@@ -18,3 +18,15 @@ export function carShell(sections) {
   geometry.computeVertexNormals();
   return geometry;
 }
+
+// Canopy frustum: base quad sits inside the body shell (no bottom face), top quad is the roof.
+export function canopy(baseWidth, frontZ, frontY, rearZ, rearY, topWidth, topFrontZ, topRearZ, topY) {
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute([
+    -baseWidth, frontY, frontZ, baseWidth, frontY, frontZ, baseWidth, rearY, rearZ, -baseWidth, rearY, rearZ,
+    -topWidth, topY, topFrontZ, topWidth, topY, topFrontZ, topWidth, topY, topRearZ, -topWidth, topY, topRearZ,
+  ], 3));
+  geometry.setIndex([0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2, 7, 3, 3, 7, 4, 3, 4, 0, 4, 7, 6, 4, 6, 5]);
+  geometry.computeVertexNormals();
+  return geometry;
+}

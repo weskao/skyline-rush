@@ -6,7 +6,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RACE_LENGTH } from './game.js';
-import { carShell } from './geometry.js';
+import { canopy, carShell } from './geometry.js';
 import { createEffects } from './effects.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
@@ -29,17 +29,109 @@ function block(parent, mat, x, y, z, width, height, depth) {
   return mesh;
 }
 
-const bodyGeometry = carShell([[-2.38, 0.8, 0.48, 0.66], [-1.8, 1.03, 0.4, 0.86], [-1.25, 1.12, 0.42, 1.01], [0.8, 1.08, 0.42, 1.02], [1.55, 1.16, 0.46, 1.01], [2.28, 0.98, 0.54, 0.83]]);
-const cabinGeometry = (() => {
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute([
-    -0.91, 1, -1.03, 0.91, 1, -1.03, 0.9, 1.02, 1.32, -0.9, 1.02, 1.32,
-    -0.7, 1.59, -0.35, 0.7, 1.59, -0.35, 0.73, 1.59, 0.63, -0.73, 1.59, 0.63,
-  ], 3));
-  geometry.setIndex([0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2, 7, 3, 3, 7, 4, 3, 4, 0, 4, 7, 6, 4, 6, 5]);
-  geometry.computeVertexNormals();
-  return geometry;
-})();
+const lampGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.05, 12);
+const roadsterPorts = [-0.62, -0.22, 0.22, 0.62];
+
+function lamp(parent, mat, x, y, z, radius = 1) {
+  const mesh = new THREE.Mesh(lampGeometry, mat);
+  mesh.rotation.x = Math.PI / 2;
+  mesh.position.set(x, y, z);
+  mesh.scale.set(radius, 1, radius);
+  parent.add(mesh);
+}
+
+function mirrors(parent, mat, y) {
+  for (const side of [-1, 1]) block(parent, mat, side * 1.15, y, -0.4, 0.2, 0.12, 0.32);
+}
+
+// Each style returns its wing; a wing with userData.lift rises on boost, braking and flight.
+const CAR_STYLES = {
+  // Player: low wedge, smoked fastback canopy, full-width tail bar, quad thruster ports, pop-up wing.
+  roadster: {
+    color: '#e6e9e7', glass: '#3b2c24', light: [2.2, 0.02, 0.05], detailed: true,
+    body: carShell([[-2.45, 0.86, 0.4, 0.6], [-1.95, 1.06, 0.36, 0.74], [-1.2, 1.13, 0.38, 0.86], [0.5, 1.1, 0.38, 0.96], [1.55, 1.16, 0.42, 1.04], [2.32, 1.05, 0.5, 1.02]]),
+    cabin: canopy(0.92, -0.95, 0.86, 1.75, 1.02, 0.66, -0.15, 0.7, 1.4),
+    trim(group, m) {
+      const bronze = material('#7a5f4c', 0.8, 0.28);
+      const ember = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.1, 0.32, 0.08) });
+      block(group, m.white, 0, 0.53, -2.46, 1.56, 0.035, 0.04);
+      block(group, m.light, 0, 0.95, 2.34, 2.08, 0.08, 0.05);
+      block(group, m.black, 0, 0.7, 2.33, 1.86, 0.36, 0.04);
+      block(group, material('#c9ccd0', 0.2, 0.5), 0, 0.84, 2.36, 0.4, 0.12, 0.02);
+      for (const x of roadsterPorts) lamp(group, ember, x, 0.64, 2.36, 0.65);
+      const wing = new THREE.Group();
+      block(wing, bronze, 0, 0, 0, 2.2, 0.05, 0.44);
+      for (const side of [-1, 1]) block(wing, m.black, side * 0.62, -0.2, 0.05, 0.05, 0.4, 0.1);
+      wing.position.set(0, 1.07, 1.95);
+      wing.userData = { restY: 1.07, lift: 0.34 };
+      group.add(wing);
+      return wing;
+    },
+  },
+  // NOVA: long-tail hypercar, twin tail fins bridged by a blade, split magenta tail lights.
+  nova: {
+    color: '#fd775d', glass: '#121a24', light: [3.5, 0.06, 0.6],
+    body: carShell([[-2.5, 0.8, 0.42, 0.58], [-1.9, 1.08, 0.38, 0.8], [-1.1, 1.14, 0.4, 0.84], [0.7, 1.12, 0.4, 0.9], [1.7, 1.16, 0.42, 0.94], [2.7, 0.92, 0.5, 0.82]]),
+    cabin: canopy(0.78, -0.8, 0.82, 1.4, 0.9, 0.55, -0.1, 0.55, 1.36),
+    trim(group, m) {
+      for (const side of [-1, 1]) {
+        block(group, m.white, side * 0.5, 0.52, -2.51, 0.4, 0.035, 0.04);
+        block(group, m.light, side * 0.5, 0.74, 2.71, 0.66, 0.06, 0.04);
+        block(group, m.paint, side * 0.62, 1.08, 2.2, 0.05, 0.42, 0.95);
+      }
+      mirrors(group, m.black, 1);
+      return block(group, m.black, 0, 1.31, 2.3, 1.24, 0.05, 0.5);
+    },
+  },
+  // ORBIT: rounded GT, tall bubble canopy, ducktail lip, round cyan lamps.
+  orbit: {
+    color: '#b9c39a', glass: '#1d3a3a', light: [0.2, 1.8, 3.2],
+    body: carShell([[-2.35, 0.86, 0.44, 0.7], [-1.8, 1.06, 0.4, 0.88], [-1.2, 1.12, 0.42, 0.96], [0.8, 1.12, 0.42, 0.98], [1.6, 1.12, 0.46, 0.98], [2.25, 0.96, 0.54, 0.88]]),
+    cabin: canopy(0.92, -1, 0.95, 1.5, 0.97, 0.72, -0.4, 0.8, 1.6),
+    trim(group, m) {
+      block(group, m.paint, 0, 1.6, 0.2, 1.43, 0.045, 1.2);
+      for (const x of [-0.6, 0.6]) lamp(group, m.white, x, 0.6, -2.36);
+      for (const x of [-0.74, -0.42, 0.42, 0.74]) lamp(group, m.light, x, 0.76, 2.26);
+      mirrors(group, m.black, 1.1);
+      return block(group, m.paint, 0, 0.96, 2.05, 1.96, 0.07, 0.36);
+    },
+  },
+  // APEX: track car with splitter, roof scoop, side intakes, tall endplate wing, amber C-lights.
+  apex: {
+    color: '#7baab6', glass: '#151c2a', light: [3.4, 1, 0.04],
+    body: carShell([[-2.45, 0.9, 0.36, 0.6], [-1.9, 1.1, 0.36, 0.8], [-1.2, 1.15, 0.38, 0.92], [0.8, 1.13, 0.38, 0.96], [1.55, 1.16, 0.42, 1], [2.25, 1.04, 0.5, 0.94]]),
+    cabin: canopy(0.86, -0.9, 0.9, 1.3, 0.98, 0.58, -0.2, 0.55, 1.46),
+    trim(group, m) {
+      block(group, m.black, 0, 0.37, -2.52, 2, 0.04, 0.3);
+      block(group, m.black, 0, 1.52, 0.3, 0.34, 0.14, 0.5);
+      for (const side of [-1, 1]) {
+        block(group, m.white, side * 0.6, 0.54, -2.46, 0.5, 0.05, 0.04).rotation.z = side * 0.12;
+        block(group, m.light, side * 0.78, 0.86, 2.27, 0.42, 0.055, 0.04);
+        block(group, m.light, side * 0.99, 0.73, 2.27, 0.055, 0.3, 0.04);
+        block(group, m.black, side * 1.13, 0.78, 0.6, 0.06, 0.18, 0.7);
+        block(group, m.black, side * 0.55, 1.3, 2, 0.06, 0.68, 0.14);
+        block(group, m.black, side * 1.15, 1.56, 2, 0.04, 0.34, 0.62);
+      }
+      return block(group, m.black, 0, 1.66, 2, 2.3, 0.07, 0.46);
+    },
+  },
+  // Traffic: upright commuter shape so racers stand out.
+  commuter: {
+    color: '#8c99a4', glass: '#172e40', light: [3.5, 0.08, 0.12],
+    body: carShell([[-2.38, 0.8, 0.48, 0.66], [-1.8, 1.03, 0.4, 0.86], [-1.25, 1.12, 0.42, 1.01], [0.8, 1.08, 0.42, 1.02], [1.55, 1.16, 0.46, 1.01], [2.28, 0.98, 0.54, 0.83]]),
+    cabin: canopy(0.9, -1.03, 1, 1.32, 1.02, 0.72, -0.35, 0.63, 1.59),
+    trim(group, m) {
+      block(group, m.paint, 0, 0.94, -1.4, 1.94, 0.1, 1.45).rotation.x = -0.07;
+      block(group, m.paint, 0, 1.6, 0.14, 1.43, 0.045, 1.01);
+      block(group, m.paint, 0, 1.08, 1.52, 2.06, 0.18, 1.01);
+      block(group, m.light, 0, 0.98, 2.24, 1.97, 0.065, 0.05);
+      block(group, m.black, 0, 0.7, 2.25, 1.5, 0.17, 0.04);
+      for (const side of [-1, 1]) block(group, m.white, side * 0.78, 0.94, -2.23, 0.46, 0.055, 0.05);
+      mirrors(group, m.black, 1.19);
+      return block(group, m.black, 0, 1.18, 1.99, 2.3, 0.07, 0.34);
+    },
+  },
+};
 
 const spokeGeometry = new THREE.BufferGeometry();
 const spokeVertices = [0, 0, 0];
@@ -53,28 +145,19 @@ spokeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(spokeVer
 spokeGeometry.setIndex(spokeIndices);
 spokeGeometry.computeVertexNormals();
 
-function makeCar(color, detailed = false) {
+function makeCar(style, color = style.color) {
   const group = new THREE.Group();
+  const detailed = !!style.detailed;
   const paint = material(color, 0.55, 0.25);
   const black = material('#101923', 0.4, 0.4);
-  const glass = material('#172e40', 0.85, 0.16);
-  const red = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.5, 0.08, 0.12) });
+  const glass = material(style.glass, 0.85, 0.16);
+  const light = new THREE.MeshBasicMaterial({ color: new THREE.Color(...style.light) });
   const white = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 2.1, 2.6) });
   block(group, black, 0, 0.48, 0, 2.08, 0.26, 4.38);
-  const body = new THREE.Mesh(bodyGeometry, paint);
-  group.add(body);
-  const hood = block(group, paint, 0, 0.94, -1.4, 1.94, 0.1, 1.45);
-  hood.rotation.x = -0.07;
-  const cabin = new THREE.Mesh(cabinGeometry, glass);
-  group.add(cabin);
-  block(group, paint, 0, 1.6, 0.14, 1.43, 0.045, 1.01);
-  block(group, paint, 0, 1.08, 1.52, 2.06, 0.18, 1.01);
-  block(group, red, 0, 0.98, 2.24, 1.97, 0.065, 0.05);
-  block(group, black, 0, 0.7, 2.25, 1.5, 0.17, 0.04);
-  const wing = block(group, black, 0, detailed ? 1.38 : 1.18, 1.99, 2.3, 0.07, 0.34);
+  const body = new THREE.Mesh(style.body, paint);
+  group.add(body, new THREE.Mesh(style.cabin, glass));
+  const wing = style.trim(group, { paint, black, light, white });
   for (const side of [-1, 1]) {
-    block(group, white, side * 0.78, 0.94, -2.23, 0.46, 0.055, 0.05);
-    block(group, black, side * 1.17, 1.19, -0.38, 0.22, 0.14, 0.36);
     block(group, black, side * 1.09, 0.55, 0.04, 0.04, 0.13, 2.32);
     if (detailed) block(group, white, side * 1.1, 0.48, 0, 0.025, 0.025, 2.5);
   }
@@ -117,24 +200,17 @@ function makeCar(color, detailed = false) {
   group.add(jets);
   const boostJets = new THREE.Group();
   if (detailed) {
-    const stripe = material('#163a50', 0.7, 0.3);
-    for (const side of [-1, 1]) {
-      block(group, black, side * 0.65, 1.22, 1.99, 0.08, 0.32, 0.12);
-      block(group, stripe, side * 0.22, 1.628, 0.14, 0.15, 0.012, 1.02);
-      const hoodStripe = block(group, stripe, side * 0.22, 1, -1.4, 0.15, 0.012, 1.4);
-      hoodStripe.rotation.x = hood.rotation.x;
-      block(group, black, side * 0.73, 0.67, -2.25, 0.34, 0.15, 0.08);
-      const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 2.5, 12, 1, true), coreMaterial);
+    const plume = new THREE.CylinderGeometry(0.06, 0.12, 2.2, 10, 1, true);
+    for (const x of roadsterPorts) {
+      const exhaust = new THREE.Mesh(plume, coreMaterial);
       exhaust.rotation.x = Math.PI / 2;
-      exhaust.position.set(side * 0.72, 0.55, 3.35);
+      exhaust.position.set(x, 0.64, 3.46);
       boostJets.add(exhaust);
     }
-    block(group, black, 0, 0.7, 2.28, 0.6, 0.16, 0.02);
-    for (const x of [-0.8, -0.4, 0, 0.4, 0.8]) block(group, black, x, 0.43, 2.15, 0.035, 0.2, 0.4);
   }
   boostJets.visible = false;
   group.add(boostJets);
-  group.userData = { wheels, jets, body, wing, boostJets, brakeLight: red };
+  group.userData = { wheels, jets, body, wing, boostJets, brakeLight: light, lightColor: light.color.clone() };
   return group;
 }
 
@@ -330,13 +406,12 @@ export function createWorld(canvas) {
   finish.add(finishSign);
   scene.add(finish);
 
-  const player = makeCar('#e6e9e7', true);
+  const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
-  const rivalColors = ['#fd775d', '#b9c39a', '#7baab6'];
-  const rivals = rivalColors.map(color => { const car = makeCar(color); scene.add(car); return car; });
+  const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex].map(style => { const car = makeCar(style); scene.add(car); return car; });
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   const traffic = Array.from({ length: 36 }, (_, i) => {
-    const car = makeCar(trafficColors[i % 5]);
+    const car = makeCar(CAR_STYLES.commuter, trafficColors[i % 5]);
     car.scale.setScalar(0.96);
     scene.add(car);
     return car;
@@ -385,8 +460,10 @@ export function createWorld(canvas) {
     mesh.userData.jets.visible = !!car.thrusting;
     mesh.userData.boostJets.visible = !!car.boosting;
     mesh.userData.boostJets.scale.z = 0.95 + Math.sin(time * 37) * 0.05;
-    mesh.userData.brakeLight.color.setRGB(car.braking ? 8 : 3.5, 0.08, 0.12);
-    mesh.userData.wing.rotation.x = THREE.MathUtils.damp(mesh.userData.wing.rotation.x, car.braking ? -0.35 : car.boosting ? 0.08 : 0, 8, dt);
+    mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(car.braking ? 2.3 : 1);
+    const { wing } = mesh.userData;
+    wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking ? -0.35 : car.boosting ? 0.08 : 0, 8, dt);
+    if (wing.userData.lift) wing.position.y = THREE.MathUtils.damp(wing.position.y, wing.userData.restY + (car.boosting || car.braking || car.altitude > 0.8 ? wing.userData.lift : 0), 8, dt);
     mesh.userData.jets.scale.y = 0.9 + Math.sin(time * 29) * 0.06;
     mesh.userData.wheels.forEach(wheel => {
       const target = (car.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);
