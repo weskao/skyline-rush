@@ -12,8 +12,9 @@ export default defineConfig({
     channel: 'chrome',
     baseURL: 'http://127.0.0.1:5178',
     viewport: { width: 1440, height: 900 },
-    // Linux CI uses Mesa under Xvfb; SwiftShader stalls this scene's countdown.
-    launchOptions: { args: process.env.CI ? ['--use-gl=angle', '--use-angle=gl'] : ['--enable-unsafe-swiftshader'] },
+    // shortcut: CPU-only CI renders fewer pixels; use a GPU runner for visual fidelity tests.
+    deviceScaleFactor: process.env.CI ? 0.25 : 1,
+    launchOptions: { args: ['--enable-unsafe-swiftshader'] },
     screenshot: 'only-on-failure',
   },
   webServer: {
