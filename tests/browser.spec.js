@@ -37,7 +37,7 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   }
   await page.locator('#vfx-panel > summary').click();
   await page.waitForTimeout(600);
-  await page.screenshot({ path: 'artifacts/aero-downforce.png' });
+  await page.screenshot({ path: 'artifacts/aero-downforce.jpeg', quality: 70 });
   await page.getByRole('button', { name: 'Start race from showcase', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w'); await page.keyboard.down('Shift');
@@ -82,7 +82,7 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   expect(panel.x).toBeGreaterThanOrEqual(0);
   expect(panel.x + panel.width).toBeLessThanOrEqual(360);
   expect(panel.y + panel.height).toBeLessThanOrEqual(780);
-  await page.screenshot({ path: 'artifacts/aero-settings-mobile.png' });
+  await page.screenshot({ path: 'artifacts/aero-settings-mobile.jpeg', quality: 70 });
   await page.reload();
   await page.locator('#vfx-panel > summary').click();
   await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
@@ -479,7 +479,7 @@ test.describe('phone game gestures', () => {
     await expect(gas).not.toHaveClass(/is-held/);
     expect(await page.evaluate(() => getSelection().toString())).toBe('');
     expect(await page.evaluate(() => [scrollX, scrollY, visualViewport.scale])).toEqual([0, 0, 1]);
-    await page.screenshot({ path: 'artifacts/mobile-touch-controls.png' });
+    await page.screenshot({ path: 'artifacts/mobile-touch-controls.jpeg', quality: 70 });
     await session.detach();
   });
 });
