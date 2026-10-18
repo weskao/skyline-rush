@@ -49,11 +49,33 @@ export function createEffects(scene, roadCenter) {
   const points = new THREE.Points(geometry, material);
   points.frustumCulled = false;
   scene.add(points);
+  const cores = new THREE.Group();
+  cores.name = 'Lift gas cores';
+  scene.add(cores);
+  const coreGeometry = new THREE.CylinderGeometry(0.085, 0.24, 1, 16, 12, true);
+  coreGeometry.translate(0, -0.5, 0);
+  const coreMaterial = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    uniforms: { time: { value: 0 }, power: { value: 0 } },
+    vertexShader: `varying vec2 vUv; varying float height;
+      void main(){vUv=uv;vec4 world=modelMatrix*vec4(position,1.);height=world.y;
+        gl_Position=projectionMatrix*viewMatrix*world;}`,
+    fragmentShader: `varying vec2 vUv;varying float height;uniform float time,power;
+      void main(){if(height<.09)discard;float downstream=1.-vUv.y;
+        float breakup=.65+.35*sin(vUv.x*37.+downstream*31.-time*38.);
+        float envelope=pow(1.-downstream,1.6)*smoothstep(0.,.06,downstream);
+        gl_FragColor=vec4(.86,.94,1.,power*envelope*breakup*.5);}`,
+  });
+  for (let i = 0; i < 16; i++) {
+    const jet = new THREE.Mesh(coreGeometry, coreMaterial.clone());
+    jet.visible = false; cores.add(jet);
+  }
+  let flowTime = 0;
   let cursor = 0, lastImpact = null, lastLanding = null;
   const emissions = new Float64Array(4), strengths = new Float64Array(4);
   const nozzles = new Uint8Array(4);
   const nozzlePosition = new THREE.Vector3(), nozzleVelocity = new THREE.Vector3();
-  const orange = [2.5, 0.85, 0.15], mist = [0.58, 0.64, 0.68];
+  const orange = [2.5, 0.85, 0.15], mist = [0.58, 0.64, 0.68], gas = [0.8, 0.87, 0.92];
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
     Object.assign(particles[cursor], { x, y, distance, vx, vy, forward, size, life, maxLife: life, color, gravity, kind, opacity, radialX, grounded: false, phase: cursor * 2.39996 });
     cursor = (cursor + 1) % COUNT;
@@ -81,6 +103,7 @@ export function createEffects(scene, roadCenter) {
   return {
     update(race, dt, center, preview, reducedMotion, vehicles) {
       dt = Math.max(0, dt);
+      flowTime += dt;
       const car = race.player;
       const distance = preview ? 340 : car.distance;
       if (car.impact !== lastImpact) {
@@ -96,6 +119,18 @@ export function createEffects(scene, roadCenter) {
         const pose = vehicles?.[source];
         const active = (preview || race.phase === 'racing') && (preview ? source < 2 && (!pose || pose.userData.jets.visible) : driver.thrusting) && pose?.visible !== false;
         strengths[source] = THREE.MathUtils.damp(strengths[source], active ? 1 : 0, active ? 12 : 9, dt);
+        for (let port = 0; port < LIFT_PORTS.length; port++) {
+          const jet = cores.children[source * 4 + port];
+          jet.visible = !!pose && strengths[source] >= 0.01 && pose.visible;
+          if (!jet.visible) continue;
+          const [x, z] = LIFT_PORTS[port];
+          pose.updateWorldMatrix(true, false);
+          jet.position.set(x, 0.19, z).applyMatrix4(pose.matrixWorld);
+          pose.getWorldQuaternion(jet.quaternion);
+          jet.scale.set(1, 0.65 + strengths[source] * 0.75, 1);
+          jet.material.uniforms.power.value = strengths[source] * (reducedMotion ? 0.65 : 1);
+          jet.material.uniforms.time.value = flowTime + port * 0.31;
+        }
         if (strengths[source] < 0.01 || dt === 0) continue;
         const d = preview ? source === 0 ? 340 : 375 + (source - 1) * 28 : driver.distance;
         const altitude = pose ? pose.position.y : preview ? source === 0 ? 1.6 : 5 : driver.altitude;
@@ -109,7 +144,7 @@ export function createEffects(scene, roadCenter) {
           const angle = Math.random() * Math.PI * 2;
           const radius = Math.sqrt(Math.random()) * 0.12;
           nozzlePosition.set(x + Math.cos(angle) * radius, 0.19, z + Math.sin(angle) * radius);
-          nozzleVelocity.set(Math.sign(x) * (0.5 + Math.random()), -12 - Math.random() * 5, 0);
+          nozzleVelocity.set(Math.cos(angle) * 0.8, -18 - Math.random() * 4, Math.sin(angle) * 0.8);
           if (pose) {
             nozzlePosition.applyMatrix4(pose.matrixWorld);
             nozzlePosition.x += center;
@@ -123,8 +158,8 @@ export function createEffects(scene, roadCenter) {
           emit(nozzlePosition.x, nozzlePosition.y, nozzlePosition.z,
             nozzleVelocity.x + Math.sin(heading) * speed * 0.88 + (driver.steering || 0) * 6,
             nozzleVelocity.y, -nozzleVelocity.z + Math.cos(heading) * speed * 0.88,
-            reducedMotion ? 0.85 : 1.15 + Math.random() * 0.5,
-            0.55 + Math.random() * 0.3, mist, 0, 1, strengths[source] * 0.32, Math.sign(x));
+            reducedMotion ? 0.75 : 0.9 + Math.random() * 0.4,
+            0.65 + Math.random() * 0.25, gas, 0, 1, strengths[source] * 0.48, Math.sign(x));
           emissions[source]--;
         }
       }
@@ -148,8 +183,8 @@ export function createEffects(scene, roadCenter) {
           if (p.kind === 1 && !p.grounded) {
             // The deck redirects the downwash into a broad, slowing wall jet.
             const spread = 4 + Math.random() * 3;
-            p.vx = p.radialX * spread;
-            p.forward = p.forward * 0.22 + Math.sin(p.phase) * spread * 0.6;
+            p.vx = Math.cos(p.phase) * spread;
+            p.forward = p.forward * 0.22 + Math.sin(p.phase) * spread;
             p.kind = 2; p.grounded = true; p.opacity *= 0.65;
             p.size = 0.7; p.life = Math.min(p.life, 0.5);
           }
@@ -192,6 +227,7 @@ export function createEffects(scene, roadCenter) {
       lastImpact = lastLanding = null;
       cursor = 0;
       emissions.fill(0); strengths.fill(0); nozzles.fill(0);
+      cores.children.forEach(jet => { jet.visible = false; });
     },
   };
 }

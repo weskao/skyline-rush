@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Scene } from 'three';
+import { Scene, Group, Vector3 } from 'three';
 import { createRace } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 
@@ -60,4 +60,28 @@ test('reset clears visible vapor immediately and a paused frame leaves it empty'
   assert.ok(attributes.alpha.array.every(alpha => alpha === 0));
   effects.update(race, 0, 0, false, false);
   assert.ok(attributes.alpha.array.every(alpha => alpha === 0));
+});
+
+test('lift cores follow tilted nozzle transforms and fade completely on release/reset', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene(), pose = new Group();
+  pose.position.set(2, 4, -3); pose.rotation.z = 0.3;
+  scene.add(pose);
+  const effects = createEffects(scene, () => 0), race = createRace();
+  race.phase = 'racing'; race.player.thrusting = true;
+  effects.update(race, 0.1, 0, false, false, [pose]);
+  const cores = scene.getObjectByName('Lift gas cores');
+  assert.ok(cores, 'continuous near-nozzle gas is visible');
+  const jet = cores.children[0];
+  assert.ok(jet.visible);
+  const expected = pose.localToWorld(new Vector3(-0.79, 0.19, -1.3));
+  assert.ok(jet.position.distanceTo(expected) < 0.001);
+  assert.ok(jet.quaternion.angleTo(pose.quaternion) < 0.001);
+  race.player.thrusting = false;
+  for (let i = 0; i < 120; i++) effects.update(race, 1 / 60, 0, false, false, [pose]);
+  assert.ok(cores.children.every(core => !core.visible));
+  race.player.thrusting = true;
+  effects.update(race, 0.1, 0, false, false, [pose]); effects.reset();
+  assert.ok(cores.children.every(core => !core.visible));
 });

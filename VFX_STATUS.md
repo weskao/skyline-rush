@@ -40,6 +40,8 @@ This is the implementation checklist. A feature changes from `- [ ]` to `- [x]` 
 
 ## Verification
 
+- [x] Refine downward lift VFX with short animated white gas cores, world-space vapor and radial ground wash; verify tilted anchors, release/reset, desktop flight and touch controls.
+
 - [x] Unit coverage for settings bounds, local anchor rotation, world-space rebasing, bounded repeated use, release/reset and collision discontinuities.
 - [x] Unit coverage for the V keyboard action without disturbing held driving inputs.
 - [x] Targeted browser coverage for Airflow, presets, quality, all showcase views, Boost coexistence, pause/restart, persistence, mobile layout and reduced motion.
