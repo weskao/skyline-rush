@@ -1,5 +1,11 @@
 # Verification — 2026-10-18
 
+## Screenshot refresh — 2026-10-19
+
+All 35 PNG/JPEG images in `artifacts/` were recaptured from the current production build in Chrome at full resolution, including the four README images. Existing filenames are retained for compatibility; images named `before` and `after` now both show the current build and no longer preserve the historical comparisons described below. Annotated images identify the current flight and airflow controls. Videos and performance JSON reports remain historical artifacts.
+
+The README image URLs and social-preview URL use a new cache version. `public/og-image.jpeg` matches the refreshed `artifacts/readme-hero.jpeg`.
+
 ## Final results
 
 - `npm test`: 15 tests passed, 0 failed. Driving, speed/road limits, launch speed, flight, fuel exhaustion, landing, collision altitude/cooldown, pause/invalid time steps, rival flight, reset, boost consumption, within-tick finish order, outward-facing geometry, keyboard cleanup and touch cancellation.
