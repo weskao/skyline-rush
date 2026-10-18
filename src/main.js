@@ -41,6 +41,11 @@ document.querySelector('#app').innerHTML = `
           <button class="setting" role="switch" data-audio="music" aria-checked="true"><span>Music</span><b aria-hidden="true">ON</b></button>
           <button class="setting" role="switch" data-audio="sfx" aria-checked="true"><span>Sound effects</span><b aria-hidden="true">ON</b></button>
         </div>
+        <div class="settings-panel music-prompt" id="music-prompt" role="group" aria-labelledby="music-prompt-title" hidden>
+          <p id="music-prompt-title">Play background music?</p>
+          <button class="setting" id="music-yes"><span>Play music</span></button>
+          <button class="setting" id="music-no"><span>Not now</span></button>
+        </div>
       </div>
       <button class="icon-button" id="camera-button" aria-label="Change camera" aria-pressed="false" title="Camera · C">${icon('camera')}</button>
       <button class="icon-button" id="restart-button" aria-label="Restart race" title="Restart · R" hidden>${icon('restart')}</button>
@@ -188,8 +193,13 @@ function toggleSettings(open = ui['settings-panel'].hidden) {
   ui['settings-button'].setAttribute('aria-expanded', String(open));
 }
 
-// Browsers start audio only after a user gesture, so saved choices are applied on the first one.
-function unlockAudio() {
+// Browsers that block autoplay start audio only after a user gesture, so saved choices are applied on the first one.
+let gestured = false;
+function unlockAudio(event) {
+  if (event) {
+    gestured = true;
+    $('#music-prompt').hidden = true;
+  }
   if (!sound.running() && (audio.music || audio.sfx)) {
     setAudio('music', audio.music);
     setAudio('sfx', audio.sfx);
@@ -208,6 +218,11 @@ const controls = createControls(window, action => {
   ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist })[action]?.();
 });
 for (const type of ['click', 'keydown']) window.addEventListener(type, unlockAudio, { capture: true });
+// Try autoplay; where the browser blocks it, ask instead. The answer is itself the unlocking gesture.
+unlockAudio();
+setTimeout(() => { $('#music-prompt').hidden = gestured || !audio.music || sound.running(); }, 600);
+$('#music-yes').addEventListener('click', () => setAudio('music', true));
+$('#music-no').addEventListener('click', () => setAudio('music', false));
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
 ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', restart);

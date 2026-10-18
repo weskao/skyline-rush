@@ -34,6 +34,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .setting:hover { background: rgb(255 255 255 / .08); }
 .setting b { font-size: 10px; letter-spacing: 1.6px; color: var(--muted); }
 .setting[aria-checked="true"] b { color: var(--accent); }
+.music-prompt p { margin: 0; padding: 10px 12px 4px; font-size: 13px; color: var(--muted); }
+.music-prompt #music-yes { color: var(--accent); }
 .intro { position: absolute; z-index: 2; left: 7%; top: 23%; max-width: 600px; }
 .route-label { display: flex; align-items: center; gap: 11px; font-size: 10px; letter-spacing: 2px; font-weight: 600; color: #dbd8d1; margin-bottom: 24px; }
 .route-label > span:not(.route-line) { color: var(--accent); }
