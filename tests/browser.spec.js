@@ -1,5 +1,7 @@
 import { test, expect, chromium } from '@playwright/test';
 
+const slow = process.env.CI ? 3 : 1; // CPU-only CI renders WebGL slowly; see playwright.config.js
+
 const measureAudio = () => {
   const connect = AudioNode.prototype.connect;
   AudioNode.prototype.connect = function(destination, ...args) {
@@ -354,7 +356,7 @@ test('a page preserved for back navigation keeps its renderer, animation and inp
 });
 
 test('a complete 5 km sprint reaches results, saves a best time and can race again', async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(120000 * slow);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start race' }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -363,11 +365,11 @@ test('a complete 5 km sprint reaches results, saves a best time and can race aga
   await page.keyboard.down('a');
   await page.waitForTimeout(220);
   await page.keyboard.up('a');
-  await expect(page.locator('#skill-report')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#skill-report')).toBeVisible({ timeout: 15000 * slow });
   await expect(page.locator('#skill-report')).toContainText('CLOSE PASS');
   await expect(page.locator('#skill-report')).toContainText('CHARGE FULL');
   await page.screenshot({ path: 'artifacts/close-pass-polish.jpeg', quality: 70 });
-  await expect(page.locator('#race-status')).toHaveText('FINISHED', { timeout: 95000 });
+  await expect(page.locator('#race-status')).toHaveText('FINISHED', { timeout: 95000 * slow });
   await page.keyboard.up('w');
   await expect(page.locator('#distance')).toHaveText('5.00');
   await expect(page.locator('#result-stats')).toBeVisible();
