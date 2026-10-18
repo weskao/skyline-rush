@@ -309,7 +309,8 @@ test('flight HUD explains ascent, descent, touchdown and recharging', async ({ p
   await expect(page.locator('#flight-state')).toHaveText(/ASCENDING|CRUISE/);
   await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeGreaterThan(3);
   await page.screenshot({ path: 'artifacts/flight-immersive.jpeg', quality: 70 });
-  await expect.poll(async () => Number(await page.locator('#fuel-value').textContent())).toBeLessThan(13);
+  // Sample inside the ~0.7s low-charge window before automatic landing begins.
+  await expect.poll(async () => Number(await page.locator('#fuel-value').textContent()), { intervals: [50] }).toBeLessThan(13);
   await page.keyboard.up('Space');
   await expect(page.locator('#flight-state')).toHaveText('DESCENDING');
   expect(await page.locator('#flight-instruction').textContent()).toContain('HOLD SPACE');

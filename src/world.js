@@ -7,7 +7,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RACE_LENGTH } from './game.js';
 import { canopy, carShell } from './geometry.js';
-import { createEffects } from './effects.js';
+import { createEffects, LIFT_PORTS } from './effects.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
@@ -183,18 +183,16 @@ function makeCar(style, color = style.color) {
     wheels.push(wheel);
   }
   const jets = new THREE.Group();
-  const jetMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.1, 1.3, 3.2), transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
   const coreMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 2.4, 3), transparent: true, opacity: 0.65, depthWrite: false, blending: THREE.AdditiveBlending });
-  for (const x of [-0.79, 0.79]) for (const z of [-1.3, 1.45]) {
+  const fanMaterial = material('#71818a', 0.65, 0.45);
+  const fanGeometry = new THREE.CylinderGeometry(0.13, 0.13, 0.025, 12);
+  for (const [x, z] of LIFT_PORTS) {
     const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.2, 10), black);
     nozzle.position.set(x, 0.3, z);
     group.add(nozzle);
-    const plume = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.4, 3.6, 12, 1, true), jetMaterial);
-    plume.position.set(x, -1.65, z);
-    jets.add(plume);
-    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.11, 2.2, 8), coreMaterial);
-    core.position.set(x, -0.95, z);
-    jets.add(core);
+    const fan = new THREE.Mesh(fanGeometry, fanMaterial);
+    fan.position.set(x, 0.19, z);
+    jets.add(fan);
   }
   jets.visible = false;
   group.add(jets);
@@ -409,6 +407,7 @@ export function createWorld(canvas) {
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
   const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex].map(style => { const car = makeCar(style); scene.add(car); return car; });
+  const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   const traffic = Array.from({ length: 36 }, (_, i) => {
     const car = makeCar(CAR_STYLES.commuter, trafficColors[i % 5]);
@@ -430,8 +429,6 @@ export function createWorld(canvas) {
   shadow.position.y = 0.03;
   scene.add(shadow);
   const effects = createEffects(scene, roadCenter);
-  const thrustLight = new THREE.PointLight('#62ccff', 0, 14, 2);
-  scene.add(thrustLight);
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
   const smoothLook = new THREE.Vector3(0, 2, -25);
@@ -464,7 +461,6 @@ export function createWorld(canvas) {
     const { wing } = mesh.userData;
     wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking ? -0.35 : car.boosting ? 0.08 : 0, 8, dt);
     if (wing.userData.lift) wing.position.y = THREE.MathUtils.damp(wing.position.y, wing.userData.restY + (car.boosting || car.braking || car.altitude > 0.8 ? wing.userData.lift : 0), 8, dt);
-    mesh.userData.jets.scale.y = 0.9 + Math.sin(time * 29) * 0.06;
     mesh.userData.wheels.forEach(wheel => {
       const target = (car.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);
       wheel.rotation.z = THREE.MathUtils.damp(wheel.rotation.z, target, 7, dt);
@@ -557,10 +553,7 @@ export function createWorld(canvas) {
       shadow.material.opacity = 0.6 / (1 + player.position.y * 0.2);
       finish.position.set(roadCenter(RACE_LENGTH) - center, 0, -(RACE_LENGTH - distance));
       finish.visible = RACE_LENGTH - distance < 1400;
-      effects.update(race, motionDt, center, preview, reducedMotion);
-      thrustLight.position.copy(player.position);
-      thrustLight.position.y = Math.max(0.7, player.position.y - 0.7);
-      thrustLight.intensity = player.userData.jets.visible ? 18 : 0;
+      effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles);
       const portrait = camera.aspect < 0.8;
       if (preview) {
         desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
