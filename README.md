@@ -2,9 +2,9 @@
 
 A playable 3D coastal highway sprint starring a flying electric sports car, modeled on the Tesla Roadster 2 and its rocket-thruster concept. Lift off on four blue thrusters, race three opponents, fly over traffic, manage charge and land to recharge. The handling is fictional arcade physics; this is an unofficial fan project, not affiliated with Tesla or SpaceX.
 
-![Skyline Rush in flight](artifacts/readme-hero.jpeg)
-
 ![Start screen with the audio settings open](artifacts/readme-start.jpeg)
+
+![Skyline Rush in flight](artifacts/readme-hero.jpeg)
 
 ![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg)
 
