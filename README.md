@@ -66,7 +66,7 @@ make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 ```
 
-Browser tests use an installed Google Chrome. Tests allow SwiftShader for headless rendering; normal gameplay uses the browser's available GPU. Screenshots are written to `artifacts/` as JPEG (quality 70); test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
+Browser tests use an installed Google Chrome. Local tests allow SwiftShader for headless rendering; Linux CI uses Mesa OpenGL under Xvfb. Normal gameplay uses the browser's available GPU. Screenshots are written to `artifacts/` as JPEG (quality 70); test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
 
 ```sh
 npm run preview         # Serve the production build after npm run build
