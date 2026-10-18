@@ -6,6 +6,10 @@ A playable 3D coastal highway sprint starring a flying electric sports car, mode
 
 ![Start screen with the audio settings open](artifacts/readme-start.jpeg)
 
+![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg)
+
+![Race results with a new personal best](artifacts/race-results.jpeg)
+
 ## Run locally
 
 Requires Node.js 22.12 or newer and a browser with WebGL 2 and hardware acceleration.
