@@ -1,3 +1,22 @@
+## [0.3.1] - 2026-10-18
+
+### 📚 Documentation
+
+- Refresh gameplay screenshots
+- Refresh screenshots as compressed jpeg
+- Refresh screenshots at full resolution
+- Refresh README assets
+
+### 🧪 Testing
+
+- Dismiss music prompt before settings clicks
+
+### ⚙️ Miscellaneous Tasks
+
+- **pages:** Publish releases to github pages
+- Use mesa for linux browser rendering
+- Reduce pixel load on software rendering
+- Scale browser test timeouts for software rendering
 ## [0.3.0] - 2026-10-18
 
 ### 🚀 Features
