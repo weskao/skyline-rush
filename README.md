@@ -81,6 +81,8 @@ make deploy                                # same deploy by hand: make run → n
 
 The pre-push hook (`.githooks/pre-push`) runs `make deploy` when a pushed tag points at HEAD; a failed deploy blocks the push. Enable it once per clone with `git config core.hooksPath .githooks`. `make deploy` needs `npx netlify-cli login` once per machine and the site link in `.netlify/state.json` (`npx netlify-cli link`). CI (`.github/workflows/ci.yml`) only builds and tests; it never deploys.
 
+The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-hero.jpeg`. After changing the cover, copy it again and bump the `?v=` on `og:image` in `index.html` so social sites fetch the new one.
+
 ## Project
 
 - `src/game.js`: deterministic arcade simulation, opponents, traffic and finish order.
