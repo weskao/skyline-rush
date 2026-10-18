@@ -55,7 +55,7 @@ npm test                 # Deterministic simulation, input lifecycle and geometr
 npm run build           # Production assets in dist/
 npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full race
 make run                # All three (test:browser builds first)
-make deploy             # Placeholder: this project has no deploy target yet
+make deploy             # Placeholder: deploys go through GitHub Actions (see Deploy)
 ```
 
 Browser tests use an installed Google Chrome. Tests allow SwiftShader for headless rendering; normal gameplay uses the browser's available GPU. Screenshots are written to `artifacts/`; test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
@@ -63,6 +63,16 @@ Browser tests use an installed Google Chrome. Tests allow SwiftShader for headle
 ```sh
 npm run preview         # Serve the production build after npm run build
 ```
+
+## Deploy
+
+Live at https://skyline-rush.netlify.app. Netlify never builds on its own (`ignore = "exit 0"` in `netlify.toml`); every deploy runs through `.github/workflows/ci.yml` (compile, unit tests, deploy, smoke check).
+
+```sh
+gh workflow run ci.yml --ref main   # manual deploy
+```
+
+Set `NETLIFY_AUTO_DEPLOY=1` in `.env` to deploy on every push to `main` instead. CI needs the `NETLIFY_SITE_ID` and `NETLIFY_AUTH_TOKEN` repository secrets.
 
 ## Project
 

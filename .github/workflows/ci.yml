@@ -1,0 +1,72 @@
+# compile → unit tests run on every push / PR.
+# deploy runs after compile + tests pass in that same run, when either:
+#   - triggered manually (Actions → CI → Run workflow, or `gh workflow run ci.yml`), or
+#   - it is a push to main and NETLIFY_AUTO_DEPLOY=1 in .env.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    outputs:
+      auto_deploy: ${{ steps.flag.outputs.auto_deploy }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: flag
+        run: |
+          v=$(sed -n 's/^NETLIFY_AUTO_DEPLOY=//p' .env 2>/dev/null | tr -d '[:space:]')
+          [ "$v" = 1 ] && echo auto_deploy=1 >> "$GITHUB_OUTPUT" || echo auto_deploy=0 >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  unit-tests:
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    needs: [compile, unit-tests]
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && needs.compile.outputs.auto_deploy == '1')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://skyline-rush.netlify.app
+    concurrency: production
+    steps:
+      # netlify.toml (redirects, headers) must be present for the deploy to include it.
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - run: npx --yes netlify-cli deploy --prod --no-build --dir=dist
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - name: Smoke-check live routes
+        run: |
+          for p in /; do
+            curl -fsS -o /dev/null "https://skyline-rush.netlify.app$p"
+          done
