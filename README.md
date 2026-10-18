@@ -2,7 +2,9 @@
 
 A playable 3D coastal highway sprint starring a flying electric sports car, modeled on the Tesla Roadster 2 and its rocket-thruster concept. Lift off on four blue thrusters, race three opponents, fly over traffic, manage charge and land to recharge. The handling is fictional arcade physics; this is an unofficial fan project, not affiliated with Tesla or SpaceX.
 
-![Skyline Rush in flight](artifacts/readme-hero.png)
+![Skyline Rush in flight](artifacts/readme-hero.jpeg)
+
+![Start screen with the audio settings open](artifacts/readme-start.jpeg)
 
 ## Run locally
 
@@ -36,7 +38,7 @@ Mobile layouts provide steering, accelerator, brake, boost and flight buttons. T
 
 All audio is synthesized with Web Audio; no audio downloads are needed. Background music has two looping synthwave tracks: an intro theme (~64 s) on the start and results screens, and a faster race theme (~55 s) from the countdown on. Each builds up over its loop and ducks while paused. Sound effects cover menu confirmation, three countdown ticks and GO, motor/wind, lift and boost, braking, vehicle/guardrail contact, landing, low-charge warning, close-pass reward and a finish melody. Muting effects stops pending cues, and pausing fades driving sounds. Low-charge warnings rearm only after recharging above 30%.
 
-The speaker icon opens audio settings with separate Music and Sound effects switches. Both default to on, and each choice is remembered in a cookie (`skyline-rush-music`, `skyline-rush-sound`) for a year. Browsers only allow audio after a user gesture, so the intro music starts on your first click or key press.
+The speaker icon opens audio settings with separate Music and Sound effects switches (shown open in the start-screen screenshot above). Both default to on, and each choice is remembered in a cookie (`skyline-rush-music`, `skyline-rush-sound`) for a year. Browsers only allow audio after a user gesture, so the intro music starts on your first click or key press.
 
 The flight panel shows ascent, cruise, descent and touchdown, remaining thrust seconds and the next control to use. Cyan rings mark the aerial corridor; they are visual guides. Mobile also has a hold-to-boost button. Orange contact reports show the impact type and speed lost; guardrails now rebound and slow a grounded car. Flying above them clears the rails.
 
@@ -58,7 +60,7 @@ make run                # All three (test:browser builds first)
 make deploy             # Placeholder: deploys go through GitHub Actions (see Deploy)
 ```
 
-Browser tests use an installed Google Chrome. Tests allow SwiftShader for headless rendering; normal gameplay uses the browser's available GPU. Screenshots are written to `artifacts/`; test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
+Browser tests use an installed Google Chrome. Tests allow SwiftShader for headless rendering; normal gameplay uses the browser's available GPU. Screenshots are written to `artifacts/` as JPEG (quality 70); test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
 
 ```sh
 npm run preview         # Serve the production build after npm run build

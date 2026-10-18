@@ -56,7 +56,7 @@ test('countdown lights, automatic accelerator and brake work without holding the
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('.start-lights')).toBeVisible();
   await expect(page.locator('#speed')).toHaveText('0');
-  await page.screenshot({ path: 'artifacts/countdown-polish.png' });
+  await page.screenshot({ path: 'artifacts/countdown-polish.jpeg', quality: 70 });
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(80);
   await page.keyboard.down('s');
@@ -127,7 +127,7 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   await expect(page.getByRole('button', { name: 'Change camera' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Change camera' }).click();
   await page.locator('#intro').evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
-  await page.screenshot({ path: 'artifacts/desktop-ready.png' });
+  await page.screenshot({ path: 'artifacts/desktop-ready.jpeg', quality: 70 });
   await page.getByRole('button', { name: 'Start race' }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
@@ -140,7 +140,7 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   await page.keyboard.down('Space');
   await expect(page.locator('#flight-mode')).toHaveText('FLIGHT MODE');
   await expect.poll(async () => parseFloat(await page.locator('#altitude').textContent())).toBeGreaterThan(3);
-  await page.screenshot({ path: 'artifacts/desktop-flight.png' });
+  await page.screenshot({ path: 'artifacts/desktop-flight.jpeg', quality: 70 });
   await page.keyboard.up('Space');
   await expect(page.locator('#flight-mode')).toHaveText('ROAD MODE');
   await expect(page.locator('#altitude')).toHaveText('0.0');
@@ -170,7 +170,7 @@ test.describe('touch landscape', () => {
     await expect(page.getByRole('button', { name: 'Hold to fly', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await expect(page.locator('#countdown')).toBeHidden();
-    await page.screenshot({ path: 'artifacts/mobile-landscape.png' });
+    await page.screenshot({ path: 'artifacts/mobile-landscape.jpeg', quality: 70 });
   });
 });
 
@@ -179,7 +179,7 @@ test('mobile: responsive layout and pointer controls support simultaneous drivin
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Start race' })).toBeVisible();
   await page.locator('#intro').evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
-  await page.screenshot({ path: 'artifacts/mobile-ready.png' });
+  await page.screenshot({ path: 'artifacts/mobile-ready.jpeg', quality: 70 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   await page.getByRole('button', { name: 'Start race' }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -189,7 +189,7 @@ test('mobile: responsive layout and pointer controls support simultaneous drivin
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);
   await fly.dispatchEvent('pointerdown', { pointerId: 2 });
   await expect(page.locator('#flight-mode')).toHaveText('FLIGHT MODE');
-  await page.screenshot({ path: 'artifacts/mobile-flight.png' });
+  await page.screenshot({ path: 'artifacts/mobile-flight.jpeg', quality: 70 });
   await fly.dispatchEvent('pointercancel', { pointerId: 2 });
   await throttle.dispatchEvent('pointerup', { pointerId: 1 });
   await expect(page.locator('#flight-mode')).toHaveText('ROAD MODE');
@@ -231,13 +231,13 @@ test('a complete 5 km sprint reaches results, saves a best time and can race aga
   await expect(page.locator('#skill-report')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('#skill-report')).toContainText('CLOSE PASS');
   await expect(page.locator('#skill-report')).toContainText('CHARGE FULL');
-  await page.screenshot({ path: 'artifacts/close-pass-polish.png' });
+  await page.screenshot({ path: 'artifacts/close-pass-polish.jpeg', quality: 70 });
   await expect(page.locator('#race-status')).toHaveText('FINISHED', { timeout: 95000 });
   await page.keyboard.up('w');
   await expect(page.locator('#distance')).toHaveText('5.00');
   await expect(page.locator('#result-stats')).toBeVisible();
   expect(await page.evaluate(() => Number(localStorage.getItem('skyline-rush-best')))).toBeGreaterThan(50);
-  await page.screenshot({ path: 'artifacts/race-results.png' });
+  await page.screenshot({ path: 'artifacts/race-results.jpeg', quality: 70 });
   await page.getByRole('button', { name: 'Race again' }).click();
   await expect(page.locator('#distance')).toHaveText('0.00');
   await expect(page.locator('#race-status')).toHaveText('COUNTDOWN');
@@ -252,7 +252,7 @@ test('flight HUD explains ascent, descent, touchdown and recharging', async ({ p
   await page.keyboard.down('Space');
   await expect(page.locator('#flight-state')).toHaveText(/ASCENDING|CRUISE/);
   await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeGreaterThan(3);
-  await page.screenshot({ path: 'artifacts/flight-immersive.png' });
+  await page.screenshot({ path: 'artifacts/flight-immersive.jpeg', quality: 70 });
   await expect.poll(async () => Number(await page.locator('#fuel-value').textContent())).toBeLessThan(13);
   await page.keyboard.up('Space');
   await expect(page.locator('#flight-state')).toHaveText('DESCENDING');
@@ -274,7 +274,7 @@ test('guardrail collision shows impact feedback and recovers without blocking co
   await expect(page.locator('#impact-report')).toBeVisible();
   await expect(page.locator('#impact-report')).toContainText('GUARDRAIL');
   await page.keyboard.up('d');
-  await page.screenshot({ path: 'artifacts/collision-immersive.png' });
+  await page.screenshot({ path: 'artifacts/collision-immersive.jpeg', quality: 70 });
   await expect(page.locator('#impact-report')).toBeHidden();
   const speed = Number(await page.locator('#speed').textContent());
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(speed + 10);
@@ -306,6 +306,6 @@ test.describe('narrow touch screen', () => {
       expect(bound.width).toBeGreaterThanOrEqual(44);
       expect(bound.height).toBeGreaterThanOrEqual(44);
     }
-    await page.screenshot({ path: 'artifacts/mobile-narrow.png' });
+    await page.screenshot({ path: 'artifacts/mobile-narrow.jpeg', quality: 70 });
   });
 });

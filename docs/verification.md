@@ -21,12 +21,12 @@
 
 ## Screenshots
 
-- `artifacts/desktop-ready.png`
-- `artifacts/desktop-flight.png`
-- `artifacts/mobile-ready.png`
-- `artifacts/mobile-flight.png`
-- `artifacts/mobile-landscape.png`
-- `artifacts/race-results.png`
+- `artifacts/desktop-ready.jpeg`
+- `artifacts/desktop-flight.jpeg`
+- `artifacts/mobile-ready.jpeg`
+- `artifacts/mobile-flight.jpeg`
+- `artifacts/mobile-landscape.jpeg`
+- `artifacts/race-results.jpeg`
 
 Desktop, portrait, landscape and flight screenshots were visually inspected. All visuals show the actual WebGL renderer.
 
@@ -49,7 +49,7 @@ No external deployment, remote Git operations or changes to other projects were 
 
 ### Visual and performance evidence
 
-`artifacts/ui-before.png` and `artifacts/ui-after.png` preserve the visual comparison. `flight-immersive.png`, `collision-immersive.png`, `mobile-narrow.png` and `skyline-panorama.png` show real gameplay; the standard desktop/mobile/result captures were refreshed by the suite.
+`artifacts/ui-before.png` and `artifacts/ui-after.png` preserve the visual comparison. `flight-immersive.jpeg`, `collision-immersive.jpeg`, `mobile-narrow.jpeg` and `skyline-panorama.png` show real gameplay; the standard desktop/mobile/result captures were refreshed by the suite.
 
 The comparison measures 90 animation frames after accelerating past 110 km/h and flying above 3m in 1440×900 headless Chrome on this machine. The original scene recorded 16.57ms mean / 16.8ms p95, approximately 60 FPS. Exact after measurements and browser error results are in `artifacts/performance-after.json`; the baseline is in `artifacts/performance-before.json`. These measurements do not establish performance on physical phones.
 
