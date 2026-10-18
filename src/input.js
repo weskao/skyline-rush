@@ -3,7 +3,7 @@ const drivingKeys = {
   KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   Space: 'fly', ShiftLeft: 'boost', ShiftRight: 'boost',
 };
-const actionKeys = { Escape: 'pause', KeyP: 'pause', KeyR: 'restart', KeyC: 'camera', KeyM: 'sound', KeyT: 'assist', Enter: 'start' };
+const actionKeys = { Escape: 'pause', KeyP: 'pause', KeyR: 'restart', KeyC: 'camera', KeyM: 'sound', KeyT: 'assist', KeyV: 'airflow', Enter: 'start' };
 
 export function createControls(target = window, onAction = () => {}) {
   const keys = new Set();

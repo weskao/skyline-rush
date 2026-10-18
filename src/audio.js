@@ -81,7 +81,21 @@ export function createSound() {
   function cue(name) {
     if (name === 'go') { tone(660, 880, 0.4); tone(990, 1320, 0.4, 0, 0.025); }
     else if (name === 'finish') [523, 659, 784, 1047].forEach((pitch, i) => tone(pitch, pitch, 0.35, i * 0.13));
-    else if (name === 'boost' || name === 'lift') tone(name === 'boost' ? 100 : 260, 900, 0.35, 0, 0.03);
+    else if (name === 'boost') {
+      tone(95, 42, 0.23, 0, 0.045);
+      if (enabled && voices.size < 24) {
+        const source = context.createBufferSource();
+        const band = context.createBiquadFilter(), envelope = context.createGain();
+        const now = context.currentTime;
+        source.buffer = noiseBuffer; band.type = 'bandpass'; band.Q.value = 0.5;
+        band.frequency.setValueAtTime(2400, now); band.frequency.exponentialRampToValueAtTime(650, now + 0.32);
+        envelope.gain.setValueAtTime(0, now); envelope.gain.linearRampToValueAtTime(0.1, now + 0.008);
+        envelope.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+        source.connect(band).connect(envelope).connect(master); source.start(now);
+        track(source, [band, envelope], now + 0.38);
+      }
+    }
+    else if (name === 'lift') tone(260, 900, 0.35, 0, 0.03);
     else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
     else if (name === 'low') { tone(440, 330, 0.14); tone(440, 330, 0.14, 0.2); }
     else if (name === 'pause') tone(520, 220, 0.15);

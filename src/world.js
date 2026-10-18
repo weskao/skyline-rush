@@ -8,6 +8,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RACE_LENGTH } from './game.js';
 import { canopy, carShell } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
+import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
+import { vfxSettings } from './vfx-settings.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
@@ -30,7 +32,6 @@ function block(parent, mat, x, y, z, width, height, depth) {
 }
 
 const lampGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.05, 12);
-const roadsterPorts = [-0.62, -0.22, 0.22, 0.62];
 
 function lamp(parent, mat, x, y, z, radius = 1) {
   const mesh = new THREE.Mesh(lampGeometry, mat);
@@ -53,12 +54,12 @@ const CAR_STYLES = {
     cabin: canopy(0.92, -0.95, 0.86, 1.75, 1.02, 0.66, -0.15, 0.7, 1.4),
     trim(group, m) {
       const bronze = material('#7a5f4c', 0.8, 0.28);
-      const ember = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.1, 0.32, 0.08) });
+      const nozzleMetal = material('#71818a', 0.7, 0.35);
       block(group, m.white, 0, 0.53, -2.46, 1.56, 0.035, 0.04);
       block(group, m.light, 0, 0.95, 2.34, 2.08, 0.08, 0.05);
       block(group, m.black, 0, 0.7, 2.33, 1.86, 0.36, 0.04);
       block(group, material('#c9ccd0', 0.2, 0.5), 0, 0.84, 2.36, 0.4, 0.12, 0.02);
-      for (const x of roadsterPorts) lamp(group, ember, x, 0.64, 2.36, 0.65);
+      for (const port of REAR_PORTS) lamp(group, nozzleMetal, port.position[0], 0.64, 2.36, 0.65);
       const wing = new THREE.Group();
       block(wing, bronze, 0, 0, 0, 2.2, 0.05, 0.44);
       for (const side of [-1, 1]) block(wing, m.black, side * 0.62, -0.2, 0.05, 0.05, 0.4, 0.1);
@@ -183,7 +184,6 @@ function makeCar(style, color = style.color) {
     wheels.push(wheel);
   }
   const jets = new THREE.Group();
-  const coreMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 2.4, 3), transparent: true, opacity: 0.65, depthWrite: false, blending: THREE.AdditiveBlending });
   const fanMaterial = material('#71818a', 0.65, 0.45);
   const fanGeometry = new THREE.CylinderGeometry(0.13, 0.13, 0.025, 12);
   for (const [x, z] of LIFT_PORTS) {
@@ -196,19 +196,7 @@ function makeCar(style, color = style.color) {
   }
   jets.visible = false;
   group.add(jets);
-  const boostJets = new THREE.Group();
-  if (detailed) {
-    const plume = new THREE.CylinderGeometry(0.06, 0.12, 2.2, 10, 1, true);
-    for (const x of roadsterPorts) {
-      const exhaust = new THREE.Mesh(plume, coreMaterial);
-      exhaust.rotation.x = Math.PI / 2;
-      exhaust.position.set(x, 0.64, 3.46);
-      boostJets.add(exhaust);
-    }
-  }
-  boostJets.visible = false;
-  group.add(boostJets);
-  group.userData = { wheels, jets, body, wing, boostJets, brakeLight: light, lightColor: light.color.clone() };
+  group.userData = { wheels, jets, body, wing, brakeLight: light, lightColor: light.color.clone() };
   return group;
 }
 
@@ -244,12 +232,14 @@ export function createWorld(canvas) {
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 1.1);
   composer.addPass(bloom);
   const lens = new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, boost: { value: 0 }, impact: { value: 0 } },
+    uniforms: { tDiffuse: { value: null }, boost: { value: 0 }, impact: { value: 0 }, pressure: { value: 0 }, nozzle: { value: new THREE.Vector2() }, time: { value: 0 } },
     vertexShader: 'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `uniform sampler2D tDiffuse; uniform float boost; uniform float impact; varying vec2 vUv;
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float boost; uniform float impact; uniform float pressure,time; uniform vec2 nozzle; varying vec2 vUv;
       void main(){ vec2 delta=vUv-.5; vec2 offset=delta*impact*.008;
-        vec3 col=texture2D(tDiffuse,vUv).rgb;
-        col.r=texture2D(tDiffuse,vUv+offset).r; col.b=texture2D(tDiffuse,vUv-offset).b;
+        vec2 gas=vUv-nozzle;float mask=exp(-dot(gas*vec2(2.,1.),gas*vec2(2.,1.))*550.);
+        vec2 uv=vUv+sin(gas.yx*160.+time*25.)*mask*pressure*.0015;
+        vec3 col=texture2D(tDiffuse,uv).rgb;
+        col.r=texture2D(tDiffuse,uv+offset).r; col.b=texture2D(tDiffuse,uv-offset).b;
         vec3 blur=texture2D(tDiffuse,vUv-delta*.012).rgb+texture2D(tDiffuse,vUv-delta*.025).rgb;
         col=mix(col,blur*.5,boost*dot(delta,delta)*.65);
         col*=1.-smoothstep(.15,.85,length(delta))*.3;
@@ -429,6 +419,9 @@ export function createWorld(canvas) {
   shadow.position.y = 0.03;
   scene.add(shadow);
   const effects = createEffects(scene, roadCenter);
+  const aero = createAeroVFX(scene, player);
+  let visual = vfxSettings();
+  const projectedNozzle = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
   const smoothLook = new THREE.Vector3(0, 2, -25);
@@ -455,11 +448,10 @@ export function createWorld(canvas) {
     mesh.rotation.z = THREE.MathUtils.damp(mesh.rotation.z, bank, 8, dt);
     mesh.rotation.x = THREE.MathUtils.damp(mesh.rotation.x, car.thrusting ? -0.06 : Math.min(0.08, -(car.verticalSpeed || 0) * 0.006), 7, dt);
     mesh.userData.jets.visible = !!car.thrusting;
-    mesh.userData.boostJets.visible = !!car.boosting;
-    mesh.userData.boostJets.scale.z = 0.95 + Math.sin(time * 37) * 0.05;
     mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(car.braking ? 2.3 : 1);
     const { wing } = mesh.userData;
-    wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking ? -0.35 : car.boosting ? 0.08 : 0, 8, dt);
+    const downforce = isPlayer && visual.enabled && visual.airflow && visual.aeroMode === 'downforce';
+    wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : car.boosting ? 0.08 : 0, 8, dt);
     if (wing.userData.lift) wing.position.y = THREE.MathUtils.damp(wing.position.y, wing.userData.restY + (car.boosting || car.braking || car.altitude > 0.8 ? wing.userData.lift : 0), 8, dt);
     mesh.userData.wheels.forEach(wheel => {
       const target = (car.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);
@@ -471,13 +463,14 @@ export function createWorld(canvas) {
 
   return {
     resize,
+    configureVFX(options) { visual = vfxSettings(options); },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
     render(race, dt, idleTime, input = {}) {
       const preview = race.phase === 'ready';
       const car = race.player;
-      const reducedMotion = motionPreference.matches;
+      const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
-      if (lastRace !== race) { effects.reset(); lastRace = race; initialized = false; carBank = 0; }
+      if (lastRace !== race) { effects.reset(); aero.reset(); lastRace = race; initialized = false; carBank = 0; }
       const distance = preview ? 340 : car.distance;
       const center = roadCenter(distance);
       const time = race.elapsed + idleTime;
@@ -540,7 +533,8 @@ export function createWorld(canvas) {
       });
 
       if (preview) {
-        updateCar(player, { ...car, distance, altitude: 1.6 + (reducedMotion ? 0 : Math.sin(idleTime * 1.1) * 0.12), thrusting: true }, distance, center, time, dt, true);
+        const groundedShowcase = visual.enabled && visual.airflow;
+        updateCar(player, { ...car, distance, altitude: groundedShowcase ? 0 : 1.6 + (reducedMotion ? 0 : Math.sin(idleTime * 1.1) * 0.12), thrusting: !groundedShowcase }, distance, center, time, dt, true);
         rivals.forEach((mesh, i) => updateCar(mesh, { ...race.rivals[i], distance: distance + 35 + i * 28, altitude: i === 0 ? 5 : 0, thrusting: i === 0 }, distance, center, time, dt));
         traffic.forEach((mesh, i) => updateCar(mesh, { ...race.traffic[i], distance: distance + 65 + i * 32 }, distance, center, time, dt));
       } else {
@@ -554,8 +548,13 @@ export function createWorld(canvas) {
       finish.position.set(roadCenter(RACE_LENGTH) - center, 0, -(RACE_LENGTH - distance));
       finish.visible = RACE_LENGTH - distance < 1400;
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles);
+      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
       const portrait = camera.aspect < 0.8;
-      if (preview) {
+      if (visual.enabled && visual.airflow && visual.view !== 'drive') {
+        const angle = visual.view === 'orbit' ? time * 0.18 : { front: Math.PI, rear: 0, left: -Math.PI / 2, right: Math.PI / 2 }[visual.view];
+        desiredCamera.set(player.position.x + Math.sin(angle) * 9, player.position.y + 3.6, Math.cos(angle) * 9);
+        lookTarget.copy(player.position); lookTarget.y += 0.8;
+      } else if (preview) {
         desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
         lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
       } else if (cameraMode === 1) {
@@ -573,6 +572,8 @@ export function createWorld(canvas) {
         desiredCamera.x += Math.sin(time * 61) * impact * 0.27;
         desiredCamera.y += Math.sin(time * 47) * impact * 0.15 - landing * 0.3;
         desiredCamera.z += impact * 0.65;
+        desiredCamera.x += Math.sin(time * 65) * feedback.ignition * visual.shake * 0.12;
+        desiredCamera.z += feedback.strength * 0.22;
       }
       const smoothing = 1 - Math.exp(-dt * 7);
       if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
@@ -581,12 +582,17 @@ export function createWorld(canvas) {
       camera.lookAt(smoothLook);
       carBank = THREE.MathUtils.damp(carBank, !reducedMotion && car.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt);
       camera.rotation.z += carBank;
-      const boosting = car.boosting && race.phase === 'racing';
-      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + (boosting ? 5 : 0) - impact * 4;
+      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + feedback.strength * (visual.enabled ? visual.fov : 0) - impact * 4;
       camera.fov += (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();
-      lens.uniforms.boost.value = reducedMotion ? 0 : boosting ? 1 : Math.max(0, car.speed - 55) / 100;
+      lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : feedback.strength * visual.motionBlur;
       lens.uniforms.impact.value = reducedMotion ? 0 : impact;
+      projectedNozzle.copy(feedback.nozzle).project(camera);
+      lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
+      lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
+      lens.uniforms.time.value = time;
+      bloom.strength = 0.42 + (reducedMotion ? 0 : feedback.strength * visual.bloom * 0.25 + feedback.ignition * visual.bloom * 0.2);
+      bloom.enabled = visual.quality !== 'low';
       composer.render(dt);
     },
     dispose() {

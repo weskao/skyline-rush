@@ -3,6 +3,7 @@ import { createRace, startRace, stepRace, racePosition, RACE_LENGTH } from './ga
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
+import { vfxSettings, VFX_RANGES, VFX_PRESETS } from './vfx-settings.js';
 
 const icons = {
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
@@ -52,6 +53,31 @@ document.querySelector('#app').innerHTML = `
       <button class="icon-button" id="pause-button" aria-label="Pause race" title="Pause · Esc" disabled>${icon('pause')}</button>
     </nav>
   </header>
+  <aside class="aero-tools" aria-label="Airflow and visual effects">
+    <button id="airflow-toggle" aria-pressed="false" title="Toggle airflow · V"><kbd>V</kbd> AIRFLOW</button>
+    <button id="aero-start" aria-label="Start race from showcase">RACE →</button>
+    <details id="vfx-panel"><summary>VFX <span aria-hidden="true">＋</span></summary>
+      <div class="vfx-settings">
+        <div class="vfx-heading"><span>AEROSPACE / VISUAL LAB</span><strong>Shape the rush.</strong><small>Visual simulation · driving physics unchanged</small></div>
+        <label>Visual effects <input type="checkbox" data-vfx="enabled"></label>
+        <label>Visual style <select data-vfx="preset"><option value="realistic">Realistic</option><option value="cinematic">Cinematic</option><option value="extreme">Extreme · sci-fi</option></select></label>
+        <label>Quality <select data-vfx="quality"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+        <label>Aerodynamics <select data-vfx="aeroMode"><option value="drag">Low drag</option><option value="downforce">High downforce</option></select></label>
+        <label>Showcase camera <select data-vfx="view"><option value="drive">Driving camera</option><option value="front">Front</option><option value="rear">Rear</option><option value="left">Left</option><option value="right">Right</option><option value="orbit">Orbit</option></select></label>
+        <label>Comfort mode <input type="checkbox" data-vfx="comfortable"></label>
+        <small class="vfx-note">Comfort removes flashes, shake, afterimages and blur. System reduced-motion preferences are always respected.</small>
+        <label>Haptic feedback <input type="checkbox" data-vfx="haptics"></label>
+        <details class="vfx-tuning"><summary>Fine tuning</summary>${Object.entries(VFX_RANGES).map(([key, [label, min, max, step]]) => `<label class="vfx-range">${label}<output for="vfx-${key}"></output><input id="vfx-${key}" aria-label="${label}" data-vfx="${key}" type="range" min="${min}" max="${max}" step="${step}"></label>`).join('')}</details>
+        <button id="vfx-reset">Reset visual settings</button>
+      </div>
+    </details>
+  </aside>
+  <section class="airflow-hud" id="airflow-hud" aria-label="Airflow status" aria-hidden="true">
+    <span class="aero-eyebrow">AERODYNAMIC TELEMETRY</span><strong>AIRFLOW ACTIVE</strong>
+    <span id="aero-mode">LOW DRAG</span>
+    <div class="aero-channels"><span>FLOW <b id="aero-flow">LAMINAR</b></span><span>FLOOR <b id="aero-floor">GROUND EFFECT</b></span><span>JET <b id="aero-jet">STANDBY</b></span></div>
+    <span class="aero-disclaimer">FLOW VISUALIZATION / NOT CFD</span>
+  </section>
 
   <main>
     <section class="intro" id="intro" aria-labelledby="intro-title">
@@ -64,6 +90,7 @@ document.querySelector('#app').innerHTML = `
         <div><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Drive</span></div>
         <div><kbd class="wide-key">SPACE</kbd><span>Hold to fly</span></div>
         <div><kbd>SHIFT</kbd><span>Boost</span></div>
+        <div><kbd>V</kbd><span>Airflow</span></div>
       </div>
       <p class="flight-tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</p>
     </section>
@@ -124,6 +151,46 @@ let best = null;
 try { best = Number(localStorage.getItem('skyline-rush-best')) || null; } catch { /* Racing works when storage is disabled. */ }
 try { for (const kind in audio) audio[kind] = !document.cookie.split('; ').includes(`${AUDIO_COOKIES[kind]}=off`); } catch { /* Audio defaults to on when cookies are unavailable. */ }
 const sound = createSound();
+let visual = vfxSettings();
+try { visual = vfxSettings(JSON.parse(localStorage.getItem('skyline-rush-vfx'))); } catch { /* Defaults work without storage. */ }
+const vfxControls = [...document.querySelectorAll('[data-vfx]')];
+const airflowHud = $('#airflow-hud');
+const boostStatus = document.createElement('span');
+boostStatus.id = 'boost-status';
+boostStatus.className = 'boost-status';
+document.querySelector('.fuel-stat').append(boostStatus);
+let previousBoost = false;
+function showVFX() {
+  world?.configureVFX(visual);
+  for (const control of vfxControls) {
+    const key = control.dataset.vfx;
+    if (control.type === 'checkbox') control.checked = visual[key];
+    else control.value = visual[key];
+    if (control.type === 'range') control.previousElementSibling.value = visual[key];
+  }
+  $('#airflow-toggle').setAttribute('aria-pressed', String(visual.airflow));
+  $('#airflow-toggle').disabled = !visual.enabled;
+  document.body.classList.toggle('airflow-active', visual.airflow && visual.enabled);
+  document.body.classList.toggle('vfx-comfort', visual.comfortable);
+  airflowHud.setAttribute('aria-hidden', String(!visual.airflow || !visual.enabled));
+  $('#aero-mode').textContent = visual.aeroMode === 'downforce' ? 'HIGH DOWNFORCE' : 'LOW DRAG';
+  try { localStorage.setItem('skyline-rush-vfx', JSON.stringify(visual)); } catch { /* Settings remain usable in memory. */ }
+}
+function toggleAirflow() {
+  if (!visual.enabled) return;
+  visual.airflow = !visual.airflow;
+  showVFX();
+}
+for (const control of vfxControls) control.addEventListener('input', () => {
+  const key = control.dataset.vfx;
+  const value = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
+  visual = vfxSettings({ ...visual, ...(key === 'preset' ? VFX_PRESETS[value] : {}), [key]: value });
+  showVFX();
+});
+$('#airflow-toggle').addEventListener('click', toggleAirflow);
+$('#aero-start').addEventListener('click', start);
+$('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVFX(); });
+showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 
 function showAudio() {
@@ -215,7 +282,8 @@ function changeCamera() {
 
 const controls = createControls(window, action => {
   if (action === 'pause') toggleSettings(false);
-  ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist })[action]?.();
+  if (action === 'pause') $('#vfx-panel').open = false;
+  ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
 });
 for (const type of ['click', 'keydown']) window.addEventListener(type, unlockAudio, { capture: true });
 // Try autoplay; where the browser blocks it, ask instead. The answer is itself the unlocking gesture.
@@ -314,8 +382,20 @@ function updateUI(now, input) {
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 22);
   document.body.classList.toggle('boosting', car.boosting && race.phase === 'racing');
+  const boost = car.boosting && race.phase === 'racing';
+  const calm = visual.comfortable || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  boostStatus.textContent = boost ? 'THRUST ACTIVE' : car.fuel === 0 ? 'CHARGE EMPTY' : car.fuel < 100 && !flying ? 'RECHARGING' : 'BOOST READY';
+  boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
+  if (boost && !previousBoost && visual.enabled && !calm) {
+    boostStatus.animate([{ opacity: 0.4, transform: 'translateX(-5px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180 });
+    if (visual.haptics) navigator.vibrate?.(25);
+  }
+  previousBoost = boost;
+  $('#aero-flow').textContent = boost ? 'HIGH VELOCITY' : 'BODY STREAMLINES';
+  $('#aero-floor').textContent = flying ? 'LIFT / DOWNWASH' : visual.aeroMode === 'downforce' ? 'SUCTION ACTIVE' : 'LOW DRAG';
+  $('#aero-jet').textContent = boost ? 'THRUST ACTIVE' : race.phase === 'ready' ? 'DEMONSTRATION' : 'STANDBY';
   document.body.style.setProperty('--flight-bank', `${-car.steering * 5}deg`);
-  document.body.style.setProperty('--streak-opacity', race.phase === 'racing' ? car.boosting ? '0.45' : flying && car.speed > 55 ? '0.16' : '0' : '0');
+  document.body.style.setProperty('--streak-opacity', visual.enabled && !calm && race.phase === 'racing' ? String(boost ? visual.speedLines : 0) : '0');
   const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
   ui['impact-report'].hidden = race.phase !== 'racing' || impactAge > 1.1;
   if (!ui['impact-report'].hidden) {
@@ -363,6 +443,7 @@ function updateUI(now, input) {
 
 try {
   world = createWorld($('#world'));
+  world.configureVFX(visual);
   window.addEventListener('resize', world.resize);
   let previousTime = performance.now();
   let accumulator = 0;

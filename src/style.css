@@ -414,6 +414,65 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .countdown[data-step="GO"] { color: #b0f5ff; }
 .countdown[data-step="GO"] .start-lights > i { background: #90efff; border-color: #c8faff; box-shadow: 0 0 22px #69d5ff; }
 .skill-report { position: fixed; z-index: 3; top: 28%; left: 50%; transform: translateX(-50%); padding: 12px 18px; border: 1px solid #7ee4ff; border-radius: 5px; background: rgb(7 34 48 / .9); color: #c3f7ff; font: 700 20px 'Barlow Condensed', sans-serif; letter-spacing: 1px; white-space: nowrap; pointer-events: none; }
+.aero-tools { position: fixed; top: 103px; right: 40px; z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
+.aero-tools > button, .aero-tools > details > summary { min-height: 34px; padding: 6px 10px; border: 1px solid #6e9baa66; border-radius: 5px; background: #102432d9; color: #c6edfa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.aero-tools kbd { height: 20px; min-width: 20px; font-size: 9px; }
+#airflow-toggle[aria-pressed="true"] { background: #204858; border-color: #89d8ed; }
+#aero-start { display: none; }
+.airflow-active[data-phase="ready"] #aero-start { display: block; }
+.vfx-settings { position: absolute; right: 0; top: 44px; width: 310px; max-height: calc(100dvh - 170px); overflow-y: auto; overscroll-behavior: contain; background: #0b1c2bf5; border: 1px solid #6daabe70; border-radius: 10px; box-shadow: 0 18px 55px #0006; padding: 18px; backdrop-filter: blur(14px); letter-spacing: 0; }
+.vfx-heading { display: grid; gap: 9px; padding-bottom: 18px; border-bottom: 1px solid #87c5da30; }
+.vfx-heading > span { color: #91d9ee; font-size: 8px; letter-spacing: 2px; }
+.vfx-heading strong { font: 700 30px 'Barlow Condensed', sans-serif; }
+.vfx-heading small, .vfx-note { font-size: 10px; line-height: 1.6; color: #a8bbc8; }
+.vfx-settings label { min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; }
+.vfx-settings select { max-width: 155px; min-height: 34px; font: inherit; color: #dcf4ff; background: #193442; border: 1px solid #5c8796; border-radius: 4px; padding: 4px; }
+.vfx-settings input { accent-color: #91e0f2; }
+.vfx-settings input[type="checkbox"] { width: 20px; height: 20px; }
+.vfx-tuning > summary { padding: 16px 0; cursor: pointer; border-top: 1px solid #87c5da30; }
+.vfx-settings .vfx-range { display: grid; grid-template-columns: 1fr auto; padding: 9px 0; }
+.vfx-range input { grid-column: 1 / -1; width: 100%; margin: 0; }
+.vfx-range output { color: #a3e8fb; font-variant-numeric: tabular-nums; }
+#vfx-reset { border: 1px solid #779ca8; border-radius: 4px; background: transparent; min-height: 38px; width: 100%; margin-top: 10px; font-size: 11px; }
+summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.airflow-hud { position: fixed; top: 285px; left: 40px; z-index: 3; width: 214px; padding: 16px; background: linear-gradient(120deg,#0b2539e8,#0b25397a); border-left: 2px solid #83e1fa; border-radius: 0 6px 6px 0; display: grid; gap: 9px; opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s; pointer-events: none; }
+.airflow-active .airflow-hud { opacity: 1; transform: translateY(0); }
+.airflow-active[data-phase="ready"] .intro { opacity: 0; visibility: hidden; }
+.airflow-active[data-phase="ready"] .scene-shade { opacity: .3; }
+.aero-eyebrow { font-size: 7px; letter-spacing: 1.7px; color: #a4c5d5; }
+.airflow-hud > strong { font: 700 24px 'Barlow Condensed', sans-serif; color: #d5f8ff; }
+#aero-mode { font-size: 9px; letter-spacing: 1.5px; color: #8cddf2; }
+.aero-channels { display: grid; gap: 9px; border-top: 1px solid #91d9ee38; padding-top: 12px; margin-top: 4px; }
+.aero-channels > span { display: flex; justify-content: space-between; font-size: 8px; color: #89a8b6; }
+.aero-channels b { font-weight: 500; color: #d1e6f0; font-size: 8px; }
+.aero-disclaimer { font-size: 6px; letter-spacing: 1.2px; color: #90a8b9; padding-top: 7px; }
+.boost-status { display: block; margin-top: 8px; font-size: 8px; letter-spacing: 1.5px; color: #a0cee0; transition: color .25s; }
+.boost-status[data-state="active"] { color: #e0faff; text-shadow: 0 0 9px #58d7ff; }
+.speed-streaks { transition: opacity .35s ease-out; }
+.vfx-comfort .speed-streaks { display: none; }
+@media (max-width: 760px) {
+  .aero-tools { top: 74px; right: 16px; }
+  .aero-tools > button, .aero-tools > details > summary { min-height: 30px; padding: 4px 8px; font-size: 8px; }
+  .vfx-settings { max-height: calc(100dvh - 140px); width: min(310px, calc(100vw - 32px)); top: 36px; }
+  .airflow-hud { top: 245px; left: 16px; width: 160px; padding: 10px; gap: 6px; }
+  .airflow-hud > strong { font-size: 20px; }
+  .aero-eyebrow { font-size: 6px; letter-spacing: 1px; }
+  .aero-channels { gap: 7px; padding-top: 8px; }
+  .aero-channels > span, .aero-channels b { font-size: 6px; }
+  .aero-disclaimer { display: none; }
+  .boost-status { font-size: 6px; letter-spacing: .5px; }
+  .intro-controls { flex-wrap: wrap; gap: 12px 20px; }
+}
+@media (max-height: 500px) {
+  .aero-tools { top: 64px; right: 16px; }
+  .airflow-hud { top: 150px; width: 160px; padding: 10px; }
+  .aero-channels, .aero-disclaimer { display: none; }
+  .vfx-settings { max-height: calc(100dvh - 110px); top: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .airflow-hud { transition: none; transform: none; }
+  .boost-status { text-shadow: none; }
+}
 @media (max-width: 440px) {
   .brand > span { display: none; }
   .brand > svg { width: 30px; height: 30px; }

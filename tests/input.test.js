@@ -46,18 +46,19 @@ test('pause action fires once on a held key and clears throttle', () => {
   assert.equal(controls.read().throttle, false);
 });
 
-test('camera, audio and auto accelerator shortcuts preserve held driving inputs', () => {
+test('camera, audio, airflow and auto accelerator shortcuts preserve held driving inputs', () => {
   const target = new EventTarget();
   const actions = [];
   const controls = createControls(target, action => actions.push(action));
   send(target, 'keydown', { code: 'KeyW' });
   send(target, 'keydown', { code: 'Space' });
-  for (const code of ['KeyC', 'KeyM', 'KeyT']) {
+  for (const code of ['KeyC', 'KeyM', 'KeyT', 'KeyV']) {
     send(target, 'keydown', { code });
     assert.equal(controls.read().throttle, true);
     assert.equal(controls.read().fly, true);
   }
-  assert.deepEqual(actions, ['camera', 'sound', 'assist']);
+  send(target, 'keydown', { code: 'KeyV', repeat: true });
+  assert.deepEqual(actions, ['camera', 'sound', 'assist', 'airflow']);
   controls.destroy();
 });
 

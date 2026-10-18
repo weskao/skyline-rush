@@ -94,7 +94,7 @@ export function createEffects(scene, roadCenter) {
       for (let source = 0; source <= race.rivals.length; source++) {
         const driver = source === 0 ? car : race.rivals[source - 1];
         const pose = vehicles?.[source];
-        const active = (preview || race.phase === 'racing') && (preview ? source < 2 : driver.thrusting) && pose?.visible !== false;
+        const active = (preview || race.phase === 'racing') && (preview ? source < 2 && (!pose || pose.userData.jets.visible) : driver.thrusting) && pose?.visible !== false;
         strengths[source] = THREE.MathUtils.damp(strengths[source], active ? 1 : 0, active ? 12 : 9, dt);
         if (strengths[source] < 0.01 || dt === 0) continue;
         const d = preview ? source === 0 ? 340 : 375 + (source - 1) * 28 : driver.distance;

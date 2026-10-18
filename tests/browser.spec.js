@@ -17,6 +17,71 @@ const measureAudio = () => {
 };
 const audioSwitch = (page, name) => page.getByRole('switch', { name });
 
+test('airflow showcase, presets, views and boost coexist without shader errors', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  await page.goto('/');
+  await page.keyboard.press('v');
+  await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
+  await expect(page.locator('#speed')).toHaveText('0');
+  await page.locator('#vfx-panel > summary').click();
+  await page.locator('[data-vfx="aeroMode"]').selectOption('downforce');
+  await expect(page.locator('#aero-mode')).toHaveText('HIGH DOWNFORCE');
+  for (const preset of ['realistic', 'extreme', 'cinematic']) await page.locator('[data-vfx="preset"]').selectOption(preset);
+  for (const quality of ['low', 'medium', 'high']) await page.locator('[data-vfx="quality"]').selectOption(quality);
+  for (const view of ['front', 'left', 'right', 'orbit', 'rear']) {
+    await page.locator('[data-vfx="view"]').selectOption(view);
+    await page.waitForTimeout(250);
+  }
+  await page.locator('#vfx-panel > summary').click();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: 'artifacts/aero-downforce.png' });
+  await page.getByRole('button', { name: 'Start race from showcase', exact: true }).click();
+  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await page.keyboard.down('w'); await page.keyboard.down('Shift');
+  await expect(page.locator('#boost-status')).toHaveText('THRUST ACTIVE');
+  await expect.poll(async () => Number(await page.locator('#fuel-value').textContent())).toBeLessThan(98);
+  await page.keyboard.press('v');
+  await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#boost-status')).toHaveText('THRUST ACTIVE');
+  await page.keyboard.up('Shift');
+  await expect(page.locator('#boost-status')).toHaveText('RECHARGING');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#race-status')).toHaveText('PAUSED');
+  await page.keyboard.press('r');
+  await expect(page.locator('#fuel-value')).toHaveText('100');
+  await expect(page.locator('#speed')).toHaveText('0');
+  expect(errors).toEqual([]);
+});
+
+test('mobile VFX controls fit, persist and respect reduced motion', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.locator('#airflow-toggle').click();
+  await page.locator('#vfx-panel > summary').click();
+  await page.locator('[data-vfx="comfortable"]').check();
+  await page.locator('[data-vfx="quality"]').selectOption('low');
+  const panel = await page.locator('.vfx-settings').boundingBox();
+  expect(panel.x).toBeGreaterThanOrEqual(0);
+  expect(panel.x + panel.width).toBeLessThanOrEqual(360);
+  expect(panel.y + panel.height).toBeLessThanOrEqual(780);
+  await page.screenshot({ path: 'artifacts/aero-settings-mobile.png' });
+  await page.reload();
+  await page.locator('#vfx-panel > summary').click();
+  await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
+  await expect(page.locator('[data-vfx="quality"]')).toHaveValue('low');
+  await expect(page.locator('.speed-streaks')).toBeHidden();
+  await page.locator('[data-vfx="enabled"]').uncheck();
+  await expect(page.locator('#airflow-toggle')).toBeDisabled();
+  await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'true');
+  await page.locator('#vfx-panel > summary').click();
+  await page.getByRole('button', { name: 'Start race', exact: true }).click();
+  await expect(page.locator('#race-status')).toHaveText('RACING');
+});
+
 test('music and sound effects start on and each remember an off choice in a cookie', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Audio settings' }).click();
