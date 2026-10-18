@@ -1,5 +1,7 @@
 # Skyline Rush
 
+[**Play Skyline Rush →**](https://weskao.github.io/skyline-rush/)
+
 A playable 3D coastal highway sprint starring a flying electric sports car, modeled on the Tesla Roadster 2 and its rocket-thruster concept. Lift off on four blue thrusters, race three opponents, fly over traffic, manage charge and land to recharge. The handling is fictional arcade physics; this is an unofficial fan project, not affiliated with Tesla or SpaceX.
 
 ![Start screen with the audio settings open](artifacts/readme-start.jpeg)
@@ -61,7 +63,7 @@ npm test                 # Deterministic simulation, input lifecycle and geometr
 npm run build           # Production assets in dist/
 npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full race
 make run                # All three (test:browser builds first)
-make deploy             # make run, then Netlify production deploy + smoke check (see Deploy)
+make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 ```
 
 Browser tests use an installed Google Chrome. Tests allow SwiftShader for headless rendering; normal gameplay uses the browser's available GPU. Screenshots are written to `artifacts/` as JPEG (quality 70); test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
@@ -72,14 +74,14 @@ npm run preview         # Serve the production build after npm run build
 
 ## Deploy
 
-Live at https://skyline-rush.netlify.app. Netlify never builds on its own (`ignore = "exit 0"` in `netlify.toml`); production is published only when a version tag is released.
+Play at [https://weskao.github.io/skyline-rush/](https://weskao.github.io/skyline-rush/). The website is public: visitors need neither a GitHub account nor Tailscale, and the developer's computer can be offline.
 
 ```sh
-git tag v0.2.0 && git push origin v0.2.0   # release: the pre-push hook runs make deploy
-make deploy                                # same deploy by hand: make run → netlify deploy --prod → smoke check
+git tag v0.4.0 && git push origin v0.4.0   # Release: CI checks → GitHub Pages deployment
+make deploy                              # Deploy remote main manually through the same CI flow
 ```
 
-The pre-push hook (`.githooks/pre-push`) runs `make deploy` when a pushed tag points at HEAD; a failed deploy blocks the push. Enable it once per clone with `git config core.hooksPath .githooks`. `make deploy` needs `npx netlify-cli login` once per machine and the site link in `.netlify/state.json` (`npx netlify-cli link`). CI (`.github/workflows/ci.yml`) only builds and tests; it never deploys.
+CI (`.github/workflows/ci.yml`) builds and runs unit and Chrome browser tests on pushes to `main`, pull requests, version-tag pushes (`v*`) and manual runs. Version-tag pushes and manual runs publish only after all checks pass, then verify the public website. Ordinary branch pushes and pull requests only run checks. Pages builds use `--base=/skyline-rush/` so scripts, styles and fonts load from the project URL. GitHub Pages must use **GitHub Actions** as its publishing source. Manual deployment requires an authenticated GitHub CLI (`gh auth login`); push your commits first because `make deploy` uses remote `main`. Deployment no longer depends on a local pre-push hook or Netlify login.
 
 The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-hero.jpeg`. After changing the cover, copy it again and bump the `?v=` on `og:image` in `index.html` so social sites fetch the new one.
 
@@ -96,4 +98,4 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-he
 
 All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vite and Playwright retain their respective package licenses.
 
-This is a local Git repository on `main`, with no remote configured. Single-player, one route, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; physical phones and Safari have not been verified.
+Source: [weskao/skyline-rush](https://github.com/weskao/skyline-rush). Single-player, one route, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; physical phones and Safari have not been verified.

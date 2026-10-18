@@ -1,10 +1,10 @@
-# Checks only: compile → unit + browser tests on every push / PR (Actions minutes are free on this public repo).
-# Deploys never run here: pushing a version tag runs `make deploy` locally via .githooks/pre-push.
+# Check every push / PR; publish GitHub Pages on version tags or manual dispatch.
 name: CI
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -38,3 +38,36 @@ jobs:
         with:
           name: browser-failures
           path: test-results
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build -- --base=/skyline-rush/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - uses: actions/deploy-pages@v4
+        id: deployment
+      - name: Verify public website
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors "$PAGE_URL" | grep -q 'Skyline Rush'

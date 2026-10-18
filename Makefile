@@ -15,10 +15,9 @@ dev: $(APP)/node_modules ## `make`: Vite dev server with hot reload on http://lo
 run: $(APP)/node_modules ## `make run`: type-check, build and run the project's checks
 	@set -e; for script in $(RUN_SCRIPTS); do $(NPM) run "$$script"; done
 
-# Needs `npx netlify-cli login` once per machine; the site link lives in .netlify/state.json (git-ignored).
-deploy: run ## `make deploy`: run the checks, then deploy dist/ to Netlify production
-	npx --yes netlify-cli deploy --prod --no-build --dir=$(APP)/dist --message "local deploy $$(git describe --tags --always)"
-	curl -fsS -o /dev/null https://skyline-rush.netlify.app/
+# Requires an authenticated GitHub CLI; CI checks the pushed main branch before publishing.
+deploy: ## `make deploy`: trigger CI checks and GitHub Pages deployment of remote main
+	gh workflow run ci.yml --ref main
 
 # Installs dependencies on first run and whenever package-lock.json changes.
 $(APP)/node_modules: $(APP)/package-lock.json
