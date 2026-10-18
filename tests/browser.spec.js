@@ -445,3 +445,41 @@ test.describe('narrow touch screen', () => {
     await page.screenshot({ path: 'artifacts/mobile-narrow.jpeg', quality: 70 });
   });
 });
+
+test.describe('phone game gestures', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('long press and simultaneous touches stay in the game and release cleanly', async ({ page, context }) => {
+    await page.goto('/');
+    const title = page.locator('h1');
+    await expect(title).toHaveCSS('user-select', 'none');
+    for (const type of ['contextmenu', 'dragstart']) {
+      expect(await title.evaluate((element, type) => element.dispatchEvent(new Event(type, { bubbles: true, cancelable: true })), type)).toBe(false);
+    }
+    await page.getByRole('button', { name: 'Start race' }).tap();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    const gas = page.locator('[data-control="throttle"]');
+    const left = page.locator('[data-control="left"]');
+    const session = await context.newCDPSession(page);
+    const point = async (locator, id) => {
+      const box = await locator.boundingBox();
+      expect(box.width).toBeGreaterThanOrEqual(56);
+      return { id, x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    const gasPoint = await point(gas, 1);
+    const leftPoint = await point(left, 2);
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [gasPoint] });
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [gasPoint, leftPoint] });
+    await expect(gas).toHaveClass(/is-held/);
+    await expect(left).toHaveClass(/is-held/);
+    await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(30);
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [leftPoint] });
+    await expect(left).not.toHaveClass(/is-held/);
+    await expect(gas).toHaveClass(/is-held/);
+    await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    await expect(gas).not.toHaveClass(/is-held/);
+    expect(await page.evaluate(() => getSelection().toString())).toBe('');
+    expect(await page.evaluate(() => [scrollX, scrollY, visualViewport.scale])).toEqual([0, 0, 1]);
+    await page.screenshot({ path: 'artifacts/mobile-touch-controls.png' });
+    await session.detach();
+  });
+});

@@ -29,6 +29,9 @@ export function createControls(target = window, onAction = () => {}) {
   });
   listen(target, 'keyup', event => keys.delete(event.code));
   listen(target, 'blur', clear);
+  for (const type of ['contextmenu', 'dragstart']) {
+    listen(target, type, event => event.preventDefault());
+  }
   return {
     clear,
     read() {

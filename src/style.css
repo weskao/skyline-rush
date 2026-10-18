@@ -1,7 +1,8 @@
 @font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
 :root { font-family: 'Avenir Next', 'Segoe UI', sans-serif; color: #f4f0e9; background: #142334; font-synthesis: none; --accent: #ff8966; --blue: #96e3ff; --muted: #c2c8cd; }
 * { box-sizing: border-box; }
-html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+#app { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body { min-width: 320px; -webkit-tap-highlight-color: transparent; }
 button, a { -webkit-user-select: none; user-select: none; }
 button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
@@ -10,9 +11,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-
 button, a { transition: background .18s, color .18s, transform .18s; }
 button:active:not(:disabled) { transform: translateY(1px); }
 button[hidden], [hidden] { display: none !important; }
-::selection { color: #152534; background: var(--accent); }
 svg { width: 22px; height: 22px; flex-shrink: 0; }
-#world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; }
+#world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; touch-action: none; }
 .scene-shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(9 21 34 / .88) 0%, rgb(9 21 34 / .69) 25%, rgb(9 21 34 / .1) 58%, transparent 80%), linear-gradient(0deg, rgb(6 17 28 / .91), transparent 30%, transparent 78%, rgb(9 21 34 / .26)); transition: opacity .5s; }
 body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(6 17 28 / .86), transparent 28%, transparent 76%, rgb(9 21 34 / .6)); }
 .topbar { position: fixed; z-index: 5; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
@@ -486,4 +486,21 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
   .start-lights { margin-bottom: 5px; }
   .countdown > span { margin-top: 5px; }
   .skill-report { top: 28%; font-size: 18px; }
+}
+
+/* Keep thumb controls clear of phone edges without blocking settings scrolling. */
+@media (pointer: coarse), (max-width: 760px) {
+  .touch-controls { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); touch-action: none; }
+  .topbar { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  body:not([data-phase="ready"]) .telemetry { bottom: calc(107px + env(safe-area-inset-bottom)); }
+  .start-hint, .intro-controls { display: none; }
+}
+@media (max-width: 760px) and (min-height: 501px) {
+  body:not([data-phase="ready"]) .touch-controls { display: grid; grid-template-columns: auto auto; gap: 10px; }
+  .touch-steer { grid-column: 1; grid-row: 1 / 3; align-self: end; }
+  .touch-actions { grid-column: 2; grid-row: 1; }
+  .touch-pedals { grid-column: 2; grid-row: 2; }
+  .touch-steer, .touch-actions, .touch-pedals { gap: 10px; }
+  .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: 56px; height: 60px; font-size: 9px; }
+  body:not([data-phase="ready"]) .telemetry { bottom: calc(166px + env(safe-area-inset-bottom)); }
 }
