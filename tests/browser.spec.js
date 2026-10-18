@@ -2,6 +2,12 @@ import { test, expect, chromium } from '@playwright/test';
 
 const slow = process.env.CI ? 3 : 1; // CPU-only CI renders WebGL slowly; see playwright.config.js
 
+// Where autoplay is blocked (CI runners), the music prompt appears after 600ms over the settings buttons.
+const dismissMusicPrompt = async page => {
+  await page.waitForTimeout(700);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+};
+
 const measureAudio = () => {
   const connect = AudioNode.prototype.connect;
   AudioNode.prototype.connect = function(destination, ...args) {
@@ -60,6 +66,7 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
 
 test('starting with a VFX control focused hands the keyboard back to driving', async ({ page }) => {
   await page.goto('/');
+  await dismissMusicPrompt(page);
   await page.locator('#vfx-panel > summary').click();
   await page.locator('[data-vfx="preset"]').focus();
   // Safari and Firefox on macOS do not move focus to a clicked button.
@@ -76,6 +83,7 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   await page.setViewportSize({ width: 360, height: 780 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
+  await dismissMusicPrompt(page);
   await page.locator('#airflow-toggle').click();
   await page.locator('#vfx-panel > summary').click();
   await page.locator('[data-vfx="comfortable"]').check();
@@ -86,6 +94,7 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   expect(panel.y + panel.height).toBeLessThanOrEqual(780);
   await page.screenshot({ path: 'artifacts/aero-settings-mobile.jpeg', quality: 70 });
   await page.reload();
+  await dismissMusicPrompt(page);
   await page.locator('#vfx-panel > summary').click();
   await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
   await expect(page.locator('[data-vfx="quality"]')).toHaveValue('low');
