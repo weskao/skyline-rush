@@ -3,7 +3,7 @@ const drivingKeys = {
   KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   Space: 'fly', ShiftLeft: 'boost', ShiftRight: 'boost',
 };
-const actionKeys = { Escape: 'pause', KeyP: 'pause', KeyR: 'restart', KeyC: 'camera', KeyM: 'sound', Enter: 'start' };
+const actionKeys = { Escape: 'pause', KeyP: 'pause', KeyR: 'restart', KeyC: 'camera', KeyM: 'sound', KeyT: 'assist', Enter: 'start' };
 
 export function createControls(target = window, onAction = () => {}) {
   const keys = new Set();
@@ -16,13 +16,14 @@ export function createControls(target = window, onAction = () => {}) {
   function clear() { keys.clear(); pointers.clear(); }
   listen(target, 'keydown', event => {
     if (event.target?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
+    if (event.code === 'Space' && event.target?.closest?.('button')) return;
     if (drivingKeys[event.code]) {
       event.preventDefault();
       keys.add(event.code);
     } else if (actionKeys[event.code] && !event.repeat) {
       if (event.code === 'Enter' && event.target?.closest?.('button')) return;
       event.preventDefault();
-      clear();
+      if (['pause', 'restart', 'start'].includes(actionKeys[event.code])) clear();
       onAction(actionKeys[event.code]);
     }
   });

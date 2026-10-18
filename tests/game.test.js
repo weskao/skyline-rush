@@ -143,6 +143,80 @@ test('ground boost spends charge instead of recharging while the accelerator is 
   assert.ok(race.player.fuel > 60);
 });
 
+test('releasing boost decelerates smoothly and braking overrides both accelerator and boost', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: 102, fuel: 70 });
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.ok(race.player.speed > 100 && race.player.speed < 102);
+  const before = race.player.speed;
+  stepRace(race, { throttle: true, brake: true, boost: true }, 1 / 60);
+  assert.equal(race.player.boosting, false);
+  assert.ok(before - race.player.speed > 0.5);
+});
+
+test('steering eases in, reverses promptly and recenters when released', () => {
+  const race = racing();
+  race.player.speed = 60;
+  const x = race.player.x;
+  stepRace(race, { steer: 1 }, 1 / 60);
+  assert.ok(race.player.x > x && race.player.x - x < 0.1);
+  advance(race, 0.25, { steer: -1 });
+  assert.ok(race.player.steering < -0.8);
+  advance(race, 0.5);
+  assert.ok(Math.abs(race.player.steering) < 0.01);
+});
+
+test('close ground overtakes award charge once, chain within five seconds and reset on contact', () => {
+  const race = racing();
+  race.rivals = [];
+  Object.assign(race.player, { speed: 70, fuel: 50 });
+  const traffic = { x: race.player.x + 2.5, distance: -4, speed: 20 };
+  race.traffic = [traffic];
+  stepRace(race, { boost: true }, 1 / 60);
+  assert.equal(race.player.nearMisses, 1);
+  assert.equal(race.player.combo, 1);
+  assert.ok(race.player.fuel > 57);
+  advance(race, 0.2, { boost: true });
+  assert.equal(race.player.nearMisses, 1);
+  traffic.distance = race.player.distance - 4;
+  stepRace(race, { boost: true }, 1 / 60);
+  assert.equal(race.player.combo, 2);
+  traffic.x = race.player.x;
+  traffic.distance = race.player.distance + 1;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.combo, 0);
+  assert.equal(race.player.collisions, 1);
+});
+
+test('distant, airborne, slow and recovering passes cannot earn a near miss', () => {
+  for (const setup of [{ x: 7.5 }, { altitude: 5 }, { speed: 30 }, { cooldown: 1 }]) {
+    const race = racing();
+    race.rivals = [];
+    Object.assign(race.player, { speed: 70, fuel: 50 }, setup);
+    race.traffic = [{ x: 0, distance: -4, speed: 0 }];
+    stepRace(race, {}, 1 / 60);
+    assert.equal(race.player.nearMisses, 0);
+  }
+  const race = racing();
+  Object.assign(race.player, { combo: 3, nearMiss: { time: race.elapsed - 6 } });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.combo, 0);
+});
+
+test('contact with another car on the passing tick cancels the close-pass reward', () => {
+  const race = racing();
+  race.rivals = [];
+  Object.assign(race.player, { speed: 70, fuel: 50 });
+  race.traffic = [
+    { x: race.player.x + 2.5, distance: -4, speed: 20 },
+    { x: race.player.x, distance: 1, speed: 20 },
+  ];
+  stepRace(race, { boost: true }, 1 / 60);
+  assert.equal(race.player.collisions, 1);
+  assert.equal(race.player.nearMisses, 0);
+  assert.ok(race.player.fuel < 50);
+});
+
 test('finish order uses crossing time when player and rival finish during the same tick', () => {
   for (const [playerDistance, rivalDistance, expectedPosition] of [[4999.9, 4999.5, 1], [4999, 4999.9, 2]]) {
     const race = racing();
@@ -152,4 +226,49 @@ test('finish order uses crossing time when player and rival finish during the sa
     assert.equal(race.phase, 'finished');
     assert.equal(race.result.position, expectedPosition);
   }
+});
+
+test('vehicle contact records a bounded impact and pushes the player away only once per contact', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: 65, x: 2.5 });
+  race.traffic = [{ x: 3, distance: 2, speed: 25 }];
+  stepRace(race, {}, 1 / 60);
+  const impact = race.player.impact;
+  assert.equal(impact?.kind, 'vehicle');
+  assert.ok(impact.intensity > 0 && impact.intensity <= 1);
+  assert.ok(impact.speedLost > 20);
+  assert.ok(race.player.x < 2.5);
+  assert.equal(race.player.collisions, 1);
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.impact, impact);
+});
+
+test('guardrail contact slows and rebounds a grounded car but a flying car clears the rail', () => {
+  for (const altitude of [0, 5]) {
+    const race = racing();
+    Object.assign(race.player, { speed: 60, x: ROAD_LIMIT, altitude });
+    stepRace(race, { throttle: true, steer: 1 }, 1 / 60);
+    if (altitude === 0) {
+      assert.equal(race.player.impact?.kind, 'barrier');
+      assert.ok(race.player.x < ROAD_LIMIT);
+      assert.ok(race.player.speed < 55);
+    } else {
+      assert.equal(race.player.impact, null);
+      assert.equal(race.player.collisions, 0);
+    }
+  }
+});
+
+test('landing emits one touchdown event with the actual descent speed and resets with a new race', () => {
+  const race = racing();
+  Object.assign(race.player, { altitude: 0.1, verticalSpeed: -8, speed: 50 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.altitude, 0);
+  assert.ok(race.player.landing?.speed > 8);
+  assert.equal(race.player.landing.time, race.elapsed);
+  const landing = race.player.landing;
+  advance(race, 1, { throttle: true });
+  assert.equal(race.player.landing, landing);
+  assert.equal(createRace().player.impact, null);
+  assert.equal(createRace().player.landing, null);
 });

@@ -1,0 +1,9 @@
+{
+  "metrics": {
+    "samples": 90,
+    "meanFrameMs": 16.59,
+    "p95FrameMs": 16.7,
+    "fps": 60.3
+  },
+  "errors": []
+}

@@ -24,9 +24,16 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .route-heading > span:last-child { color: #d4c7bd; }
 .live-dot { width: 5px; height: 5px; background: #b9cda3; border-radius: 50%; }
 .route-divider { opacity: .45; }
-.toolbar { display: flex; gap: 7px; }
+.toolbar { position: relative; display: flex; gap: 7px; }
 .icon-button { width: 42px; height: 42px; border: 1px solid rgb(255 255 255 / .19); background: rgb(14 28 42 / .15); display: grid; place-items: center; border-radius: 50%; }
 .icon-button:hover:not(:disabled), .icon-button[aria-pressed="true"] { background: rgb(255 255 255 / .15); }
+/* Icons are re-rendered on audio changes; keep click targets on the stable button. */
+.icon-button svg { pointer-events: none; }
+.settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
+.setting { display: flex; justify-content: space-between; align-items: center; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font-size: 13px; text-align: left; }
+.setting:hover { background: rgb(255 255 255 / .08); }
+.setting b { font-size: 10px; letter-spacing: 1.6px; color: var(--muted); }
+.setting[aria-checked="true"] b { color: var(--accent); }
 .intro { position: absolute; z-index: 2; left: 7%; top: 23%; max-width: 600px; }
 .route-label { display: flex; align-items: center; gap: 11px; font-size: 10px; letter-spacing: 2px; font-weight: 600; color: #dbd8d1; margin-bottom: 24px; }
 .route-label > span:not(.route-line) { color: var(--accent); }
@@ -229,4 +236,193 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
   .overlay-content > p { margin-bottom: 18px; }
   .result-stats { margin: 15px 0; }
   .text-button { margin-top: 12px; }
+}
+
+/* Flight instruments stay quiet on the road; cyan marks usable airspace. */
+:root { --blue: #88e9ff; --accent: #ff9678; }
+.topbar { background: linear-gradient(180deg, rgb(6 16 32 / .62), transparent); }
+.brand { text-shadow: 0 2px 18px rgb(0 9 24 / .6); }
+.route-heading { text-shadow: 0 1px 8px #091525; }
+.icon-button { background: rgb(8 22 38 / .55); border-color: rgb(195 224 244 / .25); }
+.icon-button:hover:not(:disabled) { border-color: var(--blue); background: #19384c; }
+.intro { animation: intro-arrival .7s cubic-bezier(.16, 1, .3, 1) both; }
+.intro-copy { color: #e1e4e9; }
+.primary-button { box-shadow: 0 8px 30px rgb(8 15 26 / .28); }
+.primary-button:hover:not(:disabled) svg { transform: translateX(4px); }
+.primary-button svg { transition: transform .18s ease-out; }
+.scene-shade { background: linear-gradient(90deg, rgb(4 15 32 / .92), rgb(5 17 34 / .68) 27%, transparent 66%), linear-gradient(0deg, rgb(4 13 28 / .95), transparent 32%, transparent 80%, rgb(4 13 28 / .3)); }
+body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(4 13 28 / .93), transparent 29%, transparent 70%, rgb(4 13 28 / .72)); }
+.speedometer { text-shadow: 0 3px 15px #081629; }
+.speed-number > strong { font-size: 90px; }
+.speed-ticks { gap: 4px; }
+.speed-ticks > i { height: 7px; }
+.speed-caption, .fuel-caption { font-size: 9px; letter-spacing: 1.1px; color: #bfccd8; }
+.stat-label { font-size: 9px; letter-spacing: 1.5px; color: #d3dce3; }
+.mode-indicator { align-items: stretch; width: 290px; gap: 9px; padding: 13px 18px 15px; background: rgb(7 23 42 / .72); border: 1px solid rgb(129 178 209 / .28); border-radius: 5px; box-shadow: 0 9px 30px rgb(1 10 23 / .2); }
+.mode-heading { display: flex; gap: 9px; align-items: center; }
+.mode-icon { display: flex; }
+.mode-icon svg { width: 18px; height: 18px; }
+#flight-mode { font-size: 9px; letter-spacing: 1.6px; color: #b8c9d6; }
+#flight-budget { margin-left: auto; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--blue); }
+#flight-state { font: 700 27px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; color: #f4f0e9; }
+.mode-key { font-size: 8px; line-height: 1.6; letter-spacing: .6px; color: #b9cbd9; }
+.airborne .mode-indicator { border-color: rgb(103 227 255 / .65); }
+.airborne #flight-state { color: var(--blue); }
+.airborne .fuel-track > i { background: #7ce7ff; }
+.low-charge .fuel-track > i { background: #ffb572; }
+.low-charge #flight-budget, .low-charge .fuel-caption { color: #ffd09e; }
+.fuel-stat { width: 195px; }
+.fuel-track { height: 5px; background: #263e56; }
+.fuel-heading b { font-size: 27px; }
+.altitude-stat > strong { font-size: 43px; }
+.flight-telemetry { text-shadow: 0 2px 12px #061225; }
+.leaderboard { width: 195px; padding: 6px 12px; border-radius: 4px; background: rgb(7 23 42 / .55); border: 1px solid rgb(155 194 222 / .16); }
+.racer { height: 33px; font-size: 10px; color: #edf3f7; }
+.racer.is-player { color: #ffae94; }
+.position-stat { text-shadow: 0 2px 12px #071426; }
+.race-progress { padding: 11px 13px 15px; background: rgb(7 23 42 / .55); border: 1px solid rgb(155 194 222 / .16); border-radius: 4px; width: 330px; }
+.progress-track { height: 3px; }
+.flight-director { position: fixed; top: 37%; left: calc(50% - 150px); width: 300px; text-align: center; z-index: 2; pointer-events: none; opacity: 0; color: var(--blue); transform: rotate(var(--flight-bank, 0deg)); transition: opacity .3s, transform .2s ease-out; text-shadow: 0 1px 7px #071426; }
+.flight-director > span { font-size: 8px; letter-spacing: 3px; }
+.flight-director > svg { display: block; width: 100%; height: 100px; stroke: currentColor; stroke-width: 1; filter: drop-shadow(0 1px 3px #0b2137); }
+.director-level { opacity: .5; }
+.flight-director .director-climb { font-size: 11px; letter-spacing: 1.5px; font-variant-numeric: tabular-nums; }
+.airborne .flight-director, .airborne .altitude-ladder { opacity: .8; }
+.altitude-ladder { position: fixed; z-index: 2; right: 72px; top: 44%; height: 110px; width: 35px; opacity: 0; pointer-events: none; border-left: 1px solid rgb(123 221 255 / .5); color: #a4eaff; transition: opacity .3s; }
+.altitude-ladder > span { position: absolute; font-size: 9px; right: 0; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px #0b2137; }
+.altitude-ladder > span:nth-of-type(1) { top: -3px; }
+.altitude-ladder > span:nth-of-type(2) { top: 51px; }
+.altitude-ladder > span:nth-of-type(3) { bottom: -4px; }
+.altitude-ladder > i { display: block; width: 6px; height: 1px; margin-top: 36px; background: #7dc8df; }
+.altitude-ladder > b { position: absolute; left: -4px; bottom: -3px; width: 7px; height: 7px; background: #a4eaff; }
+.altitude-ladder > small { position: absolute; left: -6px; bottom: -29px; font-size: 7px; white-space: nowrap; letter-spacing: 1px; }
+.impact-report { position: fixed; left: 50%; top: 27%; z-index: 4; transform: translateX(-50%); display: flex; gap: 15px; align-items: center; padding: 14px 20px; background: rgb(42 25 32 / .94); border: 1px solid #f79a6d; border-radius: 5px; color: #ffd5ba; box-shadow: 0 8px 32px rgb(0 9 22 / .3); pointer-events: none; }
+.impact-icon { display: flex; }
+.impact-icon svg { width: 26px; height: 26px; }
+.impact-report > div { display: flex; flex-direction: column; gap: 6px; }
+.impact-report strong { font: 700 24px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; white-space: nowrap; }
+.impact-report div > span { font-size: 8px; letter-spacing: 1px; color: #ead0c1; }
+.collision .scene-shade { box-shadow: inset 0 0 160px rgb(255 102 53 / .32); }
+.speed-streaks { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: var(--streak-opacity, 0); transition: opacity .4s; }
+.speed-streaks > i { position: absolute; left: 50%; top: 50%; height: 1px; width: 18vw; background: linear-gradient(90deg, transparent, #9feaff); transform-origin: 0 0; animation: wind-rush .75s linear infinite; animation-delay: var(--delay); }
+.boosting .speed-ticks > i.active { background: var(--blue); }
+.boosting .speed-number > strong { color: #b5edff; }
+.touch-actions { display: flex; gap: 6px; align-items: end; }
+.touch-controls .touch-boost { width: 44px; height: 58px; border-color: #ffba88; color: #ffcc9d; flex-direction: column; gap: 5px; font-size: 6px; letter-spacing: .7px; }
+.touch-controls button.is-held { background: #386a82; border-color: #afeaff; }
+.touch-controls .touch-gas.is-held { background: #ffc095; }
+.touch-controls .touch-boost.is-held { background: #885143; }
+.race-overlay { background: rgb(5 17 34 / .76); }
+@keyframes intro-arrival { from { opacity: .25; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes wind-rush { from { transform: rotate(var(--angle)) translateX(32vw) scaleX(.2); opacity: 0; } 35% { opacity: 1; } to { transform: rotate(var(--angle)) translateX(64vw) scaleX(1.6); opacity: 0; } }
+@media (max-width: 760px) {
+  .topbar { padding-left: 16px; padding-right: 16px; }
+  .intro { top: max(120px, 16%); }
+  .speed-number > strong { font-size: 65px; }
+  .speed-ticks { gap: 2px; }
+  .speed-ticks > i { height: 4px; }
+  .speed-caption { font-size: 6px; }
+  .fuel-stat { width: 126px; }
+  .fuel-heading b { font-size: 22px; }
+  .fuel-caption { font-size: 6px; letter-spacing: .3px; }
+  .stat-label { font-size: 7px; letter-spacing: .8px; }
+  .altitude-stat > strong { font-size: 33px; }
+  body:not([data-phase="ready"]) .mode-indicator { width: 115px; min-width: 0; padding: 7px 4px; background: rgb(7 23 42 / .65); gap: 6px; border-color: rgb(103 227 255 / .35); top: 94px; align-items: center; }
+  .mode-heading { gap: 4px; }
+  .mode-heading .mode-icon { display: none; }
+  #flight-mode { font-size: 6px; letter-spacing: .8px; }
+  #flight-budget { font-size: 8px; margin-left: 4px; }
+  #flight-state { font-size: 18px; letter-spacing: .7px; }
+  .mode-key { display: none; }
+  .leaderboard { width: 105px; padding: 3px 5px; }
+  .racer { height: 25px; font-size: 7px; }
+  .race-progress { top: 114px; padding: 8px 10px 11px; width: 100%; }
+  .flight-director { width: 180px; left: calc(50% - 90px); top: 37%; }
+  .flight-director > svg { height: 60px; }
+  .flight-director > span { font-size: 6px; letter-spacing: 2px; }
+  .flight-director .director-climb { font-size: 9px; }
+  .altitude-ladder { display: none; }
+  .impact-report { padding: 12px 15px; top: 33%; gap: 10px; }
+  .impact-report strong { font-size: 21px; }
+  .impact-report div > span { font-size: 7px; }
+  .touch-controls { left: 12px; right: 12px; gap: 8px; }
+  .touch-steer, .touch-pedals { gap: 5px; }
+  .touch-controls button { width: 49px; height: 57px; }
+  .touch-controls .touch-fly { width: 53px; height: 68px; }
+  .touch-controls .touch-boost { width: 44px; }
+}
+@media (hover: none) and (pointer: coarse) and (min-width: 761px) {
+  body:not([data-phase="ready"]) .mode-indicator { position: fixed; left: 50%; top: 144px; transform: translateX(-50%); width: 225px; padding: 8px 12px; gap: 5px; }
+  #flight-state { font-size: 21px; }
+  .mode-key { display: none; }
+  .speed-number > strong { font-size: 45px; }
+  .stat-label { font-size: 8px; }
+  .altitude-stat > strong { font-size: 32px; }
+  .fuel-stat { width: 150px; }
+  .fuel-caption { font-size: 7px; }
+  .flight-director { top: 53%; width: 170px; left: calc(50% - 85px); }
+  .flight-director > svg { height: 40px; }
+  .flight-director > span, .altitude-ladder { display: none; }
+  .leaderboard { width: 130px; }
+  .racer { height: 22px; font-size: 8px; }
+  .race-progress { width: 250px; }
+  .impact-report { top: 28%; }
+}
+@media (max-width: 370px) {
+  .topbar { padding-left: 12px; padding-right: 12px; gap: 8px; }
+  .brand { gap: 4px; }
+  .brand > svg { width: 23px; height: 23px; }
+  .brand > span { font-size: 19px; letter-spacing: .6px; }
+  .toolbar { gap: 4px; }
+  .icon-button { width: 30px; height: 30px; }
+  .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: 44px; flex-shrink: 0; }
+  .touch-controls button svg { width: 19px; height: 19px; }
+  .leaderboard { width: 83px; }
+  .racer { font-size: 8px; gap: 5px; }
+  .racer > strong { letter-spacing: .4px; }
+  .racer > span:last-child { display: none; }
+  body:not([data-phase="ready"]) .mode-indicator { width: 97px; }
+  #flight-mode { font-size: 7px; letter-spacing: .3px; }
+  #flight-budget { font-size: 8px; }
+  #flight-state { font-size: 16px; }
+  .fuel-stat { width: 110px; }
+  .flight-telemetry { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro { animation: none; }
+  .speed-streaks { display: none; }
+  .flight-director { transform: none; transition: opacity .15s; }
+  .primary-button:hover:not(:disabled) svg { transform: none; }
+  .collision .scene-shade { box-shadow: inset 0 0 70px rgb(255 102 53 / .16); }
+}
+
+/* Start lights and reward cues use the same cyan/amber language as the instruments. */
+.icon-button { width: 44px; height: 44px; flex-shrink: 0; }
+.assist-button { display: flex; flex-direction: column; gap: 1px; border-radius: 12px; }
+.assist-button svg { width: 18px; height: 18px; }
+.assist-button span { font-size: 8px; letter-spacing: .6px; }
+.assist-button[aria-pressed="true"] { color: #b4f4ff; background: #224e60; border-color: var(--blue); }
+.countdown > strong { display: block; font: inherit; }
+.countdown > span { display: block; margin-top: 16px; font: 600 10px/1.5 'Avenir Next', sans-serif; letter-spacing: 2px; }
+.start-lights { display: flex; justify-content: center; gap: 14px; margin: 0 auto 14px; }
+.start-lights > i { width: 14px; height: 14px; border-radius: 50%; background: #2b3948; border: 1px solid #6b7b8a; }
+.countdown[data-step="3"] .start-lights > i:first-child,
+.countdown[data-step="2"] .start-lights > i:nth-child(-n+2),
+.countdown[data-step="1"] .start-lights > i { background: #ffae79; border-color: #ffd0a6; box-shadow: 0 0 18px #fb895b; }
+.countdown[data-step="GO"] { color: #b0f5ff; }
+.countdown[data-step="GO"] .start-lights > i { background: #90efff; border-color: #c8faff; box-shadow: 0 0 22px #69d5ff; }
+.skill-report { position: fixed; z-index: 3; top: 28%; left: 50%; transform: translateX(-50%); padding: 12px 18px; border: 1px solid #7ee4ff; border-radius: 5px; background: rgb(7 34 48 / .9); color: #c3f7ff; font: 700 20px 'Barlow Condensed', sans-serif; letter-spacing: 1px; white-space: nowrap; pointer-events: none; }
+@media (max-width: 440px) {
+  .brand > span { display: none; }
+  .brand > svg { width: 30px; height: 30px; }
+  .topbar { gap: 8px; }
+  .toolbar { gap: 5px; }
+  .countdown > span { font-size: 8px; letter-spacing: 1px; }
+  .skill-report { top: 33%; font-size: 17px; padding: 10px 12px; }
+}
+@media (max-height: 500px) {
+  .countdown { top: 25%; font-size: 70px; }
+  .start-lights { margin-bottom: 5px; }
+  .countdown > span { margin-top: 5px; }
+  .skill-report { top: 28%; font-size: 18px; }
 }

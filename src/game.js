@@ -11,6 +11,8 @@ export function createRace() {
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, collisions: 0, cooldown: 0,
+      impact: null, landing: null, steering: 0, boosting: false, braking: false,
+      nearMiss: null, nearMisses: 0, combo: 0,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
@@ -31,6 +33,18 @@ export function racePosition(race) {
   return race.result?.position ?? 1 + race.rivals.filter(rival => rival.distance > race.player.distance).length;
 }
 
+function contact(race, kind, obstacleX, intensity, retention) {
+  const car = race.player;
+  const side = Math.sign(car.x - obstacleX) || -1;
+  const speedLost = car.speed * (1 - retention);
+  car.impact = { kind, intensity, side, speedLost, x: car.x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
+  car.speed *= retention;
+  car.x = clamp(car.x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
+  car.cooldown = 1.5;
+  car.collisions++;
+  car.combo = 0;
+}
+
 export function stepRace(race, input, dt) {
   if (!Number.isFinite(dt) || dt <= 0 || dt > 0.1) return;
   if (race.phase === 'countdown') {
@@ -41,13 +55,20 @@ export function stepRace(race, input, dt) {
   if (race.phase !== 'racing') return;
   race.elapsed += dt;
   const car = race.player;
-  const throttle = input.throttle === true;
   const brake = input.brake === true;
+  const throttle = input.throttle === true && !brake;
   const steer = Number.isFinite(input.steer) ? clamp(input.steer, -1, 1) : 0;
   const boost = input.boost === true && car.fuel > 0 && !brake;
-  car.speed = clamp(car.speed + ((throttle ? 15 : -4) - (brake ? 35 : 0) + (boost ? 12 : 0)) * dt, 0, boost ? MAX_SPEED + 14 : MAX_SPEED);
-  car.x = clamp(car.x + steer * Math.min(12, car.speed * 0.22) * dt, -ROAD_LIMIT, ROAD_LIMIT);
+  car.boosting = boost;
+  car.braking = brake;
+  const limit = boost ? MAX_SPEED + 14 : MAX_SPEED;
+  const acceleration = car.speed > limit ? -18 - (brake ? 35 : 0) : (throttle ? 15 : -4) - (brake ? 35 : 0) + (boost ? 12 : 0);
+  car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
+  car.steering += (steer - car.steering) * (1 - Math.exp(-14 * dt));
+  const lateralPosition = car.x + car.steering * Math.min(12, car.speed * 0.22) * dt;
+  car.x = clamp(lateralPosition, -ROAD_LIMIT, ROAD_LIMIT);
   car.cooldown = Math.max(0, car.cooldown - dt);
+  if (car.nearMiss && race.elapsed - car.nearMiss.time > 5) car.combo = 0;
 
   if (!input.fly && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
   car.thrusting = !!input.fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
@@ -61,7 +82,11 @@ export function stepRace(race, input, dt) {
     car.fuel = Math.min(100, car.fuel + 13 * dt);
   }
   if (boost) car.fuel = Math.max(0, car.fuel - 10 * dt);
+  const previousAltitude = car.altitude;
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
+  if (previousAltitude > 0 && car.altitude === 0) {
+    car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x };
+  }
   if (car.altitude === 0 || car.altitude === 12) car.verticalSpeed = 0;
   const previousDistance = car.distance;
   car.distance += car.speed * dt;
@@ -89,9 +114,21 @@ export function stepRace(race, input, dt) {
       Math.abs((other.altitude || 0) - car.altitude) < 1.8,
     );
     if (obstacle) {
-      car.speed *= 0.45;
-      car.cooldown = 1.5;
-      car.collisions++;
+      contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), 0.45);
+    } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12) {
+      contact(race, 'barrier', Math.sign(lateralPosition) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75);
+    }
+  }
+  for (const traffic of race.traffic) {
+    const gap = traffic.distance - traffic.speed * dt - previousDistance;
+    const clearance = Math.abs(traffic.x - car.x);
+    if (gap > -4.4 && traffic.distance - car.distance <= -4.4 &&
+        clearance >= 2 && clearance < 3.5 && car.altitude < 1.8 && car.speed > 35 && car.cooldown === 0) {
+      car.combo = Math.min(5, car.combo + 1);
+      car.nearMisses++;
+      const charge = Math.min(100 - car.fuel, 6 + car.combo * 2);
+      car.fuel += charge;
+      car.nearMiss = { time: race.elapsed, combo: car.combo, charge };
     }
   }
   if (car.distance >= RACE_LENGTH) {
@@ -99,8 +136,9 @@ export function stepRace(race, input, dt) {
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
     car.distance = RACE_LENGTH;
     race.elapsed = finishTime;
-    race.result = { position, time: finishTime, collisions: car.collisions };
+    race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses };
     race.phase = 'finished';
     car.thrusting = false;
+    car.boosting = false;
   }
 }

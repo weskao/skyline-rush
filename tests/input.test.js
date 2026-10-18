@@ -46,6 +46,31 @@ test('pause action fires once on a held key and clears throttle', () => {
   assert.equal(controls.read().throttle, false);
 });
 
+test('camera, audio and auto accelerator shortcuts preserve held driving inputs', () => {
+  const target = new EventTarget();
+  const actions = [];
+  const controls = createControls(target, action => actions.push(action));
+  send(target, 'keydown', { code: 'KeyW' });
+  send(target, 'keydown', { code: 'Space' });
+  for (const code of ['KeyC', 'KeyM', 'KeyT']) {
+    send(target, 'keydown', { code });
+    assert.equal(controls.read().throttle, true);
+    assert.equal(controls.read().fly, true);
+  }
+  assert.deepEqual(actions, ['camera', 'sound', 'assist']);
+  controls.destroy();
+});
+
+test('Space on a focused menu button preserves native keyboard activation', () => {
+  const button = new EventTarget();
+  button.closest = selector => selector === 'button' ? button : null;
+  const controls = createControls(button);
+  const event = send(button, 'keydown', { code: 'Space' });
+  assert.equal(event.defaultPrevented, false);
+  assert.equal(controls.read().fly, false);
+  controls.destroy();
+});
+
 test('touch pointer cancellation releases flight without releasing a separate accelerator', () => {
   const target = new EventTarget();
   const fly = new EventTarget();

@@ -1,35 +1,243 @@
+// Two 32-bar loops (intro ≈ 64 s, race ≈ 55 s). Each chord is [bass root, three pad/arp tones];
+// lead is eight eighth-notes per chord bar (0 = rest). Layers enter at the listed bar so every pass builds up.
+export const TRACKS = {
+  intro: {
+    bpm: 120, arp: 2, bass: [0, 6, 8, 14], enter: { bass: 8, drums: 16, lead: 16 },
+    chords: [[45, 57, 60, 64], [41, 57, 60, 65], [48, 55, 60, 64], [43, 55, 59, 62], [45, 57, 60, 64], [41, 57, 60, 65], [43, 55, 59, 62], [40, 56, 59, 64]],
+    lead: [
+      76, 0, 74, 76, 0, 72, 0, 0, 72, 0, 74, 72, 0, 69, 0, 0, 67, 0, 72, 0, 76, 0, 74, 72, 74, 0, 0, 0, 71, 0, 0, 0,
+      76, 0, 74, 76, 0, 79, 0, 76, 77, 0, 76, 74, 0, 72, 0, 0, 74, 0, 72, 71, 0, 67, 0, 0, 68, 0, 71, 0, 74, 0, 0, 0,
+    ],
+  },
+  race: {
+    bpm: 140, arp: 1, bass: [0, 2, 4, 6, 8, 10, 12, 14], enter: { bass: 0, drums: 4, lead: 16 },
+    chords: [[40, 55, 59, 64], [36, 55, 60, 64], [43, 55, 59, 62], [38, 54, 57, 62], [40, 55, 59, 64], [36, 55, 60, 64], [38, 54, 57, 62], [35, 54, 59, 63]],
+    lead: [
+      71, 0, 74, 0, 76, 0, 74, 71, 72, 0, 0, 71, 72, 0, 76, 0, 74, 0, 0, 0, 71, 0, 67, 0, 69, 0, 71, 0, 74, 0, 0, 0,
+      76, 0, 79, 0, 76, 0, 74, 76, 79, 0, 0, 76, 72, 0, 76, 0, 78, 0, 76, 0, 74, 0, 69, 0, 71, 0, 75, 0, 78, 0, 75, 0,
+    ],
+  },
+};
+const LOOP_STEPS = 32 * 16;
+const pitch = note => 440 * 2 ** ((note - 69) / 12);
+
 export function createSound() {
-  let context, oscillator, gain, filter;
-  let enabled = false;
-  return {
-    async toggle() {
-      try {
-        if (!context) {
-          context = new AudioContext();
-          oscillator = context.createOscillator();
-          filter = context.createBiquadFilter();
-          gain = context.createGain();
-          oscillator.type = 'sawtooth';
-          filter.type = 'lowpass';
-          filter.frequency.value = 220;
-          gain.gain.value = 0;
-          oscillator.connect(filter).connect(gain).connect(context.destination);
-          oscillator.start();
-        }
-        await context.resume();
-        enabled = !enabled;
-        if (!enabled) gain.gain.setTargetAtTime(0, context.currentTime, 0.1);
-      } catch {
-        enabled = false;
+  let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
+  let music, warm, hats, snares, song = null, step = 0, nextStep = 0;
+  let enabled = false, musicOn = false, previousRace, previousPhase, previousCount;
+  let lastImpact = null, lastLanding = null, lastNearMiss = null;
+  let wasThrusting = false, wasBoosting = false, lowCharge = false;
+  const voices = new Set();
+
+  function track(source, nodes, end, cue = true) {
+    if (cue) voices.add(source);
+    source.onended = () => { voices.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
+    source.stop(end);
+  }
+  function silenceCues() {
+    for (const voice of voices) voice.stop();
+    voices.clear();
+  }
+  function voice(type, frequency, endFrequency, time, duration, volume, attack, destination, cue = true) {
+    const source = context.createOscillator();
+    const envelope = context.createGain();
+    source.type = type;
+    source.frequency.setValueAtTime(frequency, time);
+    source.frequency.exponentialRampToValueAtTime(endFrequency, time + duration);
+    envelope.gain.setValueAtTime(0, time);
+    envelope.gain.linearRampToValueAtTime(volume, time + attack);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+    source.connect(envelope).connect(destination);
+    source.start(time);
+    track(source, [envelope], time + duration + 0.02, cue);
+  }
+  function tone(frequency, endFrequency, duration, delay = 0, volume = 0.045) {
+    if (!enabled || voices.size >= 24) return;
+    voice('sine', frequency, endFrequency, context.currentTime + delay, duration, volume, 0.008, master);
+  }
+  function hit(destination, time, duration, volume) {
+    const source = context.createBufferSource();
+    const envelope = context.createGain();
+    source.buffer = noiseBuffer;
+    envelope.gain.setValueAtTime(volume, time);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+    source.connect(envelope).connect(destination);
+    source.start(time, Math.random() * 0.5);
+    track(source, [envelope], time + duration + 0.02, false);
+  }
+  function playStep(tune, index, time) {
+    const bar = Math.floor(index / 16), beat = index % 16, chord = tune.chords[bar % 8], sixteenth = 15 / tune.bpm;
+    const note = (type, midi, length, volume, attack, destination = music) => voice(type, pitch(midi), pitch(midi), time, sixteenth * length, volume, attack, destination, false);
+    if (beat === 0) chord.slice(1).forEach(midi => note('triangle', midi, 16, 0.022, 0.4));
+    if (beat % tune.arp === 0) note('square', chord[1 + (beat / tune.arp) % 3] + 12, 1.5, 0.012, 0.005);
+    if (bar >= tune.enter.bass && tune.bass.includes(beat)) note('sawtooth', chord[0], 1.8, 0.05, 0.01, warm);
+    const lead = beat % 2 === 0 && bar >= tune.enter.lead && tune.lead[(bar % 8) * 8 + beat / 2];
+    if (lead) note('square', lead, 3, 0.02, 0.02, warm);
+    if (bar < tune.enter.drums) return;
+    if (beat % 4 === 0) voice('sine', 140, 45, time, 0.22, 0.18, 0.004, music, false);
+    if (beat === 4 || beat === 12) hit(snares, time, 0.14, 0.07);
+    if (beat % 4 === 2) hit(hats, time, 0.045, 0.03);
+  }
+  function cue(name) {
+    if (name === 'go') { tone(660, 880, 0.4); tone(990, 1320, 0.4, 0, 0.025); }
+    else if (name === 'finish') [523, 659, 784, 1047].forEach((pitch, i) => tone(pitch, pitch, 0.35, i * 0.13));
+    else if (name === 'boost' || name === 'lift') tone(name === 'boost' ? 100 : 260, 900, 0.35, 0, 0.03);
+    else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
+    else if (name === 'low') { tone(440, 330, 0.14); tone(440, 330, 0.14, 0.2); }
+    else if (name === 'pause') tone(520, 220, 0.15);
+    else tone(name === 'tick' ? 440 : 720, name === 'tick' ? 440 : 1040, name === 'tick' ? 0.18 : 0.12);
+  }
+  function impulse(intensity, landing, barrier = false) {
+    if (voices.size >= 24) return;
+    const source = context.createBufferSource();
+    const envelope = context.createGain();
+    const lowpass = context.createBiquadFilter();
+    source.buffer = noiseBuffer;
+    lowpass.type = 'lowpass';
+    const now = context.currentTime;
+    lowpass.frequency.setValueAtTime(landing ? 180 : barrier ? 2600 : 1400, now);
+    lowpass.frequency.exponentialRampToValueAtTime(60, now + 0.3);
+    envelope.gain.setValueAtTime(0, now);
+    envelope.gain.linearRampToValueAtTime(intensity * (landing ? 0.09 : 0.18), now + 0.008);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+    source.connect(lowpass).connect(envelope).connect(master);
+    source.start(now);
+    track(source, [lowpass, envelope], now + 0.38);
+    tone(landing ? 75 : 130, 38, 0.22, 0, intensity * 0.07);
+  }
+  function noise(frequency, type) {
+    const source = context.createBufferSource();
+    source.buffer = noiseBuffer;
+    source.loop = true;
+    const band = context.createBiquadFilter();
+    band.type = type;
+    band.frequency.value = frequency;
+    band.Q.value = 0.6;
+    const level = context.createGain();
+    level.gain.value = 0;
+    source.connect(band).connect(level).connect(master);
+    source.start();
+    return level;
+  }
+  function filtered(type, frequency) {
+    const node = context.createBiquadFilter();
+    node.type = type;
+    node.frequency.value = frequency;
+    node.connect(music);
+    return node;
+  }
+  function open() {
+    if (!context) {
+      context = new AudioContext();
+      oscillator = context.createOscillator();
+      filter = context.createBiquadFilter();
+      gain = context.createGain();
+      master = context.createGain();
+      master.gain.value = 0;
+      music = context.createGain();
+      music.gain.value = 0;
+      const limiter = context.createDynamicsCompressor();
+      limiter.threshold.value = -12;
+      limiter.ratio.value = 8;
+      master.connect(limiter).connect(context.destination);
+      music.connect(limiter);
+      oscillator.type = 'sawtooth';
+      filter.type = 'lowpass';
+      filter.frequency.value = 220;
+      gain.gain.value = 0;
+      oscillator.connect(filter).connect(gain).connect(master);
+      oscillator.start();
+      noiseBuffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      thrustGain = noise(950, 'bandpass');
+      windGain = noise(400, 'lowpass');
+      skidGain = noise(2300, 'bandpass');
+      warm = filtered('lowpass', 1800);
+      hats = filtered('highpass', 7000);
+      snares = filtered('bandpass', 1800);
+    }
+    // Not awaited: before the first user gesture resume() can stay pending; a later gesture retries it.
+    context.resume().catch(() => {});
+  }
+  function fail() {
+    enabled = musicOn = false;
+    if (master) master.gain.value = 0;
+    context?.close().catch(() => {});
+    context = null;
+  }
+  function setEnabled(next) {
+    try {
+      if (next) open();
+      if (context) {
+        enabled = next;
+        if (!enabled) silenceCues();
+        master.gain.setTargetAtTime(enabled ? 0.8 : 0, context.currentTime, 0.025);
       }
-      return enabled;
+    } catch { fail(); }
+    return enabled;
+  }
+  function setMusic(next) {
+    try {
+      if (next) open();
+      musicOn = next && !!context;
+    } catch { fail(); }
+    return musicOn;
+  }
+  return {
+    cue,
+    setEnabled,
+    setMusic,
+    running: () => context?.state === 'running',
+    update(race) {
+      const car = race.player;
+      const active = race.phase === 'racing';
+      const count = race.phase === 'countdown' ? Math.ceil(race.countdown) : null;
+      if (race !== previousRace) {
+        silenceCues();
+        previousRace = race;
+        previousPhase = previousCount = null;
+        lastImpact = lastLanding = lastNearMiss = null;
+        wasThrusting = wasBoosting = lowCharge = false;
+      }
+      if (race.phase === 'paused' && previousPhase !== 'paused') silenceCues();
+      if (enabled) {
+        if (count !== null && count !== previousCount) cue('tick');
+        if (active && previousPhase === 'countdown') cue('go');
+        if (race.phase === 'finished' && previousPhase !== 'finished') cue('finish');
+        if (active) {
+          if (car.impact && car.impact !== lastImpact && race.elapsed - car.impact.time < 0.2) impulse(car.impact.intensity, false, car.impact.kind === 'barrier');
+          if (car.landing && car.landing !== lastLanding && race.elapsed - car.landing.time < 0.2) impulse(Math.min(1, car.landing.speed / 14), true);
+          if (car.nearMiss && car.nearMiss !== lastNearMiss) cue('near');
+          if (car.thrusting && !wasThrusting) cue('lift');
+          if (car.boosting && !wasBoosting) cue('boost');
+          if (car.fuel < 20 && !lowCharge) cue('low');
+        }
+      }
+      if (context) {
+        const now = context.currentTime;
+        oscillator.frequency.setTargetAtTime(35 + car.speed * 1.5 + (car.boosting ? 45 : 0), now, 0.12);
+        filter.frequency.setTargetAtTime(car.boosting ? 850 : 180 + car.speed * 3, now, 0.15);
+        gain.gain.setTargetAtTime(active ? 0.014 + car.speed * 0.00016 : 0, now, 0.06);
+        thrustGain.gain.setTargetAtTime(active && (car.thrusting || car.boosting) ? 0.055 : 0, now, 0.08);
+        windGain.gain.setTargetAtTime(active ? (car.speed / 102) ** 2 * 0.07 : 0, now, 0.1);
+        skidGain.gain.setTargetAtTime(active && car.braking && car.altitude < 0.2 && car.speed > 15 ? 0.035 : 0, now, 0.06);
+        music.gain.setTargetAtTime(!musicOn ? 0 : race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65, now, 0.1);
+        const name = musicOn ? race.phase === 'ready' || race.phase === 'finished' ? 'intro' : 'race' : null;
+        if (name !== song) { song = name; step = 0; }
+        // Schedule ~0.2 s ahead from the frame loop; after a stalled frame, resume from now instead of bursting.
+        if (song) for (nextStep = Math.max(nextStep, now + 0.03); nextStep < now + 0.2; nextStep += 15 / TRACKS[song].bpm, step = (step + 1) % LOOP_STEPS) playStep(TRACKS[song], step, nextStep);
+      }
+      previousPhase = race.phase;
+      previousCount = count;
+      lastImpact = car.impact;
+      lastLanding = car.landing;
+      lastNearMiss = car.nearMiss;
+      wasThrusting = active && car.thrusting;
+      wasBoosting = active && car.boosting;
+      if (car.fuel >= 30) lowCharge = false;
+      else if (car.fuel < 20) lowCharge = true;
     },
-    update(car, active) {
-      if (!context || !enabled) return;
-      oscillator.frequency.setTargetAtTime(35 + car.speed * 1.5 + (car.thrusting ? 50 : 0), context.currentTime, 0.12);
-      filter.frequency.setTargetAtTime(car.thrusting ? 850 : 180 + car.speed * 3, context.currentTime, 0.15);
-      gain.gain.setTargetAtTime(active ? 0.014 + car.speed * 0.00016 : 0, context.currentTime, 0.1);
-    },
-    dispose() { context?.close(); },
+    dispose() { silenceCues(); context?.close().catch(() => {}); },
   };
 }
