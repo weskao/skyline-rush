@@ -204,12 +204,18 @@ function showAudio() {
 
 showAudio();
 
+// Driving keys are ignored while a form control has focus, so hand the keyboard back to the race.
+function focusRace() {
+  $('#vfx-panel').open = false;
+  document.activeElement?.blur();
+}
+
 function start() {
   if (!world || race.phase !== 'ready') return;
   controls.clear();
   startRace(race);
   sound.cue('ui');
-  ui['start-button'].blur();
+  focusRace();
 }
 
 function restart() {
@@ -219,13 +225,14 @@ function restart() {
   goUntil = 0;
   startRace(race);
   sound.update(race);
-  document.activeElement?.blur();
+  focusRace();
 }
 
 function pause() {
   if (race.phase === 'paused') {
     race.phase = pausedPhase;
     controls.clear();
+    focusRace();
   } else if (race.phase === 'racing' || race.phase === 'countdown') {
     pausedPhase = race.phase;
     race.phase = 'paused';

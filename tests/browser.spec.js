@@ -56,6 +56,20 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   expect(errors).toEqual([]);
 });
 
+test('starting with a VFX control focused hands the keyboard back to driving', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#vfx-panel > summary').click();
+  await page.locator('[data-vfx="preset"]').focus();
+  // Safari and Firefox on macOS do not move focus to a clicked button.
+  await page.locator('#start-button').evaluate(button => button.click());
+  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await expect(page.locator('#vfx-panel')).not.toHaveAttribute('open');
+  await page.keyboard.down('w');
+  await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(20);
+  await page.keyboard.down('d');
+  await expect.poll(async () => parseFloat(await page.evaluate(() => document.body.style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
+});
+
 test('mobile VFX controls fit, persist and respect reduced motion', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
