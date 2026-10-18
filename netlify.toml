@@ -1,5 +1,5 @@
 [build]
   command = "npm run build"
   publish = "dist"
-  # Every deploy goes through GitHub Actions; NETLIFY_AUTO_DEPLOY in .env picks auto vs manual.
+  # Netlify never builds on its own; deploys come from `make deploy`, run by .githooks/pre-push on a tag push.
   ignore = "exit 0"

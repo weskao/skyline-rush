@@ -1,0 +1,19 @@
+#!/bin/sh
+# Pushing a tag that points at HEAD runs `make deploy` first; a failed deploy blocks the push.
+# Enable once per clone: git config core.hooksPath .githooks
+zero=0000000000000000000000000000000000000000
+head=$(git rev-parse HEAD)
+deploy=
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in refs/tags/*) ;; *) continue ;; esac
+  [ "$local_sha" = "$zero" ] && continue # tag deletion
+  tag=${remote_ref#refs/tags/}
+  if [ "$(git rev-parse "$local_sha^{commit}")" = "$head" ]; then
+    deploy=$tag
+  else
+    echo "pre-push: tag $tag is not on HEAD, not deploying it (check out the tag and run make deploy)" >&2
+  fi
+done
+[ -z "$deploy" ] && exit 0
+echo "pre-push: tag $deploy pushed, running make deploy" >&2
+exec make deploy </dev/null

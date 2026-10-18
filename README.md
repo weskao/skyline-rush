@@ -57,7 +57,7 @@ npm test                 # Deterministic simulation, input lifecycle and geometr
 npm run build           # Production assets in dist/
 npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full race
 make run                # All three (test:browser builds first)
-make deploy             # Placeholder: deploys go through GitHub Actions (see Deploy)
+make deploy             # make run, then Netlify production deploy + smoke check (see Deploy)
 ```
 
 Browser tests use an installed Google Chrome. Tests allow SwiftShader for headless rendering; normal gameplay uses the browser's available GPU. Screenshots are written to `artifacts/` as JPEG (quality 70); test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
@@ -68,13 +68,14 @@ npm run preview         # Serve the production build after npm run build
 
 ## Deploy
 
-Live at https://skyline-rush.netlify.app. Netlify never builds on its own (`ignore = "exit 0"` in `netlify.toml`); every deploy runs through `.github/workflows/ci.yml` (compile, unit tests, deploy, smoke check).
+Live at https://skyline-rush.netlify.app. Netlify never builds on its own (`ignore = "exit 0"` in `netlify.toml`); production is published only when a version tag is released.
 
 ```sh
-gh workflow run ci.yml --ref main   # manual deploy
+git tag v0.2.0 && git push origin v0.2.0   # release: the pre-push hook runs make deploy
+make deploy                                # same deploy by hand: make run → netlify deploy --prod → smoke check
 ```
 
-Set `NETLIFY_AUTO_DEPLOY=1` in `.env` to deploy on every push to `main` instead. CI needs the `NETLIFY_SITE_ID` and `NETLIFY_AUTH_TOKEN` repository secrets.
+The pre-push hook (`.githooks/pre-push`) runs `make deploy` when a pushed tag points at HEAD; a failed deploy blocks the push. Enable it once per clone with `git config core.hooksPath .githooks`. `make deploy` needs `npx netlify-cli login` once per machine and the site link in `.netlify/state.json` (`npx netlify-cli link`). CI (`.github/workflows/ci.yml`) only builds and tests; it never deploys.
 
 ## Project
 
