@@ -1,5 +1,38 @@
 # Verification — 2026-10-18
 
+## HUD motion and event feedback — 2026-10-20
+
+Scope: TODO 8B Consistency → Event callouts → Button feel → Animated numbers → Leaderboard reorder (five checkboxes).
+
+- **TDD:** browser tests first failed on fixed 180 ms button timing, absent press scaling/held glow,
+  the missing speed needle, and rows being relabelled instead of moved. The callout tests first failed
+  on missing queued events, then passed for coalescing, expiry, phase resets, NITRO activation/extension,
+  fractional refills and drift tiers. All tests use the existing Node/Playwright runners; no dependency was added.
+- Review regressions first failed for contact/callout coexistence, a queued drift instruction after release,
+  and a drift payout hidden by a longer existing mini boost. Contact banners now suspend callout display time;
+  historical spark-tier copy stays valid in the queue; `driftPayout` records the actual reward for haptics.
+- The existing 320 px touch-target test caught AUTO shrinking the throttle to 42.24 px. Physical pointer presses
+  now own compression, while logical held state owns illumination. Release, cancel, capture loss, blur and pause
+  clear the physical press. Screenshot inspection also caught landscape HUD overlap; the three phone viewports
+  now assert that callouts stay clear of progress and flight-state panels, and all three pass.
+- `npm test`: **170 passed**, zero failures/skips. Source/test syntax checks and `git diff --check` pass.
+- `npm run test:browser -- --workers=2`: **88 passed in 5.7 minutes**, with one stable production build.
+  This includes all existing gameplay/audio/storage/controls tests and nine new motion tests. Desktop 1440×900
+  and touch 390×844, 320×740, 844×390 are covered. The production build succeeds with the existing >500 kB chunk advisory.
+- Four real-race PNGs (desktop ranking, desktop events, phone portrait, phone landscape) were inspected
+  before and after blue-box annotation. Markers use native-pixel DOM bounds; the images preserve readable
+  event/position feedback, the speed needle, complete leaderboard rows and the held FLY button.
+- **Frame cadence:** one headless Chrome browser at a time, DPR 1, AUTO racing, two-second warmup, 120
+  requestAnimationFrame intervals per viewport. Desktop median 16.7 → 16.7 ms, p95 16.8 → 16.7 ms;
+  touch 390×844 median 16.7 → 16.7 ms, p95 16.8 → 16.8 ms. No regression was measured in this short steady-race
+  sample; it does not measure GPU completion or sustained physical-phone performance.
+- Independent review findings were reproduced and repaired, then rechecked with no remaining actionable findings.
+  Change size excluding documentation: production **+176 / −27 lines**, tests **+300 / −0 lines**.
+  All 50 pre-existing artifact files were restored after browser tests and hash-checked against the pre-test archive.
+  The five requested TODO entries and README are updated. No commit, push or deployment was performed.
+- Physical Android/iOS devices, Safari, sustained thermal behavior and vibration feel remain unverified.
+  Browser haptic verification observes calls to the native API boundary, not a hardware motor.
+
 ## Gameplay depth completion — 2026-10-20
 
 Scope: History, gauge feedback, slide-pad feedback, track selection/scenery/unlocks, and style points/stars.
