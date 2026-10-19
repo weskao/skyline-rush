@@ -33,6 +33,9 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 | Fly | Hold Space once above 65 km/h |
 | Land | Release Space |
 | Boost | Hold Shift; consumes thruster charge |
+| NITRO | E (one full charge; press again during NITRO to extend it) |
+| Right-hand alternates | J = Fly, K = Boost, L = NITRO (the original keys still work) |
+| Drift | Hold S + A / D above 162 km/h (ground only) |
 | Start | Enter |
 | Pause / resume | Esc / P |
 | Restart | R |
@@ -40,13 +43,15 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 | Mute / unmute all audio | M |
 | Auto accelerator on / off | T / AUTO button |
 
-Mobile layouts provide steering, accelerator, brake, boost and flight buttons. Touch controls support simultaneous holds. AUTO holds the accelerator so you can concentrate on steering and flying; braking always overrides it. The setting lasts until toggled off or the page reloads. Leaving the tab pauses the race and clears held input. Camera and sound shortcuts preserve held driving controls.
+Mobile layouts provide steering, accelerator, brake, boost and flight buttons. Touch controls support simultaneous holds. AUTO holds the accelerator so you can concentrate on steering and flying; braking always overrides it. The setting lasts until toggled off or the page reloads. Leaving the tab pauses the race and clears held input. Camera and sound shortcuts preserve held driving controls. On touch, sliding a thumb down on the steering pad brakes and sliding down and sideways drifts; in Buttons mode the brake sits under the steering buttons so brake + steer drifts there too. There is no touch NITRO button yet.
+
+The key bindings live in `src/key-map.js` (default map, conflict-swapping `rebind`, validation) and are saved under `localStorage['skyline-rush-keymap']`. There is no remapping screen yet, so the default map is what you get; the saved map is read once at load.
 
 All audio is synthesized with Web Audio; no audio downloads are needed. Background music has two looping synthwave tracks: an intro theme (~64 s) on the start and results screens, and a faster race theme (~55 s) from the countdown on. Each builds up over its loop and ducks while paused. Sound effects cover menu confirmation, three countdown ticks and GO, motor/wind, lift and boost, braking, vehicle/guardrail contact, landing, low-charge warning, close-pass reward and a finish melody. Muting effects stops pending cues, and pausing fades driving sounds. Low-charge warnings rearm only after recharging above 30%.
 
 The speaker icon opens audio settings with separate Music and Sound effects switches (shown open in the start-screen screenshot above). Both default to on, and each choice is remembered in a cookie (`skyline-rush-music`, `skyline-rush-sound`) for a year. The intro music starts as soon as the page loads where the browser allows autoplay. Where it doesn't (most browsers on a first visit), the start screen asks "Play background music?". **Play music** starts it, and so does any other click or key press. **Not now** turns Music off and remembers that.
 
-The flight panel shows ascent, cruise, descent and touchdown, remaining thrust seconds and the next control to use. Cyan rings mark the aerial corridor; they are visual guides. Mobile also has a hold-to-boost button. Orange contact reports show the impact type and speed lost; guardrails now rebound and slow a grounded car. Flying above them clears the rails.
+The flight panel shows ascent, cruise, descent and touchdown, remaining thrust seconds and the next control to use. Cyan rings mark the aerial corridor and are gameplay: see Rings below. Mobile also has a hold-to-boost button. Orange contact reports show the impact type and speed lost; guardrails now rebound and slow a grounded car. Flying above them clears the rails.
 
 The scene includes bloom lighting, sunset water, suspension bridges, thruster vapor, collision sparks and touchdown ripples. Camera motion and nonessential speed streaks respect your system's reduced-motion preference. Sound effects give separate thrust, contact and landing feedback.
 
@@ -55,6 +60,28 @@ Three amber start lights turn cyan at GO. The player car is a low wedge roadster
 For an extra charge reward, overtake traffic closely on the ground above 126 km/h. Clean passes within five seconds chain up to ×5 and refill 8–16% charge (capped at 100%). Collisions break the chain; airborne, distant and recovering passes earn no reward. The HUD announces each pass and the final 500 metres; results show total close passes and contacts.
 
 Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Finish the 5 km sprint ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
+
+### Handling
+
+Steering ramps to full over 0.15 s and the lateral speed is capped at 9 m/s at high speed. Holding Fly below 65 km/h is remembered for 1.5 s and lifts off automatically once fast enough. Releasing Fly in the air lowers the fall acceleration (11 → 7 m/s²) for softer landings. Vehicles are 1.7 m wide for collisions, so more passes count as near misses. A shallow guardrail touch is a scrape (0.92 speed kept, pushed back onto the road, no collision, combo kept); head-on hits still count as contact. With AUTO on, releasing steering also eases the car to the nearest lane centre (lane assist). Holding Fly + Boost drains 22 charge per second instead of 29 and keeps the boost speed cap.
+
+### NITRO and drift
+
+NITRO has its own reserve (`player.nitro`, up to 3 charges, each fills as a float). Pickups along the track (cell +0.25, can +0.5, airborne tank +1, one overcharge that fills to the cap) are placed from the track seed; anything above the cap becomes charge (each 0.25 = +8). One charge gives 2.5 s with the speed cap raised by 30 m/s and much stronger acceleration; pressing again extends it by 2 s without stacking speed, so three presses chain into a 6.5 s burst. Traffic contact during NITRO keeps 70% speed instead of 45%.
+
+Above 162 km/h on the ground, brake + steer drifts instead of hard braking: only 3 m/s² is lost, near-miss combo points double, and releasing pays NITRO plus a mini boost by drift time (1 s: +0.15 and 0.5 s, 2 s: +0.3 and 0.8 s, 3 s: +0.5 and 1.2 s). Taking off, or hitting a car or barrier, loses the build-up.
+
+### Rings
+
+The 5 km coast has 22 rings every 220 m, in groups of 3 to 5 (placed from the track seed). A ring counts only when the car passes through its radius; grazing the edge does not. Types: charge (+20 charge), nitro (+0.5), slipstream (3 s mini boost), risk (a small ring, +1 NITRO and 500 score) and mystery (one random-by-seed effect: shield 10 s or until the first hit, magnet 5 s, ghost through traffic 3 s, or freeze rivals at half speed 2 s). Clearing a whole group is a PERFECT LINE worth +1 NITRO; missing one ring breaks it but keeps the rewards already earned. There is no PERFECT LINE callout and no ring burst effect yet.
+
+### Rivals, slipstream and the final sprint
+
+Staying right behind a rival or traffic car for 1.5 s gives +6 m/s of speed cap and +0.25 NITRO (leave the draft to re-arm). Rivals use NITRO too, two charges each, by personality: NOVA fires steadily from 8 s then every 18 s, ORBIT fires while flying, APEX surges from 75% of the race. Light rubber-banding (at most ±4% speed beyond 50 m) keeps the race tense. In the last 500 m the race music speeds up to 115% and the status line shows the gaps to the nearest rival ahead and behind (`FINAL 500 M · +N m · −N m`).
+
+### Saved data
+
+All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: touch and visual settings. Only the coast track is selectable in the game for now; `neon`, `canyon` and `aurora` (tunnels, gaps, crosswind, ice, uphill) exist in the simulation and its tests but have no track-select screen or scenery.
 
 ## Verify
 
@@ -88,7 +115,10 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-he
 ## Project
 
 - `src/game.js`: deterministic arcade simulation, opponents, traffic and finish order.
-- `src/input.js`: keyboard and multi-pointer controls with cancellation and blur cleanup.
+- `src/input.js`: keyboard and multi-pointer controls with cancellation and blur cleanup; reads the saved key map.
+- `src/key-map.js`: pure key map with J/K/L and E alternates, conflict-swapping rebind, validation and storage.
+- `src/history.js`: per-race history (latest 50), per-track best times, legacy best migration and career stats (no UI yet).
+- `src/rng.js`: seeded random streams; track pickups and rings come from the track seed.
 - `src/world.js`, `src/geometry.js`: Three.js renderer, procedural cars, highway, skyline, flight effects and cameras.
 - `src/effects.js`: a fixed 480-particle GPU pool for vapor, sparks and landing dust.
 - `src/main.js`, `src/style.css`: start screen, telemetry, pause/results, responsive controls and lifecycle.
