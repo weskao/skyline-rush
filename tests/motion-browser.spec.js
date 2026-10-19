@@ -148,16 +148,21 @@ for (const [name, viewport] of [
     const callout = page.locator('#event-callout');
     await expect(callout).toBeVisible({ timeout: 35000 });
     await expect(page.locator('#event-callout > div:visible')).toHaveCount(1);
+    // One synchronous read: the callout expires after 1.2s, so separate boundingBox() round trips can miss it on slow CI.
+    const boxes = await page.evaluate(selectors => Object.fromEntries(selectors.map(selector => {
+      const { x, y, width, height } = document.querySelector(selector).getBoundingClientRect();
+      return [selector, { x, y, width, height }];
+    })), ['#event-callout', '.speed-dial', '#leaderboard', '.race-progress', '.mode-indicator']);
     for (const selector of ['#event-callout', '.speed-dial', '#leaderboard']) {
-      const box = await page.locator(selector).boundingBox();
+      const box = boxes[selector];
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
       expect(box.y).toBeGreaterThanOrEqual(0);
       expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
     }
-    const popup = await callout.boundingBox();
+    const popup = boxes['#event-callout'];
     for (const selector of ['.race-progress', '.mode-indicator']) {
-      const panel = await page.locator(selector).boundingBox();
+      const panel = boxes[selector];
       expect(popup.x + popup.width <= panel.x || panel.x + panel.width <= popup.x ||
         popup.y + popup.height <= panel.y || panel.y + panel.height <= popup.y, `Callout overlaps ${selector}`).toBe(true);
     }
