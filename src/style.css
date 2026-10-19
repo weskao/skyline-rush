@@ -494,6 +494,8 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
   .topbar { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
   body:not([data-phase="ready"]) .telemetry { bottom: calc(112px + env(safe-area-inset-bottom)); }
   .start-hint, .intro-controls { display: none; }
+  /* the two-row steering cluster (buttons mode) reserves the same height the portrait layout does */
+  body:not([data-phase="ready"]):has(#touch-controls[data-steer-mode="buttons"]) .telemetry { bottom: calc(180px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 760px) and (min-height: 501px) {
   body:not([data-phase="ready"]) .touch-controls { display: grid; grid-template-columns: auto auto; gap: 10px; }
@@ -509,6 +511,9 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
 .touch-controls button { min-width: 44px; min-height: 44px; max-width: 20vw; opacity: var(--touch-opacity, 1); }
 #touch-controls[data-hand="right"] { direction: rtl; }
 #touch-controls[data-hand="right"] .touch-steer { direction: ltr; }
+/* Buttons mode: BRAKE spans the row under [<][>] in the steering cluster (mirrors with data-hand), so one thumb can brake + steer. */
+.touch-steer { display: grid; grid-template-columns: auto auto; }
+.touch-controls .touch-steer [data-control="brake"] { grid-column: 1 / -1; width: auto; }
 #touch-controls[data-steer-mode="slide"] { justify-content: flex-end; }
 #touch-controls[data-steer-mode="slide"] .touch-steer, #touch-controls[data-steer-mode="slide"] [data-control="brake"], #touch-controls[data-steer-mode="buttons"] .touch-pad { display: none; }
 #touch-controls[data-steer-mode="slide"] .touch-pedals { justify-content: flex-end; }

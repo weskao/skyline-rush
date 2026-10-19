@@ -140,16 +140,16 @@ document.querySelector('#app').innerHTML = `
   </footer>
   ${/* TOUCH CONTROLS DOM/CSS CONTRACT — frozen; style.css builds from this, change both together.
    #touch-controls.touch-controls (shown by the existing media rules; [hidden] outside racing/countdown)
-     data-steer-mode="slide|buttons"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer
+     data-steer-mode="slide|buttons"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer (and its brake)
                                       buttons: .touch-steer left/right buttons steer, hide .touch-pad
      data-hand="left|right"           side of the screen the steering (pad or .touch-steer) sits on; actions/pedals take the other side
      style --touch-scale              0.85 (S) | 1 (M) | 1.15 (L); multiply control sizes by it
      style --touch-opacity            0.4–1; control opacity
      children, in order (all siblings):
        .touch-pad[aria-hidden]        slide surface (pointer events, touch-action:none) > .pad-ring + .pad-knob (positioned later by main.js)
-       .touch-steer                   button[data-control=left|right]
+       .touch-steer                   button[data-control=left|right] + button[data-control=brake] (brake sits under them, same thumb: brake + steer = drift)
        .touch-actions                 button.touch-fly[data-control=fly], button.touch-boost[data-control=boost]
-       .touch-pedals                  button[data-control=brake], button.touch-gas[data-control=throttle] (gas always visible, both modes)
+       .touch-pedals                  button.touch-gas[data-control=throttle] (gas always visible, both modes)
      button.is-held / [aria-pressed=true] while active (existing).
    Toolbar Controls panel (NOT inside .settings): .controls-menu > button#controls-button.controls-button (text "Controls",
      deliberately not .icon-button) + #controls-panel.controls-panel[hidden] — the scroll container: give it max-height + overflow:auto.
@@ -157,9 +157,9 @@ document.querySelector('#app').innerHTML = `
      label.controls-field.controls-range > output + input[type=range][data-controls=opacity]; button#controls-reset.controls-reset. */ ''}
   <div class="touch-controls" id="touch-controls" aria-label="Touch driving controls" hidden>
     <div class="touch-pad" aria-hidden="true"><i class="pad-ring"></i><i class="pad-knob"></i></div>
-    <div class="touch-steer"><button data-control="left" aria-label="Steer left">${icon('left')}</button><button data-control="right" aria-label="Steer right">${icon('right')}</button></div>
+    <div class="touch-steer"><button data-control="left" aria-label="Steer left">${icon('left')}</button><button data-control="right" aria-label="Steer right">${icon('right')}</button><button data-control="brake" aria-label="Brake">${icon('brake')}</button></div>
     <div class="touch-actions"><button class="touch-fly" data-control="fly" aria-label="Hold to fly">${icon('fly')}<span>FLY</span></button><button class="touch-boost" data-control="boost" aria-label="Hold to boost">${icon('arrow')}<span>BOOST</span></button></div>
-    <div class="touch-pedals"><button data-control="brake" aria-label="Brake">${icon('brake')}</button><button class="touch-gas" data-control="throttle" aria-label="Accelerate">${icon('pedal')}</button></div>
+    <div class="touch-pedals"><button class="touch-gas" data-control="throttle" aria-label="Accelerate">${icon('pedal')}</button></div>
   </div>
   <div class="bottomline"><span><i></i> BEYOND THE ROAD</span><span>AN ORIGINAL ARCADE FLIGHT RACER <span class="version">v0.1</span></span></div>
 `;
