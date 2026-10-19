@@ -1,3 +1,34 @@
+## [0.5.0] - 2026-10-19
+
+### 🚀 Features
+
+- **game:** Cap FLY+BOOST air dash fuel drain at 22/s
+- **game:** Analog steering ramp, 9 m/s lateral cap and lane assist
+- **game:** Barrier scrape for shallow-angle guardrail touches
+- **game:** Narrow vehicle collision width 1.9 -> 1.7
+- **game:** Takeoff buffer and glide
+- **controls:** Remappable key map with J/K/L and E alternates
+- **game:** Data-driven tracks, special sections and seeded rng
+- **game:** Nitro charges, seeded pickups and 3-charge cap
+- **game:** Drift builds nitro and a mini boost on release
+- **game:** Seeded rings with rewards, perfect lines and mystery effects
+- **history:** Per-race history, per-track best, career stats
+- **game:** Save history and per-track best when a race finishes
+- **controls:** Move touch brake under the steering buttons (left thumb)
+- **game:** Slipstream nitro bonus and rival nitro personalities with rubber-banding
+- **game:** Final sprint tempo ramp and rival gaps in the last 500 m
+
+### 🐛 Bug Fixes
+
+- **game:** Address review of control-feel changes
+- **controls:** Guard blocked localStorage and invalid keys in key map
+- **game:** No free risk rings in tunnels; note ring hit-test shortcut
+
+### 📚 Documentation
+
+- **todo:** Tick completed items
+- Add HANDOFF and refresh README
+- Correct uphill and pickup notes, add verifier findings to HANDOFF
 ## [0.4.0] - 2026-10-19
 
 ### 🚀 Features
