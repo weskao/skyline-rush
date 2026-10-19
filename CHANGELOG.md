@@ -1,3 +1,20 @@
+## [0.7.1] - 2026-10-19
+
+### 💼 Other
+
+- **make:** Adopt dev/run/deploy makefile layout
+
+### 🚜 Refactor
+
+- **ui:** Render the static ui shell with vue
+
+### 📚 Documentation
+
+- Describe vue + vite structure
+
+### ⚙️ Miscellaneous Tasks
+
+- Refresh screenshots from vue browser run
 ## [0.7.0] - 2026-10-19
 
 ### 🚀 Features
