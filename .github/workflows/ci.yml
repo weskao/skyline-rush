@@ -8,9 +8,10 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A newer push to the same branch makes the older run moot; tags are unique refs, so releases are never cancelled.
+# A newer run of the same event on the same ref makes the older one moot. Keying on the event keeps a push from
+# cancelling a manual deploy; tags are unique refs, so releases are never cancelled.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
