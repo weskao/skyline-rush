@@ -135,6 +135,28 @@ test('leaderboard moves the same racer rows with FLIP only when order changes', 
   expect(await page.locator('#leaderboard .racer').evaluateAll(rows => rows.reduce((count, row) => count + row.getAnimations().length, 0))).toBe(0);
 });
 
+for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+  test(`race callout is a small translucent chip clear of the centre view at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await open(page);
+    const chip = await page.evaluate(() => {
+      const callout = document.querySelector('#event-callout');
+      callout.hidden = false;
+      const report = callout.querySelector('#skill-report');
+      report.hidden = false;
+      report.innerHTML = 'NEAR MISS ×3<span>CLOSE PASS · +20% CHARGE</span>';
+      const { top, bottom, height } = callout.getBoundingClientRect();
+      const style = getComputedStyle(callout);
+      const alpha = style.backgroundColor.match(/rgba?\(([^)]+)\)/)[1].split(/[ ,/]+/).filter(Boolean)[3];
+      return { top, bottom, height, alpha: alpha === undefined ? 1 : Number(alpha), border: parseFloat(style.borderTopWidth) };
+    });
+    expect(chip.alpha).toBeLessThanOrEqual(0.45);
+    expect(chip.border).toBe(0);
+    expect(chip.height).toBeLessThanOrEqual(viewport.height * 0.2);
+    expect(chip.bottom).toBeLessThanOrEqual(viewport.height * 0.45);
+  });
+}
+
 for (const [name, viewport] of [
   ['portrait', { width: 390, height: 844 }],
   ['narrow', { width: 320, height: 740 }],
@@ -164,7 +186,7 @@ for (const [name, viewport] of [
     for (const selector of ['.race-progress', '.mode-indicator']) {
       const panel = boxes[selector];
       expect(popup.x + popup.width <= panel.x || panel.x + panel.width <= popup.x ||
-        popup.y + popup.height <= panel.y || panel.y + panel.height <= popup.y, `Callout overlaps ${selector}`).toBe(true);
+        popup.y + popup.height <= panel.y || panel.y + panel.height <= popup.y, `Callout overlaps ${selector} ${JSON.stringify([popup, panel])}`).toBe(true);
     }
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(page.locator('#speed-needle')).toHaveCSS('transition-duration', '0s');
