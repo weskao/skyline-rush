@@ -3,6 +3,7 @@ export const MAX_SPEED = 88;
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
 export const STEER_RAMP = 0.15;
+export const SCRAPE_RATIO = 0.1; // lateral/forward speed below this is a shallow-angle scrape
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -13,7 +14,7 @@ export function createRace() {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, boosting: false, braking: false,
-      nearMiss: null, nearMisses: 0, combo: 0,
+      nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
@@ -74,6 +75,7 @@ export function stepRace(race, input, dt) {
   }
   car.x = clamp(lateralPosition, -ROAD_LIMIT, ROAD_LIMIT);
   car.cooldown = Math.max(0, car.cooldown - dt);
+  car.scrapeCooldown = Math.max(0, car.scrapeCooldown - dt);
   if (car.nearMiss && race.elapsed - car.nearMiss.time > 5) car.combo = 0;
 
   if (!input.fly && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
@@ -123,7 +125,17 @@ export function stepRace(race, input, dt) {
     if (obstacle) {
       contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), 0.45);
     } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12) {
-      contact(race, 'barrier', Math.sign(lateralPosition) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75);
+      const side = Math.sign(lateralPosition);
+      if (Math.abs(car.steering * Math.min(9, car.speed * 0.22)) / car.speed < SCRAPE_RATIO) {
+        car.x = side * (ROAD_LIMIT - 0.3);
+        if (car.scrapeCooldown === 0) {
+          car.speed *= 0.92;
+          car.scrapeCooldown = 0.5;
+          car.scrape = { side, x: car.x, time: race.elapsed };
+        }
+      } else {
+        contact(race, 'barrier', side * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75);
+      }
     }
   }
   for (const traffic of race.traffic) {

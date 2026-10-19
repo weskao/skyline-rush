@@ -246,7 +246,8 @@ test('vehicle contact records a bounded impact and pushes the player away only o
 test('guardrail contact slows and rebounds a grounded car but a flying car clears the rail', () => {
   for (const altitude of [0, 5]) {
     const race = racing();
-    Object.assign(race.player, { speed: 60, x: ROAD_LIMIT, altitude });
+    // Deliberate edit (barrier scrape): a hard, fully-deflected steer is the head-on case that still uses contact().
+    Object.assign(race.player, { speed: 60, x: ROAD_LIMIT, altitude, steering: 1 });
     stepRace(race, { throttle: true, steer: 1 }, 1 / 60);
     if (altitude === 0) {
       assert.equal(race.player.impact?.kind, 'barrier');
@@ -309,4 +310,17 @@ test('lane assist eases a released car to the nearest lane centre only when enab
   Object.assign(race.player, { speed: 40, x: 3.6 });
   advance(race, 0.5, { throttle: true, laneAssist: true, steer: 1 });
   assert.ok(race.player.x > 3.6);
+});
+
+test('a shallow barrier touch scrapes: 0.92 speed, back on the road, no collision, combo kept, once per scrape', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: 60, x: ROAD_LIMIT, steering: 0.3, combo: 3 });
+  advance(race, 0.3, { steer: 0.3 });
+  const car = race.player;
+  assert.equal(car.impact, null);
+  assert.equal(car.collisions, 0);
+  assert.equal(car.combo, 3);
+  assert.equal(car.cooldown, 0);
+  assert.ok(car.x < ROAD_LIMIT);
+  assert.ok(car.speed < 60 * 0.92 && car.speed > 60 * 0.92 - 1.5);
 });
