@@ -203,3 +203,15 @@ test('input follows the saved key map as it changes and ignores unbound keys', (
   assert.equal(controls.read().fly, true);
   controls.destroy();
 });
+
+test('two keys bound to one action keep it held until both are released', () => {
+  const target = new EventTarget();
+  const controls = createControls(target);
+  send(target, 'keydown', { code: 'KeyK' });
+  send(target, 'keydown', { code: 'ShiftLeft' });
+  send(target, 'keyup', { code: 'KeyK' });
+  assert.equal(controls.read().boost, true);
+  send(target, 'keyup', { code: 'ShiftLeft' });
+  assert.equal(controls.read().boost, false);
+  controls.destroy();
+});

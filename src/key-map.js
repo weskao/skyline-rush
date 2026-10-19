@@ -13,6 +13,7 @@ export const resetKeyMap = () => Object.fromEntries(Object.entries(DEFAULT_KEY_M
 // Binds `key` as the action's only key. If another action holds it, that action takes the old keys (swap).
 export function rebind(map, action, key) {
   if (!Object.hasOwn(map, action)) return { map, swapped: null, error: 'unknown-action' };
+  if (typeof key !== 'string' || !key) return { map, swapped: null, error: 'invalid' };
   if (ACTION_KEYS[key]) return { map, swapped: null, error: 'reserved' };
   if (map[action].length === 1 && map[action][0] === key) return { map, swapped: null };
   const next = Object.fromEntries(Object.entries(map).map(([name, keys]) => [name, [...keys]]));
@@ -37,10 +38,11 @@ export function validateKeyMap(value) {
   return Object.fromEntries(Object.keys(DEFAULT_KEY_MAP).map(action => [action, [...value[action]]]));
 }
 
-export function loadKeyMap(storage = globalThis.localStorage) {
-  try { return validateKeyMap(JSON.parse(storage.getItem(KEYMAP_KEY))); } catch { return resetKeyMap(); }
+// globalThis.localStorage is read inside the try: a blocked-storage getter throws SecurityError.
+export function loadKeyMap(storage) {
+  try { return validateKeyMap(JSON.parse((storage ?? globalThis.localStorage).getItem(KEYMAP_KEY))); } catch { return resetKeyMap(); }
 }
 
-export function saveKeyMap(map, storage = globalThis.localStorage) {
-  try { storage.setItem(KEYMAP_KEY, JSON.stringify(map)); } catch { /* Remap stays usable in memory. */ }
+export function saveKeyMap(map, storage) {
+  try { (storage ?? globalThis.localStorage).setItem(KEYMAP_KEY, JSON.stringify(map)); } catch { /* Remap stays usable in memory. */ }
 }

@@ -71,3 +71,23 @@ test('save and load round-trip under its own key; bad storage falls back', () =>
   assert.deepEqual(loadKeyMap(throwing), DEFAULT_KEY_MAP);
   assert.doesNotThrow(() => saveKeyMap(map, throwing));
 });
+
+test('rebind rejects empty, non-string and undefined keys without changing the map', () => {
+  for (const key of ['', undefined, null, 42, {}]) {
+    const result = rebind(DEFAULT_KEY_MAP, 'fly', key);
+    assert.equal(result.error, 'invalid');
+    assert.equal(result.map, DEFAULT_KEY_MAP);
+    assert.equal(result.swapped, null);
+  }
+});
+
+test('blocked storage getter falls back to defaults on load and never throws on save', () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('blocked'); }, configurable: true });
+  try {
+    assert.deepEqual(loadKeyMap(), DEFAULT_KEY_MAP);
+    assert.doesNotThrow(() => saveKeyMap(DEFAULT_KEY_MAP));
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'localStorage', original); else delete globalThis.localStorage;
+  }
+});
