@@ -1,3 +1,5 @@
+import { seededRng } from './rng.js';
+
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction.
 export const RACE_TRACKS = {
   coast: { name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, sections: [] },
@@ -39,20 +41,60 @@ export const GAP_RESPAWN = 5; // m past the gap where the car is put back
 export const CROSSWIND_SPEED = 4; // m/s sideways push
 export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
 
+export const NITRO_MAX = 3; // charges
+export const NITRO_TIME = 2.5; // seconds one charge lasts
+export const NITRO_EXTEND = 2; // seconds added by a press during NITRO
+export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
+export const NITRO_PICKUPS = { cell: 0.25, can: 0.5, tank: 1, overcharge: NITRO_MAX }; // overcharge only tops up to the cap, no fuel
+
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+// Pickups come only from the track's 'pickups' stream so every run of a track is identical.
+function createPickups(track) {
+  const random = seededRng(track.seed, 'pickups');
+  const pick = list => list[Math.floor(random() * list.length)];
+  // Ground pickups would sit over a gap's hole; air pickups would be stuck in a tunnel roof.
+  const blocked = pickup => track.sections.some(s => pickup.distance >= s.from - 10 && pickup.distance < s.to + 10 &&
+    (s.type === 'gap' ? pickup.altitude === 0 : s.type === 'tunnel' && pickup.altitude > 0));
+  const pickups = [];
+  for (let distance = 300; distance < track.length - 300; distance += Math.round(120 + random() * 160)) {
+    const roll = random();
+    if (roll < 0.6) {
+      const x = pick(LANES); // a row of cells down one lane
+      for (let i = 0; i < 4; i++) pickups.push({ distance: distance + i * 8, x, altitude: 0, tier: 'cell' });
+    } else if (roll < 0.85) {
+      pickups.push({ distance, x: pick([-5, 0, 5]), altitude: 0, tier: 'can' }); // between lanes
+    } else {
+      pickups.push({ distance, x: pick(LANES), altitude: Math.round(30 + random() * 40) / 10, tier: 'tank' });
+    }
+  }
+  let overcharge; // high-risk: near the flight ceiling over an edge lane; bounded retries so a tunnel-heavy track cannot hang
+  for (let tries = 0; tries < 50 && (!overcharge || blocked(overcharge)); tries++) {
+    overcharge = { distance: Math.round(track.length * (0.5 + random() * 0.3)), x: pick([LANES[0], LANES[3]]), altitude: 10, tier: 'overcharge' };
+  }
+  return [...pickups.filter(pickup => !blocked(pickup)), overcharge].sort((a, b) => a.distance - b.distance);
+}
+
+// Charges cap at NITRO_MAX; the excess becomes fuel so nothing is wasted.
+function addNitro(car, amount) {
+  const overflow = car.nitro + amount - NITRO_MAX;
+  car.nitro = Math.min(NITRO_MAX, car.nitro + amount);
+  if (overflow > 0) car.fuel = Math.min(100, car.fuel + overflow * NITRO_FUEL_PER_CHARGE);
+}
 
 export function createRace(trackId = 'coast') {
   const track = RACE_TRACKS[trackId];
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   return {
     trackId, length: track.length, sections: track.sections.map(section => ({ ...section })),
-    phase: 'ready', countdown: 3, elapsed: 0, result: null,
+    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: createPickups(track),
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       section: null, falls: 0, fall: null,
+      nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, longestCombo: 0,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
@@ -103,9 +145,21 @@ export function stepRace(race, input, dt) {
   const boost = input.boost === true && car.fuel > 0 && !brake;
   car.boosting = boost;
   car.braking = brake;
-  const limit = boost ? MAX_SPEED + 14 : MAX_SPEED;
-  const acceleration = car.speed > limit ? -18 - (brake ? 35 : 0) : (throttle ? 15 : -4) - (brake ? 35 : 0) + (boost ? 12 : 0);
+  // NITRO is edge-triggered: one press spends one full charge; a press during NITRO extends it, never stacks speed.
+  if (input.nitro === true && !car.nitroHeld && car.nitro >= 1) {
+    car.nitro -= 1;
+    if (car.nitroTime > 0) car.nitroTime += NITRO_EXTEND;
+    else {
+      car.nitroTime = NITRO_TIME;
+      car.nitroUses++;
+    }
+  }
+  car.nitroHeld = input.nitro === true;
+  const nitro = car.nitroTime > 0;
+  const limit = nitro ? MAX_SPEED + 30 : boost ? MAX_SPEED + 14 : MAX_SPEED;
+  const acceleration = car.speed > limit ? -18 - (brake ? 35 : 0) : (throttle ? 15 : -4) - (brake ? 35 : 0) + (boost ? 12 : 0) + (nitro ? 40 : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
+  car.nitroTime = Math.max(0, car.nitroTime - dt);
   // Linear ramp: full deflection takes STEER_RAMP seconds (longer on ice), like an analog stick.
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
   car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
@@ -182,7 +236,7 @@ export function stepRace(race, input, dt) {
       Math.abs((other.altitude || 0) - car.altitude) < 1.8,
     );
     if (obstacle) {
-      contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), 0.45);
+      contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), nitro ? 0.7 : 0.45);
     } else if (roofHit) {
       contact(race, 'barrier', Math.sign(car.x) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75); // pushed toward the centre
     } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12) {
@@ -205,10 +259,17 @@ export function stepRace(race, input, dt) {
     if (gap > -4.4 && traffic.distance - car.distance <= -4.4 &&
         clearance >= 2 && clearance < 3.5 && car.altitude < 1.8 && car.speed > 35 && car.cooldown === 0) {
       car.combo = Math.min(5, car.combo + 1);
+      car.longestCombo = Math.max(car.longestCombo, car.combo);
       car.nearMisses++;
       const charge = Math.min(100 - car.fuel, 6 + car.combo * 2);
       car.fuel += charge;
       car.nearMiss = { time: race.elapsed, combo: car.combo, charge };
+    }
+  }
+  for (const pickup of race.pickups) { // sorted by distance
+    if (pickup.distance > car.distance) break;
+    if (pickup.distance > previousDistance && Math.abs(pickup.x - car.x) < 1.7 && Math.abs(pickup.altitude - car.altitude) < 1.8) {
+      addNitro(car, pickup.tier === 'overcharge' ? NITRO_MAX - car.nitro : NITRO_PICKUPS[pickup.tier]);
     }
   }
   if (car.distance >= race.length) {
@@ -216,7 +277,8 @@ export function stepRace(race, input, dt) {
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
     car.distance = race.length;
     race.elapsed = finishTime;
-    race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses };
+    race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses,
+      nitroUses: car.nitroUses, longestCombo: car.longestCombo };
     race.phase = 'finished';
     car.thrusting = false;
     car.boosting = false;

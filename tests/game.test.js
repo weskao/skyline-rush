@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -523,4 +523,166 @@ test('ice slows the steering response compared with dry road', () => {
   advance(dry, 0.2, { steer: 1 });
   assert.ok(slick.player.steering > 0 && slick.player.steering < dry.player.steering * 0.6);
   assert.ok(slick.player.x < dry.player.x);
+});
+
+function press(race, input = {}) {
+  stepRace(race, { ...input, nitro: true }, 1 / 60);
+  stepRace(race, input, 1 / 60);
+}
+
+test('pickups come only from the track seed, are reproducible and cover every tier with one overcharge', () => {
+  const random = Math.random;
+  Math.random = () => { throw new Error('Math.random used'); };
+  try {
+    for (const id of TRACK_IDS) {
+      const { pickups, length, sections } = createRace(id);
+      assert.deepEqual(pickups, createRace(id).pickups);
+      assert.deepEqual(new Set(pickups.map(p => p.tier)), new Set(['cell', 'can', 'tank', 'overcharge']), id);
+      assert.equal(pickups.filter(p => p.tier === 'overcharge').length, 1, id);
+      for (const pickup of pickups) {
+        assert.deepEqual(Object.keys(pickup), ['distance', 'x', 'altitude', 'tier']);
+        assert.ok(pickup.distance > 0 && pickup.distance < length && Math.abs(pickup.x) < ROAD_LIMIT);
+        assert.equal(pickup.altitude > 0, pickup.tier === 'tank' || pickup.tier === 'overcharge');
+        const section = sections.find(s => pickup.distance >= s.from && pickup.distance < s.to);
+        assert.ok(!(section?.type === 'gap' && pickup.altitude === 0), `${id} ground pickup over a gap`);
+        assert.ok(!(section?.type === 'tunnel' && pickup.altitude > 0), `${id} air pickup in a tunnel`);
+      }
+    }
+  } finally {
+    Math.random = random;
+  }
+  assert.notDeepEqual(createRace('coast').pickups, createRace('neon').pickups);
+});
+
+test('passing through each pickup tier adds its nitro amount once; a pickup in another lane is missed', () => {
+  const amounts = { cell: 0.25, can: 0.5, tank: 1, overcharge: NITRO_MAX };
+  for (const [tier, amount] of Object.entries(amounts)) {
+    const race = racing();
+    const altitude = tier === 'tank' || tier === 'overcharge' ? 5 : 0;
+    Object.assign(race.player, { speed: 60, altitude });
+    race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude, tier }];
+    stepRace(race, {}, 1 / 60);
+    assert.equal(race.player.nitro, amount, tier);
+    stepRace(race, {}, 1 / 60);
+    assert.equal(race.player.nitro, amount, tier);
+  }
+  const race = racing();
+  race.player.speed = 60;
+  race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x + 5, altitude: 0, tier: 'can' }];
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.nitro, 0);
+  Object.assign(race.player, { nitro: 1.5, fuel: 50, altitude: 5 });
+  race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude: 5, tier: 'overcharge' }];
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.nitro, NITRO_MAX);
+  assert.equal(race.player.fuel, 50); // overcharge tops up only, nothing converted
+});
+
+test('under one full charge NITRO cannot fire', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: 60, nitro: 0.99 });
+  press(race, { throttle: true });
+  assert.equal(race.player.nitroTime, 0);
+  assert.equal(race.player.nitro, 0.99);
+  assert.equal(race.player.nitroUses, 0);
+});
+
+test('NITRO spends one charge for 2.5 s with a MAX_SPEED + 30 cap and much stronger acceleration', () => {
+  const plain = racing();
+  const nitro = racing();
+  for (const race of [plain, nitro]) Object.assign(race.player, { speed: 40, nitro: 1 });
+  stepRace(plain, { throttle: true, boost: true }, 1 / 60);
+  stepRace(nitro, { throttle: true, nitro: true }, 1 / 60);
+  assert.equal(nitro.player.nitro, 0);
+  assert.equal(nitro.player.nitroUses, 1);
+  assert.ok(nitro.player.speed - 40 > 2 * (plain.player.speed - 40));
+  advance(nitro, 2.3, { throttle: true });
+  assert.ok(nitro.player.nitroTime > 0);
+  assert.ok(nitro.player.speed > MAX_SPEED + 20 && nitro.player.speed <= MAX_SPEED + 30);
+  advance(nitro, 0.25, { throttle: true });
+  assert.equal(nitro.player.nitroTime, 0);
+  const top = nitro.player.speed;
+  advance(nitro, 1, { throttle: true });
+  assert.ok(nitro.player.speed < top);
+});
+
+test('holding NITRO fires once; pressing again extends it by 2 s without stacking speed', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: MAX_SPEED + 30, nitro: 3 });
+  advance(race, 0.5, { throttle: true, nitro: true });
+  assert.equal(race.player.nitro, 2);
+  stepRace(race, { throttle: true }, 1 / 60); // release
+  const remaining = race.player.nitroTime;
+  press(race, { throttle: true });
+  assert.equal(race.player.nitro, 1);
+  assert.ok(Math.abs(race.player.nitroTime - (remaining + 2 - 2 / 60)) < 1e-9);
+  assert.equal(race.player.nitroUses, 1);
+  advance(race, 1, { throttle: true, boost: true });
+  assert.ok(race.player.speed <= MAX_SPEED + 30);
+});
+
+test('hitting traffic during NITRO keeps 0.7 of the speed instead of 0.45', () => {
+  for (const [nitro, retention] of [[1, 0.7], [0, 0.45]]) {
+    const race = racing();
+    Object.assign(race.player, { speed: 60, nitro });
+    stepRace(race, { nitro: true }, 1 / 60);
+    const speed = race.player.speed;
+    race.traffic = [{ x: race.player.x, distance: race.player.distance + 1, speed: 0 }];
+    stepRace(race, {}, 1 / 60);
+    assert.equal(race.player.collisions, 1);
+    assert.ok(Math.abs(race.player.speed / speed - retention) < 0.02, `retention ${retention}`);
+  }
+});
+
+test('nitro caps at 3 charges: a 0.5 pickup at 2.9 fills to 3 and converts 0.4 into 12.8 fuel', () => {
+  assert.equal(NITRO_MAX, 3);
+  const race = racing();
+  Object.assign(race.player, { speed: 60, nitro: 2.9, fuel: 50 });
+  race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude: 0, tier: 'can' }];
+  stepRace(race, { boost: true }, 1 / 60);
+  assert.equal(race.player.nitro, 3);
+  assert.ok(Math.abs(race.player.fuel - (50 - 10 / 60 + 0.4 * 32)) < 1e-9);
+  race.player.fuel = 95;
+  race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude: 0, tier: 'tank' }];
+  stepRace(race, { boost: true }, 1 / 60);
+  assert.equal(race.player.fuel, 100);
+});
+
+test('using one charge takes 3 to 2 and three presses chain into one 6.5 s burst via the extend rule', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: 60, nitro: 3 });
+  press(race);
+  assert.equal(race.player.nitro, 2);
+  press(race);
+  press(race);
+  assert.equal(race.player.nitro, 0);
+  assert.ok(Math.abs(race.player.nitroTime - (2.5 + 2 + 2 - 6 / 60)) < 1e-9);
+});
+
+test('the race result records NITRO activations and the longest near-miss combo', () => {
+  const race = racing();
+  Object.assign(race.player, { nitro: 1, combo: 0 });
+  press(race);
+  race.player.speed = 70;
+  const traffic = { x: race.player.x + 2.5, distance: race.player.distance - 4, speed: 20 };
+  race.traffic = [traffic];
+  stepRace(race, {}, 1 / 60);
+  traffic.distance = race.player.distance - 4;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.combo, 2);
+  race.traffic = [{ x: race.player.x, distance: race.player.distance + 1, speed: 0 }];
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.combo, 0);
+  race.traffic = [];
+  advance(race, 1.6, { throttle: true }); // wait out the contact cooldown
+  race.traffic = [{ x: race.player.x + 2.5, distance: race.player.distance - 4, speed: 20 }];
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.player.combo, 1);
+  race.traffic = [];
+  race.rivals.forEach(rival => { rival.distance = 100; });
+  Object.assign(race.player, { distance: race.length - 1, speed: 80 });
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.result.nitroUses, 1);
+  assert.equal(race.result.longestCombo, 2);
+  assert.equal(createRace().player.longestCombo, 0);
 });
