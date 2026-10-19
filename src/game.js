@@ -100,14 +100,17 @@ function createRings(track) {
   const inTunnel = distance => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
   for (let distance = RING_SPACING; distance < track.length - 100;) {
     const roll = random();
-    const type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? 'risk' : 'mystery';
+    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? 'risk' : 'mystery';
     let x = 2.5;
     let altitude = 8;
     if (!track.fixedRings) {
       x = Math.round((random() * 2 - 1) * 70) / 10;
       altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
     }
-    if (inTunnel(distance)) altitude = 1.5; // the car cannot climb in a tunnel
+    if (inTunnel(distance)) { // the car cannot climb in a tunnel, so a 'risk' ring there would be free
+      altitude = 1.5;
+      if (type === 'risk') type = 'nitro';
+    }
     rings.push({ distance, x, altitude, radius: type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS, type, group: 0 });
     distance += track.fixedRings ? RING_SPACING : Math.round(200 + random() * 120);
   }
@@ -378,6 +381,7 @@ export function stepRace(race, input, dt) {
   const fell = car.fall?.time === race.elapsed; // a respawn jump skips the rings it covers
   for (const ring of race.rings) { // sorted by distance
     if (ring.distance > car.distance) break;
+    // shortcut: tests the car's end-of-step x/altitude, not the interpolated crossing (error < 0.7 m at dt 0.1), upgrade if risk rings feel unfair
     if (fell || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring));
   }
