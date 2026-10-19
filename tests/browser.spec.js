@@ -28,6 +28,21 @@ const measureAudio = () => {
 };
 const audioSwitch = (page, name) => page.getByRole('switch', { name });
 
+test('start screen leads with the game name and one dominant start action', async ({ page }) => {
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  const wordmark = page.locator('#intro .intro-wordmark');
+  await expect(wordmark).toHaveText('SKYLINE RUSH');
+  const size = async locator => parseFloat(await locator.evaluate(element => getComputedStyle(element).fontSize));
+  expect(await size(wordmark)).toBeGreaterThan(await size(page.locator('#intro-title')));
+  const start = page.locator('#start-button');
+  expect((await start.boundingBox()).height).toBeGreaterThanOrEqual(58);
+  await expect(start).toHaveCSS('text-transform', 'uppercase');
+  await expect(page.locator('#intro .history-button')).toHaveCSS('border-top-style', 'solid');
+  const [startBox, historyBox] = [await start.boundingBox(), await page.locator('#intro .history-button').boundingBox()];
+  expect(Math.abs((startBox.y + startBox.height / 2) - (historyBox.y + historyBox.height / 2))).toBeLessThan(2);
+});
+
 test('the UI is rendered by a mounted Vue app', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#start-button')).toBeVisible();

@@ -5,6 +5,8 @@ import { RACE_TRACKS } from './game.js';
 import { VFX_RANGES } from './vfx-settings.js';
 import { icons, ICON_ATTRS } from './icons.js';
 
+const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
+
 // Controls-panel radio groups: settings key → [legend, [value, label]...]; values must match controlSettings().
 const CONTROL_CHOICES = {
   mode: ['Steering', [['slide', 'Slide'], ['buttons', 'Buttons']]],
@@ -23,7 +25,7 @@ const CONTROL_CHOICES = {
   <div class="altitude-ladder" aria-hidden="true"><span>12</span><i></i><span>06</span><i></i><span>00</span><b id="height-indicator"></b><small>ALT / M</small></div>
   <header class="topbar">
     <a class="brand" href="./" aria-label="Skyline Rush home">
-      <svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path d="M4 27 18 5h13L17 27H4Zm9 6h16" stroke="currentColor" stroke-width="3"/></svg>
+      <svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg>
       <span>SKYLINE<span class="brand-rush">RUSH</span></span>
     </a>
     <div class="route-heading"><span class="live-dot"></span> COASTAL EXPRESSWAY <span class="route-divider">/</span> <span>DUSK RUN</span></div>
@@ -89,13 +91,14 @@ const CONTROL_CHOICES = {
   <main>
     <section class="intro" id="intro" aria-labelledby="intro-title">
       <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> 4 DRIVERS</div>
+      <p class="intro-wordmark"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span>SKYLINE <b>RUSH</b></span></p>
       <h1 id="intro-title">The road is just<br>the <em>beginning.</em></h1>
       <p class="intro-copy">Own the highway. Then leave it behind.<br>Fire your thrusters and take the race to the sky.</p>
       <div class="track-select" role="group" aria-label="Choose track"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="String(id === 'coast')"><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
       <p id="track-note" class="track-note"></p>
       <button class="primary-button" id="start-button" aria-label="Start race"><span>Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-      <span class="start-hint">or press <kbd>ENTER</kbd></span>
       <button class="text-button history-button" data-open-history>History</button>
+      <span class="start-hint">or press <kbd>ENTER</kbd></span>
       <div class="intro-controls">
         <div><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Drive</span></div>
         <div><kbd class="wide-key">SPACE</kbd><span>Hold to fly</span></div>
