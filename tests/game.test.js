@@ -364,3 +364,25 @@ test('glide: releasing FLY in the air lowers fall acceleration to 7, a held but 
     assert.ok(Math.abs(race.player.verticalSpeed + fall * 0.5) < 0.2);
   }
 });
+
+test('review fixes: full-lock rail hit at boost speed is still a collision, lane assist waits out contact and standstill, buffer does not block recharge', () => {
+  let race = racing();
+  Object.assign(race.player, { speed: 100, x: ROAD_LIMIT, steering: 1 });
+  stepRace(race, { steer: 1 }, 1 / 60);
+  assert.equal(race.player.impact?.kind, 'barrier');
+
+  race = racing();
+  Object.assign(race.player, { speed: 0, x: 4.5 });
+  advance(race, 1, { brake: true, laneAssist: true });
+  assert.equal(race.player.x, 4.5);
+
+  race = racing();
+  Object.assign(race.player, { speed: 40, x: 3.6, cooldown: 1 });
+  advance(race, 0.5, { throttle: true, laneAssist: true });
+  assert.equal(race.player.x, 3.6);
+
+  race = racing();
+  Object.assign(race.player, { speed: 5, fuel: 10, flyBuffer: 1.5 });
+  advance(race, 0.5, {});
+  assert.ok(race.player.fuel > 10);
+});

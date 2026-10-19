@@ -70,7 +70,7 @@ export function stepRace(race, input, dt) {
   // Linear ramp: full deflection takes STEER_RAMP seconds, like an analog stick.
   car.steering += clamp(steer - car.steering, -dt / STEER_RAMP, dt / STEER_RAMP);
   let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * dt;
-  if (input.laneAssist === true && steer === 0) {
+  if (input.laneAssist === true && steer === 0 && car.cooldown === 0 && car.speed > 5) {
     const lane = LANES.reduce((best, centre) => Math.abs(centre - car.x) < Math.abs(best - car.x) ? centre : best);
     lateralPosition += (lane - lateralPosition) * (1 - Math.exp(-3 * dt));
   }
@@ -82,7 +82,7 @@ export function stepRace(race, input, dt) {
   // Takeoff buffer: FLY held while too slow is remembered; it counts as held until the window runs out.
   car.flyBuffer = input.fly && car.speed < 18 ? TAKEOFF_BUFFER : input.fly ? 0 : Math.max(0, car.flyBuffer - dt);
   const fly = !!input.fly || car.flyBuffer > 0;
-  if (!fly && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
+  if (!input.fly && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
   car.thrusting = fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
   if (car.thrusting) {
     car.verticalSpeed = Math.min(7, car.verticalSpeed + 19 * dt);
@@ -90,7 +90,7 @@ export function stepRace(race, input, dt) {
     if (car.fuel === 0) car.exhausted = true;
   } else if (car.altitude > 0) {
     car.verticalSpeed -= (fly ? 11 : 7) * dt; // releasing FLY glides
-  } else if (!fly && !boost) {
+  } else if (!input.fly && !boost) {
     car.fuel = Math.min(100, car.fuel + 13 * dt);
   }
   // AIR DASH: flight + boost together share a 22/s drain instead of 19 + 10.
@@ -130,7 +130,7 @@ export function stepRace(race, input, dt) {
       contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), 0.45);
     } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12) {
       const side = Math.sign(lateralPosition);
-      if (Math.abs(car.steering * Math.min(9, car.speed * 0.22)) / car.speed < SCRAPE_RATIO) {
+      if (Math.abs(car.steering) < 0.9 && Math.abs(car.steering * Math.min(9, car.speed * 0.22)) / car.speed < SCRAPE_RATIO) {
         car.x = side * (ROAD_LIMIT - 0.3);
         if (car.scrapeCooldown === 0) {
           car.speed *= 0.92;
