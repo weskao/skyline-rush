@@ -215,3 +215,25 @@ test('two keys bound to one action keep it held until both are released', () => 
   assert.equal(controls.read().boost, false);
   controls.destroy();
 });
+
+test('a slide-pad drag down and sideways reads as brake plus steer together (the drift input)', () => {
+  const controls = createControls(new EventTarget());
+  const el = padTarget(controls);
+  send(el, 'pointerdown', { pointerId: 1, clientX: 0, clientY: 0 });
+  send(el, 'pointermove', { pointerId: 1, clientX: 50, clientY: 60 });
+  const input = controls.read();
+  assert.equal(input.brake, true);
+  assert.equal(input.steer, 0.5);
+  assert.equal(input.throttle, false);
+  controls.destroy();
+});
+
+test('keyboard brake plus a steer key reads as brake plus steer together (the drift input)', () => {
+  const target = new EventTarget();
+  const controls = createControls(target);
+  send(target, 'keydown', { code: 'KeyS' });
+  send(target, 'keydown', { code: 'KeyD' });
+  assert.equal(controls.read().brake, true);
+  assert.equal(controls.read().steer, 1);
+  controls.destroy();
+});

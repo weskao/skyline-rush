@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -35,7 +35,7 @@ test('accelerating, coasting, braking and steering respect road and speed limits
   const speed = race.player.speed;
   advance(race, 1);
   assert.ok(race.player.speed < speed);
-  advance(race, 5, { brake: true, steer: -1 });
+  advance(race, 5, { brake: true, steer: -1 }); // drifts down to 45 m/s, then hard-brakes to a stop
   assert.equal(race.player.speed, 0);
   assert.ok(race.player.x >= -ROAD_LIMIT);
 });
@@ -685,4 +685,121 @@ test('the race result records NITRO activations and the longest near-miss combo'
   assert.equal(race.result.nitroUses, 1);
   assert.equal(race.result.longestCombo, 2);
   assert.equal(createRace().player.longestCombo, 0);
+});
+
+function driftingRace(speed = 80) {
+  const race = racing();
+  Object.assign(race.player, { speed, x: 0 });
+  return race;
+}
+const DRIFT = { brake: true, steer: 0.1 };
+
+test('no drift below 45 m/s: brake plus steer hard-brakes', () => {
+  const race = driftingRace(DRIFT_MIN_SPEED - 1);
+  advance(race, 0.5, DRIFT);
+  assert.equal(race.player.drift, null);
+  assert.ok(race.player.speed < 44 - 15);
+});
+
+test('brake plus steer at speed drifts, bleeding only 3 m/s^2, with the steer direction', () => {
+  const race = driftingRace();
+  assert.equal(race.player.drift, null);
+  advance(race, 0.5, { brake: true, steer: -0.1 });
+  assert.equal(race.player.drift.dir, -1);
+  assert.ok(Math.abs(race.player.drift.time - 0.5) < 0.02);
+  assert.ok(Math.abs(race.player.speed - (80 - 1.5)) < 0.1);
+});
+
+test('the pad input shape (brake + analog steer, nothing else) drifts; brake alone and steer alone do not', () => {
+  const pad = { throttle: false, brake: true, steer: 0.5, fly: false, boost: false, nitro: false };
+  let race = driftingRace();
+  advance(race, 0.3, pad);
+  assert.equal(race.player.drift?.dir, 1);
+  race = driftingRace();
+  advance(race, 0.3, { brake: true });
+  assert.equal(race.player.drift, null);
+  advance(race, 0.3, { steer: 0.1 });
+  assert.equal(race.player.drift, null);
+});
+
+test('releasing a drift pays nitro and a mini boost by the highest time threshold reached', () => {
+  const rewards = [[0.95, 0, 0], [1.05, 0.15, 0.5], [2.05, 0.3, 0.8], [3.05, 0.5, 1.2]];
+  for (const [time, nitro, boost] of rewards) {
+    const race = driftingRace();
+    advance(race, time, DRIFT);
+    assert.equal(race.player.nitro, 0, 'nothing is paid while drifting');
+    stepRace(race, {}, 1 / 60);
+    assert.equal(race.player.drift, null);
+    assert.ok(Math.abs(race.player.nitro - nitro) < 1e-9, `nitro at ${time}s`);
+    assert.ok(Math.abs(race.player.miniBoost - boost) < 0.05, `mini boost at ${time}s`);
+  }
+});
+
+test('drift nitro counts toward the cap and the overflow becomes fuel', () => {
+  const race = driftingRace();
+  Object.assign(race.player, { nitro: 2.9, fuel: 50 });
+  advance(race, 3.05, DRIFT);
+  const fuel = race.player.fuel;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.nitro, NITRO_MAX);
+  assert.ok(race.player.fuel - fuel > 10); // 0.4 overflow x 32 fuel
+});
+
+test('the mini boost lifts the speed cap past MAX_SPEED without burning fuel', () => {
+  const race = driftingRace();
+  advance(race, 3.05, DRIFT);
+  race.player.fuel = 50;
+  advance(race, 0.9, { throttle: true });
+  assert.ok(race.player.speed > MAX_SPEED);
+  assert.ok(race.player.fuel >= 50);
+  advance(race, 2, { throttle: true });
+  assert.ok(race.player.miniBoost === 0 && race.player.speed <= MAX_SPEED + 1e-9);
+});
+
+test('hitting a car or a barrier mid-drift cancels the build-up and loses the reward', () => {
+  for (const crash of [
+    race => { race.traffic = [{ x: race.player.x, distance: race.player.distance + 1, speed: 0 }]; },
+    race => { Object.assign(race.player, { x: ROAD_LIMIT, steering: 1 }); },
+  ]) {
+    const race = driftingRace(100);
+    advance(race, 2.05, DRIFT);
+    assert.ok(race.player.drift);
+    crash(race);
+    stepRace(race, { brake: true, steer: 1 }, 1 / 60); // full steer: a rail hit is a barrier crash, not a scrape
+    assert.equal(race.player.collisions, 1);
+    assert.equal(race.player.drift, null);
+    race.traffic = [];
+    Object.assign(race.player, { speed: 80, cooldown: 0 });
+    stepRace(race, {}, 1 / 60);
+    assert.equal(race.player.nitro, 0);
+    assert.equal(race.player.miniBoost, 0);
+  }
+});
+
+test('no drift in the air, and taking off mid-drift cancels it', () => {
+  let race = driftingRace();
+  Object.assign(race.player, { altitude: 3, verticalSpeed: 0 });
+  advance(race, 0.3, DRIFT);
+  assert.equal(race.player.drift, null);
+
+  race = driftingRace();
+  advance(race, 2.05, DRIFT);
+  assert.ok(race.player.drift);
+  advance(race, 0.3, { ...DRIFT, fly: true });
+  assert.ok(race.player.altitude > 0);
+  assert.equal(race.player.drift, null);
+  advance(race, 4, {});
+  assert.equal(race.player.altitude, 0);
+  assert.equal(race.player.nitro, 0);
+});
+
+test('near-miss combo points are doubled while drifting', () => {
+  for (const [input, combo] of [[{ throttle: true }, 1], [DRIFT, 2]]) {
+    const race = driftingRace(70);
+    race.rivals = [];
+    race.traffic = [{ x: race.player.x + 2.5, distance: -4, speed: 20 }];
+    race.traffic[0].distance = race.player.distance - 4;
+    stepRace(race, input, 1 / 60);
+    assert.equal(race.player.combo, combo);
+  }
 });

@@ -47,6 +47,11 @@ export const NITRO_EXTEND = 2; // seconds added by a press during NITRO
 export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
 export const NITRO_PICKUPS = { cell: 0.25, can: 0.5, tank: 1, overcharge: NITRO_MAX }; // overcharge only tops up to the cap, no fuel
 
+export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
+export const DRIFT_BLEED = 3; // m/s^2 lost while drifting (normal braking is 35)
+// Payout on release for the highest threshold reached: seconds drifted, nitro charges, mini-boost seconds.
+export const DRIFT_REWARDS = [{ time: 3, nitro: 0.5, boost: 1.2 }, { time: 2, nitro: 0.3, boost: 0.8 }, { time: 1, nitro: 0.15, boost: 0.5 }];
+
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 // Pickups come only from the track's 'pickups' stream so every run of a track is identical.
@@ -95,6 +100,7 @@ export function createRace(trackId = 'coast') {
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       section: null, falls: 0, fall: null,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, longestCombo: 0,
+      drift: null, miniBoost: 0,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
@@ -125,6 +131,7 @@ function contact(race, kind, obstacleX, intensity, retention) {
   car.cooldown = 1.5;
   car.collisions++;
   car.combo = 0;
+  car.drift = null; // a crash loses the drift build-up
 }
 
 export function stepRace(race, input, dt) {
@@ -156,10 +163,26 @@ export function stepRace(race, input, dt) {
   }
   car.nitroHeld = input.nitro === true;
   const nitro = car.nitroTime > 0;
-  const limit = nitro ? MAX_SPEED + 30 : boost ? MAX_SPEED + 14 : MAX_SPEED;
-  const acceleration = car.speed > limit ? -18 - (brake ? 35 : 0) : (throttle ? 15 : -4) - (brake ? 35 : 0) + (boost ? 12 : 0) + (nitro ? 40 : 0);
+  // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; releasing it pays out by drift time.
+  if (brake && steer !== 0 && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED) {
+    car.drift ??= { time: 0, dir: Math.sign(steer) };
+    car.drift.time += dt;
+  } else if (car.drift) {
+    const reward = DRIFT_REWARDS.find(r => car.drift.time >= r.time);
+    if (reward) {
+      addNitro(car, reward.nitro);
+      car.miniBoost = Math.max(car.miniBoost, reward.boost);
+    }
+    car.drift = null;
+  }
+  const drifting = car.drift !== null;
+  const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
+  const limit = nitro ? MAX_SPEED + 30 : boosted ? MAX_SPEED + 14 : MAX_SPEED;
+  const drive = drifting ? -DRIFT_BLEED : (throttle ? 15 : -4) - (brake ? 35 : 0);
+  const acceleration = car.speed > limit ? -18 - (brake && !drifting ? 35 : 0) : drive + (boosted ? 12 : 0) + (nitro ? 40 : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
   car.nitroTime = Math.max(0, car.nitroTime - dt);
+  car.miniBoost = Math.max(0, car.miniBoost - dt);
   // Linear ramp: full deflection takes STEER_RAMP seconds (longer on ice), like an analog stick.
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
   car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
@@ -197,6 +220,7 @@ export function stepRace(race, input, dt) {
     car.altitude = TUNNEL_CEILING - CAR_HEIGHT;
     car.verticalSpeed = Math.min(0, car.verticalSpeed);
   }
+  if (car.altitude > 0) car.drift = null; // taking off loses the drift build-up
   if (previousAltitude > 0 && car.altitude === 0) {
     car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x };
   }
@@ -209,6 +233,7 @@ export function stepRace(race, input, dt) {
     car.altitude = car.verticalSpeed = 0;
     car.cooldown = 1.5; // respawn grace: no instant collision with traffic parked past the gap
     car.combo = 0;
+    car.drift = null;
     car.falls++;
     car.fall = { from: section.from, distance: car.distance, time: race.elapsed };
   }
@@ -258,7 +283,7 @@ export function stepRace(race, input, dt) {
     const clearance = Math.abs(traffic.x - car.x);
     if (gap > -4.4 && traffic.distance - car.distance <= -4.4 &&
         clearance >= 2 && clearance < 3.5 && car.altitude < 1.8 && car.speed > 35 && car.cooldown === 0) {
-      car.combo = Math.min(5, car.combo + 1);
+      car.combo = Math.min(5, car.combo + (drifting ? 2 : 1)); // drifting doubles the combo points
       car.longestCombo = Math.max(car.longestCombo, car.combo);
       car.nearMisses++;
       const charge = Math.min(100 - car.fuel, 6 + car.combo * 2);
