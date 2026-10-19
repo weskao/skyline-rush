@@ -152,6 +152,8 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
     const { distance, altitude, nitro } = await page.evaluate(() => ({ distance: Number(document.querySelector('#distance').textContent) * 1000, altitude: Number(document.querySelector('#altitude').textContent), nitro: Number(document.querySelector('#nitro-meter').getAttribute('aria-valuenow')) }));
     if (nitro === 0.5 && !fractional) {
       expect(await page.locator('.nitro-segment i').first().evaluate(element => element.style.transform)).toBe('scaleX(0.5)');
+      await expect(page.locator('#nitro-meter')).toHaveAttribute('data-refilling', 'true');
+      await expect(page.locator('.nitro-segment i').first()).toHaveCSS('background-color', 'rgb(255, 124, 118)');
       fractional = true;
     }
     const nextGate = Math.ceil(Math.max(1, distance) / 220) * 220;

@@ -385,11 +385,18 @@ test('a complete 5 km sprint reaches results, saves a best time and can race aga
   await page.keyboard.up('w');
   await expect(page.locator('#distance')).toHaveText('5.00');
   await expect(page.locator('#result-stats')).toBeVisible();
+  await expect(page.locator('#result-style')).toHaveAttribute('aria-label', /^[1-3] of 3 style stars$/);
+  await expect(page.locator('.style-stars svg')).toHaveCount(3);
   expect(await page.evaluate(() => Number(localStorage.getItem('skyline-rush-best')))).toBeGreaterThan(50);
   const history = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-history')));
   expect(history).toHaveLength(1);
   expect(history[0]).toMatchObject({ track: 'coast', distance: 5000 });
   expect(history[0].time).toBeGreaterThan(50);
+  expect(history[0].score).toBeGreaterThan(0);
+  await page.getByRole('button', { name: 'History', exact: true }).click();
+  await expect(page.locator('.history-run')).toHaveCount(1);
+  await expect(page.locator('.history-run')).toContainText('BEST');
+  await page.getByRole('button', { name: 'Close history' }).click();
   const bests = await page.evaluate(() => ({ perTrack: JSON.parse(localStorage.getItem('skyline-rush-best-tracks')).coast, legacy: Number(localStorage.getItem('skyline-rush-best')) }));
   expect(bests.perTrack).toBe(bests.legacy);
   await page.screenshot({ path: 'artifacts/race-results.jpeg', quality: 70 });

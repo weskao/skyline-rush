@@ -122,3 +122,38 @@ test('a throwing localStorage getter never throws out of the module', () => {
     assert.deepEqual(recordBest('coast', 60), { best: 60, record: true });
   });
 });
+
+test('top-three finishes permanently unlock the next track, even after history rolls over', async () => {
+  const { loadUnlocks } = await import('../src/history.js');
+  assert.equal(typeof loadUnlocks, 'function');
+  const storage = memoryStorage();
+  assert.deepEqual(loadUnlocks(storage), ['coast']);
+  recordRace(finishedRace({ position: 4 }), storage);
+  assert.deepEqual(loadUnlocks(storage), ['coast']);
+  recordRace(finishedRace({ position: 3 }), storage);
+  recordRace(finishedRace({ position: 2 }, { trackId: 'neon' }), storage);
+  assert.deepEqual(loadUnlocks(storage), ['coast', 'neon', 'canyon']);
+  for (let i = 0; i < 51; i++) recordRace(finishedRace({ position: 4 }), storage);
+  assert.deepEqual(loadUnlocks(storage), ['coast', 'neon', 'canyon']);
+  recordRace(finishedRace({ position: 1 }, { trackId: 'canyon' }), storage);
+  assert.deepEqual(loadUnlocks(storage), ['coast', 'neon', 'canyon', 'aurora']);
+  assert.deepEqual(loadUnlocks(throwingStorage), ['coast']);
+});
+
+test('unlock migration accepts only valid track finishes and ignores malformed progress', async () => {
+  const { loadUnlocks } = await import('../src/history.js');
+  assert.equal(typeof loadUnlocks, 'function');
+  const storage = memoryStorage({
+    'skyline-rush-unlocked': '["bad", null]',
+    [HISTORY_KEY]: JSON.stringify([{ track: 'coast', position: 3, time: 70 }, { track: 'neon', position: 0, time: 65 }]),
+  });
+  assert.deepEqual(loadUnlocks(storage), ['coast', 'neon']);
+});
+
+test('the oldest qualifying legacy finish is migrated before the next save evicts it', async () => {
+  const { loadUnlocks } = await import('../src/history.js');
+  const history = Array.from({ length: 50 }, (_, i) => ({ track: i === 0 ? 'neon' : 'coast', position: i === 0 ? 2 : 4, time: 70 }));
+  const storage = memoryStorage({ [HISTORY_KEY]: JSON.stringify(history) });
+  recordRace(finishedRace({ position: 4 }), storage);
+  assert.deepEqual(loadUnlocks(storage), ['coast', 'neon', 'canyon']);
+});

@@ -172,7 +172,7 @@ export function createRace(trackId = 'coast') {
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
       drift: null, miniBoost: 0,
-      rings: 0, perfectLines: 0, score: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
+      rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
@@ -189,6 +189,7 @@ function collectRing(race, ring, index) {
   const car = race.player;
   ring.hit = true;
   car.rings++;
+  car.score += 150;
   if (ring.type === 'charge') car.fuel = Math.min(100, car.fuel + RING_FUEL);
   else if (ring.type === 'nitro') addNitro(car, 0.5);
   else if (ring.type === 'slipstream') car.miniBoost = Math.max(car.miniBoost, SLIPSTREAM_BOOST);
@@ -202,6 +203,7 @@ function collectRing(race, ring, index) {
   car.groupHits[ring.group] = (car.groupHits[ring.group] ?? 0) + 1;
   if (car.groupHits[ring.group] === race.rings.filter(other => other.group === ring.group).length) {
     car.perfectLines++; // PERFECT LINE: every ring of the group cleared
+    car.score += 500;
     addNitro(car, PERFECT_LINE_NITRO);
   }
 }
@@ -363,6 +365,7 @@ export function stepRace(race, input, dt) {
   }
   if (car.altitude === 0 || car.altitude === 12) car.verticalSpeed = 0;
   const previousDistance = car.distance;
+  const previousContacts = car.collisions + car.falls;
   car.distance += car.speed * dt;
   if (car.section === 'gap' && car.altitude < GAP_CLEARANCE) {
     car.speed *= GAP_SLOWDOWN;
@@ -434,6 +437,7 @@ export function stepRace(race, input, dt) {
       car.combo = Math.min(5, car.combo + (drifting ? 2 : 1)); // drifting doubles the combo points
       car.longestCombo = Math.max(car.longestCombo, car.combo);
       car.nearMisses++;
+      car.score += 100 * car.combo;
       const charge = Math.min(100 - car.fuel, 6 + car.combo * 2);
       car.fuel += charge;
       car.nearMiss = { time: race.elapsed, combo: car.combo, charge };
@@ -458,14 +462,24 @@ export function stepRace(race, input, dt) {
     if (fell || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring));
   }
+  const travelled = Math.min(car.distance, race.length) - previousDistance;
+  if (car.collisions + car.falls !== previousContacts) car.cleanDistance = 0;
+  else {
+    car.cleanDistance += travelled;
+    car.score += Math.floor(car.cleanDistance / 500) * 100;
+    car.cleanDistance %= 500;
+  }
+  if (car.altitude > 0 && car.speed >= 18) car.score += dt * 10;
   if (car.distance >= race.length) {
     const finishTime = race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
     car.distance = race.length;
     race.elapsed = finishTime;
+    const score = Math.round(car.score);
     race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses,
       nitroUses: car.nitroUses, longestCombo: car.longestCombo,
-      rings: car.rings, perfectLines: car.perfectLines, score: car.score };
+      rings: car.rings, perfectLines: car.perfectLines, score,
+      stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1 };
     race.phase = 'finished';
     car.thrusting = false;
     car.boosting = false;

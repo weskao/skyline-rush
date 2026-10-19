@@ -1,13 +1,13 @@
 import './style.css';
 import { version } from '../package.json';
-import { createRace, startRace, stepRace, racePosition, sprintGaps } from './game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_TRACKS } from './game.js';
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { vfxSettings, VFX_RANGES, VFX_PRESETS } from './vfx-settings.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
-import { recordRace, recordBest, LEGACY_BEST_KEY } from './history.js';
+import { recordRace, recordBest, loadHistory, loadBests, loadUnlocks, careerStats, LEGACY_BEST_KEY } from './history.js';
 
 const icons = {
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
@@ -23,6 +23,9 @@ const icons = {
   right: '<path d="m10 5 7 7-7 7"/>',
   pedal: '<path d="m6 17 6-10 6 10M6 21h12"/>',
   brake: '<path d="M5 7h14v11H5zM9 10v5m6-5v5"/>',
+  nitro: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>',
+  boost: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/>',
+  star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]}</svg>`;
 // Controls-panel radio groups: settings key → [legend, [value, label]...]; values must match controlSettings().
@@ -109,11 +112,14 @@ document.querySelector('#app').innerHTML = `
 
   <main>
     <section class="intro" id="intro" aria-labelledby="intro-title">
-      <div class="route-label"><span class="route-line"></span> 5 KM SPRINT <span>·</span> 4 DRIVERS</div>
+      <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> 4 DRIVERS</div>
       <h1 id="intro-title">The road is just<br>the <em>beginning.</em></h1>
       <p class="intro-copy">Own the highway. Then leave it behind.<br>Fire your thrusters and take the race to the sky.</p>
+      <div class="track-select" role="group" aria-label="Choose track">${Object.entries(RACE_TRACKS).map(([id, track]) => `<button data-track="${id}" aria-pressed="${id === 'coast'}"><strong>${track.name}</strong><span>${track.length / 1000} KM <small></small></span></button>`).join('')}</div>
+      <p id="track-note" class="track-note"></p>
       <button class="primary-button" id="start-button" aria-label="Start race"><span>Start race</span>${icon('arrow')}</button>
       <span class="start-hint">or press <kbd>ENTER</kbd></span>
+      <button class="text-button history-button" data-open-history>History</button>
       <div class="intro-controls">
         <div><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Drive</span></div>
         <div><kbd class="wide-key">SPACE</kbd><span>Hold to fly</span></div>
@@ -124,7 +130,7 @@ document.querySelector('#app').innerHTML = `
     </section>
 
     <section class="race-info" id="race-info" aria-label="Race progress" hidden>
-      <div class="position-stat"><span class="stat-label">POSITION</span><div><strong id="position">04</strong><span>/ 04</span></div><span class="time" id="timer">00:00.00</span></div>
+      <div class="position-stat"><span class="stat-label">POSITION</span><div><strong id="position">04</strong><span>/ 04</span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
       <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard"></div>
     </section>
@@ -136,10 +142,19 @@ document.querySelector('#app').innerHTML = `
     <div class="impact-report" id="impact-report" role="status" hidden><span class="impact-icon">${icon('brake')}</span><div><strong id="impact-title">CONTACT</strong><span>STABILIZING · <b id="impact-loss">0</b> KM/H LOST</span></div></div>
 
     <section class="race-overlay" id="race-overlay" aria-labelledby="overlay-title" hidden>
-      <div class="overlay-content"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><div id="result-stats" class="result-stats" hidden></div><button class="primary-button" id="resume-button" aria-label="Resume race"><span>Back to the race</span>${icon('arrow')}</button><button class="text-button" id="again-button">Race again ${icon('restart')}</button></div>
+      <div class="overlay-content"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><div id="result-stats" class="result-stats" hidden></div><div id="result-style" class="result-style" hidden></div><button class="primary-button" id="resume-button" aria-label="Resume race"><span>Back to the race</span>${icon('arrow')}</button><button class="text-button" id="again-button">Race again ${icon('restart')}</button><div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track">Choose track</button><button class="text-button" data-open-history>History</button></div></div>
     </section>
     <div id="error-message" class="error-message" role="alert" hidden></div>
   </main>
+
+  <dialog id="history-screen" class="history-screen" aria-labelledby="history-title">
+    <header class="history-heading"><h2 id="history-title">Race history</h2><button class="controls-button" id="history-close" aria-label="Close history">Close</button></header>
+    <p id="career-summary" class="career-summary"></p>
+    <label class="history-filter">Track <select id="history-track" aria-label="History track">${Object.entries(RACE_TRACKS).map(([id, track]) => `<option value="${id}">${track.name}</option>`).join('')}</select></label>
+    <figure class="history-trend"><figcaption id="history-trend-label"></figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"></svg></figure>
+    <p id="history-empty" hidden>No runs here yet. Finish a race to start your history.</p>
+    <div id="history-runs" class="history-runs"></div>
+  </dialog>
 
   <footer class="telemetry">
     <div class="speedometer"><div class="speed-number"><strong id="speed">0</strong><span>KM/H</span></div><div class="speed-ticks" aria-hidden="true">${Array.from({ length: 24 }, () => '<i></i>').join('')}</div><span class="speed-caption" id="speed-caption">READY FOR TAKEOFF</span></div>
@@ -166,7 +181,7 @@ document.querySelector('#app').innerHTML = `
   <div class="touch-controls" id="touch-controls" aria-label="Touch driving controls" hidden>
     <div class="touch-pad" aria-hidden="true"><i class="pad-ring"></i><i class="pad-knob"></i></div>
     <div class="touch-steer"><button data-control="left" aria-label="Steer left">${icon('left')}</button><button data-control="right" aria-label="Steer right">${icon('right')}</button><button data-control="brake" aria-label="Brake">${icon('brake')}</button></div>
-    <div class="touch-actions"><button class="touch-nitro" data-control="nitro" aria-label="Activate nitro">${icon('arrow')}<span>NITRO</span></button><button class="touch-fly" data-control="fly" aria-label="Hold to fly">${icon('fly')}<span>FLY</span></button><button class="touch-boost" data-control="boost" aria-label="Hold to boost">${icon('arrow')}<span>BOOST</span></button></div>
+    <div class="touch-actions"><button class="touch-nitro" data-control="nitro" aria-label="Activate nitro">${icon('nitro')}<span>NITRO</span></button><button class="touch-fly" data-control="fly" aria-label="Hold to fly">${icon('fly')}<span>FLY</span></button><button class="touch-boost" data-control="boost" aria-label="Hold to boost">${icon('boost')}<span>BOOST</span></button></div>
     <div class="touch-pedals"><button class="touch-gas" data-control="throttle" aria-label="Accelerate">${icon('pedal')}</button></div>
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><span>Drag buttons to fit your thumbs</span><button id="layout-done">Done editing</button></div>
@@ -198,6 +213,11 @@ let autoThrottle = touchPreference.matches;
 let animationId;
 let pausedPhase = 'racing';
 const sessionBests = {};
+let sessionHistory = loadHistory();
+const unlockedTracks = new Set(loadUnlocks());
+let previousFuel = 100;
+let previousNitro = 0;
+let nitroRefillUntil = 0;
 try { for (const kind in audio) audio[kind] = !document.cookie.split('; ').includes(`${AUDIO_COOKIES[kind]}=off`); } catch { /* Audio defaults to on when cookies are unavailable. */ }
 const sound = createSound();
 let visual = vfxSettings();
@@ -261,6 +281,92 @@ $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVF
 showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 
+const trackNotes = {
+  coast: 'Dusk coast · open skies and sweeping sea views.',
+  neon: 'Rainy night · low tunnels (4 m ceiling) and dense traffic.',
+  canyon: 'Desert noon · fly over broken bridges; steer into crosswinds.',
+  aurora: 'Snowy night · ice slows steering; uphill sections recharge slowly.',
+};
+function showTracks() {
+  const track = RACE_TRACKS[race.trackId];
+  for (const button of document.querySelectorAll('[data-track]')) {
+    const id = button.dataset.track;
+    button.disabled = !unlockedTracks.has(id);
+    button.setAttribute('aria-pressed', String(id === race.trackId));
+    button.querySelector('small').textContent = button.disabled ? 'LOCKED' : id === race.trackId ? 'SELECTED' : 'OPEN';
+    const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1];
+    button.title = button.disabled ? `Finish top 3 on ${RACE_TRACKS[previous].name} to unlock` : trackNotes[id];
+  }
+  $('#track-length').textContent = `${track.length / 1000} KM SPRINT`;
+  const tracks = Object.keys(RACE_TRACKS);
+  const next = tracks[tracks.indexOf(race.trackId) + 1];
+  $('#track-note').textContent = trackNotes[race.trackId] + (next && !unlockedTracks.has(next) ? ` Finish top 3 on ${track.name} to unlock ${RACE_TRACKS[next].name}.` : '');
+  $('.route-heading').textContent = track.name.toUpperCase();
+  $('.overlay-route').textContent = `SKYLINE RUSH / ${track.name.toUpperCase()}`;
+  $('#world').setAttribute('aria-label', `3D ${track.name} racing highway`);
+}
+for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
+  if (race.phase !== 'ready' || !unlockedTracks.has(button.dataset.track)) return;
+  controls.clear();
+  race = createRace(button.dataset.track);
+  showTracks();
+  sound.cue('ui');
+});
+$('.track-select').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  event.preventDefault(); event.stopPropagation();
+  const buttons = [...document.querySelectorAll('[data-track]:not(:disabled)')];
+  const index = buttons.indexOf(document.activeElement);
+  buttons[(index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length].focus();
+});
+showTracks();
+
+const historyScreen = $('#history-screen');
+let historyOpener;
+function showHistory() {
+  const trackId = $('#history-track').value;
+  const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
+  const stats = careerStats(sessionHistory);
+  $('#career-summary').textContent = `${stats.races} races · ${stats.wins} wins · ${(stats.totalDistance / 1000).toFixed(1)} km · longest combo ×${stats.longestCombo} · most rings ${stats.mostRings}`;
+  const best = Math.min(loadBests()[trackId] ?? Infinity, ...runs.map(run => run.time));
+  const recent = runs.slice(-10);
+  $('#history-empty').hidden = runs.length > 0;
+  $('.history-trend').hidden = recent.length === 0;
+  $('#history-trend-label').textContent = `Last ${recent.length} times · oldest → newest · lower is faster`;
+  const low = Math.min(...recent.map(run => run.time));
+  const high = Math.max(...recent.map(run => run.time));
+  const points = recent.map((run, i) => [recent.length === 1 ? 250 : 10 + i / (recent.length - 1) * 480, high === low ? 40 : 70 - (run.time - low) / (high - low) * 60]);
+  $('#history-chart').innerHTML = `<polyline points="${points.map(point => point.join(',')).join(' ')}"/>${points.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="3"><title>${timeString(recent[i].time)}</title></circle>`).join('')}`;
+  // Storage is untrusted: put saved fields into textContent, never HTML.
+  $('#history-runs').replaceChildren(...runs.toReversed().map(run => {
+    const row = document.createElement('details'); row.className = 'history-run';
+    const summary = document.createElement('summary');
+    const date = new Date(run.date);
+    const dateText = Number.isFinite(date.getTime()) ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Date unavailable';
+    for (const text of [dateText, timeString(run.time), `P${Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—'} / 4`]) {
+      const field = document.createElement('span'); field.textContent = text; summary.append(field);
+    }
+    if (run.time === best) { const badge = document.createElement('b'); badge.className = 'history-best'; badge.textContent = 'BEST'; summary.append(badge); }
+    const detail = document.createElement('p');
+    const number = value => Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
+    detail.textContent = `${number(run.score)} style · ${number(run.collisions)} contacts · ${number(run.nearMisses)} close passes · ${number(run.rings)} rings · ${number(run.perfectLines)} perfect lines · ${number(run.nitroUses)} nitro uses`;
+    row.append(summary, detail); return row;
+  }));
+}
+for (const button of document.querySelectorAll('[data-open-history]')) button.addEventListener('click', () => {
+  controls.clear(); historyOpener = button; $('#history-track').value = race.trackId;
+  showHistory(); historyScreen.showModal();
+});
+$('#history-track').addEventListener('change', showHistory);
+$('#history-close').addEventListener('click', () => historyScreen.close());
+historyScreen.addEventListener('close', () => historyOpener?.focus({ preventScroll: true }));
+historyScreen.addEventListener('keydown', event => event.stopPropagation());
+$('#choose-track').addEventListener('click', () => {
+  controls.clear(); race = createRace(race.trackId); goUntil = 0;
+  showTracks(); phaseUI(); previousPhase = race.phase;
+  document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
+});
+
 function showAudio() {
   for (const button of audioSwitches) {
     const on = audio[button.dataset.audio];
@@ -279,7 +385,7 @@ function focusRace() {
 }
 
 function start() {
-  if (!world || race.phase !== 'ready') return;
+  if (!world || race.phase !== 'ready' || historyScreen.open) return;
   if (editingLayout) editLayout(false);
   controls.clear();
   startRace(race);
@@ -291,7 +397,8 @@ function restart() {
   if (!world) return;
   if (editingLayout) editLayout(false);
   controls.clear();
-  race = createRace();
+  race = createRace(race.trackId);
+  previousFuel = 100; previousNitro = 0;
   goUntil = 0;
   startRace(race);
   sound.update(race);
@@ -600,9 +707,18 @@ function phaseUI() {
     ui['overlay-copy'].textContent = 'Your race is paused. Resume when you’re ready.';
     ui['resume-button'].hidden = false;
     ui['result-stats'].hidden = true;
+    $('#result-style').hidden = true;
+    $('#result-links').hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
-    recordRace(race); // history.js swallows storage failures
+    const recordRun = recordRace(race); // history.js swallows storage failures
+    sessionHistory = [...sessionHistory, recordRun].slice(-50);
+    if (race.result.position <= 3) {
+      const tracks = Object.keys(RACE_TRACKS);
+      const next = tracks[tracks.indexOf(race.trackId) + 1];
+      if (next) unlockedTracks.add(next);
+    }
+    showTracks();
     const trackId = race.trackId ?? 'coast';
     const saved = recordBest(trackId, race.elapsed);
     // Session bests keep "personal best" honest when storage is blocked.
@@ -616,6 +732,10 @@ function phaseUI() {
     ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;
     ui['result-stats'].innerHTML = `<div><span>POSITION</span><strong>${race.result.position}<small> / 4</small></strong></div><div><span>YOUR TIME</span><strong>${timeString(race.elapsed)}</strong></div><div><span>BEST</span><strong>${timeString(best)}</strong></div>`;
+    $('#result-style').hidden = false;
+    $('#result-links').hidden = false;
+    $('#result-style').setAttribute('aria-label', `${race.result.stars} of 3 style stars`);
+    $('#result-style').innerHTML = `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < race.result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${race.result.score} STYLE</strong><small>Close passes · rings · perfect lines · airtime · clean driving<br>2 stars: ${race.length * 0.25} points · 3 stars: ${race.length * 0.5} points</small>`;
     ui['overlay-copy'].textContent += ` ${race.result.nearMisses} close passes · ${race.result.collisions} contacts.`;
     ui['again-button'].focus({ preventScroll: true });
   }
@@ -636,8 +756,12 @@ function updateUI(now, input) {
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
   $('#race-length').textContent = (race.length / 1000).toFixed(2);
   ui['fuel-value'].textContent = String(Math.round(car.fuel));
-  ui['fuel-fill'].style.width = `${car.fuel}%`;
+  ui['fuel-fill'].style.transform = `scaleX(${car.fuel / 100})`;
   ui['fuel-meter'].setAttribute('aria-valuenow', String(Math.round(car.fuel)));
+  ui['fuel-meter'].setAttribute('aria-valuetext', `${car.fuel < 20 ? 'Low charge · ' : ''}${Math.round(car.fuel)}%`);
+  ui['fuel-meter'].dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
+  previousFuel = car.fuel;
+  $('#style-score').textContent = `STYLE ${Math.floor(car.score)}`;
   ui.altitude.textContent = car.altitude.toFixed(1);
   const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
   // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
@@ -652,12 +776,19 @@ function updateUI(now, input) {
   ui['flight-state'].textContent = airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
   nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
   nitroMeter.classList.toggle('is-max', car.nitro >= 3);
+  nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
+  if (car.nitro > previousNitro && race.phase === 'racing') nitroRefillUntil = now + .6;
+  nitroMeter.dataset.refilling = String(race.phase === 'racing' && now < nitroRefillUntil);
   nitroStatus.textContent = nitroActive ? 'NITRO ACTIVE' : car.nitro >= 3 ? 'NITRO MAX' : `NITRO ${car.nitro.toFixed(2)} / 3`;
   for (const [index, segment] of nitroSegments.entries()) {
     const fill = Math.min(1, Math.max(0, car.nitro - index));
     segment.firstElementChild.style.transform = `scaleX(${fill})`;
     segment.classList.toggle('is-full', fill === 1);
+    if (fill === 1 && previousNitro < index + 1 && race.phase === 'racing' && !visual.comfortable && !reducedMotion.matches) {
+      segment.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 450 });
+    }
   }
+  previousNitro = car.nitro;
   if (car.perfectLines > previousPerfectLines) perfectUntil = race.elapsed + 2;
   if (car.perfectLines < previousPerfectLines) perfectUntil = 0;
   previousPerfectLines = car.perfectLines;
@@ -668,7 +799,7 @@ function updateUI(now, input) {
   ui['fuel-caption'].textContent = car.exhausted ? `${tap ? 'LAND' : release} TO RECHARGE` : car.boosting ? 'BOOST · SHARED THRUSTER CHARGE' : car.thrusting ? 'THRUSTERS ENGAGED' : flying ? 'DESCENDING TO ROAD' : 'GROUND RECHARGE ACTIVE';
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
-  document.body.classList.toggle('low-charge', car.fuel < 22);
+  document.body.classList.toggle('low-charge', car.fuel < 20);
   document.body.classList.toggle('boosting', (car.boosting || nitroActive) && race.phase === 'racing');
   const boost = (car.boosting || nitroActive) && race.phase === 'racing';
   const calm = visual.comfortable || matchMedia('(prefers-reduced-motion: reduce)').matches;

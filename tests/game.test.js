@@ -989,7 +989,7 @@ test('charge, nitro, slipstream and risk rings pay their rewards', () => {
   const risk = ringRace([{ type: 'risk', radius: RISK_RING_RADIUS }]);
   advance(risk, 0.1);
   assert.equal(risk.player.nitro, 1);
-  assert.equal(risk.player.score, RISK_SCORE);
+  assert.equal(risk.player.score, RISK_SCORE + 150);
 });
 
 test('clearing a whole group is a PERFECT LINE worth one extra nitro; missing one breaks it but keeps earned rewards', () => {
@@ -1013,7 +1013,7 @@ test('the finished race reports rings, perfect lines and score', () => {
   assert.equal(race.phase, 'finished');
   assert.equal(race.result.rings, 3);
   assert.equal(race.result.perfectLines, 1);
-  assert.equal(race.result.score, 3 * RISK_SCORE);
+  assert.equal(race.result.score, 3 * RISK_SCORE + 3 * 150 + 500);
   assert.equal(createRace().player.rings, 0);
   assert.equal(createRace().player.score, 0);
 });

@@ -1,3 +1,5 @@
+import { RACE_TRACKS } from './game.js';
+
 export const HISTORY_KEY = 'skyline-rush-history';
 export const BEST_KEY = 'skyline-rush-best-tracks';
 export const LEGACY_BEST_KEY = 'skyline-rush-best'; // single pre-tracks best; read-only here, still written by main.js for coast
@@ -7,6 +9,19 @@ export const HISTORY_LIMIT = 50;
 const read = (key, storage) => { try { return JSON.parse((storage ?? globalThis.localStorage).getItem(key)); } catch { return null; } };
 const write = (key, value, storage) => { try { (storage ?? globalThis.localStorage).setItem(key, JSON.stringify(value)); } catch { /* History is a nicety; racing never depends on it. */ } };
 const valid = time => Number.isFinite(time) && time > 0;
+
+export function loadUnlocks(storage, history = loadHistory(storage)) {
+  const tracks = Object.keys(RACE_TRACKS);
+  const saved = read('skyline-rush-unlocked', storage);
+  const unlocked = new Set(Array.isArray(saved) ? saved.filter(id => tracks.includes(id)) : []);
+  unlocked.add('coast');
+  for (const run of history) {
+    const index = tracks.indexOf(run.track);
+    if (index < 0 || !Number.isInteger(run.position) || run.position < 1 || run.position > 3 || !valid(run.time)) continue;
+    for (const id of tracks.slice(0, index + 2)) unlocked.add(id);
+  }
+  return tracks.filter(id => unlocked.has(id));
+}
 
 export function loadHistory(storage) {
   const history = read(HISTORY_KEY, storage);
@@ -22,7 +37,10 @@ export function recordRace(race, storage, now = new Date()) {
     longestCombo: result.longestCombo || 0, score: result.score || 0,
     distance: race.length || 0, // a finished race always covered its full length
   };
-  write(HISTORY_KEY, [...loadHistory(storage), record].slice(-HISTORY_LIMIT), storage);
+  const history = [...loadHistory(storage), record];
+  // Preserve legacy progress before trimming away the run that originally earned it.
+  write('skyline-rush-unlocked', loadUnlocks(storage, history), storage);
+  write(HISTORY_KEY, history.slice(-HISTORY_LIMIT), storage);
   return record;
 }
 

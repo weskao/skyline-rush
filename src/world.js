@@ -9,6 +9,7 @@ import { canopy, carShell } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.js';
+import { RACE_TRACKS } from './game.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
@@ -17,6 +18,13 @@ const matrix = new THREE.Matrix4();
 const rotation = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
+
+const TRACK_PALETTES = {
+  coast: { top: '#101e43', horizon: '#d98785', fog: '#94758a', rock: '#374762', road: '#142534', ground: '#0a233b', rail: '#40d9ed', sun: '#ffb88a', warmth: 1 },
+  neon: { top: '#040a20', horizon: '#263057', fog: '#18223f', rock: '#182039', road: '#101c2e', ground: '#080e21', rail: '#ff52bf', sun: '#96b7ff', warmth: 0 },
+  canyon: { top: '#458bab', horizon: '#f5c58c', fog: '#c99c79', rock: '#a15339', road: '#51453b', ground: '#a76e46', rail: '#ffc36f', sun: '#ffdfaa', warmth: .6 },
+  aurora: { top: '#051b31', horizon: '#337064', fog: '#234d5b', rock: '#9cb9c7', road: '#293d50', ground: '#b3cad3', rail: '#78ffd1', sun: '#b9ddff', warmth: 0 },
+};
 
 function material(color, metalness = 0, roughness = 0.7) {
   return new THREE.MeshStandardMaterial({ color, metalness, roughness });
@@ -254,26 +262,29 @@ export function createWorld(canvas) {
   room.dispose();
   env.dispose();
 
-  scene.add(new THREE.HemisphereLight('#90bcff', '#15273f', 1.7));
+  const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
+  scene.add(ambient);
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
   const sky = new THREE.Mesh(new THREE.SphereGeometry(2500, 24, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false,
-    uniforms: { top: { value: new THREE.Color('#101e43') }, horizon: { value: new THREE.Color('#d98785') } },
+    uniforms: { top: { value: new THREE.Color('#101e43') }, horizon: { value: new THREE.Color('#d98785') }, warmth: { value: 1 }, aurora: { value: 0 }, time: { value: 0 } },
     vertexShader: 'varying vec3 vPosition; void main(){ vPosition=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-    fragmentShader: `varying vec3 vPosition; uniform vec3 top; uniform vec3 horizon;
+    fragmentShader: `varying vec3 vPosition; uniform vec3 top; uniform vec3 horizon; uniform float warmth,aurora,time;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
         return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
       void main(){vec3 dir=normalize(vPosition);float h=dir.y;
         vec3 col=mix(horizon,top,smoothstep(-.03,.65,h));
         float light=pow(max(0.,dot(dir,normalize(vec3(-.22,.055,-1.)))),12.);
-        col+=vec3(.65,.21,.07)*light;
+        col+=vec3(.65,.21,.07)*light*warmth;
         vec2 p=dir.xz/(max(.08,abs(h)))*2.;
         float cloud=noise(p*1.8)*.6+noise(p*4.5)*.25+noise(p*9.)*.15;
         float band=smoothstep(.05,.13,h)*(1.-smoothstep(.3,.62,h));
         col=mix(col,vec3(.3,.24,.37)+vec3(.32,.12,.02)*light,smoothstep(.45,.75,cloud)*band*.6);
+        float ribbon=pow(max(0.,sin(dir.x*9.+sin(dir.z*6.+time*.08)*2.+h*16.)),12.);
+        col+=vec3(.04,.8,.35)*ribbon*band*aurora;
         gl_FragColor=vec4(col,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -285,14 +296,15 @@ export function createWorld(canvas) {
   scene.add(sun);
 
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 } },
+    uniforms: { time: { value: 0 }, ground: { value: new THREE.Color('#0a233b') }, fogColor: { value: new THREE.Color('#94758a') }, water: { value: 1 } },
     vertexShader: 'varying vec3 p; void main(){p=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}',
-    fragmentShader: `varying vec3 p; uniform float time;
+    fragmentShader: `varying vec3 p; uniform float time,water; uniform vec3 ground,fogColor;
       void main(){float wave=sin(p.x*.065+time*.7+sin(p.z*.018))*sin(p.z*.21-time)*.5+.5;
         vec3 col=mix(vec3(.018,.055,.11),vec3(.055,.14,.21),wave*.5);
         float reflection=pow(max(0.,1.-abs(p.x+170.)*.003),8.)*smoothstep(.68,1.,wave);
         col+=vec3(.65,.22,.08)*reflection;
-        float fog=smoothstep(300.,1800.,distance(p,cameraPosition));col=mix(col,vec3(.25,.17,.25),fog);
+        col=mix(ground,col,water);
+        float fog=smoothstep(300.,1800.,distance(p,cameraPosition));col=mix(col,fogColor,fog);
         gl_FragColor=vec4(col,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -335,6 +347,8 @@ export function createWorld(canvas) {
   }
   roadGeometry.setAttribute('position', new THREE.BufferAttribute(roadVertices, 3).setUsage(THREE.DynamicDrawUsage));
   roadGeometry.setIndex(indices);
+  const baseIndices = roadGeometry.index.array.slice();
+  roadGeometry.index.setUsage(THREE.DynamicDrawUsage);
   const normals = new Float32Array((segments + 1) * 6);
   for (let i = 1; i < normals.length; i += 3) normals[i] = 1;
   roadGeometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
@@ -350,6 +364,32 @@ export function createWorld(canvas) {
   const poles = instances(box, material('#465967', 0.65), 48, scene);
   const lamps = instances(box, new THREE.MeshBasicMaterial({ color: '#ffe5c1' }), 24, scene);
   const railLights = instances(box, new THREE.MeshBasicMaterial({ color: new THREE.Color(0.12, 1.2, 1.7) }), segments * 2, scene);
+  const tunnelRoofs = instances(box, new THREE.MeshStandardMaterial({ color: '#38526d', transparent: true, opacity: .4, depthWrite: false }), segments, scene);
+  const tunnelWalls = instances(box, material('#23344b'), segments * 2, scene);
+  const surfaceMarks = instances(box, new THREE.MeshBasicMaterial({ color: '#9ae6ff', transparent: true, opacity: .3, depthWrite: false }), segments, scene);
+  const cliffs = instances(new THREE.ConeGeometry(1, 1, 5), material('#a15339'), 40, scene);
+  const weatherPositions = new Float32Array(180 * 3);
+  for (let i = 0; i < 180; i++) weatherPositions.set([Math.sin(i * 29) * 45, i * 17 % 32, -(i * 13 % 180)], i * 3);
+  const weatherGeometry = new THREE.BufferGeometry();
+  weatherGeometry.setAttribute('position', new THREE.BufferAttribute(weatherPositions, 3));
+  const weather = new THREE.Points(weatherGeometry, new THREE.PointsMaterial({ color: '#b8d8ef', size: .18, transparent: true, opacity: .65, depthWrite: false }));
+  scene.add(weather);
+  const signTextures = [];
+  const signs = Object.fromEntries(Object.entries({ tunnel: 'TUNNEL / 4 M CEILING', gap: 'BROKEN BRIDGE / FLY', crosswind: 'CROSSWIND / STEER', ice: 'ICE / STEER EARLY', uphill: 'UPHILL / SAVE CHARGE' }).map(([type, label]) => {
+    const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
+    const context = sign.getContext('2d');
+    context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);
+    context.strokeStyle = '#ffc36f'; context.lineWidth = 8; context.strokeRect(4, 4, 504, 88);
+    context.fillStyle = '#fff1d6'; context.font = 'bold 27px sans-serif'; context.textAlign = 'center'; context.fillText(label, 256, 58);
+    const texture = new THREE.CanvasTexture(sign); texture.colorSpace = THREE.SRGBColorSpace; signTextures.push(texture);
+    return [type, new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })];
+  }));
+  const sectionSigns = Array.from({ length: 8 }, () => {
+    const group = new THREE.Group();
+    block(group, material('#637282'), 0, 2.5, 0, .2, 5, .2);
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(8, 1.5), signs.gap); panel.position.y = 5; group.add(panel); scene.add(group);
+    return { group, panel };
+  });
   const towers = Array.from({ length: 3 }, () => {
     const tower = new THREE.Group();
     const steel = material('#233e55', 0.65, 0.4);
@@ -395,7 +435,7 @@ export function createWorld(canvas) {
   const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex].map(style => { const car = makeCar(style); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
-  const traffic = Array.from({ length: 36 }, (_, i) => {
+  const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity))) }, (_, i) => {
     const car = makeCar(CAR_STYLES.commuter, trafficColors[i % 5]);
     car.scale.setScalar(0.96);
     scene.add(car);
@@ -424,6 +464,7 @@ export function createWorld(canvas) {
   let cameraMode = 0;
   let initialized = false;
   let lastRace = null;
+  let trackId;
   let carBank = 0;
 
   function resize() {
@@ -469,16 +510,59 @@ export function createWorld(canvas) {
       const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
       if (lastRace !== race) { effects.reset(); aero.reset(); lastRace = race; initialized = false; carBank = 0; }
+      if (trackId !== race.trackId) {
+        trackId = race.trackId;
+        const palette = TRACK_PALETTES[trackId];
+        scene.background.set(palette.fog); scene.fog.color.set(palette.fog);
+        sky.material.uniforms.top.value.set(palette.top); sky.material.uniforms.horizon.value.set(palette.horizon);
+        sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' ? 1 : 0;
+        sunlight.color.set(palette.sun); sunlight.intensity = trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
+        ambient.intensity = trackId === 'neon' ? 1.1 : 1.7;
+        sun.visible = trackId === 'coast' || trackId === 'canyon';
+        sea.material.uniforms.ground.value.set(palette.ground); sea.material.uniforms.fogColor.value.set(palette.fog);
+        sea.material.uniforms.water.value = trackId === 'coast' || trackId === 'neon' ? 1 : 0;
+        seaLines.visible = trackId === 'coast'; mountains.material.color.set(palette.rock);
+        city.visible = trackId === 'coast' || trackId === 'neon';
+        windows.material.color.set(trackId === 'neon' ? '#ff6dbc' : '#ffd394');
+        roadMaterial.color.set(palette.road); roadMaterial.roughness = trackId === 'neon' ? .16 : .5;
+        railLights.material.color.set(palette.rail);
+        cliffs.visible = trackId === 'canyon' || trackId === 'aurora'; cliffs.material.color.set(palette.rock);
+        tunnelRoofs.visible = tunnelWalls.visible = trackId === 'neon';
+        surfaceMarks.visible = trackId === 'aurora';
+        weather.material.size = trackId === 'neon' ? .12 : .24;
+        roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
+      }
       const distance = preview ? 340 : car.distance;
       const center = roadCenter(distance);
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
+      sky.material.uniforms.time.value = reducedMotion ? 0 : time;
+      const touch = matchMedia('(pointer: coarse)').matches;
+      weather.visible = !reducedMotion && visual.enabled && (trackId === 'neon' || trackId === 'aurora');
+      weatherGeometry.setDrawRange(0, touch || visual.quality === 'low' ? 60 : 180);
+      if (weather.visible) {
+        for (let i = 0; i < 180; i++) weatherPositions[i * 3 + 1] = (i * 17 + time * (trackId === 'neon' ? -18 : -3)) % 32;
+        weatherGeometry.attributes.position.needsUpdate = true;
+        weather.position.set(car.x, car.altitude + 25, 15);
+      }
       for (let i = 0; i <= segments; i++) {
         const d = Math.floor(distance / 12) * 12 + (i - 5) * 12;
         const x = roadCenter(d) - center;
         const z = -(d - distance);
         roadVertices.set([x - 12, 0, z, x + 12, 0, z], i * 6);
         if (i === segments) continue;
+        const section = race.sections.find(section => d + 6 >= section.from && d + 6 < section.to);
+        if (trackId === 'canyon') for (let j = 0; j < 6; j++) roadGeometry.index.array[i * 6 + j] = section?.type === 'gap' ? 0 : baseIndices[i * 6 + j];
+        if (tunnelRoofs.visible) {
+          const tunnel = section?.type === 'tunnel';
+          // Zero scales produce undefined lit normals that poison bloom; hide unused instances below the scene.
+          put(tunnelRoofs, i, x, tunnel ? 4.25 : -1000, z - 6, 24, .5, 12.1);
+          for (let side = 0; side < 2; side++) put(tunnelWalls, i * 2 + side, x + (side ? 12.6 : -12.6), tunnel ? 2 : -1000, z - 6, 1, 4, 12.1);
+        }
+        if (surfaceMarks.visible) {
+          const marked = section?.type === 'ice' || section?.type === 'uphill';
+          put(surfaceMarks, i, x, marked ? .035 : -1000, z - 6, section?.type === 'uphill' ? 1.2 : 23, .025, section?.type === 'uphill' ? 3 : 12.1);
+        }
         const angle = -roadHeading(d);
         for (let j = 0; j < 3; j++) put(laneLines, i * 3 + j, x + (j - 1) * 5, 0.018, z - 2, 0.11, 0.02, 4.7, angle);
         for (let side = 0; side < 2; side++) {
@@ -489,6 +573,26 @@ export function createWorld(canvas) {
         }
       }
       roadGeometry.attributes.position.needsUpdate = true;
+      if (trackId === 'canyon') roadGeometry.index.needsUpdate = true;
+      if (tunnelRoofs.visible) tunnelRoofs.instanceMatrix.needsUpdate = tunnelWalls.instanceMatrix.needsUpdate = true;
+      if (surfaceMarks.visible) surfaceMarks.instanceMatrix.needsUpdate = true;
+      sectionSigns.forEach(({ group, panel }, i) => {
+        const section = race.sections[i];
+        const relative = section ? section.from - 65 - distance : 0;
+        group.visible = !!section && relative > -40 && relative < 850;
+        if (!group.visible) return;
+        group.position.set(roadCenter(section.from - 65) - center - 17, 0, -relative);
+        panel.material = signs[section.type];
+      });
+      if (cliffs.visible) {
+        const count = touch || visual.quality === 'low' ? 20 : 40;
+        cliffs.count = count;
+        for (let i = 0; i < count; i++) {
+          const d = Math.floor(distance / 75) * 75 + Math.floor(i / 2) * 75;
+          put(cliffs, i, roadCenter(d) - center + (i % 2 ? 1 : -1) * (38 + i % 4 * 10), 15, -(d - distance), 28, 50 + i % 5 * 10, 40, i);
+        }
+        cliffs.instanceMatrix.needsUpdate = true;
+      }
       [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
       towers.forEach((tower, i) => {
         const d = Math.floor(distance / 1100) * 1100 + (i + 1) * 1100 - 500;
@@ -529,11 +633,11 @@ export function createWorld(canvas) {
         const groundedShowcase = visual.enabled && visual.airflow;
         updateCar(player, { ...car, distance, altitude: groundedShowcase ? 0 : 1.6 + (reducedMotion ? 0 : Math.sin(idleTime * 1.1) * 0.12), thrusting: !groundedShowcase }, distance, center, time, dt, true);
         rivals.forEach((mesh, i) => updateCar(mesh, { ...race.rivals[i], distance: distance + 35 + i * 28, altitude: i === 0 ? 5 : 0, thrusting: i === 0 }, distance, center, time, dt));
-        traffic.forEach((mesh, i) => updateCar(mesh, { ...race.traffic[i], distance: distance + 65 + i * 32 }, distance, center, time, dt));
+        traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, { ...race.traffic[i], distance: distance + 65 + i * 32 }, distance, center, time, dt); });
       } else {
         updateCar(player, car, distance, center, time, motionDt, true, input);
         rivals.forEach((mesh, i) => updateCar(mesh, race.rivals[i], distance, center, time, motionDt));
-        traffic.forEach((mesh, i) => updateCar(mesh, race.traffic[i], distance, center, time, motionDt));
+        traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt); });
       }
       shadow.position.x = player.position.x;
       shadow.scale.setScalar(1 + player.position.y * 0.04);
@@ -597,6 +701,8 @@ export function createWorld(canvas) {
       });
       environment.dispose();
       signTexture.dispose();
+      signTextures.forEach(texture => texture.dispose());
+      Object.values(signs).forEach(mat => mat.dispose());
       shadowTexture.dispose();
       composer.passes.forEach(pass => pass.dispose());
       composer.dispose();

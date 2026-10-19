@@ -1,5 +1,5 @@
 @font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
-:root { font-family: 'Avenir Next', 'Segoe UI', sans-serif; color: #f4f0e9; background: #142334; font-synthesis: none; --accent: #ff8966; --blue: #96e3ff; --muted: #c2c8cd; }
+:root { font-family: 'Avenir Next', 'Segoe UI', sans-serif; color: #f4f0e9; background: #142334; font-synthesis: none; --accent: #ff8966; --blue: #96e3ff; --muted: #c2c8cd; --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-spring: cubic-bezier(.2, 1.2, .3, 1); --dur-fast: 120ms; --dur-base: 240ms; --dur-slow: 480ms; }
 * { box-sizing: border-box; }
 html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
 #app { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -80,7 +80,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .fuel-heading b { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .fuel-heading small { font-size: 9px; color: #b4c0c9; margin-left: 3px; }
 .fuel-track { height: 3px; width: 100%; background: #4a5b68; margin: 10px 0; overflow: hidden; }
-.fuel-track > i { height: 100%; display: block; background: var(--blue); width: 100%; transition: width .1s linear; }
+.fuel-track > i { height: 100%; display: block; background: var(--blue); width: 100%; transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
 .fuel-caption { display: block; font-size: 7px; letter-spacing: 1.2px; color: #b3c4d0; }
 .bottomline { position: fixed; bottom: 20px; left: 40px; right: 40px; display: flex; justify-content: space-between; font-size: 8px; letter-spacing: 1.9px; color: #a5b2bd; z-index: 3; }
 .bottomline > span { display: flex; align-items: center; gap: 8px; }
@@ -562,7 +562,7 @@ body.layout-editing #touch-controls { display: flex; }
 .nitro-hud { margin-top: 10px; font-size: 8px; letter-spacing: 1px; color: #f2d39e; }
 .nitro-meter { display: flex; gap: 4px; margin-top: 5px; }
 .nitro-segment { flex: 1; height: 7px; overflow: hidden; border: 1px solid #ae946f; border-radius: 8px; background: #233748; }
-.nitro-segment i { display: block; height: 100%; background: #f7c576; transform-origin: left; transition: transform .15s ease-out; }
+.nitro-segment i { display: block; position: relative; height: 100%; background: #f7c576; transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
 .nitro-segment.is-full { border-color: #ffe1aa; box-shadow: 0 0 7px rgb(247 197 118 / .5); }
 .nitro-meter.is-max { animation: nitro-max 1.4s ease-in-out infinite alternate; }
 @keyframes nitro-max { to { opacity: .5; } }
@@ -577,6 +577,108 @@ body.layout-editing #touch-controls { display: flex; }
 .touch-actions .touch-boost { grid-column: 1; grid-row: 2; }
 .touch-actions .touch-fly { grid-column: 2; grid-row: 2; }
 #touch-controls .touch-steer button.is-positioned { width: calc(54px * var(--touch-scale, 1)); }
+
+.intro { top: 17%; max-width: 620px; }
+.intro h1 { font-size: clamp(54px, 5.8vw, 80px); }
+.intro-controls { margin-top: 20px; }
+.track-select { display: flex; gap: 8px; overflow-x: auto; padding: 6px; margin: -6px; scroll-snap-type: x proximity; scrollbar-color: var(--accent) #263849; scrollbar-width: thin; }
+.track-select button { flex: 0 0 137px; min-height: 62px; border: 1px solid #6b7b89; border-radius: 3px; padding: 10px; background: #142334; text-align: left; scroll-snap-align: start; }
+.track-select button[aria-pressed="true"] { border-color: var(--accent); background: #303139; }
+.track-select button:hover:not(:disabled) { background: #2a3b4d; }
+.track-select button:disabled { opacity: .65; }
+.track-select strong { font-size: 12px; display: block; margin-bottom: 7px; }
+.track-select button > span { display: flex; justify-content: space-between; gap: 6px; font-size: 9px; color: #d1dce4; }
+.track-select small { font-size: 8px; }
+.track-select button[aria-pressed="true"] small { color: var(--accent); }
+.track-note { margin: 12px 0 18px; max-width: 550px; color: #d1dce4; font-size: 11px; line-height: 1.6; }
+.history-button { display: inline-flex; min-height: 44px; margin: 0 0 0 14px; padding: 8px 12px; }
+.style-score { display: block; font-size: 10px; color: #f2d39e; margin-top: 10px; font-variant-numeric: tabular-nums; }
+@media (pointer: coarse), (max-width: 760px) {
+  body:not([data-phase="ready"]) .flight-telemetry { transform: translateY(-40px); }
+}
+@media (min-width: 761px) {
+  body:has(#touch-controls[data-steer-mode="buttons"]) .flight-telemetry { transform: none; }
+}
+.result-style { margin: 14px 0; display: grid; justify-items: center; gap: 8px; }
+.style-stars { display: flex; gap: 9px; color: #798898; }
+.style-stars svg { width: 30px; height: 30px; }
+.style-stars .earned { color: #f7c576; }
+.style-stars .earned svg { fill: currentColor; }
+.result-style > strong { font-size: 15px; color: #f7c576; }
+.result-style small { font-size: 10px; color: #cad2d8; line-height: 1.7; }
+.result-links { display: flex; justify-content: center; gap: 16px; }
+.result-links .text-button { min-height: 44px; margin: 0; }
+.history-screen { width: min(720px, calc(100% - 32px)); max-height: calc(100dvh - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); padding: 28px; border: 1px solid #758798; border-radius: 8px; color: #f4f0e9; background: #142334; overflow: auto; scrollbar-color: #899eaf #142334; }
+.history-screen::backdrop { background: rgb(5 15 27 / .82); }
+.history-screen[open] { animation: history-in var(--dur-base) var(--ease-out); }
+@keyframes history-in { from { opacity: .6; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+.history-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.history-heading h2 { font: 700 42px/1 'Barlow Condensed', sans-serif; margin: 0; }
+.history-heading button { min-height: 44px; }
+.career-summary { color: #ccd7e0; font-size: 12px; line-height: 1.8; margin: 20px 0 24px; }
+.history-filter { display: flex; gap: 12px; align-items: center; font-size: 12px; }
+.history-filter select { min-height: 44px; min-width: 170px; padding: 8px; border: 1px solid #8093a3; border-radius: 3px; font: inherit; color: inherit; background: #1b3044; }
+.history-filter select:focus-visible, .history-run summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.history-trend { margin: 24px 0 18px; }
+.history-trend figcaption { font-size: 11px; color: #ccd7e0; margin-bottom: 8px; }
+#history-chart { width: 100%; height: 80px; overflow: visible; }
+#history-chart polyline { fill: none; stroke: var(--blue); stroke-width: 2; vector-effect: non-scaling-stroke; }
+#history-chart circle { fill: var(--accent); }
+.history-run { border-top: 1px solid #42596c; }
+.history-run summary { min-height: 54px; display: flex; gap: 18px; align-items: center; cursor: pointer; font-size: 13px; font-variant-numeric: tabular-nums; padding: 12px 4px; }
+.history-run summary > span:first-child { flex: 1; color: #ccd7e0; }
+.history-run summary > span:nth-child(2) { font-weight: 700; }
+.history-run summary::after { content: ''; width: 6px; height: 6px; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; transform: rotate(45deg); }
+.history-run[open] summary::after { transform: rotate(225deg); }
+.history-best { color: #f7c576; font-size: 10px; }
+.history-run p, #history-empty { font-size: 12px; line-height: 1.8; color: #ccd7e0; }
+.history-run p { margin: 0 4px 16px; }
+.fuel-track { position: relative; height: 5px; }
+.low-charge .fuel-track > i { background: #ff7c76; animation: fuel-low 1s ease-in-out infinite alternate; }
+@keyframes fuel-low { to { opacity: .4; } }
+.fuel-track::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, #fff4d6, transparent); opacity: 0; transform: translateX(-100%); pointer-events: none; }
+.fuel-track[data-refilling="true"]::after { opacity: .65; animation: fuel-refill 1.2s ease-in-out infinite; }
+.nitro-meter.is-low .nitro-segment i { background: #ff7c76; animation: fuel-low 1s ease-in-out infinite alternate; }
+.nitro-segment i::after { content: ''; position: absolute; inset: 0; opacity: 0; background: linear-gradient(90deg, transparent, #fff4d6, transparent); transform: translateX(-100%); }
+.nitro-meter[data-refilling="true"] .nitro-segment i::after { opacity: .65; animation: fuel-refill .6s ease-out; }
+@keyframes fuel-refill { to { transform: translateX(100%); } }
+.vfx-comfort .fuel-track > i, .vfx-comfort .fuel-track::after, .vfx-comfort .nitro-segment i, .vfx-comfort .nitro-segment i::after, .vfx-comfort .history-screen { animation: none; transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .fuel-track > i, .fuel-track::after, .nitro-segment i, .nitro-segment i::after, .history-screen { animation: none !important; transition: none; }
+}
+@media (max-width: 760px) {
+  .intro { top: max(115px, 15%); max-width: 410px; }
+  .intro h1 { font-size: clamp(46px, 12vw, 68px); }
+  .track-select button { flex-basis: 130px; min-height: 62px; }
+  .track-note { font-size: 10px; margin-bottom: 14px; }
+  .intro-controls, .flight-tip { display: none; }
+  .history-button { margin-left: 6px; font-size: 11px; }
+  .start-hint { display: none; }
+  .history-screen { padding: 20px; }
+  .history-heading h2 { font-size: 34px; }
+  .history-run summary { display: grid; grid-template-columns: 1fr auto 8px; gap: 8px; font-size: 12px; }
+  .history-run summary > span:nth-child(2) { font-size: 15px; }
+  .history-run summary > span:nth-child(3) { grid-row: 2; font-size: 10px; }
+  .history-run summary::after { grid-column: 3; grid-row: 1 / span 2; }
+  .history-best { font-size: 9px; }
+  .result-stats { margin: 16px 0; }
+  .overlay-content .text-button { min-height: 44px; }
+  .race-overlay { overflow-y: auto; padding-block: 20px; }
+  .overlay-content h2 { margin-top: 8px; }
+  .overlay-content > p { margin-bottom: 16px; }
+}
+@media (max-height: 500px) and (min-width: 761px) {
+  .intro { top: 80px; left: 5%; max-width: 550px; bottom: 90px; overflow: auto; padding: 5px; }
+  .intro h1 { font-size: 40px; margin-bottom: 10px; }
+  .intro-copy, .intro-controls, .flight-tip, .route-label { display: none; }
+  .track-note { margin-block: 8px; font-size: 10px; }
+  .track-select button { min-height: 54px; flex-basis: 125px; padding: 8px; }
+  .primary-button { height: 44px; }
+  .race-overlay { inset: 70px 0 16px; overflow-y: auto; padding-block: 18px; }
+  .overlay-content h2 { font-size: 40px; margin: 8px 0; }
+  .overlay-content > p, .result-stats { margin: 10px 0; }
+  .overlay-content { margin-block: auto; }
+}
 @media (max-width: 370px) {
   .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost, .touch-controls .touch-nitro { width: calc(44px * var(--touch-scale, 1)); }
   .touch-steer, .touch-actions, .touch-pedals { gap: 6px; }
