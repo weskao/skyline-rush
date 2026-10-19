@@ -28,6 +28,12 @@ const measureAudio = () => {
 };
 const audioSwitch = (page, name) => page.getByRole('switch', { name });
 
+test('the UI is rendered by a mounted Vue app', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#start-button')).toBeVisible();
+  expect(await page.evaluate(() => Boolean(document.querySelector('#app').__vue_app__))).toBe(true);
+});
+
 test('airflow showcase, presets, views and boost coexist without shader errors', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
