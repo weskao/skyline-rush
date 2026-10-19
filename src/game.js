@@ -1,4 +1,29 @@
-export const RACE_LENGTH = 5000;
+// Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction.
+export const RACE_TRACKS = {
+  coast: { name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, sections: [] },
+  neon: {
+    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002,
+    sections: [
+      { from: 600, to: 1100, type: 'tunnel' }, { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
+    ],
+  },
+  canyon: {
+    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003,
+    sections: [
+      { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
+      { from: 3000, to: 3070, type: 'gap' }, { from: 3300, to: 4100, type: 'crosswind', dir: -1 },
+      { from: 4400, to: 4470, type: 'gap' },
+    ],
+  },
+  aurora: {
+    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004,
+    sections: [
+      { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
+      { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
+    ],
+  },
+};
+export const RACE_LENGTH = RACE_TRACKS.coast.length;
 export const MAX_SPEED = 88;
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -6,23 +31,35 @@ export const STEER_RAMP = 0.15;
 export const TAKEOFF_BUFFER = 1.5; // seconds a FLY press below takeoff speed stays remembered
 export const SCRAPE_RATIO = 0.1; // lateral/forward speed below this is a shallow-angle scrape
 
+export const TUNNEL_CEILING = 4; // m; the car's roof (altitude + CAR_HEIGHT) may not pass it
+export const CAR_HEIGHT = 1.2;
+export const GAP_CLEARANCE = 1; // altitude needed to fly over a missing bridge section
+export const GAP_SLOWDOWN = 0.4; // speed kept after falling into a gap
+export const GAP_RESPAWN = 5; // m past the gap where the car is put back
+export const CROSSWIND_SPEED = 4; // m/s sideways push
+export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
+
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
-export function createRace() {
+export function createRace(trackId = 'coast') {
+  const track = RACE_TRACKS[trackId];
+  if (!track) throw new Error(`Unknown track: ${trackId}`);
   return {
+    trackId, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
+      section: null, falls: 0, fall: null,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
       altitude: 0, thrusting: false, finishTime: null,
     })),
-    traffic: Array.from({ length: 36 }, (_, i) => ({
-      x: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125,
+    traffic: Array.from({ length: Math.round(36 * track.trafficDensity) }, (_, i) => ({
+      x: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / track.trafficDensity,
       speed: 23 + (i % 5) * 3, color: i % 5,
     })),
   };
@@ -58,6 +95,8 @@ export function stepRace(race, input, dt) {
   if (race.phase !== 'racing') return;
   race.elapsed += dt;
   const car = race.player;
+  const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
+  car.section = section?.type ?? null;
   const brake = input.brake === true;
   const throttle = input.throttle === true && !brake;
   const steer = Number.isFinite(input.steer) ? clamp(input.steer, -1, 1) : 0;
@@ -67,9 +106,11 @@ export function stepRace(race, input, dt) {
   const limit = boost ? MAX_SPEED + 14 : MAX_SPEED;
   const acceleration = car.speed > limit ? -18 - (brake ? 35 : 0) : (throttle ? 15 : -4) - (brake ? 35 : 0) + (boost ? 12 : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
-  // Linear ramp: full deflection takes STEER_RAMP seconds, like an analog stick.
-  car.steering += clamp(steer - car.steering, -dt / STEER_RAMP, dt / STEER_RAMP);
+  // Linear ramp: full deflection takes STEER_RAMP seconds (longer on ice), like an analog stick.
+  const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
+  car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
   let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * dt;
+  if (car.section === 'crosswind') lateralPosition += (section.dir ?? 1) * CROSSWIND_SPEED * dt;
   if (input.laneAssist === true && steer === 0 && car.cooldown === 0 && car.speed > 5) {
     const lane = LANES.reduce((best, centre) => Math.abs(centre - car.x) < Math.abs(best - car.x) ? centre : best);
     lateralPosition += (lane - lateralPosition) * (1 - Math.exp(-3 * dt));
@@ -97,12 +138,26 @@ export function stepRace(race, input, dt) {
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);
   const previousAltitude = car.altitude;
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
+  const roofHit = car.section === 'tunnel' && car.altitude + CAR_HEIGHT > TUNNEL_CEILING;
+  if (roofHit) {
+    car.altitude = TUNNEL_CEILING - CAR_HEIGHT;
+    car.verticalSpeed = Math.min(0, car.verticalSpeed);
+  }
   if (previousAltitude > 0 && car.altitude === 0) {
     car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x };
   }
   if (car.altitude === 0 || car.altitude === 12) car.verticalSpeed = 0;
   const previousDistance = car.distance;
   car.distance += car.speed * dt;
+  if (car.section === 'gap' && car.altitude < GAP_CLEARANCE) {
+    car.speed *= GAP_SLOWDOWN;
+    car.distance = section.to + GAP_RESPAWN;
+    car.altitude = car.verticalSpeed = 0;
+    car.cooldown = 1.5; // respawn grace: no instant collision with traffic parked past the gap
+    car.combo = 0;
+    car.falls++;
+    car.fall = { from: section.from, distance: car.distance, time: race.elapsed };
+  }
 
   for (const traffic of race.traffic) {
     traffic.distance += traffic.speed * dt;
@@ -116,8 +171,8 @@ export function stepRace(race, input, dt) {
     const cycle = (race.elapsed + i * 3) % 13;
     rival.altitude = cycle > 6 && cycle < 11 ? Math.sin((cycle - 6) / 5 * Math.PI) * (5 + i) : 0;
     rival.thrusting = cycle > 6 && cycle < 9;
-    if (rival.distance >= RACE_LENGTH && rival.finishTime === null) {
-      rival.finishTime = race.elapsed - dt + Math.max(0, RACE_LENGTH - before) / rival.speed;
+    if (rival.distance >= race.length && rival.finishTime === null) {
+      rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / rival.speed;
     }
   });
 
@@ -128,6 +183,8 @@ export function stepRace(race, input, dt) {
     );
     if (obstacle) {
       contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), 0.45);
+    } else if (roofHit) {
+      contact(race, 'barrier', Math.sign(car.x) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75); // pushed toward the centre
     } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12) {
       const side = Math.sign(lateralPosition);
       if (Math.abs(car.steering) < 0.9 && Math.abs(car.steering * Math.min(9, car.speed * 0.22)) / car.speed < SCRAPE_RATIO) {
@@ -154,10 +211,10 @@ export function stepRace(race, input, dt) {
       car.nearMiss = { time: race.elapsed, combo: car.combo, charge };
     }
   }
-  if (car.distance >= RACE_LENGTH) {
-    const finishTime = race.elapsed - dt + dt * (RACE_LENGTH - previousDistance) / (car.distance - previousDistance);
+  if (car.distance >= race.length) {
+    const finishTime = race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
-    car.distance = RACE_LENGTH;
+    car.distance = race.length;
     race.elapsed = finishTime;
     race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses };
     race.phase = 'finished';

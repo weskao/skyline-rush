@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, ROAD_LIMIT, MAX_SPEED } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -385,4 +385,142 @@ test('review fixes: full-lock rail hit at boost speed is still a collision, lane
   Object.assign(race.player, { speed: 5, fuel: 10, flyBuffer: 1.5 });
   advance(race, 0.5, {});
   assert.ok(race.player.fuel > 10);
+});
+
+// --- Track data and special sections ---------------------------------------------------------
+
+const TRACK_IDS = ['coast', 'neon', 'canyon', 'aurora'];
+
+function racingOn(trackId) {
+  const race = createRace(trackId);
+  startRace(race);
+  advance(race, 3.1);
+  race.traffic = [];
+  return race;
+}
+
+function sectionOf(trackId, type, index = 0) {
+  return RACE_TRACKS[trackId].sections.filter(section => section.type === type)[index];
+}
+
+test('the track table holds all four tracks and coast matches the original race', () => {
+  assert.deepEqual(Object.keys(RACE_TRACKS), TRACK_IDS);
+  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 4000, 6000, 5500]);
+  assert.equal(RACE_LENGTH, RACE_TRACKS.coast.length);
+  assert.deepEqual(createRace(), createRace('coast'));
+  const coast = createRace();
+  assert.equal(coast.trackId, 'coast');
+  assert.equal(coast.length, 5000);
+  assert.equal(coast.traffic.length, 36);
+  assert.equal(coast.traffic[1].distance, 295);
+  assert.equal(createRace('neon').traffic.length, 54);
+  assert.throws(() => createRace('moon'), /Unknown track/);
+});
+
+test('special sections stay on the road, never overlap and cover each track signature', () => {
+  for (const id of TRACK_IDS) {
+    const { length, sections } = RACE_TRACKS[id];
+    sections.forEach((section, i) => {
+      assert.ok(section.from > 0 && section.from < section.to && section.to < length - 100);
+      assert.ok(i === 0 || sections[i - 1].to <= section.from);
+    });
+  }
+  assert.equal(RACE_TRACKS.coast.sections.length, 0);
+  assert.ok(sectionOf('neon', 'tunnel'));
+  assert.ok([2, 3].includes(RACE_TRACKS.canyon.sections.filter(section => section.type === 'gap').length));
+  assert.ok(sectionOf('canyon', 'crosswind') && sectionOf('aurora', 'ice') && sectionOf('aurora', 'uphill'));
+});
+
+test('stepRace looks up the section from the current distance', () => {
+  const race = racingOn('aurora');
+  const ice = sectionOf('aurora', 'ice');
+  race.player.distance = ice.from + 1;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.section, 'ice');
+  race.player.distance = ice.from - 50;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.section, null);
+});
+
+test('every track can be finished', () => {
+  for (const id of TRACK_IDS) {
+    const race = racingOn(id);
+    assert.equal(race.trackId, id);
+    advance(race, 300, { throttle: true });
+    assert.equal(race.phase, 'finished', id);
+    assert.equal(race.player.distance, RACE_TRACKS[id].length);
+    assert.ok(race.result.time > 30, id);
+    const fresh = racingOn(id);
+    fresh.rivals.forEach(rival => { rival.distance = 100; });
+    Object.assign(fresh.player, { distance: fresh.length - 1, speed: 80 });
+    stepRace(fresh, { throttle: true }, 1 / 60);
+    assert.equal(fresh.phase, 'finished', id);
+    assert.equal(fresh.result.position, 1);
+  }
+});
+
+test('flying into a tunnel roof is barrier contact; driving or flying outside is safe', () => {
+  const tunnel = sectionOf('neon', 'tunnel');
+  const high = racingOn('neon');
+  Object.assign(high.player, { distance: tunnel.from + 10, speed: 50, altitude: 6 });
+  stepRace(high, {}, 1 / 60);
+  assert.equal(high.player.collisions, 1);
+  assert.equal(high.player.impact.kind, 'barrier');
+  assert.ok(high.player.altitude < TUNNEL_CEILING);
+  assert.ok(high.player.speed < 50 * 0.8);
+
+  const low = racingOn('neon');
+  Object.assign(low.player, { distance: tunnel.from + 10, speed: 50, altitude: 1 });
+  stepRace(low, {}, 1 / 60);
+  assert.equal(low.player.collisions, 0);
+
+  const outside = racingOn('neon');
+  Object.assign(outside.player, { distance: tunnel.from - 100, speed: 50, altitude: 6 });
+  stepRace(outside, {}, 1 / 60);
+  assert.equal(outside.player.collisions, 0);
+  assert.equal(outside.player.altitude > TUNNEL_CEILING, true);
+});
+
+test('falling into a gap slows the car and respawns it past the gap; flying over is safe', () => {
+  const gap = sectionOf('canyon', 'gap');
+  const fall = racingOn('canyon');
+  Object.assign(fall.player, { distance: gap.from + 5, speed: 60 });
+  stepRace(fall, {}, 1 / 60);
+  assert.equal(fall.player.falls, 1);
+  assert.ok(fall.player.distance > gap.to);
+  assert.ok(fall.player.speed < 40);
+  assert.equal(fall.player.altitude, 0);
+  stepRace(fall, {}, 1 / 60);
+  assert.equal(fall.player.falls, 1);
+
+  const flight = racingOn('canyon');
+  Object.assign(flight.player, { distance: gap.from + 5, speed: 60, altitude: 5 });
+  stepRace(flight, {}, 1 / 60);
+  assert.equal(flight.player.falls, 0);
+  assert.ok(flight.player.distance < gap.to);
+  assert.ok(flight.player.speed > 55);
+});
+
+test('crosswind pushes the car sideways only inside its zone', () => {
+  const wind = sectionOf('canyon', 'crosswind');
+  const inside = racingOn('canyon');
+  Object.assign(inside.player, { distance: wind.from + 10, speed: 30, x: 0 });
+  const outside = racingOn('canyon');
+  Object.assign(outside.player, { distance: wind.from - 200, speed: 30, x: 0 });
+  advance(inside, 0.5);
+  advance(outside, 0.5);
+  assert.ok(inside.player.x * (wind.dir ?? 1) > 1);
+  assert.equal(outside.player.x, 0);
+});
+
+test('ice slows the steering response compared with dry road', () => {
+  const ice = sectionOf('aurora', 'ice');
+  const slick = racingOn('aurora');
+  Object.assign(slick.player, { distance: ice.from + 10, speed: 40 });
+  const dry = racingOn('aurora');
+  Object.assign(dry.player, { distance: ice.from - 200, speed: 40 });
+  advance(slick, 0.2, { steer: 1 });
+  advance(dry, 0.2, { steer: 1 });
+  assert.ok(slick.player.steering > 0 && slick.player.steering < dry.player.steering * 0.6);
+  assert.ok(slick.player.x < dry.player.x);
 });
