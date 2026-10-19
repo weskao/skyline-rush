@@ -6,6 +6,7 @@ import { createSound } from './audio.js';
 import { vfxSettings, VFX_RANGES, VFX_PRESETS } from './vfx-settings.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap } from './key-map.js';
+import { recordRace, recordBest, LEGACY_BEST_KEY } from './history.js';
 
 const icons = {
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
@@ -186,8 +187,7 @@ const audioSwitches = [...document.querySelectorAll('[data-audio]')];
 let autoThrottle = touchPreference.matches;
 let animationId;
 let pausedPhase = 'racing';
-let best = null;
-try { best = Number(localStorage.getItem('skyline-rush-best')) || null; } catch { /* Racing works when storage is disabled. */ }
+const sessionBests = {};
 try { for (const kind in audio) audio[kind] = !document.cookie.split('; ').includes(`${AUDIO_COOKIES[kind]}=off`); } catch { /* Audio defaults to on when cookies are unavailable. */ }
 const sound = createSound();
 let visual = vfxSettings();
@@ -489,11 +489,15 @@ function phaseUI() {
     ui['result-stats'].hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
-    const record = !best || race.elapsed < best;
-    if (record) {
-      best = race.elapsed;
-      try { localStorage.setItem('skyline-rush-best', String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
-    }
+    recordRace(race); // history.js swallows storage failures
+    const trackId = race.trackId ?? 'coast';
+    const saved = recordBest(trackId, race.elapsed);
+    // Session bests keep "personal best" honest when storage is blocked.
+    const best = Math.min(saved.best, sessionBests[trackId] ?? Infinity);
+    const record = saved.record && !(sessionBests[trackId] <= race.elapsed);
+    sessionBests[trackId] = best;
+    // The pre-tracks key stays readable for coast (older builds, browser test).
+    if (record && trackId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
     ui['overlay-title'].textContent = race.result.position === 1 ? 'Above the rest.' : 'That was a rush.';
     ui['overlay-copy'].textContent = record ? 'A new personal best. The skyline is yours.' : 'One more run. One less second.';
     ui['resume-button'].hidden = true;
