@@ -46,7 +46,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
     read() {
       syncKeys();
       const held = new Set([...keys].map(key => drivingKeys[key]).concat([...pointers.values()]));
-      let steer = Number(held.has('right')) - Number(held.has('left'));
+      let steer = (Number(held.has('right')) - Number(held.has('left'))) * (defaultSettings()?.sensitivity ?? 1);
       let brake = held.has('brake');
       for (const { pad } of slides) {
         const read = pad.read();
@@ -61,6 +61,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
     bindButton(button, control) {
       listen(button, 'pointerdown', event => {
         event.preventDefault();
+        if (defaultSettings()?.editing) return;
         if (control === 'fly' && flyMode === 'toggle') flyLatched = !flyLatched;
         else pointers.set(event.pointerId, control);
         // Synthetic accessibility/test events do not own a native pointer to capture.

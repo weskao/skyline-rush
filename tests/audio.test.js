@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TRACKS, sprintFactor } from '../src/audio.js';
+import { TRACKS, sprintFactor, createSound } from '../src/audio.js';
+import { createRace } from '../src/game.js';
 
 test('both music tracks are complete loops of about one minute', () => {
   for (const [name, track] of Object.entries(TRACKS)) {
@@ -19,4 +20,80 @@ test('sprintFactor leaves the tempo alone until the last 500 m, then ramps to 1.
   assert.ok(Math.abs(sprintFactor(5000, 5000) - 1.15) < 1e-9);
   assert.ok(Math.abs(sprintFactor(9999, 5000) - 1.15) < 1e-9);
   assert.ok(sprintFactor(3600, 4000) > 1);
+});
+
+// Record the Web Audio boundary; synthesizers, cue selection and event tracking stay real.
+function audioScene(t) {
+  const nodes = [];
+  const param = () => ({ value: 0, setValueAtTime(value) { this.value = value; },
+    setTargetAtTime(value) { this.value = value; }, linearRampToValueAtTime(value) { this.value = value; },
+    exponentialRampToValueAtTime(value) { this.value = value; } });
+  const node = kind => {
+    const result = { kind, frequency: param(), gain: param(), Q: param(), threshold: param(), ratio: param(),
+      connect(destination) { this.destination = destination; return destination; }, disconnect() {}, start() {}, stop() {} };
+    nodes.push(result); return result;
+  };
+  globalThis.AudioContext = class {
+    currentTime = 0; sampleRate = 100; state = 'running'; destination = {};
+    createOscillator() { return node('oscillator'); }
+    createGain() { return node('gain'); }
+    createBiquadFilter() { return node('filter'); }
+    createDynamicsCompressor() { return node('compressor'); }
+    createBufferSource() { return node('buffer'); }
+    createBuffer() { return { getChannelData: () => new Float32Array(100) }; }
+    resume() { return Promise.resolve(); }
+    close() { return Promise.resolve(); }
+  };
+  t.after(() => { delete globalThis.AudioContext; });
+  const sound = createSound(), race = createRace();
+  race.phase = 'racing'; race.player.speed = 60;
+  assert.equal(sound.setEnabled(true), true);
+  sound.update(race);
+  t.after(() => sound.dispose());
+  return { sound, race, nodes, tones: () => nodes.filter(node => node.kind === 'oscillator').length };
+}
+
+test('collected pickups produce one cue and never replay while muted, paused or after restart', t => {
+  const { sound, race, tones } = audioScene(t);
+  const pickup = race.pickups[0];
+  const before = tones();
+  pickup.taken = true; sound.update(race);
+  assert.ok(tones() > before, 'collection emits a synthesized pickup tone');
+  const collected = tones(); sound.update(race);
+  assert.equal(tones(), collected);
+  race.phase = 'paused'; race.pickups[1].taken = true; sound.update(race);
+  race.phase = 'racing'; sound.update(race);
+  assert.equal(tones(), collected);
+  sound.setEnabled(false); race.pickups[2].taken = true; sound.update(race);
+  sound.setEnabled(true); sound.update(race);
+  assert.equal(tones(), collected);
+  const next = createRace(); next.phase = 'racing'; next.pickups[0].taken = true;
+  sound.update(next);
+  assert.equal(tones(), collected, 'new race does not replay preexisting collection state');
+});
+
+test('NITRO reuses boost ignition once per activation and sustains the thrust sound', t => {
+  const { sound, race, nodes, tones } = audioScene(t);
+  const before = tones();
+  race.player.nitroTime = 2.5; sound.update(race);
+  assert.ok(tones() > before);
+  const after = tones(); sound.update(race);
+  assert.equal(tones(), after);
+  const thrust = nodes.find(node => node.kind === 'filter' && node.frequency.value === 950).destination;
+  assert.ok(thrust.gain.value > 0);
+  race.player.nitroTime = 0; sound.update(race);
+  assert.equal(thrust.gain.value, 0);
+});
+
+test('drift screech builds with charge thresholds and silences on release/pause', t => {
+  const { sound, race, nodes } = audioScene(t);
+  const skid = nodes.find(node => node.kind === 'filter' && node.frequency.value === 2300).destination;
+  const levels = [];
+  for (const time of [0.5, 1, 2, 3]) {
+    race.player.drift = { time, dir: 1 }; sound.update(race); levels.push(skid.gain.value);
+  }
+  assert.ok(levels[0] > 0, 'drift state alone drives screech');
+  assert.ok(levels.every((level, i) => i === 0 || level > levels[i - 1]));
+  race.phase = 'paused'; sound.update(race); assert.equal(skid.gain.value, 0);
+  race.phase = 'racing'; race.player.drift = null; sound.update(race); assert.equal(skid.gain.value, 0);
 });

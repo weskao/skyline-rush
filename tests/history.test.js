@@ -61,6 +61,23 @@ test('best time is stored per track and only improves', () => {
   assert.deepEqual(JSON.parse(storage.data[BEST_KEY]), { coast: 55, alpine: 90 });
 });
 
+test('invalid best times never replace a saved best or create a new record', () => {
+  for (const time of [NaN, Infinity, -Infinity, 0, -1, '55', null, undefined]) {
+    const storage = memoryStorage({ [BEST_KEY]: '{"coast":60}' });
+    assert.deepEqual(recordBest('coast', time, storage), { best: 60, record: false });
+    assert.deepEqual(recordBest('aurora', time, storage), { best: undefined, record: false });
+    assert.deepEqual(loadBests(storage), { coast: 60 });
+    assert.equal(storage.data[BEST_KEY], '{"coast":60}');
+  }
+});
+
+test('a failed best write preserves the stored best and still returns the session result', () => {
+  const storage = memoryStorage({ [BEST_KEY]: '{"coast":60}' });
+  storage.setItem = () => { throw new Error('quota exceeded'); };
+  assert.deepEqual(recordBest('coast', 55, storage), { best: 55, record: true });
+  assert.deepEqual(loadBests(storage), { coast: 60 });
+});
+
 test('the old single best migrates to coast once and the old key stays', () => {
   const storage = memoryStorage({ [LEGACY_BEST_KEY]: '72.5' });
   assert.deepEqual(loadBests(storage), { coast: 72.5 });

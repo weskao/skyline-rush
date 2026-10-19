@@ -541,3 +541,42 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
   .controls-button { padding: 0 4px; font-size: 8px; letter-spacing: .6px; }
   body:not([data-phase="ready"]) .brand { display: none; }
 }
+
+/* Control customization inherits the existing instrument panel. */
+.keymap-field { display: grid; grid-template-columns: 1fr; }
+.keymap-binding { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 8px; text-align: left; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; background: transparent; font-size: 10px; }
+.keymap-binding b { color: #b4edff; font-size: 10px; font-weight: 500; text-align: right; }
+.keymap-binding[aria-pressed="true"] { border-color: var(--accent); background: #243b50; }
+.controls-note { margin: 8px; font-size: 11px; line-height: 1.5; color: #c9dfed; }
+.touch-controls .touch-nitro { width: calc(50px * var(--touch-scale, 1)); height: calc(52px * var(--touch-scale, 1)); flex-direction: column; gap: 4px; color: #f8d59a; border-color: #cba36c; font-size: 7px; letter-spacing: .6px; }
+.touch-controls .touch-nitro.is-held { background: #7a613c; }
+.touch-controls button.is-positioned { position: fixed; transform: translate(-50%, -50%); width: calc(54px * var(--touch-scale, 1)); }
+.layout-toolbar { position: fixed; left: 50%; top: 80px; transform: translateX(-50%); z-index: 12; width: max-content; max-width: calc(100vw - 24px); display: flex; align-items: center; gap: 14px; padding: 10px; background: #102b40; border: 1px solid #8ab8ce; border-radius: 10px; font-size: 12px; }
+.layout-toolbar button { min-height: 44px; padding: 8px 12px; border-radius: 6px; border: 1px solid #a9dced; background: #284b62; }
+body.layout-editing #touch-controls { display: flex; }
+.layout-editing .touch-controls button { transition: none; outline: 1px dashed #d4e5f1; outline-offset: 3px; cursor: move; }
+.layout-editing .touch-pad { pointer-events: none; }
+.layout-editing .telemetry { opacity: .35; pointer-events: none; }
+.layout-editing .aero-tools { visibility: hidden; }
+.nitro-hud { margin-top: 10px; font-size: 8px; letter-spacing: 1px; color: #f2d39e; }
+.nitro-meter { display: flex; gap: 4px; margin-top: 5px; }
+.nitro-segment { flex: 1; height: 7px; overflow: hidden; border: 1px solid #ae946f; border-radius: 8px; background: #233748; }
+.nitro-segment i { display: block; height: 100%; background: #f7c576; transform-origin: left; transition: transform .15s ease-out; }
+.nitro-segment.is-full { border-color: #ffe1aa; box-shadow: 0 0 7px rgb(247 197 118 / .5); }
+.nitro-meter.is-max { animation: nitro-max 1.4s ease-in-out infinite alternate; }
+@keyframes nitro-max { to { opacity: .5; } }
+.maneuver-report { position: fixed; top: 34%; left: 50%; transform: translateX(-50%); z-index: 3; text-align: center; color: #ffe3ae; font-family: 'Barlow Condensed', sans-serif; font-size: clamp(28px, 6vw, 56px); white-space: nowrap; }
+.maneuver-report span { display: block; margin-top: 8px; font-family: 'Avenir Next', 'Segoe UI', sans-serif; font-size: 12px; letter-spacing: 2px; }
+.vfx-comfort .nitro-meter, .vfx-comfort .nitro-segment i { animation: none; transition: none; }
+@media (prefers-reduced-motion: reduce) { .nitro-meter.is-max, .nitro-segment i { animation: none; transition: none; } }
+@media (max-width: 560px) { .nitro-hud { font-size: 7px; letter-spacing: .4px; margin-top: 6px; } .layout-toolbar { top: 64px; font-size: 10px; gap: 8px; } }
+
+.touch-actions { display: grid; grid-template-columns: auto auto; margin-inline-start: auto; }
+.touch-actions .touch-nitro { grid-column: 1 / -1; justify-self: end; }
+.touch-actions .touch-boost { grid-column: 1; grid-row: 2; }
+.touch-actions .touch-fly { grid-column: 2; grid-row: 2; }
+#touch-controls .touch-steer button.is-positioned { width: calc(54px * var(--touch-scale, 1)); }
+@media (max-width: 370px) {
+  .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost, .touch-controls .touch-nitro { width: calc(44px * var(--touch-scale, 1)); }
+  .touch-steer, .touch-actions, .touch-pedals { gap: 6px; }
+}

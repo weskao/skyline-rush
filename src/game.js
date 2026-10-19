@@ -187,6 +187,7 @@ export function createRace(trackId = 'coast') {
 
 function collectRing(race, ring, index) {
   const car = race.player;
+  ring.hit = true;
   car.rings++;
   if (ring.type === 'charge') car.fuel = Math.min(100, car.fuel + RING_FUEL);
   else if (ring.type === 'nitro') addNitro(car, 0.5);
@@ -223,6 +224,17 @@ export function startRace(race) {
 
 export function racePosition(race) {
   return race.result?.position ?? 1 + race.rivals.filter(rival => rival.distance > race.player.distance).length;
+}
+
+export function sprintGaps(race) {
+  let ahead = null, behind = null;
+  for (const rival of race.rivals) {
+    if (rival.finishTime != null) continue;
+    const gap = rival.distance - race.player.distance;
+    if (gap > 0 && (ahead === null || gap < ahead)) ahead = gap;
+    if (gap < 0 && (behind === null || -gap < behind)) behind = -gap;
+  }
+  return { ahead, behind };
 }
 
 function contact(race, kind, obstacleX, intensity, retention) {
@@ -334,7 +346,7 @@ export function stepRace(race, input, dt) {
   } else if (car.altitude > 0) {
     car.verticalSpeed -= (fly ? 11 : 7) * dt; // releasing FLY glides
   } else if (!input.fly && !boost) {
-    car.fuel = Math.min(100, car.fuel + 13 * dt);
+    car.fuel = Math.min(100, car.fuel + (car.section === 'uphill' ? 6.5 : 13) * dt);
   }
   // AIR DASH: flight + boost together share a 22/s drain instead of 19 + 10.
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);

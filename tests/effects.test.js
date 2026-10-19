@@ -85,3 +85,127 @@ test('lift cores follow tilted nozzle transforms and fade completely on release/
   effects.update(race, 0.1, 0, false, false, [pose]); effects.reset();
   assert.ok(cores.children.every(core => !core.visible));
 });
+
+function raceScene(t) {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene(), effects = createEffects(scene, () => 0), race = createRace();
+  race.phase = 'racing'; race.player.speed = 60;
+  race.pickups = []; race.rings = [];
+  const points = scene.children.find(object => object.isPoints);
+  const update = (dt = 0.05, options = {}, reduced = false) => effects.update(race, dt, 0, false, reduced, undefined, options);
+  return { scene, effects, race, attributes: points.geometry.attributes, update };
+}
+
+test('pickup tiers are visible at their seeded positions and taken pickups disappear', t => {
+  const { scene, race, update } = raceScene(t);
+  race.pickups = ['cell', 'can', 'tank', 'overcharge'].map((tier, i) => ({ tier, x: i, altitude: i, distance: 100 + i * 10 }));
+  const before = structuredClone(race);
+  update();
+  const group = scene.getObjectByName('Nitro pickups');
+  assert.ok(group, 'collectible models are attached to the real scene');
+  const visible = group.children.filter(mesh => mesh.visible);
+  assert.equal(visible.length, 4);
+  assert.equal(new Set(visible.map(mesh => mesh.material.color.getHex())).size, 4);
+  assert.equal(new Set(visible.map(mesh => mesh.scale.x)).size, 4);
+  assert.ok(visible[0].material.color.b > visible[0].material.color.r * 3 && visible[0].material.color.b > visible[0].material.color.g * 2, 'cell is blue');
+  assert.ok(visible[1].material.color.r > visible[1].material.color.g * 2, 'can is orange');
+  assert.ok(visible[2].material.color.g > visible[1].material.color.g, 'tank is gold');
+  assert.ok(visible[3].material.vertexColors && visible[3].geometry.attributes.color, 'overcharge is rainbow');
+  assert.equal(visible[2].position.x, 2);
+  assert.equal(visible[2].position.z, -120);
+  assert.ok(visible[2].position.y >= 2);
+  assert.deepEqual(race, before, 'rendering must not modify the sim');
+  race.pickups[1].taken = true; update(0);
+  assert.equal(group.children.filter(mesh => mesh.visible).length, 3);
+});
+
+test('rings use their collision radius and type color, including a rainbow mystery ring', t => {
+  const { scene, race, update } = raceScene(t);
+  race.rings = ['charge', 'nitro', 'slipstream', 'risk', 'mystery'].map((type, i) => ({ type, radius: type === 'risk' ? 2.4 : 4.8, x: 2.5, altitude: 8, distance: 100 + i * 30 }));
+  update();
+  const group = scene.getObjectByName('Race rings');
+  assert.ok(group);
+  const visible = group.children.filter(mesh => mesh.visible);
+  assert.equal(visible.length, 5);
+  assert.equal(visible[3].scale.x * visible[3].geometry.parameters.radius, 2.4);
+  assert.equal(new Set(visible.map(mesh => mesh.material.color.getHex())).size, 5);
+  assert.ok(visible[0].material.color.g > visible[0].material.color.r * 3 && visible[0].material.color.b > visible[0].material.color.r * 3, 'charge is cyan');
+  assert.ok(visible[1].material.color.r > visible[1].material.color.b * 3 && visible[1].material.color.g > visible[1].material.color.b * 3, 'nitro is gold');
+  assert.ok(visible[2].material.color.r > visible[2].material.color.g * 2 && visible[2].material.color.b > visible[2].material.color.g * 2, 'slipstream is purple');
+  assert.ok(visible[3].material.color.r > visible[3].material.color.g * 3 && visible[3].material.color.r > visible[3].material.color.b * 3, 'risk is red');
+  assert.ok(visible[4].material.vertexColors);
+  const rainbow = visible[4].geometry.attributes.color.array;
+  assert.ok(new Set(rainbow).size > 5, 'mystery is visibly multicolored around its circumference');
+  race.player.distance = 130; update(0);
+  assert.equal(group.children.filter(mesh => mesh.visible).length, 3);
+});
+
+for (const kind of ['pickup', 'ring']) test(`${kind} collection bursts once and never replays across pause, disabled VFX or restart`, t => {
+  const { scene, effects, race, attributes, update } = raceScene(t);
+  const item = { tier: 'cell', type: 'nitro', radius: 4.8, x: 0, altitude: 0, distance: 0 };
+  race[kind === 'pickup' ? 'pickups' : 'rings'] = [item];
+  update();
+  item[kind === 'pickup' ? 'taken' : 'hit'] = true;
+  update();
+  assert.ok(attributes.alpha.array.some(alpha => alpha > 0), 'a collected item emits a burst');
+  const geometry = scene.children.find(object => object.isPoints).geometry;
+  for (let i = 0; i < 30; i++) update();
+  assert.ok(attributes.alpha.array.every(alpha => alpha === 0), 'the same item cannot emit every frame');
+  assert.equal(scene.children.find(object => object.isPoints).geometry, geometry);
+  effects.reset(); update(0);
+  assert.ok(attributes.alpha.array.every(alpha => alpha === 0));
+  const second = { ...item, taken: false, hit: false };
+  race[kind === 'pickup' ? 'pickups' : 'rings'].push(second);
+  update(); second[kind === 'pickup' ? 'taken' : 'hit'] = true;
+  race.phase = 'paused'; update(0);
+  race.phase = 'racing'; update(0.05, { enabled: false }); update();
+  assert.ok(attributes.alpha.array.every(alpha => alpha === 0), 'events suppressed by pause do not replay');
+});
+
+test('drifting emits ground smoke and threshold-colored sparks while respecting motion/VFX limits', t => {
+  const { race, effects, attributes, update } = raceScene(t);
+  const counts = [];
+  for (const time of [1, 2, 3]) {
+    effects.reset();
+    race.player.drift = { time, dir: 1 };
+    update();
+    const sparks = [...attributes.alpha.array].flatMap((a, i) => a > 0 && attributes.kind.array[i] === 0 ? [i] : []);
+    assert.ok(sparks.length > 0, `sparks at ${time} seconds`);
+    for (const i of sparks) {
+      const [r, g, b] = attributes.color.array.slice(i * 3, i * 3 + 3);
+      if (time === 1) assert.ok(b > r * 2 && b > g * 2, 'one-second sparks are blue');
+      if (time === 2) assert.ok(r > g * 2 && g > b * 3, 'two-second sparks are orange');
+      if (time === 3) assert.ok(r > g * 2 && b > g * 3, 'three-second sparks are purple');
+    }
+    assert.ok([...attributes.alpha.array].some((a, i) => a > 0 && attributes.kind.array[i] === 2), 'tire smoke');
+    counts.push(sparks.length);
+  }
+  effects.reset(); update(0.05, { quality: 'low' });
+  assert.ok(attributes.alpha.array.filter(a => a > 0).length < counts.at(-1) + 2);
+  effects.reset(); update(0.05, {}, true);
+  assert.ok(attributes.alpha.array.every(alpha => alpha === 0), 'comfortable/reduced motion omits tire particles');
+  effects.reset(); update(0.05, { enabled: false });
+  assert.ok(attributes.alpha.array.every(alpha => alpha === 0));
+});
+
+test('disposing marker pools releases every tier material, including types no longer drawn', t => {
+  const { scene, effects, race, update } = raceScene(t);
+  race.pickups = ['cell', 'can', 'tank', 'overcharge'].map((tier, i) => ({ tier, x: 0, altitude: 0, distance: 100 + i * 10 }));
+  race.rings = ['charge', 'nitro', 'slipstream', 'risk', 'mystery'].map((type, i) => ({ type, radius: 4.8, x: 0, altitude: 8, distance: 100 + i * 20 }));
+  update();
+  const groups = [scene.getObjectByName('Nitro pickups'), scene.getObjectByName('Race rings')];
+  const materials = new Set(groups.flatMap(group => group.children.filter(mesh => mesh.visible).map(mesh => mesh.material)));
+  const geometries = new Set(groups.flatMap(group => group.children.map(mesh => mesh.geometry)));
+  const disposed = new Map();
+  for (const resource of [...materials, ...geometries]) resource.addEventListener('dispose', () => disposed.set(resource, (disposed.get(resource) || 0) + 1));
+  // Replace every visible material: traversing bound meshes alone would now miss seven types.
+  race.pickups = Array.from({ length: 40 }, (_, i) => ({ ...race.pickups[0], distance: 100 + i }));
+  race.rings = Array.from({ length: 7 }, (_, i) => ({ ...race.rings[0], distance: 100 + i }));
+  update();
+  assert.ok(groups.every(group => new Set(group.children.map(mesh => mesh.material)).size === 1));
+  effects.dispose?.();
+  assert.equal(disposed.size, 11, 'all nine materials and both shared geometries are released');
+  assert.ok([...disposed.values()].every(count => count === 1));
+  assert.ok(groups.every(group => group.parent === null), 'scene disposal will not dispose these resources twice');
+});

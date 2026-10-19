@@ -237,3 +237,32 @@ test('keyboard brake plus a steer key reads as brake plus steer together (the dr
   assert.equal(controls.read().steer, 1);
   controls.destroy();
 });
+
+test('desktop steering sensitivity scales keys and buttons without changing slide full lock', () => {
+  const target = new EventTarget();
+  const settings = { sensitivity: 0.5, fullLock: 60 };
+  const controls = createControls(target, () => {}, { getSettings: () => settings });
+  send(target, 'keydown', { code: 'KeyD' });
+  assert.equal(controls.read().steer, 0.5);
+  send(target, 'keyup', { code: 'KeyD' });
+  const pad = padTarget(controls, settings);
+  send(pad, 'pointerdown', { pointerId: 1, clientX: 0, clientY: 0 });
+  send(pad, 'pointermove', { pointerId: 1, clientX: 60, clientY: 0 });
+  assert.equal(controls.read().steer, 1);
+  controls.destroy();
+});
+
+test('layout editing blocks touch controls until editing ends', () => {
+  const settings = { editing: true };
+  const controls = createControls(new EventTarget(), () => {}, { getSettings: () => settings });
+  const button = new EventTarget();
+  controls.bindButton(button, 'nitro');
+  send(button, 'pointerdown', { pointerId: 1 });
+  assert.equal(controls.read().nitro, false);
+  settings.editing = false;
+  send(button, 'pointerdown', { pointerId: 2 });
+  assert.equal(controls.read().nitro, true);
+  send(button, 'pointerup', { pointerId: 2 });
+  assert.equal(controls.read().nitro, false);
+  controls.destroy();
+});

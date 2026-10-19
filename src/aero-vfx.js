@@ -163,7 +163,7 @@ export function createAeroVFX(scene, vehicle) {
       dt = clamp(Number.isFinite(dt) ? dt : 0, 0, 0.1);
       const car = race.player, active = race.phase === 'racing', preview = race.phase === 'ready';
       const enabled = settings.enabled;
-      const boost = active && car.boosting && enabled;
+      const boost = active && (car.boosting || car.nitroTime > 0 || car.miniBoost > 0) && enabled;
       const calm = reducedMotion || settings.comfortable;
       quality = settings.quality === 'low' ? 0.25 : settings.quality === 'medium' ? 0.5 : 1;
       if (calm) quality = Math.min(quality, 0.5);

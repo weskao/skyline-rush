@@ -5,7 +5,7 @@ const slow = process.env.CI ? 3 : 1;
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: '**/browser.spec.js',
+  testMatch: '**/*browser.spec.js',
   fullyParallel: false,
   workers: 1,
   timeout: 45000 * slow,

@@ -83,17 +83,18 @@ Mobile:
 - [x] **Handedness**: steering on left (default) / steering on right — mirrors the whole layout for left-handed players
 - [x] **Slide sensitivity**: distance for full lock (40 / 60 / 80 px)
 - [x] **Button size** (S / M / L) and **opacity**
-- [ ] **Edit layout**: drag each action button (FLY / BOOST / NITRO / and the classic buttons in mode B) to a new spot, with a live preview over a paused race; Reset to default
+- [x] **Edit layout**: drag each action button (FLY / BOOST / NITRO / and the classic buttons in mode B) to a new spot, with a live preview over a paused race; Reset to default
 - [x] **FLY behavior**: hold (default) / toggle
 
 Desktop:
-- [ ] **Key remapping**: click an action, press the new key; conflicts are flagged and swapped; Reset to default (the `J`/`K`/`L` alternates from 7B are part of the default map)
-- [ ] **Steering sensitivity** (from 7C) and gamepad mapping view
+- [x] **Key remapping**: click an action, press the new key; conflicts are flagged and swapped; Reset to default (the `J`/`K`/`L` alternates from 7B are part of the default map)
+- [x] **Steering sensitivity** (from 7C)
+- [ ] Gamepad mapping view
 
 Both:
 - [x] Saved to `localStorage['skyline-rush-controls']` with try/catch like the existing VFX settings; invalid / outdated saves fall back to defaults
 - [x] `input.js` reads the saved map; game rules stay device-agnostic
-- [ ] Acceptance: unit tests for slide → steer mapping (dead zone, full lock, center follow, slide-down brake) and key remap conflicts; browser test at touch viewports: slide steering moves the car, Buttons mode still works, mirrored layout and edited button positions survive reload
+- [x] Acceptance: unit tests for slide → steer mapping (dead zone, full lock, center follow, slide-down brake) and key remap conflicts; browser test at touch viewports: slide steering moves the car, Buttons mode still works, mirrored layout and edited button positions survive reload
 
 ### Per-item platform notes
 
@@ -142,22 +143,22 @@ Nitro pickups on the road and in the air, in tiers:
 | Overcharge core | Spinning rainbow core | **Fills to the cap** | One per track, placed in a high-risk spot |
 
 Use (press `E` / touch NITRO button):
-- [ ] Spends **1 full charge** for 2.5 s: speed cap `MAX_SPEED + 30`, much stronger acceleration, wider FOV + the existing lens boost effect
-- [ ] Cannot fire with less than 1 full charge (HUD shows that charge's fill progress)
+- [x] Spends **1 full charge** for 2.5 s: speed cap `MAX_SPEED + 30`, much stronger acceleration, wider FOV + the existing lens boost effect
+- [x] Cannot fire with less than 1 full charge (HUD shows that charge's fill progress)
 - [x] Pressing again during NITRO **extends it by 2 s** instead of stacking speed (keeps it controllable)
 - [x] Hitting traffic during NITRO keeps more speed (retention 0.45 → 0.7), rewarding bold driving
 
-- [ ] `player.nitro` (float), `player.nitroTime`; `input.nitro` with the `E` key / touch button
+- [x] `player.nitro` (float), `player.nitroTime`; `input.nitro` with the `E` key / touch button
 - [x] `race.pickups` generated from the track seed as `{ distance, x, altitude, tier }`; pass-through check uses the same previousDistance → distance window as near-misses
-- [ ] Pickup effects reuse the `effects.js` particle pool; sounds reuse `audio.js`
+- [x] Pickup effects reuse the `effects.js` particle pool; sounds reuse `audio.js`
 - [x] Acceptance: tests for each tier's amount, "under 1 charge cannot fire", and "extend does not stack speed"
 
 ## 3. Nitro cap: up to 3 charges
 
 - [x] Cap of **3 charges** (`NITRO_MAX = 3`). Once a charge reaches 1.0 the next one starts filling, up to 3.0
-- [ ] HUD: 3-segment capsule bar; full segments glow, the filling one shows its ratio, the whole bar pulses `NITRO MAX` at 3
+- [x] HUD: 3-segment capsule bar; full segments glow, the filling one shows its ratio, the whole bar pulses `NITRO MAX` at 3
 - [x] **Overflow conversion**: pickups at the cap convert the excess into fuel (each 0.25 = +8 fuel), nothing is wasted
-- [ ] Chained bursts: with 3 charges, pressing 3 times gives a 7.5 s burst (via the extend rule)
+- [x] Chained bursts: with 3 charges, pressing 3 times gives a 6.5 s burst (2.5 s + 2 s + 2 s via the extend rule)
 - [x] Tests: pickup 0.5 at 2.9 → nitro = 3 and 0.4 converted to fuel; using one charge takes 3 → 2
 
 ## 4. Special rewards for flying through rings
@@ -174,11 +175,11 @@ Turn the existing 7 decorative gates into interactive rings. Only passing throug
 | Mystery ring | Rainbow | One at random: **Shield** (absorbs the next collision), **Magnet** (pulls nearby pickups for 5 s), **Ghost** (pass through traffic for 3 s), **Freeze** (rivals slow down for 2 s) |
 
 **Ring chain bonus**: rings appear in groups of 3–5
-- [ ] Clearing a whole group = **PERFECT LINE**: extra +1 nitro and a big HUD callout
+- [x] Clearing a whole group = **PERFECT LINE**: extra +1 nitro and a big HUD callout
 - [x] Missing one breaks the group bonus (individual ring rewards already earned are kept)
 
 - [x] `race.rings` as `{ distance, x, altitude, radius, type, group }`, generated from the track seed
-- [ ] `world.js` gates read position / color from `race.rings`; a ring bursts and disappears when passed
+- [x] `world.js` gates read position / color from `race.rings`; a collected ring bursts once and every crossed ring disappears
 - [x] Shield / Magnet / Ghost / Freeze as `player.effects = { shield, magnet, ghost, freeze }` (seconds remaining)
 - [x] Acceptance: tests for center hit (grazing the edge does not count), PERFECT LINE, and each mystery effect
 
@@ -221,7 +222,7 @@ Ordered by small effort, big fun:
 
 ### 7B. FLY and boost at the same time
 
-- [ ] **AIR DASH**: holding FLY + BOOST together caps the combined drain at **22/s** (instead of 29/s), keeping the `MAX_SPEED + 14` cap; HUD shows `AIR DASH`
+- [x] **AIR DASH**: holding FLY + BOOST together caps the combined drain at **22/s** (instead of 29/s), keeping the `MAX_SPEED + 14` cap; HUD shows `AIR DASH`
 - [ ] **NITRO doesn't use fuel** (separate `nitro` reserve from item 2), so FLY + NITRO always works together; NITRO while flying = straight-line air dash
 - [x] **Alternate keys**: right hand `J` = FLY, `K` = BOOST, `L` = NITRO, left hand stays on WASD, avoiding the Shift + Space conflict (original keys still work)
 - [ ] **Touch** (layout in item 0):
@@ -232,7 +233,7 @@ Ordered by small effort, big fun:
 
 ### 7C. Handling feel
 
-- [ ] **Steering curve**: input ramps to full over 0.15 s (like an analog stick); high-speed lateral cap 12 → 9 m/s; "Steering sensitivity" in settings
+- [x] **Steering curve**: input ramps to full over 0.15 s (like an analog stick); high-speed lateral cap 12 → 9 m/s; "Steering sensitivity" in settings
 - [x] **Lane assist** (part of AUTO, can be turned off): releasing steering eases the car to the nearest lane center
 - [x] **Barrier scrape**: shallow-angle touches become a "scrape" — 0.92 speed retention, car pushed back onto the road, no collision counted, combo kept; only head-on hits use the existing `contact`
 - [x] **Forgiving hitbox**: vehicle collision width 1.9 → 1.7, so more "almost hit" moments become near-misses instead of crashes
@@ -249,7 +250,7 @@ Trigger:
 - [x] Ground only (`altitude === 0`); taking off or crashing ends the drift
 
 Physics:
-- [ ] Car body slides out 20–30° (`world.js` body yaw), arc still controlled by steering
+- [x] Car body slides out 20–30° (`world.js` body yaw), arc still controlled by steering
 - [x] Drifting only bleeds a little speed (−3 m/s², normal braking is −35)
 - [x] Near-miss combo points ×2 while drifting
 
@@ -263,8 +264,8 @@ Physics:
 
 - [x] Rewards count toward the 3-charge cap; overflow converts to fuel per item 3
 - [x] Hitting a car / barrier mid-drift → the build-up is lost
-- [ ] Visuals / audio: tire smoke and sparks share the `effects.js` particle pool; add tire screech to `audio.js`
-- [ ] `player.drift = { time, dir }`, `input.drift`; `stepRace` handles enter / hold / release payout
+- [x] Visuals / audio: tire smoke and sparks share the `effects.js` particle pool; add tire screech to `audio.js`
+- [x] `player.drift = { time, dir }`; brake + steer derives drift, and `stepRace` handles enter / hold / release payout
 - [x] Acceptance: tests for no drift below 45 m/s, the three time thresholds and rewards, crash cancels, no drift in the air
 
 ## 8. UI / UX polish and animation

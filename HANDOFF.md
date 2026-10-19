@@ -1,5 +1,24 @@
 # HANDOFF: gameplay-depth logic pass (run goal-20261019-203853)
 
+## Follow-up implementation (2026-10-19)
+
+- [x] Controls: live key remapping, conflict/reset feedback, steering sensitivity, editable touch positions and persistence.
+- [x] HUD: AIR DASH, fractional three-charge NITRO meter, touch NITRO, PERFECT LINE and drift/mini-boost feedback.
+- [x] Rendering/audio: NITRO camera/lens, collectible pickup feedback, drift yaw/smoke/sparks/screech, correctly sized and coloured rings with collection bursts.
+- [x] Verifier gaps: uphill recharge, finished-rival sprint gaps, invalid best times, lane-assist/gap/tunnel regressions and successful ring-hit markers.
+- [x] Acceptance: TDD red/green evidence, unit/build/browser checks, annotated UI screenshots and Telegram delivery; tick only verified TODO requirements.
+
+The original handoff below records the starting state. Explicitly excluded features remain excluded. Three chained NITRO presses follow the existing 2.5 + 2 + 2 = 6.5 s rule; drift remains derived from brake + steer rather than adding a separate input.
+
+Branch: `feat/handoff-gameplay-ui`. The implementation also closes layout editing before starting/restarting/resuming, respects device safe areas for custom positions, releases every marker material on disposal, and suppresses MAX animation in comfort/reduced-motion modes. Seventeen newly completed requirements are checked in `TODO.md`; gamepad mapping was split out so it stays unchecked.
+
+Verification: unit tests **154/154**; production build and source/test syntax checks pass. Complete Chrome run **65/66** exposed MINI BOOST masking TOUCHDOWN; after rebuilding its fix, the landing, earned-ring/NITRO/drift and full-race/history flows passed **3/3**. The complete suite was not rerun after that one-line fix. Independent review passed. See `docs/verification.md` for TDD evidence and the exact verification boundary. Physical phones, Safari and subjective audio quality remain unchecked.
+
+Delivery: four inspected, annotated UI screenshots and the zh-TW completion summary were sent through Telegram, with successful `sendPhoto` / `sendMessage` receipts. The requested annotated images were retained; temporary raw images, capture scripts and logs were removed. No commit, push or deployment was performed.
+
+<details>
+<summary>Original handoff (historical starting state)</summary>
+
 State: `npm test` 132/132, `npm run build` ok. The game rules for 27 in-scope items are in `src/game.js` and the pure modules `src/key-map.js`, `src/history.js`, `src/rng.js`, with unit tests. What remains is UI, rendering and feel. Browser/Playwright tests and on-device checks were not run.
 
 Inventory: 27 of 27 in-scope items processed. 19 fully ticked, 5 partly ticked (#1, #29, #30, #31, #32), 3 left unticked (#3, #11, #14). 39 TODO lines ticked in total.
@@ -96,3 +115,5 @@ All constants are named exports at the top of `src/game.js`.
 - Untested lines (removal still passes `npm test`): the `steer === 0` check for lane assist, the `fell ||` check that makes a gap respawn skip rings, and the tunnel ring rules (risk becomes nitro, altitude 1.5; neon has 6 tunnel rings).
 - `src/main.js` wiring (history save on finish, sessionBests, legacy best write, key-map load, gap readout) has no unit test.
 - Run tests with `npm test` or `node --test tests/*.test.js`; `node --test tests/` fails on Node 25.
+
+</details>

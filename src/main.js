@@ -1,11 +1,11 @@
 import './style.css';
-import { createRace, startRace, stepRace, racePosition, RACE_LENGTH } from './game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps } from './game.js';
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { vfxSettings, VFX_RANGES, VFX_PRESETS } from './vfx-settings.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
-import { loadKeyMap } from './key-map.js';
+import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, LEGACY_BEST_KEY } from './history.js';
 
 const icons = {
@@ -62,10 +62,16 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       <div class="controls-menu">
-        <button class="controls-button" id="controls-button" aria-expanded="false" aria-controls="controls-panel" title="Touch controls">Controls</button>
-        <div class="controls-panel" id="controls-panel" role="group" aria-label="Touch controls" hidden>
+        <button class="controls-button" id="controls-button" aria-expanded="false" aria-controls="controls-panel" title="Driving controls">Controls</button>
+        <div class="controls-panel" id="controls-panel" role="group" aria-label="Driving controls" hidden>
           ${controlChoices}
           <label class="controls-field controls-range">Button opacity <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Button opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
+          <label class="controls-field controls-range">Steering sensitivity <output for="controls-sensitivity"></output><input id="controls-sensitivity" aria-label="Steering sensitivity" type="range" data-controls="sensitivity" min="0.4" max="1" step="0.1"></label>
+          <fieldset class="controls-field keymap-field"><legend>Keyboard · select action, then press a key</legend>${['throttle', 'brake', 'left', 'right', 'fly', 'boost', 'nitro'].map(action => `<button class="keymap-binding" data-rebind="${action}"><span>${action.toUpperCase()}</span><b></b></button>`).join('')}</fieldset>
+          <p id="keymap-status" role="status" class="controls-note">Fixed shortcuts: Esc pause · R restart · C camera.</p>
+          <button class="controls-reset" id="keymap-reset">Reset keyboard</button>
+          <button class="controls-reset" id="layout-edit">Edit touch layout</button>
+          <button class="controls-reset" id="layout-reset">Reset touch layout</button>
           <button class="controls-reset" id="controls-reset">Reset to defaults</button>
         </div>
       </div>
@@ -118,11 +124,12 @@ document.querySelector('#app').innerHTML = `
 
     <section class="race-info" id="race-info" aria-label="Race progress" hidden>
       <div class="position-stat"><span class="stat-label">POSITION</span><div><strong id="position">04</strong><span>/ 04</span></div><span class="time" id="timer">00:00.00</span></div>
-      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / 5.00 KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div></div>
+      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard"></div>
     </section>
 
     <div class="countdown" id="countdown" role="status" aria-live="polite" hidden><div class="start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong id="countdown-number">3</strong><span id="countdown-label">HOLD ACCELERATOR · GET READY</span></div>
+    <div class="maneuver-report" id="maneuver-report" role="status" hidden>PERFECT LINE<span>+1 NITRO</span></div>
     <div class="skill-report" id="skill-report" role="status" hidden></div>
     <div class="driving-message" id="driving-message" role="status"></div>
     <div class="impact-report" id="impact-report" role="status" hidden><span class="impact-icon">${icon('brake')}</span><div><strong id="impact-title">CONTACT</strong><span>STABILIZING · <b id="impact-loss">0</b> KM/H LOST</span></div></div>
@@ -158,9 +165,10 @@ document.querySelector('#app').innerHTML = `
   <div class="touch-controls" id="touch-controls" aria-label="Touch driving controls" hidden>
     <div class="touch-pad" aria-hidden="true"><i class="pad-ring"></i><i class="pad-knob"></i></div>
     <div class="touch-steer"><button data-control="left" aria-label="Steer left">${icon('left')}</button><button data-control="right" aria-label="Steer right">${icon('right')}</button><button data-control="brake" aria-label="Brake">${icon('brake')}</button></div>
-    <div class="touch-actions"><button class="touch-fly" data-control="fly" aria-label="Hold to fly">${icon('fly')}<span>FLY</span></button><button class="touch-boost" data-control="boost" aria-label="Hold to boost">${icon('arrow')}<span>BOOST</span></button></div>
+    <div class="touch-actions"><button class="touch-nitro" data-control="nitro" aria-label="Activate nitro">${icon('arrow')}<span>NITRO</span></button><button class="touch-fly" data-control="fly" aria-label="Hold to fly">${icon('fly')}<span>FLY</span></button><button class="touch-boost" data-control="boost" aria-label="Hold to boost">${icon('arrow')}<span>BOOST</span></button></div>
     <div class="touch-pedals"><button class="touch-gas" data-control="throttle" aria-label="Accelerate">${icon('pedal')}</button></div>
   </div>
+  <div class="layout-toolbar" id="layout-toolbar" hidden><span>Drag buttons to fit your thumbs</span><button id="layout-done">Done editing</button></div>
   <div class="bottomline"><span><i></i> BEYOND THE ROAD</span><span>AN ORIGINAL ARCADE FLIGHT RACER <span class="version">v0.1</span></span></div>
 `;
 
@@ -194,8 +202,12 @@ let visual = vfxSettings();
 try { visual = vfxSettings(JSON.parse(localStorage.getItem('skyline-rush-vfx'))); } catch { /* Defaults work without storage. */ }
 // In-memory source of truth: input.js reads it on every pointermove, so storage is only touched on load/change.
 let controlPrefs = controlSettings();
+let editingLayout = false;
+let rebinding = null;
+let keyMap = loadKeyMap();
 try { controlPrefs = controlSettings(JSON.parse(localStorage.getItem(CONTROLS_KEY))); } catch { /* Defaults work without storage. */ }
-const getControlSettings = () => controlPrefs;
+let inputPrefs = controlPrefs;
+const getControlSettings = () => inputPrefs;
 const controlInputs = [...document.querySelectorAll('[data-controls]')];
 const vfxControls = [...document.querySelectorAll('[data-vfx]')];
 const airflowHud = $('#airflow-hud');
@@ -204,6 +216,16 @@ boostStatus.id = 'boost-status';
 boostStatus.className = 'boost-status';
 document.querySelector('.fuel-stat').append(boostStatus);
 let previousBoost = false;
+let previousPerfectLines = 0;
+let perfectUntil = 0;
+const nitroHud = document.createElement('div');
+nitroHud.className = 'nitro-hud';
+nitroHud.innerHTML = `<span id="nitro-status">NITRO 0 / 3</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="Nitro charges" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
+document.querySelector('.fuel-stat').append(nitroHud);
+const nitroSegments = [...nitroHud.querySelectorAll('.nitro-segment')];
+const nitroStatus = $('#nitro-status');
+const nitroMeter = $('#nitro-meter');
+
 function showVFX() {
   world?.configureVFX(visual);
   for (const control of vfxControls) {
@@ -256,6 +278,7 @@ function focusRace() {
 
 function start() {
   if (!world || race.phase !== 'ready') return;
+  if (editingLayout) editLayout(false);
   controls.clear();
   startRace(race);
   sound.cue('ui');
@@ -264,6 +287,7 @@ function start() {
 
 function restart() {
   if (!world) return;
+  if (editingLayout) editLayout(false);
   controls.clear();
   race = createRace();
   goUntil = 0;
@@ -273,6 +297,7 @@ function restart() {
 }
 
 function pause() {
+  if (editingLayout) editLayout(false);
   if (race.phase === 'paused') {
     race.phase = pausedPhase;
     controls.clear();
@@ -319,23 +344,36 @@ function toggleSettings(open = ui['settings-panel'].hidden) {
 // Touch layout is tuned between races only, so the panel never opens mid-race.
 function toggleControls(open = ui['controls-panel'].hidden) {
   open &&= race.phase === 'ready' || race.phase === 'paused';
+  if (!open) rebinding = null;
   ui['controls-panel'].hidden = !open;
   ui['controls-button'].setAttribute('aria-expanded', String(open));
 }
 
-function applyControls() {
+function applyControls(persist = true) {
+  inputPrefs = { ...controlPrefs, editing: editingLayout };
   const touch = ui['touch-controls'];
   touch.dataset.steerMode = controlPrefs.mode;
   touch.dataset.hand = controlPrefs.hand;
   touch.style.setProperty('--touch-scale', String(TOUCH_SCALE[controlPrefs.size]));
   touch.style.setProperty('--touch-opacity', String(controlPrefs.opacity));
   controls.setFlyMode(controlPrefs.flyMode);
+  for (const button of touchButtons) {
+    const point = controlPrefs.layout[button.dataset.control];
+    button.classList.toggle('is-positioned', !!point);
+    if (point) {
+      const halfWidth = button.offsetWidth / 2 || 32;
+      const halfHeight = button.offsetHeight / 2 || 35;
+      const x = (controlPrefs.hand === 'right' ? 1 - point.x : point.x) * innerWidth;
+      button.style.left = `clamp(calc(env(safe-area-inset-left, 0px) + ${halfWidth + 8}px), ${x}px, calc(100vw - env(safe-area-inset-right, 0px) - ${halfWidth + 8}px))`;
+      button.style.top = `clamp(calc(env(safe-area-inset-top, 0px) + ${halfHeight + 8}px), ${point.y * innerHeight}px, calc(100dvh - env(safe-area-inset-bottom, 0px) - ${halfHeight + 8}px))`;
+    } else { button.style.removeProperty('left'); button.style.removeProperty('top'); }
+  }
   for (const input of controlInputs) {
     const value = controlPrefs[input.dataset.controls];
     if (input.type === 'radio') input.checked = input.value === String(value);
     else { input.value = String(value); input.previousElementSibling.value = `${Math.round(value * 100)}%`; }
   }
-  try { localStorage.setItem(CONTROLS_KEY, JSON.stringify(controlPrefs)); } catch { /* Settings remain usable in memory. */ }
+  if (persist) try { localStorage.setItem(CONTROLS_KEY, JSON.stringify(controlPrefs)); } catch { /* Settings remain usable in memory. */ }
 }
 
 // Browsers that block autoplay start audio only after a user gesture, so saved choices are applied on the first one.
@@ -363,7 +401,7 @@ const controls = createControls(window, action => {
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
   ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
-}, { getSettings: getControlSettings, getKeyMap: (keyMap => () => keyMap)(loadKeyMap()) });
+}, { getSettings: getControlSettings, getKeyMap: () => keyMap });
 const pad = $('.touch-pad');
 controls.bindSlidePad(pad, { getSettings: getControlSettings });
 // input.js keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.js).
@@ -419,15 +457,87 @@ ui['controls-button'].addEventListener('click', () => { toggleControls(); sound.
 ui['controls-panel'].addEventListener('input', ({ target }) => {
   const key = target.dataset.controls;
   if (!key) return;
-  controlPrefs = controlSettings({ ...controlPrefs, [key]: key === 'fullLock' || key === 'opacity' ? Number(target.value) : target.value });
+  controlPrefs = controlSettings({ ...controlPrefs, [key]: ['fullLock', 'opacity', 'sensitivity'].includes(key) ? Number(target.value) : target.value });
   applyControls();
 });
 $('#controls-reset').addEventListener('click', () => { controlPrefs = controlSettings(); applyControls(); sound.cue('ui'); });
+const keyLabel = code => code.replace(/^Key|^Digit/, '').replace(/^Arrow/, 'Arrow ').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
+function showKeyMap() {
+  const introKeys = document.querySelector('.intro-controls .keys');
+  introKeys.replaceChildren(...['throttle', 'left', 'brake', 'right'].map(action => {
+    const key = document.createElement('kbd'); key.textContent = keyLabel(keyMap[action][0]); return key;
+  }));
+  const hints = document.querySelectorAll('.intro-controls > div');
+  hints[1].firstElementChild.textContent = keyLabel(keyMap.fly[0]);
+  hints[2].firstElementChild.textContent = keyLabel(keyMap.boost[0]);
+  for (const button of document.querySelectorAll('[data-rebind]')) {
+    button.lastElementChild.textContent = keyMap[button.dataset.rebind].map(keyLabel).join(' / ');
+    button.setAttribute('aria-pressed', String(rebinding === button.dataset.rebind));
+  }
+}
+for (const button of document.querySelectorAll('[data-rebind]')) button.addEventListener('click', () => {
+  controls.clear();
+  rebinding = button.dataset.rebind;
+  $('#keymap-status').textContent = `Press a key for ${rebinding.toUpperCase()}.`;
+  showKeyMap();
+});
+$('#keymap-reset').addEventListener('click', () => {
+  controls.clear(); rebinding = null; keyMap = resetKeyMap(); saveKeyMap(keyMap); showKeyMap();
+  $('#keymap-status').textContent = 'Keyboard defaults restored.';
+});
+showKeyMap();
+function editLayout(editing) {
+  editingLayout = editing;
+  controls.clear(); padTouch = null; drawPad();
+  document.body.classList.toggle('layout-editing', editing);
+  $('#layout-toolbar').hidden = !editing;
+  toggleControls(false);
+  phaseUI();
+  applyControls();
+}
+$('#layout-edit').addEventListener('click', () => editLayout(true));
+$('#layout-done').addEventListener('click', () => editLayout(false));
+$('#layout-reset').addEventListener('click', () => { controlPrefs = { ...controlPrefs, layout: {} }; applyControls(); });
+for (const button of touchButtons) {
+  let drag = null;
+  button.addEventListener('pointerdown', event => {
+    if (!editingLayout) return;
+    event.preventDefault();
+    drag = { id: event.pointerId, dx: event.clientX - (button.getBoundingClientRect().left + button.offsetWidth / 2), dy: event.clientY - (button.getBoundingClientRect().top + button.offsetHeight / 2) };
+    button.setPointerCapture(event.pointerId);
+  });
+  button.addEventListener('pointermove', event => {
+    if (!editingLayout || event.pointerId !== drag?.id) return;
+    const x = Math.min(innerWidth - button.offsetWidth / 2 - 8, Math.max(button.offsetWidth / 2 + 8, event.clientX - drag.dx));
+    const y = Math.min(innerHeight - button.offsetHeight / 2 - 8, Math.max(button.offsetHeight / 2 + 8, event.clientY - drag.dy));
+    controlPrefs = { ...controlPrefs, layout: { ...controlPrefs.layout, [button.dataset.control]: { x: controlPrefs.hand === 'right' ? 1 - x / innerWidth : x / innerWidth, y: y / innerHeight } } };
+    applyControls(false);
+  });
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, event => { if (event.pointerId === drag?.id) { drag = null; applyControls(); } });
+}
+window.addEventListener('resize', applyControls);
 document.addEventListener('click', event => {
   if (!event.target.closest('.controls-menu')) toggleControls(false);
 });
 // Capture phase so Escape only closes the panel and never reaches input.js as a pause/resume.
 document.addEventListener('keydown', event => {
+  if (editingLayout && event.code === 'Escape') {
+    event.preventDefault(); event.stopImmediatePropagation(); editLayout(false); return;
+  }
+  if (rebinding) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (event.repeat) return;
+    if (event.code === 'Escape') { rebinding = null; showKeyMap(); $('#keymap-status').textContent = 'Key change cancelled.'; return; }
+    const action = rebinding;
+    const result = rebind(keyMap, action, event.code);
+    if (result.error) {
+      $('#keymap-status').textContent = result.error === 'reserved' ? `${keyLabel(event.code)} is reserved. Press another key.` : 'That key is unavailable. Press another key.';
+      return;
+    }
+    controls.clear(); keyMap = result.map; saveKeyMap(keyMap); rebinding = null; showKeyMap();
+    $('#keymap-status').textContent = result.swapped ? `${action.toUpperCase()} and ${result.swapped.toUpperCase()} swapped conflicting keys.` : `${action.toUpperCase()} assigned to ${keyLabel(event.code)}.`;
+    return;
+  }
   if (event.code !== 'Escape' || ui['controls-panel'].hidden) return;
   event.preventDefault();
   event.stopPropagation();
@@ -474,8 +584,9 @@ function phaseUI() {
   if (!['racing', 'countdown'].includes(phase)) { padTouch = null; drawPad(); } // controls.clear() reset the real pad; drop the mirror with it
   ui.intro.hidden = !ready;
   ui['race-info'].hidden = ready;
-  ui['race-overlay'].hidden = !overlay;
-  ui['touch-controls'].hidden = ready || overlay;
+  ui['race-overlay'].hidden = !overlay || editingLayout;
+  ui['touch-controls'].hidden = !editingLayout && (ready || overlay);
+  ui.intro.hidden ||= editingLayout;
   ui['controls-button'].disabled = !(ready || phase === 'paused');
   if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
@@ -520,7 +631,8 @@ function updateUI(now, input) {
   ui.position.textContent = String(racePosition(race)).padStart(2, '0');
   ui.timer.textContent = timeString(race.elapsed);
   ui.distance.textContent = (car.distance / 1000).toFixed(2);
-  ui['progress-fill'].style.width = `${car.distance / RACE_LENGTH * 100}%`;
+  ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
+  $('#race-length').textContent = (race.length / 1000).toFixed(2);
   ui['fuel-value'].textContent = String(Math.round(car.fuel));
   ui['fuel-fill'].style.width = `${car.fuel}%`;
   ui['fuel-meter'].setAttribute('aria-valuenow', String(Math.round(car.fuel)));
@@ -528,20 +640,35 @@ function updateUI(now, input) {
   const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
   // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
   if (controlPrefs.flyMode === 'toggle' && input.fly && (car.exhausted || car.fuel <= 0)) controls.setFly(false);
-  const hold = touchPreference.matches ? tap ? 'TAP FLY' : 'HOLD FLY' : 'HOLD SPACE';
-  const release = touchPreference.matches ? 'RELEASE FLY' : 'RELEASE SPACE';
+  const hold = touchPreference.matches ? tap ? 'TAP FLY' : 'HOLD FLY' : `HOLD ${keyLabel(keyMap.fly[0]).toUpperCase()}`;
+  const release = touchPreference.matches ? 'RELEASE FLY' : `RELEASE ${keyLabel(keyMap.fly[0]).toUpperCase()}`;
   const touchdown = car.landing && race.elapsed - car.landing.time < 1.1;
   const depleted = car.exhausted || car.fuel <= 0;
   const state = car.thrusting ? car.verticalSpeed > 0.2 ? 'ASCENDING' : 'CRUISE' : car.altitude > 0.25 ? 'DESCENDING' : touchdown ? 'TOUCHDOWN' : depleted ? 'RECHARGING' : car.speed >= 18 ? 'READY TO FLY' : 'BUILD SPEED';
-  ui['flight-state'].textContent = state;
-  ui['flight-budget'].textContent = `${(car.fuel / 19).toFixed(1)}s`;
+  const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
+  const airDash = car.thrusting && car.boosting;
+  ui['flight-state'].textContent = airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
+  nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
+  nitroMeter.classList.toggle('is-max', car.nitro >= 3);
+  nitroStatus.textContent = nitroActive ? 'NITRO ACTIVE' : car.nitro >= 3 ? 'NITRO MAX' : `NITRO ${car.nitro.toFixed(2)} / 3`;
+  for (const [index, segment] of nitroSegments.entries()) {
+    const fill = Math.min(1, Math.max(0, car.nitro - index));
+    segment.firstElementChild.style.transform = `scaleX(${fill})`;
+    segment.classList.toggle('is-full', fill === 1);
+  }
+  if (car.perfectLines > previousPerfectLines) perfectUntil = race.elapsed + 2;
+  if (car.perfectLines < previousPerfectLines) perfectUntil = 0;
+  previousPerfectLines = car.perfectLines;
+  $('#maneuver-report').hidden = race.phase !== 'racing' || race.elapsed >= perfectUntil;
+  document.body.classList.toggle('nitro-active', nitroActive);
+  ui['flight-budget'].textContent = `${(car.fuel / (airDash ? 22 : 19)).toFixed(1)}s`;
   ui['flight-instruction'].textContent = car.thrusting ? `${tap ? 'TAP FLY TO LAND' : 'RELEASE TO DESCEND'} · STEER IN THE AIR` : car.altitude > 0.25 ? depleted ? 'CHARGE EMPTY · AUTO LANDING' : `${hold} TO CLIMB AGAIN` : car.exhausted ? `${tap ? 'TAP FLY TO LAND' : release} · RECHARGE ON ROAD` : car.speed < 18 ? `REACH 65 KM/H · ${hold} TO LIFT` : depleted ? 'CHARGING · STAY ON THE ROAD' : `${hold} TO LIFT${tap ? '' : ' · RELEASE TO LAND'}`;
   ui['fuel-caption'].textContent = car.exhausted ? `${tap ? 'LAND' : release} TO RECHARGE` : car.boosting ? 'BOOST · SHARED THRUSTER CHARGE' : car.thrusting ? 'THRUSTERS ENGAGED' : flying ? 'DESCENDING TO ROAD' : 'GROUND RECHARGE ACTIVE';
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 22);
-  document.body.classList.toggle('boosting', car.boosting && race.phase === 'racing');
-  const boost = car.boosting && race.phase === 'racing';
+  document.body.classList.toggle('boosting', (car.boosting || nitroActive) && race.phase === 'racing');
+  const boost = (car.boosting || nitroActive) && race.phase === 'racing';
   const calm = visual.comfortable || matchMedia('(prefers-reduced-motion: reduce)').matches;
   boostStatus.textContent = boost ? 'THRUST ACTIVE' : car.fuel === 0 ? 'CHARGE EMPTY' : car.fuel < 100 && !flying ? 'RECHARGING' : 'BOOST READY';
   boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
@@ -591,17 +718,11 @@ function updateUI(now, input) {
   const near = car.nearMiss;
   ui['skill-report'].hidden = race.phase !== 'racing' || impactAge < 1.1 || !near || race.elapsed - near.time > 1.8;
   if (!ui['skill-report'].hidden) ui['skill-report'].textContent = `CLOSE PASS ×${near.combo}  /  ${near.charge < 0.5 ? 'CHARGE FULL' : `+${Math.round(near.charge)}% CHARGE`}`;
-  const length = race.length ?? RACE_LENGTH;
+  const length = race.length;
   let status = race.phase.toUpperCase();
   if (race.phase === 'racing' && car.distance >= length - 500) {
-    // Final-sprint gaps (metres) to the nearest rival ahead / behind.
-    let ahead = Infinity, behind = Infinity;
-    for (const rival of race.rivals) {
-      const gap = rival.distance - car.distance;
-      if (gap > 0) ahead = Math.min(ahead, gap);
-      else behind = Math.min(behind, -gap);
-    }
-    status = `FINAL 500 M${ahead < Infinity ? ` · +${Math.round(ahead)} m` : ''}${behind < Infinity ? ` · −${Math.round(behind)} m` : ''}`;
+    const { ahead, behind } = sprintGaps(race);
+    status = `FINAL 500 M${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
   }
   ui['race-status'].textContent = status;
   ui['driving-message'].textContent = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? 'REACH 65 KM/H TO LIFT OFF' : car.exhausted && input.fly ? 'RELEASE FLIGHT TO RECHARGE' : '';

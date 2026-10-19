@@ -386,10 +386,17 @@ test('a complete 5 km sprint reaches results, saves a best time and can race aga
   await expect(page.locator('#distance')).toHaveText('5.00');
   await expect(page.locator('#result-stats')).toBeVisible();
   expect(await page.evaluate(() => Number(localStorage.getItem('skyline-rush-best')))).toBeGreaterThan(50);
+  const history = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-history')));
+  expect(history).toHaveLength(1);
+  expect(history[0]).toMatchObject({ track: 'coast', distance: 5000 });
+  expect(history[0].time).toBeGreaterThan(50);
+  const bests = await page.evaluate(() => ({ perTrack: JSON.parse(localStorage.getItem('skyline-rush-best-tracks')).coast, legacy: Number(localStorage.getItem('skyline-rush-best')) }));
+  expect(bests.perTrack).toBe(bests.legacy);
   await page.screenshot({ path: 'artifacts/race-results.jpeg', quality: 70 });
   await page.getByRole('button', { name: 'Race again' }).click();
   await expect(page.locator('#distance')).toHaveText('0.00');
   await expect(page.locator('#race-status')).toHaveText('COUNTDOWN');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-history')).length)).toBe(1);
 });
 
 test('flight HUD explains ascent, descent, touchdown and recharging', async ({ page }) => {
@@ -441,7 +448,7 @@ test('reduced motion keeps flight instructions while hiding nonessential speed s
 
 test.describe('narrow touch screen', () => {
   test.use({ viewport: { width: 320, height: 740 }, hasTouch: true, isMobile: true });
-  test('all six controls remain onscreen with usable touch targets', async ({ page }) => {
+  test('all seven controls remain onscreen with usable touch targets', async ({ page }) => {
     await useControls(page, { mode: 'buttons' });
     await page.goto('/');
     await page.getByRole('button', { name: 'Start race' }).click();
@@ -450,7 +457,7 @@ test.describe('narrow touch screen', () => {
       const { left, right, width, height } = button.getBoundingClientRect();
       return { left, right, width, height };
     }));
-    expect(bounds).toHaveLength(11);
+    expect(bounds).toHaveLength(12);
     for (const bound of bounds) {
       expect(bound.left).toBeGreaterThanOrEqual(0);
       expect(bound.right).toBeLessThanOrEqual(320);
@@ -727,9 +734,9 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         await expect(page.locator('.touch-pad')).toBeHidden();
         const steer = hand === 'right' ? (x => x > width / 2) : (x => x < width / 2);
         const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
-        for (const name of ['Steer left', 'Steer right']) expect(steer(await centerX(name)), `${hand} ${name}`).toBe(true);
+        for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${hand} ${name}`).toBe(true);
         // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-        for (const name of ['Brake', 'Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
+        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Activate nitro'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
       }
     });
 
@@ -778,8 +785,8 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
           const bounds = await visibleBounds(page);
           const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
           expect(touchButtons.map(bound => bound.name).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
-            ? ['Accelerate', 'Hold to boost', 'Hold to fly']
-            : ['Accelerate', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']);
+            ? ['Accelerate', 'Activate nitro', 'Hold to boost', 'Hold to fly']
+            : ['Accelerate', 'Activate nitro', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']);
           expect(bounds.some(bound => bound.pad)).toBe(mode === 'slide');
           for (const bound of bounds) {
             const label = `${mode} ${size} ${bound.name}`;
