@@ -492,9 +492,13 @@ export function createWorld(canvas) {
       }
       roadGeometry.attributes.position.needsUpdate = true;
       [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
+      const firstGate = race.rings.findIndex(ring => ring.distance > distance); // the gates are the next rings ahead
       gates.forEach((gate, i) => {
-        const d = Math.floor(distance / 220) * 220 + (i + 1) * 220;
-        gate.position.set(roadCenter(d) - center + 2.5, 8, -(d - distance));
+        const ring = firstGate < 0 ? undefined : race.rings[firstGate + i];
+        gate.visible = ring !== undefined;
+        if (!ring) return;
+        const d = ring.distance;
+        gate.position.set(roadCenter(d) - center + ring.x, ring.altitude, -(d - distance));
         gate.rotation.y = -roadHeading(d);
       });
       towers.forEach((tower, i) => {

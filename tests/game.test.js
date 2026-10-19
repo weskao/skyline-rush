@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -802,4 +802,205 @@ test('near-miss combo points are doubled while drifting', () => {
     stepRace(race, input, 1 / 60);
     assert.equal(race.player.combo, combo);
   }
+});
+
+// ---- rings ----
+// `unreachable` adds a far-off ring to group 0 so a single test ring never completes a PERFECT LINE by itself.
+function ringRace(rings, setup = {}, unreachable = true) {
+  const race = racing();
+  race.rings = rings.map((ring, i) => ({ distance: 100 + i * 10, x: 0, altitude: 0, radius: RING_RADIUS, type: 'charge', group: 0, ...ring }));
+  if (unreachable) race.rings.push({ distance: 4000, x: 0, altitude: 0, radius: RING_RADIUS, type: 'charge', group: 0 });
+  Object.assign(race.player, { distance: 99.7, x: 0, speed: 40, ...setup });
+  return race;
+}
+
+test('rings come only from the track seed: reproducible, ordered, in groups of 3 to 5, and every type appears', () => {
+  const random = Math.random;
+  Math.random = () => { throw new Error('Math.random used'); };
+  try {
+    const types = new Set();
+    for (const id of TRACK_IDS) {
+      const { rings, length } = createRace(id);
+      assert.deepEqual(rings, createRace(id).rings);
+      assert.ok(rings.length >= 7, id);
+      rings.forEach((ring, i) => {
+        assert.deepEqual(Object.keys(ring), ['distance', 'x', 'altitude', 'radius', 'type', 'group']);
+        assert.ok(ring.distance > 0 && ring.distance < length && Math.abs(ring.x) < ROAD_LIMIT && ring.altitude >= 0 && ring.altitude <= 12);
+        assert.ok(i === 0 || ring.distance > rings[i - 1].distance);
+        assert.equal(ring.radius, ring.type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS);
+        types.add(ring.type);
+      });
+      const sizes = Object.values(Object.groupBy(rings, ring => ring.group)).map(group => group.length);
+      assert.ok(sizes.every(size => size >= 3 && size <= 5), `${id} group sizes ${sizes}`);
+      assert.deepEqual([...new Set(rings.map(ring => ring.group))], sizes.map((_, i) => i)); // consecutive group ids
+    }
+    assert.deepEqual(types, new Set(['charge', 'nitro', 'slipstream', 'risk', 'mystery']));
+  } finally {
+    Math.random = random;
+  }
+  assert.notDeepEqual(createRace('coast').rings, createRace('neon').rings);
+});
+
+test('coast keeps the original gate positions every 220 m at x 2.5 and altitude 8', () => {
+  const { rings } = createRace('coast');
+  rings.forEach((ring, i) => {
+    assert.equal(ring.distance, (i + 1) * 220);
+    assert.equal(ring.x, 2.5);
+    assert.equal(ring.altitude, 8);
+  });
+});
+
+test('a ring counts only when the car passes inside its radius; grazing the edge does not', () => {
+  const hit = ringRace([{ type: 'nitro' }]);
+  advance(hit, 0.1);
+  assert.equal(hit.player.rings, 1);
+  assert.equal(hit.player.nitro, 0.5);
+  const inside = ringRace([{ type: 'nitro' }], { x: RING_RADIUS - 0.05 });
+  advance(inside, 0.1);
+  assert.equal(inside.player.rings, 1);
+  const graze = ringRace([{ type: 'nitro' }], { x: RING_RADIUS + 0.05 });
+  advance(graze, 0.1);
+  assert.equal(graze.player.rings, 0);
+  assert.equal(graze.player.nitro, 0);
+  const low = ringRace([{ type: 'nitro', altitude: 8 }]); // right lane, wrong height
+  advance(low, 0.1);
+  assert.equal(low.player.rings, 0);
+  const again = ringRace([{ type: 'nitro' }]);
+  advance(again, 0.5, {}); // a ring is only passed once
+  assert.equal(again.player.nitro, 0.5);
+});
+
+test('charge, nitro, slipstream and risk rings pay their rewards', () => {
+  const charge = ringRace([{ type: 'charge' }]);
+  charge.player.fuel = 50;
+  advance(charge, 0.1);
+  assert.ok(charge.player.fuel >= 70 && charge.player.fuel < 72);
+  const full = ringRace([{ type: 'charge' }]);
+  full.player.fuel = 95;
+  advance(full, 0.1);
+  assert.equal(full.player.fuel, 100);
+  const overflow = ringRace([{ type: 'nitro' }]);
+  overflow.player.nitro = NITRO_MAX;
+  overflow.player.fuel = 10;
+  advance(overflow, 0.1);
+  assert.equal(overflow.player.nitro, NITRO_MAX);
+  assert.ok(overflow.player.fuel > 10); // addNitro turns the overflow into fuel
+  const slip = ringRace([{ type: 'slipstream' }]);
+  advance(slip, 0.1);
+  assert.ok(slip.player.miniBoost > 2.8 && slip.player.miniBoost <= 3);
+  const risk = ringRace([{ type: 'risk', radius: RISK_RING_RADIUS }]);
+  advance(risk, 0.1);
+  assert.equal(risk.player.nitro, 1);
+  assert.equal(risk.player.score, RISK_SCORE);
+});
+
+test('clearing a whole group is a PERFECT LINE worth one extra nitro; missing one breaks it but keeps earned rewards', () => {
+  const perfect = ringRace([0, 1, 2].map(() => ({ type: 'nitro' })), {}, false);
+  advance(perfect, 1);
+  assert.equal(perfect.player.rings, 3);
+  assert.equal(perfect.player.perfectLines, 1);
+  assert.equal(perfect.player.nitro, 2.5); // 3 x 0.5 + 1 for the line, capped at the 3 charges
+  const broken = ringRace([{ type: 'nitro' }, { type: 'nitro', x: 9 }, { type: 'nitro' }], {}, false);
+  advance(broken, 1);
+  assert.equal(broken.player.rings, 2);
+  assert.equal(broken.player.perfectLines, 0);
+  assert.equal(broken.player.nitro, 1); // the two rings cleared still paid
+});
+
+test('the finished race reports rings, perfect lines and score', () => {
+  const race = ringRace([0, 1, 2].map(() => ({ type: 'risk', radius: RISK_RING_RADIUS })), {}, false);
+  advance(race, 1);
+  Object.assign(race.player, { distance: race.length - 1, speed: 60 });
+  advance(race, 0.2);
+  assert.equal(race.phase, 'finished');
+  assert.equal(race.result.rings, 3);
+  assert.equal(race.result.perfectLines, 1);
+  assert.equal(race.result.score, 3 * RISK_SCORE);
+  assert.equal(createRace().player.rings, 0);
+  assert.equal(createRace().player.score, 0);
+});
+
+test('mystery rings pick their effect from the seed, never Math.random, and grant exactly that one', () => {
+  const random = Math.random;
+  Math.random = () => { throw new Error('Math.random used'); };
+  try {
+    assert.deepEqual(MYSTERY_EFFECTS.slice().sort(), ['freeze', 'ghost', 'magnet', 'shield']);
+    const seen = new Set();
+    for (let seed = 0; seed < 40; seed++) {
+      assert.equal(mysteryEffect(seed, 3), mysteryEffect(seed, 3));
+      seen.add(mysteryEffect(seed, 3));
+    }
+    assert.equal(seen.size, 4);
+    for (const effect of MYSTERY_EFFECTS) {
+      const seed = Array.from({ length: 200 }, (_, s) => s).find(s => mysteryEffect(s, 0) === effect);
+      const race = ringRace([{ type: 'mystery' }]);
+      race.seed = seed;
+      advance(race, 0.1);
+      for (const name of MYSTERY_EFFECTS) assert.equal(race.player.effects[name] > 0, name === effect, `${effect}/${name}`);
+    }
+  } finally {
+    Math.random = random;
+  }
+});
+
+test('shield absorbs exactly one collision', () => {
+  const race = racing();
+  Object.assign(race.player, { distance: 100, x: 0, speed: 40 });
+  race.player.effects.shield = 10;
+  race.traffic = [{ x: 0, distance: 102, speed: 20, color: 0 }];
+  advance(race, 0.1);
+  assert.equal(race.player.collisions, 0);
+  assert.equal(race.player.effects.shield, 0);
+  assert.ok(race.player.speed > 38); // no speed lost
+  Object.assign(race.player, { distance: 200, cooldown: 0 });
+  race.traffic = [{ x: 0, distance: 202, speed: 20, color: 0 }];
+  advance(race, 0.1);
+  assert.equal(race.player.collisions, 1);
+});
+
+test('ghost drives through traffic while it lasts and then wears off', () => {
+  const crash = () => {
+    const race = racing();
+    Object.assign(race.player, { distance: 100, x: 0, speed: 40 });
+    race.traffic = [{ x: 0, distance: 102, speed: 20, color: 0 }];
+    return race;
+  };
+  const plain = crash();
+  advance(plain, 0.1);
+  assert.equal(plain.player.collisions, 1);
+  const ghost = crash();
+  ghost.player.effects.ghost = 3;
+  advance(ghost, 0.1);
+  assert.equal(ghost.player.collisions, 0);
+  advance(ghost, 3);
+  assert.equal(ghost.player.effects.ghost, 0);
+});
+
+test('freeze slows the rivals while it lasts', () => {
+  const run = freeze => {
+    const race = racing();
+    race.rivals.forEach(rival => Object.assign(rival, { distance: 500, speed: 60 }));
+    race.player.effects.freeze = freeze;
+    advance(race, 1);
+    return race.rivals[0].distance - 500;
+  };
+  const frozen = run(2);
+  const normal = run(0);
+  assert.ok(frozen < normal * 0.6 && frozen > 0, `${frozen} vs ${normal}`);
+});
+
+test('magnet pulls nearby pickups into the car, once', () => {
+  const run = magnet => {
+    const race = racing();
+    Object.assign(race.player, { distance: 100, x: 0, speed: 40 });
+    race.pickups = [{ distance: 108, x: 7.5, altitude: 0, tier: 'can' }, { distance: 400, x: 0, altitude: 0, tier: 'can' }];
+    race.player.effects.magnet = magnet;
+    advance(race, 0.5);
+    return race;
+  };
+  const pulled = run(5);
+  assert.equal(pulled.player.nitro, 0.5); // the far pickup stays out of range
+  advance(pulled, 0.5);
+  assert.equal(pulled.player.nitro, 0.5); // and the pulled one is not collected again on crossing
+  assert.equal(run(0).player.nitro, 0);
 });
