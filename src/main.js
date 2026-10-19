@@ -1,4 +1,5 @@
 import './style.css';
+import { version } from '../package.json';
 import { createRace, startRace, stepRace, racePosition, sprintGaps } from './game.js';
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
@@ -169,7 +170,8 @@ document.querySelector('#app').innerHTML = `
     <div class="touch-pedals"><button class="touch-gas" data-control="throttle" aria-label="Accelerate">${icon('pedal')}</button></div>
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><span>Drag buttons to fit your thumbs</span><button id="layout-done">Done editing</button></div>
-  <div class="bottomline"><span><i></i> BEYOND THE ROAD</span><span>AN ORIGINAL ARCADE FLIGHT RACER <span class="version">v0.1</span></span></div>
+  <div class="bottomline"><span><i></i> BEYOND THE ROAD</span><span>AN ORIGINAL ARCADE FLIGHT RACER</span></div>
+  <div class="build-version">v${version}</div>
 `;
 
 const $ = selector => document.querySelector(selector);

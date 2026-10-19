@@ -108,6 +108,7 @@ Play at [https://weskao.github.io/skyline-rush/](https://weskao.github.io/skylin
 ```sh
 git tag v0.4.0 && git push origin v0.4.0   # Release: CI checks → GitHub Pages deployment
 make deploy                              # Deploy remote main manually through the same CI flow
+# The on-screen version (ready screen, desktop and mobile) is `package.json`'s version; `/release` bumps it.
 ```
 
 CI (`.github/workflows/ci.yml`) builds and runs unit and Chrome browser tests on pushes to `main`, pull requests, version-tag pushes (`v*`) and manual runs. Version-tag pushes and manual runs publish only after all checks pass, then verify the public website. Ordinary branch pushes and pull requests only run checks. Pages builds use `--base=/skyline-rush/` so scripts, styles and fonts load from the project URL. GitHub Pages must use **GitHub Actions** as its publishing source. Manual deployment requires an authenticated GitHub CLI (`gh auth login`); push your commits first because `make deploy` uses remote `main`. Deployment no longer depends on a local pre-push hook or Netlify login.
