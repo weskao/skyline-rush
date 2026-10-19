@@ -1,3 +1,12 @@
+## [0.4.0] - 2026-10-19
+
+### 🚀 Features
+
+- **controls:** Add configurable touch controls
+
+### 📚 Documentation
+
+- Add gameplay depth design todo
 ## [0.3.1] - 2026-10-18
 
 ### 📚 Documentation
