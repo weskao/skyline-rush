@@ -1,0 +1,8 @@
+{
+  "method": "120 requestAnimationFrame intervals during a real Coast race; installed headless Chrome, SwiftShader, DPR 1; one browser at a time",
+  "desktopViewport": { "width": 1440, "height": 900 },
+  "touchViewport": { "width": 390, "height": 844 },
+  "before": { "desktop": { "medianMs": 16.7, "p95Ms": 16.7 }, "touch": { "medianMs": 16.7, "p95Ms": 16.8 } },
+  "after": { "desktop": { "medianMs": 16.7, "p95Ms": 16.8 }, "touch": { "medianMs": 16.7, "p95Ms": 16.8 } },
+  "limits": "Short local frame-cadence sample, not callback cost, GPU completion, physical-phone calibration or sustained thermal performance. Other tracks were visually verified, not benchmarked."
+}
