@@ -4,6 +4,7 @@ import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { vfxSettings, VFX_RANGES, VFX_PRESETS } from './vfx-settings.js';
+import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 
 const icons = {
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
@@ -21,6 +22,16 @@ const icons = {
   brake: '<path d="M5 7h14v11H5zM9 10v5m6-5v5"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]}</svg>`;
+// Controls-panel radio groups: settings key → [legend, [value, label]...]; values must match controlSettings().
+const CONTROL_CHOICES = {
+  mode: ['Steering', [['slide', 'Slide'], ['buttons', 'Buttons']]],
+  hand: ['Steering hand', [['left', 'Left'], ['right', 'Right']]],
+  fullLock: ['Slide sensitivity', [[40, 'High'], [60, 'Medium'], [80, 'Low']]],
+  size: ['Button size', [['S', 'Small'], ['M', 'Medium'], ['L', 'Large']]],
+  flyMode: ['FLY button', [['hold', 'Hold'], ['toggle', 'Toggle']]],
+};
+const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
+const controlChoices = Object.entries(CONTROL_CHOICES).map(([key, [legend, options]]) => `<fieldset class="controls-field"><legend>${legend}</legend>${options.map(([value, label]) => `<label class="controls-choice"><input type="radio" name="controls-${key}" data-controls="${key}" value="${value}"><span>${label}</span></label>`).join('')}</fieldset>`).join('');
 
 document.querySelector('#app').innerHTML = `
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
@@ -46,6 +57,14 @@ document.querySelector('#app').innerHTML = `
           <p id="music-prompt-title">Play background music?</p>
           <button class="setting" id="music-yes"><span>Play music</span></button>
           <button class="setting" id="music-no"><span>Not now</span></button>
+        </div>
+      </div>
+      <div class="controls-menu">
+        <button class="controls-button" id="controls-button" aria-expanded="false" aria-controls="controls-panel" title="Touch controls">Controls</button>
+        <div class="controls-panel" id="controls-panel" role="group" aria-label="Touch controls" hidden>
+          ${controlChoices}
+          <label class="controls-field controls-range">Button opacity <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Button opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
+          <button class="controls-reset" id="controls-reset">Reset to defaults</button>
         </div>
       </div>
       <button class="icon-button" id="camera-button" aria-label="Change camera" aria-pressed="false" title="Camera · C">${icon('camera')}</button>
@@ -117,7 +136,25 @@ document.querySelector('#app').innerHTML = `
     <div class="mode-indicator"><div class="mode-heading"><div class="mode-icon" id="mode-icon">${icon('road')}</div><span id="flight-mode">ROAD MODE</span><span id="flight-budget">5.3s</span></div><strong id="flight-state">BUILD SPEED</strong><span class="mode-key" id="flight-instruction">REACH 65 KM/H · HOLD SPACE TO LIFT</span></div>
     <div class="flight-telemetry"><div class="altitude-stat"><span class="stat-label">ALTITUDE</span><strong><span id="altitude">0.0</span><small>M</small></strong></div><div class="fuel-stat"><div class="fuel-heading"><span class="stat-label">THRUSTER CHARGE</span><span><b id="fuel-value">100</b><small>%</small></span></div><div class="fuel-track" id="fuel-meter" role="meter" aria-label="Thruster charge" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="fuel-fill"></i></div><span class="fuel-caption" id="fuel-caption">GROUND RECHARGE ACTIVE</span></div></div>
   </footer>
+  ${/* TOUCH CONTROLS DOM/CSS CONTRACT — frozen; style.css builds from this, change both together.
+   #touch-controls.touch-controls (shown by the existing media rules; [hidden] outside racing/countdown)
+     data-steer-mode="slide|buttons"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer
+                                      buttons: .touch-steer left/right buttons steer, hide .touch-pad
+     data-hand="left|right"           side of the screen the steering (pad or .touch-steer) sits on; actions/pedals take the other side
+     style --touch-scale              0.85 (S) | 1 (M) | 1.15 (L); multiply control sizes by it
+     style --touch-opacity            0.4–1; control opacity
+     children, in order (all siblings):
+       .touch-pad[aria-hidden]        slide surface (pointer events, touch-action:none) > .pad-ring + .pad-knob (positioned later by main.js)
+       .touch-steer                   button[data-control=left|right]
+       .touch-actions                 button.touch-fly[data-control=fly], button.touch-boost[data-control=boost]
+       .touch-pedals                  button[data-control=brake], button.touch-gas[data-control=throttle] (gas always visible, both modes)
+     button.is-held / [aria-pressed=true] while active (existing).
+   Toolbar Controls panel (NOT inside .settings): .controls-menu > button#controls-button.controls-button (text "Controls",
+     deliberately not .icon-button) + #controls-panel.controls-panel[hidden] — the scroll container: give it max-height + overflow:auto.
+     Inside: fieldset.controls-field > legend + label.controls-choice > input[type=radio][data-controls] + span;
+     label.controls-field.controls-range > output + input[type=range][data-controls=opacity]; button#controls-reset.controls-reset. */ ''}
   <div class="touch-controls" id="touch-controls" aria-label="Touch driving controls" hidden>
+    <div class="touch-pad" aria-hidden="true"><i class="pad-ring"></i><i class="pad-knob"></i></div>
     <div class="touch-steer"><button data-control="left" aria-label="Steer left">${icon('left')}</button><button data-control="right" aria-label="Steer right">${icon('right')}</button></div>
     <div class="touch-actions"><button class="touch-fly" data-control="fly" aria-label="Hold to fly">${icon('fly')}<span>FLY</span></button><button class="touch-boost" data-control="boost" aria-label="Hold to boost">${icon('arrow')}<span>BOOST</span></button></div>
     <div class="touch-pedals"><button data-control="brake" aria-label="Brake">${icon('brake')}</button><button class="touch-gas" data-control="throttle" aria-label="Accelerate">${icon('pedal')}</button></div>
@@ -126,7 +163,7 @@ document.querySelector('#app').innerHTML = `
 `;
 
 const $ = selector => document.querySelector(selector);
-const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'progress-fill', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'settings-panel', 'camera-button', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
+const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'progress-fill', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'settings-panel', 'camera-button', 'controls-button', 'controls-panel', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
 ui['assist-button'] = $('#assist-button');
 ui['skill-report'] = $('#skill-report');
 const countdownNumber = $('#countdown-number');
@@ -144,7 +181,8 @@ let goUntil = 0;
 const AUDIO_COOKIES = { music: 'skyline-rush-music', sfx: 'skyline-rush-sound' };
 const audio = { music: true, sfx: true };
 const audioSwitches = [...document.querySelectorAll('[data-audio]')];
-let autoThrottle = false;
+// Touch players start with AUTO on (checked once at load, never persisted); desktop starts off.
+let autoThrottle = touchPreference.matches;
 let animationId;
 let pausedPhase = 'racing';
 let best = null;
@@ -153,6 +191,11 @@ try { for (const kind in audio) audio[kind] = !document.cookie.split('; ').inclu
 const sound = createSound();
 let visual = vfxSettings();
 try { visual = vfxSettings(JSON.parse(localStorage.getItem('skyline-rush-vfx'))); } catch { /* Defaults work without storage. */ }
+// In-memory source of truth: input.js reads it on every pointermove, so storage is only touched on load/change.
+let controlPrefs = controlSettings();
+try { controlPrefs = controlSettings(JSON.parse(localStorage.getItem(CONTROLS_KEY))); } catch { /* Defaults work without storage. */ }
+const getControlSettings = () => controlPrefs;
+const controlInputs = [...document.querySelectorAll('[data-controls]')];
 const vfxControls = [...document.querySelectorAll('[data-vfx]')];
 const airflowHud = $('#airflow-hud');
 const boostStatus = document.createElement('span');
@@ -243,9 +286,14 @@ function pause() {
   sound.cue(race.phase === 'paused' ? 'pause' : 'ui');
 }
 
+function showAssist() {
+  ui['assist-button'].setAttribute('aria-pressed', String(autoThrottle));
+  ui['assist-button'].title = `Auto accelerator ${autoThrottle ? 'on' : 'off'} · T`;
+}
+
 function toggleAssist() {
   autoThrottle = !autoThrottle;
-  ui['assist-button'].setAttribute('aria-pressed', String(autoThrottle));
+  showAssist();
   sound.cue('ui');
 }
 
@@ -265,6 +313,28 @@ function toggleSound() {
 function toggleSettings(open = ui['settings-panel'].hidden) {
   ui['settings-panel'].hidden = !open;
   ui['settings-button'].setAttribute('aria-expanded', String(open));
+}
+
+// Touch layout is tuned between races only, so the panel never opens mid-race.
+function toggleControls(open = ui['controls-panel'].hidden) {
+  open &&= race.phase === 'ready' || race.phase === 'paused';
+  ui['controls-panel'].hidden = !open;
+  ui['controls-button'].setAttribute('aria-expanded', String(open));
+}
+
+function applyControls() {
+  const touch = ui['touch-controls'];
+  touch.dataset.steerMode = controlPrefs.mode;
+  touch.dataset.hand = controlPrefs.hand;
+  touch.style.setProperty('--touch-scale', String(TOUCH_SCALE[controlPrefs.size]));
+  touch.style.setProperty('--touch-opacity', String(controlPrefs.opacity));
+  controls.setFlyMode(controlPrefs.flyMode);
+  for (const input of controlInputs) {
+    const value = controlPrefs[input.dataset.controls];
+    if (input.type === 'radio') input.checked = input.value === String(value);
+    else { input.value = String(value); input.previousElementSibling.value = `${Math.round(value * 100)}%`; }
+  }
+  try { localStorage.setItem(CONTROLS_KEY, JSON.stringify(controlPrefs)); } catch { /* Settings remain usable in memory. */ }
 }
 
 // Browsers that block autoplay start audio only after a user gesture, so saved choices are applied on the first one.
@@ -290,8 +360,79 @@ function changeCamera() {
 const controls = createControls(window, action => {
   if (action === 'pause') toggleSettings(false);
   if (action === 'pause') $('#vfx-panel').open = false;
+  if (action === 'pause') toggleControls(false);
   ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
+}, { getSettings: getControlSettings });
+const pad = $('.touch-pad');
+controls.bindSlidePad(pad, { getSettings: getControlSettings });
+// input.js keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.js).
+const PAD_BRAKE_PX = 40;
+const PAD_HINT_SECONDS = 4;
+const padRing = $('.pad-ring');
+const padKnob = $('.pad-knob');
+let padTouch = null;
+let padHint = false;
+const clampPad = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+// Ring/knob sit at the pad's top-left in CSS; transform alone moves them (percentages centre each on its point).
+function placePad(el, x, y, opacity) {
+  el.style.transform = `translate(calc(${x}px - 50%), calc(${y}px - 50%))`;
+  el.style.opacity = opacity;
+  el.style.transition = reducedMotion.matches ? 'none' : 'opacity 0.6s ease';
+}
+function drawPad() {
+  const rect = pad.getBoundingClientRect();
+  const brake = !!padTouch && padTouch.y - padTouch.oy >= PAD_BRAKE_PX;
+  if (brake) ui['touch-controls'].dataset.padBrake = 'true'; else delete ui['touch-controls'].dataset.padBrake;
+  if (padTouch) {
+    const lock = controlPrefs.fullLock;
+    placePad(padRing, padTouch.ox - rect.left, padTouch.oy - rect.top, '0.35');
+    placePad(padKnob, clampPad(padTouch.x, padTouch.ox - lock, padTouch.ox + lock) - rect.left, clampPad(padTouch.y, padTouch.oy - lock, padTouch.oy + lock) - rect.top, '0.6');
+  } else {
+    placePad(padRing, rect.width / 2, rect.height / 2, padHint ? '0.25' : '0');
+    placePad(padKnob, rect.width / 2, rect.height / 2, padHint ? '0.45' : '0');
+  }
+}
+pad.addEventListener('pointerdown', event => {
+  if (padTouch) return;
+  padTouch = { id: event.pointerId, ox: event.clientX, oy: event.clientY, x: event.clientX, y: event.clientY };
+  drawPad();
 });
+pad.addEventListener('pointermove', event => {
+  if (event.pointerId !== padTouch?.id) return;
+  padTouch.x = event.clientX; padTouch.y = event.clientY;
+  const dx = padTouch.x - padTouch.ox;
+  if (Math.abs(dx) > controlPrefs.fullLock) padTouch.ox = padTouch.x - Math.sign(dx) * controlPrefs.fullLock;
+  drawPad();
+});
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  pad.addEventListener(type, event => {
+    if (event.pointerId !== padTouch?.id) return;
+    padTouch = null;
+    drawPad();
+  });
+}
+applyControls();
+showAssist();
+ui['controls-button'].addEventListener('click', () => { toggleControls(); sound.cue('ui'); });
+ui['controls-panel'].addEventListener('input', ({ target }) => {
+  const key = target.dataset.controls;
+  if (!key) return;
+  controlPrefs = controlSettings({ ...controlPrefs, [key]: key === 'fullLock' || key === 'opacity' ? Number(target.value) : target.value });
+  applyControls();
+});
+$('#controls-reset').addEventListener('click', () => { controlPrefs = controlSettings(); applyControls(); sound.cue('ui'); });
+document.addEventListener('click', event => {
+  if (!event.target.closest('.controls-menu')) toggleControls(false);
+});
+// Capture phase so Escape only closes the panel and never reaches input.js as a pause/resume.
+document.addEventListener('keydown', event => {
+  if (event.code !== 'Escape' || ui['controls-panel'].hidden) return;
+  event.preventDefault();
+  event.stopPropagation();
+  toggleControls(false);
+  ui['controls-button'].focus({ preventScroll: true });
+}, { capture: true });
 for (const type of ['click', 'keydown']) window.addEventListener(type, unlockAudio, { capture: true });
 // Try autoplay; where the browser blocks it, ask instead. The answer is itself the unlocking gesture.
 unlockAudio();
@@ -329,10 +470,13 @@ function phaseUI() {
   const ready = phase === 'ready';
   const overlay = phase === 'paused' || phase === 'finished';
   document.body.dataset.phase = phase;
+  if (!['racing', 'countdown'].includes(phase)) { padTouch = null; drawPad(); } // controls.clear() reset the real pad; drop the mirror with it
   ui.intro.hidden = !ready;
   ui['race-info'].hidden = ready;
   ui['race-overlay'].hidden = !overlay;
   ui['touch-controls'].hidden = ready || overlay;
+  ui['controls-button'].disabled = !(ready || phase === 'paused');
+  if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
   ui['race-status'].textContent = phase.toUpperCase();
@@ -376,15 +520,18 @@ function updateUI(now, input) {
   ui['fuel-fill'].style.width = `${car.fuel}%`;
   ui['fuel-meter'].setAttribute('aria-valuenow', String(Math.round(car.fuel)));
   ui.altitude.textContent = car.altitude.toFixed(1);
-  const hold = touchPreference.matches ? 'HOLD FLY' : 'HOLD SPACE';
+  const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
+  // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
+  if (controlPrefs.flyMode === 'toggle' && input.fly && (car.exhausted || car.fuel <= 0)) controls.setFly(false);
+  const hold = touchPreference.matches ? tap ? 'TAP FLY' : 'HOLD FLY' : 'HOLD SPACE';
   const release = touchPreference.matches ? 'RELEASE FLY' : 'RELEASE SPACE';
   const touchdown = car.landing && race.elapsed - car.landing.time < 1.1;
   const depleted = car.exhausted || car.fuel <= 0;
   const state = car.thrusting ? car.verticalSpeed > 0.2 ? 'ASCENDING' : 'CRUISE' : car.altitude > 0.25 ? 'DESCENDING' : touchdown ? 'TOUCHDOWN' : depleted ? 'RECHARGING' : car.speed >= 18 ? 'READY TO FLY' : 'BUILD SPEED';
   ui['flight-state'].textContent = state;
   ui['flight-budget'].textContent = `${(car.fuel / 19).toFixed(1)}s`;
-  ui['flight-instruction'].textContent = car.thrusting ? 'RELEASE TO DESCEND · STEER IN THE AIR' : car.altitude > 0.25 ? depleted ? 'CHARGE EMPTY · AUTO LANDING' : `${hold} TO CLIMB AGAIN` : car.exhausted ? `${release} · RECHARGE ON ROAD` : car.speed < 18 ? `REACH 65 KM/H · ${hold} TO LIFT` : depleted ? 'CHARGING · STAY ON THE ROAD' : `${hold} TO LIFT · RELEASE TO LAND`;
-  ui['fuel-caption'].textContent = car.exhausted ? `${release} TO RECHARGE` : car.boosting ? 'BOOST · SHARED THRUSTER CHARGE' : car.thrusting ? 'THRUSTERS ENGAGED' : flying ? 'DESCENDING TO ROAD' : 'GROUND RECHARGE ACTIVE';
+  ui['flight-instruction'].textContent = car.thrusting ? `${tap ? 'TAP FLY TO LAND' : 'RELEASE TO DESCEND'} · STEER IN THE AIR` : car.altitude > 0.25 ? depleted ? 'CHARGE EMPTY · AUTO LANDING' : `${hold} TO CLIMB AGAIN` : car.exhausted ? `${tap ? 'TAP FLY TO LAND' : release} · RECHARGE ON ROAD` : car.speed < 18 ? `REACH 65 KM/H · ${hold} TO LIFT` : depleted ? 'CHARGING · STAY ON THE ROAD' : `${hold} TO LIFT${tap ? '' : ' · RELEASE TO LAND'}`;
+  ui['fuel-caption'].textContent = car.exhausted ? `${tap ? 'LAND' : release} TO RECHARGE` : car.boosting ? 'BOOST · SHARED THRUSTER CHARGE' : car.thrusting ? 'THRUSTERS ENGAGED' : flying ? 'DESCENDING TO ROAD' : 'GROUND RECHARGE ACTIVE';
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 22);
@@ -414,7 +561,11 @@ function updateUI(now, input) {
     const active = control === 'left' ? input.steer < 0 : control === 'right' ? input.steer > 0 : !!input[control];
     button.classList.toggle('is-held', active);
     button.setAttribute('aria-pressed', String(active));
+    // Hold mode keeps the stable 'Hold to fly' label from the markup; only toggle mode varies it.
+    if (control === 'fly') button.setAttribute('aria-label', tap ? active ? 'Tap to land' : 'Tap to fly' : 'Hold to fly');
   });
+  const hint = !padTouch && race.phase === 'racing' && race.elapsed < PAD_HINT_SECONDS && controlPrefs.mode === 'slide';
+  if (hint !== padHint) { padHint = hint; drawPad(); }
   ui['speed-caption'].textContent = race.phase === 'ready' ? 'READY FOR TAKEOFF' : car.boosting ? 'BOOST ENGAGED' : autoThrottle ? 'AUTO ACCELERATOR · BRAKE TO OVERRIDE' : 'ALL ELECTRIC. ALL ADRENALINE.';
   document.body.classList.toggle('airborne', flying);
   document.body.classList.toggle('collision', impactAge < 0.45 && race.phase === 'racing');

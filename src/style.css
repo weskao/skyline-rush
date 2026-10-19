@@ -122,10 +122,10 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .result-stats small { font-size: 15px; color: #b1c2cd; }
 .error-message { position: fixed; z-index: 10; bottom: 180px; left: 10%; right: 10%; padding: 20px; background: #263849; color: #fff0e0; border: 1px solid var(--accent); text-align: center; font-size: 14px; }
 .touch-controls { display: none; position: fixed; bottom: 35px; left: 16px; right: 16px; z-index: 4; justify-content: space-between; align-items: end; gap: 12px; }
-.touch-controls button { width: 54px; height: 57px; border-radius: 8px; background: rgb(25 44 60 / .7); border: 1px solid rgb(210 226 238 / .3); display: flex; align-items: center; justify-content: center; touch-action: none; }
+.touch-controls button { width: calc(54px * var(--touch-scale, 1)); height: calc(57px * var(--touch-scale, 1)); border-radius: 8px; background: rgb(25 44 60 / .7); border: 1px solid rgb(210 226 238 / .3); display: flex; align-items: center; justify-content: center; touch-action: none; }
 .touch-controls button:active { background: #4b7187; }
 .touch-steer, .touch-pedals { display: flex; gap: 6px; }
-.touch-controls .touch-fly { width: 62px; height: 68px; border-color: #83ceeb; color: #aeebff; flex-direction: column; gap: 5px; font-size: 8px; letter-spacing: 1px; }
+.touch-controls .touch-fly { width: calc(62px * var(--touch-scale, 1)); height: calc(68px * var(--touch-scale, 1)); border-color: #83ceeb; color: #aeebff; flex-direction: column; gap: 5px; font-size: 8px; letter-spacing: 1px; }
 .touch-controls .touch-gas { background: #e7916f; color: #192b3a; border-color: #e7916f; }
 @media (max-height: 760px) and (min-width: 761px) {
   .intro { top: 20%; }
@@ -179,7 +179,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
   .bottomline { left: 23px; right: 23px; font-size: 6px; bottom: 21px; letter-spacing: 1.3px; }
   .bottomline > span:last-child { display: none; }
   body:not([data-phase="ready"]) .touch-controls { display: flex; }
-  body:not([data-phase="ready"]) .telemetry { bottom: 124px; }
+  body:not([data-phase="ready"]) .telemetry { bottom: 180px; }
   body:not([data-phase="ready"]) .mode-indicator { display: flex; position: fixed; top: 96px; left: 50%; transform: translateX(-50%); min-width: 0; gap: 5px; }
   body:not([data-phase="ready"]) .mode-icon svg { width: 19px; height: 19px; }
   #flight-mode { font-size: 7px; letter-spacing: 1.5px; white-space: nowrap; }
@@ -216,7 +216,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 @media (prefers-reduced-motion: reduce) { button, a, .scene-shade, .fuel-track > i { transition: none; } }
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) {
   body:not([data-phase="ready"]) .touch-controls { display: flex; }
-  body:not([data-phase="ready"]) .telemetry { bottom: 107px; }
+  body:not([data-phase="ready"]) .telemetry { bottom: 112px; }
   .touch-controls { bottom: max(18px, env(safe-area-inset-bottom)); }
   .topbar { height: 70px; padding: 12px 24px; }
   .intro { top: 82px; }
@@ -310,7 +310,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .boosting .speed-ticks > i.active { background: var(--blue); }
 .boosting .speed-number > strong { color: #b5edff; }
 .touch-actions { display: flex; gap: 6px; align-items: end; }
-.touch-controls .touch-boost { width: 44px; height: 58px; border-color: #ffba88; color: #ffcc9d; flex-direction: column; gap: 5px; font-size: 6px; letter-spacing: .7px; }
+.touch-controls .touch-boost { width: calc(44px * var(--touch-scale, 1)); height: calc(58px * var(--touch-scale, 1)); border-color: #ffba88; color: #ffcc9d; flex-direction: column; gap: 5px; font-size: 6px; letter-spacing: .7px; }
 .touch-controls button.is-held { background: #386a82; border-color: #afeaff; }
 .touch-controls .touch-gas.is-held { background: #ffc095; }
 .touch-controls .touch-boost.is-held { background: #885143; }
@@ -349,9 +349,9 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .impact-report div > span { font-size: 7px; }
   .touch-controls { left: 12px; right: 12px; gap: 8px; }
   .touch-steer, .touch-pedals { gap: 5px; }
-  .touch-controls button { width: 49px; height: 57px; }
-  .touch-controls .touch-fly { width: 53px; height: 68px; }
-  .touch-controls .touch-boost { width: 44px; }
+  .touch-controls button { width: calc(49px * var(--touch-scale, 1)); height: calc(57px * var(--touch-scale, 1)); }
+  .touch-controls .touch-fly { width: calc(53px * var(--touch-scale, 1)); height: calc(68px * var(--touch-scale, 1)); }
+  .touch-controls .touch-boost { width: calc(44px * var(--touch-scale, 1)); }
 }
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) {
   body:not([data-phase="ready"]) .mode-indicator { position: fixed; left: 50%; top: 144px; transform: translateX(-50%); width: 225px; padding: 8px 12px; gap: 5px; }
@@ -377,7 +377,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .brand > span { font-size: 19px; letter-spacing: .6px; }
   .toolbar { gap: 4px; }
   .icon-button { width: 30px; height: 30px; }
-  .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: 44px; flex-shrink: 0; }
+  .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: calc(44px * var(--touch-scale, 1)); flex-shrink: 0; }
   .touch-controls button svg { width: 19px; height: 19px; }
   .leaderboard { width: 83px; }
   .racer { font-size: 8px; gap: 5px; }
@@ -492,7 +492,7 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
 @media (pointer: coarse), (max-width: 760px) {
   .touch-controls { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); touch-action: none; }
   .topbar { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
-  body:not([data-phase="ready"]) .telemetry { bottom: calc(107px + env(safe-area-inset-bottom)); }
+  body:not([data-phase="ready"]) .telemetry { bottom: calc(112px + env(safe-area-inset-bottom)); }
   .start-hint, .intro-controls { display: none; }
 }
 @media (max-width: 760px) and (min-height: 501px) {
@@ -501,6 +501,38 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
   .touch-actions { grid-column: 2; grid-row: 1; }
   .touch-pedals { grid-column: 2; grid-row: 2; }
   .touch-steer, .touch-actions, .touch-pedals { gap: 10px; }
-  .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: 56px; height: 60px; font-size: 9px; }
-  body:not([data-phase="ready"]) .telemetry { bottom: calc(166px + env(safe-area-inset-bottom)); }
+  .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: calc(56px * var(--touch-scale, 1)); height: calc(60px * var(--touch-scale, 1)); font-size: 9px; }
+  body:not([data-phase="ready"]) .telemetry { bottom: calc(180px + env(safe-area-inset-bottom)); }
+}
+
+/* Touch control preferences (contract: comment in main.js). Sizes scale via --touch-scale in the declarations above; telemetry offsets reserve the Large (1.15x) height. */
+.touch-controls button { min-width: 44px; min-height: 44px; max-width: 20vw; opacity: var(--touch-opacity, 1); }
+#touch-controls[data-hand="right"] { direction: rtl; }
+#touch-controls[data-hand="right"] .touch-steer { direction: ltr; }
+#touch-controls[data-steer-mode="slide"] { justify-content: flex-end; }
+#touch-controls[data-steer-mode="slide"] .touch-steer, #touch-controls[data-steer-mode="slide"] [data-control="brake"], #touch-controls[data-steer-mode="buttons"] .touch-pad { display: none; }
+#touch-controls[data-steer-mode="slide"] .touch-pedals { justify-content: flex-end; }
+.touch-pad { position: fixed; z-index: -1; top: 55%; bottom: 0; left: 0; width: min(38%, calc(50% - 70px)); touch-action: none; }
+#touch-controls[data-hand="right"] .touch-pad { left: auto; right: 0; }
+.pad-ring, .pad-knob { position: absolute; left: 0; top: 0; display: block; border-radius: 50%; pointer-events: none; }
+.pad-ring { width: 88px; height: 88px; border: 2px solid rgb(210 226 238 / .7); }
+.pad-knob { width: 40px; height: 40px; background: rgb(210 226 238 / .6); }
+.toolbar { margin-left: auto; }
+.controls-button { min-width: 44px; height: 44px; flex-shrink: 0; padding: 0 12px; border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; background: rgb(8 22 38 / .55); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; }
+.controls-button:hover:not(:disabled), .controls-button[aria-expanded="true"] { border-color: var(--blue); background: #19384c; }
+.controls-panel { position: absolute; top: calc(100% + 10px); right: 0; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 100px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
+.controls-field { display: flex; gap: 6px; margin: 0; padding: 8px 6px; border: 0; }
+.controls-field legend { padding: 0 0 6px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
+.controls-choice { position: relative; flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; font-size: 12px; cursor: pointer; }
+.controls-choice input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.controls-choice:hover { background: rgb(255 255 255 / .08); }
+.controls-choice:has(input:checked) { color: var(--accent); border-color: var(--accent); background: rgb(255 255 255 / .1); }
+.controls-choice:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
+.controls-field.controls-range { display: grid; grid-template-columns: 1fr auto; align-items: center; font-size: 12px; }
+.controls-range output { color: #a3e8fb; font-variant-numeric: tabular-nums; }
+.controls-range input { grid-column: 1 / -1; width: 100%; height: 44px; margin: 0; accent-color: #91e0f2; }
+.controls-reset { min-height: 44px; margin: 4px 6px 6px; border: 1px solid #779ca8; border-radius: 8px; background: transparent; font-size: 12px; }
+@media (max-width: 370px) {
+  .controls-button { padding: 0 4px; font-size: 8px; letter-spacing: .6px; }
+  body:not([data-phase="ready"]) .brand { display: none; }
 }

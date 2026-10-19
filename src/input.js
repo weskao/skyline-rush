@@ -1,3 +1,5 @@
+import { createSlidePad } from './slide-pad.js';
+
 const drivingKeys = {
   KeyW: 'throttle', ArrowUp: 'throttle', KeyS: 'brake', ArrowDown: 'brake',
   KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
@@ -5,15 +7,21 @@ const drivingKeys = {
 };
 const actionKeys = { Escape: 'pause', KeyP: 'pause', KeyR: 'restart', KeyC: 'camera', KeyM: 'sound', KeyT: 'assist', KeyV: 'airflow', Enter: 'start' };
 
-export function createControls(target = window, onAction = () => {}) {
+export function createControls(target = window, onAction = () => {}, { getSettings: defaultSettings = () => ({}) } = {}) {
   const keys = new Set();
   const pointers = new Map();
+  const slides = [];
+  let flyMode = 'hold';
+  let flyLatched = false;
   const cleanups = [];
   function listen(element, type, handler) {
     element.addEventListener(type, handler);
     cleanups.push(() => element.removeEventListener(type, handler));
   }
-  function clear() { keys.clear(); pointers.clear(); }
+  function clear() {
+    keys.clear(); pointers.clear(); flyLatched = false;
+    for (const slide of slides) { slide.pointerId = null; slide.pad.reset(); }
+  }
   listen(target, 'keydown', event => {
     if (event.target?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
     if (event.code === 'Space' && event.target?.closest?.('button')) return;
@@ -36,16 +44,23 @@ export function createControls(target = window, onAction = () => {}) {
     clear,
     read() {
       const held = new Set([...keys].map(key => drivingKeys[key]).concat([...pointers.values()]));
+      let steer = Number(held.has('right')) - Number(held.has('left'));
+      let brake = held.has('brake');
+      for (const { pad } of slides) {
+        const read = pad.read();
+        if (Math.abs(read.steer) > Math.abs(steer)) steer = read.steer;
+        brake ||= read.brake;
+      }
       return {
-        throttle: held.has('throttle'), brake: held.has('brake'),
-        steer: Number(held.has('right')) - Number(held.has('left')),
-        fly: held.has('fly'), boost: held.has('boost'),
+        throttle: held.has('throttle'), brake, steer,
+        fly: held.has('fly') || flyLatched, boost: held.has('boost'),
       };
     },
     bindButton(button, control) {
       listen(button, 'pointerdown', event => {
         event.preventDefault();
-        pointers.set(event.pointerId, control);
+        if (control === 'fly' && flyMode === 'toggle') flyLatched = !flyLatched;
+        else pointers.set(event.pointerId, control);
         // Synthetic accessibility/test events do not own a native pointer to capture.
         if (button.hasPointerCapture && event.isTrusted) button.setPointerCapture(event.pointerId);
       });
@@ -53,6 +68,35 @@ export function createControls(target = window, onAction = () => {}) {
         listen(button, type, event => pointers.delete(event.pointerId));
       }
     },
+    bindSlidePad(element, { getSettings = defaultSettings } = {}) {
+      const slide = { pointerId: null, pad: createSlidePad() };
+      slides.push(slide);
+      const syncLock = () => slide.pad.setFullLock(getSettings()?.fullLock);
+      listen(element, 'pointerdown', event => {
+        event.preventDefault();
+        if (slide.pointerId !== null) return;
+        slide.pointerId = event.pointerId;
+        syncLock();
+        slide.pad.down(event.clientX, event.clientY);
+        // Synthetic accessibility/test events do not own a native pointer to capture.
+        if (element.hasPointerCapture && event.isTrusted) element.setPointerCapture(event.pointerId);
+      });
+      listen(element, 'pointermove', event => {
+        if (event.pointerId !== slide.pointerId) return;
+        syncLock();
+        slide.pad.move(event.clientX, event.clientY);
+      });
+      for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+        listen(element, type, event => {
+          if (event.pointerId !== slide.pointerId) return;
+          slide.pointerId = null;
+          slide.pad.up();
+        });
+      }
+    },
+    setFlyMode(mode) { flyMode = mode === 'toggle' ? 'toggle' : 'hold'; if (flyMode === 'hold') flyLatched = false; },
+    toggleFly() { flyLatched = !flyLatched; },
+    setFly(on) { flyLatched = Boolean(on); },
     destroy() { clear(); cleanups.forEach(remove => remove()); },
   };
 }

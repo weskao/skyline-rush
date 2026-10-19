@@ -52,13 +52,13 @@ the screen is a slide pad; put the thumb down anywhere and slide.
    steering hand                action hand
 ```
 
-- [ ] Touch-down point becomes the center; horizontal distance from it = steering amount
+- [x] Touch-down point becomes the center; horizontal distance from it = steering amount
   (dead zone 6 px, full lock at ~60 px, analog in between — `stepRace` already accepts a fractional `steer`)
-- [ ] If the thumb slides past full lock, the center follows it, so steering back the other way responds immediately
+- [x] If the thumb slides past full lock, the center follows it, so steering back the other way responds immediately
 - [ ] Release = straight ahead (with lane assist from 7C if enabled)
 - [ ] **Slide down past ~40 px = brake**; down + sideways = **drift** (brake + steer), so brake and drift need no button
 - [ ] A faint floating ring + knob shows where the center and thumb are; it fades after a few seconds of play
-- [ ] Pad covers the bottom ~45% of its half of the screen, so it never blocks the car or the callouts
+- [x] Pad covers the bottom ~45% of its half of the screen, so it never blocks the car or the callouts
 
 **Mode B — Buttons (classic)**: today's `[◀] [▶]` + `[BRAKE]` buttons, for players who prefer tapping.
 
@@ -72,7 +72,7 @@ the screen is a slide pad; put the thumb down anywhere and slide.
 ```
 
 Shared by both modes:
-- [ ] **AUTO accelerator on by default on touch** (the existing assist), so no thumb is spent holding the throttle; the gas button stays available when AUTO is off
+- [x] **AUTO accelerator on by default on touch** (the existing assist), so no thumb is spent holding the throttle; the gas button stays available when AUTO is off
 - [ ] Action hand: FLY (largest), BOOST, NITRO in an arc around it; sliding between FLY and BOOST holds both (AIR DASH)
 - [ ] **Drift = brake + steer** in both modes, the same rule as the keyboard
 
@@ -80,18 +80,18 @@ Shared by both modes:
 
 Mobile:
 - [ ] **Steering mode**: Slide (default) / Buttons / Tilt (device orientation, asks permission only when chosen)
-- [ ] **Handedness**: steering on left (default) / steering on right — mirrors the whole layout for left-handed players
-- [ ] **Slide sensitivity**: distance for full lock (40 / 60 / 80 px)
-- [ ] **Button size** (S / M / L) and **opacity**
+- [x] **Handedness**: steering on left (default) / steering on right — mirrors the whole layout for left-handed players
+- [x] **Slide sensitivity**: distance for full lock (40 / 60 / 80 px)
+- [x] **Button size** (S / M / L) and **opacity**
 - [ ] **Edit layout**: drag each action button (FLY / BOOST / NITRO / and the classic buttons in mode B) to a new spot, with a live preview over a paused race; Reset to default
-- [ ] **FLY behavior**: hold (default) / toggle
+- [x] **FLY behavior**: hold (default) / toggle
 
 Desktop:
 - [ ] **Key remapping**: click an action, press the new key; conflicts are flagged and swapped; Reset to default (the `J`/`K`/`L` alternates from 7B are part of the default map)
 - [ ] **Steering sensitivity** (from 7C) and gamepad mapping view
 
 Both:
-- [ ] Saved to `localStorage['skyline-rush-controls']` with try/catch like the existing VFX settings; invalid / outdated saves fall back to defaults
+- [x] Saved to `localStorage['skyline-rush-controls']` with try/catch like the existing VFX settings; invalid / outdated saves fall back to defaults
 - [ ] `input.js` reads the saved map; game rules stay device-agnostic
 - [ ] Acceptance: unit tests for slide → steer mapping (dead zone, full lock, center follow, slide-down brake) and key remap conflicts; browser test at touch viewports: slide steering moves the car, Buttons mode still works, mirrored layout and edited button positions survive reload
 
@@ -225,8 +225,8 @@ Ordered by small effort, big fun:
 - [ ] **NITRO doesn't use fuel** (separate `nitro` reserve from item 2), so FLY + NITRO always works together; NITRO while flying = straight-line air dash
 - [ ] **Alternate keys**: right hand `J` = FLY, `K` = BOOST, `L` = NITRO, left hand stays on WASD, avoiding the Shift + Space conflict (original keys still work)
 - [ ] **Touch** (layout in item 0):
-  - [ ] AUTO accelerator on by default, so the right thumb is free for FLY / BOOST / NITRO
-  - [ ] FLY button can be set to "toggle" (tap to lift off and hold altitude, tap again to land), freeing the right thumb for BOOST / NITRO
+  - [x] AUTO accelerator on by default, so the right thumb is free for FLY / BOOST / NITRO
+  - [x] FLY button can be set to "toggle" (tap to lift off and hold altitude, tap again to land), freeing the right thumb for BOOST / NITRO
   - [ ] FLY and BOOST buttons sit side by side; sliding a finger onto the border between them activates both (uses the existing pointer tracking)
 - [ ] Acceptance: test `input = { fly: true, boost: true }` held for 2 s → `thrusting` and `boosting` both true, not `exhausted`, speed > `MAX_SPEED`
 

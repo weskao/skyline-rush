@@ -90,3 +90,86 @@ test('touch pointer cancellation releases flight without releasing a separate ac
   assert.equal(controls.read().throttle, false);
   controls.destroy();
 });
+
+function padTarget(controls, settings = { fullLock: 100 }) {
+  const el = new EventTarget();
+  controls.bindSlidePad(el, { getSettings: () => settings });
+  return el;
+}
+
+test('slide pad steers analog, reads live fullLock, ignores other pointers, resets on clear', () => {
+  const settings = { fullLock: 100 };
+  const controls = createControls(new EventTarget());
+  const el = padTarget(controls, settings);
+  send(el, 'pointerdown', { pointerId: 1, clientX: 200, clientY: 300 });
+  send(el, 'pointermove', { pointerId: 1, clientX: 250, clientY: 300 });
+  assert.equal(controls.read().steer, 0.5);
+  send(el, 'pointermove', { pointerId: 2, clientX: 0, clientY: 300 });
+  assert.equal(controls.read().steer, 0.5);
+  const second = send(el, 'pointerdown', { pointerId: 2, clientX: 0, clientY: 0 });
+  assert.ok(second.defaultPrevented);
+  send(el, 'pointermove', { pointerId: 2, clientX: 90, clientY: 0 });
+  assert.equal(controls.read().steer, 0.5);
+  settings.fullLock = 50;
+  send(el, 'pointermove', { pointerId: 1, clientX: 250, clientY: 300 });
+  assert.equal(controls.read().steer, 1);
+  send(el, 'pointerup', { pointerId: 2 });
+  assert.equal(controls.read().steer, 1);
+  send(el, 'pointerup', { pointerId: 1 });
+  assert.equal(controls.read().steer, 0);
+  send(el, 'pointerdown', { pointerId: 3, clientX: 0, clientY: 0 });
+  send(el, 'pointermove', { pointerId: 3, clientX: -25, clientY: 0 });
+  assert.equal(controls.read().steer, -0.5);
+  controls.clear();
+  assert.equal(controls.read().steer, 0);
+  controls.destroy();
+});
+
+test('keyboard and pad steer combine by larger magnitude', () => {
+  const target = new EventTarget();
+  const controls = createControls(target);
+  const el = padTarget(controls);
+  send(target, 'keydown', { code: 'ArrowLeft' });
+  send(el, 'pointerdown', { pointerId: 1, clientX: 0, clientY: 0 });
+  send(el, 'pointermove', { pointerId: 1, clientX: 30, clientY: 0 });
+  assert.equal(controls.read().steer, -1);
+  send(target, 'keyup', { code: 'ArrowLeft' });
+  assert.equal(controls.read().steer, 0.3);
+  controls.destroy();
+});
+
+test('sliding the pad down brakes without disturbing other controls', () => {
+  const controls = createControls(new EventTarget());
+  const el = padTarget(controls);
+  send(el, 'pointerdown', { pointerId: 1, clientX: 0, clientY: 0 });
+  assert.equal(controls.read().brake, false);
+  send(el, 'pointermove', { pointerId: 1, clientX: 0, clientY: 60 });
+  assert.equal(controls.read().brake, true);
+  send(el, 'pointercancel', { pointerId: 1 });
+  assert.equal(controls.read().brake, false);
+  controls.destroy();
+});
+
+test('toggle fly latches on tap, survives release, clears via setFly/clear; hold mode unchanged', () => {
+  const controls = createControls(new EventTarget());
+  const fly = new EventTarget();
+  controls.bindButton(fly, 'fly');
+  send(fly, 'pointerdown', { pointerId: 1 });
+  send(fly, 'pointerup', { pointerId: 1 });
+  assert.equal(controls.read().fly, false);
+  controls.setFlyMode('toggle');
+  send(fly, 'pointerdown', { pointerId: 1 });
+  send(fly, 'pointerup', { pointerId: 1 });
+  assert.equal(controls.read().fly, true);
+  send(fly, 'pointerdown', { pointerId: 1 });
+  send(fly, 'pointerup', { pointerId: 1 });
+  assert.equal(controls.read().fly, false);
+  controls.toggleFly();
+  assert.equal(controls.read().fly, true);
+  controls.setFly(false);
+  assert.equal(controls.read().fly, false);
+  controls.toggleFly();
+  controls.clear();
+  assert.equal(controls.read().fly, false);
+  controls.destroy();
+});
