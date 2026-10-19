@@ -18,7 +18,7 @@ Requires Node.js 22.12 or newer and a browser with WebGL 2 and hardware accelera
 
 ```sh
 cd "$HOME/Documents/Workspace/skyline-rush"
-make         # Installs dependencies on first run, then starts the Vite dev server
+make         # Installs dependencies on first run, then starts the Vite + Vue dev server
 ```
 
 Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the font are bundled locally; gameplay makes no external requests. No backend or account is needed.
@@ -132,11 +132,13 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-he
 - `src/rng.js`: seeded random streams; track pickups and rings come from the track seed.
 - `src/world.js`, `src/geometry.js`: Three.js renderer, procedural cars, highway, skyline, flight effects and cameras.
 - `src/effects.js`: a fixed 480-particle GPU pool for vapor, sparks and landing dust.
-- `src/main.js`, `src/style.css`: start screen, telemetry, pause/results, responsive controls and lifecycle.
+- `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
+- `src/main.js`, `src/style.css`: mounts `App.vue`, then drives telemetry, pause/results, responsive controls and lifecycle on that DOM.
+- `vite.config.js`: Vite with `@vitejs/plugin-vue`.
 - `src/audio.js`: synthesized sound effects and the looping intro/race music sequencer.
 - `tests/`: unit and browser behavior tests.
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
 
-All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vite and Playwright retain their respective package licenses.
+All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vue, Vite and Playwright retain their respective package licenses.
 
 Source: [weskao/skyline-rush](https://github.com/weskao/skyline-rush). Single-player, one route, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; physical phones and Safari have not been verified.

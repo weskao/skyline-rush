@@ -5,7 +5,7 @@ Goal: race an original thruster-equipped sports car along a 5 km highway against
 ## Scope
 1. `src/game.js`: deterministic fixed-step simulation, countdown, acceleration/braking/steering, fuel-limited lift and gravity, collision clearance, rivals, finish order and reset.
 2. `src/world.js`, `src/geometry.js`: Three.js world, procedural sports cars with outward-facing body geometry, curved highway, city, coastline, chase camera and thruster effects.
-3. `src/main.js`, `src/style.css`, `index.html`: input, responsive HUD, start/pause/results, camera and sound controls, WebGL failure handling.
+3. `src/App.vue` (Vue UI markup), `src/main.js`, `src/style.css`, `index.html`: input, responsive HUD, start/pause/results, camera and sound controls, WebGL failure handling.
 4. `tests/game.test.js`, `tests/input.test.js`, `tests/browser.spec.js`: behavioral tests and real browser input/lifecycle checks.
 5. Package lockfile, Makefile, README and verification record: reproducible local setup and evidence.
 
