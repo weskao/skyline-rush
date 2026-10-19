@@ -64,7 +64,7 @@ All constants are named exports at the top of `src/game.js`.
 - **#8 glide**: fall 11 to 7 when FLY is released; an exhausted car with FLY still held falls at 11, a released one at 7.
 - **#15 touch brake**: needs an on-phone thumb-comfort check for brake + steer drift (landscape and portrait, Large size, left- and right-handed). In Buttons mode telemetry lifts 180 px via `:has()` (iOS 15.4+): check for a collision with the top HUD on short landscape. Slide mode hides the brake button (the pad still brakes).
 - **Drift (#31)**: thresholds 1/2/3 s pay nitro 0.15/0.3/0.5 and mini boost 0.5/0.8/1.2 s. NITRO's +40 acceleration still applies while drifting; dropping below 45 m/s pays out as a release; a rail scrape does not cancel drift; combo x2 is +2 per near-miss, capped at 5; no gap-fall cancel test; drift and mini boost are invisible outside the sim.
-- **NITRO (#29/#30)**: E and L fire an invisible NITRO in the live game until HUD/rendering land. Tank tier spawns airborne only (TODO says "inside traffic gaps"; traffic moves, so no static gaps). `nitroUses` counts fresh activations only (a triple-chain achievement needs its own counter). The 0.7 retention also applies to rival contact. Overflow converts 32 fuel per charge, fuel capped at 100. Pickups are never marked collected (the renderer can hide those behind the car).
+- **NITRO (#29/#30)**: E and L fire an invisible NITRO in the live game until HUD/rendering land. Tank tier spawns airborne only (TODO says "inside traffic gaps"; traffic moves, so no static gaps). `nitroUses` counts fresh activations only (a triple-chain achievement needs its own counter). The 0.7 retention also applies to rival contact. Overflow converts 32 fuel per charge, fuel capped at 100. Pickups are marked `taken` once collected (`src/game.js`), so the renderer can hide them.
 - **#24 slipstream**: `SLIPSTREAM_TIME` 1.5 s, cap bonus +6, nitro +0.25, paid once per engagement and re-armed after leaving the draft; the cap bonus stacks with nitro/boost (max 124).
 - **#25 rivals**: `RIVAL_NITRO_CHARGES` 2, time 2.5 s, bonus +12 m/s (raises the speed cap only). NOVA fires at 8 s then every 18 s; ORBIT fires in the air (altitude > 2, speed >= 60) once per hop, hop period 9 s vs 13 s; APEX from 75% of the race. Rubber band: `RUBBER_BAND_MAX` 0.04, free 50 m, range 250 m. A rival over its cap decays at (14 + i) m/s² instead of snapping.
 - **#28 final sprint (T11, commit 6b43914)**: `sprintFactor` in `src/audio.js` ramps the race-music tempo 1.0 to 1.15 over the last 500 m; the HUD text `FINAL 500 M · +N m · −N m` reuses `#race-status`. The tempo change and the HUD text were not checked by ear or eye, and wrapping on narrow screens is unchecked. Only the sprint factor has a unit test.
@@ -88,3 +88,11 @@ All constants are named exports at the top of `src/game.js`.
 - Fix commit `3b014e0` (F1) addressed a T8 review finding: guard blocked `localStorage` and invalid keys in the key map.
 - T11 = #28 final sprint, commit `6b43914`.
 - Existing tests were edited only where a spec change forced it (steering guardrail test); `coast` behaviour is otherwise unchanged and its original tests pass.
+
+## Verifier findings (not fixed)
+
+- Aurora `uphill` sections (`RACE_TRACKS.aurora`, `src/game.js` L23-24) are data only; `stepRace` ignores them. TODO means slower ground recharge there.
+- Final-sprint gap readout (`src/main.js` ~L594-604) also counts rivals that already finished; their `distance` keeps growing, so a finished rival can show as `+N m` ahead.
+- Untested lines (removal still passes `npm test`): the `steer === 0` check for lane assist, the `fell ||` check that makes a gap respawn skip rings, and the tunnel ring rules (risk becomes nitro, altitude 1.5; neon has 6 tunnel rings).
+- `src/main.js` wiring (history save on finish, sessionBests, legacy best write, key-map load, gap readout) has no unit test.
+- Run tests with `npm test` or `node --test tests/*.test.js`; `node --test tests/` fails on Node 25.

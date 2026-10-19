@@ -81,7 +81,7 @@ Staying right behind a rival or traffic car for 1.5 s gives +6 m/s of speed cap 
 
 ### Saved data
 
-All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: touch and visual settings. Only the coast track is selectable in the game for now; `neon`, `canyon` and `aurora` (tunnels, gaps, crosswind, ice, uphill) exist in the simulation and its tests but have no track-select screen or scenery.
+All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: touch and visual settings. Only the coast track is selectable in the game for now; `neon`, `canyon` and `aurora` (tunnels, gaps, crosswind, ice) exist in the simulation (Aurora's `uphill` sections are defined but have no effect yet) and its tests but have no track-select screen or scenery.
 
 ## Verify
 
