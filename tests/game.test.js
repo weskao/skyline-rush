@@ -272,3 +272,16 @@ test('landing emits one touchdown event with the actual descent speed and resets
   assert.equal(createRace().player.impact, null);
   assert.equal(createRace().player.landing, null);
 });
+
+test('air dash: holding fly and boost together drains fuel at 22 per second and keeps the boost speed cap', () => {
+  const race = racing();
+  race.player.speed = 80;
+  advance(race, 1, { fly: true, boost: true });
+  assert.ok(Math.abs(race.player.fuel - 78) < 0.5);
+  advance(race, 1, { fly: true, boost: true });
+  const car = race.player;
+  assert.equal(car.thrusting, true);
+  assert.equal(car.boosting, true);
+  assert.equal(car.exhausted, false);
+  assert.ok(car.speed > MAX_SPEED && car.speed <= MAX_SPEED + 14);
+});

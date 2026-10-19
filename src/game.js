@@ -81,7 +81,8 @@ export function stepRace(race, input, dt) {
   } else if (!input.fly && !boost) {
     car.fuel = Math.min(100, car.fuel + 13 * dt);
   }
-  if (boost) car.fuel = Math.max(0, car.fuel - 10 * dt);
+  // AIR DASH: flight + boost together share a 22/s drain instead of 19 + 10.
+  if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);
   const previousAltitude = car.altitude;
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
   if (previousAltitude > 0 && car.altitude === 0) {
