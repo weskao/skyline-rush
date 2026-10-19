@@ -1,3 +1,8 @@
+## [0.8.1] - 2026-10-19
+
+### 🧪 Testing
+
+- Stabilize motion browser checks
 ## [0.8.0] - 2026-10-19
 
 ### 🚀 Features
