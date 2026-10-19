@@ -1,3 +1,23 @@
+## [0.8.0] - 2026-10-19
+
+### 🚀 Features
+
+- **hud:** Add motion timings and event callouts
+
+### 📚 Documentation
+
+- Record HUD motion and callout work
+
+### 🧪 Testing
+
+- **browser:** Stabilize fuel and nitro checks on slow ci
+
+### ⚙️ Miscellaneous Tasks
+
+- Shard browser tests and cancel superseded runs
+- **seo:** Use start screen as og image
+- Keep pushes from cancelling manual deploys
+- **artifacts:** Refresh screenshots after HUD work
 ## [0.7.1] - 2026-10-19
 
 ### 💼 Other
