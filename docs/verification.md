@@ -1,5 +1,39 @@
 # Verification — 2026-10-18
 
+## Gameplay depth completion — 2026-10-20
+
+Scope: History, gauge feedback, slide-pad feedback, track selection/scenery/unlocks, and style points/stars.
+
+- **TDD:** new simulation/history tests first failed for missing points, stars and unlock persistence.
+  Browser tests first failed on missing History and track selection, absent gauge refill feedback,
+  and indistinguishable track skies. The existing slide-pad feedback passed without new production code.
+  Additional red/green regressions cover black Neon rendering from zero-scale lit instances,
+  legacy unlocks surviving the 50-record rollover, fractional star thresholds, chart direction,
+  touch-readable unlock instructions, and mobile gauge/button overlap.
+- `npm test`: **162 passed**. Production build succeeds; Vite retains its existing >500 kB chunk advisory.
+- Final complete browser acceptance: `npx playwright test --fully-parallel --workers=2`:
+  **78 passed in 5.0 minutes**, using one stable production build. Desktop 1440×900, touch 390×844,
+  320×740 and 844×390 are covered. An earlier run passed 77/78; its remaining test received a local
+  HTTP navigation failure while the build directory was being replaced.
+- **Visual evidence:** seven inspected, blue-box annotated PNGs under `artifacts/gameplay-depth/`:
+  desktop/mobile track menu, History, desktop/mobile real-race results, and mobile pad/gauges.
+  History/menu screenshots use synthetic records; the results came from an actual 5 km UI-driven run
+  (second place, 01:07.13, 600 points, one star). A fresh 320×740 menu shows the unlock rule without hover.
+- A fresh-context review found the fractional-score mismatch and tooltip-only unlock rule. Both
+  were reproduced, fixed and independently scored resolved; the reviewer also checked the gauge overlap
+  correction. Its final `ship` disposition covers those fixes and their visible regressions.
+- **Frame cadence:** one browser at a time, 120 intervals per viewport during a Coast race, DPR 1,
+  installed headless Chrome/SwiftShader. Desktop 1440×900 median 16.7 ms before/after; p95 16.7 → 16.8 ms.
+  Touch 390×844 median 16.7 ms and p95 16.8 ms before/after. See `frame-times.json` for the method and limits.
+  This short sample does not establish physical-phone performance or measure GPU completion.
+- Physical Android/iOS devices, Safari and sustained thermal behavior remain unverified. No new
+  dependency, commit, push or deployment is part of this task; a separate release-version operation
+  changed the checkout during implementation and its changes were preserved.
+- Eight implementation/automated-acceptance checkboxes in `TODO.md` are marked complete; the
+  physical-device acceptance gate remains explicitly unchecked. `git diff --check` and source
+  syntax checks pass. Final annotated images are preserved; task-owned temporary captures/scripts
+  are removed after delivery.
+
 ## HANDOFF implementation — 2026-10-19
 
 Branch: `feat/handoff-gameplay-ui`. The eight remaining feature groups in `HANDOFF.md` are implemented, along with its simulation/data verifier gaps. Seventeen related `TODO.md` requirements are now checked. Gamepad mapping, tilt, History/Track-select screens, and physical-phone comfort remain outside this pass.

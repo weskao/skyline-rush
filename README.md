@@ -83,7 +83,15 @@ Staying right behind a rival or traffic car for 1.5 s gives +6 m/s of speed cap 
 
 ### Saved data
 
-All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: driving and visual settings. Only the coast track is selectable in the game for now; `neon`, `canyon` and `aurora` (tunnels, gaps, crosswind, ice, uphill) exist in the simulation and its tests but have no track-select screen or scenery. Aurora's uphill sections recharge ground fuel at half the normal rate.
+All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50. Open **History** from the start or results screen to filter by track, see the best run and a chart of the latest ten times, and tap a run for details. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-unlocked`: track unlocks, preserved even after older runs leave History. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: driving and visual settings.
+
+### Tracks and style
+
+Start on Coast. Finish top three to unlock Neon Downtown, then Canyon Skyway, then Aurora Pass. Choose a track before starting; keyboard users can move between track buttons with Left/Right and choose with Enter. Restart keeps the selected track; **Choose track** on the results screen returns to the menu. Each track has its own sky, palette and procedural scenery: rainy neon streets and low tunnels, red desert cliffs and bridge gaps/crosswinds, or snowy mountains with aurora and ice. Warning signs mark special sections. Aurora's uphill sections recharge ground fuel at half the normal rate.
+
+Style points reward close passes (100 × combo, with drift's doubled combo), rings (150, plus 500 for a risk ring), PERFECT LINEs (500), moving airtime (10 per second), and every 500 clean metres (100). Contacts and gap falls reset clean-distance progress. Results award one star for finishing, two at 250 points/km, and three at 500 points/km, independently of finishing position.
+
+Fuel and nitro bars ease toward new values, warn below 20% capacity, shimmer on refills and pulse when a nitro charge completes. Comfort mode and system reduced motion disable those animations. The slide pad shows a floating ring/knob while held and a short hint at the start of a race; release returns steering to neutral.
 
 ## Verify
 

@@ -33,6 +33,10 @@ tests already use: desktop 1440×900, phone portrait 390×844 and 320×740, phon
 - **Orientation**: portrait and landscape both playable; landscape is the recommended racing orientation
 - **Tests**: each item's browser test runs at a desktop viewport and at least one touch viewport
 
+- [ ] **Physical-device acceptance**: measure before/after frame time on a mid-range phone and
+  check Android/iOS hardware and Safari. The 2026-10-20 implementation checks below cover desktop
+  and touch-browser viewports; this real-device gate remains open (see `docs/verification.md`).
+
 ### Mobile control layout (with all new actions)
 
 Two thumbs, so the right side must not need two simultaneous presses. Steering has two modes,
@@ -55,9 +59,9 @@ the screen is a slide pad; put the thumb down anywhere and slide.
 - [x] Touch-down point becomes the center; horizontal distance from it = steering amount
   (dead zone 6 px, full lock at ~60 px, analog in between — `stepRace` already accepts a fractional `steer`)
 - [x] If the thumb slides past full lock, the center follows it, so steering back the other way responds immediately
-- [ ] Release = straight ahead (with lane assist from 7C if enabled)
+- [x] Release = straight ahead (with lane assist from 7C if enabled)
 - [x] **Slide down past ~40 px = brake**; down + sideways = **drift** (brake + steer), so brake and drift need no button
-- [ ] A faint floating ring + knob shows where the center and thumb are; it fades after a few seconds of play
+- [x] A faint floating ring + knob shows where the center and thumb are; it fades after a few seconds of play
 - [x] Pad covers the bottom ~45% of its half of the screen, so it never blocks the car or the callouts
 
 **Mode B — Buttons (classic)**: today's `[◀] [▶]` + `[BRAKE]` buttons, for players who prefer tapping.
@@ -124,8 +128,8 @@ coast track becomes `coast`.
 
 - [x] `TRACKS` table + `createRace(trackId)`; `coast` behaves exactly as today (existing tests stay unchanged)
 - [x] Special sections described as `{ from, to, type }`; `stepRace` looks them up by current distance
-- [ ] `world.js` switches palette / sky / roadside decoration per track (procedural geometry only, no downloaded assets)
-- [ ] Track select in the menu; unlock rule: finish top 3 on the previous track
+- [x] `world.js` switches palette / sky / roadside decoration per track (procedural geometry only, no downloaded assets)
+- [x] Track select in the menu; unlock rule: finish top 3 on the previous track
 - [x] Acceptance: every track can be finished; tunnel roof hit, gap fall, crosswind, and ice each have a unit test
 
 ## 2. Power-up: NITRO
@@ -188,17 +192,17 @@ Turn the existing 7 decorative gates into interactive rings. Only passing throug
 - [x] Save one record per finished race to `localStorage['skyline-rush-history']` (keep the latest 50):
       date, track, position, time, collisions, near-misses, rings / PERFECT LINEs, NITRO uses, score
 - [x] Best time per track (replaces the single `skyline-rush-best`; migrate the old value to `coast` once)
-- [ ] History screen: list filtered by track, best-run marker, sparkline of the last 10 times
+- [x] History screen: list filtered by track, best-run marker, sparkline of the last 10 times
 - [x] Career stats: races, wins, total distance, longest combo, most rings in one run
 - [ ] **Ghost race**: record the best run's `x / altitude` trace at 10 Hz and replay it as a translucent ghost car next time; can be turned off in settings
 - [x] If storage fails (private mode) the game keeps working, using the existing try/catch pattern
-- [ ] Acceptance: unit tests for write / read / 50-record cap / old-best migration; browser test for the History screen
+- [x] Acceptance: unit tests for write / read / 50-record cap / old-best migration; browser test for the History screen
 
 ## 6. Other ideas to make it more fun
 
 Ordered by small effort, big fun:
 
-- [ ] **Style score**: near-misses, rings, PERFECT LINEs, airtime, and clean sections score points; 1–3 star rating at the finish, so there's something to chase besides winning
+- [x] **Style score**: near-misses, rings, PERFECT LINEs, airtime, and clean sections score points; 1–3 star rating at the finish, so there's something to chase besides winning
 - [x] **Slipstream**: staying right behind a rival / traffic car for 1.5 s → speed cap +6 and +0.25 nitro
 - [ ] **Air tricks**: quick left-right flick while flying = barrel roll; land it → +0.25 nitro; a hard landing loses the reward (uses `landing.speed`)
 - [x] **Rivals use NITRO too**: give rivals personalities (NOVA steady, ORBIT loves flying, APEX late surge) plus light rubber-banding to keep races tense
@@ -284,7 +288,7 @@ Physics:
 - [ ] **Animated numbers**: speedometer needle / arc that eases with speed; position number flips with a ↑ green / ↓ red pulse when you gain or lose a place
 - [ ] **Leaderboard reorder**: FLIP animation (measure old/new row positions, animate `transform`) when places swap
 - [ ] **Event callouts**: center-screen pop-ups that scale in and fade out for `NEAR MISS ×3`, `PERFECT LINE`, `NITRO`, `+0.5`, drift spark tiers; queue them so they don't overlap
-- [ ] **Gauges**: fuel and the 3-segment nitro bar ease (not linear), flash red under 20%, shimmer while refilling, pulse when a nitro charge completes
+- [x] **Gauges**: fuel and the 3-segment nitro bar ease (not linear), flash red under 20%, shimmer while refilling, pulse when a nitro charge completes
 - [ ] **Finish sequence**: slow-motion over the line (~0.6 s), camera swings to a side view, then the results card slides in; stats count up one by one; stars pop in; "NEW BEST" stamp
 - [ ] **Screen transitions**: intro slides out as the countdown lights drop in; pause blurs and dims the scene; restart wipes instead of cutting
 - [ ] **Countdown**: start lights turn on one by one with a sound tick; "GO" bursts out with a short camera push
