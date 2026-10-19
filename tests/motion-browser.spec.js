@@ -139,21 +139,27 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 
   test(`race callout is a small translucent chip clear of the centre view at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await open(page);
+    await page.locator('#start-button').click();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
     const chip = await page.evaluate(() => {
       const callout = document.querySelector('#event-callout');
       callout.hidden = false;
       const report = callout.querySelector('#skill-report');
       report.hidden = false;
       report.innerHTML = 'NEAR MISS ×3<span>CLOSE PASS · +20% CHARGE</span>';
-      const { top, bottom, height } = callout.getBoundingClientRect();
+      const box = element => { const { left, right, top, bottom } = element.getBoundingClientRect(); return { left, right, top, bottom }; };
       const style = getComputedStyle(callout);
       const alpha = style.backgroundColor.match(/rgba?\(([^)]+)\)/)[1].split(/[ ,/]+/).filter(Boolean)[3];
-      return { top, bottom, height, alpha: alpha === undefined ? 1 : Number(alpha), border: parseFloat(style.borderTopWidth) };
+      return { ...box(callout), height: callout.offsetHeight, progress: box(document.querySelector('.race-progress')),
+        alpha: alpha === undefined ? 1 : Number(alpha), border: parseFloat(style.borderTopWidth) };
     });
     expect(chip.alpha).toBeLessThanOrEqual(0.45);
     expect(chip.border).toBe(0);
     expect(chip.height).toBeLessThanOrEqual(viewport.height * 0.2);
     expect(chip.bottom).toBeLessThanOrEqual(viewport.height * 0.45);
+    const { progress } = chip;
+    expect(chip.right <= progress.left || progress.right <= chip.left || chip.bottom <= progress.top || progress.bottom <= chip.top,
+      `Callout covers the race progress bar ${JSON.stringify(chip)}`).toBe(true);
   });
 }
 
