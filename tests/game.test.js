@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -13,6 +13,20 @@ function racing() {
   race.traffic = [];
   return race;
 }
+
+test('sprint gaps show nearest unfinished rivals, ignoring ties and finished racers', () => {
+  const race = createRace();
+  race.player.distance = 4500;
+  for (const [rivals, expected] of [
+    [[], { ahead: null, behind: null }],
+    [[{ distance: 4540, finishTime: null }, { distance: 4510, finishTime: null }, { distance: 4475, finishTime: null }], { ahead: 10, behind: 25 }],
+    [[{ distance: 4400, finishTime: null }, { distance: 4480, finishTime: null }, { distance: 4520, finishTime: null }], { ahead: 20, behind: 20 }],
+    [[{ distance: 4510, finishTime: 50 }, { distance: 4490, finishTime: 51 }, { distance: 4500, finishTime: null }], { ahead: null, behind: null }],
+  ]) {
+    race.rivals = rivals;
+    assert.deepEqual(sprintGaps(race), expected);
+  }
+});
 
 test('starting requires a countdown and countdown holds every racer on the grid', () => {
   const race = createRace();
@@ -325,6 +339,18 @@ test('a shallow barrier touch scrapes: 0.92 speed, back on the road, no collisio
   assert.ok(car.speed < 60 * 0.92 && car.speed > 60 * 0.92 - 1.5);
 });
 
+test('lane assist leaves active steering unchanged in either direction', () => {
+  for (const steer of [-0.5, 0.5]) {
+    const manual = racing();
+    const assisted = racing();
+    for (const race of [manual, assisted]) Object.assign(race.player, { speed: 40, x: 3.6 });
+    advance(manual, 0.25, { throttle: true, steer });
+    advance(assisted, 0.25, { throttle: true, steer, laneAssist: true });
+    assert.equal(assisted.player.x, manual.player.x);
+    assert.equal(assisted.player.steering, manual.player.steering);
+  }
+});
+
 test('vehicle collision width is 1.7 so a 1.8 m lateral gap is not a crash', () => {
   for (const [gap, collisions] of [[1.8, 0], [1.6, 1]]) {
     const race = racing();
@@ -511,6 +537,33 @@ test('crosswind pushes the car sideways only inside its zone', () => {
   advance(outside, 0.5);
   assert.ok(inside.player.x * (wind.dir ?? 1) > 1);
   assert.equal(outside.player.x, 0);
+});
+
+test('Aurora uphill ground recharge is slower and returns to normal outside the section', () => {
+  const uphill = sectionOf('aurora', 'uphill');
+  const race = racingOn('aurora');
+  for (const [distance, recharge] of [[uphill.from - 1, 13], [uphill.from, 6.5], [uphill.to - 1, 6.5], [uphill.to, 13]]) {
+    Object.assign(race.player, { distance, speed: 0, fuel: 40 });
+    advance(race, 1);
+    assert.ok(Math.abs(race.player.fuel - 40 - recharge) < 1e-9, `recharge at ${distance}m`);
+  }
+});
+
+test('a gap respawn skips rings traversed by the jump but collects a later ring normally', () => {
+  const gap = sectionOf('canyon', 'gap');
+  const race = racingOn('canyon');
+  race.rivals = [];
+  race.pickups = [];
+  race.rings = [gap.from + 10, gap.to + 3, gap.to + 6].map(distance => ({ distance, x: 0, altitude: 0, radius: RING_RADIUS, type: 'nitro', group: 0 }));
+  Object.assign(race.player, { distance: gap.from + 5, speed: 60, x: 0 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.falls, 1);
+  assert.equal(race.player.rings, 0);
+  assert.equal(race.player.nitro, 0);
+  advance(race, 0.1);
+  assert.equal(race.player.rings, 1);
+  assert.equal(race.player.nitro, 0.5);
+  assert.equal(race.player.perfectLines, 0);
 });
 
 test('ice slows the steering response compared with dry road', () => {
@@ -793,6 +846,23 @@ test('no drift in the air, and taking off mid-drift cancels it', () => {
   assert.equal(race.player.nitro, 0);
 });
 
+test('falling into a gap cancels a held drift without a release reward', () => {
+  const race = racingOn('canyon');
+  race.rivals = [];
+  race.pickups = [];
+  race.rings = [];
+  Object.assign(race.player, { speed: 80, x: 0 });
+  advance(race, 2.05, DRIFT);
+  assert.ok(race.player.drift.time > 2);
+  race.player.distance = sectionOf('canyon', 'gap').from + 5;
+  stepRace(race, DRIFT, 1 / 60);
+  assert.equal(race.player.falls, 1);
+  assert.equal(race.player.drift, null);
+  advance(race, 0.2);
+  assert.equal(race.player.nitro, 0);
+  assert.equal(race.player.miniBoost, 0);
+});
+
 test('near-miss combo points are doubled while drifting', () => {
   for (const [input, combo] of [[{ throttle: true }, 1], [DRIFT, 2]]) {
     const race = driftingRace(70);
@@ -848,6 +918,34 @@ test('coast keeps the original gate positions every 220 m at x 2.5 and altitude 
     assert.equal(ring.x, 2.5);
     assert.equal(ring.altitude, 8);
   });
+});
+
+test('tunnel rings stay low and convert risk to a full-size nitro ring', () => {
+  const neon = createRace('neon');
+  const tunnelRings = neon.rings.filter(ring => neon.sections.some(s => ring.distance >= s.from && ring.distance < s.to));
+  assert.ok(tunnelRings.length > 0);
+  assert.ok(tunnelRings.every(ring => ring.altitude === 1.5 && ring.type !== 'risk'));
+
+  const risk = createRace().rings.find(ring => ring.type === 'risk');
+  assert.ok(risk);
+  const sections = RACE_TRACKS.coast.sections;
+  try {
+    RACE_TRACKS.coast.sections = [{ from: risk.distance - 1, to: risk.distance + 1, type: 'tunnel' }];
+    const converted = createRace().rings.find(ring => ring.distance === risk.distance);
+    assert.equal(converted.type, 'nitro');
+    assert.equal(converted.altitude, 1.5);
+    assert.equal(converted.radius, RING_RADIUS);
+  } finally {
+    RACE_TRACKS.coast.sections = sections;
+  }
+});
+
+test('only a collected ring is marked hit for rendering', () => {
+  const race = ringRace([{ type: 'nitro' }, { type: 'nitro', x: 9 }]);
+  advance(race, 0.5);
+  assert.equal(race.player.rings, 1);
+  assert.equal(race.rings[0].hit, true);
+  assert.notEqual(race.rings[1].hit, true);
 });
 
 test('a ring counts only when the car passes inside its radius; grazing the edge does not', () => {

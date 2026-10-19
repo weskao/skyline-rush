@@ -77,6 +77,24 @@ test('repeated boost cycles stay bounded, release fades and restart clears every
   assert.ok(scene.children.filter(child => child.isLineSegments).every(child => !child.visible));
 });
 
+test('NITRO and drift rewards ignite the existing exhaust without a held BOOST input', () => {
+  for (const reserve of ['nitroTime', 'miniBoost']) {
+    const { race, update, vapor, vfx } = fixture();
+    race.player.boosting = false;
+    race.player[reserve] = 1;
+    const feedback = update();
+    assert.ok(feedback.strength > 0.8, `${reserve} ignites boost feedback`);
+    assert.ok(vapor.geometry.attributes.alpha.array.some(alpha => alpha > 0), `${reserve} emits exhaust`);
+    race.player[reserve] = 0;
+    for (let i = 0; i < 100; i++) update();
+    assert.ok(vapor.geometry.attributes.alpha.array.every(alpha => alpha === 0));
+    vfx.reset();
+    race.phase = 'paused';
+    race.player[reserve] = 1;
+    assert.equal(update().strength, 0, 'paused rewards cannot ignite exhaust');
+  }
+});
+
 test('collision discontinuity never interpolates exhaust through the rejected path', () => {
   const { vehicle, race, update, vapor, vfx } = fixture();
   update(); vfx.reset(); update(0);

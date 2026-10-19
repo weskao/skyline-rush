@@ -1,5 +1,29 @@
 # Verification — 2026-10-18
 
+## HANDOFF implementation — 2026-10-19
+
+Branch: `feat/handoff-gameplay-ui`. The eight remaining feature groups in `HANDOFF.md` are implemented, along with its simulation/data verifier gaps. Seventeen related `TODO.md` requirements are now checked. Gamepad mapping, tilt, History/Track-select screens, and physical-phone comfort remain outside this pass.
+
+TDD evidence:
+
+- Control/input regressions first failed for missing sensitivity persistence/scaling and editing triggering driving actions; the owner suite then passed 21/21.
+- Effects/audio regressions first failed for missing pickup/ring markers and bursts, drift smoke/sparks, pickup cues, NITRO thrust and drift screech. Semantic color and pooled-material disposal regressions also failed before their fixes.
+- Simulation/history regressions first failed for unchanged uphill recharge, invalid best times, missing ring-hit markers and missing unfinished-rival gap calculation. Additional lane-assist/gap/tunnel coverage exercised already-correct behavior; mutations removing the guards were detected.
+- Browser regressions first failed for missing controls/NITRO UI, resuming while still editing, unsafe custom positions and MAX animation ignoring reduced motion. The new gameplay test earns the first five rings with real keyboard input, checks fractional fill/MAX/PERFECT LINE, then spends NITRO and drifts. The touch tests use trusted CDP touches and verify actual saved/mirrored positions, not just stored JSON.
+- The complete browser run exposed MINI BOOST masking TOUCHDOWN. The HUD now preserves landing feedback; its existing acceptance test is the regression.
+
+`npm test`: **154/154 passed**. `npm run build` succeeds (635.28 kB JS / 171.42 kB gzip), retaining Vite's existing large-chunk advisory. All source/test JavaScript syntax checks and `git diff --check` pass; there is no separate lint script.
+
+The complete `npm run test:browser` run exercised all **66 tests**: **65 passed / 1 failed** in 8.3 minutes, exposing the landing-feedback regression above. After rebuilding its fix, `npx playwright test tests/browser.spec.js tests/handoff-browser.spec.js --grep 'complete 5 km|flight HUD|earned ring'` passed **3/3** in 1.8 minutes. This rechecked landing, real NITRO/drift/comfort behavior and the full race's history/per-track/legacy-best persistence. The complete suite was not repeated after that one-line priority fix.
+
+Independent code review found and verified repairs for editor race transitions, safe-area placement and pooled-material disposal, then accepted the final landing-priority fix. No important findings remain.
+
+Render-cost samples used the same 1440×900 headless Chrome, keyboard acceleration, two-second warmup and two-second measurement. Both produced 120 callbacks: mean **1.13 → 1.56 ms**, p95 **1.30 → 3.00 ms**. The added visible pickups, ring materials and feedback have measurable cost; pools remain fixed and allocate no per-frame geometry/materials. These short samples measure JavaScript/render submission, not GPU completion, sustained FPS or physical-phone thermals.
+
+Four full-resolution Chrome screenshots were captured from the production build: controls/remapping, an earned PERFECT LINE with NITRO MAX, active NITRO, and mirrored touch-layout editing. Blue annotations use measured DOM bounds in native image pixels; each raw and annotated image was visually inspected. Temporary capture scripts/raw images are removed after delivery, retaining the four annotated images requested by the user.
+
+An external release process stashed the uncommitted work mid-run. Only this task's files were restored, including the new test from the stash's untracked snapshot; that external stash was retained. The feature branch was then created without committing or publishing.
+
 ## Screenshot refresh — 2026-10-19
 
 All 35 PNG/JPEG images in `artifacts/` were recaptured from the current production build in Chrome at full resolution, including the four README images. Existing filenames are retained for compatibility; images named `before` and `after` now both show the current build and no longer preserve the historical comparisons described below. Annotated images identify the current flight and airflow controls. Videos and performance JSON reports remain historical artifacts.

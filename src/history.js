@@ -42,7 +42,7 @@ export function loadBests(storage) {
 
 export function recordBest(trackId, time, storage) {
   const bests = loadBests(storage);
-  const record = !(bests[trackId] <= time);
+  const record = valid(time) && !(bests[trackId] <= time);
   if (record) write(BEST_KEY, { ...bests, [trackId]: time }, storage);
   return { best: record ? time : bests[trackId], record };
 }

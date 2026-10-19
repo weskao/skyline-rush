@@ -30,6 +30,7 @@ export function createSound() {
   let lastImpact = null, lastLanding = null, lastNearMiss = null;
   let wasThrusting = false, wasBoosting = false, lowCharge = false;
   const voices = new Set();
+  let collectedPickups = new WeakSet();
 
   function track(source, nodes, end, cue = true) {
     if (cue) voices.add(source);
@@ -99,6 +100,7 @@ export function createSound() {
     }
     else if (name === 'lift') tone(260, 900, 0.35, 0, 0.03);
     else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
+    else if (name === 'pickup') { tone(1047, 1568, 0.14, 0, 0.03); tone(1568, 2093, 0.18, 0.07, 0.02); }
     else if (name === 'low') { tone(440, 330, 0.14); tone(440, 330, 0.14, 0.2); }
     else if (name === 'pause') tone(520, 220, 0.15);
     else tone(name === 'tick' ? 440 : 720, name === 'tick' ? 440 : 1040, name === 'tick' ? 0.18 : 0.12);
@@ -208,6 +210,8 @@ export function createSound() {
     update(race) {
       const car = race.player;
       const active = race.phase === 'racing';
+      const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
+      const freshRace = race !== previousRace;
       const count = race.phase === 'countdown' ? Math.ceil(race.countdown) : null;
       if (race !== previousRace) {
         silenceCues();
@@ -215,6 +219,7 @@ export function createSound() {
         previousPhase = previousCount = null;
         lastImpact = lastLanding = lastNearMiss = null;
         wasThrusting = wasBoosting = lowCharge = false;
+        collectedPickups = new WeakSet();
       }
       if (race.phase === 'paused' && previousPhase !== 'paused') silenceCues();
       if (enabled) {
@@ -226,18 +231,23 @@ export function createSound() {
           if (car.landing && car.landing !== lastLanding && race.elapsed - car.landing.time < 0.2) impulse(Math.min(1, car.landing.speed / 14), true);
           if (car.nearMiss && car.nearMiss !== lastNearMiss) cue('near');
           if (car.thrusting && !wasThrusting) cue('lift');
-          if (car.boosting && !wasBoosting) cue('boost');
+          if (boosting && !wasBoosting) cue('boost');
           if (car.fuel < 20 && !lowCharge) cue('low');
         }
       }
+      for (const pickup of race.pickups) if (pickup.taken && !collectedPickups.has(pickup)) {
+        collectedPickups.add(pickup);
+        if (enabled && active && !freshRace) cue('pickup');
+      }
       if (context) {
         const now = context.currentTime;
-        oscillator.frequency.setTargetAtTime(35 + car.speed * 1.5 + (car.boosting ? 45 : 0), now, 0.12);
-        filter.frequency.setTargetAtTime(car.boosting ? 850 : 180 + car.speed * 3, now, 0.15);
+        oscillator.frequency.setTargetAtTime(35 + car.speed * 1.5 + (boosting ? 45 : 0), now, 0.12);
+        filter.frequency.setTargetAtTime(boosting ? 850 : 180 + car.speed * 3, now, 0.15);
         gain.gain.setTargetAtTime(active ? 0.014 + car.speed * 0.00016 : 0, now, 0.06);
-        thrustGain.gain.setTargetAtTime(active && (car.thrusting || car.boosting) ? 0.055 : 0, now, 0.08);
+        thrustGain.gain.setTargetAtTime(active && (car.thrusting || boosting) ? 0.055 : 0, now, 0.08);
         windGain.gain.setTargetAtTime(active ? (car.speed / 102) ** 2 * 0.07 : 0, now, 0.1);
-        skidGain.gain.setTargetAtTime(active && car.braking && car.altitude < 0.2 && car.speed > 15 ? 0.035 : 0, now, 0.06);
+        const skid = car.drift ? 0.035 + Math.min(3, Math.floor(car.drift.time)) * 0.012 : car.braking ? 0.035 : 0;
+        skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
         music.gain.setTargetAtTime(!musicOn ? 0 : race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65, now, 0.1);
         const name = musicOn ? race.phase === 'ready' || race.phase === 'finished' ? 'intro' : 'race' : null;
         if (name !== song) { song = name; step = 0; }
@@ -250,7 +260,7 @@ export function createSound() {
       lastLanding = car.landing;
       lastNearMiss = car.nearMiss;
       wasThrusting = active && car.thrusting;
-      wasBoosting = active && car.boosting;
+      wasBoosting = active && boosting;
       if (car.fuel >= 30) lowCharge = false;
       else if (car.fuel < 20) lowCharge = true;
     },

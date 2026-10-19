@@ -5,7 +5,6 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { RACE_LENGTH } from './game.js';
 import { canopy, carShell } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
@@ -351,9 +350,6 @@ export function createWorld(canvas) {
   const poles = instances(box, material('#465967', 0.65), 48, scene);
   const lamps = instances(box, new THREE.MeshBasicMaterial({ color: '#ffe5c1' }), 24, scene);
   const railLights = instances(box, new THREE.MeshBasicMaterial({ color: new THREE.Color(0.12, 1.2, 1.7) }), segments * 2, scene);
-  const gateMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.1, 1.1, 1.6), transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
-  const gateGeometry = new THREE.TorusGeometry(4.8, 0.045, 6, 64);
-  const gates = Array.from({ length: 7 }, () => { const gate = new THREE.Mesh(gateGeometry, gateMaterial); scene.add(gate); return gate; });
   const towers = Array.from({ length: 3 }, () => {
     const tower = new THREE.Group();
     const steel = material('#233e55', 0.65, 0.4);
@@ -443,7 +439,8 @@ export function createWorld(canvas) {
     mesh.visible = isPlayer || (relative > -55 && relative < 900);
     if (!mesh.visible) return;
     mesh.position.set(roadCenter(car.distance) - center + car.x, car.altitude || 0, -relative);
-    mesh.rotation.y = -roadHeading(car.distance);
+    const driftYaw = car.drift ? -car.drift.dir * Math.PI * 25 / 180 : 0;
+    mesh.rotation.y = -roadHeading(car.distance) + driftYaw;
     const bank = isPlayer ? -(car.steering || 0) * (car.altitude > 0.8 ? 0.12 : 0.045) : 0;
     mesh.rotation.z = THREE.MathUtils.damp(mesh.rotation.z, bank, 8, dt);
     mesh.rotation.x = THREE.MathUtils.damp(mesh.rotation.x, car.thrusting ? -0.06 : Math.min(0.08, -(car.verticalSpeed || 0) * 0.006), 7, dt);
@@ -451,8 +448,9 @@ export function createWorld(canvas) {
     mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(car.braking ? 2.3 : 1);
     const { wing } = mesh.userData;
     const downforce = isPlayer && visual.enabled && visual.airflow && visual.aeroMode === 'downforce';
-    wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : car.boosting ? 0.08 : 0, 8, dt);
-    if (wing.userData.lift) wing.position.y = THREE.MathUtils.damp(wing.position.y, wing.userData.restY + (car.boosting || car.braking || car.altitude > 0.8 ? wing.userData.lift : 0), 8, dt);
+    const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
+    wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : boosting ? 0.08 : 0, 8, dt);
+    if (wing.userData.lift) wing.position.y = THREE.MathUtils.damp(wing.position.y, wing.userData.restY + (boosting || car.braking || car.altitude > 0.8 ? wing.userData.lift : 0), 8, dt);
     mesh.userData.wheels.forEach(wheel => {
       const target = (car.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);
       wheel.rotation.z = THREE.MathUtils.damp(wheel.rotation.z, target, 7, dt);
@@ -492,15 +490,6 @@ export function createWorld(canvas) {
       }
       roadGeometry.attributes.position.needsUpdate = true;
       [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
-      const firstGate = race.rings.findIndex(ring => ring.distance > distance); // the gates are the next rings ahead
-      gates.forEach((gate, i) => {
-        const ring = firstGate < 0 ? undefined : race.rings[firstGate + i];
-        gate.visible = ring !== undefined;
-        if (!ring) return;
-        const d = ring.distance;
-        gate.position.set(roadCenter(d) - center + ring.x, ring.altitude, -(d - distance));
-        gate.rotation.y = -roadHeading(d);
-      });
       towers.forEach((tower, i) => {
         const d = Math.floor(distance / 1100) * 1100 + (i + 1) * 1100 - 500;
         tower.position.set(roadCenter(d) - center, 0, -(d - distance));
@@ -549,10 +538,11 @@ export function createWorld(canvas) {
       shadow.position.x = player.position.x;
       shadow.scale.setScalar(1 + player.position.y * 0.04);
       shadow.material.opacity = 0.6 / (1 + player.position.y * 0.2);
-      finish.position.set(roadCenter(RACE_LENGTH) - center, 0, -(RACE_LENGTH - distance));
-      finish.visible = RACE_LENGTH - distance < 1400;
-      effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles);
+      finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance));
+      finish.visible = race.length - distance < 1400;
+      effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles, visual);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
+      const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
       if (visual.enabled && visual.airflow && visual.view !== 'drive') {
         const angle = visual.view === 'orbit' ? time * 0.18 : { front: Math.PI, rear: 0, left: -Math.PI / 2, right: Math.PI / 2 }[visual.view];
@@ -577,7 +567,7 @@ export function createWorld(canvas) {
         desiredCamera.y += Math.sin(time * 47) * impact * 0.15 - landing * 0.3;
         desiredCamera.z += impact * 0.65;
         desiredCamera.x += Math.sin(time * 65) * feedback.ignition * visual.shake * 0.12;
-        desiredCamera.z += feedback.strength * 0.22;
+        desiredCamera.z += boostStrength * (visual.enabled ? 0.22 : 0);
       }
       const smoothing = 1 - Math.exp(-dt * 7);
       if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
@@ -586,20 +576,21 @@ export function createWorld(canvas) {
       camera.lookAt(smoothLook);
       carBank = THREE.MathUtils.damp(carBank, !reducedMotion && car.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt);
       camera.rotation.z += carBank;
-      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + feedback.strength * (visual.enabled ? visual.fov : 0) - impact * 4;
+      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + boostStrength * (visual.enabled ? visual.fov : 0) - impact * 4;
       camera.fov += (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();
-      lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : feedback.strength * visual.motionBlur;
+      lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : boostStrength * visual.motionBlur;
       lens.uniforms.impact.value = reducedMotion ? 0 : impact;
       projectedNozzle.copy(feedback.nozzle).project(camera);
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = 0.42 + (reducedMotion ? 0 : feedback.strength * visual.bloom * 0.25 + feedback.ignition * visual.bloom * 0.2);
+      bloom.strength = 0.42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * 0.25 + feedback.ignition * visual.bloom * 0.2);
       bloom.enabled = visual.quality !== 'low';
       composer.render(dt);
     },
     dispose() {
+      effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();
         if (object.material) for (const mat of [].concat(object.material)) mat.dispose();

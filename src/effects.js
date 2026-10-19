@@ -76,6 +76,32 @@ export function createEffects(scene, roadCenter) {
   const nozzles = new Uint8Array(4);
   const nozzlePosition = new THREE.Vector3(), nozzleVelocity = new THREE.Vector3();
   const orange = [2.5, 0.85, 0.15], mist = [0.58, 0.64, 0.68], gas = [0.8, 0.87, 0.92];
+  const blue = [0.15, 0.8, 2.5], gold = [2.5, 1.8, 0.15], purple = [1.2, 0.3, 2.5], red = [2.5, 0.1, 0.15];
+  const spectrum = [red, orange, gold, [0.15, 2, 0.65], blue, purple];
+  const pickupColors = { cell: blue, can: orange, tank: gold, overcharge: spectrum };
+  const ringColors = { charge: [0.1, 1.8, 2.5], nitro: gold, slipstream: purple, risk: red, mystery: spectrum };
+  const ringGeometry = new THREE.TorusGeometry(1, 0.012, 6, 64);
+  const rainbow = new Float32Array(ringGeometry.attributes.position.count * 3), tint = new THREE.Color();
+  for (let i = 0; i < ringGeometry.attributes.position.count; i++) {
+    const angle = Math.atan2(ringGeometry.attributes.position.getY(i), ringGeometry.attributes.position.getX(i));
+    tint.setHSL((angle / (Math.PI * 2) + 1) % 1, 1, 0.6).toArray(rainbow, i * 3);
+  }
+  ringGeometry.setAttribute('color', new THREE.BufferAttribute(rainbow, 3));
+  const ringMaterials = Object.fromEntries(Object.entries(ringColors).map(([type, color]) => [type,
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(...(type === 'mystery' ? [1, 1, 1] : color)), vertexColors: type === 'mystery', transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })]));
+  const pickupMaterials = Object.fromEntries(Object.entries(pickupColors).map(([tier, color]) => [tier,
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(...(tier === 'overcharge' ? [1, 1, 1] : color)), vertexColors: tier === 'overcharge' })]));
+  const gates = new THREE.Group(), pickups = new THREE.Group();
+  gates.name = 'Race rings'; pickups.name = 'Nitro pickups';
+  scene.add(gates, pickups);
+  const pickupGeometry = new THREE.OctahedronGeometry(1);
+  const pickupRainbow = new Float32Array(pickupGeometry.attributes.position.count * 3);
+  for (let i = 0; i < pickupGeometry.attributes.position.count; i++) tint.setHSL(i / pickupGeometry.attributes.position.count, 1, 0.6).toArray(pickupRainbow, i * 3);
+  pickupGeometry.setAttribute('color', new THREE.BufferAttribute(pickupRainbow, 3));
+  for (let i = 0; i < 7; i++) gates.add(new THREE.Mesh(ringGeometry, ringMaterials.charge));
+  for (let i = 0; i < 40; i++) pickups.add(new THREE.Mesh(pickupGeometry, pickupMaterials.cell));
+  const pickupSizes = { cell: 0.28, can: 0.48, tank: 0.7, overcharge: 0.95 };
+  let previousRace = null, seen = new WeakSet(), driftEmission = 0;
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
     Object.assign(particles[cursor], { x, y, distance, vx, vy, forward, size, life, maxLife: life, color, gravity, kind, opacity, radialX, grounded: false, phase: cursor * 2.39996 });
     cursor = (cursor + 1) % COUNT;
@@ -89,7 +115,7 @@ export function createEffects(scene, roadCenter) {
         Math.cos(angle) * spread, landing ? 0.4 + Math.random() * 1.5 : 2 + Math.random() * 6,
         carSpeed * (landing ? 0.3 : 0.8) + Math.sin(angle) * spread,
         landing ? 0.6 : 0.08 + Math.random() * 0.18,
-        0.4 + Math.random() * 0.65, color, landing ? 2 : 12, landing ? 2 : 0, landing ? 0.2 : 0.85);
+        0.4 + Math.random() * 0.65, color.length > 3 ? color[i % color.length] : color, landing ? 2 : 12, landing ? 2 : 0, landing ? 0.2 : 0.85);
     }
   }
   const rings = [orange].map(color => {
@@ -101,27 +127,69 @@ export function createEffects(scene, roadCenter) {
     return ring;
   });
   return {
-    update(race, dt, center, preview, reducedMotion, vehicles) {
+    update(race, dt, center, preview, reducedMotion, vehicles, options = {}) {
       dt = Math.max(0, dt);
       flowTime += dt;
       const car = race.player;
       const distance = preview ? 340 : car.distance;
+      const enabled = options.enabled !== false;
+      const active = enabled && !preview && race.phase === 'racing' && dt > 0;
+      const lowQuality = options.quality === 'low';
+      points.visible = enabled;
+      for (let source = 0; source < 2; source++) {
+        const items = source === 0 ? race.pickups : race.rings;
+        const group = source === 0 ? pickups : gates;
+        let slot = 0;
+        for (const item of items) {
+          const collected = source === 0 ? item.taken : item.hit;
+          if (collected && !seen.has(item)) {
+            seen.add(item);
+            if (previousRace === race && active) burst(item, reducedMotion ? 6 : lowQuality ? 12 : 32,
+              source === 0 ? pickupColors[item.tier] : ringColors[item.type], car.speed);
+          }
+          if (collected || item.distance <= distance || item.distance > distance + 900 || slot >= group.children.length) continue;
+          const mesh = group.children[slot++];
+          mesh.visible = true;
+          mesh.position.set(roadCenter(item.distance) + item.x - center,
+            item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
+          mesh.rotation.y = source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2);
+          mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
+          mesh.material = source === 0 ? pickupMaterials[item.tier] : ringMaterials[item.type];
+        }
+        for (; slot < group.children.length; slot++) group.children[slot].visible = false;
+      }
+      previousRace = race;
+      if (active && !reducedMotion && car.drift && car.altitude < 0.2) {
+        driftEmission = Math.min(8, driftEmission + dt * (lowQuality ? 16 : 60));
+        while (driftEmission >= 1) {
+          const side = Math.floor(driftEmission) % 2 ? -1 : 1;
+          nozzlePosition.set(side * 1.05, 0.12, 1.45);
+          const pose = vehicles?.[0];
+          if (pose) { pose.updateWorldMatrix(true, false); nozzlePosition.applyMatrix4(pose.matrixWorld); }
+          else nozzlePosition.x += roadCenter(car.distance) + car.x - center;
+          const x = nozzlePosition.x + center, d = distance - nozzlePosition.z;
+          emit(x, 0.12, d, side * 1.5, 0.8, car.speed * 0.25, 0.55, 0.5, mist, 0, 2, 0.3);
+          if (car.drift.time >= 1) emit(x, 0.15, d, side * (2 + Math.random() * 3), 1.5, car.speed * 0.3,
+            0.12, 0.4, car.drift.time >= 3 ? purple : car.drift.time >= 2 ? orange : blue, 6);
+          driftEmission--;
+        }
+      } else driftEmission = 0;
       if (car.impact !== lastImpact) {
         lastImpact = car.impact;
-        if (lastImpact) { burst(lastImpact, 95, orange, car.speed); rings[0].userData.event = lastImpact; }
+        if (lastImpact && active) { burst(lastImpact, 95, orange, car.speed); rings[0].userData.event = lastImpact; }
       }
       if (car.landing !== lastLanding) {
         lastLanding = car.landing;
-        if (lastLanding) burst(lastLanding, 65, mist, car.speed, true);
+        if (lastLanding && active) burst(lastLanding, 65, mist, car.speed, true);
       }
       for (let source = 0; source <= race.rivals.length; source++) {
         const driver = source === 0 ? car : race.rivals[source - 1];
         const pose = vehicles?.[source];
-        const active = (preview || race.phase === 'racing') && (preview ? source < 2 && (!pose || pose.userData.jets.visible) : driver.thrusting) && pose?.visible !== false;
+        const active = enabled && (preview || race.phase === 'racing') && (preview ? source < 2 && (!pose || pose.userData.jets.visible) : driver.thrusting) && pose?.visible !== false;
         strengths[source] = THREE.MathUtils.damp(strengths[source], active ? 1 : 0, active ? 12 : 9, dt);
         for (let port = 0; port < LIFT_PORTS.length; port++) {
           const jet = cores.children[source * 4 + port];
-          jet.visible = !!pose && strengths[source] >= 0.01 && pose.visible;
+          jet.visible = enabled && !!pose && strengths[source] >= 0.01 && pose.visible;
           if (!jet.visible) continue;
           const [x, z] = LIFT_PORTS[port];
           pose.updateWorldMatrix(true, false);
@@ -131,7 +199,7 @@ export function createEffects(scene, roadCenter) {
           jet.material.uniforms.power.value = strengths[source] * (reducedMotion ? 0.65 : 1);
           jet.material.uniforms.time.value = flowTime + port * 0.31;
         }
-        if (strengths[source] < 0.01 || dt === 0) continue;
+        if (!enabled || strengths[source] < 0.01 || dt === 0) continue;
         const d = preview ? source === 0 ? 340 : 375 + (source - 1) * 28 : driver.distance;
         const altitude = pose ? pose.position.y : preview ? source === 0 ? 1.6 : 5 : driver.altitude;
         const heading = Math.atan((roadCenter(d + 1) - roadCenter(d - 1)) / 2);
@@ -219,12 +287,19 @@ export function createEffects(scene, roadCenter) {
         lastImpact = null; lastLanding = null;
       }
     },
+    dispose() {
+      gates.removeFromParent(); pickups.removeFromParent();
+      ringGeometry.dispose(); pickupGeometry.dispose();
+      for (const mat of Object.values(ringMaterials)) mat.dispose();
+      for (const mat of Object.values(pickupMaterials)) mat.dispose();
+    },
     reset() {
       for (const p of particles) p.life = 0;
       alphas.fill(0);
       geometry.attributes.alpha.needsUpdate = true;
       rings.forEach(ring => { ring.userData.event = null; ring.visible = false; });
       lastImpact = lastLanding = null;
+      seen = new WeakSet(); previousRace = null; driftEmission = 0;
       cursor = 0;
       emissions.fill(0); strengths.fill(0); nozzles.fill(0);
       cores.children.forEach(jet => { jet.visible = false; });
