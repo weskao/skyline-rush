@@ -143,26 +143,30 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   await expect(page.locator('#controls-sensitivity')).toHaveValue('0.4');
   await page.locator('#controls-button').click();
   await page.locator('#assist-button').click();
+  // Snapshot the HUD in-page the moment charge reads 0.5; polling from the test misses the 0.6s refill window on slow CI.
+  await page.evaluate(() => {
+    const meter = document.querySelector('#nitro-meter');
+    const observer = new MutationObserver(() => {
+      if (meter.getAttribute('aria-valuenow') !== '0.5') return;
+      const bar = meter.querySelector('.nitro-segment i');
+      window.halfCharge = { transform: bar.style.transform, refilling: meter.dataset.refilling, color: getComputedStyle(bar).backgroundColor };
+      observer.disconnect();
+    });
+    observer.observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
+  });
   await start(page);
   let held = false;
-  let fractional = false;
   const deadline = Date.now() + 65000;
   // Coast's visible gates are 220m apart. Fly in short hops to clear the first group while recharging between gates.
   while (Date.now() < deadline && !await page.locator('#maneuver-report').isVisible()) {
-    const { distance, altitude, nitro } = await page.evaluate(() => ({ distance: Number(document.querySelector('#distance').textContent) * 1000, altitude: Number(document.querySelector('#altitude').textContent), nitro: Number(document.querySelector('#nitro-meter').getAttribute('aria-valuenow')) }));
-    if (nitro === 0.5 && !fractional) {
-      expect(await page.locator('.nitro-segment i').first().evaluate(element => element.style.transform)).toBe('scaleX(0.5)');
-      await expect(page.locator('#nitro-meter')).toHaveAttribute('data-refilling', 'true');
-      await expect(page.locator('.nitro-segment i').first()).toHaveCSS('background-color', 'rgb(255, 124, 118)');
-      fractional = true;
-    }
+    const { distance, altitude } = await page.evaluate(() => ({ distance: Number(document.querySelector('#distance').textContent) * 1000, altitude: Number(document.querySelector('#altitude').textContent) }));
     const nextGate = Math.ceil(Math.max(1, distance) / 220) * 220;
     const fly = nextGate <= 1100 && nextGate - distance < 125 && altitude < 8.8;
     if (fly !== held) { await page.keyboard[fly ? 'down' : 'up']('Space'); held = fly; }
     await page.waitForTimeout(35);
   }
   await page.keyboard.up('Space');
-  expect(fractional).toBe(true);
+  expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();
   await expect(page.locator('#nitro-status')).toHaveText('NITRO MAX');
   await expect(page.locator('.nitro-segment.is-full')).toHaveCount(3);

@@ -117,7 +117,8 @@ test('fuel warns below 20%, refill feedback appears and comfort disables gauge m
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('Shift');
-  await expect(page.locator('#fuel-meter')).toHaveAttribute('aria-valuetext', /Low charge/, { timeout: 16000 });
+  // CPU-only CI simulates slower than wall-clock (frame gaps are clamped), so draining takes longer there.
+  await expect(page.locator('#fuel-meter')).toHaveAttribute('aria-valuetext', /Low charge/, { timeout: process.env.CI ? 48000 : 16000 });
   await page.keyboard.up('Shift');
   await expect(page.locator('#fuel-meter')).toHaveAttribute('data-refilling', 'true');
   await page.locator('#vfx-panel > summary').click();
