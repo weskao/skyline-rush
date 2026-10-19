@@ -1,3 +1,12 @@
+## [0.9.0] - 2026-10-19
+
+### 🚀 Features
+
+- **ui:** Lead start screen with game wordmark
+
+### ⚙️ Miscellaneous Tasks
+
+- **artifacts:** Refresh screenshots after start screen
 ## [0.8.1] - 2026-10-19
 
 ### 🧪 Testing
