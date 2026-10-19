@@ -2,6 +2,7 @@ export const RACE_LENGTH = 5000;
 export const MAX_SPEED = 88;
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
+export const STEER_RAMP = 0.15;
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -64,8 +65,13 @@ export function stepRace(race, input, dt) {
   const limit = boost ? MAX_SPEED + 14 : MAX_SPEED;
   const acceleration = car.speed > limit ? -18 - (brake ? 35 : 0) : (throttle ? 15 : -4) - (brake ? 35 : 0) + (boost ? 12 : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
-  car.steering += (steer - car.steering) * (1 - Math.exp(-14 * dt));
-  const lateralPosition = car.x + car.steering * Math.min(12, car.speed * 0.22) * dt;
+  // Linear ramp: full deflection takes STEER_RAMP seconds, like an analog stick.
+  car.steering += clamp(steer - car.steering, -dt / STEER_RAMP, dt / STEER_RAMP);
+  let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * dt;
+  if (input.laneAssist === true && steer === 0) {
+    const lane = LANES.reduce((best, centre) => Math.abs(centre - car.x) < Math.abs(best - car.x) ? centre : best);
+    lateralPosition += (lane - lateralPosition) * (1 - Math.exp(-3 * dt));
+  }
   car.x = clamp(lateralPosition, -ROAD_LIMIT, ROAD_LIMIT);
   car.cooldown = Math.max(0, car.cooldown - dt);
   if (car.nearMiss && race.elapsed - car.nearMiss.time > 5) car.combo = 0;

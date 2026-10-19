@@ -285,3 +285,28 @@ test('air dash: holding fly and boost together drains fuel at 22 per second and 
   assert.equal(car.exhausted, false);
   assert.ok(car.speed > MAX_SPEED && car.speed <= MAX_SPEED + 14);
 });
+
+test('steering input ramps to full over 0.15 s and high-speed lateral speed caps at 9 m/s', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: MAX_SPEED, x: -7.5 });
+  advance(race, 0.05, { throttle: true, steer: 1 });
+  assert.ok(Math.abs(race.player.steering - 1 / 3) < 0.01);
+  advance(race, 0.2, { throttle: true, steer: 1 });
+  assert.equal(race.player.steering, 1);
+  const x = race.player.x;
+  advance(race, 0.5, { throttle: true, steer: 1 });
+  assert.ok(Math.abs(race.player.x - x - 4.5) < 0.05);
+});
+
+test('lane assist eases a released car to the nearest lane centre only when enabled', () => {
+  for (const laneAssist of [true, false]) {
+    const race = racing();
+    Object.assign(race.player, { speed: 40, x: 3.6 });
+    advance(race, 2, { throttle: true, laneAssist });
+    assert.ok(laneAssist ? Math.abs(race.player.x - 2.5) < 0.05 : race.player.x === 3.6);
+  }
+  const race = racing();
+  Object.assign(race.player, { speed: 40, x: 3.6 });
+  advance(race, 0.5, { throttle: true, laneAssist: true, steer: 1 });
+  assert.ok(race.player.x > 3.6);
+});

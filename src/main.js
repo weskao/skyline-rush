@@ -614,6 +614,7 @@ try {
     accumulator += rawDelta > 0.25 ? 0 : dt;
     const input = controls.read();
     if (autoThrottle && !input.brake) input.throttle = true;
+    input.laneAssist = autoThrottle;
     while (accumulator >= 1 / 60) {
       stepRace(race, input, 1 / 60);
       accumulator -= 1 / 60;
