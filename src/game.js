@@ -3,6 +3,7 @@ export const MAX_SPEED = 88;
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
 export const STEER_RAMP = 0.15;
+export const TAKEOFF_BUFFER = 1.5; // seconds a FLY press below takeoff speed stays remembered
 export const SCRAPE_RATIO = 0.1; // lateral/forward speed below this is a shallow-angle scrape
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -14,7 +15,7 @@ export function createRace() {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, boosting: false, braking: false,
-      nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0,
+      nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
@@ -78,15 +79,18 @@ export function stepRace(race, input, dt) {
   car.scrapeCooldown = Math.max(0, car.scrapeCooldown - dt);
   if (car.nearMiss && race.elapsed - car.nearMiss.time > 5) car.combo = 0;
 
-  if (!input.fly && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
-  car.thrusting = !!input.fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
+  // Takeoff buffer: FLY held while too slow is remembered; it counts as held until the window runs out.
+  car.flyBuffer = input.fly && car.speed < 18 ? TAKEOFF_BUFFER : input.fly ? 0 : Math.max(0, car.flyBuffer - dt);
+  const fly = !!input.fly || car.flyBuffer > 0;
+  if (!fly && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
+  car.thrusting = fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
   if (car.thrusting) {
     car.verticalSpeed = Math.min(7, car.verticalSpeed + 19 * dt);
     car.fuel = Math.max(0, car.fuel - 19 * dt);
     if (car.fuel === 0) car.exhausted = true;
   } else if (car.altitude > 0) {
-    car.verticalSpeed -= 11 * dt;
-  } else if (!input.fly && !boost) {
+    car.verticalSpeed -= (fly ? 11 : 7) * dt; // releasing FLY glides
+  } else if (!fly && !boost) {
     car.fuel = Math.min(100, car.fuel + 13 * dt);
   }
   // AIR DASH: flight + boost together share a 22/s drain instead of 19 + 10.

@@ -334,3 +334,33 @@ test('vehicle collision width is 1.7 so a 1.8 m lateral gap is not a crash', () 
     assert.equal(race.player.collisions, collisions);
   }
 });
+
+test('takeoff buffer: FLY pressed below 18 m/s lifts off once fast enough, but only within 1.5 s of release', () => {
+  const peak = (gapSeconds) => {
+    const race = racing();
+    race.player.speed = 5;
+    advance(race, 0.1, { fly: true });
+    advance(race, gapSeconds, {});
+    let max = 0;
+    for (let frame = 0; frame < 240; frame++) {
+      stepRace(race, { throttle: true }, 1 / 60);
+      max = Math.max(max, race.player.altitude);
+    }
+    return max;
+  };
+  assert.ok(peak(0) > 0.5);
+  assert.equal(peak(2), 0);
+  const race = racing();
+  race.player.speed = 5;
+  advance(race, 3, { throttle: true });
+  assert.equal(race.player.altitude, 0);
+});
+
+test('glide: releasing FLY in the air lowers fall acceleration to 7, a held but powerless FLY keeps 11', () => {
+  for (const [fly, fall] of [[false, 7], [true, 11]]) {
+    const race = racing();
+    Object.assign(race.player, { speed: 60, altitude: 10, fuel: 0, exhausted: true });
+    advance(race, 0.5, { fly });
+    assert.ok(Math.abs(race.player.verticalSpeed + fall * 0.5) < 0.2);
+  }
+});
