@@ -5,6 +5,7 @@ import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { vfxSettings, VFX_RANGES, VFX_PRESETS } from './vfx-settings.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
+import { loadKeyMap } from './key-map.js';
 
 const icons = {
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
@@ -362,7 +363,7 @@ const controls = createControls(window, action => {
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
   ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
-}, { getSettings: getControlSettings });
+}, { getSettings: getControlSettings, getKeyMap: (keyMap => () => keyMap)(loadKeyMap()) });
 const pad = $('.touch-pad');
 controls.bindSlidePad(pad, { getSettings: getControlSettings });
 // input.js keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.js).

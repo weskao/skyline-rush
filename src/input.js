@@ -1,13 +1,13 @@
 import { createSlidePad } from './slide-pad.js';
+import { DEFAULT_KEY_MAP, ACTION_KEYS as actionKeys } from './key-map.js';
 
-const drivingKeys = {
-  KeyW: 'throttle', ArrowUp: 'throttle', KeyS: 'brake', ArrowDown: 'brake',
-  KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
-  Space: 'fly', ShiftLeft: 'boost', ShiftRight: 'boost',
-};
-const actionKeys = { Escape: 'pause', KeyP: 'pause', KeyR: 'restart', KeyC: 'camera', KeyM: 'sound', KeyT: 'assist', KeyV: 'airflow', Enter: 'start' };
+// code -> action lookup, rebuilt only when the key map object changes.
+const lookupFor = map => Object.fromEntries(Object.entries(map).flatMap(([action, codes]) => codes.map(code => [code, action])));
 
-export function createControls(target = window, onAction = () => {}, { getSettings: defaultSettings = () => ({}) } = {}) {
+export function createControls(target = window, onAction = () => {}, { getSettings: defaultSettings = () => ({}), getKeyMap = () => DEFAULT_KEY_MAP } = {}) {
+  let mapped = null;
+  let drivingKeys = {};
+  const syncKeys = () => { const map = getKeyMap(); if (map !== mapped) { mapped = map; drivingKeys = lookupFor(map); } };
   const keys = new Set();
   const pointers = new Map();
   const slides = [];
@@ -23,6 +23,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
     for (const slide of slides) { slide.pointerId = null; slide.pad.reset(); }
   }
   listen(target, 'keydown', event => {
+    syncKeys();
     if (event.target?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
     if (event.code === 'Space' && event.target?.closest?.('button')) return;
     if (drivingKeys[event.code]) {
@@ -43,6 +44,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
   return {
     clear,
     read() {
+      syncKeys();
       const held = new Set([...keys].map(key => drivingKeys[key]).concat([...pointers.values()]));
       let steer = Number(held.has('right')) - Number(held.has('left'));
       let brake = held.has('brake');
@@ -53,7 +55,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
       }
       return {
         throttle: held.has('throttle'), brake, steer,
-        fly: held.has('fly') || flyLatched, boost: held.has('boost'),
+        fly: held.has('fly') || flyLatched, boost: held.has('boost'), nitro: held.has('nitro'),
       };
     },
     bindButton(button, control) {

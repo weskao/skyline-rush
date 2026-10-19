@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createControls } from '../src/input.js';
+import { DEFAULT_KEY_MAP } from '../src/key-map.js';
 
 function send(target, type, properties = {}) {
   const event = new Event(type, { cancelable: true });
@@ -15,10 +16,10 @@ test('keyboard maps driving and flight; blur releases every held control', () =>
   send(target, 'keydown', { code: 'KeyW' });
   send(target, 'keydown', { code: 'ArrowLeft' });
   const space = send(target, 'keydown', { code: 'Space' });
-  assert.deepEqual(controls.read(), { throttle: true, brake: false, steer: -1, fly: true, boost: false });
+  assert.deepEqual(controls.read(), { throttle: true, brake: false, steer: -1, fly: true, boost: false, nitro: false });
   assert.ok(space.defaultPrevented);
   send(target, 'blur');
-  assert.deepEqual(controls.read(), { throttle: false, brake: false, steer: 0, fly: false, boost: false });
+  assert.deepEqual(controls.read(), { throttle: false, brake: false, steer: 0, fly: false, boost: false, nitro: false });
   controls.destroy();
 });
 
@@ -171,5 +172,34 @@ test('toggle fly latches on tap, survives release, clears via setFly/clear; hold
   controls.toggleFly();
   controls.clear();
   assert.equal(controls.read().fly, false);
+  controls.destroy();
+});
+
+test('alternate keys J/K/L and E drive fly, boost and nitro; originals still work', () => {
+  const target = new EventTarget();
+  const controls = createControls(target);
+  for (const [code, name] of [['KeyJ', 'fly'], ['KeyK', 'boost'], ['KeyL', 'nitro'], ['KeyE', 'nitro'], ['Space', 'fly'], ['ShiftLeft', 'boost']]) {
+    send(target, 'keydown', { code });
+    assert.equal(controls.read()[name], true, code);
+    send(target, 'keyup', { code });
+    assert.equal(controls.read()[name], false, code);
+  }
+  controls.destroy();
+});
+
+test('input follows the saved key map as it changes and ignores unbound keys', () => {
+  const target = new EventTarget();
+  let keyMap = { ...DEFAULT_KEY_MAP, fly: ['KeyF'], boost: ['Space'] };
+  const controls = createControls(target, () => {}, { getKeyMap: () => keyMap });
+  const space = send(target, 'keydown', { code: 'Space' });
+  assert.deepEqual([controls.read().boost, controls.read().fly], [true, false]);
+  assert.ok(space.defaultPrevented);
+  send(target, 'keyup', { code: 'Space' });
+  const j = send(target, 'keydown', { code: 'KeyJ' });
+  assert.equal(controls.read().fly, false);
+  assert.equal(j.defaultPrevented, false);
+  keyMap = DEFAULT_KEY_MAP;
+  send(target, 'keydown', { code: 'KeyJ' });
+  assert.equal(controls.read().fly, true);
   controls.destroy();
 });
