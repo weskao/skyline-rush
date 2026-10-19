@@ -19,6 +19,8 @@ export const TRACKS = {
   },
 };
 const LOOP_STEPS = 32 * 16;
+// Race-song tempo multiplier: 1 until the last 500 m, then a linear ramp to 1.15 at the finish.
+export const sprintFactor = (distance, length) => 1 + 0.15 * Math.min(1, Math.max(0, (distance - (length - 500)) / 500));
 const pitch = note => 440 * 2 ** ((note - 69) / 12);
 
 export function createSound() {
@@ -240,7 +242,7 @@ export function createSound() {
         const name = musicOn ? race.phase === 'ready' || race.phase === 'finished' ? 'intro' : 'race' : null;
         if (name !== song) { song = name; step = 0; }
         // Schedule ~0.2 s ahead from the frame loop; after a stalled frame, resume from now instead of bursting.
-        if (song) for (nextStep = Math.max(nextStep, now + 0.03); nextStep < now + 0.2; nextStep += 15 / TRACKS[song].bpm, step = (step + 1) % LOOP_STEPS) playStep(TRACKS[song], step, nextStep);
+        if (song) for (nextStep = Math.max(nextStep, now + 0.03); nextStep < now + 0.2; nextStep += 15 / (TRACKS[song].bpm * (song === 'race' && active ? sprintFactor(car.distance, race.length) : 1)), step = (step + 1) % LOOP_STEPS) playStep(TRACKS[song], step, nextStep);
       }
       previousPhase = race.phase;
       previousCount = count;

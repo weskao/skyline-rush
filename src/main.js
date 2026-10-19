@@ -591,7 +591,19 @@ function updateUI(now, input) {
   const near = car.nearMiss;
   ui['skill-report'].hidden = race.phase !== 'racing' || impactAge < 1.1 || !near || race.elapsed - near.time > 1.8;
   if (!ui['skill-report'].hidden) ui['skill-report'].textContent = `CLOSE PASS ×${near.combo}  /  ${near.charge < 0.5 ? 'CHARGE FULL' : `+${Math.round(near.charge)}% CHARGE`}`;
-  ui['race-status'].textContent = race.phase === 'racing' && car.distance >= RACE_LENGTH - 500 ? 'FINAL 500 M' : race.phase.toUpperCase();
+  const length = race.length ?? RACE_LENGTH;
+  let status = race.phase.toUpperCase();
+  if (race.phase === 'racing' && car.distance >= length - 500) {
+    // Final-sprint gaps (metres) to the nearest rival ahead / behind.
+    let ahead = Infinity, behind = Infinity;
+    for (const rival of race.rivals) {
+      const gap = rival.distance - car.distance;
+      if (gap > 0) ahead = Math.min(ahead, gap);
+      else behind = Math.min(behind, -gap);
+    }
+    status = `FINAL 500 M${ahead < Infinity ? ` · +${Math.round(ahead)} m` : ''}${behind < Infinity ? ` · −${Math.round(behind)} m` : ''}`;
+  }
+  ui['race-status'].textContent = status;
   ui['driving-message'].textContent = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? 'REACH 65 KM/H TO LIFT OFF' : car.exhausted && input.fly ? 'RELEASE FLIGHT TO RECHARGE' : '';
   const racers = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
   racers.forEach((racer, i) => {
