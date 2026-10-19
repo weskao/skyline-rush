@@ -119,7 +119,7 @@ export function stepRace(race, input, dt) {
 
   if (car.cooldown === 0) {
     const obstacle = [...race.traffic, ...race.rivals].find(other =>
-      Math.abs(other.distance - car.distance) < 4.4 && Math.abs(other.x - car.x) < 1.9 &&
+      Math.abs(other.distance - car.distance) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
       Math.abs((other.altitude || 0) - car.altitude) < 1.8,
     );
     if (obstacle) {
