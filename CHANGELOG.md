@@ -1,3 +1,17 @@
+## [0.7.0] - 2026-10-19
+
+### 🚀 Features
+
+- Show release version on the ready screen
+- Add track visuals, style score and history
+
+### 📚 Documentation
+
+- Document gameplay depth and verification
+
+### ⚙️ Miscellaneous Tasks
+
+- Refresh screenshots and depth artifacts
 ## [0.6.0] - 2026-10-19
 
 ### 🚀 Features
