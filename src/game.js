@@ -171,7 +171,7 @@ export function createRace(trackId = 'coast') {
       section: null, falls: 0, fall: null,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
-      drift: null, miniBoost: 0,
+      drift: null, driftPayout: null, miniBoost: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
@@ -310,6 +310,7 @@ export function stepRace(race, input, dt) {
     if (reward) {
       addNitro(car, reward.nitro);
       car.miniBoost = Math.max(car.miniBoost, reward.boost);
+      car.driftPayout = { time: race.elapsed, nitro: reward.nitro };
     }
     car.drift = null;
   }

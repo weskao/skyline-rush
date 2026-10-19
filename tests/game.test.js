@@ -747,6 +747,20 @@ function driftingRace(speed = 80) {
 }
 const DRIFT = { brake: true, steer: 0.1 };
 
+test('drift payout emits one feedback event even when an existing boost is longer than the reward', () => {
+  const race = driftingRace();
+  race.player.miniBoost = 3;
+  advance(race, 1.1, DRIFT);
+  stepRace(race, {}, 1 / 60);
+  assert.ok(race.player.miniBoost > 1);
+  assert.equal(race.player.nitro, 0.15);
+  assert.deepEqual(race.player.driftPayout, { time: race.elapsed, nitro: 0.15 });
+  const payout = race.player.driftPayout;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.driftPayout, payout);
+  assert.equal(createRace().player.driftPayout, null);
+});
+
 test('no drift below 45 m/s: brake plus steer hard-brakes', () => {
   const race = driftingRace(DRIFT_MIN_SPEED - 1);
   advance(race, 0.5, DRIFT);

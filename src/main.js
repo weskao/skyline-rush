@@ -2,7 +2,7 @@ import './style.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_TRACKS } from './game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
@@ -10,6 +10,7 @@ import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, loadHistory, loadBests, loadUnlocks, careerStats, LEGACY_BEST_KEY } from './history.js';
+import { createCallouts } from './callouts.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -26,8 +27,27 @@ const speedTicks = [...document.querySelectorAll('.speed-ticks i')];
 ui.leaderboard.innerHTML = Array.from({ length: 4 }, () => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
 const leaderboardRows = [...ui.leaderboard.children];
 const touchButtons = [...document.querySelectorAll('[data-control]')];
+// Touch driving prevents default pointer behavior, so :active alone cannot show a press.
+const pressedButtons = new Map();
+document.addEventListener('pointerdown', event => {
+  const button = event.target.closest('button:not(:disabled)');
+  if (button) { pressedButtons.set(event.pointerId, button); button.classList.add('is-pressed'); }
+}, { capture: true });
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) document.addEventListener(type, event => {
+  pressedButtons.get(event.pointerId)?.classList.remove('is-pressed');
+  pressedButtons.delete(event.pointerId);
+}, { capture: true });
+function clearButtonPresses() {
+  for (const button of pressedButtons.values()) button.classList.remove('is-pressed');
+  pressedButtons.clear();
+}
 const touchPreference = matchMedia('(pointer: coarse)');
 let race = createRace();
+const racerRows = new Map(['YOU', ...race.rivals.map(rival => rival.name)].map((name, i) => [name, leaderboardRows[i]]));
+let leaderboardOrder = '';
+const speedNeedle = $('#speed-needle');
+const positionChange = $('#position-change');
+let previousPosition = null, positionUntil = 0;
 let world;
 let previousPhase;
 let previousFlight;
@@ -65,8 +85,13 @@ boostStatus.id = 'boost-status';
 boostStatus.className = 'boost-status';
 document.querySelector('.fuel-stat').append(boostStatus);
 let previousBoost = false;
-let previousPerfectLines = 0;
-let perfectUntil = 0;
+const callouts = createCallouts();
+const eventCallout = $('#event-callout');
+const calloutReports = [$('#maneuver-report'), ui['skill-report'], $('#action-report')];
+let shownCallout = null;
+let feedbackCar, lastImpact, lastDriftPayout, lastNitroTime = 0;
+const motionTokens = getComputedStyle(document.documentElement);
+const motionOptions = duration => ({ duration: parseFloat(motionTokens.getPropertyValue(`--dur-${duration}`)), easing: motionTokens.getPropertyValue('--ease-out').trim() });
 const nitroHud = document.createElement('div');
 nitroHud.className = 'nitro-hud';
 nitroHud.innerHTML = `<span id="nitro-status">NITRO 0 / 3</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="Nitro charges" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
@@ -506,6 +531,7 @@ document.querySelector('.toolbar').addEventListener('click', event => {
   if (event.detail > 0) event.target.closest('button')?.blur();
 });
 window.addEventListener('blur', () => {
+  clearButtonPresses();
   if (race.phase === 'racing' || race.phase === 'countdown') pause();
 });
 document.addEventListener('visibilitychange', () => {
@@ -516,6 +542,7 @@ function phaseUI() {
   const phase = race.phase;
   const ready = phase === 'ready';
   const overlay = phase === 'paused' || phase === 'finished';
+  if (ready || overlay) clearButtonPresses();
   document.body.dataset.phase = phase;
   if (!['racing', 'countdown'].includes(phase)) { padTouch = null; drawPad(); } // controls.clear() reset the real pad; drop the mirror with it
   ui.intro.hidden = !ready;
@@ -575,9 +602,32 @@ function updateUI(now, input) {
     previousPhase = race.phase;
   }
   const car = race.player;
+  const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
+  const calm = visual.comfortable || reducedMotion.matches;
   const flying = car.altitude > 0.25;
   ui.speed.textContent = String(Math.round(car.speed * 3.6));
-  ui.position.textContent = String(racePosition(race)).padStart(2, '0');
+  speedNeedle.style.transform = `rotate(${-70 + Math.min(1, car.speed / (MAX_SPEED + 30)) * 140}deg)`;
+  const position = racePosition(race);
+  if (previousPosition !== position) {
+    ui.position.textContent = String(position).padStart(2, '0');
+    if (previousPosition !== null && race.phase === 'racing') {
+      const gained = position < previousPosition;
+      positionChange.textContent = gained ? '↑' : '↓';
+      positionChange.dataset.direction = ui.position.dataset.direction = gained ? 'gained' : 'lost';
+      positionChange.setAttribute('aria-label', gained ? 'Gained a place' : 'Lost a place');
+      positionUntil = now + 1.2;
+      ui.position.getAnimations().forEach(animation => animation.cancel());
+      positionChange.getAnimations().forEach(animation => animation.cancel());
+      if (!calm) {
+        ui.position.animate([{ opacity: .4, transform: `rotateX(${gained ? '-' : ''}65deg)` }, { opacity: 1, transform: 'rotateX(0)' }], motionOptions('base'));
+        positionChange.animate([{ opacity: .35 }, { opacity: 1 }], motionOptions('slow'));
+      }
+    }
+    previousPosition = position;
+  }
+  positionChange.hidden = race.phase !== 'racing' || now >= positionUntil;
+  if (positionChange.hidden) delete ui.position.dataset.direction;
+  if (calm || race.phase !== 'racing') for (const element of [ui.position, positionChange]) element.getAnimations().forEach(animation => animation.cancel());
   ui.timer.textContent = timeString(race.elapsed);
   ui.distance.textContent = (car.distance / 1000).toFixed(2);
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
@@ -616,10 +666,28 @@ function updateUI(now, input) {
     }
   }
   previousNitro = car.nitro;
-  if (car.perfectLines > previousPerfectLines) perfectUntil = race.elapsed + 2;
-  if (car.perfectLines < previousPerfectLines) perfectUntil = 0;
-  previousPerfectLines = car.perfectLines;
-  $('#maneuver-report').hidden = race.phase !== 'racing' || race.elapsed >= perfectUntil;
+  const callout = callouts.update(race, impactAge <= 1.1);
+  if (!callout || calm) eventCallout.getAnimations().forEach(animation => animation.cancel());
+  eventCallout.hidden = !callout;
+  if (callout !== shownCallout) {
+    for (const report of calloutReports) report.hidden = true;
+    if (callout) {
+      const report = calloutReports[callout.kind === 'perfect' ? 0 : callout.kind === 'near' ? 1 : 2];
+      const detail = document.createElement('span');
+      detail.textContent = callout.detail;
+      report.replaceChildren(document.createTextNode(callout.title), detail);
+      report.hidden = false;
+      eventCallout.dataset.kind = callout.kind;
+      eventCallout.getAnimations().forEach(animation => animation.cancel());
+      if (!visual.comfortable && !reducedMotion.matches) eventCallout.animate([
+        { opacity: 0, transform: 'scale(.88)', offset: 0 },
+        { opacity: 1, transform: 'scale(1)', offset: .2 },
+        { opacity: 1, transform: 'scale(1)', offset: .85 },
+        { opacity: 0, transform: 'scale(1)', offset: 1 },
+      ], { ...motionOptions('slow'), duration: motionOptions('slow').duration * 2.5 });
+    }
+    shownCallout = callout;
+  }
   document.body.classList.toggle('nitro-active', nitroActive);
   ui['flight-budget'].textContent = `${(car.fuel / (airDash ? 22 : 19)).toFixed(1)}s`;
   ui['flight-instruction'].textContent = car.thrusting ? `${tap ? 'TAP FLY TO LAND' : 'RELEASE TO DESCEND'} · STEER IN THE AIR` : car.altitude > 0.25 ? depleted ? 'CHARGE EMPTY · AUTO LANDING' : `${hold} TO CLIMB AGAIN` : car.exhausted ? `${tap ? 'TAP FLY TO LAND' : release} · RECHARGE ON ROAD` : car.speed < 18 ? `REACH 65 KM/H · ${hold} TO LIFT` : depleted ? 'CHARGING · STAY ON THE ROAD' : `${hold} TO LIFT${tap ? '' : ' · RELEASE TO LAND'}`;
@@ -629,20 +697,27 @@ function updateUI(now, input) {
   document.body.classList.toggle('low-charge', car.fuel < 20);
   document.body.classList.toggle('boosting', (car.boosting || nitroActive) && race.phase === 'racing');
   const boost = (car.boosting || nitroActive) && race.phase === 'racing';
-  const calm = visual.comfortable || matchMedia('(prefers-reduced-motion: reduce)').matches;
   boostStatus.textContent = boost ? 'THRUST ACTIVE' : car.fuel === 0 ? 'CHARGE EMPTY' : car.fuel < 100 && !flying ? 'RECHARGING' : 'BOOST READY';
   boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
   if (boost && !previousBoost && visual.enabled && !calm) {
     boostStatus.animate([{ opacity: 0.4, transform: 'translateX(-5px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180 });
-    if (visual.haptics) navigator.vibrate?.(25);
   }
+  if (feedbackCar === car && race.phase === 'racing' && touchPreference.matches && visual.haptics && !calm) {
+    const hit = car.impact && car.impact !== lastImpact;
+    const burst = car.nitroTime > lastNitroTime || (boost && !previousBoost);
+    const driftPaid = car.driftPayout && car.driftPayout !== lastDriftPayout;
+    if (hit || burst || driftPaid) {
+      try { navigator.vibrate?.(hit ? [18, 30, 18] : burst ? 25 : 15); } catch { /* Unsupported haptics never interrupt a race. */ }
+    }
+  }
+  feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime;
+  lastDriftPayout = car.driftPayout;
   previousBoost = boost;
   $('#aero-flow').textContent = boost ? 'HIGH VELOCITY' : 'BODY STREAMLINES';
   $('#aero-floor').textContent = flying ? 'LIFT / DOWNWASH' : visual.aeroMode === 'downforce' ? 'SUCTION ACTIVE' : 'LOW DRAG';
   $('#aero-jet').textContent = boost ? 'THRUST ACTIVE' : race.phase === 'ready' ? 'DEMONSTRATION' : 'STANDBY';
   document.body.style.setProperty('--flight-bank', `${-car.steering * 5}deg`);
   document.body.style.setProperty('--streak-opacity', visual.enabled && !calm && race.phase === 'racing' ? String(boost ? visual.speedLines : 0) : '0');
-  const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
   ui['impact-report'].hidden = race.phase !== 'racing' || impactAge > 1.1;
   if (!ui['impact-report'].hidden) {
     ui['impact-title'].textContent = car.impact.kind === 'barrier' ? 'GUARDRAIL CONTACT' : 'VEHICLE CONTACT';
@@ -675,9 +750,6 @@ function updateUI(now, input) {
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches) countdownNumber.animate([{ opacity: 0.4, transform: 'scale(1.3)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 220 });
   }
   countdownLabel.textContent = countdown ? autoThrottle ? 'AUTO ACCELERATOR READY' : 'HOLD ACCELERATOR · GET READY' : 'GO FOR THE SKYLINE';
-  const near = car.nearMiss;
-  ui['skill-report'].hidden = race.phase !== 'racing' || impactAge < 1.1 || !near || race.elapsed - near.time > 1.8;
-  if (!ui['skill-report'].hidden) ui['skill-report'].textContent = `CLOSE PASS ×${near.combo}  /  ${near.charge < 0.5 ? 'CHARGE FULL' : `+${Math.round(near.charge)}% CHARGE`}`;
   const length = race.length;
   let status = race.phase.toUpperCase();
   if (race.phase === 'racing' && car.distance >= length - 500) {
@@ -687,8 +759,19 @@ function updateUI(now, input) {
   ui['race-status'].textContent = status;
   ui['driving-message'].textContent = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? 'REACH 65 KM/H TO LIFT OFF' : car.exhausted && input.fly ? 'RELEASE FLIGHT TO RECHARGE' : '';
   const racers = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
+  const order = racers.map(racer => racer.name).join(',');
+  if (calm || race.phase !== 'racing') leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
+  if (order !== leaderboardOrder) {
+    // FLIP reads geometry only on a rank change, with all reads batched before writes.
+    const before = !calm && race.phase === 'racing' && leaderboardOrder ? new Map(leaderboardRows.map(row => [row, row.getBoundingClientRect().top])) : null;
+    leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
+    ui.leaderboard.append(...racers.map(racer => racerRows.get(racer.name)));
+    const moves = before ? leaderboardRows.map(row => [row, before.get(row) - row.getBoundingClientRect().top]) : [];
+    for (const [row, delta] of moves) if (delta) row.animate([{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }], motionOptions('base'));
+    leaderboardOrder = order;
+  }
   racers.forEach((racer, i) => {
-    const row = leaderboardRows[i];
+    const row = racerRows.get(racer.name);
     row.classList.toggle('is-player', !!racer.player);
     row.children[0].textContent = String(i + 1);
     row.children[2].textContent = racer.name;
