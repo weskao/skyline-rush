@@ -64,6 +64,29 @@ export const EFFECT_TIMES = { shield: 10, magnet: 5, ghost: 3, freeze: 2 }; // s
 export const MAGNET_RANGE = 12; // m
 export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
+// SLIPSTREAM: right behind a rival or traffic car (same lane, in draft range) long enough pays once per engagement.
+export const SLIPSTREAM_TIME = 1.5; // seconds in the draft before it pays
+export const SLIPSTREAM_CAP_BONUS = 6; // m/s added to the speed cap while the draft is active
+export const SLIPSTREAM_NITRO = 0.25; // charges, once per engagement (leave the draft to re-arm)
+export const SLIPSTREAM_LATERAL = 1.9; // m, max sideways offset from the car ahead
+export const SLIPSTREAM_MIN_GAP = 4.4; // m behind; closer is a collision
+export const SLIPSTREAM_MAX_GAP = 14; // m behind
+export const SLIPSTREAM_ALTITUDE = 1.8; // m, max altitude difference
+
+// Rival NITRO and rubber-banding (rivals get RIVAL_NITRO_CHARGES charges, fired by personality).
+export const RIVAL_NITRO_CHARGES = 2;
+export const RIVAL_NITRO_TIME = NITRO_TIME; // seconds one rival charge lasts
+export const RIVAL_NITRO_BONUS = 12; // m/s added to the rival's speed cap during NITRO
+export const RIVAL_NITRO_NOVA_FIRST = 8; // NOVA (steady): first charge at this race second...
+export const RIVAL_NITRO_NOVA_EVERY = 18; // ...then one every this many seconds
+export const RIVAL_NITRO_ORBIT_ALTITUDE = 2; // ORBIT (loves flying): fires in the air, once per hop...
+export const RIVAL_NITRO_MIN_SPEED = 60; // ...and only once up to speed (a charge only lifts the cap)
+export const RIVAL_NITRO_APEX_FROM = 0.75; // APEX (late surge): fires from this fraction of the race
+export const RIVAL_HOP_PERIOD = { NOVA: 13, ORBIT: 9, APEX: 13 }; // seconds per hop cycle; shorter = more hops
+export const RUBBER_BAND_MAX = 0.04; // speed multiplier changes by at most +/- this
+export const RUBBER_BAND_FREE = 50; // m of lead/deficit with no effect
+export const RUBBER_BAND_RANGE = 250; // m beyond the free zone to reach the full effect
+
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 // Pickups come only from the track's 'pickups' stream so every run of a track is identical.
@@ -147,12 +170,13 @@ export function createRace(trackId = 'coast') {
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       section: null, falls: 0, fall: null,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, longestCombo: 0,
+      slipstream: { time: 0, active: false, paid: false },
       drift: null, miniBoost: 0,
       rings: 0, perfectLines: 0, score: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
-      altitude: 0, thrusting: false, finishTime: null,
+      altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroTime: 0, nitroHop: -1,
     })),
     traffic: Array.from({ length: Math.round(36 * track.trafficDensity) }, (_, i) => ({
       x: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / track.trafficDensity,
@@ -179,6 +203,18 @@ function collectRing(race, ring, index) {
     car.perfectLines++; // PERFECT LINE: every ring of the group cleared
     addNitro(car, PERFECT_LINE_NITRO);
   }
+}
+
+// Personality decides when a rival spends a charge (it must have one and no NITRO running).
+function rivalWantsNitro(race, rival, hop) {
+  if (rival.name === 'NOVA') return race.elapsed >= RIVAL_NITRO_NOVA_FIRST + (RIVAL_NITRO_CHARGES - rival.nitro) * RIVAL_NITRO_NOVA_EVERY;
+  if (rival.name === 'ORBIT') {
+    const fire = rival.altitude > RIVAL_NITRO_ORBIT_ALTITUDE && rival.speed >= RIVAL_NITRO_MIN_SPEED && rival.nitroHop !== hop;
+    if (fire) rival.nitroHop = hop;
+    return fire;
+  }
+  if (rival.name === 'APEX') return rival.distance >= race.length * RIVAL_NITRO_APEX_FROM;
+  return false;
 }
 
 export function startRace(race) {
@@ -236,6 +272,21 @@ export function stepRace(race, input, dt) {
   }
   car.nitroHeld = input.nitro === true;
   const nitro = car.nitroTime > 0;
+  // SLIPSTREAM: judged on last frame's positions; the timer runs while a car is ahead in draft range.
+  const slip = car.slipstream;
+  const inDraft = other => {
+    const gap = other.distance - car.distance;
+    return gap >= SLIPSTREAM_MIN_GAP && gap <= SLIPSTREAM_MAX_GAP && Math.abs(other.x - car.x) < SLIPSTREAM_LATERAL &&
+      Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
+  };
+  const drafted = race.traffic.some(inDraft) || race.rivals.some(inDraft);
+  slip.time = drafted ? slip.time + dt : 0;
+  slip.active = drafted && slip.time >= SLIPSTREAM_TIME;
+  if (!drafted) slip.paid = false;
+  else if (slip.active && !slip.paid) {
+    slip.paid = true;
+    addNitro(car, SLIPSTREAM_NITRO);
+  }
   // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; releasing it pays out by drift time.
   if (brake && steer !== 0 && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED) {
     car.drift ??= { time: 0, dir: Math.sign(steer) };
@@ -250,7 +301,7 @@ export function stepRace(race, input, dt) {
   }
   const drifting = car.drift !== null;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
-  const limit = nitro ? MAX_SPEED + 30 : boosted ? MAX_SPEED + 14 : MAX_SPEED;
+  const limit = (nitro ? MAX_SPEED + 30 : boosted ? MAX_SPEED + 14 : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0);
   const drive = drifting ? -DRIFT_BLEED : (throttle ? 15 : -4) - (brake ? 35 : 0);
   const acceleration = car.speed > limit ? -18 - (brake && !drifting ? 35 : 0) : drive + (boosted ? 12 : 0) + (nitro ? 40 : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
@@ -318,13 +369,23 @@ export function stepRace(race, input, dt) {
     if (traffic.distance < car.distance - 60) traffic.distance += 1400;
   }
   race.rivals.forEach((rival, i) => {
-    rival.speed = Math.min(70 + i * 3, rival.speed + (14 + i) * dt);
-    const before = rival.distance;
-    const slow = car.effects.freeze > 0 ? FREEZE_RIVAL_SPEED : 1;
-    rival.distance += rival.speed * slow * dt;
-    const cycle = (race.elapsed + i * 3) % 13;
+    const period = RIVAL_HOP_PERIOD[rival.name] ?? 13;
+    const cycle = ((race.elapsed + i * 3) % period) * (13 / period);
     rival.altitude = cycle > 6 && cycle < 11 ? Math.sin((cycle - 6) / 5 * Math.PI) * (5 + i) : 0;
     rival.thrusting = cycle > 6 && cycle < 9;
+    if (rival.nitro > 0 && rival.nitroTime === 0 && rivalWantsNitro(race, rival, Math.floor((race.elapsed + i * 3) / period))) {
+      rival.nitro--;
+      rival.nitroTime = RIVAL_NITRO_TIME;
+    }
+    rival.nitroTime = Math.max(0, rival.nitroTime - dt);
+    const cap = 70 + i * 3 + (rival.nitroTime > 0 ? RIVAL_NITRO_BONUS : 0);
+    rival.speed = rival.speed > cap ? Math.max(cap, rival.speed - (14 + i) * dt) : Math.min(cap, rival.speed + (14 + i) * dt);
+    const before = rival.distance;
+    // Rubber band: a rival far ahead of the player eases off, one far behind speeds up, by at most RUBBER_BAND_MAX.
+    const gap = rival.distance - car.distance;
+    const band = Math.sign(gap) * clamp((Math.abs(gap) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
+    const slow = (car.effects.freeze > 0 ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
+    rival.distance += rival.speed * slow * dt;
     if (rival.distance >= race.length && rival.finishTime === null) {
       rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / (rival.speed * slow);
     }

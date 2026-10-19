@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -1003,4 +1003,110 @@ test('magnet pulls nearby pickups into the car, once', () => {
   advance(pulled, 0.5);
   assert.equal(pulled.player.nitro, 0.5); // and the pulled one is not collected again on crossing
   assert.equal(run(0).player.nitro, 0);
+});
+
+// Player at 88 m/s with `lead` 6 m ahead (traffic by default); the lead pulls away slowly so the gap stays in the 4.4-14 m draft window.
+function drafting(speed, leadSpeed, kind = 'traffic') {
+  const race = racing();
+  Object.assign(race, { rivals: [], pickups: [], rings: [] });
+  Object.assign(race.player, { distance: 100, x: 2.5, speed });
+  const lead = { x: 2.5, distance: 106, speed: leadSpeed, altitude: 0 };
+  if (kind === 'rival') race.rivals = [{ ...lead, name: 'NOVA', nitro: 0, nitroTime: 0, finishTime: null }];
+  else race.traffic = [lead];
+  return race;
+}
+
+test('slipstream behind traffic pays +0.25 nitro and +6 speed cap only after the full time', () => {
+  const race = drafting(MAX_SPEED, 91);
+  advance(race, SLIPSTREAM_TIME - 0.1, { throttle: true });
+  assert.equal(race.player.nitro, 0);
+  assert.equal(race.player.slipstream.active, false);
+  assert.ok(race.player.slipstream.time > 1 && race.player.speed <= MAX_SPEED);
+  advance(race, 0.5, { throttle: true });
+  assert.equal(race.player.nitro, 0.25);
+  assert.equal(race.player.slipstream.active, true);
+  assert.ok(race.player.speed > MAX_SPEED + 3 && race.player.speed <= MAX_SPEED + SLIPSTREAM_CAP_BONUS + 1e-9, `${race.player.speed}`);
+  advance(race, 0.8, { throttle: true });
+  assert.equal(race.player.nitro, 0.25); // once per engagement
+});
+
+test('slipstream behind a rival counts too, and leaving the draft re-arms it', () => {
+  const race = drafting(70, 70, 'rival');
+  const cruise = seconds => { for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) { race.player.speed = race.rivals[0].speed = 70; stepRace(race, {}, 1 / 60); } };
+  cruise(SLIPSTREAM_TIME + 0.2);
+  assert.equal(race.player.nitro, 0.25);
+  race.rivals[0].distance += 100; // break away
+  cruise(0.1);
+  assert.deepEqual([race.player.slipstream.time, race.player.slipstream.active], [0, false]);
+  race.rivals[0].distance = race.player.distance + 6;
+  cruise(SLIPSTREAM_TIME + 0.2);
+  assert.equal(race.player.nitro, 0.5);
+});
+
+test('slipstream needs the same lane and a draft-range gap', () => {
+  for (const change of [{ x: -7.5 }, { distance: 125 }, { altitude: 5 }]) {
+    const race = drafting(MAX_SPEED, MAX_SPEED);
+    Object.assign(race.traffic[0], change);
+    advance(race, SLIPSTREAM_TIME + 0.3);
+    assert.equal(race.player.nitro, 0, JSON.stringify(change));
+  }
+});
+
+test('rival nitro fires by personality and respects its charge budget', () => {
+  const fresh = () => { const race = racing(); race.player.effects.ghost = 99; return race; };
+  const [nova, orbit, apex] = [0, 1, 2];
+  const step = race => stepRace(race, {}, 1 / 60);
+  const early = fresh();
+  step(early);
+  assert.deepEqual(early.rivals.map(rival => rival.nitro), [RIVAL_NITRO_CHARGES, RIVAL_NITRO_CHARGES, RIVAL_NITRO_CHARGES]);
+  const novaRace = fresh(); // NOVA: steady, fixed schedule
+  novaRace.elapsed = RIVAL_NITRO_NOVA_FIRST + 0.1;
+  step(novaRace);
+  assert.equal(novaRace.rivals[nova].nitro, RIVAL_NITRO_CHARGES - 1);
+  assert.ok(novaRace.rivals[orbit].nitro === RIVAL_NITRO_CHARGES || novaRace.rivals[orbit].altitude > 2);
+  const orbitRace = fresh(); // ORBIT: only while flying
+  orbitRace.elapsed = 0.1;
+  step(orbitRace);
+  assert.equal(orbitRace.rivals[orbit].nitro, RIVAL_NITRO_CHARGES);
+  orbitRace.elapsed = 2.8;
+  step(orbitRace); // in the air but too slow: no wasted charge
+  assert.equal(orbitRace.rivals[orbit].nitro, RIVAL_NITRO_CHARGES);
+  orbitRace.rivals[orbit].speed = 73;
+  step(orbitRace);
+  step(orbitRace);
+  assert.ok(orbitRace.rivals[orbit].altitude > 2);
+  assert.equal(orbitRace.rivals[orbit].nitro, RIVAL_NITRO_CHARGES - 1);
+  advance(orbitRace, RIVAL_NITRO_TIME + 0.2); // still airborne when it ends (hop is ~2.7 s) but the same hop never fires twice
+  assert.equal(orbitRace.rivals[orbit].nitro, RIVAL_NITRO_CHARGES - 1);
+  const apexRace = fresh(); // APEX: saves it for the last quarter
+  apexRace.rivals[apex].distance = RACE_LENGTH * 0.7;
+  step(apexRace);
+  assert.equal(apexRace.rivals[apex].nitro, RIVAL_NITRO_CHARGES);
+  apexRace.rivals[apex].distance = RACE_LENGTH * 0.76;
+  apexRace.rivals[apex].speed = 76;
+  const before = apexRace.rivals[apex].speed;
+  advance(apexRace, 2);
+  assert.ok(apexRace.rivals[apex].speed > 76 + 3 && apexRace.rivals[apex].speed <= 76 + RIVAL_NITRO_BONUS + 1e-9, `${before} -> ${apexRace.rivals[apex].speed}`);
+  advance(apexRace, 8); // both charges burn, then nothing is left
+  assert.equal(apexRace.rivals[apex].nitro, 0);
+  assert.equal(apexRace.rivals[apex].nitroTime, 0);
+  assert.ok(apexRace.rivals[apex].speed <= 76 + 1e-9);
+});
+
+test('rubber-banding stays within a few percent: leaders ease off, stragglers speed up', () => {
+  const gain = playerDistance => {
+    const race = racing();
+    race.player.effects.ghost = 99;
+    Object.assign(race.player, { distance: playerDistance, x: 7.5 });
+    Object.assign(race.rivals[0], { distance: 1000, speed: 60 });
+    advance(race, 1);
+    return race.rivals[0].distance - 1000;
+  };
+  const neutral = gain(1000);
+  const ahead = gain(0); // rival 1000 m ahead of the player
+  const behind = gain(2000); // rival 1000 m behind
+  assert.ok(ahead < neutral && ahead >= neutral * (1 - RUBBER_BAND_MAX) - 1e-9, `${ahead} vs ${neutral}`);
+  assert.ok(behind > neutral, `${behind} vs ${neutral}`);
+  assert.ok(behind / ahead <= (1 + RUBBER_BAND_MAX) / (1 - RUBBER_BAND_MAX) + 1e-9, `${behind} vs ${ahead}`); // neutral drifts into the band itself once it pulls 50 m clear
+  assert.ok(RUBBER_BAND_MAX <= 0.06);
 });
