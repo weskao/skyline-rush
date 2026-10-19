@@ -91,7 +91,7 @@ const CONTROL_CHOICES = {
   <main>
     <section class="intro" id="intro" aria-labelledby="intro-title">
       <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> 4 DRIVERS</div>
-      <p class="intro-wordmark"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span>SKYLINE <b>RUSH</b></span></p>
+      <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span>SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title">The road is just<br>the <em>beginning.</em></h1>
       <p class="intro-copy">Own the highway. Then leave it behind.<br>Fire your thrusters and take the race to the sky.</p>
       <div class="track-select" role="group" aria-label="Choose track"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="String(id === 'coast')"><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>

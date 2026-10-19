@@ -28,6 +28,14 @@ const measureAudio = () => {
 };
 const audioSwitch = (page, name) => page.getByRole('switch', { name });
 
+test('start screen wordmark reloads the page', async ({ page }) => {
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  await page.evaluate(() => { window.__stale = true; });
+  await Promise.all([page.waitForEvent('load'), page.locator('#intro .intro-wordmark').click()]);
+  expect(await page.evaluate(() => window.__stale)).toBeUndefined();
+});
+
 test('start screen leads with the game name and one dominant start action', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);

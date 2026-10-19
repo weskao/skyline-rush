@@ -702,7 +702,7 @@ body.layout-editing #touch-controls { display: flex; }
 }
 
 /* Start screen: the game name leads, the tagline supports it. */
-.intro-wordmark { display: flex; align-items: center; gap: clamp(10px, 1.2vw, 16px); margin: 0 0 14px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(46px, 5.6vw, 80px); line-height: .9; white-space: nowrap; letter-spacing: .04em; text-shadow: 0 4px 34px rgb(0 9 24 / .7); }
+.intro-wordmark { display: flex; align-items: center; gap: clamp(10px, 1.2vw, 16px); margin: 0 0 14px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(46px, 5.6vw, 80px); line-height: .9; white-space: nowrap; letter-spacing: .04em; text-shadow: 0 4px 34px rgb(0 9 24 / .7); color: inherit; text-decoration: none; width: fit-content; }
 .intro-wordmark svg { flex: none; width: .78em; height: .78em; color: var(--accent); filter: drop-shadow(0 0 16px rgb(255 150 120 / .45)); }
 .intro-wordmark b { font-weight: inherit; color: var(--accent); }
 .intro h1 { font-size: clamp(28px, 3.1vw, 44px); line-height: 1.08; margin-bottom: 16px; }
