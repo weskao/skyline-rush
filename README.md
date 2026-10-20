@@ -1,8 +1,21 @@
 # Skyline Rush
 
+**English** · [繁體中文](README.zh-TW.md)
+
 [**Play Skyline Rush →**](https://weskao.github.io/skyline-rush/)
 
 A playable 3D coastal highway sprint starring a flying electric sports car, modeled on the Tesla Roadster 2 and its rocket-thruster concept. Lift off on four blue thrusters, race three opponents, fly over traffic, manage charge and land to recharge. The handling is fictional arcade physics; this is an unofficial fan project, not affiliated with Tesla or SpaceX.
+
+## The game
+
+Skyline Rush is a short, replayable arcade sprint in the browser: one player against three rivals and the traffic between them, on desktop or phone, with nothing to install.
+
+- **Drive, then fly.** Above 65 km/h, hold FLY to lift off over traffic, through rings and across broken bridges. Flight and BOOST share one thruster charge that refills only on the road, so every climb is a choice.
+- **Earn NITRO by driving well.** Close passes, drifts, ring groups (PERFECT LINE), slipstreams, landed barrel rolls and pickups fill a three-charge NITRO reserve; spend it in one burst or chain presses to extend it.
+- **Four tracks, unlocked in order.** Coast at dusk, rainy Neon Downtown with low tunnels, Canyon Skyway with bridge gaps and crosswinds, and Aurora Pass with ice and uphill climbs. Each has one aerial shortcut for players who can hold a line in the air.
+- **Something to chase.** Every finish scores style stars that unlock paints in the Garage. A best-run ghost, a daily challenge with its own board and four medals give reasons to race again.
+
+Races last about a minute. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
 ![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261020b)
 
@@ -42,12 +55,13 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 | Change camera | C |
 | Mute / unmute all audio | M |
 | Auto accelerator on / off | T / AUTO button |
+| AIRFLOW showcase on / off | V / AIRFLOW button |
 
-Mobile layouts provide steering, accelerator, brake, boost, flight and NITRO buttons. Touch controls support simultaneous holds. AUTO holds the accelerator so you can concentrate on steering and flying; braking always overrides it. The setting lasts until toggled off or the page reloads. Leaving the tab pauses the race and clears held input. Camera and sound shortcuts preserve held driving controls. On touch, sliding a thumb down on the steering pad brakes and sliding down and sideways drifts; in Buttons mode the brake sits under the steering buttons so brake + steer drifts there too.
+Mobile layouts provide steering, accelerator, brake, boost, flight and NITRO buttons. Touch controls support simultaneous holds. AUTO holds the accelerator so you can concentrate on steering and flying; braking always overrides it. It starts on for touch devices and off for keyboard play, and the choice lasts until toggled or the page reloads. Leaving the tab pauses the race and clears held input. Camera and sound shortcuts preserve held driving controls. On touch, sliding a thumb down on the steering pad brakes and sliding down and sideways drifts; in Buttons mode the brake sits under the steering buttons so brake + steer drifts there too.
 
 Open **Controls** before a race or while paused to adjust keyboard steering sensitivity or remap a driving action. Select an action, then press a key; conflicting bindings swap, fixed shortcuts stay reserved, and Escape cancels capture. Reset keyboard restores the defaults. Bindings take effect immediately and are saved under `localStorage['skyline-rush-keymap']`.
 
-The same panel controls touch steering mode, handedness, slide sensitivity, size, opacity and hold/toggle FLY. **Edit touch layout** lets you drag the action and classic steering buttons over the race preview; **Done editing** keeps the arrangement and **Reset touch layout** restores it. Positions persist across reloads, mirror with handedness and stay within the viewport after rotation.
+The same panel controls touch steering mode, handedness, slide sensitivity, size, opacity and hold/toggle FLY. **Edit touch layout** lets you drag the action and classic steering buttons over the race preview; **Done editing** keeps the arrangement and **Reset touch layout** restores it. Positions persist across reloads, mirror with handedness and stay within the viewport after rotation. On short landscape screens (under 380 px tall, such as iPhone Safari with its toolbar showing), the start screen drops its tagline so START RACE needs no scrolling, and the race HUD hides the speed dial and secondary charge lines so no panel overlaps another.
 
 All audio is synthesized with Web Audio; no audio downloads are needed. Background music has two looping synthwave tracks: an intro theme (~64 s) on the start and results screens, and a faster race theme (~55 s) from the countdown on. Each builds up over its loop and ducks while paused. Sound effects cover menu confirmation, three countdown ticks and GO, motor/wind, lift and boost, braking, vehicle/guardrail contact, landing, low-charge warning, close-pass reward and a finish melody. Muting effects stops pending cues, and pausing fades driving sounds. Low-charge warnings rearm only after recharging above 30%.
 
@@ -57,11 +71,13 @@ The flight panel shows ascent, cruise, descent and touchdown, remaining thrust s
 
 The scene includes bloom lighting, sunset water, suspension bridges, thruster vapor, collision sparks and touchdown ripples. Camera motion and nonessential speed streaks respect your system's reduced-motion preference. Sound effects give separate thrust, contact and landing feedback.
 
+**VFX** (top right) picks a Realistic, Cinematic or Extreme look, Low / Medium / High quality (Low turns bloom off and draws less scenery), Comfort mode (no flashes, shake, afterimages or blur) and optional haptics; **Fine tuning** exposes each effect as a slider and **Reset visual settings** restores the defaults. **AIRFLOW** (or V) switches the scene to an aerodynamics showcase: streamlines over the body, a telemetry panel, Low drag or High downforce, and a driving, front, rear, side or orbiting camera. **Race** starts a race straight from the showcase.
+
 Three amber start lights turn cyan at GO. The player car is a low wedge roadster with a smoked fastback canopy, a full-width red tail bar, four rear thruster ports, a bronze pop-up wing that rises for boost, braking and flight, spinning five-spoke wheels and steering front wheels. Each rival has its own silhouette and light signature: NOVA is a long-tail with twin fins and split magenta lights, ORBIT a rounded GT with a bubble canopy and round cyan lamps, APEX a track car with a splitter, roof scoop, tall endplate wing and amber C-lights. Traffic uses an upright commuter shape. Steering eases in quickly and releasing boost slows the car progressively instead of instantly cutting speed. All driving and toolbar buttons have at least 44px touch targets, including at 320px width.
 
 For an extra charge reward, overtake traffic closely on the ground above 126 km/h. Clean passes within five seconds chain up to ×5 and refill 8–16% charge (capped at 100%). Collisions break the chain; airborne, distant and recovering passes earn no reward. The HUD announces each pass and the final 500 metres; results show total close passes and contacts.
 
-Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Finish the 5 km sprint ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
+Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Finish the sprint (4–6 km depending on the track) ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
 
 ### Handling
 
@@ -155,7 +171,8 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-st
 - `src/audio.js`: synthesized sound effects and the looping intro/race music sequencer.
 - `tests/`: unit and browser behavior tests.
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
+- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
 
 All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vue, Vite and Playwright retain their respective package licenses.
 
-Source: [weskao/skyline-rush](https://github.com/weskao/skyline-rush). Single-player, one route, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; physical phones and Safari have not been verified.
+Source: [weskao/skyline-rush](https://github.com/weskao/skyline-rush). Single-player, four tracks, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; iOS Safari has been checked in the iOS Simulator (portrait and landscape, Coast and Neon), but frame rate on physical phones has not been measured.

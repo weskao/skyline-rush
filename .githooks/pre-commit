@@ -1,0 +1,15 @@
+#!/bin/sh
+# Keep README.zh-TW.md in step with README.md: translate the staged README and stage the result.
+# Bypass once with SKIP_README_ZH=1 git commit ...
+git diff --cached --quiet -- README.md && exit 0
+[ "${SKIP_README_ZH:-}" = 1 ] && exit 0
+node scripts/readme-zh.mjs check --staged >/dev/null && exit 0
+echo "pre-commit: README.md changed; regenerating README.zh-TW.md with claude -p (about a minute)..." >&2
+if node scripts/readme-zh.mjs sync --staged; then
+  git add README.zh-TW.md
+else
+  echo "pre-commit: README.zh-TW.md is stale and could not be regenerated." >&2
+  echo "  Fix: node scripts/readme-zh.mjs sync   (or translate by hand, then: node scripts/readme-zh.mjs stamp)" >&2
+  echo "  Skip once: SKIP_README_ZH=1 git commit ..." >&2
+  exit 1
+fi

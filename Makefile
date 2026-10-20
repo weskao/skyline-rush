@@ -16,7 +16,8 @@ run: node_modules ## `make run`: unit tests, production build and Chrome browser
 deploy: ## `make deploy`: trigger CI checks and GitHub Pages deployment of remote main
 	gh workflow run ci.yml --ref main
 
-# Installs dependencies on first run and whenever package-lock.json changes.
+# Installs dependencies on first run and whenever package-lock.json changes; also enables the repo's git hooks.
 node_modules: package-lock.json
 	$(NPM) install
+	@git config core.hooksPath .githooks
 	@touch $@
