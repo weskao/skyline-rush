@@ -9,6 +9,10 @@ Implementation rules: game rules live in the pure simulation layer `src/game.js`
 `tests/game.test.js` (TDD). `world.js` only renders, `main.js` owns the HUD and persistence. Pickup
 and ring placement comes from a per-track seed so runs are reproducible and testable.
 
+Current scope: all gamepad-related work (input support, mapping UI, and acceptance checks)
+is the **lowest priority** and **out of scope for this iteration**. Gamepad references below
+describe future work, not current requirements.
+
 ---
 
 ## 0. Desktop + mobile (applies to every item below)
@@ -93,7 +97,7 @@ Mobile:
 Desktop:
 - [x] **Key remapping**: click an action, press the new key; conflicts are flagged and swapped; Reset to default (the `J`/`K`/`L` alternates from 7B are part of the default map)
 - [x] **Steering sensitivity** (from 7C)
-- [ ] Gamepad mapping view
+- [ ] Gamepad mapping view — **lowest priority; out of scope for this iteration**
 
 Both:
 - [x] Saved to `localStorage['skyline-rush-controls']` with try/catch like the existing VFX settings; invalid / outdated saves fall back to defaults
@@ -243,7 +247,7 @@ Ordered by small effort, big fun:
 - [x] **Forgiving hitbox**: vehicle collision width 1.9 → 1.7, so more "almost hit" moments become near-misses instead of crashes
 - [x] **Takeoff buffer**: holding FLY below 18 m/s is remembered and lifts off automatically once fast enough (no need to press again)
 - [x] **Glide**: releasing FLY in the air lowers fall acceleration 11 → 7 for more controllable, softer landings (`landing.speed`)
-- [ ] **Gamepad support**: the browser's built-in Gamepad API, analog stick steering, triggers for throttle / brake
+- [ ] **Gamepad support**: the browser's built-in Gamepad API, analog stick steering, triggers for throttle / brake — **lowest priority; out of scope for this iteration**
 - [x] Move the touch brake to the left thumb, next to steering (see item 0), so brake + steer = drift works on touch
 
 ### 7D. DRIFT (builds nitro)
@@ -311,3 +315,4 @@ Physics:
 7. History + per-track best + ghost (item 5)
 8. Three new tracks (content part of item 1)
 9. Pick from item 6
+10. **Gamepad support + mapping view** — lowest priority; deferred beyond this iteration

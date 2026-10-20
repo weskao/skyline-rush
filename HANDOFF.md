@@ -1,3 +1,61 @@
+# UI implementation handoff — Codex → Claude Code
+
+## Scope and ownership
+
+Codex owns the existing UI, animation, camera presentation, touch interaction and browser
+verification. Claude Code owns new gameplay rules, result validation, progression and saved
+gameplay data. Gamepad support, mapping UI and hardware acceptance are the lowest priority
+and excluded from this iteration. No dependency, deployment or remote push is planned.
+
+Keep the existing visual identity and motion tokens. Use transform/opacity for DOM motion;
+respect system reduced motion and Comfort mode. The finish presentation must not change
+the race clock, finish order, score, or number of saved race records.
+
+## Implementation plan / progress
+
+Each batch follows RED (observable regression) → GREEN (minimal implementation) → regression
+checks → documentation update → Conventional Commit. All work runs in this session.
+
+- [ ] Race presentation: intro exit, countdown entrance and GO camera push, pause depth,
+  restart wipe, 0.6 s render-only finish coast / side camera, results entrance, sequential
+  stat counts, earned stars and NEW BEST. Reuse the existing tick/GO/finish audio cues.
+- [ ] Menu: bounded palette previews on track cards; History entrance/exit with focus restoration.
+- [ ] Controls: adjacent FLY/BOOST single-pointer AIR DASH, right-thumb arc, Tilt permission,
+  calibration, orientation handling and fallback. Preserve layout editing, remapping and drift.
+- [ ] Extension UI: Ghost preference, daily challenge, achievements and cosmetic surfaces;
+  only expose honest available/unavailable states until gameplay contracts exist.
+- [ ] Final acceptance: unit suite, complete Playwright suite, desktop / mobile portrait /
+  narrow / landscape visual review, reduced-motion and comfort checks, frame cadence sample.
+- [ ] Final annotated screenshots and Telegram delivery via screenshot-mark-send; done-report.
+
+## Presentation contracts
+
+- `race.phase`: `ready | countdown | racing | paused | finished` remains authoritative.
+- Countdown consumes `race.countdown`. Audio already emits tick / GO / finish in `audio.js`.
+- Results consume `race.result`, `race.elapsed` and the existing history/best functions.
+- Finish animation operates after simulation finishes; presentation time never feeds `stepRace`.
+- UI-only transition state is private to the presentation layer; restart and navigation cancel it.
+- Input continues to emit `steer`, `brake`, `fly`, `boost`, `nitro`, `throttle`.
+- Storage and device permissions may fail; racing and existing controls must remain usable.
+
+## Claude Code follow-up
+
+Do not implement gamepad work during this iteration. Preserve the presentation contracts and
+re-run browser tests if changing race phases or input. New Ghost traces (10 Hz), date-seeded
+challenge simulation/boards, achievement awards and cosmetic unlock rules still require real
+simulation/storage implementations; a UI surface alone does not complete their TODO entries.
+
+## Evidence and limits
+
+Initial inspection: existing countdown lights and sound cues, History slide-in, touch buttons,
+motion tokens, input lifecycle and result persistence are reused. Only `TODO.md` was dirty at
+task start (the already authorized gamepad deferral). Implementation/test results are recorded
+below as batches complete. Physical phones, Safari and subjective audio quality need separate
+hardware verification; Chrome touch emulation does not establish those results.
+
+<details>
+<summary>Previous handoff (historical; current scope above takes precedence)</summary>
+
 # HANDOFF: gameplay-depth logic pass (run goal-20261019-203853)
 
 ## Follow-up implementation (2026-10-19)
@@ -115,5 +173,7 @@ All constants are named exports at the top of `src/game.js`.
 - Untested lines (removal still passes `npm test`): the `steer === 0` check for lane assist, the `fell ||` check that makes a gap respawn skip rings, and the tunnel ring rules (risk becomes nitro, altitude 1.5; neon has 6 tunnel rings).
 - `src/main.js` wiring (history save on finish, sessionBests, legacy best write, key-map load, gap readout) has no unit test.
 - Run tests with `npm test` or `node --test tests/*.test.js`; `node --test tests/` fails on Node 25.
+
+</details>
 
 </details>
