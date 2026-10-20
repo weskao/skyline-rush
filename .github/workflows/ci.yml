@@ -70,7 +70,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Call vite directly: `npm run build -- --base=...` hands --base to the assert script, not vite.
       - run: npx vite build --base=/skyline-rush/ && node scripts/assert-production-locked.mjs
+      - name: Check asset paths match the Pages base
+        run: |
+          for p in $(grep -oE '(src|href)="/[^"]*"' dist/index.html | cut -d'"' -f2); do
+            case "$p" in
+              /skyline-rush/*) f="dist/${p#/skyline-rush/}"; test -f "${f%%\?*}" || { echo "missing in dist: $p"; exit 1; } ;;
+              *) echo "not under /skyline-rush/: $p"; exit 1 ;;
+            esac
+          done
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -80,4 +89,12 @@ jobs:
       - name: Verify public website
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
-        run: curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors "$PAGE_URL" | grep -q 'Skyline Rush'
+        # The title alone passes on a blank page; also require the new entry script to be served.
+        run: |
+          js=$(grep -oE 'src="[^"]*\.js"' dist/index.html | cut -d'"' -f2)
+          origin=$(echo "$PAGE_URL" | grep -oE '^https?://[^/]+')
+          for i in 1 2 3 4 5 6; do
+            html=$(curl --fail --silent --show-error "$PAGE_URL") && grep -q 'Skyline Rush' <<<"$html" && grep -qF "$js" <<<"$html" && break
+            [ "$i" = 6 ] && { echo "page missing $js"; exit 1; }; sleep 10
+          done
+          curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors -o /dev/null "$origin$js"
