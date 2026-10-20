@@ -169,10 +169,10 @@ showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 
 const trackNotes = {
-  coast: 'Dusk coast · open skies and sweeping sea views.',
-  neon: 'Rainy night · low tunnels (4 m ceiling) and dense traffic.',
-  canyon: 'Desert noon · fly over broken bridges; steer into crosswinds.',
-  aurora: 'Snowy night · ice slows steering; uphill sections recharge slowly.',
+  coast: 'Dusk coast · open skies and sweeping sea views; a left-lane sky shortcut mid-route.',
+  neon: 'Rainy night · low tunnels (4 m ceiling) and dense traffic; a right-lane sky shortcut between them.',
+  canyon: 'Desert noon · fly over broken bridges; steer into crosswinds; a left-lane sky shortcut.',
+  aurora: 'Snowy night · ice slows steering; uphill sections recharge slowly; a right-lane sky shortcut in the final sprint.',
 };
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
@@ -830,7 +830,7 @@ function updateUI(now, input) {
   const state = car.thrusting ? car.verticalSpeed > 0.2 ? 'ASCENDING' : 'CRUISE' : car.altitude > 0.25 ? 'DESCENDING' : touchdown ? 'TOUCHDOWN' : depleted ? 'RECHARGING' : car.speed >= 18 ? 'READY TO FLY' : 'BUILD SPEED';
   const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
   const airDash = car.thrusting && car.boosting;
-  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? 'AIR DASH · NITRO' : airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.trick && !car.trick.done ? 'TRICK' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
+  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? 'AIR DASH · NITRO' : airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.trick && !car.trick.done ? 'TRICK' : car.inShortcut ? 'SHORTCUT' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
   nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
   nitroMeter.classList.toggle('is-max', car.nitro >= 3);
   nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
@@ -869,7 +869,8 @@ function updateUI(now, input) {
     shownCallout = callout;
   }
   document.body.classList.toggle('nitro-active', nitroActive);
-  ui['flight-budget'].textContent = `${(car.fuel / (airDash ? 22 : 19)).toFixed(1)}s`;
+  // Inside a shortcut only BOOST drains (3/s); plain flight there is free.
+  ui['flight-budget'].textContent = car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`;
   ui['flight-instruction'].textContent = car.thrusting ? `${tap ? 'TAP FLY TO LAND' : 'RELEASE TO DESCEND'} · STEER IN THE AIR` : car.altitude > 0.25 ? depleted ? 'CHARGE EMPTY · AUTO LANDING' : `${hold} TO CLIMB AGAIN` : car.exhausted ? `${tap ? 'TAP FLY TO LAND' : release} · RECHARGE ON ROAD` : car.speed < 18 ? `REACH 65 KM/H · ${hold} TO LIFT` : depleted ? 'CHARGING · STAY ON THE ROAD' : `${hold} TO LIFT${tap ? '' : ' · RELEASE TO LAND'}`;
   ui['fuel-caption'].textContent = car.exhausted ? `${tap ? 'LAND' : release} TO RECHARGE` : car.boosting ? 'BOOST · SHARED THRUSTER CHARGE' : car.thrusting ? 'THRUSTERS ENGAGED' : flying ? 'DESCENDING TO ROAD' : 'GROUND RECHARGE ACTIVE';
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;

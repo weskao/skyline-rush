@@ -16,7 +16,7 @@ export function createCallouts() {
         near: car.nearMisses, perfect: car.perfectLines, nitro: car.nitro,
         nitroTime: car.nitroTime, uses: car.nitroUses,
         drift: Math.min(3, Math.floor(car.drift?.time ?? 0)),
-        trick: car.trick, trickPayout: car.trickPayout,
+        trick: car.trick, trickPayout: car.trickPayout, shortcut: car.inShortcut,
       };
       if (race !== previousRace || race.phase !== 'racing') {
         pending.length = 0;
@@ -32,6 +32,7 @@ export function createCallouts() {
         enqueue('nitro', 'NITRO', next.uses > previous.uses ? 'SPEED BURST' : '+2 SECONDS');
       }
       if (next.drift > previous.drift) enqueue('drift', `DRIFT · ${['', 'BLUE', 'ORANGE', 'PURPLE'][next.drift]}`, 'SPARK TIER EARNED');
+      if (next.shortcut && !previous.shortcut) enqueue('shortcut', 'SHORTCUT', 'FREE FLIGHT · +12 SPEED CAP');
       if (next.trick && next.trick !== previous.trick) enqueue('trick', 'BARREL ROLL', 'LAND CLEANLY · +0.25 NITRO');
       const trickPaid = next.trickPayout && next.trickPayout !== previous.trickPayout;
       if (trickPaid) {

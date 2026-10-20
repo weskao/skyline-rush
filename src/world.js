@@ -9,7 +9,7 @@ import { canopy, carShell } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.js';
-import { RACE_TRACKS, TRICK_ROLL_TIME } from './game.js';
+import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
@@ -366,6 +366,10 @@ export function createWorld(canvas) {
   const railLights = instances(box, new THREE.MeshBasicMaterial({ color: new THREE.Color(0.12, 1.2, 1.7) }), segments * 2, scene);
   const tunnelRoofs = instances(box, new THREE.MeshStandardMaterial({ color: '#38526d', transparent: true, opacity: .4, depthWrite: false }), segments, scene);
   const tunnelWalls = instances(box, material('#23344b'), segments * 2, scene);
+  // Shortcut floor sits at the corridor's lower edge, so the car visibly flies the band above it.
+  const shortcutDeck = instances(box, new THREE.MeshBasicMaterial({ transparent: true, opacity: .28, depthWrite: false }), segments, scene);
+  const shortcutPylonMeshes = instances(box, material('#d9dcda', .4, .5), 8, scene);
+  shortcutDeck.name = 'shortcut-deck'; shortcutPylonMeshes.name = 'shortcut-pylons';
   const surfaceMarks = instances(box, new THREE.MeshBasicMaterial({ color: '#9ae6ff', transparent: true, opacity: .3, depthWrite: false }), segments, scene);
   const cliffs = instances(new THREE.ConeGeometry(1, 1, 5), material('#a15339'), 40, scene);
   const weatherPositions = new Float32Array(180 * 3);
@@ -544,6 +548,7 @@ export function createWorld(canvas) {
         railLights.material.color.set(palette.rail);
         cliffs.visible = trackId === 'canyon' || trackId === 'aurora'; cliffs.material.color.set(palette.rock);
         tunnelRoofs.visible = tunnelWalls.visible = trackId === 'neon';
+        shortcutDeck.material.color.set(palette.rail);
         surfaceMarks.visible = trackId === 'aurora';
         weather.material.size = trackId === 'neon' ? .12 : .24;
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
@@ -575,6 +580,9 @@ export function createWorld(canvas) {
           put(tunnelRoofs, i, x, tunnel ? 4.25 : -1000, z - 6, 24, .5, 12.1);
           for (let side = 0; side < 2; side++) put(tunnelWalls, i * 2 + side, x + (side ? 12.6 : -12.6), tunnel ? 2 : -1000, z - 6, 1, 4, 12.1);
         }
+        // Low quality and touch draw every other deck segment, as cliffs halve their count.
+        const deck = section?.type === 'shortcut' && (i % 2 === 0 || !(touch || visual.quality === 'low'));
+        put(shortcutDeck, i, x + (deck ? section.x : 0), deck ? section.altitude - SHORTCUT_TOLERANCE : -1000, z - 6, 6, .12, 12.1);
         if (surfaceMarks.visible) {
           const marked = section?.type === 'ice' || section?.type === 'uphill';
           put(surfaceMarks, i, x, marked ? .035 : -1000, z - 6, section?.type === 'uphill' ? 1.2 : 23, .025, section?.type === 'uphill' ? 3 : 12.1);
@@ -592,6 +600,14 @@ export function createWorld(canvas) {
       if (trackId === 'canyon') roadGeometry.index.needsUpdate = true;
       if (tunnelRoofs.visible) tunnelRoofs.instanceMatrix.needsUpdate = tunnelWalls.instanceMatrix.needsUpdate = true;
       if (surfaceMarks.visible) surfaceMarks.instanceMatrix.needsUpdate = true;
+      shortcutDeck.instanceMatrix.needsUpdate = true;
+      const pylons = race.sections.filter(section => section.type === 'shortcut').flatMap(shortcutPylons);
+      for (let i = 0; i < shortcutPylonMeshes.count; i++) {
+        const pylon = pylons[i], relative = pylon?.distance - distance;
+        const shown = relative > -20 && relative < 900; // NaN without a pylon
+        put(shortcutPylonMeshes, i, shown ? roadCenter(pylon.distance) - center + pylon.x : 0, shown ? pylon.altitude : -1000, shown ? -relative : 0, .4, SHORTCUT_TOLERANCE * 2, .4);
+      }
+      shortcutPylonMeshes.instanceMatrix.needsUpdate = true;
       sectionSigns.forEach(({ group, panel }, i) => {
         const section = race.sections[i];
         const relative = section ? section.from - 65 - distance : 0;

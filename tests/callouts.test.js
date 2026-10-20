@@ -141,3 +141,20 @@ test('a hard trick landing announces the lost reward once and never replays afte
   race.phase = 'racing';
   assert.equal(callouts.update(race), null);
 });
+
+test('entering a shortcut corridor announces SHORTCUT once per entry, never on the road beneath it', () => {
+  const race = running(), callouts = createCallouts();
+  const corridor = race.sections.find(section => section.type === 'shortcut');
+  race.traffic = []; race.pickups = []; race.rings = [];
+  callouts.update(race);
+  Object.assign(race.player, { distance: corridor.from + 10, x: corridor.x, altitude: 0, speed: 30 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(callouts.update(race), null, 'driving under the corridor is not entering it');
+  Object.assign(race.player, { altitude: corridor.altitude, verticalSpeed: 0 });
+  stepRace(race, { fly: true }, 1 / 60);
+  assert.equal(race.player.inShortcut, true);
+  assert.equal(callouts.update(race)?.title, 'SHORTCUT');
+  race.elapsed += 1.3;
+  stepRace(race, { fly: true }, 1 / 60);
+  assert.equal(callouts.update(race), null, 'staying inside does not repeat it');
+});
