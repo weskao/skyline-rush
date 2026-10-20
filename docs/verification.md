@@ -1,5 +1,71 @@
 # Verification — 2026-10-18
 
+## Remaining UI and animation pass — 2026-10-20
+
+Scope: TODO 8B finish, transitions, countdown and menu; touch action arc / AIR DASH seam;
+Tilt settings and permissions; Garage and the Ghost / daily challenge / medal UI surfaces.
+Gamepad is explicitly excluded. The Ghost recorder, challenge simulation, award criteria and
+cosmetic unlock/equip persistence remain open for Claude Code in `HANDOFF.md`.
+
+- TDD: the first presentation/collection tests failed on missing preview/Garage elements;
+  input regressions failed on unsupported Tilt settings and a touch seam that did not activate
+  BOOST. Stricter browser regressions then reproduced live reduced-motion cancellation,
+  immediate-results focus transfer, Garage Escape propagation, fractional scroll clipping,
+  narrow-phone NITRO/car overlap, countdown/HUD overlap and landscape ranking/charge overlap.
+  Each was corrected and its targeted checks rerun successfully. Six Node and fifteen
+  Playwright tests were added, using existing runners and no additional dependency.
+- Finish presentation is a separate clock: official finish/result/history are finalized once,
+  followed by 0.6 s of visual coast / side camera, then results and sequential counters.
+  Reduced motion and Comfort skip the wait and movement. Unit checks protect official race
+  immutability and restart cancellation; real desktop and reduced-motion phone races verify
+  ordering, accuracy, focus and one history record. Existing audio cues are reused.
+- Track preview loops stop outside the ready screen, when clipped/backgrounded and in calm
+  modes. History retains modal keyboard behavior and opener focus through animated close.
+- Tilt permission is requested only on explicit selection/recenter. Denial/errors/no readings
+  fall back to Slide. Sensor values are finite-checked, screen-oriented and calibrated; stale
+  steering expires after 500 ms. Native sensor permission is substituted in browser tests;
+  real DOM orientation events exercise the actual input path and rendered car steering.
+  Physical calibration and sensor direction still need Android/iOS hardware verification.
+- Garage reuses the live renderer, previews paint/tail lights without saved-data changes and
+  restores canvas placement, viewport, standard appearance and focus when closed. Progression
+  states are explicitly unavailable rather than fabricating earned awards or recorded ghosts.
+- Four main viewport flows and fourteen existing responsive sizes passed targeted checks.
+  Actual screenshots were inspected at 1440×900, 390×844, 320×740 and 844×390, including race,
+  countdown, pause, controls, Garage, history/daily board and the complete medal list.
+  Nine final PNGs were annotated from native-pixel DOM bounds and individually inspected.
+- Independent read-only code review found a finish shadow left behind by the visual coast;
+  the shadow now follows the player's presentation Z offset. No other actionable code finding.
+- Final acceptance: `npm test` **177 passed**, zero failures/skips;
+  `npm run test:browser -- --workers=2` **122 passed in 7.2 minutes**. Production build,
+  source/test syntax checks and `git diff --check` pass; the existing >500 kB chunk advisory
+  remains. No source/test changes followed this run. Prior complete-suite attempts were
+  interrupted for screenshot-discovered fixes and are not counted as final acceptance.
+- One completed run reported **121/122**, failing only the pre-existing earned-ring pilot.
+  The original test passed unchanged in isolation. Its host-driven polling was replaced by
+  an in-page frame loop through the real Space handlers and HUD; all reward assertions remain.
+  Two parallel repetitions then passed in 26.7 s. The successful final whole-suite run includes
+  this repair. All 42 pre-existing artifact files were restored and byte-verified afterward.
+- Nine inspected annotated PNGs were delivered through `screenshot-mark-send` / `tg-send.sh`:
+  confirmed photo message IDs **21246, 21247, 21248, 21249, 21250, 21251, 21252, 21253, 21254**.
+  Blue marks new/modified regions. The requested handoff filename is **HANDOFF.md** at the
+  project root; the final `done-report` text is sent after the documentation commit.
+  Commits are local only; no push or deployment.
+
+### Performance sample
+
+One Chrome browser at a time, DPR 1, AUTO race, 2 s warmup and 120 requestAnimationFrame
+intervals per viewport. Before/after use the same sampler. Values below are milliseconds:
+
+| Viewport | Cadence median before → after | Cadence p95 before → after | Callback p95 before → after |
+| --- | --- | --- | --- |
+| 1440×900 | 16.7 → 16.7 (both repeats) | 16.8 → 16.7 / 16.8 | 1.8 → 2.9 / 3.0 |
+| Touch 390×844 | 16.7 → 16.7 (both repeats) | 16.7 → 16.8 (both repeats) | 1.6 → 1.6 / 2.0 |
+
+No frame-cadence drop was observed in these short steady-race samples. Desktop callback tail
+cost increased in both samples; it remained below the 16.7 ms frame budget and is disclosed
+rather than called a CPU performance improvement. This measures callbacks/render submission,
+not GPU completion, sustained thermal behavior, or physical-phone performance.
+
 ## HUD motion and event feedback — 2026-10-20
 
 Scope: TODO 8B Consistency → Event callouts → Button feel → Animated numbers → Leaderboard reorder (five checkboxes).

@@ -24,9 +24,10 @@ checks → documentation update → Conventional Commit. All work runs in this s
   calibration, orientation handling and fallback. Preserve layout editing, remapping and drift.
 - [x] Extension UI: Ghost preference, daily challenge, achievements and cosmetic surfaces;
   only expose honest available/unavailable states until gameplay contracts exist.
-- [ ] Final acceptance: unit suite, complete Playwright suite, desktop / mobile portrait /
+- [x] Final acceptance: unit suite, complete Playwright suite, desktop / mobile portrait /
   narrow / landscape visual review, reduced-motion and comfort checks, frame cadence sample.
-- [ ] Final annotated screenshots and Telegram delivery via screenshot-mark-send; done-report.
+- [x] Final annotated screenshots and Telegram photo delivery via screenshot-mark-send.
+  The done-report notification follows the final documentation commit and names `HANDOFF.md`.
 
 ## Presentation contracts
 
@@ -116,7 +117,26 @@ hardware verification; Chrome touch emulation does not establish those results.
   flight window under parallel rendering. The same unchanged test passed in isolation.
   Only its driver was moved from host round trips to page animation frames, sending the
   real Space key handlers and reading the real HUD; all reward/persistence assertions remain.
-  Two parallel repeats now pass (26.7 s). The final full-suite rerun is still required.
+  Two parallel repeats passed (26.7 s), followed by the successful complete-suite run below.
+
+### Final acceptance and delivery — 2026-10-20
+
+- `npm test`: **177 passed**, zero failures/skips.
+- `npm run test:browser -- --workers=2`: **122 passed in 7.2 minutes** on the final build.
+  Production build, source/test syntax checks and `git diff --check` pass. The existing
+  >500 kB build-chunk advisory remains. No source/test changes followed the successful run.
+- Desktop 1440×900 and touch 390×844, 320×740 and 844×390 screenshots were inspected;
+  nine final annotated PNGs were individually checked. All 42 pre-existing artifact files
+  were preserved and byte-verified after restoring test-generated changes.
+- Short local frame samples retained 16.7 ms median cadence. Desktop callback p95 increased
+  from 1.8 ms to 2.9 / 3.0 ms; touch from 1.6 ms to 1.6 / 2.0 ms. This is not a sustained
+  hardware/GPU benchmark; see `docs/verification.md` for the comparison and limits.
+- Nine annotated screenshots were delivered through Telegram with confirmed `sendPhoto`
+  message IDs **21246, 21247, 21248, 21249, 21250, 21251, 21252, 21253, 21254**.
+  Blue marks new/modified UI. The handoff filename is **HANDOFF.md**, at the project root.
+- Changes are committed locally in coherent batches; no remote push or deployment.
+  Physical Android/iOS sensor calibration, Safari and subjective audio/haptics remain open.
+  Gameplay follow-up and excluded gamepad work retain the boundaries above.
 
 <details>
 <summary>Previous handoff (historical; current scope above takes precedence)</summary>

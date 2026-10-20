@@ -304,7 +304,7 @@ Physics:
 - [x] **Menu**: track select cards with a looping preview of the track's sky / palette; History screen slides in from the side
 - [x] **Consistency**: one shared set of motion tokens in `style.css` (`--ease-out`, `--ease-spring`, `--dur-fast` 120 ms / `--dur-base` 240 ms / `--dur-slow` 480 ms) used by every new animation
 - Rules: animate only `transform` / `opacity` (no layout thrash on the hot render path); every new animation respects the existing `prefers-reduced-motion` and "comfortable" settings by falling back to an instant or fade-only version
-- [ ] Acceptance: browser test checks callouts appear and disappear, results card renders after the finish sequence, and reduced-motion disables the motion; no frame-time regression measured during a race
+- [x] Acceptance: browser tests verify callout lifetime, results after the finish sequence and reduced-motion behavior; short local Chrome samples show no frame-cadence drop (desktop callback p95 increased 1.8 → 2.9–3.0 ms). See `docs/verification.md`; physical-device performance remains unverified.
 
 ---
 
