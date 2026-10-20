@@ -75,9 +75,9 @@ Above 162 km/h on the ground, brake + steer drifts instead of hard braking: only
 
 NITRO burns no charge, so Fly + NITRO always work together (Fly + Boost + NITRO keeps the 22/s AIR DASH drain).
 
-**Air tricks**: while flying, a quick steer flick (two opposite presses within 0.3 s) starts a 0.7 s barrel roll. Land a finished roll below 11 m/s for +0.25 NITRO; a harder landing (an unpowered drop from about 9 m or more) loses the reward. Landing early, hitting anything, a tunnel roof or a gap cancels the roll.
+**Air tricks**: while flying, a quick steer flick (two opposite presses within 0.3 s) starts a 0.7 s barrel roll. Land a finished roll below 11 m/s for +0.25 NITRO; a harder landing (an unpowered drop from about 9 m or more) loses the reward. Landing early, hitting anything, a tunnel roof or a gap cancels the roll. The car spins (reduced motion and Comfortable VFX keep the text but drop the spin), the HUD reads TRICK, and BARREL ROLL / TRICK +0.25 / HARD LANDING callouts, a whoosh and a short haptic buzz on touch mark the roll and its payout.
 
-**Shortcuts**: every track has one aerial corridor 6 m above an edge lane, marked SHORTCUT / FLY HIGH. Inside it, flight costs no charge and the speed cap rises by 12 m/s; it is lined with NITRO cells and holds a tank halfway, but alternating pylons count as barrier hits.
+**Shortcuts**: every track has one aerial corridor 6 m above an edge lane, marked SHORTCUT / FLY HIGH. Inside it, flight costs no charge and the speed cap rises by 12 m/s; it is lined with NITRO cells and holds a tank halfway, but alternating pylons count as barrier hits. A translucent deck in the track's accent colour marks the corridor floor; inside, the HUD reads SHORTCUT and the flight budget shows ∞ (BOOST still drains charge).
 
 ### Rings
 

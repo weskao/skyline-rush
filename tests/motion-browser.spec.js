@@ -1,10 +1,85 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './helpers/gameplay-browser.js';
 
 const open = async page => {
   await page.goto('/');
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 };
+
+for (const [name, viewport, hasTouch] of [
+  ['desktop', { width: 1440, height: 900 }, false],
+  ['touch', { width: 390, height: 844 }, true],
+]) test.describe(`air tricks ${name}`, () => {
+  test.use({ viewport, hasTouch });
+  test('an airborne flick rolls the car, announces the landing and acknowledges its payout once', async ({ gameplayPage: page }) => {
+    await page.locator('#start-button').click();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    await expect(page.locator('#countdown')).toBeHidden();
+    await page.locator('#vfx-panel > summary').click();
+    await page.locator('[data-vfx="haptics"]').check();
+    await page.locator('#vfx-panel > summary').click();
+    await page.evaluate(() => {
+      window.vibrations = [];
+      Object.defineProperty(navigator, 'vibrate', { configurable: true, value: pattern => { window.vibrations.push(pattern); return true; } });
+      const race = window.gameplay.race;
+      race.traffic = []; race.pickups = []; race.rings = [];
+      Object.assign(race.player, { speed: 60, altitude: 4, verticalSpeed: 0, fuel: 95 });
+    });
+    if (hasTouch) {
+      const pad = page.locator('.touch-pad'), box = await pad.boundingBox();
+      const pointer = { pointerId: 91, pointerType: 'touch', clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 };
+      await pad.dispatchEvent('pointerdown', pointer);
+      await pad.dispatchEvent('pointermove', { ...pointer, clientX: pointer.clientX - 30 });
+      await page.waitForTimeout(50);
+      await pad.dispatchEvent('pointermove', { ...pointer, clientX: pointer.clientX + 30 });
+      await page.waitForTimeout(70);
+      await pad.dispatchEvent('pointerup', pointer);
+    } else {
+      await page.keyboard.down('a');
+      await page.waitForTimeout(50);
+      await page.keyboard.up('a');
+      await page.keyboard.down('d');
+      await page.waitForTimeout(70);
+      await page.keyboard.up('d');
+    }
+    await expect(page.locator('#flight-state')).toHaveText('TRICK');
+    await expect(page.locator('#event-callout')).toContainText('BARREL ROLL');
+    await expect.poll(() => page.evaluate(() => Math.abs(Math.sin(window.gameScene.player.rotation.z)))).toBeGreaterThan(.4);
+    // A 4 m glide lands on its own (~1.1 s, 7.5 m/s) after the 0.7 s roll: a clean, paid landing.
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.player.trickPayout?.nitro)).toBe(.25);
+    await expect(page.locator('#event-callout')).toContainText('TRICK +0.25');
+    expect(await page.evaluate(() => window.vibrations.filter(value => JSON.stringify(value) === '[12,20,12]').length)).toBe(hasTouch ? 1 : 0);
+    await page.waitForTimeout(150);
+    expect(await page.evaluate(() => window.vibrations.filter(value => Array.isArray(value) && value[0] === 12).length)).toBe(hasTouch ? 1 : 0);
+    await expect.poll(() => page.evaluate(() => Math.cos(window.gameScene.player.rotation.z))).toBeGreaterThan(.99);
+  });
+
+  test('reduced motion and comfort suppress roll movement while keeping trick feedback readable', async ({ gameplayPage: page }) => {
+    await page.locator('#start-button').click();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    await expect(page.locator('#countdown')).toBeHidden();
+    for (const mode of ['reduce', 'comfortable']) {
+      await page.emulateMedia({ reducedMotion: mode === 'reduce' ? 'reduce' : 'no-preference' });
+      if (mode === 'comfortable') {
+        await page.locator('#vfx-panel > summary').click();
+        await page.locator('[data-vfx="comfortable"]').check();
+        await page.locator('#vfx-panel > summary').click();
+      }
+      await page.evaluate(() => {
+        const race = window.gameplay.race;
+        race.traffic = []; race.pickups = []; race.rings = [];
+        Object.assign(race.player, { speed: 60, altitude: 8, verticalSpeed: 0, fuel: 95, trick: { dir: 1, time: .2, done: false } });
+      });
+      await expect(page.locator('#flight-state')).toHaveText('TRICK');
+      await expect(page.locator('#event-callout')).toContainText('BARREL ROLL');
+      await expect.poll(() => page.evaluate(() => Math.abs(window.gameScene.player.rotation.z))).toBeLessThan(.01);
+      expect(await page.locator('#event-callout').evaluate(element => element.getAnimations().length)).toBe(0);
+      await page.evaluate(() => { window.gameplay.race.player.trick = null; });
+      await page.waitForTimeout(1400);
+    }
+  });
+});
 
 test('shared motion tokens control button feedback and comfort removes movement', async ({ page }) => {
   await open(page);

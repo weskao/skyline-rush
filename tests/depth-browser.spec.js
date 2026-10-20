@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { test as gameplayTest } from './helpers/gameplay-browser.js';
 
 const records = Array.from({ length: 12 }, (_, i) => ({
   date: `2026-01-${String(i + 1).padStart(2, '0')}T12:00:00Z`, track: 'coast',
@@ -148,5 +149,36 @@ test.describe('slide-pad feedback', () => {
     await expect(page.locator('#touch-controls')).not.toHaveAttribute('data-pad-brake');
     await page.locator('#pause-button').click();
     await expect(page.locator('#touch-controls')).toBeHidden();
+  });
+});
+
+for (const [name, viewport, hasTouch] of [
+  ['desktop', { width: 1440, height: 900 }, false],
+  ['landscape', { width: 844, height: 390 }, true],
+]) gameplayTest.describe(`shortcut ${name}`, () => {
+  gameplayTest.use({ viewport, hasTouch });
+  gameplayTest('the corridor shows its deck and pylons, a SHORTCUT label and callout, and free flight', async ({ gameplayPage: page }) => {
+    await expect(page.locator('#track-note')).toContainText('shortcut');
+    await page.locator('#start-button').click();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    await expect(page.locator('#countdown')).toBeHidden();
+    // Re-pin the altitude every frame: the test stands in for a player feathering FLY at 6 m.
+    await page.evaluate(() => {
+      const race = window.gameplay.race, corridor = race.sections.find(section => section.type === 'shortcut');
+      race.traffic = []; race.pickups = []; race.rings = [];
+      Object.assign(race.player, { distance: corridor.from + 20, x: corridor.x, speed: 60, fuel: 80 });
+      const pin = () => { if (race.phase !== 'racing') return; Object.assign(race.player, { altitude: corridor.altitude, verticalSpeed: 0 }); requestAnimationFrame(pin); };
+      pin();
+    });
+    await expect(page.locator('#flight-state')).toHaveText('SHORTCUT');
+    await expect(page.locator('#event-callout')).toContainText('SHORTCUT');
+    await expect(page.locator('#flight-budget')).toHaveText('∞');
+    const raised = name => page.evaluate(name => {
+      const mesh = window.gameScene.scene.getObjectByName(name);
+      if (!mesh?.visible) return 0;
+      return Array.from({ length: mesh.count }, (_, i) => mesh.instanceMatrix.array[i * 16 + 13]).filter(y => y > 0).length;
+    }, name);
+    await expect.poll(() => raised('shortcut-deck')).toBeGreaterThan(5);
+    await expect.poll(() => raised('shortcut-pylons')).toBeGreaterThan(0);
   });
 });

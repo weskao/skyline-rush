@@ -110,3 +110,51 @@ test('queued drift feedback describes the earned tier after the player has relea
   assert.equal(event.title, 'DRIFT · BLUE');
   assert.equal(event.detail, 'SPARK TIER EARNED');
 });
+
+test('a real airborne flick announces its roll, then its landing reward without a duplicate refill', () => {
+  const race = running(), callouts = createCallouts();
+  Object.assign(race.player, { speed: 60, altitude: 4 });
+  race.traffic = []; race.pickups = []; race.rings = [];
+  callouts.update(race);
+  stepRace(race, { steer: -1 }, 1 / 60);
+  callouts.update(race);
+  stepRace(race, { steer: 1 }, 1 / 60);
+  assert.equal(callouts.update(race)?.title, 'BARREL ROLL');
+  for (let i = 0; i < 48; i++) { stepRace(race, {}, 1 / 60); callouts.update(race); }
+  Object.assign(race.player, { altitude: .001, verticalSpeed: -1 });
+  stepRace(race, {}, 1 / 60);
+  callouts.update(race);
+  race.elapsed += 1.3;
+  assert.equal(callouts.update(race)?.title, 'TRICK +0.25');
+  race.elapsed += 1.3;
+  assert.equal(callouts.update(race), null, 'the same reward is not also a generic refill');
+});
+
+test('a hard trick landing announces the lost reward once and never replays after pause', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.player.trickPayout = { time: 0, nitro: 0, hard: true };
+  assert.equal(callouts.update(race)?.title, 'HARD LANDING');
+  race.elapsed = 1.3;
+  assert.equal(callouts.update(race), null);
+  race.phase = 'paused'; callouts.update(race);
+  race.phase = 'racing';
+  assert.equal(callouts.update(race), null);
+});
+
+test('entering a shortcut corridor announces SHORTCUT once per entry, never on the road beneath it', () => {
+  const race = running(), callouts = createCallouts();
+  const corridor = race.sections.find(section => section.type === 'shortcut');
+  race.traffic = []; race.pickups = []; race.rings = [];
+  callouts.update(race);
+  Object.assign(race.player, { distance: corridor.from + 10, x: corridor.x, altitude: 0, speed: 30 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(callouts.update(race), null, 'driving under the corridor is not entering it');
+  Object.assign(race.player, { altitude: corridor.altitude, verticalSpeed: 0 });
+  stepRace(race, { fly: true }, 1 / 60);
+  assert.equal(race.player.inShortcut, true);
+  assert.equal(callouts.update(race)?.title, 'SHORTCUT');
+  race.elapsed += 1.3;
+  stepRace(race, { fly: true }, 1 / 60);
+  assert.equal(callouts.update(race), null, 'staying inside does not repeat it');
+});
