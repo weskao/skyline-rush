@@ -13,6 +13,12 @@ Current scope: all gamepad-related work (input support, mapping UI, and acceptan
 is **Lowest priority** and **out of scope for this iteration**. Gamepad references below
 describe future work, not current requirements.
 
+Remaining open items are split into logic (Claude, `src/game.js` + `tests/game.test.js`) and UI
+(Codex, rendering / HUD / browser specs) in
+`docs/superpowers/plans/2026-10-20-remaining-items-split.md`, which holds the frozen UI
+contracts, file ownership, the parallel schedule and the prompt for each AI; the sub-checkboxes
+below mirror that split.
+
 ---
 
 ## 0. Desktop + mobile (applies to every item below)
@@ -38,7 +44,8 @@ mobile = touch via the existing `(pointer: coarse)` detection and the `.touch-co
 - **Orientation**: portrait and landscape both playable; landscape is the recommended racing orientation
 - **Tests**: each item's browser test runs at a desktop viewport and at least one touch viewport
 
-- [ ] **Physical-device acceptance**: measure before/after frame time on a mid-range phone and
+- [ ] **Physical-device acceptance** (manual — user on a phone, not Claude / Codex work; steps in
+  the split plan §A): measure before/after frame time on a mid-range phone and
   check Android/iOS hardware and Safari. The 2026-10-20 implementation checks below cover desktop
   and touch-browser viewports; this real-device gate remains open (see `docs/verification.md`).
 
@@ -211,12 +218,16 @@ Ordered by small effort, big fun:
 - [x] **Style score**: near-misses, rings, PERFECT LINEs, airtime, and clean sections score points; 1–3 star rating at the finish, so there's something to chase besides winning
 - [x] **Slipstream**: staying right behind a rival / traffic car for 1.5 s → speed cap +6 and +0.25 nitro
 - [ ] **Air tricks**: quick left-right flick while flying = barrel roll; land it → +0.25 nitro; a hard landing loses the reward (uses `landing.speed`)
+  - [x] Logic (Claude): flick detection within 0.3 s of raw `steer` sign change while airborne → `player.trick = { dir, time, done }`; 0.7 s roll; landing with `done` and `landing.speed < 11` pays +0.25 via `addNitro`, ≥ 11 writes `trickPayout = { nitro: 0, hard: true }`; contact / roof hit / gap fall / early landing cancel without payout; 8 unit tests (plan §C)
+  - [ ] UI (Codex): `world.js` body roll (`rotation.z`), callouts `BARREL ROLL` / `TRICK +0.25` / `HARD LANDING`, `TRICK` flight-state label, whoosh cue, haptic on payout, browser test at desktop + 390×844
 - [x] **Rivals use NITRO too**: give rivals personalities (NOVA steady, ORBIT loves flying, APEX late surge) plus light rubber-banding to keep races tense
 - [x] **Daily challenge**: date-seeded track + modifier (no flight, double traffic, gold rings only…), with its own board in History
   - [x] History UI: today's track + modifier, start action and the daily board (fastest five)
 - [x] **Achievements / medals**: first win, zero-collision finish, 5 PERFECT LINEs in one race, triple nitro chain…, shown in History
   - [x] History UI: four medal entries with awarded dates; award rules and persistence in `src/history.js`
 - [ ] **Shortcuts**: one flight-only elevated shortcut per track, with pickups but also risk
+  - [x] Logic (Claude): `{ from, to, type: 'shortcut', x: ±7.5, altitude: 6 }` section on all four tracks; `player.inShortcut` (|dx| < 3, |dAltitude| < 2.5); inside: flight burns no fuel and the speed cap gets +12; `shortcutPylons(section)` every 100 m alternating ±2.2 m, hitting one is `barrier` contact; corridor cells + one tank from `createPickups`; 7 unit tests incl. the coast-sections assertion update, plus the `SHORTCUT / FLY HIGH` sign entry in `world.js` (plan §D)
+  - [ ] UI (Codex): `world.js` elevated deck + pylons via `shortcutPylons`, `SHORTCUT` label and entry callout, `∞` fuel budget while inside, `trackNotes`, browser test at desktop + 844×390
 - [x] **Final sprint**: in the last 500 m the music speeds up (`audio.js` bpm) and rival gaps are shown, for comeback drama
 - [x] **Cosmetic unlocks**: stars unlock car paint / tail light colors (visual only, no stat changes)
   - [x] Garage UI: live previews; best stars per track (summed) unlock Coral 3 / Glacier 6 / Aurora 9; equip is saved
@@ -237,6 +248,7 @@ Ordered by small effort, big fun:
 
 - [x] **AIR DASH**: holding FLY + BOOST together caps the combined drain at **22/s** (instead of 29/s), keeping the `MAX_SPEED + 14` cap; HUD shows `AIR DASH`
 - [ ] **NITRO doesn't use fuel** (separate `nitro` reserve from item 2), so FLY + NITRO always works together; NITRO while flying = straight-line air dash
+  - [x] Logic (Claude): already true in `game.js`; add the acceptance tests — `{ fly, nitro }` held 2 s → `thrusting`, `nitroTime > 0`, not `exhausted`, fuel down by 19/s only; `{ fly, boost, nitro }` keeps the 22/s AIR DASH drain and the `MAX_SPEED + 30` cap (plan §B; no new physics unless decision 1b is chosen)
   - [x] UI (Codex): flight-state label `AIR DASH · NITRO` when thrusting with NITRO active (`main.js:832`)
 - [x] **Alternate keys**: right hand `J` = FLY, `K` = BOOST, `L` = NITRO, left hand stays on WASD, avoiding the Shift + Space conflict (original keys still work)
 - [x] **Touch** (layout in item 0):

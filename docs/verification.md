@@ -1,5 +1,30 @@
 # Verification — 2026-10-18
 
+## Logic for NITRO + FLY, air tricks and shortcuts — 2026-10-20
+
+Scope: the logic half of the remaining TODO items as split in
+`docs/superpowers/plans/2026-10-20-remaining-items-split.md` (§B, §C, §D). The UI half is
+Codex's. `src/game.js` adds `player.trick` / `trickPayout` / `flick`, `player.inShortcut`,
+a `shortcut` section on all four tracks and `shortcutPylons()`; `src/world.js` gains only the
+`SHORTCUT / FLY HIGH` sign entry so the new section type gets a material.
+
+- TDD: 2 NITRO + FLY acceptance tests (§B, no physics change: they pass on existing code and
+  pin the behaviour), 8 air-trick tests and 7 shortcut tests. Each of the 15 new-logic tests
+  failed on its own assertion first. Two cancel tests passed vacuously at first; they got an
+  `assert.ok(trick)` precondition and went red. Two existing tests were narrowed: the
+  air-pickup invariant now allows pickups inside shortcut sections, and the tunnel-ring test
+  filters `type === 'tunnel'`.
+- Results: `npm test` **211 passed**. `npm run test:browser` (1 worker) ran 104 passed and
+  21 failed with `ERR_CONNECTION_REFUSED`. The test server on port 5178 went down mid-run,
+  while a parallel Codex session committed in the same tree. `npx playwright test
+  --last-failed` on a fresh build then gave **21 passed**, so **125/125** in total.
+- Visual: a screenshot of Coast with the corridor moved to 300 m in the served bundle only
+  shows the `SHORTCUT / FLY HIGH` sign over the left side.
+- Cost: each step does one extra section check for `inShortcut`, a timer for an active trick,
+  and one `shortcutPylons(section)` scan (≤ 5 pylons) only inside a shortcut section.
+- Not verified: the deck, pylon meshes, trick roll, callouts and HUD (Codex's UI half, not
+  built yet); how the tuning feels in play (0.3 s flick window, +12 cap, pylon spacing).
+
 ## Gameplay follow-up: ghost, daily challenge, medals, cosmetic unlocks — 2026-10-20
 
 Scope: the four gameplay TODOs the UI pass left open (`HANDOFF.md`, removed after this pass).
