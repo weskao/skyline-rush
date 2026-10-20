@@ -830,7 +830,7 @@ function updateUI(now, input) {
   const state = car.thrusting ? car.verticalSpeed > 0.2 ? 'ASCENDING' : 'CRUISE' : car.altitude > 0.25 ? 'DESCENDING' : touchdown ? 'TOUCHDOWN' : depleted ? 'RECHARGING' : car.speed >= 18 ? 'READY TO FLY' : 'BUILD SPEED';
   const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
   const airDash = car.thrusting && car.boosting;
-  ui['flight-state'].textContent = airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
+  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? 'AIR DASH · NITRO' : airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
   nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
   nitroMeter.classList.toggle('is-max', car.nitro >= 3);
   nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);

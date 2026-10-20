@@ -237,6 +237,7 @@ Ordered by small effort, big fun:
 
 - [x] **AIR DASH**: holding FLY + BOOST together caps the combined drain at **22/s** (instead of 29/s), keeping the `MAX_SPEED + 14` cap; HUD shows `AIR DASH`
 - [ ] **NITRO doesn't use fuel** (separate `nitro` reserve from item 2), so FLY + NITRO always works together; NITRO while flying = straight-line air dash
+  - [x] UI (Codex): flight-state label `AIR DASH · NITRO` when thrusting with NITRO active (`main.js:832`)
 - [x] **Alternate keys**: right hand `J` = FLY, `K` = BOOST, `L` = NITRO, left hand stays on WASD, avoiding the Shift + Space conflict (original keys still work)
 - [x] **Touch** (layout in item 0):
   - [x] AUTO accelerator on by default, so the right thumb is free for FLY / BOOST / NITRO
