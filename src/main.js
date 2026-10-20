@@ -115,7 +115,6 @@ const calmMotion = () => visual.comfortable || reducedMotion.matches;
 function stopPresentationMotion() {
   if (calmMotion()) document.getAnimations().forEach(animation => animation.cancel());
 }
-reducedMotion.addEventListener('change', stopPresentationMotion);
 function enter(element, from, duration = 'base') {
   element.getAnimations().forEach(animation => animation.cancel());
   if (!calmMotion()) element.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], motionOptions(duration));
@@ -971,6 +970,7 @@ try {
   let previousTime = performance.now();
   let accumulator = 0;
   let hudElapsed = 0;
+  let wasCalm = calmMotion();
   function frame(now) {
     const rawDelta = (now - previousTime) / 1000;
     previousTime = now;
@@ -986,7 +986,11 @@ try {
       if (!race.modifier) recordGhost(trace, race);
       accumulator -= 1 / 60;
     }
-    presentationState = presentation.update(race, dt, calmMotion());
+    const calm = calmMotion();
+    // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.
+    if (calm && !wasCalm) stopPresentationMotion();
+    wasCalm = calm;
+    presentationState = presentation.update(race, dt, calm);
     const ghost = controlPrefs.ghost && !race.modifier && race.phase !== 'ready' ? ghostFor(race.trackId) : null;
     world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
     sound.update(race);
