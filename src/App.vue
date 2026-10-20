@@ -4,6 +4,7 @@ import { version } from '../package.json';
 import { RACE_TRACKS } from './game.js';
 import { VFX_RANGES } from './vfx-settings.js';
 import { icons, ICON_ATTRS } from './icons.js';
+import { PAINTS } from './appearance.js';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
 
@@ -49,6 +50,8 @@ const CONTROL_CHOICES = {
           <fieldset v-for="([legend, options], key) in CONTROL_CHOICES" class="controls-field"><legend>{{ legend }}</legend><label v-for="[value, label] in options" class="controls-choice"><input type="radio" :name="`controls-${key}`" :data-controls="key" :value="value"><span>{{ label }}</span></label></fieldset>
           <p id="tilt-status" role="status" class="controls-note">Tilt asks permission only when selected. Hold your phone comfortably to set neutral.</p>
           <button id="tilt-enable" class="controls-reset" hidden>Enable / recenter tilt</button>
+          <label class="ghost-setting"><input id="ghost-enabled" type="checkbox" disabled>Show best-run ghost</label>
+          <p id="ghost-status" class="controls-note">No best-run replay recorded yet.</p>
           <label class="controls-field controls-range">Button opacity <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Button opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
           <label class="controls-field controls-range">Steering sensitivity <output for="controls-sensitivity"></output><input id="controls-sensitivity" aria-label="Steering sensitivity" type="range" data-controls="sensitivity" min="0.4" max="1" step="0.1"></label>
           <fieldset class="controls-field keymap-field"><legend>Keyboard · select action, then press a key</legend><button v-for="action in ['throttle', 'brake', 'left', 'right', 'fly', 'boost', 'nitro']" class="keymap-binding" :data-rebind="action"><span>{{ action.toUpperCase() }}</span><b></b></button></fieldset>
@@ -101,6 +104,7 @@ const CONTROL_CHOICES = {
       <div class="intro-actions">
         <button class="primary-button" id="start-button" aria-label="Start race"><span>Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
         <button class="text-button history-button" data-open-history>History</button>
+        <button class="text-button garage-button" id="garage-button">Garage</button>
         <span class="start-hint">or press <kbd>ENTER</kbd></span>
       </div>
       <div class="intro-controls">
@@ -139,6 +143,26 @@ const CONTROL_CHOICES = {
     <figure class="history-trend"><figcaption id="history-trend-label"></figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"></svg></figure>
     <p id="history-empty" hidden>No runs here yet. Finish a race to start your history.</p>
     <div id="history-runs" class="history-runs"></div>
+    <section id="daily-challenge" class="history-extra" aria-labelledby="daily-title">
+      <h3 id="daily-title">Daily challenge</h3>
+      <p id="daily-status">No daily challenge is available yet.</p>
+      <button id="daily-start" class="controls-reset" disabled>Start daily challenge</button>
+      <h4>Daily board</h4><div id="daily-board"><p>No challenge runs recorded yet.</p></div>
+    </section>
+    <section class="history-extra" aria-labelledby="achievements-title">
+      <h3 id="achievements-title">Medals</h3><p id="achievement-status">Your awarded medals will appear here when available.</p>
+      <ul id="achievement-list" class="achievement-list"><li v-for="[id, name, detail] in [['first-win', 'First victory', 'Win your first race'], ['clean-run', 'Clean run', 'Finish without a collision'], ['perfect-five', 'Perfect flight', 'Five PERFECT LINEs in one race'], ['nitro-chain', 'Triple burst', 'Chain three NITRO charges']]" :data-medal="id"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><div><strong>{{ name }}</strong><span>{{ detail }}</span></div><small>Not awarded</small></li></ul>
+    </section>
+  </dialog>
+
+  <dialog id="garage-screen" class="history-screen garage-screen" aria-labelledby="garage-title">
+    <header class="history-heading"><h2 id="garage-title">Garage</h2><button class="controls-button" id="garage-close" aria-label="Close garage">Close</button></header>
+    <p class="collection-note">Explore paint and tail light combinations. Appearance never changes performance.</p>
+    <div id="garage-preview" class="garage-preview" aria-label="Live car preview"></div>
+    <div class="paint-options" role="group" aria-label="Preview car finish"><button v-for="(paint, id) in PAINTS" :data-paint="id" :aria-label="`Preview ${id}`" :aria-pressed="String(id === 'pearl')"><i :style="{ backgroundColor: paint.paint }" aria-hidden="true"></i><span>{{ paint.name }}</span></button></div>
+    <p id="garage-status" class="collection-note" role="status">Pearl · standard finish.</p>
+    <button id="garage-equip" class="controls-reset" disabled aria-label="Equip finish">Standard finish equipped</button>
+    <p class="collection-note">Additional finishes are previews. Cosmetic unlocks are not available yet.</p>
   </dialog>
 
   <footer class="telemetry">

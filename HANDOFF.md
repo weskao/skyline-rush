@@ -22,7 +22,7 @@ checks → documentation update → Conventional Commit. All work runs in this s
 - [x] Menu: bounded palette previews on track cards; History entrance/exit with focus restoration.
 - [x] Controls: adjacent FLY/BOOST single-pointer AIR DASH, right-thumb arc, Tilt permission,
   calibration, orientation handling and fallback. Preserve layout editing, remapping and drift.
-- [ ] Extension UI: Ghost preference, daily challenge, achievements and cosmetic surfaces;
+- [x] Extension UI: Ghost preference, daily challenge, achievements and cosmetic surfaces;
   only expose honest available/unavailable states until gameplay contracts exist.
 - [ ] Final acceptance: unit suite, complete Playwright suite, desktop / mobile portrait /
   narrow / landscape visual review, reduced-motion and comfort checks, frame cadence sample.
@@ -75,6 +75,36 @@ hardware verification; Chrome touch emulation does not establish those results.
   re-enabling after reload. Validate direction/calibration on actual iOS/Android hardware.
 - Evidence so far: Node suite 177 passed; 8 presentation browser tests passed (including
   complete desktop and reduced-motion phone races). Final combined suite is still pending.
+
+### Batch 2 — Garage and progression UI
+
+- Garage reuses the single live WebGL canvas in `#garage-preview`; `world.resize()` now reads
+  the canvas's actual bounds. Closing (button or Escape) restores the canvas to the app,
+  its full-screen viewport, Pearl appearance and opener focus. Preview never writes storage.
+- `src/appearance.js:PAINTS` is the shared catalog; `world.previewAppearance(PAINTS[id])`
+  changes player paint and baseline tail light color only. New skins are explicitly preview-only;
+  no fabricated unlocks or stat changes. The Equip action remains disabled.
+- Future UI integration points (all saved/rendered data must be validated and displayed with
+  textContent, following the existing History pattern):
+  - `#ghost-enabled` / `#ghost-status`: currently disabled, no recorded trace. Enable only once
+    10 Hz recording, per-track best-trace validation and playback are implemented. Define a
+    persistent user preference then; no new replay storage format is assumed by this UI.
+  - `#daily-status`, `#daily-start`, `#daily-board`: currently honest unavailable/empty states.
+    Supply a date-seeded track + modifier, start flow and distinct board in the logic pass.
+  - `#achievement-list [data-medal]`: `first-win`, `clean-run`, `perfect-five`, `nitro-chain`.
+    Supply validated awarded facts, then replace the unawarded copy/style; UI does not infer
+    awards from raw History or confuse fresh NITRO activations with extensions.
+  - `#garage-equip`: implement star-based ownership and saved equipped paint before enabling.
+    Restore the actual equipped appearance when previews close; Pearl is the current default.
+- These surfaces complete only their nested UI TODOs. The four parent gameplay TODOs stay open.
+- RED: four viewport tests failed on the absent Garage entry. Integration then reproduced
+  Escape being swallowed by the driving shortcuts; both dialogs now use the established
+  History keyboard propagation guard. Four collection tests pass, with 14 existing responsive
+  checks passing after adding scroll padding for fractional-pixel clipping.
+- Visual review found landscape countdown overlapping the instruments; a new geometry
+  regression failed before correction. Countdown now has intrinsic width, a clear mobile
+  location and temporarily hides mobile telemetry through GO. Review also found the finish
+  shadow left behind; it now shares the player's presentation Z offset.
 
 <details>
 <summary>Previous handoff (historical; current scope above takes precedence)</summary>

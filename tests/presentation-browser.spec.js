@@ -26,6 +26,18 @@ for (const [name, viewport, hasTouch] of [
       };
     });
     await page.locator('#start-button').click();
+    await expect(page.locator('#countdown')).toBeVisible();
+    await page.waitForTimeout(300);
+    const overlaps = await page.evaluate(() => {
+      const countdown = document.querySelector('#countdown').getBoundingClientRect();
+      return ['.race-progress', '.mode-indicator', '.fuel-stat', '.speedometer'].filter(selector => {
+        const element = document.querySelector(selector), style = getComputedStyle(element);
+        if (style.visibility === 'hidden' || style.display === 'none') return false;
+        const panel = element.getBoundingClientRect();
+        return panel.width && panel.height && countdown.left < panel.right && panel.left < countdown.right && countdown.top < panel.bottom && panel.top < countdown.bottom;
+      });
+    });
+    expect(overlaps, 'Countdown must remain clear of visible instruments').toEqual([]);
     await expect(page.locator('#race-status')).toHaveText('RACING');
     expect(await page.evaluate(() => window.uiMotion)).toEqual(expect.arrayContaining(['intro', 'countdown']));
     await page.locator('#pause-button').click();

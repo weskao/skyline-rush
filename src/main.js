@@ -12,6 +12,7 @@ import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, loadHistory, loadBests, loadUnlocks, careerStats, LEGACY_BEST_KEY } from './history.js';
 import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
+import { PAINTS } from './appearance.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -245,7 +246,26 @@ function closeHistory() {
 $('#history-close').addEventListener('click', closeHistory);
 historyScreen.addEventListener('cancel', event => { event.preventDefault(); closeHistory(); });
 historyScreen.addEventListener('close', () => historyOpener?.focus({ preventScroll: true }));
-historyScreen.addEventListener('keydown', event => event.stopPropagation());
+const garageScreen = $('#garage-screen');
+function previewPaint(id) {
+  world?.previewAppearance(PAINTS[id]);
+  document.querySelectorAll('[data-paint]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.paint === id)));
+  $('#garage-status').textContent = `${PAINTS[id].name} · ${id === 'pearl' ? 'standard finish.' : 'Preview only · not unlocked.'}`;
+  $('#garage-equip').textContent = id === 'pearl' ? 'Standard finish equipped' : 'Unlocks not available yet';
+}
+$('#garage-button').addEventListener('click', () => {
+  if (!world || race.phase !== 'ready') return;
+  controls.clear(); garageScreen.showModal();
+  $('#garage-preview').append($('#world'));
+  world.resize(); previewPaint('pearl');
+});
+document.querySelectorAll('[data-paint]').forEach(button => button.addEventListener('click', () => previewPaint(button.dataset.paint)));
+$('#garage-close').addEventListener('click', () => garageScreen.close());
+garageScreen.addEventListener('close', () => {
+  $('#app').prepend($('#world')); world.resize(); previewPaint('pearl');
+  controls.clear(); $('#garage-button').focus({ preventScroll: true });
+});
+for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
 $('#choose-track').addEventListener('click', () => {
   controls.clear(); race = createRace(race.trackId); goUntil = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
@@ -270,7 +290,7 @@ function focusRace() {
 }
 
 function start() {
-  if (!world || race.phase !== 'ready' || historyScreen.open) return;
+  if (!world || race.phase !== 'ready' || document.querySelector('dialog[open]')) return;
   if (editingLayout) editLayout(false);
   controls.clear();
   leaveIntro();
@@ -401,6 +421,7 @@ function changeCamera() {
 }
 
 const controls = createControls(window, action => {
+  if (document.querySelector('dialog[open]')) { controls.clear(); return; }
   if (action === 'pause') toggleSettings(false);
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);

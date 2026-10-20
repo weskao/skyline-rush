@@ -468,9 +468,10 @@ export function createWorld(canvas) {
   let carBank = 0;
 
   function resize() {
-    renderer.setSize(innerWidth, innerHeight);
-    composer.setSize(innerWidth, innerHeight);
-    camera.aspect = innerWidth / innerHeight;
+    const { width, height } = canvas.getBoundingClientRect();
+    renderer.setSize(width, height, false);
+    composer.setSize(width, height);
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
   }
   resize();
@@ -502,6 +503,10 @@ export function createWorld(canvas) {
 
   return {
     resize,
+    previewAppearance(paint) {
+      player.userData.body.material.color.set(paint.paint);
+      player.userData.lightColor.fromArray(paint.light);
+    },
     configureVFX(options) { visual = vfxSettings(options); },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
     render(race, dt, idleTime, input = {}, presentation = {}) {
@@ -641,6 +646,7 @@ export function createWorld(canvas) {
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt); });
       }
       shadow.position.x = player.position.x;
+      shadow.position.z = player.position.z;
       shadow.scale.setScalar(1 + player.position.y * 0.04);
       shadow.material.opacity = 0.6 / (1 + player.position.y * 0.2);
       finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance));
