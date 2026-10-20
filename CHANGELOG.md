@@ -1,3 +1,8 @@
+## [0.12.3] - 2026-10-20
+
+### 🐛 Bug Fixes
+
+- **ui:** Match root background to the scene's bottom edge
 ## [0.12.2] - 2026-10-20
 
 ### 🐛 Bug Fixes
