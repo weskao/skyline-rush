@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+  <title id="title">Skyline Rush app icon</title>
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#294659"/>
+      <stop offset=".55" stop-color="#101b26"/>
+      <stop offset="1" stop-color="#080f1a"/>
+    </linearGradient>
+    <linearGradient id="rush" x1="0" y1="1" x2=".8" y2="0">
+      <stop stop-color="#ff604e"/>
+      <stop offset=".6" stop-color="#ff805e"/>
+      <stop offset="1" stop-color="#ffd09a"/>
+    </linearGradient>
+    <linearGradient id="wake">
+      <stop stop-color="#76d9e7" stop-opacity="0"/>
+      <stop offset="1" stop-color="#76d9e7" stop-opacity=".5"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#night)"/>
+  <path d="M144 473h184M115 525h178M161 577h101" stroke="url(#wake)" stroke-width="12" stroke-linecap="round"/>
+  <g transform="translate(174 147) scale(18)">
+    <!-- Same forward-slant mark as the in-game wordmark, with a thicker small-icon silhouette. -->
+    <path d="M4 27 18 5h13L17 27H4Z" fill="#ff805e" fill-opacity=".07" stroke="url(#rush)" stroke-width="3.2" stroke-linejoin="round"/>
+    <path d="M13 33h16" stroke="#ff805e" stroke-width="3.2" stroke-linecap="round"/>
+  </g>
+</svg>
