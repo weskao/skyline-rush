@@ -112,6 +112,11 @@ hardware verification; Chrome touch emulation does not establish those results.
   All four presentation viewport checks pass. Earlier full-suite runs were intentionally
   interrupted when screenshot review found these issues; only the final stable-build run
   counts as whole-suite acceptance.
+- One fixed-build run completed at 121/122: the pre-existing earned-ring pilot missed its
+  flight window under parallel rendering. The same unchanged test passed in isolation.
+  Only its driver was moved from host round trips to page animation frames, sending the
+  real Space key handlers and reading the real HUD; all reward/persistence assertions remain.
+  Two parallel repeats now pass (26.7 s). The final full-suite rerun is still required.
 
 <details>
 <summary>Previous handoff (historical; current scope above takes precedence)</summary>

@@ -155,17 +155,26 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
     observer.observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
   });
   await start(page);
-  let held = false;
-  const deadline = Date.now() + 65000;
-  // Coast's visible gates are 220m apart. Fly in short hops to clear the first group while recharging between gates.
-  while (Date.now() < deadline && !await page.locator('#maneuver-report').isVisible()) {
-    const { distance, altitude } = await page.evaluate(() => ({ distance: Number(document.querySelector('#distance').textContent) * 1000, altitude: Number(document.querySelector('#altitude').textContent) }));
-    const nextGate = Math.ceil(Math.max(1, distance) / 220) * 220;
-    const fly = nextGate <= 1100 && nextGate - distance < 125 && altitude < 8.8;
-    if (fly !== held) { await page.keyboard[fly ? 'down' : 'up']('Space'); held = fly; }
-    await page.waitForTimeout(35);
-  }
-  await page.keyboard.up('Space');
+  // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
+  const perfectLine = await page.evaluate(() => new Promise(resolve => {
+    let held = false;
+    const deadline = performance.now() + 65000;
+    const key = type => window.dispatchEvent(new KeyboardEvent(type, { code: 'Space', key: ' ', bubbles: true, cancelable: true }));
+    const pilot = () => {
+      const collected = !document.querySelector('#maneuver-report').hidden;
+      if (collected || performance.now() >= deadline || document.body.dataset.phase !== 'racing') {
+        key('keyup'); resolve(collected); return;
+      }
+      const distance = Number(document.querySelector('#distance').textContent) * 1000;
+      const altitude = Number(document.querySelector('#altitude').textContent);
+      const nextGate = Math.ceil(Math.max(1, distance) / 220) * 220;
+      const fly = nextGate <= 1100 && nextGate - distance < 125 && altitude < 8.8;
+      if (fly !== held) { key(fly ? 'keydown' : 'keyup'); held = fly; }
+      requestAnimationFrame(pilot);
+    };
+    pilot();
+  }));
+  expect(perfectLine, 'The visible first ring group must produce a real PERFECT LINE').toBe(true);
   expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();
   await expect(page.locator('#nitro-status')).toHaveText('NITRO MAX');
