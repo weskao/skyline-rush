@@ -27,7 +27,7 @@ export function createSound() {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0;
   let enabled = false, musicOn = false, previousRace, previousPhase, previousCount;
-  let lastImpact = null, lastLanding = null, lastNearMiss = null;
+  let lastImpact = null, lastLanding = null, lastNearMiss = null, lastTrick = null;
   let wasThrusting = false, wasBoosting = false, lowCharge = false;
   const voices = new Set();
   let collectedPickups = new WeakSet();
@@ -84,8 +84,8 @@ export function createSound() {
   function cue(name) {
     if (name === 'go') { tone(660, 880, 0.4); tone(990, 1320, 0.4, 0, 0.025); }
     else if (name === 'finish') [523, 659, 784, 1047].forEach((pitch, i) => tone(pitch, pitch, 0.35, i * 0.13));
-    else if (name === 'boost') {
-      tone(95, 42, 0.23, 0, 0.045);
+    else if (name === 'boost' || name === 'whoosh') {
+      if (name === 'boost') tone(95, 42, 0.23, 0, 0.045);
       if (enabled && voices.size < 24) {
         const source = context.createBufferSource();
         const band = context.createBiquadFilter(), envelope = context.createGain();
@@ -217,7 +217,7 @@ export function createSound() {
         silenceCues();
         previousRace = race;
         previousPhase = previousCount = null;
-        lastImpact = lastLanding = lastNearMiss = null;
+        lastImpact = lastLanding = lastNearMiss = lastTrick = null;
         wasThrusting = wasBoosting = lowCharge = false;
         collectedPickups = new WeakSet();
       }
@@ -230,6 +230,7 @@ export function createSound() {
           if (car.impact && car.impact !== lastImpact && race.elapsed - car.impact.time < 0.2) impulse(car.impact.intensity, false, car.impact.kind === 'barrier');
           if (car.landing && car.landing !== lastLanding && race.elapsed - car.landing.time < 0.2) impulse(Math.min(1, car.landing.speed / 14), true);
           if (car.nearMiss && car.nearMiss !== lastNearMiss) cue('near');
+          if (car.trick && car.trick !== lastTrick) cue('whoosh');
           if (car.thrusting && !wasThrusting) cue('lift');
           if (boosting && !wasBoosting) cue('boost');
           if (car.fuel < 20 && !lowCharge) cue('low');
@@ -259,6 +260,7 @@ export function createSound() {
       lastImpact = car.impact;
       lastLanding = car.landing;
       lastNearMiss = car.nearMiss;
+      lastTrick = car.trick;
       wasThrusting = active && car.thrusting;
       wasBoosting = active && boosting;
       if (car.fuel >= 30) lowCharge = false;

@@ -97,3 +97,24 @@ test('drift screech builds with charge thresholds and silences on release/pause'
   race.phase = 'paused'; sound.update(race); assert.equal(skid.gain.value, 0);
   race.phase = 'racing'; race.player.drift = null; sound.update(race); assert.equal(skid.gain.value, 0);
 });
+
+test('each roll starts one noise whoosh; mute and pause consume it without replaying', t => {
+  const { sound, race, nodes } = audioScene(t);
+  const bursts = () => nodes.filter(node => node.kind === 'buffer' && !node.loop).length;
+  const before = bursts();
+  race.player.trick = { dir: 1, time: 0, done: false };
+  sound.update(race);
+  assert.equal(bursts(), before + 1);
+  race.player.trick.time = .3; sound.update(race);
+  assert.equal(bursts(), before + 1);
+  race.phase = 'paused';
+  race.player.trick = { dir: -1, time: 0, done: false }; sound.update(race);
+  race.phase = 'racing'; sound.update(race);
+  assert.equal(bursts(), before + 1);
+  sound.setEnabled(false);
+  race.player.trick = { dir: 1, time: 0, done: false }; sound.update(race);
+  sound.setEnabled(true); sound.update(race);
+  assert.equal(bursts(), before + 1);
+  race.player.trick = { dir: -1, time: 0, done: false }; sound.update(race);
+  assert.equal(bursts(), before + 2);
+});

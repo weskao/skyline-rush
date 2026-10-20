@@ -9,7 +9,7 @@ import { canopy, carShell } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.js';
-import { RACE_TRACKS } from './game.js';
+import { RACE_TRACKS, TRICK_ROLL_TIME } from './game.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
@@ -491,7 +491,11 @@ export function createWorld(canvas) {
     const driftYaw = car.drift ? -car.drift.dir * Math.PI * 25 / 180 : 0;
     mesh.rotation.y = -roadHeading(car.distance) + driftYaw;
     const bank = isPlayer ? -(car.steering || 0) * (car.altitude > 0.8 ? 0.12 : 0.045) : 0;
-    mesh.rotation.z = THREE.MathUtils.damp(mesh.rotation.z, bank, 8, dt);
+    // Reduced motion and comfort keep the steering bank but drop the roll; the trick still pays.
+    const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
+    // Wrap completed turns before banking again, so landing never unwinds a full roll.
+    const bankFrom = THREE.MathUtils.euclideanModulo(mesh.rotation.z + Math.PI, Math.PI * 2) - Math.PI;
+    mesh.rotation.z = trick ? bank + trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : THREE.MathUtils.damp(bankFrom, bank, 8, dt);
     mesh.rotation.x = THREE.MathUtils.damp(mesh.rotation.x, car.thrusting ? -0.06 : Math.min(0.08, -(car.verticalSpeed || 0) * 0.006), 7, dt);
     mesh.userData.jets.visible = !!car.thrusting;
     mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(car.braking ? 2.3 : 1);

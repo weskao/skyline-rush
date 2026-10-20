@@ -108,7 +108,7 @@ const callouts = createCallouts();
 const eventCallout = $('#event-callout');
 const calloutReports = [$('#maneuver-report'), ui['skill-report'], $('#action-report')];
 let shownCallout = null;
-let feedbackCar, lastImpact, lastDriftPayout, lastNitroTime = 0;
+let feedbackCar, lastImpact, lastDriftPayout, lastTrickPayout, lastNitroTime = 0;
 const motionTokens = getComputedStyle(document.documentElement);
 const motionOptions = duration => ({ duration: parseFloat(motionTokens.getPropertyValue(`--dur-${duration}`)), easing: motionTokens.getPropertyValue('--ease-out').trim() });
 const calmMotion = () => visual.comfortable || reducedMotion.matches;
@@ -830,7 +830,7 @@ function updateUI(now, input) {
   const state = car.thrusting ? car.verticalSpeed > 0.2 ? 'ASCENDING' : 'CRUISE' : car.altitude > 0.25 ? 'DESCENDING' : touchdown ? 'TOUCHDOWN' : depleted ? 'RECHARGING' : car.speed >= 18 ? 'READY TO FLY' : 'BUILD SPEED';
   const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
   const airDash = car.thrusting && car.boosting;
-  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? 'AIR DASH · NITRO' : airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
+  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? 'AIR DASH · NITRO' : airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.trick && !car.trick.done ? 'TRICK' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
   nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
   nitroMeter.classList.toggle('is-max', car.nitro >= 3);
   nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
@@ -886,12 +886,14 @@ function updateUI(now, input) {
     const hit = car.impact && car.impact !== lastImpact;
     const burst = car.nitroTime > lastNitroTime || (boost && !previousBoost);
     const driftPaid = car.driftPayout && car.driftPayout !== lastDriftPayout;
-    if (hit || burst || driftPaid) {
-      try { navigator.vibrate?.(hit ? [18, 30, 18] : burst ? 25 : 15); } catch { /* Unsupported haptics never interrupt a race. */ }
+    const trickPaid = car.trickPayout?.nitro > 0 && car.trickPayout !== lastTrickPayout;
+    if (hit || burst || driftPaid || trickPaid) {
+      try { navigator.vibrate?.(hit ? [18, 30, 18] : trickPaid ? [12, 20, 12] : burst ? 25 : 15); } catch { /* Unsupported haptics never interrupt a race. */ }
     }
   }
   feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime;
   lastDriftPayout = car.driftPayout;
+  lastTrickPayout = car.trickPayout;
   previousBoost = boost;
   $('#aero-flow').textContent = boost ? 'HIGH VELOCITY' : 'BODY STREAMLINES';
   $('#aero-floor').textContent = flying ? 'LIFT / DOWNWASH' : visual.aeroMode === 'downforce' ? 'SUCTION ACTIVE' : 'LOW DRAG';
