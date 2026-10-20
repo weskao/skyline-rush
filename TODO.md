@@ -49,7 +49,8 @@ mobile = touch via the existing `(pointer: coarse)` detection and the `.touch-co
   check Android/iOS hardware and Safari. The 2026-10-20 implementation checks below cover desktop
   and touch-browser viewports; this real-device gate remains open (see `docs/verification.md`).
   - [x] iOS Simulator Safari (iPhone 17, iOS 26.5), 2026-10-20: Coast and Neon, portrait and landscape, touch FLY works; it found and fixed two short-landscape layout bugs (HUD overlap, START RACE below the fold)
-  - [ ] Real phones: frame time p95 on a mid-range Android (Chrome) and an iPhone (Safari); the Android emulator's translated GPU (7.5 fps, black 3D canvas) cannot stand in for hardware
+  - [x] Measurement tool: `?perf` shows racing frame-time p50/p95/fps over the last 20 s; checked in iOS Simulator Safari (p50 17.0 ms, p95 24.0 ms, 59.7 fps on the Mac GPU, so not a phone number)
+  - [ ] Real phones: frame time p95 on a mid-range Android (Chrome) and an iPhone (Safari), read from `?perf`; the Android emulator's translated GPU (7.5 fps, black 3D canvas) cannot stand in for hardware
 
 ### Mobile control layout (with all new actions)
 

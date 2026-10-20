@@ -1,5 +1,20 @@
 # Verification — 2026-10-18
 
+## `?perf` frame-time readout for the real-phone check — 2026-10-20
+
+Scope: a measuring tool for the open §A real-phone gate, not the measurement itself.
+
+- `?perf` in the URL adds a fixed strip at the top: `FRAME p50 · p95 · fps · window` over the
+  last 20 s of racing (`src/perf.js`, nearest-rank percentiles; frames over 250 ms, i.e. tab
+  switches, are skipped). Without the parameter no element is created and nothing is sampled.
+- TDD: `tests/perf.test.js` (3 cases) and `tests/perf-browser.spec.js` (overlay text and position
+  with `?perf`, absence without it). Both failed first and pass now; `npm test` 218/218.
+- iOS Simulator Safari (iPhone 17, iOS 26.5) over the LAN: p50 17.0 ms, p95 24.0 ms, 59.7 fps over
+  20 s on Coast. This uses the Mac's GPU and is not a phone number.
+- Not verified: a physical iPhone and a mid-range Android. The iPhone was not connected when this
+  ran; the next step is to open `http://<computer-ip>:<port>/?perf` on each phone, race 20 s, and
+  record p50/p95 here.
+
 ## Device check in the iOS Simulator; short-landscape layout fixes — 2026-10-20
 
 Scope: plan §A as far as simulators reach. The production build was served with `vite preview`
