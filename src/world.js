@@ -385,7 +385,7 @@ export function createWorld(canvas) {
   const weather = new THREE.Points(weatherGeometry, new THREE.PointsMaterial({ color: '#b8d8ef', size: .18, transparent: true, opacity: .65, depthWrite: false }));
   scene.add(weather);
   const signTextures = [];
-  const signs = Object.fromEntries(Object.entries({ tunnel: 'TUNNEL / 4 M CEILING', gap: 'BROKEN BRIDGE / FLY', crosswind: 'CROSSWIND / STEER', ice: 'ICE / STEER EARLY', uphill: 'UPHILL / SAVE CHARGE', shortcut: 'SHORTCUT / FLY HIGH' }).map(([type, label]) => {
+  const signs = Object.fromEntries(Object.entries({ tunnel: 'TUNNEL / 4 M CEILING', gap: 'BROKEN BRIDGE / FLY', crosswind: 'CROSSWIND / STEER', ice: 'ICE / STEER EARLY', uphill: 'UPHILL / SAVE CHARGE', shortcut: 'SHORTCUT / FLY HIGH', launch: 'LAUNCH RAMP / BOOST', spiral: '360 HELIX / CLIMB' }).map(([type, label]) => {
     const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
     const context = sign.getContext('2d');
     context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);
@@ -394,7 +394,7 @@ export function createWorld(canvas) {
     const texture = new THREE.CanvasTexture(sign); texture.colorSpace = THREE.SRGBColorSpace; signTextures.push(texture);
     return [type, new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })];
   }));
-  const sectionSigns = Array.from({ length: 8 }, () => {
+  const sectionSigns = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => track.sections.length)) }, () => {
     const group = new THREE.Group();
     block(group, material('#637282'), 0, 2.5, 0, .2, 5, .2);
     const panel = new THREE.Mesh(new THREE.PlaneGeometry(8, 1.5), signs.gap); panel.position.y = 5; group.add(panel); scene.add(group);
