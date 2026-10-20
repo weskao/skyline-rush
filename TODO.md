@@ -10,7 +10,7 @@ Implementation rules: game rules live in the pure simulation layer `src/game.js`
 and ring placement comes from a per-track seed so runs are reproducible and testable.
 
 Current scope: all gamepad-related work (input support, mapping UI, and acceptance checks)
-is the **lowest priority** and **out of scope for this iteration**. Gamepad references below
+is **Lowest priority** and **out of scope for this iteration**. Gamepad references below
 describe future work, not current requirements.
 
 ---
@@ -19,13 +19,14 @@ describe future work, not current requirements.
 
 Every item is done only when it works on both platforms. Targets match the viewports the browser
 tests already use: desktop 1440×900, phone portrait 390×844 and 320×740, phone landscape 844×390
-(touch). Desktop = keyboard (+ optional gamepad, mouse for menus); mobile = touch via the existing
-`(pointer: coarse)` detection and the `.touch-controls` layout.
+(touch). Desktop = keyboard (+ optional gamepad — **Lowest priority**, deferred; mouse for menus);
+mobile = touch via the existing `(pointer: coarse)` detection and the `.touch-controls` layout.
 
 ### Shared rules
 
 - **One input model**: every action is a named control in `input.js` (`fly`, `boost`, `nitro`, `brake`…)
-  that keys, touch buttons, and gamepad all map to. Game rules never check the device
+  that keys, touch buttons, and gamepad (gamepad mapping — **Lowest priority**, deferred) all map to.
+  Game rules never check the device
 - **Same rules, same numbers** on both platforms; mobile only differs in layout, hints, and effect budget
 - **Hints match the device**: desktop shows keys (`HOLD SPACE`), mobile shows button names (`HOLD FLY`),
   extending the existing `touchPreference` switch in `main.js`
@@ -97,7 +98,7 @@ Mobile:
 Desktop:
 - [x] **Key remapping**: click an action, press the new key; conflicts are flagged and swapped; Reset to default (the `J`/`K`/`L` alternates from 7B are part of the default map)
 - [x] **Steering sensitivity** (from 7C)
-- [ ] Gamepad mapping view — **lowest priority; out of scope for this iteration**
+- [ ] **Gamepad mapping view** — **Lowest priority**; out of scope for this iteration
 
 Both:
 - [x] Saved to `localStorage['skyline-rush-controls']` with try/catch like the existing VFX settings; invalid / outdated saves fall back to defaults
@@ -113,7 +114,7 @@ Both:
 | 4. Rings | Full burst particles | Smaller bursts; ring centers slightly more forgiving (+10% radius) since touch steering is coarser |
 | 5. History | Table with columns, hover for details | Stacked cards, tap for details; sparkline fits 320 px width |
 | 6. Others | Daily challenge / achievements in the menu | Same, plus share-result via `navigator.share` where available |
-| 7. Controls | `J`/`K`/`L` alternate keys, key remapping, gamepad, steering sensitivity | Slide steering default, Buttons / Tilt modes, handedness mirror, editable layout, AUTO default, FLY toggle |
+| 7. Controls | `J`/`K`/`L` alternate keys, key remapping, steering sensitivity; gamepad (**Lowest priority**, deferred) | Slide steering default, Buttons / Tilt modes, handedness mirror, editable layout, AUTO default, FLY toggle |
 | 8. UI / motion | Full motion | Same motion with fewer simultaneous effects; `navigator.vibrate` haptics where supported |
 
 ---
@@ -251,7 +252,7 @@ Ordered by small effort, big fun:
 - [x] **Forgiving hitbox**: vehicle collision width 1.9 → 1.7, so more "almost hit" moments become near-misses instead of crashes
 - [x] **Takeoff buffer**: holding FLY below 18 m/s is remembered and lifts off automatically once fast enough (no need to press again)
 - [x] **Glide**: releasing FLY in the air lowers fall acceleration 11 → 7 for more controllable, softer landings (`landing.speed`)
-- [ ] **Gamepad support**: the browser's built-in Gamepad API, analog stick steering, triggers for throttle / brake — **lowest priority; out of scope for this iteration**
+- [ ] **Gamepad support**: the browser's built-in Gamepad API, analog stick steering, triggers for throttle / brake — **Lowest priority**; out of scope for this iteration
 - [x] Move the touch brake to the left thumb, next to steering (see item 0), so brake + steer = drift works on touch
 
 ### 7D. DRIFT (builds nitro)
@@ -319,4 +320,4 @@ Physics:
 7. History + per-track best + ghost (item 5)
 8. Three new tracks (content part of item 1)
 9. Pick from item 6
-10. **Gamepad support + mapping view** — lowest priority; deferred beyond this iteration
+10. **Gamepad support + mapping view** — **Lowest priority**; deferred beyond this iteration
