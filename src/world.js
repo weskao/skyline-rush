@@ -9,6 +9,7 @@ import { canopy, carShell } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.js';
+import { createRearLight } from './rear-light.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
@@ -63,7 +64,9 @@ const CAR_STYLES = {
       const bronze = material('#7a5f4c', 0.8, 0.28);
       const nozzleMetal = material('#71818a', 0.7, 0.35);
       block(group, m.white, 0, 0.53, -2.46, 1.56, 0.035, 0.04);
-      block(group, m.light, 0, 0.95, 2.34, 2.08, 0.08, 0.05);
+      const rearLight = createRearLight();
+      group.add(rearLight.group);
+      group.userData.rearLight = rearLight;
       block(group, m.black, 0, 0.7, 2.33, 1.86, 0.36, 0.04);
       block(group, material('#c9ccd0', 0.2, 0.5), 0, 0.84, 2.36, 0.4, 0.12, 0.02);
       for (const port of REAR_PORTS) lamp(group, nozzleMetal, port.position[0], 0.64, 2.36, 0.65);
@@ -203,7 +206,7 @@ function makeCar(style, color = style.color) {
   }
   jets.visible = false;
   group.add(jets);
-  group.userData = { wheels, jets, body, wing, brakeLight: light, lightColor: light.color.clone() };
+  Object.assign(group.userData, { wheels, jets, body, wing, brakeLight: light, lightColor: light.color.clone() });
   return group;
 }
 
@@ -436,6 +439,7 @@ export function createWorld(canvas) {
 
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
+  const rearLight = player.userData.rearLight;
   const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex].map(style => { const car = makeCar(style); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
@@ -529,7 +533,7 @@ export function createWorld(canvas) {
       const car = race.player;
       const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
-      if (lastRace !== race) { effects.reset(); aero.reset(); lastRace = race; initialized = false; carBank = 0; }
+      if (lastRace !== race) { effects.reset(); aero.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; }
       if (trackId !== race.trackId) {
         trackId = race.trackId;
         const palette = TRACK_PALETTES[trackId];
@@ -673,6 +677,7 @@ export function createWorld(canvas) {
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt); });
       }
       ghostCar.visible = !preview && !!ghost;
+      rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
       if (ghostCar.visible) {
         ghostCar.position.set(roadCenter(ghost.distance) - center + ghost.x, ghost.altitude, distance - ghost.distance);
         ghostCar.rotation.y = -roadHeading(ghost.distance);
