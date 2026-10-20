@@ -17,7 +17,10 @@ After these assets are deployed over HTTPS:
 
 Menu wording and the final icon mask depend on the browser and operating system.
 An existing installation may cache its previous icon; remove and add it again
-after deployment if needed. Installation requires a supported browser. This
+after deployment if needed. iOS also keeps the status-bar style an icon was
+added with: icons added before v0.12.0 stay in `black-translucent` mode and keep
+a 62 pt band at the bottom that only the page background can reach. Remove and
+add those icons again to get the full screen. Installation requires a supported browser. This
 change supplies online web-app installation metadata, not offline gameplay or
 native app-store packages.
 

@@ -114,6 +114,9 @@ test.describe('device safe areas', () => {
       ['android 15 buttons', { top: 48, bottom: 48, left: 0, right: 0 }, 412, 892],
       ['android 14', { top: 0, bottom: 0, left: 0, right: 0 }, 412, 915],
       ['notch landscape', { top: 0, bottom: 21, left: 47, right: 47 }, 844, 390],
+      ['android 15 landscape buttons', { top: 24, bottom: 0, left: 0, right: 48 }, 915, 412],
+      ['ipad portrait', { top: 24, bottom: 20, left: 0, right: 0 }, 820, 1180],
+      ['ipad landscape', { top: 24, bottom: 20, left: 0, right: 0 }, 1180, 820],
     ];
     for (const [name, insets, width, height] of profiles) {
       await page.setViewportSize({ width, height });
@@ -135,7 +138,8 @@ test.describe('device safe areas', () => {
       const camera = await page.locator('#camera-button').boundingBox();
       expect(camera.x + camera.width, `${name} camera`).toBeLessThanOrEqual(width - insets.right + 1);
       expect(camera.y, `${name} camera`).toBeGreaterThanOrEqual(insets.top - 1);
-      if (height >= 500) {
+      // touch tablets hide the footer by design
+      if (height >= 500 && await page.locator('.bottomline').isVisible()) {
         const line = await page.locator('.bottomline').boundingBox();
         const gap = height - (line.y + line.height);
         expect(gap, `${name} footer`).toBeGreaterThanOrEqual(insets.bottom - 1);
@@ -148,3 +152,32 @@ test.describe('device safe areas', () => {
     }
   });
 });
+
+// iOS keeps the status-bar style an icon was installed with. Icons added under black-translucent
+// still lay out 62 pt short of the screen, and only the root background reaches that bottom band
+// (WebKit 313800). The opaque status strip of a black install is root background too.
+for (const [width, height] of [[402, 874], [1440, 900]]) {
+  test(`root background continues the scene's bottom edge at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('./');
+    await page.locator('#intro').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+    const edge = async () => {
+      const png = (await page.screenshot({ clip: { x: 0, y: height - 4, width, height: 4 } })).toString('base64');
+      return page.evaluate(async src => {
+        const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${src}`)).blob());
+        const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
+        context.drawImage(bitmap, 0, 0);
+        const { data } = context.getImageData(0, 0, bitmap.width, bitmap.height);
+        const sum = [0, 0, 0];
+        for (let i = 0; i < data.length; i += 4) for (let c = 0; c < 3; c++) sum[c] += data[i + c];
+        return sum.map(value => value / (data.length / 4));
+      }, png);
+    };
+    const root = (await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).match(/\d+/g).map(Number);
+    const mismatch = rgb => Math.max(...rgb.map((value, c) => Math.abs(value - root[c])));
+    expect(mismatch(await edge()), 'start screen').toBeLessThanOrEqual(10);
+    await page.locator('#start-button').click();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    expect(mismatch(await edge()), 'racing').toBeLessThanOrEqual(10);
+  });
+}
