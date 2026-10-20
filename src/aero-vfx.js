@@ -80,9 +80,9 @@ export function createAeroVFX(scene, vehicle) {
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme;
       void main(){float t=1.-vUv.y;
-        float cells=pow(.5+.5*cos(t*48.),5.)*diamonds;
+        float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
         float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
-        float core=exp(-t*7.);float fade=pow(1.-t,1.7)*smoothstep(0.,.025,t);
+        float core=exp(-t*7.);float fade=pow(max(0.,1.-t),1.7)*smoothstep(0.,.025,t);
         vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
         gl_FragColor=vec4(color*brightness*(1.+core+cells),fade*(.15+core*.55+cells*.35)*breakup*power);}`,
@@ -119,7 +119,7 @@ export function createAeroVFX(scene, vehicle) {
   const ribbon = new THREE.Mesh(ribbonGeo, new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
     vertexShader: 'attribute float alpha;varying float vAlpha;varying vec2 vUv;void main(){vAlpha=alpha;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: 'varying float vAlpha;varying vec2 vUv;void main(){float edge=pow(sin(vUv.x*3.14159),3.);gl_FragColor=vec4(.5,.8,1.,edge*vAlpha);}',
+    fragmentShader: 'varying float vAlpha;varying vec2 vUv;void main(){float edge=pow(max(0.,sin(vUv.x*3.14159)),3.);gl_FragColor=vec4(.5,.8,1.,edge*vAlpha);}',
   }));
   ribbon.name = 'Continuous dash ribbon'; ribbon.frustumCulled = false; scene.add(ribbon);
   let segmentCursor = 0;
