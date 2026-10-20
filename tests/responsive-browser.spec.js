@@ -78,11 +78,21 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
         '.flight-telemetry', '.aero-tools', '#controls-button', '#pause-button',
         // .touch-pad is left out: it is the invisible slide zone the pointer-transparent HUD sits on.
         ...['fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
-      const boxes = [];
-      for (const selector of blocks) {
-        const block = page.locator(selector).first();
-        if (await block.isVisible()) boxes.push([selector, await block.boundingBox()]);
-      }
+      // One synchronous evaluate with the place-change arrow forced on: it widens POSITION for a moment,
+      // and sampling it by luck made this test flaky.
+      const boxes = await page.evaluate(selectors => {
+        const arrow = document.querySelector('#position-change');
+        const [hidden, text] = [arrow.hidden, arrow.textContent];
+        Object.assign(arrow, { hidden: false, textContent: '\u2193' });
+        const rects = selectors.flatMap(selector => {
+          const el = document.querySelector(selector);
+          if (!el || !el.checkVisibility()) return [];
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return [[selector, { x, y, width, height }]];
+        });
+        Object.assign(arrow, { hidden, textContent: text });
+        return rects;
+      }, blocks);
       const apart = (a, b) => a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
       const overlaps = boxes.flatMap(([name, box], i) => boxes.slice(i + 1).filter(([, other]) => !apart(box, other)).map(([other]) => `${name} × ${other}`));
       expect(overlaps).toEqual([]);
