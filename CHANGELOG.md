@@ -1,3 +1,26 @@
+## [0.10.0] - 2026-10-20
+
+### 🚀 Features
+
+- **ui:** Reload page from start screen wordmark
+
+### 🐛 Bug Fixes
+
+- **ui:** Shrink race callout so it clears the view
+- **ui:** Keep race callout clear of progress bar
+- **vfx:** Clamp shader power bases
+
+### 🎨 Styling
+
+- **history:** Polish history panel
+
+### 🧪 Testing
+
+- **browser:** Add track render probe
+
+### ⚙️ Miscellaneous Tasks
+
+- **artifacts:** Refresh gameplay captures
 ## [0.9.0] - 2026-10-19
 
 ### 🚀 Features
