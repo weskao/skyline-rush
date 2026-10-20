@@ -375,7 +375,7 @@ export function createWorld(canvas) {
   const weather = new THREE.Points(weatherGeometry, new THREE.PointsMaterial({ color: '#b8d8ef', size: .18, transparent: true, opacity: .65, depthWrite: false }));
   scene.add(weather);
   const signTextures = [];
-  const signs = Object.fromEntries(Object.entries({ tunnel: 'TUNNEL / 4 M CEILING', gap: 'BROKEN BRIDGE / FLY', crosswind: 'CROSSWIND / STEER', ice: 'ICE / STEER EARLY', uphill: 'UPHILL / SAVE CHARGE' }).map(([type, label]) => {
+  const signs = Object.fromEntries(Object.entries({ tunnel: 'TUNNEL / 4 M CEILING', gap: 'BROKEN BRIDGE / FLY', crosswind: 'CROSSWIND / STEER', ice: 'ICE / STEER EARLY', uphill: 'UPHILL / SAVE CHARGE', shortcut: 'SHORTCUT / FLY HIGH' }).map(([type, label]) => {
     const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
     const context = sign.getContext('2d');
     context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);

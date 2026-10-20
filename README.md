@@ -73,6 +73,12 @@ NITRO has its own reserve (`player.nitro`, up to 3 charges, each fills as a floa
 
 Above 162 km/h on the ground, brake + steer drifts instead of hard braking: only 3 m/s² is lost, near-miss combo points double, and releasing pays NITRO plus a mini boost by drift time (1 s: +0.15 and 0.5 s, 2 s: +0.3 and 0.8 s, 3 s: +0.5 and 1.2 s). The body yaws 25°, smoke and blue/orange/purple sparks show the tier, tire screech builds, and the HUD names drift/mini-boost states. Taking off, falling into a gap, or hitting a car or barrier loses the build-up.
 
+NITRO burns no charge, so Fly + NITRO always work together (Fly + Boost + NITRO keeps the 22/s AIR DASH drain).
+
+**Air tricks**: while flying, a quick steer flick (two opposite presses within 0.3 s) starts a 0.7 s barrel roll. Land a finished roll below 11 m/s for +0.25 NITRO; a harder landing (an unpowered drop from about 9 m or more) loses the reward. Landing early, hitting anything, a tunnel roof or a gap cancels the roll.
+
+**Shortcuts**: every track has one aerial corridor 6 m above an edge lane, marked SHORTCUT / FLY HIGH. Inside it, flight costs no charge and the speed cap rises by 12 m/s; it is lined with NITRO cells and holds a tank halfway, but alternating pylons count as barrier hits.
+
 ### Rings
 
 The 5 km coast has 22 rings every 220 m, in groups of 3 to 5 (placed from the track seed). A ring counts only when the car passes through its visible radius; grazing the edge does not. Types: cyan charge (+20 charge), gold nitro (+0.5), purple slipstream (3 s mini boost), red risk (a small ring, +1 NITRO and 500 score) and rainbow mystery (one random-by-seed effect: shield 10 s or until the first hit, magnet 5 s, ghost through traffic 3 s, or freeze rivals at half speed 2 s). Collected rings burst once and disappear. Clearing a whole group announces PERFECT LINE and awards +1 NITRO; missing one ring breaks it but keeps the rewards already earned.

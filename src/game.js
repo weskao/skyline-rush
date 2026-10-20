@@ -1,18 +1,24 @@
 import { seededRng } from './rng.js';
 
-// Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction.
+// Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
+// `x` / `altitude` place a shortcut corridor.
 export const RACE_TRACKS = {
-  coast: { name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, sections: [], fixedRings: true }, // fixedRings: the original gate grid
+  coast: { // fixedRings: the original gate grid
+    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, fixedRings: true,
+    sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
+  },
   neon: {
     name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002,
     sections: [
-      { from: 600, to: 1100, type: 'tunnel' }, { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
+      { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
+      { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
     ],
   },
   canyon: {
     name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003,
     sections: [
       { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
+      { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
       { from: 3000, to: 3070, type: 'gap' }, { from: 3300, to: 4100, type: 'crosswind', dir: -1 },
       { from: 4400, to: 4470, type: 'gap' },
     ],
@@ -22,6 +28,7 @@ export const RACE_TRACKS = {
     sections: [
       { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
       { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
+      { from: 4920, to: 5380, type: 'shortcut', x: 7.5, altitude: 6 },
     ],
   },
 };
@@ -51,6 +58,24 @@ export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
 export const DRIFT_BLEED = 3; // m/s^2 lost while drifting (normal braking is 35)
 // Payout on release for the highest threshold reached: seconds drifted, nitro charges, mini-boost seconds.
 export const DRIFT_REWARDS = [{ time: 3, nitro: 0.5, boost: 1.2 }, { time: 2, nitro: 0.3, boost: 0.8 }, { time: 1, nitro: 0.15, boost: 0.5 }];
+
+// AIR TRICK: a steer press opposite to one begun moments earlier, while flying, is a barrel roll; landing it pays nitro.
+export const TRICK_FLICK_WINDOW = 0.3; // s between the starts of the two presses
+export const TRICK_ROLL_TIME = 0.7; // s for one full roll
+export const TRICK_NITRO = 0.25; // charges for a landed roll
+export const TRICK_HARD_LANDING = 11; // m/s landing.speed that loses the reward (an unpowered glide from 8.6 m)
+
+// SHORTCUT: a flight-only corridor { x, altitude } over an edge lane; inside it flight is free and faster, pylons are the risk.
+export const SHORTCUT_HALF_WIDTH = 3; // m either side of the corridor centre
+export const SHORTCUT_TOLERANCE = 2.5; // m above or below the corridor altitude (also the pylon height)
+export const SHORTCUT_CAP_BONUS = 12; // m/s added to the speed cap inside
+export const SHORTCUT_PYLON_SPACING = 100; // m
+export const SHORTCUT_PYLON_OFFSET = 2.2; // m from the centre, alternating sides
+// Derived from the section, never stored, so the simulation and the renderer always agree.
+export const shortcutPylons = section => Array.from({ length: Math.ceil((section.to - section.from - 50) / SHORTCUT_PYLON_SPACING) }, (_, i) => ({
+  distance: section.from + 50 + i * SHORTCUT_PYLON_SPACING, x: section.x + (i % 2 ? 1 : -1) * SHORTCUT_PYLON_OFFSET, altitude: section.altitude,
+}));
+const PYLON_HALF_WIDTH = 1.2; // m
 
 export const RING_RADIUS = 4.8;
 export const RISK_RING_RADIUS = 2.4;
@@ -111,6 +136,10 @@ function createPickups(track) {
   let overcharge; // high-risk: near the flight ceiling over an edge lane; bounded retries so a tunnel-heavy track cannot hang
   for (let tries = 0; tries < 50 && (!overcharge || blocked(overcharge)); tries++) {
     overcharge = { distance: Math.round(track.length * (0.5 + random() * 0.3)), x: pick([LANES[0], LANES[3]]), altitude: 10, tier: 'overcharge' };
+  }
+  for (const s of track.sections) if (s.type === 'shortcut') { // the corridor's reward line: cells down the centre, a tank halfway
+    for (let distance = s.from + 30; distance < s.to; distance += 60) pickups.push({ distance, x: s.x, altitude: s.altitude, tier: 'cell' });
+    pickups.push({ distance: (s.from + s.to) / 2, x: s.x, altitude: s.altitude, tier: 'tank' });
   }
   return [...pickups.filter(pickup => !blocked(pickup)), overcharge].sort((a, b) => a.distance - b.distance);
 }
@@ -184,10 +213,10 @@ export function createRace(trackId = 'coast', modifier = null) {
       fuel: 100, thrusting: false, exhausted: false, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
-      section: null, falls: 0, fall: null,
+      section: null, inShortcut: false, falls: 0, fall: null,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
-      drift: null, driftPayout: null, miniBoost: 0,
+      drift: null, driftPayout: null, miniBoost: 0, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
@@ -271,6 +300,7 @@ function contact(race, kind, obstacleX, intensity, retention) {
   car.collisions++;
   car.combo = 0;
   car.drift = null; // a crash loses the drift build-up
+  car.trick = null;
 }
 
 export function stepRace(race, input, dt) {
@@ -285,9 +315,21 @@ export function stepRace(race, input, dt) {
   const car = race.player;
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
   car.section = section?.type ?? null;
+  car.inShortcut = car.section === 'shortcut' && Math.abs(car.x - section.x) < SHORTCUT_HALF_WIDTH &&
+    Math.abs(car.altitude - section.altitude) < SHORTCUT_TOLERANCE;
   const brake = input.brake === true;
   const throttle = input.throttle === true && !brake;
   const steer = Number.isFinite(input.steer) ? clamp(input.steer, -1, 1) : 0;
+  // AIR TRICK reads the raw input sign: the steering ramp would hide a fast flick.
+  const steerSign = Math.sign(steer);
+  if (car.trick) car.trick.done = (car.trick.time += dt) >= TRICK_ROLL_TIME;
+  if (steerSign !== 0 && steerSign !== car.steerSign) { // a fresh press
+    if (car.altitude > 0 && !car.trick && car.flick?.dir === -steerSign && race.elapsed - car.flick.time <= TRICK_FLICK_WINDOW) {
+      car.trick = { dir: steerSign, time: 0, done: false };
+    }
+    car.flick = { dir: steerSign, time: race.elapsed };
+  }
+  car.steerSign = steerSign;
   const boost = input.boost === true && car.fuel > 0 && !brake;
   car.boosting = boost;
   car.braking = brake;
@@ -334,7 +376,8 @@ export function stepRace(race, input, dt) {
   }
   const drifting = car.drift !== null;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
-  const limit = (nitro ? MAX_SPEED + 30 : boosted ? MAX_SPEED + 14 : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0);
+  const limit = (nitro ? MAX_SPEED + 30 : boosted ? MAX_SPEED + 14 : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) +
+    (car.inShortcut ? SHORTCUT_CAP_BONUS : 0);
   const drive = drifting ? -DRIFT_BLEED : (throttle ? 15 : -4) - (brake ? 35 : 0);
   const acceleration = car.speed > limit ? -18 - (brake && !drifting ? 35 : 0) : drive + (boosted ? 12 : 0) + (nitro ? 40 : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
@@ -363,7 +406,7 @@ export function stepRace(race, input, dt) {
   car.thrusting = fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
   if (car.thrusting) {
     car.verticalSpeed = Math.min(7, car.verticalSpeed + 19 * dt);
-    car.fuel = Math.max(0, car.fuel - 19 * dt);
+    car.fuel = Math.max(0, car.fuel - (car.inShortcut ? 0 : 19) * dt); // the corridor carries the car
     if (car.fuel === 0) car.exhausted = true;
   } else if (car.altitude > 0) {
     car.verticalSpeed -= (fly ? 11 : 7) * dt; // releasing FLY glides
@@ -378,10 +421,17 @@ export function stepRace(race, input, dt) {
   if (roofHit) {
     car.altitude = TUNNEL_CEILING - CAR_HEIGHT;
     car.verticalSpeed = Math.min(0, car.verticalSpeed);
+    car.trick = null;
   }
   if (car.altitude > 0) car.drift = null; // taking off loses the drift build-up
   if (previousAltitude > 0 && car.altitude === 0) {
     car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x };
+    if (car.trick?.done && car.section !== 'gap') { // touching down over a gap is a fall, not a landing
+      const hard = car.landing.speed >= TRICK_HARD_LANDING;
+      if (!hard) addNitro(car, TRICK_NITRO);
+      car.trickPayout = { time: race.elapsed, nitro: hard ? 0 : TRICK_NITRO, hard };
+    }
+    car.trick = null;
   }
   if (car.altitude === 0 || car.altitude === 12) car.verticalSpeed = 0;
   const previousDistance = car.distance;
@@ -394,6 +444,7 @@ export function stepRace(race, input, dt) {
     car.cooldown = 1.5; // respawn grace: no instant collision with traffic parked past the gap
     car.combo = 0;
     car.drift = null;
+    car.trick = null;
     car.falls++;
     car.fall = { from: section.from, distance: car.distance, time: race.elapsed };
   }
@@ -431,10 +482,14 @@ export function stepRace(race, input, dt) {
       Math.abs(other.distance - car.distance) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
       Math.abs((other.altitude || 0) - car.altitude) < 1.8,
     );
+    const pylon = car.section === 'shortcut' && shortcutPylons(section).find(p => p.distance > previousDistance && p.distance <= car.distance &&
+      Math.abs(p.x - car.x) < PYLON_HALF_WIDTH && Math.abs(p.altitude - car.altitude) < SHORTCUT_TOLERANCE);
     if (obstacle) {
       contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), nitro ? 0.7 : 0.45);
     } else if (roofHit) {
       contact(race, 'barrier', Math.sign(car.x) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75); // pushed toward the centre
+    } else if (pylon) {
+      contact(race, 'barrier', pylon.x, clamp(car.speed / 100, 0.25, 1), 0.75);
     } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12) {
       const side = Math.sign(lateralPosition);
       if (Math.abs(car.steering) < 0.9 && Math.abs(car.steering * Math.min(9, car.speed * 0.22)) / car.speed < SCRAPE_RATIO) {

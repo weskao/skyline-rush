@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -301,6 +301,30 @@ test('air dash: holding fly and boost together drains fuel at 22 per second and 
   assert.ok(car.speed > MAX_SPEED && car.speed <= MAX_SPEED + 14);
 });
 
+test('FLY + NITRO: nitro burns no fuel, so flight stays up for the whole burst at the nitro cap', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: 80, nitro: 1 });
+  advance(race, 2, { fly: true, nitro: true });
+  const car = race.player;
+  assert.equal(car.thrusting, true);
+  assert.equal(car.exhausted, false);
+  assert.ok(car.nitroTime > 0);
+  assert.ok(Math.abs(car.fuel - 62) < 0.5); // 19/s flight only
+  assert.ok(car.speed > MAX_SPEED + 14 && car.speed <= MAX_SPEED + 30);
+});
+
+test('FLY + BOOST + NITRO keeps the 22/s AIR DASH drain and the MAX_SPEED + 30 cap', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: 80, nitro: 1 });
+  advance(race, 2, { fly: true, boost: true, nitro: true });
+  const car = race.player;
+  assert.equal(car.thrusting, true);
+  assert.equal(car.boosting, true);
+  assert.ok(car.nitroTime > 0);
+  assert.ok(Math.abs(car.fuel - 56) < 0.5);
+  assert.ok(car.speed > MAX_SPEED + 14 && car.speed <= MAX_SPEED + 30);
+});
+
 test('steering input ramps to full over 0.15 s and high-speed lateral speed caps at 9 m/s', () => {
   const race = racing();
   Object.assign(race.player, { speed: MAX_SPEED, x: -7.5 });
@@ -451,7 +475,7 @@ test('special sections stay on the road, never overlap and cover each track sign
       assert.ok(i === 0 || sections[i - 1].to <= section.from);
     });
   }
-  assert.equal(RACE_TRACKS.coast.sections.length, 0);
+  assert.deepEqual(RACE_TRACKS.coast.sections.map(section => section.type), ['shortcut']); // coast's ground race is unchanged
   assert.ok(sectionOf('neon', 'tunnel'));
   assert.ok([2, 3].includes(RACE_TRACKS.canyon.sections.filter(section => section.type === 'gap').length));
   assert.ok(sectionOf('canyon', 'crosswind') && sectionOf('aurora', 'ice') && sectionOf('aurora', 'uphill'));
@@ -595,8 +619,10 @@ test('pickups come only from the track seed, are reproducible and cover every ti
       for (const pickup of pickups) {
         assert.deepEqual(Object.keys(pickup), ['distance', 'x', 'altitude', 'tier']);
         assert.ok(pickup.distance > 0 && pickup.distance < length && Math.abs(pickup.x) < ROAD_LIMIT);
-        assert.equal(pickup.altitude > 0, pickup.tier === 'tank' || pickup.tier === 'overcharge');
         const section = sections.find(s => pickup.distance >= s.from && pickup.distance < s.to);
+        // Tanks and the overcharge fly; any other air pickup is a cell lining a shortcut corridor.
+        if (pickup.tier === 'tank' || pickup.tier === 'overcharge') assert.ok(pickup.altitude > 0);
+        else assert.ok(pickup.altitude === 0 || section?.type === 'shortcut', `${id} stray air ${pickup.tier}`);
         assert.ok(!(section?.type === 'gap' && pickup.altitude === 0), `${id} ground pickup over a gap`);
         assert.ok(!(section?.type === 'tunnel' && pickup.altitude > 0), `${id} air pickup in a tunnel`);
       }
@@ -936,7 +962,7 @@ test('coast keeps the original gate positions every 220 m at x 2.5 and altitude 
 
 test('tunnel rings stay low and convert risk to a full-size nitro ring', () => {
   const neon = createRace('neon');
-  const tunnelRings = neon.rings.filter(ring => neon.sections.some(s => ring.distance >= s.from && ring.distance < s.to));
+  const tunnelRings = neon.rings.filter(ring => neon.sections.some(s => s.type === 'tunnel' && ring.distance >= s.from && ring.distance < s.to));
   assert.ok(tunnelRings.length > 0);
   assert.ok(tunnelRings.every(ring => ring.altitude === 1.5 && ring.type !== 'risk'));
 
@@ -1237,4 +1263,238 @@ test('the result records the longest NITRO chain: charges spent in one burst, no
   assert.equal(race.result.nitroUses, 2);
   assert.equal(race.result.nitroChain, 2);
   assert.equal(createRace().player.nitroChain, 0);
+});
+
+// --- Air tricks -------------------------------------------------------------------------------
+
+function airborne(altitude = 6, trackId = 'coast') {
+  const race = racingOn(trackId);
+  Object.assign(race, { rivals: [], pickups: [], rings: [] });
+  Object.assign(race.player, { speed: 60, altitude, verticalSpeed: 0 });
+  return race;
+}
+
+// A left press, then a right press `gap` seconds after the left one began.
+function flick(race, gap = 0.1) {
+  advance(race, gap, { steer: -1 });
+  stepRace(race, { steer: 1 }, 1 / 60);
+}
+
+function land(race) {
+  for (let frame = 0; frame < 600 && race.player.altitude > 0; frame++) stepRace(race, {}, 1 / 60);
+}
+
+test('air trick: a quick left-right flick while flying starts a barrel roll; on the ground it does nothing', () => {
+  const air = airborne();
+  flick(air);
+  assert.deepEqual(air.player.trick, { dir: 1, time: 0, done: false });
+  const ground = airborne(0);
+  flick(ground);
+  assert.equal(ground.player.trick, null);
+});
+
+test('air trick: a flick slower than the window starts no roll and a flick during a roll is ignored', () => {
+  const slow = airborne();
+  flick(slow, TRICK_FLICK_WINDOW + 0.1);
+  assert.equal(slow.player.trick, null);
+  const race = airborne();
+  flick(race);
+  flick(race, 0.05);
+  assert.equal(race.player.trick.dir, 1);
+  assert.ok(race.player.trick.time > 0.05);
+});
+
+test('air trick: the roll finishes after TRICK_ROLL_TIME and never changes speed, x or altitude', () => {
+  const race = airborne(10);
+  flick(race);
+  const plain = structuredClone(race);
+  plain.player.trick = null;
+  advance(race, TRICK_ROLL_TIME - 0.05);
+  assert.equal(race.player.trick.done, false);
+  advance(race, 0.1);
+  assert.equal(race.player.trick.done, true);
+  advance(plain, TRICK_ROLL_TIME - 0.05);
+  advance(plain, 0.1);
+  for (const key of ['speed', 'x', 'altitude']) assert.equal(race.player[key], plain.player[key], key);
+});
+
+test('air trick: landing a finished roll softly pays TRICK_NITRO once', () => {
+  const race = airborne(6);
+  race.player.nitro = 1;
+  flick(race);
+  land(race);
+  assert.ok(race.player.landing.speed < TRICK_HARD_LANDING);
+  assert.equal(race.player.nitro, 1 + TRICK_NITRO);
+  assert.deepEqual(race.player.trickPayout, { time: race.elapsed, nitro: TRICK_NITRO, hard: false });
+  assert.equal(race.player.trick, null);
+  advance(race, 0.5);
+  assert.equal(race.player.nitro, 1 + TRICK_NITRO);
+});
+
+test('air trick: a hard landing (from the 12 m ceiling, no FLY) loses the reward', () => {
+  const race = airborne(12);
+  race.player.nitro = 1;
+  flick(race);
+  land(race);
+  assert.ok(race.player.landing.speed >= TRICK_HARD_LANDING);
+  assert.equal(race.player.nitro, 1);
+  assert.deepEqual(race.player.trickPayout, { time: race.elapsed, nitro: 0, hard: true });
+});
+
+test('air trick: landing before the roll finishes cancels it without a payout', () => {
+  const race = airborne(1.5);
+  flick(race);
+  assert.ok(race.player.trick);
+  land(race);
+  assert.equal(race.player.trick, null);
+  assert.equal(race.player.trickPayout, null);
+  assert.equal(race.player.nitro, 0);
+});
+
+test('air trick: vehicle contact, a tunnel roof hit and a gap fall cancel the roll without a payout', () => {
+  const crash = airborne(6);
+  flick(crash);
+  assert.ok(crash.player.trick);
+  crash.traffic = [{ x: crash.player.x, distance: crash.player.distance + 2, speed: 0, altitude: 6, color: 0 }];
+  stepRace(crash, {}, 1 / 60);
+  assert.equal(crash.player.collisions, 1);
+  assert.equal(crash.player.trick, null);
+
+  const tunnel = sectionOf('neon', 'tunnel');
+  const roof = airborne(6, 'neon');
+  roof.player.distance = tunnel.from - 100;
+  flick(roof);
+  assert.ok(roof.player.trick);
+  roof.player.distance = tunnel.from + 10;
+  stepRace(roof, {}, 1 / 60);
+  assert.equal(roof.player.impact.kind, 'barrier');
+  assert.equal(roof.player.trick, null);
+
+  const gap = sectionOf('canyon', 'gap');
+  for (const rollTime of [0, TRICK_ROLL_TIME + 0.05]) { // a finished roll touching down over the hole is a fall too
+    const fall = airborne(6, 'canyon');
+    fall.player.distance = gap.from - 200;
+    flick(fall);
+    advance(fall, rollTime);
+    assert.equal(fall.player.trick?.done, rollTime > 0);
+    Object.assign(fall.player, { distance: gap.from + 5, altitude: 0.05 });
+    stepRace(fall, {}, 1 / 60);
+    assert.equal(fall.player.falls, 1);
+    assert.equal(fall.player.trick, null);
+    assert.equal(fall.player.trickPayout, null);
+  }
+});
+
+test('air trick payout counts toward the nitro cap and the overflow becomes fuel', () => {
+  const race = airborne(6);
+  Object.assign(race.player, { nitro: 2.9, fuel: 50 });
+  flick(race);
+  land(race);
+  assert.equal(race.player.nitro, NITRO_MAX);
+  assert.ok(Math.abs(race.player.fuel - (50 + 0.15 * 32)) < 1e-9);
+});
+
+// --- Shortcuts --------------------------------------------------------------------------------
+
+function inCorridor(trackId = 'coast', overrides = {}) {
+  const race = airborne(0, trackId);
+  const corridor = sectionOf(trackId, 'shortcut');
+  Object.assign(race.player, { distance: corridor.from + 20, x: corridor.x, altitude: corridor.altitude, ...overrides });
+  return { race, corridor };
+}
+
+// Pins the car at one altitude, like a player feathering FLY.
+function hold(race, seconds, input, altitude) {
+  for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) {
+    Object.assign(race.player, { altitude, verticalSpeed: 0 });
+    stepRace(race, input, 1 / 60);
+  }
+}
+
+test('every track has exactly one flight-only shortcut corridor above an edge lane', () => {
+  for (const id of TRACK_IDS) {
+    const shortcuts = RACE_TRACKS[id].sections.filter(section => section.type === 'shortcut');
+    assert.equal(shortcuts.length, 1, id);
+    const [{ from, to, x, altitude }] = shortcuts;
+    assert.ok(to - from >= 450 && to - from <= 550, id);
+    assert.ok([LANES[0], LANES[3]].includes(x), id);
+    assert.equal(altitude, 6, id);
+  }
+});
+
+test('the car is in the shortcut only inside the corridor volume, never on the road under it', () => {
+  const { race, corridor } = inCorridor();
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.inShortcut, true);
+  assert.equal(race.player.section, 'shortcut');
+  const offsets = [
+    { altitude: 0 },
+    { altitude: corridor.altitude + SHORTCUT_TOLERANCE + 0.1 },
+    { x: corridor.x - Math.sign(corridor.x) * (SHORTCUT_HALF_WIDTH + 0.1) },
+    { distance: corridor.to + 10 },
+  ];
+  for (const offset of offsets) {
+    const { race: outside } = inCorridor('coast', offset);
+    stepRace(outside, {}, 1 / 60);
+    assert.equal(outside.player.inShortcut, false, JSON.stringify(offset));
+  }
+  assert.equal(createRace().player.inShortcut, false);
+});
+
+test('flight inside the corridor burns no fuel; the same flight over the other edge lane burns 19/s', () => {
+  const { race, corridor } = inCorridor();
+  hold(race, 2, { fly: true }, corridor.altitude);
+  assert.equal(race.player.thrusting, true);
+  assert.equal(race.player.fuel, 100);
+  const { race: outside } = inCorridor('coast', { x: -corridor.x });
+  hold(outside, 2, { fly: true }, corridor.altitude);
+  assert.ok(Math.abs(outside.player.fuel - 62) < 0.5);
+});
+
+test('the corridor adds SHORTCUT_CAP_BONUS to the speed cap only while inside', () => {
+  const { race, corridor } = inCorridor('coast', { speed: MAX_SPEED });
+  hold(race, 1.5, { throttle: true, fly: true }, corridor.altitude);
+  assert.equal(race.player.speed, MAX_SPEED + SHORTCUT_CAP_BONUS);
+  const { race: outside } = inCorridor('coast', { speed: MAX_SPEED, x: -corridor.x });
+  hold(outside, 1.5, { throttle: true, fly: true }, corridor.altitude);
+  assert.equal(outside.player.speed, MAX_SPEED);
+});
+
+test('shortcut pylons alternate across the corridor; flying into one is barrier contact, the centre line is safe', () => {
+  const corridor = sectionOf('coast', 'shortcut');
+  const pylons = shortcutPylons(corridor);
+  assert.deepEqual(pylons.slice(0, 2), [
+    { distance: corridor.from + 50, x: corridor.x - SHORTCUT_PYLON_OFFSET, altitude: corridor.altitude },
+    { distance: corridor.from + 150, x: corridor.x + SHORTCUT_PYLON_OFFSET, altitude: corridor.altitude },
+  ]);
+  assert.ok(pylons.length >= 4 && pylons.every(pylon => pylon.distance < corridor.to));
+  const { race: hit } = inCorridor('coast', { distance: pylons[0].distance - 0.5, x: pylons[0].x });
+  stepRace(hit, {}, 1 / 60);
+  assert.equal(hit.player.collisions, 1);
+  assert.equal(hit.player.impact.kind, 'barrier');
+  const { race: safe } = inCorridor('coast', { distance: pylons[0].distance - 0.5 });
+  stepRace(safe, {}, 1 / 60);
+  assert.equal(safe.player.collisions, 0);
+});
+
+test('each corridor holds a row of nitro cells down its centre and one tank at its midpoint', () => {
+  for (const id of TRACK_IDS) {
+    const corridor = sectionOf(id, 'shortcut');
+    const inside = createRace(id).pickups.filter(pickup => pickup.distance >= corridor.from && pickup.distance < corridor.to &&
+      pickup.x === corridor.x && pickup.altitude === corridor.altitude);
+    assert.ok(inside.filter(pickup => pickup.tier === 'cell').length >= 7, id);
+    assert.deepEqual(inside.filter(pickup => pickup.tier === 'tank').map(pickup => pickup.distance), [(corridor.from + corridor.to) / 2], id);
+  }
+});
+
+test('a corridor cell is collected by the usual pass-through window from just under the corridor line', () => {
+  const corridor = sectionOf('coast', 'shortcut');
+  const race = racingOn('coast');
+  race.rivals = [];
+  const cell = race.pickups.find(pickup => pickup.tier === 'cell' && pickup.distance >= corridor.from &&
+    pickup.x === corridor.x && pickup.altitude === corridor.altitude);
+  Object.assign(race.player, { distance: cell.distance - 0.5, x: corridor.x, altitude: corridor.altitude - 0.5, speed: 60, verticalSpeed: 0 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(cell.taken, true);
+  assert.equal(race.player.nitro, 0.25);
 });
