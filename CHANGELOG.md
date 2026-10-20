@@ -1,3 +1,17 @@
+## [0.11.1] - 2026-10-20
+
+### 🐛 Bug Fixes
+
+- **motion:** Detect calm mode transitions
+
+### 📚 Documentation
+
+- **media:** Refresh gameplay screenshots
+
+### 🧪 Testing
+
+- **browser:** Stabilize ci animation timing
+- **browser:** Isolate drift and clock setup
 ## [0.11.0] - 2026-10-20
 
 ### 🚀 Features
