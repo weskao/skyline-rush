@@ -5,7 +5,7 @@ export function controlSettings(values = {}) {
   if (!values || typeof values !== 'object' || Array.isArray(values) || values.version !== CONTROL_DEFAULTS.version) return { ...CONTROL_DEFAULTS, layout: {} };
   const d = CONTROL_DEFAULTS;
   return {
-    mode: ['slide', 'buttons'].includes(values.mode) ? values.mode : d.mode,
+    mode: ['slide', 'buttons', 'tilt'].includes(values.mode) ? values.mode : d.mode,
     hand: ['left', 'right'].includes(values.hand) ? values.hand : d.hand,
     fullLock: [40, 60, 80].includes(values.fullLock) ? values.fullLock : d.fullLock,
     size: ['S', 'M', 'L'].includes(values.size) ? values.size : d.size,

@@ -11,6 +11,7 @@ import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, loadHistory, loadBests, loadUnlocks, careerStats, LEGACY_BEST_KEY } from './history.js';
 import { createCallouts } from './callouts.js';
+import { createPresentation } from './presentation.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -42,6 +43,7 @@ function clearButtonPresses() {
   pressedButtons.clear();
 }
 const touchPreference = matchMedia('(pointer: coarse)');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let race = createRace();
 const racerRows = new Map(['YOU', ...race.rivals.map(rival => rival.name)].map((name, i) => [name, leaderboardRows[i]]));
 let leaderboardOrder = '';
@@ -64,6 +66,9 @@ let sessionHistory = loadHistory();
 const unlockedTracks = new Set(loadUnlocks());
 let previousFuel = 100;
 let previousNitro = 0;
+const presentation = createPresentation();
+let presentationState = presentation.update(race, 0);
+let resultCounts = [];
 let nitroRefillUntil = 0;
 try { for (const kind in audio) audio[kind] = !document.cookie.split('; ').includes(`${AUDIO_COOKIES[kind]}=off`); } catch { /* Audio defaults to on when cookies are unavailable. */ }
 const sound = createSound();
@@ -76,6 +81,7 @@ let rebinding = null;
 let keyMap = loadKeyMap();
 try { controlPrefs = controlSettings(JSON.parse(localStorage.getItem(CONTROLS_KEY))); } catch { /* Defaults work without storage. */ }
 let inputPrefs = controlPrefs;
+let tiltRequest = 0, tiltGranted = false, tiltSeen = false, tiltTimeout;
 const getControlSettings = () => inputPrefs;
 const controlInputs = [...document.querySelectorAll('[data-controls]')];
 const vfxControls = [...document.querySelectorAll('[data-vfx]')];
@@ -92,6 +98,21 @@ let shownCallout = null;
 let feedbackCar, lastImpact, lastDriftPayout, lastNitroTime = 0;
 const motionTokens = getComputedStyle(document.documentElement);
 const motionOptions = duration => ({ duration: parseFloat(motionTokens.getPropertyValue(`--dur-${duration}`)), easing: motionTokens.getPropertyValue('--ease-out').trim() });
+const calmMotion = () => visual.comfortable || reducedMotion.matches;
+function stopPresentationMotion() {
+  if (calmMotion()) document.getAnimations().forEach(animation => animation.cancel());
+}
+reducedMotion.addEventListener('change', stopPresentationMotion);
+function enter(element, from, duration = 'base') {
+  element.getAnimations().forEach(animation => animation.cancel());
+  if (!calmMotion()) element.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], motionOptions(duration));
+}
+function leaveIntro() {
+  if (calmMotion()) return;
+  ui.intro.inert = true;
+  const animation = ui.intro.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-36px)' }], motionOptions('base'));
+  animation.finished.catch(() => {}).then(() => { ui.intro.inert = false; ui.intro.hidden = race.phase !== 'ready'; });
+}
 const nitroHud = document.createElement('div');
 nitroHud.className = 'nitro-hud';
 nitroHud.innerHTML = `<span id="nitro-status">NITRO 0 / 3</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="Nitro charges" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
@@ -112,6 +133,7 @@ function showVFX() {
   $('#airflow-toggle').disabled = !visual.enabled;
   document.body.classList.toggle('airflow-active', visual.airflow && visual.enabled);
   document.body.classList.toggle('vfx-comfort', visual.comfortable);
+  stopPresentationMotion();
   airflowHud.setAttribute('aria-hidden', String(!visual.airflow || !visual.enabled));
   $('#aero-mode').textContent = visual.aeroMode === 'downforce' ? 'HIGH DOWNFORCE' : 'LOW DRAG';
   try { localStorage.setItem('skyline-rush-vfx', JSON.stringify(visual)); } catch { /* Settings remain usable in memory. */ }
@@ -173,6 +195,11 @@ $('.track-select').addEventListener('keydown', event => {
 });
 showTracks();
 
+const previewObserver = new IntersectionObserver(entries => {
+  for (const entry of entries) entry.target.dataset.visible = String(entry.isIntersecting);
+}, { root: $('.track-select') });
+document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
+
 const historyScreen = $('#history-screen');
 let historyOpener;
 function showHistory() {
@@ -210,7 +237,13 @@ for (const button of document.querySelectorAll('[data-open-history]')) button.ad
   showHistory(); historyScreen.showModal();
 });
 $('#history-track').addEventListener('change', showHistory);
-$('#history-close').addEventListener('click', () => historyScreen.close());
+function closeHistory() {
+  if (calmMotion()) { historyScreen.close(); return; }
+  const animation = historyScreen.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(36px)' }], motionOptions('fast'));
+  animation.finished.catch(() => {}).then(() => historyScreen.close());
+}
+$('#history-close').addEventListener('click', closeHistory);
+historyScreen.addEventListener('cancel', event => { event.preventDefault(); closeHistory(); });
 historyScreen.addEventListener('close', () => historyOpener?.focus({ preventScroll: true }));
 historyScreen.addEventListener('keydown', event => event.stopPropagation());
 $('#choose-track').addEventListener('click', () => {
@@ -240,6 +273,7 @@ function start() {
   if (!world || race.phase !== 'ready' || historyScreen.open) return;
   if (editingLayout) editLayout(false);
   controls.clear();
+  leaveIntro();
   startRace(race);
   sound.cue('ui');
   focusRace();
@@ -249,6 +283,13 @@ function restart() {
   if (!world) return;
   if (editingLayout) editLayout(false);
   controls.clear();
+  const wipe = $('#race-wipe');
+  wipe.getAnimations().forEach(animation => animation.cancel());
+  wipe.hidden = calmMotion();
+  if (!wipe.hidden) {
+    const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
+    animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
+  }
   race = createRace(race.trackId);
   previousFuel = 100; previousNitro = 0;
   goUntil = 0;
@@ -318,6 +359,8 @@ function applyControls(persist = true) {
   touch.style.setProperty('--touch-scale', String(TOUCH_SCALE[controlPrefs.size]));
   touch.style.setProperty('--touch-opacity', String(controlPrefs.opacity));
   controls.setFlyMode(controlPrefs.flyMode);
+  $('#tilt-enable').hidden = controlPrefs.mode !== 'tilt';
+  if (controlPrefs.mode !== 'tilt') { controls.setTilt(false); tiltGranted = false; clearTimeout(tiltTimeout); }
   for (const button of touchButtons) {
     const point = controlPrefs.layout[button.dataset.control];
     button.classList.toggle('is-positioned', !!point);
@@ -362,7 +405,11 @@ const controls = createControls(window, action => {
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
   ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
-}, { getSettings: getControlSettings, getKeyMap: () => keyMap });
+}, { getSettings: getControlSettings, getKeyMap: () => keyMap, onTilt: () => {
+  if (tiltSeen) return;
+  tiltSeen = true; clearTimeout(tiltTimeout);
+  $('#tilt-status').textContent = 'Tilt ready. Tilt left / right to steer; pull the slide pad down to brake or drift.';
+} });
 const pad = $('.touch-pad');
 controls.bindSlidePad(pad, { getSettings: getControlSettings });
 // input.js keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.js).
@@ -373,7 +420,6 @@ const padKnob = $('.pad-knob');
 let padTouch = null;
 let padHint = false;
 const clampPad = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 // Ring/knob sit at the pad's top-left in CSS; transform alone moves them (percentages centre each on its point).
 function placePad(el, x, y, opacity) {
   el.style.transform = `translate(calc(${x}px - 50%), calc(${y}px - 50%))`;
@@ -413,15 +459,45 @@ for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
   });
 }
 applyControls();
+if (controlPrefs.mode === 'tilt') $('#tilt-status').textContent = 'Saved Tilt mode. Enable tilt to grant access again, or select Slide / Buttons.';
 showAssist();
 ui['controls-button'].addEventListener('click', () => { toggleControls(); sound.cue('ui'); });
 ui['controls-panel'].addEventListener('input', ({ target }) => {
   const key = target.dataset.controls;
   if (!key) return;
+  tiltRequest++;
+  controls.clear();
+  if (key === 'mode' && target.value === 'tilt') { enableTilt(); return; }
   controlPrefs = controlSettings({ ...controlPrefs, [key]: ['fullLock', 'opacity', 'sensitivity'].includes(key) ? Number(target.value) : target.value });
   applyControls();
 });
-$('#controls-reset').addEventListener('click', () => { controlPrefs = controlSettings(); applyControls(); sound.cue('ui'); });
+async function enableTilt() {
+  const request = ++tiltRequest;
+  const status = $('#tilt-status');
+  try {
+    if (!window.isSecureContext || !window.DeviceOrientationEvent) throw new Error('unavailable');
+    const permission = DeviceOrientationEvent.requestPermission;
+    const result = permission ? await permission.call(DeviceOrientationEvent) : 'granted';
+    if (request !== tiltRequest || !['ready', 'paused'].includes(race.phase)) return;
+    if (result !== 'granted') throw new Error('denied');
+    controls.clear(); tiltGranted = true; tiltSeen = false;
+    controlPrefs = { ...controlPrefs, mode: 'tilt' }; applyControls(); controls.setTilt(true);
+    status.textContent = 'Waiting for tilt readings. Hold the phone comfortably; the first reading sets neutral.';
+    clearTimeout(tiltTimeout);
+    tiltTimeout = setTimeout(() => {
+      if (!tiltSeen && tiltGranted) {
+        controlPrefs = { ...controlPrefs, mode: 'slide' }; applyControls();
+        status.textContent = 'No tilt readings received. Slide steering is available; try Tilt again on a supported phone.';
+      }
+    }, 2500);
+  } catch (error) {
+    if (request !== tiltRequest) return;
+    controlPrefs = { ...controlPrefs, mode: 'slide' }; applyControls();
+    status.textContent = error.message === 'denied' ? 'Tilt permission denied. Slide steering is still available.' : 'Tilt unavailable. Use HTTPS and a phone with motion sensors, or keep Slide steering.';
+  }
+}
+$('#tilt-enable').addEventListener('click', enableTilt);
+$('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); applyControls(); sound.cue('ui'); });
 const keyLabel = code => code.replace(/^Key|^Digit/, '').replace(/^Arrow/, 'Arrow ').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
 function showKeyMap() {
   const introKeys = document.querySelector('.intro-controls .keys');
@@ -535,6 +611,7 @@ window.addEventListener('blur', () => {
   if (race.phase === 'racing' || race.phase === 'countdown') pause();
 });
 document.addEventListener('visibilitychange', () => {
+  document.body.classList.toggle('page-hidden', document.hidden);
   if (document.hidden && (race.phase === 'racing' || race.phase === 'countdown')) pause();
 });
 
@@ -545,9 +622,10 @@ function phaseUI() {
   if (ready || overlay) clearButtonPresses();
   document.body.dataset.phase = phase;
   if (!['racing', 'countdown'].includes(phase)) { padTouch = null; drawPad(); } // controls.clear() reset the real pad; drop the mirror with it
-  ui.intro.hidden = !ready;
+  ui.intro.hidden = !ready && !ui.intro.getAnimations().length;
+  if (ready) { ui.intro.inert = false; ui.intro.getAnimations().forEach(animation => animation.cancel()); }
   ui['race-info'].hidden = ready;
-  ui['race-overlay'].hidden = !overlay || editingLayout;
+  ui['race-overlay'].hidden = !overlay || editingLayout || phase === 'finished';
   ui['touch-controls'].hidden = !editingLayout && (ready || overlay);
   ui.intro.hidden ||= editingLayout;
   ui['controls-button'].disabled = !(ready || phase === 'paused');
@@ -557,6 +635,8 @@ function phaseUI() {
   ui['race-status'].textContent = phase.toUpperCase();
   ui['pause-button'].setAttribute('aria-label', phase === 'paused' ? 'Resume race' : 'Pause race');
   if (phase === 'paused') {
+    $('#new-best').hidden = true;
+    enter($('.overlay-content'), 'translateY(12px)');
     ui['overlay-title'].textContent = 'Take a breather.';
     ui['overlay-copy'].textContent = 'Your race is paused. Resume when you’re ready.';
     ui['resume-button'].hidden = false;
@@ -586,12 +666,17 @@ function phaseUI() {
     ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;
     ui['result-stats'].innerHTML = `<div><span>POSITION</span><strong>${race.result.position}<small> / 4</small></strong></div><div><span>YOUR TIME</span><strong>${timeString(race.elapsed)}</strong></div><div><span>BEST</span><strong>${timeString(best)}</strong></div>`;
+    $('#new-best').hidden = !record;
     $('#result-style').hidden = false;
     $('#result-links').hidden = false;
     $('#result-style').setAttribute('aria-label', `${race.result.stars} of 3 style stars`);
     $('#result-style').innerHTML = `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < race.result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${race.result.score} STYLE</strong><small>Close passes · rings · perfect lines · airtime · clean driving<br>2 stars: ${race.length * 0.25} points · 3 stars: ${race.length * 0.5} points</small>`;
+    resultCounts = [
+      { element: ui['result-stats'].children[1].querySelector('strong'), value: race.elapsed, format: timeString },
+      { element: ui['result-stats'].children[2].querySelector('strong'), value: best, format: timeString },
+      { element: $('#result-style > strong'), value: race.result.score, format: value => `${Math.round(value)} STYLE` },
+    ];
     ui['overlay-copy'].textContent += ` ${race.result.nearMisses} close passes · ${race.result.collisions} contacts.`;
-    ui['again-button'].focus({ preventScroll: true });
   }
 }
 
@@ -599,7 +684,19 @@ function updateUI(now, input) {
   if (previousPhase !== race.phase) {
     if (previousPhase === 'countdown' && race.phase === 'racing') goUntil = now + 0.8;
     phaseUI();
+    if (race.phase === 'countdown' && previousPhase !== 'paused') enter(ui.countdown, 'translateY(-24px)');
     previousPhase = race.phase;
+  }
+  if (race.phase === 'finished' && presentationState.results) {
+    if (ui['race-overlay'].hidden) {
+      ui['race-overlay'].hidden = false;
+      enter($('.overlay-content'), 'translateX(48px)', 'slow');
+      ui['again-button'].focus({ preventScroll: true });
+    }
+    resultCounts.forEach(({ element, value, format }, i) => {
+      const progress = Math.max(0, Math.min(1, presentationState.count * 3 - i));
+      element.textContent = format(value * (1 - (1 - progress) ** 3));
+    });
   }
   const car = race.player;
   const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
@@ -747,7 +844,7 @@ function updateUI(now, input) {
   if (countdownNumber.textContent !== countdownText) {
     countdownNumber.textContent = countdownText;
     ui.countdown.dataset.step = countdownText;
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) countdownNumber.animate([{ opacity: 0.4, transform: 'scale(1.3)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 220 });
+    if (!calm) countdownNumber.animate([{ opacity: 0.4, transform: `scale(${countdown ? 1.3 : 0.65})` }, { opacity: 1, transform: 'scale(1)' }], motionOptions(countdown ? 'base' : 'slow'));
   }
   countdownLabel.textContent = countdown ? autoThrottle ? 'AUTO ACCELERATOR READY' : 'HOLD ACCELERATOR · GET READY' : 'GO FOR THE SKYLINE';
   const length = race.length;
@@ -800,7 +897,8 @@ try {
       stepRace(race, input, 1 / 60);
       accumulator -= 1 / 60;
     }
-    world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input);
+    presentationState = presentation.update(race, dt, calmMotion());
+    world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState);
     sound.update(race);
     hudElapsed += dt;
     if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
@@ -827,6 +925,7 @@ window.addEventListener('pagehide', event => {
   // A cached page resumes the same animation, renderer and controls on back navigation.
   if (event.persisted) return;
   cancelAnimationFrame(animationId);
+  previewObserver.disconnect();
   controls.destroy();
   sound.dispose();
   world?.dispose();

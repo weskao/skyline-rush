@@ -16,11 +16,11 @@ the race clock, finish order, score, or number of saved race records.
 Each batch follows RED (observable regression) → GREEN (minimal implementation) → regression
 checks → documentation update → Conventional Commit. All work runs in this session.
 
-- [ ] Race presentation: intro exit, countdown entrance and GO camera push, pause depth,
+- [x] Race presentation: intro exit, countdown entrance and GO camera push, pause depth,
   restart wipe, 0.6 s render-only finish coast / side camera, results entrance, sequential
   stat counts, earned stars and NEW BEST. Reuse the existing tick/GO/finish audio cues.
-- [ ] Menu: bounded palette previews on track cards; History entrance/exit with focus restoration.
-- [ ] Controls: adjacent FLY/BOOST single-pointer AIR DASH, right-thumb arc, Tilt permission,
+- [x] Menu: bounded palette previews on track cards; History entrance/exit with focus restoration.
+- [x] Controls: adjacent FLY/BOOST single-pointer AIR DASH, right-thumb arc, Tilt permission,
   calibration, orientation handling and fallback. Preserve layout editing, remapping and drift.
 - [ ] Extension UI: Ghost preference, daily challenge, achievements and cosmetic surfaces;
   only expose honest available/unavailable states until gameplay contracts exist.
@@ -52,6 +52,29 @@ motion tokens, input lifecycle and result persistence are reused. Only `TODO.md`
 task start (the already authorized gamepad deferral). Implementation/test results are recorded
 below as batches complete. Physical phones, Safari and subjective audio quality need separate
 hardware verification; Chrome touch emulation does not establish those results.
+
+### Batch 1 — race presentation and controls
+
+- Presentation regressions first failed on missing preview elements; a stricter 600 ms
+  interruption check then reproduced a running 4 s animation ignoring reduced motion.
+  Finish integration found that the immediate reduced-motion path skipped focus transfer.
+  Both were fixed at the presentation boundary. Unit tests protect race/result immutability.
+- `src/presentation.js:createPresentation().update(race, dt, calm)` consumes display-frame
+  delta only. The finish coasts visually for 0.6 s, reveals results, then counts time/best/style
+  over 1.2 s. `world.render` accepts an optional fifth presentation argument. No game rule changed.
+- Existing audio tick/GO/finish signals are reused rather than duplicated.
+- Track preview loops pause when clipped, hidden or outside the ready screen; comfort/reduced
+  motion removes them. History exit preserves native modal focus and Escape semantics.
+- Input regressions first failed on the FLY/BOOST seam and unsupported `tilt` preference.
+  An 8 px seam applies only to touch movement on action buttons. Cancellation, clear and
+  blur release all actions; toggle-FLY retains its existing latch semantics.
+- Tilt normalizes gamma/beta to screen angle, calibrates the first valid sample, recalibrates
+  on rotation/clear, uses a 2 degree dead zone and 20 degree full lock, and expires stale
+  steering after 500 ms. Permission is requested only from explicit selection/recenter.
+  Denial/error or no initial readings within 2.5 s falls back to Slide. Saved Tilt requires
+  re-enabling after reload. Validate direction/calibration on actual iOS/Android hardware.
+- Evidence so far: Node suite 177 passed; 8 presentation browser tests passed (including
+  complete desktop and reduced-motion phone races). Final combined suite is still pending.
 
 <details>
 <summary>Previous handoff (historical; current scope above takes precedence)</summary>

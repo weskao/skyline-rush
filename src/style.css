@@ -590,9 +590,11 @@ body.layout-editing #touch-controls { display: flex; }
 @media (max-width: 560px) { .nitro-hud { font-size: 7px; letter-spacing: .4px; margin-top: 6px; } .layout-toolbar { top: 64px; font-size: 10px; gap: 8px; } }
 
 .touch-actions { display: grid; grid-template-columns: auto auto; margin-inline-start: auto; }
-.touch-actions .touch-nitro { grid-column: 1 / -1; justify-self: end; }
+.touch-actions .touch-nitro { grid-column: 1; justify-self: end; }
 .touch-actions .touch-boost { grid-column: 1; grid-row: 2; }
 .touch-actions .touch-fly { grid-column: 2; grid-row: 2; }
+.touch-actions .touch-fly { min-width: calc(64px * var(--touch-scale, 1)); min-height: calc(68px * var(--touch-scale, 1)); }
+#touch-controls[data-steer-mode="tilt"] .touch-steer { display: none; }
 #touch-controls .touch-steer button.is-positioned { width: calc(54px * var(--touch-scale, 1)); }
 
 .intro { top: 17%; max-width: 620px; }
@@ -629,6 +631,30 @@ body.layout-editing #touch-controls { display: flex; }
 .history-screen::backdrop { background: rgb(5 15 27 / .82); }
 .history-screen[open] { animation: history-in var(--dur-base) var(--ease-out); }
 @keyframes history-in { from { opacity: .6; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+
+/* Race presentation uses the existing motion vocabulary; simulation time is untouched. */
+.race-wipe { position: fixed; inset: 0; z-index: 20; background: #142334; transform-origin: left; pointer-events: none; }
+.race-overlay { animation: overlay-in var(--dur-base) var(--ease-out); }
+@keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+.new-best { display: inline-block; padding: 7px 12px; border: 1px solid #f7c576; color: #f7c576; font-size: 11px; font-weight: 700; letter-spacing: 2px; animation: best-stamp var(--dur-slow) var(--ease-out) 1.4s both; }
+@keyframes best-stamp { from { opacity: 0; transform: scale(1.35) rotate(-8deg); } to { opacity: 1; transform: none; } }
+body[data-phase="finished"] .style-stars > span.earned { animation: star-arrival var(--dur-slow) var(--ease-spring) .8s both; }
+body[data-phase="finished"] .style-stars > span.earned:nth-child(2) { animation-delay: .95s; }
+body[data-phase="finished"] .style-stars > span.earned:nth-child(3) { animation-delay: 1.1s; }
+@keyframes star-arrival { from { opacity: 0; transform: scale(.5) rotate(-20deg); } to { opacity: 1; transform: none; } }
+.track-preview { display: block; height: 26px; margin-bottom: 9px; overflow: hidden; border-radius: 2px; background: linear-gradient(180deg, var(--preview-top), var(--preview-horizon)); animation: track-sky 6s ease-in-out infinite alternate; animation-play-state: paused; }
+.track-preview > i { display: block; height: 100%; background: linear-gradient(165deg, transparent 60%, var(--preview-ground) 61% 76%, transparent 77%), linear-gradient(195deg, transparent 65%, var(--preview-ground) 66%); }
+.preview-coast { --preview-top: #23365a; --preview-horizon: #eeaa8f; --preview-ground: #274c65; }
+.preview-neon { --preview-top: #131735; --preview-horizon: #ae4e91; --preview-ground: #39254d; }
+.preview-canyon { --preview-top: #4e94c1; --preview-horizon: #efce97; --preview-ground: #9a503c; }
+.preview-aurora { --preview-top: #132c42; --preview-horizon: #71c5ac; --preview-ground: #adc4d3; }
+body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] { animation-play-state: running; }
+@keyframes track-sky { from { transform: scale(1.04) translateX(-2px); } to { transform: scale(1.04) translateX(2px); } }
+.intro .track-select button { overflow: hidden; }
+.vfx-comfort .track-preview, .vfx-comfort .race-overlay, .vfx-comfort .new-best, .vfx-comfort .style-stars > span.earned { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .track-preview, .race-overlay, .new-best, body[data-phase="finished"] .style-stars > span.earned { animation: none !important; }
+}
 .history-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .history-heading h2 { font: 700 42px/1 'Barlow Condensed', sans-serif; margin: 0; }
 .history-heading button { min-height: 44px; }

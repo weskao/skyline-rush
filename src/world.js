@@ -504,7 +504,7 @@ export function createWorld(canvas) {
     resize,
     configureVFX(options) { visual = vfxSettings(options); },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
-    render(race, dt, idleTime, input = {}) {
+    render(race, dt, idleTime, input = {}, presentation = {}) {
       const preview = race.phase === 'ready';
       const car = race.player;
       const reducedMotion = motionPreference.matches || visual.comfortable;
@@ -636,6 +636,7 @@ export function createWorld(canvas) {
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, { ...race.traffic[i], distance: distance + 65 + i * 32 }, distance, center, time, dt); });
       } else {
         updateCar(player, car, distance, center, time, motionDt, true, input);
+        if (race.phase === 'finished') player.position.z -= presentation.finishDistance || 0;
         rivals.forEach((mesh, i) => updateCar(mesh, race.rivals[i], distance, center, time, motionDt));
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt); });
       }
@@ -648,7 +649,10 @@ export function createWorld(canvas) {
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
-      if (visual.enabled && visual.airflow && visual.view !== 'drive') {
+      if (race.phase === 'finished' && !reducedMotion) {
+        desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
+        lookTarget.copy(player.position); lookTarget.y += 0.8;
+      } else if (visual.enabled && visual.airflow && visual.view !== 'drive') {
         const angle = visual.view === 'orbit' ? time * 0.18 : { front: Math.PI, rear: 0, left: -Math.PI / 2, right: Math.PI / 2 }[visual.view];
         desiredCamera.set(player.position.x + Math.sin(angle) * 9, player.position.y + 3.6, Math.cos(angle) * 9);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
@@ -662,6 +666,7 @@ export function createWorld(canvas) {
         desiredCamera.set(car.x * 0.74, car.altitude * 0.85 + (car.altitude > 2 ? 4.4 : 4.8), portrait ? 13.5 : 11.6);
         lookTarget.set(car.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, car.altitude * 0.85 + 1.5, -25);
       }
+      desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
       const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
       const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
       const landingAge = car.landing ? race.elapsed - car.landing.time : 10;

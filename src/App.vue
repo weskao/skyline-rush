@@ -9,7 +9,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 
 // Controls-panel radio groups: settings key → [legend, [value, label]...]; values must match controlSettings().
 const CONTROL_CHOICES = {
-  mode: ['Steering', [['slide', 'Slide'], ['buttons', 'Buttons']]],
+  mode: ['Steering', [['slide', 'Slide'], ['buttons', 'Buttons'], ['tilt', 'Tilt']]],
   hand: ['Steering hand', [['left', 'Left'], ['right', 'Right']]],
   fullLock: ['Slide sensitivity', [[40, 'High'], [60, 'Medium'], [80, 'Low']]],
   size: ['Button size', [['S', 'Small'], ['M', 'Medium'], ['L', 'Large']]],
@@ -47,6 +47,8 @@ const CONTROL_CHOICES = {
         <button class="controls-button" id="controls-button" aria-expanded="false" aria-controls="controls-panel" title="Driving controls">Controls</button>
         <div class="controls-panel" id="controls-panel" role="group" aria-label="Driving controls" hidden>
           <fieldset v-for="([legend, options], key) in CONTROL_CHOICES" class="controls-field"><legend>{{ legend }}</legend><label v-for="[value, label] in options" class="controls-choice"><input type="radio" :name="`controls-${key}`" :data-controls="key" :value="value"><span>{{ label }}</span></label></fieldset>
+          <p id="tilt-status" role="status" class="controls-note">Tilt asks permission only when selected. Hold your phone comfortably to set neutral.</p>
+          <button id="tilt-enable" class="controls-reset" hidden>Enable / recenter tilt</button>
           <label class="controls-field controls-range">Button opacity <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Button opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
           <label class="controls-field controls-range">Steering sensitivity <output for="controls-sensitivity"></output><input id="controls-sensitivity" aria-label="Steering sensitivity" type="range" data-controls="sensitivity" min="0.4" max="1" step="0.1"></label>
           <fieldset class="controls-field keymap-field"><legend>Keyboard · select action, then press a key</legend><button v-for="action in ['throttle', 'brake', 'left', 'right', 'fly', 'boost', 'nitro']" class="keymap-binding" :data-rebind="action"><span>{{ action.toUpperCase() }}</span><b></b></button></fieldset>
@@ -94,7 +96,7 @@ const CONTROL_CHOICES = {
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span>SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title">The road is just<br>the <em>beginning.</em></h1>
       <p class="intro-copy">Own the highway. Then leave it behind.<br>Fire your thrusters and take the race to the sky.</p>
-      <div class="track-select" role="group" aria-label="Choose track"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="String(id === 'coast')"><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
+      <div class="track-select" role="group" aria-label="Choose track"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="String(id === 'coast')"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
       <p id="track-note" class="track-note"></p>
       <div class="intro-actions">
         <button class="primary-button" id="start-button" aria-label="Start race"><span>Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
@@ -124,10 +126,11 @@ const CONTROL_CHOICES = {
     <div class="impact-report" id="impact-report" role="status" hidden><span class="impact-icon"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></span><div><strong id="impact-title">CONTACT</strong><span>STABILIZING · <b id="impact-loss">0</b> KM/H LOST</span></div></div>
 
     <section class="race-overlay" id="race-overlay" aria-labelledby="overlay-title" hidden>
-      <div class="overlay-content"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><div id="result-stats" class="result-stats" hidden></div><div id="result-style" class="result-style" hidden></div><button class="primary-button" id="resume-button" aria-label="Resume race"><span>Back to the race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="text-button" id="again-button">Race again <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button><div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track">Choose track</button><button class="text-button" data-open-history>History</button></div></div>
+      <div class="overlay-content"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><span id="new-best" class="new-best" hidden>NEW BEST</span><div id="result-stats" class="result-stats" hidden></div><div id="result-style" class="result-style" hidden></div><button class="primary-button" id="resume-button" aria-label="Resume race"><span>Back to the race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="text-button" id="again-button">Race again <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button><div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track">Choose track</button><button class="text-button" data-open-history>History</button></div></div>
     </section>
     <div id="error-message" class="error-message" role="alert" hidden></div>
   </main>
+  <div id="race-wipe" class="race-wipe" aria-hidden="true" hidden></div>
 
   <dialog id="history-screen" class="history-screen" aria-labelledby="history-title">
     <header class="history-heading"><h2 id="history-title">Race history</h2><button class="controls-button" id="history-close" aria-label="Close history">Close</button></header>
@@ -145,8 +148,9 @@ const CONTROL_CHOICES = {
   </footer>
   <!-- TOUCH CONTROLS DOM/CSS CONTRACT — frozen; style.css builds from this, change both together.
    #touch-controls.touch-controls (shown by the existing media rules; [hidden] outside racing/countdown)
-     data-steer-mode="slide|buttons"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer (and its brake)
+     data-steer-mode="slide|buttons|tilt"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer (and its brake)
                                       buttons: .touch-steer left/right buttons steer, hide .touch-pad
+                                      tilt: sensors steer; pad remains available for down-drag brake / drift
      data-hand="left|right"           side of the screen the steering (pad or .touch-steer) sits on; actions/pedals take the other side
      style --touch-scale              0.85 (S) | 1 (M) | 1.15 (L); multiply control sizes by it
      style --touch-opacity            0.4–1; control opacity

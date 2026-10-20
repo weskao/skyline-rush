@@ -98,6 +98,47 @@ function padTarget(controls, settings = { fullLock: 100 }) {
   return el;
 }
 
+test('one touch slides from FLY across the BOOST seam and releases both on cancel', () => {
+  const controls = createControls(new EventTarget());
+  const fly = new EventTarget(); fly.getBoundingClientRect = () => ({ left: 100, right: 160, top: 0, bottom: 70 });
+  const boost = new EventTarget(); boost.getBoundingClientRect = () => ({ left: 40, right: 94, top: 0, bottom: 70 });
+  controls.bindButton(fly, 'fly'); controls.bindButton(boost, 'boost');
+  send(fly, 'pointerdown', { pointerId: 1, pointerType: 'touch', clientX: 130, clientY: 30 });
+  send(fly, 'pointermove', { pointerId: 1, pointerType: 'touch', clientX: 97, clientY: 30 });
+  assert.equal(controls.read().fly, true);
+  assert.equal(controls.read().boost, true);
+  send(fly, 'pointermove', { pointerId: 1, pointerType: 'touch', clientX: 60, clientY: 30 });
+  assert.equal(controls.read().fly, false);
+  assert.equal(controls.read().boost, true);
+  send(fly, 'pointercancel', { pointerId: 1 });
+  assert.equal(controls.read().boost, false);
+  controls.destroy();
+});
+
+test('tilt calibrates neutral, ignores invalid samples, handles screen rotation and clears on blur', () => {
+  const target = new EventTarget(); target.screen = { orientation: { angle: 0 } };
+  const settings = { mode: 'tilt', sensitivity: 1 };
+  const controls = createControls(target, () => {}, { getSettings: () => settings });
+  controls.setTilt(true);
+  send(target, 'deviceorientation', { gamma: 12, beta: 30 });
+  assert.equal(controls.read().steer, 0);
+  send(target, 'deviceorientation', { gamma: 22, beta: 30 });
+  assert.equal(controls.read().steer, 0.5);
+  send(target, 'deviceorientation', { gamma: null, beta: null });
+  assert.equal(controls.read().steer, 0.5);
+  target.screen.orientation.angle = 90;
+  send(target, 'deviceorientation', { gamma: 0, beta: 30 });
+  assert.equal(controls.read().steer, 0);
+  send(target, 'deviceorientation', { gamma: 0, beta: 10 });
+  assert.equal(controls.read().steer, -1);
+  send(target, 'blur');
+  assert.equal(controls.read().steer, 0);
+  controls.setTilt(false);
+  send(target, 'deviceorientation', { gamma: 0, beta: 50 });
+  assert.equal(controls.read().steer, 0);
+  controls.destroy();
+});
+
 test('slide pad steers analog, reads live fullLock, ignores other pointers, resets on clear', () => {
   const settings = { fullLock: 100 };
   const controls = createControls(new EventTarget());

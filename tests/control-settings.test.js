@@ -16,6 +16,10 @@ test('valid values round-trip and unknown keys are dropped', () => {
   assert.deepEqual(controlSettings({ ...valid, extra: true }), valid);
 });
 
+test('tilt steering survives validated preference storage without changing older defaults', () => {
+  assert.equal(controlSettings({ version: 1, mode: 'tilt' }).mode, 'tilt');
+});
+
 test('bad values fall back per field; opacity clamps to 0.4-1', () => {
   const result = controlSettings({ version: 1, mode: 'x', hand: 1, fullLock: 50, size: 'XL', flyMode: null, opacity: NaN });
   assert.deepEqual(result, defaults);
