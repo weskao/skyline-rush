@@ -42,6 +42,7 @@ export const RACE_TRACKS = {
       { from: 3775, to: 3840, type: 'gap' },
       { from: 4550, to: 4630, type: 'launch' },
       { from: 4630, to: 4700, type: 'gap' },
+      { from: 4950, to: 5300, type: 'shortcut', x: -7.5, altitude: 6 },
     ],
   },
 };
@@ -457,7 +458,7 @@ export function stepRace(race, input, dt) {
   const previousContacts = car.collisions + car.falls;
   car.distance += car.speed * dt;
   const gapNow = race.trackId === 'spiral' ? skyGapAt(car.distance) : car.section === 'gap';
-  if (gapNow && car.altitude < GAP_CLEARANCE) {
+  if (gapNow && car.altitude < GAP_CLEARANCE && !(race.trackId === 'spiral' && car.altitude > 0 && car.verticalSpeed > 0)) {
     car.speed *= GAP_SLOWDOWN;
     const gapEnd = race.trackId === 'spiral' ? SKY_JUMPS.find(j => car.distance >= j.gapFrom && car.distance < j.gapTo)?.gapTo : section.to;
     car.distance = (gapEnd ?? section.to) + GAP_RESPAWN;
