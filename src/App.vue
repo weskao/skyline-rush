@@ -96,9 +96,11 @@ const CONTROL_CHOICES = {
       <p class="intro-copy">Own the highway. Then leave it behind.<br>Fire your thrusters and take the race to the sky.</p>
       <div class="track-select" role="group" aria-label="Choose track"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="String(id === 'coast')"><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
       <p id="track-note" class="track-note"></p>
-      <button class="primary-button" id="start-button" aria-label="Start race"><span>Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-      <button class="text-button history-button" data-open-history>History</button>
-      <span class="start-hint">or press <kbd>ENTER</kbd></span>
+      <div class="intro-actions">
+        <button class="primary-button" id="start-button" aria-label="Start race"><span>Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <button class="text-button history-button" data-open-history>History</button>
+        <span class="start-hint">or press <kbd>ENTER</kbd></span>
+      </div>
       <div class="intro-controls">
         <div><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Drive</span></div>
         <div><kbd class="wide-key">SPACE</kbd><span>Hold to fly</span></div>

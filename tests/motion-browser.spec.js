@@ -90,8 +90,6 @@ test.describe('touch button feedback', () => {
 
 test('speed dial eases as speed rises and a lost place flips with a readable down arrow', async ({ page }) => {
   await open(page);
-  await expect(page.locator('#speed-needle')).toBeVisible();
-  const initial = await page.locator('#speed-needle').evaluate(element => getComputedStyle(element).transform);
   await page.evaluate(() => {
     window.placeChanges = [];
     const position = document.querySelector('#position');
@@ -102,6 +100,8 @@ test('speed dial eases as speed rises and a lost place flips with a readable dow
     }).observe(position, { childList: true });
   });
   await page.locator('#start-button').click();
+  await expect(page.locator('#speed-needle')).toBeVisible();
+  const initial = await page.locator('#speed-needle').evaluate(element => getComputedStyle(element).transform);
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await expect.poll(() => page.evaluate(() => window.placeChanges.some(change => change.arrow === '↓' && change.direction === 'lost' && change.animated))).toBe(true);
   await page.keyboard.down('w');
