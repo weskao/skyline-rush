@@ -1,5 +1,23 @@
 # Verification — 2026-10-18
 
+## NITRO + FLY closed: browser coverage for `AIR DASH · NITRO` — 2026-10-20
+
+Scope: TODO 7B "NITRO doesn't use fuel". Logic tests and Codex's label (`873f76a`) already
+existed; no browser test checked the label. New `tests/nitro-fly-browser.spec.js`: desktop
+(hold W, E, Space) and 844×390 touch (NITRO + FLY held as two touch points).
+
+- TDD: built with the label clause removed from `main.js` (source restored right after the
+  build). Both tests failed on `Expected "AIR DASH · NITRO"` while the HUD showed
+  `NITRO ACTIVE` / `CRUISE`. A first draft tapped NITRO and failed for the wrong reason (the
+  down/up pair fell between frames and NITRO never activated), so both tests now hold it.
+  With the real build: **2 passed (15.2 s)**.
+- Test seam: the player has no NITRO charge at start and earning one needs a full PERFECT
+  LINE, so the spec rewrites `nitro:0` to `nitro:3` in the served bundle. A guard assertion
+  fails loudly if a minifier change breaks the rewrite.
+- Review of `873f76a`: unlike `NITRO ACTIVE`, the new label does not check
+  `race.phase === 'racing'`. Low risk; the finished and countdown phases were not checked.
+- Not run: the full browser suite after adding this file (it is a new, independent spec).
+
 ## Logic for NITRO + FLY, air tricks and shortcuts — 2026-10-20
 
 Scope: the logic half of the remaining TODO items as split in
