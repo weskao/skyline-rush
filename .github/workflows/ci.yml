@@ -24,7 +24,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
       - run: npm test
 
   # CPU-only WebGL makes the serial suite take ~24 min on one runner; shards run it in parallel.
