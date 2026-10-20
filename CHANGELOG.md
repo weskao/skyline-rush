@@ -1,3 +1,16 @@
+## [0.12.2] - 2026-10-20
+
+### 🐛 Bug Fixes
+
+- **ui:** Keep leaderboard clear of position stat on short landscape phones
+
+### 🧪 Testing
+
+- **ui:** Force the place-change arrow on when measuring HUD overlap
+
+### ⚙️ Miscellaneous Tasks
+
+- Remove build step from test job
 ## [0.12.1] - 2026-10-20
 
 ### 🐛 Bug Fixes
