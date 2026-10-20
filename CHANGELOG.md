@@ -1,3 +1,39 @@
+## [0.11.0] - 2026-10-20
+
+### 🚀 Features
+
+- **ui:** Animate race flow and touch controls
+- **ui:** Add garage and progression surfaces
+- **progression:** Add medal, paint unlock, ghost trace and daily challenge rules
+- **ui:** Connect ghost replay, daily challenge, medals and paint equip
+- **gameplay:** Add air tricks and shortcut corridors
+- **ui:** Show barrel rolls and trick landings
+- **ui:** Render shortcut corridors and their hud
+- **vfx:** Add continuous animated rear led bar
+- **pwa:** Add rounded app icons
+
+### 🐛 Bug Fixes
+
+- **ui:** Prevent responsive start screen overlaps
+- **ui:** Keep compact hud and actions clear
+- **ui:** Show nitro during air dash
+- **ui:** Fit short landscape phone layouts
+
+### 📚 Documentation
+
+- Define ui handoff and defer gamepad work
+- Record ui acceptance and handoff
+- Record gameplay follow-up and retire HANDOFF.md
+- Mark gamepad work as lowest priority
+- Split remaining todo into logic and ui halves
+- Close air tricks and shortcuts
+- **readme:** Add synced traditional chinese guide
+- **media:** Refresh gameplay screenshots
+
+### 🧪 Testing
+
+- **ui:** Keep ring pilot on page frames
+- **browser:** Cover the air dash nitro label
 ## [0.10.0] - 2026-10-20
 
 ### 🚀 Features
