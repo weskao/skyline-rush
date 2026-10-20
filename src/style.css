@@ -401,6 +401,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 /* Landscape Safari with its toolbar showing leaves ~340px: lift the race info and drop secondary lines so blocks stay apart. */
 @media (pointer: coarse) and (min-width: 761px) and (max-height: 380px) {
   .race-info, .leaderboard { top: 70px; }
+  .leaderboard { left: 166px; } /* clears POSITION when the place-change arrow widens it */
   .speed-ticks, .fuel-caption, .fuel-stat .boost-status { display: none; }
   .fuel-track { margin: 4px 0; }
   .fuel-heading { gap: 6px; }
