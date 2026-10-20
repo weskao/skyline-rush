@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { test as gameplayTest } from './helpers/gameplay-browser.js';
 
 const open = async page => {
   await page.goto('/');
@@ -196,12 +197,29 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '2');
   await page.keyboard.up('e');
   await expect(page.locator('body')).not.toHaveClass(/nitro-active/);
-  await expect(page.locator('#altitude')).toHaveText('0.0');
-  await page.keyboard.down('s');
-  await page.keyboard.down('a');
-  await expect(page.locator('#flight-state')).toContainText('DRIFT');
-  await expect(page.locator('#flight-state')).toContainText('BLUE');
-  await page.keyboard.up('s');
-  await page.keyboard.up('a');
-  await expect(page.locator('#flight-state')).toHaveText('MINI BOOST');
+});
+
+gameplayTest.describe('drift feedback', () => {
+  gameplayTest.beforeEach(async ({ page }) => { await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') }); });
+  gameplayTest('brake and steer build blue sparks and releasing earns a mini boost', async ({ gameplayPage: page }) => {
+    await start(page);
+    await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
+    // Test drift feedback on a clear road, independent of the ring pilot's traffic and elapsed time.
+    await page.evaluate(() => {
+      const race = window.gameplay.race;
+      race.traffic = []; race.pickups = []; race.rings = [];
+      race.rivals.forEach(rival => { rival.distance = 1000; });
+      Object.assign(race.player, { speed: 80, x: 0, distance: 0 });
+    });
+    await expect(page.locator('#altitude')).toHaveText('0.0');
+    await page.keyboard.down('s');
+    await page.keyboard.down('a');
+    await page.clock.runFor(1100);
+    await expect(page.locator('#flight-state')).toContainText('DRIFT');
+    await expect(page.locator('#flight-state')).toContainText('BLUE');
+    await page.keyboard.up('s');
+    await page.keyboard.up('a');
+    await page.clock.runFor(100);
+    await expect(page.locator('#flight-state')).toHaveText('MINI BOOST');
+  });
 });

@@ -12,7 +12,7 @@ for (const [name, viewport, hasTouch] of [
   ['touch', { width: 390, height: 844 }, true],
 ]) test.describe(`air tricks ${name}`, () => {
   test.use({ viewport, hasTouch });
-  test.beforeEach(async ({ page }) => { await page.clock.install(); });
+  test.beforeEach(async ({ page }) => { await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') }); });
   test('an airborne flick rolls the car, announces the landing and acknowledges its payout once', async ({ gameplayPage: page }) => {
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -21,7 +21,7 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('[data-vfx="haptics"]').check();
     await page.locator('#vfx-panel > summary').click();
     // Keep the flick and landing on simulation time, independent of software-rendering speed.
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+    await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
     await page.evaluate(() => {
       window.vibrations = [];
       Object.defineProperty(navigator, 'vibrate', { configurable: true, value: pattern => { window.vibrations.push(pattern); return true; } });
