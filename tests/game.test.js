@@ -1222,3 +1222,19 @@ test('rubber-banding stays within a few percent: leaders ease off, stragglers sp
   assert.ok(behind / ahead <= (1 + RUBBER_BAND_MAX) / (1 - RUBBER_BAND_MAX) + 1e-9, `${behind} vs ${ahead}`); // neutral drifts into the band itself once it pulls 50 m clear
   assert.ok(RUBBER_BAND_MAX <= 0.06);
 });
+
+test('the result records the longest NITRO chain: charges spent in one burst, not fresh activations', () => {
+  const race = racing();
+  Object.assign(race.player, { speed: 60, nitro: 3 });
+  press(race);
+  press(race);
+  advance(race, 5, { throttle: true }); // let the two-charge burst run out
+  race.player.nitro = 1;
+  press(race); // a fresh burst starts a new chain
+  race.rivals.forEach(rival => { rival.distance = 100; });
+  Object.assign(race.player, { distance: race.length - 1, speed: 80 });
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.result.nitroUses, 2);
+  assert.equal(race.result.nitroChain, 2);
+  assert.equal(createRace().player.nitroChain, 0);
+});

@@ -157,19 +157,35 @@ function addNitro(car, amount) {
   if (overflow > 0) car.fuel = Math.min(100, car.fuel + overflow * NITRO_FUEL_PER_CHARGE);
 }
 
-export function createRace(trackId = 'coast') {
+// Daily challenge: one track + modifier per local calendar day, from its own date-named stream.
+export const DAILY_MODIFIERS = ['no-flight', 'double-traffic', 'gold-rings'];
+export function dailyChallenge(date = new Date()) {
+  const id = [date.getFullYear(), date.getMonth() + 1, date.getDate()].map(n => String(n).padStart(2, '0')).join('-');
+  const random = seededRng(0, `daily-${id}`);
+  const tracks = Object.keys(RACE_TRACKS);
+  const track = tracks[Math.floor(random() * tracks.length)];
+  // Broken bridges need flight, so a gap track never gets no-flight.
+  const modifiers = DAILY_MODIFIERS.filter(m => m !== 'no-flight' || !RACE_TRACKS[track].sections.some(s => s.type === 'gap'));
+  return { id, track, modifier: modifiers[Math.floor(random() * modifiers.length)] };
+}
+
+export function createRace(trackId = 'coast', modifier = null) {
   const track = RACE_TRACKS[trackId];
   if (!track) throw new Error(`Unknown track: ${trackId}`);
+  if (modifier !== null && !DAILY_MODIFIERS.includes(modifier)) throw new Error(`Unknown modifier: ${modifier}`);
+  const density = track.trafficDensity * (modifier === 'double-traffic' ? 2 : 1);
+  const rings = createRings(track);
+  if (modifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
-    trackId, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
-    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: createPickups(track), rings: createRings(track),
+    trackId, modifier, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
+    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: createPickups(track), rings,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       section: null, falls: 0, fall: null,
-      nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, longestCombo: 0,
+      nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
       drift: null, driftPayout: null, miniBoost: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
@@ -178,8 +194,8 @@ export function createRace(trackId = 'coast') {
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
       altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroTime: 0, nitroHop: -1,
     })),
-    traffic: Array.from({ length: Math.round(36 * track.trafficDensity) }, (_, i) => ({
-      x: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / track.trafficDensity,
+    traffic: Array.from({ length: Math.round(36 * density) }, (_, i) => ({
+      x: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / density,
       speed: 23 + (i % 5) * 3, color: i % 5,
     })),
   };
@@ -282,7 +298,9 @@ export function stepRace(race, input, dt) {
     else {
       car.nitroTime = NITRO_TIME;
       car.nitroUses++;
+      car.nitroBurst = 0;
     }
+    car.nitroChain = Math.max(car.nitroChain, ++car.nitroBurst); // charges spent in this one burst
   }
   car.nitroHeld = input.nitro === true;
   const nitro = car.nitroTime > 0;
@@ -338,9 +356,10 @@ export function stepRace(race, input, dt) {
   if (car.nearMiss && race.elapsed - car.nearMiss.time > 5) car.combo = 0;
 
   // Takeoff buffer: FLY held while too slow is remembered; it counts as held until the window runs out.
-  car.flyBuffer = input.fly && car.speed < 18 ? TAKEOFF_BUFFER : input.fly ? 0 : Math.max(0, car.flyBuffer - dt);
-  const fly = !!input.fly || car.flyBuffer > 0;
-  if (!input.fly && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
+  const flyInput = !!input.fly && race.modifier !== 'no-flight';
+  car.flyBuffer = flyInput && car.speed < 18 ? TAKEOFF_BUFFER : flyInput ? 0 : Math.max(0, car.flyBuffer - dt);
+  const fly = flyInput || car.flyBuffer > 0;
+  if (!flyInput && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
   car.thrusting = fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
   if (car.thrusting) {
     car.verticalSpeed = Math.min(7, car.verticalSpeed + 19 * dt);
@@ -348,7 +367,7 @@ export function stepRace(race, input, dt) {
     if (car.fuel === 0) car.exhausted = true;
   } else if (car.altitude > 0) {
     car.verticalSpeed -= (fly ? 11 : 7) * dt; // releasing FLY glides
-  } else if (!input.fly && !boost) {
+  } else if (!flyInput && !boost) {
     car.fuel = Math.min(100, car.fuel + (car.section === 'uphill' ? 6.5 : 13) * dt);
   }
   // AIR DASH: flight + boost together share a 22/s drain instead of 19 + 10.
@@ -478,7 +497,7 @@ export function stepRace(race, input, dt) {
     race.elapsed = finishTime;
     const score = Math.round(car.score);
     race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses,
-      nitroUses: car.nitroUses, longestCombo: car.longestCombo,
+      nitroUses: car.nitroUses, nitroChain: car.nitroChain, longestCombo: car.longestCombo,
       rings: car.rings, perfectLines: car.perfectLines, score,
       stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1 };
     race.phase = 'finished';

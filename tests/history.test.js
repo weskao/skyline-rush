@@ -157,3 +157,64 @@ test('the oldest qualifying legacy finish is migrated before the next save evict
   recordRace(finishedRace({ position: 4 }), storage);
   assert.deepEqual(loadUnlocks(storage), ['coast', 'neon', 'canyon']);
 });
+
+test('medal rules: win, zero contacts, five PERFECT LINEs and a three-charge NITRO chain', async () => {
+  const { medalsFor, MEDALS } = await import('../src/history.js');
+  assert.deepEqual(MEDALS, ['first-win', 'clean-run', 'perfect-five', 'nitro-chain']);
+  assert.deepEqual(medalsFor({ position: 1, collisions: 0, perfectLines: 5, nitroChain: 3 }), MEDALS);
+  assert.deepEqual(medalsFor({ position: 2, collisions: 1, perfectLines: 4, nitroChain: 2, nitroUses: 3 }), []);
+  assert.deepEqual(medalsFor({ position: 3, collisions: 0 }), ['clean-run']);
+  assert.deepEqual(medalsFor(null), []);
+});
+
+test('medals are saved once with the first award date and only new ones are reported', async () => {
+  const { recordMedals, loadMedals } = await import('../src/history.js');
+  const storage = memoryStorage();
+  const first = new Date('2026-10-01T10:00:00Z');
+  assert.deepEqual(recordMedals({ position: 1, collisions: 2 }, storage, first), ['first-win']);
+  assert.deepEqual(recordMedals({ position: 1, collisions: 0 }, storage, new Date('2026-10-02T10:00:00Z')), ['clean-run']);
+  assert.deepEqual(loadMedals(storage), { 'first-win': first.toISOString(), 'clean-run': '2026-10-02T10:00:00.000Z' });
+});
+
+test('saved medals are validated and storage failures never throw', async () => {
+  const { recordMedals, loadMedals } = await import('../src/history.js');
+  const storage = memoryStorage({ 'skyline-rush-medals': JSON.stringify({ 'first-win': 'not a date', 'clean-run': '2026-10-02T10:00:00.000Z', hacked: '2026-10-02T10:00:00.000Z' }) });
+  assert.deepEqual(loadMedals(storage), { 'clean-run': '2026-10-02T10:00:00.000Z' });
+  assert.deepEqual(loadMedals(memoryStorage({ 'skyline-rush-medals': '[1,2]' })), {});
+  assert.deepEqual(recordMedals({ position: 1 }, throwingStorage), ['first-win']);
+  assert.deepEqual(loadMedals(throwingStorage), {});
+});
+
+test('paints unlock at 0 / 3 / 6 / 9 total stars and stay visual only', async () => {
+  const { PAINTS, ownedPaints } = await import('../src/appearance.js');
+  assert.deepEqual(Object.fromEntries(Object.entries(PAINTS).map(([id, paint]) => [id, paint.stars])), { pearl: 0, coral: 3, glacier: 6, aurora: 9 });
+  assert.deepEqual(ownedPaints(0), ['pearl']);
+  assert.deepEqual(ownedPaints(5), ['pearl', 'coral']);
+  assert.deepEqual(ownedPaints(12), ['pearl', 'coral', 'glacier', 'aurora']);
+  assert.deepEqual(ownedPaints(NaN), ['pearl']);
+});
+
+test('best stars are kept per track and summed; invalid saved stars are ignored', async () => {
+  const { recordStars, loadStars, starTotal } = await import('../src/history.js');
+  const storage = memoryStorage({ 'skyline-rush-stars': JSON.stringify({ coast: 2, neon: 7, nowhere: 3, canyon: 1.5 }) });
+  assert.deepEqual(loadStars(storage), { coast: 2 });
+  recordStars('coast', 1, storage);
+  recordStars('neon', 3, storage);
+  recordStars('canyon', 9, storage);
+  assert.deepEqual(loadStars(storage), { coast: 2, neon: 3 });
+  assert.equal(starTotal(loadStars(storage)), 5);
+  recordStars('coast', 3, throwingStorage);
+  assert.deepEqual(loadStars(throwingStorage), {});
+});
+
+test('the equipped paint is saved and falls back to pearl unless it is owned', async () => {
+  const { loadPaint, savePaint } = await import('../src/history.js');
+  const storage = memoryStorage();
+  assert.equal(loadPaint(['pearl', 'coral'], storage), 'pearl');
+  savePaint('coral', storage);
+  assert.equal(loadPaint(['pearl', 'coral'], storage), 'coral');
+  assert.equal(loadPaint(['pearl'], storage), 'pearl');
+  assert.equal(loadPaint(['pearl', 'coral'], memoryStorage({ 'skyline-rush-paint': '"toString"' })), 'pearl');
+  savePaint('coral', throwingStorage);
+  assert.equal(loadPaint(['pearl', 'coral'], throwingStorage), 'pearl');
+});

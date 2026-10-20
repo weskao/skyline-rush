@@ -1,4 +1,5 @@
-import { RACE_TRACKS } from './game.js';
+import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
+import { validGhost } from './ghost.js';
 
 export const HISTORY_KEY = 'skyline-rush-history';
 export const BEST_KEY = 'skyline-rush-best-tracks';
@@ -64,6 +65,75 @@ export function recordBest(trackId, time, storage) {
   if (record) write(BEST_KEY, { ...bests, [trackId]: time }, storage);
   return { best: record ? time : bests[trackId], record };
 }
+
+export const MEDALS = ['first-win', 'clean-run', 'perfect-five', 'nitro-chain'];
+const MEDALS_KEY = 'skyline-rush-medals';
+const MEDAL_RULES = {
+  'first-win': result => result.position === 1,
+  'clean-run': result => result.collisions === 0,
+  'perfect-five': result => result.perfectLines >= 5,
+  'nitro-chain': result => result.nitroChain >= 3, // three charges in one burst, not three separate activations
+};
+export const medalsFor = result => result ? MEDALS.filter(id => MEDAL_RULES[id](result)) : [];
+
+// { medalId: ISO date first awarded }; unknown ids and bad dates are dropped.
+export function loadMedals(storage) {
+  const saved = read(MEDALS_KEY, storage);
+  const medals = {};
+  if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
+    for (const id of MEDALS) if (typeof saved[id] === 'string' && Number.isFinite(Date.parse(saved[id]))) medals[id] = saved[id];
+  }
+  return medals;
+}
+
+export function recordMedals(result, storage, now = new Date()) {
+  const medals = loadMedals(storage);
+  const awarded = medalsFor(result).filter(id => !medals[id]);
+  if (awarded.length) write(MEDALS_KEY, { ...medals, ...Object.fromEntries(awarded.map(id => [id, now.toISOString()])) }, storage);
+  return awarded;
+}
+
+// Best style stars per track (1-3); their sum unlocks paints.
+const STARS_KEY = 'skyline-rush-stars';
+const validStars = stars => Number.isInteger(stars) && stars >= 1 && stars <= 3;
+export function loadStars(storage) {
+  const saved = read(STARS_KEY, storage);
+  const stars = {};
+  if (saved && typeof saved === 'object' && !Array.isArray(saved)) for (const id in RACE_TRACKS) if (validStars(saved[id])) stars[id] = saved[id];
+  return stars;
+}
+export function recordStars(trackId, stars, storage) {
+  const saved = loadStars(storage);
+  if (RACE_TRACKS[trackId] && validStars(stars) && !(saved[trackId] >= stars)) write(STARS_KEY, { ...saved, [trackId]: stars }, storage);
+}
+export const starTotal = stars => Object.values(stars).reduce((sum, value) => sum + value, 0);
+
+const PAINT_KEY = 'skyline-rush-paint';
+export const loadPaint = (owned, storage) => { const id = read(PAINT_KEY, storage); return owned.includes(id) ? id : 'pearl'; };
+export const savePaint = (id, storage) => write(PAINT_KEY, id, storage);
+
+// One best-run ghost per track: { trackId: { time, samples } }.
+const GHOSTS_KEY = 'skyline-rush-ghosts';
+const loadGhosts = storage => { const saved = read(GHOSTS_KEY, storage); return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}; };
+export const loadGhost = (trackId, storage) => { const ghost = loadGhosts(storage)[trackId]; return validGhost(ghost, trackId) ? ghost : null; };
+export const saveGhost = (trackId, ghost, storage) => write(GHOSTS_KEY, { ...loadGhosts(storage), [trackId]: ghost }, storage);
+
+// Daily challenge runs live on their own board, never in history, bests, unlocks or ghosts.
+const DAILY_KEY = 'skyline-rush-daily';
+const validDaily = run => run && typeof run === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(run.id) && Object.hasOwn(RACE_TRACKS, run.track) &&
+  DAILY_MODIFIERS.includes(run.modifier) && valid(run.time) && Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 &&
+  Number.isFinite(run.score) && run.score >= 0 && typeof run.date === 'string';
+export function loadDaily(storage) {
+  const runs = read(DAILY_KEY, storage);
+  return Array.isArray(runs) ? runs.filter(validDaily) : [];
+}
+export function recordDaily(challenge, race, storage, now = new Date()) {
+  const { position, time, score } = race.result;
+  const run = { id: challenge.id, track: challenge.track, modifier: challenge.modifier, time, position, score, date: now.toISOString() };
+  write(DAILY_KEY, [...loadDaily(storage), run].slice(-HISTORY_LIMIT), storage);
+  return run;
+}
+export const dailyBoard = (runs, id) => runs.filter(run => run.id === id).sort((a, b) => a.time - b.time);
 
 export function careerStats(history) {
   const stats = { races: 0, wins: 0, totalDistance: 0, longestCombo: 0, mostRings: 0 };
