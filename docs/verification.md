@@ -1,5 +1,32 @@
 # Verification — 2026-10-18
 
+## Device check in the iOS Simulator; short-landscape layout fixes — 2026-10-20
+
+Scope: plan §A as far as simulators reach. The production build was served with `vite preview`
+and driven through mobile-mcp.
+
+- iOS Simulator (iPhone 17, iOS 26.5, Safari): Coast and Neon run, in portrait and landscape.
+  The 3D scene, countdown, AUTO, touch FLY (altitude 8.7–8.8 m, charge drain) and results all
+  work.
+- Found in landscape Safari with the toolbar showing (874×339 CSS px, plus a 21 pt bottom safe
+  area):
+  - during a race, the speed ran into POSITION and the leaderboard, and altitude/charge ran into
+    the AIRFLOW/VFX bar;
+  - on the ready screen, START RACE sat below the visible part of the scrollable intro.
+- Fix: one `@media (pointer: coarse) and (min-width: 761px) and (max-height: 380px)` block in
+  `src/style.css`. It lifts race-info, hides the speed tick dial, the fuel caption and the boost
+  status, uses smaller charge and speed numbers, sets the flight-telemetry lift to 36 px, and
+  hides the intro tagline. Nothing changes at 390 px tall or more.
+- TDD: new `tests/responsive-browser.spec.js` cases at 844×390 and 874×339 (the latter with
+  iPhone safe-area insets). They check that the HUD blocks don't overlap and that START RACE is
+  on screen without scrolling. The 874×339 cases failed first and pass now; the whole responsive
+  spec passes (18). Rechecked on the simulator after the fix.
+- Android emulator (Pixel 9 Pro XL, Chrome over CDP): no page errors, WebGL 2 through ANGLE's
+  emulator translator. The 3D canvas stays black (bloom on or off), at about 7.5 fps on the ready
+  screen and a 50 ms median frame while racing. This is the emulator's GPU path, not evidence
+  about real hardware. Not investigated further, since the iOS Simulator renders correctly.
+- Not verified: frame time on physical phones (§A stays open), Canyon and Aurora on device.
+
 ## Air tricks and shortcuts UI closed — 2026-10-20
 
 Scope: the UI halves of plan §C and §D in `ui/air-tricks-shortcuts`, merged into `main` as

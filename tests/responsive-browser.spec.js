@@ -49,3 +49,44 @@ for (const [width, height, hasTouch] of [
     });
   });
 }
+
+// 874x339 is iPhone landscape Safari with its toolbar showing (402 pt screen minus ~63 pt of chrome).
+for (const [width, height] of [[844, 390], [874, 339]]) {
+  test.describe(`touch race HUD ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
+
+    test('START RACE is on screen without scrolling the intro', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const intro = page.locator('#intro');
+      await intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const [panel, start] = await Promise.all([intro.boundingBox(), page.locator('#start-button').boundingBox()]);
+      expect(start.y + start.height).toBeLessThanOrEqual(Math.min(panel.y + panel.height, height));
+      expect(await intro.evaluate(el => el.scrollTop)).toBe(0);
+    });
+
+    test('racing HUD blocks stay apart', async ({ page, context }) => {
+      // iPhone landscape keeps a home-indicator inset below the page; it lifts every bottom-anchored block.
+      if (height < 380) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, top: 0, bottom: 21 } });
+      await page.goto('/');
+      await page.waitForTimeout(700);
+      if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+      await page.locator('#start-button').click();
+      await expect(page.locator('#race-status')).toHaveText('RACING');
+      await expect(page.locator('#countdown')).toBeHidden();
+      const blocks = ['.position-stat', '.leaderboard', '.race-progress', '.mode-indicator', '.speedometer',
+        '.flight-telemetry', '.aero-tools', '#controls-button', '#pause-button',
+        // .touch-pad is left out: it is the invisible slide zone the pointer-transparent HUD sits on.
+        ...['fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
+      const boxes = [];
+      for (const selector of blocks) {
+        const block = page.locator(selector).first();
+        if (await block.isVisible()) boxes.push([selector, await block.boundingBox()]);
+      }
+      const apart = (a, b) => a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
+      const overlaps = boxes.flatMap(([name, box], i) => boxes.slice(i + 1).filter(([, other]) => !apart(box, other)).map(([other]) => `${name} × ${other}`));
+      expect(overlaps).toEqual([]);
+      for (const [name, box] of boxes) expect(box.y + box.height, `${name} below the screen`).toBeLessThanOrEqual(height);
+    });
+  });
+}
