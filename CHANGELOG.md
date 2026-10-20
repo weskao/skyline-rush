@@ -1,3 +1,36 @@
+## [0.12.0] - 2026-10-20
+
+### 🚀 Features
+
+- **perf:** Add ?perf frame-time readout
+- **dev:** Add compile-time local all-unlocked testing mode
+- **track:** Introduce shared 3D Sky Spiral centreline geometry
+- **track:** Render curved elevated Sky Spiral road and neon skyline
+- **track:** Integrate playable Sky Spiral road into game and renderer
+- **track:** Integrate playable Sky Spiral road into game and renderer
+- **track:** Integrate playable Sky Spiral road into game and renderer
+- **track:** Integrate playable Sky Spiral road into game and renderer
+
+### 🐛 Bug Fixes
+
+- **pwa:** Full-bleed scene, tappable chrome
+- **track:** Preserve shortcut rules and airborne launch across sky gaps
+- **track:** Preserve shortcut rules and airborne launch across sky gaps
+
+### 📚 Documentation
+
+- Document ?perf device check
+- **claude:** Document local unlocked testing and release security boundaries
+- **artifacts:** Refresh gameplay screenshots
+- **track:** Document Sky Spiral and add track preview palette
+- **track:** Document Sky Spiral and add track preview palette
+- **track:** Document Sky Spiral and add track preview palette
+- **track:** Describe Sky Spiral in Traditional Chinese
+
+### 🧪 Testing
+
+- **browser:** Wait for calm boost before rear light check
+- **track:** Cover Sky Spiral helix frames, gaps and ramp physics
 ## [0.11.1] - 2026-10-20
 
 ### 🐛 Bug Fixes
