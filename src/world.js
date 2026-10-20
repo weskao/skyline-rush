@@ -10,6 +10,8 @@ import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.js';
 import { createRearLight } from './rear-light.js';
+import { createSkyScene } from './sky-scene.js';
+import { skyPosition, skyFrame } from './sky-track.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
@@ -25,6 +27,7 @@ const TRACK_PALETTES = {
   neon: { top: '#040a20', horizon: '#263057', fog: '#18223f', rock: '#182039', road: '#101c2e', ground: '#080e21', rail: '#ff52bf', sun: '#96b7ff', warmth: 0 },
   canyon: { top: '#458bab', horizon: '#f5c58c', fog: '#c99c79', rock: '#a15339', road: '#51453b', ground: '#a76e46', rail: '#ffc36f', sun: '#ffdfaa', warmth: .6 },
   aurora: { top: '#051b31', horizon: '#337064', fog: '#234d5b', rock: '#9cb9c7', road: '#293d50', ground: '#b3cad3', rail: '#78ffd1', sun: '#b9ddff', warmth: 0 },
+  spiral: { top: '#050b25', horizon: '#55348c', fog: '#302657', rock: '#29345b', road: '#111827', ground: '#161d49', rail: '#00e5ff', sun: '#a855f7', warmth: 0 },
 };
 
 function material(color, metalness = 0, roughness = 0.7) {
@@ -469,7 +472,8 @@ export function createWorld(canvas) {
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.03;
   scene.add(shadow);
-  const effects = createEffects(scene, roadCenter);
+  const skyScene = createSkyScene(scene);
+  const effects = createEffects(scene, (s) => trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
   let visual = vfxSettings();
   const projectedNozzle = new THREE.Vector3();
@@ -495,9 +499,16 @@ export function createWorld(canvas) {
     const relative = car.distance - distance;
     mesh.visible = isPlayer || (relative > -55 && relative < 900);
     if (!mesh.visible) return;
-    mesh.position.set(roadCenter(car.distance) - center + car.x, car.altitude || 0, -relative);
+    if (trackId === 'spiral') {
+      mesh.position.fromArray(skyPosition(car.distance, car.x, car.altitude || 0, distance));
+      const frame = skyFrame(car.distance);
+      const basis = new THREE.Matrix4().makeBasis(
+        new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate());
+      mesh.quaternion.setFromRotationMatrix(basis);
+    } else mesh.position.set(roadCenter(car.distance) - center + car.x, car.altitude || 0, -relative);
     const driftYaw = car.drift ? -car.drift.dir * Math.PI * 25 / 180 : 0;
-    mesh.rotation.y = -roadHeading(car.distance) + driftYaw;
+    if (trackId === 'spiral') mesh.rotateY(driftYaw);
+    else mesh.rotation.y = -roadHeading(car.distance) + driftYaw;
     const bank = isPlayer ? -(car.steering || 0) * (car.altitude > 0.8 ? 0.12 : 0.045) : 0;
     // Reduced motion and comfort keep the steering bank but drop the roll; the trick still pays.
     const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
@@ -558,7 +569,7 @@ export function createWorld(canvas) {
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
       }
       const distance = preview ? 340 : car.distance;
-      const center = roadCenter(distance);
+      const center = trackId === 'spiral' ? skyPosition(distance)[0] : roadCenter(distance);
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
@@ -570,7 +581,19 @@ export function createWorld(canvas) {
         weatherGeometry.attributes.position.needsUpdate = true;
         weather.position.set(car.x, car.altitude + 25, 15);
       }
-      for (let i = 0; i <= segments; i++) {
+      if (trackId === 'spiral') {
+        skyScene.update(distance, visual.quality);
+        road.visible = false;
+        for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls, cliffs, surfaceMarks]) m.visible = false;
+        towers.forEach(t => { t.visible = false; });
+        sectionSigns.forEach(({group}) => { group.visible = false; });
+      } else {
+        skyScene.hide();
+        road.visible = true;
+        for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls]) m.visible = true;
+        towers.forEach(t => { t.visible = true; });
+      }
+      if (trackId !== 'spiral') for (let i = 0; i <= segments; i++) {
         const d = Math.floor(distance / 12) * 12 + (i - 5) * 12;
         const x = roadCenter(d) - center;
         const z = -(d - distance);
@@ -600,7 +623,7 @@ export function createWorld(canvas) {
           put(railLights, i * 2 + side, x + sx * 12.1, 0.68, z - 6, 0.045, 0.04, 12.15, angle);
         }
       }
-      roadGeometry.attributes.position.needsUpdate = true;
+      if (trackId !== 'spiral') roadGeometry.attributes.position.needsUpdate = true;
       if (trackId === 'canyon') roadGeometry.index.needsUpdate = true;
       if (tunnelRoofs.visible) tunnelRoofs.instanceMatrix.needsUpdate = tunnelWalls.instanceMatrix.needsUpdate = true;
       if (surfaceMarks.visible) surfaceMarks.instanceMatrix.needsUpdate = true;
@@ -629,7 +652,7 @@ export function createWorld(canvas) {
         }
         cliffs.instanceMatrix.needsUpdate = true;
       }
-      [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
+      if (trackId !== 'spiral') [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
       towers.forEach((tower, i) => {
         const d = Math.floor(distance / 1100) * 1100 + (i + 1) * 1100 - 500;
         tower.position.set(roadCenter(d) - center, 0, -(d - distance));
@@ -679,14 +702,24 @@ export function createWorld(canvas) {
       ghostCar.visible = !preview && !!ghost;
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
       if (ghostCar.visible) {
-        ghostCar.position.set(roadCenter(ghost.distance) - center + ghost.x, ghost.altitude, distance - ghost.distance);
-        ghostCar.rotation.y = -roadHeading(ghost.distance);
+        if (trackId === 'spiral') {
+          ghostCar.position.fromArray(skyPosition(ghost.distance, ghost.x, ghost.altitude, distance));
+          const frame = skyFrame(ghost.distance);
+          ghostCar.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right),new THREE.Vector3(...frame.up),new THREE.Vector3(...frame.forward).negate()));
+        } else {
+          ghostCar.position.set(roadCenter(ghost.distance) - center + ghost.x, ghost.altitude, distance - ghost.distance);
+          ghostCar.rotation.y = -roadHeading(ghost.distance);
+        }
       }
       shadow.position.x = player.position.x;
       shadow.position.z = player.position.z;
       shadow.scale.setScalar(1 + player.position.y * 0.04);
       shadow.material.opacity = 0.6 / (1 + player.position.y * 0.2);
-      finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance));
+      if (trackId === 'spiral') {
+        finish.position.fromArray(skyPosition(race.length, 0, 0, distance));
+        const frame = skyFrame(race.length);
+        finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
+      } else { finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance)); finish.rotation.set(0,0,0); }
       finish.visible = race.length - distance < 1400;
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles, visual);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
@@ -703,11 +736,18 @@ export function createWorld(canvas) {
         desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
         lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
       } else if (cameraMode === 1) {
-        desiredCamera.set(car.x, car.altitude + 1.7, -0.95);
-        lookTarget.set(car.x + roadCenter(distance + 65) - center, car.altitude + 1.5, -65);
+        if (trackId === 'spiral') desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
+        else desiredCamera.set(car.x, car.altitude + 1.7, -0.95);
+        if (trackId === 'spiral') lookTarget.fromArray(skyPosition(distance + 65, car.x, car.altitude + 1.5, distance));
+        else lookTarget.set(car.x + roadCenter(distance + 65) - center, car.altitude + 1.5, -65);
       } else {
-        desiredCamera.set(car.x * 0.74, car.altitude * 0.85 + (car.altitude > 2 ? 4.4 : 4.8), portrait ? 13.5 : 11.6);
-        lookTarget.set(car.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, car.altitude * 0.85 + 1.5, -25);
+        if (trackId === 'spiral') {
+          const frame = skyFrame(distance);
+          const back = new THREE.Vector3(...frame.forward).multiplyScalar(- (portrait ? 14.5 : 12.5));
+          desiredCamera.copy(player.position).add(back).add(new THREE.Vector3(0,5,0));
+        } else desiredCamera.set(car.x * 0.74, car.altitude * 0.85 + (car.altitude > 2 ? 4.4 : 4.8), portrait ? 13.5 : 11.6);
+        if (trackId === 'spiral') lookTarget.fromArray(skyPosition(distance + 34, car.x, car.altitude + 1.5, distance));
+        else lookTarget.set(car.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, car.altitude * 0.85 + 1.5, -25);
       }
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
       const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
@@ -742,6 +782,7 @@ export function createWorld(canvas) {
       composer.render(dt);
     },
     dispose() {
+      skyScene.dispose();
       effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();
