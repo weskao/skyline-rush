@@ -1,4 +1,5 @@
 import { seededRng } from './rng.js';
+import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
@@ -29,6 +30,18 @@ export const RACE_TRACKS = {
       { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
       { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
       { from: 4920, to: 5380, type: 'shortcut', x: 7.5, altitude: 6 },
+    ],
+  },
+  spiral: {
+    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005,
+    sections: [
+      { from: 1100, to: 2200, type: 'spiral' },
+      { from: 2800, to: 2870, type: 'launch' },
+      { from: 2870, to: 2935, type: 'gap' },
+      { from: 3700, to: 3775, type: 'launch' },
+      { from: 3775, to: 3840, type: 'gap' },
+      { from: 4550, to: 4630, type: 'launch' },
+      { from: 4630, to: 4700, type: 'gap' },
     ],
   },
 };
@@ -416,6 +429,12 @@ export function stepRace(race, input, dt) {
   // AIR DASH: flight + boost together share a 22/s drain instead of 19 + 10.
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);
   const previousAltitude = car.altitude;
+  // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
+  if (race.trackId === 'spiral' && car.section === 'launch' && car.altitude === 0 && car.speed > 32 &&
+      car.distance >= section.to - car.speed * dt - 1) {
+    car.altitude = 0.02;
+    car.verticalSpeed = Math.max(car.verticalSpeed, 6 + car.speed * 0.075);
+  }
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
   const roofHit = car.section === 'tunnel' && car.altitude + CAR_HEIGHT > TUNNEL_CEILING;
   if (roofHit) {
@@ -437,9 +456,11 @@ export function stepRace(race, input, dt) {
   const previousDistance = car.distance;
   const previousContacts = car.collisions + car.falls;
   car.distance += car.speed * dt;
-  if (car.section === 'gap' && car.altitude < GAP_CLEARANCE) {
+  const gapNow = race.trackId === 'spiral' ? skyGapAt(car.distance) : car.section === 'gap';
+  if (gapNow && car.altitude < GAP_CLEARANCE) {
     car.speed *= GAP_SLOWDOWN;
-    car.distance = section.to + GAP_RESPAWN;
+    const gapEnd = race.trackId === 'spiral' ? SKY_JUMPS.find(j => car.distance >= j.gapFrom && car.distance < j.gapTo)?.gapTo : section.to;
+    car.distance = (gapEnd ?? section.to) + GAP_RESPAWN;
     car.altitude = car.verticalSpeed = 0;
     car.cooldown = 1.5; // respawn grace: no instant collision with traffic parked past the gap
     car.combo = 0;
