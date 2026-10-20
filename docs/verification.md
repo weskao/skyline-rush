@@ -1,5 +1,35 @@
 # Verification — 2026-10-18
 
+## Air tricks and shortcuts UI closed — 2026-10-20
+
+Scope: the UI halves of plan §C and §D in `ui/air-tricks-shortcuts`, merged into `main` as
+`18d66d1`. Codex wrote the §C red tests and most of the §C code, then ran out of quota. Claude
+finished §C, then built §D.
+
+- §C TDD: the 3 new unit tests (callouts, audio) fail with `src/` reverted, which confirms the
+  red step Codex reported. One browser test raced the natural landing: a 4 m glide lands about
+  1.1 s after the flick, so `trick` was already `null` when the test polled `trick.done`. The
+  test now waits for the real clean-landing payout (`trickPayout.nitro === 0.25`). Review fix:
+  reduced motion and Comfortable VFX zeroed the normal steering bank; now only the roll drops.
+- §D TDD: a unit test that the `SHORTCUT` callout fires on entering the corridor and not on the
+  road below it, and a browser test at desktop and 844×390. The browser test checks the track
+  note, the `SHORTCUT` label, the callout, the `∞` budget, and that deck and pylon instances
+  sit above ground. Both failed first because the feature was missing. One page error found on
+  the way: an empty pylon slot defaulted to `relative = -1`, which passed the `> -20`
+  visibility check and then read `undefined.distance`. It is now `NaN`, which fails the check,
+  and hidden instances still get finite matrices.
+- Results: in the worktree, `npm test` **215 passed** and `npm run test:browser` **131
+  passed** (15.5 min). On the merge result, `npm test` **215 passed**, and
+  `nitro-fly-browser` + `motion-browser` + `depth-browser` **32 passed**. `artifacts/*.jpeg`
+  were restored after the run.
+- Visual: screenshots of Coast at desktop and 844×390 show the rolled car with `TRICK` /
+  `BARREL ROLL`, and the teal deck, pylon, `SHORTCUT` label and `∞` budget.
+- Cost: one extra instanced draw each for the deck (120 instances, halved on touch / low) and
+  the pylons (8 instances), plus a filter over `race.sections` (≤ 5 pylons) every frame.
+- Not verified: Neon, Canyon and Aurora corridors on screen (only Coast); how it feels in
+  play; real phones (§A). At 844×390 the callout chip overlaps the position block. That
+  placement is older than this change.
+
 ## NITRO + FLY closed: browser coverage for `AIR DASH · NITRO` — 2026-10-20
 
 Scope: TODO 7B "NITRO doesn't use fuel". Logic tests and Codex's label (`873f76a`) already

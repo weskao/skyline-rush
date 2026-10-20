@@ -10,6 +10,10 @@ If a contract must change, Claude edits the block here first and says so in the 
 Decisions confirmed 2026-10-20: 1(a) no new NITRO physics · 2(a) corridor = free flight +
 speed-cap bonus, no distance warp · 3 = yes, Coast gets a shortcut.
 
+Status 2026-10-20: §B, §C and §D are closed (logic, UI and browser tests merged in `18d66d1`).
+Codex ran out of quota mid-§C after writing the red tests and most of the code; Claude finished
+§C and built §D in the same `ui/air-tricks-shortcuts` worktree. Only §A (real phones) remains.
+
 ## File ownership and parallel schedule
 
 | Owner | Files | Never edits |
