@@ -89,7 +89,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .fuel-track { height: 3px; width: 100%; background: #4a5b68; margin: 10px 0; overflow: hidden; }
 .fuel-track > i { height: 100%; display: block; background: var(--blue); width: 100%; transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
 .fuel-caption { display: block; font-size: 7px; letter-spacing: 1.2px; color: #b3c4d0; }
-.bottomline { position: fixed; bottom: 20px; left: 40px; right: 40px; display: flex; justify-content: space-between; font-size: 8px; letter-spacing: 1.9px; color: #a5b2bd; z-index: 3; }
+.bottomline { position: fixed; bottom: max(20px, env(safe-area-inset-bottom, 0px)); left: max(40px, env(safe-area-inset-left, 0px)); right: max(40px, env(safe-area-inset-right, 0px)); display: flex; justify-content: space-between; font-size: 8px; letter-spacing: 1.9px; color: #a5b2bd; z-index: 3; }
 .bottomline > span { display: flex; align-items: center; gap: 8px; }
 .bottomline i { width: 4px; height: 4px; display: inline-block; border-radius: 50%; background: var(--accent); }
 .build-version { position: fixed; z-index: 3; left: 0; right: 0; bottom: max(4px, env(safe-area-inset-bottom)); text-align: center; font-size: 9px; letter-spacing: 1.5px; color: #8d9daa; pointer-events: none; display: none; }
@@ -199,7 +199,7 @@ body[data-phase="ready"] .build-version { display: block; }
   .fuel-heading { gap: 8px; }
   .fuel-heading b { font-size: 20px; }
   .fuel-caption { font-size: 6px; letter-spacing: .6px; }
-  .bottomline { left: 23px; right: 23px; font-size: 6px; bottom: 21px; letter-spacing: 1.3px; }
+  .bottomline { left: max(23px, env(safe-area-inset-left, 0px)); right: max(23px, env(safe-area-inset-right, 0px)); font-size: 6px; bottom: max(21px, env(safe-area-inset-bottom, 0px)); letter-spacing: 1.3px; }
   .bottomline > span:last-child { display: none; }
   body:not([data-phase="ready"]) .touch-controls { display: flex; }
   body:not([data-phase="ready"]) .telemetry { bottom: 180px; }
@@ -457,13 +457,13 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .countdown[data-step="1"] .start-lights > i { background: #ffae79; border-color: #ffd0a6; box-shadow: 0 0 18px #fb895b; }
 .countdown[data-step="GO"] { color: #b0f5ff; }
 .countdown[data-step="GO"] .start-lights > i { background: #90efff; border-color: #c8faff; box-shadow: 0 0 22px #69d5ff; }
-.aero-tools { position: fixed; top: 103px; right: 40px; z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
+.aero-tools { position: fixed; top: 103px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
 .aero-tools > button, .aero-tools > details > summary { min-height: 34px; padding: 6px 10px; border: 1px solid #6e9baa66; border-radius: 5px; background: #102432d9; color: #c6edfa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .aero-tools kbd { height: 20px; min-width: 20px; font-size: 9px; }
 #airflow-toggle[aria-pressed="true"] { background: #204858; border-color: #89d8ed; }
 #aero-start { display: none; }
 .airflow-active[data-phase="ready"] #aero-start { display: block; }
-.vfx-settings { position: absolute; right: 0; top: 44px; width: 310px; max-height: calc(100dvh - 170px); overflow-y: auto; overscroll-behavior: contain; background: #0b1c2bf5; border: 1px solid #6daabe70; border-radius: 10px; box-shadow: 0 18px 55px #0006; padding: 18px; backdrop-filter: blur(14px); letter-spacing: 0; }
+.vfx-settings { position: absolute; right: 0; top: 44px; width: 310px; max-height: calc(100dvh - 170px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; background: #0b1c2bf5; border: 1px solid #6daabe70; border-radius: 10px; box-shadow: 0 18px 55px #0006; padding: 18px; backdrop-filter: blur(14px); letter-spacing: 0; }
 .vfx-heading { display: grid; gap: 9px; padding-bottom: 18px; border-bottom: 1px solid #87c5da30; }
 .vfx-heading > span { color: #91d9ee; font-size: 8px; letter-spacing: 2px; }
 .vfx-heading strong { font: 700 30px 'Barlow Condensed', sans-serif; }
@@ -494,9 +494,9 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
 .speed-streaks { transition: opacity .35s ease-out; }
 .vfx-comfort .speed-streaks { display: none; }
 @media (max-width: 760px) {
-  .aero-tools { top: 74px; right: 16px; }
+  .aero-tools { top: 74px; right: max(16px, env(safe-area-inset-right, 0px)); }
   .aero-tools > button, .aero-tools > details > summary { min-height: 30px; padding: 4px 8px; font-size: 8px; }
-  .vfx-settings { max-height: calc(100dvh - 140px); width: min(310px, calc(100vw - 32px)); top: 36px; }
+  .vfx-settings { max-height: calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); width: min(310px, calc(100vw - 32px)); top: 36px; }
   .airflow-hud { top: 245px; left: 16px; width: 160px; padding: 10px; gap: 6px; }
   .airflow-hud > strong { font-size: 20px; }
   .aero-eyebrow { font-size: 6px; letter-spacing: 1px; }
@@ -507,10 +507,10 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
   .intro-controls { flex-wrap: wrap; gap: 12px 20px; }
 }
 @media (max-height: 500px) {
-  .aero-tools { top: 64px; right: 16px; }
+  .aero-tools { top: 64px; right: max(16px, env(safe-area-inset-right, 0px)); }
   .airflow-hud { top: 150px; width: 160px; padding: 10px; }
   .aero-channels, .aero-disclaimer { display: none; }
-  .vfx-settings { max-height: calc(100dvh - 110px); top: 36px; }
+  .vfx-settings { max-height: calc(100dvh - 110px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); top: 36px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .airflow-hud { transition: none; transform: none; }
@@ -535,12 +535,12 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
 
 /* Keep thumb controls clear of phone edges without blocking settings scrolling. */
 @media (pointer: coarse), (max-width: 760px) {
-  .touch-controls { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); touch-action: none; }
+  .touch-controls { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom, 0px)); touch-action: none; }
   .topbar { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
-  body:not([data-phase="ready"]) .telemetry { bottom: calc(112px + env(safe-area-inset-bottom)); }
+  body:not([data-phase="ready"]) .telemetry { bottom: calc(112px + max(0px, env(safe-area-inset-bottom, 0px) - 18px)); }
   .start-hint, .intro-controls { display: none; }
   /* the two-row steering cluster (buttons mode) reserves the same height the portrait layout does */
-  body:not([data-phase="ready"]):has(#touch-controls[data-steer-mode="buttons"]) .telemetry { bottom: calc(180px + env(safe-area-inset-bottom)); }
+  body:not([data-phase="ready"]):has(#touch-controls[data-steer-mode="buttons"]) .telemetry { bottom: calc(180px + max(0px, env(safe-area-inset-bottom, 0px) - 18px)); }
 }
 @media (max-width: 760px) and (min-height: 501px) {
   body:not([data-phase="ready"]) .touch-controls { display: grid; grid-template-columns: auto auto; gap: 10px; }
@@ -549,7 +549,7 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
   .touch-pedals { grid-column: 2; grid-row: 2; }
   .touch-steer, .touch-actions, .touch-pedals { gap: 10px; }
   .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: calc(56px * var(--touch-scale, 1)); height: calc(60px * var(--touch-scale, 1)); font-size: 9px; }
-  body:not([data-phase="ready"]) .telemetry { bottom: calc(180px + env(safe-area-inset-bottom)); }
+  body:not([data-phase="ready"]) .telemetry { bottom: calc(180px + max(0px, env(safe-area-inset-bottom, 0px) - 18px)); }
 }
 
 /* Touch control preferences (contract: comment in main.js). Sizes scale via --touch-scale in the declarations above; telemetry offsets reserve the Large (1.15x) height. */
@@ -570,7 +570,7 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px 
 .toolbar { margin-left: auto; }
 .controls-button { min-width: 44px; height: 44px; flex-shrink: 0; padding: 0 12px; border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; background: rgb(8 22 38 / .55); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; }
 .controls-button:hover:not(:disabled), .controls-button[aria-expanded="true"] { border-color: var(--blue); background: #19384c; }
-.controls-panel { position: absolute; top: calc(100% + 10px); right: 0; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 100px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
+.controls-panel { position: absolute; top: calc(100% + 10px); right: 0; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 100px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
 .controls-field { display: flex; gap: 6px; margin: 0; padding: 8px 6px; border: 0; }
 .controls-field legend { padding: 0 0 6px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
 .controls-choice { position: relative; flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; font-size: 12px; cursor: pointer; }
@@ -836,7 +836,7 @@ body[data-phase="ready"] .telemetry { display: none; }
 .intro {
   top: clamp(124px, 17dvh, 180px);
   right: max(20px, env(safe-area-inset-right));
-  bottom: calc(48px + env(safe-area-inset-bottom));
+  bottom: max(48px, env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   overscroll-behavior: contain;
   scroll-padding-block: 8px;
@@ -853,4 +853,31 @@ body[data-phase="ready"] .telemetry { display: none; }
 }
 @media (max-height: 500px) {
   .intro { top: 106px; }
+}
+
+/* Insets are 0 when the OS already places the web view clear of the status bar
+   (iOS standalone with an opaque bar, Android 14 and earlier). Android 15+
+   edge-to-edge, and a notch or Dynamic Island in landscape, report the real
+   inset. Chrome shifts by that amount; #world stays inset 0. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+.topbar,
+.aero-tools,
+.race-info,
+.event-callout,
+body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
+.intro { margin-top: calc(-6px + var(--safe-top)); }
+.race-info, .telemetry {
+  margin-left: max(0px, calc(var(--safe-left) - 40px));
+  margin-right: max(0px, calc(var(--safe-right) - 40px));
+}
+@media (max-width: 760px) {
+  .race-info, .telemetry {
+    margin-left: max(0px, calc(var(--safe-left) - 23px));
+    margin-right: max(0px, calc(var(--safe-right) - 23px));
+  }
 }

@@ -4,6 +4,9 @@ test('installed apps receive decodable icons and launch inside the deployed site
   await page.goto('./', { waitUntil: 'domcontentloaded' });
   const manifestLink = page.locator('link[rel="manifest"]');
   await expect(manifestLink).toHaveCount(1);
+  // black-translucent lets iOS standalone draw under the status bar and then
+  // drop that same height as an unpaintable band at the bottom (WebKit 313800).
+  await expect(page.locator('meta[name="apple-mobile-web-app-status-bar-style"]')).toHaveAttribute('content', 'black');
   const manifestURL = await manifestLink.evaluate(link => link.href);
   const response = await page.request.get(manifestURL);
   expect(response.ok()).toBe(true);

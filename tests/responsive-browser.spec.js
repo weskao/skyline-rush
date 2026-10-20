@@ -90,3 +90,51 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
     });
   });
 }
+
+// Insets are 0 on Android 14 and on iOS standalone once the status bar sits outside the web view.
+// Android 15 draws edge-to-edge, and a notch or Dynamic Island reports its own inset.
+test.describe('device safe areas', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('scene stays full-bleed and controls clear each device inset', async ({ page, context }) => {
+    const profiles = [
+      ['notch iphone', { top: 47, bottom: 34, left: 0, right: 0 }, 390, 844],
+      ['dynamic island', { top: 59, bottom: 34, left: 0, right: 0 }, 402, 874],
+      ['android 15 gesture', { top: 24, bottom: 24, left: 0, right: 0 }, 412, 915],
+      ['android 15 buttons', { top: 48, bottom: 48, left: 0, right: 0 }, 412, 892],
+      ['android 14', { top: 0, bottom: 0, left: 0, right: 0 }, 412, 915],
+      ['notch landscape', { top: 0, bottom: 21, left: 47, right: 47 }, 844, 390],
+    ];
+    for (const [name, insets, width, height] of profiles) {
+      await page.setViewportSize({ width, height });
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets });
+      await page.goto('./');
+      await page.evaluate(() => document.fonts.ready);
+      await page.locator('#intro').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const world = await page.locator('#world').boundingBox();
+      expect(world.x, name).toBeLessThanOrEqual(1);
+      expect(world.y, name).toBeLessThanOrEqual(1);
+      expect(world.x + world.width, name).toBeGreaterThanOrEqual(width - 1);
+      expect(world.y + world.height, name).toBeGreaterThanOrEqual(height - 1);
+      const bar = await page.locator('.topbar').boundingBox();
+      expect(bar.y, `${name} top bar`).toBeGreaterThanOrEqual(insets.top - 1);
+      expect(bar.y, `${name} top bar`).toBeLessThanOrEqual(insets.top + 1);
+      const brand = await page.locator('.brand').boundingBox();
+      expect(brand.x, `${name} brand`).toBeGreaterThanOrEqual(insets.left - 1);
+      const camera = await page.locator('#camera-button').boundingBox();
+      expect(camera.x + camera.width, `${name} camera`).toBeLessThanOrEqual(width - insets.right + 1);
+      expect(camera.y, `${name} camera`).toBeGreaterThanOrEqual(insets.top - 1);
+      if (height >= 500) {
+        const line = await page.locator('.bottomline').boundingBox();
+        const gap = height - (line.y + line.height);
+        expect(gap, `${name} footer`).toBeGreaterThanOrEqual(insets.bottom - 1);
+        expect(gap, `${name} footer`).toBeLessThanOrEqual(Math.max(22, insets.bottom) + 2);
+      }
+      const start = await page.locator('#start-button').boundingBox();
+      expect(start.y, `${name} start`).toBeGreaterThanOrEqual(insets.top - 1);
+      expect(start.y + start.height, `${name} start`).toBeLessThanOrEqual(height - insets.bottom + 1);
+      await cdp.detach();
+    }
+  });
+});
