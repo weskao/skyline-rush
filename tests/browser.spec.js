@@ -422,6 +422,10 @@ test('a complete 5 km sprint reaches results, saves a best time and can race aga
   expect(history[0]).toMatchObject({ track: 'coast', distance: 5000 });
   expect(history[0].time).toBeGreaterThan(50);
   expect(history[0].score).toBeGreaterThan(0);
+  const saved = await page.evaluate(() => ({ ghost: JSON.parse(localStorage.getItem('skyline-rush-ghosts')).coast, stars: JSON.parse(localStorage.getItem('skyline-rush-stars')).coast }));
+  expect(Math.abs(saved.ghost.samples.length - (Math.floor(saved.ghost.time * 10) + 1))).toBeLessThanOrEqual(1);
+  expect(saved.ghost.time).toBe(history[0].time);
+  expect(saved.stars).toBeGreaterThanOrEqual(1);
   await page.getByRole('button', { name: 'History', exact: true }).click();
   await expect(page.locator('.history-run')).toHaveCount(1);
   await expect(page.locator('.history-run')).toContainText('BEST');

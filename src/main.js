@@ -2,17 +2,19 @@ import './style.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_TRACKS, MAX_SPEED } from './game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
-import { recordRace, recordBest, loadHistory, loadBests, loadUnlocks, careerStats, LEGACY_BEST_KEY } from './history.js';
+import { recordRace, recordBest, loadHistory, loadBests, loadUnlocks, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
+  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, LEGACY_BEST_KEY } from './history.js';
+import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
-import { PAINTS } from './appearance.js';
+import { PAINTS, ownedPaints } from './appearance.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -65,6 +67,16 @@ let pausedPhase = 'racing';
 const sessionBests = {};
 let sessionHistory = loadHistory();
 const unlockedTracks = new Set(loadUnlocks());
+// Session copies keep progression honest when storage is blocked.
+let sessionMedals = loadMedals();
+const sessionStars = loadStars();
+let equippedPaint = loadPaint(ownedPaints(starTotal(sessionStars)));
+const ghosts = {}; // per-track best-run ghost, loaded and validated on first use
+const ghostFor = trackId => trackId in ghosts ? ghosts[trackId] : ghosts[trackId] = loadGhost(trackId);
+let trace = [], traceRace = null;
+let sessionDaily = loadDaily();
+let daily = null; // the challenge being raced; its modifier lives on race.modifier
+const MODIFIER_LABELS = { 'no-flight': 'No flight', 'double-traffic': 'Double traffic', 'gold-rings': 'Gold rings only' };
 let previousFuel = 100;
 let previousNitro = 0;
 const presentation = createPresentation();
@@ -176,14 +188,23 @@ function showTracks() {
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
   $('#track-note').textContent = trackNotes[race.trackId] + (next && !unlockedTracks.has(next) ? ` Finish top 3 on ${track.name} to unlock ${RACE_TRACKS[next].name}.` : '');
-  $('.route-heading').textContent = track.name.toUpperCase();
-  $('.overlay-route').textContent = `SKYLINE RUSH / ${track.name.toUpperCase()}`;
+  const route = race.modifier ? `DAILY · ${track.name} · ${MODIFIER_LABELS[race.modifier]}`.toUpperCase() : track.name.toUpperCase();
+  $('.route-heading').textContent = route;
+  $('.overlay-route').textContent = `SKYLINE RUSH / ${route}`;
   $('#world').setAttribute('aria-label', `3D ${track.name} racing highway`);
+  showGhost();
 }
+function showGhost() {
+  const ghost = ghostFor(race.trackId);
+  const name = RACE_TRACKS[race.trackId].name;
+  $('#ghost-enabled').checked = controlPrefs.ghost;
+  $('#ghost-status').textContent = race.modifier ? 'Ghosts sit out daily challenges.' : ghost ? `Best-run ghost ready on ${name} · ${timeString(ghost.time)}.` : `No best-run replay recorded on ${name} yet.`;
+}
+$('#ghost-enabled').addEventListener('change', ({ target }) => { controlPrefs = controlSettings({ ...controlPrefs, ghost: target.checked }); applyControls(); });
 for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
   if (race.phase !== 'ready' || !unlockedTracks.has(button.dataset.track)) return;
   controls.clear();
-  race = createRace(button.dataset.track);
+  race = createRace(button.dataset.track); daily = null;
   showTracks();
   sound.cue('ui');
 });
@@ -232,7 +253,26 @@ function showHistory() {
     detail.textContent = `${number(run.score)} style · ${number(run.collisions)} contacts · ${number(run.nearMisses)} close passes · ${number(run.rings)} rings · ${number(run.perfectLines)} perfect lines · ${number(run.nitroUses)} nitro uses`;
     row.append(summary, detail); return row;
   }));
+  const today = dailyChallenge();
+  $('#daily-status').textContent = `Today: ${RACE_TRACKS[today.track].name} · ${MODIFIER_LABELS[today.modifier]}. Runs here skip history, bests and ghosts.`;
+  $('#daily-start').disabled = !world;
+  const board = dailyBoard(sessionDaily, today.id).slice(0, 5);
+  const line = text => { const row = document.createElement('p'); row.textContent = text; return row; };
+  $('#daily-board').replaceChildren(...board.length ? board.map((run, i) => line(`#${i + 1} · ${timeString(run.time)} · P${run.position} / 4 · ${Math.round(run.score)} style`)) : [line('No challenge runs recorded yet today.')]);
+  for (const item of document.querySelectorAll('[data-medal]')) {
+    const awarded = sessionMedals[item.dataset.medal];
+    item.classList.toggle('is-awarded', !!awarded);
+    item.querySelector('small').textContent = awarded ? `Awarded ${new Date(awarded).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : 'Not awarded';
+  }
+  $('#achievement-status').textContent = `${Object.keys(sessionMedals).length} of 4 medals awarded.`;
 }
+$('#daily-start').addEventListener('click', () => {
+  daily = dailyChallenge();
+  historyScreen.close();
+  controls.clear(); race = createRace(daily.track, daily.modifier); goUntil = 0; previousFuel = 100; previousNitro = 0;
+  showTracks(); phaseUI(); previousPhase = race.phase;
+  start();
+});
 for (const button of document.querySelectorAll('[data-open-history]')) button.addEventListener('click', () => {
   controls.clear(); historyOpener = button; $('#history-track').value = race.trackId;
   showHistory(); historyScreen.showModal();
@@ -247,27 +287,34 @@ $('#history-close').addEventListener('click', closeHistory);
 historyScreen.addEventListener('cancel', event => { event.preventDefault(); closeHistory(); });
 historyScreen.addEventListener('close', () => historyOpener?.focus({ preventScroll: true }));
 const garageScreen = $('#garage-screen');
+let previewing = equippedPaint;
 function previewPaint(id) {
+  previewing = id;
   world?.previewAppearance(PAINTS[id]);
   document.querySelectorAll('[data-paint]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.paint === id)));
-  $('#garage-status').textContent = `${PAINTS[id].name} · ${id === 'pearl' ? 'standard finish.' : 'Preview only · not unlocked.'}`;
-  $('#garage-equip').textContent = id === 'pearl' ? 'Standard finish equipped' : 'Unlocks not available yet';
+  const stars = starTotal(sessionStars);
+  const owned = ownedPaints(stars).includes(id);
+  const { name } = PAINTS[id];
+  $('#garage-status').textContent = `${name} · ${id === equippedPaint ? 'equipped.' : owned ? 'owned.' : `Preview only · unlocks at ${PAINTS[id].stars} stars (you have ${stars}).`}`;
+  $('#garage-equip').disabled = !owned || id === equippedPaint;
+  $('#garage-equip').textContent = id === equippedPaint ? `${name} equipped` : owned ? `Equip ${name}` : `Locked · ${PAINTS[id].stars} stars`;
 }
+$('#garage-equip').addEventListener('click', () => { equippedPaint = previewing; savePaint(equippedPaint); previewPaint(equippedPaint); });
 $('#garage-button').addEventListener('click', () => {
   if (!world || race.phase !== 'ready') return;
   controls.clear(); garageScreen.showModal();
   $('#garage-preview').append($('#world'));
-  world.resize(); previewPaint('pearl');
+  world.resize(); previewPaint(equippedPaint);
 });
 document.querySelectorAll('[data-paint]').forEach(button => button.addEventListener('click', () => previewPaint(button.dataset.paint)));
 $('#garage-close').addEventListener('click', () => garageScreen.close());
 garageScreen.addEventListener('close', () => {
-  $('#app').prepend($('#world')); world.resize(); previewPaint('pearl');
+  $('#app').prepend($('#world')); world.resize(); previewPaint(equippedPaint);
   controls.clear(); $('#garage-button').focus({ preventScroll: true });
 });
 for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
 $('#choose-track').addEventListener('click', () => {
-  controls.clear(); race = createRace(race.trackId); goUntil = 0;
+  controls.clear(); race = createRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
 });
@@ -310,7 +357,7 @@ function restart() {
     const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
-  race = createRace(race.trackId);
+  race = createRace(race.trackId, race.modifier);
   previousFuel = 100; previousNitro = 0;
   goUntil = 0;
   startRace(race);
@@ -666,22 +713,36 @@ function phaseUI() {
     $('#result-links').hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
-    const recordRun = recordRace(race); // history.js swallows storage failures
-    sessionHistory = [...sessionHistory, recordRun].slice(-50);
-    if (race.result.position <= 3) {
-      const tracks = Object.keys(RACE_TRACKS);
-      const next = tracks[tracks.indexOf(race.trackId) + 1];
-      if (next) unlockedTracks.add(next);
+    const medals = recordMedals(race.result).filter(id => !sessionMedals[id]); // history.js swallows storage failures
+    sessionMedals = { ...sessionMedals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
+    const trackId = race.trackId ?? 'coast';
+    let best, record;
+    if (race.modifier) {
+      const run = recordDaily(daily, race);
+      sessionDaily = [...sessionDaily, run].slice(-50);
+      const board = dailyBoard(sessionDaily, daily.id);
+      best = board[0].time; record = board[0] === run;
+    } else {
+      const recordRun = recordRace(race);
+      sessionHistory = [...sessionHistory, recordRun].slice(-50);
+      if (race.result.position <= 3) {
+        const tracks = Object.keys(RACE_TRACKS);
+        const next = tracks[tracks.indexOf(race.trackId) + 1];
+        if (next) unlockedTracks.add(next);
+      }
+      const saved = recordBest(trackId, race.elapsed);
+      // Session bests keep "personal best" honest when storage is blocked.
+      best = Math.min(saved.best, sessionBests[trackId] ?? Infinity);
+      record = saved.record && !(sessionBests[trackId] <= race.elapsed);
+      sessionBests[trackId] = best;
+      // The pre-tracks key stays readable for coast (older builds, browser test).
+      if (record && trackId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
+      recordStars(trackId, race.result.stars);
+      sessionStars[trackId] = Math.max(sessionStars[trackId] ?? 0, race.result.stars);
+      const ghost = { time: race.elapsed, samples: trace };
+      if (record && traceRace === race && validGhost(ghost, trackId)) { saveGhost(trackId, ghost); ghosts[trackId] = ghost; }
     }
     showTracks();
-    const trackId = race.trackId ?? 'coast';
-    const saved = recordBest(trackId, race.elapsed);
-    // Session bests keep "personal best" honest when storage is blocked.
-    const best = Math.min(saved.best, sessionBests[trackId] ?? Infinity);
-    const record = saved.record && !(sessionBests[trackId] <= race.elapsed);
-    sessionBests[trackId] = best;
-    // The pre-tracks key stays readable for coast (older builds, browser test).
-    if (record && trackId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
     ui['overlay-title'].textContent = race.result.position === 1 ? 'Above the rest.' : 'That was a rush.';
     ui['overlay-copy'].textContent = record ? 'A new personal best. The skyline is yours.' : 'One more run. One less second.';
     ui['resume-button'].hidden = true;
@@ -698,6 +759,7 @@ function phaseUI() {
       { element: $('#result-style > strong'), value: race.result.score, format: value => `${Math.round(value)} STYLE` },
     ];
     ui['overlay-copy'].textContent += ` ${race.result.nearMisses} close passes · ${race.result.collisions} contacts.`;
+    if (medals.length) ui['overlay-copy'].textContent += ` New medal: ${medals.map(id => $(`[data-medal="${id}"] strong`).textContent).join(', ')}.`;
   }
 }
 
@@ -901,6 +963,7 @@ function updateUI(now, input) {
 try {
   world = createWorld($('#world'));
   world.configureVFX(visual);
+  world.previewAppearance(PAINTS[equippedPaint]);
   window.addEventListener('resize', world.resize);
   let previousTime = performance.now();
   let accumulator = 0;
@@ -914,12 +977,15 @@ try {
     const input = controls.read();
     if (autoThrottle && !input.brake) input.throttle = true;
     input.laneAssist = autoThrottle;
+    if (traceRace !== race) { traceRace = race; trace = []; }
     while (accumulator >= 1 / 60) {
       stepRace(race, input, 1 / 60);
+      if (!race.modifier) recordGhost(trace, race);
       accumulator -= 1 / 60;
     }
     presentationState = presentation.update(race, dt, calmMotion());
-    world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState);
+    const ghost = controlPrefs.ghost && !race.modifier && race.phase !== 'ready' ? ghostFor(race.trackId) : null;
+    world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
     sound.update(race);
     hudElapsed += dt;
     if (hudElapsed >= 0.075 || previousPhase !== race.phase) {

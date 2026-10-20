@@ -435,12 +435,19 @@ export function createWorld(canvas) {
   const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex].map(style => { const car = makeCar(style); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
-  const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity))) }, (_, i) => {
+  // ×2 covers the double-traffic daily modifier.
+  const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2))) }, (_, i) => {
     const car = makeCar(CAR_STYLES.commuter, trafficColors[i % 5]);
     car.scale.setScalar(0.96);
     scene.add(car);
     return car;
   });
+  // Best-run ghost: the player's shape in one translucent material.
+  const ghostCar = makeCar(CAR_STYLES.roadster);
+  const ghostMaterial = new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: 0.3, depthWrite: false });
+  ghostCar.traverse(object => { if (object.material) { [].concat(object.material).forEach(mat => mat.dispose()); object.material = ghostMaterial; } });
+  ghostCar.userData.jets.visible = ghostCar.visible = false;
+  scene.add(ghostCar);
   const shadowCanvas = document.createElement('canvas');
   shadowCanvas.width = shadowCanvas.height = 64;
   const shadowContext = shadowCanvas.getContext('2d');
@@ -509,7 +516,7 @@ export function createWorld(canvas) {
     },
     configureVFX(options) { visual = vfxSettings(options); },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
-    render(race, dt, idleTime, input = {}, presentation = {}) {
+    render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
       const preview = race.phase === 'ready';
       const car = race.player;
       const reducedMotion = motionPreference.matches || visual.comfortable;
@@ -644,6 +651,11 @@ export function createWorld(canvas) {
         if (race.phase === 'finished') player.position.z -= presentation.finishDistance || 0;
         rivals.forEach((mesh, i) => updateCar(mesh, race.rivals[i], distance, center, time, motionDt));
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt); });
+      }
+      ghostCar.visible = !preview && !!ghost;
+      if (ghostCar.visible) {
+        ghostCar.position.set(roadCenter(ghost.distance) - center + ghost.x, ghost.altitude, distance - ghost.distance);
+        ghostCar.rotation.y = -roadHeading(ghost.distance);
       }
       shadow.position.x = player.position.x;
       shadow.position.z = player.position.z;

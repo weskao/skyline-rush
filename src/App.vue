@@ -50,7 +50,7 @@ const CONTROL_CHOICES = {
           <fieldset v-for="([legend, options], key) in CONTROL_CHOICES" class="controls-field"><legend>{{ legend }}</legend><label v-for="[value, label] in options" class="controls-choice"><input type="radio" :name="`controls-${key}`" :data-controls="key" :value="value"><span>{{ label }}</span></label></fieldset>
           <p id="tilt-status" role="status" class="controls-note">Tilt asks permission only when selected. Hold your phone comfortably to set neutral.</p>
           <button id="tilt-enable" class="controls-reset" hidden>Enable / recenter tilt</button>
-          <label class="ghost-setting"><input id="ghost-enabled" type="checkbox" disabled>Show best-run ghost</label>
+          <label class="ghost-setting"><input id="ghost-enabled" type="checkbox">Show best-run ghost</label>
           <p id="ghost-status" class="controls-note">No best-run replay recorded yet.</p>
           <label class="controls-field controls-range">Button opacity <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Button opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
           <label class="controls-field controls-range">Steering sensitivity <output for="controls-sensitivity"></output><input id="controls-sensitivity" aria-label="Steering sensitivity" type="range" data-controls="sensitivity" min="0.4" max="1" step="0.1"></label>

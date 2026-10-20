@@ -677,6 +677,7 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
 .achievement-list li > div { display: grid; gap: 5px; flex: 1; min-width: 0; }
 .achievement-list strong { font-size: 13px; }
 .achievement-list span, .achievement-list small { color: #ccd7e0; font-size: 11px; }
+.achievement-list li.is-awarded > svg, .achievement-list li.is-awarded small { color: var(--accent); }
 .ghost-setting { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 6px; font-size: 12px; }
 .ghost-setting input { width: 20px; height: 20px; accent-color: var(--blue); }
 .garage-preview { height: clamp(140px, 28dvh, 240px); overflow: hidden; border-radius: 6px; margin-block: 16px; }
