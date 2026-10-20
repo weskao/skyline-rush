@@ -1,4 +1,4 @@
-<!-- source-sha256: 0ecf50e2a37465986ca733b9868defce0942d86f773daf5e57c1c8e34cc3340d generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: b05db7bd402de529019dfbf7577507f08f81964f4cc476cd0d038c5ef1e4f58a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -13,7 +13,7 @@ Skyline Rush 是一款可在瀏覽器中遊玩、短小且值得重複挑戰的�
 
 - **先開車，再飛行。** 時速超過 65 km/h 後，按住 FLY 即可升空，飛越車流、穿過光環、跨越斷橋。飛行與 BOOST 共用同一份推進器電量，而電量只能在路面上回充，因此每一次爬升都是一個抉擇。
 - **靠出色的駕駛賺取 NITRO。** 近距離超車、漂移、連續光環組（PERFECT LINE）、氣流牽引、成功落地的桶滾與拾取道具，會填滿三格的 NITRO 儲備；可以一次爆發用完，也可以連按延長持續時間。
-- **四條賽道，依序解鎖。** 黃昏海岸、有低矮隧道的雨夜 Neon Downtown、有斷橋與側風的 Canyon Skyway，以及有冰面與上坡的 Aurora Pass。每條賽道都有一條空中捷徑，留給能在空中穩住路線的玩家。
+- **五條賽道，依序解鎖。** 黃昏海岸、有低矮隧道的雨夜 Neon Downtown、有斷橋與側風的 Canyon Skyway、有冰面與上坡的 Aurora Pass，以及 Sky Spiral 的 360° 高架螺旋、起飛坡道與斷裂天橋。每條賽道都有一條空中捷徑，留給能在空中穩住路線的玩家。
 - **值得追逐的目標。** 每次完賽都會獲得風格星數，可在 Garage 解鎖塗裝。最佳成績幽靈車、擁有專屬排行榜的每日挑戰，以及四種獎章，都是再次挑戰的理由。
 
 一場比賽約一分鐘。音效在瀏覽器中合成，進度保存在本機儲存空間，因此不需要帳號，也沒有後端。
@@ -117,13 +117,17 @@ NITRO 不消耗電量，因此 Fly + NITRO 永遠可以同時使用（Fly + Boos
 
 ### 賽道與風格
 
-從 Coast 開始。名列前三即可解鎖 Neon Downtown，接著是 Canyon Skyway，然後是 Aurora Pass。開始前先選擇賽道；鍵盤使用者可用左／右鍵在賽道按鈕之間移動，並以 Enter 選擇。Restart 會保留所選賽道；結算畫面上的 **Choose track** 則會回到選單。每條賽道都有自己的天空、色調與程序生成的場景：雨中的霓虹街道與低矮隧道、紅色沙漠峭壁與斷橋／側風，或有極光與冰面的雪山。警告標誌會標示特殊路段。Aurora 的上坡路段以正常速率一半的效率回充地面燃料。
+從 Coast 開始。名列前三即可解鎖 Neon Downtown，接著是 Canyon Skyway，然後是 Aurora Pass，最後是 Sky Spiral。開始前先選擇賽道；鍵盤使用者可用左／右鍵在賽道按鈕之間移動，並以 Enter 選擇。Restart 會保留所選賽道；結算畫面上的 **Choose track** 則會回到選單。每條賽道都有自己的天空、色調與程序生成的場景：雨中的霓虹街道與低矮隧道、紅色沙漠峭壁與斷橋／側風，或有極光與冰面的雪山。警告標誌會標示特殊路段。Aurora 的上坡路段以正常速率一半的效率回充地面燃料。
 
 風格分數獎勵近距離超車（100 × 連鎖，漂移會使連鎖加倍）、光環（150，風險光環另加 500）、PERFECT LINE（500）、移動中的滯空時間（每秒 10），以及每 500 公尺的乾淨行駛（100）。碰撞與墜入斷口會重置乾淨距離的進度。結算時，完賽可得一顆星，每公里 250 分得兩顆星，每公里 500 分得三顆星，與完賽名次無關。
 
 燃料與 nitro 條會緩緩趨近新的數值，在容量低於 20% 時發出警告，補充時閃爍光澤，並在一格 nitro 充滿時脈動。Comfort mode 與系統的減少動態設定會停用這些動畫。滑動板在按住時會顯示浮動的圓環／旋鈕，並在比賽開始時顯示簡短提示；放開後轉向會回到中立。
 
 HUD 使用共用的動態時序（120 / 240 / 480 ms）。速度表指針會隨速度緩動；名次變動時，名次數字會翻轉並帶有綠色向上或紅色向下的箭頭，排行榜列則滑入新的位置。精簡的半透明事件提示位於畫面中央上方，避開 HUD 面板，並將擦身而過、PERFECT LINE、NITRO 爆發、電量增加與漂移火花階級依序排隊顯示，不會互相重疊。暫停、完賽與重新開始會清空佇列。按鈕在按下時會壓縮，放開後彈回；按住的觸控按鈕會持續亮起。VFX 設定中的選用 **Haptic feedback** 會在支援的觸控裝置上對碰撞、NITRO 與漂移獎勵發出震動回饋。Comfort mode 與系統的減少動態設定會保留文字與按下狀態的顏色，同時移除新增的動態與震動。
+
+### Sky Spiral 天際螺旋（第五條賽道，開發中）
+
+Sky Spiral 新增真正具有高度變化的 360° 上升螺旋公路、霓虹未來城市，以及三組起飛坡道與高架斷橋。沿用現有飛行、BOOST、NITRO、幽靈紀錄及賽道解鎖機制。這條賽道使用獨立的彎曲路面渲染器與自己的 3D 路徑對應，目前仍在實體手機上驗證。
 
 ## 驗證
 
@@ -179,4 +183,4 @@ CI（`.github/workflows/ci.yml`）會在推送至 `main`、pull request、版本
 
 所有車輛／場景幾何與特效皆由程式碼生成。Barlow Condensed 依其 SIL Open Font License 隨附於 `public/fonts/OFL.txt`。Three.js、Vue、Vite 與 Playwright 保留各自的套件授權。
 
-來源：[weskao/skyline-rush](https://github.com/weskao/skyline-rush)。單人、四條賽道、街機物理。瀏覽器驗證涵蓋桌機 Chrome 與模擬的行動裝置視窗；iOS Safari 已在 iOS 模擬器中檢查（直向與橫向，Coast 與 Neon），但尚未在實體手機上量測畫面更新率（可使用 `?perf`，請見「驗證」）。
+來源：[weskao/skyline-rush](https://github.com/weskao/skyline-rush)。單人、五條賽道、街機物理。瀏覽器驗證涵蓋桌機 Chrome 與模擬的行動裝置視窗；iOS Safari 已在 iOS 模擬器中檢查（直向與橫向，Coast 與 Neon），但尚未在實體手機上量測畫面更新率（可使用 `?perf`，請見「驗證」）。

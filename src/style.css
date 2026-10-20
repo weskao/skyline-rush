@@ -881,3 +881,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
     margin-right: max(0px, calc(var(--safe-right) - 23px));
   }
 }
+
+/* Sky Spiral — fifth track's high-altitude neon identity. */
+.preview-spiral { --preview-top: #050b25; --preview-horizon: #55348c; --preview-ground: #15214f; }
+.preview-spiral::after { box-shadow: 0 0 15px #00e5ff, 0 0 27px #a855f7; }

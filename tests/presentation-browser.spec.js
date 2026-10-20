@@ -16,7 +16,7 @@ for (const [name, viewport, hasTouch] of [
   test.use({ viewport, hasTouch });
   test('track previews, countdown, pause and restart have interruptible motion', async ({ page }) => {
     await open(page);
-    await expect(page.locator('.track-preview')).toHaveCount(4);
+    await expect(page.locator('.track-preview')).toHaveCount(5);
     await expect(page.locator('.track-preview').first()).toHaveCSS('animation-play-state', 'running');
     await page.evaluate(() => {
       window.uiMotion = [];
