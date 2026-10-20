@@ -198,8 +198,8 @@ Turn the existing 7 decorative gates into interactive rings. Only passing throug
 - [x] Best time per track (replaces the single `skyline-rush-best`; migrate the old value to `coast` once)
 - [x] History screen: list filtered by track, best-run marker, sparkline of the last 10 times
 - [x] Career stats: races, wins, total distance, longest combo, most rings in one run
-- [ ] **Ghost race**: record the best run's `x / altitude` trace at 10 Hz and replay it as a translucent ghost car next time; can be turned off in settings
-  - [x] Controls UI: ghost toggle and no-recorded-replay state; disabled until recording/replay logic is connected (see `HANDOFF.md`)
+- [x] **Ghost race**: record the best run's `x / altitude` trace at 10 Hz and replay it as a translucent ghost car next time; can be turned off in settings
+  - [x] Controls UI: ghost toggle and per-track replay status; 10 Hz recording, validation and translucent playback connected
 - [x] If storage fails (private mode) the game keeps working, using the existing try/catch pattern
 - [x] Acceptance: unit tests for write / read / 50-record cap / old-best migration; browser test for the History screen
 
@@ -211,14 +211,14 @@ Ordered by small effort, big fun:
 - [x] **Slipstream**: staying right behind a rival / traffic car for 1.5 s → speed cap +6 and +0.25 nitro
 - [ ] **Air tricks**: quick left-right flick while flying = barrel roll; land it → +0.25 nitro; a hard landing loses the reward (uses `landing.speed`)
 - [x] **Rivals use NITRO too**: give rivals personalities (NOVA steady, ORBIT loves flying, APEX late surge) plus light rubber-banding to keep races tense
-- [ ] **Daily challenge**: date-seeded track + modifier (no flight, double traffic, gold rings only…), with its own board in History
-  - [x] History UI: challenge status, disabled start action and empty daily board; gameplay/data integration remains for Claude Code
-- [ ] **Achievements / medals**: first win, zero-collision finish, 5 PERFECT LINEs in one race, triple nitro chain…, shown in History
-  - [x] History UI: four medal entries and unawarded states; award rules and persistence remain for Claude Code
+- [x] **Daily challenge**: date-seeded track + modifier (no flight, double traffic, gold rings only…), with its own board in History
+  - [x] History UI: today's track + modifier, start action and the daily board (fastest five)
+- [x] **Achievements / medals**: first win, zero-collision finish, 5 PERFECT LINEs in one race, triple nitro chain…, shown in History
+  - [x] History UI: four medal entries with awarded dates; award rules and persistence in `src/history.js`
 - [ ] **Shortcuts**: one flight-only elevated shortcut per track, with pickups but also risk
 - [x] **Final sprint**: in the last 500 m the music speeds up (`audio.js` bpm) and rival gaps are shown, for comeback drama
-- [ ] **Cosmetic unlocks**: stars unlock car paint / tail light colors (visual only, no stat changes)
-  - [x] Garage UI: live paint / tail light previews, standard finish and unavailable equip state; unlock/equip persistence remains for Claude Code
+- [x] **Cosmetic unlocks**: stars unlock car paint / tail light colors (visual only, no stat changes)
+  - [x] Garage UI: live previews; best stars per track (summed) unlock Coral 3 / Glacier 6 / Aurora 9; equip is saved
 
 ## 7. Controls: easier handling, FLY + boost together, drifting
 

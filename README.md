@@ -83,7 +83,14 @@ Staying right behind a rival or traffic car for 1.5 s gives +6 m/s of speed cap 
 
 ### Saved data
 
-All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50. Open **History** from the start or results screen to filter by track, see the best run and a chart of the latest ten times, and tap a run for details. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-unlocked`: track unlocks, preserved even after older runs leave History. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: driving and visual settings.
+All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50. Open **History** from the start or results screen to filter by track, see the best run and a chart of the latest ten times, and tap a run for details. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-unlocked`: track unlocks, preserved even after older runs leave History. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: driving and visual settings (the ghost toggle lives in controls). `skyline-rush-ghosts`: one best-run ghost per track. `skyline-rush-medals`, `skyline-rush-stars`, `skyline-rush-paint`: medals with award dates, best stars per track, equipped paint. `skyline-rush-daily`: daily challenge runs, latest 50. Every saved value is validated on load; anything malformed is ignored.
+
+### Ghost, daily challenge, medals and Garage
+
+- **Ghost**: each run samples the car's distance, lane position and altitude 10 times per second. A new personal best on a track saves that run, and later races on the track show it as a translucent blue car. Turn it off with **Show best-run ghost** in Controls.
+- **Daily challenge**: History shows today's track and modifier, picked from the local date: no flight, double traffic, or gold rings only. Canyon never gets no flight, because its broken bridges need it. Daily runs go only on their own board (the fastest five today); they never touch history, best times, unlocks, stars or ghosts. Restart keeps the challenge, and **Choose track** leaves it.
+- **Medals**: First victory (win), Clean run (no collisions), Perfect flight (5 PERFECT LINEs in one race) and Triple burst (3 NITRO charges in one burst: one press plus two extensions). Any finished race can award them; each keeps the date it was first earned.
+- **Garage**: your best style stars on each track add up and unlock paints: Coral at 3, Glacier at 6 and Aurora at 9. Locked paints can still be previewed. Paint only changes the look, never the car's stats.
 
 ### Tracks and style
 
@@ -130,7 +137,9 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-st
 - `src/game.js`: deterministic arcade simulation, opponents, traffic and finish order.
 - `src/input.js`: keyboard and multi-pointer controls with cancellation and blur cleanup; reads the saved key map.
 - `src/key-map.js`: pure key map with J/K/L and E alternates, conflict-swapping rebind, validation and storage.
-- `src/history.js`: per-race history (latest 50), per-track best times, legacy best migration and career stats (no UI yet).
+- `src/history.js`: saved gameplay data: race history (latest 50), per-track bests and legacy migration, career stats, medals, stars, equipped paint, ghosts and the daily board.
+- `src/ghost.js`: 10 Hz ghost recording, per-track validation and interpolated playback.
+- `src/appearance.js`: paint catalog and star unlock thresholds.
 - `src/rng.js`: seeded random streams; track pickups and rings come from the track seed.
 - `src/world.js`, `src/geometry.js`: Three.js renderer, procedural cars, highway, skyline, flight effects and cameras.
 - `src/effects.js`: a fixed 480-particle GPU pool for vapor, sparks and landing dust.

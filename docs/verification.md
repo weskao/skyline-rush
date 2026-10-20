@@ -1,5 +1,31 @@
 # Verification — 2026-10-18
 
+## Gameplay follow-up: ghost, daily challenge, medals, cosmetic unlocks — 2026-10-20
+
+Scope: the four gameplay TODOs the UI pass left open (`HANDOFF.md`, removed after this pass).
+Gamepad stays excluded. Race phases and input actions are unchanged; `createRace` gains an
+optional daily `modifier`, `stepRace` ignores FLY under `no-flight`, and results gain `nitroChain`.
+
+- TDD: 17 new unit tests failed first on missing exports or fields (`nitroChain`,
+  `recordMedals`, `loadStars`, `PAINTS[].stars`, `ghost.js`, `DAILY_MODIFIERS`). Three
+  control-settings tests needed the new `ghost` default added to their expected objects. A new
+  `progression-browser.spec.js` (3 tests) and the updated collections spec (4 viewports) failed
+  on the old placeholder states before the wiring went in.
+- Results: `npm test` **194 passed**. `npm run test:browser -- --workers=2` **125 passed (7.9 min)**.
+  This includes the complete 5 km sprint, which now also checks that the saved ghost has about
+  10 samples per second of finish time and that the coast stars were saved.
+- Visual: a screenshot taken during the countdown, with a ghost saved for the track, shows the
+  translucent blue ghost car one lane over.
+- Trust boundary: saved ghosts, medals, stars, paint and daily runs are validated on load.
+  Board rows are rendered with `textContent`; the browser spec plants an `<img onerror>` row
+  and checks that it never renders.
+- Cost: the world now builds traffic meshes for double traffic (up to 108 cars, hidden when
+  not used) plus one ghost car. Each simulation step adds one comparison for ghost recording.
+  A ghost is about 600-900 samples, roughly 15 kB of JSON per track. Frame timing was not
+  re-measured.
+- Not verified: real phones and Safari, how the ghost looks on every track and palette, and
+  daily runs that cross midnight (the board keeps the id of the challenge you started).
+
 ## Remaining UI and animation pass — 2026-10-20
 
 Scope: TODO 8B finish, transitions, countdown and menu; touch action arc / AIR DASH seam;
