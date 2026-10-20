@@ -81,8 +81,10 @@ test('startup scans outward again on restart, high speed flows, and reduced moti
   await expect.poll(async () => (await lightState(page)).width).toBe(1);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.evaluate(() => { window.gameplay.race.player.nitroTime = 5; });
-  await expect.poll(async () => (await lightState(page)).flow).toBe(false);
+  // Wait for a frame to apply the boost; flow is already off before it does.
+  await expect.poll(async () => (await lightState(page)).intensity).toBe(2.1);
   const calm = await lightState(page);
+  expect(calm.flow).toBe(false);
   await page.waitForTimeout(250);
   expect(await lightState(page)).toEqual(calm);
   await page.locator('#restart-button').click();
