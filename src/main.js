@@ -173,6 +173,7 @@ const trackNotes = {
   neon: 'Rainy night · low tunnels (4 m ceiling) and dense traffic; a right-lane sky shortcut between them.',
   canyon: 'Desert noon · fly over broken bridges; steer into crosswinds; a left-lane sky shortcut.',
   aurora: 'Snowy night · ice slows steering; uphill sections recharge slowly; a right-lane sky shortcut in the final sprint.',
+  spiral: 'Neon sky-city · ascend a 360° helix, launch across three broken skybridges and land above the clouds.',
 };
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
