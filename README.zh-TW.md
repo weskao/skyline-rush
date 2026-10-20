@@ -1,4 +1,4 @@
-<!-- source-sha256: e4eb575063441d51d40c13bbffef97627f7a5f83424be3c5f3aa9d9ccf9a15b6 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 0ecf50e2a37465986ca733b9868defce0942d86f773daf5e57c1c8e34cc3340d generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -141,6 +141,8 @@ make deploy             # Trigger CI checks + GitHub Pages deployment of remote 
 npm run preview         # Serve the production build after npm run build
 ```
 
+要在手機上檢查時，請在區域網路上提供建置結果（`npx vite preview --host 0.0.0.0`），並加上 `?perf` 開啟（例如 `http://<computer-ip>:4173/?perf`）。畫面頂端會出現一條資訊列，顯示最近 20 秒比賽中的影格時間：中位數（p50）、第 95 百分位數（p95）、平均 fps 與取樣長度。未加 `?perf` 時不會量測也不會顯示任何內容。
+
 ## 部署
 
 可在 [https://weskao.github.io/skyline-rush/](https://weskao.github.io/skyline-rush/) 遊玩。網站為公開：訪客不需要 GitHub 帳號或 Tailscale，開發者的電腦也可以離線。
@@ -169,6 +171,7 @@ CI（`.github/workflows/ci.yml`）會在推送至 `main`、pull request、版本
 - `src/App.vue`、`src/icons.js`：Vue 3 的 UI 外殼（開始畫面、HUD、面板、觸控控制）及其共用的 SVG 圖示；僅渲染一次，沒有響應式狀態。
 - `src/main.js`、`src/style.css`：掛載 `App.vue`，再於該 DOM 上驅動遙測、暫停／結算、響應式控制與生命週期。
 - `vite.config.js`：搭配 `@vitejs/plugin-vue` 的 Vite。
+- `src/perf.js`：供 `?perf` 裝置檢查讀數使用的影格時間百分位數。
 - `src/audio.js`：合成音效與循環播放的序曲／比賽音樂音序器。
 - `tests/`：單元與瀏覽器行為測試。
 - `docs/design.md`、`docs/verification.md`：範圍與驗證證據。
@@ -176,4 +179,4 @@ CI（`.github/workflows/ci.yml`）會在推送至 `main`、pull request、版本
 
 所有車輛／場景幾何與特效皆由程式碼生成。Barlow Condensed 依其 SIL Open Font License 隨附於 `public/fonts/OFL.txt`。Three.js、Vue、Vite 與 Playwright 保留各自的套件授權。
 
-來源：[weskao/skyline-rush](https://github.com/weskao/skyline-rush)。單人、四條賽道、街機物理。瀏覽器驗證涵蓋桌機 Chrome 與模擬的行動裝置視窗；iOS Safari 已在 iOS 模擬器中檢查（直向與橫向，Coast 與 Neon），但尚未在實體手機上量測畫面更新率。
+來源：[weskao/skyline-rush](https://github.com/weskao/skyline-rush)。單人、四條賽道、街機物理。瀏覽器驗證涵蓋桌機 Chrome 與模擬的行動裝置視窗；iOS Safari 已在 iOS 模擬器中檢查（直向與橫向，Coast 與 Neon），但尚未在實體手機上量測畫面更新率（可使用 `?perf`，請見「驗證」）。

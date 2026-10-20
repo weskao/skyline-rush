@@ -15,6 +15,7 @@ import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
 import { PAINTS, ownedPaints } from './appearance.js';
+import { frameStats, PERF_WINDOW } from './perf.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -971,6 +972,9 @@ try {
   let accumulator = 0;
   let hudElapsed = 0;
   let wasCalm = calmMotion();
+  const perfOverlay = new URLSearchParams(location.search).has('perf') && document.body.appendChild(Object.assign(document.createElement('output'), { id: 'perf-overlay', className: 'perf-overlay' }));
+  const perfFrames = [];
+  let perfShownAt = 0;
   function frame(now) {
     const rawDelta = (now - previousTime) / 1000;
     previousTime = now;
@@ -998,6 +1002,15 @@ try {
     if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
       updateUI(now / 1000, input);
       hudElapsed = 0;
+    }
+    if (perfOverlay && race.phase === 'racing' && rawDelta <= 0.25) {
+      perfFrames.push({ at: now, ms: rawDelta * 1000 });
+      while (now - perfFrames[0].at > PERF_WINDOW * 1000) perfFrames.shift();
+      if (now - perfShownAt >= 500) {
+        perfShownAt = now;
+        const stats = frameStats(perfFrames.map(frame => frame.ms));
+        perfOverlay.textContent = `FRAME p50 ${stats.p50.toFixed(1)} ms · p95 ${stats.p95.toFixed(1)} ms · ${stats.fps} fps · ${Math.round((now - perfFrames[0].at) / 1000)} s`;
+      }
     }
     animationId = requestAnimationFrame(frame);
   }

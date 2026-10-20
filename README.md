@@ -140,6 +140,8 @@ Browser tests use an installed Google Chrome and allow SwiftShader for headless 
 npm run preview         # Serve the production build after npm run build
 ```
 
+For a phone check, serve the build on your network (`npx vite preview --host 0.0.0.0`) and open it with `?perf` (for example `http://<computer-ip>:4173/?perf`). A strip at the top then shows racing frame times over the last 20 s: median (p50), 95th percentile (p95), average fps and the sample length. Without `?perf` nothing is measured or shown.
+
 ## Deploy
 
 Play at [https://weskao.github.io/skyline-rush/](https://weskao.github.io/skyline-rush/). The website is public: visitors need neither a GitHub account nor Tailscale, and the developer's computer can be offline.
@@ -168,6 +170,7 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-st
 - `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
 - `src/main.js`, `src/style.css`: mounts `App.vue`, then drives telemetry, pause/results, responsive controls and lifecycle on that DOM.
 - `vite.config.js`: Vite with `@vitejs/plugin-vue`.
+- `src/perf.js`: frame-time percentiles for the `?perf` device-check readout.
 - `src/audio.js`: synthesized sound effects and the looping intro/race music sequencer.
 - `tests/`: unit and browser behavior tests.
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
@@ -175,4 +178,4 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-st
 
 All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vue, Vite and Playwright retain their respective package licenses.
 
-Source: [weskao/skyline-rush](https://github.com/weskao/skyline-rush). Single-player, four tracks, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; iOS Safari has been checked in the iOS Simulator (portrait and landscape, Coast and Neon), but frame rate on physical phones has not been measured.
+Source: [weskao/skyline-rush](https://github.com/weskao/skyline-rush). Single-player, four tracks, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; iOS Safari has been checked in the iOS Simulator (portrait and landscape, Coast and Neon), but frame rate on physical phones has not been measured yet (use `?perf`, see Verify).
