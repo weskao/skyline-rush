@@ -9,13 +9,14 @@ import { createSound } from './audio.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
-import { recordRace, recordBest, loadHistory, loadBests, loadUnlocks, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
+import { recordRace, recordBest, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, LEGACY_BEST_KEY } from './history.js';
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
-import { PAINTS, ownedPaints } from './appearance.js';
+import { PAINTS } from './appearance.js';
 import { frameStats, PERF_WINDOW } from './perf.js';
+import { availableTracks, availablePaints } from '@progression-access';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -67,11 +68,11 @@ let animationId;
 let pausedPhase = 'racing';
 const sessionBests = {};
 let sessionHistory = loadHistory();
-const unlockedTracks = new Set(loadUnlocks());
+const unlockedTracks = new Set(availableTracks());
 // Session copies keep progression honest when storage is blocked.
 let sessionMedals = loadMedals();
 const sessionStars = loadStars();
-let equippedPaint = loadPaint(ownedPaints(starTotal(sessionStars)));
+let equippedPaint = loadPaint(availablePaints(starTotal(sessionStars)));
 const ghosts = {}; // per-track best-run ghost, loaded and validated on first use
 const ghostFor = trackId => trackId in ghosts ? ghosts[trackId] : ghosts[trackId] = loadGhost(trackId);
 let trace = [], traceRace = null;
@@ -293,7 +294,7 @@ function previewPaint(id) {
   world?.previewAppearance(PAINTS[id]);
   document.querySelectorAll('[data-paint]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.paint === id)));
   const stars = starTotal(sessionStars);
-  const owned = ownedPaints(stars).includes(id);
+  const owned = availablePaints(stars).includes(id);
   const { name } = PAINTS[id];
   $('#garage-status').textContent = `${name} · ${id === equippedPaint ? 'equipped.' : owned ? 'owned.' : `Preview only · unlocks at ${PAINTS[id].stars} stars (you have ${stars}).`}`;
   $('#garage-equip').disabled = !owned || id === equippedPaint;
