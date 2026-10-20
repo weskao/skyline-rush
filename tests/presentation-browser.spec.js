@@ -27,6 +27,10 @@ for (const [name, viewport, hasTouch] of [
     });
     await page.locator('#start-button').click();
     await expect(page.locator('#countdown')).toBeVisible();
+    if (hasTouch && viewport.width <= 400) {
+      const nitro = await page.locator('[data-control="nitro"]').boundingBox();
+      expect(nitro.x, 'NITRO stays in the outer thumb area, clear of the centred car').toBeGreaterThanOrEqual(viewport.width * 0.75);
+    }
     await page.waitForTimeout(300);
     const overlaps = await page.evaluate(() => {
       const countdown = document.querySelector('#countdown').getBoundingClientRect();
@@ -39,6 +43,13 @@ for (const [name, viewport, hasTouch] of [
     });
     expect(overlaps, 'Countdown must remain clear of visible instruments').toEqual([]);
     await expect(page.locator('#race-status')).toHaveText('RACING');
+    await expect(page.locator('#countdown')).toBeHidden();
+    const hudOverlap = await page.evaluate(() => {
+      const a = document.querySelector('#leaderboard').getBoundingClientRect();
+      const b = document.querySelector('.flight-telemetry').getBoundingClientRect();
+      return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    });
+    expect(hudOverlap, 'Rival rankings must not cover charge and altitude instruments').toBe(false);
     expect(await page.evaluate(() => window.uiMotion)).toEqual(expect.arrayContaining(['intro', 'countdown']));
     await page.locator('#pause-button').click();
     await expect(page.locator('#race-overlay')).toBeVisible();

@@ -105,6 +105,13 @@ hardware verification; Chrome touch emulation does not establish those results.
   regression failed before correction. Countdown now has intrinsic width, a clear mobile
   location and temporarily hides mobile telemetry through GO. Review also found the finish
   shadow left behind; it now shares the player's presentation Z offset.
+- A second real-race screenshot pass reproduced NITRO covering the centred car at 320 px and
+  the landscape leaderboard covering the charge/altitude instruments. New browser geometry
+  checks failed on both before correction. NITRO remains above FLY at the outer edge; short
+  wide touch screens place rankings between position and progress, leaving charge unobscured.
+  All four presentation viewport checks pass. Earlier full-suite runs were intentionally
+  interrupted when screenshot review found these issues; only the final stable-build run
+  counts as whole-suite acceptance.
 
 <details>
 <summary>Previous handoff (historical; current scope above takes precedence)</summary>
