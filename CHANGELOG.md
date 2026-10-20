@@ -1,3 +1,12 @@
+## [0.12.1] - 2026-10-20
+
+### 🐛 Bug Fixes
+
+- **ci:** Pass --base to vite build so Pages assets resolve under /skyline-rush/
+
+### ⚙️ Miscellaneous Tasks
+
+- **pages:** Verify asset paths before and after deploy
 ## [0.12.0] - 2026-10-20
 
 ### 🚀 Features
