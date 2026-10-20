@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { test as gameplayTest } from './helpers/gameplay-browser.js';
 
 const open = async page => {
   await page.goto('/');
@@ -82,18 +83,17 @@ test('enabling reduced motion interrupts an intro exit already in progress', asy
   await page.locator('#start-button').click();
   expect(await page.locator('#intro').evaluate(el => el.getAnimations().length)).toBeGreaterThan(0);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect.poll(() => page.locator('#intro').evaluate(el => el.getAnimations().length), { timeout: 600 }).toBe(0);
+  // Leave room for a software-rendered frame, but fail before the 4 s animation expires naturally.
+  await expect.poll(() => page.locator('#intro').evaluate(el => el.getAnimations().length), { timeout: 2000 }).toBe(0);
   await expect(page.locator('#intro')).toBeHidden();
 });
 
 for (const [name, viewport, hasTouch, reducedMotion] of [
   ['desktop', { width: 1440, height: 900 }, false, 'no-preference'],
   ['phone reduced motion', { width: 390, height: 844 }, true, 'reduce'],
-]) test.describe(`finish ${name}`, () => {
-  test.use({ viewport, hasTouch, reducedMotion });
-  test('real race reveals accurate results once, keeps its official time and returns to menu', async ({ page }) => {
-    test.setTimeout(150000);
-    await open(page);
+]) gameplayTest.describe(`finish ${name}`, () => {
+  gameplayTest.use({ viewport, hasTouch, reducedMotion });
+  gameplayTest('crossing the finish reveals accurate results once, keeps its official time and returns to menu', async ({ gameplayPage: page }) => {
     await page.evaluate(() => {
       window.finishEvidence = {};
       const overlay = document.querySelector('#race-overlay');
@@ -110,7 +110,14 @@ for (const [name, viewport, hasTouch, reducedMotion] of [
     });
     if (!hasTouch) await page.locator('#assist-button').click();
     await page.locator('#start-button').click();
-    await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished', { timeout: 135000 });
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    // The full 5 km production-bundle run lives in browser.spec.js; this test owns the finish transition.
+    await page.evaluate(() => {
+      const race = window.gameplay.race;
+      race.elapsed = 80;
+      Object.assign(race.player, { distance: race.length - 10, speed: 60 });
+    });
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
     await expect(page.locator('#race-overlay')).toBeVisible();
     await expect(page.locator('#again-button')).toBeFocused();
     await expect(page.locator('#new-best')).toBeVisible();

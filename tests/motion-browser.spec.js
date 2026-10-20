@@ -12,6 +12,7 @@ for (const [name, viewport, hasTouch] of [
   ['touch', { width: 390, height: 844 }, true],
 ]) test.describe(`air tricks ${name}`, () => {
   test.use({ viewport, hasTouch });
+  test.beforeEach(async ({ page }) => { await page.clock.install(); });
   test('an airborne flick rolls the car, announces the landing and acknowledges its payout once', async ({ gameplayPage: page }) => {
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -19,6 +20,8 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#vfx-panel > summary').click();
     await page.locator('[data-vfx="haptics"]').check();
     await page.locator('#vfx-panel > summary').click();
+    // Keep the flick and landing on simulation time, independent of software-rendering speed.
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
     await page.evaluate(() => {
       window.vibrations = [];
       Object.defineProperty(navigator, 'vibrate', { configurable: true, value: pattern => { window.vibrations.push(pattern); return true; } });
@@ -31,26 +34,29 @@ for (const [name, viewport, hasTouch] of [
       const pointer = { pointerId: 91, pointerType: 'touch', clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 };
       await pad.dispatchEvent('pointerdown', pointer);
       await pad.dispatchEvent('pointermove', { ...pointer, clientX: pointer.clientX - 30 });
-      await page.waitForTimeout(50);
+      await page.clock.runFor(50);
       await pad.dispatchEvent('pointermove', { ...pointer, clientX: pointer.clientX + 30 });
-      await page.waitForTimeout(70);
+      await page.clock.runFor(70);
       await pad.dispatchEvent('pointerup', pointer);
     } else {
       await page.keyboard.down('a');
-      await page.waitForTimeout(50);
+      await page.clock.runFor(50);
       await page.keyboard.up('a');
       await page.keyboard.down('d');
-      await page.waitForTimeout(70);
+      await page.clock.runFor(70);
       await page.keyboard.up('d');
     }
+    await page.clock.runFor(100);
     await expect(page.locator('#flight-state')).toHaveText('TRICK');
     await expect(page.locator('#event-callout')).toContainText('BARREL ROLL');
     await expect.poll(() => page.evaluate(() => Math.abs(Math.sin(window.gameScene.player.rotation.z)))).toBeGreaterThan(.4);
     // A 4 m glide lands on its own (~1.1 s, 7.5 m/s) after the 0.7 s roll: a clean, paid landing.
+    await page.clock.runFor(1000);
     await expect.poll(() => page.evaluate(() => window.gameplay.race.player.trickPayout?.nitro)).toBe(.25);
+    await page.clock.runFor(500); // Let the queued landing callout replace BARREL ROLL.
     await expect(page.locator('#event-callout')).toContainText('TRICK +0.25');
     expect(await page.evaluate(() => window.vibrations.filter(value => JSON.stringify(value) === '[12,20,12]').length)).toBe(hasTouch ? 1 : 0);
-    await page.waitForTimeout(150);
+    await page.clock.runFor(500);
     expect(await page.evaluate(() => window.vibrations.filter(value => Array.isArray(value) && value[0] === 12).length)).toBe(hasTouch ? 1 : 0);
     await expect.poll(() => page.evaluate(() => Math.cos(window.gameScene.player.rotation.z))).toBeGreaterThan(.99);
   });
