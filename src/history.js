@@ -143,6 +143,23 @@ const loadGhosts = storage => { const saved = read(GHOSTS_KEY, storage); return 
 export const loadGhost = (trackId, storage) => { const ghost = loadGhosts(storage)[trackId]; return validGhost(ghost, trackId) ? ghost : null; };
 export const saveGhost = (trackId, ghost, storage) => write(GHOSTS_KEY, { ...loadGhosts(storage), [trackId]: ghost }, storage);
 
+
+// Time Attack ghosts are keyed by full rule signature, not by Classic best.
+const MODE_GHOST_KEY = 'skyline-rush-mode-ghosts-v1';
+const modeGhostId = (trackId, config) => trackId + ':' + JSON.stringify(config);
+export function loadModeGhost(trackId, config, storage) {
+  const ghosts = read(MODE_GHOST_KEY, storage);
+  const item = ghosts && typeof ghosts === 'object' && !Array.isArray(ghosts) ? ghosts[modeGhostId(trackId, config)] : null;
+  return validGhost(item, trackId) ? item : null;
+}
+export function saveModeGhost(trackId, config, ghost, storage) {
+  if (!validGhost(ghost, trackId)) return false;
+  const previous = read(MODE_GHOST_KEY, storage);
+  const entries = previous && typeof previous === 'object' && !Array.isArray(previous) ? previous : {};
+  write(MODE_GHOST_KEY, { ...entries, [modeGhostId(trackId, config)]: ghost }, storage);
+  return true;
+}
+
 // Daily challenge runs live on their own board, never in history, bests, unlocks or ghosts.
 const DAILY_KEY = 'skyline-rush-daily';
 const validDaily = run => run && typeof run === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(run.id) && Object.hasOwn(RACE_TRACKS, run.track) &&

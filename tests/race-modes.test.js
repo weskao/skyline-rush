@@ -103,3 +103,17 @@ test('invalid and incomplete practice data cannot be saved', () => {
   classic.result = { time: 10, position: 1 };
   assert.throws(() => recordModeRace(classic), /finished practice/);
 });
+
+import { loadModeGhost, saveModeGhost } from '../src/history.js';
+
+test('Time Attack ghosts never overwrite Classic ghosts', () => {
+  const data = {};
+  const storage = { getItem: key => data[key] ?? null, setItem: (key, value) => { data[key] = value; } };
+  const race = createRace('coast', { mode: 'time' });
+  const samples = Array.from({ length: 501 }, (_, k) => [k * 10, 2.5, 0]);
+  const run = { time: 50, samples };
+  assert.equal(saveModeGhost('coast', race.config, run, storage), true);
+  assert.equal(loadModeGhost('coast', race.config, storage).time, 50);
+  assert.equal(data['skyline-rush-ghosts'], undefined);
+  assert.equal(loadModeGhost('coast', createRace('coast').config, storage), null);
+});

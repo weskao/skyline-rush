@@ -11,7 +11,7 @@ import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
-import { recordRace, recordBest, recordModeRace, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
+import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, LEGACY_BEST_KEY } from './history.js';
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
@@ -89,6 +89,13 @@ const sessionStars = loadStars();
 let equippedPaint = loadPaint(availablePaints(starTotal(sessionStars)));
 const ghosts = {}; // per-track best-run ghost, loaded and validated on first use
 const ghostFor = trackId => trackId in ghosts ? ghosts[trackId] : ghosts[trackId] = loadGhost(trackId);
+const modeGhosts = new Map();
+const modeGhostKey = race => race.trackId + ':' + JSON.stringify(race.config);
+const modeGhostFor = race => {
+  const key = modeGhostKey(race);
+  if (!modeGhosts.has(key)) modeGhosts.set(key, loadModeGhost(race.trackId, race.config));
+  return modeGhosts.get(key);
+};
 let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
@@ -293,10 +300,10 @@ function showTracks() {
   showGhost();
 }
 function showGhost() {
-  const ghost = ghostFor(race.trackId);
+  const ghost = race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null;
   const track = trackName(race.trackId, getLocale());
   $('#ghost-enabled').checked = controlPrefs.ghost;
-  $('#ghost-status').textContent = race.modifier || race.mode !== 'classic' ? t('ghost.daily') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
+  $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'custom' || race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
 }
 $('#ghost-enabled').addEventListener('change', ({ target }) => { controlPrefs = controlSettings({ ...controlPrefs, ghost: target.checked }); applyControls(); });
 for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
@@ -347,6 +354,13 @@ let historyOpener;
 function showHistory() {
   const trackId = $('#history-track').value;
   const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
+  const modes = loadModeHistory().filter(run => run.track === trackId).slice(-10).reverse();
+  $('#mode-history-empty').hidden = modes.length > 0;
+  $('#mode-history-runs').replaceChildren(...modes.map(run => {
+    const item = document.createElement('p');
+    item.textContent = `${t('mode.' + run.mode)} · ${timeString(run.time)} · ${shortDate(run.date)}`;
+    return item;
+  }));
   const stats = careerStats(sessionHistory);
   const count = (key, n) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
   $('#career-summary').textContent = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
@@ -895,6 +909,13 @@ function phaseUI() {
     $('#next-button').hidden = true;
     if (race.mode !== 'classic') {
       ({ best, record } = recordModeRace(race));
+      if (race.mode === 'time' && record) {
+        const candidate = { time: race.elapsed, samples: trace };
+        if (traceRace === race && validGhost(candidate, trackId)) {
+          saveModeGhost(trackId, race.config, candidate);
+          modeGhosts.set(modeGhostKey(race), candidate);
+        }
+      }
     } else if (race.modifier) {
       const run = recordDaily(daily, race);
       sessionDaily = [...sessionDaily, run].slice(-50);
@@ -1200,7 +1221,7 @@ try {
     if (traceRace !== race) { traceRace = race; trace = []; }
     while (accumulator >= 1 / 60) {
       stepRace(race, input, 1 / 60);
-      if (!race.modifier && race.mode === 'classic') recordGhost(trace, race);
+      if (!race.modifier && (race.mode === 'classic' || race.mode === 'time')) recordGhost(trace, race);
       accumulator -= 1 / 60;
     }
     const calm = calmMotion();
@@ -1208,7 +1229,7 @@ try {
     if (calm && !wasCalm) stopPresentationMotion();
     wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
-    const ghost = controlPrefs.ghost && !race.modifier && race.mode === 'classic' && race.phase !== 'ready' ? ghostFor(race.trackId) : null;
+    const ghost = controlPrefs.ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null : null;
     world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
     sound.update(race);
     hudElapsed += dt;

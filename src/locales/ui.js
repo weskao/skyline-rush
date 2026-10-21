@@ -3,6 +3,9 @@
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
 export const UI = Object.freeze({
   en: {
+    'mode.ghostUnavailable': 'Ghost replay is available in Classic and Time Attack.',
+    'mode.historyTitle': 'Custom & Time Attack history',
+    'mode.historyEmpty': 'Complete a Custom Race or Time Attack to save a personal record.',
     'mode.heading': 'GAME MODE',
     'mode.classic': 'Classic Race',
     'mode.custom': 'Custom Race',
@@ -381,6 +384,9 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
+    'mode.ghostUnavailable': 'Ghost 回放可在經典競速與計時挑戰中使用。',
+    'mode.historyTitle': '自訂競速與計時挑戰紀錄',
+    'mode.historyEmpty': '完成自訂競速或計時挑戰即可儲存個人紀錄。',
     'mode.heading': '遊戲模式',
     'mode.classic': '經典競速',
     'mode.custom': '自訂競速',

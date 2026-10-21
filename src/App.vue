@@ -178,6 +178,11 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <figure class="history-trend"><figcaption id="history-trend-label"></figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"></svg></figure>
     <p id="history-empty" data-i18n="history.empty" hidden>No runs here yet. Finish a race to start your history.</p>
     <div id="history-runs" class="history-runs"></div>
+    <section class="history-extra" id="mode-history" aria-labelledby="mode-history-title">
+      <h3 id="mode-history-title" data-i18n="mode.historyTitle">Custom & Time Attack history</h3>
+      <p id="mode-history-empty" data-i18n="mode.historyEmpty">Complete a Custom Race or Time Attack to save a personal record.</p>
+      <div id="mode-history-runs" class="mode-history-runs"></div>
+    </section>
     <section id="daily-challenge" class="history-extra" aria-labelledby="daily-title">
       <h3 id="daily-title" data-i18n="daily.title">Daily challenge</h3>
       <p id="daily-status">No daily challenge is available yet.</p>
