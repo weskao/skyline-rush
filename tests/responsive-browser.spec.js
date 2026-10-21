@@ -162,12 +162,15 @@ for (const [width, height] of [[402, 874], [1440, 900]]) {
     await page.goto('./');
     await page.locator('#intro').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
     const edge = async () => {
-      const png = (await page.screenshot({ clip: { x: 0, y: height - 4, width, height: 4 } })).toString('base64');
+      // Crop a full capture: CI's 0.25 scale makes 402x874 a 100.5x218.5 px surface, and a clipped
+      // strip there straddles the half pixel and reads gray. The full capture's bottom row is right.
+      const png = (await page.screenshot()).toString('base64');
       return page.evaluate(async src => {
         const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${src}`)).blob());
         const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
         context.drawImage(bitmap, 0, 0);
-        const { data } = context.getImageData(0, 0, bitmap.width, bitmap.height);
+        const rows = Math.max(1, Math.round(bitmap.height * 4 / innerHeight));
+        const { data } = context.getImageData(0, bitmap.height - rows, bitmap.width, rows);
         const sum = [0, 0, 0];
         for (let i = 0; i < data.length; i += 4) for (let c = 0; c < 3; c++) sum[c] += data[i + c];
         return sum.map(value => value / (data.length / 4));
