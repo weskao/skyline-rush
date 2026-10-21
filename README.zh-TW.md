@@ -1,4 +1,4 @@
-<!-- source-sha256: 21a91777a700bd419db18183eb62a382adebbaa84af654182aeb78697de7c4f4 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 868501d52a22f6a2a7fc5a0e426d253bca35c17356b68320c4465a2d1013c5c1 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -18,13 +18,13 @@ Skyline Rush 是一款可在瀏覽器中遊玩的短篇、可重複挑戰的街�
 
 一場比賽約一分鐘。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
 
-![開啟音訊設定的起始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261020b)
+![開啟音訊設定的起始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261022a)
 
-![Skyline Rush 飛行畫面](artifacts/readme-hero.zh-TW.jpeg?v=20261019b)
+![Skyline Rush 飛行畫面](artifacts/readme-hero.zh-TW.jpeg?v=20261022a)
 
-![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261019b)
+![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261022a)
 
-![創下個人最佳成績的賽後結果](artifacts/race-results.zh-TW.jpeg?v=20261019b)
+![創下個人最佳成績的賽後結果](artifacts/race-results.zh-TW.jpeg?v=20261022a)
 
 ## 在本機執行
 

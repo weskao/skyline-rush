@@ -17,13 +17,13 @@ Skyline Rush is a short, replayable arcade sprint in the browser: one player aga
 
 Races last about a minute. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
-![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261020b)
+![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261022a)
 
-![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261019b)
+![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261022a)
 
-![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261019b)
+![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261022a)
 
-![Race results with a new personal best](artifacts/race-results.jpeg?v=20261019b)
+![Race results with a new personal best](artifacts/race-results.jpeg?v=20261022a)
 
 ## Run locally
 
