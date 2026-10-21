@@ -133,7 +133,7 @@ export function createWorldTourScene(scene){
   });
 
   const dummy=new THREE.Object3D(),basis=new THREE.Matrix4(),world=new THREE.Vector3();
-  let active=null, heroMaterials=[],lastDistance=0;
+  let active=null, heroMaterials=[],cachedOrigin=null,cachedQuality=null;
   const local=(id,s,x=0,y=0,origin=0)=>{
     const center=trackPoint(id,clamped(id,s)),home=trackPoint(id,clamped(id,origin)),f=trackFrame(id,clamped(id,s));
     return [center.x-home.x+f.right[0]*x+f.up[0]*y,
@@ -158,6 +158,7 @@ export function createWorldTourScene(scene){
   function configure(id){
     if(id===active)return;
     clearHeroes();active=id;
+    cachedOrigin=null;cachedQuality=null; // theme switch must invalidate world geometry
     const theme=WORLD_THEMES[id];
     roadMat.color.set(theme.road);
     glowMat.color.set(theme.rail);
@@ -182,14 +183,25 @@ export function createWorldTourScene(scene){
   }
   return {
     update(id,distance,quality='high',sections=[],time=0,reducedMotion=false){
-      configure(id);lastDistance=distance;group.visible=true;
+      configure(id);group.visible=true;
       const theme=WORLD_THEMES[id],low=quality==='low';
-      const start=Math.max(0,Math.floor((distance-160)/STEP)*STEP);
-      for(let i=0;i<=ROWS;i++){
+      // The world is authored in camera-relative coordinates. Moving the
+      // *entire group* by the centreline delta is exact; regenerating every
+      // static InstancedMesh/road vertex each animation frame is not.
+      // Before: >1000 CPU transforms + GPU instance-buffer uploads per frame.
+      // Now: only when travelling into the next 12 m road sector.
+      const origin=Math.floor(Math.max(0,distance)/STEP)*STEP;
+      const home=trackPoint(id,origin),current=trackPoint(id,distance);
+      group.position.set(home.x-current.x,home.y-current.y,home.z-current.z);
+      const rebuild=cachedOrigin!==origin||cachedQuality!==quality;
+      if(rebuild){
+        cachedOrigin=origin;cachedQuality=quality;
+        const start=Math.max(0,origin-160);
+        for(let i=0;i<=ROWS;i++){
         const s=clamped(id,start+i*STEP),f=trackFrame(id,s);
         for(let side=0;side<2;side++){
           const index=(i*2+side)*3;
-          positions.set(local(id,s,side?HALF:-HALF,0,distance),index);
+          positions.set(local(id,s,side?HALF:-HALF,0,origin),index);
           normals.set(f.up,index);
         }
         if(i===ROWS)continue;
@@ -197,10 +209,10 @@ export function createWorldTourScene(scene){
         const hole=sections.some(entry=>entry.type==='gap'&&s+STEP/2>=entry.from&&s+STEP/2<entry.to);
         indices.set(hole?[a,a,a,a,a,a]:[a,a+1,a+2,a+1,a+3,a+2],k);
         for(const side of [-1,1]){
-          instance(roadEdges,i*2+(side===1?1:0),id,s+STEP*.5,side*11.8,.22,[.2,.15,STEP],distance);
+          instance(roadEdges,i*2+(side===1?1:0),id,s+STEP*.5,side*11.8,.22,[.2,.15,STEP],origin);
         }
         for(let line=0;line<3;line++){
-          instance(laneMarks,i*3+line,id,s+3,(line-1)*5,.055,[.13,.025,5.4],distance);
+          instance(laneMarks,i*3+line,id,s+3,(line-1)*5,.055,[.13,.025,5.4],origin);
         }
       }
       geometry.attributes.position.needsUpdate=geometry.attributes.normal.needsUpdate=geometry.index.needsUpdate=true;
@@ -209,16 +221,16 @@ export function createWorldTourScene(scene){
       skyline.count=low?38:94;windows.count=low?114:94*3;
       terrain.count=asteroids.count=low?32:92;
       for(let i=0;i<94;i++){
-        const s=clamped(id,Math.floor(distance/88)*88+(Math.floor(i/2)-4)*88);
+        const s=clamped(id,Math.floor(origin/88)*88+(Math.floor(i/2)-4)*88);
         const side=i%2?1:-1,offset=33+(i*23%45);
         const height=12+(i*19%63);
         if(landscape==='city'||landscape==='neon'){
-          instance(skyline,i,id,s,side*offset,height/2-4,[12+i%4*7,height,18+i%3*7],distance);
-          for(let k=0;k<3;k++)instance(windows,i*3+k,id,s,side*(offset-1.5),10+k*(height/5),[9,.85,13],distance);
+          instance(skyline,i,id,s,side*offset,height/2-4,[12+i%4*7,height,18+i%3*7],origin);
+          for(let k=0;k<3;k++)instance(windows,i*3+k,id,s,side*(offset-1.5),10+k*(height/5),[9,.85,13],origin);
         }else{
           const h=landscape==='space'?11+(i*13%37):25+(i*17%82);
           const size=landscape==='space'?[h,h*.77,h]:[16+(i%4)*9,h,16+(i%4)*9];
-          instance(landscape==='space'?asteroids:terrain,i,id,s,side*(offset+25),h*.43,size,distance);
+          instance(landscape==='space'?asteroids:terrain,i,id,s,side*(offset+25),h*.43,size,origin);
         }
       }
       if(skyline.visible){skyline.instanceMatrix.needsUpdate=true;windows.instanceMatrix.needsUpdate=true;}
@@ -226,17 +238,18 @@ export function createWorldTourScene(scene){
       if(asteroids.visible)asteroids.instanceMatrix.needsUpdate=true;
       for(const hero of heroGroup.children){
         const entry=hero.userData.entry;
-        hero.visible=Math.abs(distance-entry.at)<1900;
-        if(!hero.visible)continue;
-        pose(hero,id,entry.at,entry.side*(entry.offset||80),0,distance);
+        pose(hero,id,entry.at,entry.side*(entry.offset||80),0,origin);
         hero.rotateY(-entry.side*Math.PI*.5);
         hero.scale.setScalar(entry.scale||1);
       }
-      water.visible=landscape==='coast';
-      if(water.visible){
-        water.position.set(0,trackPoint(id,distance).y-33,-450);
-        water.material.opacity=low?.7:.85;
+      if(water.visible)water.position.set(0,-33,-450);
       }
+      // Visibility updates are cheap and still run for every frame.
+      for(const hero of heroGroup.children){
+        hero.visible=Math.abs(distance-hero.userData.entry.at)<1900;
+      }
+      water.visible=landscape==='coast';
+      if(water.visible)water.material.opacity=low?.7:.85;
       if(stars.visible){
         stars.position.set(0,0,0);
         if(!reducedMotion)stars.rotation.y=Math.sin(time*.015)*.015;
@@ -245,33 +258,42 @@ export function createWorldTourScene(scene){
       // matching visible markers along the main driving lane.
       const tunnel=sections.find(s=>s.type==='boost-tunnel');
       boostGroup.visible=arrowGroup.visible=!!tunnel && Math.abs(distance-(tunnel.from+tunnel.to)/2)<1500;
-      if(boostGroup.visible){
-        const spacing=(tunnel.to-tunnel.from)/(portals.length-1);
-        sideGlass.count=low?16:32;ceilingGlass.count=low?8:16;
-        for(let i=0;i<portals.length;i++){
-          const s=tunnel.from+i*(tunnel.to-tunnel.from)/(portals.length-1);
-          const portal=portals[i];
-          const mid=Math.min(tunnel.to,s+spacing*.45);
-          for(const side of [-1,1]){
-            instance(sideGlass,i*2+(side===1?1:0),id,mid,side*12.65,6.8,[.35,12.5,spacing],distance);
+      if(tunnel){
+        if(rebuild){
+          const spacing=(tunnel.to-tunnel.from)/(portals.length-1);
+          sideGlass.count=low?16:32;ceilingGlass.count=low?8:16;
+          for(let i=0;i<portals.length;i++){
+            const s=tunnel.from+i*spacing;
+            const mid=Math.min(tunnel.to,s+spacing*.45);
+            for(const side of [-1,1]){
+              instance(sideGlass,i*2+(side===1?1:0),id,mid,side*12.65,6.8,[.35,12.5,spacing],origin);
+            }
+            instance(ceilingGlass,i,id,mid,0,16.15,[24,.25,spacing],origin);
+            pose(portals[i],id,s,0,0,origin);
           }
-          instance(ceilingGlass,i,id,mid,0,16.15,[24,.25,spacing],distance);
-          pose(portal,id,s,0,0,distance);
-          portal.visible=s>=distance-150&&s<=distance+1400&&(i%2===0||!low);
-          const twinkle=reducedMotion?1:1+.045*Math.sin(time*3.5+i*.8);
-          portal.scale.setScalar(twinkle);
+          sideGlass.instanceMatrix.needsUpdate=ceilingGlass.instanceMatrix.needsUpdate=true;
+          for(let i=0;i<boostArrows.length;i++){
+            const s=tunnel.from+12+i*(tunnel.to-tunnel.from-24)/boostArrows.length;
+            pose(boostArrows[i],id,s,0,0,origin);
+          }
         }
-        sideGlass.instanceMatrix.needsUpdate=ceilingGlass.instanceMatrix.needsUpdate=true;
-        for(let i=0;i<boostArrows.length;i++){
-          const s=tunnel.from+12+i*(tunnel.to-tunnel.from-24)/boostArrows.length;
-          pose(boostArrows[i],id,s,0,0,distance);
-          boostArrows[i].visible=s>distance-70&&s<distance+1250&&!low;
+        if(boostGroup.visible){
+          for(let i=0;i<portals.length;i++){
+            const s=tunnel.from+i*(tunnel.to-tunnel.from)/(portals.length-1);
+            portals[i].visible=s>=distance-150&&s<=distance+1400&&(i%2===0||!low);
+            const twinkle=reducedMotion?1:1+.045*Math.sin(time*3.5+i*.8);
+            portals[i].scale.setScalar(twinkle);
+          }
+          for(let i=0;i<boostArrows.length;i++){
+            const s=tunnel.from+12+i*(tunnel.to-tunnel.from-24)/boostArrows.length;
+            boostArrows[i].visible=s>distance-70&&s<distance+1250&&!low;
+          }
         }
       }
-      if(shibuyaGroup.visible){
+      if(shibuyaGroup.visible&&rebuild){
         for(let i=0;i<crosswalk.length;i++){
           const d=1200+(i-6)*2.9;
-          pose(crosswalk[i],id,d,0,.055,distance);
+          pose(crosswalk[i],id,d,0,.055,origin);
         }
       }
     },
