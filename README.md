@@ -12,7 +12,7 @@ Skyline Rush is a short, replayable arcade sprint in the browser: one player aga
 
 - **Drive, then fly.** Above 65 km/h, hold FLY to lift off over traffic, through rings and across broken bridges. Flight and BOOST share one thruster charge that refills only on the road, so every climb is a choice.
 - **Earn NITRO by driving well.** Close passes, drifts, ring groups (PERFECT LINE), slipstreams, landed barrel rolls and pickups fill a three-charge NITRO reserve; spend it in one burst or chain presses to extend it.
-- **Five tracks, unlocked in order.** Coast at dusk, rainy Neon Downtown with low tunnels, Canyon Skyway with bridge gaps and crosswinds, Aurora Pass with ice and uphill climbs, and Sky Spiral's 360° elevated helix with jump ramps and broken skybridges. Each has one aerial shortcut for players who can hold a line in the air.
+- **Ten tracks, unlocked in order.** Coast at dusk, rainy Neon Downtown with low tunnels, Canyon Skyway with bridge gaps and crosswinds, Aurora Pass with ice and uphill climbs, Sky Spiral's 360° elevated helix with jump ramps and broken skybridges, then the World Tour: Taipei Heritage, Tokyo Afterdark, Alpine Rail Pass, Coastal Horizon and Cosmic Orbit. Each has one aerial shortcut for players who can hold a line in the air.
 - **Something to chase.** Every finish scores style stars that unlock paints in the Garage. A best-run ghost, a daily challenge with its own board and four medals give reasons to race again.
 
 Races last about a minute. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
@@ -77,7 +77,7 @@ Three amber start lights turn cyan at GO. The player car is a low wedge roadster
 
 For an extra charge reward, overtake traffic closely on the ground above 126 km/h. Clean passes within five seconds chain up to ×5 and refill 8–16% charge (capped at 100%). Collisions break the chain; airborne, distant and recovering passes earn no reward. The HUD announces each pass and the final 500 metres; results show total close passes and contacts.
 
-Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Finish the sprint (4–6 km depending on the track) ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
+Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Finish the sprint (4–8 km depending on the track) ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
 
 ### Handling
 
@@ -120,7 +120,11 @@ Sky Spiral adds a true 3D ascending helical road above a cyberpunk skyline. Driv
 
 ### Tracks and style
 
-Start on Coast. Finish top three to unlock Neon Downtown, then Canyon Skyway, then Aurora Pass, then Sky Spiral. Choose a track before starting; keyboard users can move between track buttons with Left/Right and choose with Enter. Restart keeps the selected track; **Choose track** on the results screen returns to the menu. While tracks remain locked, a podium finish shows a pulsing **Next** button on the results screen that starts the newly unlocked track straight away; it disappears once every track was already open and on daily challenges. If the browser drops the WebGL connection (common on iPhone after locking or switching apps), the game clears the warning when graphics return; otherwise **Start** or **Race again** reloads the page. Each track has its own sky, palette and procedural scenery: rainy neon streets and low tunnels, red desert cliffs and bridge gaps/crosswinds, or snowy mountains with aurora and ice. Warning signs mark special sections. Aurora's uphill sections recharge ground fuel at half the normal rate.
+Start on Coast. Finish top three to unlock Neon Downtown, then Canyon Skyway, Aurora Pass, Sky Spiral, Taipei Heritage, Tokyo Afterdark, Alpine Rail Pass, Coastal Horizon and Cosmic Orbit. Choose a track before starting; keyboard users can move between track buttons with Left/Right and choose with Enter. Restart keeps the selected track; **Choose track** on the results screen returns to the menu. While tracks remain locked, a podium finish shows a pulsing **Next** button on the results screen that starts the newly unlocked track straight away; it disappears once every track was already open and on daily challenges. If the browser drops the WebGL connection (common on iPhone after locking or switching apps), the game clears the warning when graphics return; otherwise **Start** or **Race again** reloads the page. Each track has its own sky, palette and procedural scenery: rainy neon streets and low tunnels, red desert cliffs and bridge gaps/crosswinds, or snowy mountains with aurora and ice. Warning signs mark special sections. Aurora's uphill sections recharge ground fuel at half the normal rate.
+
+### World Tour tracks, route maps and track names
+
+The five World Tour courses share one curved road renderer (`src/world-tour-scene.js`) with per-course palettes, buildings and landmarks (Presidential Office and North Gate silhouettes, neon crossings and a tower, rail viaducts and peaks, a lighthouse and sea bridge, ringed planets). Every track card shows the full main route, and during a race a live map plots YOU, NOVA, ORBIT and APEX on it; aerial shortcuts are never drawn. On screens under 500px tall and narrow phones under 700px tall the live map steps aside and the leaderboard still ranks racers. **EN / 繁體中文** under the track cards switches track names (saved as `skyline-rush-locale`).
 
 Style points reward close passes (100 × combo, with drift's doubled combo), rings (150, plus 500 for a risk ring), PERFECT LINEs (500), moving airtime (10 per second), and every 500 clean metres (100). Contacts and gap falls reset clean-distance progress. Results award one star for finishing, two at 250 points/km, and three at 500 points/km, independently of finishing position.
 
@@ -171,6 +175,8 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-st
 - `src/rng.js`: seeded random streams; track pickups and rings come from the track seed.
 - `src/world.js`, `src/geometry.js`: Three.js renderer, procedural cars, highway, skyline, flight effects and cameras.
 - `src/effects.js`: a fixed 480-particle GPU pool for vapor, sparks and landing dust.
+- `src/track-paths.js`, `src/world-tour-scene.js`: one distance-to-road mapping per track and the shared World Tour road, scenery and landmarks.
+- `src/route-map.js`, `src/i18n.js`: SVG full-route and live racer maps; English/繁體中文 track names and the saved locale.
 - `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
 - `src/main.js`, `src/style.css`: mounts `App.vue`, then drives telemetry, pause/results, responsive controls and lifecycle on that DOM.
 - `vite.config.js`: Vite with `@vitejs/plugin-vue`.
@@ -182,4 +188,4 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-st
 
 All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vue, Vite and Playwright retain their respective package licenses.
 
-Source: [weskao/skyline-rush](https://github.com/weskao/skyline-rush). Single-player, five tracks, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; iOS Safari has been checked in the iOS Simulator (portrait and landscape, Coast and Neon), but frame rate on physical phones has not been measured yet (use `?perf`, see Verify).
+Source: [weskao/skyline-rush](https://github.com/weskao/skyline-rush). Single-player, ten tracks, arcade physics. Browser verification covers desktop Chrome and emulated mobile viewports; iOS Safari has been checked in the iOS Simulator (portrait and landscape, Coast and Neon), but frame rate on physical phones has not been measured yet (use `?perf`, see Verify).
