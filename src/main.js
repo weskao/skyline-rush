@@ -16,6 +16,8 @@ import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
 import { PAINTS } from './appearance.js';
 import { frameStats, PERF_WINDOW } from './perf.js';
+import { createRouteMap } from './route-map.js';
+import { trackName, loadLocale, saveLocale } from './i18n.js';
 import { availableTracks, availablePaints } from '@progression-access';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
@@ -169,6 +171,32 @@ $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVF
 showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 
+let locale = loadLocale();
+let raceRouteMap;
+const trackRouteMaps = new Map();
+function ensureRouteMaps() {
+  for (const button of document.querySelectorAll('[data-track]')) {
+    if (trackRouteMaps.has(button.dataset.track)) continue;
+    const map = createRouteMap(button.dataset.track);
+    button.querySelector('.track-route-map').append(map.element);
+    trackRouteMaps.set(button.dataset.track, map);
+  }
+  if (!raceRouteMap || raceRouteMap.trackId !== race.trackId) {
+    raceRouteMap?.destroy();
+    raceRouteMap = createRouteMap(race.trackId, { live: true });
+    raceRouteMap.trackId = race.trackId;
+    $('#race-route-map').replaceChildren(raceRouteMap.element);
+  }
+}
+function refreshTrackLabels() {
+  for (const button of document.querySelectorAll('[data-track]')) button.querySelector('strong').textContent = trackName(button.dataset.track, locale);
+  for (const option of $('#history-track').options) option.textContent = trackName(option.value, locale);
+  for (const button of document.querySelectorAll('[data-locale]')) button.setAttribute('aria-pressed', String(button.dataset.locale === locale));
+}
+for (const button of document.querySelectorAll('[data-locale]')) button.addEventListener('click', () => {
+  locale = button.dataset.locale; saveLocale(locale); refreshTrackLabels(); showTracks();
+  if (!$('#history-screen').hidden && $('#history-screen').open) showHistory();
+});
 const trackNotes = {
   coast: 'Dusk coast · open skies and sweeping sea views; a left-lane sky shortcut mid-route.',
   neon: 'Rainy night · low tunnels (4 m ceiling) and dense traffic; a right-lane sky shortcut between them.',
@@ -178,27 +206,28 @@ const trackNotes = {
 };
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
+  ensureRouteMaps(); refreshTrackLabels();
   for (const button of document.querySelectorAll('[data-track]')) {
     const id = button.dataset.track;
     button.disabled = !unlockedTracks.has(id);
     button.setAttribute('aria-pressed', String(id === race.trackId));
     button.querySelector('small').textContent = button.disabled ? 'LOCKED' : id === race.trackId ? 'SELECTED' : 'OPEN';
     const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1];
-    button.title = button.disabled ? `Finish top 3 on ${RACE_TRACKS[previous].name} to unlock` : trackNotes[id];
+    button.title = button.disabled ? `Finish top 3 on ${trackName(previous, locale)} to unlock` : trackNotes[id];
   }
   $('#track-length').textContent = `${track.length / 1000} KM SPRINT`;
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
-  $('#track-note').textContent = trackNotes[race.trackId] + (next && !unlockedTracks.has(next) ? ` Finish top 3 on ${track.name} to unlock ${RACE_TRACKS[next].name}.` : '');
-  const route = race.modifier ? `DAILY · ${track.name} · ${MODIFIER_LABELS[race.modifier]}`.toUpperCase() : track.name.toUpperCase();
+  $('#track-note').textContent = trackNotes[race.trackId] + (next && !unlockedTracks.has(next) ? ` Finish top 3 on ${trackName(race.trackId, locale)} to unlock ${trackName(next, locale)}.` : '');
+  const route = race.modifier ? `DAILY · ${trackName(race.trackId, locale)} · ${MODIFIER_LABELS[race.modifier]}`.toUpperCase() : trackName(race.trackId, locale).toUpperCase();
   $('.route-heading').textContent = route;
   $('.overlay-route').textContent = `SKYLINE RUSH / ${route}`;
-  $('#world').setAttribute('aria-label', `3D ${track.name} racing highway`);
+  $('#world').setAttribute('aria-label', `3D ${trackName(race.trackId, locale)} racing highway`);
   showGhost();
 }
 function showGhost() {
   const ghost = ghostFor(race.trackId);
-  const name = RACE_TRACKS[race.trackId].name;
+  const name = trackName(race.trackId, locale);
   $('#ghost-enabled').checked = controlPrefs.ghost;
   $('#ghost-status').textContent = race.modifier ? 'Ghosts sit out daily challenges.' : ghost ? `Best-run ghost ready on ${name} · ${timeString(ghost.time)}.` : `No best-run replay recorded on ${name} yet.`;
 }
@@ -256,7 +285,7 @@ function showHistory() {
     row.append(summary, detail); return row;
   }));
   const today = dailyChallenge();
-  $('#daily-status').textContent = `Today: ${RACE_TRACKS[today.track].name} · ${MODIFIER_LABELS[today.modifier]}. Runs here skip history, bests and ghosts.`;
+  $('#daily-status').textContent = `Today: ${trackName(today.track, locale)} · ${MODIFIER_LABELS[today.modifier]}. Runs here skip history, bests and ghosts.`;
   $('#daily-start').disabled = !world;
   const board = dailyBoard(sessionDaily, today.id).slice(0, 5);
   const line = text => { const row = document.createElement('p'); row.textContent = text; return row; };
@@ -766,6 +795,8 @@ function phaseUI() {
 }
 
 function updateUI(now, input) {
+  ensureRouteMaps();
+  raceRouteMap.updateDrivers([{ id: 'YOU', distance: race.player.distance, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance }))]);
   if (previousPhase !== race.phase) {
     if (previousPhase === 'countdown' && race.phase === 'racing') goUntil = now + 0.8;
     phaseUI();

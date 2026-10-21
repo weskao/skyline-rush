@@ -99,8 +99,8 @@ const CONTROL_CHOICES = {
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span>SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title">The road is just<br>the <em>beginning.</em></h1>
       <p class="intro-copy">Own the highway. Then leave it behind.<br>Fire your thrusters and take the race to the sky.</p>
-      <div class="track-select" role="group" aria-label="Choose track"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="String(id === 'coast')"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
-      <p id="track-note" class="track-note"></p>
+      <div class="track-select" role="group" aria-label="Choose track"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="String(id === 'coast')"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
+      <div class="route-locales" role="group" aria-label="Track name language"><button type="button" data-locale="en" aria-pressed="true">EN</button><button type="button" data-locale="zh-TW" aria-pressed="false">繁體中文</button></div><p id="track-note" class="track-note"></p>
       <div class="intro-actions">
         <button class="primary-button" id="start-button" aria-label="Start race"><span>Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
         <button class="text-button history-button" data-open-history>History</button>
@@ -119,7 +119,7 @@ const CONTROL_CHOICES = {
     <section class="race-info" id="race-info" aria-label="Race progress" hidden>
       <div class="position-stat"><span class="stat-label">POSITION</span><div><strong id="position">04</strong><span>/ 04</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
       <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div></div>
-      <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard"></div>
+      <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions"></div>
     </section>
 
     <div class="countdown" id="countdown" role="status" aria-live="polite" hidden><div class="start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong id="countdown-number">3</strong><span id="countdown-label">HOLD ACCELERATOR · GET READY</span></div>
