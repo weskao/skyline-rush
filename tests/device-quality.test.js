@@ -26,3 +26,19 @@ test('one-time notice has English and traditional Chinese translations and a sta
  assert.match(noticeMessage('en','low').body,/Low/);
  assert.equal(noticeMessage('fr','low').title,noticeMessage('en','low').title);
 });
+
+test('Safari on macOS and iOS works without navigator.deviceMemory',()=>{
+ // Safari generally omits navigator.deviceMemory; availability is optional.
+ const modernIOS=initialDeviceVisuals({device:{cores:8,width:393,height:852,pixelRatio:3}});
+ assert.equal(modernIOS.settings.quality,'high');
+ assert.equal(modernIOS.automatic,true);
+ const olderIOS=initialDeviceVisuals({device:{cores:2,width:375,height:667,pixelRatio:2}});
+ assert.equal(olderIOS.settings.quality,'low');
+ const unknownMac=initialDeviceVisuals({device:{width:1512,height:982,pixelRatio:2}});
+ assert.equal(unknownMac.settings.quality,'high');
+});
+test('Windows/Android Chromium with memory hints and missing hardware fields fall back safely',()=>{
+ assert.equal(selectDeviceQuality({cores:4,memoryGiB:4,width:1280,height:800,pixelRatio:1.25}),'medium');
+ assert.equal(selectDeviceQuality({cores:2,memoryGiB:2,width:412,height:915,pixelRatio:3}),'low');
+ assert.equal(selectDeviceQuality({width:1280,height:720,pixelRatio:1}),'high');
+});

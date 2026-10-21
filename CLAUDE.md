@@ -81,6 +81,16 @@ Every new feature, scene, animation, user-interface change, gameplay mechanic or
 
 ## Device-adaptive startup experience
 
+### Cross-platform quality detection
+
+- Support **macOS, Windows, Android, iOS and iPadOS** with standards-based browser APIs. Avoid OS/UA-specific forced presets and do not assume that touch means a slow GPU.
+- `navigator.hardwareConcurrency` is only an approximate and sometimes privacy-reduced logical-core count, **not** a benchmark. `navigator.deviceMemory` is optional and normally absent on Safari/iOS. Always tolerate undefined core counts or RAM with safe numeric checks.
+- `window.innerWidth`, `window.innerHeight` and `devicePixelRatio` are universal sizing signals, not GPU speed measurements. Use them in conjunction with the available capability hints; do not promise exact FPS/performance scores.
+- A missing Safari RAM hint must not throw, block the startup/graphics menu, or automatically force Low solely because memory data is missing. Powerful Macs/iPhones and high-DPR devices should retain High where evidence allows.
+- On every platform, stored explicit VFX preferences override automatic device recommendations. Once-only downgrade messaging must work in both English and Traditional Chinese and persist across reloads when localStorage is available.
+- Keep platform coverage in unit tests for full Windows/Android Chromium hints as well as **Safari/iOS missing-memory fallback**, desktop browsers reporting unknown data, and unknown capability signals. Document that real GPU benchmarking/device validation remains a separate QA step.
+
+
 - On a fresh install with no saved VFX profile, choose the highest reasonable quality from available non-invasive device capabilities. **Never override a saved manual graphics preference** or overwrite game unlocks/progress.
 - Default to High when reliable device hints are unavailable. Downshift only on supported evidence of limited CPU/RAM/pixel throughput; maintain racing visibility and FPS before ornamental post-processing. Medium/Low may reduce post effects, pixel ratio, and density while keeping critical scene geometry and gameplay.
 - If High is not selected automatically, show a compact **once-only** notice describing the adjustment. Store the notice-seen flag in localStorage; once seen, do not show again across future visits unless browser site storage has been cleared. Respect blocked storage with an in-memory-only fallback.
