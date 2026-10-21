@@ -175,6 +175,26 @@ for (const [width, height] of [[402, 874], [1440, 900]]) {
         return sum.map(value => value / (data.length / 4));
       }, png);
     };
+    const decode = buffer => page.evaluate(async src => {
+      const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${src}`)).blob());
+      const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
+      context.drawImage(bitmap, 0, 0);
+      const { data } = context.getImageData(0, 0, bitmap.width, bitmap.height);
+      const rows = [];
+      for (let y = Math.max(0, bitmap.height - 3); y < bitmap.height; y++) {
+        const sum = [0, 0, 0];
+        for (let x = 0; x < bitmap.width; x++) for (let c = 0; c < 3; c++) sum[c] += data[(y * bitmap.width + x) * 4 + c];
+        rows.push({ y, avg: sum.map(v => +(v / bitmap.width).toFixed(1)), px: Array.from({ length: bitmap.width }, (_, x) => data.slice((y * bitmap.width + x) * 4, (y * bitmap.width + x) * 4 + 3).join('/')).join(' ') });
+      }
+      return { size: [bitmap.width, bitmap.height], rows };
+    }, buffer.toString('base64'));
+    const report = async tag => console.log('DIAG', tag, JSON.stringify({
+      clip4: await decode(await page.screenshot({ clip: { x: 0, y: height - 4, width, height: 4 } })),
+      clip8: await decode(await page.screenshot({ clip: { x: 0, y: height - 8, width, height: 8 } })),
+      full: await decode(await page.screenshot()),
+      state: await page.evaluate(() => ({ scrollY, sh: document.documentElement.scrollHeight, ih: innerHeight, vv: visualViewport && [visualViewport.height, visualViewport.offsetTop], dpr: devicePixelRatio, canvas: [...document.querySelectorAll('canvas')].map(c => [c.width, c.height, c.getBoundingClientRect().bottom]) })),
+    }));
+    await report('start');
     const root = (await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).match(/\d+/g).map(Number);
     const mismatch = rgb => Math.max(...rgb.map((value, c) => Math.abs(value - root[c])));
     expect(mismatch(await edge()), 'start screen').toBeLessThanOrEqual(10);
