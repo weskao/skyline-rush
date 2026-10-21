@@ -279,6 +279,12 @@ function showTracks() {
 
   $('#mode-description').textContent = t('mode.description.' + selectedMode);
   $('.route-drivers').textContent = selectedMode === 'classic' ? t('intro.drivers') : t('mode.driverCount', { n: race.rivals.length + 1 });
+  // Solo sessions show elapsed time rather than a false "01 / 04" ranking.
+  const solo = race.rivals.length === 0;
+  $('.position-stat .stat-label').textContent = t(solo ? 'mode.' + race.mode : 'race.position');
+  $('.position-stat > div > span').textContent = solo ? '' : '/ ' + String(race.rivals.length + 1).padStart(2, '0');
+  if (race.phase === 'ready') ui.position.textContent = solo ? '—' : String(race.rivals.length + 1).padStart(2, '0');
+  ui.leaderboard.hidden = solo;
   ensureRouteMaps(); refreshTrackLabels();
   for (const button of document.querySelectorAll('[data-track]')) {
     const id = button.dataset.track;
@@ -296,7 +302,7 @@ function showTracks() {
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
   const previous = tracks[tracks.indexOf(race.trackId) - 1];
-  $('#track-note').textContent = (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+  $('#track-note').textContent = (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
   const name = trackName(race.trackId, getLocale());
   const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
   $('.route-heading').textContent = route;
@@ -1023,8 +1029,8 @@ function updateUI(now, input) {
   speedNeedle.style.transform = `rotate(${-70 + Math.min(1, car.speed / (MAX_SPEED + 30)) * 140}deg)`;
   const position = racePosition(race);
   if (previousPosition !== position) {
-    ui.position.textContent = String(position).padStart(2, '0');
-    if (previousPosition !== null && race.phase === 'racing') {
+    ui.position.textContent = race.rivals.length ? String(position).padStart(2, '0') : '—';
+    if (race.rivals.length && previousPosition !== null && race.phase === 'racing') {
       const gained = position < previousPosition;
       positionChange.textContent = gained ? '↑' : '↓';
       positionChange.dataset.direction = ui.position.dataset.direction = gained ? 'gained' : 'lost';

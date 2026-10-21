@@ -63,3 +63,13 @@ test('Obstacle Run uses the original world renderer with visible race state', as
   await page.screenshot({ path: 'test-results/race-mode-obstacle-run.png' });
   expect(errors).toEqual([]);
 });
+
+test('solo HUD never displays a misleading four-player race rank', async ({ page }) => {
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('[data-race-mode="time"]').click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('.position-stat > div > span').first()).toHaveText('');
+  await expect(page.locator('.position-stat .stat-label')).toHaveText('Time Attack');
+  await expect(page.locator('#leaderboard')).toBeHidden();
+});
