@@ -52,7 +52,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: world-tour-screenshots-${{ matrix.shard }}
-          path: artifacts/world-tour/*.png
+          path: test-results/**/world-tour-*.png
           if-no-files-found: ignore
 
   deploy:
