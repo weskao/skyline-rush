@@ -179,11 +179,16 @@ export function makeLandmark(kind, palette = {}) {
     orb(0,62,0,43,'purple');
     const rings=add(torus,'gold',0,62,0,56,56,56);
     rings.rotation.set(.65,.38,.23);
+    const secondary=add(torus,'neon',0,62,0,52,52,52);secondary.rotation.set(.67,.34,.25);
     orb(-17,77,35,5,'windows');
+    orb(62,45,-33,8,'white');
+    orb(-74,61,-55,3,'purple');
+    orb(42,21,76,5,'windows');
   }else if(kind==='cosmic-gate'){
     const gate=add(torus,'neon',0,23,0,23,23,23);
     gate.rotation.z=.25;
     for(const x of [-17,17])block(x,14,0,5,28,6,'dark');
+    for(const x of [-12,12])for(const y of [8,36])orb(x,y,1,2.2,'gold');
     spire(0,48,0,9,11,'purple');
   }
   // Non-copyrighted authored model primitives; no scraped photographs.
