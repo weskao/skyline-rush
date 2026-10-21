@@ -1,4 +1,4 @@
-<!-- source-sha256: 730c0adad7d2d095ae5d6353840c5876d928601c27f6006d2e76a7c36e35487f generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 3f46b9660ebd5cc7e2cff6d02bdaa8c917f78094e66aaa2bd323547bb2486c51 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -47,15 +47,14 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 | 飛行 | 時速超過 65 km/h 後按住 Space |
 | 降落 | 放開 Space |
 | 加速推進 | 按住 Shift；會消耗推進器電量 |
-| NITRO | E（消耗一格完整電量；NITRO 期間再按一次可延長） |
-| 右手替代鍵 | J = Fly、K = Boost、L = NITRO（原本的按鍵仍可使用） |
+| NITRO | E / X（消耗一格完整電量；NITRO 期間再按一次可延長）。WASD 握法用 E；方向鍵玩家左手停在 Shift / X / Space |
 | 飄移 | 時速超過 162 km/h 時按住 S + A / D（僅限地面） |
 | 開始 | Enter |
 | 暫停 / 繼續 | Esc / P |
-| 重新開始 | R |
+| 重新開始 | Backspace |
 | 切換鏡頭 | C |
 | 全部音訊靜音 / 取消靜音 | M |
-| 自動加速開 / 關 | T / AUTO 按鈕 |
+| 自動加速開 / 關 | F2 / AUTO 按鈕 |
 | AIRFLOW 展示開 / 關 | V / AIRFLOW 按鈕 |
 
 行動裝置版面提供轉向、加速、煞車、加速推進、飛行與 NITRO 按鈕，觸控操作支援同時按住多個按鈕。AUTO 會持續按住加速器，讓你專心轉向與飛行；煞車永遠優先於它。觸控裝置預設為開啟，鍵盤遊玩預設為關閉，你的選擇會一直保留，直到再次切換或重新載入頁面。離開分頁會暫停比賽並清除按住中的輸入。比賽途中點擊 SKYLINE RUSH 標誌會先暫停並詢問：**Keep racing**、**End race**（回到賽道選擇，不儲存該次成績）或 **Back to home**（重新載入）；按 Esc 則維持暫停狀態。切換鏡頭與音效的快速鍵不會影響按住中的駕駛操作。在觸控裝置上，於轉向板上向下滑動會煞車，向下並往側邊滑動則會飄移；在 Buttons 模式下，煞車鍵位於轉向按鈕下方，因此煞車 + 轉向同樣可以飄移。
@@ -181,7 +180,7 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、拉取請求、版本
 
 - `src/game.js`：確定性的街機模擬、對手、車流與完賽順序。
 - `src/input.js`：鍵盤與多指標控制，含取消與失焦清理；會讀取已儲存的按鍵對應。
-- `src/key-map.js`：純粹的按鍵對應，含 J/K/L 與 E 替代鍵、衝突互換的重新綁定、驗證與儲存。
+- `src/key-map.js`：純粹的按鍵對應，含 E / X NITRO、衝突互換的重新綁定、驗證與儲存。
 - `src/history.js`：已儲存的遊戲資料：比賽歷史（最新 50 筆）、各賽道最佳成績與舊資料遷移、生涯統計、獎章、星數、已裝備塗裝、幽靈車與每日排行榜。
 - `src/ghost.js`：10 Hz 幽靈車錄製、各賽道驗證與內插播放。
 - `src/appearance.js`：塗裝目錄與星數解鎖門檻。

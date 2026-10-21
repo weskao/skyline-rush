@@ -46,15 +46,14 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 | Fly | Hold Space once above 65 km/h |
 | Land | Release Space |
 | Boost | Hold Shift; consumes thruster charge |
-| NITRO | E (one full charge; press again during NITRO to extend it) |
-| Right-hand alternates | J = Fly, K = Boost, L = NITRO (the original keys still work) |
+| NITRO | E / X (one full charge; press again during NITRO to extend it). WASD hands use E; arrow-key players keep the left hand on Shift / X / Space |
 | Drift | Hold S + A / D above 162 km/h (ground only) |
 | Start | Enter |
 | Pause / resume | Esc / P |
-| Restart | R |
+| Restart | Backspace |
 | Change camera | C |
 | Mute / unmute all audio | M |
-| Auto accelerator on / off | T / AUTO button |
+| Auto accelerator on / off | F2 / AUTO button |
 | AIRFLOW showcase on / off | V / AIRFLOW button |
 
 Mobile layouts provide steering, accelerator, brake, boost, flight and NITRO buttons. Touch controls support simultaneous holds. AUTO holds the accelerator so you can concentrate on steering and flying; braking always overrides it. It starts on for touch devices and off for keyboard play, and the choice lasts until toggled or the page reloads. Leaving the tab pauses the race and clears held input. Clicking the SKYLINE RUSH logo mid-race pauses and asks first: **Keep racing**, **End race** (back to track select, run not saved) or **Back to home** (reloads); Esc leaves the race paused. Camera and sound shortcuts preserve held driving controls. On touch, sliding a thumb down on the steering pad brakes and sliding down and sideways drifts; in Buttons mode the brake sits under the steering buttons so brake + steer drifts there too.
@@ -180,7 +179,7 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 
 - `src/game.js`: deterministic arcade simulation, opponents, traffic and finish order.
 - `src/input.js`: keyboard and multi-pointer controls with cancellation and blur cleanup; reads the saved key map.
-- `src/key-map.js`: pure key map with J/K/L and E alternates, conflict-swapping rebind, validation and storage.
+- `src/key-map.js`: pure key map with E / X NITRO, conflict-swapping rebind, validation and storage.
 - `src/history.js`: saved gameplay data: race history (latest 50), per-track bests and legacy migration, career stats, medals, stars, equipped paint, ghosts and the daily board.
 - `src/ghost.js`: 10 Hz ghost recording, per-track validation and interpolated playback.
 - `src/appearance.js`: paint catalog and star unlock thresholds.
