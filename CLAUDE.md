@@ -58,3 +58,50 @@ See `docs/local-unlocked-testing.md` for operational details.
 - `src/game.js` owns `boost-tunnel` reward/collision state; do not make visual trigger volumes grant repeatable rewards each frame. Preserve the one-use-per-race rule.
 - Road collectibles and particles must use `trackLocalPosition` so elevated/curved courses don't show hovering pickups or buried effects; the minimap must not reveal any shortcuts.
 - Target recognizable skyline silhouettes for historical buildings, using original licensed geometry. Maintain low/high quality and reduced-motion variants. See `docs/world-tour-landmark-polish.md` for landmark references and QA checkpoints.
+
+
+## Current World Tour scenery policy
+
+- Favor visual distinction over forcing multiple destinations through the same street model or tunnel hoops. Every track has its own road line language, roadside object kit, tunnel structures, palette and minimap skin. Shared placement/streaming is fine, shared-looking scenery is not.
+- See `docs/world-tour-scenic-redesign.md`. Its streaming rule is strict: roadside props are keyed by absolute `trackId + chunkIndex`, not re-cycled by modulo next to the player; mountain/coastal terrain must join exactly at chunk boundaries.
+- Keep bloom, emissive and mirror-like asphalt subdued in the **centre driving sightline**. Distribute subdued edge lights on sides; Alpine's railroad bore must be visually dark and physically enclosed with rare amber service lamps.
+- World Tour code locations: `src/world-tour-scene.js` (renderer/chunk pool), `src/world-tour-scenery.js` (30 authored roadside assets), `src/world-tour-tunnels.js` (five tunnel styles), `src/world-tour-landmarks.js` (landmarks), `src/world.js` (lighting), `src/style.css` and `src/route-map.js` (route map).
+- **Do not create PRs** for this feature. Direct commits to `feature/world-tour-landmark-boost-polish` only. Do not merge or deploy without user approval.
+
+
+## Mandatory performance and rendering-quality review for EVERY feature change
+
+Every new feature, scene, animation, user-interface change, gameplay mechanic or refactor **must include a performance review before completion**. Do not treat performance optimization as a later optional pass.
+
+- Preserve visual fidelity first: optimize WebGL draw calls through shared geometry/materials and GPU instancing; use camera culling, bounded deterministic scenery streaming, cached static matrices and geometry, and quality-aware GPU pixel budgets. Avoid indiscriminately removing mesh detail, landmarks, textures, effects or track identity.
+- Never rebuild unchanged scene graphs, road geometry, buffer attributes, shaders or instanced matrices each animation frame. Do not allocate large transient arrays/objects in hot loops or force SVG/DOM layout unnecessarily. Batch instanced data uploads; only update what has visibly changed.
+- Do not repeatedly allocate GPU resources while driving. Dispose unique geometry, buffers, textures, render targets, and instance attributes when no longer used. Do **not** dispose shared geometries or shared materials when only one chunk is evicted.
+- Avoid shader overdraw, unnecessarily high pixel ratios, excessive bloom and center-screen glare. Scale display resolution to the current validated quality tier; High quality retains full supported fidelity.
+- Assess both **CPU and GPU**: frame time median/p95, draw calls, triangles, GPU memory, rendering stalls, texture/geometry allocations, and 5–8 km continuous driving under high/medium/low tiers. Track actual before/after measurements when possible instead of claiming unmeasured FPS gains.
+- Add relevant unit and browser regression tests for performance-sensitive code and for scene correctness after batching/culling. Test real WebGL screenshots across all affected courses, including pause/restart, switch tracks, WebGL recovery, low-power devices and narrow phone/landscape layouts. The final report must identify untested devices and any remaining performance uncertainty.
+
+## Device-adaptive startup experience
+
+### Cross-platform quality detection
+
+- Support **macOS, Windows, Android, iOS and iPadOS** with standards-based browser APIs. Avoid OS/UA-specific forced presets and do not assume that touch means a slow GPU.
+- `navigator.hardwareConcurrency` is only an approximate and sometimes privacy-reduced logical-core count, **not** a benchmark. `navigator.deviceMemory` is optional and normally absent on Safari/iOS. Always tolerate undefined core counts or RAM with safe numeric checks.
+- `window.innerWidth`, `window.innerHeight` and `devicePixelRatio` are universal sizing signals, not GPU speed measurements. Use them in conjunction with the available capability hints; do not promise exact FPS/performance scores.
+- A missing Safari RAM hint must not throw, block the startup/graphics menu, or automatically force Low solely because memory data is missing. Powerful Macs/iPhones and high-DPR devices should retain High where evidence allows.
+- On every platform, stored explicit VFX preferences override automatic device recommendations. Once-only downgrade messaging must work in both English and Traditional Chinese and persist across reloads when localStorage is available.
+- Keep platform coverage in unit tests for full Windows/Android Chromium hints as well as **Safari/iOS missing-memory fallback**, desktop browsers reporting unknown data, and unknown capability signals. Document that real GPU benchmarking/device validation remains a separate QA step.
+
+
+- On a fresh install with no saved VFX profile, choose the highest reasonable quality from available non-invasive device capabilities. **Never override a saved manual graphics preference** or overwrite game unlocks/progress.
+- Default to High when reliable device hints are unavailable. Downshift only on supported evidence of limited CPU/RAM/pixel throughput; maintain racing visibility and FPS before ornamental post-processing. Medium/Low may reduce post effects, pixel ratio, and density while keeping critical scene geometry and gameplay.
+- If High is not selected automatically, show a compact **once-only** notice describing the adjustment. Store the notice-seen flag in localStorage; once seen, do not show again across future visits unless browser site storage has been cleared. Respect blocked storage with an in-memory-only fallback.
+- The notice must support both English and Traditional Chinese, including live changes via the existing track-name language selector. Other UI strings may remain English per the existing i18n scope. Never block Start, driving inputs or rendering behind the notice.
+
+## Home-screen 3D preview consistency
+
+- Every selectable track must show its actual **player car, three rival vehicles, drivable road and characteristic surrounding scene** in the main ready-screen 3D view. Static gradient track cards are only secondary accents, never substitutes for the live 3D showcase.
+- For Alpine Rail Pass and Cosmic Orbit, use authored preview positions and a camera defined in the **canonical road frame** (not fixed world coordinates), so mountain elevations, space-road turns, foreground scenery and driver vehicles remain visible together. Reuse the same car models, world, paint and track shaders as normal racing.
+- Verify the preview in desktop/phone resolutions, portrait/landscape, with/without effects and reduced motion. Check that rivals are not hidden behind geometry, and the camera does not look away from the road.
+- Existing road-map previews, in-race racer positions, hidden shortcut disclosure rules, and home-preview vehicle counts remain regression requirements.
+
+**Branch workflow:** Commit and push directly to `feature/world-tour-landmark-boost-polish`; do not open a PR, merge into main or deploy unless explicitly authorized.

@@ -8,6 +8,7 @@ import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
+import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
@@ -92,8 +93,16 @@ let resultCounts = [];
 let nitroRefillUntil = 0;
 try { ({ audio, volume } = readAudio(document.cookie)); } catch { /* Audio defaults to on when cookies are unavailable. */ }
 const sound = createSound();
-let visual = vfxSettings();
-try { visual = vfxSettings(JSON.parse(localStorage.getItem('skyline-rush-vfx'))); } catch { /* Defaults work without storage. */ }
+// Initial quality selection is performed once; manual/previous settings win.
+let storedVisuals=null;
+try { const raw=localStorage.getItem(QUALITY_STORAGE_KEY); if(raw)storedVisuals=JSON.parse(raw); }
+catch { /* Storage is optional; use device-aware in-memory defaults. */ }
+const deviceSelection=initialDeviceVisuals({
+  storedSettings:storedVisuals,
+  device:{cores:navigator.hardwareConcurrency,memoryGiB:navigator.deviceMemory,
+    width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},
+});
+let visual=deviceSelection.settings;
 // In-memory source of truth: input.js reads it on every pointermove, so storage is only touched on load/change.
 let controlPrefs = controlSettings();
 let editingLayout = false;
@@ -175,6 +184,30 @@ showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 
 let locale = loadLocale();
+const performanceNotice=$('#performance-notice');
+const performanceNoticeText=$('#performance-notice-text');
+const performanceNoticeTitle=$('#performance-notice-title');
+const performanceNoticeDismiss=$('#performance-notice-dismiss');
+let showedPerformanceNotice=false;
+function refreshPerformanceNotice(){
+  if(!showedPerformanceNotice)return;
+  const message=noticeMessage(locale,deviceSelection.settings.quality);
+  performanceNoticeTitle.textContent=message.title;
+  performanceNoticeText.textContent=message.body;
+  performanceNoticeDismiss.textContent=message.dismiss;
+}
+function showOneTimePerformanceNotice(){
+  if(!deviceSelection.downgraded)return;
+  try {
+    if(localStorage.getItem(DEVICE_NOTICE_KEY)==='shown')return;
+    localStorage.setItem(DEVICE_NOTICE_KEY,'shown');
+  } catch { /* Still show once for this page when persistent storage is disabled. */ }
+  showedPerformanceNotice=true;
+  refreshPerformanceNotice();
+  performanceNotice.hidden=false;
+}
+performanceNoticeDismiss.addEventListener('click',()=>{ performanceNotice.hidden=true;});
+showOneTimePerformanceNotice();
 let raceRouteMap;
 const trackRouteMaps = new Map();
 function ensureRouteMaps() {
@@ -199,7 +232,7 @@ function refreshTrackLabels() {
   for (const button of document.querySelectorAll('[data-locale]')) button.setAttribute('aria-pressed', String(button.dataset.locale === locale));
 }
 for (const button of document.querySelectorAll('[data-locale]')) button.addEventListener('click', () => {
-  locale = button.dataset.locale; saveLocale(locale); refreshTrackLabels(); showTracks();
+  locale = button.dataset.locale; saveLocale(locale); refreshPerformanceNotice(); refreshTrackLabels(); showTracks();
   if (!$('#history-screen').hidden && $('#history-screen').open) showHistory();
 });
 const trackNotes = {

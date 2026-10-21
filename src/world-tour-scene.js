@@ -3,8 +3,9 @@ import { RACE_TRACKS } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.js';
 import { roadRibbon } from './geometry.js';
 import { makeLandmark } from './world-tour-landmarks.js';
-import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER } from './world-tour-scenery.js';
+import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
+import { batchStaticChunk } from './world-tour-batching.js';
 
 // One scenery system for five distinct destinations. Locations are authored as
 // race-distance + roadside offsets; meshes follow the *real* 3D driving path.
@@ -105,7 +106,12 @@ export function createWorldTourScene(scene){
   const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map();
   let sceneryTrack=null,sceneryDetail=null;
   function releaseChunk(node){
-    node.traverse(object=>{if(object.userData?.ownGeometry)object.geometry.dispose();});
+    node.traverse(object=>{
+      if(object.userData?.ownGeometry)object.geometry.dispose();
+      // InstancedMesh owns its GPU instance attributes, not source materials
+      // or authored shared geometry. Release those buffers on chunk eviction.
+      if(object.isInstancedMesh && object.userData?.batchCount)object.dispose();
+    });
     node.removeFromParent();
   }
   function clearChunks(){for(const node of chunks.values())releaseChunk(node);chunks.clear();}
@@ -125,7 +131,8 @@ export function createWorldTourScene(scene){
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
       for(const item of sceneryPlan(id,index,level==='low')){
         const prop=kit.build(id,item.kind,item.size);
-        kit.place(prop,id,item.distance,item.side*item.offset,0);
+        kit.place(prop,id,item.distance,item.side*item.offset,
+          terrainHeight(id,item.distance,item.side,item.offset));
         // Unique authored models are keyed to absolute track distance; no
         // periodic wrap/modulus position reuse, no roadside teleporting.
         chunk.add(prop);
@@ -133,6 +140,10 @@ export function createWorldTourScene(scene){
       const earth=kit.terrain(id,index,level==='low');
       if(earth)chunk.add(earth);
       chunk.add(tunnelKit.buildChunk(id,index,sections));
+      // One-time static batching keeps every model/material, greatly reducing
+      // draw calls while the level streams through the camera.
+      const stats=batchStaticChunk(chunk);
+      chunk.userData.batchStats=stats;
       sceneryLayer.add(chunk);chunks.set(index,chunk);
     }
   }

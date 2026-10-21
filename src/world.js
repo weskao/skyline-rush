@@ -13,6 +13,7 @@ import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
+import { HERO_PREVIEWS,previewDistance,previewRival } from './track-preview.js';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
@@ -236,7 +237,8 @@ function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
 
 export function createWorld(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  let renderPixelRatio=Math.min(devicePixelRatio,1.5);
+  renderer.setPixelRatio(renderPixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.12;
@@ -278,13 +280,15 @@ export function createWorld(canvas) {
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
   const tunnelLights = [-1,1].map(()=>new THREE.PointLight('#b5a27b',0,35,2));
   tunnelLights.forEach(light=>{light.visible=false;scene.add(light);});
+  const roadsideLamps=[-1,1].map(()=>new THREE.PointLight('#d0bd9b',0,46,2));
+  roadsideLamps.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
   const sky = new THREE.Mesh(new THREE.SphereGeometry(2500, 24, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false,
-    uniforms: { top: { value: new THREE.Color('#101e43') }, horizon: { value: new THREE.Color('#d98785') }, warmth: { value: 1 }, aurora: { value: 0 }, time: { value: 0 } },
+    uniforms: { top: { value: new THREE.Color('#101e43') }, horizon: { value: new THREE.Color('#d98785') }, warmth: { value: 1 }, aurora: { value: 0 }, cloudOpacity: { value: 1 }, cloudTint: { value: new THREE.Color('#4d3d60') }, time: { value: 0 } },
     vertexShader: 'varying vec3 vPosition; void main(){ vPosition=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-    fragmentShader: `varying vec3 vPosition; uniform vec3 top; uniform vec3 horizon; uniform float warmth,aurora,time;
+    fragmentShader: `varying vec3 vPosition; uniform vec3 top; uniform vec3 horizon,cloudTint; uniform float warmth,aurora,time,cloudOpacity;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
         return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
@@ -295,7 +299,7 @@ export function createWorld(canvas) {
         vec2 p=dir.xz/(max(.08,abs(h)))*2.;
         float cloud=noise(p*1.8)*.6+noise(p*4.5)*.25+noise(p*9.)*.15;
         float band=smoothstep(.05,.13,h)*(1.-smoothstep(.3,.62,h));
-        col=mix(col,vec3(.3,.24,.37)+vec3(.32,.12,.02)*light,smoothstep(.45,.75,cloud)*band*.6);
+        col=mix(col,cloudTint+vec3(.32,.12,.02)*light,smoothstep(.45,.75,cloud)*band*.6*cloudOpacity);
         float ribbon=pow(max(0.,sin(dir.x*9.+sin(dir.z*6.+time*.08)*2.+h*16.)),12.);
         col+=vec3(.04,.8,.35)*ribbon*band*aurora;
         gl_FragColor=vec4(col,1.);
@@ -538,7 +542,21 @@ export function createWorld(canvas) {
       player.userData.body.material.color.set(paint.paint);
       player.userData.lightColor.fromArray(paint.light);
     },
-    configureVFX(options) { visual = vfxSettings(options); },
+    configureVFX(options) {
+      const updated=vfxSettings(options);
+      visual=updated;
+      // Preserve full scene and texture geometry. Lower the GPU pixel budget
+      // only on devices whose initial quality or manual user choice calls for
+      // it; high quality stays at the original 1.5x DPR cap.
+      const maxRatio=visual.quality==='low'?1:visual.quality==='medium'?1.25:1.5;
+      const nextRatio=Math.min(devicePixelRatio,maxRatio);
+      if(Math.abs(nextRatio-renderPixelRatio)>.001){
+        renderPixelRatio=nextRatio;
+        renderer.setPixelRatio(nextRatio);
+        composer.setPixelRatio(nextRatio);
+        resize();
+      }
+    },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
       const preview = race.phase === 'ready';
@@ -552,6 +570,8 @@ export function createWorld(canvas) {
         scene.background.set(palette.fog); scene.fog.color.set(palette.fog);
         sky.material.uniforms.top.value.set(palette.top); sky.material.uniforms.horizon.value.set(palette.horizon);
         sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' ? 1 : 0;
+        sky.material.uniforms.cloudOpacity.value = trackId==='cosmic'?0:trackId==='tokyo'?.14:trackId==='alpine'?.45:trackId==='coastal'?.32:trackId==='taipei'?.36:1;
+        sky.material.uniforms.cloudTint.value.set(trackId==='alpine'?'#647575':trackId==='coastal'?'#82989a':trackId==='taipei'?'#77898b':trackId==='tokyo'?'#394354':'#4d3d60');
         sunlight.color.set(palette.sun);
         sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
         sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
@@ -574,7 +594,7 @@ export function createWorld(canvas) {
         weather.material.size = trackId === 'neon' ? .12 : .24;
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
       }
-      const distance = preview ? 340 : car.distance;
+      const distance = preview ? previewDistance(trackId) : car.distance;
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
       // A readable driving corridor takes precedence over cinematic glare.
       // Dimming in the mountain bore is smoothed over the 38 m entrance.
@@ -593,6 +613,14 @@ export function createWorld(canvas) {
           light.position.fromArray(trackLocalPosition(trackId,distance+21,(i===0?-1:1)*11.7,8,distance));
         });
       }else tunnelLights.forEach(light=>light.visible=false);
+      const roadsideLit=tour&&['taipei','tokyo','coastal'].includes(trackId);
+      roadsideLamps.forEach((light,i)=>{
+        light.visible=roadsideLit&&!reducedMotion;
+        if(!light.visible)return;
+        light.intensity=trackId==='tokyo'?.29:trackId==='taipei'?.22:.17;
+        light.color.set(trackId==='tokyo'?'#a6a4bc':trackId==='coastal'?'#c4c9b7':'#cfbf9f');
+        light.position.fromArray(trackLocalPosition(trackId,distance+26,i===0?-17:17,10.5,distance));
+      });
 
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
@@ -727,9 +755,16 @@ export function createWorld(canvas) {
 
       if (preview) {
         const groundedShowcase = visual.enabled && visual.airflow;
-        updateCar(player, { ...car, distance, altitude: groundedShowcase ? 0 : 1.6 + (reducedMotion ? 0 : Math.sin(idleTime * 1.1) * 0.12), thrusting: !groundedShowcase }, distance, center, time, dt, true);
-        rivals.forEach((mesh, i) => updateCar(mesh, { ...race.rivals[i], distance: distance + 35 + i * 28, altitude: i === 0 ? 5 : 0, thrusting: i === 0 }, distance, center, time, dt));
-        traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, { ...race.traffic[i], distance: distance + 65 + i * 32 }, distance, center, time, dt); });
+        const curated=!!HERO_PREVIEWS[trackId];
+        updateCar(player, { ...car, distance,
+          altitude:curated?.2:groundedShowcase?0:1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
+          thrusting:!curated&&!groundedShowcase }, distance, center, time, dt, true);
+        rivals.forEach((mesh,i)=>updateCar(mesh,previewRival(trackId,i,race.rivals[i]),distance,center,time,dt));
+        traffic.forEach((mesh,i)=>{
+          mesh.visible=i<race.traffic.length;
+          if(mesh.visible)updateCar(mesh,{...race.traffic[i],
+            distance:distance+(curated?80:65)+i*32},distance,center,time,dt);
+        });
       } else {
         updateCar(player, car, distance, center, time, motionDt, true, input);
         if (race.phase === 'finished') player.position.z -= presentation.finishDistance || 0;
@@ -774,8 +809,22 @@ export function createWorld(canvas) {
         desiredCamera.set(player.position.x + Math.sin(angle) * 9, player.position.y + 3.6, Math.cos(angle) * 9);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
       } else if (preview) {
-        desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
-        lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
+        if(HERO_PREVIEWS[trackId]){
+          // Use the sampled road frame: unlike a hard-coded world-space camera,
+          // this is reliable on steep Alpine switchbacks and elevated Orbit road.
+          const info=HERO_PREVIEWS[trackId],frame=trackFrame(trackId,distance);
+          const forward=new THREE.Vector3(...frame.forward);
+          const right=new THREE.Vector3(...frame.right);
+          desiredCamera.copy(player.position)
+            .addScaledVector(right,portrait?info.cameraSide*.65:info.cameraSide)
+            .addScaledVector(forward,-(portrait?info.cameraBack*.88:info.cameraBack))
+            .add(new THREE.Vector3(0,info.cameraHeight,0));
+          const a=trackPoint(trackId,distance+24),o=trackPoint(trackId,distance);
+          lookTarget.set(a.x-o.x,a.y-o.y+1.15,a.z-o.z);
+        }else{
+          desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
+          lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
+        }
       } else if (cameraMode === 1) {
         if (trackId === 'spiral' || TOUR_IDS.has(trackId)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
         else desiredCamera.set(car.x, car.altitude + 1.7, -0.95);
@@ -827,6 +876,16 @@ export function createWorld(canvas) {
       bloom.strength = TOUR_IDS.has(trackId) ? .085 : .42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       composer.render(dt);
+    },
+    inspectShowcase() {
+      // Read-only projection for browser QA: verify the player and all three
+      // rivals stay within the real camera on curving/elevated preview roads.
+      camera.updateMatrixWorld(true);
+      return [player,...rivals].map((mesh,i)=>{
+        const projected=mesh.getWorldPosition(new THREE.Vector3()).project(camera);
+        return {name:i===0?'YOU':'RIVAL '+i,visible:mesh.visible,
+          x:projected.x,y:projected.y,z:projected.z};
+      });
     },
     dispose() {
       skyScene.dispose(); worldTourScene.dispose();

@@ -97,6 +97,12 @@ const CONTROL_CHOICES = {
   </section>
 
   <main>
+    <section class="performance-notice" id="performance-notice" role="status" aria-live="polite" aria-labelledby="performance-notice-title" hidden>
+      <span class="performance-notice-eyebrow">DEVICE / GRAPHICS</span>
+      <strong id="performance-notice-title"></strong>
+      <p id="performance-notice-text"></p>
+      <button type="button" id="performance-notice-dismiss">Got it</button>
+    </section>
     <section class="intro" id="intro" aria-labelledby="intro-title">
       <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> 4 DRIVERS</div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span>SKYLINE <b>RUSH</b></span></a>
