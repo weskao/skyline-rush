@@ -13,6 +13,7 @@ import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
+import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 
@@ -378,7 +379,7 @@ export function createWorld(canvas) {
   const weather = new THREE.Points(weatherGeometry, new THREE.PointsMaterial({ color: '#b8d8ef', size: .18, transparent: true, opacity: .65, depthWrite: false }));
   scene.add(weather);
   const signTextures = [];
-  const signs = Object.fromEntries(Object.entries({ tunnel: 'TUNNEL / 4 M CEILING', gap: 'BROKEN BRIDGE / FLY', crosswind: 'CROSSWIND / STEER', ice: 'ICE / STEER EARLY', uphill: 'UPHILL / SAVE CHARGE', shortcut: 'SHORTCUT / FLY HIGH', launch: 'LAUNCH RAMP / BOOST', spiral: '360 HELIX / CLIMB' }).map(([type, label]) => {
+  const signs = Object.fromEntries(Object.entries(SECTION_SIGN_LABELS).map(([type, label]) => {
     const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
     const context = sign.getContext('2d');
     context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);
@@ -639,8 +640,20 @@ export function createWorld(canvas) {
         const relative = section ? section.from - 65 - distance : 0;
         group.visible = !!section && relative > -40 && relative < 850;
         if (!group.visible) return;
-        group.position.set(roadCenter(section.from - 65) - center - 17, 0, -relative);
-        panel.material = signs[section.type];
+        if (TOUR_IDS.has(trackId)) {
+          const signDistance = section.from - 65;
+          group.position.fromArray(trackLocalPosition(trackId, signDistance, -17, 0, distance));
+          const frame = trackFrame(trackId, signDistance);
+          group.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+            new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up),
+            new THREE.Vector3(...frame.forward).negate()));
+        } else {
+          group.position.set(roadCenter(section.from - 65) - center - 17, 0, -relative);
+          group.quaternion.identity();
+        }
+        // Always assign a valid material: missing boost-tunnel was a fatal
+        // WebGLRenderer error as the sign entered view halfway through a race.
+        panel.material = signs[sectionSignKey(section.type)];
       });
       if (cliffs.visible) {
         const count = touch || visual.quality === 'low' ? 20 : 40;
