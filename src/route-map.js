@@ -45,8 +45,11 @@ export function createRouteMap(trackId, { live = false } = {}) {
       const marker = markers.get(driver.id);
       if (!marker) continue;
       const point = routeMarker(trackId, driver.distance);
-      marker.setAttribute('cx', point.x.toFixed(2));
-      marker.setAttribute('cy', point.y.toFixed(2));
+      const x = point.x.toFixed(2), y = point.y.toFixed(2);
+      // Avoid forcing SVG layout/style work on frames whose tiny marker
+      // movement is still subpixel at the current map size.
+      if (marker.getAttribute('cx') !== x) marker.setAttribute('cx', x);
+      if (marker.getAttribute('cy') !== y) marker.setAttribute('cy', y);
     }
   };
   if (live) updateDrivers(racers.map(id => ({ id, distance: 0 })));
