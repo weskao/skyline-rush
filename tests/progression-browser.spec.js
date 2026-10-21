@@ -24,22 +24,22 @@ test('owned paints equip and persist; locked paints stay preview only', async ({
   const equip = page.getByRole('button', { name: 'Equip finish' });
   await expect(status).toContainText('Pearl · equipped');
   await expect(equip).toBeDisabled();
-  await page.getByRole('button', { name: 'Preview coral' }).click();
-  await expect(status).toContainText('Coral · owned');
+  await page.getByRole('button', { name: 'Preview aurora' }).click();
+  await expect(status).toContainText('Aurora · owned');
   await expect(equip).toBeEnabled();
   await equip.click();
-  await expect(status).toContainText('Coral · equipped');
+  await expect(status).toContainText('Aurora · equipped');
   await expect(equip).toBeDisabled();
   await page.getByRole('button', { name: 'Preview glacier' }).click();
   await expect(status).toContainText('Preview only · unlocks at 6 stars');
   await expect(equip).toBeDisabled();
   await page.getByRole('button', { name: 'Close garage' }).click();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('coral');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('aurora');
   await page.reload();
   await dismissMusicPrompt(page);
   await page.getByRole('button', { name: 'Garage', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Preview coral' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(status).toContainText('Coral · equipped');
+  await expect(page.getByRole('button', { name: 'Preview aurora' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(status).toContainText('Aurora · equipped');
 });
 
 test('History shows awarded medals and today’s daily board; the daily run starts with its modifier', async ({ page }) => {

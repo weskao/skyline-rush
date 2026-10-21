@@ -16,7 +16,7 @@ test('local-only build exposes every track and paint without writing storage', (
     assert.deepEqual(devPaints(), Object.keys(PAINTS));
     assert.deepEqual(prodTracks(), ['coast']);
     assert.deepEqual(prodPaints(0), ['pearl']);
-    assert.deepEqual(prodPaints(9), Object.keys(PAINTS));
+    assert.deepEqual(prodPaints(24), Object.keys(PAINTS));
   } finally {
     if (original) Object.defineProperty(globalThis, 'localStorage', original);
     else delete globalThis.localStorage;

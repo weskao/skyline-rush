@@ -185,12 +185,13 @@ test('saved medals are validated and storage failures never throw', async () => 
   assert.deepEqual(loadMedals(throwingStorage), {});
 });
 
-test('paints unlock at 0 / 3 / 6 / 9 total stars and stay visual only', async () => {
+test('paints unlock at 0 / 3 / 6 / 10 / 16 / 24 total stars and stay visual only', async () => {
   const { PAINTS, ownedPaints } = await import('../src/appearance.js');
-  assert.deepEqual(Object.fromEntries(Object.entries(PAINTS).map(([id, paint]) => [id, paint.stars])), { pearl: 0, coral: 3, glacier: 6, aurora: 9 });
+  assert.deepEqual(Object.fromEntries(Object.entries(PAINTS).map(([id, paint]) => [id, paint.stars])), { pearl: 0, aurora: 3, glacier: 6, coral: 10, cobalt: 16, obsidian: 24 });
   assert.deepEqual(ownedPaints(0), ['pearl']);
-  assert.deepEqual(ownedPaints(5), ['pearl', 'coral']);
-  assert.deepEqual(ownedPaints(12), ['pearl', 'coral', 'glacier', 'aurora']);
+  assert.deepEqual(ownedPaints(5), ['pearl', 'aurora']);
+  assert.deepEqual(ownedPaints(23), ['pearl', 'aurora', 'glacier', 'coral', 'cobalt']);
+  assert.deepEqual(ownedPaints(30), Object.keys(PAINTS));
   assert.deepEqual(ownedPaints(NaN), ['pearl']);
 });
 
