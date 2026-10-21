@@ -101,6 +101,13 @@ export function createWorldTourScene(scene){
   const portalGeo=new THREE.TorusGeometry(13,0.36,8,48);
   const portalMat=new THREE.MeshBasicMaterial({color:'#00f2ff',toneMapped:false});
   const portalSecondary=new THREE.MeshBasicMaterial({color:'#fdbb5b',toneMapped:false});
+  const glassMat=new THREE.MeshStandardMaterial({color:'#2dddf3',emissive:'#0c5b77',
+    metalness:.25,roughness:.25,transparent:true,opacity:.23,depthWrite:false,side:THREE.DoubleSide});
+  const sideGlass=new THREE.InstancedMesh(cube,glassMat,32);
+  const ceilingGlass=new THREE.InstancedMesh(cube,glassMat,16);
+  sideGlass.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  ceilingGlass.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for(const panel of [sideGlass,ceilingGlass]){panel.frustumCulled=false;boostGroup.add(panel);}
   const portals=Array.from({length:16},(_,i)=>{
     const root=new THREE.Group();root.name='Energy hoop '+i;
     const halo=new THREE.Mesh(portalGeo,i%3===0?portalSecondary:portalMat);
@@ -156,6 +163,7 @@ export function createWorldTourScene(scene){
     glowMat.color.set(theme.rail);
     portalMat.color.set(theme.rail);
     portalSecondary.color.set(theme.accent);
+    glassMat.color.set(theme.rail);
     architectureMat.color.set(theme.buildings);
     terrainMat.color.set(theme.rock);
     windowMat.color.set(theme.prop==='neon'?'#ff68be':theme.prop==='city'?'#ffdc9b':'#b7eaff');
@@ -238,14 +246,22 @@ export function createWorldTourScene(scene){
       const tunnel=sections.find(s=>s.type==='boost-tunnel');
       boostGroup.visible=arrowGroup.visible=!!tunnel && Math.abs(distance-(tunnel.from+tunnel.to)/2)<1500;
       if(boostGroup.visible){
+        const spacing=(tunnel.to-tunnel.from)/(portals.length-1);
+        sideGlass.count=low?16:32;ceilingGlass.count=low?8:16;
         for(let i=0;i<portals.length;i++){
           const s=tunnel.from+i*(tunnel.to-tunnel.from)/(portals.length-1);
           const portal=portals[i];
+          const mid=Math.min(tunnel.to,s+spacing*.45);
+          for(const side of [-1,1]){
+            instance(sideGlass,i*2+(side===1?1:0),id,mid,side*12.65,6.8,[.35,12.5,spacing],distance);
+          }
+          instance(ceilingGlass,i,id,mid,0,16.15,[24,.25,spacing],distance);
           pose(portal,id,s,0,0,distance);
           portal.visible=s>=distance-150&&s<=distance+1400&&(i%2===0||!low);
           const twinkle=reducedMotion?1:1+.045*Math.sin(time*3.5+i*.8);
           portal.scale.setScalar(twinkle);
         }
+        sideGlass.instanceMatrix.needsUpdate=ceilingGlass.instanceMatrix.needsUpdate=true;
         for(let i=0;i<boostArrows.length;i++){
           const s=tunnel.from+12+i*(tunnel.to-tunnel.from-24)/boostArrows.length;
           pose(boostArrows[i],id,s,0,0,distance);
@@ -264,7 +280,7 @@ export function createWorldTourScene(scene){
       clearHeroes();group.removeFromParent();
       geometry.dispose();roadMat.dispose();glowMat.dispose();architectureMat.dispose();windowMat.dispose();terrainMat.dispose();stripeMat.dispose();
       roadEdges.dispose();laneMarks.dispose();skyline.dispose();windows.dispose();terrain.dispose();asteroids.dispose();
-      water.geometry.dispose();water.material.dispose();starGeo.dispose();stars.material.dispose();portalGeo.dispose();portalMat.dispose();portalSecondary.dispose();
+      water.geometry.dispose();water.material.dispose();starGeo.dispose();stars.material.dispose();portalGeo.dispose();portalMat.dispose();portalSecondary.dispose();glassMat.dispose();sideGlass.dispose();ceilingGlass.dispose();
     },
   };
 }
