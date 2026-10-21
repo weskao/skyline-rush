@@ -218,5 +218,54 @@ export function createSceneryKit() {
     props[kind](g);g.scale.setScalar(size);
     return g;
   }
-  return { build,place,material,dispose() {for(const mat of materials.values())mat.dispose();materials.clear();} };
+  // Continuous sculpted rock / coast ribbons with *absolute* distance-based
+  // noise. Adjacent 120m sections share the same endpoint and do not pop.
+  function terrain(trackId,chunk,low=false){
+    if(!['alpine','coastal'].includes(trackId))return null;
+    const length=RACE_TRACKS[trackId].length, root=new THREE.Group();
+    root.name='terrain:'+trackId+':'+chunk;
+    const strips=low?6:10,rings=4;
+    const start=chunk*SCENERY_CHUNK_METRES;
+    const end=Math.min(start+SCENERY_CHUNK_METRES,length);
+    if(start>=end)return root;
+    for(const side of [-1,1]){
+      const vertices=[],index=[];
+      for(let j=0;j<=strips;j++){
+        const distance=start+(end-start)*j/strips;
+        const p=trackPoint(trackId,distance),frame=trackFrame(trackId,distance);
+        const absoluteNoise=Math.sin(distance*.023+side*1.71)*.55+
+          Math.cos(distance*.049+side*.8)*.24+
+          Math.sin(distance*.011+3.1)*.21;
+        for(let i=0;i<rings;i++){
+          const lateral=trackId==='alpine'?[16,23,39,72][i]:[15,25,48,92][i];
+          const altitude=trackId==='alpine'
+            ?[-1,4,22,65][i]+absoluteNoise*[.12,2.2,7,16][i]
+            :(side===1?[-3,-7,-18,-22]:[-1,2,8,18])[i]
+              +absoluteNoise*[.2,.8,2.8,4.5][i];
+          vertices.push(
+            p.x+frame.right[0]*lateral*side+frame.up[0]*altitude,
+            p.y+frame.right[1]*lateral*side+frame.up[1]*altitude,
+            p.z+frame.right[2]*lateral*side+frame.up[2]*altitude,
+          );
+          if(i<rings-1&&j<strips){
+            const n=j*rings+i;
+            index.push(n,n+1,n+rings,n+1,n+rings+1,n+rings);
+          }
+        }
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+      geometry.setIndex(index);
+      geometry.computeVertexNormals();
+      const surface=new THREE.Mesh(geometry,material(trackId==='alpine'
+        ? (side===1?'#4c5b50':'#5c685c')
+        : (side===1?'#72818a':'#82937e')));
+      surface.name=trackId+' sculpted '+(side===1?'right':'left')+' terrain';
+      surface.material.side=THREE.DoubleSide;
+      surface.userData.ownGeometry=true;
+      root.add(surface);
+    }
+    return root;
+  }
+  return { build,place,terrain,material,dispose() {for(const mat of materials.values())mat.dispose();materials.clear();} };
 }
