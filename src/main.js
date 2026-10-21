@@ -204,6 +204,11 @@ const trackNotes = {
   canyon: 'Desert noon · fly over broken bridges; steer into crosswinds; a left-lane sky shortcut.',
   aurora: 'Snowy night · ice slows steering; uphill sections recharge slowly; a right-lane sky shortcut in the final sprint.',
   spiral: 'Neon sky-city · ascend a 360° helix, launch across three broken skybridges and land above the clouds.',
+  taipei: 'Taipei city heritage · ceremonial boulevards, Presidential Office and North Gate inspired silhouettes.',
+  tokyo: 'Tokyo after dark · neon crossings, towering skyline, elevated railways and busy night traffic.',
+  alpine: 'Mountain rail pass · long hairpins, deep rock tunnels and an elevated parallel railway.',
+  coastal: 'Coastal horizon · lighthouses, salt wind, a sweeping sea cliff road and coastal bridges.',
+  cosmic: 'Cosmic orbit · suspended starlit highway, giant ringed planets and a distant nebula.',
 };
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
