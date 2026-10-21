@@ -8,6 +8,11 @@ const dismissMusicPrompt = async page => {
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 };
 
+const pick = async (page, name, option) => {
+  await page.getByRole('combobox', { name, exact: true }).click();
+  await page.getByRole('option', { name: option, exact: true }).click();
+};
+
 // Touch players default to slide steering; legacy button tests pin Buttons mode (and any other prefs) before the page loads.
 const useControls = (page, prefs) => page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, ...prefs })), prefs);
 
@@ -67,12 +72,12 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
   await expect(page.locator('#speed')).toHaveText('0');
   await page.locator('#vfx-panel > summary').click();
-  await page.locator('[data-vfx="aeroMode"]').selectOption('downforce');
+  await pick(page, 'Aerodynamics', 'High downforce');
   await expect(page.locator('#aero-mode')).toHaveText('HIGH DOWNFORCE');
-  for (const preset of ['realistic', 'extreme', 'cinematic']) await page.locator('[data-vfx="preset"]').selectOption(preset);
-  for (const quality of ['low', 'medium', 'high']) await page.locator('[data-vfx="quality"]').selectOption(quality);
-  for (const view of ['front', 'left', 'right', 'orbit', 'rear']) {
-    await page.locator('[data-vfx="view"]').selectOption(view);
+  for (const preset of ['Realistic', 'Extreme · sci-fi', 'Cinematic']) await pick(page, 'Visual style', preset);
+  for (const quality of ['Low', 'Medium', 'High']) await pick(page, 'Quality', quality);
+  for (const view of ['Front', 'Left', 'Right', 'Orbit', 'Rear']) {
+    await pick(page, 'Showcase camera', view);
     await page.waitForTimeout(250);
   }
   await page.locator('#vfx-panel > summary').click();
@@ -100,7 +105,7 @@ test('starting with a VFX control focused hands the keyboard back to driving', a
   await page.goto('/');
   await dismissMusicPrompt(page);
   await page.locator('#vfx-panel > summary').click();
-  await page.locator('[data-vfx="preset"]').focus();
+  await page.getByRole('combobox', { name: 'Visual style', exact: true }).focus();
   // Safari and Firefox on macOS do not move focus to a clicked button.
   await page.locator('#start-button').evaluate(button => button.click());
   await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -119,7 +124,7 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   await page.locator('#airflow-toggle').click();
   await page.locator('#vfx-panel > summary').click();
   await page.locator('[data-vfx="comfortable"]').check();
-  await page.locator('[data-vfx="quality"]').selectOption('low');
+  await pick(page, 'Quality', 'Low');
   const panel = await page.locator('.vfx-settings').boundingBox();
   expect(panel.x).toBeGreaterThanOrEqual(0);
   expect(panel.x + panel.width).toBeLessThanOrEqual(360);
@@ -129,7 +134,7 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   await dismissMusicPrompt(page);
   await page.locator('#vfx-panel > summary').click();
   await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
-  await expect(page.locator('[data-vfx="quality"]')).toHaveValue('low');
+  await expect(page.getByRole('combobox', { name: 'Quality', exact: true })).toHaveText('Low');
   await expect(page.locator('.speed-streaks')).toBeHidden();
   await page.locator('[data-vfx="enabled"]').uncheck();
   await expect(page.locator('#airflow-toggle')).toBeDisabled();

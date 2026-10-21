@@ -42,7 +42,8 @@ for (const [name, viewport, hasTouch] of [
     const chart = await page.locator('#history-chart').boundingBox();
     expect(chart.x).toBeGreaterThanOrEqual(0);
     expect(chart.x + chart.width).toBeLessThanOrEqual(viewport.width);
-    await page.getByLabel('History track').selectOption('neon');
+    await page.getByRole('combobox', { name: 'History track' }).click();
+    await page.getByRole('option', { name: 'Neon Downtown' }).click();
     await expect(page.locator('.history-run')).toHaveCount(1);
     await expect(page.locator('.history-run')).toContainText('01:06.00');
     await expect(page.locator('#history-chart circle')).toHaveCount(1);

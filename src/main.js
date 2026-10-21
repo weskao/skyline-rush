@@ -17,11 +17,13 @@ import { createPresentation } from './presentation.js';
 import { PAINTS } from './appearance.js';
 import { frameStats, PERF_WINDOW } from './perf.js';
 import { availableTracks, availablePaints } from '@progression-access';
+import { customSelect } from './custom-select.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
 createApp(App).mount('#app');
+for (const select of document.querySelectorAll('select')) customSelect(select);
 
 const $ =selector => document.querySelector(selector);
 const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'progress-fill', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'settings-panel', 'camera-button', 'controls-button', 'controls-panel', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
