@@ -3,6 +3,8 @@
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
 export const UI = Object.freeze({
   en: {
+    'mode.hazardHud': 'DODGED {n}/{total} · STYLE {score}',
+    'mode.hazardResult': 'Obstacles dodged: {n}/{total}.',
     'mode.gauntlet': 'Obstacle Run',
     'mode.description.gauntlet': 'Dodge barriers · score clean passes',
     'mode.freeOptions': 'Free Drive traffic & pickups',
@@ -395,6 +397,8 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
+    'mode.hazardHud': '成功閃避 {n}/{total} · 分數 {score}',
+    'mode.hazardResult': '成功閃避障礙：{n}/{total}。',
     'mode.gauntlet': '障礙挑戰',
     'mode.description.gauntlet': '閃避障礙 · 乾淨通過加分',
     'mode.freeOptions': '自由駕駛車流與補給設定',

@@ -73,3 +73,16 @@ test('solo HUD never displays a misleading four-player race rank', async ({ page
   await expect(page.locator('.position-stat .stat-label')).toHaveText('Time Attack');
   await expect(page.locator('#leaderboard')).toBeHidden();
 });
+
+test('mobile game mode picker remains operable on phone portrait', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('[data-race-mode="gauntlet"]').click();
+  await expect(page.locator('[data-race-mode="gauntlet"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#start-button')).toBeInViewport();
+  await page.screenshot({ path: 'test-results/race-mode-mobile-menu.png' });
+  expect(errors).toEqual([]);
+});
