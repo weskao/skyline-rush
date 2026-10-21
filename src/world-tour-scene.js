@@ -3,7 +3,7 @@ import { RACE_TRACKS } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.js';
 import { roadRibbon } from './geometry.js';
 import { makeLandmark } from './world-tour-landmarks.js';
-import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER } from './world-tour-scenery.js';
+import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
 
 // One scenery system for five distinct destinations. Locations are authored as
@@ -125,7 +125,8 @@ export function createWorldTourScene(scene){
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
       for(const item of sceneryPlan(id,index,level==='low')){
         const prop=kit.build(id,item.kind,item.size);
-        kit.place(prop,id,item.distance,item.side*item.offset,0);
+        kit.place(prop,id,item.distance,item.side*item.offset,
+          terrainHeight(id,item.distance,item.side,item.offset));
         // Unique authored models are keyed to absolute track distance; no
         // periodic wrap/modulus position reuse, no roadside teleporting.
         chunk.add(prop);
