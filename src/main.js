@@ -1033,6 +1033,14 @@ function updateUI(now, input) {
   ui.distance.textContent = (car.distance / 1000).toFixed(2);
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
   $('#race-length').textContent = (race.length / 1000).toFixed(2);
+  const timeGhost = race.mode === 'time' && controlPrefs.ghost ? modeGhostFor(race) : null;
+  const split = $('#ghost-split');
+  split.hidden = !timeGhost || race.phase !== 'racing';
+  if (!split.hidden) {
+    const delta = car.distance - ghostAt(timeGhost, race.elapsed).distance;
+    split.textContent = t(delta >= 0 ? 'mode.ahead' : 'mode.behind', { n: Math.abs(Math.round(delta)) });
+    split.dataset.ahead = String(delta >= 0);
+  }
   ui['fuel-value'].textContent = String(Math.round(car.fuel));
   ui['fuel-fill'].style.transform = `scaleX(${car.fuel / 100})`;
   ui['fuel-meter'].setAttribute('aria-valuenow', String(Math.round(car.fuel)));

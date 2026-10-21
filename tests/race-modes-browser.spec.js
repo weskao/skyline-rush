@@ -37,3 +37,16 @@ test('custom 0-opponent race still starts; Classic remains selectable', async ({
   await page.screenshot({ path: 'test-results/race-mode-custom-solo.png' });
   expect(errors).toEqual([]);
 });
+
+test('Free Drive starts immediately without a countdown and keeps its return path', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('[data-race-mode="free"]').click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'free');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+  await page.screenshot({ path: 'test-results/race-mode-free-drive.png' });
+  expect(errors).toEqual([]);
+});
