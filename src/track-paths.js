@@ -5,6 +5,13 @@ import { skyFrame, skyPoint } from './sky-track.js';
 // The original flat routes retain their exact world-space centreline.
 const oldRoadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const flatCourses = new Set(['coast', 'neon', 'canyon', 'aurora']);
+const profiles = {
+ taipei: s => ({ x: 205 * Math.sin(s/670) + 60 * Math.sin(s/185), y: 0 }),
+ tokyo: s => ({ x: 275 * Math.sin(s/455) + 90 * Math.cos(s/205), y: 0 }),
+ alpine: s => ({ x: 380 * Math.sin(s/310) + 150 * Math.sin(s/790), y: 34 * Math.sin(s/1300) + 65*s/7600 }),
+ coastal: s => ({ x: 235 * Math.sin(s/890) + 65 * Math.sin(s/300), y: 12 * Math.sin(s/650) }),
+ cosmic: s => ({ x: 405 * Math.sin(s/900) + 220 * Math.sin(s/460), y: 65 + 24 * Math.sin(s/1050) }),
+};
 const clamp = (value, from, to) => Math.min(to, Math.max(from, value));
 const unit = ([x, y, z]) => {
   const length = Math.hypot(x, y, z) || 1;
@@ -17,6 +24,7 @@ export function trackPoint(trackId, distance) {
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, track.length);
   if (trackId === 'spiral') return skyPoint(s);
+  if (profiles[trackId]) return { ...profiles[trackId](s), z: -s };
   return { x: oldRoadCenter(s), y: 0, z: -s };
 }
 

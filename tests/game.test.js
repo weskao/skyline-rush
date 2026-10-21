@@ -439,7 +439,7 @@ test('review fixes: full-lock rail hit at boost speed is still a collision, lane
 
 // --- Track data and special sections ---------------------------------------------------------
 
-const TRACK_IDS = ['coast', 'neon', 'canyon', 'aurora', 'spiral'];
+const TRACK_IDS = ['coast', 'neon', 'canyon', 'aurora', 'spiral', 'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
 
 function racingOn(trackId) {
   const race = createRace(trackId);
@@ -453,9 +453,9 @@ function sectionOf(trackId, type, index = 0) {
   return RACE_TRACKS[trackId].sections.filter(section => section.type === type)[index];
 }
 
-test('the track table holds all five tracks and coast matches the original race', () => {
+test('the track table holds all ten tracks and coast matches the original race', () => {
   assert.deepEqual(Object.keys(RACE_TRACKS), TRACK_IDS);
-  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 4000, 6000, 5500, 5600]);
+  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 4000, 6000, 5500, 5600, 6200, 6800, 7600, 5800, 8000]);
   assert.equal(RACE_LENGTH, RACE_TRACKS.coast.length);
   assert.deepEqual(createRace(), createRace('coast'));
   const coast = createRace();
