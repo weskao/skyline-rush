@@ -1,5 +1,6 @@
 import { RACE_TRACKS } from './game.js';
 import { trackOverview } from './track-paths.js';
+import { t, trackName, getLocale } from './i18n.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const cache = new Map();
@@ -22,11 +23,12 @@ export function routeMarker(trackId, distance) {
   const total = RACE_TRACKS[trackId].length;
   const value = clamp(distance / total) * (samples.length - 1);
   const index = Math.min(Math.floor(value), samples.length - 2);
-  const t = value - index, a = samples[index], b = samples[index + 1];
-  return { x: (a.x + (b.x - a.x) * t) * 100, y: (a.y + (b.y - a.y) * t) * 100 };
+  const frac = value - index, a = samples[index], b = samples[index + 1];
+  return { x: (a.x + (b.x - a.x) * frac) * 100, y: (a.y + (b.y - a.y) * frac) * 100 };
 }
+const routeLabel = (trackId, locale = getLocale()) => t('route.aria', { name: trackName(trackId, locale) }, locale);
 export function createRouteMap(trackId, { live = false } = {}) {
-  const element = svg('svg', { viewBox: '0 0 100 100', class: 'route-overview', role: 'img', 'aria-label': `Full ${RACE_TRACKS[trackId].name} main route` });
+  const element = svg('svg', { viewBox: '0 0 100 100', class: 'route-overview', role: 'img' }); // aria-label: relabel() below
   element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
   for (const [kind, d] of [['start', 0], ['finish', RACE_TRACKS[trackId].length]]) {
     const p = routeMarker(trackId, d);
@@ -36,7 +38,6 @@ export function createRouteMap(trackId, { live = false } = {}) {
   if (live) for (const [i, id] of racers.entries()) {
     const marker = svg('circle', { r: id === 'YOU' ? 3.5 : 2.8, class: `route-driver route-driver-${id.toLowerCase()}`, 'data-racer': id });
     marker.append(svg('title'));
-    marker.firstChild.textContent = id;
     element.append(marker);
     markers.set(id, marker);
   }
@@ -50,5 +51,11 @@ export function createRouteMap(trackId, { live = false } = {}) {
     }
   };
   if (live) updateDrivers(racers.map(id => ({ id, distance: 0 })));
-  return { element, updateDrivers, destroy() { element.remove(); } };
+  // Tooltips show the localized player label; data-racer keeps the identity key.
+  const relabel = (locale = getLocale()) => {
+    element.setAttribute('aria-label', routeLabel(trackId, locale));
+    for (const [id, marker] of markers) marker.firstChild.textContent = id === 'YOU' ? t('hud.you', undefined, locale) : id;
+  };
+  relabel();
+  return { element, updateDrivers, relabel, destroy() { element.remove(); } };
 }

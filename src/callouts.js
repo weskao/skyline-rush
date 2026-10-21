@@ -1,8 +1,13 @@
+import { t } from './i18n.js';
+
+// A callout field is a catalog key or [key, params]; it resolves in the active locale once, when the event is queued.
+const text = field => Array.isArray(field) ? t(field[0], field[1]) : t(field);
+
 export function createCallouts() {
   let previousRace, previous, previousElapsed = 0, current = null;
   const pending = [];
   const enqueue = (kind, title, detail) => {
-    const event = { kind, title, detail };
+    const event = { kind, title: text(title), detail: text(detail) };
     const index = pending.findIndex(item => item.kind === kind);
     if (index < 0) pending.push(event);
     else pending[index] = event; // Show the latest combo/tier instead of stale repeats.
@@ -25,22 +30,22 @@ export function createCallouts() {
         previousRace = race;
         return null;
       }
-      if (next.perfect > previous.perfect) enqueue('perfect', 'PERFECT LINE', '+1 NITRO');
-      if (next.near > previous.near) enqueue('near', `NEAR MISS ×${car.nearMiss.combo}`,
-        `CLOSE PASS · ${car.nearMiss.charge < 0.5 ? 'CHARGE FULL' : `+${Math.round(car.nearMiss.charge)}% CHARGE`}`);
+      if (next.perfect > previous.perfect) enqueue('perfect', 'callout.perfect', 'callout.perfect.detail');
+      if (next.near > previous.near) enqueue('near', ['callout.near', { n: car.nearMiss.combo }],
+        car.nearMiss.charge < 0.5 ? 'callout.near.full' : ['callout.near.pct', { n: Math.round(car.nearMiss.charge) }]);
       if (next.uses > previous.uses || next.nitroTime > previous.nitroTime) {
-        enqueue('nitro', 'NITRO', next.uses > previous.uses ? 'SPEED BURST' : '+2 SECONDS');
+        enqueue('nitro', 'callout.nitro', next.uses > previous.uses ? 'callout.nitro.burst' : 'callout.nitro.extend');
       }
-      if (next.drift > previous.drift) enqueue('drift', `DRIFT · ${['', 'BLUE', 'ORANGE', 'PURPLE'][next.drift]}`, 'SPARK TIER EARNED');
-      if (next.shortcut && !previous.shortcut) enqueue('shortcut', 'SHORTCUT', 'FREE FLIGHT · +12 SPEED CAP');
-      if (next.trick && next.trick !== previous.trick) enqueue('trick', 'BARREL ROLL', 'LAND CLEANLY · +0.25 NITRO');
+      if (next.drift > previous.drift) enqueue('drift', ['callout.drift', { tier: t(`callout.drift.tier.${next.drift}`) }], 'callout.drift.detail');
+      if (next.shortcut && !previous.shortcut) enqueue('shortcut', 'callout.shortcut', 'callout.shortcut.detail');
+      if (next.trick && next.trick !== previous.trick) enqueue('trick', 'callout.roll', 'callout.roll.detail');
       const trickPaid = next.trickPayout && next.trickPayout !== previous.trickPayout;
       if (trickPaid) {
-        if (next.trickPayout.hard) enqueue('trick-payout', 'HARD LANDING', 'TRICK REWARD LOST');
-        else if (next.trickPayout.nitro > 0) enqueue('trick-payout', `TRICK +${next.trickPayout.nitro}`, 'CLEAN LANDING · NITRO CHARGE');
+        if (next.trickPayout.hard) enqueue('trick-payout', 'callout.hard', 'callout.hard.detail');
+        else if (next.trickPayout.nitro > 0) enqueue('trick-payout', ['callout.trick', { n: next.trickPayout.nitro }], 'callout.trick.detail');
       }
       if (next.nitro > previous.nitro && next.perfect === previous.perfect && !trickPaid) {
-        enqueue('refill', `+${Number((next.nitro - previous.nitro).toFixed(2))}`, 'NITRO CHARGE');
+        enqueue('refill', ['callout.refill', { n: Number((next.nitro - previous.nitro).toFixed(2)) }], 'callout.refill.detail');
       }
       previous = next;
       if (blocked) {

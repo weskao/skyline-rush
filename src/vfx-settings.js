@@ -1,4 +1,6 @@
 // Visual controls only: none of these values are consumed by the race simulation.
+// Index 0 is the English label; the UI translates it through the `vfx.<key>` catalog entry (vfxLabelKey).
+export const vfxLabelKey = key => `vfx.${key}`;
 export const VFX_RANGES = {
   airflowDensity: ['Airflow density', 0, 1, 0.05, 0.75],
   airflowSpeed: ['Airflow speed', 0.2, 3, 0.1, 1],

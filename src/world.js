@@ -9,6 +9,7 @@ import { canopy, carShell, roadRibbon } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.js';
+import { t, getLocale, onLocaleChange } from './i18n.js';
 import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
@@ -233,6 +234,15 @@ function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   mesh.setMatrixAt(index, matrix);
 }
 
+// Canvas sign text: Latin keeps the generic sans-serif; zh-TW appends CJK families. The font shrinks until the text fits.
+const signFont = (px, locale) => `bold ${px}px ${locale === 'zh-TW' ? '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif' : 'sans-serif'}`;
+function fitText(context, label, x, y, maxWidth, basePx, locale) {
+  let px = basePx;
+  context.font = signFont(px, locale);
+  while (px > 12 && context.measureText(label).width > maxWidth) context.font = signFont(--px, locale);
+  context.fillText(label, x, y);
+}
+
 export function createWorld(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -378,13 +388,18 @@ export function createWorld(canvas) {
   const weather = new THREE.Points(weatherGeometry, new THREE.PointsMaterial({ color: '#b8d8ef', size: .18, transparent: true, opacity: .65, depthWrite: false }));
   scene.add(weather);
   const signTextures = [];
-  const signs = Object.fromEntries(Object.entries({ tunnel: 'TUNNEL / 4 M CEILING', gap: 'BROKEN BRIDGE / FLY', crosswind: 'CROSSWIND / STEER', ice: 'ICE / STEER EARLY', uphill: 'UPHILL / SAVE CHARGE', shortcut: 'SHORTCUT / FLY HIGH', launch: 'LAUNCH RAMP / BOOST', spiral: '360 HELIX / CLIMB' }).map(([type, label]) => {
+  const signPaints = [];
+  const signs = Object.fromEntries(['tunnel', 'gap', 'crosswind', 'ice', 'uphill', 'shortcut', 'launch', 'spiral'].map(type => {
     const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
     const context = sign.getContext('2d');
-    context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);
-    context.strokeStyle = '#ffc36f'; context.lineWidth = 8; context.strokeRect(4, 4, 504, 88);
-    context.fillStyle = '#fff1d6'; context.font = 'bold 27px sans-serif'; context.textAlign = 'center'; context.fillText(label, 256, 58);
     const texture = new THREE.CanvasTexture(sign); texture.colorSpace = THREE.SRGBColorSpace; signTextures.push(texture);
+    signPaints.push(locale => {
+      context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);
+      context.strokeStyle = '#ffc36f'; context.lineWidth = 8; context.strokeRect(4, 4, 504, 88);
+      context.fillStyle = '#fff1d6'; context.textAlign = 'center';
+      fitText(context, t(`sign.${type}`, undefined, locale), 256, 58, 472, 27, locale);
+      texture.needsUpdate = true;
+    });
     return [type, new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })];
   }));
   const sectionSigns = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => track.sections.length)) }, () => {
@@ -423,11 +438,17 @@ export function createWorld(canvas) {
   const signCanvas = document.createElement('canvas');
   signCanvas.width = 1024; signCanvas.height = 128;
   const ctx = signCanvas.getContext('2d');
-  ctx.fillStyle = '#182c39'; ctx.fillRect(0, 0, 1024, 128);
-  ctx.fillStyle = '#f6f0e5'; ctx.font = 'bold 64px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('SKYLINE  /  FINISH', 512, 88);
   const signTexture = new THREE.CanvasTexture(signCanvas);
   signTexture.colorSpace = THREE.SRGBColorSpace;
+  const paintFinish = locale => {
+    ctx.fillStyle = '#182c39'; ctx.fillRect(0, 0, 1024, 128);
+    ctx.fillStyle = '#f6f0e5'; ctx.textAlign = 'center';
+    fitText(ctx, t('sign.finish', undefined, locale), 512, 88, 960, 64, locale);
+    signTexture.needsUpdate = true;
+  };
+  const redrawAllSigns = locale => { signPaints.forEach(paint => paint(locale)); paintFinish(locale); };
+  redrawAllSigns(getLocale());
+  const stopLocaleSigns = onLocaleChange(redrawAllSigns);
   const finishSign = new THREE.Mesh(new THREE.PlaneGeometry(18, 2.25), new THREE.MeshBasicMaterial({ map: signTexture, side: THREE.DoubleSide }));
   finishSign.position.set(0, 12.9, 0.4);
   finish.add(finishSign);
@@ -790,6 +811,7 @@ export function createWorld(canvas) {
       composer.render(dt);
     },
     dispose() {
+      stopLocaleSigns();
       skyScene.dispose(); worldTourScene.dispose();
       effects.dispose();
       scene.traverse(object => {

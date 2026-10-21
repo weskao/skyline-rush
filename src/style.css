@@ -42,7 +42,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .music-prompt #music-yes { color: var(--accent); }
 .intro { position: absolute; z-index: 2; left: 7%; top: 23%; max-width: 600px; }
 .route-label { display: flex; align-items: center; gap: 11px; font-size: 10px; letter-spacing: 2px; font-weight: 600; color: #dbd8d1; margin-bottom: 24px; }
-.route-label > span:not(.route-line) { color: var(--accent); }
+.route-label > span:not(.route-line, .route-drivers) { color: var(--accent); }
 .route-line { width: 28px; height: 1px; background: var(--accent); }
 h1 { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(58px, 6.3vw, 90px); line-height: .97; letter-spacing: -.02em; margin: 0 0 24px; }
 h1 em { font-weight: inherit; color: var(--accent); font-style: normal; }
@@ -530,6 +530,10 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   .boost-status { font-size: 6px; letter-spacing: .5px; }
   .intro-controls { flex-wrap: wrap; gap: 12px 20px; }
 }
+/* Portrait phones: under the progress bar and the 272px event callout (both shift by the top inset), so neither covers the panel. */
+@media (max-width: 760px) and (min-height: 501px) { .airflow-hud { top: 330px; margin-top: var(--safe-top); } }
+/* Below ~840px the channel rows would reach the bottom gauges; the headline and mode stay (as on short landscape screens). */
+@media (max-width: 760px) and (min-height: 501px) and (max-height: 839px) { .aero-channels { display: none; } }
 /* Touch tablets lift the leaderboard to the top bar; the AIRFLOW bar sits beside it instead of on it. */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
   body:not([data-phase="ready"]) .aero-tools { right: max(180px, calc(140px + env(safe-area-inset-right, 0px))); }
@@ -747,8 +751,9 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
 .history-run:first-child { border-radius: 7px 7px 0 0; }
 .history-run:last-child { border-radius: 0 0 7px 7px; }
 .history-run:only-child { border-radius: 7px; }
-.history-run summary { min-height: 60px; display: grid; grid-template-columns: minmax(0, 1fr) auto 58px 48px 8px; gap: 16px; align-items: center; cursor: pointer; list-style: none; font-size: 13px; font-variant-numeric: tabular-nums; padding: 16px; border-radius: inherit; }
+.history-run summary { min-height: 60px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(58px, max-content) 48px 8px; gap: 16px; align-items: center; cursor: pointer; list-style: none; font-size: 13px; font-variant-numeric: tabular-nums; padding: 16px; border-radius: inherit; }
 .history-run summary::-webkit-details-marker { display: none; }
+.history-run summary > span { white-space: nowrap; } /* date, time and place are single tokens ("第 1 名 / 4" must not split) */
 .history-run summary:hover, .history-run[open] { background: #1b3044; }
 .history-run summary > span:first-child { color: #ccd7e0; }
 .history-run summary > span:nth-child(2) { font-weight: 700; font-size: 15px; }
@@ -809,6 +814,7 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
 @media (max-width: 370px) {
   .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost, .touch-controls .touch-nitro { width: calc(44px * var(--touch-scale, 1)); }
   .touch-steer, .touch-actions, .touch-pedals { gap: 6px; }
+  .result-stats { gap: 16px; } /* 24px gaps overflow the 272px results column by 8px at 320 wide */
 }
 
 /* Start screen: the game name leads, the tagline supports it. */
@@ -930,7 +936,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
 .route-locales {display:flex; gap:8px; margin-top:12px;}
-.route-locales button { padding:5px 11px; color:#d4e1eb; background:#102338; border:1px solid #456176; border-radius:4px; font-size:12px; cursor:pointer; }
+.route-locales button { padding:5px 11px; color:#d4e1eb; background:#102338; border:1px solid #456176; border-radius:4px; font-size:12px; line-height:1.2; white-space:nowrap; cursor:pointer; }
 .route-locales button[aria-pressed="true"] {color:#fff; border-color:#67d9ee; background:#23475a;}
 .race-route-map { position:fixed; top:292px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
@@ -956,3 +962,28 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .leave-actions { display: grid; gap: 10px; }
 .leave-actions .primary-button { width: 100%; }
 .leave-actions .controls-reset, .leave-actions .text-button { min-height: 44px; margin: 0; }
+
+/* Traditional Chinese (<html lang="zh-TW">). Han glyphs fall back to a Taiwan CJK family after the existing Latin stacks.
+   Brand words and NITRO / FLY / BOOST carry lang="en" in App.vue, so they keep their Latin tracking. */
+:root { --cjk-fonts: 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei'; }
+:root:lang(zh-TW), .route-locales :lang(zh-TW) { font-family: 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; }
+:is(h1, h2, .event-callout, .countdown, .impact-report strong, .vfx-heading strong, .airflow-hud > strong):lang(zh-TW), #flight-state:lang(zh-TW) { font-family: 'Barlow Condensed', 'Arial Narrow', var(--cjk-fonts), sans-serif; }
+:is(kbd, .event-callout span, .countdown > span, .altitude-stat small):lang(zh-TW) { font-family: 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; }
+/* Names Latin fonts that carry the arrow (macOS Lucida Grande, iOS Arial): zh-TW fallback would draw it ~8px wider in PingFang
+   and push POSITION into the leaderboard / mode panel. Not lang="en": that would also mark its translated aria-label English. */
+#position-change:lang(zh-TW) { font-family: 'Avenir Next', 'Segoe UI', 'Lucida Grande', Arial, sans-serif; }
+/* Tracking and forced capitals are Latin display styles; Han text sets solid. !important: the Latin tracking lives on ~80
+   selectors (several with ids), so one lang override beats duplicating each of them. */
+*:lang(zh-TW) { letter-spacing: 0 !important; text-transform: none !important; }
+/* Han strokes blur together below 10px. Every label style that drops under 10px in some layout is lifted to 10px for zh-TW only
+   (none of these is above 10px in any layout, so nothing shrinks). !important for the same reason as above: these sizes live in six media blocks. */
+:is(.assist-button span, .aero-tools > button, .aero-tools > details > summary, .vfx-heading > span, .route-label, .track-select small, .start-hint, .intro-controls > div,
+  .flight-tip, .bottomline, .stat-label, .progress-labels, .racer.is-player > strong, .racer.is-player > span:last-child, .countdown > span, .event-callout span,
+  .speed-caption, .fuel-caption, #flight-mode, .mode-key, .boost-status, .aero-eyebrow, #aero-mode, .aero-channels > span, .aero-channels b, .aero-disclaimer,
+  .flight-director > span:not(.director-climb), .altitude-ladder > small, .impact-report div > span, .overlay-route, .result-stats span, .history-best, .controls-button):lang(zh-TW) { font-size: 10px !important; }
+@media (max-width: 760px) { .driving-message:lang(zh-TW) { font-size: 10px; } } /* 11px on wider screens */
+/* The larger label keeps the column's height, so POSITION does not grow into the phone progress bar below it. */
+.stat-label:lang(zh-TW) { line-height: 1; }
+.style-score:lang(zh-TW) { line-height: 1.4; } /* the CJK fallback's taller default line box */
+/* Short Han headings wrap evenly instead of leaving one or two characters on the last line. */
+:is(h1, h2, h3):lang(zh-TW) { text-wrap: balance; }

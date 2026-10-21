@@ -2,9 +2,14 @@
 let count = 0;
 const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
 
+const refreshers = [];
+// Re-sync every select's option text and accessible name after a locale switch.
+export const refreshCustomSelects = () => refreshers.forEach(refresh => refresh());
+
 export function customSelect(select) {
   const id = `select-${++count}`;
-  const name = select.getAttribute('aria-label') ?? select.closest('label')?.firstChild.textContent.trim();
+  const accessibleName = () => select.getAttribute('aria-label') ?? select.closest('label')?.firstChild.textContent.trim();
+  const name = accessibleName();
   const box = document.createElement('span');
   box.className = 'custom-select';
   const button = document.createElement('button');
@@ -71,4 +76,14 @@ export function customSelect(select) {
     if (i >= 0) commit(i);
   });
   sync();
+  // Locale switch: option text and the label are rewritten in place by applyI18n/main.js; re-read them here.
+  const refresh = () => {
+    const label = accessibleName();
+    button.setAttribute('aria-label', label);
+    list.setAttribute('aria-label', label);
+    options.forEach((item, i) => { item.textContent = select.options[i].text; });
+    sync();
+  };
+  refreshers.push(refresh);
+  return refresh;
 }

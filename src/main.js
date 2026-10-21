@@ -17,17 +17,25 @@ import { createPresentation } from './presentation.js';
 import { PAINTS } from './appearance.js';
 import { frameStats, PERF_WINDOW } from './perf.js';
 import { createRouteMap } from './route-map.js';
-import { trackName, loadLocale, saveLocale } from './i18n.js';
+import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.js';
 import { availableTracks, availablePaints } from '@progression-access';
-import { customSelect } from './custom-select.js';
+import { customSelect, refreshCustomSelects } from './custom-select.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
 createApp(App).mount('#app');
+// Saved choice > system language > English; only a click on the switch persists (saveLocale below).
+setLocale(resolveInitialLocale());
+applyI18n(); applyDocumentLocale(); // before customSelect, so the drawn selects copy translated text
 for (const select of document.querySelectorAll('select')) customSelect(select);
 
 const $ =selector => document.querySelector(selector);
+// HUD text is read every tick: a plain catalog lookup (key parity is unit-tested), swapped on a language switch.
+let L = CATALOGS[getLocale()];
+// Event messages (tilt, key map, errors) remember how to re-render, so a language switch translates the live text.
+const said = new Map();
+function say(element, text) { said.set(element, text); element.textContent = text(); }
 const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'progress-fill', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'settings-panel', 'camera-button', 'controls-button', 'controls-panel', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
 ui['assist-button'] = $('#assist-button');
 ui['skill-report'] = $('#skill-report');
@@ -83,7 +91,6 @@ const ghostFor = trackId => trackId in ghosts ? ghosts[trackId] : ghosts[trackId
 let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
-const MODIFIER_LABELS = { 'no-flight': 'No flight', 'double-traffic': 'Double traffic', 'gold-rings': 'Gold rings only' };
 let previousFuel = 100;
 let previousNitro = 0;
 const presentation = createPresentation();
@@ -134,7 +141,7 @@ function leaveIntro() {
 }
 const nitroHud = document.createElement('div');
 nitroHud.className = 'nitro-hud';
-nitroHud.innerHTML = `<span id="nitro-status">NITRO 0 / 3</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="Nitro charges" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
+nitroHud.innerHTML = `<span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
 document.querySelector('.fuel-stat').append(nitroHud);
 const nitroSegments = [...nitroHud.querySelectorAll('.nitro-segment')];
 const nitroStatus = $('#nitro-status');
@@ -154,9 +161,10 @@ function showVFX() {
   document.body.classList.toggle('vfx-comfort', visual.comfortable);
   stopPresentationMotion();
   airflowHud.setAttribute('aria-hidden', String(!visual.airflow || !visual.enabled));
-  $('#aero-mode').textContent = visual.aeroMode === 'downforce' ? 'HIGH DOWNFORCE' : 'LOW DRAG';
+  showAeroMode();
   try { localStorage.setItem('skyline-rush-vfx', JSON.stringify(visual)); } catch { /* Settings remain usable in memory. */ }
 }
+function showAeroMode() { $('#aero-mode').textContent = t(visual.aeroMode === 'downforce' ? 'hud.highDownforce' : 'hud.lowDrag'); }
 function toggleAirflow() {
   if (!visual.enabled) return;
   visual.airflow = !visual.airflow;
@@ -174,7 +182,6 @@ $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVF
 showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 
-let locale = loadLocale();
 let raceRouteMap;
 const trackRouteMaps = new Map();
 function ensureRouteMaps() {
@@ -192,26 +199,29 @@ function ensureRouteMaps() {
   }
 }
 function refreshTrackLabels() {
-  for (const button of document.querySelectorAll('[data-track]')) button.querySelector('strong').textContent = trackName(button.dataset.track, locale);
-  for (const option of $('#history-track').options) option.textContent = trackName(option.value, locale);
-  for (const button of document.querySelectorAll('[data-locale]')) button.setAttribute('aria-pressed', String(button.dataset.locale === locale));
+  for (const button of document.querySelectorAll('[data-track]')) button.querySelector('strong').textContent = trackName(button.dataset.track, getLocale());
+  for (const option of $('#history-track').options) option.textContent = trackName(option.value, getLocale());
+  for (const button of document.querySelectorAll('[data-locale]')) button.setAttribute('aria-pressed', String(button.dataset.locale === getLocale()));
 }
+// One-off re-render on a language switch (never per frame); world.js repaints its road signs via its own onLocaleChange.
+function applyLocale() {
+  const locale = getLocale();
+  L = CATALOGS[locale];
+  applyI18n(); applyDocumentLocale();
+  showTracks(); // refreshes the track buttons and History options before the drawn selects re-read them
+  refreshCustomSelects();
+  for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale);
+  if ($('#history-screen').open) showHistory();
+  for (const [element, text] of said) element.textContent = text();
+  showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
+  nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
+  if (positionChange.dataset.direction) positionChange.setAttribute('aria-label', t(positionChange.dataset.direction === 'gained' ? 'hud.gained' : 'hud.lost'));
+  previousFlight = undefined; // the next HUD tick rewrites the change-gated labels
+}
+onLocaleChange(applyLocale);
 for (const button of document.querySelectorAll('[data-locale]')) button.addEventListener('click', () => {
-  locale = button.dataset.locale; saveLocale(locale); refreshTrackLabels(); showTracks();
-  if (!$('#history-screen').hidden && $('#history-screen').open) showHistory();
+  saveLocale(button.dataset.locale); setLocale(button.dataset.locale);
 });
-const trackNotes = {
-  coast: 'Dusk coast · open skies and sweeping sea views; a left-lane sky shortcut mid-route.',
-  neon: 'Rainy night · low tunnels (4 m ceiling) and dense traffic; a right-lane sky shortcut between them.',
-  canyon: 'Desert noon · fly over broken bridges; steer into crosswinds; a left-lane sky shortcut.',
-  aurora: 'Snowy night · ice slows steering; uphill sections recharge slowly; a right-lane sky shortcut in the final sprint.',
-  spiral: 'Neon sky-city · ascend a 360° helix, launch across three broken skybridges and land above the clouds.',
-  taipei: 'Taipei city heritage · ceremonial boulevards, Presidential Office and North Gate inspired silhouettes.',
-  tokyo: 'Tokyo after dark · neon crossings, towering skyline, elevated railways and busy night traffic.',
-  alpine: 'Mountain rail pass · long hairpins, deep rock tunnels and an elevated parallel railway.',
-  coastal: 'Coastal horizon · lighthouses, salt wind, a sweeping sea cliff road and coastal bridges.',
-  cosmic: 'Cosmic orbit · suspended starlit highway, giant ringed planets and a distant nebula.',
-};
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
   ensureRouteMaps(); refreshTrackLabels();
@@ -219,25 +229,26 @@ function showTracks() {
     const id = button.dataset.track;
     button.disabled = !unlockedTracks.has(id);
     button.setAttribute('aria-pressed', String(id === race.trackId));
-    button.querySelector('small').textContent = button.disabled ? 'LOCKED' : id === race.trackId ? 'SELECTED' : 'OPEN';
+    button.querySelector('small').textContent = t(button.disabled ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
     const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1];
-    button.title = button.disabled ? `Finish top 3 on ${trackName(previous, locale)} to unlock` : trackNotes[id];
+    button.title = button.disabled ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
   }
-  $('#track-length').textContent = `${track.length / 1000} KM SPRINT`;
+  $('#track-length').textContent = t('track.sprint', { km: track.length / 1000 });
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
-  $('#track-note').textContent = trackNotes[race.trackId] + (next && !unlockedTracks.has(next) ? ` Finish top 3 on ${trackName(race.trackId, locale)} to unlock ${trackName(next, locale)}.` : '');
-  const route = race.modifier ? `DAILY · ${trackName(race.trackId, locale)} · ${MODIFIER_LABELS[race.modifier]}`.toUpperCase() : trackName(race.trackId, locale).toUpperCase();
+  $('#track-note').textContent = t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+  const name = trackName(race.trackId, getLocale());
+  const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : name).toUpperCase();
   $('.route-heading').textContent = route;
   $('.overlay-route').textContent = `SKYLINE RUSH / ${route}`;
-  $('#world').setAttribute('aria-label', `3D ${trackName(race.trackId, locale)} racing highway`);
+  $('#world').setAttribute('aria-label', t('world.aria', { track: name }));
   showGhost();
 }
 function showGhost() {
   const ghost = ghostFor(race.trackId);
-  const name = trackName(race.trackId, locale);
+  const track = trackName(race.trackId, getLocale());
   $('#ghost-enabled').checked = controlPrefs.ghost;
-  $('#ghost-status').textContent = race.modifier ? 'Ghosts sit out daily challenges.' : ghost ? `Best-run ghost ready on ${name} · ${timeString(ghost.time)}.` : `No best-run replay recorded on ${name} yet.`;
+  $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
 }
 $('#ghost-enabled').addEventListener('change', ({ target }) => { controlPrefs = controlSettings({ ...controlPrefs, ghost: target.checked }); applyControls(); });
 for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
@@ -255,24 +266,31 @@ $('.track-select').addEventListener('keydown', event => {
   buttons[(index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length].focus();
 });
 showTracks();
+refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
 const previewObserver = new IntersectionObserver(entries => {
   for (const entry of entries) entry.target.dataset.visible = String(entry.isIntersecting);
 }, { root: $('.track-select') });
 document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
 
+// Saved dates are untrusted, and Intl throws on an invalid date.
+function shortDate(value) {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? formatDate(date, { month: 'short', day: 'numeric' }) : t('history.noDate');
+}
 const historyScreen = $('#history-screen');
 let historyOpener;
 function showHistory() {
   const trackId = $('#history-track').value;
   const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
   const stats = careerStats(sessionHistory);
-  $('#career-summary').textContent = `${stats.races} races · ${stats.wins} wins · ${(stats.totalDistance / 1000).toFixed(1)} km · longest combo ×${stats.longestCombo} · most rings ${stats.mostRings}`;
+  const count = (key, n) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
+  $('#career-summary').textContent = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
   const best = Math.min(loadBests()[trackId] ?? Infinity, ...runs.map(run => run.time));
   const recent = runs.slice(-10);
   $('#history-empty').hidden = runs.length > 0;
   $('.history-trend').hidden = recent.length === 0;
-  $('#history-trend-label').textContent = `Last ${recent.length} times · oldest → newest · lower is faster`;
+  $('#history-trend-label').textContent = count('history.trend', recent.length);
   const low = Math.min(...recent.map(run => run.time));
   const high = Math.max(...recent.map(run => run.time));
   const points = recent.map((run, i) => [recent.length === 1 ? 250 : 10 + i / (recent.length - 1) * 480, high === low ? 40 : 70 - (run.time - low) / (high - low) * 60]);
@@ -281,29 +299,27 @@ function showHistory() {
   $('#history-runs').replaceChildren(...runs.toReversed().map(run => {
     const row = document.createElement('details'); row.className = 'history-run';
     const summary = document.createElement('summary');
-    const date = new Date(run.date);
-    const dateText = Number.isFinite(date.getTime()) ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Date unavailable';
-    for (const text of [dateText, timeString(run.time), `P${Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—'} / 4`]) {
+    for (const text of [shortDate(run.date), timeString(run.time), t('history.position', { n: Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—' })]) {
       const field = document.createElement('span'); field.textContent = text; summary.append(field);
     }
-    if (run.time === best) { const badge = document.createElement('b'); badge.className = 'history-best'; badge.textContent = 'BEST'; summary.append(badge); }
+    if (run.time === best) { const badge = document.createElement('b'); badge.className = 'history-best'; badge.textContent = t('history.best'); summary.append(badge); }
     const detail = document.createElement('p');
     const number = value => Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
-    detail.textContent = `${number(run.score)} style · ${number(run.collisions)} contacts · ${number(run.nearMisses)} close passes · ${number(run.rings)} rings · ${number(run.perfectLines)} perfect lines · ${number(run.nitroUses)} nitro uses`;
+    detail.textContent = t('history.detail', { score: number(run.score), contacts: number(run.collisions), near: number(run.nearMisses), rings: number(run.rings), perfect: number(run.perfectLines), nitro: number(run.nitroUses) });
     row.append(summary, detail); return row;
   }));
   const today = dailyChallenge();
-  $('#daily-status').textContent = `Today: ${trackName(today.track, locale)} · ${MODIFIER_LABELS[today.modifier]}. Runs here skip history, bests and ghosts.`;
+  $('#daily-status').textContent = t('daily.status', { track: trackName(today.track, getLocale()), modifier: t(`modifier.${today.modifier}`) });
   $('#daily-start').disabled = !world;
   const board = dailyBoard(sessionDaily, today.id).slice(0, 5);
   const line = text => { const row = document.createElement('p'); row.textContent = text; return row; };
-  $('#daily-board').replaceChildren(...board.length ? board.map((run, i) => line(`#${i + 1} · ${timeString(run.time)} · P${run.position} / 4 · ${Math.round(run.score)} style`)) : [line('No challenge runs recorded yet today.')]);
+  $('#daily-board').replaceChildren(...board.length ? board.map((run, i) => line(t('daily.line', { rank: i + 1, time: timeString(run.time), position: run.position, score: Math.round(run.score) }))) : [line(t('daily.empty'))]);
   for (const item of document.querySelectorAll('[data-medal]')) {
     const awarded = sessionMedals[item.dataset.medal];
     item.classList.toggle('is-awarded', !!awarded);
-    item.querySelector('small').textContent = awarded ? `Awarded ${new Date(awarded).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : 'Not awarded';
+    item.querySelector('small').textContent = awarded ? t('medal.awarded', { date: shortDate(awarded) }) : t('medal.notAwarded');
   }
-  $('#achievement-status').textContent = `${Object.keys(sessionMedals).length} of 4 medals awarded.`;
+  $('#achievement-status').textContent = t('medal.count', { n: Object.keys(sessionMedals).length });
 }
 $('#daily-start').addEventListener('click', () => {
   daily = dailyChallenge();
@@ -331,14 +347,19 @@ function previewPaint(id) {
   previewing = id;
   world?.previewAppearance(PAINTS[id]);
   document.querySelectorAll('[data-paint]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.paint === id)));
+  showGarage();
+}
+function showGarage(id = previewing) {
   const stars = starTotal(sessionStars);
   const owned = availablePaints(stars).includes(id);
-  const { name } = PAINTS[id];
-  $('#garage-status').textContent = `${name} · ${id === equippedPaint ? 'equipped.' : owned ? 'owned.' : `Preview only · unlocks at ${PAINTS[id].stars} stars (you have ${stars}).`}`;
+  const name = t(`paint.${id}`); // display name from the catalog; PAINTS keys stay the identity
+  const need = PAINTS[id].stars;
+  $('#garage-status').textContent = t(id === equippedPaint ? 'garage.status.equipped' : owned ? 'garage.status.owned' : 'garage.status.locked', { name, stars: need, have: stars });
   $('#garage-equip').disabled = !owned || id === equippedPaint;
-  $('#garage-equip').textContent = id === equippedPaint ? `${name} equipped` : owned ? `Equip ${name}` : `Locked · ${PAINTS[id].stars} stars`;
+  $('#garage-equip').textContent = t(id === equippedPaint ? 'garage.btn.equipped' : owned ? 'garage.btn.equip' : 'garage.btn.locked', { name, stars: need });
 }
 $('#garage-equip').addEventListener('click', () => { equippedPaint = previewing; savePaint(equippedPaint); previewPaint(equippedPaint); });
+showGarage();
 $('#garage-button').addEventListener('click', () => {
   if (!world || race.phase !== 'ready') return;
   controls.clear(); garageScreen.showModal();
@@ -376,7 +397,7 @@ function showAudio() {
   for (const button of audioSwitches) {
     const on = audio[button.dataset.audio];
     button.setAttribute('aria-checked', String(on));
-    button.lastChild.textContent = on ? 'ON' : 'OFF';
+    button.lastChild.textContent = t(on ? 'audio.on' : 'audio.off');
   }
   ui['settings-button'].innerHTML = icon(audio.music || audio.sfx ? 'sound' : 'mute');
 }
@@ -438,7 +459,7 @@ function pause() {
 
 function showAssist() {
   ui['assist-button'].setAttribute('aria-pressed', String(autoThrottle));
-  ui['assist-button'].title = `Auto accelerator ${autoThrottle ? 'on' : 'off'} · T`;
+  ui['assist-button'].title = t(autoThrottle ? 'assist.titleOn' : 'assist.titleOff');
 }
 
 function toggleAssist() {
@@ -531,7 +552,7 @@ const controls = createControls(window, action => {
 }, { getSettings: getControlSettings, getKeyMap: () => keyMap, onTilt: () => {
   if (tiltSeen) return;
   tiltSeen = true; clearTimeout(tiltTimeout);
-  $('#tilt-status').textContent = 'Tilt ready. Tilt left / right to steer; pull the slide pad down to brake or drift.';
+  say($('#tilt-status'), () => t('tilt.ready'));
 } });
 const pad = $('.touch-pad');
 controls.bindSlidePad(pad, { getSettings: getControlSettings });
@@ -582,7 +603,7 @@ for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
   });
 }
 applyControls();
-if (controlPrefs.mode === 'tilt') $('#tilt-status').textContent = 'Saved Tilt mode. Enable tilt to grant access again, or select Slide / Buttons.';
+if (controlPrefs.mode === 'tilt') say($('#tilt-status'), () => t('tilt.saved'));
 showAssist();
 ui['controls-button'].addEventListener('click', () => { toggleControls(); sound.cue('ui'); });
 ui['controls-panel'].addEventListener('input', ({ target }) => {
@@ -605,18 +626,18 @@ async function enableTilt() {
     if (result !== 'granted') throw new Error('denied');
     controls.clear(); tiltGranted = true; tiltSeen = false;
     controlPrefs = { ...controlPrefs, mode: 'tilt' }; applyControls(); controls.setTilt(true);
-    status.textContent = 'Waiting for tilt readings. Hold the phone comfortably; the first reading sets neutral.';
+    say(status, () => t('tilt.waiting'));
     clearTimeout(tiltTimeout);
     tiltTimeout = setTimeout(() => {
       if (!tiltSeen && tiltGranted) {
         controlPrefs = { ...controlPrefs, mode: 'slide' }; applyControls();
-        status.textContent = 'No tilt readings received. Slide steering is available; try Tilt again on a supported phone.';
+        say(status, () => t('tilt.none'));
       }
     }, 2500);
   } catch (error) {
     if (request !== tiltRequest) return;
     controlPrefs = { ...controlPrefs, mode: 'slide' }; applyControls();
-    status.textContent = error.message === 'denied' ? 'Tilt permission denied. Slide steering is still available.' : 'Tilt unavailable. Use HTTPS and a phone with motion sensors, or keep Slide steering.';
+    say(status, () => t(error.message === 'denied' ? 'tilt.denied' : 'tilt.unavailable'));
   }
 }
 $('#tilt-enable').addEventListener('click', enableTilt);
@@ -638,12 +659,13 @@ function showKeyMap() {
 for (const button of document.querySelectorAll('[data-rebind]')) button.addEventListener('click', () => {
   controls.clear();
   rebinding = button.dataset.rebind;
-  $('#keymap-status').textContent = `Press a key for ${rebinding.toUpperCase()}.`;
+  const action = rebinding;
+  say($('#keymap-status'), () => t('keymap.press', { action: t(`keymap.${action}`) }));
   showKeyMap();
 });
 $('#keymap-reset').addEventListener('click', () => {
   controls.clear(); rebinding = null; keyMap = resetKeyMap(); saveKeyMap(keyMap); showKeyMap();
-  $('#keymap-status').textContent = 'Keyboard defaults restored.';
+  say($('#keymap-status'), () => t('keymap.restored'));
 });
 showKeyMap();
 function editLayout(editing) {
@@ -687,15 +709,17 @@ document.addEventListener('keydown', event => {
   if (rebinding) {
     event.preventDefault(); event.stopImmediatePropagation();
     if (event.repeat) return;
-    if (event.code === 'Escape') { rebinding = null; showKeyMap(); $('#keymap-status').textContent = 'Key change cancelled.'; return; }
+    if (event.code === 'Escape') { rebinding = null; showKeyMap(); say($('#keymap-status'), () => t('keymap.cancelled')); return; }
     const action = rebinding;
     const result = rebind(keyMap, action, event.code);
     if (result.error) {
-      $('#keymap-status').textContent = result.error === 'reserved' ? `${keyLabel(event.code)} is reserved. Press another key.` : 'That key is unavailable. Press another key.';
+      const key = keyLabel(event.code);
+      say($('#keymap-status'), () => result.error === 'reserved' ? t('keymap.reserved', { key }) : t('keymap.unavailable'));
       return;
     }
     controls.clear(); keyMap = result.map; saveKeyMap(keyMap); rebinding = null; showKeyMap();
-    $('#keymap-status').textContent = result.swapped ? `${action.toUpperCase()} and ${result.swapped.toUpperCase()} swapped conflicting keys.` : `${action.toUpperCase()} assigned to ${keyLabel(event.code)}.`;
+    const key = keyLabel(event.code);
+    say($('#keymap-status'), () => result.swapped ? t('keymap.swapped', { action: t(`keymap.${action}`), other: t(`keymap.${result.swapped}`) }) : t('keymap.assigned', { action: t(`keymap.${action}`), key }));
     return;
   }
   if (event.code !== 'Escape' || ui['controls-panel'].hidden) return;
@@ -756,13 +780,9 @@ function phaseUI() {
   if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
-  ui['race-status'].textContent = phase.toUpperCase();
-  ui['pause-button'].setAttribute('aria-label', phase === 'paused' ? 'Resume race' : 'Pause race');
   if (phase === 'paused') {
     $('#new-best').hidden = true;
     enter($('.overlay-content'), 'translateY(12px)');
-    ui['overlay-title'].textContent = 'Take a breather.';
-    ui['overlay-copy'].textContent = 'Your race is paused. Resume when you’re ready.';
     ui['resume-button'].hidden = false;
     $('#next-button').hidden = true;
     ui['result-stats'].hidden = true;
@@ -791,7 +811,6 @@ function phaseUI() {
       if (next && !campaignDone && unlockedTracks.has(next)) {
         $('#next-button').hidden = false;
         $('#next-button').dataset.next = next;
-        $('#next-track').textContent = trackName(next, locale);
       }
       const saved = recordBest(trackId, race.elapsed);
       // Session bests keep "personal best" honest when storage is blocked.
@@ -806,24 +825,40 @@ function phaseUI() {
       if (record && traceRace === race && validGhost(ghost, trackId)) { saveGhost(trackId, ghost); ghosts[trackId] = ghost; }
     }
     showTracks();
-    ui['overlay-title'].textContent = race.result.position === 1 ? 'Above the rest.' : 'That was a rush.';
-    ui['overlay-copy'].textContent = record ? 'A new personal best. The skyline is yours.' : 'One more run. One less second.';
     ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;
-    ui['result-stats'].innerHTML = `<div><span>POSITION</span><strong>${race.result.position}<small> / 4</small></strong></div><div><span>YOUR TIME</span><strong>${timeString(race.elapsed)}</strong></div><div><span>BEST</span><strong>${timeString(best)}</strong></div>`;
     $('#new-best').hidden = !record;
     $('#result-style').hidden = false;
     $('#result-links').hidden = false;
-    $('#result-style').setAttribute('aria-label', `${race.result.stars} of 3 style stars`);
-    $('#result-style').innerHTML = `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < race.result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${race.result.score} STYLE</strong><small>Close passes · rings · perfect lines · airtime · clean driving<br>2 stars: ${race.length * 0.25} points · 3 stars: ${race.length * 0.5} points</small>`;
-    resultCounts = [
-      { element: ui['result-stats'].children[1].querySelector('strong'), value: race.elapsed, format: timeString },
-      { element: ui['result-stats'].children[2].querySelector('strong'), value: best, format: timeString },
-      { element: $('#result-style > strong'), value: race.result.score, format: value => `${Math.round(value)} STYLE` },
-    ];
-    ui['overlay-copy'].textContent += ` ${race.result.nearMisses} close passes · ${race.result.collisions} contacts.`;
-    if (medals.length) ui['overlay-copy'].textContent += ` New medal: ${medals.map(id => $(`[data-medal="${id}"] strong`).textContent).join(', ')}.`;
+    lastResult = { race, best, record, medals };
   }
+  phaseText();
+}
+let lastResult;
+// Text only, so a language switch re-renders the current phase without replaying its side effects (records, medals).
+function phaseText() {
+  const phase = race.phase;
+  ui['race-status'].textContent = t(`phase.${phase}`);
+  ui['pause-button'].setAttribute('aria-label', t(phase === 'paused' ? 'resume.aria' : 'pause.aria'));
+  if (phase === 'paused') {
+    ui['overlay-title'].textContent = t('overlay.pausedTitle');
+    ui['overlay-copy'].textContent = t('overlay.pausedCopy');
+  }
+  if (phase !== 'finished' || lastResult?.race !== race) return;
+  const { best, record, medals } = lastResult;
+  const { result } = race;
+  if (!$('#next-button').hidden) $('#next-track').textContent = trackName($('#next-button').dataset.next, getLocale());
+  ui['overlay-title'].textContent = t(result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
+  ui['overlay-copy'].textContent = t(record ? 'overlay.recordCopy' : 'overlay.againCopy') + t('overlay.summary', { near: result.nearMisses, contacts: result.collisions })
+    + (medals.length ? t('overlay.medal', { list: medals.map(id => t(`medal.${id}`)).join(t('list.separator')) }) : '');
+  ui['result-stats'].innerHTML = `<div><span>${t('race.position')}</span><strong>${result.position}<small> / 4</small></strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(race.elapsed)}</strong></div><div><span>${t('result.best')}</span><strong>${timeString(best)}</strong></div>`;
+  $('#result-style').setAttribute('aria-label', t('result.starsAria', { n: result.stars }));
+  $('#result-style').innerHTML = `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${t('result.style', { score: result.score })}</strong><small>${t('result.styleHelp')}<br>${t('result.styleStars', { two: race.length * 0.25, three: race.length * 0.5 })}</small>`;
+  resultCounts = [
+    { element: ui['result-stats'].children[1].querySelector('strong'), value: race.elapsed, format: timeString },
+    { element: ui['result-stats'].children[2].querySelector('strong'), value: best, format: timeString },
+    { element: $('#result-style > strong'), value: result.score, format: value => interpolate(L['result.style'], { score: Math.round(value) }) },
+  ];
 }
 
 function updateUI(now, input) {
@@ -859,7 +894,7 @@ function updateUI(now, input) {
       const gained = position < previousPosition;
       positionChange.textContent = gained ? '↑' : '↓';
       positionChange.dataset.direction = ui.position.dataset.direction = gained ? 'gained' : 'lost';
-      positionChange.setAttribute('aria-label', gained ? 'Gained a place' : 'Lost a place');
+      positionChange.setAttribute('aria-label', L[gained ? 'hud.gained' : 'hud.lost']);
       positionUntil = now + 1.2;
       ui.position.getAnimations().forEach(animation => animation.cancel());
       positionChange.getAnimations().forEach(animation => animation.cancel());
@@ -880,28 +915,30 @@ function updateUI(now, input) {
   ui['fuel-value'].textContent = String(Math.round(car.fuel));
   ui['fuel-fill'].style.transform = `scaleX(${car.fuel / 100})`;
   ui['fuel-meter'].setAttribute('aria-valuenow', String(Math.round(car.fuel)));
-  ui['fuel-meter'].setAttribute('aria-valuetext', `${car.fuel < 20 ? 'Low charge · ' : ''}${Math.round(car.fuel)}%`);
+  ui['fuel-meter'].setAttribute('aria-valuetext', `${car.fuel < 20 ? L['hud.lowCharge'] : ''}${Math.round(car.fuel)}%`);
   ui['fuel-meter'].dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
   previousFuel = car.fuel;
-  $('#style-score').textContent = `STYLE ${Math.floor(car.score)}`;
+  $('#style-score').textContent = interpolate(L['hud.style'], { n: Math.floor(car.score) });
   ui.altitude.textContent = car.altitude.toFixed(1);
   const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
   // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
   if (controlPrefs.flyMode === 'toggle' && input.fly && (car.exhausted || car.fuel <= 0)) controls.setFly(false);
-  const hold = touchPreference.matches ? tap ? 'TAP FLY' : 'HOLD FLY' : `HOLD ${keyLabel(keyMap.fly[0]).toUpperCase()}`;
-  const release = touchPreference.matches ? 'RELEASE FLY' : `RELEASE ${keyLabel(keyMap.fly[0]).toUpperCase()}`;
+  const flyKey = touchPreference.matches ? '' : keyLabel(keyMap.fly[0]).toUpperCase();
+  const hold = touchPreference.matches ? L[tap ? 'hud.tapFly' : 'hud.holdFly'] : interpolate(L['hud.holdKey'], { key: flyKey });
+  const release = touchPreference.matches ? L['hud.releaseFly'] : interpolate(L['hud.releaseKey'], { key: flyKey });
   const touchdown = car.landing && race.elapsed - car.landing.time < 1.1;
   const depleted = car.exhausted || car.fuel <= 0;
-  const state = car.thrusting ? car.verticalSpeed > 0.2 ? 'ASCENDING' : 'CRUISE' : car.altitude > 0.25 ? 'DESCENDING' : touchdown ? 'TOUCHDOWN' : depleted ? 'RECHARGING' : car.speed >= 18 ? 'READY TO FLY' : 'BUILD SPEED';
+  const state = L[car.thrusting ? car.verticalSpeed > 0.2 ? 'hud.ascending' : 'hud.cruise' : car.altitude > 0.25 ? 'hud.descending' : touchdown ? 'hud.touchdown' : depleted ? 'hud.recharging' : car.speed >= 18 ? 'hud.readyToFly' : 'hud.buildSpeed'];
   const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
   const airDash = car.thrusting && car.boosting;
-  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? 'AIR DASH · NITRO' : airDash ? 'AIR DASH' : nitroActive ? 'NITRO ACTIVE' : car.trick && !car.trick.done ? 'TRICK' : car.inShortcut ? 'SHORTCUT' : car.drift ? `DRIFT · ${car.drift.time >= 3 ? 'PURPLE' : car.drift.time >= 2 ? 'ORANGE' : car.drift.time >= 1 ? 'BLUE' : 'BUILDING'}` : car.miniBoost > 0 && !touchdown ? 'MINI BOOST' : state;
+  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro'] : airDash ? L['hud.airDash'] : nitroActive ? L['hud.nitroActive'] : car.trick && !car.trick.done ? L['hud.trick'] : car.inShortcut ? L['callout.shortcut']
+    : car.drift ? interpolate(L['callout.drift'], { tier: L[car.drift.time >= 3 ? 'callout.drift.tier.3' : car.drift.time >= 2 ? 'callout.drift.tier.2' : car.drift.time >= 1 ? 'callout.drift.tier.1' : 'hud.driftBuilding'] }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost'] : state;
   nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
   nitroMeter.classList.toggle('is-max', car.nitro >= 3);
   nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
   if (car.nitro > previousNitro && race.phase === 'racing') nitroRefillUntil = now + .6;
   nitroMeter.dataset.refilling = String(race.phase === 'racing' && now < nitroRefillUntil);
-  nitroStatus.textContent = nitroActive ? 'NITRO ACTIVE' : car.nitro >= 3 ? 'NITRO MAX' : `NITRO ${car.nitro.toFixed(2)} / 3`;
+  nitroStatus.textContent = nitroActive ? L['hud.nitroActive'] : car.nitro >= 3 ? L['hud.nitroMax'] : interpolate(L['hud.nitroCount'], { n: car.nitro.toFixed(2) });
   for (const [index, segment] of nitroSegments.entries()) {
     const fill = Math.min(1, Math.max(0, car.nitro - index));
     segment.firstElementChild.style.transform = `scaleX(${fill})`;
@@ -936,14 +973,15 @@ function updateUI(now, input) {
   document.body.classList.toggle('nitro-active', nitroActive);
   // Inside a shortcut only BOOST drains (3/s); plain flight there is free.
   ui['flight-budget'].textContent = car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`;
-  ui['flight-instruction'].textContent = car.thrusting ? `${tap ? 'TAP FLY TO LAND' : 'RELEASE TO DESCEND'} · STEER IN THE AIR` : car.altitude > 0.25 ? depleted ? 'CHARGE EMPTY · AUTO LANDING' : `${hold} TO CLIMB AGAIN` : car.exhausted ? `${tap ? 'TAP FLY TO LAND' : release} · RECHARGE ON ROAD` : car.speed < 18 ? `REACH 65 KM/H · ${hold} TO LIFT` : depleted ? 'CHARGING · STAY ON THE ROAD' : `${hold} TO LIFT${tap ? '' : ' · RELEASE TO LAND'}`;
-  ui['fuel-caption'].textContent = car.exhausted ? `${tap ? 'LAND' : release} TO RECHARGE` : car.boosting ? 'BOOST · SHARED THRUSTER CHARGE' : car.thrusting ? 'THRUSTERS ENGAGED' : flying ? 'DESCENDING TO ROAD' : 'GROUND RECHARGE ACTIVE';
+  ui['flight-instruction'].textContent = car.thrusting ? interpolate(L['hud.steerAir'], { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend'] }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand'] : interpolate(L['hud.climbAgain'], { hold })
+    : car.exhausted ? interpolate(L['hud.rechargeRoad'], { action: tap ? L['hud.tapLand'] : release }) : car.speed < 18 ? interpolate(L['hud.reachLift'], { hold }) : depleted ? L['hud.charging'] : interpolate(L[tap ? 'hud.lift' : 'hud.liftLand'], { hold });
+  ui['fuel-caption'].textContent = car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? 'hud.descendRoad' : 'hud.groundRecharge'];
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 20);
   document.body.classList.toggle('boosting', (car.boosting || nitroActive) && race.phase === 'racing');
   const boost = (car.boosting || nitroActive) && race.phase === 'racing';
-  boostStatus.textContent = boost ? 'THRUST ACTIVE' : car.fuel === 0 ? 'CHARGE EMPTY' : car.fuel < 100 && !flying ? 'RECHARGING' : 'BOOST READY';
+  boostStatus.textContent = L[boost ? 'hud.thrustActive' : car.fuel === 0 ? 'hud.chargeEmpty' : car.fuel < 100 && !flying ? 'hud.recharging' : 'hud.boostReady'];
   boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
   if (boost && !previousBoost && visual.enabled && !calm) {
     boostStatus.animate([{ opacity: 0.4, transform: 'translateX(-5px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180 });
@@ -961,14 +999,14 @@ function updateUI(now, input) {
   lastDriftPayout = car.driftPayout;
   lastTrickPayout = car.trickPayout;
   previousBoost = boost;
-  $('#aero-flow').textContent = boost ? 'HIGH VELOCITY' : 'BODY STREAMLINES';
-  $('#aero-floor').textContent = flying ? 'LIFT / DOWNWASH' : visual.aeroMode === 'downforce' ? 'SUCTION ACTIVE' : 'LOW DRAG';
-  $('#aero-jet').textContent = boost ? 'THRUST ACTIVE' : race.phase === 'ready' ? 'DEMONSTRATION' : 'STANDBY';
+  $('#aero-flow').textContent = L[boost ? 'hud.highVelocity' : 'hud.streamlines'];
+  $('#aero-floor').textContent = L[flying ? 'hud.downwash' : visual.aeroMode === 'downforce' ? 'hud.suction' : 'hud.lowDrag'];
+  $('#aero-jet').textContent = L[boost ? 'hud.thrustActive' : race.phase === 'ready' ? 'hud.demo' : 'hud.standby'];
   document.body.style.setProperty('--flight-bank', `${-car.steering * 5}deg`);
   document.body.style.setProperty('--streak-opacity', visual.enabled && !calm && race.phase === 'racing' ? String(boost ? visual.speedLines : 0) : '0');
   ui['impact-report'].hidden = race.phase !== 'racing' || impactAge > 1.1;
   if (!ui['impact-report'].hidden) {
-    ui['impact-title'].textContent = car.impact.kind === 'barrier' ? 'GUARDRAIL CONTACT' : 'VEHICLE CONTACT';
+    ui['impact-title'].textContent = L[car.impact.kind === 'barrier' ? 'hud.barrier' : 'hud.vehicle'];
     ui['impact-loss'].textContent = String(Math.round(car.impact.speedLost * 3.6));
   }
   touchButtons.forEach(button => {
@@ -976,36 +1014,40 @@ function updateUI(now, input) {
     const active = control === 'left' ? input.steer < 0 : control === 'right' ? input.steer > 0 : !!input[control];
     button.classList.toggle('is-held', active);
     button.setAttribute('aria-pressed', String(active));
-    // Hold mode keeps the stable 'Hold to fly' label from the markup; only toggle mode varies it.
-    if (control === 'fly') button.setAttribute('aria-label', tap ? active ? 'Tap to land' : 'Tap to fly' : 'Hold to fly');
+    // Only toggle mode varies the label; written only when it changes (applyI18n resets it to 'hint.fly').
+    if (control === 'fly') {
+      const label = L[tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
+      if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
+    }
   });
   const hint = !padTouch && race.phase === 'racing' && race.elapsed < PAD_HINT_SECONDS && controlPrefs.mode === 'slide';
   if (hint !== padHint) { padHint = hint; drawPad(); }
-  ui['speed-caption'].textContent = race.phase === 'ready' ? 'READY FOR TAKEOFF' : car.boosting ? 'BOOST ENGAGED' : autoThrottle ? 'AUTO ACCELERATOR · BRAKE TO OVERRIDE' : 'ALL ELECTRIC. ALL ADRENALINE.';
+  ui['speed-caption'].textContent = L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : autoThrottle ? 'hud.autoOverride' : 'hud.tagline'];
   document.body.classList.toggle('airborne', flying);
   document.body.classList.toggle('collision', impactAge < 0.45 && race.phase === 'racing');
   if (previousFlight !== flying) {
-    ui['flight-mode'].textContent = flying ? 'FLIGHT MODE' : 'ROAD MODE';
+    ui['flight-mode'].textContent = L[flying ? 'hud.flightMode' : 'hud.roadMode'];
     ui['mode-icon'].innerHTML = icon(flying ? 'fly' : 'road');
     previousFlight = flying;
   }
   const countdown = race.phase === 'countdown';
   ui.countdown.hidden = !(countdown || (race.phase === 'racing' && now < goUntil));
-  const countdownText = countdown ? String(Math.ceil(race.countdown)) : 'GO';
+  const step = countdown ? String(Math.ceil(race.countdown)) : 'GO'; // the step stays a CSS hook; only the shown text is translated
+  const countdownText = countdown ? step : L['hud.go'];
   if (countdownNumber.textContent !== countdownText) {
     countdownNumber.textContent = countdownText;
-    ui.countdown.dataset.step = countdownText;
+    ui.countdown.dataset.step = step;
     if (!calm) countdownNumber.animate([{ opacity: 0.4, transform: `scale(${countdown ? 1.3 : 0.65})` }, { opacity: 1, transform: 'scale(1)' }], motionOptions(countdown ? 'base' : 'slow'));
   }
-  countdownLabel.textContent = countdown ? autoThrottle ? 'AUTO ACCELERATOR READY' : 'HOLD ACCELERATOR · GET READY' : 'GO FOR THE SKYLINE';
+  countdownLabel.textContent = L[countdown ? autoThrottle ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline'];
   const length = race.length;
-  let status = race.phase.toUpperCase();
+  let status = L[`phase.${race.phase}`];
   if (race.phase === 'racing' && car.distance >= length - 500) {
     const { ahead, behind } = sprintGaps(race);
-    status = `FINAL 500 M${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
+    status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
   }
   ui['race-status'].textContent = status;
-  ui['driving-message'].textContent = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? 'REACH 65 KM/H TO LIFT OFF' : car.exhausted && input.fly ? 'RELEASE FLIGHT TO RECHARGE' : '';
+  ui['driving-message'].textContent = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff'] : car.exhausted && input.fly ? L['hud.releaseRecharge'] : '';
   const racers = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
   const order = racers.map(racer => racer.name).join(',');
   if (calm || race.phase !== 'racing') leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
@@ -1022,8 +1064,8 @@ function updateUI(now, input) {
     const row = racerRows.get(racer.name);
     row.classList.toggle('is-player', !!racer.player);
     row.children[0].textContent = String(i + 1);
-    row.children[2].textContent = racer.name;
-    row.children[3].textContent = racer.player ? 'YOU' : `${racer.distance >= car.distance ? '+' : '−'}${Math.abs(racer.distance - car.distance).toFixed(0)} m`;
+    row.children[2].textContent = racer.player ? L['hud.you'] : racer.name; // 'YOU' stays the row key
+    row.children[3].textContent = racer.player ? L['hud.you'] : `${racer.distance >= car.distance ? '+' : '−'}${Math.abs(racer.distance - car.distance).toFixed(0)} m`;
   });
   speedTicks.forEach((tick, i) => tick.classList.toggle('active', i / 24 < car.speed / 102));
 }
@@ -1083,15 +1125,18 @@ try {
 } catch (error) {
   ui['start-button'].disabled = true;
   $('#error-message').hidden = false;
-  $('#error-message').textContent = 'WebGL 2 could not start. Enable hardware acceleration in your browser, then reload to race.';
+  say($('#error-message'), () => t('error.webgl'));
   console.error('3D renderer initialization failed:', error);
+  // No render loop to write the HUD: one text pass now and one per language switch (after applyLocale swaps L).
+  const hudPass = () => updateUI(performance.now() / 1000, controls.read());
+  hudPass(); onLocaleChange(hudPass);
 }
 
 $('#world').addEventListener('webglcontextlost', event => {
   event.preventDefault();
   if (race.phase === 'racing' || race.phase === 'countdown') pause();
   $('#error-message').hidden = false;
-  $('#error-message').textContent = 'The WebGL graphics connection was lost. Reload this page to start a new race.';
+  say($('#error-message'), () => t('error.contextLost'));
   contextLost = true;
 });
 $('#world').addEventListener('webglcontextrestored', () => {
