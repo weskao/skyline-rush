@@ -1,4 +1,4 @@
-<!-- source-sha256: 9a5b13fa12b4d0429833bd6fe929787fc9b1130e7ad165a962b8246993dec8e9 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 7135f29ad94b3b93904913a29dc0fc6bcbb310a73471c118765394191f82f2e5 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -139,7 +139,7 @@ make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 ```
 
-瀏覽器測試使用已安裝的 Google Chrome，並允許 SwiftShader 進行無頭渲染。僅使用 CPU 的 CI 採用 0.25 的裝置像素比，讓 3D 場景維持流暢，同時保有相同的 CSS 視窗大小與遊戲斷言；本機測試則以完整解析度渲染。一般遊玩使用瀏覽器可用的 GPU。截圖會以 JPEG（品質 70）寫入 `artifacts/`；測試追蹤／結果會被忽略。完整的衝刺測試在高速機器上約需一分鐘，若軟體渲染拖慢模擬則會更久。
+瀏覽器測試使用已安裝的 Google Chrome，並允許 SwiftShader 進行無頭渲染。僅使用 CPU 的 CI 採用 0.25 的裝置像素比，讓 3D 場景維持流暢，同時保有相同的 CSS 視窗大小與遊戲斷言；本機測試則以完整解析度渲染。一般遊玩使用瀏覽器可用的 GPU。由於即時 3D 場景每次執行都不同，截圖只在檔案不存在或執行 `UPDATE_ARTIFACTS=1 npm run test:browser` 時，以 JPEG（品質 70）寫入 `artifacts/`；測試追蹤／結果會被忽略。完整的衝刺測試在高速機器上約需一分鐘，若軟體渲染拖慢模擬則會更久。
 
 ```sh
 npm run preview         # Serve the production build after npm run build
