@@ -137,15 +137,19 @@ body[data-phase="ready"] .build-version { display: block; }
 .event-callout { position: fixed; z-index: 3; top: 206px; left: 16px; right: 16px; margin: auto; width: fit-content; max-width: calc(100vw - 32px); padding: 4px 14px; text-align: center; pointer-events: none; color: #c3f7ff; background: rgb(7 26 40 / .35); border-radius: 999px; text-shadow: 0 2px 10px rgb(5 17 30 / .8); font: 700 clamp(18px, 2.6vw, 28px)/1.1 'Barlow Condensed', sans-serif; }
 .event-callout span { display: block; margin-top: 2px; font: 500 10px/1.5 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 1px; }
 .event-callout[data-kind="perfect"], .event-callout[data-kind="nitro"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
-@media (max-width: 760px) and (min-height: 501px) { .event-callout { top: 272px; } }
+@media (max-width: 760px) and (min-height: 501px) { .event-callout { top: 272px; } .driving-message[data-tone='warning'] { top: 324px; } } /* warning sits under the callout, clear of the progress bar */
 @media (max-height: 500px) {
   .event-callout { top: 30%; right: auto; margin: 0; max-width: 230px; padding: 2px 10px; font-size: 20px; } /* left gutter: the centre holds the progress and mode panels */
   .event-callout > div { display: flex; align-items: center; gap: 10px; }
   .event-callout span { margin-top: 0; font-size: 9px; }
+  .driving-message[data-tone='warning'] { top: 214px; } /* under the mode panel, above the car */
 }
+@media (max-width: 760px) and (max-height: 500px) { .driving-message[data-tone='warning'] { top: 168px; } } /* small landscape: its mode panel sits higher and the progress panel lower */
 .perf-overlay { position: fixed; z-index: 6; top: max(4px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 4px; color: #c3f7ff; background: rgb(5 17 30 / .7); font: 11px/1.4 ui-monospace, monospace; white-space: nowrap; pointer-events: none; }
 .countdown { position: fixed; top: 35%; left: 50%; translate: -50% 0; width: max-content; max-width: calc(100vw - 24px); text-align: center; z-index: 4; font: 700 140px/1 'Barlow Condensed', sans-serif; text-shadow: 0 8px 60px rgb(5 17 30 / .4); pointer-events: none; }
 .driving-message { position: fixed; top: 30%; left: 10px; right: 10px; text-align: center; color: #fff0d9; font-size: 11px; letter-spacing: 2px; z-index: 3; pointer-events: none; text-shadow: 0 2px 8px #142333; }
+/* A pill so the warning stays legible over bright dusk skies. */
+.driving-message[data-tone='warning'] { width: fit-content; max-width: calc(100vw - 32px); margin: 0 auto; padding: 4px 14px; border-radius: 999px; color: #ffd6c8; background: rgb(74 20 12 / .62); font-weight: 700; }
 .collision .scene-shade { box-shadow: inset 0 0 110px rgb(255 92 60 / .3); }
 .race-overlay { position: fixed; z-index: 4; inset: 100px 0 45px; display: grid; place-items: center; background: rgb(9 22 36 / .72); backdrop-filter: blur(8px); }
 .overlay-content { width: min(560px, calc(100% - 48px)); text-align: center; }
@@ -238,6 +242,7 @@ body[data-phase="ready"] .build-version { display: block; }
   .racer > i { display: none; }
   .countdown { top: 36%; font-size: 100px; }
   .driving-message { top: 30%; font-size: 8px; letter-spacing: 1px; }
+  .driving-message[data-tone='warning'] { font-size: 10px; padding: 2px 10px; }
   .overlay-content h2 { font-size: 58px; }
   .overlay-content > p { font-size: 11px; }
   .overlay-route { font-size: 7px; letter-spacing: 2px; }

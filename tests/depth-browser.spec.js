@@ -212,3 +212,33 @@ for (const [name, viewport, hasTouch] of [
     await expect.poll(() => raised('shortcut-pylons')).toBeGreaterThan(0);
   });
 });
+
+for (const [name, viewport, hasTouch] of [
+  ['desktop', { width: 1440, height: 900 }, false],
+  ['phone', { width: 390, height: 844 }, true],
+]) gameplayTest.describe(`flight charge HUD ${name}`, () => {
+  gameplayTest.use({ viewport, hasTouch });
+  gameplayTest('gliding names its recharge, and a gap ahead warns when charge cannot cross it', async ({ gameplayPage: page }) => {
+    await page.locator('#start-button').click();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    await expect(page.locator('#countdown')).toBeHidden();
+    await page.evaluate(() => {
+      const race = window.gameplay.race;
+      race.traffic = []; race.pickups = []; race.rings = [];
+      Object.assign(race.player, { altitude: 10, verticalSpeed: 4, speed: 60, fuel: 50 });
+    });
+    await expect(page.locator('#fuel-caption')).toHaveText(/GLIDE RECHARGE/);
+    // A broken bridge 250 m ahead; pin the charge low so the regen cannot clear the warning.
+    await page.evaluate(() => {
+      const race = window.gameplay.race, car = race.player;
+      Object.assign(car, { altitude: 0, verticalSpeed: 0, fuel: 5 });
+      race.sections.push({ from: car.distance + 250, to: car.distance + 315, type: 'gap' });
+      const pin = () => { if (race.phase !== 'racing' || window.unpinCharge) return; Object.assign(car, { fuel: 5, speed: 60 }); requestAnimationFrame(pin); };
+      pin();
+    });
+    await expect(page.locator('#driving-message')).toHaveText(/GAP AHEAD · NEED \d+% CHARGE/);
+    await expect(page.locator('#driving-message')).toHaveAttribute('data-tone', 'warning');
+    await page.evaluate(() => { window.unpinCharge = true; window.gameplay.race.player.fuel = 100; });
+    await expect(page.locator('#driving-message')).toHaveText('');
+  });
+});
