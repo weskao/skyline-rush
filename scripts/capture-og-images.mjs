@@ -2,7 +2,7 @@
 //   node scripts/capture-og-images.mjs [og] [readme]   (default: both)
 //   og     -> public/og-image.en.jpeg + public/og-image.zh-TW.jpeg (1440x900 start screen), then copies the English one to
 //             public/og-image.jpeg, the single static og:image (crawlers cannot switch language)
-//   readme -> artifacts/{readme-start,readme-hero,mobile-flight,race-results}.zh-TW.jpeg; the English files are never touched
+//   readme -> artifacts/{readme-start,readme-hero,mobile-flight,race-results}{,.zh-TW}.jpeg (English, then zh-TW)
 // The zh-TW run uses Playwright locale zh-TW, so the app's own system-language detection picks the language.
 import { copyFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -46,16 +46,17 @@ try {
   await mkdir(new URL('artifacts/', `file://${root}`), { recursive: true });
   for (const [locale, system] of LOCALES) {
     const suffix = locale === 'en' ? 'en' : locale;
-    if (targets.includes('og') || (targets.includes('readme') && locale === 'zh-TW')) {
+    const readme = name => `${root}artifacts/${name}${locale === 'en' ? '' : `.${locale}`}.jpeg`;
+    if (targets.includes('og') || targets.includes('readme')) {
       const page = await open(system, DESKTOP);
       // The scrollable intro panel is a few px too short at 1440x900, so the footnote tip is cut mid-sentence; keep it out of the cover.
       await page.addStyleTag({ content: '.flight-tip { display: none }' });
       await page.locator('#settings-button').click();
       if (targets.includes('og')) await shoot(page, `${root}public/og-image.${suffix}.jpeg`);
-      if (targets.includes('readme') && locale === 'zh-TW') await shoot(page, `${root}artifacts/readme-start.zh-TW.jpeg`);
+      if (targets.includes('readme')) await shoot(page, readme('readme-start'));
       await page.context().close();
     }
-    if (!targets.includes('readme') || locale !== 'zh-TW') continue;
+    if (!targets.includes('readme')) continue;
     // In flight: hold W to speed, then hold Space once above the lift-off speed.
     const hero = await open(system, DESKTOP);
     await startRace(hero);
@@ -63,7 +64,7 @@ try {
     await hero.waitForFunction(() => Number(document.querySelector('#speed').textContent) > 170, null, { timeout: 60000 });
     await hero.keyboard.down(' ');
     await hero.waitForFunction(() => Number(document.querySelector('#altitude').textContent) > 3, null, { timeout: 30000 });
-    await shoot(hero, `${root}artifacts/readme-hero.zh-TW.jpeg`);
+    await shoot(hero, readme('readme-hero'));
     await hero.context().close();
 
     // Phone: hold throttle on one pointer and fly on another, as the browser suite does.
@@ -73,7 +74,7 @@ try {
     await phone.waitForFunction(() => Number(document.querySelector('#speed').textContent) > 150, null, { timeout: 60000 });
     await phone.locator('[data-control="fly"]').dispatchEvent('pointerdown', { pointerId: 2 });
     await phone.waitForFunction(() => Number(document.querySelector('#altitude').textContent) > 3, null, { timeout: 30000 });
-    await shoot(phone, `${root}artifacts/mobile-flight.zh-TW.jpeg`);
+    await shoot(phone, readme('mobile-flight'));
     await phone.context().close();
 
     // Results: drive the full 5 km sprint with W held (bounded by the race itself), then capture the results overlay.
@@ -82,7 +83,7 @@ try {
     await results.keyboard.down('w');
     await results.locator('#result-stats').waitFor({ state: 'visible', timeout: 180000 });
     await results.waitForTimeout(1500); // let the result cards finish animating in
-    await shoot(results, `${root}artifacts/race-results.zh-TW.jpeg`);
+    await shoot(results, readme('race-results'));
     await results.context().close();
   }
 } finally {
