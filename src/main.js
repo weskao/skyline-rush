@@ -942,8 +942,10 @@ function updateUI(now, input) {
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 20);
   document.body.classList.toggle('boosting', (car.boosting || nitroActive) && race.phase === 'racing');
-  const boost = (car.boosting || nitroActive) && race.phase === 'racing';
-  boostStatus.textContent = boost ? 'THRUST ACTIVE' : car.fuel === 0 ? 'CHARGE EMPTY' : car.fuel < 100 && !flying ? 'RECHARGING' : 'BOOST READY';
+  const tunnelBoost = car.miniBoost > 0 && car.boostTunnelEvent &&
+    race.elapsed - car.boostTunnelEvent.time < 3.6;
+  const boost = (car.boosting || nitroActive || tunnelBoost) && race.phase === 'racing';
+  boostStatus.textContent = tunnelBoost ? 'HYPERDRIVE · +NITRO' : boost ? 'THRUST ACTIVE' : car.fuel === 0 ? 'CHARGE EMPTY' : car.fuel < 100 && !flying ? 'RECHARGING' : 'BOOST READY';
   boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
   if (boost && !previousBoost && visual.enabled && !calm) {
     boostStatus.animate([{ opacity: 0.4, transform: 'translateX(-5px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180 });

@@ -12,7 +12,7 @@ import { vfxSettings } from './vfx-settings.js';
 import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
-import { trackPoint, trackFrame } from './track-paths.js';
+import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 
@@ -467,7 +467,7 @@ export function createWorld(canvas) {
   scene.add(shadow);
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
-  const effects = createEffects(scene, (s) => trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
+  const effects = createEffects(scene, (s) => TOUR_IDS.has(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
   let visual = vfxSettings();
   const projectedNozzle = new THREE.Vector3();
@@ -581,7 +581,7 @@ export function createWorld(canvas) {
       }
       if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
         if (trackId === 'spiral') { skyScene.update(distance, visual.quality); worldTourScene.hide(); }
-        else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections); }
+        else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion); }
         road.visible = false;
         for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls, cliffs, surfaceMarks]) m.visible = false;
         towers.forEach(t => { t.visible = false; });
@@ -723,7 +723,8 @@ export function createWorld(canvas) {
         finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
       } else { finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance)); finish.rotation.set(0,0,0); }
       finish.visible = race.length - distance < 1400;
-      effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles, visual);
+      effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
+        TOUR_IDS.has(trackId) ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin) } : visual);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
