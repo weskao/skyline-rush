@@ -41,6 +41,18 @@ export function trackFrame(trackId, distance) {
   return { point: trackPoint(trackId, s), forward, right, up: unit(cross(right, forward)) };
 }
 
+/** Convert game-distance, lane and altitude to camera-relative 3D coordinates. */
+export function trackLocalPosition(trackId, distance, lateral = 0, altitude = 0, origin = 0) {
+  const point = trackPoint(trackId, distance);
+  const home = trackPoint(trackId, origin);
+  const frame = trackFrame(trackId, distance);
+  return [
+    point.x - home.x + frame.right[0] * lateral + frame.up[0] * altitude,
+    point.y - home.y + frame.right[1] * lateral + frame.up[1] * altitude,
+    point.z - home.z + frame.right[2] * lateral + frame.up[2] * altitude,
+  ];
+}
+
 export function trackOverview(trackId, count = 128) {
   const track = RACE_TRACKS[trackId];
   if (!track) throw new Error(`Unknown track: ${trackId}`);

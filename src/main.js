@@ -182,6 +182,7 @@ function ensureRouteMaps() {
     if (trackRouteMaps.has(button.dataset.track)) continue;
     const map = createRouteMap(button.dataset.track);
     button.querySelector('.track-route-map').append(map.element);
+    button.querySelector('.track-route-map').dataset.theme=button.dataset.track;
     trackRouteMaps.set(button.dataset.track, map);
   }
   if (!raceRouteMap || raceRouteMap.trackId !== race.trackId) {
@@ -189,6 +190,7 @@ function ensureRouteMaps() {
     raceRouteMap = createRouteMap(race.trackId, { live: true });
     raceRouteMap.trackId = race.trackId;
     $('#race-route-map').replaceChildren(raceRouteMap.element);
+    $('#race-route-map').dataset.theme=race.trackId;
   }
 }
 function refreshTrackLabels() {
@@ -941,9 +943,11 @@ function updateUI(now, input) {
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 20);
-  document.body.classList.toggle('boosting', (car.boosting || nitroActive) && race.phase === 'racing');
-  const boost = (car.boosting || nitroActive) && race.phase === 'racing';
-  boostStatus.textContent = boost ? 'THRUST ACTIVE' : car.fuel === 0 ? 'CHARGE EMPTY' : car.fuel < 100 && !flying ? 'RECHARGING' : 'BOOST READY';
+  document.body.classList.toggle('boosting', (car.boosting || nitroActive || (car.miniBoost > 0 && car.boostTunnelEvent)) && race.phase === 'racing');
+  const tunnelBoost = car.miniBoost > 0 && car.boostTunnelEvent &&
+    race.elapsed - car.boostTunnelEvent.time < 3.6;
+  const boost = (car.boosting || nitroActive || tunnelBoost) && race.phase === 'racing';
+  boostStatus.textContent = tunnelBoost ? 'HYPERDRIVE · +NITRO' : boost ? 'THRUST ACTIVE' : car.fuel === 0 ? 'CHARGE EMPTY' : car.fuel < 100 && !flying ? 'RECHARGING' : 'BOOST READY';
   boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
   if (boost && !previousBoost && visual.enabled && !calm) {
     boostStatus.animate([{ opacity: 0.4, transform: 'translateX(-5px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180 });

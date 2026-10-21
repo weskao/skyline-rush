@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Scene, Group, Mesh, BoxGeometry, Matrix4 } from 'three';
+import { Scene, Group, Mesh, BoxGeometry, Matrix4, BackSide } from 'three';
 import { createSkyScene } from '../src/sky-scene.js';
 import { createWorldTourScene, WORLD_THEMES } from '../src/world-tour-scene.js';
 import { RACE_TRACKS } from '../src/game.js';
@@ -17,8 +17,10 @@ test('every VFX shader clamps pow() bases so edge pixels cannot produce NaN blac
   scene.add(vehicle);
   createEffects(scene, () => 0);
   createAeroVFX(scene, vehicle);
+  const skyCourse = new Scene();
+  createSkyScene(skyCourse).update(400, 'high');
   const shaders = new Set();
-  scene.traverse(object => { if (object.material?.isShaderMaterial) shaders.add(object.material.fragmentShader); });
+  for (const root of [scene, skyCourse]) root.traverse(object => { if (object.material?.isShaderMaterial) shaders.add(object.material.fragmentShader); });
   assert.ok(shaders.size >= 5);
   const unguarded = [...shaders].flatMap(source => source.split(/\bpow\(/).slice(1)).filter(arg => !/^(max\(0\.,|clamp\()/.test(arg));
   assert.deepEqual(unguarded.map(arg => `pow(${arg.slice(0, 30)}`), []);
@@ -57,4 +59,17 @@ test('every lit mesh in the 3D courses has unit normals and non-degenerate insta
     assert.deepEqual(litFaults(tour), [], id);
   }
   assert.deepEqual(litFaults(sky), [], 'spiral');
+});
+
+test('Sky Spiral owns a sky backdrop that appears with the course and hides with it', () => {
+  const scene = new Scene();
+  const course = createSkyScene(scene);
+  course.update(400, 'high');
+  const backdrop = scene.getObjectByName('Sky Spiral backdrop');
+  assert.ok(backdrop?.isMesh, 'spiral course has its own sky backdrop');
+  assert.equal(backdrop.parent?.name, 'Sky Spiral 3D course');
+  assert.equal(backdrop.material.side, BackSide);
+  assert.equal(backdrop.parent.visible, true);
+  course.hide();
+  assert.equal(backdrop.parent.visible, false);
 });

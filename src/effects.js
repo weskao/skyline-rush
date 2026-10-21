@@ -150,7 +150,9 @@ export function createEffects(scene, roadCenter) {
           if (collected || item.distance <= distance || item.distance > distance + 900 || slot >= group.children.length) continue;
           const mesh = group.children[slot++];
           mesh.visible = true;
-          mesh.position.set(roadCenter(item.distance) + item.x - center,
+          if (options.worldPoint) mesh.position.fromArray(options.worldPoint(item.distance, item.x,
+            item.altitude + (source === 0 ? 0.85 : 0), distance));
+          else mesh.position.set(roadCenter(item.distance) + item.x - center,
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
           mesh.rotation.y = source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2);
           mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
@@ -263,7 +265,11 @@ export function createEffects(scene, roadCenter) {
           p.forward *= Math.exp(-dt * 2.4);
         }
         const offset = i * 3;
-        positions[offset] = p.x - center; positions[offset + 1] = p.y; positions[offset + 2] = -(p.distance - distance);
+        if (options.worldPoint) {
+          positions.set(options.worldPoint(p.distance,p.x-roadCenter(p.distance),p.y,distance),offset);
+        } else {
+          positions[offset] = p.x - center; positions[offset + 1] = p.y; positions[offset + 2] = -(p.distance - distance);
+        }
         colors[offset] = p.color[0]; colors[offset + 1] = p.color[1]; colors[offset + 2] = p.color[2];
         velocities[offset] = p.vx; velocities[offset + 1] = p.vy; velocities[offset + 2] = -p.forward;
         kinds[i] = p.kind;
@@ -277,7 +283,8 @@ export function createEffects(scene, roadCenter) {
         const age = event ? race.elapsed - event.time : 10;
         ring.visible = age >= 0 && age < 0.7 && !preview;
         if (ring.visible) {
-          ring.position.set(roadCenter(event.distance) + event.x - center, 0.05, -(event.distance - distance));
+          if (options.worldPoint) ring.position.fromArray(options.worldPoint(event.distance,event.x,.05,distance));
+          else ring.position.set(roadCenter(event.distance) + event.x - center, 0.05, -(event.distance - distance));
           ring.scale.setScalar(1 + age * (reducedMotion ? 3 : 14));
           ring.material.opacity = (1 - age / 0.7) * 0.55;
         }

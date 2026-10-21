@@ -12,7 +12,8 @@ import { vfxSettings } from './vfx-settings.js';
 import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
-import { trackPoint, trackFrame } from './track-paths.js';
+import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
+import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 
@@ -275,6 +276,8 @@ export function createWorld(canvas) {
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
   scene.add(ambient);
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
+  const tunnelLights = [-1,1].map(()=>new THREE.PointLight('#b5a27b',0,35,2));
+  tunnelLights.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
   const sky = new THREE.Mesh(new THREE.SphereGeometry(2500, 24, 16), new THREE.ShaderMaterial({
@@ -378,7 +381,7 @@ export function createWorld(canvas) {
   const weather = new THREE.Points(weatherGeometry, new THREE.PointsMaterial({ color: '#b8d8ef', size: .18, transparent: true, opacity: .65, depthWrite: false }));
   scene.add(weather);
   const signTextures = [];
-  const signs = Object.fromEntries(Object.entries({ tunnel: 'TUNNEL / 4 M CEILING', gap: 'BROKEN BRIDGE / FLY', crosswind: 'CROSSWIND / STEER', ice: 'ICE / STEER EARLY', uphill: 'UPHILL / SAVE CHARGE', shortcut: 'SHORTCUT / FLY HIGH', launch: 'LAUNCH RAMP / BOOST', spiral: '360 HELIX / CLIMB' }).map(([type, label]) => {
+  const signs = Object.fromEntries(Object.entries(SECTION_SIGN_LABELS).map(([type, label]) => {
     const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
     const context = sign.getContext('2d');
     context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);
@@ -467,7 +470,7 @@ export function createWorld(canvas) {
   scene.add(shadow);
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
-  const effects = createEffects(scene, (s) => trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
+  const effects = createEffects(scene, (s) => TOUR_IDS.has(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
   let visual = vfxSettings();
   const projectedNozzle = new THREE.Vector3();
@@ -549,9 +552,14 @@ export function createWorld(canvas) {
         scene.background.set(palette.fog); scene.fog.color.set(palette.fog);
         sky.material.uniforms.top.value.set(palette.top); sky.material.uniforms.horizon.value.set(palette.horizon);
         sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' ? 1 : 0;
-        sunlight.color.set(palette.sun); sunlight.intensity = trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
-        ambient.intensity = trackId === 'neon' ? 1.1 : 1.7;
+        sunlight.color.set(palette.sun);
+        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
+        sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
+        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:1.12;
+        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='neon'?1.1:1.7;
         sun.visible = trackId === 'coast' || trackId === 'canyon';
+        // Sky Spiral draws its own dome. The shared sky, sea and peaks would sit in front of it.
+        sky.visible = sea.visible = mountains.visible = trackId !== 'spiral';
         sea.material.uniforms.ground.value.set(palette.ground); sea.material.uniforms.fogColor.value.set(palette.fog);
         sea.material.uniforms.water.value = trackId === 'coast' || trackId === 'neon' ? 1 : 0;
         seaLines.visible = trackId === 'coast'; mountains.material.color.set(palette.rock);
@@ -568,6 +576,24 @@ export function createWorld(canvas) {
       }
       const distance = preview ? 340 : car.distance;
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
+      // A readable driving corridor takes precedence over cinematic glare.
+      // Dimming in the mountain bore is smoothed over the 38 m entrance.
+      const tour=TOUR_IDS.has(trackId);
+      const bore=tour&&trackId==='alpine'?race.sections.find(s=>
+        (s.type==='tunnel'||s.type==='boost-tunnel')&&distance>=s.from&&distance<=s.to):null;
+      const tunnelFade=bore?Math.min(1,(distance-bore.from)/38,(bore.to-distance)/38):0;
+      if(tour){
+        const base=trackId==='cosmic'?.62:trackId==='tokyo'?.8:.98;
+        ambient.intensity=base*(1-.67*tunnelFade);
+        sunlight.intensity=.75*(1-.88*tunnelFade);
+        tunnelLights.forEach((light,i)=>{
+          light.visible=tunnelFade>0;
+          light.intensity=.65*tunnelFade;
+          light.color.set(i===0?'#ba9c74':'#9c9989');
+          light.position.fromArray(trackLocalPosition(trackId,distance+21,(i===0?-1:1)*11.7,8,distance));
+        });
+      }else tunnelLights.forEach(light=>light.visible=false);
+
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
@@ -581,7 +607,7 @@ export function createWorld(canvas) {
       }
       if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
         if (trackId === 'spiral') { skyScene.update(distance, visual.quality); worldTourScene.hide(); }
-        else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections); }
+        else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion); }
         road.visible = false;
         for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls, cliffs, surfaceMarks]) m.visible = false;
         towers.forEach(t => { t.visible = false; });
@@ -639,8 +665,20 @@ export function createWorld(canvas) {
         const relative = section ? section.from - 65 - distance : 0;
         group.visible = !!section && relative > -40 && relative < 850;
         if (!group.visible) return;
-        group.position.set(roadCenter(section.from - 65) - center - 17, 0, -relative);
-        panel.material = signs[section.type];
+        if (TOUR_IDS.has(trackId)) {
+          const signDistance = section.from - 65;
+          group.position.fromArray(trackLocalPosition(trackId, signDistance, -17, 0, distance));
+          const frame = trackFrame(trackId, signDistance);
+          group.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+            new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up),
+            new THREE.Vector3(...frame.forward).negate()));
+        } else {
+          group.position.set(roadCenter(section.from - 65) - center - 17, 0, -relative);
+          group.quaternion.identity();
+        }
+        // Always assign a valid material: missing boost-tunnel was a fatal
+        // WebGLRenderer error as the sign entered view halfway through a race.
+        panel.material = signs[sectionSignKey(section.type)];
       });
       if (cliffs.visible) {
         const count = touch || visual.quality === 'low' ? 20 : 40;
@@ -723,7 +761,8 @@ export function createWorld(canvas) {
         finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
       } else { finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance)); finish.rotation.set(0,0,0); }
       finish.visible = race.length - distance < 1400;
-      effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles, visual);
+      effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
+        TOUR_IDS.has(trackId) ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin) } : visual);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
@@ -785,7 +824,7 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = 0.42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * 0.25 + feedback.ignition * visual.bloom * 0.2);
+      bloom.strength = TOUR_IDS.has(trackId) ? .085 : .42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       composer.render(dt);
     },

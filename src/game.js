@@ -45,11 +45,11 @@ export const RACE_TRACKS = {
       { from: 4950, to: 5450, type: 'shortcut', x: -7.5, altitude: 6 },
     ],
   },
-  taipei: {"name":"Taipei Heritage","length":6200,"trafficDensity":1.1,"seed":6006,"sections":[{"from":850,"to":1200,"type":"tunnel"},{"from":1950,"to":2450,"type":"shortcut","x":-7.5,"altitude":6},{"from":4100,"to":4450,"type":"tunnel"}]},
-  tokyo: {"name":"Tokyo Afterdark","length":6800,"trafficDensity":1.4,"seed":7007,"sections":[{"from":850,"to":1350,"type":"tunnel"},{"from":2450,"to":2950,"type":"shortcut","x":7.5,"altitude":6},{"from":4150,"to":4650,"type":"tunnel"}]},
-  alpine: {"name":"Alpine Rail Pass","length":7600,"trafficDensity":0.8,"seed":8008,"sections":[{"from":900,"to":1420,"type":"uphill"},{"from":1600,"to":2200,"type":"tunnel"},{"from":3100,"to":3600,"type":"shortcut","x":-7.5,"altitude":6},{"from":4700,"to":5200,"type":"tunnel"},{"from":5900,"to":6400,"type":"uphill"}]},
-  coastal: {"name":"Coastal Horizon","length":5800,"trafficDensity":1,"seed":9009,"sections":[{"from":850,"to":1300,"type":"crosswind","dir":1},{"from":2100,"to":2600,"type":"shortcut","x":7.5,"altitude":6},{"from":3950,"to":4600,"type":"crosswind","dir":-1}]},
-  cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1}]},
+  taipei: {"name":"Taipei Heritage","length":6200,"trafficDensity":1.1,"seed":6006,"sections":[{"from":850,"to":1200,"type":"tunnel"},{"from":1950,"to":2450,"type":"shortcut","x":-7.5,"altitude":6},{"from":3120,"to":3450,"type":"boost-tunnel"},{"from":4100,"to":4450,"type":"tunnel"}]},
+  tokyo: {"name":"Tokyo Afterdark","length":6800,"trafficDensity":1.4,"seed":7007,"sections":[{"from":850,"to":1350,"type":"tunnel"},{"from":2450,"to":2950,"type":"shortcut","x":7.5,"altitude":6},{"from":4150,"to":4650,"type":"tunnel"},{"from":5050,"to":5450,"type":"boost-tunnel"}]},
+  alpine: {"name":"Alpine Rail Pass","length":7600,"trafficDensity":0.8,"seed":8008,"sections":[{"from":900,"to":1420,"type":"uphill"},{"from":1600,"to":2200,"type":"tunnel"},{"from":3100,"to":3600,"type":"shortcut","x":-7.5,"altitude":6},{"from":3850,"to":4200,"type":"boost-tunnel"},{"from":4700,"to":5200,"type":"tunnel"},{"from":5900,"to":6400,"type":"uphill"}]},
+  coastal: {"name":"Coastal Horizon","length":5800,"trafficDensity":1,"seed":9009,"sections":[{"from":850,"to":1300,"type":"crosswind","dir":1},{"from":2100,"to":2600,"type":"shortcut","x":7.5,"altitude":6},{"from":2950,"to":3310,"type":"boost-tunnel"},{"from":3950,"to":4600,"type":"crosswind","dir":-1}]},
+  cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
 };
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
 export const MAX_SPEED = 88;
@@ -235,7 +235,7 @@ export function createRace(trackId = 'coast', modifier = null) {
       section: null, inShortcut: false, falls: 0, fall: null,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
-      drift: null, driftPayout: null, miniBoost: 0, trick: null, trickPayout: null, flick: null, steerSign: 0,
+      drift: null, driftPayout: null, miniBoost: 0, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
@@ -392,6 +392,15 @@ export function stepRace(race, input, dt) {
       car.driftPayout = { time: race.elapsed, nitro: reward.nitro };
     }
     car.drift = null;
+  }
+  // A one-time, on-road tunnel reward. Track it by the authored section start,
+  // not a frame counter: pausing, braking or standing inside cannot farm charge.
+  if (car.section === 'boost-tunnel' && !car.boostTunnelClaimed.includes(section.from) &&
+      car.speed >= 20 && car.altitude < 2.5 && !brake) {
+    car.boostTunnelClaimed.push(section.from);
+    car.miniBoost = Math.max(car.miniBoost, 3.5);
+    addNitro(car, 0.25);
+    car.boostTunnelEvent = { time: race.elapsed, distance: car.distance };
   }
   const drifting = car.drift !== null;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
