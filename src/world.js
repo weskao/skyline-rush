@@ -276,6 +276,8 @@ export function createWorld(canvas) {
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
   scene.add(ambient);
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
+  const tunnelLights = [-1,1].map(()=>new THREE.PointLight('#b5a27b',0,35,2));
+  tunnelLights.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
   const sky = new THREE.Mesh(new THREE.SphereGeometry(2500, 24, 16), new THREE.ShaderMaterial({
@@ -550,8 +552,11 @@ export function createWorld(canvas) {
         scene.background.set(palette.fog); scene.fog.color.set(palette.fog);
         sky.material.uniforms.top.value.set(palette.top); sky.material.uniforms.horizon.value.set(palette.horizon);
         sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' ? 1 : 0;
-        sunlight.color.set(palette.sun); sunlight.intensity = trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
-        ambient.intensity = trackId === 'neon' ? 1.1 : 1.7;
+        sunlight.color.set(palette.sun);
+        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
+        sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
+        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:1.12;
+        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='neon'?1.1:1.7;
         sun.visible = trackId === 'coast' || trackId === 'canyon';
         // Sky Spiral draws its own dome. The shared sky, sea and peaks would sit in front of it.
         sky.visible = sea.visible = mountains.visible = trackId !== 'spiral';
@@ -571,6 +576,24 @@ export function createWorld(canvas) {
       }
       const distance = preview ? 340 : car.distance;
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
+      // A readable driving corridor takes precedence over cinematic glare.
+      // Dimming in the mountain bore is smoothed over the 38 m entrance.
+      const tour=TOUR_IDS.has(trackId);
+      const bore=tour&&trackId==='alpine'?race.sections.find(s=>
+        (s.type==='tunnel'||s.type==='boost-tunnel')&&distance>=s.from&&distance<=s.to):null;
+      const tunnelFade=bore?Math.min(1,(distance-bore.from)/38,(bore.to-distance)/38):0;
+      if(tour){
+        const base=trackId==='cosmic'?.62:trackId==='tokyo'?.8:.98;
+        ambient.intensity=base*(1-.67*tunnelFade);
+        sunlight.intensity=.75*(1-.88*tunnelFade);
+        tunnelLights.forEach((light,i)=>{
+          light.visible=tunnelFade>0;
+          light.intensity=.65*tunnelFade;
+          light.color.set(i===0?'#ba9c74':'#9c9989');
+          light.position.fromArray(trackLocalPosition(trackId,distance+21,(i===0?-1:1)*11.7,8,distance));
+        });
+      }else tunnelLights.forEach(light=>light.visible=false);
+
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
@@ -801,7 +824,7 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = 0.42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * 0.25 + feedback.ignition * visual.bloom * 0.2);
+      bloom.strength = TOUR_IDS.has(trackId) ? .085 : .42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       composer.render(dt);
     },

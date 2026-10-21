@@ -182,6 +182,7 @@ function ensureRouteMaps() {
     if (trackRouteMaps.has(button.dataset.track)) continue;
     const map = createRouteMap(button.dataset.track);
     button.querySelector('.track-route-map').append(map.element);
+    button.querySelector('.track-route-map').dataset.theme=button.dataset.track;
     trackRouteMaps.set(button.dataset.track, map);
   }
   if (!raceRouteMap || raceRouteMap.trackId !== race.trackId) {
@@ -189,6 +190,7 @@ function ensureRouteMaps() {
     raceRouteMap = createRouteMap(race.trackId, { live: true });
     raceRouteMap.trackId = race.trackId;
     $('#race-route-map').replaceChildren(raceRouteMap.element);
+    $('#race-route-map').dataset.theme=race.trackId;
   }
 }
 function refreshTrackLabels() {

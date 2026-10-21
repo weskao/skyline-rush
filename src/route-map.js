@@ -26,7 +26,7 @@ export function routeMarker(trackId, distance) {
   return { x: (a.x + (b.x - a.x) * t) * 100, y: (a.y + (b.y - a.y) * t) * 100 };
 }
 export function createRouteMap(trackId, { live = false } = {}) {
-  const element = svg('svg', { viewBox: '0 0 100 100', class: 'route-overview', role: 'img', 'aria-label': `Full ${RACE_TRACKS[trackId].name} main route` });
+  const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img', 'aria-label': `Full ${RACE_TRACKS[trackId].name} main route` });
   element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
   for (const [kind, d] of [['start', 0], ['finish', RACE_TRACKS[trackId].length]]) {
     const p = routeMarker(trackId, d);

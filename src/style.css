@@ -956,3 +956,34 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .leave-actions { display: grid; gap: 10px; }
 .leave-actions .primary-button { width: 100%; }
 .leave-actions .controls-reset, .leave-actions .text-button { min-height: 44px; margin: 0; }
+
+
+/* Independent map visual identities: pastel city, restrained Tokyo night,
+   earthy rail-pass, Atlantic coast, muted orbit. No neon glare over HUD. */
+.track-route-map[data-theme="taipei"],.race-route-map[data-theme="taipei"]{
+ --map-line:#cdb89a;--map-bg:#343f43;--map-edge:#938876;--map-player:#e1ddd2;
+}
+.track-route-map[data-theme="tokyo"],.race-route-map[data-theme="tokyo"]{
+ --map-line:#a3a6bd;--map-bg:#25293a;--map-edge:#6b718b;--map-player:#f2e8dc;
+}
+.track-route-map[data-theme="alpine"],.race-route-map[data-theme="alpine"]{
+ --map-line:#c1b69a;--map-bg:#323b36;--map-edge:#6d786c;--map-player:#fff0cd;
+}
+.track-route-map[data-theme="coastal"],.race-route-map[data-theme="coastal"]{
+ --map-line:#bfd1cb;--map-bg:#284550;--map-edge:#729da1;--map-player:#faf1db;
+}
+.track-route-map[data-theme="cosmic"],.race-route-map[data-theme="cosmic"]{
+ --map-line:#9caac2;--map-bg:#1f2637;--map-edge:#495e78;--map-player:#eeebec;
+}
+.track-route-map[data-theme],.race-route-map[data-theme] {
+ background:var(--map-bg);border-color:var(--map-edge);box-shadow:none;
+}
+.track-route-map[data-theme] .route-overview-line,
+.race-route-map[data-theme] .route-overview-line {
+ stroke:var(--map-line);stroke-width:2.25;filter:none;
+}
+.race-route-map[data-theme] .route-driver-you{
+ fill:var(--map-player);stroke:#2b343b;stroke-width:1.8;
+}
+.track-route-map[data-theme] .route-finish,.race-route-map[data-theme] .route-finish{fill:var(--map-player);}
+.track-route-map[data-theme] .route-start,.race-route-map[data-theme] .route-start{fill:var(--map-edge);}
