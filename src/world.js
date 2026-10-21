@@ -884,8 +884,12 @@ export function createWorld(canvas) {
       camera.updateMatrixWorld(true);
       return [player,...rivals].map((mesh,i)=>{
         const projected=mesh.getWorldPosition(new THREE.Vector3()).project(camera);
+        const left=mesh.localToWorld(new THREE.Vector3(-1.2,0,0)).project(camera);
+        const right=mesh.localToWorld(new THREE.Vector3(1.2,0,0)).project(camera);
         return {name:i===0?'YOU':'RIVAL '+i,visible:mesh.visible,
-          x:projected.x,y:projected.y,z:projected.z};
+          x:projected.x,y:projected.y,z:projected.z,
+          screenWidth:Math.abs(left.x-right.x),jetsVisible:mesh.userData.jets.visible,
+          worldY:mesh.position.y};
       });
     },
     dispose() {
