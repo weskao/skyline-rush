@@ -137,7 +137,7 @@ The HUD uses shared motion timings (120 / 240 / 480 ms). A speedometer needle ea
 The whole interface is available in English and Traditional Chinese (繁體中文): start screen, Garage, History, HUD, race callouts, results, route maps, settings and the 3D road signs. One **EN / 繁體中文** switch under the track cards on the start screen changes all of it at once, with no reload. The language is picked in this order:
 
 1. the choice you saved by clicking the switch (`skyline-rush-locale`; it is written only on a click, never from auto-detection);
-2. your system language order (`navigator.languages`): the first entry decides, and any `zh*` tag (zh-TW, zh-HK, zh-Hant, zh-CN, zh-Hans, plain zh) selects 繁體中文;
+2. your system language order (`navigator.languages`): the first `en*` or `zh*` entry decides and other languages are skipped (`['ja-JP', 'zh-TW']` selects 繁體中文), any `zh*` tag (zh-TW, zh-HK, zh-Hant, zh-CN, zh-Hans, plain zh) selects 繁體中文, and an empty or missing list falls back to `navigator.language`;
 3. otherwise English.
 
 Brand and game terms stay in English in both languages: Skyline Rush, NITRO, FLY, BOOST and the rivals NOVA, ORBIT and APEX. Strings live in `src/locales/`; `src/i18n.js` owns detection, `t()` and the active locale.

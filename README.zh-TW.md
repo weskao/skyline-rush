@@ -1,4 +1,4 @@
-<!-- source-sha256: f4b1bc5b84e3d84c58fd7d0d0f13c6948f92305c71c77a24cc621802c38f3d20 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 9ad5d38f7ecd5a767114c09de5df54748f705213ecfc184766ecbed5c69f4aec generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -138,7 +138,7 @@ HUD 使用共用的動態時間（120 / 240 / 480 ms）。速度表指針會隨�
 整個介面都提供英文與繁體中文（繁體中文）：起始畫面、Garage、History、HUD、比賽提示、結果、路線圖、設定，以及 3D 路標。起始畫面賽道卡片下方的 **EN / 繁體中文** 開關會一次切換全部內容，無須重新載入。語言依下列順序決定：
 
 1. 你點擊開關所儲存的選擇（`skyline-rush-locale`；只會在點擊時寫入，絕不會寫入自動偵測的結果）；
-2. 你的系統語言順序（`navigator.languages`）：由第一個項目決定，任何 `zh*` 標籤（zh-TW、zh-HK、zh-Hant、zh-CN、zh-Hans、單純的 zh）都會選用繁體中文；
+2. 你的系統語言順序（`navigator.languages`）：由第一個 `en*` 或 `zh*` 項目決定，其他語言會被略過（`['ja-JP', 'zh-TW']` 會選用繁體中文），任何 `zh*` 標籤（zh-TW、zh-HK、zh-Hant、zh-CN、zh-Hans、單純的 zh）都會選用繁體中文，清單為空或不存在時改用 `navigator.language`；
 3. 其他情況使用英文。
 
 品牌與遊戲用語在兩種語言中都保持英文：Skyline Rush、NITRO、FLY、BOOST，以及對手 NOVA、ORBIT 與 APEX。字串位於 `src/locales/`；`src/i18n.js` 負責偵測、`t()` 與目前的語系。
