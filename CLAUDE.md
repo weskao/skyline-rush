@@ -50,3 +50,10 @@ See `docs/local-unlocked-testing.md` for operational details.
 - Never delete or weaken tests to make CI green. Report any test that could not be run.
 - If `README.md` changes, keep `README.zh-TW.md` in sync using `scripts/readme-zh.mjs` (the existing pre-commit and Claude Stop hooks also enforce this).
 - Do not claim GitHub Pages has deployed merely because a commit landed on `main`. Follow `.github/workflows/ci.yml` for publication rules.
+
+## World Tour scene fidelity and powerups
+
+- New course-themed props, landmark geometry and playable Hyperdrive gates belong in `src/world-tour-landmarks.js` and `src/world-tour-scene.js`; keep one rolling renderer for the five World Tour IDs. Avoid copying whole scenes per track.
+- `src/game.js` owns `boost-tunnel` reward/collision state; do not make visual trigger volumes grant repeatable rewards each frame. Preserve the one-use-per-race rule.
+- Road collectibles and particles must use `trackLocalPosition` so elevated/curved courses don't show hovering pickups or buried effects; the minimap must not reveal any shortcuts.
+- Target recognizable skyline silhouettes for historical buildings, using original licensed geometry. Maintain low/high quality and reduced-motion variants. See `docs/world-tour-landmark-polish.md` for landmark references and QA checkpoints.
