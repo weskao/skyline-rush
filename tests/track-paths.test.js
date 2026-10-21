@@ -57,7 +57,7 @@ test('old four course outlines are visually legible instead of a one-pixel line'
     assert.ok(new Set(xs.map(x=>x.toFixed(3))).size>20,`${id} curves need shape detail`);
   }
 });
-test('Sky Spiral's real 360-degree helix is visibly large on its full-course map',()=>{
+test("Sky Spiral's real 360-degree helix is visibly large on its full-course map",()=>{
   const samples=trackOverview('spiral',257);
   const loop=samples.filter(p=>p.distance>=1100&&p.distance<=2200);
   assert.ok(Math.max(...loop.map(p=>p.x))-Math.min(...loop.map(p=>p.x))>.5);
