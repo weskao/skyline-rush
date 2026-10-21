@@ -1,4 +1,4 @@
-<!-- source-sha256: f4b1bc5b84e3d84c58fd7d0d0f13c6948f92305c71c77a24cc621802c38f3d20 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 3337410e5653afec6a85eafe4626f6543726f7a7df528b0872ad39d78b5588e0 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -113,7 +113,7 @@ NITRO 不消耗電量，因此 Fly + NITRO 永遠可以同時使用（Fly + Boos
 - **幽靈車**：每場比賽會以每秒 10 次的頻率取樣車輛的距離、車道位置與高度。在某條賽道創下新的個人最佳成績時會儲存該場比賽，之後在該賽道比賽時會以半透明藍色車輛顯示。可在 Controls 中以 **Show best-run ghost** 關閉。
 - **每日挑戰**：History 會顯示今天的賽道與修飾條件，依本機日期挑選：禁止飛行、雙倍車流，或僅限金色光環。Canyon 永遠不會抽到禁止飛行，因為它的斷橋需要飛行。每日挑戰成績只會記入專屬排行榜（今日最快的五名）；絕不會影響歷史紀錄、最佳時間、解鎖、星數或幽靈車。Restart 會保留挑戰，**Choose track** 則會離開挑戰。
 - **獎章**：First victory（獲勝）、Clean run（無碰撞）、Perfect flight（單場比賽中 5 次 PERFECT LINE）以及 Triple burst（單次爆發中使用 3 格 NITRO：一次按壓加兩次延長）。任何完成的比賽都可能獲得獎章；每枚獎章都會記錄首次獲得的日期。
-- **Garage**：你在每條賽道上的最佳風格星數會累加並解鎖塗裝：3 星解鎖 Coral、6 星解鎖 Glacier、9 星解鎖 Aurora。未解鎖的塗裝仍可預覽。塗裝只會改變外觀，絕不影響車輛的能力數值。
+- **Garage**：你在每條賽道上的最佳風格星數會累加並解鎖塗裝：3 星解鎖 Aurora、6 星解鎖 Glacier、10 星解鎖 Coral、16 星解鎖 Cobalt、24 星解鎖 Obsidian（滿星 30）。現實中最受歡迎的車色——藍與黑——是長期目標。未解鎖的塗裝仍可預覽。塗裝只會改變外觀，絕不影響車輛的能力數值。
 
 ### Sky Spiral（實驗性的第五條賽道）
 
