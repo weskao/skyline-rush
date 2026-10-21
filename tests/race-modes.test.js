@@ -146,3 +146,60 @@ test('rule presets cover five distinct, valid race configurations', () => {
   for (const preset of Object.values(RULE_PRESETS)) assert.deepEqual(
     normalizeRaceConfig({ mode: 'custom', ...preset }), { ...normalizeRaceConfig({ mode: 'custom' }), ...preset });
 });
+
+test('Time Attack runs with zero traffic and rivals to keep ghost comparisons fair', () => {
+  const race = createRace('coast', { mode: 'time' });
+  assert.equal(race.rivals.length, 0);
+  assert.equal(race.traffic.length, 0);
+});
+
+test('Free Drive allows traffic and pickups to be disabled independently', () => {
+  const race = createRace('coast', { mode: 'free', traffic: 'off', items: false });
+  assert.equal(race.traffic.length, 0);
+  assert.equal(race.pickups.length, 0);
+  assert.equal(race.config.traffic, 'off');
+});
+
+test('Obstacle Gauntlet lays out deterministic, reachable single-lane hazards', () => {
+  const a = createRace('canyon', { mode: 'gauntlet' });
+  const b = createRace('canyon', { mode: 'gauntlet' });
+  assert.equal(a.mode, 'gauntlet');
+  assert.deepEqual(a.rivals, []);
+  assert.deepEqual(a.traffic, []);
+  assert.ok(a.hazards.length >= 6);
+  assert.deepEqual(a.hazards, b.hazards);
+  assert.ok(a.hazards.every(h => h.distance > 200 && h.distance < a.length &&
+    [-7.5, -2.5, 2.5, 7.5].includes(h.x) &&
+    !a.sections.some(s => ['gap', 'tunnel', 'launch'].includes(s.type) && h.distance >= s.from - 20 && h.distance <= s.to + 20)));
+});
+
+test('Obstacle Gauntlet collision loses speed exactly once on crossing', () => {
+  const race = createRace('coast', { mode: 'gauntlet' });
+  const hazard = race.hazards[0];
+  race.phase = 'racing';
+  race.player.distance = hazard.distance - 0.7;
+  race.player.speed = 82;
+  race.player.x = hazard.x;
+  race.player.altitude = 0;
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.player.collisions, 1);
+  assert.equal(hazard.hit, true);
+  const loss = race.player.speed;
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.player.collisions, 1);
+  assert.ok(race.player.speed >= loss);
+});
+
+test('Obstacle Gauntlet rewards safely passing an obstacle on another lane', () => {
+  const race = createRace('coast', { mode: 'gauntlet' });
+  const hazard = race.hazards[0];
+  race.phase = 'racing';
+  race.player.distance = hazard.distance - 0.7;
+  race.player.speed = 82;
+  race.player.x = hazard.x === 7.5 ? -7.5 : 7.5;
+  const score = race.player.score;
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.player.collisions, 0);
+  assert.equal(hazard.passed, true);
+  assert.ok(race.player.score > score);
+});
