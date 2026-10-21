@@ -33,11 +33,28 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .icon-button:hover:not(:disabled), .icon-button[aria-pressed="true"] { background: rgb(255 255 255 / .15); }
 /* Icons are re-rendered on audio changes; keep click targets on the stable button. */
 .icon-button svg { pointer-events: none; }
-.settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
-.setting { display: flex; justify-content: space-between; align-items: center; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font-size: 13px; text-align: left; }
+.settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; max-height: calc(100dvh - 80px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
+#settings-panel { width: min(260px, calc(100vw - 24px)); }
+/* Chrome ignores ::-webkit-scrollbar once scrollbar-color is set, so the standard properties are for Firefox only. */
+@supports not selector(::-webkit-scrollbar) { #settings-panel { scrollbar-width: thin; scrollbar-color: rgb(195 224 244 / .35) transparent; } }
+.setting { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font-size: 13px; text-align: left; }
 .setting:hover { background: rgb(255 255 255 / .08); }
-.setting b { font-size: 10px; letter-spacing: 1.6px; color: var(--muted); }
+.setting span { flex: 1; }
+.setting svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+.setting b { font-size: 10px; letter-spacing: 1.6px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .setting[aria-checked="true"] b { color: var(--accent); }
+.setting[aria-checked="false"] svg { color: var(--muted); }
+.audio-head { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 4px 12px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
+.mute-all { display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid rgb(195 224 244 / .25); border-radius: 999px; background: rgb(255 255 255 / .04); font-size: 12px; letter-spacing: normal; text-transform: none; }
+.mute-all:hover { background: rgb(255 255 255 / .1); }
+.mute-all kbd { padding: 0 5px; border: 1px solid rgb(195 224 244 / .3); border-radius: 4px; font: inherit; font-size: 10px; color: var(--muted); }
+@media (pointer: coarse) { .mute-all kbd { display: none; } }
+.audio-channel { display: grid; padding: 2px 0 8px; border-top: 1px solid rgb(195 224 244 / .1); }
+.audio-channel input { margin: 0 12px; min-height: 32px; }
+.audio-channel input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(to right, #91e0f2 var(--fill, 100%), #2c4a5a 0); }
+/* A styled WebKit scrollbar stays visible, so a cut-off panel on short screens reads as scrollable. */
+#settings-panel::-webkit-scrollbar { width: 6px; }
+#settings-panel::-webkit-scrollbar-thumb { border-radius: 3px; background: rgb(195 224 244 / .35); }
 .music-prompt p { margin: 0; padding: 10px 12px 4px; font-size: 13px; color: var(--muted); }
 .music-prompt #music-yes { color: var(--accent); }
 .intro { position: absolute; z-index: 2; left: 7%; top: 23%; max-width: 600px; }

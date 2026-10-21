@@ -163,6 +163,84 @@ test('music and sound effects start on and each remember an off choice in a cook
   await expect(page.locator('#settings-panel')).toBeHidden();
 });
 
+const volumeSlider = (page, name) => page.getByRole('slider', { name: `${name} volume` });
+
+test('each channel has a volume slider; muting keeps its level, unmuting restores it, and both survive a reload', async ({ page }) => {
+  await page.goto('/');
+  // Accept music where autoplay is blocked; declining would switch it off before the test starts.
+  await page.waitForTimeout(700);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-yes').click();
+  await page.getByRole('button', { name: 'Audio settings' }).click();
+  const music = volumeSlider(page, 'Music');
+  await expect(music).toHaveValue('100');
+  await expect(volumeSlider(page, 'Sound effects')).toHaveValue('100');
+  await music.focus();
+  for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowLeft');
+  await expect(music).toHaveValue('40');
+  await expect(music).toHaveAttribute('aria-valuetext', '40%');
+  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('skyline-rush-music-volume=40');
+  await audioSwitch(page, 'Music').click();
+  await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
+  await expect(music).toHaveValue('0');
+  await expect(music).toHaveAttribute('aria-valuetext', 'Muted');
+  await audioSwitch(page, 'Music').click();
+  await expect(music).toHaveValue('40');
+  await audioSwitch(page, 'Music').click();
+  await page.reload();
+  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
+  await audioSwitch(page, 'Music').click();
+  await expect(volumeSlider(page, 'Music')).toHaveValue('40');
+  await expect(volumeSlider(page, 'Sound effects')).toHaveValue('100');
+});
+
+test('dragging a volume slider to zero mutes it and unmuting returns to the level before the drag', async ({ page }) => {
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  await page.getByRole('button', { name: 'Audio settings' }).click();
+  const effects = volumeSlider(page, 'Sound effects');
+  const box = await effects.boundingBox();
+  const y = box.y + box.height / 2;
+  await page.mouse.move(box.x + box.width * 0.7, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 20, y, { steps: 8 });
+  await page.mouse.up();
+  await expect(effects).toHaveValue('0');
+  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
+  await audioSwitch(page, 'Sound effects').click();
+  await expect(effects).toHaveValue('100');
+});
+
+test('one quick button mutes everything and brings back each saved level', async ({ page }) => {
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await volumeSlider(page, 'Sound effects').focus();
+  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowLeft');
+  await page.getByRole('button', { name: 'Mute all' }).click();
+  await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
+  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
+  await expect(volumeSlider(page, 'Sound effects')).toHaveValue('0');
+  await page.getByRole('button', { name: 'Unmute all' }).click();
+  await expect(volumeSlider(page, 'Music')).toHaveValue('100');
+  await expect(volumeSlider(page, 'Sound effects')).toHaveValue('70');
+  await expect(page.getByRole('button', { name: 'Mute all' })).toBeVisible();
+});
+
+test('the audio panel scrolls instead of running off a short landscape phone screen', async ({ page }) => {
+  await page.setViewportSize({ width: 568, height: 240 });
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  await page.getByRole('button', { name: 'Audio settings' }).click();
+  const panel = page.locator('#settings-panel');
+  const layout = await panel.evaluate(el => ({ bottom: el.getBoundingClientRect().bottom, overflow: getComputedStyle(el).overflowY, scrolls: el.scrollHeight > el.clientHeight }));
+  expect(layout.bottom).toBeLessThanOrEqual(240);
+  expect(layout.overflow).toBe('auto');
+  expect(layout.scrolls).toBe(true);
+  await volumeSlider(page, 'Sound effects').scrollIntoViewIfNeeded();
+  await expect(volumeSlider(page, 'Sound effects')).toBeInViewport();
+});
+
 test('intro music plays after the first interaction and race music replaces it', async ({ page }) => {
   await page.addInitScript(measureAudio);
   await page.goto('/');

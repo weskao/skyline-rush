@@ -6,6 +6,7 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallen
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
+import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
@@ -64,8 +65,7 @@ let contextLost = false; // iOS drops WebGL on lock/app switch and may never res
 let previousPhase;
 let previousFlight;
 let goUntil = 0;
-const AUDIO_COOKIES = { music: 'skyline-rush-music', sfx: 'skyline-rush-sound' };
-const audio = { music: true, sfx: true };
+let { audio, volume } = readAudio();
 const audioSwitches = [...document.querySelectorAll('[data-audio]')];
 // Touch players start with AUTO on (checked once at load, never persisted); desktop starts off.
 let autoThrottle = touchPreference.matches;
@@ -90,7 +90,7 @@ const presentation = createPresentation();
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
 let nitroRefillUntil = 0;
-try { for (const kind in audio) audio[kind] = !document.cookie.split('; ').includes(`${AUDIO_COOKIES[kind]}=off`); } catch { /* Audio defaults to on when cookies are unavailable. */ }
+try { ({ audio, volume } = readAudio(document.cookie)); } catch { /* Audio defaults to on when cookies are unavailable. */ }
 const sound = createSound();
 let visual = vfxSettings();
 try { visual = vfxSettings(JSON.parse(localStorage.getItem('skyline-rush-vfx'))); } catch { /* Defaults work without storage. */ }
@@ -374,13 +374,22 @@ document.querySelector('.brand').addEventListener('click', event => {
 $('#leave-keep').addEventListener('click', () => { leaveScreen.close(); if (race.phase === 'paused') pause(); });
 $('#leave-end').addEventListener('click', () => { leaveScreen.close(); chooseTrack(); });
 
+// A muted channel shows its slider at zero; its saved level comes back on unmute.
+function showChannel(button, on, level) {
+  const slider = button.nextElementSibling, percent = `${Math.round(level * 100)}%`;
+  button.setAttribute('aria-checked', String(on));
+  button.firstElementChild.outerHTML = icon(on ? 'sound' : 'mute');
+  button.lastChild.textContent = on ? percent : 'OFF';
+  slider.value = on ? Math.round(level * 100) : 0;
+  slider.setAttribute('aria-valuetext', on ? percent : 'Muted');
+  slider.style.setProperty('--fill', `${slider.value}%`);
+}
+
 function showAudio() {
-  for (const button of audioSwitches) {
-    const on = audio[button.dataset.audio];
-    button.setAttribute('aria-checked', String(on));
-    button.lastChild.textContent = on ? 'ON' : 'OFF';
-  }
-  ui['settings-button'].innerHTML = icon(audio.music || audio.sfx ? 'sound' : 'mute');
+  for (const button of audioSwitches) showChannel(button, audio[button.dataset.audio], volume[button.dataset.audio]);
+  const on = audio.music || audio.sfx;
+  ui['settings-button'].innerHTML = icon(on ? 'sound' : 'mute');
+  $('#mute-all').firstChild.textContent = on ? 'Mute all' : 'Unmute all';
 }
 
 showAudio();
@@ -449,9 +458,13 @@ function toggleAssist() {
   sound.cue('ui');
 }
 
-function setAudio(kind, on) {
-  audio[kind] = kind === 'music' ? sound.setMusic(on) : sound.setEnabled(on);
-  try { document.cookie = `${AUDIO_COOKIES[kind]}=${audio[kind] ? 'on' : 'off'}; Max-Age=31536000; Path=/; SameSite=Lax`; } catch { /* Audio still works when cookies are unavailable. */ }
+function setAudio(kind, on, level = volume[kind]) {
+  volume[kind] = level;
+  audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
+  const name = AUDIO_COOKIES[kind];
+  try {
+    for (const pair of [`${name}=${audio[kind] ? 'on' : 'off'}`, `${name}-volume=${Math.round(level * 100)}`]) document.cookie = `${pair}; Max-Age=31536000; Path=/; SameSite=Lax`;
+  } catch { /* Audio still works when cookies are unavailable. */ }
   showAudio();
 }
 
@@ -720,10 +733,25 @@ $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(cur
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
-audioSwitches.forEach(button => button.addEventListener('click', () => {
-  setAudio(button.dataset.audio, !audio[button.dataset.audio]);
-  sound.cue('ui');
-}));
+audioSwitches.forEach(button => {
+  const kind = button.dataset.audio, slider = button.nextElementSibling;
+  button.addEventListener('click', () => {
+    setAudio(kind, !audio[kind]);
+    sound.cue('ui');
+  });
+  // Heard live while dragging but saved on release, so a drag through zero still unmutes to the level before it.
+  slider.addEventListener('input', () => {
+    const level = slider.value / 100;
+    if (kind === 'music') sound.setMusic(level > 0, level); else sound.setEnabled(level > 0, level);
+    showChannel(button, level > 0, level || volume[kind]);
+  });
+  slider.addEventListener('change', () => {
+    const next = setVolume(volume[kind], slider.value / 100);
+    setAudio(kind, next.on, next.volume);
+    if (kind === 'sfx') sound.cue('ui');
+  });
+});
+$('#mute-all').addEventListener('click', toggleSound);
 document.addEventListener('click', event => {
   if (!event.target.closest('.settings')) toggleSettings(false);
 });

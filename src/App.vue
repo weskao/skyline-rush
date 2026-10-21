@@ -35,8 +35,11 @@ const CONTROL_CHOICES = {
       <div class="settings">
         <button class="icon-button" id="settings-button" aria-label="Audio settings" aria-expanded="false" aria-controls="settings-panel" title="Audio settings · M mutes all"><svg v-bind="ICON_ATTRS" v-html="icons.sound"></svg></button>
         <div class="settings-panel" id="settings-panel" role="group" aria-label="Audio settings" hidden>
-          <button class="setting" role="switch" data-audio="music" aria-checked="true"><span>Music</span><b aria-hidden="true">ON</b></button>
-          <button class="setting" role="switch" data-audio="sfx" aria-checked="true"><span>Sound effects</span><b aria-hidden="true">ON</b></button>
+          <div class="audio-head"><span>Audio</span><button class="mute-all" id="mute-all" aria-keyshortcuts="M"><span>Mute all</span><kbd aria-hidden="true">M</kbd></button></div>
+          <div class="audio-channel" v-for="[kind, label] in [['music', 'Music'], ['sfx', 'Sound effects']]" :key="kind">
+            <button class="setting" role="switch" :data-audio="kind" aria-checked="true"><svg v-bind="ICON_ATTRS" v-html="icons.sound"></svg><span>{{ label }}</span><b aria-hidden="true">100%</b></button>
+            <input type="range" min="0" max="100" step="5" value="100" :aria-label="`${label} volume`">
+          </div>
         </div>
         <div class="settings-panel music-prompt" id="music-prompt" role="group" aria-labelledby="music-prompt-title" hidden>
           <p id="music-prompt-title">Play background music?</p>
