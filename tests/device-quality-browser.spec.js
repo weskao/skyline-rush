@@ -1,3 +1,4 @@
+import { selectLocale } from './helpers/locale-browser.js';
 import { test,expect } from '@playwright/test';
 
 const constrained=page=>page.addInitScript(()=>{
@@ -12,7 +13,7 @@ test('first visit chooses Low for constrained device, explains it in either lang
   await expect(banner).toBeVisible();
   await expect(page.locator('[data-vfx="quality"]')).toHaveValue('low');
   await expect(page.locator('#performance-notice-text')).toContainText('Low');
-  await page.locator('[data-locale="zh-TW"]').click();
+  await selectLocale(page, 'zh-TW');
   await expect(page.locator('#performance-notice-text')).toContainText('低');
   await page.reload();
   await expect(banner).toBeHidden();

@@ -21,6 +21,7 @@ export function customSelect(select) {
   const options = [...select.options].map((option, i) => {
     const item = document.createElement('li');
     Object.assign(item, { id: `${id}-${i}`, textContent: option.text });
+    if (option.lang) item.lang = option.lang; // an empty lang would mark the option "unknown language" and drop its :lang(zh-TW) styling
     item.setAttribute('role', 'option');
     return item;
   });
@@ -32,6 +33,8 @@ export function customSelect(select) {
   let active = 0;
   const sync = () => {
     button.textContent = select.selectedOptions[0]?.text ?? '';
+    // An option naming its own language (the locale switch) keeps that lang on the drawn label.
+    if (select.selectedOptions[0]?.lang) button.lang = select.selectedOptions[0].lang; else button.removeAttribute('lang');
     options.forEach((item, i) => item.setAttribute('aria-selected', String(i === select.selectedIndex)));
   };
   const highlight = i => {

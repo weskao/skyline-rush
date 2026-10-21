@@ -73,7 +73,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .intro-controls { display: flex; flex-wrap: wrap; gap: 12px 27px; margin-top: 37px; }
 .intro-controls > div { display: flex; align-items: center; gap: 9px; color: #c0c8ce; font-size: 10px; }
 .keys { display: flex; gap: 3px; }
-.wide-key { min-width: 60px; }
+.keys { align-items: center; color: #8d9aa4; } /* the "/" between key groups (W A S D / ↑ ← ↓ →) */
 .flight-tip { color: #aab9c5; font-size: 10px; line-height: 1.7; max-width: 65ch; margin: 17px 0 0; }
 .telemetry { position: fixed; z-index: 3; left: 40px; right: 40px; bottom: 65px; display: flex; align-items: end; justify-content: space-between; gap: 30px; pointer-events: none; }
 .speedometer { width: 200px; }
@@ -480,6 +480,14 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .aero-tools { position: fixed; top: 98px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
 .aero-tools > button, .aero-tools > details > summary { min-height: 34px; padding: 6px 10px; border: 1px solid #6e9baa66; border-radius: 5px; background: #102432d9; color: #c6edfa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .aero-tools kbd { height: 20px; min-width: 20px; font-size: 9px; }
+/* Language dropdown (customSelect) heads the row under the toolbar: globe left, chevron right. 10px everywhere so 繁體中文 stays legible. */
+.aero-tools .custom-select > button { min-height: 34px; padding: 6px 26px 6px 28px; border: 1px solid #6e9baa66; border-radius: 5px; color: #c6edfa; font-size: 10px; letter-spacing: 1px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='1.8'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18'/%3E%3C/svg%3E") no-repeat left 9px center,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center, #102432d9; }
+/* Keyboard shortcut badges on the toolbar buttons; touch screens have no keys, like the Mute all M badge. */
+.toolbar .icon-button { position: relative; }
+.key-badge { position: absolute; right: -4px; bottom: -4px; min-width: 16px; height: 15px; padding: 0 3px; border-color: rgb(195 224 244 / .35); border-radius: 4px; background: #0c1d2c; color: #b9d3e2; font-size: 8px; letter-spacing: 0; pointer-events: none; }
+@media (pointer: coarse) { .key-badge { display: none; } }
 #airflow-toggle[aria-pressed="true"] { background: #204858; border-color: #89d8ed; }
 #aero-start { display: none; }
 .airflow-active[data-phase="ready"] #aero-start { display: block; }
@@ -537,6 +545,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 @media (max-width: 760px) {
   .aero-tools { top: 70px; right: max(16px, env(safe-area-inset-right, 0px)); } /* ends above the 102px race info */
   .aero-tools > button, .aero-tools > details > summary { min-height: 30px; padding: 4px 8px; font-size: 8px; }
+  .aero-tools .custom-select > button { min-height: 30px; padding-block: 4px; }
   .vfx-settings { max-height: calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); width: min(310px, calc(100vw - 32px)); top: 36px; }
   .airflow-hud { top: 245px; left: 16px; width: 160px; padding: 10px; gap: 6px; }
   .airflow-hud > strong { font-size: 20px; }
@@ -957,9 +966,6 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-overview-line { fill:none; stroke: #76d9f4; stroke-width: 2.4; stroke-linejoin:round; stroke-linecap:round; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
-.route-locales {display:flex; gap:8px; margin-top:12px;}
-.route-locales button { padding:5px 11px; color:#d4e1eb; background:#102338; border:1px solid #456176; border-radius:4px; font-size:12px; line-height:1.2; white-space:nowrap; cursor:pointer; }
-.route-locales button[aria-pressed="true"] {color:#fff; border-color:#67d9ee; background:#23475a;}
 .race-route-map { position:fixed; top:292px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
@@ -972,11 +978,9 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
 /* Short screens have no free HUD slot (telemetry and touch buttons fill the sides); the leaderboard still ranks racers. */
 /* The compact in-race route map remains visible on small viewports. */
-/* Short landscape has ~9px of intro slack: draw the route over the sky strip and pin the language toggle top-right. */
+/* Short landscape has ~9px of intro slack: draw the route over the sky strip. */
 @media (max-height: 500px) and (min-width: 761px) {
   .track-route-map { position:absolute; top:8px; left:8px; right:8px; height:26px; margin:0; background:none; }
-  .route-locales { position:absolute; top:6px; right:6px; margin:0; }
-  .route-locales button { padding:3px 8px; font-size:11px; }
 }
 .leave-screen { width: min(420px, calc(100% - 32px)); text-align: center; }
 .leave-screen h2 { font: 700 42px/1 'Barlow Condensed', sans-serif; margin: 0 0 12px; }
@@ -988,7 +992,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* Traditional Chinese (<html lang="zh-TW">). Han glyphs fall back to a Taiwan CJK family after the existing Latin stacks.
    Brand words and NITRO / FLY / BOOST carry lang="en" in App.vue, so they keep their Latin tracking. */
 :root { --cjk-fonts: 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei'; }
-:root:lang(zh-TW), .route-locales :lang(zh-TW) { font-family: 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; }
+:root:lang(zh-TW), .custom-select [lang="zh-TW"] { font-family: 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; }
 :is(h1, h2, .event-callout, .countdown, .impact-report strong, .vfx-heading strong, .airflow-hud > strong):lang(zh-TW), #flight-state:lang(zh-TW) { font-family: 'Barlow Condensed', 'Arial Narrow', var(--cjk-fonts), sans-serif; }
 :is(kbd, .event-callout span, .countdown > span, .altitude-stat small):lang(zh-TW) { font-family: 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; }
 /* Names Latin fonts that carry the arrow (macOS Lucida Grande, iOS Arial): zh-TW fallback would draw it ~8px wider in PingFang
@@ -1049,7 +1053,8 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
  .race-route-map {width:59px;height:72px;right:14px;top:241px;}
 }
 @media(max-height:500px) and (min-width:761px) {
- .race-route-map {display:block;top:218px;right:16px;width:67px;height:73px;}
+ /* Bottom-aligned just left of the 2x2 touch cluster; 144px clears it at Large size (2 x 52px x 1.15 + gaps). */
+ .race-route-map {display:block;top:auto;bottom:max(18px, var(--safe-bottom));right:calc(max(12px, var(--safe-right)) + 144px);width:67px;height:73px;}
  .track-select button > span.track-route-map {
    position:absolute;top:8px;left:8px;right:8px;width:auto;height:28px;
  }
@@ -1092,7 +1097,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* One-time device auto-quality information. A small nonmodal notice does
    not hide the Start button, controls, route preview or player vehicle. */
 .performance-notice {
- position:fixed;z-index:18;top:calc(80px + env(safe-area-inset-top,0px));right:22px;
+ position:fixed;z-index:18;top:calc(220px + env(safe-area-inset-top,0px));right:22px;
  width:min(325px,calc(100vw - 32px));border:1px solid #6c90a0;
  border-radius:10px;background:#122535f5;color:#f2f5ef;padding:14px 16px;
  box-shadow:0 14px 34px #0006;display:grid;gap:7px;
@@ -1103,4 +1108,4 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .performance-notice p{font-size:12px;line-height:1.6;margin:0;color:#e0e5e5;}
 .performance-notice button{justify-self:end;background:#264758;border:1px solid #85a8b2;
  border-radius:5px;color:#fff;padding:7px 13px;cursor:pointer;}
-@media(max-width:760px){.performance-notice{top:calc(66px + env(safe-area-inset-top,0px));right:12px;width:min(285px,calc(100vw - 24px));}}
+@media(max-width:760px){.performance-notice{top:calc(190px + env(safe-area-inset-top,0px));right:12px;width:min(285px,calc(100vw - 24px));}}

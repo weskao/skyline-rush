@@ -236,7 +236,7 @@ function ensureRouteMaps() {
 function refreshTrackLabels() {
   for (const button of document.querySelectorAll('[data-track]')) button.querySelector('strong').textContent = trackName(button.dataset.track, getLocale());
   for (const option of $('#history-track').options) option.textContent = trackName(option.value, getLocale());
-  for (const button of document.querySelectorAll('[data-locale]')) button.setAttribute('aria-pressed', String(button.dataset.locale === getLocale()));
+  $('#locale-select').value = getLocale();
 }
 // One-off re-render on a language switch (never per frame); world.js repaints its road signs via its own onLocaleChange.
 function applyLocale() {
@@ -255,9 +255,7 @@ function applyLocale() {
   previousFlight = undefined; // the next HUD tick rewrites the change-gated labels
 }
 onLocaleChange(applyLocale);
-for (const button of document.querySelectorAll('[data-locale]')) button.addEventListener('click', () => {
-  saveLocale(button.dataset.locale); setLocale(button.dataset.locale);
-});
+$('#locale-select').addEventListener('change', ({ target }) => { saveLocale(target.value); setLocale(target.value); });
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
   ensureRouteMaps(); refreshTrackLabels();
@@ -696,15 +694,20 @@ async function enableTilt() {
 }
 $('#tilt-enable').addEventListener('click', enableTilt);
 $('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); applyControls(); sound.cue('ui'); });
-const keyLabel = code => code.replace(/^Key|^Digit/, '').replace(/^Arrow/, 'Arrow ').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
+const ARROWS = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
+const keyLabel = code => ARROWS[code] ?? code.replace(/^Key|^Digit/, '').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
 function showKeyMap() {
-  const introKeys = document.querySelector('.intro-controls .keys');
-  introKeys.replaceChildren(...['throttle', 'left', 'brake', 'right'].map(action => {
-    const key = document.createElement('kbd'); key.textContent = keyLabel(keyMap[action][0]); return key;
-  }));
-  const hints = document.querySelectorAll('.intro-controls > div');
-  hints[1].firstElementChild.textContent = keyLabel(keyMap.fly[0]);
-  hints[2].firstElementChild.textContent = keyLabel(keyMap.boost[0]);
+  // Start-screen legend: one kbd group per key slot (W A S D, then ↑ ← ↓ →), "/" between groups; Left/Right Shift read as one Shift.
+  for (const keys of document.querySelectorAll('.intro-controls [data-keys]')) {
+    const actions = keys.dataset.keys.split(' ');
+    const seen = new Set();
+    const groups = Array.from({ length: Math.max(...actions.map(action => keyMap[action].length)) }, (_, slot) => actions
+      .map(action => keyMap[action][slot]).filter(Boolean).map(code => keyLabel(code).replace(/^(Left|Right) Shift$/, 'Shift'))
+      .filter(label => !seen.has(label) && seen.add(label))).filter(group => group.length);
+    keys.replaceChildren(...groups.flatMap((group, i) => [...(i ? ['/'] : []), ...group.map(label => {
+      const key = document.createElement('kbd'); key.textContent = label; return key;
+    })]));
+  }
   for (const button of document.querySelectorAll('[data-rebind]')) {
     button.lastElementChild.textContent = keyMap[button.dataset.rebind].map(keyLabel).join(' / ');
     button.setAttribute('aria-pressed', String(rebinding === button.dataset.rebind));
