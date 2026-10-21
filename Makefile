@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: dev dev-unlocked test-unlocked run deploy
+.PHONY: dev dev-unlocked dev-feature test-unlocked run deploy
 
 dev: node_modules ## `make`: Vite + Vue dev server with hot reload on http://127.0.0.1:5173
 	$(NPM) run dev
@@ -12,6 +12,10 @@ dev-unlocked: node_modules ## `make dev-unlocked`: local-only Vite server with a
 	$(NPM) run dev -- --config vite.unlocked.config.js
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
+
+# Fetches origin/feature/<FEATURE> into .claude/worktrees/<FEATURE> without checking it out here.
+dev-feature: ## `make dev-feature FEATURE=<name>`: that feature branch, all-unlocked, https://127.0.0.1:5443
+	node scripts/dev-feature.mjs
 
 # test:browser builds dist/ first via pretest:browser, so build is not run separately.
 run: node_modules ## `make run`: unit tests, production build and Chrome browser tests
