@@ -304,6 +304,19 @@ All 35 PNG/JPEG images in `artifacts/` were recaptured from the current producti
 
 The README image URLs and social-preview URL use a new cache version. `public/og-image.jpeg` matches the refreshed `artifacts/readme-hero.jpeg`.
 
+## Bilingual images and docs — 2026-10-21
+
+`scripts/capture-og-images.mjs` drives the real app in Chrome (Vite dev server, SwiftShader, Playwright locale `en-US` or `zh-TW`, so the app's own language detection picks the UI language) and saves:
+
+- `public/og-image.en.jpeg` and `public/og-image.zh-TW.jpeg`: 1440×900 start screens with the audio panel open. `public/og-image.jpeg` is a byte copy of the English one and is the only `og:image` in `index.html` (crawlers cannot switch language; the page is a single static document). `index.html` also carries `og:locale` `en_US` and `og:locale:alternate` `zh_TW`, and the `?v=` is bumped to `20261021a`.
+- `artifacts/readme-start.zh-TW.jpeg` (1440×900), `readme-hero.zh-TW.jpeg` (1440×900, ascending), `mobile-flight.zh-TW.jpeg` (390×844, throttle and FLY on two pointers) and `race-results.zh-TW.jpeg` (1440×900, a full 5 km sprint to the results card). The English `artifacts/` files were not rewritten (`git status` shows them unmodified).
+
+`scripts/readme-zh.mjs sync` now rewrites those four image paths in the translation to the `.zh-TW.jpeg` variants. This time `README.zh-TW.md` was brought up to date by hand and `node scripts/readme-zh.mjs stamp`; `check` reports it up to date.
+
+Every new image was opened and inspected: correct language, no cut-off text. Known cosmetic limits, not changed here: the intro footnote (`.flight-tip`) is clipped by the 1440×900 intro panel in both languages, so the cover captures hide it; zh-TW ON/OFF badges in the audio panel render at 10 px; the zh-TW mobile `自動油門 · 踩煞車即可接手` hint wraps one character to a second line. `public/icons/*` and `app-icon.svg` contain no text (no `<text>` elements; viewed), so they need no variants. `public/manifest.webmanifest` stays English: a manifest has one name/description and no per-locale form, and a second manifest would break installability.
+
+`npm test`: 250/250 passed. `npm run build` succeeds and the production-lock assertion passes (`dist/` contains the three og images).
+
 ## Final results
 
 - `npm test`: 15 tests passed, 0 failed. Driving, speed/road limits, launch speed, flight, fuel exhaustion, landing, collision altitude/cooldown, pause/invalid time steps, rival flight, reset, boost consumption, within-tick finish order, outward-facing geometry, keyboard cleanup and touch cancellation.

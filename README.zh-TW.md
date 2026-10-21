@@ -1,4 +1,4 @@
-<!-- source-sha256: b1d939ee7969faa9e77c5bcc610caec1f46c51b8e0530cad0121ea11b401205e generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 9b48a01ef1b603ff5cdf66c536699e3558f13dc16a15008304194ab127e8f222 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -18,13 +18,13 @@ Skyline Rush 是一款可在瀏覽器中遊玩的短篇、可重複挑戰的街�
 
 一場比賽約一分鐘。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
 
-![開啟音訊設定的起始畫面](artifacts/readme-start.jpeg?v=20261020b)
+![開啟音訊設定的起始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261020b)
 
-![Skyline Rush 飛行畫面](artifacts/readme-hero.jpeg?v=20261019b)
+![Skyline Rush 飛行畫面](artifacts/readme-hero.zh-TW.jpeg?v=20261019b)
 
-![爬升時的手機直向版面](artifacts/mobile-flight.jpeg?v=20261019b)
+![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261019b)
 
-![創下個人最佳成績的賽後結果](artifacts/race-results.jpeg?v=20261019b)
+![創下個人最佳成績的賽後結果](artifacts/race-results.zh-TW.jpeg?v=20261019b)
 
 ## 在本機執行
 
@@ -125,13 +125,25 @@ Sky Spiral 新增了一條真正的 3D 上升螺旋道路，位於賽博龐克�
 
 ### 世界巡迴賽賽道、路線圖與賽道名稱
 
-五條世界巡迴賽賽道共用同一個彎曲道路渲染器（`src/world-tour-scene.js`），各自擁有專屬的配色、建築與地標（總統府與北門的剪影、霓虹十字路口與一座塔、鐵道高架橋與山峰、燈塔與跨海大橋、環狀行星）。每張賽道卡片都會顯示完整的主要路線，比賽期間則有即時地圖在其上標示 YOU、NOVA、ORBIT 與 APEX；空中捷徑則永遠不會被繪出。在高度低於 500px 的螢幕以及高度低於 700px 的窄手機上，即時地圖會讓出空間，排行榜仍會顯示賽車手的名次。賽道卡片下方的 **EN / 繁體中文** 可切換賽道名稱（儲存為 `skyline-rush-locale`）。
+五條世界巡迴賽賽道共用同一個彎曲道路渲染器（`src/world-tour-scene.js`），各自擁有專屬的配色、建築與地標（總統府與北門的剪影、霓虹十字路口與一座塔、鐵道高架橋與山峰、燈塔與跨海大橋、環狀行星）。每張賽道卡片都會顯示完整的主要路線，比賽期間則有即時地圖在其上標示 YOU、NOVA、ORBIT 與 APEX；空中捷徑則永遠不會被繪出。在高度低於 500px 的螢幕以及高度低於 700px 的窄手機上，即時地圖會讓出空間，排行榜仍會顯示賽車手的名次。賽道名稱會跟隨 **EN / 繁體中文** 開關所選的語言（見下方「語言」）。
 
 風格分數獎勵近距離超車（100 × 連鎖，飄移的連鎖加倍）、光環（150，風險光環另加 500）、PERFECT LINE（500）、移動中的滯空時間（每秒 10 分），以及每 500 公尺的乾淨行駛（100 分）。碰撞與墜入缺口會重置乾淨行駛的進度。結果會給予一顆星表示完賽、每公里 250 分給兩顆星、每公里 500 分給三顆星，與完賽名次無關。
 
 燃料與 nitro 條會平順地趨近新的數值，在容量低於 20% 時發出警告，補充時會閃爍光澤，並在一格 nitro 完成時閃動。Comfort 模式與系統的減少動態會停用這些動畫。滑動板在按住時會顯示浮動的圓環 / 圓鈕，並在比賽開始時顯示簡短提示；放開後轉向會回到中立。
 
 HUD 使用共用的動態時間（120 / 240 / 480 ms）。速度表指針會隨速度平順移動；名次變化時，名次數字會翻轉並附上綠色向上或紅色向下的箭頭，排行榜的列則會滑入新的位置。精簡的半透明事件提示位於畫面中央上方，避開 HUD 面板，並將擦身而過、PERFECT LINE、NITRO 爆發、電量增加與飄移火花等級排入佇列，不會互相重疊。暫停、完賽與重新開始會清空佇列。按鈕在按下時會壓縮，放開時彈回；按住的觸控按鈕會保持發亮。VFX 設定中的選用 **Haptic feedback** 會在支援的觸控裝置上對碰撞、NITRO 與飄移獎勵給予回饋。Comfort 模式與系統的減少動態會保留文字與按下狀態的顏色，同時移除新增的動態與震動。
+
+### 語言
+
+整個介面都提供英文與繁體中文（繁體中文）：起始畫面、Garage、History、HUD、比賽提示、結果、路線圖、設定，以及 3D 路標。起始畫面賽道卡片下方的 **EN / 繁體中文** 開關會一次切換全部內容，無須重新載入。語言依下列順序決定：
+
+1. 你點擊開關所儲存的選擇（`skyline-rush-locale`；只會在點擊時寫入，絕不會寫入自動偵測的結果）；
+2. 你的系統語言順序（`navigator.languages`）：由第一個項目決定，任何 `zh*` 標籤（zh-TW、zh-HK、zh-Hant、zh-CN、zh-Hans、單純的 zh）都會選用繁體中文；
+3. 其他情況使用英文。
+
+品牌與遊戲用語在兩種語言中都保持英文：Skyline Rush、NITRO、FLY、BOOST，以及對手 NOVA、ORBIT 與 APEX。字串位於 `src/locales/`；`src/i18n.js` 負責偵測、`t()` 與目前的語系。
+
+在地化圖片：`node scripts/capture-og-images.mjs` 會在 Chrome 中操作真實的應用程式，儲存 `public/og-image.en.jpeg` 與 `public/og-image.zh-TW.jpeg`（1440×900 的起始畫面），以及供繁體中文 README 使用的 `artifacts/{readme-start,readme-hero,mobile-flight,race-results}.zh-TW.jpeg`（`node scripts/capture-og-images.mjs og` 或 `readme` 只執行其中一半）。它不會動到 `artifacts/` 中的英文截圖。`public/manifest.webmanifest` 與應用程式圖示維持原樣：圖示不含文字，而且網頁應用程式資訊清單只有單一名稱與說明、沒有各語系的版本，再加一份資訊清單反而會破壞可安裝性。
 
 ## 驗證
 
@@ -143,7 +155,7 @@ make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 ```
 
-瀏覽器測試使用已安裝的 Google Chrome，並允許 SwiftShader 進行無頭渲染。僅使用 CPU 的 CI 採用 0.25 的裝置像素比，以維持 3D 場景的流暢度，同時保有相同的 CSS 視窗尺寸與遊戲斷言；本機測試則以完整解析度渲染。正常遊玩時會使用瀏覽器可用的 GPU。截圖會以 JPEG（品質 70）寫入 `artifacts/`，僅在檔案不存在時，或使用 `UPDATE_ARTIFACTS=1 npm run test:browser` 時才會寫入，因為即時 3D 場景每次執行都不同；測試追蹤 / 結果會被忽略。完整衝刺測試在快速的機器上約需一分鐘，軟體渲染拖慢模擬時則會更久。
+瀏覽器測試使用已安裝的 Google Chrome，並允許 SwiftShader 進行無頭渲染。僅使用 CPU 的 CI 採用 0.25 的裝置像素比，以維持 3D 場景的流暢度，同時保有相同的 CSS 視窗尺寸與遊戲斷言；本機測試則以完整解析度渲染。正常遊玩時會使用瀏覽器可用的 GPU。英文 README 截圖會以 JPEG（品質 70）寫入 `artifacts/`，僅在檔案不存在時，或使用 `UPDATE_ARTIFACTS=1 npm run test:browser` 時才會寫入，因為即時 3D 場景每次執行都不同；測試追蹤 / 結果會被忽略。完整衝刺測試在快速的機器上約需一分鐘，軟體渲染拖慢模擬時則會更久。
 
 ```sh
 npm run preview         # Serve the production build after npm run build
@@ -163,7 +175,7 @@ make deploy                              # Deploy remote main manually through t
 
 CI（`.github/workflows/ci.yml`）會在推送到 `main`、拉取請求、版本標籤推送（`v*`）以及手動執行時，建置並執行單元測試與 Chrome 瀏覽器測試。瀏覽器測試分為四個平行分片執行（`--shard=N/4`），對同一分支的較新推送會取消被取代的執行。版本標籤推送與手動執行只有在所有檢查通過後才會發佈，之後再驗證公開網站。一般的分支推送與拉取請求只會執行檢查。Pages 建置使用 `--base=/skyline-rush/`，使腳本、樣式與字型能從專案網址載入。GitHub Pages 必須使用 **GitHub Actions** 作為發佈來源。手動部署需要已驗證的 GitHub CLI（`gh auth login`）；請先推送你的提交，因為 `make deploy` 使用的是遠端 `main`。部署不再依賴本機的 pre-push 掛鉤或 Netlify 登入。
 
-連結預覽圖片為 `public/og-image.jpeg`，是 `artifacts/readme-start.jpeg` 的副本。更換封面後，請再次複製，並調高 `index.html` 中 `og:image` 的 `?v=`，讓社群網站抓取新圖。
+連結預覽圖片為 `public/og-image.jpeg`，是 `public/og-image.en.jpeg` 的副本；`node scripts/capture-og-images.mjs og` 會擷取兩種語言的封面並更新該副本。爬蟲無法切換語言，因此 `index.html` 只引用英文封面（搭配 `og:locale` `en_US` 與 `og:locale:alternate` `zh_TW`），`public/og-image.zh-TW.jpeg` 則是它的中文版，供直接連結使用。更換封面後，請調高 `index.html` 中 `og:image` 的 `?v=`，讓社群網站抓取新圖。
 
 ## 專案結構
 
@@ -177,7 +189,8 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、拉取請求、版本
 - `src/world.js`、`src/geometry.js`：Three.js 渲染器、程序化車輛、公路、天際線、飛行特效與鏡頭。
 - `src/effects.js`：固定 480 顆粒子的 GPU 粒子池，用於蒸氣、火花與落地塵土。
 - `src/track-paths.js`、`src/world-tour-scene.js`：每條賽道一份距離到道路的對應，以及共用的世界巡迴賽道路、場景與地標。
-- `src/route-map.js`、`src/i18n.js`：SVG 完整路線圖與即時賽車手地圖；English/繁體中文 的賽道名稱與已儲存的語系。
+- `src/route-map.js`、`src/i18n.js`：SVG 完整路線圖與即時賽車手地圖；語系偵測、已儲存的選擇、`t()`，以及 English/繁體中文 的賽道名稱；`src/locales/` 存放字串目錄。
+- `scripts/capture-og-images.mjs`：從真實的應用程式擷取英文與繁體中文的封面圖片，以及繁體中文 README 的截圖。
 - `src/App.vue`、`src/icons.js`：Vue 3 的 UI 外殼（起始畫面、HUD、面板、觸控控制）及其共用的 SVG 圖示；僅渲染一次，沒有響應式狀態。
 - `src/main.js`、`src/style.css`：掛載 `App.vue`，接著在該 DOM 上驅動遙測、暫停 / 結果、響應式控制與生命週期。
 - `vite.config.js`：搭配 `@vitejs/plugin-vue` 的 Vite。
