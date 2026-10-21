@@ -161,6 +161,8 @@ for (const [width, height] of [[402, 874], [1440, 900]]) {
     await page.setViewportSize({ width, height });
     await page.goto('./');
     await page.locator('#intro').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+    // The version label ends where the strip starts; at CI's 0.25 scale its ink bleeds into the one sampled row.
+    await page.addStyleTag({ content: '.build-version { visibility: hidden; }' });
     const edge = async () => {
       const png = (await page.screenshot({ clip: { x: 0, y: height - 4, width, height: 4 } })).toString('base64');
       return page.evaluate(async src => {
