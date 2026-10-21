@@ -4,6 +4,7 @@ import App from './App.vue';
 import { icon } from './icons.js';
 import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
+import { RULE_PRESETS } from './race-config.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
@@ -272,6 +273,9 @@ function showTracks() {
   for (const button of document.querySelectorAll('[data-race-mode]'))
     button.setAttribute('aria-pressed', String(button.dataset.raceMode === selectedMode));
   $('#race-mode-rules').hidden = selectedMode !== 'custom';
+  for (const button of document.querySelectorAll('[data-race-preset]'))
+    button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
+
   $('#mode-description').textContent = t('mode.description.' + selectedMode);
   $('.route-drivers').textContent = selectedMode === 'classic' ? t('intro.drivers') : t('mode.driverCount', { n: race.rivals.length + 1 });
   ensureRouteMaps(); refreshTrackLabels();
@@ -330,6 +334,14 @@ function changeRaceSelection() {
 }
 for (const button of document.querySelectorAll('[data-race-mode]')) button.addEventListener('click', () => {
   selectedMode = button.dataset.raceMode;
+  changeRaceSelection();
+});
+for (const button of document.querySelectorAll('[data-race-preset]')) button.addEventListener('click', () => {
+  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset]);
+  for (const input of document.querySelectorAll('[data-race-rule]'))
+    if (input.type === 'checkbox') input.checked = raceRules[input.dataset.raceRule];
+    else input.value = String(raceRules[input.dataset.raceRule]);
+  refreshCustomSelects();
   changeRaceSelection();
 });
 for (const input of document.querySelectorAll('[data-race-rule]')) input.addEventListener('change', () => {

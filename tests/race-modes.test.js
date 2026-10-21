@@ -133,3 +133,16 @@ test('AI opponent count supports one or three opponents without changing Classic
   assert.equal(createRace('coast', { mode: 'custom', rivals: 3 }).rivals.length, 3);
   assert.equal(createRace('coast').rivals.length, 3);
 });
+
+import { RULE_PRESETS } from '../src/race-config.js';
+
+test('rule presets cover five distinct, valid race configurations', () => {
+  assert.deepEqual(Object.keys(RULE_PRESETS), ['standard', 'traffic', 'noitems', 'air', 'precision']);
+  assert.equal(RULE_PRESETS.standard.rivals, 3);
+  assert.equal(RULE_PRESETS.traffic.traffic, 'heavy');
+  assert.equal(RULE_PRESETS.noitems.items, false);
+  assert.equal(RULE_PRESETS.air.traffic, 'off');
+  assert.equal(RULE_PRESETS.precision.rivals, 0);
+  for (const preset of Object.values(RULE_PRESETS)) assert.deepEqual(
+    normalizeRaceConfig({ mode: 'custom', ...preset }), { ...normalizeRaceConfig({ mode: 'custom' }), ...preset });
+});

@@ -3,6 +3,12 @@
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
 export const UI = Object.freeze({
   en: {
+    'mode.presets': 'Rule presets',
+    'mode.preset.standard': 'Standard',
+    'mode.preset.traffic': 'Traffic Rush',
+    'mode.preset.noitems': 'No Items',
+    'mode.preset.air': 'Air Focus',
+    'mode.preset.precision': 'Precision',
     'mode.ahead': '▲ Ahead {n} m',
     'mode.behind': '▼ Behind {n} m',
     'mode.ghostUnavailable': 'Ghost replay is available in Classic and Time Attack.',
@@ -386,6 +392,12 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
+    'mode.presets': '快速規則預設',
+    'mode.preset.standard': '標準',
+    'mode.preset.traffic': '車流衝刺',
+    'mode.preset.noitems': '無道具',
+    'mode.preset.air': '飛行練習',
+    'mode.preset.precision': '精準挑戰',
     'mode.ahead': '▲ 領先 {n} 公尺',
     'mode.behind': '▼ 落後 {n} 公尺',
     'mode.ghostUnavailable': 'Ghost 回放可在經典競速與計時挑戰中使用。',

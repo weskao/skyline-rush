@@ -4,3 +4,8 @@ undefined
 .ghost-split { display: inline-block; margin-top: 14px; padding: 5px 11px; border: 1px solid #6498a7; border-radius: 4px; background: rgb(4 21 39 / .82); color: #c7edfa; font-size: 11px; letter-spacing: .8px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .ghost-split[data-ahead="true"] { color: #91f0c5; border-color: #60b899; }
 .ghost-split[hidden] { display: none; }
+
+.race-presets { display: flex; flex-wrap: wrap; gap: 5px; margin: 7px 0; }
+.race-presets button { padding: 6px 8px; min-height: 34px; background: #16334b; color: #ddebf6; border: 1px solid #537c94; border-radius: 5px; font-size: 10px; font-weight: 700; }
+.race-presets button[aria-pressed="true"] { background: #eeb48c; color: #092138; border-color: #ffcca6; }
+.race-presets button:focus-visible { outline: 2px solid #a0edff; outline-offset: 2px; }

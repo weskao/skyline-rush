@@ -22,4 +22,11 @@ export function normalizeRaceConfig(value = {}) {
   });
 }
 
+export const RULE_PRESETS = Object.freeze({
+  standard: Object.freeze({ rivals: 3, difficulty: 'normal', traffic: 'normal', items: true }),
+  traffic: Object.freeze({ rivals: 3, difficulty: 'hard', traffic: 'heavy', items: true }),
+  noitems: Object.freeze({ rivals: 3, difficulty: 'normal', traffic: 'normal', items: false }),
+  air: Object.freeze({ rivals: 1, difficulty: 'easy', traffic: 'off', items: true }),
+  precision: Object.freeze({ rivals: 0, difficulty: 'normal', traffic: 'light', items: false }),
+});
 export const rulesSignature = config => JSON.stringify(normalizeRaceConfig(config));
