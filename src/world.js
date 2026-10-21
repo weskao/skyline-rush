@@ -13,7 +13,7 @@ import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
-import { HERO_PREVIEWS,previewDistance,previewRival } from './track-preview.js';
+import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival } from './track-preview.js';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
@@ -756,10 +756,10 @@ export function createWorld(canvas) {
       if (preview) {
         const groundedShowcase = visual.enabled && visual.airflow;
         const curated=!!HERO_PREVIEWS[trackId];
-        updateCar(player, { ...car, distance,
-          altitude:curated?.2:groundedShowcase?0:1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
-          thrusting:!curated&&!groundedShowcase }, distance, center, time, dt, true);
-        rivals.forEach((mesh,i)=>updateCar(mesh,previewRival(trackId,i,race.rivals[i]),distance,center,time,dt));
+        updateCar(player, { ...previewPlayer(trackId,car,idleTime,reducedMotion,groundedShowcase), distance },
+          distance,center,time,dt,true);
+        rivals.forEach((mesh,i)=>updateCar(mesh,
+          previewRival(trackId,i,race.rivals[i],idleTime,reducedMotion),distance,center,time,dt));
         traffic.forEach((mesh,i)=>{
           mesh.visible=i<race.traffic.length;
           if(mesh.visible)updateCar(mesh,{...race.traffic[i],
@@ -804,27 +804,30 @@ export function createWorld(canvas) {
       if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
+      } else if (preview && HERO_PREVIEWS[trackId]) {
+        // Same shot scale and 3/4 chase angle as the original five course
+        // previews, rotated into the local road frame (including hills).
+        // A world-space lookTarget at the next waypoint previously made the
+        // Alpine and Cosmic cars too small or cut off.
+        const info=HERO_PREVIEWS[trackId],frame=trackFrame(trackId,distance);
+        const right=new THREE.Vector3(...frame.right),forward=new THREE.Vector3(...frame.forward);
+        desiredCamera.copy(player.position)
+          .addScaledVector(right,portrait?7.8:info.cameraSide)
+          .addScaledVector(forward,-(portrait?13.8:info.cameraBack))
+          // Reference maps use absolute 5.1 m camera eye height, while the
+          // showcased car floats at 1.6 m. Preserve the SAME relative view.
+          .add(new THREE.Vector3(0,portrait?4.3:info.cameraHeight,0));
+        lookTarget.copy(player.position)
+          .addScaledVector(right,portrait?1:info.lookSide)
+          .addScaledVector(forward,info.lookAhead)
+          .add(new THREE.Vector3(0,info.lookHeight-1.6,0));
       } else if (visual.enabled && visual.airflow && visual.view !== 'drive') {
         const angle = visual.view === 'orbit' ? time * 0.18 : { front: Math.PI, rear: 0, left: -Math.PI / 2, right: Math.PI / 2 }[visual.view];
         desiredCamera.set(player.position.x + Math.sin(angle) * 9, player.position.y + 3.6, Math.cos(angle) * 9);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
       } else if (preview) {
-        if(HERO_PREVIEWS[trackId]){
-          // Use the sampled road frame: unlike a hard-coded world-space camera,
-          // this is reliable on steep Alpine switchbacks and elevated Orbit road.
-          const info=HERO_PREVIEWS[trackId],frame=trackFrame(trackId,distance);
-          const forward=new THREE.Vector3(...frame.forward);
-          const right=new THREE.Vector3(...frame.right);
-          desiredCamera.copy(player.position)
-            .addScaledVector(right,portrait?info.cameraSide*.65:info.cameraSide)
-            .addScaledVector(forward,-(portrait?info.cameraBack*.88:info.cameraBack))
-            .add(new THREE.Vector3(0,info.cameraHeight,0));
-          const a=trackPoint(trackId,distance+24),o=trackPoint(trackId,distance);
-          lookTarget.set(a.x-o.x,a.y-o.y+1.15,a.z-o.z);
-        }else{
-          desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
-          lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
-        }
+        desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
+        lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
       } else if (cameraMode === 1) {
         if (trackId === 'spiral' || TOUR_IDS.has(trackId)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
         else desiredCamera.set(car.x, car.altitude + 1.7, -0.95);
@@ -883,8 +886,12 @@ export function createWorld(canvas) {
       camera.updateMatrixWorld(true);
       return [player,...rivals].map((mesh,i)=>{
         const projected=mesh.getWorldPosition(new THREE.Vector3()).project(camera);
+        const left=mesh.localToWorld(new THREE.Vector3(-1.2,0,0)).project(camera);
+        const right=mesh.localToWorld(new THREE.Vector3(1.2,0,0)).project(camera);
         return {name:i===0?'YOU':'RIVAL '+i,visible:mesh.visible,
-          x:projected.x,y:projected.y,z:projected.z};
+          x:projected.x,y:projected.y,z:projected.z,
+          screenWidth:Math.abs(left.x-right.x),jetsVisible:mesh.userData.jets.visible,
+          worldY:mesh.position.y};
       });
     },
     dispose() {
