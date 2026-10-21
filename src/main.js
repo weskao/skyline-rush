@@ -272,7 +272,8 @@ function showTracks() {
   document.body.dataset.raceMode = race.mode;
   for (const button of document.querySelectorAll('[data-race-mode]'))
     button.setAttribute('aria-pressed', String(button.dataset.raceMode === selectedMode));
-  $('#race-mode-rules').hidden = selectedMode !== 'custom';
+  $('#race-mode-rules').hidden = !['custom', 'free'].includes(selectedMode);
+  $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
   for (const button of document.querySelectorAll('[data-race-preset]'))
     button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
 

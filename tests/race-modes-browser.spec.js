@@ -50,3 +50,16 @@ test('Free Drive starts immediately without a countdown and keeps its return pat
   await page.screenshot({ path: 'test-results/race-mode-free-drive.png' });
   expect(errors).toEqual([]);
 });
+
+test('Obstacle Run uses the original world renderer with visible race state', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('[data-race-mode="gauntlet"]').click();
+  await expect(page.locator('#mode-description')).toContainText('Dodge barriers');
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+  await page.screenshot({ path: 'test-results/race-mode-obstacle-run.png' });
+  expect(errors).toEqual([]);
+});

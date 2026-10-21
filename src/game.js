@@ -1,4 +1,5 @@
 import { seededRng } from './rng.js';
+import { createHazards } from './hazards.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
@@ -232,12 +233,13 @@ export function createRace(trackId = 'coast', modifier = null) {
   const dailyModifier = options ? null : modifier;
   if (dailyModifier !== null && !DAILY_MODIFIERS.includes(dailyModifier)) throw new Error(`Unknown modifier: ${dailyModifier}`);
   const config = normalizeRaceConfig(options ?? {});
-  const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode === 'custom' ? trafficMultiplier(config.traffic) : 1);
+  const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
   const rings = createRings(track);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
+    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES) : [],
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
@@ -585,6 +587,20 @@ export function stepRace(race, input, dt) {
     // shortcut: tests the car's end-of-step x/altitude, not the interpolated crossing (error < 0.7 m at dt 0.1), upgrade if risk rings feel unfair
     if (fell || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring));
+  }
+  // Every gauntlet barrier can be hit or cleared only once. The physics layer
+  // decides impacts; the renderer only draws the same authored hazards.
+  for (const hazard of race.hazards) {
+    if (hazard.distance > car.distance) break;
+    if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
+    const collision = Math.abs(car.x - hazard.x) < 1.8 && car.altitude < 2.4;
+    if (collision && car.cooldown === 0) {
+      contact(race, 'barrier', hazard.x, 0.7, 0.6);
+      hazard.hit = true;
+    } else {
+      hazard.passed = true;
+      if (!collision) car.score += 150;
+    }
   }
   const travelled = Math.min(car.distance, race.length) - previousDistance;
   if (car.collisions + car.falls !== previousContacts) car.cleanDistance = 0;

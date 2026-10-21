@@ -9,3 +9,11 @@ undefined
 .race-presets button { padding: 6px 8px; min-height: 34px; background: #16334b; color: #ddebf6; border: 1px solid #537c94; border-radius: 5px; font-size: 10px; font-weight: 700; }
 .race-presets button[aria-pressed="true"] { background: #eeb48c; color: #092138; border-color: #ffcca6; }
 .race-presets button:focus-visible { outline: 2px solid #a0edff; outline-offset: 2px; }
+
+/* Five mode cards adapt to narrow safe-area viewports without shrinking touch targets. */
+.race-mode-tabs { grid-template-columns: repeat(5,minmax(0,1fr)); }
+body[data-race-mode="free"] .race-presets,
+body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="rivals"]),
+body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
+@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); } }
