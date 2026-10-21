@@ -1,5 +1,6 @@
 import { test, expect, chromium } from '@playwright/test';
 import { saveArtifact } from './helpers/artifact.js';
+import { test as gameplayTest } from './helpers/gameplay-browser.js';
 
 const slow = process.env.CI ? 3 : 1; // CPU-only CI renders WebGL slowly; see playwright.config.js
 
@@ -531,10 +532,11 @@ test('a complete 5 km sprint reaches results, saves a best time and can race aga
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-history')).length)).toBe(1);
 });
 
-test('flight HUD explains ascent, descent, touchdown and recharging', async ({ page }) => {
-  await page.goto('/');
+gameplayTest('flight HUD explains ascent, descent, touchdown and recharging', async ({ gameplayPage: page }) => {
   await page.getByRole('button', { name: 'Start race' }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
+  // No rings or pickups: their charge and MINI BOOST would shift or mask the flight states under test.
+  await page.evaluate(() => Object.assign(window.gameplay.race, { rings: [], pickups: [] }));
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(110);
   await page.keyboard.down('Space');
