@@ -1,4 +1,4 @@
-<!-- source-sha256: 3f46b9660ebd5cc7e2cff6d02bdaa8c917f78094e66aaa2bd323547bb2486c51 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 21a91777a700bd419db18183eb62a382adebbaa84af654182aeb78697de7c4f4 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -81,7 +81,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 ### 操控手感
 
-轉向會在 0.15 秒內推到全幅，而高速時橫向速度上限為 9 m/s。在低於 65 km/h 時按住 Fly 會被記住 1.5 秒，並在速度夠快時自動升空。在空中放開 Fly 會降低下墜加速度（11 → 7 m/s²），讓落地更柔和，並緩慢回充飛行電量（每秒 4 點，為地面速率的三分之一）。碰撞判定的車寬為 1.7 m，因此更多超車會算作擦身而過。輕微觸碰護欄屬於擦撞（保留 0.92 的速度，被推回路面，不算碰撞，連鎖保留）；正面撞擊仍算碰撞。在 AUTO 開啟時，放開轉向也會讓車輛緩緩回到最近的車道中央（車道輔助）。同時按住 Fly + Boost 時，每秒消耗 22 點電量而非 29 點，保留加速推進的速度上限，並顯示 AIR DASH。
+轉向會在 0.15 秒內推到全幅，而高速時橫向速度上限為 9 m/s。在低於 65 km/h 時按住 Fly 會被記住 1.5 秒，並在速度夠快時自動升空。在空中放開 Fly 會降低下墜加速度（11 → 7 m/s²），讓落地更柔和，並緩慢回充飛行電量（每秒 4 點，為地面速率的三分之一；電量說明顯示「滑翔充能中」）。推進器耗盡後，只要放開 Fly 且電量回到 15，即使在空中也會重新解鎖。距離斷橋 300 m 內（Sky Spiral 除外，其跳台會把車拋過去），若剩餘電量不足以用目前速度推進飛越，HUD 中央會警示「前方斷橋 · 需要 n% 電量」。碰撞判定的車寬為 1.7 m，因此更多超車會算作擦身而過。輕微觸碰護欄屬於擦撞（保留 0.92 的速度，被推回路面，不算碰撞，連鎖保留）；正面撞擊仍算碰撞。在 AUTO 開啟時，放開轉向也會讓車輛緩緩回到最近的車道中央（車道輔助）。同時按住 Fly + Boost 時，每秒消耗 22 點電量而非 29 點，保留加速推進的速度上限，並顯示 AIR DASH。
 
 ### NITRO 與飄移
 
@@ -105,7 +105,7 @@ NITRO 不消耗電量，因此 Fly + NITRO 永遠可以同時使用（Fly + Boos
 
 ### 儲存的資料
 
-所有儲存都使用 try/catch，因此在儲存空間被封鎖時遊戲仍可執行。`skyline-rush-history`：每場完賽一筆紀錄，保留最新 50 筆。從起始或結果畫面開啟 **History**，可依賽道篩選、查看最佳成績與最近十次時間的圖表，並點選某場比賽查看詳情。`skyline-rush-best-tracks`：各賽道的最佳時間；舊的單一 `skyline-rush-best` 會一次性遷移至 `coast`，且仍會為 coast 寫入。`skyline-rush-unlocked`：賽道解鎖狀態，即使較舊的紀錄已移出 History 也會保留。`skyline-rush-keymap`：按鍵對應。`skyline-rush-controls` 與 `skyline-rush-vfx`：駕駛與視覺設定（幽靈車開關位於 controls 中）。`skyline-rush-ghosts`：每條賽道一個最佳成績幽靈車。`skyline-rush-medals`、`skyline-rush-stars`、`skyline-rush-paint`：附有獲得日期的獎章、每條賽道的最佳星數，以及已裝備的塗裝。`skyline-rush-daily`：每日挑戰的成績，保留最新 50 筆。每個儲存的值在載入時都會經過驗證；格式不正確的內容會被忽略。
+所有儲存都使用 try/catch，因此在儲存空間被封鎖時遊戲仍可執行。`skyline-rush-history`：每場完賽一筆紀錄，保留最新 50 筆，並記錄 `fuelOuts`（飛行電量耗盡次數）與 `gapFalls`（掉入斷橋次數），用於調整飛行平衡。從起始或結果畫面開啟 **History**，可依賽道篩選、查看最佳成績與最近十次時間的圖表，並點選某場比賽查看詳情。`skyline-rush-best-tracks`：各賽道的最佳時間；舊的單一 `skyline-rush-best` 會一次性遷移至 `coast`，且仍會為 coast 寫入。`skyline-rush-unlocked`：賽道解鎖狀態，即使較舊的紀錄已移出 History 也會保留。`skyline-rush-keymap`：按鍵對應。`skyline-rush-controls` 與 `skyline-rush-vfx`：駕駛與視覺設定（幽靈車開關位於 controls 中）。`skyline-rush-ghosts`：每條賽道一個最佳成績幽靈車。`skyline-rush-medals`、`skyline-rush-stars`、`skyline-rush-paint`：附有獲得日期的獎章、每條賽道的最佳星數，以及已裝備的塗裝。`skyline-rush-daily`：每日挑戰的成績，保留最新 50 筆。每個儲存的值在載入時都會經過驗證；格式不正確的內容會被忽略。
 
 ### 幽靈車、每日挑戰、獎章與 Garage
 
@@ -130,7 +130,7 @@ Sky Spiral 新增了一條真正的 3D 上升螺旋道路，位於賽博龐克�
 
 燃料與 nitro 條會平順地趨近新的數值，在容量低於 20% 時發出警告，補充時會閃爍光澤，並在一格 nitro 完成時閃動。Comfort 模式與系統的減少動態會停用這些動畫。滑動板在按住時會顯示浮動的圓環 / 圓鈕，並在比賽開始時顯示簡短提示；放開後轉向會回到中立。
 
-HUD 使用共用的動態時間（120 / 240 / 480 ms）。速度表指針會隨速度平順移動；名次變化時，名次數字會翻轉並附上綠色向上或紅色向下的箭頭，排行榜的列則會滑入新的位置。精簡的半透明事件提示位於畫面中央上方，避開 HUD 面板，並將擦身而過、PERFECT LINE、NITRO 爆發、電量增加與飄移火花等級排入佇列，不會互相重疊。暫停、完賽與重新開始會清空佇列。按鈕在按下時會壓縮，放開時彈回；按住的觸控按鈕會保持發亮。VFX 設定中的選用 **Haptic feedback** 會在支援的觸控裝置上對碰撞、NITRO 與飄移獎勵給予回饋。Comfort 模式與系統的減少動態會保留文字與按下狀態的顏色，同時移除新增的動態與震動。
+HUD 使用共用的動態時間（120 / 240 / 480 ms）。速度表指針會隨速度平順移動；名次變化時，名次數字會翻轉並附上綠色向上或紅色向下的箭頭，排行榜的列則會滑入新的位置。精簡的半透明事件提示位於畫面中央上方，避開 HUD 面板，並將擦身而過、PERFECT LINE、NITRO 爆發、電量增加與飄移火花等級排入佇列，不會互相重疊；同時補充飛行電量的 NITRO 獎勵會標示補了多少（NITRO · 集氣 +20%）。暫停、完賽與重新開始會清空佇列。按鈕在按下時會壓縮，放開時彈回；按住的觸控按鈕會保持發亮。VFX 設定中的選用 **Haptic feedback** 會在支援的觸控裝置上對碰撞、NITRO 與飄移獎勵給予回饋。Comfort 模式與系統的減少動態會保留文字與按下狀態的顏色，同時移除新增的動態與震動。
 
 ### 語言
 
