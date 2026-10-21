@@ -57,3 +57,12 @@ See `docs/local-unlocked-testing.md` for operational details.
 - `src/game.js` owns `boost-tunnel` reward/collision state; do not make visual trigger volumes grant repeatable rewards each frame. Preserve the one-use-per-race rule.
 - Road collectibles and particles must use `trackLocalPosition` so elevated/curved courses don't show hovering pickups or buried effects; the minimap must not reveal any shortcuts.
 - Target recognizable skyline silhouettes for historical buildings, using original licensed geometry. Maintain low/high quality and reduced-motion variants. See `docs/world-tour-landmark-polish.md` for landmark references and QA checkpoints.
+
+
+## Current World Tour scenery policy
+
+- Favor visual distinction over forcing multiple destinations through the same street model or tunnel hoops. Every track has its own road line language, roadside object kit, tunnel structures, palette and minimap skin. Shared placement/streaming is fine, shared-looking scenery is not.
+- See `docs/world-tour-scenic-redesign.md`. Its streaming rule is strict: roadside props are keyed by absolute `trackId + chunkIndex`, not re-cycled by modulo next to the player; mountain/coastal terrain must join exactly at chunk boundaries.
+- Keep bloom, emissive and mirror-like asphalt subdued in the **centre driving sightline**. Distribute subdued edge lights on sides; Alpine's railroad bore must be visually dark and physically enclosed with rare amber service lamps.
+- World Tour code locations: `src/world-tour-scene.js` (renderer/chunk pool), `src/world-tour-scenery.js` (30 authored roadside assets), `src/world-tour-tunnels.js` (five tunnel styles), `src/world-tour-landmarks.js` (landmarks), `src/world.js` (lighting), `src/style.css` and `src/route-map.js` (route map).
+- **Do not create PRs** for this feature. Direct commits to `feature/world-tour-landmark-boost-polish` only. Do not merge or deploy without user approval.
