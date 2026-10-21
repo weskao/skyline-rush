@@ -278,6 +278,8 @@ export function createWorld(canvas) {
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
   const tunnelLights = [-1,1].map(()=>new THREE.PointLight('#b5a27b',0,35,2));
   tunnelLights.forEach(light=>{light.visible=false;scene.add(light);});
+  const roadsideLamps=[-1,1].map(()=>new THREE.PointLight('#d0bd9b',0,46,2));
+  roadsideLamps.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
   const sky = new THREE.Mesh(new THREE.SphereGeometry(2500, 24, 16), new THREE.ShaderMaterial({
@@ -593,6 +595,14 @@ export function createWorld(canvas) {
           light.position.fromArray(trackLocalPosition(trackId,distance+21,(i===0?-1:1)*11.7,8,distance));
         });
       }else tunnelLights.forEach(light=>light.visible=false);
+      const roadsideLit=tour&&['taipei','tokyo','coastal'].includes(trackId);
+      roadsideLamps.forEach((light,i)=>{
+        light.visible=roadsideLit&&!reducedMotion;
+        if(!light.visible)return;
+        light.intensity=trackId==='tokyo'?.29:trackId==='taipei'?.22:.17;
+        light.color.set(trackId==='tokyo'?'#a6a4bc':trackId==='coastal'?'#c4c9b7':'#cfbf9f');
+        light.position.fromArray(trackLocalPosition(trackId,distance+26,i===0?-17:17,10.5,distance));
+      });
 
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
