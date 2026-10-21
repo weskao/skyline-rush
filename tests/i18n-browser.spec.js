@@ -181,6 +181,20 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       // Audio, controls and VFX panels.
       await page.locator('#settings-button').click();
       await check(cx, 'audio-panel');
+      // Volume sliders and Mute all: the visible label and each slider's accessible name come from the active catalog.
+      const L = CATALOGS[cx.locale];
+      expect.soft(await page.locator('#settings-panel .audio-head > span').textContent(), `${cx.id} audio heading`).toBe(L['audio.head']);
+      expect.soft(await page.locator('#mute-all > span').textContent(), `${cx.id} mute all`).toBe(L['audio.muteAll']);
+      for (const kind of ['music', 'sfx']) {
+        expect.soft(await page.locator(`[data-audio="${kind}"] > span`).textContent(), `${cx.id} ${kind} label`).toBe(L[`audio.${kind}`]);
+        expect.soft(await page.locator(`[data-audio="${kind}"] + input[type="range"]`).getAttribute('aria-label'), `${cx.id} ${kind} slider name`).toBe(L[`audio.${kind}Volume`]);
+      }
+      await page.locator('#mute-all').click();
+      expect.soft(await page.locator('#mute-all > span').textContent(), `${cx.id} unmute all`).toBe(L['audio.unmuteAll']);
+      expect.soft(await page.locator('[data-audio="music"] + input[type="range"]').getAttribute('aria-valuetext'), `${cx.id} muted slider value`).toBe(L['audio.muted']);
+      expect.soft(await page.locator('[data-audio="music"] > b').textContent(), `${cx.id} muted badge`).toBe(L['audio.off']);
+      await check(cx, 'audio-panel-muted');
+      await page.locator('#mute-all').click();
       await page.locator('#settings-button').click();
       await page.locator('#controls-button').click();
       await check(cx, 'controls-panel');
@@ -363,7 +377,9 @@ test.describe('language detection and persistence', () => {
   });
 });
 
-// Reads the real 2D sign canvases (8 road signs 512x96 + the 1024x128 finish banner) the world paints, without any hook in the app.
+// Reads the real 2D sign canvases (one 512x96 road sign per section type + the 1024x128 finish banner) the world paints, without any hook in the app.
+// Every sign.* catalog key is one canvas, so a new section sign (e.g. boost-tunnel) is counted without editing this file.
+const SIGN_COUNT = Object.keys(CATALOGS.en).filter(key => key.startsWith('sign.')).length;
 const signStats = page => page.evaluate(() => window.__signCanvases.map(canvas => {
   const { width, height } = canvas;
   const { data } = canvas.getContext('2d').getImageData(0, 0, width, height);
@@ -395,7 +411,7 @@ for (const [locale, system] of LOCALES) test.describe(`road signs ${locale}`, ()
     };
     const before = await signStats(page);
     await dump(locale);
-    expect(before.length).toBe(9);
+    expect(before.length).toBe(SIGN_COUNT);
     for (const [i, sign] of before.entries()) {
       expect.soft(sign.bright, `${locale} sign ${i} has text pixels`).toBeGreaterThan(150);
       expect.soft(sign.edge, `${locale} sign ${i} text touches the frame`).toBe(0);
