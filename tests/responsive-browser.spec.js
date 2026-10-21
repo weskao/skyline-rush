@@ -82,7 +82,7 @@ for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
       await expect(page.locator('#race-status')).toHaveText('RACING');
       await expect(page.locator('#countdown')).toBeHidden();
       // The live map only steps aside on short screens with no free HUD slot.
-      await expect(page.locator('.race-route-map')).toBeVisible({ visible: height > 700 || (height > 500 && width > 400) });
+      await expect(page.locator('.race-route-map')).toBeVisible();
       const blocks = ['.position-stat', '.leaderboard', '.race-route-map', '.race-progress', '.mode-indicator', '.speedometer',
         '.flight-telemetry', '.aero-tools', '#controls-button', '#pause-button',
         // .touch-pad is left out: it is the invisible slide zone the pointer-transparent HUD sits on.

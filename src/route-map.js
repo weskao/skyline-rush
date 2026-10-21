@@ -28,7 +28,7 @@ export function routeMarker(trackId, distance) {
 }
 const routeLabel = (trackId, locale = getLocale()) => t('route.aria', { name: trackName(trackId, locale) }, locale);
 export function createRouteMap(trackId, { live = false } = {}) {
-  const element = svg('svg', { viewBox: '0 0 100 100', class: 'route-overview', role: 'img' }); // aria-label: relabel() below
+  const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
   for (const [kind, d] of [['start', 0], ['finish', RACE_TRACKS[trackId].length]]) {
     const p = routeMarker(trackId, d);
@@ -46,8 +46,11 @@ export function createRouteMap(trackId, { live = false } = {}) {
       const marker = markers.get(driver.id);
       if (!marker) continue;
       const point = routeMarker(trackId, driver.distance);
-      marker.setAttribute('cx', point.x.toFixed(2));
-      marker.setAttribute('cy', point.y.toFixed(2));
+      const x = point.x.toFixed(2), y = point.y.toFixed(2);
+      // Avoid forcing SVG layout/style work on frames whose tiny marker
+      // movement is still subpixel at the current map size.
+      if (marker.getAttribute('cx') !== x) marker.setAttribute('cx', x);
+      if (marker.getAttribute('cy') !== y) marker.setAttribute('cy', y);
     }
   };
   if (live) updateDrivers(racers.map(id => ({ id, distance: 0 })));

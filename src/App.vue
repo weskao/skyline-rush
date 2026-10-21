@@ -39,8 +39,11 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <div class="settings">
         <button class="icon-button" id="settings-button" aria-label="Audio settings" data-i18n-aria-label="audio.settings" aria-expanded="false" aria-controls="settings-panel" title="Audio settings · M mutes all" data-i18n-title="audio.title"><svg v-bind="ICON_ATTRS" v-html="icons.sound"></svg></button>
         <div class="settings-panel" id="settings-panel" role="group" aria-label="Audio settings" data-i18n-aria-label="audio.settings" hidden>
-          <button class="setting" role="switch" data-audio="music" aria-checked="true"><span data-i18n="audio.music">Music</span><b aria-hidden="true">ON</b></button>
-          <button class="setting" role="switch" data-audio="sfx" aria-checked="true"><span data-i18n="audio.sfx">Sound effects</span><b aria-hidden="true">ON</b></button>
+          <div class="audio-head"><span data-i18n="audio.head">Audio</span><button class="mute-all" id="mute-all" aria-keyshortcuts="M"><span data-i18n="audio.muteAll">Mute all</span><kbd aria-hidden="true">M</kbd></button></div>
+          <div class="audio-channel" v-for="[kind, label] in [['music', 'Music'], ['sfx', 'Sound effects']]" :key="kind">
+            <button class="setting" role="switch" :data-audio="kind" aria-checked="true"><svg v-bind="ICON_ATTRS" v-html="icons.sound"></svg><span :data-i18n="`audio.${kind}`">{{ label }}</span><b aria-hidden="true">100%</b></button>
+            <input type="range" min="0" max="100" step="5" value="100" :aria-label="`${label} volume`" :data-i18n-aria-label="`audio.${kind}Volume`">
+          </div>
         </div>
         <div class="settings-panel music-prompt" id="music-prompt" role="group" aria-labelledby="music-prompt-title" hidden>
           <p id="music-prompt-title" data-i18n="audio.prompt">Play background music?</p>
@@ -98,6 +101,12 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
   </section>
 
   <main>
+    <section class="performance-notice" id="performance-notice" role="status" aria-live="polite" aria-labelledby="performance-notice-title" hidden>
+      <span class="performance-notice-eyebrow" data-i18n="notice.eyebrow">DEVICE / GRAPHICS</span>
+      <strong id="performance-notice-title"></strong>
+      <p id="performance-notice-text"></p>
+      <button type="button" id="performance-notice-dismiss">Got it</button>
+    </section>
     <section class="intro" id="intro" aria-labelledby="intro-title">
       <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span></div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>

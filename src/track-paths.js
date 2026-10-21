@@ -41,25 +41,67 @@ export function trackFrame(trackId, distance) {
   return { point: trackPoint(trackId, s), forward, right, up: unit(cross(right, forward)) };
 }
 
-export function trackOverview(trackId, count = 128) {
-  const track = RACE_TRACKS[trackId];
-  if (!track) throw new Error(`Unknown track: ${trackId}`);
-  const size = Number.isInteger(count) ? Math.max(2, Math.min(1000, count)) : 128;
-  const exaggeration = flatCourses.has(trackId) ? 12 : 1;
-  const points = Array.from({ length: size }, (_, i) => {
-    const distance = i * track.length / (size - 1);
-    const point = trackPoint(trackId, distance);
-    return { distance, x: point.x * exaggeration, y: -point.z };
-  });
-  const xs = points.map(p => p.x), ys = points.map(p => p.y);
-  const minX = Math.min(...xs), minY = Math.min(...ys);
-  const width = Math.max(Math.max(...xs) - minX, 1);
-  const height = Math.max(Math.max(...ys) - minY, 1);
-  const scale = 0.84 / Math.max(width, height);
-  const insetX = (1 - width * scale) / 2, insetY = (1 - height * scale) / 2;
-  return points.map(p => ({
-    distance: p.distance,
-    x: insetX + (p.x - minX) * scale,
-    y: insetY + (p.y - minY) * scale,
+/** Convert game-distance, lane and altitude to camera-relative 3D coordinates. */
+export function trackLocalPosition(trackId, distance, lateral = 0, altitude = 0, origin = 0) {
+  const point = trackPoint(trackId, distance);
+  const home = trackPoint(trackId, origin);
+  const frame = trackFrame(trackId, distance);
+  return [
+    point.x - home.x + frame.right[0] * lateral + frame.up[0] * altitude,
+    point.y - home.y + frame.right[1] * lateral + frame.up[1] * altitude,
+    point.z - home.z + frame.right[2] * lateral + frame.up[2] * altitude,
+  ];
+}
+
+// Map-only projection. Actual race geometry is unchanged. The historic flat
+// road bends by <100m over 4-6km: an equal-scale full-course map would render
+// as a near-invisible vertical thread. Independently scale the lateral axis so
+// players can READ the turns. This is a schematic, not a map-distance scale.
+const mapFit = (points, mode) => {
+  const xs=points.map(p=>p.x), ys=points.map(p=>p.y);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const midX=(minX+maxX)/2, spanX=Math.max(maxX-minX,1), spanY=Math.max(maxY-minY,1);
+  // Old flat courses show their actual sinusoidal road centerline; no hidden
+  // shortcuts or artificial bends are added.
+  return points.map(p=>({
+    distance:p.distance,
+    x:.5 + (p.x-midX)/spanX*(mode==='flat'?.72:.84),
+    y:.08 + (p.y-minY)/spanY*.84,
   }));
+};
+
+export function trackOverview(trackId, count = 128) {
+  const track=RACE_TRACKS[trackId];
+  if(!track)throw new Error(`Unknown track: ${trackId}`);
+  const size=Number.isInteger(count)?Math.max(2,Math.min(1000,count)):128;
+  const points=Array.from({length:size},(_,i)=>{
+    const distance=i*track.length/(size-1);
+    const world=trackPoint(trackId,distance);
+    return {distance,x:world.x,y:-world.z};
+  });
+  if(flatCourses.has(trackId))return mapFit(points,'flat');
+  if(trackId==='spiral'){
+    const start=1100,end=2200,after=Math.max(1,track.length-end);
+    return points.map(p=>{
+      if(p.distance<start)return {
+        distance:p.distance,x:.16,y:.07+(p.distance/start)*.36,
+      };
+      if(p.distance<=end){
+        // Project the canonical helix to a legible 360-degree loop.
+        // The radius and orientation come from skyPoint; its height is not
+        // another "secret path" and is intentionally excluded.
+        return {
+          distance:p.distance,
+          x:.16+(p.x/330)*.56,
+          y:.43+(p.y-start)/165*.145,
+        };
+      }
+      return {
+        distance:p.distance,x:.16,y:.43+(p.distance-end)/after*.49,
+      };
+    });
+  }
+  // World Tour paths keep a world-geometry projection with nonuniform
+  // schematic fit, so all ten courses are readable in the same small HUD.
+  return mapFit(points,'world-tour');
 }

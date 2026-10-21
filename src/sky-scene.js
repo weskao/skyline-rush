@@ -98,6 +98,32 @@ export function createSkyScene(scene) {
   }
   skylineMesh.instanceMatrix.needsUpdate = skylineLights.instanceMatrix.needsUpdate = true;
 
+  // This dome is the course's own sky. world.js hides the shared sky while it is up.
+  const backdrop = new THREE.Mesh(new THREE.SphereGeometry(2200, 24, 16), new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { time: { value: 0 } },
+    vertexShader: 'varying vec3 vPosition; void main(){ vPosition=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: `varying vec3 vPosition; uniform float time;
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      void main(){vec3 dir=normalize(vPosition);float h=dir.y;
+        vec3 col=mix(vec3(.22,.12,.42),vec3(.012,.027,.09),smoothstep(-.15,.72,h));
+        vec2 grid=dir.xy*220.;
+        float stars=step(.985,hash(floor(grid)))*(1.-smoothstep(.02,.16,length(fract(grid)-.5)));
+        col+=vec3(.75,.9,1.)*stars*smoothstep(0.,.2,h);
+        float spin=atan(dir.x,dir.z);
+        float band=smoothstep(-.05,.2,h)*(1.-smoothstep(.55,.9,h));
+        col+=vec3(0.,.85,1.)*pow(max(0.,sin(spin*3.+h*22.+time)),24.)*band;
+        col+=vec3(.85,.12,.72)*pow(max(0.,sin(spin*3.+h*22.+time+2.2)),24.)*band*.85;
+        col=mix(col,vec3(.04,.05,.16),smoothstep(.08,-.2,h));
+        gl_FragColor=vec4(col,1.);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+  }));
+  backdrop.name = 'Sky Spiral backdrop';
+  backdrop.frustumCulled = false;
+  group.add(backdrop);
+
   const fogBanks = new THREE.Group();
   group.add(fogBanks);
   const cloudMat = new THREE.MeshBasicMaterial({ color: '#5c639f', transparent: true, opacity: 0.085, depthWrite: false });
@@ -115,6 +141,7 @@ export function createSkyScene(scene) {
   return {
     update(distance, quality = 'high') {
       group.visible = true;
+      backdrop.material.uniforms.time.value = distance * 0.0015;
       const origin = skyPoint(distance);
       landmark.position.set(SKY_SPIRAL.radius - origin.x, -origin.y, -SKY_SPIRAL.start - origin.z);
       skyline.position.set(-origin.x, -origin.y, -origin.z);
@@ -153,7 +180,8 @@ export function createSkyScene(scene) {
       group.removeFromParent();
       geometry.dispose();
       road.material.dispose();
-      for (const mat of [cyan, magenta, stripes, concrete, cloudMat]) mat.dispose();
+      for (const mat of [cyan, magenta, stripes, concrete, cloudMat, backdrop.material]) mat.dispose();
+      backdrop.geometry.dispose();
       for (const mesh of [borders, rails, beacons, laneLines]) mesh.dispose();
       skylineMesh.dispose();
       skylineLights.dispose();

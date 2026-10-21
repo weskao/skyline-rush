@@ -21,6 +21,18 @@ earnings, or extra features that have not been implemented. It does not write un
 values to `localStorage`, so normal progression returns when you switch to `make`.
 Existing genuine saved progress is preserved.
 
+To preview one remote feature branch without checking it out in this working tree:
+
+```sh
+make dev-feature world-tour-landmark-boost-polish
+```
+
+The argument is the suffix after `feature/`. A `feature/` prefix on that argument is removed. The command fetches `origin/feature/<name>`,
+creates `.claude/worktrees/<name>` when that worktree is not already present, fast-forwards
+it, and serves that checkout with the same all-unlocked config. The URL is HTTPS on
+localhost, normally https://127.0.0.1:5443. The certificate is self-signed for
+`127.0.0.1`; the browser asks once before continuing. The server binds to localhost only.
+
 To run the standard application:
 
 ```sh

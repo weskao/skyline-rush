@@ -6,7 +6,9 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallen
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
+import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
+import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
@@ -72,8 +74,7 @@ let contextLost = false; // iOS drops WebGL on lock/app switch and may never res
 let previousPhase;
 let previousFlight;
 let goUntil = 0;
-const AUDIO_COOKIES = { music: 'skyline-rush-music', sfx: 'skyline-rush-sound' };
-const audio = { music: true, sfx: true };
+let { audio, volume } = readAudio();
 const audioSwitches = [...document.querySelectorAll('[data-audio]')];
 // Touch players start with AUTO on (checked once at load, never persisted); desktop starts off.
 let autoThrottle = touchPreference.matches;
@@ -97,10 +98,18 @@ const presentation = createPresentation();
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
 let nitroRefillUntil = 0;
-try { for (const kind in audio) audio[kind] = !document.cookie.split('; ').includes(`${AUDIO_COOKIES[kind]}=off`); } catch { /* Audio defaults to on when cookies are unavailable. */ }
+try { ({ audio, volume } = readAudio(document.cookie)); } catch { /* Audio defaults to on when cookies are unavailable. */ }
 const sound = createSound();
-let visual = vfxSettings();
-try { visual = vfxSettings(JSON.parse(localStorage.getItem('skyline-rush-vfx'))); } catch { /* Defaults work without storage. */ }
+// Initial quality selection is performed once; manual/previous settings win.
+let storedVisuals=null;
+try { const raw=localStorage.getItem(QUALITY_STORAGE_KEY); if(raw)storedVisuals=JSON.parse(raw); }
+catch { /* Storage is optional; use device-aware in-memory defaults. */ }
+const deviceSelection=initialDeviceVisuals({
+  storedSettings:storedVisuals,
+  device:{cores:navigator.hardwareConcurrency,memoryGiB:navigator.deviceMemory,
+    width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},
+});
+let visual=deviceSelection.settings;
 // In-memory source of truth: input.js reads it on every pointermove, so storage is only touched on load/change.
 let controlPrefs = controlSettings();
 let editingLayout = false;
@@ -182,6 +191,30 @@ $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVF
 showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 
+const performanceNotice=$('#performance-notice');
+const performanceNoticeText=$('#performance-notice-text');
+const performanceNoticeTitle=$('#performance-notice-title');
+const performanceNoticeDismiss=$('#performance-notice-dismiss');
+let showedPerformanceNotice=false;
+function refreshPerformanceNotice(){
+  if(!showedPerformanceNotice)return;
+  const message=noticeMessage(getLocale(),deviceSelection.settings.quality);
+  performanceNoticeTitle.textContent=message.title;
+  performanceNoticeText.textContent=message.body;
+  performanceNoticeDismiss.textContent=message.dismiss;
+}
+function showOneTimePerformanceNotice(){
+  if(!deviceSelection.downgraded)return;
+  try {
+    if(localStorage.getItem(DEVICE_NOTICE_KEY)==='shown')return;
+    localStorage.setItem(DEVICE_NOTICE_KEY,'shown');
+  } catch { /* Still show once for this page when persistent storage is disabled. */ }
+  showedPerformanceNotice=true;
+  refreshPerformanceNotice();
+  performanceNotice.hidden=false;
+}
+performanceNoticeDismiss.addEventListener('click',()=>{ performanceNotice.hidden=true;});
+showOneTimePerformanceNotice();
 let raceRouteMap;
 const trackRouteMaps = new Map();
 function ensureRouteMaps() {
@@ -189,6 +222,7 @@ function ensureRouteMaps() {
     if (trackRouteMaps.has(button.dataset.track)) continue;
     const map = createRouteMap(button.dataset.track);
     button.querySelector('.track-route-map').append(map.element);
+    button.querySelector('.track-route-map').dataset.theme=button.dataset.track;
     trackRouteMaps.set(button.dataset.track, map);
   }
   if (!raceRouteMap || raceRouteMap.trackId !== race.trackId) {
@@ -196,6 +230,7 @@ function ensureRouteMaps() {
     raceRouteMap = createRouteMap(race.trackId, { live: true });
     raceRouteMap.trackId = race.trackId;
     $('#race-route-map').replaceChildren(raceRouteMap.element);
+    $('#race-route-map').dataset.theme=race.trackId;
   }
 }
 function refreshTrackLabels() {
@@ -214,6 +249,7 @@ function applyLocale() {
   if ($('#history-screen').open) showHistory();
   for (const [element, text] of said) element.textContent = text();
   showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
+  refreshPerformanceNotice();
   nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
   if (positionChange.dataset.direction) positionChange.setAttribute('aria-label', t(positionChange.dataset.direction === 'gained' ? 'hud.gained' : 'hud.lost'));
   previousFlight = undefined; // the next HUD tick rewrites the change-gated labels
@@ -393,13 +429,22 @@ document.querySelector('.brand').addEventListener('click', event => {
 $('#leave-keep').addEventListener('click', () => { leaveScreen.close(); if (race.phase === 'paused') pause(); });
 $('#leave-end').addEventListener('click', () => { leaveScreen.close(); chooseTrack(); });
 
+// A muted channel shows its slider at zero; its saved level comes back on unmute.
+function showChannel(button, on, level) {
+  const slider = button.nextElementSibling, percent = `${Math.round(level * 100)}%`;
+  button.setAttribute('aria-checked', String(on));
+  button.firstElementChild.outerHTML = icon(on ? 'sound' : 'mute');
+  button.lastChild.textContent = on ? percent : t('audio.off');
+  slider.value = on ? Math.round(level * 100) : 0;
+  slider.setAttribute('aria-valuetext', on ? percent : t('audio.muted'));
+  slider.style.setProperty('--fill', `${slider.value}%`);
+}
+
 function showAudio() {
-  for (const button of audioSwitches) {
-    const on = audio[button.dataset.audio];
-    button.setAttribute('aria-checked', String(on));
-    button.lastChild.textContent = t(on ? 'audio.on' : 'audio.off');
-  }
-  ui['settings-button'].innerHTML = icon(audio.music || audio.sfx ? 'sound' : 'mute');
+  for (const button of audioSwitches) showChannel(button, audio[button.dataset.audio], volume[button.dataset.audio]);
+  const on = audio.music || audio.sfx;
+  ui['settings-button'].innerHTML = icon(on ? 'sound' : 'mute');
+  $('#mute-all').firstChild.textContent = t(on ? 'audio.muteAll' : 'audio.unmuteAll');
 }
 
 showAudio();
@@ -468,9 +513,13 @@ function toggleAssist() {
   sound.cue('ui');
 }
 
-function setAudio(kind, on) {
-  audio[kind] = kind === 'music' ? sound.setMusic(on) : sound.setEnabled(on);
-  try { document.cookie = `${AUDIO_COOKIES[kind]}=${audio[kind] ? 'on' : 'off'}; Max-Age=31536000; Path=/; SameSite=Lax`; } catch { /* Audio still works when cookies are unavailable. */ }
+function setAudio(kind, on, level = volume[kind]) {
+  volume[kind] = level;
+  audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
+  const name = AUDIO_COOKIES[kind];
+  try {
+    for (const pair of [`${name}=${audio[kind] ? 'on' : 'off'}`, `${name}-volume=${Math.round(level * 100)}`]) document.cookie = `${pair}; Max-Age=31536000; Path=/; SameSite=Lax`;
+  } catch { /* Audio still works when cookies are unavailable. */ }
   showAudio();
 }
 
@@ -742,10 +791,25 @@ $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(cur
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
-audioSwitches.forEach(button => button.addEventListener('click', () => {
-  setAudio(button.dataset.audio, !audio[button.dataset.audio]);
-  sound.cue('ui');
-}));
+audioSwitches.forEach(button => {
+  const kind = button.dataset.audio, slider = button.nextElementSibling;
+  button.addEventListener('click', () => {
+    setAudio(kind, !audio[kind]);
+    sound.cue('ui');
+  });
+  // Heard live while dragging but saved on release, so a drag through zero still unmutes to the level before it.
+  slider.addEventListener('input', () => {
+    const level = slider.value / 100;
+    if (kind === 'music') sound.setMusic(level > 0, level); else sound.setEnabled(level > 0, level);
+    showChannel(button, level > 0, level || volume[kind]);
+  });
+  slider.addEventListener('change', () => {
+    const next = setVolume(volume[kind], slider.value / 100);
+    setAudio(kind, next.on, next.volume);
+    if (kind === 'sfx') sound.cue('ui');
+  });
+});
+$('#mute-all').addEventListener('click', toggleSound);
 document.addEventListener('click', event => {
   if (!event.target.closest('.settings')) toggleSettings(false);
 });
@@ -979,9 +1043,11 @@ function updateUI(now, input) {
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 20);
-  document.body.classList.toggle('boosting', (car.boosting || nitroActive) && race.phase === 'racing');
-  const boost = (car.boosting || nitroActive) && race.phase === 'racing';
-  boostStatus.textContent = L[boost ? 'hud.thrustActive' : car.fuel === 0 ? 'hud.chargeEmpty' : car.fuel < 100 && !flying ? 'hud.recharging' : 'hud.boostReady'];
+  document.body.classList.toggle('boosting', (car.boosting || nitroActive || (car.miniBoost > 0 && car.boostTunnelEvent)) && race.phase === 'racing');
+  const tunnelBoost = car.miniBoost > 0 && car.boostTunnelEvent &&
+    race.elapsed - car.boostTunnelEvent.time < 3.6;
+  const boost = (car.boosting || nitroActive || tunnelBoost) && race.phase === 'racing';
+  boostStatus.textContent = L[tunnelBoost ? 'hud.hyperdrive' : boost ? 'hud.thrustActive' : car.fuel === 0 ? 'hud.chargeEmpty' : car.fuel < 100 && !flying ? 'hud.recharging' : 'hud.boostReady'];
   boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
   if (boost && !previousBoost && visual.enabled && !calm) {
     boostStatus.animate([{ opacity: 0.4, transform: 'translateX(-5px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180 });

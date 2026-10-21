@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>World Tour mid-race browser regression</title>
+<style>html,body{margin:0;background:#081428}canvas{display:block;width:100vw;height:100vh}</style></head>
+<body>
+<canvas id="world" width="640" height="360" aria-label="World Tour 3D regression"></canvas>
+<script type="module">
+  import * as THREE from 'three';
+  import { createWorld } from '../../src/world.js';
+  // Detailed WebGL diagnostic: Three.js often surfaces an unhelpful
+  // "reading visible" error if ANY visible scene mesh has no material.
+  const originalRender=THREE.WebGLRenderer.prototype.render;
+  THREE.WebGLRenderer.prototype.render=function(scene,camera){
+    if(scene?.isScene) {
+      const issues=[];
+      const check=(object,chain)=>{
+        if(!object){issues.push('undefined child of '+chain);return;}
+        const path=chain+'/'+(object.name||object.type||'unknown');
+        if((object.isMesh||object.isSprite||object.isLine||object.isPoints)&&
+          (!object.material || (Array.isArray(object.material)&&object.material.some(m=>!m)))){
+          issues.push(path+' has no valid material');
+        }
+        for(const child of object.children||[])check(child,path);
+      };
+      check(scene,'scene');
+      if(issues.length)throw Error('Invalid scene graph: '+issues.slice(0,10).join('; '));
+    }
+    return originalRender.call(this,scene,camera);
+  };
+  import { createRace, RACE_TRACKS } from '../../src/game.js';
+  const world = createWorld(document.getElementById('world'));
+  world.configureVFX({ quality: 'low', enabled: true, bloom: 0 });
+  let race, selected;
+  window.worldTourProbe = (id, distance) => {
+    // Reuse the SAME race and GPU renderer during the entire sweep, just as a
+    // real 5-8 km driving session does. Fresh races only on track changes.
+    if(selected!==id){
+      selected=id;
+      race=createRace(id);
+      race.phase='racing';
+    }
+    const d = Math.min(RACE_TRACKS[id].length - 30, distance);
+    race.elapsed = Math.max(0, d / 90);
+    Object.assign(race.player, { distance: d, speed: 72, altitude: 0, miniBoost: 0 });
+    race.rivals.forEach((r, i) => { r.distance = d + i * 16 + 35; r.speed = 60 + i * 4; });
+    world.render(race, 1 / 60, 0, { throttle: true, steer: 0 });
+    return { distance: race.player.distance, id };
+  };
+  window.worldTourSweep = async (id, from, to, frames=180) => {
+    for(let i=0;i<=frames;i++){
+      await new Promise(requestAnimationFrame);
+      window.worldTourProbe(id,from+(to-from)*(i/frames));
+    }
+    return { id, frames, arrivedAt: to };
+  };
+  window.worldTourPreviewProbe=id=>{
+    const race=createRace(id);
+    world.render(race,1/60,2,{});
+    return {id,actors:world.inspectShowcase()};
+  };
+    window.worldTourReady = true;
+</script>
+</body></html>
