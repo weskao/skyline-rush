@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>World Tour mid-race browser regression</title>
+<style>html,body{margin:0;background:#081428}canvas{display:block;width:100vw;height:100vh}</style></head>
+<body>
+<canvas id="world" width="640" height="360" aria-label="World Tour 3D regression"></canvas>
+<script type="module">
+  import { createWorld } from '../../src/world.js';
+  import { createRace, RACE_TRACKS } from '../../src/game.js';
+  const world = createWorld(document.getElementById('world'));
+  world.configureVFX({ quality: 'low', enabled: true, bloom: 0 });
+  window.worldTourProbe = (id, distance) => {
+    const race = createRace(id);
+    const d = Math.min(RACE_TRACKS[id].length - 30, distance);
+    race.phase = 'racing';
+    race.elapsed = Math.max(0, d / 90);
+    Object.assign(race.player, { distance: d, speed: 72, altitude: 0, miniBoost: 0 });
+    race.rivals.forEach((r, i) => { r.distance = d + i * 16 + 35; r.speed = 60 + i * 4; });
+    world.render(race, 1 / 60, 0, { throttle: true, steer: 0 });
+    return { distance: race.player.distance, id };
+  };
+  window.worldTourReady = true;
+</script>
+</body></html>
