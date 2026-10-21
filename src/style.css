@@ -997,7 +997,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 :is(.assist-button span, .aero-tools > button, .aero-tools > details > summary, .vfx-heading > span, .route-label, .track-select small, .start-hint, .intro-controls > div,
   .flight-tip, .bottomline, .stat-label, .progress-labels, .racer.is-player > strong, .racer.is-player > span:last-child, .countdown > span, .event-callout span,
   .speed-caption, .fuel-caption, #flight-mode, .mode-key, .boost-status, .aero-eyebrow, #aero-mode, .aero-channels > span, .aero-channels b, .aero-disclaimer,
-  .flight-director > span:not(.director-climb), .altitude-ladder > small, .impact-report div > span, .overlay-route, .result-stats span, .history-best, .controls-button):lang(zh-TW) { font-size: 10px !important; }
+  .flight-director > span:not(.director-climb), .altitude-ladder > small, .impact-report div > span, .overlay-route, .result-stats span, .history-best, .controls-button, .performance-notice-eyebrow):lang(zh-TW) { font-size: 10px !important; }
 @media (max-width: 760px) { .driving-message:lang(zh-TW) { font-size: 10px; } } /* 11px on wider screens */
 /* The larger label keeps the column's height, so POSITION does not grow into the phone progress bar below it. */
 .stat-label:lang(zh-TW) { line-height: 1; }
@@ -1038,10 +1038,11 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- .race-route-map { width:75px;height:88px;right:18px;top:250px; }
+ /* No top here: the earlier top:272px keeps portrait maps below the progress bar (250px/241px sat on it). */
+ .race-route-map { width:75px;height:88px;right:18px; }
 }
 @media(max-width:400px) {
- .race-route-map {width:59px;height:72px;right:14px;top:241px;}
+ .race-route-map {width:59px;height:72px;right:14px;}
 }
 @media(max-height:500px) and (min-width:761px) {
  .race-route-map {display:block;top:218px;right:16px;width:67px;height:73px;}
