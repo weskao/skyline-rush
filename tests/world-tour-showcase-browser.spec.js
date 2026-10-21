@@ -34,6 +34,10 @@ for(const id of ['alpine','cosmic']) {
 }
 
 test('Alpine and Cosmic selection keep the actual 3D showroom animated, not a static card',async({page},info)=>{
+  await page.addInitScript(()=>{
+    localStorage.setItem('skyline-rush-unlocked',JSON.stringify(['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic']));
+    localStorage.setItem('skyline-rush-music','off');
+  });
   await page.goto('/');
   for(const id of ['alpine','cosmic']) {
     await page.locator(`[data-track="${id}"]`).click();
