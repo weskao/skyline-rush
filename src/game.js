@@ -296,7 +296,7 @@ function rivalWantsNitro(race, rival, hop) {
 }
 
 export function startRace(race) {
-  if (race.phase === 'ready') race.phase = 'countdown';
+  if (race.phase === 'ready') race.phase = race.mode === 'free' ? 'racing' : 'countdown';
 }
 
 export function racePosition(race) {

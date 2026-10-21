@@ -47,6 +47,13 @@ jobs:
         with:
           name: browser-failures-${{ matrix.shard }}
           path: test-results
+      - name: Upload actual race-mode game screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: race-mode-screenshots-${{ matrix.shard }}
+          path: test-results/race-mode-*.png
+          if-no-files-found: ignore
       - name: Upload actual World Tour screenshots
         if: always()
         uses: actions/upload-artifact@v4

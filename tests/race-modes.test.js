@@ -117,3 +117,19 @@ test('Time Attack ghosts never overwrite Classic ghosts', () => {
   assert.equal(data['skyline-rush-ghosts'], undefined);
   assert.equal(loadModeGhost('coast', createRace('coast').config, storage), null);
 });
+
+test('Free Drive skips countdown and has no compulsory race finish', () => {
+  const race = createRace('coast', { mode: 'free' });
+  startRace(race);
+  assert.equal(race.phase, 'racing');
+  race.player.distance = race.length - 0.1;
+  race.player.speed = 85;
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.phase, 'racing');
+  assert.equal(race.result, null);
+});
+test('AI opponent count supports one or three opponents without changing Classic', () => {
+  assert.equal(createRace('coast', { mode: 'custom', rivals: 1 }).rivals.length, 1);
+  assert.equal(createRace('coast', { mode: 'custom', rivals: 3 }).rivals.length, 3);
+  assert.equal(createRace('coast').rivals.length, 3);
+});
