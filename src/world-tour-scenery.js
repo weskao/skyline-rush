@@ -56,10 +56,20 @@ export function sceneryPlan(trackId, chunk, low = false) {
     const distance = chunk * SCENERY_CHUNK_METRES + 13 + i * 27 + hash(seed, 14) * 13;
     if (distance < 0 || distance > length) continue;
     const type = kinds[Math.floor(hash(seed, trackId.length) * kinds.length)];
-    const offsetBase = ['alpine','coastal','cosmic'].includes(trackId) ? 37 : 32;
+    // Keep human-scale street furniture directly behind the sidewalks.
+    // Larger facades sit one plot farther away, not hundreds of metres
+    // out like the previous city box skyline.
+    const furniture=new Set(['scooter','traffic-light','bus-stop','banyan',
+      'vending','tokyo-lamp','sign-stack','signal','dune-grass','buoy']);
+    const compact = furniture.has(type);
+    const offsetBase=trackId==='taipei'||trackId==='tokyo'
+      ?(compact?16:24)
+      :trackId==='alpine'?(compact?17:28)
+      :trackId==='coastal'?(compact?20:32):34;
+    const offsetSpan=trackId==='cosmic'?43:compact?9:16;
     items.push({ distance, side, kind:type,
-      offset:offsetBase + Math.round(hash(seed,91) * (trackId === 'cosmic' ? 45 : 26)),
-      size: .8 + hash(seed,44) * .5 });
+      offset:offsetBase + Math.round(hash(seed,91)*offsetSpan),
+      size: .82 + hash(seed,44)*.46 });
   }
   return items;
 }
