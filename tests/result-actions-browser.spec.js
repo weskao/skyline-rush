@@ -6,9 +6,9 @@ const tracks = Object.keys(RACE_TRACKS);
 const [last, beforeLast] = [tracks.at(-1), tracks.at(-2)];
 
 // Teleports the running race over the line; rivalsFirst finishes all three rivals ahead (P4).
-async function finishRace(page, { rivalsFirst = false } = {}) {
+async function finishRace(page, { rivalsFirst = false, racing = 'RACING' } = {}) {
   await page.locator('#start-button').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await expect(page.locator('#race-status')).toHaveText(racing);
   await page.evaluate(rivalsFirst => {
     const race = window.gameplay.race;
     race.elapsed = 80;
@@ -67,8 +67,11 @@ for (const [name, viewport, hasTouch] of [
 
   test('NEXT names the unlocked track in the chosen language', async ({ gameplayPage: page }) => {
     await page.locator('[data-locale="zh-TW"]').click();
-    await finishRace(page);
+    // The switch is global: the race HUD and results are Chinese too.
+    await finishRace(page, { racing: '比賽中' });
     await expect(page.locator('#next-button')).toContainText('霓虹都會');
+    await expect(page.locator('#next-button')).not.toContainText('Neon Downtown');
+    await expect(page.locator('#result-stats')).toContainText('你的時間');
   });
 
   test('NEXT stays hidden when the next track is still locked', async ({ gameplayPage: page }) => {

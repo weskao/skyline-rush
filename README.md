@@ -124,13 +124,25 @@ Start on Coast. Finish top three to unlock Neon Downtown, then Canyon Skyway, Au
 
 ### World Tour tracks, route maps and track names
 
-The five World Tour courses share one curved road renderer (`src/world-tour-scene.js`) with per-course palettes, buildings and landmarks (Presidential Office and North Gate silhouettes, neon crossings and a tower, rail viaducts and peaks, a lighthouse and sea bridge, ringed planets). Every track card shows the full main route, and during a race a live map plots YOU, NOVA, ORBIT and APEX on it; aerial shortcuts are never drawn. On screens under 500px tall and narrow phones under 700px tall the live map steps aside and the leaderboard still ranks racers. **EN / 繁體中文** under the track cards switches track names (saved as `skyline-rush-locale`).
+The five World Tour courses share one curved road renderer (`src/world-tour-scene.js`) with per-course palettes, buildings and landmarks (Presidential Office and North Gate silhouettes, neon crossings and a tower, rail viaducts and peaks, a lighthouse and sea bridge, ringed planets). Every track card shows the full main route, and during a race a live map plots YOU, NOVA, ORBIT and APEX on it; aerial shortcuts are never drawn. On screens under 500px tall and narrow phones under 700px tall the live map steps aside and the leaderboard still ranks racers. Track names follow the language chosen with the **EN / 繁體中文** switch (see Language below).
 
 Style points reward close passes (100 × combo, with drift's doubled combo), rings (150, plus 500 for a risk ring), PERFECT LINEs (500), moving airtime (10 per second), and every 500 clean metres (100). Contacts and gap falls reset clean-distance progress. Results award one star for finishing, two at 250 points/km, and three at 500 points/km, independently of finishing position.
 
 Fuel and nitro bars ease toward new values, warn below 20% capacity, shimmer on refills and pulse when a nitro charge completes. Comfort mode and system reduced motion disable those animations. The slide pad shows a floating ring/knob while held and a short hint at the start of a race; release returns steering to neutral.
 
 The HUD uses shared motion timings (120 / 240 / 480 ms). A speedometer needle eases with speed; place changes flip the position number with a green up or red down arrow, and leaderboard rows slide into their new places. Compact translucent event callouts sit above the centre of the view, clear of the HUD panels, and queue near misses, PERFECT LINEs, NITRO bursts, charge gains and drift spark tiers without overlapping. Pause, finish and restart clear the queue. Buttons compress while pressed and spring back on release; held touch controls stay illuminated. Optional **Haptic feedback** in VFX settings signals contacts, NITRO and drift rewards on supported touch devices. Comfort mode and system reduced motion keep the text and pressed-state colors while removing the new motion and vibration.
+
+### Language
+
+The whole interface is available in English and Traditional Chinese (繁體中文): start screen, Garage, History, HUD, race callouts, results, route maps, settings and the 3D road signs. One **EN / 繁體中文** switch under the track cards on the start screen changes all of it at once, with no reload. The language is picked in this order:
+
+1. the choice you saved by clicking the switch (`skyline-rush-locale`; it is written only on a click, never from auto-detection);
+2. your system language order (`navigator.languages`): the first entry decides, and any `zh*` tag (zh-TW, zh-HK, zh-Hant, zh-CN, zh-Hans, plain zh) selects 繁體中文;
+3. otherwise English.
+
+Brand and game terms stay in English in both languages: Skyline Rush, NITRO, FLY, BOOST and the rivals NOVA, ORBIT and APEX. Strings live in `src/locales/`; `src/i18n.js` owns detection, `t()` and the active locale.
+
+Localized images: `node scripts/capture-og-images.mjs` drives the real app in Chrome and saves `public/og-image.en.jpeg` and `public/og-image.zh-TW.jpeg` (1440×900 start screens) plus `artifacts/{readme-start,readme-hero,mobile-flight,race-results}.zh-TW.jpeg` for the Traditional Chinese README (`node scripts/capture-og-images.mjs og` or `readme` runs one half). The English `artifacts/` screenshots are never touched by it. `public/manifest.webmanifest` and the app icons stay as they are: the icons contain no text, and a web app manifest has a single name and description with no per-locale variant, so a second manifest would break installability.
 
 ## Verify
 
@@ -142,7 +154,7 @@ make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 ```
 
-Browser tests use an installed Google Chrome and allow SwiftShader for headless rendering. CPU-only CI uses a device scale factor of 0.25 to keep the 3D scene responsive while retaining the same CSS viewport sizes and gameplay assertions; local tests render at full resolution. Normal gameplay uses the browser's available GPU. Screenshots are written to `artifacts/` as JPEG (quality 70) only when the file is missing or with `UPDATE_ARTIFACTS=1 npm run test:browser`, since the live 3D scene differs every run; test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
+Browser tests use an installed Google Chrome and allow SwiftShader for headless rendering. CPU-only CI uses a device scale factor of 0.25 to keep the 3D scene responsive while retaining the same CSS viewport sizes and gameplay assertions; local tests render at full resolution. Normal gameplay uses the browser's available GPU. The English README screenshots are written to `artifacts/` as JPEG (quality 70) only when the file is missing or with `UPDATE_ARTIFACTS=1 npm run test:browser`, since the live 3D scene differs every run; test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
 
 ```sh
 npm run preview         # Serve the production build after npm run build
@@ -162,7 +174,7 @@ make deploy                              # Deploy remote main manually through t
 
 CI (`.github/workflows/ci.yml`) builds and runs unit and Chrome browser tests on pushes to `main`, pull requests, version-tag pushes (`v*`) and manual runs. Browser tests run in four parallel shards (`--shard=N/4`), and a newer push to the same branch cancels the run it supersedes. Version-tag pushes and manual runs publish only after all checks pass, then verify the public website. Ordinary branch pushes and pull requests only run checks. Pages builds use `--base=/skyline-rush/` so scripts, styles and fonts load from the project URL. GitHub Pages must use **GitHub Actions** as its publishing source. Manual deployment requires an authenticated GitHub CLI (`gh auth login`); push your commits first because `make deploy` uses remote `main`. Deployment no longer depends on a local pre-push hook or Netlify login.
 
-The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-start.jpeg`. After changing the cover, copy it again and bump the `?v=` on `og:image` in `index.html` so social sites fetch the new one.
+The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.jpeg`; `node scripts/capture-og-images.mjs og` captures both language covers and refreshes that copy. Crawlers cannot switch language, so `index.html` references only the English cover (with `og:locale` `en_US` and `og:locale:alternate` `zh_TW`), and `public/og-image.zh-TW.jpeg` is its Chinese twin for direct links. After changing the cover, bump the `?v=` on `og:image` in `index.html` so social sites fetch the new one.
 
 ## Project
 
@@ -176,7 +188,8 @@ The link-preview image is `public/og-image.jpeg`, a copy of `artifacts/readme-st
 - `src/world.js`, `src/geometry.js`: Three.js renderer, procedural cars, highway, skyline, flight effects and cameras.
 - `src/effects.js`: a fixed 480-particle GPU pool for vapor, sparks and landing dust.
 - `src/track-paths.js`, `src/world-tour-scene.js`: one distance-to-road mapping per track and the shared World Tour road, scenery and landmarks.
-- `src/route-map.js`, `src/i18n.js`: SVG full-route and live racer maps; English/繁體中文 track names and the saved locale.
+- `src/route-map.js`, `src/i18n.js`: SVG full-route and live racer maps; locale detection, the saved choice, `t()` and the English/繁體中文 track names; `src/locales/` holds the catalogs.
+- `scripts/capture-og-images.mjs`: captures the English and zh-TW cover images and the zh-TW README screenshots from the real app.
 - `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
 - `src/main.js`, `src/style.css`: mounts `App.vue`, then drives telemetry, pause/results, responsive controls and lifecycle on that DOM.
 - `vite.config.js`: Vite with `@vitejs/plugin-vue`.

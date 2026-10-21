@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SUPPORTED_LOCALES, TRACK_NAMES, trackName, loadLocale, saveLocale } from '../src/i18n.js';
+import {
+  SUPPORTED_LOCALES, TRACK_NAMES, trackName, loadLocale, saveLocale,
+  CATALOGS, interpolate, detectLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, t,
+  formatNumber, applyDocumentLocale, applyI18n,
+} from '../src/i18n.js';
+import { UI } from '../src/locales/ui.js';
+import { GAME } from '../src/locales/game.js';
 import { RACE_TRACKS } from '../src/game.js';
 
 test('all track IDs have English and Traditional Chinese labels', () => {
@@ -24,4 +30,82 @@ test('locale preference validates and gracefully handles blocked storage', () =>
   const blocked = { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); } };
   assert.equal(loadLocale(blocked), 'en');
   assert.doesNotThrow(() => saveLocale('en', blocked));
+});
+
+const memStore = (init = {}) => {
+  const data = new Map(Object.entries(init));
+  return { data, getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v) };
+};
+
+test('detectLocale maps any zh* tag to zh-TW and everything else to en', () => {
+  for (const tag of ['zh-TW', 'zh-HK', 'zh-Hant', 'zh-CN', 'zh-Hans', 'zh']) assert.equal(detectLocale([tag]), 'zh-TW', tag);
+  assert.equal(detectLocale(['fr-FR']), 'en');
+  assert.equal(detectLocale(['fr-FR', 'zh-TW']), 'zh-TW');
+  assert.equal(detectLocale(['en-US', 'zh-TW']), 'en', 'system preference order is respected');
+  assert.equal(detectLocale(['zh-HK', 'en-US']), 'zh-TW');
+  assert.equal(detectLocale([]), 'en');
+  assert.equal(detectLocale(undefined), 'en');
+});
+
+test('resolveInitialLocale: saved beats system, blocked storage is safe, auto value is never persisted', () => {
+  assert.equal(resolveInitialLocale(memStore({ 'skyline-rush-locale': 'en' }), ['zh-TW']), 'en');
+  assert.equal(resolveInitialLocale(memStore({ 'skyline-rush-locale': 'zh-TW' }), ['fr']), 'zh-TW');
+  assert.equal(resolveInitialLocale(memStore({ 'skyline-rush-locale': 'bogus' }), ['zh-CN']), 'zh-TW');
+  const empty = memStore();
+  assert.equal(resolveInitialLocale(empty, ['zh-HK']), 'zh-TW');
+  assert.equal(empty.data.size, 0);
+  const blocked = { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); } };
+  assert.equal(resolveInitialLocale(blocked, ['zh-TW']), 'zh-TW');
+  assert.equal(resolveInitialLocale(blocked, []), 'en');
+});
+
+test('t() interpolates, falls back to English and returns the key when missing', () => {
+  assert.equal(interpolate('Hi {name}, {name}! {x}', { name: 'NOVA' }), 'Hi NOVA, NOVA! {x}');
+  assert.equal(interpolate('{toString}', {}), '{toString}');
+  assert.equal(t('doc.title', undefined, 'ja'), CATALOGS.en['doc.title']); // unsupported locale -> English
+  assert.equal(t('no.such.key'), 'no.such.key');
+  assert.equal(t('doc.title', undefined, 'zh-TW'), CATALOGS['zh-TW']['doc.title']);
+});
+
+test('setLocale validates, notifies on change and unsubscribes', () => {
+  const seen = [];
+  const off = onLocaleChange(l => seen.push(l));
+  try {
+    setLocale('zh-TW'); setLocale('zh-TW'); setLocale('bogus');
+    assert.equal(getLocale(), 'zh-TW');
+    assert.equal(t('doc.title'), CATALOGS['zh-TW']['doc.title']);
+    off();
+    setLocale('en');
+    assert.deepEqual(seen, ['zh-TW']);
+  } finally { off(); setLocale('en'); }
+});
+
+test('catalogs: en and zh-TW have the same keys and en has no CJK', () => {
+  for (const l of SUPPORTED_LOCALES) assert.deepEqual(Object.keys(UI[l]).filter(k => k in GAME[l]), [], 'UI/GAME key overlap');
+  assert.deepEqual(Object.keys(CATALOGS['zh-TW']).sort(), Object.keys(CATALOGS.en).sort());
+  for (const [k, v] of Object.entries(CATALOGS.en)) assert.doesNotMatch(v, /[　-鿿＀-￯]/, k);
+});
+
+test('formatNumber uses the requested locale', () => {
+  assert.equal(formatNumber(1234.5, undefined, 'en'), '1,234.5');
+});
+
+test('applyI18n and applyDocumentLocale fill attributes, text, lang, title and description', () => {
+  const el = (attrs) => ({ attrs: { ...attrs }, textContent: '',
+    getAttribute(k) { return this.attrs[k]; }, setAttribute(k, v) { this.attrs[k] = v; } });
+  const text = el({ 'data-i18n': 'doc.title' });
+  const titled = el({ 'data-i18n-title': 'doc.title' });
+  const labelled = el({ 'data-i18n-aria-label': 'doc.description' });
+  const meta = el({});
+  const all = [text, titled, labelled];
+  const root = { querySelectorAll: sel => all.filter(e => `[${Object.keys(e.attrs).find(a => sel === `[${a}]`)}]` === sel) };
+  applyI18n(root, 'zh-TW');
+  assert.equal(text.textContent, CATALOGS['zh-TW']['doc.title']);
+  assert.equal(titled.attrs.title, CATALOGS['zh-TW']['doc.title']);
+  assert.equal(labelled.attrs['aria-label'], CATALOGS['zh-TW']['doc.description']);
+  const doc = { documentElement: {}, title: '', querySelector: sel => (sel === 'meta[name="description"]' ? meta : null) };
+  applyDocumentLocale(doc, 'zh-TW');
+  assert.equal(doc.documentElement.lang, 'zh-TW');
+  assert.equal(doc.title, CATALOGS['zh-TW']['doc.title']);
+  assert.equal(meta.attrs.content, CATALOGS['zh-TW']['doc.description']);
 });
