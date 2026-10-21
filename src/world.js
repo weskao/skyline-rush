@@ -13,6 +13,7 @@ import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
+import { HERO_PREVIEWS,previewDistance,previewRival } from './track-preview.js';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
@@ -578,7 +579,7 @@ export function createWorld(canvas) {
         weather.material.size = trackId === 'neon' ? .12 : .24;
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
       }
-      const distance = preview ? 340 : car.distance;
+      const distance = preview ? previewDistance(trackId) : car.distance;
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
       // A readable driving corridor takes precedence over cinematic glare.
       // Dimming in the mountain bore is smoothed over the 38 m entrance.
@@ -739,9 +740,16 @@ export function createWorld(canvas) {
 
       if (preview) {
         const groundedShowcase = visual.enabled && visual.airflow;
-        updateCar(player, { ...car, distance, altitude: groundedShowcase ? 0 : 1.6 + (reducedMotion ? 0 : Math.sin(idleTime * 1.1) * 0.12), thrusting: !groundedShowcase }, distance, center, time, dt, true);
-        rivals.forEach((mesh, i) => updateCar(mesh, { ...race.rivals[i], distance: distance + 35 + i * 28, altitude: i === 0 ? 5 : 0, thrusting: i === 0 }, distance, center, time, dt));
-        traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, { ...race.traffic[i], distance: distance + 65 + i * 32 }, distance, center, time, dt); });
+        const curated=!!HERO_PREVIEWS[trackId];
+        updateCar(player, { ...car, distance,
+          altitude:curated?.2:groundedShowcase?0:1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
+          thrusting:!curated&&!groundedShowcase }, distance, center, time, dt, true);
+        rivals.forEach((mesh,i)=>updateCar(mesh,previewRival(trackId,i,race.rivals[i]),distance,center,time,dt));
+        traffic.forEach((mesh,i)=>{
+          mesh.visible=i<race.traffic.length;
+          if(mesh.visible)updateCar(mesh,{...race.traffic[i],
+            distance:distance+(curated?80:65)+i*32},distance,center,time,dt);
+        });
       } else {
         updateCar(player, car, distance, center, time, motionDt, true, input);
         if (race.phase === 'finished') player.position.z -= presentation.finishDistance || 0;
@@ -786,8 +794,22 @@ export function createWorld(canvas) {
         desiredCamera.set(player.position.x + Math.sin(angle) * 9, player.position.y + 3.6, Math.cos(angle) * 9);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
       } else if (preview) {
-        desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
-        lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
+        if(HERO_PREVIEWS[trackId]){
+          // Use the sampled road frame: unlike a hard-coded world-space camera,
+          // this is reliable on steep Alpine switchbacks and elevated Orbit road.
+          const info=HERO_PREVIEWS[trackId],frame=trackFrame(trackId,distance);
+          const forward=new THREE.Vector3(...frame.forward);
+          const right=new THREE.Vector3(...frame.right);
+          desiredCamera.copy(player.position)
+            .addScaledVector(right,portrait?info.cameraSide*.65:info.cameraSide)
+            .addScaledVector(forward,-(portrait?info.cameraBack*.88:info.cameraBack))
+            .add(new THREE.Vector3(0,info.cameraHeight,0));
+          const a=trackPoint(trackId,distance+24),o=trackPoint(trackId,distance);
+          lookTarget.set(a.x-o.x,a.y-o.y+1.15,a.z-o.z);
+        }else{
+          desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
+          lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
+        }
       } else if (cameraMode === 1) {
         if (trackId === 'spiral' || TOUR_IDS.has(trackId)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
         else desiredCamera.set(car.x, car.altitude + 1.7, -0.95);
