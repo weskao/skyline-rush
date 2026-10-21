@@ -62,9 +62,11 @@ function landmark(kind,mat,accent){
 }
 export function createWorldTourScene(scene){
  const group=new THREE.Group();scene.add(group);group.visible=false;
- const pos=new Float32Array((NS+1)*6), idx=new Uint16Array(NS*6);
+ const pos=new Float32Array((NS+1)*6), normals=new Float32Array((NS+1)*6), idx=new Uint16Array(NS*6);
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));
+ // Lit materials need normals; without them the shader yields NaN and bloom blackens the whole frame.
+ geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3).setUsage(THREE.DynamicDrawUsage));
  geometry.setIndex(new THREE.BufferAttribute(idx,1).setUsage(THREE.DynamicDrawUsage));
  const roadMaterial=new THREE.MeshStandardMaterial({color:'#293447',metalness:.22,roughness:.56,side:THREE.DoubleSide});
  const road=new THREE.Mesh(geometry,roadMaterial);road.frustumCulled=false;group.add(road);
@@ -106,13 +108,13 @@ export function createWorldTourScene(scene){
    const start=Math.max(0,Math.floor((distance-120)/STEP)*STEP);
    for(let i=0;i<=NS;i++){
     const s=Math.min(RACE_TRACKS[id].length,start+i*STEP),frame=trackFrame(id,s);
-    for(let side=0;side<2;side++)pos.set(toLocal(id,s,side?HALF:-HALF,0,distance), (2*i+side)*3);
+    for(let side=0;side<2;side++){pos.set(toLocal(id,s,side?HALF:-HALF,0,distance), (2*i+side)*3);normals.set(frame.up,(2*i+side)*3);}
     if(i===NS)continue;
     const k=6*i,a=2*i,gap=sections.some(v=>v.type==='gap'&&s+STEP/2>=v.from&&s+STEP/2<v.to);
     idx.set(gap?[a,a,a,a,a,a]:[a,a+1,a+2,a+1,a+3,a+2],k);
     for(let side=0;side<2;side++)pose(roadMarks,i*2+side,id,s+STEP/2,side?11.4:-11.4,.08,[.16,.13,STEP],distance);
    }
-   geometry.attributes.position.needsUpdate=true;geometry.index.needsUpdate=true;
+   geometry.attributes.position.needsUpdate=geometry.attributes.normal.needsUpdate=true;geometry.index.needsUpdate=true;
    roadMarks.instanceMatrix.needsUpdate=true;
    buildings.count=quality==='low'?32:80;
    for(let i=0;i<80;i++){

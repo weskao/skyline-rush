@@ -27,3 +27,16 @@ test('all five paths are continuous, finite and have distinct overview silhouett
  }
  assert.equal(unique.size,5);
 });
+test('world-tour road ribbon carries finite unit normals so lit materials never render NaN',async()=>{
+ const THREE=await import('three');
+ const {createWorldTourScene}=await import('../src/world-tour-scene.js');
+ const scene=new THREE.Scene(),tour=createWorldTourScene(scene);
+ for(const id of ids){
+  tour.update(id,500,'high');
+  let road;scene.traverse(o=>{if(o.isMesh&&!o.isInstancedMesh&&o.geometry.index?.count===140*6)road=o;});
+  const normal=road.geometry.attributes.normal;
+  assert.ok(normal,`${id} road has a normal attribute`);
+  for(let i=0;i<normal.count;i++)assert.ok(Math.abs(Math.hypot(normal.getX(i),normal.getY(i),normal.getZ(i))-1)<1e-6,id);
+ }
+ tour.dispose();
+});
