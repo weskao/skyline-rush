@@ -13,17 +13,10 @@ test('both music tracks are complete loops of about one minute', () => {
   }
 });
 
-test('sprintFactor leaves the tempo alone until the last 500 m, then ramps to 1.15 at the finish', () => {
-  assert.equal(sprintFactor(0, 5000), 1);
-  assert.equal(sprintFactor(4500, 5000), 1);
-  assert.ok(Math.abs(sprintFactor(4750, 5000) - 1.075) < 1e-9);
-  assert.ok(Math.abs(sprintFactor(5000, 5000) - 1.15) < 1e-9);
-  assert.ok(Math.abs(sprintFactor(9999, 5000) - 1.15) < 1e-9);
-  assert.ok(sprintFactor(3600, 4000) > 1);
-});
+const midiHz = note => 440 * 2 ** ((note - 69) / 12);
 
 // Record the Web Audio boundary; synthesizers, cue selection and event tracking stay real.
-function audioScene(t) {
+function installAudio(t) {
   const nodes = [];
   const param = () => ({ value: 0, setValueAtTime(value) { this.value = value; },
     setTargetAtTime(value) { this.value = value; }, linearRampToValueAtTime(value) { this.value = value; },
@@ -45,11 +38,49 @@ function audioScene(t) {
     close() { return Promise.resolve(); }
   };
   t.after(() => { delete globalThis.AudioContext; });
-  const sound = createSound(), race = createRace();
+  const sound = createSound();
+  t.after(() => sound.dispose());
+  return { nodes, sound };
+}
+
+// Sky Spiral's first pad (MIDI 56) is not the shared intro pad (57) or race pad (55).
+function heardFrequencies(t, trackId, phase) {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace(trackId);
+  race.phase = phase;
+  race.player.speed = 40;
+  assert.equal(sound.setMusic(true), true);
+  sound.update(race);
+  return nodes.filter(item => item.kind === 'oscillator').map(item => item.frequency.value);
+}
+
+test('entering Sky Spiral plays its background music instead of the shared intro', t => {
+  const heard = heardFrequencies(t, 'spiral', 'ready');
+  assert.ok(heard.some(hz => Math.abs(hz - midiHz(56)) < 0.05), 'Sky Spiral pad plays on the menu');
+  assert.equal(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), false, 'shared intro stays silent');
+});
+
+test('racing Sky Spiral keeps its background music instead of the shared race song', t => {
+  const heard = heardFrequencies(t, 'spiral', 'racing');
+  assert.ok(heard.some(hz => Math.abs(hz - midiHz(56)) < 0.05), 'Sky Spiral pad plays during the race');
+  assert.equal(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05), false, 'shared race song stays silent');
+});
+
+test('sprintFactor leaves the tempo alone until the last 500 m, then ramps to 1.15 at the finish', () => {
+  assert.equal(sprintFactor(0, 5000), 1);
+  assert.equal(sprintFactor(4500, 5000), 1);
+  assert.ok(Math.abs(sprintFactor(4750, 5000) - 1.075) < 1e-9);
+  assert.ok(Math.abs(sprintFactor(5000, 5000) - 1.15) < 1e-9);
+  assert.ok(Math.abs(sprintFactor(9999, 5000) - 1.15) < 1e-9);
+  assert.ok(sprintFactor(3600, 4000) > 1);
+});
+
+function audioScene(t) {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace();
   race.phase = 'racing'; race.player.speed = 60;
   assert.equal(sound.setEnabled(true), true);
   sound.update(race);
-  t.after(() => sound.dispose());
   return { sound, race, nodes, tones: () => nodes.filter(node => node.kind === 'oscillator').length };
 }
 

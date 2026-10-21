@@ -553,6 +553,8 @@ export function createWorld(canvas) {
         sunlight.color.set(palette.sun); sunlight.intensity = trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
         ambient.intensity = trackId === 'neon' ? 1.1 : 1.7;
         sun.visible = trackId === 'coast' || trackId === 'canyon';
+        // Sky Spiral draws its own dome. The shared sky, sea and peaks would sit in front of it.
+        sky.visible = sea.visible = mountains.visible = trackId !== 'spiral';
         sea.material.uniforms.ground.value.set(palette.ground); sea.material.uniforms.fogColor.value.set(palette.fog);
         sea.material.uniforms.water.value = trackId === 'coast' || trackId === 'neon' ? 1 : 0;
         seaLines.visible = trackId === 'coast'; mountains.material.color.set(palette.rock);
