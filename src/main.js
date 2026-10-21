@@ -19,11 +19,13 @@ import { frameStats, PERF_WINDOW } from './perf.js';
 import { createRouteMap } from './route-map.js';
 import { trackName, loadLocale, saveLocale } from './i18n.js';
 import { availableTracks, availablePaints } from '@progression-access';
+import { customSelect } from './custom-select.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
 createApp(App).mount('#app');
+for (const select of document.querySelectorAll('select')) customSelect(select);
 
 const $ =selector => document.querySelector(selector);
 const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'progress-fill', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'settings-panel', 'camera-button', 'controls-button', 'controls-panel', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
@@ -350,11 +352,25 @@ garageScreen.addEventListener('close', () => {
   controls.clear(); $('#garage-button').focus({ preventScroll: true });
 });
 for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
-$('#choose-track').addEventListener('click', () => {
+function chooseTrack() {
   controls.clear(); race = createRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
+  previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
+}
+$('#choose-track').addEventListener('click', chooseTrack);
+
+// Brand click mid-race pauses and asks first; on the intro/results screens the link just goes home.
+const leaveScreen = $('#leave-screen');
+leaveScreen.addEventListener('keydown', event => event.stopPropagation());
+document.querySelector('.brand').addEventListener('click', event => {
+  if (!['racing', 'countdown', 'paused'].includes(race.phase) || document.querySelector('dialog[open]')) return;
+  event.preventDefault();
+  if (race.phase !== 'paused') pause();
+  controls.clear(); leaveScreen.showModal();
 });
+$('#leave-keep').addEventListener('click', () => { leaveScreen.close(); if (race.phase === 'paused') pause(); });
+$('#leave-end').addEventListener('click', () => { leaveScreen.close(); chooseTrack(); });
 
 function showAudio() {
   for (const button of audioSwitches) {

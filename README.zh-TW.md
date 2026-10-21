@@ -1,4 +1,4 @@
-<!-- source-sha256: 940c73dde3494595d9e97a5b8ad1a95b617fd3aece22eb54ea9111e639fd22c2 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 7135f29ad94b3b93904913a29dc0fc6bcbb310a73471c118765394191f82f2e5 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -58,7 +58,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 | 自動加速開 / 關 | T / AUTO 按鈕 |
 | AIRFLOW 展示開 / 關 | V / AIRFLOW 按鈕 |
 
-行動裝置版面提供轉向、油門、煞車、加速推進、飛行與 NITRO 按鈕。觸控操作支援同時按住多個按鈕。AUTO 會持續按住油門，讓你專心轉向與飛行；煞車永遠優先於它。觸控裝置預設開啟，鍵盤遊玩時預設關閉，你的選擇會維持到再次切換或重新載入頁面為止。離開分頁會暫停比賽並清除按住的輸入。切換鏡頭與音效的快捷鍵不會影響按住中的駕駛操作。在觸控裝置上，在轉向板上將拇指往下滑會煞車，往下並往旁邊滑則會漂移；在 Buttons 模式下，煞車按鈕位於轉向按鈕下方，因此煞車 + 轉向同樣可以漂移。
+行動裝置版面提供轉向、油門、煞車、加速推進、飛行與 NITRO 按鈕。觸控操作支援同時按住多個按鈕。AUTO 會持續按住油門，讓你專心轉向與飛行；煞車永遠優先於它。觸控裝置預設開啟，鍵盤遊玩時預設關閉，你的選擇會維持到再次切換或重新載入頁面為止。離開分頁會暫停比賽並清除按住的輸入。比賽中點擊 SKYLINE RUSH 標誌會先暫停並詢問：**Keep racing**（繼續比賽）、**End race**（回到選擇賽道，本次成績不儲存）或 **Back to home**（重新載入回首頁）；按 Esc 則保持暫停。切換鏡頭與音效的快捷鍵不會影響按住中的駕駛操作。在觸控裝置上，在轉向板上將拇指往下滑會煞車，往下並往旁邊滑則會漂移；在 Buttons 模式下，煞車按鈕位於轉向按鈕下方，因此煞車 + 轉向同樣可以漂移。
 
 比賽前或暫停時開啟 **Controls**，即可調整鍵盤轉向靈敏度，或重新對應駕駛動作。選取一個動作後按下按鍵；衝突的按鍵會互相交換，固定的快捷鍵保留不可更動，按 Escape 可取消擷取。Reset keyboard 會還原預設值。按鍵設定會立即生效，並儲存在 `localStorage['skyline-rush-keymap']`。
 
@@ -139,7 +139,7 @@ make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 ```
 
-瀏覽器測試使用已安裝的 Google Chrome，並允許 SwiftShader 進行無頭渲染。僅使用 CPU 的 CI 採用 0.25 的裝置像素比，讓 3D 場景維持流暢，同時保有相同的 CSS 視窗大小與遊戲斷言；本機測試則以完整解析度渲染。一般遊玩使用瀏覽器可用的 GPU。截圖會以 JPEG（品質 70）寫入 `artifacts/`；測試追蹤／結果會被忽略。完整的衝刺測試在高速機器上約需一分鐘，若軟體渲染拖慢模擬則會更久。
+瀏覽器測試使用已安裝的 Google Chrome，並允許 SwiftShader 進行無頭渲染。僅使用 CPU 的 CI 採用 0.25 的裝置像素比，讓 3D 場景維持流暢，同時保有相同的 CSS 視窗大小與遊戲斷言；本機測試則以完整解析度渲染。一般遊玩使用瀏覽器可用的 GPU。由於即時 3D 場景每次執行都不同，截圖只在檔案不存在或執行 `UPDATE_ARTIFACTS=1 npm run test:browser` 時，以 JPEG（品質 70）寫入 `artifacts/`；測試追蹤／結果會被忽略。完整的衝刺測試在高速機器上約需一分鐘，若軟體渲染拖慢模擬則會更久。
 
 ```sh
 npm run preview         # Serve the production build after npm run build

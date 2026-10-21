@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { saveArtifact } from './helpers/artifact.js';
 import { test } from './helpers/gameplay-browser.js';
 
 const lightState = page => page.evaluate(() => {
@@ -40,7 +41,7 @@ test('rear LED remains one thin red line and responds to driving, braking and ni
   });
   await expect.poll(async () => (await lightState(page)).intensity).toBeGreaterThan(cruising.intensity * 2);
   expect((await lightState(page)).glow).toBeGreaterThan(cruising.glow * 2);
-  await page.screenshot({ path: 'artifacts/rear-led-braking.jpeg', quality: 85 });
+  await saveArtifact(page, { path: 'artifacts/rear-led-braking.jpeg', quality: 85 });
   await cleanView.evaluate(style => style.remove());
   await page.evaluate(() => {
     const race = window.gameplay.race;
@@ -90,5 +91,5 @@ test('startup scans outward again on restart, high speed flows, and reduced moti
   await page.locator('#restart-button').click();
   expect((await lightState(page)).width).toBe(1);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: 'artifacts/rear-led-mobile.jpeg', quality: 85 });
+  await saveArtifact(page, { path: 'artifacts/rear-led-mobile.jpeg', quality: 85 });
 });
