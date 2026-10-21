@@ -9,6 +9,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const SOURCE = 'README.md';
 const TARGET = 'README.zh-TW.md';
+// Screenshots captured in zh-TW by scripts/capture-og-images.mjs; the translated README shows these instead of the English ones.
+const ZH_IMAGES = /artifacts\/(readme-start|readme-hero|mobile-flight|race-results)\.jpeg/g;
 const MARKER = /^<!-- source-sha256: ([0-9a-f]{64}) [^\n]*-->\n/;
 const PROMPT = `Translate the Markdown README on stdin from English into Traditional Chinese as written in Taiwan (zh-TW).
 Keep unchanged: the Markdown structure and heading levels, tables, code blocks, inline code, URLs, image paths, file names,
@@ -48,7 +50,7 @@ if (mode === 'check') {
   if (!translated.startsWith('# ') || fences(translated) !== fences(source)) {
     throw new Error(`claude -p returned something that is not a full README translation; ${TARGET} left unchanged.`);
   }
-  writeFileSync(TARGET, `${marker}${translated}\n`);
+  writeFileSync(TARGET, `${marker}${translated.replace(ZH_IMAGES, 'artifacts/$1.zh-TW.jpeg')}\n`);
   console.log(`${TARGET} regenerated from README.md.`);
 } else {
   console.error(`Unknown mode "${mode}". Use check, sync or stamp.`);
