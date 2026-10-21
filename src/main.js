@@ -263,16 +263,20 @@ function showTracks() {
   ensureRouteMaps(); refreshTrackLabels();
   for (const button of document.querySelectorAll('[data-track]')) {
     const id = button.dataset.track;
-    button.disabled = !unlockedTracks.has(id);
+    const locked = !unlockedTracks.has(id);
     button.setAttribute('aria-pressed', String(id === race.trackId));
-    button.querySelector('small').textContent = t(button.disabled ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
+    button.querySelector('small').textContent = t(locked ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
     const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1];
-    button.title = button.disabled ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
+    button.title = locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
   }
+  ui['start-button'].disabled = !daily && !unlockedTracks.has(race.trackId);
+  ui['start-button'].setAttribute('aria-describedby', 'track-note');
+  $('.start-hint').hidden = ui['start-button'].disabled;
   $('#track-length').textContent = t('track.sprint', { km: track.length / 1000 });
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
-  $('#track-note').textContent = t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+  const previous = tracks[tracks.indexOf(race.trackId) - 1];
+  $('#track-note').textContent = (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
   const name = trackName(race.trackId, getLocale());
   const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : name).toUpperCase();
   $('.route-heading').textContent = route;
@@ -288,7 +292,7 @@ function showGhost() {
 }
 $('#ghost-enabled').addEventListener('change', ({ target }) => { controlPrefs = controlSettings({ ...controlPrefs, ghost: target.checked }); applyControls(); });
 for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
-  if (race.phase !== 'ready' || !unlockedTracks.has(button.dataset.track)) return;
+  if (race.phase !== 'ready') return;
   controls.clear();
   race = createRace(button.dataset.track); daily = null;
   showTracks();
@@ -456,7 +460,7 @@ function focusRace() {
 }
 
 function start() {
-  if (!world || race.phase !== 'ready' || document.querySelector('dialog[open]')) return;
+  if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   if (editingLayout) editLayout(false);
   controls.clear();
@@ -467,7 +471,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
-  if (!world) return;
+  if (!world || (!daily && !unlockedTracks.has(trackId))) return;
   if (contextLost) { location.reload(); return; }
   if (editingLayout) editLayout(false);
   controls.clear();

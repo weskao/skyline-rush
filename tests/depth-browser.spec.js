@@ -81,7 +81,7 @@ for (const [name, viewport, hasTouch] of [
 
 test('fresh progress locks tracks, empty History works and Escape restores menu focus', async ({ page }) => {
   await open(page);
-  await expect(page.locator('[data-track="neon"]')).toBeDisabled();
+  await expect(page.locator('[data-track="neon"]')).toBeEnabled();
   await expect(page.locator('#track-note')).toContainText('Finish top 3 on Coast to unlock Neon Downtown');
   await page.getByRole('button', { name: 'History', exact: true }).click();
   await expect(page.locator('#history-empty')).toBeVisible();
@@ -90,6 +90,33 @@ test('fresh progress locks tracks, empty History works and Escape restores menu 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Race history' })).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'History', exact: true })).toBeFocused();
+});
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) test.describe(`locked previews ${viewport.width}`, () => {
+  test.use({ viewport });
+  test('all tracks preview while locked starts stay blocked', async ({ page }) => {
+    await open(page);
+    const ids = await page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
+    for (const id of ids.slice(1)) {
+      const card = page.locator(`[data-track="${id}"]`);
+      await expect(card).toBeEnabled();
+      await card.click();
+      await expect(card).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('#world')).toHaveAttribute('aria-label', new RegExp(await card.locator('strong').innerText()));
+      await expect(page.locator('#start-button')).toBeDisabled();
+      await expect(page.locator('#track-note')).toContainText('Finish top 3');
+      await page.locator('#start-button').evaluate(button => button.click());
+      await page.locator('body').click({ position: { x: 2, y: 2 } });
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('r');
+      await expect(page.locator('.start-hint')).toBeHidden();
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+    }
+    await page.locator('[data-track="coast"]').click();
+    await expect(page.locator('#start-button')).toBeEnabled();
+    await page.locator('#start-button').click();
+    await expect(page.locator('body')).not.toHaveAttribute('data-phase', 'ready');
+  });
 });
 
 test('track changes render four distinct sky palettes in the WebGL framebuffer', async ({ page }) => {
