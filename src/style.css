@@ -218,7 +218,7 @@ body[data-phase="ready"] .build-version { display: block; }
   .fuel-caption { font-size: 6px; letter-spacing: .6px; }
   .bottomline { left: max(23px, env(safe-area-inset-left, 0px)); right: max(23px, env(safe-area-inset-right, 0px)); font-size: 6px; bottom: max(21px, env(safe-area-inset-bottom, 0px)); letter-spacing: 1.3px; }
   .bottomline > span:last-child { display: none; }
-  body:not([data-phase="ready"]) .touch-controls { display: flex; }
+  body:not([data-phase="ready"]) .touch-controls { display: grid; }
   body:not([data-phase="ready"]) .telemetry { bottom: 180px; }
   body:not([data-phase="ready"]) .mode-indicator { display: flex; position: fixed; top: 96px; left: 50%; transform: translateX(-50%); min-width: 0; gap: 5px; }
   body:not([data-phase="ready"]) .mode-icon svg { width: 19px; height: 19px; }
@@ -256,7 +256,7 @@ body[data-phase="ready"] .build-version { display: block; }
 }
 @media (prefers-reduced-motion: reduce) { button, a, .scene-shade, .fuel-track > i { transition: none; } }
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) {
-  body:not([data-phase="ready"]) .touch-controls { display: flex; }
+  body:not([data-phase="ready"]) .touch-controls { display: grid; }
   body:not([data-phase="ready"]) .telemetry { bottom: 112px; }
   .touch-controls { bottom: max(18px, env(safe-area-inset-bottom)); }
   .topbar { height: 70px; padding: 12px 24px; }
@@ -488,6 +488,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .toolbar .icon-button { position: relative; }
 .key-badge { position: absolute; right: -4px; bottom: -4px; min-width: 16px; height: 15px; padding: 0 3px; border-color: rgb(195 224 244 / .35); border-radius: 4px; background: #0c1d2c; color: #b9d3e2; font-size: 8px; letter-spacing: 0; pointer-events: none; }
 @media (pointer: coarse) { .key-badge { display: none; } }
+/* A setting, like CONTROLS: offered on the start screen, while paused and on results, so the racing HUD keeps its width. */
+body:is([data-phase="countdown"], [data-phase="racing"]) .aero-tools .custom-select { display: none; }
 #airflow-toggle[aria-pressed="true"] { background: #204858; border-color: #89d8ed; }
 #aero-start { display: none; }
 .airflow-active[data-phase="ready"] #aero-start { display: block; }
@@ -601,11 +603,8 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   body:not([data-phase="ready"]):has(#touch-controls[data-steer-mode="buttons"]) .telemetry { bottom: calc(180px + max(0px, env(safe-area-inset-bottom, 0px) - 18px)); }
 }
 @media (max-width: 760px) and (min-height: 501px) {
-  body:not([data-phase="ready"]) .touch-controls { display: grid; grid-template-columns: auto auto; gap: 10px; }
-  .touch-steer { grid-column: 1; grid-row: 1 / 3; align-self: end; }
-  .touch-actions { grid-column: 2; grid-row: 1; }
-  .touch-pedals { grid-column: 2; grid-row: 2; }
-  .touch-steer, .touch-actions, .touch-pedals { gap: 10px; }
+  body:not([data-phase="ready"]) .touch-controls { display: grid; gap: 10px; }
+  .touch-steer { gap: 10px; }
   .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: calc(56px * var(--touch-scale, 1)); height: calc(60px * var(--touch-scale, 1)); font-size: 9px; }
   body:not([data-phase="ready"]) .telemetry { bottom: calc(180px + max(0px, env(safe-area-inset-bottom, 0px) - 18px)); }
 }
@@ -656,7 +655,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .touch-controls button.is-positioned { position: fixed; transform: translate(-50%, -50%); width: calc(54px * var(--touch-scale, 1)); }
 .layout-toolbar { position: fixed; left: 50%; top: 80px; transform: translateX(-50%); z-index: 12; width: max-content; max-width: calc(100vw - 24px); display: flex; align-items: center; gap: 14px; padding: 10px; background: #102b40; border: 1px solid #8ab8ce; border-radius: 10px; font-size: 12px; }
 .layout-toolbar button { min-height: 44px; padding: 8px 12px; border-radius: 6px; border: 1px solid #a9dced; background: #284b62; }
-body.layout-editing #touch-controls { display: flex; }
+body.layout-editing #touch-controls { display: grid; }
 .layout-editing .touch-controls button { transition: none; outline: 1px dashed #d4e5f1; outline-offset: 3px; cursor: move; }
 .layout-editing .touch-pad { pointer-events: none; }
 .layout-editing .telemetry { opacity: .35; pointer-events: none; }
@@ -672,11 +671,21 @@ body.layout-editing #touch-controls { display: flex; }
 @media (prefers-reduced-motion: reduce) { .nitro-meter.is-max, .nitro-segment i { animation: none; transition: none; } }
 @media (max-width: 560px) { .nitro-hud { font-size: 7px; letter-spacing: .4px; margin-top: 6px; } .layout-toolbar { top: 64px; font-size: 10px; gap: 8px; } }
 
-.touch-actions { display: grid; grid-template-columns: auto auto; margin-inline-start: auto; }
-.touch-actions .touch-nitro { grid-column: 1 / -1; justify-self: end; }
-.touch-actions .touch-boost { grid-column: 1; grid-row: 2; }
-.touch-actions .touch-fly { grid-column: 2; grid-row: 2; }
-.touch-actions .touch-fly { min-width: calc(64px * var(--touch-scale, 1)); min-height: calc(68px * var(--touch-scale, 1)); }
+/* Right-thumb cluster: one 2x2 block in the corner, [NITRO][GAS] over [BOOST][FLY]. BOOST and FLY share the bottom row so one thumb
+   slides across both (input.js bridges an 8px seam). The steering cluster takes the 1fr column; the slide pad is position:fixed, outside
+   the grid; data-hand="right" mirrors the columns through direction:rtl. --touch-cell is the square button size before --touch-scale. */
+.touch-controls { --touch-cell: 56px; grid-template-columns: 1fr auto auto; grid-template-rows: auto auto; align-items: end; }
+.touch-actions, .touch-pedals { display: contents; }
+.touch-steer { grid-column: 1; grid-row: 1 / 3; justify-self: start; align-self: end; }
+.touch-actions .touch-nitro { grid-column: 2; grid-row: 1; }
+.touch-pedals .touch-gas { grid-column: 3; grid-row: 1; }
+.touch-actions .touch-boost { grid-column: 2; grid-row: 2; }
+.touch-actions .touch-fly { grid-column: 3; grid-row: 2; }
+#touch-controls :is(.touch-actions, .touch-pedals) button { width: calc(var(--touch-cell) * var(--touch-scale, 1)); height: calc(var(--touch-cell) * var(--touch-scale, 1)); }
+@media (max-width: 760px) and (min-height: 501px) { .touch-controls { --touch-cell: 62px; } }
+@media (max-width: 370px) { .touch-controls { --touch-cell: 54px; } }
+@media (max-height: 500px) { .touch-controls { --touch-cell: 52px; } }
+@media (max-height: 380px) { .touch-controls { --touch-cell: 48px; gap: 8px; } }
 #touch-controls[data-steer-mode="tilt"] .touch-steer { display: none; }
 #touch-controls .touch-steer button.is-positioned { width: calc(54px * var(--touch-scale, 1)); }
 
