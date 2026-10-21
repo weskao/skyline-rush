@@ -877,6 +877,16 @@ export function createWorld(canvas) {
       bloom.enabled = visual.quality !== 'low';
       composer.render(dt);
     },
+    inspectShowcase() {
+      // Read-only projection for browser QA: verify the player and all three
+      // rivals stay within the real camera on curving/elevated preview roads.
+      camera.updateMatrixWorld(true);
+      return [player,...rivals].map((mesh,i)=>{
+        const projected=mesh.getWorldPosition(new THREE.Vector3()).project(camera);
+        return {name:i===0?'YOU':'RIVAL '+i,visible:mesh.visible,
+          x:projected.x,y:projected.y,z:projected.z};
+      });
+    },
     dispose() {
       skyScene.dispose(); worldTourScene.dispose();
       effects.dispose();

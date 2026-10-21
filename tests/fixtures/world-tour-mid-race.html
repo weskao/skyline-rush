@@ -53,6 +53,11 @@
     }
     return { id, frames, arrivedAt: to };
   };
-  window.worldTourReady = true;
+  window.worldTourPreviewProbe=id=>{
+    const race=createRace(id);
+    world.render(race,1/60,2,{});
+    return {id,actors:world.inspectShowcase()};
+  };
+    window.worldTourReady = true;
 </script>
 </body></html>
