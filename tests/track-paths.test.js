@@ -46,3 +46,23 @@ test('unknown track IDs fail clearly and distance clamps',()=>{
   assert.deepEqual(trackPoint('coast',-4),trackPoint('coast',0));
   assert.deepEqual(trackPoint('coast',999999),trackPoint('coast',5000));
 });
+
+test('old four course outlines are visually legible instead of a one-pixel line',()=>{
+  for(const id of ['coast','neon','canyon','aurora']){
+    const points=trackOverview(id,128);
+    const xs=points.map(p=>p.x);
+    const ys=points.map(p=>p.y);
+    assert.ok(Math.max(...xs)-Math.min(...xs)>=.70,`${id} lateral turns must be readable`);
+    assert.ok(Math.max(...ys)-Math.min(...ys)>=.82,`${id} must show full start-to-finish length`);
+    assert.ok(new Set(xs.map(x=>x.toFixed(3))).size>20,`${id} curves need shape detail`);
+  }
+});
+test('Sky Spiral's real 360-degree helix is visibly large on its full-course map',()=>{
+  const samples=trackOverview('spiral',257);
+  const loop=samples.filter(p=>p.distance>=1100&&p.distance<=2200);
+  assert.ok(Math.max(...loop.map(p=>p.x))-Math.min(...loop.map(p=>p.x))>.5);
+  assert.ok(Math.max(...loop.map(p=>p.y))-Math.min(...loop.map(p=>p.y))>.26);
+  const start=samples[0],end=samples.at(-1);
+  assert.ok(start.y<.1&&end.y>.9);
+  assert.ok(loop.some(p=>p.x>.6)&&loop.some(p=>p.y<.3));
+});
