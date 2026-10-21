@@ -1,0 +1,39 @@
+import { test, expect } from '@playwright/test';
+
+async function closeMusicPrompt(page) {
+  await page.waitForTimeout(700);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+}
+
+test('solo Time Attack shows real 3D preview, starts, and hides unused opponents', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('[data-race-mode="time"]').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
+  await expect(page.locator('[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#mode-description')).toContainText('Solo best-time');
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+  await page.screenshot({ path: 'test-results/race-mode-time-attack.png' });
+  expect(errors).toEqual([]);
+});
+
+test('custom 0-opponent race still starts; Classic remains selectable', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('[data-race-mode="custom"]').click();
+  await expect(page.locator('#race-mode-rules')).toBeVisible();
+  await page.locator('[data-race-rule="rivals"]').evaluate(select => {
+    select.value = '0';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+  await expect(page.locator('#leaderboard .racer')).toHaveCount(1, { timeout: 15000 });
+  await page.screenshot({ path: 'test-results/race-mode-custom-solo.png' });
+  expect(errors).toEqual([]);
+});

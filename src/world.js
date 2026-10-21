@@ -779,8 +779,11 @@ export function createWorld(canvas) {
         const curated=!!HERO_PREVIEWS[trackId];
         updateCar(player, { ...previewPlayer(trackId,car,idleTime,reducedMotion,groundedShowcase), distance },
           distance,center,time,dt,true);
-        rivals.forEach((mesh,i)=>updateCar(mesh,
-          previewRival(trackId,i,race.rivals[i],idleTime,reducedMotion),distance,center,time,dt));
+        rivals.forEach((mesh,i) => {
+          mesh.visible = true; // show all three showcase cars even in solo practice
+          const standIn = { x: [-7.5, -2.5, 7.5][i], distance: 0, speed: 0, altitude: 0, steering: 0 };
+          updateCar(mesh, previewRival(trackId,i,race.rivals[i] ?? standIn,idleTime,reducedMotion),distance,center,time,dt);
+        });
         traffic.forEach((mesh,i)=>{
           mesh.visible=i<race.traffic.length;
           if(mesh.visible)updateCar(mesh,{...race.traffic[i],
@@ -789,7 +792,10 @@ export function createWorld(canvas) {
       } else {
         updateCar(player, car, distance, center, time, motionDt, true, input);
         if (race.phase === 'finished') player.position.z -= presentation.finishDistance || 0;
-        rivals.forEach((mesh, i) => updateCar(mesh, race.rivals[i], distance, center, time, motionDt));
+        rivals.forEach((mesh, i) => {
+          mesh.visible = i < race.rivals.length;
+          if (mesh.visible) updateCar(mesh, race.rivals[i], distance, center, time, motionDt);
+        });
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt); });
       }
       ghostCar.visible = !preview && !!ghost;

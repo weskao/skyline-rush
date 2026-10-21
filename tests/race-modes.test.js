@@ -77,3 +77,29 @@ test('time attack has no rivals and still completes a normal sprint', () => {
   assert.equal(race.phase, 'finished');
   assert.equal(race.result.position, 1);
 });
+
+import { recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.js';
+
+test('practice history stays separate from campaign history and unlocks', () => {
+  const map = new Map();
+  const storage = { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value) };
+  const race = createRace('coast', { mode: 'time' });
+  race.result = { position: 1, time: 40.5, score: 1000 };
+  const first = recordModeRace(race, storage);
+  assert.deepEqual(first, { best: 40.5, record: true });
+  assert.equal(loadModeHistory(storage).length, 1);
+  assert.equal(loadHistory(storage).length, 0);
+  assert.deepEqual(loadUnlocks(storage), ['coast']);
+  race.result.time = 42;
+  assert.deepEqual(recordModeRace(race, storage), { best: 40.5, record: false });
+  race.result.time = 39;
+  assert.deepEqual(recordModeRace(race, storage), { best: 39, record: true });
+});
+
+test('invalid and incomplete practice data cannot be saved', () => {
+  const race = createRace('coast', { mode: 'free' });
+  assert.throws(() => recordModeRace(race), /finished practice/);
+  const classic = createRace('coast');
+  classic.result = { time: 10, position: 1 };
+  assert.throws(() => recordModeRace(classic), /finished practice/);
+});

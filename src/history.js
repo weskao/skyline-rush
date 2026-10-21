@@ -60,8 +60,9 @@ export function recordModeRace(race, storage, now = new Date()) {
   const rules = JSON.stringify(race.config);
   const previous = loadModeHistory(storage);
   const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
-  const best = Math.min(race.result.time, ...comparable.map(run => run.time));
-  const record = !comparable.length || race.result.time < best + Number.EPSILON && !comparable.some(run => run.time <= race.result.time);
+  const previousBest = Math.min(Infinity, ...comparable.map(run => run.time));
+  const record = race.result.time < previousBest;
+  const best = Math.min(previousBest, race.result.time);
   write(MODE_HISTORY_KEY, [...previous, {
     date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
     time: race.result.time, position: race.result.position, score: race.result.score,
