@@ -96,7 +96,7 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   await expect(page.locator('#boost-status')).toHaveText('RECHARGING');
   await page.keyboard.press('Escape');
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
-  await page.keyboard.press('r');
+  await page.keyboard.press('Backspace');
   await expect(page.locator('#fuel-value')).toHaveText('100');
   await expect(page.locator('#speed')).toHaveText('0');
   expect(errors).toEqual([]);
@@ -331,7 +331,7 @@ test('countdown lights, automatic accelerator and brake work without holding the
   await page.waitForTimeout(250);
   await expect(page.locator('#distance')).toHaveText(distance);
   await page.keyboard.press('p');
-  await page.keyboard.press('t');
+  await page.keyboard.press('F2');
   await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'false');
 });
 

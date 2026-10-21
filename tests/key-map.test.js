@@ -7,10 +7,10 @@ const memoryStorage = (initial = {}) => {
   return { data, getItem: key => data[key] ?? null, setItem: (key, value) => { data[key] = String(value); } };
 };
 
-test('defaults keep the original keys and add J/K/L and E alternates', () => {
-  assert.deepEqual(DEFAULT_KEY_MAP.fly, ['Space', 'KeyJ']);
-  assert.deepEqual(DEFAULT_KEY_MAP.boost, ['ShiftLeft', 'ShiftRight', 'KeyK']);
-  assert.deepEqual(DEFAULT_KEY_MAP.nitro, ['KeyE', 'KeyL']);
+test('defaults serve WASD and arrow hands: Space fly, Shift boost, E or X nitro', () => {
+  assert.deepEqual(DEFAULT_KEY_MAP.fly, ['Space']);
+  assert.deepEqual(DEFAULT_KEY_MAP.boost, ['ShiftLeft', 'ShiftRight']);
+  assert.deepEqual(DEFAULT_KEY_MAP.nitro, ['KeyE', 'KeyX']);
   assert.deepEqual(DEFAULT_KEY_MAP.throttle, ['KeyW', 'ArrowUp']);
 });
 
@@ -19,27 +19,29 @@ test('rebinding to a free key replaces that action keys and leaves others alone'
   assert.deepEqual(map.fly, ['KeyF']);
   assert.equal(swapped, null);
   assert.deepEqual(map.boost, DEFAULT_KEY_MAP.boost);
-  assert.deepEqual(DEFAULT_KEY_MAP.fly, ['Space', 'KeyJ'], 'input map is not mutated');
+  assert.deepEqual(DEFAULT_KEY_MAP.fly, ['Space'], 'input map is not mutated');
 });
 
 test('rebinding to a key another action holds swaps the two actions', () => {
-  const { map, swapped } = rebind(DEFAULT_KEY_MAP, 'fly', 'KeyK');
-  assert.equal(swapped, 'boost');
-  assert.deepEqual(map.fly, ['KeyK']);
-  assert.deepEqual(map.boost, ['Space', 'KeyJ', 'ShiftLeft', 'ShiftRight']);
+  const { map, swapped } = rebind(DEFAULT_KEY_MAP, 'fly', 'KeyX');
+  assert.equal(swapped, 'nitro');
+  assert.deepEqual(map.fly, ['KeyX']);
+  assert.deepEqual(map.nitro, ['Space', 'KeyE']);
   const keys = Object.values(map).flat();
   assert.equal(new Set(keys).size, keys.length, 'no key is bound twice');
 });
 
 test('rebinding to a key the action already owns narrows it to that key without a swap', () => {
-  const { map, swapped } = rebind(DEFAULT_KEY_MAP, 'fly', 'KeyJ');
+  const { map, swapped } = rebind(DEFAULT_KEY_MAP, 'nitro', 'KeyX');
   assert.equal(swapped, null);
-  assert.deepEqual(map, { ...DEFAULT_KEY_MAP, fly: ['KeyJ'] });
+  assert.deepEqual(map, { ...DEFAULT_KEY_MAP, nitro: ['KeyX'] });
 });
 
 test('reserved action keys and unknown actions are refused', () => {
   assert.equal(rebind(DEFAULT_KEY_MAP, 'fly', 'Escape').map, DEFAULT_KEY_MAP);
   assert.equal(rebind(DEFAULT_KEY_MAP, 'fly', 'Escape').error, 'reserved');
+  for (const key of ['Backspace', 'F2']) assert.equal(rebind(DEFAULT_KEY_MAP, 'nitro', key).error, 'reserved', key);
+  for (const key of ['KeyR', 'KeyT']) assert.equal(rebind(DEFAULT_KEY_MAP, 'nitro', key).error, undefined, `${key} is free to bind`);
   assert.equal(rebind(DEFAULT_KEY_MAP, 'warp', 'KeyF').error, 'unknown-action');
 });
 
@@ -47,7 +49,7 @@ test('reset returns an independent copy of the defaults', () => {
   const map = resetKeyMap();
   assert.deepEqual(map, DEFAULT_KEY_MAP);
   map.fly.push('KeyZ');
-  assert.deepEqual(DEFAULT_KEY_MAP.fly, ['Space', 'KeyJ']);
+  assert.deepEqual(DEFAULT_KEY_MAP.fly, ['Space']);
 });
 
 test('validate keeps a good map and falls back to defaults for bad ones', () => {

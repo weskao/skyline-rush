@@ -110,7 +110,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await page.locator('#start-button').evaluate(button => button.click());
       await page.locator('body').click({ position: { x: 2, y: 2 } });
       await page.keyboard.press('Enter');
-      await page.keyboard.press('r');
+      await page.keyboard.press('Backspace');
       await expect(page.locator('.start-hint')).toBeHidden();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
     }
