@@ -104,7 +104,11 @@ export function createWorldTourScene(scene){
   const sceneryLayer=new THREE.Group();sceneryLayer.name='Distance-anchored continuous scenery';group.add(sceneryLayer);
   const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map();
   let sceneryTrack=null,sceneryDetail=null;
-  function clearChunks(){for(const node of chunks.values())node.removeFromParent();chunks.clear();}
+  function releaseChunk(node){
+    node.traverse(object=>{if(object.userData?.ownGeometry)object.geometry.dispose();});
+    node.removeFromParent();
+  }
+  function clearChunks(){for(const node of chunks.values())releaseChunk(node);chunks.clear();}
   function streamScenery(id,distance,quality,sections){
     const level=quality==='low'?'low':'high';
     const centerChunk=Math.floor(Math.max(0,distance)/SCENERY_CHUNK_METRES);
@@ -114,7 +118,7 @@ export function createWorldTourScene(scene){
     const start=Math.max(0,centerChunk-(level==='low'?2:3));
     const end=Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+(level==='low'?7:10));
     for(const [index,node] of chunks){
-      if(index<start||index>end){node.removeFromParent();chunks.delete(index);}
+      if(index<start||index>end){releaseChunk(node);chunks.delete(index);}
     }
     for(let index=start;index<=end;index++){
       if(chunks.has(index))continue;
@@ -126,6 +130,8 @@ export function createWorldTourScene(scene){
         // periodic wrap/modulus position reuse, no roadside teleporting.
         chunk.add(prop);
       }
+      const earth=kit.terrain(id,index,level==='low');
+      if(earth)chunk.add(earth);
       chunk.add(tunnelKit.buildChunk(id,index,sections));
       sceneryLayer.add(chunk);chunks.set(index,chunk);
     }
