@@ -1056,10 +1056,10 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- .race-route-map { width:75px;height:88px;right:18px;top:250px; }
+ .race-route-map { width:75px;height:88px;right:18px;top:272px; } /* below the 262px progress bar */
 }
 @media(max-width:400px) {
- .race-route-map {width:59px;height:72px;right:14px;top:241px;}
+ .race-route-map {width:59px;height:72px;right:14px;top:270px;}
 }
 @media(max-height:500px) and (min-width:761px) {
  /* Bottom-aligned just left of the 2x2 touch cluster; 144px clears it at Large size (2 x 52px x 1.15 + gaps). */
