@@ -40,3 +40,23 @@ test('live minimap does not duplicate secret corridors and moves marker position
   await page.waitForTimeout(5000);
   await expect(marker).not.toHaveAttribute('cy',start);
 });
+
+// Real browser output for review: screenshots are produced by WebGL, not mockups.
+test('capture genuine world-tour scenes and race HUD', async ({ page }) => {
+  const { mkdirSync } = await import('node:fs');
+  mkdirSync('artifacts/world-tour', { recursive: true });
+  await seed(page);
+  await page.goto('/');
+  for (const id of newIds) {
+    await page.locator(`[data-track="${id}"]`).click();
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `artifacts/world-tour/${id}-desktop.png`, animations: 'disabled' });
+  }
+  await page.locator('[data-track="taipei"]').click();
+  await page.locator('#start-button').click();
+  await page.waitForTimeout(4300);
+  await page.screenshot({ path: 'artifacts/world-tour/taipei-race-map.png', animations: 'disabled' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: 'artifacts/world-tour/taipei-mobile.png', animations: 'disabled' });
+});
