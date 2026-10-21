@@ -1,0 +1,25 @@
+// A small, versioned contract for practice modes; Classic and Daily stay identical.
+export const MODES = Object.freeze(['classic', 'custom', 'free', 'time']);
+const TRAFFIC = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
+const DIFFICULTIES = ['easy', 'normal', 'hard'];
+
+export const trafficMultiplier = value => TRAFFIC[value] ?? TRAFFIC.normal;
+
+export function normalizeRaceConfig(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError('Race mode settings must be an object');
+  const mode = value.mode ?? 'classic';
+  if (!MODES.includes(mode)) throw new RangeError('Unknown race mode: ' + String(mode));
+  // Solo and Classic are fixed rulesets. Only Custom changes the race simulation.
+  const custom = mode === 'custom';
+  const rivals = custom && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' ? 3 : 0;
+  return Object.freeze({
+    rulesVersion: 1,
+    mode,
+    rivals,
+    traffic: custom && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : 'normal',
+    difficulty: custom && DIFFICULTIES.includes(value.difficulty) ? value.difficulty : 'normal',
+    items: custom && typeof value.items === 'boolean' ? value.items : true,
+  });
+}
+
+export const rulesSignature = config => JSON.stringify(normalizeRaceConfig(config));

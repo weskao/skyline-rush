@@ -46,6 +46,29 @@ export function recordRace(race, storage, now = new Date()) {
   return record;
 }
 
+
+// Practice, custom and Time Attack records never mutate Classic history or unlocks.
+export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
+export function loadModeHistory(storage) {
+  const saved = read(MODE_HISTORY_KEY, storage);
+  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time'].includes(run.mode) &&
+    typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
+}
+export function recordModeRace(race, storage, now = new Date()) {
+  if (!['custom', 'time'].includes(race.mode) || !race.result || !valid(race.result.time))
+    throw new TypeError('A finished practice race is required');
+  const rules = JSON.stringify(race.config);
+  const previous = loadModeHistory(storage);
+  const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
+  const best = Math.min(race.result.time, ...comparable.map(run => run.time));
+  const record = !comparable.length || race.result.time < best + Number.EPSILON && !comparable.some(run => run.time <= race.result.time);
+  write(MODE_HISTORY_KEY, [...previous, {
+    date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
+    time: race.result.time, position: race.result.position, score: race.result.score,
+  }].slice(-HISTORY_LIMIT), storage);
+  return { best, record };
+}
+
 // Per-track bests; folds the legacy single best into coast (min, so re-running never overwrites a better time).
 export function loadBests(storage) {
   const stored = read(BEST_KEY, storage);
