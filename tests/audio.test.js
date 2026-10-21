@@ -54,10 +54,10 @@ function heardFrequencies(t, trackId, phase) {
   return nodes.filter(item => item.kind === 'oscillator').map(item => item.frequency.value);
 }
 
-test('entering Sky Spiral plays its background music instead of the shared intro', t => {
+test('selecting Sky Spiral on the menu keeps the shared intro', t => {
   const heard = heardFrequencies(t, 'spiral', 'ready');
-  assert.ok(heard.some(hz => Math.abs(hz - midiHz(56)) < 0.05), 'Sky Spiral pad plays on the menu');
-  assert.equal(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), false, 'shared intro stays silent');
+  assert.ok(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), 'shared intro plays on the menu');
+  assert.equal(heard.some(hz => Math.abs(hz - midiHz(56)) < 0.05), false, 'Sky Spiral music stays silent until the race starts');
 });
 
 test('racing Sky Spiral keeps its background music instead of the shared race song', t => {
@@ -65,6 +65,23 @@ test('racing Sky Spiral keeps its background music instead of the shared race so
   assert.ok(heard.some(hz => Math.abs(hz - midiHz(56)) < 0.05), 'Sky Spiral pad plays during the race');
   assert.equal(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05), false, 'shared race song stays silent');
 });
+
+// Opening pads sit outside the shared intro (57) and race (55) pads.
+const WORLD_TOUR_PADS = { taipei: 62, tokyo: 63, alpine: 58, coastal: 65, cosmic: 66 };
+
+for (const [trackId, pad] of Object.entries(WORLD_TOUR_PADS)) {
+  test(`selecting ${trackId} on the menu keeps the shared intro`, t => {
+    const heard = heardFrequencies(t, trackId, 'ready');
+    assert.ok(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), `${trackId} menu keeps the intro`);
+    assert.equal(heard.some(hz => Math.abs(hz - midiHz(pad)) < 0.05), false, `${trackId} music stays silent on the menu`);
+  });
+
+  test(`racing ${trackId} plays its own music instead of the shared race song`, t => {
+    const heard = heardFrequencies(t, trackId, 'racing');
+    assert.ok(heard.some(hz => Math.abs(hz - midiHz(pad)) < 0.05), `${trackId} pad plays during the race`);
+    assert.equal(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05), false, `${trackId} leaves the shared race song silent`);
+  });
+}
 
 test('sprintFactor leaves the tempo alone until the last 500 m, then ramps to 1.15 at the finish', () => {
   assert.equal(sprintFactor(0, 5000), 1);
