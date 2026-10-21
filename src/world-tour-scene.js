@@ -72,14 +72,16 @@ export function createWorldTourScene(scene){
   const architectureMat=new THREE.MeshStandardMaterial({color:'#546582',roughness:.65,metalness:.25});
   const windowMat=new THREE.MeshBasicMaterial({color:'#b4dff9'});
   const terrainMat=new THREE.MeshStandardMaterial({color:'#4b6f77',roughness:.98,flatShading:true});
-  const stripeMat=new THREE.MeshBasicMaterial({color:'#f7eaca'});
+  const stripeMat=new THREE.MeshBasicMaterial({color:'#d2cbb6',toneMapped:true});
+  const shoulderMat=new THREE.MeshStandardMaterial({color:'#727c79',roughness:.97,metalness:0});
   const roadEdges=new THREE.InstancedMesh(cube,glowMat,ROWS*2);
+  const shoulders=new THREE.InstancedMesh(cube,shoulderMat,ROWS*2);
   const laneMarks=new THREE.InstancedMesh(cube,stripeMat,ROWS*3);
   const skyline=new THREE.InstancedMesh(cube,architectureMat,94);
   const windows=new THREE.InstancedMesh(cube,windowMat,94*3);
   const terrain=new THREE.InstancedMesh(cone,terrainMat,92);
   const asteroids=new THREE.InstancedMesh(rock,terrainMat,92);
-  for(const mesh of [roadEdges,laneMarks,skyline,windows,terrain,asteroids]){
+  for(const mesh of [roadEdges,shoulders,laneMarks,skyline,windows,terrain,asteroids]){
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;group.add(mesh);
   }
   const water=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({
@@ -194,6 +196,8 @@ export function createWorldTourScene(scene){
     roadMat.color.set(ROAD_CHARACTER[id].pavement);
     roadMat.roughness=.94;roadMat.metalness=.025;
     glowMat.color.set(ROAD_CHARACTER[id].edge);
+    stripeMat.color.set(ROAD_CHARACTER[id].lane);
+    shoulderMat.color.set(ROAD_CHARACTER[id].shoulder);
     portalMat.color.set(id==='cosmic'?'#688b9a':id==='tokyo'?'#9e839c':'#9b9587');
     portalSecondary.color.set(id==='cosmic'?'#8b819f':'#aa9b83');
     glassMat.color.set(ROAD_CHARACTER[id].edge);
@@ -242,15 +246,30 @@ export function createWorldTourScene(scene){
         const a=i*2,k=i*6;
         const hole=sections.some(entry=>entry.type==='gap'&&s+STEP/2>=entry.from&&s+STEP/2<entry.to);
         indices.set(hole?[a,a,a,a,a,a]:[a,a+1,a+2,a+1,a+3,a+2],k);
+        const character=ROAD_CHARACTER[id].markings;
         for(const side of [-1,1]){
-          instance(roadEdges,i*2+(side===1?1:0),id,s+STEP*.5,side*11.8,.22,[.2,.15,STEP],origin);
+          const n=i*2+(side===1?1:0);
+          instance(roadEdges,n,id,s+STEP*.5,side*11.8,.24,
+            [character==='mountain'?.25:.16,.14,STEP],origin);
+          instance(shoulders,n,id,s+STEP*.5,side*13.5,-.22,
+            [character==='orbital'?2.5:3.2,.42,STEP],origin);
         }
-        for(let line=0;line<3;line++){
-          instance(laneMarks,i*3+line,id,s+3,(line-1)*5,.055,[.13,.025,5.4],origin);
+        const offsets=character==='urban'?[-6,0,6]
+          :character==='expressway'?[-5.4,0,5.4]
+          :character==='orbital'?[-10.6,10.6]:[-10.5,0,10.5];
+        const stripes=offsets.length;
+        laneMarks.count=ROWS*stripes;
+        for(let line=0;line<stripes;line++){
+          const lateral=offsets[line];
+          const edge=Math.abs(lateral)>9;
+          const width=edge?.19:character==='mountain'?.16:.12;
+          const length=edge?STEP:character==='urban'?3.8:5;
+          instance(laneMarks,i*stripes+line,id,s+2,lateral,.07,
+            [width,.035,length],origin);
         }
       }
       geometry.attributes.position.needsUpdate=geometry.attributes.normal.needsUpdate=geometry.index.needsUpdate=true;
-      roadEdges.instanceMatrix.needsUpdate=laneMarks.instanceMatrix.needsUpdate=true;
+      roadEdges.instanceMatrix.needsUpdate=shoulders.instanceMatrix.needsUpdate=laneMarks.instanceMatrix.needsUpdate=true;
       // Retired generic roadside box/cone instances are not rendered.
       // Authored, persistent 120m chunks are streamed independently above.
       skyline.count=windows.count=terrain.count=asteroids.count=0;
@@ -325,8 +344,8 @@ export function createWorldTourScene(scene){
     hide(){group.visible=false;},
     dispose(){
       clearHeroes();clearChunks();kit.dispose();tunnelKit.dispose();group.removeFromParent();
-      geometry.dispose();roadMat.dispose();glowMat.dispose();architectureMat.dispose();windowMat.dispose();terrainMat.dispose();stripeMat.dispose();
-      roadEdges.dispose();laneMarks.dispose();skyline.dispose();windows.dispose();terrain.dispose();asteroids.dispose();
+      geometry.dispose();roadMat.dispose();glowMat.dispose();architectureMat.dispose();windowMat.dispose();terrainMat.dispose();stripeMat.dispose();shoulderMat.dispose();
+      roadEdges.dispose();shoulders.dispose();laneMarks.dispose();skyline.dispose();windows.dispose();terrain.dispose();asteroids.dispose();
       water.geometry.dispose();water.material.dispose();starGeo.dispose();stars.material.dispose();portalGeo.dispose();portalMat.dispose();portalSecondary.dispose();glassMat.dispose();sideGlass.dispose();ceilingGlass.dispose();
     },
   };
