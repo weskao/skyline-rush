@@ -16,6 +16,11 @@ for(const [id,[from,to,length]] of Object.entries(tracks)){
       expect(response.distance).toBeGreaterThanOrEqual(0);
       await page.waitForTimeout(90);
     }
+    // Long-running RAF render checks the actual failure path around each
+    // energy tunnel instead of taking only one isolated mid-race screenshot.
+    const sweep=await page.evaluate(([name,from,to])=>
+      window.worldTourSweep(name,from-180,to+180,180),[id,from,to]);
+    expect(sweep.arrivedAt).toBe(to+180);
     expect(errors).toEqual([]);
     await page.screenshot({path:info.outputPath(`world-tour-${id}-mid-race.png`),animations:'disabled'});
   });

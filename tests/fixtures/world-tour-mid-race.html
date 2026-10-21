@@ -9,15 +9,28 @@
   import { createRace, RACE_TRACKS } from '../../src/game.js';
   const world = createWorld(document.getElementById('world'));
   world.configureVFX({ quality: 'low', enabled: true, bloom: 0 });
+  let race, selected;
   window.worldTourProbe = (id, distance) => {
-    const race = createRace(id);
+    // Reuse the SAME race and GPU renderer during the entire sweep, just as a
+    // real 5-8 km driving session does. Fresh races only on track changes.
+    if(selected!==id){
+      selected=id;
+      race=createRace(id);
+      race.phase='racing';
+    }
     const d = Math.min(RACE_TRACKS[id].length - 30, distance);
-    race.phase = 'racing';
     race.elapsed = Math.max(0, d / 90);
     Object.assign(race.player, { distance: d, speed: 72, altitude: 0, miniBoost: 0 });
     race.rivals.forEach((r, i) => { r.distance = d + i * 16 + 35; r.speed = 60 + i * 4; });
     world.render(race, 1 / 60, 0, { throttle: true, steer: 0 });
     return { distance: race.player.distance, id };
+  };
+  window.worldTourSweep = async (id, from, to, frames=180) => {
+    for(let i=0;i<=frames;i++){
+      await new Promise(requestAnimationFrame);
+      window.worldTourProbe(id,from+(to-from)*(i/frames));
+    }
+    return { id, frames, arrivedAt: to };
   };
   window.worldTourReady = true;
 </script>
