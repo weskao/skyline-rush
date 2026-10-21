@@ -409,12 +409,19 @@ test('a complete 5 km sprint reaches results, saves a best time and can race aga
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(150);
-  await page.keyboard.down('a');
-  await page.waitForTimeout(220);
-  await page.keyboard.up('a');
-  await expect(page.locator('#skill-report')).toBeVisible({ timeout: 15000 * slow });
-  await expect(page.locator('#skill-report')).toContainText('CLOSE PASS');
-  await expect(page.locator('#skill-report')).toContainText('CHARGE FULL');
+  // Traffic spacing decides when a pass lands in the 2–3.5 m near-miss band, so one lane nudge cannot promise one:
+  // weave across the lanes until the 1.2 s callout shows, bounded by the race itself rather than a 15 s window.
+  let weaving = true;
+  const weave = (async () => {
+    for (let i = 0; weaving; i++) {
+      const key = i % 2 ? 'd' : 'a';
+      await page.keyboard.down(key); await page.waitForTimeout(220); await page.keyboard.up(key);
+      await page.waitForTimeout(1200);
+    }
+  })();
+  await expect(page.locator('#skill-report')).toContainText('CLOSE PASS · CHARGE FULL', { timeout: 60000 * slow });
+  weaving = false;
+  await weave;
   await saveArtifact(page, { path: 'artifacts/close-pass-polish.jpeg', quality: 70 });
   await expect(page.locator('#race-status')).toHaveText('FINISHED', { timeout: 95000 * slow });
   await page.keyboard.up('w');
