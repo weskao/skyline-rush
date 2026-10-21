@@ -16,7 +16,7 @@ Use these project-root commands:
 | --- | --- |
 | `make` or `make dev` | Normal localhost Vite development, respecting saved progression |
 | `make dev-unlocked` | **Local-only all-unlocked Vite server** for testing tracks and Garage paints |
-| `make dev-feature FEATURE=<name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS on localhost. Does not check out that branch here |
+| `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS on localhost. Does not check out that branch here |
 | `make test-unlocked` | Alias for `make dev-unlocked`; starts a server, **not** the test runner |
 | `npm test` | Deterministic Node unit tests |
 | `npm run build` | Production build with a release-bundle safety assertion |

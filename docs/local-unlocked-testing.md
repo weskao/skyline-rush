@@ -24,10 +24,10 @@ Existing genuine saved progress is preserved.
 To preview one remote feature branch without checking it out in this working tree:
 
 ```sh
-make dev-feature FEATURE=world-tour-landmark-boost-polish
+make dev-feature world-tour-landmark-boost-polish
 ```
 
-`FEATURE` is the suffix after `feature/`. The command fetches `origin/feature/<name>`,
+The argument is the suffix after `feature/`. A `feature/` prefix on that argument is removed. The command fetches `origin/feature/<name>`,
 creates `.claude/worktrees/<name>` when that worktree is not already present, fast-forwards
 it, and serves that checkout with the same all-unlocked config. The URL is HTTPS on
 localhost, normally https://127.0.0.1:5443. The certificate is self-signed for

@@ -13,9 +13,18 @@ dev-unlocked: node_modules ## `make dev-unlocked`: local-only Vite server with a
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
 
-# Fetches origin/feature/<FEATURE> into .claude/worktrees/<FEATURE> without checking it out here.
-dev-feature: ## `make dev-feature FEATURE=<name>`: that feature branch, all-unlocked, https://127.0.0.1:5443
-	node scripts/dev-feature.mjs
+# Fetches origin/feature/<name> into .claude/worktrees/<name> without checking it out here.
+# The branch name is an extra goal; an empty rule stops make from requiring a file by that name.
+dev-feature: ## `make dev-feature <name>`: that feature branch, all-unlocked, https://127.0.0.1:5443
+	node scripts/dev-feature.mjs $(filter-out $@,$(MAKECMDGOALS))
+
+DEV_FEATURE_ARGS := $(filter-out dev-feature,$(MAKECMDGOALS))
+DEV_FEATURE_NAME := $(filter-out dev dev-unlocked test-unlocked run deploy node_modules,$(DEV_FEATURE_ARGS))
+ifneq ($(filter dev-feature,$(MAKECMDGOALS)),)
+ifneq ($(DEV_FEATURE_NAME),)
+$(eval $(DEV_FEATURE_NAME):;@:)
+endif
+endif
 
 # test:browser builds dist/ first via pretest:browser, so build is not run separately.
 run: node_modules ## `make run`: unit tests, production build and Chrome browser tests

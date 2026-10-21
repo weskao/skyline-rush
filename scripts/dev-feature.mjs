@@ -6,12 +6,13 @@ import { pathToFileURL } from 'node:url';
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const worktreesRoot = path.join(repoRoot, '.claude', 'worktrees');
 
+const USAGE =
+  'Usage: make dev-feature <name>\nExample: make dev-feature world-tour-landmark-boost-polish';
+
 export function featureSlug(raw) {
   const name = String(raw ?? '').trim().replace(/^feature\//, '');
   if (name === '.' || name === '..' || !/^[A-Za-z0-9._-]+$/.test(name)) {
-    throw new Error(
-      'Usage: make dev-feature FEATURE=<name>\nExample: make dev-feature FEATURE=world-tour-landmark-boost-polish',
-    );
+    throw new Error(USAGE);
   }
   return name;
 }
@@ -97,7 +98,9 @@ async function serve(worktree, tls) {
 }
 
 async function main() {
-  const slug = featureSlug(process.env.FEATURE);
+  const args = process.argv.slice(2);
+  if (args.length !== 1) throw new Error(USAGE);
+  const slug = featureSlug(args[0]);
   const branch = `feature/${slug}`;
   const worktree = path.resolve(worktreesRoot, slug);
   const escaped = path.relative(worktreesRoot, worktree);
