@@ -264,6 +264,7 @@ function showTracks() {
   for (const button of document.querySelectorAll('[data-track]')) {
     const id = button.dataset.track;
     const locked = !unlockedTracks.has(id);
+    button.classList.toggle('is-locked', locked);
     button.setAttribute('aria-pressed', String(id === race.trackId));
     button.querySelector('small').textContent = t(locked ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
     const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1];

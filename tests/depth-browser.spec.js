@@ -100,7 +100,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     for (const id of ids.slice(1)) {
       const card = page.locator(`[data-track="${id}"]`);
       await expect(card).toBeEnabled();
+      await expect(card).toHaveCSS('opacity', '0.65');
       await card.click();
+      await expect(card).toHaveCSS('opacity', '0.85');
       await expect(card).toHaveAttribute('aria-pressed', 'true');
       await expect(page.locator('#world')).toHaveAttribute('aria-label', new RegExp(await card.locator('strong').innerText()));
       await expect(page.locator('#start-button')).toBeDisabled();
