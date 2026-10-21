@@ -965,7 +965,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
 @media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
-/* Short screens have no free HUD slot (telemetry and touch buttons fill the sides); the leaderboard still ranks racers. */
+/* Short screens: telemetry and touch buttons fill the sides, so the map moves to the bottom row (see the short-screen blocks below). */
 /* The compact in-race route map remains visible on small viewports. */
 /* Short landscape has ~9px of intro slack: draw the route over the sky strip and pin the language toggle top-right. */
 @media (max-height: 500px) and (min-width: 761px) {
@@ -1052,6 +1052,20 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media (max-width:400px) and (max-height:700px) {
  .race-route-map {display:block;}
+}
+/* Short screens: telemetry fills the right column, so the map sits on the bottom row beside the thumb-action
+   cluster (its width + gap, landscape sized for the Large buttons; mirrored for a right-hand layout). */
+@media (pointer: coarse) and (min-width:761px) and (max-height:500px) {
+ .race-route-map { top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(12px, var(--safe-right)) + 212px); }
+ body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(12px, var(--safe-left)) + 212px); }
+}
+@media (max-width:760px) and (min-height:501px) and (max-height:700px) {
+ .race-route-map { top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(12px, var(--safe-right)) + 140px); }
+ body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(12px, var(--safe-left)) + 140px); }
+}
+@media (max-width:370px) and (min-height:501px) and (max-height:700px) {
+ .race-route-map { right:calc(max(12px, var(--safe-right)) + 124px); }
+ body:has(#touch-controls[data-hand="right"]) .race-route-map { left:calc(max(12px, var(--safe-left)) + 124px); }
 }
 /* Keep a map on short screens: it is passive and never intercepts inputs. */
 
