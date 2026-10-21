@@ -22,7 +22,8 @@ test('entering a boost tunnel once grants speed burst and nitro without draining
   assert.equal(race.player.boostTunnelClaimed[0],t.from,id);
   assert.ok(race.player.miniBoost>3,id);
   assert.ok(race.player.nitro>=0.55-1e-9,id);
-  assert.equal(race.player.fuel,72,id);
+  // Standard ground regeneration still applies (+13/s); the portal never burns fuel.
+  assert.ok(race.player.fuel>=72&&race.player.fuel<=72+13/60+1e-9,id);
   const granted=race.player.nitro;
   for(let i=0;i<40;i++)stepRace(race,{throttle:true},1/60);
   assert.equal(race.player.nitro,granted,id);
