@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -315,6 +315,7 @@ test('FLY + NITRO: nitro burns no fuel, so flight stays up for the whole burst a
 
 test('FLY + BOOST + NITRO keeps the 22/s AIR DASH drain and the MAX_SPEED + 30 cap', () => {
   const race = racing();
+  Object.assign(race, { pickups: [], rings: [] }); // pickups would add fuel along the way
   Object.assign(race.player, { speed: 80, nitro: 1 });
   advance(race, 2, { fly: true, boost: true, nitro: true });
   const car = race.player;
@@ -654,7 +655,7 @@ test('passing through each pickup tier adds its nitro amount once; a pickup in a
   race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude: 5, tier: 'overcharge' }];
   stepRace(race, {}, 1 / 60);
   assert.equal(race.player.nitro, NITRO_MAX);
-  assert.equal(race.player.fuel, 50); // overcharge tops up only, nothing converted
+  assert.equal(race.player.fuel, 50 + GLIDE_FUEL_REGEN / 60); // overcharge tops up only: just the glide regen
 });
 
 test('under one full charge NITRO cannot fire', () => {
@@ -713,14 +714,14 @@ test('hitting traffic during NITRO keeps 0.7 of the speed instead of 0.45', () =
   }
 });
 
-test('nitro caps at 3 charges: a 0.5 pickup at 2.9 fills to 3 and converts 0.4 into 12.8 fuel', () => {
+test('nitro caps at 3 charges: a 0.5 pickup at 2.9 banks 0.1 for 2 fuel and converts 0.4 into 12.8 fuel', () => {
   assert.equal(NITRO_MAX, 3);
   const race = racing();
   Object.assign(race.player, { speed: 60, nitro: 2.9, fuel: 50 });
   race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude: 0, tier: 'can' }];
   stepRace(race, { boost: true }, 1 / 60);
   assert.equal(race.player.nitro, 3);
-  assert.ok(Math.abs(race.player.fuel - (50 - 10 / 60 + 0.4 * 32)) < 1e-9);
+  assert.ok(Math.abs(race.player.fuel - (50 - 10 / 60 + 0.1 * NITRO_FUEL_BONUS + 0.4 * 32)) < 1e-9);
   race.player.fuel = 95;
   race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude: 0, tier: 'tank' }];
   stepRace(race, { boost: true }, 1 / 60);
@@ -1391,7 +1392,26 @@ test('air trick payout counts toward the nitro cap and the overflow becomes fuel
   flick(race);
   land(race);
   assert.equal(race.player.nitro, NITRO_MAX);
-  assert.ok(Math.abs(race.player.fuel - (50 + 0.15 * 32)) < 1e-9);
+  const glide = race.player.fuel - (50 + 0.1 * NITRO_FUEL_BONUS + 0.15 * 32);
+  assert.ok(glide > 0 && glide <= GLIDE_FUEL_REGEN * 3, `glide regen ${glide}`); // the rest is regen while gliding down
+});
+
+test('banked nitro refills flight fuel, and releasing FLY in the air slowly regenerates it', () => {
+  const pickup = racing();
+  Object.assign(pickup, { pickups: [], rings: [] });
+  Object.assign(pickup.player, { speed: 60, fuel: 30 });
+  pickup.pickups = [{ distance: pickup.player.distance + 0.5, x: pickup.player.x, altitude: 0, tier: 'tank' }];
+  stepRace(pickup, { boost: true }, 1 / 60);
+  assert.ok(Math.abs(pickup.player.fuel - (30 - 10 / 60 + NITRO_FUEL_BONUS)) < 1e-9);
+  const glide = airborne(10);
+  glide.player.fuel = 30;
+  advance(glide, 0.5);
+  assert.ok(glide.player.altitude > 0);
+  assert.ok(Math.abs(glide.player.fuel - (30 + GLIDE_FUEL_REGEN * 0.5)) < 1e-9);
+  const held = airborne(10);
+  Object.assign(held.player, { fuel: 30, speed: 10 }); // FLY held below takeoff speed: airborne, not thrusting
+  advance(held, 0.25, { fly: true });
+  assert.equal(held.player.fuel, 30);
 });
 
 // --- Shortcuts --------------------------------------------------------------------------------

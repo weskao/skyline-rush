@@ -71,6 +71,8 @@ export const NITRO_MAX = 3; // charges
 export const NITRO_TIME = 2.5; // seconds one charge lasts
 export const NITRO_EXTEND = 2; // seconds added by a press during NITRO
 export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
+export const NITRO_FUEL_BONUS = 20; // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
+export const GLIDE_FUEL_REGEN = 4; // fuel/s while airborne with FLY and boost released (ground is 13)
 export const NITRO_PICKUPS = { cell: 0.25, can: 0.5, tank: 1, overcharge: NITRO_MAX }; // overcharge only tops up to the cap, no fuel
 
 export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
@@ -198,11 +200,11 @@ function createRings(track) {
 // The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
 export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `mystery${index}`)() * MYSTERY_EFFECTS.length)];
 
-// Charges cap at NITRO_MAX; the excess becomes fuel so nothing is wasted.
-function addNitro(car, amount) {
-  const overflow = car.nitro + amount - NITRO_MAX;
+// Charges cap at NITRO_MAX; the excess becomes fuel so nothing is wasted. Banked charge also refills flight fuel.
+function addNitro(car, amount, fuelBonus = NITRO_FUEL_BONUS) {
+  const overflow = Math.max(0, car.nitro + amount - NITRO_MAX);
   car.nitro = Math.min(NITRO_MAX, car.nitro + amount);
-  if (overflow > 0) car.fuel = Math.min(100, car.fuel + overflow * NITRO_FUEL_PER_CHARGE);
+  car.fuel = Math.min(100, car.fuel + (amount - overflow) * fuelBonus + overflow * NITRO_FUEL_PER_CHARGE);
 }
 
 // Daily challenge: one track + modifier per local calendar day, from its own date-named stream.
@@ -438,6 +440,7 @@ export function stepRace(race, input, dt) {
     if (car.fuel === 0) car.exhausted = true;
   } else if (car.altitude > 0) {
     car.verticalSpeed -= (fly ? 11 : 7) * dt; // releasing FLY glides
+    if (!fly && !boost) car.fuel = Math.min(100, car.fuel + GLIDE_FUEL_REGEN * dt);
   } else if (!flyInput && !boost) {
     car.fuel = Math.min(100, car.fuel + (car.section === 'uphill' ? 6.5 : 13) * dt);
   }
@@ -563,7 +566,8 @@ export function stepRace(race, input, dt) {
       Math.hypot(pickup.distance - car.distance, pickup.x - car.x, pickup.altitude - car.altitude) < MAGNET_RANGE;
     if (crossed || pulled) {
       pickup.taken = true;
-      addNitro(car, pickup.tier === 'overcharge' ? NITRO_MAX - car.nitro : NITRO_PICKUPS[pickup.tier]);
+      if (pickup.tier === 'overcharge') addNitro(car, NITRO_MAX - car.nitro, 0);
+      else addNitro(car, NITRO_PICKUPS[pickup.tier]);
     }
   }
   const fell = car.fall?.time === race.elapsed; // a respawn jump skips the rings it covers
