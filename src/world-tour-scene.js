@@ -5,6 +5,7 @@ import { roadRibbon } from './geometry.js';
 import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
+import { batchStaticChunk } from './world-tour-batching.js';
 
 // One scenery system for five distinct destinations. Locations are authored as
 // race-distance + roadside offsets; meshes follow the *real* 3D driving path.
@@ -134,6 +135,10 @@ export function createWorldTourScene(scene){
       const earth=kit.terrain(id,index,level==='low');
       if(earth)chunk.add(earth);
       chunk.add(tunnelKit.buildChunk(id,index,sections));
+      // One-time static batching keeps every model/material, greatly reducing
+      // draw calls while the level streams through the camera.
+      const stats=batchStaticChunk(chunk);
+      chunk.userData.batchStats=stats;
       sceneryLayer.add(chunk);chunks.set(index,chunk);
     }
   }

@@ -32,7 +32,7 @@ test('persistent roadside props do not teleport or recreate on 12-m road rebuild
     const layer=root.getObjectByName('Distance-anchored continuous scenery');
     const chunk=layer.getObjectByName('world-tour-'+id+'-chunk-11');
     assert.ok(chunk,id+' has a persistent chunk');
-    const first=chunk.children.find(c=>SCENERY_KINDS[id].includes(c.name)&&c.children.length>=3);
+    const first=chunk.children.find(c=>SCENERY_KINDS[id].includes(c.name)&&c.userData.batched);
     assert.ok(first,id+' has authored props');
     root.updateMatrixWorld(true);
     const before=new THREE.Vector3();first.getWorldPosition(before);
