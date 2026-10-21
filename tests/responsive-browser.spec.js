@@ -67,9 +67,8 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
   });
 }
 
-// minimapOnly: these layouts already let .aero-tools touch the leaderboard/mode indicator on main; only the live map is checked there.
-for (const [width, height, hasTouch, minimapOnly] of [[844, 390, true], [874, 339, true],
-  [1440, 900, false, true], [1024, 768, true, true], [390, 844, true, true], [360, 780, true, true], [320, 568, true, true]]) {
+for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
+  [1440, 900, false], [1024, 768, true], [390, 844, true], [360, 780, true], [320, 568, true]]) {
   test.describe(`race HUD ${width}x${height}`, () => {
     test.use({ viewport: { width, height }, hasTouch, isMobile: hasTouch });
 
@@ -105,7 +104,7 @@ for (const [width, height, hasTouch, minimapOnly] of [[844, 390, true], [874, 33
       }, blocks);
       const apart = (a, b) => a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
       const overlaps = boxes.flatMap(([name, box], i) => boxes.slice(i + 1).filter(([, other]) => !apart(box, other)).map(([other]) => `${name} × ${other}`));
-      expect(minimapOnly ? overlaps.filter(pair => pair.includes('.race-route-map')) : overlaps).toEqual([]);
+      expect(overlaps).toEqual([]);
       for (const [name, box] of boxes) expect(box.y + box.height, `${name} below the screen`).toBeLessThanOrEqual(height);
     });
   });

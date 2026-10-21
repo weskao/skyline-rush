@@ -235,6 +235,7 @@ body[data-phase="ready"] .build-version { display: block; }
   .intro-controls, .flight-tip { display: none; }
   .route-label { margin-bottom: 13px; }
   .telemetry { bottom: 42px; }
+  .speed-ticks, .fuel-caption, .fuel-stat .boost-status { display: none; } /* keeps the gauges below the progress bar on a 568px phone */
 }
 @media (prefers-reduced-motion: reduce) { button, a, .scene-shade, .fuel-track > i { transition: none; } }
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) {
@@ -353,7 +354,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .fuel-caption { font-size: 6px; letter-spacing: .3px; }
   .stat-label { font-size: 7px; letter-spacing: .8px; }
   .altitude-stat > strong { font-size: 33px; }
-  body:not([data-phase="ready"]) .mode-indicator { width: 115px; min-width: 0; padding: 7px 4px; background: rgb(7 23 42 / .65); gap: 6px; border-color: rgb(103 227 255 / .35); top: 94px; align-items: center; }
+  body:not([data-phase="ready"]) .mode-indicator { width: 115px; min-width: 0; padding: 7px 4px; background: rgb(7 23 42 / .65); gap: 6px; border-color: rgb(103 227 255 / .35); top: 108px; align-items: center; }
   .mode-heading { gap: 4px; }
   .mode-heading .mode-icon { display: none; }
   #flight-mode { font-size: 6px; letter-spacing: .8px; }
@@ -424,6 +425,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .icon-button { width: 30px; height: 30px; }
   .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: calc(44px * var(--touch-scale, 1)); flex-shrink: 0; }
   .touch-controls button svg { width: 19px; height: 19px; }
+  .race-info { inset: 102px 18px auto; } /* leaves the centred flight-mode label clear of POSITION */
   .leaderboard { width: 83px; }
   .racer { font-size: 8px; gap: 5px; }
   .racer > strong { letter-spacing: .4px; }
@@ -458,7 +460,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .countdown[data-step="1"] .start-lights > i { background: #ffae79; border-color: #ffd0a6; box-shadow: 0 0 18px #fb895b; }
 .countdown[data-step="GO"] { color: #b0f5ff; }
 .countdown[data-step="GO"] .start-lights > i { background: #90efff; border-color: #c8faff; box-shadow: 0 0 22px #69d5ff; }
-.aero-tools { position: fixed; top: 103px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
+.aero-tools { position: fixed; top: 98px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
 .aero-tools > button, .aero-tools > details > summary { min-height: 34px; padding: 6px 10px; border: 1px solid #6e9baa66; border-radius: 5px; background: #102432d9; color: #c6edfa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .aero-tools kbd { height: 20px; min-width: 20px; font-size: 9px; }
 #airflow-toggle[aria-pressed="true"] { background: #204858; border-color: #89d8ed; }
@@ -516,7 +518,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .speed-streaks { transition: opacity .35s ease-out; }
 .vfx-comfort .speed-streaks { display: none; }
 @media (max-width: 760px) {
-  .aero-tools { top: 74px; right: max(16px, env(safe-area-inset-right, 0px)); }
+  .aero-tools { top: 70px; right: max(16px, env(safe-area-inset-right, 0px)); } /* ends above the 102px race info */
   .aero-tools > button, .aero-tools > details > summary { min-height: 30px; padding: 4px 8px; font-size: 8px; }
   .vfx-settings { max-height: calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); width: min(310px, calc(100vw - 32px)); top: 36px; }
   .airflow-hud { top: 245px; left: 16px; width: 160px; padding: 10px; gap: 6px; }
@@ -527,6 +529,10 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   .aero-disclaimer { display: none; }
   .boost-status { font-size: 6px; letter-spacing: .5px; }
   .intro-controls { flex-wrap: wrap; gap: 12px 20px; }
+}
+/* Touch tablets lift the leaderboard to the top bar; the AIRFLOW bar sits beside it instead of on it. */
+@media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
+  body:not([data-phase="ready"]) .aero-tools { right: max(180px, calc(140px + env(safe-area-inset-right, 0px))); }
 }
 @media (max-height: 500px) {
   .aero-tools { top: 64px; right: max(16px, env(safe-area-inset-right, 0px)); }
