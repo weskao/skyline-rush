@@ -5,7 +5,28 @@
 <body>
 <canvas id="world" width="640" height="360" aria-label="World Tour 3D regression"></canvas>
 <script type="module">
+  import * as THREE from 'three';
   import { createWorld } from '../../src/world.js';
+  // Detailed WebGL diagnostic: Three.js often surfaces an unhelpful
+  // "reading visible" error if ANY visible scene mesh has no material.
+  const originalRender=THREE.WebGLRenderer.prototype.render;
+  THREE.WebGLRenderer.prototype.render=function(scene,camera){
+    if(scene?.isScene) {
+      const issues=[];
+      const check=(object,chain)=>{
+        if(!object){issues.push('undefined child of '+chain);return;}
+        const path=chain+'/'+(object.name||object.type||'unknown');
+        if((object.isMesh||object.isSprite||object.isLine||object.isPoints)&&
+          (!object.material || (Array.isArray(object.material)&&object.material.some(m=>!m)))){
+          issues.push(path+' has no valid material');
+        }
+        for(const child of object.children||[])check(child,path);
+      };
+      check(scene,'scene');
+      if(issues.length)throw Error('Invalid scene graph: '+issues.slice(0,10).join('; '));
+    }
+    return originalRender.call(this,scene,camera);
+  };
   import { createRace, RACE_TRACKS } from '../../src/game.js';
   const world = createWorld(document.getElementById('world'));
   world.configureVFX({ quality: 'low', enabled: true, bloom: 0 });
