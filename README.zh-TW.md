@@ -1,4 +1,4 @@
-<!-- source-sha256: b1d939ee7969faa9e77c5bcc610caec1f46c51b8e0530cad0121ea11b401205e generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 70889cdb324e47ec96798cda0c9cda9835b27606821c694d93d7b75d470c4d27 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -66,7 +66,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 所有音訊都以 Web Audio 合成，不需要下載任何音訊檔。背景音樂有兩首循環播放的 synthwave 曲目：起始與結果畫面播放的前奏主題（約 64 秒），以及從倒數開始播放、節奏更快的比賽主題（約 55 秒）。兩者都會在每次循環中逐步堆疊，暫停時則會壓低音量。音效涵蓋選單確認、三聲倒數滴答與 GO、馬達 / 風聲、升空與加速推進、煞車、車輛 / 護欄碰撞、落地、低電量警告、近距離超車獎勵，以及完賽旋律。靜音音效會停止待播放的提示音，暫停則會淡出駕駛音效。低電量警告只有在電量回充超過 30% 後才會重新啟用。
 
-喇叭圖示會開啟音訊設定，內有獨立的 Music 與 Sound effects 開關（上方起始畫面截圖中即為開啟狀態）。兩者預設皆為開啟，每項選擇都會以 cookie（`skyline-rush-music`、`skyline-rush-sound`）記住一年。在瀏覽器允許自動播放的情況下，頁面一載入就會開始播放前奏音樂。若不允許（多數瀏覽器在初次造訪時都不允許），起始畫面會詢問「Play background music?」。**Play music** 會開始播放，任何其他點擊或按鍵也一樣。**Not now** 會將 Music 關閉並記住這個選擇。
+喇叭圖示會開啟音訊設定，內有 Music 與 Sound effects 兩列，各自包含靜音開關與音量滑桿（上方起始畫面截圖中即為開啟狀態）。**Mute all**（或按 M）可一次將兩者靜音。靜音會保留各聲道的音量，取消靜音時即恢復原本音量；將滑桿拖到零也會以相同方式將該聲道靜音。兩者預設皆為開啟、音量 100%，每項開關與音量都會以 cookie（`skyline-rush-music`、`skyline-rush-sound`，以及記錄百分比的 `-volume` 版本）記住一年。在較矮的螢幕上，面板可以捲動。在瀏覽器允許自動播放的情況下，頁面一載入就會開始播放前奏音樂。若不允許（多數瀏覽器在初次造訪時都不允許），起始畫面會詢問「Play background music?」。**Play music** 會開始播放，任何其他點擊或按鍵也一樣。**Not now** 會將 Music 關閉並記住這個選擇。
 
 飛行面板會顯示爬升、巡航、下降與觸地階段、剩餘推力秒數，以及下一個該使用的操作。青色光環標示出空中通道，並且屬於遊戲機制：請見下方的 Rings。行動裝置另有按住加速推進的按鈕。橘色碰撞回報會顯示撞擊類型與損失的速度；護欄現在會彈開並使地面上的車輛減速，從上方飛越則可越過護欄。
 
@@ -183,6 +183,7 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、拉取請求、版本
 - `vite.config.js`：搭配 `@vitejs/plugin-vue` 的 Vite。
 - `src/perf.js`：用於 `?perf` 裝置檢查讀數的影格時間百分位數。
 - `src/audio.js`：合成音效與循環播放的前奏 / 比賽音樂定序器。
+- `src/audio-settings.js`：讀取已儲存的音樂／音效開關與音量 cookie，以及滑桿「靜音保留音量」的規則。
 - `tests/`：單元與瀏覽器行為測試。
 - `docs/design.md`、`docs/verification.md`：範圍與驗證佐證。
 - `README.zh-TW.md`：本檔案的繁體中文翻譯，由 `scripts/readme-zh.mjs` 保持最新（`check`、以 `claude -p` 翻譯的 `sync`，以及手動編輯後使用的 `stamp`）。`.githooks/pre-commit` 掛鉤會在提交變更 README.md 時重新產生它（可用 `SKIP_README_ZH=1` 略過一次）；`make` 會以 `git config core.hooksPath .githooks` 啟用掛鉤。`.claude/settings.json` 中的 Claude Code Stop 掛鉤會在某一輪編輯了 README.md 卻沒有更新它時，讓 Claude 回頭更新。
