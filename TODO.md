@@ -338,3 +338,471 @@ Physics:
 8. Three new tracks (content part of item 1)
 9. Pick from item 6
 10. **Gamepad support + mapping view** — **Lowest priority**; deferred beyond this iteration
+
+
+---
+
+## 9. Game modes and race-session configuration (new roadmap — 2026-10-22)
+
+**Status:** All checkboxes in sections 9–13 are **proposals**, not implemented features.
+The preceding sections (0–8) are the existing implementation history; do not reset their
+completion state or regress Classic Race. Priority labels: **P0** = first release, **P1** =
+second wave, **P2** = larger/long-term work. Keep the existing 10 tracks, official unlock
+rules, track showcase parity, NITRO/FLY/BOOST, rivals, daily challenges, Ghost, Garage,
+saved history, English/Traditional Chinese UI and production-only access restrictions.
+
+**Design boundary:** All 10 current tracks are **point-to-point sprint courses**, not closed
+circuits. A repeat of the same sprint or a multi-stage event is **not** a seamless lap. The
+actual closed-circuit/1–3–5 lap feature below needs genuine looped route geometry and
+checkpoint validation; merely multiplying `race.length` or resetting distance would be wrong.
+
+### 9A. Common mode/session model (P0; prerequisite)
+
+- [ ] **MODE-00 — Versioned `RaceConfig` / session contract.** Define a validated, serializable
+  configuration with stable fields such as `mode`, `trackId`, `seed`, `rivalCount`,
+  `aiDifficulty`, `trafficDensity`, `itemsEnabled`, `collisionRule`, `ghostEnabled`,
+  `durationSeconds` / `stageCount` (only when applicable), `visualPreset` and `rulesVersion`.
+  Declare mode-specific allowed options and defaults in a pure module; distinguish
+  **simulation rules** from **visual-only** settings.
+- [ ] Extend/refactor `createRace(trackId, options)` (or add a compatible wrapper) to build
+  sessions from `RaceConfig` **without breaking** existing `createRace('coast')` and
+  `createRace(trackId, dailyModifier)` callers. Keep the current Daily Challenge seed,
+  modifier rules and official Classic Race parameters identical.
+- [ ] Model explicit objectives and completion conditions per mode: `placement`,
+  `finish-time`, `score-target`, `checkpoint-timer`, `stage-points`, `survival` or
+  `no-auto-finish`. Do not keep reusing `race.length` completion for every mode.
+- [ ] Separate `Classic / Campaign` from `Custom / Practice / Challenge` in eligibility:
+  only qualifying Classic finishes unlock the next track or award career progression.
+  A local test-all-unlocked run must never grant unlocks, stars or achievements.
+- [ ] Produce deterministic simulation seeds for traffic, checkpoints, obstacles and items
+  with **separate named streams**, so adding decoration or an option cannot silently
+  reshuffle the original pickups or rings. Validate finite coordinates and bounded counts.
+- [ ] **Acceptance:** unit tests cover old call signatures, default-rule parity,
+  incompatible/unknown options, deterministic replay, mode-specific finishing and
+  access rules; all ten existing courses remain raceable.
+
+### 9B. Free Drive / Practice mode (P0)
+
+- [ ] **MODE-01 — Free Drive v1:** drive and fly on any **already unlocked** course with
+  no finishing position, mandatory countdown, AI race placement or automatic victory.
+  Add a visible return/restart control and an optional one-tap reset-to-start.
+- [ ] Allow selectable **no AI**, traffic density and item availability. Reuse existing
+  steering, cameras, drift, FLY, BOOST, NITRO and 3D scenery; do not build a new
+  physics engine.
+- [ ] At the authored end of an open sprint, offer **Restart / Choose Track / End
+  Session**, or stop safely in a designated free-drive area. Do **not** claim
+  endless roadway, reverse-map continuity or loop back to the start until implemented.
+- [ ] Optional practice HUD: current speed, air time, travel distance, max speed,
+  clean near-miss chain and trick counter; hide rival position and race countdown.
+- [ ] **Acceptance:** crossing the old finish cannot save an official best, stars,
+  campaign unlock or Daily record; exit/restart/pause work for keyboard and touch;
+  world buffers do not grow across repeated sessions.
+
+### 9C. Custom Race (P0)
+
+- [ ] **MODE-02 — Custom Race:** choose an unlocked track, 0–3 rivals, AI
+  **Easy / Normal / Hard**, traffic **Off / Light / Normal / Heavy**, power-ups
+  **On / Off**, collisions **Normal / Relaxed**, Ghost visibility and weather/time
+  **visual preset**. Preserve original defaults in Classic mode.
+- [ ] AI difficulty adjusts clearly named parameters (target speed, mistake rate
+  or rubber-band bounds) without breaking current rival personalities `NOVA`,
+  `ORBIT` and `APEX`. Support 0, 1, 2 and 3 rivals correctly.
+- [ ] Offer a longer session with **1 / 2 / 3 / 5 sprint stages** (same or selectable
+  unlocked courses), but label it **stages / heats**, not circuit laps; show aggregate
+  time or points explicitly and reset physical state between stages.
+- [ ] Support validated presets **Standard / Traffic Rush / No Items / Air Focus /
+  Precision** and a custom configuration, all with one-tap Reset to Default.
+- [ ] **Acceptance:** generated item/traffic counts, HUD placement labels, AI finish
+  detection and results all work with 0 rivals; Custom scores never overwrite
+  Classic or Daily records.
+
+### 9D. Time Attack / Ghost Trial (P0)
+
+- [ ] **MODE-03 — Time Attack:** solo fixed-course trial with clean start/finish,
+  immediate retry and best time per stable `trackId + mode + ruleset`. No rival
+  race position or opponent-driven rubber banding.
+- [ ] Reuse the existing 10 Hz best-run Ghost when the recorded trace and rules
+  are compatible; show `Ahead / Behind` split against the personal record.
+  Keep separate Ghost data for mode-specific bests if necessary.
+- [ ] Optional **Clean Time Trial** variant: collisions invalidate a clean medal or
+  apply an explicit time penalty; do not silently change legacy physics.
+- [ ] **Acceptance:** timed results/ghosts remain isolated from Classic bests;
+  blocked localStorage never prevents play; mobile HUD remains readable.
+
+### 9E. Stunt & Style Attack (P1)
+
+- [ ] **MODE-04 — Stunt Attack:** timed 2 / 3 / 5-minute score run for air tricks,
+  sustained drift, near-misses, rings, PERFECT LINE groups and flying shortcuts.
+  Reuse existing `player.score`, `trick`, `drift` and ring events.
+- [ ] Add explicit style-combo multiplier, clean landing bonus and fair combo
+  break/decay on crashes; prevent stationary or repeated reset farming.
+- [ ] Save best score, combo, air time and medal thresholds by exact track/ruleset.
+- [ ] **Acceptance:** deterministic scoring independent of FPS and input device;
+  end-of-timer results work without reaching the sprint finish.
+
+### 9F. Checkpoint Rush (P1)
+
+- [ ] **MODE-05 — Checkpoint Rush:** pass a deterministic sequence of grounded or
+  aerial gates before time expires; each clean gate extends the timer.
+- [ ] Choose checkpoints from the **real track route and reachable flight envelopes**;
+  prevent impossible gates inside tunnel roofs, road gaps or conflicting hazards.
+- [ ] Show next target distance/direction, time left, checkpoint chain and optional
+  perfect-gate rewards. Invalid/missed gates cannot secretly count.
+- [ ] **Acceptance:** gated time-extension and expiry have unit tests; minimap
+  uses the official main route and never reveals hidden shortcut geometry.
+
+### 9G. Multi-track Championship Cup (P1)
+
+- [ ] **MODE-06 — Championship:** select a curated 3–5-track cup consisting of
+  **unlocked** stages; award stage ranking points and a clear final champion.
+- [ ] Preserve stage standings across transitions with fair AI participation,
+  an explicit continue/retry flow, and optional saved in-progress cup recovery.
+- [ ] Distinguish cup medals/bests from individual Classic times; a cup does
+  not grant unearned unlocks for stages skipped or completed in practice mode.
+- [ ] **Acceptance:** ties, quit/resume, mid-cup restart, 0-rival rejection and
+  incomplete data produce deterministic, understandable results.
+
+### 9H. Obstacle Gauntlet (P1)
+
+- [ ] **MODE-07 — Obstacle Gauntlet:** fixed-seed hazard challenges with
+  escalating moving gates, road barricades, flying hoops, debris and safe/risky
+  alternate lines. Keep the ordinary track drivable in Classic mode by default.
+- [ ] Add difficulty tiers based on warning time, obstacle spacing and
+  activation frequency **without random unavoidable collisions**.
+- [ ] Score clean obstacle passes, near-misses and finish time; practice and
+  obstacle-mode records stay separate.
+- [ ] **Acceptance:** each generated hazard arrangement leaves a reasonable
+  passable ground/air path and has predictable collision tests.
+
+### 9I. Elimination / Last Racer Standing (P2)
+
+- [ ] **MODE-08 — Elimination:** after an announced interval/checkpoint, eliminate
+  the last active racer until one remains; show a readable knockout countdown.
+- [ ] Define whether the player loses immediately or gets one short comeback window;
+  do not eliminate AI simply because an actor is off-camera.
+- [ ] **Acceptance:** active AI count/rank changes cleanly; results work after
+  early elimination and never award Classic progression.
+
+### 9J. Endless Highway / Distance Survival (P2)
+
+- [ ] **MODE-09 — Endless Highway:** deterministic extension/streaming **beyond**
+  the fixed 4–8 km authored tracks; progressively increase challenge and record
+  longest distance/survival score.
+- [ ] Build extendable road geometry, scene chunks, encounter seeds, objective
+  markers, camera/traffic recycling and safe recovery. Respect absolute distance
+  to avoid repeated scenery, teleporting objects or floating-point problems.
+- [ ] Keep memory/GPU resources bounded after lengthy play; verify pause, resume,
+  context loss and browser tab backgrounding.
+- [ ] **Acceptance:** play can continue past the former end without hitting
+  clamped `trackPoint()`, missing geometry, a fake lap or an unintended finish.
+
+### 9K. Event Lab Lite / course creator (P2)
+
+- [ ] **MODE-10 — Event Lab Lite:** begin with **preset course modifiers** and
+  validated placement templates (cones, barricades, ramps, gates, pickups,
+  checkpoints), not a full free-form level editor.
+- [ ] Add a later visual designer for positioning supported objects on unlocked
+  courses, with snap-to-lane, collision previews, Undo/Redo and Reset.
+- [ ] Import/export **versioned, size-limited JSON** that validates track IDs,
+  geometry bounds, obstacle count, segment reachability and sanitizes labels;
+  no script execution, remote code, or dependency on online accounts.
+- [ ] Community sharing or multiplayer uploads require a separate backend,
+  moderation/storage and security design; **not** part of offline-first v1.
+- [ ] **Acceptance:** creation and replay produce the same stage with the same
+  seed on desktop and mobile; malformed/corrupt creations fail safely.
+
+## 10. Mode-selection UX, race settings, true laps and saved progress
+
+### 10A. Start-screen setup and player experience (P0)
+
+- [ ] **UX-01 — Mode-first flow:** `Choose Mode → Choose Unlocked Track →
+  Configure Rules → Start`. Retain the current animated 3D track previews,
+  vehicle scale, three-rival showcase, full-route maps and mobile usability.
+- [ ] Use a compact, readable configuration panel rather than filling every
+  track card with controls; allow mode descriptions, Restore Defaults and a
+  preview/summary of active rules before Start.
+- [ ] Disable or explain unsupported combinations (e.g. lap count on open
+  sprint, elimination with 0 AI, no-flight over mandatory bridge gaps,
+  checkpoint in unreachable aerial areas).
+- [ ] Add appropriate pre-race options for AI 0–3, AI difficulty, traffic
+  density, pickups, collision severity, Ghost, stage count, timed duration,
+  cosmetic scenery/weather, item rules, and per-mode eligibility.
+- [ ] Saved user presets must not alter unlocks, reward eligibility or
+  existing `skyline-rush-controls` / `skyline-rush-history` formats.
+- [ ] All labels, option descriptions, countdowns, HUD outcomes, tooltips,
+  error messages and results are localized in **English and zh-TW**, live
+  switchable without changing stable track/mode IDs.
+- [ ] Preserve keyboard, pointer and mobile touch navigation, visible focus,
+  readable contrast, safe-area layout and reduced-motion/Comfort settings.
+
+### 10B. Honest laps versus repeated sprints (P2)
+
+- [ ] **LAP-01 — Separate session types:** support multi-stage/repeated
+  **point-to-point** sprints first (P0/P1), and label them “Stage 1/3”,
+  not “Lap 1/3”. The original 10 tracks must keep their authored geography.
+- [ ] **LAP-02 — Genuine closed circuits:** author at least one actual loop
+  whose start/finish world position, tangent, road banking and width connect
+  continuously; do **not** fake it with instant distance wrap.
+- [ ] **LAP-03 — Configurable 1 / 3 / 5 laps** only on circuits with a valid
+  topology; lap timer, personal best lap, total race time, split sectors,
+  lap HUD, AI lap standings and finish sequence.
+- [ ] **LAP-04 — Anti-shortcut checkpoints:** ordered sector validation
+  prevents crossing the finish backwards, flying over the finish repeatedly,
+  teleports or respawns from granting false laps.
+- [ ] **Acceptance:** completion requires the configured number of valid
+  laps; player/AI cameras, positions, world props, mini-route map, Ghost,
+  checkpoints and collision physics remain continuous across every seam.
+
+### 10C. Result/history isolation and safeguards (P0)
+
+- [ ] Store a stable `modeId + trackId + rulesVersion + rulesSignature` on
+  each **new-mode** result, plus appropriate time, score, distance,
+  stage/lap data and item/hazard statistics. Keep legacy history readable.
+- [ ] Show per-mode bests, mode-filtered History and applicable Ghosts;
+  clearly distinguish personal practice milestones from official medals.
+- [ ] Use validated persistence with storage-failure fallbacks, reasonable
+  caps and migration tests; prevent a custom “no traffic” best from
+  replacing an official Classic best.
+- [ ] Keep Classic Career unlocks, 1–3 stars, Garage paint unlocking,
+  achievements and Daily Challenge board isolated from custom/free-drive
+  sessions unless a specific future rule explicitly grants eligibility.
+- [ ] Pausing, restarting, exiting, switching modes or closing a dialog
+  cannot double-write a result or award the same benefit twice.
+
+## 11. Interactive scenery, track hazards and procedural world props
+
+### 11A. Data model and runtime behavior (P1)
+
+- [ ] **ENV-01 — Typed object catalog:** separate
+  **visual-only scenery** (buildings, crowds, parked trains, signs, lamps,
+  spaceships) from **collidable / triggerable gameplay objects**.
+- [ ] **ENV-02 — Deterministic hazard schema:** define bounded properties
+  such as `id`, `trackId`, `distance`, `lateralOffset`, `altitude`,
+  `type`, `hitbox`, `triggerWindow`, `warningLeadSeconds`,
+  `movementPattern`, `difficulty` and `seed`.
+- [ ] **ENV-03 — Logic/render separation:** calculate hits, passes,
+  rewards and state changes in the pure simulation (`src/game.js` or
+  extracted rules module), not by reading Three.js mesh positions.
+  Render exactly the hazard state described by the simulation.
+- [ ] **ENV-04 — Hazard behaviors:** static cones/barricades, moving
+  side-to-side gates, periodic energy barriers, falling debris/rocks,
+  wind gusts, hazardous terrain, rotating rings, rail crossing events
+  and safe/risky branch markers.
+- [ ] **ENV-05 — Safety/readability:** visible anticipation cues, adequate
+  reaction distance at maximum NITRO speed, accessible color+shape
+  signals, a reachable escape route, and forgiving hitboxes on touch.
+  Hazards must not randomly spawn inside the player.
+- [ ] **ENV-06 — Reusable renderer:** pool or instance shared meshes and
+  emitters, load/unload by visible distance with bounded chunk lifetime,
+  no new material/geometry allocations every frame, and stable
+  Low/Medium/High quality fallbacks.
+- [ ] **ENV-07 — Play-mode switches:** allow hazards Off / Standard /
+  Extreme only where a mode supports that option; Classic uses the
+  existing base behavior until intentionally updated.
+- [ ] **Acceptance:** deterministic placement, cross-frame collision
+  sweeps, warning timing, out-of-range cleanup, no impossible gates
+  and no device-specific simulation differences.
+
+### 11B. Track-specific gameplay identities (P1)
+
+- [ ] **Coast:** scattered cargo, gust warnings and temporary shoulder
+  closures; combine clean high-speed overtakes with coastal visibility.
+- [ ] **Neon Downtown:** animated construction barriers, temporary lane
+  closures, traffic diversions and readable neon gate timing.
+- [ ] **Canyon Skyway:** warned falling rocks, cliff-side debris,
+  precision launch ramps and risk/reward routes over broken bridges.
+- [ ] **Aurora Pass:** snowbanks, localized low-grip ice bends,
+  timed blizzard visibility and safer alternative lines.
+- [ ] **Sky Spiral:** rotating light hoops, synchronized aerial gates,
+  changing platform barriers and airborne precision scoring.
+- [ ] **Taipei Heritage:** festival street furniture, temporary
+  boulevard closures and scenic props, while preserving landmark
+  visibility and the existing curated ready-screen showcase.
+- [ ] **Tokyo Afterdark:** traffic-control signals, timed gates,
+  neon construction equipment and dynamic but fair crossing events.
+- [ ] **Alpine Rail Pass:** avalanche warnings, snow drift obstacles,
+  passing trains as scenery, and rail-crossing interactions **only**
+  where real drivable-road geometry and clearance permit them.
+- [ ] **Coastal Horizon:** wave-spray warning zones, crosswinds,
+  lighthouse-side narrow bridge obstacles and safe shoulder routes.
+- [ ] **Cosmic Orbit:** floating asteroid fragments, moving energy
+  barriers, low-gravity sectors and aerial gate sequences.
+- [ ] **Acceptance:** every themed hazard has at least one collision/
+  reward test and an in-game desktop + mobile visual check; never let
+  hero landmarks or scenery block the route unexpectedly.
+
+### 11C. More visual world richness (P1)
+
+- [ ] Add **non-colliding** per-track detail sets: spectators, billboards,
+  parked service vehicles, rail platforms, moving background trains,
+  signs, drones/ships, coastline spray, atmospheric lights and skyline
+  animation. Reuse `world-tour-scenery.js` placement planning, batching
+  and chunk lifecycle when applicable.
+- [ ] **Weather/time-of-day presets:** daylight, dusk, night, rain/fog,
+  snowfall or aurora where stylistically appropriate; start with
+  visual-only overrides. Treat physical wet-grip/wind changes as
+  opt-in, independently tested rules rather than surprise difficulty.
+- [ ] Respect `track-showcase.md`: every new or changed course ready
+  screen must still show the player, three rivals, visible jets,
+  appropriate chase camera and recognizable track world.
+- [ ] Degrade particle density, transparent overlays and shadow/light
+  count on weak hardware without removing essential hazard silhouettes
+  or necessary traffic warnings.
+
+## 12. Items, pickups, active inventory and bonus challenges
+
+### 12A. Turn current ring effects into optional active items (P1)
+
+- [ ] **ITEM-01 — Single item slot:** pick up and hold one active item;
+  show icon, ready/held state, cooldown and an accessible Activate
+  action on keyboard and touch. Keep NITRO and FLY/BOOST as separate
+  systems; do not overload existing controls without remapping.
+- [ ] **ITEM-02 — Shield:** reuse existing “absorb one collision” effect
+  as a held/triggerable item, with a clear hit/expiration state.
+- [ ] **ITEM-03 — Magnet:** reuse current timed pickup attraction,
+  with an optional active duration and visible radius indicator.
+- [ ] **ITEM-04 — Ghost:** reuse short traffic phasing with explicit
+  cooldown; it must not let players pass invalid lap checkpoints.
+- [ ] **ITEM-05 — Freeze:** reuse temporary rival slowdown only in modes
+  with AI; provide a harmless conversion/fallback in solo events.
+- [ ] **Acceptance:** no unintended double-stacks or unbounded
+  durations, correct activation order and no change to existing
+  mystery-ring payouts in Classic mode.
+
+### 12B. Additional pickups and interactive pads (P1/P2)
+
+- [ ] **ITEM-06 — Precision speed strips / Energy Gates:** reward
+  accurately crossing a boost pad or flight gate; apply capped,
+  readable acceleration or thruster recharge.
+- [ ] **ITEM-07 — Air recharge pads:** restore a bounded share of
+  FLY energy mid-flight, making aerial precision lines worthwhile.
+- [ ] **ITEM-08 — Repair / recovery pad:** temporarily mitigate
+  one obstacle's speed loss or restore a limited resource without
+  erasing official collision counts.
+- [ ] **ITEM-09 — Score multiplier token:** temporary style-combo
+  bonus in Stunt/Checkpoint modes; cap multipliers and prevent
+  overlapping infinite reward loops.
+- [ ] **ITEM-10 — EMP Pulse (P2):** short-range rival disruption
+  exclusive to suitable competitive rule sets; clear fair warning
+  and no effect on player control accessibility.
+- [ ] **ITEM-11 — Mode item rules:** Off / Classic Mystery Rings /
+  Active Items / All Items. Resolve item positions from seeded
+  streams and never place important rewards inside impossible gaps.
+- [ ] **ITEM-12 — Visual/audio feedback:** unique item outlines,
+  landing sparks, pickup beams, cooldown audio and special hit FX
+  that reuse `src/effects.js`, `src/audio.js` and comfort settings.
+- [ ] **Acceptance:** item effects, caps, cooldowns, pickups, misses,
+  blocked storage, mode restrictions and touch button layout have
+  unit/browser coverage.
+
+### 12C. Extra replayability and optional presentation (P2)
+
+- [ ] **PHOTO-01 — Photo / Showcase mode:** in paused Free Drive,
+  orbit the camera, hide HUD, adjust compatible time/weather presets
+  and export a browser-generated screenshot where supported;
+  do not claim cloud storage or full replay video without a backend.
+- [ ] **REPLAY-01 — Expanded challenge medals:** clean checkpoint
+  chain, longest flight, zero-collision time trial, best aerial
+  combination and themed gauntlet completion; keep separate from
+  existing four Career medals.
+- [ ] **REPLAY-02 — Personalized challenge presets:** remember a
+  few recent custom-rule setups and allow duplicate/retry from the
+  results screen without modifying the base track.
+- [ ] **REPLAY-03 — Risk/reward course lines:** alternate ground and
+  aerial targets that give more score or item charge at higher
+  difficulty, with hazards and scoring that can be disabled for
+  straightforward practice.
+
+## 13. Implementation order, test plan and release gates
+
+### 13A. Recommended milestones
+
+1. **P0-A / Foundation:** `RaceConfig`, schema validation, explicit
+   objectives, rule signatures, legacy compatibility and progression
+   separation (9A, 10C).
+2. **P0-B / Player setup:** accessible mode-first selector,
+   pre-race options, presets and localization (10A).
+3. **P0-C / First playable modes:** Custom Race, Time Attack and
+   Free Drive v1; per-mode History and safe results (9B–9D).
+4. **P1-A / Built on existing systems:** Stunt Attack, Checkpoint Rush
+   and Championship; multi-stage **sprints**, not fake laps (9E–9G).
+5. **P1-B / Hazards and world detail:** typed obstacle contract,
+   first two obstacle families, art/performance tests, then all
+   10 distinct track-specific sets (9H, 11).
+6. **P1-C / Items:** one-slot active inventory, reuse Shield/Magnet/
+   Ghost/Freeze, then new pads/bonuses (12A–12B).
+7. **P2-A / Long-term modes:** Elimination, true closed-circuit laps,
+   streamed Endless Highway and Event Lab Lite (9I–9K, 10B).
+8. **P2-B / Polish:** photo mode, bonus medals and user presets (12C).
+
+### 13B. File ownership and coding rules
+
+- [ ] Keep core deterministic rules in `src/game.js` or focused pure
+  imported modules; test in `tests/game.test.js` and new
+  mode/hazard/item unit-test files as needed.
+- [ ] Keep rendering, moving obstacles, shaders and scenery in
+  `src/world.js`, `src/world-tour-scene.js` and appropriate modules
+  under `src/`; don't clone the renderer once per new mode.
+- [ ] Keep mode-selection UI in `src/App.vue` and screen flow in
+  `src/main.js`; maintain the project's existing static Vue shell /
+  imperative HUD integration unless separately refactored.
+- [ ] Keep per-mode records, migration, eligibility and safe storage
+  in `src/history.js` (or small companion modules); route topology
+  in `src/track-paths.js`; device inputs in `src/input.js`.
+- [ ] Do not weaken `.claude/rules/unlock-separation.md` or use
+  runtime/dev query toggles for shipped content: unlocked-track
+  testing remains local-only through existing Vite alias rules.
+- [ ] Keep `README.md` and `README.zh-TW.md` consistent if game
+  documentation changes. Maintain `CLAUDE.md` and scoped rules
+  only when real implementation conventions change.
+
+### 13C. Mandatory acceptance and performance (all new features)
+
+- [ ] **Correctness:** tests for 0/1/3 AI, seeded hazard determinism,
+  item disabled, Ghost compatibility, checkpoint/lap order, time
+  expiry, stage ties, restart/exit, storage failures and score
+  eligibility. Include no NaNs, invisible collision objects or
+  unreachable objective sequences.
+- [ ] **Classic regression:** original 10 tracks, Daily Challenge,
+  Garage stars/unlocks, medals, best Ghosts, NITRO/FLY/BOOST,
+  air tricks, camera, performance notice and save migration.
+- [ ] **Responsive:** Playwright desktop 1440×900 and touch phone
+  390×844, 320×740 and landscape 844×390; no HUD/touch control
+  overlap, focus traps or offscreen Start/Exit actions.
+- [ ] **Motion & accessibility:** comfortable/reduced-motion,
+  low/medium/high visuals, color-independent hazard telegraphs,
+  touch hit targets, keyboard remapping and screen-reader
+  labels on important buttons.
+- [ ] **Performance:** bounded spawned/active objects, chunk
+  evictions, fixed update/simulation behavior, and before/after
+  `?perf` p50/p95/fps comparison on desktop and **real** midrange
+  Android Chrome + iPhone Safari when available. Simulator results
+  are not substitutes for phone GPU testing.
+- [ ] **Verification:** `npm test` + `npm run build` for all logic
+  or progression changes; also `npm run test:browser` for any
+  UI, rendering, controls or unlock visibility changes. Ensure
+  production build excludes local-only unlock wiring.
+- [ ] **Delivery:** implement on a feature branch unless the user
+  explicitly requests direct `main` changes; review and mark
+  individual tasks `[x]` only after implementation and tests.
+
+### 13D. Inspiration and design references
+
+- **Mario Kart World:** Free Roam and custom VS-style rules — adapt
+  settings, not copyrighted tracks/characters.
+- **Forza Horizon 5 EventLab:** rule presets, track props and event
+  creation — begin with a small, validated object library.
+- **Trackmania:** time trials, ghosts, stunt/platform challenges,
+  checkpoint precision and eventually authored looped circuits.
+- **Hot Wheels Unleashed 2: Turbocharged:** modular hazards, jumps,
+  obstacle timing and arcade risk/reward.
+
+Reference entry points:
+[Mario Kart World](https://www.nintendo.com/us/gaming-systems/switch-2/featured-games/mario-kart-world/) ·
+[Forza](https://forza.net/) ·
+[Trackmania](https://www.trackmania.com/) ·
+[Hot Wheels Unleashed 2](https://hotwheelsunleashed.com/).
+
+**Scope reminder:** This is a backlog, not a claim that features exist or are
+approved for implementation. Preserve the earlier completed work and
+never conflate future modes with existing Control “steering mode” options.
