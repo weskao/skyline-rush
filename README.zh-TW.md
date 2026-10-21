@@ -1,4 +1,4 @@
-<!-- source-sha256: b05db7bd402de529019dfbf7577507f08f81964f4cc476cd0d038c5ef1e4f58a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 940c73dde3494595d9e97a5b8ad1a95b617fd3aece22eb54ea9111e639fd22c2 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -117,7 +117,7 @@ NITRO 不消耗電量，因此 Fly + NITRO 永遠可以同時使用（Fly + Boos
 
 ### 賽道與風格
 
-從 Coast 開始。名列前三即可解鎖 Neon Downtown，接著是 Canyon Skyway，然後是 Aurora Pass，最後是 Sky Spiral。開始前先選擇賽道；鍵盤使用者可用左／右鍵在賽道按鈕之間移動，並以 Enter 選擇。Restart 會保留所選賽道；結算畫面上的 **Choose track** 則會回到選單。每條賽道都有自己的天空、色調與程序生成的場景：雨中的霓虹街道與低矮隧道、紅色沙漠峭壁與斷橋／側風，或有極光與冰面的雪山。警告標誌會標示特殊路段。Aurora 的上坡路段以正常速率一半的效率回充地面燃料。
+從 Coast 開始。名列前三即可解鎖 Neon Downtown，接著是 Canyon Skyway，然後是 Aurora Pass，最後是 Sky Spiral。開始前先選擇賽道；鍵盤使用者可用左／右鍵在賽道按鈕之間移動，並以 Enter 選擇。Restart 會保留所選賽道；結算畫面上的 **Choose track** 則會回到選單。仍有賽道未解鎖時，前三名完賽會在結算畫面顯示閃動的 **Next** 按鈕，直接開始剛解鎖的賽道；若所有賽道在本場前就已開放，或在每日挑戰中，則不會出現。若瀏覽器中斷 WebGL 連線（iPhone 鎖定螢幕或切換 App 後很常見），圖形恢復時遊戲會自動清除警告；否則按 **Start** 或 **Race again** 會重新載入頁面。每條賽道都有自己的天空、色調與程序生成的場景：雨中的霓虹街道與低矮隧道、紅色沙漠峭壁與斷橋／側風，或有極光與冰面的雪山。警告標誌會標示特殊路段。Aurora 的上坡路段以正常速率一半的效率回充地面燃料。
 
 風格分數獎勵近距離超車（100 × 連鎖，漂移會使連鎖加倍）、光環（150，風險光環另加 500）、PERFECT LINE（500）、移動中的滯空時間（每秒 10），以及每 500 公尺的乾淨行駛（100）。碰撞與墜入斷口會重置乾淨距離的進度。結算時，完賽可得一顆星，每公里 250 分得兩顆星，每公里 500 分得三顆星，與完賽名次無關。
 

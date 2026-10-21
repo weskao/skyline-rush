@@ -143,7 +143,7 @@ body[data-phase="ready"] .build-version { display: block; }
 .result-stats span { font-size: 8px; letter-spacing: 1.6px; color: #bac6cf; }
 .result-stats strong { font: 700 32px 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
 .result-stats small { font-size: 15px; color: #b1c2cd; }
-.error-message { position: fixed; z-index: 10; bottom: 180px; left: 10%; right: 10%; padding: 20px; background: #263849; color: #fff0e0; border: 1px solid var(--accent); text-align: center; font-size: 14px; }
+.error-message { pointer-events: none; position: fixed; z-index: 10; bottom: 180px; left: 10%; right: 10%; padding: 20px; background: #263849; color: #fff0e0; border: 1px solid var(--accent); text-align: center; font-size: 14px; }
 .touch-controls { display: none; position: fixed; bottom: 35px; left: 16px; right: 16px; z-index: 4; justify-content: space-between; align-items: end; gap: 12px; }
 .touch-controls button { width: calc(54px * var(--touch-scale, 1)); height: calc(57px * var(--touch-scale, 1)); border-radius: 8px; background: rgb(25 44 60 / .7); border: 1px solid rgb(210 226 238 / .3); display: flex; align-items: center; justify-content: center; touch-action: none; }
 .touch-controls button:active { background: #4b7187; }
@@ -804,12 +804,16 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
 
 /* Start screen buttons: one unmistakable primary action, glassy secondary choices.
    No transition overrides here, so the shared press/comfort motion rules stay in charge. */
-.intro .primary-button { position: relative; overflow: hidden; height: 60px; min-width: 236px; padding: 0 10px 0 26px; gap: 28px; vertical-align: middle; border-radius: 4px; background: linear-gradient(100deg, #ffb394, var(--accent) 48%, #ff7552); color: #10202f; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 22px; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 12px 34px rgb(255 118 84 / .34), inset 0 1px 0 rgb(255 255 255 / .5), inset 0 -2px 0 rgb(120 30 10 / .2); }
-.intro .primary-button svg { box-sizing: border-box; width: 40px; height: 40px; padding: 10px; border-radius: 3px; background: #10202f; color: var(--accent); }
-.intro .primary-button::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgb(255 255 255 / .42) 50%, transparent 65%); translate: -100% 0; animation: start-sheen 3.6s var(--ease-out) 1.4s infinite; pointer-events: none; }
-.intro .primary-button:hover:not(:disabled) { background: linear-gradient(100deg, #ffc4aa, #ffa284 48%, #ff8462); box-shadow: 0 16px 42px rgb(255 118 84 / .48), inset 0 1px 0 rgb(255 255 255 / .6), inset 0 -2px 0 rgb(120 30 10 / .2); }
+.intro .primary-button, .race-overlay .next-button { position: relative; overflow: hidden; height: 60px; min-width: 236px; padding: 0 10px 0 26px; gap: 28px; vertical-align: middle; border-radius: 4px; background: linear-gradient(100deg, #ffb394, var(--accent) 48%, #ff7552); color: #10202f; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 22px; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 12px 34px rgb(255 118 84 / .34), inset 0 1px 0 rgb(255 255 255 / .5), inset 0 -2px 0 rgb(120 30 10 / .2); }
+.intro .primary-button svg, .race-overlay .next-button svg { box-sizing: border-box; width: 40px; height: 40px; padding: 10px; border-radius: 3px; background: #10202f; color: var(--accent); }
+.intro .primary-button::after, .race-overlay .next-button::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgb(255 255 255 / .42) 50%, transparent 65%); translate: -100% 0; animation: start-sheen 3.6s var(--ease-out) 1.4s infinite; pointer-events: none; }
+.intro .primary-button:hover:not(:disabled), .race-overlay .next-button:hover { background: linear-gradient(100deg, #ffc4aa, #ffa284 48%, #ff8462); box-shadow: 0 16px 42px rgb(255 118 84 / .48), inset 0 1px 0 rgb(255 255 255 / .6), inset 0 -2px 0 rgb(120 30 10 / .2); }
 .intro .primary-button:focus-visible, .intro :is(.history-button, .garage-button):focus-visible, .intro .track-select button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 @keyframes start-sheen { 0%, 55% { translate: -100% 0; } 100% { translate: 100% 0; } }
+/* Results NEXT: the start button's look plus a beacon ring; the ring pulses, the tap target never moves. */
+.race-overlay .next-button { display: flex; margin: 0 auto 12px; animation: next-beacon 1.4s var(--ease-out) infinite; }
+.race-overlay .next-button::after { animation-delay: .6s; }
+@keyframes next-beacon { from { box-shadow: 0 0 0 0 rgb(255 118 84 / .7), 0 12px 34px rgb(255 118 84 / .34); } to { box-shadow: 0 0 0 18px rgb(255 118 84 / 0), 0 12px 34px rgb(255 118 84 / .34); } }
 .intro :is(.history-button, .garage-button) { height: 48px; min-height: 0; margin: 0 0 0 12px; padding: 0 20px; vertical-align: middle; border: 1px solid rgb(225 235 242 / .3); border-radius: 4px; background: rgb(10 24 40 / .5); backdrop-filter: blur(8px); color: #e8edf1; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
 .intro :is(.history-button, .garage-button):hover { border-color: var(--accent); color: var(--accent); background: rgb(30 34 46 / .7); }
 .intro .start-hint { vertical-align: middle; letter-spacing: .04em; }
@@ -829,8 +833,8 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
   .intro .primary-button svg { width: 32px; height: 32px; padding: 7px; }
   .intro :is(.history-button, .garage-button) { height: 44px; }
 }
-@media (prefers-reduced-motion: reduce) { .intro .primary-button::after { animation: none; } }
-.vfx-comfort .intro .primary-button::after { animation: none; }
+@media (prefers-reduced-motion: reduce) { .intro .primary-button::after, .race-overlay .next-button, .race-overlay .next-button::after { animation: none; } }
+.vfx-comfort .intro .primary-button::after, .vfx-comfort .race-overlay .next-button, .vfx-comfort .race-overlay .next-button::after { animation: none; }
 
 /* The ready screen owns this space; live instruments return when the race starts. */
 body[data-phase="ready"] .telemetry { display: none; }

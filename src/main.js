@@ -56,6 +56,7 @@ const speedNeedle = $('#speed-needle');
 const positionChange = $('#position-change');
 let previousPosition = null, positionUntil = 0;
 let world;
+let contextLost = false; // iOS drops WebGL on lock/app switch and may never restore it
 let previousPhase;
 let previousFlight;
 let goUntil = 0;
@@ -340,6 +341,7 @@ function focusRace() {
 
 function start() {
   if (!world || race.phase !== 'ready' || document.querySelector('dialog[open]')) return;
+  if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   if (editingLayout) editLayout(false);
   controls.clear();
   leaveIntro();
@@ -348,8 +350,9 @@ function start() {
   focusRace();
 }
 
-function restart() {
+function restart(trackId = race.trackId) {
   if (!world) return;
+  if (contextLost) { location.reload(); return; }
   if (editingLayout) editLayout(false);
   controls.clear();
   const wipe = $('#race-wipe');
@@ -359,7 +362,7 @@ function restart() {
     const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
-  race = createRace(race.trackId, race.modifier);
+  race = createRace(trackId, race.modifier);
   previousFuel = 100; previousNitro = 0;
   goUntil = 0;
   startRace(race);
@@ -659,8 +662,9 @@ $('#music-yes').addEventListener('click', () => setAudio('music', true));
 $('#music-no').addEventListener('click', () => setAudio('music', false));
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
 ui['start-button'].addEventListener('click', start);
-ui['restart-button'].addEventListener('click', restart);
-ui['again-button'].addEventListener('click', restart);
+ui['restart-button'].addEventListener('click', () => restart());
+ui['again-button'].addEventListener('click', () => restart());
+$('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
@@ -710,6 +714,7 @@ function phaseUI() {
     ui['overlay-title'].textContent = 'Take a breather.';
     ui['overlay-copy'].textContent = 'Your race is paused. Resume when you’re ready.';
     ui['resume-button'].hidden = false;
+    $('#next-button').hidden = true;
     ui['result-stats'].hidden = true;
     $('#result-style').hidden = true;
     $('#result-links').hidden = true;
@@ -719,6 +724,7 @@ function phaseUI() {
     sessionMedals = { ...sessionMedals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
     const trackId = race.trackId ?? 'coast';
     let best, record;
+    $('#next-button').hidden = true;
     if (race.modifier) {
       const run = recordDaily(daily, race);
       sessionDaily = [...sessionDaily, run].slice(-50);
@@ -727,10 +733,15 @@ function phaseUI() {
     } else {
       const recordRun = recordRace(race);
       sessionHistory = [...sessionHistory, recordRun].slice(-50);
-      if (race.result.position <= 3) {
-        const tracks = Object.keys(RACE_TRACKS);
-        const next = tracks[tracks.indexOf(race.trackId) + 1];
-        if (next) unlockedTracks.add(next);
+      const tracks = Object.keys(RACE_TRACKS);
+      const next = tracks[tracks.indexOf(race.trackId) + 1];
+      // NEXT drives progression only: hidden once every track was already open before this run.
+      const campaignDone = tracks.every(id => unlockedTracks.has(id));
+      if (next && race.result.position <= 3) unlockedTracks.add(next);
+      if (next && !campaignDone && unlockedTracks.has(next)) {
+        $('#next-button').hidden = false;
+        $('#next-button').dataset.next = next;
+        $('#next-track').textContent = RACE_TRACKS[next].name;
       }
       const saved = recordBest(trackId, race.elapsed);
       // Session bests keep "personal best" honest when storage is blocked.
@@ -1029,6 +1040,11 @@ $('#world').addEventListener('webglcontextlost', event => {
   if (race.phase === 'racing' || race.phase === 'countdown') pause();
   $('#error-message').hidden = false;
   $('#error-message').textContent = 'The WebGL graphics connection was lost. Reload this page to start a new race.';
+  contextLost = true;
+});
+$('#world').addEventListener('webglcontextrestored', () => {
+  contextLost = false;
+  $('#error-message').hidden = true;
 });
 window.addEventListener('pagehide', event => {
   // A cached page resumes the same animation, renderer and controls on back navigation.
