@@ -814,7 +814,9 @@ export function createWorld(canvas) {
         desiredCamera.copy(player.position)
           .addScaledVector(right,portrait?7.8:info.cameraSide)
           .addScaledVector(forward,-(portrait?13.8:info.cameraBack))
-          .add(new THREE.Vector3(0,portrait?5.9:info.cameraHeight,0));
+          // Reference maps use absolute 5.1 m camera eye height, while the
+          // showcased car floats at 1.6 m. Preserve the SAME relative view.
+          .add(new THREE.Vector3(0,portrait?4.3:info.cameraHeight,0));
         lookTarget.copy(player.position)
           .addScaledVector(right,portrait?1:info.lookSide)
           .addScaledVector(forward,info.lookAhead)

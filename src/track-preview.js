@@ -1,11 +1,11 @@
 // Showcase art direction: the player and a rival hover with animated jets,
 // like the original Skyline Rush launch screen. Other rivals ground the shot.
 // Keep the 50° FOV / three-quarter chase camera at the ORIGINAL home-screen
-// distance and scale; use each 3D road's own tangent to avoid looking off-track.
+// distance and scale; cameraHeight is the offset ABOVE the hovering car. Use each 3D road's own tangent to avoid looking off-track.
 export const HERO_PREVIEWS = Object.freeze({
-  alpine: { distance: 1510, cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 5.1,
+  alpine: { distance: 1510, cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 1.4 },
-  cosmic: { distance: 3940, cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 5.1,
+  cosmic: { distance: 3940, cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 1.4 },
 });
 export const previewDistance = id => HERO_PREVIEWS[id]?.distance ?? 340;

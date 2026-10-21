@@ -9,7 +9,7 @@ for(const id of ['alpine','cosmic']) {
     assert.ok(d>500&&d<RACE_TRACKS[id].length);
     assert.equal(info.cameraSide,8.3);
     assert.equal(info.cameraBack,11.8);
-    assert.equal(info.cameraHeight,5.1);
+    assert.equal(info.cameraHeight,3.5);
     const player=previewPlayer(id,race.player,3,false,false);
     assert.ok(player.altitude>1.4&&player.altitude<1.8);
     assert.equal(player.thrusting,true);
