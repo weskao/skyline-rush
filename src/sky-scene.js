@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { roadRibbon } from './geometry.js';
 import { skyFrame, skyPoint, skyPosition, skyGapAt, SKY_SPIRAL } from './sky-track.js';
 
 // A dedicated, bounded 3D road renderer. The existing four flat tracks keep
@@ -13,13 +14,8 @@ export function createSkyScene(scene) {
   group.name = 'Sky Spiral 3D course';
   scene.add(group);
 
-  const geometry = new THREE.BufferGeometry();
-  const positions = new Float32Array((ROWS + 1) * 6);
-  const normals = new Float32Array((ROWS + 1) * 6);
-  const indices = new Uint16Array(ROWS * 6);
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
-  geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3).setUsage(THREE.DynamicDrawUsage));
-  geometry.setIndex(new THREE.BufferAttribute(indices, 1).setUsage(THREE.DynamicDrawUsage));
+  const geometry = roadRibbon(ROWS);
+  const [positions, normals, indices] = [geometry.attributes.position.array, geometry.attributes.normal.array, geometry.index.array];
   const road = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
     color: '#111827', metalness: 0.42, roughness: 0.35, side: THREE.DoubleSide,
   }));

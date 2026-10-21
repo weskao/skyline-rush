@@ -23,3 +23,15 @@ test('the glass canopy faces outward for every car style proportion', () => {
   assertOutward(canopy(0.92, -0.95, 0.86, 1.75, 1.02, 0.66, -0.15, 0.7, 1.4), new Vector3(0, 1.1, 0.4));
   assertOutward(canopy(0.92, -1, 0.95, 1.5, 0.97, 0.72, -0.4, 0.8, 1.6), new Vector3(0, 1.2, 0.2));
 });
+
+test('a road ribbon is born lit-safe: unit normals on every vertex and upward-facing quads', async () => {
+  const { roadRibbon } = await import('../src/geometry.js');
+  const rows = 4, geometry = roadRibbon(rows);
+  const { position, normal } = geometry.attributes;
+  assert.equal(position.count, (rows + 1) * 2);
+  assert.equal(normal.count, position.count);
+  for (let i = 0; i < normal.count; i++) assert.deepEqual([normal.getX(i), normal.getY(i), normal.getZ(i)], [0, 1, 0]);
+  for (let i = 0; i <= rows; i++) position.array.set([-1, 0, -i, 1, 0, -i], i * 6);
+  assert.equal(geometry.index.count, rows * 6);
+  assertOutward(geometry, new Vector3(0, -1, -rows / 2));
+});

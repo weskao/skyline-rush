@@ -29,7 +29,8 @@ test('ten full-route previews and bilingual names are available without exposing
   await page.locator('[data-locale="en"]').click();
   await expect(page.locator('[data-track="taipei"] strong')).toHaveText('Taipei Heritage');
 });
-for (const id of newIds) test(`new course ${id} renders a lit scene and exposes racer HUD markers`, async ({page}) => {
+// Every course, not just the tour: the flat road in world.js needs WebGL, so only a real frame can check it.
+for (const id of ids) test(`course ${id} renders a lit scene and exposes racer HUD markers`, async ({page}) => {
   await seed(page);
   const errors=[];
   page.on('pageerror', e => errors.push(e.message));

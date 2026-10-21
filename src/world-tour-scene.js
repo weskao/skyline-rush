@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RACE_TRACKS } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.js';
+import { roadRibbon } from './geometry.js';
 
 export const WORLD_THEMES = {
   taipei: { top:'#1b3158', horizon:'#e0a58d', fog:'#776d84', rock:'#657e83', road:'#303640', ground:'#536374', rail:'#ffcf88', sun:'#ffe0a5', warmth:.8, buildings:'#c08d75', accent:'#ecb76b', landmarks:[
@@ -62,12 +63,8 @@ function landmark(kind,mat,accent){
 }
 export function createWorldTourScene(scene){
  const group=new THREE.Group();scene.add(group);group.visible=false;
- const pos=new Float32Array((NS+1)*6), normals=new Float32Array((NS+1)*6), idx=new Uint16Array(NS*6);
- const geometry=new THREE.BufferGeometry();
- geometry.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));
- // Lit materials need normals; without them the shader yields NaN and bloom blackens the whole frame.
- geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3).setUsage(THREE.DynamicDrawUsage));
- geometry.setIndex(new THREE.BufferAttribute(idx,1).setUsage(THREE.DynamicDrawUsage));
+ const geometry=roadRibbon(NS);
+ const [pos,normals,idx]=[geometry.attributes.position.array,geometry.attributes.normal.array,geometry.index.array];
  const roadMaterial=new THREE.MeshStandardMaterial({color:'#293447',metalness:.22,roughness:.56,side:THREE.DoubleSide});
  const road=new THREE.Mesh(geometry,roadMaterial);road.frustumCulled=false;group.add(road);
  const railMaterial=new THREE.MeshBasicMaterial({color:'#8ceaf6'});

@@ -1,4 +1,4 @@
-import { BufferGeometry, Float32BufferAttribute } from 'three';
+import { BufferAttribute, BufferGeometry, DynamicDrawUsage, Float32BufferAttribute } from 'three';
 
 export function carShell(sections) {
   const vertices = [];
@@ -28,5 +28,19 @@ export function canopy(baseWidth, frontZ, frontY, rearZ, rearY, topWidth, topFro
   ], 3));
   geometry.setIndex([0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2, 7, 3, 3, 7, 4, 3, 4, 0, 4, 7, 6, 4, 6, 5]);
   geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Every road strip starts here: lit materials need a normal per vertex, or the shader yields NaN and bloom blackens
+// the frame. Two vertices (left, right) per row; callers rewrite position/normal/index arrays and flag needsUpdate.
+export function roadRibbon(rows) {
+  const geometry = new BufferGeometry();
+  const normals = new Float32Array((rows + 1) * 6);
+  for (let i = 1; i < normals.length; i += 3) normals[i] = 1;
+  const indices = new Uint16Array(rows * 6);
+  for (let i = 0; i < rows; i++) indices.set([i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2], i * 6);
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array((rows + 1) * 6), 3).setUsage(DynamicDrawUsage));
+  geometry.setAttribute('normal', new BufferAttribute(normals, 3).setUsage(DynamicDrawUsage));
+  geometry.setIndex(new BufferAttribute(indices, 1).setUsage(DynamicDrawUsage));
   return geometry;
 }

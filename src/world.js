@@ -5,7 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { canopy, carShell } from './geometry.js';
+import { canopy, carShell, roadRibbon } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.js';
@@ -348,20 +348,9 @@ export function createWorld(canvas) {
   }
 
   const segments = 120;
-  const roadGeometry = new THREE.BufferGeometry();
-  const roadVertices = new Float32Array((segments + 1) * 6);
-  const indices = [];
-  for (let i = 0; i < segments; i++) {
-    const a = i * 2;
-    indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-  }
-  roadGeometry.setAttribute('position', new THREE.BufferAttribute(roadVertices, 3).setUsage(THREE.DynamicDrawUsage));
-  roadGeometry.setIndex(indices);
+  const roadGeometry = roadRibbon(segments);
+  const roadVertices = roadGeometry.attributes.position.array;
   const baseIndices = roadGeometry.index.array.slice();
-  roadGeometry.index.setUsage(THREE.DynamicDrawUsage);
-  const normals = new Float32Array((segments + 1) * 6);
-  for (let i = 1; i < normals.length; i += 3) normals[i] = 1;
-  roadGeometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
   const roadMaterial = material('#142534', 0.3, 0.5);
   roadMaterial.envMapIntensity = 0.25;
   const road = new THREE.Mesh(roadGeometry, roadMaterial);
