@@ -83,6 +83,8 @@ export function createSound() {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0;
   let enabled = false, musicOn = false, previousRace, previousPhase, previousCount;
+  // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
+  let effectsLevel = 1, musicLevel = 1;
   let lastImpact = null, lastLanding = null, lastNearMiss = null, lastTrick = null;
   let wasThrusting = false, wasBoosting = false, lowCharge = false;
   const voices = new Set();
@@ -240,18 +242,20 @@ export function createSound() {
     context?.close().catch(() => {});
     context = null;
   }
-  function setEnabled(next) {
+  function setEnabled(next, volume = 1) {
+    effectsLevel = volume ** 2;
     try {
       if (next) open();
       if (context) {
         enabled = next;
         if (!enabled) silenceCues();
-        master.gain.setTargetAtTime(enabled ? 0.8 : 0, context.currentTime, 0.025);
+        master.gain.setTargetAtTime(enabled ? 0.8 * effectsLevel : 0, context.currentTime, 0.025);
       }
     } catch { fail(); }
     return enabled;
   }
-  function setMusic(next) {
+  function setMusic(next, volume = 1) {
+    musicLevel = volume ** 2;
     try {
       if (next) open();
       musicOn = next && !!context;
@@ -305,7 +309,7 @@ export function createSound() {
         windGain.gain.setTargetAtTime(active ? (car.speed / 102) ** 2 * 0.07 : 0, now, 0.1);
         const skid = car.drift ? 0.035 + Math.min(3, Math.floor(car.drift.time)) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
-        music.gain.setTargetAtTime(!musicOn ? 0 : race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65, now, 0.1);
+        music.gain.setTargetAtTime(!musicOn ? 0 : musicLevel * (race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65), now, 0.1);
         const name = !musicOn ? null : race.phase === 'ready' || race.phase === 'finished' ? 'intro' : COURSE_SONGS[race.trackId] || 'race';
         if (name !== song) { song = name; step = 0; }
         // Schedule ~0.2 s ahead from the frame loop; after a stalled frame, resume from now instead of bursting.

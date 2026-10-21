@@ -166,3 +166,20 @@ test('each roll starts one noise whoosh; mute and pause consume it without repla
   race.player.trick = { dir: -1, time: 0, done: false }; sound.update(race);
   assert.equal(bursts(), before + 2);
 });
+
+test('volume sliders scale the effects and music buses on a perceptual curve', t => {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace();
+  race.phase = 'racing';
+  sound.setEnabled(true, 0.5);
+  sound.setMusic(true, 0.5);
+  sound.update(race);
+  const [effects, music] = nodes.filter(node => node.kind === 'gain' && node.destination?.kind === 'compressor');
+  assert.equal(effects.gain.value, 0.8 * 0.25);
+  assert.equal(music.gain.value, 0.5 * 0.25);
+  sound.setEnabled(true);
+  sound.setMusic(true);
+  sound.update(race);
+  assert.equal(effects.gain.value, 0.8, 'full volume keeps the original mix');
+  assert.equal(music.gain.value, 0.5);
+});
