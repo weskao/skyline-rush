@@ -62,6 +62,9 @@ export const SCRAPE_RATIO = 0.1; // lateral/forward speed below this is a shallo
 export const TUNNEL_CEILING = 4; // m; the car's roof (altitude + CAR_HEIGHT) may not pass it
 export const CAR_HEIGHT = 1.2;
 export const GAP_CLEARANCE = 1; // altitude needed to fly over a missing bridge section
+export const GAP_WARN_DISTANCE = 300; // m ahead of a broken bridge where too little charge to cross is flagged
+export const GAP_LIFT_RESERVE = 6; // charge to climb from the road to GAP_CLEARANCE (about 0.3 s of thrust)
+export const FLY_DRAIN = 19; // charge per second while thrusting
 export const GAP_SLOWDOWN = 0.4; // speed kept after falling into a gap
 export const GAP_RESPAWN = 5; // m past the gap where the car is put back
 export const CROSSWIND_SPEED = 4; // m/s sideways push
@@ -204,7 +207,9 @@ export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededR
 function addNitro(car, amount, fuelBonus = NITRO_FUEL_BONUS) {
   const overflow = Math.max(0, car.nitro + amount - NITRO_MAX);
   car.nitro = Math.min(NITRO_MAX, car.nitro + amount);
-  car.fuel = Math.min(100, car.fuel + (amount - overflow) * fuelBonus + overflow * NITRO_FUEL_PER_CHARGE);
+  const fuel = Math.min(100, car.fuel + (amount - overflow) * fuelBonus + overflow * NITRO_FUEL_PER_CHARGE);
+  car.rewardFuel += fuel - car.fuel; // running total the callouts diff to announce the charge gained
+  car.fuel = fuel;
 }
 
 // Daily challenge: one track + modifier per local calendar day, from its own date-named stream.
@@ -231,7 +236,7 @@ export function createRace(trackId = 'coast', modifier = null) {
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: createPickups(track), rings,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
-      fuel: 100, thrusting: false, exhausted: false, collisions: 0, cooldown: 0,
+      fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       section: null, inShortcut: false, falls: 0, fall: null,
@@ -432,12 +437,12 @@ export function stepRace(race, input, dt) {
   const flyInput = !!input.fly && race.modifier !== 'no-flight';
   car.flyBuffer = flyInput && car.speed < 18 ? TAKEOFF_BUFFER : flyInput ? 0 : Math.max(0, car.flyBuffer - dt);
   const fly = flyInput || car.flyBuffer > 0;
-  if (!flyInput && car.altitude === 0 && car.fuel >= 15) car.exhausted = false;
+  if (!flyInput && car.fuel >= 15) car.exhausted = false; // glide regen and rewards can unlock it mid-air
   car.thrusting = fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
   if (car.thrusting) {
     car.verticalSpeed = Math.min(7, car.verticalSpeed + 19 * dt);
-    car.fuel = Math.max(0, car.fuel - (car.inShortcut ? 0 : 19) * dt); // the corridor carries the car
-    if (car.fuel === 0) car.exhausted = true;
+    car.fuel = Math.max(0, car.fuel - (car.inShortcut ? 0 : FLY_DRAIN) * dt); // the corridor carries the car
+    if (car.fuel === 0) { car.exhausted = true; car.fuelOuts++; } // thrusting needs !exhausted, so this counts each run-out once
   } else if (car.altitude > 0) {
     car.verticalSpeed -= (fly ? 11 : 7) * dt; // releasing FLY glides
     if (!fly && !boost) car.fuel = Math.min(100, car.fuel + GLIDE_FUEL_REGEN * dt);
@@ -593,10 +598,20 @@ export function stepRace(race, input, dt) {
     const score = Math.round(car.score);
     race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses,
       nitroUses: car.nitroUses, nitroChain: car.nitroChain, longestCombo: car.longestCombo,
-      rings: car.rings, perfectLines: car.perfectLines, score,
+      rings: car.rings, perfectLines: car.perfectLines, fuelOuts: car.fuelOuts, gapFalls: car.falls, score,
       stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1 };
     race.phase = 'finished';
     car.thrusting = false;
     car.boosting = false;
   }
+}
+
+// The next broken bridge within warning range when the charge left cannot thrust across it at the current speed.
+export function gapChargeWarning(race) {
+  if (race.trackId === 'spiral') return null; // its launch ramps throw the car across
+  const car = race.player;
+  const gap = race.sections.find(s => s.type === 'gap' && s.to > car.distance && s.from - car.distance <= GAP_WARN_DISTANCE);
+  if (!gap) return null;
+  const need = FLY_DRAIN * (gap.to - Math.max(car.distance, gap.from)) / Math.max(car.speed, 18) + (car.altitude >= GAP_CLEARANCE ? 0 : GAP_LIFT_RESERVE);
+  return car.fuel < need ? { from: gap.from, need } : null;
 }

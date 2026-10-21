@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, GAP_WARN_DISTANCE, gapChargeWarning, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -1517,4 +1517,69 @@ test('a corridor cell is collected by the usual pass-through window from just un
   stepRace(race, {}, 1 / 60);
   assert.equal(cell.taken, true);
   assert.equal(race.player.nitro, 0.25);
+});
+
+// --- Flight charge recovery and data -----------------------------------------------------------
+
+test('an exhausted thruster unlocks in the air once FLY is released and charge is back to 15', () => {
+  const race = airborne(10);
+  Object.assign(race.player, { fuel: 15, exhausted: true });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.exhausted, false);
+  assert.ok(race.player.altitude > 0);
+  stepRace(race, { fly: true }, 1 / 60);
+  assert.equal(race.player.thrusting, true);
+  const low = airborne(10);
+  Object.assign(low.player, { fuel: 10, exhausted: true });
+  stepRace(low, {}, 1 / 60);
+  assert.equal(low.player.exhausted, true);
+});
+
+test('gap charge warning: within range of a broken bridge with too little charge to cross', () => {
+  const gap = RACE_TRACKS.canyon.sections.find(s => s.type === 'gap');
+  const race = racingOn('canyon');
+  Object.assign(race.player, { distance: gap.from - 200, speed: 60, fuel: 5 });
+  const warning = gapChargeWarning(race);
+  assert.equal(warning.from, gap.from);
+  assert.ok(warning.need > 5 && warning.need < 100);
+  race.player.fuel = 100;
+  assert.equal(gapChargeWarning(race), null, 'enough charge');
+  Object.assign(race.player, { distance: gap.from - GAP_WARN_DISTANCE - 1, fuel: 5 });
+  assert.equal(gapChargeWarning(race), null, 'too far away');
+  Object.assign(race.player, { distance: gap.to + 1 });
+  assert.notEqual(gapChargeWarning(race)?.from, gap.from, 'a passed gap no longer warns');
+  const coast = racing();
+  coast.player.fuel = 0;
+  assert.equal(gapChargeWarning(coast), null, 'no gaps on coast');
+  const spiral = racingOn('spiral'), jumpGap = RACE_TRACKS.spiral.sections.find(s => s.type === 'gap');
+  Object.assign(spiral.player, { distance: jumpGap.from - 100, speed: 60, fuel: 0 });
+  assert.equal(gapChargeWarning(spiral), null, 'Sky Spiral launch ramps carry the car across');
+});
+
+test('races count charge run-outs and gap falls for tuning', () => {
+  const race = racing();
+  advance(race, 3, { throttle: true });
+  advance(race, 9, { throttle: true, fly: true });
+  assert.equal(race.player.fuelOuts, 1);
+  const gap = RACE_TRACKS.canyon.sections.find(s => s.type === 'gap');
+  const fall = racingOn('canyon');
+  Object.assign(fall, { rivals: [] });
+  Object.assign(fall.player, { distance: gap.from - 1, speed: 60 });
+  advance(fall, 0.2, { throttle: true });
+  assert.equal(fall.player.falls, 1);
+  Object.assign(fall.player, { distance: fall.length - 1, fuelOuts: 2 });
+  advance(fall, 0.2, { throttle: true });
+  assert.equal(fall.result.fuelOuts, 2);
+  assert.equal(fall.result.gapFalls, 1);
+});
+
+test('rewardFuel counts the flight charge NITRO rewards actually add, capped at 100', () => {
+  const race = racing();
+  Object.assign(race, { pickups: [], rings: [] });
+  Object.assign(race.player, { speed: 60, fuel: 90 });
+  race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude: 0, tier: 'tank' }];
+  stepRace(race, { boost: true }, 1 / 60);
+  assert.equal(race.player.fuel, 100);
+  assert.ok(Math.abs(race.player.rewardFuel - (10 + 10 / 60)) < 1e-9);
+  assert.equal(createRace().player.rewardFuel, 0);
 });

@@ -19,7 +19,7 @@ export function createCallouts() {
       const car = race.player;
       const next = {
         near: car.nearMisses, perfect: car.perfectLines, nitro: car.nitro,
-        nitroTime: car.nitroTime, uses: car.nitroUses,
+        nitroTime: car.nitroTime, uses: car.nitroUses, rewardFuel: car.rewardFuel,
         drift: Math.min(3, Math.floor(car.drift?.time ?? 0)),
         trick: car.trick, trickPayout: car.trickPayout, shortcut: car.inShortcut,
       };
@@ -30,6 +30,7 @@ export function createCallouts() {
         previousRace = race;
         return null;
       }
+      const fuel = Math.round(next.rewardFuel - previous.rewardFuel); // flight charge the rewards added this frame
       if (next.perfect > previous.perfect) enqueue('perfect', 'callout.perfect', 'callout.perfect.detail');
       if (next.near > previous.near) enqueue('near', ['callout.near', { n: car.nearMiss.combo }],
         car.nearMiss.charge < 0.5 ? 'callout.near.full' : ['callout.near.pct', { n: Math.round(car.nearMiss.charge) }]);
@@ -42,10 +43,10 @@ export function createCallouts() {
       const trickPaid = next.trickPayout && next.trickPayout !== previous.trickPayout;
       if (trickPaid) {
         if (next.trickPayout.hard) enqueue('trick-payout', 'callout.hard', 'callout.hard.detail');
-        else if (next.trickPayout.nitro > 0) enqueue('trick-payout', ['callout.trick', { n: next.trickPayout.nitro }], 'callout.trick.detail');
+        else if (next.trickPayout.nitro > 0) enqueue('trick-payout', ['callout.trick', { n: next.trickPayout.nitro }], fuel > 0 ? ['callout.trick.fuel', { n: fuel }] : 'callout.trick.detail');
       }
       if (next.nitro > previous.nitro && next.perfect === previous.perfect && !trickPaid) {
-        enqueue('refill', ['callout.refill', { n: Number((next.nitro - previous.nitro).toFixed(2)) }], 'callout.refill.detail');
+        enqueue('refill', ['callout.refill', { n: Number((next.nitro - previous.nitro).toFixed(2)) }], fuel > 0 ? ['callout.refill.fuel', { n: fuel }] : 'callout.refill.detail');
       }
       previous = next;
       if (blocked) {

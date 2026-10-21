@@ -36,6 +36,7 @@ export function recordRace(race, storage, now = new Date()) {
     position: result.position || 0, time: result.time || 0, collisions: result.collisions || 0, nearMisses: result.nearMisses || 0,
     rings: result.rings || 0, perfectLines: result.perfectLines || 0, nitroUses: result.nitroUses || 0,
     longestCombo: result.longestCombo || 0, score: result.score || 0,
+    fuelOuts: result.fuelOuts || 0, gapFalls: result.gapFalls || 0, // flight-charge tuning data
     distance: race.length || 0, // a finished race always covered its full length
   };
   const history = [...loadHistory(storage), record];
