@@ -39,6 +39,11 @@ const memStore = (init = {}) => {
 
 test('detectLocale maps any zh* tag to zh-TW and everything else to en', () => {
   for (const tag of ['zh-TW', 'zh-HK', 'zh-Hant', 'zh-CN', 'zh-Hans', 'zh']) assert.equal(detectLocale([tag]), 'zh-TW', tag);
+  // Case-insensitive, underscore separators (Android/POSIX style) and script subtags.
+  for (const tag of ['ZH-tw', 'zh_TW', 'zh-Hant-TW']) assert.equal(detectLocale([tag]), 'zh-TW', tag);
+  for (const tag of ['EN-gb', 'en_US']) assert.equal(detectLocale([tag]), 'en', tag);
+  assert.equal(detectLocale(['ja-JP', 'zh-TW']), 'zh-TW', 'unsupported tags are skipped, not decisive');
+  assert.equal(detectLocale(['ja-JP']), 'en');
   assert.equal(detectLocale(['fr-FR']), 'en');
   assert.equal(detectLocale(['fr-FR', 'zh-TW']), 'zh-TW');
   assert.equal(detectLocale(['en-US', 'zh-TW']), 'en', 'system preference order is respected');
@@ -57,6 +62,22 @@ test('resolveInitialLocale: saved beats system, blocked storage is safe, auto va
   const blocked = { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); } };
   assert.equal(resolveInitialLocale(blocked, ['zh-TW']), 'zh-TW');
   assert.equal(resolveInitialLocale(blocked, []), 'en');
+});
+
+test('resolveInitialLocale falls back to navigator.language when navigator.languages is empty or missing', () => {
+  const saved = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  const withNavigator = (nav, expected, label) => {
+    Object.defineProperty(globalThis, 'navigator', { value: nav, configurable: true, writable: true });
+    assert.equal(resolveInitialLocale(memStore()), expected, label);
+  };
+  try {
+    withNavigator({ languages: [], language: 'zh-TW' }, 'zh-TW', 'empty languages uses language');
+    withNavigator({ language: 'zh-TW' }, 'zh-TW', 'missing languages uses language');
+    withNavigator({ languages: ['en-US'], language: 'zh-TW' }, 'en', 'a non-empty list wins over language');
+    withNavigator({ languages: [], language: '' }, 'en', 'neither -> en');
+    withNavigator({}, 'en', 'bare navigator -> en');
+    withNavigator(undefined, 'en', 'no navigator -> en');
+  } finally { Object.defineProperty(globalThis, 'navigator', saved); }
 });
 
 test('t() interpolates, falls back to English and returns the key when missing', () => {

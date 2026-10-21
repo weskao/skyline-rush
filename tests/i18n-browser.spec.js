@@ -254,12 +254,18 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       if (await page.locator('#airflow-toggle').isVisible()) {
         await page.locator('#airflow-toggle').click();
         await check(cx, 'race-hud-airflow', { hud: true });
+        await page.locator('#airflow-toggle').click(); // off again: the flight HUD is checked on its own (airflow + flight HUD collide on phones in en too, tracked separately), and a persisted airflow-on would hide the intro after the reload below
       }
-      await page.evaluate(() => { Object.assign(window.gameplay.race.player, { speed: 90 }); });
+      await page.evaluate(() => { document.activeElement?.blur(); Object.assign(window.gameplay.race.player, { speed: 90 }); }); // the clicked toggle keeps focus and would swallow Space
       await page.keyboard.down('Space');
       await page.waitForTimeout(700);
+      // The flight HUD must really be showing: a focused toggle would swallow Space and leave the road HUD on screen.
+      expect.soft(await page.evaluate(() => document.body.classList.contains('airborne')), `${cx.id} airborne during flight`).toBe(true);
+      expect.soft(await page.locator('#flight-mode').textContent(), `${cx.id} flight mode label`).toBe(CATALOGS[cx.locale]['hud.flightMode']);
       await check(cx, 'race-hud-flight', { hud: true });
       await page.keyboard.up('Space');
+      await expect(page.locator('body')).not.toHaveClass(/airborne/); // the callouts below belong on the road, not mid-descent
+      await expect(page.locator('.flight-director')).toHaveCSS('opacity', '0'); // and not over the flight HUD's 0.3s fade-out
       await page.evaluate(() => { window.gameplay.race.player.perfectLines++; });
       await expect(page.locator('#event-callout')).toBeVisible();
       await calloutText(cx, 'callout-perfect');
@@ -374,6 +380,25 @@ test.describe('language detection and persistence', () => {
         await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
       });
     });
+  });
+});
+
+// A status message set at runtime (not via data-i18n) must be re-rendered by a live language switch.
+for (const [locale, system] of LOCALES) test.describe(`rebind prompt ${locale}`, () => {
+  test.use({ locale: system });
+  test('the key-rebind prompt re-renders in the new language and back', async ({ page }) => {
+    const press = code => CATALOGS[code]['keymap.press'].replace('{action}', CATALOGS[code]['keymap.fly']);
+    const other = locale === 'en' ? 'zh-TW' : 'en';
+    const status = page.locator('#keymap-status');
+    await page.goto('/');
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+    await page.locator('#controls-button').click();
+    await page.locator('[data-rebind="fly"]').click();
+    await expect(status).toHaveText(press(locale));
+    await page.locator(`.route-locales [data-locale="${other}"]`).click();
+    await expect(status).toHaveText(press(other));
+    await page.locator(`.route-locales [data-locale="${locale}"]`).click();
+    await expect(status).toHaveText(press(locale));
   });
 });
 

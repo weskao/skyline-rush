@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { CATALOGS } from '../src/i18n.js';
 
 for (const [width, height, hasTouch] of [
   [320, 568, true], [390, 844, true], [568, 320, true], [844, 390, true],
@@ -67,10 +68,13 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
   });
 }
 
-for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
+// zh-TW runs the tight viewports only: its CJK font stack widens HUD text (the place-change arrow once did), the roomy ones add no signal.
+const ZH_TW_HUD_SIZES = ['844x390', '874x339', '390x844', '320x568'];
+for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
   [1440, 900, false], [1024, 768, true], [390, 844, true], [360, 780, true], [320, 568, true]]) {
-  test.describe(`race HUD ${width}x${height}`, () => {
-    test.use({ viewport: { width, height }, hasTouch, isMobile: hasTouch });
+  if (locale === 'zh-TW' && !ZH_TW_HUD_SIZES.includes(`${width}x${height}`)) continue;
+  test.describe(`race HUD ${width}x${height}${locale === 'zh-TW' ? ' zh-TW' : ''}`, () => {
+    test.use({ viewport: { width, height }, hasTouch, isMobile: hasTouch, locale });
 
     test('racing HUD blocks stay apart', async ({ page, context }) => {
       // iPhone landscape keeps a home-indicator inset below the page; it lifts every bottom-anchored block.
@@ -79,7 +83,8 @@ for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
       await page.waitForTimeout(700);
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       await page.locator('#start-button').click();
-      await expect(page.locator('#race-status')).toHaveText('RACING');
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+      await expect(page.locator('#race-status')).toHaveText(CATALOGS[locale === 'zh-TW' ? 'zh-TW' : 'en']['phase.racing']);
       await expect(page.locator('#countdown')).toBeHidden();
       // The live map only steps aside on short screens with no free HUD slot.
       await expect(page.locator('.race-route-map')).toBeVisible();
