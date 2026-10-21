@@ -1,3 +1,8 @@
+## [0.12.4] - 2026-10-21
+
+### 🧪 Testing
+
+- **ui:** Crop bottom edge from a full viewport capture
 ## [0.12.3] - 2026-10-20
 
 ### 🐛 Bug Fixes
