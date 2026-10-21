@@ -1,3 +1,45 @@
+## [0.13.0] - 2026-10-21
+
+### 🚀 Features
+
+- **track:** Add shared canonical route sampling for existing five tracks
+- **ui:** Introduce shared course overview, live minimap and bilingual names
+- **ui:** Add next-track button on results
+- **track:** Register Taipei, Tokyo, alpine, coast and cosmic circuits
+- **world:** Add shared 3D world-tour roads and landmark scenes
+- **ui:** Confirm before leaving a race via logo
+- **ui:** Draw dropdowns and toggles without os ui
+
+### 🐛 Bug Fixes
+
+- **hud:** Position course minimap away from progress and touch controls
+- **world-tour:** Give the tour road normals so the scene renders
+- **ui:** Fit route maps and language toggle into every layout
+- **ui:** Keep the AIRFLOW bar, flight-mode label and gauges clear of the race HUD
+
+### 🚜 Refactor
+
+- **world:** Build every road ribbon through one lit-safe helper
+
+### 📚 Documentation
+
+- **design:** Specify World Tour tracks, live minimap, and track-name i18n
+- **plan:** Detail TDD rollout for ten-track World Tour, minimap and i18n
+- Describe World Tour tracks, route maps and track-name toggle
+
+### 🧪 Testing
+
+- **red:** Describe shared public main-route geometry
+- **map:** Correct coordinate format assertion
+- **browser:** Cover five new 3D courses, route maps and locale selection
+- **visual:** Capture actual desktop and mobile WebGL course screenshots
+- **browser:** Write artifact screenshots only on demand
+- **browser:** Check lit World Tour frames and keep captures out of artifacts/
+- **browser:** Weave for the first close pass instead of betting on one nudge
+
+### ⚙️ Miscellaneous Tasks
+
+- **visual:** Upload actual browser-captured world-tour screenshots
 ## [0.12.4] - 2026-10-21
 
 ### 🧪 Testing
