@@ -161,8 +161,15 @@ for (const [width, height] of [[402, 874], [1440, 900]]) {
     await page.setViewportSize({ width, height });
     await page.goto('./');
     await page.locator('#intro').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+    const diag = async () => page.evaluate(h => {
+      const at = x => document.elementsFromPoint(x, h - 2).map(e => `${e.tagName}.${e.className}`).join('>');
+      const rect = sel => { const r = document.querySelector(sel)?.getBoundingClientRect(); return r && `${r.top.toFixed(1)}-${r.bottom.toFixed(1)}`; };
+      return { dpr: devicePixelRatio, left: at(10), mid: at(innerWidth / 2), right: at(innerWidth - 10), version: rect('.build-version'), bottomline: rect('.bottomline'), canvas: rect('canvas'), font: getComputedStyle(document.body).fontFamily, inner: [innerWidth, innerHeight] };
+    }, height);
     const edge = async () => {
-      const png = (await page.screenshot({ clip: { x: 0, y: height - 4, width, height: 4 } })).toString('base64');
+      const buffer = await page.screenshot({ clip: { x: 0, y: height - 4, width, height: 4 } });
+      await test.info().attach('edge', { body: buffer, contentType: 'image/png' });
+      const png = buffer.toString('base64');
       return page.evaluate(async src => {
         const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${src}`)).blob());
         const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
@@ -170,12 +177,13 @@ for (const [width, height] of [[402, 874], [1440, 900]]) {
         const { data } = context.getImageData(0, 0, bitmap.width, bitmap.height);
         const sum = [0, 0, 0];
         for (let i = 0; i < data.length; i += 4) for (let c = 0; c < 3; c++) sum[c] += data[i + c];
-        return sum.map(value => value / (data.length / 4));
+        return Object.assign(sum.map(value => value / (data.length / 4)), { size: [bitmap.width, bitmap.height], pixels: Array.from(data).join(',') });
       }, png);
     };
     const root = (await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).match(/\d+/g).map(Number);
     const mismatch = rgb => Math.max(...rgb.map((value, c) => Math.abs(value - root[c])));
-    expect(mismatch(await edge()), 'start screen').toBeLessThanOrEqual(10);
+    const first = await edge();
+    expect(mismatch(first), `start screen ${JSON.stringify({ size: first.size, pixels: first.pixels, ...await diag() })}`).toBeLessThanOrEqual(10);
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     expect(mismatch(await edge()), 'racing').toBeLessThanOrEqual(10);
