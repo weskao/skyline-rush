@@ -316,11 +316,25 @@ garageScreen.addEventListener('close', () => {
   controls.clear(); $('#garage-button').focus({ preventScroll: true });
 });
 for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
-$('#choose-track').addEventListener('click', () => {
+function chooseTrack() {
   controls.clear(); race = createRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
+  previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
+}
+$('#choose-track').addEventListener('click', chooseTrack);
+
+// Brand click mid-race pauses and asks first; on the intro/results screens the link just goes home.
+const leaveScreen = $('#leave-screen');
+leaveScreen.addEventListener('keydown', event => event.stopPropagation());
+document.querySelector('.brand').addEventListener('click', event => {
+  if (!['racing', 'countdown', 'paused'].includes(race.phase) || document.querySelector('dialog[open]')) return;
+  event.preventDefault();
+  if (race.phase !== 'paused') pause();
+  controls.clear(); leaveScreen.showModal();
 });
+$('#leave-keep').addEventListener('click', () => { leaveScreen.close(); if (race.phase === 'paused') pause(); });
+$('#leave-end').addEventListener('click', () => { leaveScreen.close(); chooseTrack(); });
 
 function showAudio() {
   for (const button of audioSwitches) {

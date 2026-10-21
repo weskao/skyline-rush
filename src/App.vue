@@ -165,6 +165,16 @@ const CONTROL_CHOICES = {
     <p class="collection-note">Additional finishes are previews. Cosmetic unlocks are not available yet.</p>
   </dialog>
 
+  <dialog id="leave-screen" class="history-screen leave-screen" aria-labelledby="leave-title" aria-describedby="leave-copy">
+    <h2 id="leave-title">Leave this race?</h2>
+    <p id="leave-copy">Your race is paused. If you leave now, this run won’t be saved.</p>
+    <div class="leave-actions">
+      <button class="primary-button" id="leave-keep" autofocus><span>Keep racing</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+      <button class="controls-reset" id="leave-end">End race · choose track</button>
+      <a class="text-button" id="leave-home" href="./">Back to home</a>
+    </div>
+  </dialog>
+
   <footer class="telemetry">
     <div class="speedometer"><div class="speed-number"><strong id="speed">0</strong><span>KM/H</span></div><div class="speed-ticks" aria-hidden="true"><svg class="speed-dial" viewBox="0 0 200 22"><path d="M4 20 Q100 -16 196 20"/><path id="speed-needle" d="M100 20V2"/></svg><i v-for="i in 24"></i></div><span class="speed-caption" id="speed-caption">READY FOR TAKEOFF</span></div>
     <div class="mode-indicator"><div class="mode-heading"><div class="mode-icon" id="mode-icon"><svg v-bind="ICON_ATTRS" v-html="icons.road"></svg></div><span id="flight-mode">ROAD MODE</span><span id="flight-budget">5.3s</span></div><strong id="flight-state">BUILD SPEED</strong><span class="mode-key" id="flight-instruction">REACH 65 KM/H · HOLD SPACE TO LIFT</span></div>

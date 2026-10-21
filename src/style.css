@@ -890,3 +890,10 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* Sky Spiral — fifth track's high-altitude neon identity. */
 .preview-spiral { --preview-top: #050b25; --preview-horizon: #55348c; --preview-ground: #15214f; }
 .preview-spiral::after { box-shadow: 0 0 15px #00e5ff, 0 0 27px #a855f7; }
+
+.leave-screen { width: min(420px, calc(100% - 32px)); text-align: center; }
+.leave-screen h2 { font: 700 42px/1 'Barlow Condensed', sans-serif; margin: 0 0 12px; }
+.leave-screen p { margin: 0 0 24px; color: #cad2d8; font-size: 13px; line-height: 1.7; }
+.leave-actions { display: grid; gap: 10px; }
+.leave-actions .primary-button { width: 100%; }
+.leave-actions .controls-reset, .leave-actions .text-button { min-height: 44px; margin: 0; }
