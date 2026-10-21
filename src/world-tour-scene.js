@@ -106,7 +106,12 @@ export function createWorldTourScene(scene){
   const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map();
   let sceneryTrack=null,sceneryDetail=null;
   function releaseChunk(node){
-    node.traverse(object=>{if(object.userData?.ownGeometry)object.geometry.dispose();});
+    node.traverse(object=>{
+      if(object.userData?.ownGeometry)object.geometry.dispose();
+      // InstancedMesh owns its GPU instance attributes, not source materials
+      // or authored shared geometry. Release those buffers on chunk eviction.
+      if(object.isInstancedMesh && object.userData?.batchCount)object.dispose();
+    });
     node.removeFromParent();
   }
   function clearChunks(){for(const node of chunks.values())releaseChunk(node);chunks.clear();}

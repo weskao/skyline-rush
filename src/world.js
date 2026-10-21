@@ -237,7 +237,8 @@ function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
 
 export function createWorld(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  let renderPixelRatio=Math.min(devicePixelRatio,1.5);
+  renderer.setPixelRatio(renderPixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.12;
@@ -541,7 +542,21 @@ export function createWorld(canvas) {
       player.userData.body.material.color.set(paint.paint);
       player.userData.lightColor.fromArray(paint.light);
     },
-    configureVFX(options) { visual = vfxSettings(options); },
+    configureVFX(options) {
+      const updated=vfxSettings(options);
+      visual=updated;
+      // Preserve full scene and texture geometry. Lower the GPU pixel budget
+      // only on devices whose initial quality or manual user choice calls for
+      // it; high quality stays at the original 1.5x DPR cap.
+      const maxRatio=visual.quality==='low'?1:visual.quality==='medium'?1.25:1.5;
+      const nextRatio=Math.min(devicePixelRatio,maxRatio);
+      if(Math.abs(nextRatio-renderPixelRatio)>.001){
+        renderPixelRatio=nextRatio;
+        renderer.setPixelRatio(nextRatio);
+        composer.setPixelRatio(nextRatio);
+        resize();
+      }
+    },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
       const preview = race.phase === 'ready';
