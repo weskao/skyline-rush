@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { RACE_TRACKS } from '../src/game.js';
 import { createWorldTourScene,WORLD_THEMES } from '../src/world-tour-scene.js';
-import { createSceneryKit } from '../src/world-tour-scenery.js';
+import { createSceneryKit,SCENERY_KINDS } from '../src/world-tour-scenery.js';
 
 const ids=['taipei','tokyo','alpine','coastal','cosmic'];
 test('five worlds show no central emissive asphalt or shared placeholder scenery',()=>{
@@ -19,7 +19,7 @@ test('five worlds show no central emissive asphalt or shared placeholder scenery
     const scenery=root.getObjectByName('Distance-anchored continuous scenery');
     const chunks=scenery.children.filter(child=>child.name.startsWith('world-tour-'+id+'-chunk-'));
     assert.ok(chunks.length>=10&&chunks.length<=16,id+' streams a bounded set of chunks');
-    assert.ok(chunks.some(chunk=>chunk.children.some(child=>child.name?.includes('terrain')||child.children.some(c=>c.name==='arcade'||c.name==='night-shop'||c.name==='satellite')))||id==='coastal'||id==='alpine');
+    assert.ok(chunks.some(chunk=>chunk.children.some(child=>SCENERY_KINDS[id].includes(child.name))),id+' should have authored roadside assets');
   }
   renderer.dispose();
 });
@@ -32,7 +32,7 @@ test('persistent roadside props do not teleport or recreate on 12-m road rebuild
     const layer=root.getObjectByName('Distance-anchored continuous scenery');
     const chunk=layer.getObjectByName('world-tour-'+id+'-chunk-11');
     assert.ok(chunk,id+' has a persistent chunk');
-    const first=chunk.children.find(c=>c.children.some(x=>x.name));
+    const first=chunk.children.find(c=>SCENERY_KINDS[id].includes(c.name)&&c.children.length>=3);
     assert.ok(first,id+' has authored props');
     root.updateMatrixWorld(true);
     const before=new THREE.Vector3();first.getWorldPosition(before);
