@@ -248,6 +248,7 @@ test('countdown lights, automatic accelerator and brake work without holding the
   await page.keyboard.up('s');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(80);
   await page.keyboard.press('p');
+  await expect(page.locator('#race-status')).toHaveText('PAUSED'); // the key handler runs on the next frame; read distance only once paused
   const distance = await page.locator('#distance').textContent();
   await page.waitForTimeout(250);
   await expect(page.locator('#distance')).toHaveText(distance);

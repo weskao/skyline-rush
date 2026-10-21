@@ -2,6 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace } from '../src/game.js';
 import { createCallouts } from '../src/callouts.js';
+import { setLocale } from '../src/i18n.js';
+import { VFX_RANGES, vfxLabelKey } from '../src/vfx-settings.js';
+import { GAME } from '../src/locales/game.js';
 
 function running() {
   const race = createRace();
@@ -157,4 +160,36 @@ test('entering a shortcut corridor announces SHORTCUT once per entry, never on t
   race.elapsed += 1.3;
   stepRace(race, { fly: true }, 1 / 60);
   assert.equal(callouts.update(race), null, 'staying inside does not repeat it');
+});
+
+test('callouts resolve in the active locale, with parameterized tiers, combo and charge', () => {
+  setLocale('zh-TW');
+  try {
+    const race = running(), callouts = createCallouts();
+    callouts.update(race);
+    Object.assign(race.player, { nearMisses: 2, nearMiss: { combo: 2, charge: 41.6 } });
+    const near = callouts.update(race);
+    assert.deepEqual([near.title, near.detail], ['驚險閃避 ×2', '擦身而過 · 集氣 +42%']);
+    race.elapsed = 1.3;
+    race.player.drift = { time: 2.4 };
+    const drift = callouts.update(race);
+    assert.deepEqual([drift.title, drift.detail], ['漂移 · 橘色', '火花等級達成']);
+    race.elapsed = 2.6;
+    race.player.nitroUses = 1;
+    assert.equal(callouts.update(race).title, 'NITRO'); // brand term stays English
+  } finally { setLocale('en'); }
+  const english = createCallouts(), race = running();
+  english.update(race);
+  Object.assign(race.player, { nearMisses: 1, nearMiss: { combo: 1, charge: 0 } });
+  const shown = english.update(race);
+  assert.deepEqual([shown.title, shown.detail], ['NEAR MISS ×1', 'CLOSE PASS · CHARGE FULL']);
+});
+
+test('every VFX label and sign has a catalog entry in both locales, and en matches the source label', () => {
+  for (const [key, [label]] of Object.entries(VFX_RANGES)) {
+    assert.equal(GAME.en[vfxLabelKey(key)], label);
+    assert.ok(GAME['zh-TW'][vfxLabelKey(key)]);
+  }
+  for (const type of ['tunnel', 'gap', 'crosswind', 'ice', 'uphill', 'shortcut', 'launch', 'spiral', 'finish'])
+    assert.ok(GAME['zh-TW'][`sign.${type}`] && GAME.en[`sign.${type}`]);
 });

@@ -24,10 +24,14 @@ test('ten full-route previews and bilingual names are available without exposing
   await expect(page.locator('.track-route-map polyline')).toHaveCount(ids.length);
   for (const id of ids) await expect(page.locator(`.preview-${id}`), `${id} preview has its own sky`).not.toHaveCSS('background-image', 'none');
   await page.locator('[data-locale="zh-TW"]').click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
   await expect(page.locator('[data-track="taipei"] strong')).toHaveText('台北古都');
   await expect(page.locator('[data-track="cosmic"] strong')).toHaveText('星際軌道');
+  await expect(page.locator('#track-length')).toHaveText('5 KM 衝刺賽');
   await page.locator('[data-locale="en"]').click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('[data-track="taipei"] strong')).toHaveText('Taipei Heritage');
+  await expect(page.locator('#track-length')).toHaveText('5 KM SPRINT');
 });
 // Every course, not just the tour: the flat road in world.js needs WebGL, so only a real frame can check it.
 for (const id of ids) test(`course ${id} renders a lit scene and exposes racer HUD markers`, async ({page}) => {
