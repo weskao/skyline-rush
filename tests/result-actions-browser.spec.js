@@ -1,5 +1,9 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { RACE_TRACKS } from '../src/game.js';
+
+const tracks = Object.keys(RACE_TRACKS);
+const [last, beforeLast] = [tracks.at(-1), tracks.at(-2)];
 
 // Teleports the running race over the line; rivalsFirst finishes all three rivals ahead (P4).
 async function finishRace(page, { rivalsFirst = false } = {}) {
@@ -61,6 +65,12 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#race-overlay')).toBeHidden();
   });
 
+  test('NEXT names the unlocked track in the chosen language', async ({ gameplayPage: page }) => {
+    await page.locator('[data-locale="zh-TW"]').click();
+    await finishRace(page);
+    await expect(page.locator('#next-button')).toContainText('霓虹都會');
+  });
+
   test('NEXT stays hidden when the next track is still locked', async ({ gameplayPage: page }) => {
     await finishRace(page, { rivalsFirst: true });
     await expect(page.locator('#result-stats')).toContainText('4');
@@ -68,18 +78,18 @@ for (const [name, viewport, hasTouch] of [
   });
 
   test('NEXT stays hidden once every track was already unlocked', async ({ gameplayPage: page }) => {
-    await unlock(page, ['coast', 'neon', 'canyon', 'aurora', 'spiral']);
+    await unlock(page, tracks);
     await finishRace(page);
     await expect(page.locator('#next-button')).toBeHidden();
   });
 
   test('NEXT appears for the final unlock and hides on the last track', async ({ gameplayPage: page }) => {
-    await unlock(page, ['coast', 'neon', 'canyon', 'aurora']);
-    await page.locator('[data-track="aurora"]').click();
+    await unlock(page, tracks.slice(0, -1));
+    await page.locator(`[data-track="${beforeLast}"]`).click();
     await finishRace(page);
-    await expect(page.locator('#next-button')).toContainText('Sky Spiral');
+    await expect(page.locator('#next-button')).toContainText(RACE_TRACKS[last].name);
     await page.locator('#next-button').click();
-    await expect(page.locator('.route-heading')).toHaveText('SKY SPIRAL');
+    await expect(page.locator('.route-heading')).toHaveText(RACE_TRACKS[last].name.toUpperCase());
     await page.evaluate(() => {
       const race = window.gameplay.race;
       race.phase = 'racing'; race.elapsed = 80;

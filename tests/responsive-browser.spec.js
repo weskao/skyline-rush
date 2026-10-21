@@ -64,6 +64,14 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
       expect(start.y + start.height).toBeLessThanOrEqual(Math.min(panel.y + panel.height, height));
       expect(await intro.evaluate(el => el.scrollTop)).toBe(0);
     });
+  });
+}
+
+// minimapOnly: these layouts already let .aero-tools touch the leaderboard/mode indicator on main; only the live map is checked there.
+for (const [width, height, hasTouch, minimapOnly] of [[844, 390, true], [874, 339, true],
+  [1440, 900, false, true], [1024, 768, true, true], [390, 844, true, true], [360, 780, true, true], [320, 568, true, true]]) {
+  test.describe(`race HUD ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch, isMobile: hasTouch });
 
     test('racing HUD blocks stay apart', async ({ page, context }) => {
       // iPhone landscape keeps a home-indicator inset below the page; it lifts every bottom-anchored block.
@@ -74,7 +82,9 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
       await page.locator('#start-button').click();
       await expect(page.locator('#race-status')).toHaveText('RACING');
       await expect(page.locator('#countdown')).toBeHidden();
-      const blocks = ['.position-stat', '.leaderboard', '.race-progress', '.mode-indicator', '.speedometer',
+      // The live map only steps aside on short screens with no free HUD slot.
+      await expect(page.locator('.race-route-map')).toBeVisible({ visible: height > 700 || (height > 500 && width > 400) });
+      const blocks = ['.position-stat', '.leaderboard', '.race-route-map', '.race-progress', '.mode-indicator', '.speedometer',
         '.flight-telemetry', '.aero-tools', '#controls-button', '#pause-button',
         // .touch-pad is left out: it is the invisible slide zone the pointer-transparent HUD sits on.
         ...['fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
@@ -95,7 +105,7 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
       }, blocks);
       const apart = (a, b) => a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
       const overlaps = boxes.flatMap(([name, box], i) => boxes.slice(i + 1).filter(([, other]) => !apart(box, other)).map(([other]) => `${name} × ${other}`));
-      expect(overlaps).toEqual([]);
+      expect(minimapOnly ? overlaps.filter(pair => pair.includes('.race-route-map')) : overlaps).toEqual([]);
       for (const [name, box] of boxes) expect(box.y + box.height, `${name} below the screen`).toBeLessThanOrEqual(height);
     });
   });

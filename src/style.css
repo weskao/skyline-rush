@@ -910,6 +910,12 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* Sky Spiral — fifth track's high-altitude neon identity. */
 .preview-spiral { --preview-top: #050b25; --preview-horizon: #55348c; --preview-ground: #15214f; }
 .preview-spiral::after { box-shadow: 0 0 15px #00e5ff, 0 0 27px #a855f7; }
+/* World Tour previews reuse each course's WORLD_THEMES sky and ground. */
+.preview-taipei { --preview-top: #1b3158; --preview-horizon: #e0a58d; --preview-ground: #536374; }
+.preview-tokyo { --preview-top: #10092d; --preview-horizon: #5b2484; --preview-ground: #16204a; }
+.preview-alpine { --preview-top: #254968; --preview-horizon: #aec6c1; --preview-ground: #547e78; }
+.preview-coastal { --preview-top: #193c68; --preview-horizon: #ffc49a; --preview-ground: #1d687d; }
+.preview-cosmic { --preview-top: #030a24; --preview-horizon: #492788; --preview-ground: #11183e; }
 
 /* Main-route SVG reuses the same road sampling as the driving world; shortcuts stay hidden. */
 .track-route-map { display:block; height: 65px; margin: 6px 0 9px; border-radius: 4px; background: rgb(4 14 29 / .48); }
@@ -920,17 +926,24 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-locales {display:flex; gap:8px; margin-top:12px;}
 .route-locales button { padding:5px 11px; color:#d4e1eb; background:#102338; border:1px solid #456176; border-radius:4px; font-size:12px; cursor:pointer; }
 .route-locales button[aria-pressed="true"] {color:#fff; border-color:#67d9ee; background:#23475a;}
-.race-route-map { position:fixed; top:235px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
+.race-route-map { position:fixed; top:292px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
 .route-driver-you { fill:#fff; stroke:#09e5ff; stroke-width:2.1; }
 .route-driver-nova { fill:#fc58a1; }
 .route-driver-orbit { fill:#f5c15b; }
 .route-driver-apex { fill:#82df9c; }
-@media (max-width:760px){ .race-route-map {top:206px;right:20px;width:77px;height:94px;} .track-route-map {height:48px;} }
+/* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
+@media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
-
-@media (max-height: 500px) { .race-route-map { top:82px;right:14px;width:72px;height:80px;} }
+/* Short screens have no free HUD slot (telemetry and touch buttons fill the sides); the leaderboard still ranks racers. */
+@media (max-height: 500px), (max-width: 400px) and (max-height: 700px) { .race-route-map { display:none; } }
+/* Short landscape has ~9px of intro slack: draw the route over the sky strip and pin the language toggle top-right. */
+@media (max-height: 500px) and (min-width: 761px) {
+  .track-route-map { position:absolute; top:8px; left:8px; right:8px; height:26px; margin:0; background:none; }
+  .route-locales { position:absolute; top:6px; right:6px; margin:0; }
+  .route-locales button { padding:3px 8px; font-size:11px; }
+}
 .leave-screen { width: min(420px, calc(100% - 32px)); text-align: center; }
 .leave-screen h2 { font: 700 42px/1 'Barlow Condensed', sans-serif; margin: 0 0 12px; }
 .leave-screen p { margin: 0 0 24px; color: #cad2d8; font-size: 13px; line-height: 1.7; }

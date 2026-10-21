@@ -791,7 +791,7 @@ function phaseUI() {
       if (next && !campaignDone && unlockedTracks.has(next)) {
         $('#next-button').hidden = false;
         $('#next-button').dataset.next = next;
-        $('#next-track').textContent = RACE_TRACKS[next].name;
+        $('#next-track').textContent = trackName(next, locale);
       }
       const saved = recordBest(trackId, race.elapsed);
       // Session bests keep "personal best" honest when storage is blocked.
@@ -827,7 +827,7 @@ function phaseUI() {
 }
 
 function updateUI(now, input) {
-  ensureRouteMaps();
+  if (raceRouteMap?.trackId !== race.trackId) ensureRouteMaps();
   raceRouteMap.updateDrivers([{ id: 'YOU', distance: race.player.distance, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance }))]);
   if (previousPhase !== race.phase) {
     if (previousPhase === 'countdown' && race.phase === 'racing') goUntil = now + 0.8;
