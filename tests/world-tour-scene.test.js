@@ -55,7 +55,8 @@ test('shared scenery system renders five real road meshes, boost hoops and quali
   const data=road.geometry.attributes.position.array;
   assert.ok([...data].every(Number.isFinite),`${id} road geometry has NaN`);
   visual.update(id,t.from+28,'low',RACE_TRACKS[id].sections,1,true);
-  assert.ok(boost.children.filter(c=>c.visible).length<=8,'low quality must cut energy hoops');
+  assert.ok(boost.children.filter(c=>c.name.startsWith('Energy hoop') && c.visible).length<=8,
+    'low quality must cut energy hoops; instanced glass panels are separate objects');
  }
  visual.hide();assert.equal(world.visible,false);
  visual.dispose();assert.ok(!scene.children.includes(world));
