@@ -184,7 +184,7 @@ export function createWorldTourScene(scene){
   return {
     update(id,distance,quality='high',sections=[],time=0,reducedMotion=false){
       configure(id);group.visible=true;
-      const theme=WORLD_THEMES[id],low=quality==='low';
+      const theme=WORLD_THEMES[id],low=quality==='low',landscape=theme.prop;
       // The world is authored in camera-relative coordinates. Moving the
       // *entire group* by the centreline delta is exact; regenerating every
       // static InstancedMesh/road vertex each animation frame is not.
@@ -217,7 +217,6 @@ export function createWorldTourScene(scene){
       }
       geometry.attributes.position.needsUpdate=geometry.attributes.normal.needsUpdate=geometry.index.needsUpdate=true;
       roadEdges.instanceMatrix.needsUpdate=laneMarks.instanceMatrix.needsUpdate=true;
-      const landscape=theme.prop;
       skyline.count=low?38:94;windows.count=low?114:94*3;
       terrain.count=asteroids.count=low?32:92;
       for(let i=0;i<94;i++){
