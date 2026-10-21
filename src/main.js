@@ -270,7 +270,7 @@ $('#locale-select').addEventListener('change', ({ target }) => { saveLocale(targ
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
   document.body.dataset.raceMode = race.mode;
-  for (const button of document.querySelectorAll('[data-race-mode]'))
+  for (const button of document.querySelectorAll('button[data-race-mode]'))
     button.setAttribute('aria-pressed', String(button.dataset.raceMode === selectedMode));
   $('#race-mode-rules').hidden = !['custom', 'free'].includes(selectedMode);
   $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
@@ -339,7 +339,7 @@ function changeRaceSelection() {
   phaseUI();
   sound.cue('ui');
 }
-for (const button of document.querySelectorAll('[data-race-mode]')) button.addEventListener('click', () => {
+for (const button of document.querySelectorAll('button[data-race-mode]')) button.addEventListener('click', () => {
   selectedMode = button.dataset.raceMode;
   changeRaceSelection();
 });

@@ -10,9 +10,9 @@ test('solo Time Attack shows real 3D preview, starts, and hides unused opponents
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('[data-race-mode="time"]').click();
+  await page.locator('button[data-race-mode="time"]').click();
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
-  await expect(page.locator('[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('button[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#mode-description')).toContainText('Solo best-time');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
@@ -25,7 +25,7 @@ test('custom 0-opponent race still starts; Classic remains selectable', async ({
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('[data-race-mode="custom"]').click();
+  await page.locator('button[data-race-mode="custom"]').click();
   await expect(page.locator('#race-mode-rules')).toBeVisible();
   await page.locator('[data-race-rule="rivals"]').evaluate(select => {
     select.value = '0';
@@ -43,7 +43,7 @@ test('Free Drive starts immediately without a countdown and keeps its return pat
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('[data-race-mode="free"]').click();
+  await page.locator('button[data-race-mode="free"]').click();
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'free');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
@@ -56,7 +56,7 @@ test('Obstacle Run uses the original world renderer with visible race state', as
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('[data-race-mode="gauntlet"]').click();
+  await page.locator('button[data-race-mode="gauntlet"]').click();
   await expect(page.locator('#mode-description')).toContainText('Dodge barriers');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
@@ -67,7 +67,7 @@ test('Obstacle Run uses the original world renderer with visible race state', as
 test('solo HUD never displays a misleading four-player race rank', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('[data-race-mode="time"]').click();
+  await page.locator('button[data-race-mode="time"]').click();
   await page.locator('#start-button').click();
   await expect(page.locator('.position-stat > div > span').first()).toHaveText('');
   await expect(page.locator('.position-stat .stat-label')).toHaveText('Time Attack');
@@ -80,8 +80,8 @@ test('mobile game mode picker remains operable on phone portrait', async ({ page
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('[data-race-mode="gauntlet"]').click();
-  await expect(page.locator('[data-race-mode="gauntlet"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('button[data-race-mode="gauntlet"]').click();
+  await expect(page.locator('button[data-race-mode="gauntlet"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#start-button')).toBeInViewport();
   await page.screenshot({ path: 'test-results/race-mode-mobile-menu.png' });
   expect(errors).toEqual([]);
