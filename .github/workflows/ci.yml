@@ -47,6 +47,13 @@ jobs:
         with:
           name: browser-failures-${{ matrix.shard }}
           path: test-results
+      - name: Upload actual World Tour screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-tour-screenshots-${{ matrix.shard }}
+          path: artifacts/world-tour/*.png
+          if-no-files-found: ignore
 
   deploy:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
