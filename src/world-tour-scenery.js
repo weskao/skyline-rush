@@ -12,6 +12,28 @@ export const SCENERY_KINDS = Object.freeze({
   coastal: ['palm','beach-hut','sea-wall','pier','dune-grass','buoy'],
   cosmic: ['satellite','asteroid','habitat','antenna','debris','solar-panel'],
 });
+// Natural terrain altitude under each prop. The placement function shares
+// the exact same deterministic profile as the cliff mesh, so forest plants
+// grow ON the hillside instead of being hidden underneath it.
+export function terrainHeight(trackId,distance,side,lateral) {
+  if(!['alpine','coastal'].includes(trackId))return 0;
+  const noise=Math.sin(distance*.023+side*1.71)*.55+
+    Math.cos(distance*.049+side*.8)*.24+
+    Math.sin(distance*.011+3.1)*.21;
+  const xs=trackId==='alpine'?[16,23,39,72]:[15,25,48,92];
+  const ys=trackId==='alpine'
+    ?[-1,4+noise*2.2,22+noise*7,65+noise*16]
+    :(side===1?[-3,-7,-18,-22]:[-1,2,8,18])
+      .map((h,i)=>h+noise*[.2,.8,2.8,4.5][i]);
+  for(let i=0;i<xs.length-1;i++){
+    if(lateral<=xs[i+1]){
+      const t=Math.max(0,Math.min(1,(lateral-xs[i])/(xs[i+1]-xs[i])));
+      return ys[i]*(1-t)+ys[i+1]*t;
+    }
+  }
+  return ys.at(-1);
+}
+
 export const ROAD_CHARACTER = Object.freeze({
   taipei: { markings:'urban', shoulder:'#777e7a', lane:'#c6c3b3', edge:'#969c95', pavement:'#373e41' },
   tokyo: { markings:'expressway', shoulder:'#49566c', lane:'#a5abb6', edge:'#727e96', pavement:'#202b3b' },
@@ -233,15 +255,10 @@ export function createSceneryKit() {
       for(let j=0;j<=strips;j++){
         const distance=start+(end-start)*j/strips;
         const p=trackPoint(trackId,distance),frame=trackFrame(trackId,distance);
-        const absoluteNoise=Math.sin(distance*.023+side*1.71)*.55+
-          Math.cos(distance*.049+side*.8)*.24+
-          Math.sin(distance*.011+3.1)*.21;
+        // Use terrainHeight for props and ground; never derive them independently.
         for(let i=0;i<rings;i++){
           const lateral=trackId==='alpine'?[16,23,39,72][i]:[15,25,48,92][i];
-          const altitude=trackId==='alpine'
-            ?[-1,4,22,65][i]+absoluteNoise*[.12,2.2,7,16][i]
-            :(side===1?[-3,-7,-18,-22]:[-1,2,8,18])[i]
-              +absoluteNoise*[.2,.8,2.8,4.5][i];
+          const altitude=terrainHeight(trackId,distance,side,lateral);
           vertices.push(
             p.x+frame.right[0]*lateral*side+frame.up[0]*altitude,
             p.y+frame.right[1]*lateral*side+frame.up[1]*altitude,
