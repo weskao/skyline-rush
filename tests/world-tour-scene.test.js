@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { WORLD_THEMES, createWorldTourScene } from '../src/world-tour-scene.js';
+import { WORLD_THEMES, createWorldTourScene, blocksLandmark, landmarkSafePlan } from '../src/world-tour-scene.js';
+import { sceneryPlan } from '../src/world-tour-scenery.js';
 import { makeLandmark } from '../src/world-tour-landmarks.js';
 import { RACE_TRACKS } from '../src/game.js';
 
@@ -60,4 +61,21 @@ test('shared scenery system renders five real road meshes, boost hoops and quali
  }
  visual.hide();assert.equal(world.visible,false);
  visual.dispose();assert.ok(!scene.children.includes(world));
+});
+test('landmark approaches keep every roadside prop; blockers move or shrink',()=>{
+  for(const id of ids)for(const low of [false,true]){
+    const blocks=item=>WORLD_THEMES[id].landmarks.some(l=>blocksLandmark(id,l,item));
+    let moved=0;
+    for(let chunk=0;chunk<=Math.ceil(RACE_TRACKS[id].length/120);chunk++){
+      const plan=sceneryPlan(id,chunk,low),safe=landmarkSafePlan(id,chunk,low);
+      assert.equal(safe.length,plan.length,id+' chunk '+chunk+' lost props');
+      safe.forEach((item,i)=>{
+        if(!blocks(plan[i]))return assert.deepEqual(item,plan[i]);
+        if(item.size<plan[i].size)return assert.equal(item.distance,plan[i].distance);
+        assert.ok(!blocks(item),id+' moved prop still blocks');
+        moved++;
+      });
+    }
+    if(!low)assert.ok(moved>0,id+' never moves a blocker');
+  }
 });

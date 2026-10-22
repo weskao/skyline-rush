@@ -82,6 +82,27 @@ export function blocksLandmark(id,l,item){
   return false;
 }
 
+// Props that would block a landmark move instead of vanishing, so the approach
+// keeps its original density: one plot farther out, the other kerb, or further
+// out still. Only a prop with no clear slot stays put, shrunk to street scale.
+// shortcut: clear slots are checked against unblocked neighbours and this
+// chunk's moved props, not props moved in adjacent chunks.
+export function landmarkSafePlan(id,chunk,low=false){
+  const blocks=item=>WORLD_THEMES[id].landmarks.some(l=>blocksLandmark(id,l,item));
+  const items=sceneryPlan(id,chunk,low);
+  if(!items.some(blocks))return items;
+  const placed=[chunk-1,chunk,chunk+1].flatMap(c=>sceneryPlan(id,c,low)).filter(i=>!blocks(i));
+  const clear=c=>!blocks(c)&&placed.every(p=>p.side!==c.side||
+    Math.abs(p.distance-c.distance)>=9||Math.abs(p.offset-c.offset)>=14);
+  return items.map(item=>{
+    if(!blocks(item))return item;
+    const across={...item,side:-item.side},out=o=>({...item,offset:item.offset+o});
+    const moved=[out(24),across,out(40),{...across,distance:item.distance+13},out(60)].find(clear);
+    if(moved)placed.push(moved);
+    return moved||{...item,size:item.size*.45};
+  });
+}
+
 export function createWorldTourScene(scene){
   const group=new THREE.Group();group.name='World Tour authored scenery';group.visible=false;scene.add(group);
   const geometry=roadRibbon(ROWS);
@@ -148,8 +169,7 @@ export function createWorldTourScene(scene){
     for(let index=start;index<=end;index++){
       if(chunks.has(index))continue;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
-      for(const item of sceneryPlan(id,index,level==='low')){
-        if(WORLD_THEMES[id].landmarks.some(l=>blocksLandmark(id,l,item)))continue;
+      for(const item of landmarkSafePlan(id,index,level==='low')){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
