@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
- testDir:'./tests',testMatch:'**/world-tour-mid-race-browser.spec.js',
+ testDir:'./tests',testMatch:['**/world-tour-mid-race-browser.spec.js','**/world-tour-showcase-browser.spec.js'],
  fullyParallel:false,workers:1,
  timeout:process.env.CI?180000:90000,
  expect:{timeout:20000},
