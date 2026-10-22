@@ -626,7 +626,7 @@ export function stepRace(race, input, dt) {
     const finishTime = race.checkpoint?.expired ? race.elapsed :
       race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
-    car.distance = race.length;
+    car.distance = Math.min(car.distance, race.length); // An expired timer must not teleport the car to the finish.
     race.elapsed = finishTime;
     const score = Math.round(car.score);
     race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses,

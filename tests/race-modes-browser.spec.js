@@ -102,3 +102,16 @@ test('Custom Race sprint stage selector displays the first of three heats', asyn
   await expect(page.locator('#sprint-stage')).toHaveText('STAGE 1 / 3');
   expect(errors).toEqual([]);
 });
+
+test('Checkpoint Rush displays the real 3D course and dynamic gate HUD', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('button[data-race-mode="checkpoint"]').click();
+  await expect(page.locator('#mode-description')).toContainText('glowing gates');
+  await page.locator('#start-button').click();
+  await expect(page.locator('#checkpoint-hud')).toBeVisible();
+  await expect(page.locator('#checkpoint-hud')).toContainText('GATES 0/');
+  await page.screenshot({ path: 'test-results/race-mode-checkpoint-rush.png' });
+  expect(errors).toEqual([]);
+});

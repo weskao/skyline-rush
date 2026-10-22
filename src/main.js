@@ -943,6 +943,8 @@ function phaseUI() {
     $('#next-stage').hidden = !intermediateStage;
     if (intermediateStage) {
       best = 0; record = false; // A partial series never writes a misleading individual best.
+    } else if (race.mode === 'checkpoint' && race.result.success === false) {
+      best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
     } else if (race.mode !== 'classic') {
       const total = sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
       const modeRace = sprintSeries ? { ...race, result: { ...race.result, time: total,
@@ -1016,6 +1018,13 @@ function phaseText() {
     resultCounts = [];
     return;
   }
+  if (race.mode === 'checkpoint' && !result.success) {
+    ui['overlay-title'].textContent = t('mode.checkpointFailed');
+    ui['overlay-copy'].textContent = t('mode.checkpointFailedCopy', { n: race.checkpoint.passed, total: race.checkpoint.gates.length });
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.gates')}</span><strong>${race.checkpoint.passed} / ${race.checkpoint.gates.length}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(race.elapsed)}</strong></div>`;
+    resultCounts = [];
+    return;
+  }
   const displayedTime = series ? sprintTotal(series) : race.elapsed;
   if (!$('#next-button').hidden) $('#next-track').textContent = trackName($('#next-button').dataset.next, getLocale());
   ui['overlay-title'].textContent = series ? t('mode.seriesComplete') : race.mode !== 'classic' ? t('mode.resultTitle') : t(result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
@@ -1051,6 +1060,17 @@ function updateUI(now, input) {
       const progress = Math.max(0, Math.min(1, presentationState.count * 3 - i));
       element.textContent = format(value * (1 - (1 - progress) ** 3));
     });
+  }
+  const checkpointHud = $('#checkpoint-hud');
+  checkpointHud.hidden = !race.checkpoint || race.phase === 'ready';
+  if (race.checkpoint) {
+    const next = race.checkpoint.gates.find(g => !g.passed && !g.missed);
+    checkpointHud.textContent = t('mode.checkpointHud', {
+      n: race.checkpoint.passed, total: race.checkpoint.gates.length,
+      seconds: race.checkpoint.timeLeft.toFixed(1),
+      distance: next ? Math.max(0,Math.ceil(next.distance - race.player.distance)) : 0,
+    });
+    checkpointHud.dataset.urgent = String(race.checkpoint.timeLeft < 10);
   }
   const counter = $('#sprint-stage');
   counter.hidden = !sprintSeries;

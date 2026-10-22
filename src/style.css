@@ -1205,3 +1205,8 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
 /* The series counter sits in the race info without expanding the top HUD. */
 .sprint-stage { display: inline-block; margin-top: 5px; color: #c9f4ff; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
 .sprint-stage[hidden], #sprint-stages-setting[hidden], #next-stage[hidden] { display: none !important; }
+
+/* A concise urgency HUD; gameplay signals remain visible in every graphics preset. */
+.checkpoint-hud { display: block; margin-top: 6px; width: fit-content; max-width: 100%; color: #93fff0; font-size: clamp(10px,1vw,13px); letter-spacing: .06em; font-weight: 700; text-shadow: 0 0 9px #32c2b8aa; }
+.checkpoint-hud[data-urgent="true"] { color: #ffd084; text-shadow: 0 0 12px #ff8d45aa; }
+.checkpoint-hud[hidden] { display: none !important; }
