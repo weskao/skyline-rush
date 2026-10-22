@@ -6,6 +6,7 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallen
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
+import { stuntMedal } from './stunt-attack.js';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
@@ -400,7 +401,11 @@ function showHistory() {
   $('#mode-history-empty').hidden = modes.length > 0;
   $('#mode-history-runs').replaceChildren(...modes.map(run => {
     const item = document.createElement('p');
-    item.textContent = `${t('mode.' + run.mode)} · ${timeString(run.time)} · ${shortDate(run.date)}`;
+    item.textContent = run.mode === 'stunt'
+      ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
+        run.medal ? t('mode.medal.' + run.medal) : '',
+        t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) }), shortDate(run.date)].filter(Boolean).join(' · ')
+      : `${t('mode.' + run.mode)} · ${timeString(run.time)} · ${shortDate(run.date)}`;
     return item;
   }));
   const stats = careerStats(sessionHistory);
@@ -987,7 +992,7 @@ function phaseUI() {
     } else if (race.result.success === false && race.mode !== 'classic') {
       best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
     } else if (race.mode === 'stunt' && stunt) {
-      ({best,record} = recordModeRace({ ...race, result:{...race.result, time:stunt.elapsed, score:Math.round(stunt.score)} }));
+      ({best,record} = recordModeRace({ ...race, result:{...race.result, time:stunt.elapsed, score:Math.round(stunt.score), maxCombo:stunt.maxCombo, airTime:stunt.airTime} }));
     } else if (race.mode !== 'classic') {
       const total = cup ? cupTotalTime(cup) : sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
       const modeRace = cup ? { ...race, trackId: cup.tracks[0], result: { ...race.result, time: total,
@@ -1061,7 +1066,8 @@ function phaseText() {
       heats:finishedStunt.heats, max:finishedStunt.maxCombo, air:finishedStunt.airTime.toFixed(1),
     });
     if (continuing) $('#next-stage').textContent = t('mode.stuntNext', {sec:Math.ceil(left)});
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.stuntPoints')}</span><strong>${Math.round(finishedStunt.score)}</strong></div><div><span>${t('mode.stuntTime')}</span><strong>${Math.floor(finishedStunt.elapsed)} / ${finishedStunt.duration} s</strong></div>${continuing?'':`<div><span>${t('mode.stuntBest')}</span><strong>${Math.round(best)}</strong></div>`}`;
+    const medal = continuing ? null : stuntMedal(finishedStunt.score, finishedStunt.duration);
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.stuntPoints')}</span><strong>${Math.round(finishedStunt.score)}</strong></div><div><span>${t('mode.stuntTime')}</span><strong>${Math.floor(finishedStunt.elapsed)} / ${finishedStunt.duration} s</strong></div>${continuing?'':`<div><span>${t('mode.stuntBest')}</span><strong>${Math.round(best)}</strong></div><div><span>${t('mode.stuntMedal')}</span><strong>${medal ? t('mode.medal.' + medal) : t('mode.medal.none')}</strong></div>`}`;
     resultCounts=[];
     return;
   }

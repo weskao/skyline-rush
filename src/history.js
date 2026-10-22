@@ -1,5 +1,6 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { validGhost } from './ghost.js';
+import { stuntMedal } from './stunt-attack.js';
 
 export const HISTORY_KEY = 'skyline-rush-history';
 export const BEST_KEY = 'skyline-rush-best-tracks';
@@ -70,6 +71,11 @@ export function recordModeRace(race, storage, now = new Date()) {
   write(MODE_HISTORY_KEY, [...previous, {
     date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
     time: race.result.time, position: race.result.position, score: race.result.score,
+    ...(scoreAttack ? {
+      maxCombo: Number.isInteger(race.result.maxCombo) ? Math.max(0, race.result.maxCombo) : 0,
+      airTime: Number.isFinite(race.result.airTime) ? Math.max(0, race.result.airTime) : 0,
+      medal: stuntMedal(race.result.score, race.config?.duration),
+    } : {}),
   }].slice(-HISTORY_LIMIT), storage);
   return { best, record };
 }
