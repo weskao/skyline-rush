@@ -182,3 +182,21 @@ test('Free Drive shows live, zeroed practice telemetry without showing rival ran
   await expect(page.locator('#leaderboard')).toBeHidden();
   expect(errors).toEqual([]);
 });
+
+test('Stunt Attack offers a timed score challenge with live arcade feedback', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="stunt"]').click();
+  await expect(page.locator('#stunt-rules')).toBeVisible();
+  await page.locator('#stunt-duration').evaluate(select => {
+    select.value='180';
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.locator('#start-button').click();
+  await expect(page.locator('#stunt-hud')).toBeVisible();
+  await expect(page.locator('#stunt-hud')).toContainText('COMBO');
+  await expect(page.locator('#stunt-hud')).toContainText('HEAT 1');
+  expect(errors).toEqual([]);
+});
