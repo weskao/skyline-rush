@@ -183,3 +183,47 @@ test('volume sliders scale the effects and music buses on a perceptual curve', t
   assert.equal(effects.gain.value, 0.8, 'full volume keeps the original mix');
   assert.equal(music.gain.value, 0.5);
 });
+
+test('each new arcade mode has a playable 50–70 second synthesized music loop', () => {
+  for (const [name, firstPad] of Object.entries({checkpoint:60,stunt:62,gauntlet:52,cup:64,cruise:67})) {
+    const track = TRACKS[name];
+    assert.ok(track, `${name} must define an original theme`);
+    assert.ok(track.bpm >= 110 && track.bpm <= 150, name);
+    assert.equal(track.lead.length, 64);
+    assert.equal(track.chords.length, 8);
+    assert.equal(track.chords[0][1], firstPad, `${name} has a distinct opening pad`);
+  }
+});
+
+test('Checkpoint Rush plays its own soundtrack instead of the general racing pad', t => {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace('coast', {mode:'checkpoint'});
+  race.phase='racing';
+  sound.setMusic(true);
+  sound.update(race);
+  const frequencies = nodes.filter(n=>n.kind==='oscillator').map(n=>n.frequency.value);
+  assert.ok(frequencies.some(hz=>Math.abs(hz-midiHz(60))<0.05));
+  assert.equal(frequencies.some(hz=>Math.abs(hz-midiHz(55))<0.05),false);
+});
+
+test('checkpoint pass triggers a new Web Audio tone once, and muted changes cannot replay', t => {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace('coast',{mode:'checkpoint'});
+  race.phase='racing';
+  sound.setEnabled(true);
+  const tones=()=>nodes.filter(n=>n.kind==='oscillator').length;
+  sound.update(race);
+  const count=tones();
+  race.checkpoint.passed++;
+  sound.update(race);
+  assert.ok(tones()>count, 'passed checkpoint emits special synthetic chime');
+  const after=tones();
+  sound.update(race);
+  assert.equal(tones(),after,'same gate cannot chime repeatedly');
+  sound.setEnabled(false);
+  race.checkpoint.passed++;
+  sound.update(race);
+  sound.setEnabled(true);
+  sound.update(race);
+  assert.equal(tones(),after,'events during mute are consumed');
+});
