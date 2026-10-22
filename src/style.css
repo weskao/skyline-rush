@@ -1123,3 +1123,23 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .performance-notice button{justify-self:end;background:#264758;border:1px solid #85a8b2;
  border-radius:5px;color:#fff;padding:7px 13px;cursor:pointer;}
 @media(max-width:760px){.performance-notice{top:calc(190px + env(safe-area-inset-top,0px));right:12px;width:min(285px,calc(100vw - 24px));}}
+
+/* Mode selector reuses the compact intro layout; expanded controls float above cards. */
+.race-setup { position: relative; z-index: 9; margin: 0 0 9px; width: min(460px, 100%); }
+.race-setup > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px;
+  list-style: none; padding: 8px 14px; border: 1px solid #71d6ed70; border-radius: 8px;
+  background: #102536e8; color: #c5edfb; font-size: 10px; letter-spacing: 1px; cursor: pointer; }
+.race-setup > summary::-webkit-details-marker { display: none; }
+.race-setup > summary strong { color: #c8f8ff; font-size: 12px; }
+.race-setup > summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.race-setup-options { position: absolute; top: calc(100% + 4px); left: 0; width: min(460px, calc(100vw - 34px));
+  max-height: min(62dvh, 480px); overflow: auto; overscroll-behavior: contain; padding: 14px 16px;
+  border: 1px solid #71d6ed88; border-radius: 10px; background: #0b1f2df7; box-shadow: 0 15px 35px #0009;
+  backdrop-filter: blur(15px); }
+.race-setting { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 46px; font-size: 12px; }
+.race-setting select { max-width: 180px; min-height: 34px; border: 1px solid #527c90; color: #e1f5fa; background: #173345; border-radius: 6px; }
+.race-setting .custom-select > button { min-width: 130px; max-width: 190px; min-height: 34px; padding: 6px 25px 6px 9px; color: #e1f5fa; border: 1px solid #527c90; border-radius: 6px; }
+.race-mode-description { margin: 8px 0 10px; color: #a9c6d3; font-size: 11px; line-height: 1.6; }
+#custom-rules[hidden], .race-setup[hidden], #exit-free[hidden] { display: none; }
+#leaderboard .racer[hidden] { display: none; }
+@media (max-width: 760px) { .race-setup { width: 100%; } .race-setup-options { max-height: 54dvh; } }
