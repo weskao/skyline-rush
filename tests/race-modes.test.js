@@ -296,3 +296,29 @@ test('Championship is a distinct ranked 3-rival mode with no Career unlock eligi
   assert.deepEqual(race.config.cupTracks,['coast','neon','canyon']);
   assert.equal(createRace('coast').config.cupTracks,undefined);
 });
+
+test('Stunt Attack uses a solo moving-traffic score run and finishes at its timer', () => {
+  const race = createRace('coast', {mode:'stunt', duration:120});
+  assert.equal(race.rivals.length,0);
+  assert.ok(race.traffic.length > 0);
+  assert.equal(race.config.duration,120);
+  assert.ok(race.styleAttack);
+  startRace(race);
+  for (let i=0;i<181;i++) stepRace(race,{},1/60);
+  race.stuntLimit=race.elapsed+.05;
+  for (let i=0;i<4;i++) stepRace(race,{},1/60);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.endReason,'timer');
+  assert.equal(race.result.success,true);
+  assert.ok(Number.isFinite(race.result.score));
+});
+test('Stunt Attack exposes a new heat rather than claiming a fake circuit lap at route end', () => {
+  const race=createRace('coast',{mode:'stunt',duration:180});
+  startRace(race);
+  for(let i=0;i<181;i++)stepRace(race,{},1/60);
+  race.player.distance=race.length-.1;
+  race.player.speed=80;
+  stepRace(race,{},1/60);
+  assert.equal(race.result.endReason,'route');
+  assert.ok(race.elapsed < race.config.duration);
+});

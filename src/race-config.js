@@ -1,5 +1,5 @@
 // A small, versioned contract for practice modes; Classic and Daily stay identical.
-export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup']);
+export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt']);
 const TRAFFIC = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
 const DIFFICULTIES = ['easy', 'normal', 'hard'];
 
@@ -25,6 +25,7 @@ export function normalizeRaceConfig(value = {}) {
     ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
+    ...(mode === 'stunt' ? { duration: [120, 180, 300].includes(value.duration) ? value.duration : 120 } : {}),
     ...(mode === 'cup' && Array.isArray(value.cupTracks) && [3,5].includes(value.cupTracks.length) &&
        value.cupTracks.every(id => typeof id === 'string') && new Set(value.cupTracks).size === value.cupTracks.length
        ? { cupTracks: [...value.cupTracks] } : {}),

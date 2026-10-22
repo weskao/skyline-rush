@@ -51,18 +51,22 @@ export function recordRace(race, storage, now = new Date()) {
 export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
 export function loadModeHistory(storage) {
   const saved = read(MODE_HISTORY_KEY, storage);
-  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup'].includes(run.mode) &&
+  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt'].includes(run.mode) &&
     typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
 }
 export function recordModeRace(race, storage, now = new Date()) {
-  if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false)
+  if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
+    (race.mode === 'stunt' && (!Number.isFinite(race.result.score) || race.result.score < 0)))
     throw new TypeError('A finished practice race is required');
   const rules = JSON.stringify(race.config);
   const previous = loadModeHistory(storage);
   const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
-  const previousBest = Math.min(Infinity, ...comparable.map(run => run.time));
-  const record = race.result.time < previousBest;
-  const best = Math.min(previousBest, race.result.time);
+  const scoreAttack = race.mode === 'stunt';
+  const previousBest = scoreAttack ? Math.max(-Infinity, ...comparable.filter(run => Number.isFinite(run.score)).map(run => run.score))
+    : Math.min(Infinity, ...comparable.map(run => run.time));
+  const value = scoreAttack ? race.result.score : race.result.time;
+  const record = scoreAttack ? value > previousBest : value < previousBest;
+  const best = scoreAttack ? Math.max(previousBest, value) : Math.min(previousBest, value);
   write(MODE_HISTORY_KEY, [...previous, {
     date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
     time: race.result.time, position: race.result.position, score: race.result.score,
