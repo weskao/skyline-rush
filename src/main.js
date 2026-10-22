@@ -105,7 +105,8 @@ let selectedMode = 'classic';
 const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal', stages: 1 };
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules,
-  ...(selectedMode === 'gauntlet' ? { hazardTier: $('#hazard-tier').value } : {}) });
+  ...(selectedMode === 'gauntlet' ? { hazardTier: $('#hazard-tier').value } : {}),
+  ...(selectedMode === 'time' && $('#clean-trial').checked ? {clean:true} : {}) });
 let previousFuel = 100;
 let previousNitro = 0;
 const presentation = createPresentation();
@@ -278,6 +279,7 @@ function showTracks() {
   $('#race-mode-rules').hidden = !['custom', 'free'].includes(selectedMode);
   $('#sprint-stages-setting').hidden = selectedMode !== 'custom';
   $('#gauntlet-rules').hidden = selectedMode !== 'gauntlet';
+  $('#time-trial-rules').hidden = selectedMode !== 'time';
   $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
   for (const button of document.querySelectorAll('[data-race-preset]'))
     button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
@@ -357,6 +359,7 @@ for (const button of document.querySelectorAll('[data-race-preset]')) button.add
   changeRaceSelection();
 });
 $('#hazard-tier').addEventListener('change', changeRaceSelection);
+$('#clean-trial').addEventListener('change', changeRaceSelection);
 for (const input of document.querySelectorAll('[data-race-rule]')) input.addEventListener('change', () => {
   raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule) ? Number(input.value) : input.value;
   changeRaceSelection();
@@ -946,7 +949,7 @@ function phaseUI() {
     $('#next-stage').hidden = !intermediateStage;
     if (intermediateStage) {
       best = 0; record = false; // A partial series never writes a misleading individual best.
-    } else if (race.mode === 'checkpoint' && race.result.success === false) {
+    } else if (race.result.success === false && race.mode !== 'classic') {
       best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
     } else if (race.mode !== 'classic') {
       const total = sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
@@ -1021,6 +1024,13 @@ function phaseText() {
     resultCounts = [];
     return;
   }
+  if (race.mode === 'time' && !result.success) {
+    ui['overlay-title'].textContent = t('mode.cleanFailed');
+    ui['overlay-copy'].textContent = t('mode.cleanFailedCopy',{n:result.collisions});
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.collision')}</span><strong>${result.collisions}</strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(race.elapsed)}</strong></div>`;
+    resultCounts = [];
+    return;
+  }
   if (race.mode === 'checkpoint' && !result.success) {
     ui['overlay-title'].textContent = t('mode.checkpointFailed');
     ui['overlay-copy'].textContent = t('mode.checkpointFailedCopy', { n: race.checkpoint.passed, total: race.checkpoint.gates.length });
@@ -1063,6 +1073,12 @@ function updateUI(now, input) {
       const progress = Math.max(0, Math.min(1, presentationState.count * 3 - i));
       element.textContent = format(value * (1 - (1 - progress) ** 3));
     });
+  }
+  const cleanTrialHud = $('#clean-trial-hud');
+  cleanTrialHud.hidden = race.mode !== 'time' || !race.config.clean || race.phase === 'ready';
+  if (!cleanTrialHud.hidden) {
+    cleanTrialHud.textContent = t(race.player.collisions ? 'mode.cleanBroken' : 'mode.cleanActive');
+    cleanTrialHud.dataset.broken = String(race.player.collisions > 0);
   }
   const hazardWarning = $('#hazard-warning');
   const hazardAhead = race.mode === 'gauntlet' ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;

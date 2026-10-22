@@ -24,6 +24,7 @@ export function normalizeRaceConfig(value = {}) {
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
     ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
+    ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
   });
 }
 

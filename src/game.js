@@ -634,7 +634,8 @@ export function stepRace(race, input, dt) {
       nitroUses: car.nitroUses, nitroChain: car.nitroChain, longestCombo: car.longestCombo,
       rings: car.rings, perfectLines: car.perfectLines, fuelOuts: car.fuelOuts, gapFalls: car.falls, score,
       stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1,
-      success: race.checkpoint ? !race.checkpoint.expired && race.checkpoint.passed === race.checkpoint.gates.length : true };
+      success: race.checkpoint ? !race.checkpoint.expired && race.checkpoint.passed === race.checkpoint.gates.length :
+        !(race.mode === 'time' && race.config.clean && car.collisions > 0) };
     race.phase = 'finished';
     car.thrusting = false;
     car.boosting = false;

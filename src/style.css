@@ -1215,3 +1215,9 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
 .hazard-warning { display: inline-block; margin-top: 6px; padding: 4px 10px; border: 1px solid #ffca76aa; border-radius: 6px; background: #5a2a24cc; color: #ffecbd; font-weight: 700; font-size: 11px; letter-spacing: .05em; }
 .hazard-warning[hidden], #gauntlet-rules[hidden] { display: none !important; }
 #gauntlet-rules label { display:flex; gap: 8px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding: 12px 4px; }
+
+/* Clean-trial status deliberately uses a shape/icon as well as color. */
+.clean-trial-hud { display:inline-block; margin-top:6px; color:#a2f5c6; font-size:11px; font-weight:700; letter-spacing:.05em; }
+.clean-trial-hud[data-broken="true"] { color:#ffbb94; }
+.clean-trial-hud[hidden], #time-trial-rules[hidden] { display:none !important; }
+#time-trial-rules label {display:flex; gap:12px; align-items:center; padding:12px 4px;}

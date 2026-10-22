@@ -273,3 +273,18 @@ test('Extreme gauntlet increases obstacle count without affecting Classic traffi
   assert.equal(base.config.hazardTier,undefined);
   assert.equal(extreme.config.hazardTier,'extreme');
 });
+
+test('clean Time Attack never records runs after contact, while old Time Attack stays valid', () => {
+  const race = createRace('coast',{mode:'time',clean:true});
+  assert.equal(race.config.clean,true);
+  startRace(race);
+  for(let i=0;i<181;i++) stepRace(race,{},1/60);
+  race.player.collisions = 1;
+  race.player.distance = race.length - .1;
+  race.player.speed = 80;
+  stepRace(race,{},1/60);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.success,false);
+  assert.throws(()=>recordModeRace(race));
+  assert.equal(createRace('coast',{mode:'classic',clean:true}).config.clean,undefined);
+});

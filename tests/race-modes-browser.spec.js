@@ -131,3 +131,17 @@ test('Extreme Obstacle Run updates its intensity setting and warning system', as
   await page.screenshot({ path:'test-results/race-mode-gauntlet-extreme.png' });
   expect(errors).toEqual([]);
 });
+
+test('Clean Time Trial shows accessible rule toggle and clean driving HUD', async ({ page }) => {
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/');
+  await page.locator('button[data-race-mode="time"]').click();
+  await expect(page.locator('#time-trial-rules')).toBeVisible();
+  await page.locator('#clean-trial').check();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#clean-trial-hud')).toBeVisible();
+  await expect(page.locator('#clean-trial-hud')).toContainText('CLEAN RUN');
+  await page.screenshot({path:'test-results/race-mode-clean-time-attack.png'});
+  expect(errors).toEqual([]);
+});
