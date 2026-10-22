@@ -11,6 +11,16 @@
 
 驗證：379 項單元測試、正式建置通過；297 項瀏覽器案例中 290 項首輪通過、7 項重跑或修正後通過。語言測試的延遲音樂提示改用實際可見狀態處理，4 個使用檔案的 73 項相關回歸全部通過。畫面證據位於 `artifacts/control-guide/`。
 
+## 互動操作教學（2026-10-23）
+
+- [ ] 真實 Free Drive 場景：加速、左轉、右轉、煞車、起飛、降落、BOOST、NITRO 八步，依實際輸入與車況判定完成。
+- [ ] 畫面提示與控制高亮；中英文、目前鍵盤配置、Slide／Buttons／Tilt、手機與平板直橫向。
+- [ ] 從操作教學與 Controls 開始；暫停、略過、退出、完成與重練流程。
+- [ ] 教學隔離正式紀錄、解鎖、Ghost 與每日挑戰；退出還原原本選擇或暫停中的比賽。
+- [ ] TDD 單元、桌面與手機實際操作瀏覽器回歸、正式建置。
+- [ ] 傳送桌面／手機標註截圖與完成摘要。
+- [ ] 真機 Safari／Android／平板驗收（模擬器與瀏覽器尺寸測試不視為真機）。
+
 Original baseline (everything below builds on these initial systems): a single 5 km coastal highway
 sprint (`RACE_LENGTH`), 3 rivals, 36 recycled traffic cars, flight and BOOST sharing one `fuel` pool,
 near-miss combos that recharge fuel, 7 purely decorative cyan rings in the sky (`world.js` gates),
