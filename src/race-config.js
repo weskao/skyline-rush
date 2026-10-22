@@ -1,5 +1,5 @@
 // A small, versioned contract for practice modes; Classic and Daily stay identical.
-export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet']);
+export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt']);
 const TRAFFIC = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
 const DIFFICULTIES = ['easy', 'normal', 'hard'];
 
@@ -12,17 +12,23 @@ export function normalizeRaceConfig(value = {}) {
   // Only Custom has rivals. Free Drive can adjust traffic and pickups.
   const custom = mode === 'custom';
   const practice = custom || mode === 'free';
-  const rivals = custom && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' ? 3 : 0;
+  const rivals = custom && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' ? 3 : 0;
   return Object.freeze({
     rulesVersion: 1,
     mode,
     rivals,
-    traffic: practice && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet'].includes(mode) ? 'off' : 'normal',
+    traffic: practice && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet', 'checkpoint'].includes(mode) ? 'off' : 'normal',
     difficulty: custom && DIFFICULTIES.includes(value.difficulty) ? value.difficulty : 'normal',
     items: practice && typeof value.items === 'boolean' ? value.items : true,
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
     ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),
+    ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
+    ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
+    ...(mode === 'stunt' ? { duration: [120, 180, 300].includes(value.duration) ? value.duration : 120 } : {}),
+    ...(mode === 'cup' && Array.isArray(value.cupTracks) && [3,5].includes(value.cupTracks.length) &&
+       value.cupTracks.every(id => typeof id === 'string') && new Set(value.cupTracks).size === value.cupTracks.length
+       ? { cupTracks: [...value.cupTracks] } : {}),
   });
 }
 

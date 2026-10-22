@@ -1,5 +1,8 @@
 import { seededRng } from './rng.js';
-import { createHazards } from './hazards.js';
+import { createHazards, hazardX } from './hazards.js';
+import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
+import { createPracticeStats, samplePractice } from './practice-stats.js';
+import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
@@ -239,7 +242,11 @@ export function createRace(trackId = 'coast', modifier = null) {
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
-    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES) : [],
+    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) : [],
+    checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
+    practice: config.mode === 'free' ? createPracticeStats() : null,
+    styleAttack: config.mode === 'stunt' ? createStuntAttack() : null,
+    stuntLimit: config.mode === 'stunt' ? config.duration : null,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
@@ -346,6 +353,7 @@ export function stepRace(race, input, dt) {
   if (race.phase !== 'racing') return;
   race.elapsed += dt;
   const car = race.player;
+  const previousScore = car.score;
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
   car.section = section?.type ?? null;
   car.inShortcut = car.section === 'shortcut' && Math.abs(car.x - section.x) < SHORTCUT_HALF_WIDTH &&
@@ -594,9 +602,10 @@ export function stepRace(race, input, dt) {
   for (const hazard of race.hazards) {
     if (hazard.distance > car.distance) break;
     if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
-    const collision = Math.abs(car.x - hazard.x) < 1.8 && car.altitude < 2.4;
+    const obstacleX = hazardX(hazard, race.elapsed);
+    const collision = Math.abs(car.x - obstacleX) < 1.8 && car.altitude < 2.4;
     if (collision && car.cooldown === 0) {
-      contact(race, 'barrier', hazard.x, 0.7, 0.6);
+      contact(race, 'barrier', obstacleX, 0.7, 0.6);
       hazard.hit = true;
     } else {
       hazard.passed = true;
@@ -611,22 +620,32 @@ export function stepRace(race, input, dt) {
     car.cleanDistance %= 500;
   }
   if (car.altitude > 0 && car.speed >= 18) car.score += dt * 10;
+  if (race.checkpoint) {
+    car.score += stepCheckpointRush(race.checkpoint, previousDistance, car, dt);
+  }
+  if (race.practice) samplePractice(race.practice, car, Math.max(0, Math.min(car.distance, race.length) - previousDistance), dt);
+  if (race.styleAttack) car.score += scoreStuntAttack(race.styleAttack, car, car.score - previousScore, dt, race.elapsed);
   if (race.mode === 'free' && car.distance >= race.length) {
     car.distance = race.length; // authored point-to-point road ends here; no fake infinite road
     car.speed = 0;
     car.thrusting = false;
     car.boosting = false;
   }
-  if (race.mode !== 'free' && car.distance >= race.length) {
-    const finishTime = race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
+  const stuntTimeUp = race.mode === 'stunt' && race.elapsed >= race.stuntLimit;
+  if (race.mode !== 'free' && (car.distance >= race.length || race.checkpoint?.expired || stuntTimeUp)) {
+    const finishTime = stuntTimeUp ? race.stuntLimit : race.checkpoint?.expired ? race.elapsed :
+      race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
-    car.distance = race.length;
+    car.distance = Math.min(car.distance, race.length); // An expired timer must not teleport the car to the finish.
     race.elapsed = finishTime;
     const score = Math.round(car.score);
     race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses,
       nitroUses: car.nitroUses, nitroChain: car.nitroChain, longestCombo: car.longestCombo,
       rings: car.rings, perfectLines: car.perfectLines, fuelOuts: car.fuelOuts, gapFalls: car.falls, score,
-      stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1 };
+      stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1,
+      success: race.checkpoint ? !race.checkpoint.expired && race.checkpoint.passed === race.checkpoint.gates.length :
+        !(race.mode === 'time' && race.config.clean && car.collisions > 0),
+      ...(race.mode === 'stunt' ? { endReason: stuntTimeUp ? 'timer' : 'route' } : {}) };
     race.phase = 'finished';
     car.thrusting = false;
     car.boosting = false;

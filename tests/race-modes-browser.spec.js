@@ -102,3 +102,101 @@ test('Custom Race sprint stage selector displays the first of three heats', asyn
   await expect(page.locator('#sprint-stage')).toHaveText('STAGE 1 / 3');
   expect(errors).toEqual([]);
 });
+
+test('Checkpoint Rush displays the real 3D course and dynamic gate HUD', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('button[data-race-mode="checkpoint"]').click();
+  await expect(page.locator('#mode-description')).toContainText('glowing gates');
+  await page.locator('#start-button').click();
+  await expect(page.locator('#checkpoint-hud')).toBeVisible();
+  await expect(page.locator('#checkpoint-hud')).toContainText('GATES 0/');
+  await page.screenshot({ path: 'test-results/race-mode-checkpoint-rush.png' });
+  expect(errors).toEqual([]);
+});
+
+test('Extreme Obstacle Run updates its intensity setting and warning system', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('button[data-race-mode="gauntlet"]').click();
+  await expect(page.locator('#gauntlet-rules')).toBeVisible();
+  await page.locator('#hazard-tier').evaluate(select => {
+    select.value = 'extreme';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode','gauntlet');
+  await page.screenshot({ path:'test-results/race-mode-gauntlet-extreme.png' });
+  expect(errors).toEqual([]);
+});
+
+test('Clean Time Trial shows accessible rule toggle and clean driving HUD', async ({ page }) => {
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/');
+  await page.locator('button[data-race-mode="time"]').click();
+  await expect(page.locator('#time-trial-rules')).toBeVisible();
+  await page.locator('#time-trial-rules > summary').click();
+  await expect(page.locator('#clean-trial')).toBeVisible();
+  await page.locator('#clean-trial').check();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#clean-trial-hud')).toBeVisible();
+  await expect(page.locator('#clean-trial-hud')).toContainText('CLEAN RUN');
+  await page.screenshot({path:'test-results/race-mode-clean-time-attack.png'});
+  expect(errors).toEqual([]);
+});
+
+test('Championship Cup honestly requires three previously unlocked tracks', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('button[data-race-mode="cup"]').click();
+  await expect(page.locator('button[data-race-mode="cup"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#track-note')).toContainText('Unlock at least 3 tracks');
+});
+
+test('Cup length cannot bypass locked tracks with Enter',async({page})=>{
+ await page.goto('/');
+ await page.locator('button[data-race-mode="cup"]').click();
+ await page.locator('#cup-length').evaluate(select=>{
+   select.value='5';select.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await expect(page.locator('#track-note')).toContainText('Unlock at least 5 tracks');
+ await expect(page.locator('#start-button')).toBeDisabled();
+ await page.keyboard.press('Enter');
+ await expect(page.locator('body')).toHaveAttribute('data-phase','ready');
+});
+
+test('Free Drive shows live, zeroed practice telemetry without showing rival rank', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="free"]').click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#practice-hud')).toBeVisible();
+  await expect(page.locator('#practice-hud')).toContainText('AIR');
+  await expect(page.locator('#practice-hud')).toContainText('TRICKS');
+  await expect(page.locator('#practice-hud')).toContainText('COMBO');
+  await expect(page.locator('#leaderboard')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('Stunt Attack offers a timed score challenge with live arcade feedback', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="stunt"]').click();
+  await expect(page.locator('#stunt-rules')).toBeVisible();
+  await page.locator('#stunt-duration').evaluate(select => {
+    select.value='180';
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.locator('#start-button').click();
+  await expect(page.locator('#stunt-hud')).toBeVisible();
+  await expect(page.locator('#stunt-hud')).toContainText('COMBO');
+  await expect(page.locator('#stunt-hud')).toContainText('HEAT 1');
+  expect(errors).toEqual([]);
+});

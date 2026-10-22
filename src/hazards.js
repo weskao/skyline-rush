@@ -1,17 +1,24 @@
 import { seededRng } from './rng.js';
-
-// Gauntlet-only barriers: never move the originals or change their RNG streams.
-// Exactly one lane is blocked at a time; all other lanes and flight remain usable.
 const HAZARD_SECTION_TYPES = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel']);
 
-export function createHazards(track, lanes) {
+// Obstacles move across a single lane at most; the other lanes always stay open.
+export function createHazards(track, lanes, tier = 'standard') {
+  if (!['standard', 'extreme'].includes(tier) || !Number.isFinite(track?.length) ||
+      track.length < 800 || !Number.isFinite(track.seed) || !Array.isArray(track.sections) ||
+      !Array.isArray(lanes) || !lanes.length) throw new RangeError('Invalid gauntlet rules');
   const random = seededRng(track.seed, 'gauntlet-hazards');
   const hazards = [];
-  for (let distance = 450; distance < track.length - 220; distance += 290 + Math.floor(random() * 70)) {
+  for (let distance = 450; distance < track.length - 220; distance += (tier === 'extreme' ? 200 : 290) + Math.floor(random() * 70)) {
     const blocked = track.sections.some(s => HAZARD_SECTION_TYPES.has(s.type) &&
       distance >= s.from - 35 && distance <= s.to + 35);
     const x = lanes[Math.floor(random() * lanes.length)];
-    if (!blocked) hazards.push({ distance, x, altitude: 0, hit: false, passed: false });
+    if (!blocked) hazards.push({ distance, x, altitude: 0, hit: false, passed: false,
+      moving: hazards.length % (tier === 'extreme' ? 2 : 4) === 0,
+      phase: hazards.length * 1.7, speed: tier === 'extreme' ? 1.65 : 1.05 });
   }
   return hazards;
+}
+
+export function hazardX(hazard, time) {
+  return hazard.moving ? Math.max(-9, Math.min(9, hazard.x + Math.sin(time * hazard.speed + hazard.phase) * 1.8)) : hazard.x;
 }

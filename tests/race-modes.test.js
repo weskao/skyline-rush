@@ -224,3 +224,101 @@ test('relaxed Custom collisions cap the speed penalty and preserve impact readou
   assert.equal(createRace('coast', { mode:'classic', collision:'relaxed' }).config.collision, undefined);
   assert.equal(createRace('coast', 'double-traffic').config.collision, undefined);
 });
+
+test('Checkpoint Rush awards gate-time bonus only for real gate crossings', () => {
+  const race = createRace('coast', {mode:'checkpoint'});
+  assert.equal(race.rivals.length, 0);
+  assert.equal(race.traffic.length, 0);
+  assert.ok(race.checkpoint.gates.length >= 4);
+  startRace(race);
+  for (let i = 0; i < 181; i++) stepRace(race, {}, 1 / 60);
+  const gate = race.checkpoint.gates[0];
+  race.player.distance = gate.distance - 1;
+  race.player.x = gate.x; race.player.altitude = gate.altitude; race.player.speed = 75;
+  const timeBefore = race.checkpoint.timeLeft;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.checkpoint.passed, 1);
+  assert.ok(race.checkpoint.timeLeft > timeBefore);
+  assert.ok(race.player.score >= 250);
+});
+test('Checkpoint Rush times out without recording an official finish or personal best', () => {
+  const race = createRace('coast',{mode:'checkpoint'});
+  startRace(race);
+  for (let i = 0; i < 181; i++) stepRace(race,{},1 / 60);
+  race.checkpoint.timeLeft = 0.01;
+  stepRace(race,{},1 / 60);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.success,false);
+  assert.throws(()=>recordModeRace(race));
+});
+test('Checkpoint Rush completes on the real finish after all gates are cleared', () => {
+  const race = createRace('coast',{mode:'checkpoint'});
+  startRace(race);
+  for (let i = 0; i < 181; i++) stepRace(race,{},1 / 60);
+  for (const gate of race.checkpoint.gates) gate.passed = true;
+  race.checkpoint.passed = race.checkpoint.gates.length;
+  race.player.distance = race.length - 0.1;
+  race.player.speed = 80;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.success,true);
+});
+
+test('Extreme gauntlet increases obstacle count without affecting Classic traffic or score', () => {
+  const base = createRace('coast',{mode:'gauntlet'});
+  const extreme = createRace('coast',{mode:'gauntlet',hazardTier:'extreme'});
+  assert.ok(extreme.hazards.length > base.hazards.length);
+  assert.equal(extreme.traffic.length,0);
+  assert.equal(createRace('coast').hazards.length,0);
+  assert.equal(base.config.hazardTier,undefined);
+  assert.equal(extreme.config.hazardTier,'extreme');
+});
+
+test('clean Time Attack never records runs after contact, while old Time Attack stays valid', () => {
+  const race = createRace('coast',{mode:'time',clean:true});
+  assert.equal(race.config.clean,true);
+  startRace(race);
+  for(let i=0;i<181;i++) stepRace(race,{},1/60);
+  race.player.collisions = 1;
+  race.player.distance = race.length - .1;
+  race.player.speed = 80;
+  stepRace(race,{},1/60);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.success,false);
+  assert.throws(()=>recordModeRace(race));
+  assert.equal(createRace('coast',{mode:'classic',clean:true}).config.clean,undefined);
+});
+
+test('Championship is a distinct ranked 3-rival mode with no Career unlock eligibility', () => {
+  const race=createRace('coast',{mode:'cup',cupTracks:['coast','neon','canyon']});
+  assert.equal(race.mode,'cup');
+  assert.equal(race.rivals.length,3);
+  assert.deepEqual(race.config.cupTracks,['coast','neon','canyon']);
+  assert.equal(createRace('coast').config.cupTracks,undefined);
+});
+
+test('Stunt Attack uses a solo moving-traffic score run and finishes at its timer', () => {
+  const race = createRace('coast', {mode:'stunt', duration:120});
+  assert.equal(race.rivals.length,0);
+  assert.ok(race.traffic.length > 0);
+  assert.equal(race.config.duration,120);
+  assert.ok(race.styleAttack);
+  startRace(race);
+  for (let i=0;i<181;i++) stepRace(race,{},1/60);
+  race.stuntLimit=race.elapsed+.05;
+  for (let i=0;i<4;i++) stepRace(race,{},1/60);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.endReason,'timer');
+  assert.equal(race.result.success,true);
+  assert.ok(Number.isFinite(race.result.score));
+});
+test('Stunt Attack exposes a new heat rather than claiming a fake circuit lap at route end', () => {
+  const race=createRace('coast',{mode:'stunt',duration:180});
+  startRace(race);
+  for(let i=0;i<181;i++)stepRace(race,{},1/60);
+  race.player.distance=race.length-.1;
+  race.player.speed=80;
+  stepRace(race,{},1/60);
+  assert.equal(race.result.endReason,'route');
+  assert.ok(race.elapsed < race.config.duration);
+});

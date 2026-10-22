@@ -1,4 +1,4 @@
-<!-- source-sha256: 8362dde20173d1c1b0caee5daf682c0acba2ed8223983b9d861afb294dbf458a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: e063479c01c143eb4d293b3e515f24dbfa58de2b09e7d3341219d9ba0a2ca5c2 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -9,14 +9,14 @@
 
 ## 遊戲介紹
 
-Skyline Rush 是一款可在瀏覽器中遊玩的短篇、可重複挑戰的街機衝刺遊戲：一名玩家對上三名對手以及夾雜其間的車流，桌機或手機皆可，無需安裝任何東西。
+Skyline Rush 的經典競速是一款可在瀏覽器中遊玩的短篇街機衝刺遊戲：一名玩家對上三名對手及道路車流，桌機或手機皆可，無需安裝。其他模式則包含單人練習、自訂規則及多賽段挑戰。
 
 - **先開車，再飛行。** 時速超過 65 km/h 後，按住 FLY 即可升空，飛越車流、穿過光環、跨越斷橋。飛行與 BOOST 共用同一份推進器電量，而且只有在路面上才會回充，因此每一次爬升都是一次取捨。
 - **靠好的駕駛賺取 NITRO。** 近距離超車、飄移、光環組合（PERFECT LINE）、尾流、落地的桶滾以及拾取道具，都會填滿三格的 NITRO 儲備；你可以一次爆發用完，也可以連按來延長效果。
 - **十條賽道，依序解鎖。** 黃昏的海岸、有低矮隧道的雨夜 Neon Downtown、有斷橋與側風的 Canyon Skyway、有冰面與上坡的 Aurora Pass、擁有跳台與斷裂天橋的 360° 高架螺旋 Sky Spiral，接著是世界巡迴賽：Taipei Heritage、Tokyo Afterdark、Alpine Rail Pass、Coastal Horizon 與 Cosmic Orbit。每條賽道都有一條空中捷徑，留給能在空中穩住路線的玩家。
 - **有目標可追。** 每次完賽都會獲得風格星數，可在 Garage 解鎖塗裝。最佳成績幽靈車、擁有專屬排行榜的每日挑戰，以及四枚獎章，都是再戰一場的理由。
 
-一場比賽約一分鐘。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
+一場經典衝刺賽約一分鐘；多賽段挑戰會更久。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
 
 ![開啟音訊設定的起始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261022a)
 
@@ -25,6 +25,35 @@ Skyline Rush 是一款可在瀏覽器中遊玩的短篇、可重複挑戰的街�
 ![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261022a)
 
 ![創下個人最佳成績的賽後結果](artifacts/race-results.zh-TW.jpeg?v=20261022a)
+
+## 遊戲模式與重玩挑戰（開發分支）
+
+> **持續開發中 · 2026 年 10 月 22 日。** 新模式位於 [`feature/race-modes-p0`](https://github.com/weskao/skyline-rush/tree/feature/race-modes-p0)，不代表已更新至[公開 GitHub Pages 遊戲](https://weskao.github.io/skyline-rush/)。上方原有圖片是較早版本的實際畫面；目前模式的實機瀏覽器截圖請見下方。其他尚未完成的功能列於 [TODO.md](TODO.md)。
+
+先選擇**已解鎖的賽道**，在賽道卡片下方選擇 **遊戲模式**，需要時展開專屬設定，接著按下 **Start race** 或 Enter。新模式共用原本的 Three.js 賽道、飛行、FLY／BOOST／NITRO 及觸控系統。開發分支目前有七種模式：
+
+| 模式 | 玩法及設定 | 成績與解鎖規則 |
+| --- | --- | --- |
+| **Classic Race／經典競速** | 10 條賽道、3 名 AI 對手、一般車流、空中捷徑、能量光環及 NITRO。 | 前三名解鎖下一條賽道；只有經典生涯賽能取得正式星數、獎章與解鎖進度。 |
+| **Custom Race／自訂競速** | **0～3 名對手**、簡單／普通／困難、關閉／低／普通／高車流、NITRO 道具開關、一般／寬鬆碰撞。內建標準、車流衝刺、無道具、飛行練習與精準挑戰五種預設。 | 成績獨立儲存。可跑 **1／2／3／5 段連續衝刺**並累計總時間，這些是單程賽段，**並不是真正的環形賽道圈數**。 |
+| **Free Drive／自由駕駛** | 在已解鎖的路線練習駕駛、甩尾與飛行，可調車流與補給，不強制排名或獲勝。 | 到路線終點可重玩或換賽道；目前不是無限延伸的開放世界。 |
+| **Time Attack／計時挑戰** | 單人計時、最佳紀錄 Ghost、超前／落後距離。另可開啟 **零碰撞計時**。 | 依賽道及規則分開計算最佳成績。零碰撞挑戰如發生碰撞，該次成績無效，不覆蓋個人最佳。 |
+| **Obstacle Run／障礙挑戰** | 固定種子的道路障礙；可選 **Standard／Extreme**。部分障礙左右掃動，HUD 預告前方風險。 | 乾淨閃避可得風格分數；沿原路線完賽。碰撞與視覺位置使用同一套決定性邏輯，不更動 Classic 的標準路況。 |
+| **Checkpoint Rush／限時關卡** | 穿越發光的 3D 門框。起始 **28 秒**，每次成功通過關卡加 **10 秒**（最多 60 秒）及 **250 風格分數**。 | 限時通過所有關卡並抵達終點；漏門或超時不記為有效最佳成績。HUD 顯示關卡進度、剩餘時間與下一關距離。 |
+| **Championship Cup／錦標賽** | 只使用已解鎖的賽道，選擇 **3 或 5 站**，每站與 NOVA、ORBIT、APEX 競速。 | 每站依名次給予 **10／7／5／3 分**，比較總積分及同分時的累積時間；錦標賽不會另外解鎖生涯賽道。 |
+
+### 設定介面、HUD 與可用性
+
+- 模式及賽道選擇支援鍵盤和手機觸控；設定面板只顯示該模式適用的選項。未解鎖足夠賽道時，錦標賽會顯示需要的數量。
+- HUD 依模式切換：單人賽不顯示無意義的多人名次；連續衝刺與錦標賽顯示段數；限時關卡顯示即時倒數；障礙挑戰預警；零碰撞計時清楚提示是否失去有效資格。
+- 練習及自訂模式成績與獨立 Ghost 規則，不會覆寫 Classic、生涯解鎖、星數、獎章或每日挑戰資料。模式專屬成績儲存在 `skyline-rush-mode-history-v1`。
+- 模式選項、完成／失敗訊息及障礙警告提供英文與繁體中文；低畫質、觸控配置和減少動態仍列入後續驗收。
+
+### 實際遊戲截圖與測試狀態
+
+[下載 GitHub Actions／Playwright 實際遊戲截圖](https://github.com/weskao/skyline-rush/actions/runs/39742666980/artifacts/12410172411)：含自訂單人、自由駕駛、計時挑戰、障礙挑戰、Extreme 障礙、限時關卡及手機模式選單。這些都由**實際執行中的遊戲**擷取，不是設計示意圖。GitHub Artifact 可能需要登入且會過期；也可在本機執行 `npx playwright test tests/race-modes-browser.spec.js` 後查看 `test-results/race-mode-*.png`。CI 軟體渲染截圖會降解析度，無法直接代表手機實際畫質。
+
+**驗證快照（commit `beab3e2`）**：`npm test`、正式建置及 World Tour 中途測試已通過；競速模式瀏覽器測試為 **11 項通過、1 項失敗**（零碰撞計時的 UI 測試逾時）。此分支**尚未完成全部驗收，也尚未部署**。特技挑戰、無盡道路、真正環形賽道圈數、主動道具欄與關卡編輯器等項目仍待實作，請以 [TODO.md](TODO.md) 的 `[x]` 為準。
 
 ## 在本機執行
 
@@ -111,7 +140,7 @@ NITRO 不消耗電量，因此 Fly + NITRO 永遠可以同時使用（Fly + Boos
 
 - **幽靈車**：每場比賽會以每秒 10 次的頻率取樣車輛的距離、車道位置與高度。在某條賽道創下新的個人最佳成績時會儲存該場比賽，之後在該賽道比賽時會以半透明藍色車輛顯示。可在 Controls 中以 **Show best-run ghost** 關閉。
 - **每日挑戰**：History 會顯示今天的賽道與修飾條件，依本機日期挑選：禁止飛行、雙倍車流，或僅限金色光環。Canyon 永遠不會抽到禁止飛行，因為它的斷橋需要飛行。每日挑戰成績只會記入專屬排行榜（今日最快的五名）；絕不會影響歷史紀錄、最佳時間、解鎖、星數或幽靈車。Restart 會保留挑戰，**Choose track** 則會離開挑戰。
-- **獎章**：First victory（獲勝）、Clean run（無碰撞）、Perfect flight（單場比賽中 5 次 PERFECT LINE）以及 Triple burst（單次爆發中使用 3 格 NITRO：一次按壓加兩次延長）。任何完成的比賽都可能獲得獎章；每枚獎章都會記錄首次獲得的日期。
+- **獎章**：First victory（獲勝）、Clean run（無碰撞）、Perfect flight（單場比賽中 5 次 PERFECT LINE）以及 Triple burst（單次爆發中使用 3 格 NITRO：一次按壓加兩次延長）。僅符合資格的經典競速完賽可取得獎章；每枚獎章會記錄首次獲得的日期。
 - **Garage**：你在每條賽道上的最佳風格星數會累加並解鎖塗裝：3 星解鎖 Aurora、6 星解鎖 Glacier、10 星解鎖 Coral、16 星解鎖 Cobalt、24 星解鎖 Obsidian（滿星 30）。現實中最受歡迎的車色——藍與黑——是長期目標。未解鎖的塗裝仍可預覽。塗裝只會改變外觀，絕不影響車輛的能力數值。
 
 ### Sky Spiral（實驗性的第五條賽道）

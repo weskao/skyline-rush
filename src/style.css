@@ -1207,3 +1207,31 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
 /* The series counter sits in the race info without expanding the top HUD. */
 .sprint-stage { display: inline-block; margin-top: 5px; color: #c9f4ff; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
 .sprint-stage[hidden], #sprint-stages-setting[hidden], #next-stage[hidden] { display: none !important; }
+
+/* A concise urgency HUD; gameplay signals remain visible in every graphics preset. */
+.checkpoint-hud { display: block; margin-top: 6px; width: fit-content; max-width: 100%; color: #93fff0; font-size: clamp(10px,1vw,13px); letter-spacing: .06em; font-weight: 700; text-shadow: 0 0 9px #32c2b8aa; }
+.checkpoint-hud[data-urgent="true"] { color: #ffd084; text-shadow: 0 0 12px #ff8d45aa; }
+.checkpoint-hud[hidden] { display: none !important; }
+
+/* Gauntlet alert is readable without flashing and survives low-performance settings. */
+.hazard-warning { display: inline-block; margin-top: 6px; padding: 4px 10px; border: 1px solid #ffca76aa; border-radius: 6px; background: #5a2a24cc; color: #ffecbd; font-weight: 700; font-size: 11px; letter-spacing: .05em; }
+.hazard-warning[hidden], #gauntlet-rules[hidden] { display: none !important; }
+#gauntlet-rules label { display:flex; gap: 8px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding: 12px 4px; }
+
+/* Clean-trial status deliberately uses a shape/icon as well as color. */
+.clean-trial-hud { display:inline-block; margin-top:6px; color:#a2f5c6; font-size:11px; font-weight:700; letter-spacing:.05em; }
+.clean-trial-hud[data-broken="true"] { color:#ffbb94; }
+.clean-trial-hud[hidden], #time-trial-rules[hidden] { display:none !important; }
+#time-trial-rules label {display:flex; gap:12px; align-items:center; padding:12px 4px;}
+
+/* Cup standings reuse the existing result panel; preserve focus/contrast on mobile. */
+body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #b38542aa; }
+
+/* Compact Free Drive statistics: legible over scenery and wrap on narrow phones. */
+.practice-hud { display:block; width:fit-content; max-width:100%; margin-top:6px; padding:5px 9px; border:1px solid #8ce6ef66; border-radius:6px; background:#10283de6; color:#bcf7ea; font-size:clamp(9px, 1vw, 11px); font-weight:700; line-height:1.65; letter-spacing:.04em; }
+.practice-hud[hidden] { display:none !important; }
+
+/* Score Attack uses the existing race HUD with compact neon arcade feedback. */
+.stunt-hud { display:inline-block; max-width:100%; margin-top:6px; padding:5px 10px; border:1px solid #ffc87988; border-radius:6px; color:#ffe6ae; background:#3b2544e6; font-size:clamp(9px,1.2vw,12px); font-weight:800; line-height:1.5; letter-spacing:.045em; text-shadow:0 0 10px #eb9f5488; }
+.stunt-hud[hidden], #stunt-rules[hidden] { display:none !important; }
+#stunt-rules label {display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:12px 4px;}

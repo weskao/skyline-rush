@@ -395,7 +395,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [ ] At the authored end of an open sprint, offer **Restart / Choose Track / End
   Session**, or stop safely in a designated free-drive area. Do **not** claim
   endless roadway, reverse-map continuity or loop back to the start until implemented.
-- [ ] Optional practice HUD: current speed, air time, travel distance, max speed,
+- [x] Optional practice HUD: current speed, air time, travel distance, max speed,
   clean near-miss chain and trick counter; hide rival position and race countdown.
 - [ ] **Acceptance:** crossing the old finish cannot save an official best, stars,
   campaign unlock or Daily record; exit/restart/pause work for keyboard and touch;
@@ -427,7 +427,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [x] Reuse the existing 10 Hz best-run Ghost when the recorded trace and rules
   are compatible; show `Ahead / Behind` split against the personal record.
   Keep separate Ghost data for mode-specific bests if necessary.
-- [ ] Optional **Clean Time Trial** variant: collisions invalidate a clean medal or
+- [x] Optional **Clean Time Trial** variant: collisions invalidate a clean medal or
   apply an explicit time penalty; do not silently change legacy physics.
 - [ ] **Acceptance:** timed results/ghosts remain isolated from Classic bests;
   blocked localStorage never prevents play; mobile HUD remains readable.
@@ -445,7 +445,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 9F. Checkpoint Rush (P1)
 
-- [ ] **MODE-05 — Checkpoint Rush:** pass a deterministic sequence of grounded or
+- [x] **MODE-05 — Checkpoint Rush:** pass a deterministic sequence of grounded or
   aerial gates before time expires; each clean gate extends the timer.
 - [ ] Choose checkpoints from the **real track route and reachable flight envelopes**;
   prevent impossible gates inside tunnel roofs, road gaps or conflicting hazards.
@@ -456,7 +456,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 9G. Multi-track Championship Cup (P1)
 
-- [ ] **MODE-06 — Championship:** select a curated 3–5-track cup consisting of
+- [x] **MODE-06 — Championship:** select a curated 3–5-track cup consisting of
   **unlocked** stages; award stage ranking points and a clear final champion.
 - [ ] Preserve stage standings across transitions with fair AI participation,
   an explicit continue/retry flow, and optional saved in-progress cup recovery.
@@ -470,7 +470,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [ ] **MODE-07 — Obstacle Gauntlet:** fixed-seed hazard challenges with
   escalating moving gates, road barricades, flying hoops, debris and safe/risky
   alternate lines. Keep the ordinary track drivable in Classic mode by default.
-- [ ] Add difficulty tiers based on warning time, obstacle spacing and
+- [x] Add difficulty tiers based on warning time, obstacle spacing and
   activation frequency **without random unavoidable collisions**.
 - [ ] Score clean obstacle passes, near-misses and finish time; practice and
   obstacle-mode records stay separate.

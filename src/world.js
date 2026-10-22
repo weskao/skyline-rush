@@ -18,6 +18,7 @@ import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival } from './trac
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
+import { hazardX } from './hazards.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
@@ -387,6 +388,9 @@ export function createWorld(canvas) {
   const shortcutPylonMeshes = instances(box, material('#d9dcda', .4, .5), 8, scene);
   const gauntletBarriers = instances(box, new THREE.MeshBasicMaterial({ color: '#ff946f' }), 24, scene);
   gauntletBarriers.name = 'gauntlet-barriers'; gauntletBarriers.count = 0;
+  // Neon uprights + beam for each timed checkpoint; pooled like the gauntlet barriers.
+  const checkpointGates = instances(box, new THREE.MeshBasicMaterial({ color: '#54f3dd' }), 48, scene);
+  checkpointGates.name = 'checkpoint-gates'; checkpointGates.count = 0;
   shortcutDeck.name = 'shortcut-deck'; shortcutPylonMeshes.name = 'shortcut-pylons';
   const surfaceMarks = instances(box, new THREE.MeshBasicMaterial({ color: '#9ae6ff', transparent: true, opacity: .3, depthWrite: false }), segments, scene);
   const cliffs = instances(new THREE.ConeGeometry(1, 1, 5), material('#a15339'), 40, scene);
@@ -783,13 +787,28 @@ export function createWorld(canvas) {
       if (!preview && race.mode === 'gauntlet') for (const hazard of race.hazards) {
         if (hazard.distance < distance - 16 || hazard.distance > distance + 550) continue;
         if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
-        const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, hazard.x, 1.25, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, hazard.x, 1.25, distance)
-            : [roadCenter(hazard.distance) - center + hazard.x, 1.25, distance - hazard.distance];
+        const x = hazardX(hazard, race.elapsed);
+        const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, 1.25, distance)
+          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, 1.25, distance)
+            : [roadCenter(hazard.distance) - center + x, 1.25, distance - hazard.distance];
         put(gauntletBarriers, visibleHazards++, ...xyz, 3.1, 2.5, 1.3);
       }
       gauntletBarriers.count = visibleHazards;
       if (visibleHazards) gauntletBarriers.instanceMatrix.needsUpdate = true;
+
+      let visibleGateParts = 0;
+      if (!preview && race.checkpoint) for (const gate of race.checkpoint.gates) {
+        if (gate.passed || gate.missed || gate.distance < distance - 16 || gate.distance > distance + 550) continue;
+        if (visibleGateParts + 3 > checkpointGates.instanceMatrix.count) break;
+        const locate = (x, y) => trackId === 'spiral' ? skyPosition(gate.distance, x, y, distance)
+          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, gate.distance, x, y, distance)
+            : [roadCenter(gate.distance) - center + x, y, distance - gate.distance];
+        put(checkpointGates, visibleGateParts++, ...locate(gate.x - 3.2, gate.altitude + 2.4), .32, 4.8, .44);
+        put(checkpointGates, visibleGateParts++, ...locate(gate.x + 3.2, gate.altitude + 2.4), .32, 4.8, .44);
+        put(checkpointGates, visibleGateParts++, ...locate(gate.x, gate.altitude + 4.8), 6.7, .34, .44);
+      }
+      checkpointGates.count = visibleGateParts;
+      if (visibleGateParts) checkpointGates.instanceMatrix.needsUpdate = true;
 
       if (preview) {
         const groundedShowcase = visual.enabled && visual.airflow;

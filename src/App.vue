@@ -130,7 +130,39 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <button type="button" data-race-mode="free" aria-pressed="false" data-i18n="mode.free">Free Drive</button>
           <button type="button" data-race-mode="time" aria-pressed="false" data-i18n="mode.time">Time Attack</button>
           <button type="button" data-race-mode="gauntlet" aria-pressed="false" data-i18n="mode.gauntlet">Obstacle Run</button>
+          <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
+          <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
+          <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
         </div>
+        <details class="race-mode-rules" id="stunt-rules" hidden>
+          <summary data-i18n="mode.stuntRules">Stunt Attack duration</summary>
+          <label><span data-i18n="mode.stuntDuration">Active driving time</span>
+            <select id="stunt-duration" aria-label="Stunt duration" data-i18n-aria-label="mode.stuntDuration">
+              <option value="120" selected>2 min</option><option value="180">3 min</option><option value="300">5 min</option>
+            </select>
+          </label>
+        </details>
+        <details class="race-mode-rules" id="cup-rules" hidden>
+          <summary data-i18n="mode.cupSettings">Championship format</summary>
+          <label><span data-i18n="mode.cupLength">Number of unique tracks</span>
+            <select id="cup-length" aria-label="Cup stages" data-i18n-aria-label="mode.cupLength">
+              <option value="3" selected>3</option><option value="5">5</option>
+            </select>
+          </label>
+        </details>
+        <details class="race-mode-rules" id="time-trial-rules" hidden>
+          <summary data-i18n="mode.cleanRules">Clean Time Trial</summary>
+          <label><input type="checkbox" id="clean-trial"> <span data-i18n="mode.cleanDescription">No collisions allowed for a valid record</span></label>
+        </details>
+        <details class="race-mode-rules" id="gauntlet-rules" hidden>
+          <summary data-i18n="mode.gauntletDifficulty">Obstacle intensity</summary>
+          <label><span data-i18n="mode.hazardTier">Obstacle speed and spacing</span>
+            <select id="hazard-tier" aria-label="Obstacle intensity" data-i18n-aria-label="mode.gauntletDifficulty">
+              <option value="standard" selected data-i18n="mode.standard">Standard</option>
+              <option value="extreme" data-i18n="mode.extreme">Extreme</option>
+            </select>
+          </label>
+        </details>
         <details class="race-mode-rules" id="race-mode-rules" hidden>
           <summary data-i18n="mode.rules">Customize race rules</summary>
           <div class="race-presets" role="group" aria-label="Rule presets" data-i18n-aria-label="mode.presets">
@@ -163,7 +195,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
       <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">04</strong><span>/ 04</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
-      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="sprint-stage" class="sprint-stage" hidden></output></div>
+      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"></div>
     </section>
 
