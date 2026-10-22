@@ -12,7 +12,7 @@ const VIEWPORTS = [['desktop', { width: 1440, height: 900 }, false], ['phone', {
 const MIN_CJK_PX = 10;
 const CJK = /[㐀-鿿豈-﫿　-〿]/;
 // Brand/game terms, units and key names the zh-TW UI keeps in English.
-const ALLOWED = new Set(['SKYLINE', 'RUSH', 'NITRO', 'FLY', 'BOOST', 'NOVA', 'ORBIT', 'APEX', 'KM', 'ESC', 'SPACE', 'SHIFT', 'ENTER', 'CFD']); // CFD: the technical acronym in "NOT CFD"
+const ALLOWED = new Set(['SKYLINE', 'RUSH', 'NITRO', 'FLY', 'BOOST', 'NOVA', 'ORBIT', 'APEX', 'KM', 'ESC', 'SPACE', 'SHIFT', 'ENTER', 'BACKSPACE', 'CFD']); // CFD: the technical acronym in "NOT CFD"
 const KEY_PREFIXES = [...new Set(Object.keys(CATALOGS.en).map(key => key.split('.')[0]))];
 // A catalog key shown to the player: a whole-string dotted identifier, or a real catalog prefix glued to a dotted tail.
 const RAW_KEY = new RegExp(`^[a-z][A-Za-z0-9]*(\\.[A-Za-z0-9-]+)+$|(^|[^\\w.])(${KEY_PREFIXES.join('|')})\\.[A-Za-z][\\w.]*`);
