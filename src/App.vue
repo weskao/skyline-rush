@@ -143,7 +143,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <summary data-i18n="mode.stuntRules">Stunt Attack duration</summary>
           <label><span data-i18n="mode.stuntDuration">Active driving time</span>
             <select id="stunt-duration" aria-label="Stunt duration" data-i18n-aria-label="mode.stuntDuration">
-              <option value="120" selected data-i18n="mode.duration.two">2 min</option><option value="180" data-i18n="mode.duration.three">3 min</option><option value="300" data-i18n="mode.duration.five">5 min</option>
+              <option value="120" selected data-i18n="mode.stuntMinutes.120">2 min</option><option value="180" data-i18n="mode.stuntMinutes.180">3 min</option><option value="300" data-i18n="mode.stuntMinutes.300">5 min</option>
             </select>
           </label>
         </details>

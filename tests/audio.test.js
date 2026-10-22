@@ -67,9 +67,9 @@ test('racing Sky Spiral keeps its background music instead of the shared race so
 });
 
 // Opening pads sit outside the shared intro (57) and race (55) pads.
-const WORLD_TOUR_PADS = { taipei: 62, tokyo: 63, alpine: 58, coastal: 65, cosmic: 66 };
+const COURSE_PADS = { spiral:56, neon:61, canyon:68, aurora:74, taipei:62, tokyo:63, alpine:58, coastal:65, cosmic:66 };
 
-for (const [trackId, pad] of Object.entries(WORLD_TOUR_PADS)) {
+for (const [trackId, pad] of Object.entries(COURSE_PADS)) {
   test(`selecting ${trackId} on the menu keeps the shared intro`, t => {
     const heard = heardFrequencies(t, trackId, 'ready');
     assert.ok(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), `${trackId} menu keeps the intro`);
@@ -226,4 +226,11 @@ test('checkpoint pass triggers a new Web Audio tone once, and muted changes cann
   sound.setEnabled(true);
   sound.update(race);
   assert.equal(tones(),after,'events during mute are consumed');
+});
+
+
+test('racing Coast retains the shared race pad after new course songs are added', t => {
+  const heard = heardFrequencies(t, 'coast', 'racing');
+  assert.ok(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05));
+  assert.equal(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), false);
 });

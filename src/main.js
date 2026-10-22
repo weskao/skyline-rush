@@ -29,6 +29,7 @@ import { createRouteMap } from './route-map.js';
 import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.js';
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
+import { refreshIfStale } from './update-check.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -1002,7 +1003,12 @@ window.addEventListener('blur', () => {
 document.addEventListener('visibilitychange', () => {
   document.body.classList.toggle('page-hidden', document.hidden);
   if (document.hidden && (race.phase === 'racing' || race.phase === 'countdown')) pause();
+  if (!document.hidden) pickUpNewBuild();
 });
+// Only refresh an idle session after reload, resume or bfcache restore; don't interrupt a race.
+const pickUpNewBuild = () => refreshIfStale(() => race.phase === 'ready');
+window.addEventListener('pageshow', event => { if (event.persisted) pickUpNewBuild(); });
+pickUpNewBuild();
 
 function phaseUI() {
   const phase = race.phase;

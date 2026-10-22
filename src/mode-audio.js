@@ -1,5 +1,5 @@
 // Pure mode-specific sound events: one-shot transitions, no Web Audio dependencies.
-const COURSE_MUSIC = {spiral:'spiral',taipei:'taipei',tokyo:'tokyo',alpine:'alpine',coastal:'coastal',cosmic:'cosmic'};
+const COURSE_MUSIC = {spiral:'spiral',neon:'neon',canyon:'canyon',aurora:'aurora',taipei:'taipei',tokyo:'tokyo',alpine:'alpine',coastal:'coastal',cosmic:'cosmic'};
 const MODE_MUSIC = {checkpoint:'checkpoint',stunt:'stunt',gauntlet:'gauntlet',cup:'cup',free:'cruise',elimination:'gauntlet'};
 export const musicForMode = race => ['ready','finished'].includes(race.phase) ? 'intro' : MODE_MUSIC[race.mode] || COURSE_MUSIC[race.trackId] || 'race';
 
