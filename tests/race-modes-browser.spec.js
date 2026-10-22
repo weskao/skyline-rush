@@ -248,3 +248,17 @@ test('Checkpoint Rush shows directional guidance and perfect gate counter', asyn
   await expect(page.locator('#checkpoint-hud')).toContainText('NEXT');
   await page.screenshot({path:'test-results/race-mode-checkpoint-guidance.png'});
 });
+
+test('Custom active power-ups show a safe accessible item slot',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/');await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="custom"]').click();
+  await page.locator('#race-mode-rules > summary').click();
+  await page.locator('[data-race-rule="activeItems"]').check();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#item-slot')).toBeVisible();
+  await expect(page.locator('#item-status')).toContainText('EMPTY');
+  await expect(page.locator('#activate-item')).toBeDisabled();
+  await page.screenshot({path:'test-results/race-mode-active-items.png'});
+  expect(errors).toEqual([]);
+});

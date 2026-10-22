@@ -3,6 +3,7 @@ import { createHazards, hazardX } from './hazards.js';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
 import { createPracticeStats, samplePractice } from './practice-stats.js';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
+import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
@@ -257,6 +258,7 @@ export function createRace(trackId = 'coast', modifier = null) {
       slipstream: { time: 0, active: false, paid: false },
       drift: null, driftPayout: null, miniBoost: 0, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
+      heldItem: null, itemCooldown: 0,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].slice(0, config.rivals).map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
@@ -282,7 +284,8 @@ function collectRing(race, ring, index) {
     car.score += RISK_SCORE;
   } else if (ring.type === 'mystery') {
     const effect = mysteryEffect(race.seed, index);
-    car.effects[effect] = EFFECT_TIMES[effect];
+    if (race.config.activeItems) bankItem(car, effect);
+    else car.effects[effect] = EFFECT_TIMES[effect];
   }
   car.groupHits[ring.group] = (car.groupHits[ring.group] ?? 0) + 1;
   if (car.groupHits[ring.group] === race.rings.filter(other => other.group === ring.group).length) {
@@ -306,6 +309,11 @@ function rivalWantsNitro(race, rival, hop) {
 
 export function startRace(race) {
   if (race.phase === 'ready') race.phase = race.mode === 'free' ? 'racing' : 'countdown';
+}
+
+export function useHeldItem(race) {
+  if (!race?.config?.activeItems || race.phase !== 'racing') return null;
+  return activateItem(race.player, race.rivals.length > 0);
 }
 
 export function racePosition(race) {
@@ -354,6 +362,7 @@ export function stepRace(race, input, dt) {
   race.elapsed += dt;
   const car = race.player;
   const previousScore = car.score;
+  if (race.config.activeItems) tickItemCooldown(car, dt);
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
   car.section = section?.type ?? null;
   car.inShortcut = car.section === 'shortcut' && Math.abs(car.x - section.x) < SHORTCUT_HALF_WIDTH &&

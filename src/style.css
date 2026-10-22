@@ -1257,3 +1257,11 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .recent-custom-runs button { min-height: 36px; padding: 6px 9px; border: 1px solid #5e91ad; border-radius: 5px; background: #173549; color: #daf2fa; font-size: 11px; text-align: left; }
 .recent-custom-runs button:focus-visible { outline: 2px solid #a3edff; outline-offset: 2px; }
 #recent-custom[hidden] { display: none !important; }
+
+/* Active inventory lives with race telemetry, not inside the adjustable touch driving grid. */
+.item-slot {display:flex;align-items:center;gap:8px;max-width:100%;margin-top:7px;padding:5px 7px;background:#152d41ec;border:1px solid #7bd6e59a;border-radius:6px;color:#bceefa;font-size:10px;font-weight:800;line-height:1.5;}
+.item-slot[hidden]{display:none!important;}
+.item-slot button{pointer-events:auto;min-height:34px;padding:5px 9px;border:1px solid #e8c079;border-radius:5px;background:#e5bb6e;color:#1c2834;font-size:11px;font-weight:800;cursor:pointer;}
+.item-slot button:disabled{opacity:.45;cursor:default;}
+.item-slot button:focus-visible{outline:2px solid #9cddff;outline-offset:2px;}
+@media(max-width:760px){.item-slot{flex-wrap:wrap;max-width:220px}.item-slot button{min-height:40px}}

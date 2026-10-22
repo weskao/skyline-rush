@@ -20,6 +20,7 @@ export function normalizeRaceConfig(value = {}) {
     traffic: practice && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet', 'checkpoint'].includes(mode) ? 'off' : 'normal',
     difficulty: custom && DIFFICULTIES.includes(value.difficulty) ? value.difficulty : 'normal',
     items: practice && typeof value.items === 'boolean' ? value.items : true,
+    ...(practice && value.items !== false && value.activeItems === true ? { activeItems: true } : {}),
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
     ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),

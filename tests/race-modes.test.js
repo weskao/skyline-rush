@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeRaceConfig, MODES } from '../src/race-config.js';
-import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
+import { createRace, startRace, stepRace, useHeldItem, RACE_TRACKS } from '../src/game.js';
 
 test('normalization keeps classic defaults and validates mode names', () => {
   const config = normalizeRaceConfig();
@@ -321,4 +321,15 @@ test('Stunt Attack exposes a new heat rather than claiming a fake circuit lap at
   stepRace(race,{},1/60);
   assert.equal(race.result.endReason,'route');
   assert.ok(race.elapsed < race.config.duration);
+});
+
+test('active mystery inventory is opt-in and does not change Classic behavior', () => {
+  const classic=createRace('coast',{mode:'classic',activeItems:true});
+  const custom=createRace('coast',{mode:'custom',activeItems:true});
+  assert.equal(classic.config.activeItems,undefined);
+  assert.equal(custom.config.activeItems,true);
+  custom.phase='racing'; custom.player.heldItem='shield';
+  assert.equal(useHeldItem(custom),'shield');
+  assert.equal(custom.player.effects.shield,10);
+  assert.equal(useHeldItem(classic),null);
 });

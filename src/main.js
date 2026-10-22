@@ -2,7 +2,7 @@ import './style.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
+import { createRace, startRace, stepRace, useHeldItem, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
@@ -106,7 +106,7 @@ let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
-const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal', stages: 1 };
+const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, collision: 'normal', stages: 1 };
 const cupCount = () => Number($('#cup-length').value);
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 let cup = null; // Three unlocked point-to-point heats, with rival points carried between heats.
@@ -376,7 +376,7 @@ for (const button of document.querySelectorAll('button[data-race-mode]')) button
   changeRaceSelection();
 });
 for (const button of document.querySelectorAll('[data-race-preset]')) button.addEventListener('click', () => {
-  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', stages: 1 });
+  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', stages: 1, activeItems: false });
   for (const input of document.querySelectorAll('[data-race-rule]'))
     if (input.type === 'checkbox') input.checked = raceRules[input.dataset.raceRule];
     else input.value = String(raceRules[input.dataset.raceRule]);
@@ -717,12 +717,15 @@ function changeCamera() {
   ui['camera-button'].setAttribute('aria-pressed', String(mode === 1));
 }
 
+function triggerItem() {
+  if (useHeldItem(race)) sound.cue('pickup');
+}
 const controls = createControls(window, action => {
   if (document.querySelector('dialog[open]')) { controls.clear(); return; }
   if (action === 'pause') toggleSettings(false);
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
-  ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
+  ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
 }, { getSettings: getControlSettings, getKeyMap: () => keyMap, onTilt: () => {
   if (tiltSeen) return;
   tiltSeen = true; clearTimeout(tiltTimeout);
@@ -730,6 +733,7 @@ const controls = createControls(window, action => {
 } });
 const pad = $('.touch-pad');
 controls.bindSlidePad(pad, { getSettings: getControlSettings });
+$('#activate-item').addEventListener('click', triggerItem);
 // input.js keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.js).
 const PAD_BRAKE_PX = 40;
 const PAD_HINT_SECONDS = 4;
@@ -1203,6 +1207,12 @@ function updateUI(now, input) {
     n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
     total: sprintSeries.count,
   });
+  const slot = $('#item-slot'), carItem = race.player.heldItem;
+  slot.hidden = !race.config.activeItems || race.phase === 'ready';
+  if (!slot.hidden) {
+    $('#item-status').textContent = carItem ? t('mode.itemReady',{item:t('mode.item.'+carItem)}) : t('mode.itemEmpty');
+    $('#activate-item').disabled = !carItem || race.phase !== 'racing' || race.player.itemCooldown > 0;
+  }
   const stuntHud = $('#stunt-hud');
   stuntHud.hidden = !stunt || race.phase === 'ready';
   if (stunt) {
