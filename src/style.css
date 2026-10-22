@@ -1208,7 +1208,7 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
  .race-mode-rules[open] { max-height: 180px; overflow-y: auto; }
 }
 @media (max-width:370px) {
- .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); }
 }
 .mode-history-runs p { padding: 9px 0; border-bottom: 1px solid #405465; margin: 0; font-variant-numeric: tabular-nums; color: #e5edf4; }
 
@@ -1222,12 +1222,12 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-presets button:focus-visible { outline: 2px solid #a0edff; outline-offset: 2px; }
 
 /* Five mode cards adapt to narrow safe-area viewports without shrinking touch targets. */
-.race-mode-tabs { grid-template-columns: repeat(5,minmax(0,1fr)); }
+.race-mode-tabs { grid-template-columns: repeat(5,minmax(min-content,1fr)); }
 body[data-race-mode="free"] .race-presets,
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="rivals"]),
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
-@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
-@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(min-content,1fr)); } }
+@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); } }
 /* 501-966px-tall desktops: the picker costs ~100px, so it goes to one row and the tagline yields, keeping the flight tip whole. */
 @media (min-width: 1001px) and (min-height: 501px) and (max-height: 966px) {
  .intro-copy { display: none; }
