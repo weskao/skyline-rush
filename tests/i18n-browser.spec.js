@@ -12,7 +12,7 @@ const VIEWPORTS = [['desktop', { width: 1440, height: 900 }, false], ['phone', {
 const MIN_CJK_PX = 10;
 const CJK = /[㐀-鿿豈-﫿　-〿]/;
 // Brand/game terms, units and key names the zh-TW UI keeps in English.
-const ALLOWED = new Set(['SKYLINE', 'RUSH', 'NITRO', 'FLY', 'BOOST', 'NOVA', 'ORBIT', 'APEX', 'KM', 'ESC', 'SPACE', 'SHIFT', 'ENTER', 'CFD']); // CFD: the technical acronym in "NOT CFD"
+const ALLOWED = new Set(['SKYLINE', 'RUSH', 'NITRO', 'FLY', 'BOOST', 'NOVA', 'ORBIT', 'APEX', 'KM', 'ESC', 'SPACE', 'SHIFT', 'ENTER', 'BACKSPACE', 'CFD']); // CFD: the technical acronym in "NOT CFD"
 const KEY_PREFIXES = [...new Set(Object.keys(CATALOGS.en).map(key => key.split('.')[0]))];
 // A catalog key shown to the player: a whole-string dotted identifier, or a real catalog prefix glued to a dotted tail.
 const RAW_KEY = new RegExp(`^[a-z][A-Za-z0-9]*(\\.[A-Za-z0-9-]+)+$|(^|[^\\w.])(${KEY_PREFIXES.join('|')})\\.[A-Za-z][\\w.]*`);
@@ -454,3 +454,43 @@ for (const [locale, system] of LOCALES) test.describe(`road signs ${locale}`, ()
     }
   });
 });
+
+// Start screen: the intro is a vertical scroller. At common desktop heights its content fits, so no text line is cut by the
+// scroller's bottom edge (a cut line once peeked 7px out of the zh-TW intro); shorter screens must still scroll to the last line.
+const introLines = page => page.locator('#intro').evaluate(intro => {
+  const box = intro.getBoundingClientRect();
+  const edge = box.top + intro.clientTop + intro.clientHeight;
+  const range = document.createRange();
+  const lines = [];
+  for (const el of intro.querySelectorAll('*')) {
+    if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+    for (const node of el.childNodes) {
+      if (node.nodeType !== 3 || !node.textContent.trim()) continue;
+      range.selectNodeContents(node);
+      for (const r of range.getClientRects()) if (r.width > 0 && r.height > 0) lines.push({ text: node.textContent.trim().slice(0, 24), top: r.top, bottom: r.bottom });
+    }
+  }
+  return { edge, lines, scrollable: intro.scrollHeight - intro.clientHeight };
+});
+for (const [locale, system] of LOCALES) for (const [width, height] of [[1440, 900], [1600, 900], [1280, 900], [1920, 1080], [1440, 800], [1366, 768], [1280, 720]]) {
+  test.describe(`intro bottom edge ${locale} ${width}x${height}`, () => {
+    test.use({ locale: system, viewport: { width, height } });
+    test('no text line is cut by the scroller edge, and the last line is reachable', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const intro = page.locator('#intro');
+      await intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const cut = ({ edge, lines }) => lines.filter(line => line.top < edge - 0.5 && line.bottom > edge + 0.5).map(line => `"${line.text}" ${Math.round(line.top)}..${Math.round(line.bottom)} edge ${Math.round(edge)}`);
+      const first = await introLines(page);
+      if (height >= 900) {
+        expect(cut(first), 'lines cut by the intro bottom edge').toEqual([]);
+        expect(first.scrollable, 'intro content fits without scrolling').toBeLessThanOrEqual(0);
+      }
+      await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
+      const last = await introLines(page);
+      const lowest = last.lines.reduce((a, b) => (b.bottom > a.bottom ? b : a));
+      expect(lowest.text, 'the flight tip is the last line').toBe((await page.locator('.flight-tip').innerText()).trim().slice(0, 24));
+      expect(lowest.bottom, 'last line fully visible once scrolled').toBeLessThanOrEqual(last.edge + 0.5);
+    });
+  });
+}
