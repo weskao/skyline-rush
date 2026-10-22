@@ -13,16 +13,9 @@ Detailed, file-scoped rules live in `.claude/rules/` and load only when their fi
 ## Home-screen landmark showcase
 
 Selecting a map on the home screen must show that map's signature landmark in the live 3D
-preview (Taipei → Presidential Office, Tokyo → Tokyo Tower). Every new map ships the same way:
-
-- Give its `HERO_PREVIEWS` entry (`src/track-preview.js`) a `landmark` kind and a preview
-  `distance` with the landmark 150–600 m ahead; neither camera nor landmark sits in a tunnel or
-  shortcut. Frame it with `lookHeight` only; keep the chase-camera offsets and car scale.
-- Keep the sightline clear with the landmark's `plaza` (no roadside props) and turn its facade
-  toward the camera with `yaw` when needed (`src/world-tour-scene.js`).
-- Landscape: landmark right of the home UI panel, top in frame. Portrait: in the upper band.
-- Add the map to the unit + browser landmark checks (`tests/track-preview.test.js`,
-  `tests/world-tour-showcase-browser.spec.js`; `inspectLandmarks()` reports bounds and occlusion).
+preview, and roadside props or terrain must not hide it there or while racing toward it. Every
+new map ships the same way; placement, occlusion and test rules are in
+`.claude/rules/track-showcase.md` ("Signature landmark").
 
 ## Commands
 
