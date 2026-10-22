@@ -280,7 +280,10 @@ function showTracks() {
   $('#selected-race-mode').textContent = t(`mode.${mode}`);
   $('#mode-description').textContent = t(`mode.desc.${mode}`);
   $('#custom-rules').hidden = mode !== 'custom';
-  $('.route-drivers').textContent = t('mode.drivers', { n: race.rivals.length + 1 });
+  $('.route-drivers').textContent = t(race.rivals.length ? 'mode.drivers' : 'mode.driver', { n: race.rivals.length + 1 });
+  const startLabel = t(mode === 'free' ? 'mode.startFree' : mode === 'time' ? 'mode.startTime' : 'start.race');
+  $('#start-button > span').textContent = startLabel;
+  $('#start-button').setAttribute('aria-label', startLabel);
   const name = trackName(race.trackId, getLocale());
   const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : name).toUpperCase();
   $('.route-heading').textContent = route;
@@ -883,7 +886,7 @@ function phaseUI() {
     $('#exit-free').hidden = race.config?.mode !== 'free';
     $('#new-best').hidden = true;
     enter($('.overlay-content'), 'translateY(12px)');
-    ui['resume-button'].hidden = false;
+    ui['resume-button'].hidden = race.endOfRoute;
     $('#next-button').hidden = true;
     ui['result-stats'].hidden = true;
     $('#result-style').hidden = true;
@@ -892,7 +895,7 @@ function phaseUI() {
     controls.clear();
     $('#exit-free').hidden = true;
     const official = race.config?.mode === 'classic';
-    const medals = official ? recordMedals(race.result).filter(id => !sessionMedals[id]) : []; // history.js swallows storage failures
+    const medals = official && !race.modifier ? recordMedals(race.result).filter(id => !sessionMedals[id]) : []; // history.js swallows storage failures
     sessionMedals = { ...sessionMedals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
     const trackId = race.trackId ?? 'coast';
     let best, record;
@@ -952,7 +955,7 @@ function phaseText() {
   const { best, record, medals } = lastResult;
   const { result } = race;
   if (!$('#next-button').hidden) $('#next-track').textContent = trackName($('#next-button').dataset.next, getLocale());
-  ui['overlay-title'].textContent = t(result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
+  ui['overlay-title'].textContent = t(race.config?.mode === 'time' ? 'mode.timeComplete' : race.config?.mode === 'custom' ? 'mode.customComplete' : result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
   ui['overlay-copy'].textContent = (race.config?.mode === 'classic' ? t(record ? 'overlay.recordCopy' : 'overlay.againCopy') : t('mode.unrankedFinish')) + t('overlay.summary', { near: result.nearMisses, contacts: result.collisions })
     + (medals.length ? t('overlay.medal', { list: medals.map(id => t(`medal.${id}`)).join(t('list.separator')) }) : '');
   ui['result-stats'].innerHTML = `<div><span>${t('race.position')}</span><strong>${result.position}<small> / ${race.rivals.length + 1}</small></strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(race.elapsed)}</strong></div><div><span>${t('result.best')}</span><strong>${timeString(best)}</strong></div>`;
