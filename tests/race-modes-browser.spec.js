@@ -293,3 +293,30 @@ test('Custom hazards toggle off, then render with safe physics and warning UI', 
   await page.screenshot({path:'test-results/race-mode-custom-obstacles.png'});
   expect(errors).toEqual([]);
 });
+
+test('paused Free Drive supports orbit, lighting and local PNG export', async ({ page }) => {
+  const errors=[];
+  page.on('pageerror',err=>errors.push(err.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="free"]').click();
+  await page.locator('#start-button').click();
+  await page.locator('#pause-button').click();
+  await expect(page.locator('#photo-open')).toBeVisible();
+  await page.locator('#photo-open').click();
+  await expect(page.locator('#photo-screen')).toBeVisible();
+  await page.locator('#photo-orbit').fill('135');
+  await page.locator('#photo-fov').fill('45');
+  await page.locator('#photo-sky').evaluate(select=>{
+    select.value='sunset';select.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  await page.screenshot({path:'test-results/race-mode-photo-studio.png'});
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('#photo-save').click();
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^skyline-rush-coast-.*\.png$/);
+  await expect(page.locator('#photo-status')).toContainText('PNG prepared');
+  await page.locator('#photo-close').click();
+  await expect(page.locator('#photo-screen')).not.toBeVisible();
+  expect(errors).toEqual([]);
+});

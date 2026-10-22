@@ -214,10 +214,28 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <div class="impact-report" id="impact-report" role="status" hidden><span class="impact-icon"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></span><div><strong id="impact-title">CONTACT</strong><span><span data-i18n="impact.stabilizing">STABILIZING ·</span> <b id="impact-loss">0</b> <span data-i18n="impact.lost">KM/H LOST</span></span></div></div>
 
     <section class="race-overlay" id="race-overlay" aria-labelledby="overlay-title" hidden>
-      <div class="overlay-content"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><span id="new-best" class="new-best" data-i18n="result.newBest" hidden>NEW BEST</span><div id="result-stats" class="result-stats" hidden></div><div id="result-style" class="result-style" hidden></div><button class="primary-button" id="resume-button" aria-label="Resume race" data-i18n-aria-label="resume.aria"><span data-i18n="resume.label">Back to the race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="primary-button next-button" id="next-stage" hidden>Next stage</button><button class="primary-button next-button" id="next-button" hidden><span><span data-i18n="result.next">Next ·</span> <b id="next-track"></b></span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button><div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.history">History</button></div></div>
+      <div class="overlay-content"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><span id="new-best" class="new-best" data-i18n="result.newBest" hidden>NEW BEST</span><div id="result-stats" class="result-stats" hidden></div><div id="result-style" class="result-style" hidden></div><button type="button" class="text-button" id="photo-open" hidden data-i18n="photo.open">PHOTO STUDIO</button><button class="primary-button" id="resume-button" aria-label="Resume race" data-i18n-aria-label="resume.aria"><span data-i18n="resume.label">Back to the race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="primary-button next-button" id="next-stage" hidden>Next stage</button><button class="primary-button next-button" id="next-button" hidden><span><span data-i18n="result.next">Next ·</span> <b id="next-track"></b></span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button><div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.history">History</button></div></div>
     </section>
     <div id="error-message" class="error-message" role="alert" hidden></div>
   </main>
+  <dialog id="photo-screen" class="photo-screen" aria-labelledby="photo-title">
+    <div class="photo-panel">
+      <h2 id="photo-title" data-i18n="photo.title">PHOTO STUDIO</h2>
+      <p data-i18n="photo.help">Free Drive is paused. Orbit and frame your car, then save a local PNG.</p>
+      <label><span data-i18n="photo.orbit">Camera orbit</span>
+        <input id="photo-orbit" type="range" min="0" max="360" step="15" value="30"></label>
+      <label><span data-i18n="photo.fov">Field of view</span>
+        <input id="photo-fov" type="range" min="35" max="85" value="58"></label>
+      <label><span data-i18n="photo.sky">Photo lighting</span>
+        <select id="photo-sky"><option value="original" data-i18n="photo.original">Original</option>
+          <option value="sunset" data-i18n="photo.sunset">Sunset</option>
+          <option value="night" data-i18n="photo.night">Night</option>
+          <option value="fog" data-i18n="photo.fog">Fog</option></select></label>
+      <p id="photo-status" role="status" data-i18n="photo.status">This photo stays on your device.</p>
+      <div class="photo-actions"><button type="button" id="photo-save" data-i18n="photo.save">SAVE PNG</button>
+        <button type="button" id="photo-close" data-i18n="photo.close">BACK</button></div>
+    </div>
+  </dialog>
   <div id="race-wipe" class="race-wipe" aria-hidden="true" hidden></div>
 
   <dialog id="history-screen" class="history-screen" aria-labelledby="history-title">

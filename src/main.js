@@ -11,6 +11,7 @@ import { loadRecentCustom, saveRecentCustom } from './recent-custom.js';
 import { stuntMedal } from './stunt-attack.js';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
 import { createWorld } from './world.js';
+import { photoFilename } from './photo-export.js';
 import { createSound } from './audio.js';
 import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
@@ -937,6 +938,35 @@ $('#next-stage').addEventListener('click', () => {
 $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
+const photoDialog = $('#photo-screen');
+const updatePhotoView = () => world?.setPhotoView({
+  angle:Number($('#photo-orbit').value), fov:Number($('#photo-fov').value),
+  sky:$('#photo-sky').value,
+});
+$('#photo-open').addEventListener('click', () => {
+  if (race.mode !== 'free' || race.phase !== 'paused' || !world) return;
+  updatePhotoView();
+  photoDialog.showModal();
+  $('#photo-status').textContent=t('photo.status');
+  sound.cue('ui');
+});
+for (const id of ['photo-orbit','photo-fov','photo-sky']) $('#'+id).addEventListener('input', updatePhotoView);
+$('#photo-close').addEventListener('click',()=>photoDialog.close());
+photoDialog.addEventListener('close',()=>{ world?.setPhotoView(null); sound.cue('ui'); });
+$('#photo-save').addEventListener('click', async () => {
+  const button=$('#photo-save'); button.disabled=true;
+  try {
+    const blob=await world.capturePhoto();
+    const url=URL.createObjectURL(blob);
+    const download=document.createElement('a');
+    download.href=url; download.download=photoFilename(race.trackId);
+    download.click();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    $('#photo-status').textContent=t('photo.ready');
+    sound.cue('photo');
+  } catch { $('#photo-status').textContent=t('photo.error'); }
+  finally { button.disabled=false; }
+});
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
 audioSwitches.forEach(button => {
   const kind = button.dataset.audio, slider = button.nextElementSibling;
@@ -991,6 +1021,7 @@ function phaseUI() {
   if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
+  $('#photo-open').hidden = phase !== 'paused' || race.mode !== 'free';
   if (phase === 'paused') {
     $('#new-best').hidden = true;
     enter($('.overlay-content'), 'translateY(12px)');

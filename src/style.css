@@ -1269,3 +1269,22 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .elimination-hud{display:inline-block;max-width:100%;margin-top:7px;padding:5px 9px;border:1px solid #ffce8777;border-radius:5px;background:#482a31dd;color:#ffe7b2;font-size:11px;font-weight:800;letter-spacing:.06em;text-shadow:0 0 9px #fb914966;}
 .elimination-hud[hidden]{display:none!important;}
 .elimination-hud[data-urgent="true"]{border-color:#ffb19d;color:#fff0e9;background:#873a44ee;}
+
+/* Paused Free Drive Photo Studio: keep the scenery visible, no new dependencies. */
+.photo-screen { position: fixed; inset: 12px auto auto 12px; margin: 0; width: min(360px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
+.photo-screen::backdrop { background: transparent; }
+.photo-panel { display: grid; gap: 12px; padding: 18px; font-size: 13px; }
+.photo-panel h2 { margin: 0; font-size: 18px; letter-spacing: .12em; }
+.photo-panel p { margin: 0; line-height: 1.5; }
+.photo-panel label { display: grid; gap: 5px; }
+.photo-panel input { width: 100%; }
+.photo-panel select { min-height: 38px; }
+.photo-actions { display: flex; gap: 10px; }
+.photo-actions button { min-height: 44px; flex: 1; border-radius: 6px; border: 1px solid #81e9e7; background: #21536a; color: #efffff; font-weight: 700; }
+.photo-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.photo-screen[open] { z-index: 120; }
+body:has(#photo-screen[open]) .race-overlay,
+body:has(#photo-screen[open]) .race-info,
+body:has(#photo-screen[open]) .touch-controls,
+body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
+#photo-open[hidden] { display: none !important; }

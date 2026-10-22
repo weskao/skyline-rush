@@ -175,6 +175,7 @@ export function createSound() {
     else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
     else if (name === 'pickup') { tone(1047, 1568, 0.14, 0, 0.03); tone(1568, 2093, 0.18, 0.07, 0.02); }
     else if (name === 'low') { tone(440, 330, 0.14); tone(440, 330, 0.14, 0.2); }
+    else if (name === 'photo') { tone(1100, 840, .09, 0, .012); }
     else if (name === 'gate-clear') { tone(790, 1185, .16); tone(1185, 1580, .26, .1, .028); }
     else if (name === 'gate-miss') { tone(410, 245, .22); }
     else if (name === 'countdown-urgent') { tone(740, 740, .11); tone(740, 740, .11, .18); }

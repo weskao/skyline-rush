@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { flipRgbaRows, photoFov } from './photo-export.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -513,6 +514,7 @@ export function createWorld(canvas) {
   let lastRace = null;
   let trackId;
   let carBank = 0;
+  let photoView = null, photoDefaults = null, photoCapture = null;
 
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
@@ -585,6 +587,40 @@ export function createWorld(canvas) {
       }
     },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
+    setPhotoView(options) {
+      if (!options) {
+        photoView = null;
+        if (photoDefaults) {
+          scene.background.copy(photoDefaults.background);
+          scene.fog.color.copy(photoDefaults.fogColor);
+          scene.fog.density = photoDefaults.fogDensity;
+          renderer.toneMappingExposure = photoDefaults.exposure;
+          photoDefaults = null;
+        }
+        return;
+      }
+      if (!photoDefaults) photoDefaults = {
+        background: scene.background.clone(), fogColor: scene.fog.color.clone(),
+        fogDensity: scene.fog.density, exposure: renderer.toneMappingExposure,
+      };
+      const angle = Number.isFinite(options.angle) ? options.angle : 0;
+      photoView = { angle: angle * Math.PI / 180, fov: photoFov(options.fov), sky: options.sky };
+      const styles = {
+        original: null,
+        sunset: ['#ec9478', '#bb7f89', .001, 1.15],
+        night: ['#1b2e5a', '#304b73', .0016, .72],
+        fog: ['#8297a4', '#8297a4', .004, 1.02],
+      };
+      const style = styles[options.sky] ?? null;
+      scene.background.set(style ? style[0] : photoDefaults.background);
+      scene.fog.color.set(style ? style[1] : photoDefaults.fogColor);
+      scene.fog.density = style ? style[2] : photoDefaults.fogDensity;
+      renderer.toneMappingExposure = style ? style[3] : photoDefaults.exposure;
+    },
+    capturePhoto() {
+      if (photoCapture) return Promise.reject(new Error('Photo capture already in progress'));
+      return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
+    },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
       const preview = race.phase === 'ready';
       const car = race.player;
@@ -864,7 +900,11 @@ export function createWorld(canvas) {
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
-      if (race.phase === 'finished' && !reducedMotion) {
+      if (photoView && race.phase === 'paused') {
+        desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
+          player.position.y + 5, player.position.z + Math.cos(photoView.angle) * 14);
+        lookTarget.copy(player.position); lookTarget.y += 1;
+      } else if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
       } else if (preview && HERO_PREVIEWS[trackId]) {
@@ -927,11 +967,16 @@ export function createWorld(canvas) {
       if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
       camera.position.lerp(desiredCamera, smoothing);
       smoothLook.lerp(lookTarget, smoothing);
+      // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
+      if (photoView && race.phase === 'paused') {
+        camera.position.copy(desiredCamera);
+        smoothLook.copy(lookTarget);
+      }
       camera.lookAt(smoothLook);
       carBank = THREE.MathUtils.damp(carBank, !reducedMotion && car.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt);
       camera.rotation.z += carBank;
       const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + boostStrength * (visual.enabled ? visual.fov : 0) - impact * 4;
-      camera.fov += (targetFov - camera.fov) * smoothing;
+      camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();
       lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : boostStrength * visual.motionBlur;
       lens.uniforms.impact.value = reducedMotion ? 0 : impact;
@@ -942,6 +987,22 @@ export function createWorld(canvas) {
       bloom.strength = TOUR_IDS.has(trackId) ? .085 : .42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       composer.render(dt);
+      if (photoCapture) {
+        const request = photoCapture;
+        photoCapture = null;
+        try {
+          const resolution = renderer.getDrawingBufferSize(new THREE.Vector2());
+          const width = resolution.x, height = resolution.y;
+          if (width * height > 16_000_000) throw new RangeError('Screenshot too large');
+          const pixels = new Uint8Array(width * height * 4);
+          renderer.getContext().readPixels(0,0,width,height,
+            renderer.getContext().RGBA,renderer.getContext().UNSIGNED_BYTE,pixels);
+          const output = document.createElement('canvas');
+          output.width = width; output.height = height;
+          output.getContext('2d').putImageData(new ImageData(flipRgbaRows(pixels,width,height),width,height),0,0);
+          output.toBlob(blob => blob ? request.resolve(blob) : request.reject(new Error('PNG export unavailable')),'image/png');
+        } catch (error) { request.reject(error); }
+      }
     },
     inspectShowcase() {
       // Read-only projection for browser QA: verify the player and all three
