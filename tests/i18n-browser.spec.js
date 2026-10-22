@@ -107,7 +107,7 @@ const PANELS = ['#intro', '.overlay-content', '#race-overlay', '#controls-panel'
 const HUD = ['.position-stat', '.leaderboard', '.race-route-map', '.race-progress', '.mode-indicator', '.speedometer', '.flight-telemetry', '.aero-tools', '#controls-button', '#pause-button',
   '.airflow-hud', '.flight-director', '.altitude-ladder', ...['fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
 const HUD_LEAVES = [...HUD, '#flight-mode', '#flight-budget', '#flight-state', '#flight-instruction', '#speed-caption', '.speed-number', '.altitude-stat', '.fuel-stat', '#style-score', '#position-change',
-  '.event-callout', '.driving-message', '#airflow-toggle', '#aero-start', '#vfx-panel > summary'];
+  '.event-callout', '.driving-message', '#airflow-toggle', '#vfx-panel > summary'];
 
 async function settle(page) {
   await page.evaluate(() => document.fonts.ready);

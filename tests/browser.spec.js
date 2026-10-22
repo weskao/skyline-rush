@@ -85,7 +85,11 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   await page.locator('#vfx-panel > summary').click();
   await page.waitForTimeout(600);
   await saveArtifact(page, { path: 'artifacts/aero-downforce.jpeg', quality: 70 });
-  await page.getByRole('button', { name: 'Start race from showcase', exact: true }).click();
+  await expect(page.locator('#track-note')).toBeHidden();
+  await expect(page.locator('#aero-start')).toHaveCount(0);
+  // The one start button docks below the car instead of covering the showcase.
+  expect((await page.locator('#start-button').boundingBox()).y).toBeGreaterThan(900 * 0.75);
+  await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w'); await page.keyboard.down('Shift');
   await expect(page.locator('#boost-status')).toHaveText('THRUST ACTIVE');

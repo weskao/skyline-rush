@@ -213,7 +213,6 @@ for (const control of vfxControls) control.addEventListener('input', () => {
   showVFX();
 });
 $('#airflow-toggle').addEventListener('click', toggleAirflow);
-$('#aero-start').addEventListener('click', start);
 $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVFX(); });
 showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
