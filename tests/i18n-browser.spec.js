@@ -396,9 +396,10 @@ for (const [locale, system] of LOCALES) test.describe(`rebind prompt ${locale}`,
     await page.locator('#controls-button').click();
     await page.locator('[data-rebind="fly"]').click();
     await expect(status).toHaveText(press(locale));
-    await page.locator(`.route-locales [data-locale="${other}"]`).click();
+    // The open controls panel covers the custom picker, so drive the native select it wraps (same change handler).
+    await page.locator('#locale-select').selectOption(other, { force: true });
     await expect(status).toHaveText(press(other));
-    await page.locator(`.route-locales [data-locale="${locale}"]`).click();
+    await page.locator('#locale-select').selectOption(locale, { force: true });
     await expect(status).toHaveText(press(locale));
   });
 });
