@@ -610,6 +610,7 @@ function applyControls(persist = true) {
   const touch = ui['touch-controls'];
   touch.dataset.steerMode = controlPrefs.mode;
   touch.dataset.hand = controlPrefs.hand;
+  touch.dataset.size = controlPrefs.size;
   touch.style.setProperty('--touch-scale', String(TOUCH_SCALE[controlPrefs.size]));
   touch.style.setProperty('--touch-opacity', String(controlPrefs.opacity));
   controls.setFlyMode(controlPrefs.flyMode);

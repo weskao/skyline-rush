@@ -1,4 +1,4 @@
-<!-- source-sha256: 21a91777a700bd419db18183eb62a382adebbaa84af654182aeb78697de7c4f4 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 8362dde20173d1c1b0caee5daf682c0acba2ed8223983b9d861afb294dbf458a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -18,13 +18,13 @@ Skyline Rush 是一款可在瀏覽器中遊玩的短篇、可重複挑戰的街�
 
 一場比賽約一分鐘。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
 
-![開啟音訊設定的起始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261020b)
+![開啟音訊設定的起始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261022a)
 
-![Skyline Rush 飛行畫面](artifacts/readme-hero.zh-TW.jpeg?v=20261019b)
+![Skyline Rush 飛行畫面](artifacts/readme-hero.zh-TW.jpeg?v=20261022a)
 
-![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261019b)
+![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261022a)
 
-![創下個人最佳成績的賽後結果](artifacts/race-results.zh-TW.jpeg?v=20261019b)
+![創下個人最佳成績的賽後結果](artifacts/race-results.zh-TW.jpeg?v=20261022a)
 
 ## 在本機執行
 
@@ -137,7 +137,7 @@ HUD 使用共用的動態時間（120 / 240 / 480 ms）。速度表指針會隨�
 整個介面都提供英文與繁體中文（繁體中文）：起始畫面、Garage、History、HUD、比賽提示、結果、路線圖、設定，以及 3D 路標。起始畫面賽道卡片下方的 **EN / 繁體中文** 開關會一次切換全部內容，無須重新載入。語言依下列順序決定：
 
 1. 你點擊開關所儲存的選擇（`skyline-rush-locale`；只會在點擊時寫入，絕不會寫入自動偵測的結果）；
-2. 你的系統語言順序（`navigator.languages`）：由第一個項目決定，任何 `zh*` 標籤（zh-TW、zh-HK、zh-Hant、zh-CN、zh-Hans、單純的 zh）都會選用繁體中文；
+2. 你的系統語言順序（`navigator.languages`）：由第一個 `en*` 或 `zh*` 項目決定，其他語言會被略過（`['ja-JP', 'zh-TW']` 會選用繁體中文），任何 `zh*` 標籤（zh-TW、zh-HK、zh-Hant、zh-CN、zh-Hans、單純的 zh）都會選用繁體中文，清單為空或不存在時改用 `navigator.language`；
 3. 其他情況使用英文。
 
 品牌與遊戲用語在兩種語言中都保持英文：Skyline Rush、NITRO、FLY、BOOST，以及對手 NOVA、ORBIT 與 APEX。字串位於 `src/locales/`；`src/i18n.js` 負責偵測、`t()` 與目前的語系。

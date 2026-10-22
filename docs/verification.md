@@ -317,6 +317,13 @@ Every new image was opened and inspected: correct language, no cut-off text. Kno
 
 `npm test`: 250/250 passed. `npm run build` succeeds and the production-lock assertion passes (`dist/` contains the three og images).
 
+## zh-TW wording rules (units and brand terms) — 2026-10-22
+
+Decision from the i18n review (kept as is, written down so nobody "fixes" it later):
+
+- **Units.** Numeric gauge readouts keep the Latin unit in both languages: speed `KM/H`, altitude `5.2 M`, leaderboard gaps `+6 m`, race progress `0.08 / 5.00 KM`, `FINAL 500 M` / `最後 500 M`, `達到 65 KM/H`. Prose labels in zh-TW spell the metre out as `公尺`: the altitude ladder caption `高度 / 公尺` (`hud.altLadder`), the NITRO trail slider `NITRO 軌跡長度（公尺）` (`vfx.trailLength`), `限高 4 公尺` on the tunnel sign and the Neon track note. One rule, applied per element type, so a number next to a gauge never changes unit text between languages.
+- **Brand terms stay in English in zh-TW:** `SKYLINE RUSH`, `NITRO`, `FLY`, `BOOST`, the rival names `NOVA`, `ORBIT`, `APEX`, key names (`ESC`, `SPACE`, `SHIFT`, `ENTER`, shown as keycaps) and the technical acronym `CFD` in "NOT CFD". `tests/i18n-browser.spec.js` (`ALLOWED`) fails on any other stray Latin word of 2+ letters on a zh-TW screen (so `KM` is listed, and the single letters `M` and `H` pass), so a new English term must be added there on purpose.
+
 ## Final results
 
 - `npm test`: 15 tests passed, 0 failed. Driving, speed/road limits, launch speed, flight, fuel exhaustion, landing, collision altitude/cooldown, pause/invalid time steps, rival flight, reset, boost consumption, within-tick finish order, outward-facing geometry, keyboard cleanup and touch cancellation.

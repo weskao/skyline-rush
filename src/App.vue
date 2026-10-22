@@ -234,6 +234,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
                                       buttons: .touch-steer left/right buttons steer, hide .touch-pad
                                       tilt: sensors steer; pad remains available for down-drag brake / drift
      data-hand="left|right"           side of the screen the steering (pad or .touch-steer) sits on; actions/pedals take the other side
+     data-size="S|M|L"               chosen size; lets the live route map clear the cluster (style.css)
      style --touch-scale              0.85 (S) | 1 (M) | 1.15 (L); multiply control sizes by it
      style --touch-opacity            0.4–1; control opacity
      children, in order (all siblings):
