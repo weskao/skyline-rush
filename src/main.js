@@ -355,7 +355,7 @@ for (const button of document.querySelectorAll('[data-race-preset]')) button.add
   changeRaceSelection();
 });
 for (const input of document.querySelectorAll('[data-race-rule]')) input.addEventListener('change', () => {
-  raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : input.dataset.raceRule === 'rivals' ? Number(input.value) : input.value;
+  raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule) ? Number(input.value) : input.value;
   changeRaceSelection();
 });
 showTracks();

@@ -86,3 +86,19 @@ test('mobile game mode picker remains operable on phone portrait', async ({ page
   await page.screenshot({ path: 'test-results/race-mode-mobile-menu.png' });
   expect(errors).toEqual([]);
 });
+
+
+test('Custom Race sprint stage selector displays the first of three heats', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('button[data-race-mode="custom"]').click();
+  await page.locator('[data-race-rule="stages"]').evaluate(select => {
+    select.value = '3';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await page.locator('#start-button').click();
+  await expect(page.locator('#sprint-stage')).toBeVisible();
+  await expect(page.locator('#sprint-stage')).toHaveText('STAGE 1 / 3');
+  expect(errors).toEqual([]);
+});
