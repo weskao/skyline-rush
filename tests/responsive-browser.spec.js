@@ -264,7 +264,7 @@ for (const [width, height] of [[390, 844], [375, 667], [320, 568], [844, 390]]) 
     await expect(page.locator('.flight-director')).toHaveCSS('opacity', '0.8');
     await page.evaluate(() => { const car = window.gameplay.race.player; car.nearMisses++; car.nearMiss = { time: window.gameplay.race.elapsed, combo: 4, charge: 37 }; });
     await expect(page.locator('#event-callout')).toBeVisible();
-    await page.waitForTimeout(400); // past the director's .3s opacity transition
+    // No settle wait: the overlap must be gone from the callout's first frame, not after a fade (CI's i18n check caught one mid-fade).
     const [director, callout] = await Promise.all(['.flight-director', '#event-callout'].map(selector => page.locator(selector).boundingBox()));
     // Callouts last ~1.4s; on a portrait phone the director may step aside (fade out) for one instead of moving.
     const directorShown = await page.locator('.flight-director').evaluate(el => Number(getComputedStyle(el).opacity) > 0.05);
