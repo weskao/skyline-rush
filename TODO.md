@@ -395,7 +395,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [ ] At the authored end of an open sprint, offer **Restart / Choose Track / End
   Session**, or stop safely in a designated free-drive area. Do **not** claim
   endless roadway, reverse-map continuity or loop back to the start until implemented.
-- [ ] Optional practice HUD: current speed, air time, travel distance, max speed,
+- [x] Optional practice HUD: current speed, air time, travel distance, max speed,
   clean near-miss chain and trick counter; hide rival position and race countdown.
 - [ ] **Acceptance:** crossing the old finish cannot save an official best, stars,
   campaign unlock or Daily record; exit/restart/pause work for keyboard and touch;

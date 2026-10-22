@@ -1143,6 +1143,7 @@ function updateUI(now, input) {
     max: Math.round(race.practice.maxSpeed * 3.6),
     air: race.practice.airTime.toFixed(1),
     near: race.practice.nearMisses,
+    combo: race.player.combo,
     tricks: race.practice.tricks,
   });
   const car = race.player;

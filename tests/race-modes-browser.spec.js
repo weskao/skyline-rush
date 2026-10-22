@@ -178,6 +178,7 @@ test('Free Drive shows live, zeroed practice telemetry without showing rival ran
   await expect(page.locator('#practice-hud')).toBeVisible();
   await expect(page.locator('#practice-hud')).toContainText('AIR');
   await expect(page.locator('#practice-hud')).toContainText('TRICKS');
+  await expect(page.locator('#practice-hud')).toContainText('COMBO');
   await expect(page.locator('#leaderboard')).toBeHidden();
   expect(errors).toEqual([]);
 });
