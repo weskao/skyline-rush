@@ -29,20 +29,37 @@ export function stepCheckpointRush(state, previousDistance, car, dt) {
   if (state.expired || !Number.isFinite(dt) || dt <= 0 || dt > 0.1 ||
       !Number.isFinite(previousDistance) || !Number.isFinite(car?.distance) ||
       !Number.isFinite(car?.x) || !Number.isFinite(car?.altitude)) return 0;
-  state.timeLeft = Math.max(0, state.timeLeft - dt);
+  if (!Number.isFinite(state.timeLeft) || state.timeLeft <= 0) {
+    state.timeLeft = 0;
+    state.expired = true;
+    return 0;
+  }
+  let remaining = state.timeLeft;
+  let lastFraction = 0;
   let bonus = 0;
+  const distanceTraveled = car.distance - previousDistance;
   for (const gate of state.gates) {
     if (gate.distance > car.distance) break;
     if (gate.distance <= previousDistance || gate.passed || gate.missed) continue;
+    // Spend time at the actual crossing, not the frame's end.
+    const fraction = distanceTraveled > 0 ? (gate.distance - previousDistance) / distanceTraveled : 1;
+    remaining = Math.max(0, remaining - dt * (fraction - lastFraction));
+    lastFraction = fraction;
+    if (remaining <= 0) {
+      state.timeLeft = 0;
+      state.expired = true;
+      return bonus;
+    }
     if (Math.abs(car.x - gate.x) <= 3 && Math.abs(car.altitude - gate.altitude) <= 3) {
       gate.passed = true;
       state.passed++;
       const perfect = Math.abs(car.x - gate.x) <= 0.8 && Math.abs(car.altitude - gate.altitude) <= 0.8;
       if (perfect) state.perfect++;
       bonus += perfect ? 400 : 250;
-      state.timeLeft = Math.min(60, state.timeLeft + 10);
+      remaining = Math.min(60, remaining + 10);
     } else { gate.missed = true; state.missed++; }
   }
+  state.timeLeft = Math.max(0, remaining - dt * (1 - lastFraction));
   state.expired = state.timeLeft <= 0;
   return bonus;
 }
