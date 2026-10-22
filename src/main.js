@@ -25,6 +25,7 @@ import { createRouteMap } from './route-map.js';
 import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.js';
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
+import { trackDropdown } from './dropdown.js';
 import { refreshIfStale } from './update-check.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
@@ -239,7 +240,10 @@ function showOneTimePerformanceNotice(){
 const hidePerformanceNotice=()=>{ performanceNotice.hidden=true; };
 performanceNoticeDismiss.addEventListener('click',hidePerformanceNotice);
 // The notice floats over the toolbar panels; opening one means the reader is already in the settings it points to.
-$('#vfx-panel').addEventListener('toggle',event=>{ if(event.target.open)hidePerformanceNotice(); });
+$('#vfx-panel').addEventListener('toggle', ({ target: panel }) => {
+  if (panel.open) hidePerformanceNotice();
+  trackDropdown(panel, panel.open, () => { panel.open = false; });
+});
 showOneTimePerformanceNotice();
 let raceRouteMap;
 const trackRouteMaps = new Map();
@@ -625,6 +629,7 @@ function toggleSettings(open = ui['settings-panel'].hidden) {
   ui['settings-panel'].hidden = !open;
   if (open) hidePerformanceNotice();
   ui['settings-button'].setAttribute('aria-expanded', String(open));
+  trackDropdown($('.settings'), open, () => toggleSettings(false));
 }
 
 // Touch layout is tuned between races only, so the panel never opens mid-race.
@@ -634,6 +639,7 @@ function toggleControls(open = ui['controls-panel'].hidden) {
   ui['controls-panel'].hidden = !open;
   if (open) hidePerformanceNotice();
   ui['controls-button'].setAttribute('aria-expanded', String(open));
+  trackDropdown($('.controls-menu'), open, () => toggleControls(false));
 }
 
 function applyControls(persist = true) {
@@ -846,9 +852,6 @@ for (const button of touchButtons) {
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, event => { if (event.pointerId === drag?.id) { drag = null; applyControls(); } });
 }
 window.addEventListener('resize', applyControls);
-document.addEventListener('click', event => {
-  if (!event.target.closest('.controls-menu')) toggleControls(false);
-});
 // Capture phase so Escape only closes the panel and never reaches input.js as a pause/resume.
 document.addEventListener('keydown', event => {
   if (editingLayout && event.code === 'Escape') {
@@ -921,9 +924,6 @@ audioSwitches.forEach(button => {
   });
 });
 $('#mute-all').addEventListener('click', toggleSound);
-document.addEventListener('click', event => {
-  if (!event.target.closest('.settings')) toggleSettings(false);
-});
 ui['camera-button'].addEventListener('click', changeCamera);
 ui['assist-button'].addEventListener('click', toggleAssist);
 document.querySelector('.toolbar').addEventListener('click', event => {
