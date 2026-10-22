@@ -1,5 +1,5 @@
 // A small, versioned contract for practice modes; Classic and Daily stay identical.
-export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint']);
+export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup']);
 const TRAFFIC = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
 const DIFFICULTIES = ['easy', 'normal', 'hard'];
 
@@ -12,7 +12,7 @@ export function normalizeRaceConfig(value = {}) {
   // Only Custom has rivals. Free Drive can adjust traffic and pickups.
   const custom = mode === 'custom';
   const practice = custom || mode === 'free';
-  const rivals = custom && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' ? 3 : 0;
+  const rivals = custom && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' ? 3 : 0;
   return Object.freeze({
     rulesVersion: 1,
     mode,
@@ -25,6 +25,9 @@ export function normalizeRaceConfig(value = {}) {
     ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
+    ...(mode === 'cup' && Array.isArray(value.cupTracks) && value.cupTracks.length === 3 &&
+       value.cupTracks.every(id => typeof id === 'string') && new Set(value.cupTracks).size === 3
+       ? { cupTracks: [...value.cupTracks] } : {}),
   });
 }
 
