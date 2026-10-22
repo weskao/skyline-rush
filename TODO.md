@@ -344,7 +344,10 @@ Physics:
 
 ## 9. Game modes and race-session configuration (new roadmap — 2026-10-22)
 
-**Status:** All checkboxes in sections 9–13 are **proposals**, not implemented features.
+**Status:** Sections 9–13 are a feature roadmap; checked entries are implemented and have passed
+targeted verification on `feature/race-modes-p0`. Larger acceptance gates remain unchecked
+until the complete requirement and required browser/device testing pass.
+The original 2026-10-22 roadmap had all tasks unchecked.
 The preceding sections (0–8) are the existing implementation history; do not reset their
 completion state or regress Classic Race. Priority labels: **P0** = first release, **P1** =
 second wave, **P2** = larger/long-term work. Keep the existing 10 tracks, official unlock
@@ -364,14 +367,14 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
   `durationSeconds` / `stageCount` (only when applicable), `visualPreset` and `rulesVersion`.
   Declare mode-specific allowed options and defaults in a pure module; distinguish
   **simulation rules** from **visual-only** settings.
-- [ ] Extend/refactor `createRace(trackId, options)` (or add a compatible wrapper) to build
+- [x] Extend/refactor `createRace(trackId, options)` (or add a compatible wrapper) to build
   sessions from `RaceConfig` **without breaking** existing `createRace('coast')` and
   `createRace(trackId, dailyModifier)` callers. Keep the current Daily Challenge seed,
   modifier rules and official Classic Race parameters identical.
 - [ ] Model explicit objectives and completion conditions per mode: `placement`,
   `finish-time`, `score-target`, `checkpoint-timer`, `stage-points`, `survival` or
   `no-auto-finish`. Do not keep reusing `race.length` completion for every mode.
-- [ ] Separate `Classic / Campaign` from `Custom / Practice / Challenge` in eligibility:
+- [x] Separate `Classic / Campaign` from `Custom / Practice / Challenge` in eligibility:
   only qualifying Classic finishes unlock the next track or award career progression.
   A local test-all-unlocked run must never grant unlocks, stars or achievements.
 - [ ] Produce deterministic simulation seeds for traffic, checkpoints, obstacles and items
@@ -383,10 +386,10 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 9B. Free Drive / Practice mode (P0)
 
-- [ ] **MODE-01 — Free Drive v1:** drive and fly on any **already unlocked** course with
+- [x] **MODE-01 — Free Drive v1:** drive and fly on any **already unlocked** course with
   no finishing position, mandatory countdown, AI race placement or automatic victory.
   Add a visible return/restart control and an optional one-tap reset-to-start.
-- [ ] Allow selectable **no AI**, traffic density and item availability. Reuse existing
+- [x] Allow selectable **no AI**, traffic density and item availability. Reuse existing
   steering, cameras, drift, FLY, BOOST, NITRO and 3D scenery; do not build a new
   physics engine.
 - [ ] At the authored end of an open sprint, offer **Restart / Choose Track / End
@@ -404,13 +407,13 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
   **Easy / Normal / Hard**, traffic **Off / Light / Normal / Heavy**, power-ups
   **On / Off**, collisions **Normal / Relaxed**, Ghost visibility and weather/time
   **visual preset**. Preserve original defaults in Classic mode.
-- [ ] AI difficulty adjusts clearly named parameters (target speed, mistake rate
+- [x] AI difficulty adjusts clearly named parameters (target speed, mistake rate
   or rubber-band bounds) without breaking current rival personalities `NOVA`,
   `ORBIT` and `APEX`. Support 0, 1, 2 and 3 rivals correctly.
-- [ ] Offer a longer session with **1 / 2 / 3 / 5 sprint stages** (same or selectable
+- [x] Offer a longer session with **1 / 2 / 3 / 5 sprint stages** (same or selectable
   unlocked courses), but label it **stages / heats**, not circuit laps; show aggregate
   time or points explicitly and reset physical state between stages.
-- [ ] Support validated presets **Standard / Traffic Rush / No Items / Air Focus /
+- [x] Support validated presets **Standard / Traffic Rush / No Items / Air Focus /
   Precision** and a custom configuration, all with one-tap Reset to Default.
 - [ ] **Acceptance:** generated item/traffic counts, HUD placement labels, AI finish
   detection and results all work with 0 rivals; Custom scores never overwrite
@@ -418,10 +421,10 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 9D. Time Attack / Ghost Trial (P0)
 
-- [ ] **MODE-03 — Time Attack:** solo fixed-course trial with clean start/finish,
+- [x] **MODE-03 — Time Attack:** solo fixed-course trial with clean start/finish,
   immediate retry and best time per stable `trackId + mode + ruleset`. No rival
   race position or opponent-driven rubber banding.
-- [ ] Reuse the existing 10 Hz best-run Ghost when the recorded trace and rules
+- [x] Reuse the existing 10 Hz best-run Ghost when the recorded trace and rules
   are compatible; show `Ahead / Behind` split against the personal record.
   Keep separate Ghost data for mode-specific bests if necessary.
 - [ ] Optional **Clean Time Trial** variant: collisions invalidate a clean medal or
