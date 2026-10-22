@@ -956,6 +956,18 @@ body[data-phase="ready"] .telemetry { display: none; }
   .flight-tip { margin-top: 5px; }
 }
 
+/* Spacious desktop height still needs the complete intro visible without a clipped final line.
+   Keep the tagline while recovering the ~24px overflow observed at 1920x1080. */
+@media (min-width: 1001px) and (min-height: 967px) and (max-height: 1160px) {
+  .intro .route-label { margin-bottom: 17px; }
+  .intro .intro-copy { margin-bottom: 8px; }
+  .intro .track-note { margin-bottom: 9px; }
+}
+/* Music consent must never block unrelated toolbar settings while waiting for an answer.
+   Its two explicit choices remain clickable, but the surrounding panel/text is click-through. */
+.music-prompt { pointer-events: none; }
+.music-prompt button { pointer-events: auto; }
+
 /* Insets are 0 when the OS already places the web view clear of the status bar
    (iOS standalone with an opaque bar, Android 14 and earlier). Android 15+
    edge-to-edge, and a notch or Dynamic Island in landscape, report the real

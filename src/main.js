@@ -880,7 +880,7 @@ for (const type of ['click', 'keydown']) window.addEventListener(type, unlockAud
 unlockAudio();
 setTimeout(() => { $('#music-prompt').hidden = gestured || !audio.music || sound.running(); }, 600);
 $('#music-yes').addEventListener('click', () => setAudio('music', true));
-$('#music-no').addEventListener('click', () => setAudio('music', false));
+$('#music-no').addEventListener('click', () => { $('#music-prompt').hidden = true; setAudio('music', false); });
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
 ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
