@@ -1,3 +1,44 @@
+## [0.15.1] - 2026-10-22
+
+### 🚀 Features
+
+- **race:** Add versioned race rules and validation with unit tests
+- **race:** Wire configurable opponents, traffic and solo modes into simulation
+- **history:** Isolate custom race and time trial results from career
+- **ui:** Add bilingual race mode selector and custom rules panel
+- **race:** Connect mode selection, controls and unranked results
+- **race:** Add relaxed collision rule to custom and free modes
+- **race:** Add TDD-backed multi-heat sprint series rules
+- **ui:** Play multi-stage Custom sprints with aggregated timing
+
+### 🐛 Bug Fixes
+
+- **race:** Prevent practice rewards and polish solo session UX
+- **ui:** Remove race placement in Free Drive and align browser checks
+- **ui:** Put the downgrade notice away on panel open
+- **i18n:** Name the 特效 panel in the zh-tw notice
+- **ui:** Fade the flight director for phone callouts
+- **ui:** Hide the flight director at once for callouts
+
+### 💼 Other
+
+- Integrate main 0.15.0 race modes into feature/race-modes-p0
+
+### 📚 Documentation
+
+- **todo:** Check verified P0 game mode and multi-stage milestones
+
+### 🧪 Testing
+
+- **ui:** Validate numeric stage selection through Custom race start
+- **browser:** Pin the ci device profile in playwright
+- **browser:** Match the 2x2 thumb cluster in nitro check
+- **browser:** Run world tour showcase on dev server
+- **browser:** Answer the music prompt before panels
+
+### ⚙️ Miscellaneous Tasks
+
+- Run full tests for race modes feature branch
 ## [0.15.0] - 2026-10-22
 
 ### 🚀 Features
