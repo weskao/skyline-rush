@@ -244,6 +244,7 @@ export function createRace(trackId = 'coast', modifier = null) {
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
+    props: [], // solid World Tour scenery parts; main.js fills them from roadObstacles()
     hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) :
       config.hazards ? createHazards(track, LANES, config.hazards) : [],
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
@@ -332,6 +333,16 @@ export function sprintGaps(race) {
     if (gap < 0 && (behind === null || -gap < behind)) behind = -gap;
   }
   return { ahead, behind };
+}
+
+// Car body against scenery parts (sorted by distance); the swept range catches thin parts at high speed.
+function hitProp(props, car, previousDistance) {
+  for (const p of props) {
+    if (p.from > car.distance + 2.2) break;
+    if (p.to > previousDistance - 2.2 && p.right > car.x - 0.85 && p.left < car.x + 0.85 &&
+      p.top > car.altitude && p.bottom < car.altitude + 1.8) return p;
+  }
+  return null;
 }
 
 function contact(race, kind, obstacleX, intensity, retention) {
@@ -553,10 +564,15 @@ export function stepRace(race, input, dt) {
       Math.abs(other.distance - car.distance) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
       Math.abs((other.altitude || 0) - car.altitude) < 1.8,
     );
+    const prop = car.effects.ghost > 0 ? null : hitProp(race.props, car, previousDistance);
     const pylon = car.section === 'shortcut' && shortcutPylons(section).find(p => p.distance > previousDistance && p.distance <= car.distance &&
       Math.abs(p.x - car.x) < PYLON_HALF_WIDTH && Math.abs(p.altitude - car.altitude) < SHORTCUT_TOLERANCE);
     if (obstacle) {
       contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), nitro ? 0.7 : 0.45);
+    } else if (prop) {
+      contact(race, 'barrier', (prop.left + prop.right) / 2, clamp(car.speed / 100, 0.25, 1), nitro ? 0.7 : 0.45);
+      // A solid prop cannot be driven through: step out to its open-road side (it never reaches past ROAD_CLEARANCE).
+      car.x = prop.left > 0 ? Math.min(car.x, prop.left - 1.1) : Math.max(car.x, prop.right + 1.1);
     } else if (roofHit) {
       contact(race, 'barrier', Math.sign(car.x) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75); // pushed toward the centre
     } else if (pylon) {

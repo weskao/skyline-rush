@@ -1583,3 +1583,31 @@ test('rewardFuel counts the flight charge NITRO rewards actually add, capped at 
   assert.ok(Math.abs(race.player.rewardFuel - (10 + 10 / 60)) < 1e-9);
   assert.equal(createRace().player.rewardFuel, 0);
 });
+
+test('a Tokyo train reaching into the lanes is solid: hitting it is barrier contact, the centre lane and overhead signs stay clear', async () => {
+  const { roadObstacles } = await import('../src/world-tour-scene.js');
+  const props = roadObstacles('tokyo');
+  const train = props.find(p => p.kind === 'train' && p.bottom < 1 && p.top > 3 && p.from > 400);
+  assert.ok(train, 'a ground-level train part reaches the road');
+  const run = (part, x) => {
+    const race = createRace('tokyo');
+    race.props = props;
+    startRace(race);
+    advance(race, 3.1);
+    race.traffic = [];
+    race.rivals.forEach(rival => { rival.distance = part.to + 500; });
+    Object.assign(race.player, { distance: part.from - 4, x, altitude: 0, speed: 80, cooldown: 0 });
+    for (let i = 0; i < 12 && race.player.distance < part.to + 3; i++) stepRace(race, {}, 1 / 60);
+    return race.player;
+  };
+  const inLane = train.left > 0 ? train.left + 1 : train.right - 1;
+  const hit = run(train, inLane);
+  assert.equal(hit.collisions, 1);
+  assert.equal(hit.impact.kind, 'barrier');
+  assert.ok(hit.speed < 60, 'the crash costs speed');
+  assert.ok(train.left > 0 ? hit.x <= train.left - 1.1 : hit.x >= train.right + 1.1, 'pushed out to the open road');
+  assert.equal(run(train, 0).collisions, 0, 'the centre stays open');
+  const sign = props.find(p => p.bottom > 3 && !props.some(q => q !== p && q.bottom < 1.8 && q.from < p.to + 6 && q.to > p.from - 6));
+  assert.ok(sign, 'an overhead part hangs over the lanes');
+  assert.equal(run(sign, (Math.max(sign.left, -ROAD_LIMIT) + Math.min(sign.right, ROAD_LIMIT)) / 2).collisions, 0, 'driving under it is clear');
+});

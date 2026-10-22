@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { RACE_TRACKS } from './game.js';
+import { RACE_TRACKS, ROAD_LIMIT } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.js';
 import { roadRibbon } from './geometry.js';
 import { makeLandmark } from './world-tour-landmarks.js';
-import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight } from './world-tour-scenery.js';
+import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
 import { batchStaticChunk } from './world-tour-batching.js';
 
@@ -13,7 +13,7 @@ export const WORLD_THEMES = {
   taipei: {
     top:'#405970',horizon:'#91a4a4',fog:'#74868b',rock:'#657e83',road:'#373e41',ground:'#536374',rail:'#929f9a',sun:'#c3c9c5',warmth:.08,
     buildings:'#ad6e59',accent:'#f3c47b',prop:'city',landmarks:[
-      {kind:'office',at:1150,side:-1,offset:94,scale:1.12},
+      {kind:'office',at:1750,side:1,offset:94,scale:1.7,yaw:.6,plaza:520},
       {kind:'gate',at:2630,side:1,offset:71,scale:1.12},
       {kind:'temple',at:4480,side:-1,offset:75,scale:1.25},
     ],
@@ -22,7 +22,7 @@ export const WORLD_THEMES = {
     top:'#121a31',horizon:'#38415e',fog:'#32364d',rock:'#252e44',road:'#202b3b',ground:'#232c40',rail:'#838a98',sun:'#a0a7bc',warmth:0,
     buildings:'#29305c',accent:'#ff49bd',prop:'neon',landmarks:[
       {kind:'crossing',at:1200,side:-1,offset:66,scale:1.2},
-      {kind:'tower',at:3200,side:1,offset:125,scale:1.25},
+      {kind:'tower',at:3300,side:-1,offset:110,scale:1.25,plaza:500},
       {kind:'railway',at:5180,side:-1,offset:78,scale:1.05},
     ],
   },
@@ -31,13 +31,13 @@ export const WORLD_THEMES = {
     buildings:'#526c65',accent:'#f9dba2',prop:'mountain',landmarks:[
       {kind:'tunnel',at:1760,side:1,offset:80,scale:1.3},
       {kind:'railway',at:3850,side:-1,offset:110,scale:1.25},
-      {kind:'mountain',at:6180,side:1,offset:185,scale:1.8},
+      {kind:'mountain',at:6180,side:-1,offset:120,scale:1.4,plaza:560},
     ],
   },
   coastal: {
     top:'#577b90',horizon:'#a6b7b1',fog:'#899ea6',rock:'#697785',road:'#454b49',ground:'#557985',rail:'#9eaca3',sun:'#c2ccc7',warmth:0,
     buildings:'#d6b99b',accent:'#ffeeaa',prop:'coast',landmarks:[
-      {kind:'lighthouse',at:1180,side:1,offset:100,scale:1.35},
+      {kind:'lighthouse',at:1180,side:-1,offset:100,scale:1.35,plaza:400},
       {kind:'bridge',at:3160,side:-1,offset:130,scale:1.2},
       {kind:'arch',at:4870,side:1,offset:125,scale:1.6},
     ],
@@ -46,7 +46,7 @@ export const WORLD_THEMES = {
     top:'#10182b',horizon:'#34374e',fog:'#212c47',rock:'#293148',road:'#22293c',ground:'#212941',rail:'#55798c',sun:'#778da1',warmth:0,
     buildings:'#263371',accent:'#ad73ff',prop:'space',landmarks:[
       {kind:'planet',at:1610,side:1,offset:290,scale:2.1},
-      {kind:'cosmic-gate',at:4100,side:-1,offset:96,scale:1.5},
+      {kind:'cosmic-gate',at:4100,side:-1,offset:96,scale:1.5,plaza:420},
       {kind:'planet',at:6740,side:-1,offset:310,scale:1.9},
     ],
   },
@@ -62,6 +62,76 @@ const ZER0=new THREE.Vector3();
 
 function seeded(i){const n=Math.sin(i*127.1+78.233)*43758.5453;return n-Math.floor(n);}
 const clamped=(id,s)=>Math.max(0,Math.min(RACE_TRACKS[id].length,s));
+
+// An authored plaza keeps the approach sightline to a hero landmark open: a
+// roadside item drops out only if, seen from some road point of the approach,
+// it sits nearer than the landmark and inside its angular width (ground plane).
+// Everything else on both kerbs stays, so the street does not go empty.
+export function blocksLandmark(id,l,item){
+  if(!l.plaza||item.distance<l.at-l.plaza||item.distance>l.at+60)return false;
+  const at=(s,lateral)=>{const f=trackFrame(id,s);return [f.point.x+f.right[0]*lateral,f.point.z+f.right[2]*lateral];};
+  const [lx,lz]=at(l.at,l.side*(l.offset||80)),[ix,iz]=at(item.distance,item.side*item.offset);
+  const radius=(l.radius||30)*(l.scale||1);
+  for(let s=l.at-l.plaza;s<item.distance;s+=30){
+    const p=trackPoint(id,s),ax=lx-p.x,az=lz-p.z,bx=ix-p.x,bz=iz-p.z;
+    const toLandmark=Math.hypot(ax,az),toItem=Math.hypot(bx,bz);
+    if(toItem>=toLandmark)continue;
+    const angle=Math.abs(Math.atan2(ax*bz-az*bx,ax*bx+az*bz));
+    if(angle<Math.atan(radius/toLandmark)+Math.atan(14/toItem))return true;
+  }
+  return false;
+}
+
+// Props that would block a landmark move instead of vanishing, so the approach
+// keeps its original density: one plot farther out, the other kerb, or further
+// out still. Only a prop with no clear slot stays put, shrunk to street scale.
+// shortcut: clear slots are checked against unblocked neighbours and this
+// chunk's moved props, not props moved in adjacent chunks.
+export function landmarkSafePlan(id,chunk,low=false){
+  const blocks=item=>WORLD_THEMES[id].landmarks.some(l=>blocksLandmark(id,l,item));
+  const items=sceneryPlan(id,chunk,low);
+  if(!items.some(blocks))return items;
+  const placed=[chunk-1,chunk,chunk+1].flatMap(c=>sceneryPlan(id,c,low)).filter(i=>!blocks(i));
+  const clear=c=>!blocks(c)&&placed.every(p=>p.side!==c.side||
+    Math.abs(p.distance-c.distance)>=9||Math.abs(p.offset-c.offset)>=14);
+  return items.map(item=>{
+    if(!blocks(item))return item;
+    const across={...item,side:-item.side},out=o=>({...item,offset:item.offset+o});
+    const moved=[out(24),across,out(40),{...across,distance:item.distance+13},out(60)].map(clearOfRoad).find(clear);
+    if(moved)placed.push(moved);
+    return moved||{...item,size:item.size*.45};
+  });
+}
+
+// Prop parts within reach of the car (lateral, along-road distance and height
+// relative to the road), so scenery that reaches into the road is solid.
+const REACH=ROAD_LIMIT+.85;
+function solidParts(id,item){
+  const rise=terrainHeight(id,item.distance,item.side,item.offset),parts=[];
+  for(const b of propParts(item.kind)){
+    const left=item.side*item.offset+b.min.x*item.size,right=item.side*item.offset+b.max.x*item.size;
+    if(right>-REACH&&left<REACH)parts.push({from:item.distance-b.max.z*item.size,to:item.distance-b.min.z*item.size,
+      left,right,bottom:rise+b.min.y*item.size,top:rise+b.max.y*item.size,kind:item.kind});
+  }
+  return parts;
+}
+// Low detail drops half the props, but never one that is solid in the road.
+export function detailPlan(id,chunk,low=false){
+  const items=landmarkSafePlan(id,chunk);
+  return low?items.filter(item=>item.slot<2||solidParts(id,item).length):items;
+}
+// Every solid part on a World Tour road, sorted by distance; static per track, so cached for good.
+const obstacleCache=new Map();
+export function roadObstacles(id){
+  if(!WORLD_THEMES[id])return [];
+  if(!obstacleCache.has(id)){
+    const parts=[];
+    for(let c=0;c*SCENERY_CHUNK_METRES<=RACE_TRACKS[id].length;c++)
+      for(const item of landmarkSafePlan(id,c))parts.push(...solidParts(id,item));
+    obstacleCache.set(id,parts.sort((a,b)=>a.from-b.from));
+  }
+  return obstacleCache.get(id);
+}
 
 export function createWorldTourScene(scene){
   const group=new THREE.Group();group.name='World Tour authored scenery';group.visible=false;scene.add(group);
@@ -129,7 +199,7 @@ export function createWorldTourScene(scene){
     for(let index=start;index<=end;index++){
       if(chunks.has(index))continue;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
-      for(const item of sceneryPlan(id,index,level==='low')){
+      for(const item of detailPlan(id,index,level==='low')){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
@@ -293,7 +363,8 @@ export function createWorldTourScene(scene){
       for(const hero of heroGroup.children){
         const entry=hero.userData.entry;
         pose(hero,id,entry.at,entry.side*(entry.offset||80),0,origin);
-        hero.rotateY(-entry.side*Math.PI*.5);
+        // Optional yaw turns a facade toward the showcase camera's sightline.
+        hero.rotateY(-entry.side*Math.PI*.5+(entry.yaw||0));
         hero.scale.setScalar(entry.scale||1);
       }
       if(water.visible)water.position.set(0,-33,-450);
@@ -358,6 +429,7 @@ export function createWorldTourScene(scene){
         }
       }
     },
+    landmarks(){return heroGroup.children;},
     hide(){group.visible=false;},
     dispose(){
       clearHeroes();clearChunks();kit.dispose();tunnelKit.dispose();group.removeFromParent();
