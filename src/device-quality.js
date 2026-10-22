@@ -11,7 +11,7 @@ export const DEVICE_MESSAGES = Object.freeze({
   },
   'zh-TW': {
     title:'已針對此裝置調整效能',
-    message:'為了維持流暢的賽車體驗，已將畫質從「高」調整為「{quality}」。你隨時可以在 VFX 設定中自行修改。',
+    message:'為了維持流暢的賽車體驗，已將畫質從「高」調整為「{quality}」。你隨時可以在特效設定中自行修改。',
     dismiss:'了解',
     level:{low:'低',medium:'中'},
   },

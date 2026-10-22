@@ -1,4 +1,4 @@
-import { test as base } from '@playwright/test';
+import { test as base } from './test.js';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
 

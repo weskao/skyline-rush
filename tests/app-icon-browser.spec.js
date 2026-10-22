@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test.js';
 
 test('installed apps receive decodable icons and launch inside the deployed site', async ({ page }) => {
   await page.goto('./', { waitUntil: 'domcontentloaded' });

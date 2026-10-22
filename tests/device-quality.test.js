@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { selectDeviceQuality,initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY } from '../src/device-quality.js';
+import { UI } from '../src/locales/ui.js';
 test('unknown or powerful devices keep high fidelity',()=>{
  assert.equal(selectDeviceQuality({}), 'high');
  assert.equal(selectDeviceQuality({cores:10,memoryGiB:16,width:2560,height:1600,pixelRatio:2}),'high');
@@ -25,6 +26,13 @@ test('one-time notice has English and traditional Chinese translations and a sta
  assert.match(noticeMessage('zh-TW','medium').body,/中/);
  assert.match(noticeMessage('en','low').body,/Low/);
  assert.equal(noticeMessage('fr','low').title,noticeMessage('en','low').title);
+});
+
+test('the notice names the VFX panel exactly as its toolbar button reads in each language',()=>{
+ // zh-TW once said "VFX 設定" while the button reads 特效, leaving stray English in a Chinese sentence.
+ for (const locale of ['en','zh-TW']) for (const quality of ['low','medium'])
+  assert.ok(noticeMessage(locale,quality).body.includes(UI[locale]['vfx.summary']),`${locale} ${quality}`);
+ assert.doesNotMatch(noticeMessage('zh-TW','medium').body,/[A-Za-z]/);
 });
 
 test('Safari on macOS and iOS works without navigator.deviceMemory',()=>{

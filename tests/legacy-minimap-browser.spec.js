@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 const ids = ['coast','neon','canyon','aurora','spiral'];
 const seed = page => page.addInitScript(trackIds => {

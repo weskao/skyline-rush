@@ -6,7 +6,8 @@ const slow = process.env.CI ? 3 : 1;
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*browser.spec.js',
-  testIgnore: '**/world-tour-mid-race-browser.spec.js',
+  // These load tests/fixtures/*.html, which only the dev server serves (preview falls back to the app); see playwright.world-tour.config.js.
+  testIgnore: ['**/world-tour-mid-race-browser.spec.js', '**/world-tour-showcase-browser.spec.js'],
   // Lets CI --shard split by test instead of by file (browser.spec.js alone is most of the suite).
   fullyParallel: true,
   workers: 1,

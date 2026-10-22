@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test.js';
+import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { CATALOGS } from '../src/i18n.js';
 
 for (const [width, height, hasTouch] of [
@@ -248,5 +249,28 @@ for (const [width, height] of [[402, 874], [1440, 900]]) {
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     expect(mismatch(await edge()), 'racing').toBeLessThanOrEqual(10);
+  });
+}
+
+// A callout can fire mid-flight (slow CI runners hit it by timing); on phones its two-line form once ran into the flight director.
+for (const [width, height] of [[390, 844], [375, 667], [320, 568], [844, 390]]) {
+  gameplayTest(`flight director and a mid-flight callout stay apart at ${width}x${height}`, async ({ gameplayPage: page }) => {
+    await page.setViewportSize({ width, height });
+    await page.locator('#start-button').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: 15000 });
+    await page.evaluate(() => { document.activeElement?.blur(); window.gameplay.race.player.speed = 90; });
+    await page.keyboard.down('Space');
+    await expect(page.locator('body')).toHaveClass(/airborne/);
+    await expect(page.locator('.flight-director')).toHaveCSS('opacity', '0.8');
+    await page.evaluate(() => { const car = window.gameplay.race.player; car.nearMisses++; car.nearMiss = { time: window.gameplay.race.elapsed, combo: 4, charge: 37 }; });
+    await expect(page.locator('#event-callout')).toBeVisible();
+    await page.waitForTimeout(400); // past the director's .3s opacity transition
+    const [director, callout] = await Promise.all(['.flight-director', '#event-callout'].map(selector => page.locator(selector).boundingBox()));
+    // Callouts last ~1.4s; on a portrait phone the director may step aside (fade out) for one instead of moving.
+    const directorShown = await page.locator('.flight-director').evaluate(el => Number(getComputedStyle(el).opacity) > 0.05);
+    await page.keyboard.up('Space');
+    expect(!directorShown || callout.y + callout.height <= director.y + 0.5 || director.y + director.height <= callout.y + 0.5 ||
+      callout.x + callout.width <= director.x + 0.5 || director.x + director.width <= callout.x + 0.5,
+    `callout ${JSON.stringify(callout)} overlaps director ${JSON.stringify(director)}`).toBe(true);
   });
 }

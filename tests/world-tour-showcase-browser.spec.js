@@ -1,4 +1,4 @@
-import { test,expect } from '@playwright/test';
+import { test,expect } from './helpers/test.js';
 
 for(const id of ['alpine','cosmic']) {
   test(`${id}: home preview is a full, dynamic four-car airborne showcase with matching scale`,async({page},info)=>{

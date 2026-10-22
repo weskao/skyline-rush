@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test.js';
 
 // Earning a charge needs a full PERFECT LINE (see handoff-browser.spec.js); this spec only pins the
 // FLY + NITRO label, so the served bundle starts the player with 3 charges instead.

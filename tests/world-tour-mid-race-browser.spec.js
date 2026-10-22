@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test.js';
 const tracks={
   taipei:[3120,3450,6200],tokyo:[5050,5450,6800],
   alpine:[3850,4200,7600],coastal:[2950,3310,5800],
