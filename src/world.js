@@ -527,7 +527,10 @@ export function createWorld(canvas) {
 
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}) {
     const relative = car.distance - distance;
-    mesh.visible = isPlayer || (relative > -55 && relative < 900);
+    // Tour and sky routes end at the finish and trackPoint clamps there, so cars
+    // past it would pile up at the arch like parked cars; they leave the scene instead.
+    const pastFinish = (trackId === 'spiral' || TOUR_IDS.has(trackId)) && car.distance > RACE_TRACKS[trackId].length;
+    mesh.visible = isPlayer || (relative > -55 && relative < 900 && !pastFinish);
     if (!mesh.visible) return;
     if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
       if (trackId === 'spiral') mesh.position.fromArray(skyPosition(car.distance, car.x, car.altitude || 0, distance));

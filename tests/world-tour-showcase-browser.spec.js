@@ -77,6 +77,17 @@ for(const [id,kind,stops] of [['taipei','office',[1250,1400,1550]],['tokyo','tow
   });
 }
 
+// The road ends at the arch, so rivals past it must leave instead of parking there.
+test('rivals that crossed the finish do not stay parked at the arch',async({page})=>{
+  await page.goto('/tests/fixtures/world-tour-mid-race.html');
+  await page.waitForFunction(()=>window.worldTourReady===true);
+  for(const id of ['taipei','tokyo','alpine','coastal','cosmic','spiral']){
+    const actors=await page.evaluate(id=>window.worldTourFinishProbe(id),id);
+    expect(actors[0].visible,`${id} player`).toBe(true);
+    expect(actors.slice(1).filter(a=>a.visible).map(a=>a.name),`${id} rivals past the finish`).toEqual([]);
+  }
+});
+
 test('World Tour selection keeps the actual 3D showroom animated, not a static card',async({page},info)=>{
   await page.addInitScript(()=>{
     localStorage.setItem('skyline-rush-unlocked',JSON.stringify(['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic']));
