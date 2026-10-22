@@ -1,6 +1,7 @@
-// 32-bar loops (intro ≈ 64 s, race ≈ 55 s, Sky Spiral ≈ 60 s, each World Tour course 56–70 s).
+// 32-bar loops (intro ≈ 64 s, race ≈ 55 s, each course song 56–70 s).
 // Each chord is [bass root, three pad/arp tones]; lead is eight eighth-notes per chord bar (0 = rest).
 // Layers enter at the listed bar so every pass builds up.
+// A course song uses the same id as its track. Coast has none and keeps `race`.
 export const TRACKS = {
   intro: {
     bpm: 120, arp: 2, bass: [0, 6, 8, 14], enter: { bass: 8, drums: 16, lead: 16 },
@@ -16,6 +17,33 @@ export const TRACKS = {
     lead: [
       71, 0, 74, 0, 76, 0, 74, 71, 72, 0, 0, 71, 72, 0, 76, 0, 74, 0, 0, 0, 71, 0, 67, 0, 69, 0, 71, 0, 74, 0, 0, 0,
       76, 0, 79, 0, 76, 0, 74, 76, 79, 0, 0, 76, 72, 0, 76, 0, 78, 0, 76, 0, 74, 0, 69, 0, 71, 0, 75, 0, 78, 0, 75, 0,
+    ],
+  },
+  // Neon Downtown: F# minor, syncopated bass, dense arp. Opening pad is MIDI 61.
+  neon: {
+    bpm: 124, arp: 1, bass: [0, 3, 6, 8, 11, 14], enter: { bass: 0, drums: 2, lead: 4 },
+    chords: [[42, 61, 68, 73], [38, 57, 66, 69], [47, 59, 66, 71], [49, 61, 68, 73], [42, 61, 68, 73], [45, 64, 69, 73], [40, 59, 68, 71], [49, 56, 61, 68]],
+    lead: [
+      73, 0, 76, 0, 73, 68, 0, 0, 71, 0, 73, 76, 0, 80, 0, 0, 68, 0, 0, 71, 73, 0, 76, 0, 75, 73, 0, 71, 0, 68, 0, 0,
+      76, 0, 80, 0, 78, 76, 0, 73, 71, 0, 68, 0, 71, 73, 0, 0, 80, 0, 76, 0, 73, 0, 71, 68, 73, 0, 76, 80, 0, 0, 0, 73,
+    ],
+  },
+  // Canyon Skyway: E major, wide leaps, open bass. Opening pad is MIDI 68.
+  canyon: {
+    bpm: 118, arp: 3, bass: [0, 8, 12], enter: { bass: 4, drums: 8, lead: 4 },
+    chords: [[40, 68, 71, 76], [45, 64, 69, 76], [47, 66, 71, 78], [45, 64, 69, 73], [40, 68, 71, 76], [49, 64, 68, 73], [47, 66, 71, 78], [45, 64, 69, 76]],
+    lead: [
+      76, 0, 0, 80, 0, 0, 83, 0, 76, 0, 71, 0, 68, 0, 0, 0, 80, 0, 0, 83, 0, 76, 0, 71, 68, 0, 0, 71, 76, 0, 0, 80,
+      71, 0, 76, 0, 0, 83, 0, 0, 80, 0, 76, 71, 0, 68, 0, 0, 83, 0, 0, 80, 0, 76, 0, 71, 76, 0, 0, 68, 0, 71, 0, 76,
+    ],
+  },
+  // Aurora Pass: B minor, slow shimmer, sparse lead. Opening pad is MIDI 74.
+  aurora: {
+    bpm: 114, arp: 4, bass: [0, 12], enter: { bass: 8, drums: 16, lead: 8 },
+    chords: [[47, 74, 78, 83], [43, 67, 74, 79], [50, 69, 74, 78], [40, 71, 76, 83], [47, 74, 78, 83], [45, 69, 76, 81], [43, 67, 74, 79], [42, 73, 78, 83]],
+    lead: [
+      83, 0, 0, 0, 86, 0, 0, 0, 78, 0, 0, 81, 0, 0, 76, 0, 74, 0, 0, 0, 78, 0, 81, 0, 76, 0, 0, 0, 71, 0, 0, 0,
+      86, 0, 0, 83, 0, 0, 81, 0, 78, 0, 0, 74, 0, 0, 71, 0, 81, 0, 0, 0, 83, 0, 0, 78, 74, 0, 0, 76, 0, 0, 0, 83,
     ],
   },
   // Sky Spiral only. Opening pad is MIDI 56, not the intro pad (57) or the race pad (55).
@@ -73,7 +101,6 @@ export const TRACKS = {
     ],
   },
 };
-const COURSE_SONGS = { spiral: 'spiral', taipei: 'taipei', tokyo: 'tokyo', alpine: 'alpine', coastal: 'coastal', cosmic: 'cosmic' };
 const LOOP_STEPS = 32 * 16;
 // Race tempo multiplier: 1 until the last 500 m, then a linear ramp to 1.15 at the finish.
 export const sprintFactor = (distance, length) => 1 + 0.15 * Math.min(1, Math.max(0, (distance - (length - 500)) / 500));
@@ -310,7 +337,7 @@ export function createSound() {
         const skid = car.drift ? 0.035 + Math.min(3, Math.floor(car.drift.time)) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
         music.gain.setTargetAtTime(!musicOn ? 0 : musicLevel * (race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65), now, 0.1);
-        const name = !musicOn ? null : race.phase === 'ready' || race.phase === 'finished' ? 'intro' : COURSE_SONGS[race.trackId] || 'race';
+        const name = !musicOn ? null : race.phase === 'ready' || race.phase === 'finished' ? 'intro' : TRACKS[race.trackId] ? race.trackId : 'race';
         if (name !== song) { song = name; step = 0; }
         // Schedule ~0.2 s ahead from the frame loop; after a stalled frame, resume from now instead of bursting.
         const sprint = active && song && song !== 'intro' ? sprintFactor(car.distance, race.length) : 1;
