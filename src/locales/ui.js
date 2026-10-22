@@ -6,7 +6,7 @@ export const UI = Object.freeze({
   en: {
     ...MOBILE_GUIDE_COPY.en,
     "guide.open": "How to play",
-    "guide.title": "Ready to drive?",
+    "guide.title": "Start your engines!",
     "guide.close": "Got it",
     "guide.intro": "A quick control guide. Reopen it anytime from Controls → How to play.",
     "guide.devices": "Control guide",
@@ -476,7 +476,7 @@ export const UI = Object.freeze({
   'zh-TW': {
     ...MOBILE_GUIDE_COPY['zh-TW'],
     "guide.open": "操作教學",
-    "guide.title": "準備好上路了嗎？",
+    "guide.title": "發動引擎，全速衝刺！",
     "guide.close": "知道了",
     "guide.intro": "快速認識操作方式。之後可隨時從「控制 → 操作教學」重新查看。",
     "guide.devices": "操作教學裝置",

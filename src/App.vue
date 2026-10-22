@@ -26,7 +26,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 <template>
   <dialog id="guide-screen" class="history-screen guide-screen" aria-labelledby="guide-title" aria-describedby="guide-intro">
     <header class="guide-header">
-      <h2 id="guide-title" data-i18n="guide.title">Ready to drive?</h2>
+      <h2 id="guide-title" data-i18n="guide.title">Start your engines!</h2>
       <button id="guide-close" class="controls-reset" autofocus data-i18n="guide.close">Got it</button>
     </header>
     <p id="guide-intro" data-i18n="guide.intro">A quick control guide. Reopen it anytime from Controls → How to play.</p>
