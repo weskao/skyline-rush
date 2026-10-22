@@ -138,6 +138,8 @@ test('Clean Time Trial shows accessible rule toggle and clean driving HUD', asyn
   await page.goto('/');
   await page.locator('button[data-race-mode="time"]').click();
   await expect(page.locator('#time-trial-rules')).toBeVisible();
+  await page.locator('#time-trial-rules > summary').click();
+  await expect(page.locator('#clean-trial')).toBeVisible();
   await page.locator('#clean-trial').check();
   await page.locator('#start-button').click();
   await expect(page.locator('#clean-trial-hud')).toBeVisible();
