@@ -104,7 +104,8 @@ let daily = null; // the challenge being raced; its modifier lives on race.modif
 let selectedMode = 'classic';
 const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal', stages: 1 };
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
-const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules });
+const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules,
+  ...(selectedMode === 'gauntlet' ? { hazardTier: $('#hazard-tier').value } : {}) });
 let previousFuel = 100;
 let previousNitro = 0;
 const presentation = createPresentation();
@@ -276,6 +277,7 @@ function showTracks() {
     button.setAttribute('aria-pressed', String(button.dataset.raceMode === selectedMode));
   $('#race-mode-rules').hidden = !['custom', 'free'].includes(selectedMode);
   $('#sprint-stages-setting').hidden = selectedMode !== 'custom';
+  $('#gauntlet-rules').hidden = selectedMode !== 'gauntlet';
   $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
   for (const button of document.querySelectorAll('[data-race-preset]'))
     button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
@@ -354,6 +356,7 @@ for (const button of document.querySelectorAll('[data-race-preset]')) button.add
   refreshCustomSelects();
   changeRaceSelection();
 });
+$('#hazard-tier').addEventListener('change', changeRaceSelection);
 for (const input of document.querySelectorAll('[data-race-rule]')) input.addEventListener('change', () => {
   raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule) ? Number(input.value) : input.value;
   changeRaceSelection();
@@ -1061,6 +1064,11 @@ function updateUI(now, input) {
       element.textContent = format(value * (1 - (1 - progress) ** 3));
     });
   }
+  const hazardWarning = $('#hazard-warning');
+  const hazardAhead = race.mode === 'gauntlet' ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;
+  const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
+  hazardWarning.hidden = !hazardAhead || hazardDistance > 170 || race.phase !== 'racing';
+  if (!hazardWarning.hidden) hazardWarning.textContent = t('mode.hazardWarning', { n: hazardDistance });
   const checkpointHud = $('#checkpoint-hud');
   checkpointHud.hidden = !race.checkpoint || race.phase === 'ready';
   if (race.checkpoint) {

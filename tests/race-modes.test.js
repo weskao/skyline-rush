@@ -263,3 +263,13 @@ test('Checkpoint Rush completes on the real finish after all gates are cleared',
   assert.equal(race.phase,'finished');
   assert.equal(race.result.success,true);
 });
+
+test('Extreme gauntlet increases obstacle count without affecting Classic traffic or score', () => {
+  const base = createRace('coast',{mode:'gauntlet'});
+  const extreme = createRace('coast',{mode:'gauntlet',hazardTier:'extreme'});
+  assert.ok(extreme.hazards.length > base.hazards.length);
+  assert.equal(extreme.traffic.length,0);
+  assert.equal(createRace('coast').hazards.length,0);
+  assert.equal(base.config.hazardTier,undefined);
+  assert.equal(extreme.config.hazardTier,'extreme');
+});

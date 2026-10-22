@@ -23,6 +23,7 @@ export function normalizeRaceConfig(value = {}) {
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
     ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),
+    ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
   });
 }
 

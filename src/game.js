@@ -1,5 +1,5 @@
 import { seededRng } from './rng.js';
-import { createHazards } from './hazards.js';
+import { createHazards, hazardX } from './hazards.js';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
@@ -240,7 +240,7 @@ export function createRace(trackId = 'coast', modifier = null) {
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
-    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES) : [],
+    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) : [],
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
@@ -596,9 +596,10 @@ export function stepRace(race, input, dt) {
   for (const hazard of race.hazards) {
     if (hazard.distance > car.distance) break;
     if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
-    const collision = Math.abs(car.x - hazard.x) < 1.8 && car.altitude < 2.4;
+    const obstacleX = hazardX(hazard, race.elapsed);
+    const collision = Math.abs(car.x - obstacleX) < 1.8 && car.altitude < 2.4;
     if (collision && car.cooldown === 0) {
-      contact(race, 'barrier', hazard.x, 0.7, 0.6);
+      contact(race, 'barrier', obstacleX, 0.7, 0.6);
       hazard.hit = true;
     } else {
       hazard.passed = true;

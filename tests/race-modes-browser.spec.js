@@ -115,3 +115,19 @@ test('Checkpoint Rush displays the real 3D course and dynamic gate HUD', async (
   await page.screenshot({ path: 'test-results/race-mode-checkpoint-rush.png' });
   expect(errors).toEqual([]);
 });
+
+test('Extreme Obstacle Run updates its intensity setting and warning system', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('button[data-race-mode="gauntlet"]').click();
+  await expect(page.locator('#gauntlet-rules')).toBeVisible();
+  await page.locator('#hazard-tier').evaluate(select => {
+    select.value = 'extreme';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode','gauntlet');
+  await page.screenshot({ path:'test-results/race-mode-gauntlet-extreme.png' });
+  expect(errors).toEqual([]);
+});

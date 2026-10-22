@@ -1210,3 +1210,8 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
 .checkpoint-hud { display: block; margin-top: 6px; width: fit-content; max-width: 100%; color: #93fff0; font-size: clamp(10px,1vw,13px); letter-spacing: .06em; font-weight: 700; text-shadow: 0 0 9px #32c2b8aa; }
 .checkpoint-hud[data-urgent="true"] { color: #ffd084; text-shadow: 0 0 12px #ff8d45aa; }
 .checkpoint-hud[hidden] { display: none !important; }
+
+/* Gauntlet alert is readable without flashing and survives low-performance settings. */
+.hazard-warning { display: inline-block; margin-top: 6px; padding: 4px 10px; border: 1px solid #ffca76aa; border-radius: 6px; background: #5a2a24cc; color: #ffecbd; font-weight: 700; font-size: 11px; letter-spacing: .05em; }
+.hazard-warning[hidden], #gauntlet-rules[hidden] { display: none !important; }
+#gauntlet-rules label { display:flex; gap: 8px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding: 12px 4px; }

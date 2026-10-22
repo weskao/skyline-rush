@@ -18,6 +18,7 @@ import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival } from './trac
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
+import { hazardX } from './hazards.js';
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
@@ -786,9 +787,10 @@ export function createWorld(canvas) {
       if (!preview && race.mode === 'gauntlet') for (const hazard of race.hazards) {
         if (hazard.distance < distance - 16 || hazard.distance > distance + 550) continue;
         if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
-        const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, hazard.x, 1.25, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, hazard.x, 1.25, distance)
-            : [roadCenter(hazard.distance) - center + hazard.x, 1.25, distance - hazard.distance];
+        const x = hazardX(hazard, race.elapsed);
+        const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, 1.25, distance)
+          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, 1.25, distance)
+            : [roadCenter(hazard.distance) - center + x, 1.25, distance - hazard.distance];
         put(gauntletBarriers, visibleHazards++, ...xyz, 3.1, 2.5, 1.3);
       }
       gauntletBarriers.count = visibleHazards;
