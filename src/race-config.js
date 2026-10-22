@@ -1,39 +1,33 @@
-// Pure, versioned rules for race sessions. No storage, DOM or renderer coupling.
-export const RACE_CONFIG_VERSION = 1;
-export const RACE_MODES = Object.freeze(['classic', 'custom', 'free', 'time']);
-const DEFAULTS = Object.freeze({
-  rivalCount: 3, aiDifficulty: 'normal', trafficDensity: 'normal',
-  itemsEnabled: true, collisionRule: 'normal', ghostEnabled: true, visualPreset: 'track',
-});
-const TRAFFIC = Object.freeze({ off: 0, light: .5, normal: 1, heavy: 1.5 });
-const ALLOWED = new Set(['version', 'mode', ...Object.keys(DEFAULTS)]);
-const CHOICES = { aiDifficulty: ['easy', 'normal', 'hard'], trafficDensity: Object.keys(TRAFFIC), collisionRule: ['normal', 'relaxed'], visualPreset: ['track', 'day', 'night'] };
+// A small, versioned contract for practice modes; Classic and Daily stay identical.
+export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet']);
+const TRAFFIC = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
+const DIFFICULTIES = ['easy', 'normal', 'hard'];
 
-export function raceConfig(trackId = 'coast', options = {}) {
-  if (!options || typeof options !== 'object' || Array.isArray(options)) throw new TypeError('Invalid race options');
-  for (const key of Object.keys(options)) if (!ALLOWED.has(key)) throw new RangeError(`Unknown race option: ${key}`);
-  if (options.version !== undefined && options.version !== RACE_CONFIG_VERSION) throw new RangeError('Unknown race config version');
-  const mode = options.mode ?? 'classic';
-  if (!RACE_MODES.includes(mode)) throw new RangeError(`Unknown race mode: ${mode}`);
-  for (const [key, values] of Object.entries(CHOICES)) if (options[key] !== undefined && !values.includes(options[key])) throw new RangeError(`Invalid ${key}`);
-  if (options.rivalCount !== undefined && (!Number.isInteger(options.rivalCount) || options.rivalCount < 0 || options.rivalCount > 3)) throw new RangeError('Invalid rival count');
-  for (const key of ['itemsEnabled', 'ghostEnabled']) if (options[key] !== undefined && typeof options[key] !== 'boolean') throw new TypeError(`Invalid ${key}`);
-  const rules = mode === 'classic' ? DEFAULTS : { ...DEFAULTS, ...options };
-  // Solo modes deliberately cannot inherit opponents from stale Custom settings.
-  const rivalCount = mode === 'free' || mode === 'time' ? 0 : rules.rivalCount;
-  return { version: RACE_CONFIG_VERSION, mode, trackId, rivalCount,
-    aiDifficulty: rules.aiDifficulty, trafficDensity: rules.trafficDensity,
-    itemsEnabled: rules.itemsEnabled, collisionRule: rules.collisionRule,
-    ghostEnabled: rules.ghostEnabled, visualPreset: rules.visualPreset };
+export const trafficMultiplier = value => TRAFFIC[value] ?? TRAFFIC.normal;
+
+export function normalizeRaceConfig(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError('Race mode settings must be an object');
+  const mode = value.mode ?? 'classic';
+  if (!MODES.includes(mode)) throw new RangeError('Unknown race mode: ' + String(mode));
+  // Only Custom has rivals. Free Drive can adjust traffic and pickups.
+  const custom = mode === 'custom';
+  const practice = custom || mode === 'free';
+  const rivals = custom && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' ? 3 : 0;
+  return Object.freeze({
+    rulesVersion: 1,
+    mode,
+    rivals,
+    traffic: practice && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet'].includes(mode) ? 'off' : 'normal',
+    difficulty: custom && DIFFICULTIES.includes(value.difficulty) ? value.difficulty : 'normal',
+    items: practice && typeof value.items === 'boolean' ? value.items : true,
+  });
 }
 
-export const trafficMultiplier = density => {
-  if (!Object.hasOwn(TRAFFIC, density)) throw new RangeError(`Unknown traffic density: ${density}`);
-  return TRAFFIC[density];
-};
-export const officialRules = config => config?.mode === 'classic' &&
-  Object.entries(DEFAULTS).every(([key, value]) => config[key] === value) && config.rivalCount === 3;
-export const raceRulesKey = config => JSON.stringify([
-  config.version, config.mode, config.trackId, config.rivalCount, config.aiDifficulty,
-  config.trafficDensity, config.itemsEnabled, config.collisionRule, config.ghostEnabled,
-]);
+export const RULE_PRESETS = Object.freeze({
+  standard: Object.freeze({ rivals: 3, difficulty: 'normal', traffic: 'normal', items: true }),
+  traffic: Object.freeze({ rivals: 3, difficulty: 'hard', traffic: 'heavy', items: true }),
+  noitems: Object.freeze({ rivals: 3, difficulty: 'normal', traffic: 'normal', items: false }),
+  air: Object.freeze({ rivals: 1, difficulty: 'easy', traffic: 'off', items: true }),
+  precision: Object.freeze({ rivals: 0, difficulty: 'normal', traffic: 'light', items: false }),
+});
+export const rulesSignature = config => JSON.stringify(normalizeRaceConfig(config));

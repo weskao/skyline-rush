@@ -385,6 +385,8 @@ export function createWorld(canvas) {
   // Shortcut floor sits at the corridor's lower edge, so the car visibly flies the band above it.
   const shortcutDeck = instances(box, new THREE.MeshBasicMaterial({ transparent: true, opacity: .28, depthWrite: false }), segments, scene);
   const shortcutPylonMeshes = instances(box, material('#d9dcda', .4, .5), 8, scene);
+  const gauntletBarriers = instances(box, new THREE.MeshBasicMaterial({ color: '#ff946f' }), 24, scene);
+  gauntletBarriers.name = 'gauntlet-barriers'; gauntletBarriers.count = 0;
   shortcutDeck.name = 'shortcut-deck'; shortcutPylonMeshes.name = 'shortcut-pylons';
   const surfaceMarks = instances(box, new THREE.MeshBasicMaterial({ color: '#9ae6ff', transparent: true, opacity: .3, depthWrite: false }), segments, scene);
   const cliffs = instances(new THREE.ConeGeometry(1, 1, 5), material('#a15339'), 40, scene);
@@ -588,6 +590,7 @@ export function createWorld(canvas) {
       if (trackId !== race.trackId) {
         trackId = race.trackId;
         const palette = TRACK_PALETTES[trackId];
+        gauntletBarriers.material.color.set(trackId === 'cosmic' || trackId === 'spiral' ? '#ed87fa' : trackId === 'aurora' || trackId === 'alpine' ? '#ffcf81' : '#ff946f');
         scene.background.set(palette.fog); scene.fog.color.set(palette.fog);
         sky.material.uniforms.top.value.set(palette.top); sky.material.uniforms.horizon.value.set(palette.horizon);
         sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' ? 1 : 0;
@@ -774,13 +777,30 @@ export function createWorld(canvas) {
         buildings.instanceMatrix.needsUpdate = windows.instanceMatrix.needsUpdate = true;
       });
 
+      // Bounded InstancedMesh: one distinct marker per reachable barrier,
+      // no scene allocations or three.js collision checks on the hot path.
+      let visibleHazards = 0;
+      if (!preview && race.mode === 'gauntlet') for (const hazard of race.hazards) {
+        if (hazard.distance < distance - 16 || hazard.distance > distance + 550) continue;
+        if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
+        const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, hazard.x, 1.25, distance)
+          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, hazard.x, 1.25, distance)
+            : [roadCenter(hazard.distance) - center + hazard.x, 1.25, distance - hazard.distance];
+        put(gauntletBarriers, visibleHazards++, ...xyz, 3.1, 2.5, 1.3);
+      }
+      gauntletBarriers.count = visibleHazards;
+      if (visibleHazards) gauntletBarriers.instanceMatrix.needsUpdate = true;
+
       if (preview) {
         const groundedShowcase = visual.enabled && visual.airflow;
         const curated=!!HERO_PREVIEWS[trackId];
         updateCar(player, { ...previewPlayer(trackId,car,idleTime,reducedMotion,groundedShowcase), distance },
           distance,center,time,dt,true);
-        rivals.forEach((mesh,i)=>updateCar(mesh,
-          previewRival(trackId,i,race.rivals[i],idleTime,reducedMotion),distance,center,time,dt));
+        rivals.forEach((mesh,i) => {
+          mesh.visible = true; // show all three showcase cars even in solo practice
+          const standIn = { x: [-7.5, -2.5, 7.5][i], distance: 0, speed: 0, altitude: 0, steering: 0 };
+          updateCar(mesh, previewRival(trackId,i,race.rivals[i] ?? standIn,idleTime,reducedMotion),distance,center,time,dt);
+        });
         traffic.forEach((mesh,i)=>{
           mesh.visible=i<race.traffic.length;
           if(mesh.visible)updateCar(mesh,{...race.traffic[i],
@@ -789,7 +809,10 @@ export function createWorld(canvas) {
       } else {
         updateCar(player, car, distance, center, time, motionDt, true, input);
         if (race.phase === 'finished') player.position.z -= presentation.finishDistance || 0;
-        rivals.forEach((mesh, i) => updateCar(mesh, race.rivals[i], distance, center, time, motionDt));
+        rivals.forEach((mesh, i) => {
+          mesh.visible = i < race.rivals.length;
+          if (mesh.visible) updateCar(mesh, race.rivals[i], distance, center, time, motionDt);
+        });
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt); });
       }
       ghostCar.visible = !preview && !!ghost;

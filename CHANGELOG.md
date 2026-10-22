@@ -1,3 +1,40 @@
+## [0.15.0] - 2026-10-22
+
+### 🚀 Features
+
+- Introduce custom race, free drive and time attack modes
+- Track solo records and race-specific ghost replays
+- Start free driving instantly and capture mode screenshots in CI
+- Show live Ghost gap and finish free-drive HUD
+- Add five one-tap custom racing rule presets
+- Add playable obstacle gauntlet and configurable free-drive traffic
+- Add obstacle score HUD and focused mobile browser screenshot gate
+
+### 🐛 Bug Fixes
+
+- **ui:** Keep portrait minimap clear and lift zh notice label
+- **ui:** Give the short-screen minimap a bottom-row HUD slot
+- **ui:** Keep the altitude ladder below the route map on tall desktops
+- Handle solo race rendering and cover mode UI with browser tests
+- Show honest solo HUD and suppress campaign hints in practice
+- Bind mode switching only to buttons, not the body
+- **style:** Restore stylesheet truncated in 9ade5ef
+- **ui:** Fit the desktop intro so the flight tip is whole
+- **ui:** Size the short-screen map slot from the cluster
+
+### 📚 Documentation
+
+- **todo:** Plan new race modes, custom rules, hazards and power-ups
+- **readme:** Recapture README screenshots
+- **i18n:** Clarify detection order and zh-TW unit rules
+
+### 🧪 Testing
+
+- **i18n:** Cover audio panel and count road signs from catalog
+- **i18n:** Fly for real and cover detection, rebind and zh HUD
+- Specify new race modes before implementation
+- Define clean time trials and interactive obstacle gauntlet
+- **i18n:** Allow the Backspace key name in zh-TW
 ## [0.14.0] - 2026-10-21
 
 ### 🚀 Features

@@ -12,7 +12,7 @@ const VIEWPORTS = [['desktop', { width: 1440, height: 900 }, false], ['phone', {
 const MIN_CJK_PX = 10;
 const CJK = /[㐀-鿿豈-﫿　-〿]/;
 // Brand/game terms, units and key names the zh-TW UI keeps in English.
-const ALLOWED = new Set(['SKYLINE', 'RUSH', 'NITRO', 'FLY', 'BOOST', 'NOVA', 'ORBIT', 'APEX', 'KM', 'ESC', 'SPACE', 'SHIFT', 'ENTER', 'CFD']); // CFD: the technical acronym in "NOT CFD"
+const ALLOWED = new Set(['SKYLINE', 'RUSH', 'NITRO', 'FLY', 'BOOST', 'NOVA', 'ORBIT', 'APEX', 'KM', 'ESC', 'SPACE', 'SHIFT', 'ENTER', 'BACKSPACE', 'CFD']); // CFD: the technical acronym in "NOT CFD"
 const KEY_PREFIXES = [...new Set(Object.keys(CATALOGS.en).map(key => key.split('.')[0]))];
 // A catalog key shown to the player: a whole-string dotted identifier, or a real catalog prefix glued to a dotted tail.
 const RAW_KEY = new RegExp(`^[a-z][A-Za-z0-9]*(\\.[A-Za-z0-9-]+)+$|(^|[^\\w.])(${KEY_PREFIXES.join('|')})\\.[A-Za-z][\\w.]*`);
@@ -182,6 +182,20 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       // Audio, controls and VFX panels.
       await page.locator('#settings-button').click();
       await check(cx, 'audio-panel');
+      // Volume sliders and Mute all: the visible label and each slider's accessible name come from the active catalog.
+      const L = CATALOGS[cx.locale];
+      expect.soft(await page.locator('#settings-panel .audio-head > span').textContent(), `${cx.id} audio heading`).toBe(L['audio.head']);
+      expect.soft(await page.locator('#mute-all > span').textContent(), `${cx.id} mute all`).toBe(L['audio.muteAll']);
+      for (const kind of ['music', 'sfx']) {
+        expect.soft(await page.locator(`[data-audio="${kind}"] > span`).textContent(), `${cx.id} ${kind} label`).toBe(L[`audio.${kind}`]);
+        expect.soft(await page.locator(`[data-audio="${kind}"] + input[type="range"]`).getAttribute('aria-label'), `${cx.id} ${kind} slider name`).toBe(L[`audio.${kind}Volume`]);
+      }
+      await page.locator('#mute-all').click();
+      expect.soft(await page.locator('#mute-all > span').textContent(), `${cx.id} unmute all`).toBe(L['audio.unmuteAll']);
+      expect.soft(await page.locator('[data-audio="music"] + input[type="range"]').getAttribute('aria-valuetext'), `${cx.id} muted slider value`).toBe(L['audio.muted']);
+      expect.soft(await page.locator('[data-audio="music"] > b').textContent(), `${cx.id} muted badge`).toBe(L['audio.off']);
+      await check(cx, 'audio-panel-muted');
+      await page.locator('#mute-all').click();
       await page.locator('#settings-button').click();
       await page.locator('#controls-button').click();
       await check(cx, 'controls-panel');
@@ -241,12 +255,18 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       if (await page.locator('#airflow-toggle').isVisible()) {
         await page.locator('#airflow-toggle').click();
         await check(cx, 'race-hud-airflow', { hud: true });
+        await page.locator('#airflow-toggle').click(); // off again: the flight HUD is checked on its own (airflow + flight HUD collide on phones in en too, tracked separately), and a persisted airflow-on would hide the intro after the reload below
       }
-      await page.evaluate(() => { Object.assign(window.gameplay.race.player, { speed: 90 }); });
+      await page.evaluate(() => { document.activeElement?.blur(); Object.assign(window.gameplay.race.player, { speed: 90 }); }); // the clicked toggle keeps focus and would swallow Space
       await page.keyboard.down('Space');
       await page.waitForTimeout(700);
+      // The flight HUD must really be showing: a focused toggle would swallow Space and leave the road HUD on screen.
+      expect.soft(await page.evaluate(() => document.body.classList.contains('airborne')), `${cx.id} airborne during flight`).toBe(true);
+      expect.soft(await page.locator('#flight-mode').textContent(), `${cx.id} flight mode label`).toBe(CATALOGS[cx.locale]['hud.flightMode']);
       await check(cx, 'race-hud-flight', { hud: true });
       await page.keyboard.up('Space');
+      await expect(page.locator('body')).not.toHaveClass(/airborne/); // the callouts below belong on the road, not mid-descent
+      await expect(page.locator('.flight-director')).toHaveCSS('opacity', '0'); // and not over the flight HUD's 0.3s fade-out
       await page.evaluate(() => { window.gameplay.race.player.perfectLines++; });
       await expect(page.locator('#event-callout')).toBeVisible();
       await calloutText(cx, 'callout-perfect');
@@ -364,7 +384,29 @@ test.describe('language detection and persistence', () => {
   });
 });
 
-// Reads the real 2D sign canvases (8 road signs 512x96 + the 1024x128 finish banner) the world paints, without any hook in the app.
+// A status message set at runtime (not via data-i18n) must be re-rendered by a live language switch.
+for (const [locale, system] of LOCALES) test.describe(`rebind prompt ${locale}`, () => {
+  test.use({ locale: system });
+  test('the key-rebind prompt re-renders in the new language and back', async ({ page }) => {
+    const press = code => CATALOGS[code]['keymap.press'].replace('{action}', CATALOGS[code]['keymap.fly']);
+    const other = locale === 'en' ? 'zh-TW' : 'en';
+    const status = page.locator('#keymap-status');
+    await page.goto('/');
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+    await page.locator('#controls-button').click();
+    await page.locator('[data-rebind="fly"]').click();
+    await expect(status).toHaveText(press(locale));
+    // The open controls panel covers the custom picker, so drive the native select it wraps (same change handler).
+    await page.locator('#locale-select').selectOption(other, { force: true });
+    await expect(status).toHaveText(press(other));
+    await page.locator('#locale-select').selectOption(locale, { force: true });
+    await expect(status).toHaveText(press(locale));
+  });
+});
+
+// Reads the real 2D sign canvases (one 512x96 road sign per section type + the 1024x128 finish banner) the world paints, without any hook in the app.
+// Every sign.* catalog key is one canvas, so a new section sign (e.g. boost-tunnel) is counted without editing this file.
+const SIGN_COUNT = Object.keys(CATALOGS.en).filter(key => key.startsWith('sign.')).length;
 const signStats = page => page.evaluate(() => window.__signCanvases.map(canvas => {
   const { width, height } = canvas;
   const { data } = canvas.getContext('2d').getImageData(0, 0, width, height);
@@ -396,7 +438,7 @@ for (const [locale, system] of LOCALES) test.describe(`road signs ${locale}`, ()
     };
     const before = await signStats(page);
     await dump(locale);
-    expect(before.length).toBe(9);
+    expect(before.length).toBe(SIGN_COUNT);
     for (const [i, sign] of before.entries()) {
       expect.soft(sign.bright, `${locale} sign ${i} has text pixels`).toBeGreaterThan(150);
       expect.soft(sign.edge, `${locale} sign ${i} text touches the frame`).toBe(0);
@@ -412,3 +454,43 @@ for (const [locale, system] of LOCALES) test.describe(`road signs ${locale}`, ()
     }
   });
 });
+
+// Start screen: the intro is a vertical scroller. At common desktop heights its content fits, so no text line is cut by the
+// scroller's bottom edge (a cut line once peeked 7px out of the zh-TW intro); shorter screens must still scroll to the last line.
+const introLines = page => page.locator('#intro').evaluate(intro => {
+  const box = intro.getBoundingClientRect();
+  const edge = box.top + intro.clientTop + intro.clientHeight;
+  const range = document.createRange();
+  const lines = [];
+  for (const el of intro.querySelectorAll('*')) {
+    if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+    for (const node of el.childNodes) {
+      if (node.nodeType !== 3 || !node.textContent.trim()) continue;
+      range.selectNodeContents(node);
+      for (const r of range.getClientRects()) if (r.width > 0 && r.height > 0) lines.push({ text: node.textContent.trim().slice(0, 24), top: r.top, bottom: r.bottom });
+    }
+  }
+  return { edge, lines, scrollable: intro.scrollHeight - intro.clientHeight };
+});
+for (const [locale, system] of LOCALES) for (const [width, height] of [[1440, 900], [1600, 900], [1280, 900], [1920, 1080], [1440, 800], [1366, 768], [1280, 720]]) {
+  test.describe(`intro bottom edge ${locale} ${width}x${height}`, () => {
+    test.use({ locale: system, viewport: { width, height } });
+    test('no text line is cut by the scroller edge, and the last line is reachable', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const intro = page.locator('#intro');
+      await intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const cut = ({ edge, lines }) => lines.filter(line => line.top < edge - 0.5 && line.bottom > edge + 0.5).map(line => `"${line.text}" ${Math.round(line.top)}..${Math.round(line.bottom)} edge ${Math.round(edge)}`);
+      const first = await introLines(page);
+      if (height >= 900) {
+        expect(cut(first), 'lines cut by the intro bottom edge').toEqual([]);
+        expect(first.scrollable, 'intro content fits without scrolling').toBeLessThanOrEqual(0);
+      }
+      await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
+      const last = await introLines(page);
+      const lowest = last.lines.reduce((a, b) => (b.bottom > a.bottom ? b : a));
+      expect(lowest.text, 'the flight tip is the last line').toBe((await page.locator('.flight-tip').innerText()).trim().slice(0, 24));
+      expect(lowest.bottom, 'last line fully visible once scrolled').toBeLessThanOrEqual(last.edge + 0.5);
+    });
+  });
+}

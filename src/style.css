@@ -344,6 +344,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .altitude-ladder > i { display: block; width: 6px; height: 1px; margin-top: 36px; background: #7dc8df; }
 .altitude-ladder > b { position: absolute; left: -4px; bottom: -3px; width: 7px; height: 7px; background: #a4eaff; }
 .altitude-ladder > small { position: absolute; left: -6px; bottom: -29px; font-size: 7px; white-space: nowrap; letter-spacing: 1px; }
+@media (min-height: 860px) { .altitude-ladder { top: 430px; } } /* below the live route map (292-418px); shorter screens keep 44% (no room above the right-hand telemetry) */
 .impact-report { position: fixed; left: 50%; top: 27%; z-index: 4; transform: translateX(-50%); display: flex; gap: 15px; align-items: center; padding: 14px 20px; background: rgb(42 25 32 / .94); border: 1px solid #f79a6d; border-radius: 5px; color: #ffd5ba; box-shadow: 0 8px 32px rgb(0 9 22 / .3); pointer-events: none; }
 .impact-icon { display: flex; }
 .impact-icon svg { width: 26px; height: 26px; }
@@ -621,6 +622,8 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 /* Buttons mode: BRAKE spans the row under [<][>] in the steering cluster (mirrors with data-hand), so one thumb can brake + steer. */
 .touch-steer { display: grid; grid-template-columns: auto auto; }
 .touch-controls .touch-steer [data-control="brake"] { grid-column: 1 / -1; width: auto; }
+/* When max-width caps BRAKE short of the row (phones), keep it on the outer edge for the right hand too, as it is for the left. */
+#touch-controls[data-hand="right"] .touch-steer [data-control="brake"]:not(.is-positioned) { width: 100%; justify-self: end; }
 #touch-controls[data-steer-mode="slide"] { justify-content: flex-end; }
 #touch-controls[data-steer-mode="slide"] .touch-steer, #touch-controls[data-steer-mode="slide"] [data-control="brake"], #touch-controls[data-steer-mode="buttons"] .touch-pad { display: none; }
 #touch-controls[data-steer-mode="slide"] .touch-pedals { justify-content: flex-end; }
@@ -679,7 +682,8 @@ body.layout-editing #touch-controls { display: grid; }
 /* Right-thumb cluster: one 2x2 block in the corner, [NITRO][GAS] over [BOOST][FLY]. BOOST and FLY share the bottom row so one thumb
    slides across both (input.js bridges an 8px seam). The steering cluster takes the 1fr column; the slide pad is position:fixed, outside
    the grid; data-hand="right" mirrors the columns through direction:rtl. --touch-cell is the square button size before --touch-scale. */
-.touch-controls { --touch-cell: 56px; grid-template-columns: 1fr auto auto; grid-template-rows: auto auto; align-items: end; }
+:root { --touch-cell: 56px; }
+.touch-controls { grid-template-columns: 1fr auto auto; grid-template-rows: auto auto; align-items: end; }
 .touch-actions, .touch-pedals { display: contents; }
 .touch-steer { grid-column: 1; grid-row: 1 / 3; justify-self: start; align-self: end; }
 .touch-actions .touch-nitro { grid-column: 2; grid-row: 1; }
@@ -687,10 +691,10 @@ body.layout-editing #touch-controls { display: grid; }
 .touch-actions .touch-boost { grid-column: 2; grid-row: 2; }
 .touch-actions .touch-fly { grid-column: 3; grid-row: 2; }
 #touch-controls :is(.touch-actions, .touch-pedals) button { width: calc(var(--touch-cell) * var(--touch-scale, 1)); height: calc(var(--touch-cell) * var(--touch-scale, 1)); }
-@media (max-width: 760px) and (min-height: 501px) { .touch-controls { --touch-cell: 62px; } }
-@media (max-width: 370px) { .touch-controls { --touch-cell: 54px; } }
-@media (max-height: 500px) { .touch-controls { --touch-cell: 52px; } }
-@media (max-height: 380px) { .touch-controls { --touch-cell: 48px; gap: 8px; } }
+@media (max-width: 760px) and (min-height: 501px) { :root { --touch-cell: 62px; } }
+@media (max-width: 370px) { :root { --touch-cell: 54px; } }
+@media (max-height: 500px) { :root { --touch-cell: 52px; } }
+@media (max-height: 380px) { :root { --touch-cell: 48px; } .touch-controls { gap: 8px; } }
 #touch-controls[data-steer-mode="tilt"] .touch-steer { display: none; }
 #touch-controls .touch-steer button.is-positioned { width: calc(54px * var(--touch-scale, 1)); }
 
@@ -936,6 +940,15 @@ body[data-phase="ready"] .telemetry { display: none; }
 @media (max-height: 500px) {
   .intro { top: 106px; }
 }
+/* Below ~967px tall the full desktop intro overflows by a few px and the scroller edge cuts the flight tip mid-line.
+   Tighter spacing (54px) lets it fit from 900px tall; shorter screens still scroll to it. */
+@media (min-width: 1001px) and (min-height: 501px) and (max-height: 966px) {
+  .route-label { margin-bottom: 14px; }
+  .intro-copy { margin-bottom: 16px; }
+  .track-note { margin: 8px 0 12px; }
+  .intro-controls { margin-top: 12px; row-gap: 6px; }
+  .flight-tip { margin-top: 8px; }
+}
 
 /* Insets are 0 when the OS already places the web view clear of the status bar
    (iOS standalone with an opaque bar, Android 14 and earlier). Android 15+
@@ -990,7 +1003,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
 @media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
-/* Short screens have no free HUD slot (telemetry and touch buttons fill the sides); the leaderboard still ranks racers. */
+/* Short screens: telemetry and touch buttons fill the sides, so the map moves to the bottom row (see the short-screen blocks below). */
 /* The compact in-race route map remains visible on small viewports. */
 /* Short landscape has ~9px of intro slack: draw the route over the sky strip. */
 @media (max-height: 500px) and (min-width: 761px) {
@@ -1020,7 +1033,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 :is(.assist-button span, .aero-tools > button, .aero-tools > details > summary, .vfx-heading > span, .route-label, .track-select small, .start-hint, .intro-controls > div,
   .flight-tip, .bottomline, .stat-label, .progress-labels, .racer.is-player > strong, .racer.is-player > span:last-child, .countdown > span, .event-callout span,
   .speed-caption, .fuel-caption, #flight-mode, .mode-key, .boost-status, .aero-eyebrow, #aero-mode, .aero-channels > span, .aero-channels b, .aero-disclaimer,
-  .flight-director > span:not(.director-climb), .altitude-ladder > small, .impact-report div > span, .overlay-route, .result-stats span, .history-best, .controls-button):lang(zh-TW) { font-size: 10px !important; }
+  .flight-director > span:not(.director-climb), .altitude-ladder > small, .impact-report div > span, .overlay-route, .result-stats span, .history-best, .controls-button, .performance-notice-eyebrow):lang(zh-TW) { font-size: 10px !important; }
 @media (max-width: 760px) { .driving-message:lang(zh-TW) { font-size: 10px; } } /* 11px on wider screens */
 /* The larger label keeps the column's height, so POSITION does not grow into the phone progress bar below it. */
 .stat-label:lang(zh-TW) { line-height: 1; }
@@ -1067,14 +1080,23 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
  .race-route-map {width:59px;height:72px;right:14px;top:270px;}
 }
 @media(max-height:500px) and (min-width:761px) {
- /* Bottom-aligned just left of the 2x2 touch cluster; 144px clears it at Large size (2 x 52px x 1.15 + gaps). */
- .race-route-map {display:block;top:auto;bottom:max(18px, var(--safe-bottom));right:calc(max(12px, var(--safe-right)) + 144px);width:67px;height:73px;}
+ .race-route-map {width:67px;height:73px;}
  .track-select button > span.track-route-map {
    position:absolute;top:8px;left:8px;right:8px;width:auto;height:28px;
  }
 }
 @media (max-width:400px) and (max-height:700px) {
  .race-route-map {display:block;}
+}
+/* Short screens: telemetry fills the right column, so the map sits on the bottom row beside the 2x2 thumb-action cluster
+   (mirrored for a right-hand layout). The slot is that cluster's width: 2 cells x the chosen size (TOUCH_SCALE in main.js)
+   + up to 12px column gap + 8px clearance. */
+.race-route-map { --cluster-scale: 1; }
+body:has(#touch-controls[data-size="S"]) .race-route-map { --cluster-scale: .85; }
+body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15; }
+@media (min-width:761px) and (max-height:500px), (max-width:760px) and (min-height:501px) and (max-height:700px) {
+ .race-route-map { --cluster: calc(2 * var(--touch-cell) * var(--cluster-scale) + 20px); display:block; top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(12px, var(--safe-right)) + var(--cluster)); }
+ body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(12px, var(--safe-left)) + var(--cluster)); }
 }
 /* Keep a map on short screens: it is passive and never intercepts inputs. */
 
@@ -1124,24 +1146,58 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
  border-radius:5px;color:#fff;padding:7px 13px;cursor:pointer;}
 @media(max-width:760px){.performance-notice{top:calc(190px + env(safe-area-inset-top,0px));right:12px;width:min(285px,calc(100vw - 24px));}}
 
-/* Mode selector reuses the compact intro layout; expanded controls float above cards. */
-.race-setup { position: relative; z-index: 9; margin: 0 0 9px; width: min(460px, 100%); }
-.race-setup > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px;
-  list-style: none; padding: 8px 14px; border: 1px solid #71d6ed70; border-radius: 8px;
-  background: #102536e8; color: #c5edfb; font-size: 10px; letter-spacing: 1px; cursor: pointer; }
-.race-setup > summary::-webkit-details-marker { display: none; }
-.race-setup > summary strong { color: #c8f8ff; font-size: 12px; }
-.race-setup > summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.race-setup-options { position: absolute; top: calc(100% + 4px); left: 0; width: min(460px, calc(100vw - 34px));
-  max-height: min(62dvh, 480px); overflow: auto; overscroll-behavior: contain; padding: 14px 16px;
-  border: 1px solid #71d6ed88; border-radius: 10px; background: #0b1f2df7; box-shadow: 0 15px 35px #0009;
-  backdrop-filter: blur(15px); }
-.race-setting { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 46px; font-size: 12px; }
-.race-setting select { max-width: 180px; min-height: 34px; border: 1px solid #527c90; color: #e1f5fa; background: #173345; border-radius: 6px; }
-.race-setting .custom-select > button { min-width: 130px; max-width: 190px; min-height: 34px; padding: 6px 25px 6px 9px; color: #e1f5fa; border: 1px solid #527c90; border-radius: 6px; }
-.race-mode-description { margin: 8px 0 10px; color: #a9c6d3; font-size: 11px; line-height: 1.6; }
-#custom-rules[hidden], .race-setup[hidden], #exit-free[hidden] { display: none; }
-#leaderboard .racer[hidden] { display: none; }
-@media (max-width: 760px) { .race-setup { width: 100%; } .race-setup-options { max-height: 54dvh; } }
 
-#leaderboard[hidden] { display: none !important; }
+/* Race mode selector is intentionally compact: the 3D course showcase remains the hero. */
+.race-mode-picker { max-width: min(100%, 550px); margin: 15px 0 0; padding: 11px 12px; background: rgb(10 25 43 / .86); border: 1px solid #53738a; border-radius: 10px; backdrop-filter: blur(8px); }
+.race-mode-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+.race-mode-heading > span { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
+.race-mode-heading small { font-size: 10px; color: #d1e3ed; text-align: right; line-height: 1.4; }
+.race-mode-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
+.race-mode-tabs button { min-height: 38px; padding: 5px 7px; border: 1px solid #627c8d; border-radius: 5px; background: #22384a; color: #eef6f8; font: 700 11px/1.35 'Avenir Next','Segoe UI',sans-serif; }
+.race-mode-tabs button[aria-pressed="true"] { color: #102338; background: #ffb491; border-color: #ffcfb4; }
+.race-mode-tabs button:focus-visible { outline: 3px solid #9de4ff; outline-offset: 2px; }
+.race-mode-rules { margin-top: 10px; }
+.race-mode-rules summary { display: flex; justify-content: space-between; list-style: none; color: #aee7fa; font-size: 11px; font-weight: 700; cursor: pointer; padding-block: 5px; }
+.race-mode-rules summary::-webkit-details-marker { display: none; }
+.race-mode-rules summary::after { content: '＋'; }
+.race-mode-rules[open] summary::after { content: '－'; }
+.race-mode-rule-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; padding-top: 8px; }
+.race-mode-rule-grid label { display: flex; flex-direction: column; gap: 5px; color: #eaf3fa; font-size: 11px; }
+.race-mode-rule-grid select, .race-mode-rule-grid .custom-select > button { width: 100%; min-height: 36px; color: #f5f6f8; background: #1c3348; border: 1px solid #728aa0; border-radius: 4px; padding: 5px 10px; }
+.race-mode-rule-grid label.race-items { flex-direction: row; align-items: center; min-height: 36px; }
+.race-mode-rule-grid input { accent-color: #ffb491; }
+@media (max-width:760px) {
+ .race-mode-picker { padding: 8px; margin: 10px 0 0; }
+ .race-mode-tabs button { font-size: 10px; min-height: 36px; padding: 4px; }
+ .intro:has(.race-mode-picker) { max-height: calc(100dvh - 126px - env(safe-area-inset-bottom)); overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; padding: 2px 6px 12px; } /* 6px matches the track strip's -6px bleed */
+ .race-mode-rules[open] { max-height: 180px; overflow-y: auto; }
+}
+@media (max-width:370px) {
+ .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+.mode-history-runs p { padding: 9px 0; border-bottom: 1px solid #405465; margin: 0; font-variant-numeric: tabular-nums; color: #e5edf4; }
+
+.ghost-split { display: inline-block; margin-top: 14px; padding: 5px 11px; border: 1px solid #6498a7; border-radius: 4px; background: rgb(4 21 39 / .82); color: #c7edfa; font-size: 11px; letter-spacing: .8px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ghost-split[data-ahead="true"] { color: #91f0c5; border-color: #60b899; }
+.ghost-split[hidden] { display: none; }
+
+.race-presets { display: flex; flex-wrap: wrap; gap: 5px; margin: 7px 0; }
+.race-presets button { padding: 6px 8px; min-height: 34px; background: #16334b; color: #ddebf6; border: 1px solid #537c94; border-radius: 5px; font-size: 10px; font-weight: 700; }
+.race-presets button[aria-pressed="true"] { background: #eeb48c; color: #092138; border-color: #ffcca6; }
+.race-presets button:focus-visible { outline: 2px solid #a0edff; outline-offset: 2px; }
+
+/* Five mode cards adapt to narrow safe-area viewports without shrinking touch targets. */
+.race-mode-tabs { grid-template-columns: repeat(5,minmax(0,1fr)); }
+body[data-race-mode="free"] .race-presets,
+body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="rivals"]),
+body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
+@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+/* 501-966px-tall desktops: the picker costs ~100px, so it goes to one row and the tagline yields, keeping the flight tip whole. */
+@media (min-width: 1001px) and (min-height: 501px) and (max-height: 966px) {
+ .intro-copy { display: none; }
+ .race-mode-picker { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 14px; padding: 8px 10px; }
+ .race-mode-heading { flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; }
+ .race-mode-heading small { text-align: left; max-width: 120px; }
+ .race-mode-rules { grid-column: 1 / -1; }
+}

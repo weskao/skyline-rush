@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { CATALOGS } from '../src/i18n.js';
 
 for (const [width, height, hasTouch] of [
   [320, 568, true], [390, 844, true], [568, 320, true], [844, 390, true],
@@ -67,10 +68,13 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
   });
 }
 
-for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
+// zh-TW runs the tight viewports only: its CJK font stack widens HUD text (the place-change arrow once did), the roomy ones add no signal.
+const ZH_TW_HUD_SIZES = ['844x390', '874x339', '390x844', '320x568'];
+for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
   [1440, 900, false], [1024, 768, true], [390, 844, true], [360, 780, true], [320, 568, true]]) {
-  test.describe(`race HUD ${width}x${height}`, () => {
-    test.use({ viewport: { width, height }, hasTouch, isMobile: hasTouch });
+  if (locale === 'zh-TW' && !ZH_TW_HUD_SIZES.includes(`${width}x${height}`)) continue;
+  test.describe(`race HUD ${width}x${height}${locale === 'zh-TW' ? ' zh-TW' : ''}`, () => {
+    test.use({ viewport: { width, height }, hasTouch, isMobile: hasTouch, locale });
 
     test('racing HUD blocks stay apart', async ({ page, context }) => {
       // iPhone landscape keeps a home-indicator inset below the page; it lifts every bottom-anchored block.
@@ -79,7 +83,8 @@ for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
       await page.waitForTimeout(700);
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       await page.locator('#start-button').click();
-      await expect(page.locator('#race-status')).toHaveText('RACING');
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+      await expect(page.locator('#race-status')).toHaveText(CATALOGS[locale === 'zh-TW' ? 'zh-TW' : 'en']['phase.racing']);
       await expect(page.locator('#countdown')).toBeHidden();
       // The live map only steps aside on short screens with no free HUD slot.
       await expect(page.locator('.race-route-map')).toBeVisible();
@@ -106,6 +111,58 @@ for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
       const overlaps = boxes.flatMap(([name, box], i) => boxes.slice(i + 1).filter(([, other]) => !apart(box, other)).map(([other]) => `${name} × ${other}`));
       expect(overlaps).toEqual([]);
       for (const [name, box] of boxes) expect(box.y + box.height, `${name} below the screen`).toBeLessThanOrEqual(height);
+    });
+  });
+}
+
+// The short-screen live map sits on the bottom row beside the thumb clusters, so its slot must follow every
+// touch size, steering mode and hand (a fixed offset once overlapped the Large throttle/BOOST by 6-13px).
+const CONTROL_COMBOS = ['S', 'M', 'L'].flatMap(size => ['slide', 'buttons'].flatMap(mode => ['left', 'right'].map(hand => ({ size, mode, hand, version: 1 }))));
+for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 667], [360, 640], [320, 568], [844, 390], [874, 339], [812, 375], [932, 430]]) {
+  test.describe(`race map clears touch controls ${width}x${height}${locale === 'zh-TW' ? ' zh-TW' : ''}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true, locale });
+
+    test('every touch size, steering mode and hand', async ({ page, context }) => {
+      test.setTimeout(90000);
+      if (height < 380) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, top: 0, bottom: 21 } });
+      // Music off up front: its prompt opens 600ms after load and would sit over START.
+      await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; path=/'; });
+      await page.goto('/');
+      const others = ['.position-stat', '.leaderboard', '.race-progress', '.mode-indicator', '.speedometer', '.flight-telemetry', '.aero-tools',
+        '#controls-button', '#pause-button', ...['left', 'right', 'brake', 'fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
+      const hits = [];
+      // zh-TW only changes HUD text widths, so it runs the Large size, the tightest slot.
+      for (const combo of CONTROL_COMBOS.filter(({ size }) => locale === 'en-US' || size === 'L')) {
+        await page.evaluate(value => localStorage.setItem('skyline-rush-controls', value), JSON.stringify(combo));
+        await page.reload();
+        await page.locator('#start-button').click();
+        // The countdown already lays out the race HUD (telemetry only turns visible), and skipping its 3s keeps 112 layouts quick.
+        await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
+        const tag = `${combo.size}/${combo.mode}/${combo.hand}`;
+        const result = await page.evaluate(selectors => {
+          const box = el => { const { x, y, width, height } = el.getBoundingClientRect(); return { x, y, width, height }; };
+          const map = document.querySelector('.race-route-map');
+          const [steer, brake] = ['.touch-steer', '[data-control="brake"]'].map(selector => document.querySelector(selector));
+          return { map: map.checkVisibility() ? box(map) : null, events: getComputedStyle(map).pointerEvents,
+            steer: steer.checkVisibility() ? box(steer) : null, brake: brake.checkVisibility() ? box(brake) : null,
+            others: selectors.flatMap(selector => [...document.querySelectorAll(selector)].filter(el => el.checkVisibility()).map(el => [selector, box(el)])) };
+        }, others);
+        if (!result.map) { hits.push(`${tag}: map hidden`); continue; }
+        if (result.events !== 'none') hits.push(`${tag}: map takes pointer events`);
+        // A phone caps BRAKE short of its row: it must keep to the outer screen edge for either hand (the map slot relies on it).
+        if (result.brake) {
+          const [s, b] = [result.steer, result.brake];
+          const gap = combo.hand === 'left' ? b.x - s.x : (s.x + s.width) - (b.x + b.width);
+          if (Math.abs(gap) > 0.5) hits.push(`${tag}: brake ${Math.round(gap)}px off the outer edge`);
+        }
+        const m = result.map;
+        if (m.x < 0 || m.y < 0 || m.x + m.width > width + 0.5 || m.y + m.height > height + 0.5) hits.push(`${tag}: map off screen`);
+        for (const [name, b] of result.others) {
+          const apart = m.x + m.width <= b.x + 0.5 || b.x + b.width <= m.x + 0.5 || m.y + m.height <= b.y + 0.5 || b.y + b.height <= m.y + 0.5;
+          if (!apart) hits.push(`${tag}: map × ${name} ${Math.round(Math.min(m.x + m.width - b.x, b.x + b.width - m.x))}px`);
+        }
+      }
+      expect(hits).toEqual([]);
     });
   });
 }
