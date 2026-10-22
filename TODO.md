@@ -456,7 +456,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 9G. Multi-track Championship Cup (P1)
 
-- [ ] **MODE-06 — Championship:** select a curated 3–5-track cup consisting of
+- [x] **MODE-06 — Championship:** select a curated 3–5-track cup consisting of
   **unlocked** stages; award stage ranking points and a clear final champion.
 - [ ] Preserve stage standings across transitions with fair AI participation,
   an explicit continue/retry flow, and optional saved in-progress cup recovery.
