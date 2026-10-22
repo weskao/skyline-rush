@@ -305,8 +305,11 @@ test('paused Free Drive supports orbit, lighting and local PNG export', async ({
   await expect(page.locator('#photo-open')).toBeVisible();
   await page.locator('#photo-open').click();
   await expect(page.locator('#photo-screen')).toBeVisible();
-  await page.locator('#photo-orbit').fill('135');
-  await page.locator('#photo-fov').fill('45');
+  for (const [id,value] of [['photo-orbit','135'],['photo-fov','45']]) {
+    await page.locator('#'+id).evaluate((slider, val) => {
+      slider.value = val; slider.dispatchEvent(new Event('input',{bubbles:true}));
+    }, value);
+  }
   await page.locator('#photo-sky').evaluate(select=>{
     select.value='sunset';select.dispatchEvent(new Event('input',{bubbles:true}));
   });
