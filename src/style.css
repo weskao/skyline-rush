@@ -705,7 +705,7 @@ body.layout-editing #touch-controls { display: grid; }
 .intro-controls { margin-top: 20px; }
 .track-select { display: flex; gap: 8px; overflow-x: auto; padding: 6px; margin: -6px; scroll-snap-type: x proximity; scrollbar-color: var(--accent) #263849; scrollbar-width: thin; }
 .track-select button { flex: 0 0 137px; min-height: 62px; border: 1px solid #6b7b89; border-radius: 3px; padding: 10px; background: #142334; text-align: left; scroll-snap-align: start; }
-.track-select button[aria-pressed="true"] { border-color: var(--accent); background: #303139; }
+.track-select button[aria-pressed="true"] { border-color: var(--accent); background: #303139; scroll-snap-align: center; } /* holds centerSelectedTrack against the start snap */
 .track-select button:hover:not(:disabled) { background: #2a3b4d; }
 .track-select button:disabled { opacity: .65; }
 .track-select strong { font-size: 12px; display: block; margin-bottom: 7px; }

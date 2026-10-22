@@ -408,7 +408,15 @@ for (const input of document.querySelectorAll('[data-race-rule]')) input.addEven
   raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule) ? Number(input.value) : input.value;
   changeRaceSelection();
 });
-showTracks();
+// Back to home reloads the page; the tab remembers the last raced track so the intro reopens on it.
+const LAST_TRACK_KEY = 'skyline-rush-last-track';
+try { const last = sessionStorage.getItem(LAST_TRACK_KEY); if (unlockedTracks.has(last)) race = selectedRace(last); } catch { /* Coast stays the default without storage. */ }
+// The browser clamps scrollLeft, so the first and last tracks rest at the row's edges instead of the middle.
+function centerSelectedTrack() {
+  const button = document.querySelector(`[data-track="${race.trackId}"]`), row = button.parentElement;
+  row.scrollLeft += button.getBoundingClientRect().left + button.offsetWidth / 2 - row.getBoundingClientRect().left - row.clientWidth / 2;
+}
+showTracks(); centerSelectedTrack();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
 const previewObserver = new IntersectionObserver(entries => {
@@ -533,6 +541,7 @@ function chooseTrack() {
   previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
+  centerSelectedTrack();
 }
 $('#choose-track').addEventListener('click', chooseTrack);
 
@@ -584,6 +593,7 @@ function start() {
   stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, trackId:race.trackId } : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
+  try { sessionStorage.setItem(LAST_TRACK_KEY, race.trackId); } catch { /* The intro falls back to Coast after a reload. */ }
   leaveIntro();
   startRace(race);
   sound.cue('ui');

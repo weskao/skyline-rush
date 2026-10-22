@@ -1,4 +1,4 @@
-<!-- source-sha256: e1b43dcf7df49168a07859307dd6b96e3174fb74165c19f11d638ce79167f80e generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 7ba2a9d2ae7438e9f8a70e9b5290faf1ab0e535d486ee4dae32c5bfa43ff896a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -86,7 +86,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 | 自動加速開 / 關 | F2 / AUTO 按鈕 |
 | AIRFLOW 展示開 / 關 | V / AIRFLOW 按鈕 |
 
-行動裝置版面提供轉向、加速、煞車、加速推進、飛行與 NITRO 按鈕，觸控操作支援同時按住多個按鈕。AUTO 會持續按住加速器，讓你專心轉向與飛行；煞車永遠優先於它。觸控裝置預設為開啟，鍵盤遊玩預設為關閉，你的選擇會一直保留，直到再次切換或重新載入頁面。離開分頁會暫停比賽並清除按住中的輸入。比賽途中點擊 SKYLINE RUSH 標誌會先暫停並詢問：**Keep racing**、**End race**（回到賽道選擇，不儲存該次成績）或 **Back to home**（重新載入）；按 Esc 則維持暫停狀態。切換鏡頭與音效的快速鍵不會影響按住中的駕駛操作。在觸控裝置上，於轉向板上向下滑動會煞車，向下並往側邊滑動則會飄移；在 Buttons 模式下，煞車鍵位於轉向按鈕下方，因此煞車 + 轉向同樣可以飄移。
+行動裝置版面提供轉向、加速、煞車、加速推進、飛行與 NITRO 按鈕，觸控操作支援同時按住多個按鈕。AUTO 會持續按住加速器，讓你專心轉向與飛行；煞車永遠優先於它。觸控裝置預設為開啟，鍵盤遊玩預設為關閉，你的選擇會一直保留，直到再次切換或重新載入頁面。離開分頁會暫停比賽並清除按住中的輸入。比賽途中點擊 SKYLINE RUSH 標誌會先暫停並詢問：**Keep racing**、**End race**（回到賽道選擇，不儲存該次成績）或 **Back to home**（重新載入）；兩者回到開始畫面時都會選中剛才比賽的賽道，並將它捲動到賽道列的正中央（最前與最後的賽道則停在兩端）。按 Esc 則維持暫停狀態。切換鏡頭與音效的快速鍵不會影響按住中的駕駛操作。在觸控裝置上，於轉向板上向下滑動會煞車，向下並往側邊滑動則會飄移；在 Buttons 模式下，煞車鍵位於轉向按鈕下方，因此煞車 + 轉向同樣可以飄移。
 
 比賽前或暫停時開啟 **Controls**，可調整鍵盤轉向靈敏度，或重新對應駕駛動作。選取一個動作後按下按鍵即可；衝突的按鍵設定會互換，固定的快速鍵保留不可更改，按 Escape 可取消擷取。Reset keyboard 會還原預設值。按鍵設定即時生效，並儲存於 `localStorage['skyline-rush-keymap']`。
 
