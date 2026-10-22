@@ -118,6 +118,34 @@ test('starting with a VFX control focused hands the keyboard back to driving', a
   await expect.poll(async () => parseFloat(await page.evaluate(() => document.body.style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
 });
 
+for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) test(`${name} dropdowns close on an outside press or another button, one open at a time`, async ({ page }) => {
+  await page.setViewportSize(viewport);
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  const vfx = page.locator('#vfx-panel'), quality = page.getByRole('combobox', { name: 'Quality', exact: true });
+  await vfx.locator('> summary').click();
+  await quality.click();
+  await expect(quality).toHaveAttribute('aria-expanded', 'true');
+  // A press inside the VFX panel closes only the drawn select.
+  await page.locator('.vfx-settings').click({ position: { x: 8, y: 8 } });
+  await expect(quality).toHaveAttribute('aria-expanded', 'false');
+  await expect(vfx).toHaveAttribute('open');
+  // Left edge, mid-height: page background on both layouts, clear of every panel.
+  const outside = () => page.mouse.click(4, viewport.height / 2);
+  await outside();
+  await expect(vfx).not.toHaveAttribute('open');
+  // Another dropdown's button swaps them instead of stacking.
+  await vfx.locator('> summary').click();
+  await page.locator('#settings-button').click();
+  await expect(page.locator('#settings-panel')).toBeVisible();
+  await expect(vfx).not.toHaveAttribute('open');
+  await page.locator('#controls-button').click();
+  await expect(page.locator('#controls-panel')).toBeVisible();
+  await expect(page.locator('#settings-panel')).toBeHidden();
+  await outside();
+  await expect(page.locator('#controls-panel')).toBeHidden();
+});
+
 test('mobile VFX controls fit, persist and respect reduced motion', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
