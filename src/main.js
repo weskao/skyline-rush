@@ -25,6 +25,7 @@ import { createRouteMap } from './route-map.js';
 import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.js';
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
+import { refreshIfStale } from './update-check.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -935,7 +936,13 @@ window.addEventListener('blur', () => {
 document.addEventListener('visibilitychange', () => {
   document.body.classList.toggle('page-hidden', document.hidden);
   if (document.hidden && (race.phase === 'racing' || race.phase === 'countdown')) pause();
+  if (!document.hidden) pickUpNewBuild();
 });
+// A home-screen app resumes the page it last loaded, and a cold launch can get a cached index.html for up to
+// 10 minutes after a deploy: on launch, resume and back-forward restore, swap in the newer build while nothing is at stake.
+const pickUpNewBuild = () => refreshIfStale(() => race.phase === 'ready');
+window.addEventListener('pageshow', event => { if (event.persisted) pickUpNewBuild(); });
+pickUpNewBuild();
 
 function phaseUI() {
   const phase = race.phase;
