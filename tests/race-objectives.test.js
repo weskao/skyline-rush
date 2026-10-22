@@ -62,3 +62,12 @@ test('Classic, Daily and Time Attack keep the authored finish boundary', () => {
     assert.deepEqual(raceCompletion(race), { done: true, reason: 'route' });
   }
 });
+
+test('Championship is an explicit stage-points objective, not a fake lap or a single race victory', () => {
+  const race = createRace('coast', { mode: 'cup', cupTracks: ['coast', 'neon', 'canyon'] });
+  assert.equal(race.objective.type, 'stage-points');
+  assert.deepEqual(raceCompletion(race), { done: false, reason: null });
+  race.player.distance = race.length;
+  assert.deepEqual(raceCompletion(race), { done: true, reason: 'route' });
+  assert.equal(createRaceObjective({ mode: 'cup' }).type, 'stage-points');
+});
