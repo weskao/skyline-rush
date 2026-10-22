@@ -6,6 +6,7 @@ import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
 import { createElimination, stepElimination } from './elimination.js';
 import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
+import { createRaceObjective, raceCompletion } from './race-objectives.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
@@ -242,7 +243,7 @@ export function createRace(trackId = 'coast', modifier = null) {
   const rings = createRings(track);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
-    trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
+    trackId, modifier: dailyModifier, mode: config.mode, config, objective: createRaceObjective(config), seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
     hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) :
       config.hazards ? createHazards(track, LANES, config.hazards) : [],
@@ -656,9 +657,9 @@ export function stepRace(race, input, dt) {
       return;
     }
   }
-  const stuntTimeUp = race.mode === 'stunt' && race.elapsed >= race.stuntLimit;
-  if (!['free','elimination'].includes(race.mode) && (car.distance >= race.length || race.checkpoint?.expired || stuntTimeUp)) {
-    const finishTime = stuntTimeUp ? race.stuntLimit : race.checkpoint?.expired ? race.elapsed :
+  const completion = raceCompletion(race);
+  if (completion.done) {
+    const finishTime = completion.reason === 'timer' ? race.stuntLimit : completion.reason === 'expired' ? race.elapsed :
       race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
     car.distance = Math.min(car.distance, race.length); // An expired timer must not teleport the car to the finish.
@@ -670,7 +671,7 @@ export function stepRace(race, input, dt) {
       stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1,
       success: race.checkpoint ? !race.checkpoint.expired && race.checkpoint.passed === race.checkpoint.gates.length :
         !(race.mode === 'time' && race.config.clean && car.collisions > 0),
-      ...(race.mode === 'stunt' ? { endReason: stuntTimeUp ? 'timer' : 'route' } : {}) };
+      ...(race.mode === 'stunt' ? { endReason: completion.reason } : {}) };
     race.phase = 'finished';
     car.thrusting = false;
     car.boosting = false;
