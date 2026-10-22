@@ -31,13 +31,13 @@ export const WORLD_THEMES = {
     buildings:'#526c65',accent:'#f9dba2',prop:'mountain',landmarks:[
       {kind:'tunnel',at:1760,side:1,offset:80,scale:1.3},
       {kind:'railway',at:3850,side:-1,offset:110,scale:1.25},
-      {kind:'mountain',at:6180,side:1,offset:185,scale:1.8},
+      {kind:'mountain',at:6180,side:-1,offset:120,scale:1.4,plaza:560},
     ],
   },
   coastal: {
     top:'#577b90',horizon:'#a6b7b1',fog:'#899ea6',rock:'#697785',road:'#454b49',ground:'#557985',rail:'#9eaca3',sun:'#c2ccc7',warmth:0,
     buildings:'#d6b99b',accent:'#ffeeaa',prop:'coast',landmarks:[
-      {kind:'lighthouse',at:1180,side:1,offset:100,scale:1.35},
+      {kind:'lighthouse',at:1180,side:-1,offset:100,scale:1.35,plaza:400},
       {kind:'bridge',at:3160,side:-1,offset:130,scale:1.2},
       {kind:'arch',at:4870,side:1,offset:125,scale:1.6},
     ],
@@ -46,7 +46,7 @@ export const WORLD_THEMES = {
     top:'#10182b',horizon:'#34374e',fog:'#212c47',rock:'#293148',road:'#22293c',ground:'#212941',rail:'#55798c',sun:'#778da1',warmth:0,
     buildings:'#263371',accent:'#ad73ff',prop:'space',landmarks:[
       {kind:'planet',at:1610,side:1,offset:290,scale:2.1},
-      {kind:'cosmic-gate',at:4100,side:-1,offset:96,scale:1.5},
+      {kind:'cosmic-gate',at:4100,side:-1,offset:96,scale:1.5,plaza:420},
       {kind:'planet',at:6740,side:-1,offset:310,scale:1.9},
     ],
   },
@@ -62,6 +62,25 @@ const ZER0=new THREE.Vector3();
 
 function seeded(i){const n=Math.sin(i*127.1+78.233)*43758.5453;return n-Math.floor(n);}
 const clamped=(id,s)=>Math.max(0,Math.min(RACE_TRACKS[id].length,s));
+
+// An authored plaza keeps the approach sightline to a hero landmark open: a
+// roadside item drops out only if, seen from some road point of the approach,
+// it sits nearer than the landmark and inside its angular width (ground plane).
+// Everything else on both kerbs stays, so the street does not go empty.
+export function blocksLandmark(id,l,item){
+  if(!l.plaza||item.distance<l.at-l.plaza||item.distance>l.at+60)return false;
+  const at=(s,lateral)=>{const f=trackFrame(id,s);return [f.point.x+f.right[0]*lateral,f.point.z+f.right[2]*lateral];};
+  const [lx,lz]=at(l.at,l.side*(l.offset||80)),[ix,iz]=at(item.distance,item.side*item.offset);
+  const radius=(l.radius||30)*(l.scale||1);
+  for(let s=l.at-l.plaza;s<item.distance;s+=30){
+    const p=trackPoint(id,s),ax=lx-p.x,az=lz-p.z,bx=ix-p.x,bz=iz-p.z;
+    const toLandmark=Math.hypot(ax,az),toItem=Math.hypot(bx,bz);
+    if(toItem>=toLandmark)continue;
+    const angle=Math.abs(Math.atan2(ax*bz-az*bx,ax*bx+az*bz));
+    if(angle<Math.atan(radius/toLandmark)+Math.atan(14/toItem))return true;
+  }
+  return false;
+}
 
 export function createWorldTourScene(scene){
   const group=new THREE.Group();group.name='World Tour authored scenery';group.visible=false;scene.add(group);
@@ -130,10 +149,7 @@ export function createWorldTourScene(scene){
       if(chunks.has(index))continue;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
       for(const item of sceneryPlan(id,index,level==='low')){
-        // An authored plaza (an open boulevard) keeps the sightline to a hero
-        // landmark free of roadside props on both kerbs.
-        if(WORLD_THEMES[id].landmarks.some(l=>l.plaza&&
-          item.distance>l.at-l.plaza&&item.distance<l.at+60))continue;
+        if(WORLD_THEMES[id].landmarks.some(l=>blocksLandmark(id,l,item)))continue;
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));

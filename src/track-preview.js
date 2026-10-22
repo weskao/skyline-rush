@@ -9,10 +9,12 @@ export const HERO_PREVIEWS = Object.freeze({
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
   tokyo: { distance: 3075, landmark: 'tower', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 8 },
-  alpine: { distance: 1510, cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
-    lookSide: -1.4, lookAhead: 3.5, lookHeight: 1.4 },
-  cosmic: { distance: 3940, cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
-    lookSide: -1.4, lookAhead: 3.5, lookHeight: 1.4 },
+  alpine: { distance: 5660, landmark: 'mountain', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 9 },
+  coastal: { distance: 800, landmark: 'lighthouse', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
+  cosmic: { distance: 3700, landmark: 'cosmic-gate', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
 });
 export const previewDistance = id => HERO_PREVIEWS[id]?.distance ?? 340;
 export const isCuratedPreview = id => !!HERO_PREVIEWS[id];

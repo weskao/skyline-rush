@@ -12,6 +12,16 @@ export const SCENERY_KINDS = Object.freeze({
   coastal: ['palm','beach-hut','sea-wall','pier','dune-grass','buoy'],
   cosmic: ['satellite','asteroid','habitat','antenna','debris','solar-panel'],
 });
+// Valley openings: the hillside on one side sinks to a meadow so the hero
+// peak (WORLD_THEMES alpine mountain, 6180 m left) is not hidden behind the
+// valley wall. 0..1 with 90 m ramps; continuous in distance, so no seams.
+export const TERRAIN_VISTAS = Object.freeze({ alpine: [{ from: 5600, to: 6260, side: -1 }] });
+function vistaOpening(trackId,distance,side) {
+  let open=0;
+  for(const v of TERRAIN_VISTAS[trackId]||[])if(v.side===side)
+    open=Math.max(open,Math.min(1,(distance-v.from)/90,(v.to-distance)/90));
+  return Math.max(0,open);
+}
 // Natural terrain altitude under each prop. The placement function shares
 // the exact same deterministic profile as the cliff mesh, so forest plants
 // grow ON the hillside instead of being hidden underneath it.
@@ -21,8 +31,9 @@ export function terrainHeight(trackId,distance,side,lateral) {
     Math.cos(distance*.049+side*.8)*.24+
     Math.sin(distance*.011+3.1)*.21;
   const xs=trackId==='alpine'?[16,23,39,72]:[15,25,48,92];
+  const open=1-.85*vistaOpening(trackId,distance,side);
   const ys=trackId==='alpine'
-    ?[-1,4+noise*2.2,22+noise*7,65+noise*16]
+    ?[-1,(4+noise*2.2)*open,(22+noise*7)*open,(65+noise*16)*open]
     :(side===1?[-3,-7,-18,-22]:[-1,2,8,18])
       .map((h,i)=>h+noise*[.2,.8,2.8,4.5][i]);
   for(let i=0;i<xs.length-1;i++){
