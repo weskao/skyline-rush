@@ -344,6 +344,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .altitude-ladder > i { display: block; width: 6px; height: 1px; margin-top: 36px; background: #7dc8df; }
 .altitude-ladder > b { position: absolute; left: -4px; bottom: -3px; width: 7px; height: 7px; background: #a4eaff; }
 .altitude-ladder > small { position: absolute; left: -6px; bottom: -29px; font-size: 7px; white-space: nowrap; letter-spacing: 1px; }
+@media (min-height: 860px) { .altitude-ladder { top: 430px; } } /* below the live route map (292-418px); shorter screens keep 44% (no room above the right-hand telemetry) */
 .impact-report { position: fixed; left: 50%; top: 27%; z-index: 4; transform: translateX(-50%); display: flex; gap: 15px; align-items: center; padding: 14px 20px; background: rgb(42 25 32 / .94); border: 1px solid #f79a6d; border-radius: 5px; color: #ffd5ba; box-shadow: 0 8px 32px rgb(0 9 22 / .3); pointer-events: none; }
 .impact-icon { display: flex; }
 .impact-icon svg { width: 26px; height: 26px; }
@@ -990,7 +991,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
 @media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
-/* Short screens have no free HUD slot (telemetry and touch buttons fill the sides); the leaderboard still ranks racers. */
+/* Short screens: telemetry and touch buttons fill the sides, so the map moves to the bottom row (see the short-screen blocks below). */
 /* The compact in-race route map remains visible on small viewports. */
 /* Short landscape has ~9px of intro slack: draw the route over the sky strip. */
 @media (max-height: 500px) and (min-width: 761px) {
@@ -1020,7 +1021,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 :is(.assist-button span, .aero-tools > button, .aero-tools > details > summary, .vfx-heading > span, .route-label, .track-select small, .start-hint, .intro-controls > div,
   .flight-tip, .bottomline, .stat-label, .progress-labels, .racer.is-player > strong, .racer.is-player > span:last-child, .countdown > span, .event-callout span,
   .speed-caption, .fuel-caption, #flight-mode, .mode-key, .boost-status, .aero-eyebrow, #aero-mode, .aero-channels > span, .aero-channels b, .aero-disclaimer,
-  .flight-director > span:not(.director-climb), .altitude-ladder > small, .impact-report div > span, .overlay-route, .result-stats span, .history-best, .controls-button):lang(zh-TW) { font-size: 10px !important; }
+  .flight-director > span:not(.director-climb), .altitude-ladder > small, .impact-report div > span, .overlay-route, .result-stats span, .history-best, .controls-button, .performance-notice-eyebrow):lang(zh-TW) { font-size: 10px !important; }
 @media (max-width: 760px) { .driving-message:lang(zh-TW) { font-size: 10px; } } /* 11px on wider screens */
 /* The larger label keeps the column's height, so POSITION does not grow into the phone progress bar below it. */
 .stat-label:lang(zh-TW) { line-height: 1; }
@@ -1075,6 +1076,20 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media (max-width:400px) and (max-height:700px) {
  .race-route-map {display:block;}
+}
+/* Short screens: telemetry fills the right column, so the map sits on the bottom row beside the thumb-action
+   cluster (its width + gap, landscape sized for the Large buttons; mirrored for a right-hand layout). */
+@media (pointer: coarse) and (min-width:761px) and (max-height:500px) {
+ .race-route-map { top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(12px, var(--safe-right)) + 212px); }
+ body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(12px, var(--safe-left)) + 212px); }
+}
+@media (max-width:760px) and (min-height:501px) and (max-height:700px) {
+ .race-route-map { top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(12px, var(--safe-right)) + 140px); }
+ body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(12px, var(--safe-left)) + 140px); }
+}
+@media (max-width:370px) and (min-height:501px) and (max-height:700px) {
+ .race-route-map { right:calc(max(12px, var(--safe-right)) + 124px); }
+ body:has(#touch-controls[data-hand="right"]) .race-route-map { left:calc(max(12px, var(--safe-left)) + 124px); }
 }
 /* Keep a map on short screens: it is passive and never intercepts inputs. */
 
