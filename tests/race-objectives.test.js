@@ -8,7 +8,7 @@ test('every shipped mode has an explicit serializable objective', () => {
   const expected = {
     classic: 'placement', custom: 'placement', free: 'no-auto-finish',
     time: 'finish-time', gauntlet: 'placement', checkpoint: 'checkpoint-timer',
-    cup: 'placement', stunt: 'timed-score', elimination: 'survival',
+    cup: 'stage-points', stunt: 'timed-score', elimination: 'survival',
   };
   for (const [mode, type] of Object.entries(expected)) {
     const objective = createRaceObjective({ mode, ...(mode === 'stunt' ? { duration: 180 } : {}) });

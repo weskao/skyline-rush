@@ -6,8 +6,9 @@ export function createRaceObjective(config = {}) {
     case 'classic':
     case 'custom':
     case 'gauntlet':
-    case 'cup':
       return Object.freeze({ type: 'placement' });
+    case 'cup':
+      return Object.freeze({ type: 'stage-points' });
     case 'time':
       return Object.freeze({ type: 'finish-time' });
     case 'checkpoint':
@@ -44,6 +45,7 @@ export function raceCompletion(race) {
       if (race.elapsed >= (race.stuntLimit ?? objective.durationSeconds)) return { done: true, reason: 'timer' };
       return routeEnd ? { done: true, reason: 'route' } : { done: false, reason: null };
     case 'placement':
+    case 'stage-points':
     case 'finish-time':
       return routeEnd ? { done: true, reason: 'route' } : { done: false, reason: null };
     default:
