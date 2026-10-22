@@ -1,4 +1,4 @@
-import { normalizeRaceConfig, rulesSignature } from './race-config.js';
+import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from './race-config.js';
 import { createRaceObjective } from './race-objectives.js';
 import { RACE_STREAMS } from './rng.js';
 
@@ -23,7 +23,13 @@ export function createRaceSessionContract(trackId, seed, settings = {}, presenta
   const visualPreset = presentation.visualPreset ?? 'track';
   if (!VISUAL_PRESETS.includes(visualPreset)) throw new RangeError('Invalid visualPreset');
 
+  // Existing createRace() passes the already-normalized v1 object. New callers
+  // supplying raw settings must pass strict mode/field/type validation.
   const config = normalizeRaceConfig(settings);
+  const canonical = settings?.rulesVersion === 1 &&
+    Object.keys(settings).length === Object.keys(config).length &&
+    Object.keys(config).every(key => JSON.stringify(settings[key]) === JSON.stringify(config[key]));
+  if (!canonical) validateRaceRequest(settings);
   const simulation = Object.freeze({
     rulesVersion: config.rulesVersion,
     rivalCount: config.rivals,

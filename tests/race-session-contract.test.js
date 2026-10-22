@@ -136,3 +136,19 @@ test('MODE-00: named random streams stay stable and independent of each other', 
   const pickup = seededRng(1001, RACE_STREAMS.pickups);
   assert.notDeepEqual(Array.from({ length: 8 }, () => pickup()), baseline);
 });
+
+test('MODE-00: direct session requests fail closed, but normalized legacy calls remain compatible', () => {
+  assert.throws(() => createRaceSessionContract('coast', 1001,
+    { mode: 'time', rivals: 3 }), /rivals/i);
+  assert.throws(() => createRaceSessionContract('coast', 1001,
+    { mode: 'custom', items: false, activeItems: true }), /activeItems/i);
+  assert.throws(() => createRaceSessionContract('coast', 1001,
+    { mode: 'cup', cupTracks: ['coast', 'coast', 'neon'] }), /cupTracks/i);
+  const normalized = normalizeRaceConfig({ mode: 'time', rivals: 3 });
+  const built = createRaceSessionContract('coast', 1001, normalized);
+  assert.equal(built.simulation.rivalCount, 0);
+  assert.equal(built.mode, 'time');
+  const direct = createRaceSessionContract('coast', 1001, { mode: 'time', clean: true });
+  assert.equal(direct.mode, 'time');
+  assert.equal(direct.objective.type, 'finish-time');
+});
