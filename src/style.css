@@ -8,18 +8,20 @@ button, a { -webkit-user-select: none; user-select: none; }
 button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
 button:disabled { opacity: .35; cursor: default; }
 button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
-button { scale: 1; transition: scale var(--dur-base) var(--ease-spring); }
-button:active:not(:disabled), button.is-pressed:not(:disabled) { scale: .96; transition-duration: var(--dur-fast); }
+/* Press feedback never changes the box: a shrinking button drops clicks released near its edge. */
+button { transition: filter var(--dur-base) var(--ease-spring); }
+button:active:not(:disabled), button.is-pressed:not(:disabled) { filter: brightness(.82); transition-duration: var(--dur-fast); }
 button[hidden], [hidden] { display: none !important; }
 .vfx-comfort button { transition: none; }
 @media (prefers-reduced-motion: reduce) { button { transition: none !important; } }
-.vfx-comfort button, .layout-editing button { scale: 1 !important; }
-@media (prefers-reduced-motion: reduce) { button { scale: 1 !important; } }
 svg { width: 22px; height: 22px; flex-shrink: 0; }
 #world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; touch-action: none; }
 .scene-shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(9 21 34 / .88) 0%, rgb(9 21 34 / .69) 25%, rgb(9 21 34 / .1) 58%, transparent 80%), linear-gradient(0deg, rgb(6 17 28 / .91), transparent 30%, transparent 78%, rgb(9 21 34 / .26)); transition: opacity .5s; }
 body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(6 17 28 / .86), transparent 28%, transparent 76%, rgb(9 21 34 / .6)); }
 .topbar { position: fixed; z-index: 5; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+/* The bar's empty gradient lets taps through to the .aero-tools row it overlaps; only its own controls catch them. */
+.topbar { pointer-events: none; }
+.topbar > * { pointer-events: auto; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #f4f0e9; }
 .brand > svg { width: 38px; height: 38px; color: var(--accent); }
 .brand > span { display: flex; align-items: baseline; gap: 7px; font-family: 'Barlow Condensed', sans-serif; font-size: 27px; letter-spacing: 2.5px; }
@@ -519,7 +521,7 @@ body:is([data-phase="countdown"], [data-phase="racing"]) .aero-tools .custom-sel
 summary:focus-visible, input:focus-visible, .custom-select > button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 /* Page-drawn controls: no OS select popup, checkbox or slider. */
 .custom-select { position: relative; display: inline-block; min-width: 0; max-width: 100%; }
-.custom-select > button { display: block; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; background: #1b3044 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center; scale: 1 !important; }
+.custom-select > button { display: block; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; background: #1b3044 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center; }
 .custom-select > button[aria-expanded="true"] { border-color: var(--blue); }
 .custom-select > [role="listbox"] { position: absolute; z-index: 6; top: calc(100% + 4px); right: 0; min-width: 100%; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 4px; list-style: none; background: #0b1c2bf8; border: 1px solid #5c8796; border-radius: 6px; box-shadow: 0 12px 32px #0009; }
 .custom-select [role="option"] { min-height: 40px; display: flex; align-items: center; padding: 8px 12px; border-radius: 4px; white-space: nowrap; cursor: pointer; }
@@ -579,6 +581,11 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   .airflow-hud { top: 150px; width: 160px; padding: 10px; }
   .aero-channels, .aero-disclaimer { display: none; }
   .vfx-settings { max-height: calc(100dvh - 110px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); top: 36px; }
+}
+/* A short mouse window keeps the full-height toolbar (its buttons end at 78px), so the row starts below it instead of under it. */
+@media (max-height: 500px) and (min-width: 761px) and (hover: hover) {
+  .aero-tools { top: 86px; }
+  .vfx-settings { max-height: calc(100dvh - 132px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .airflow-hud { transition: none; transform: none; }
@@ -705,7 +712,7 @@ body.layout-editing #touch-controls { display: grid; }
 .intro-controls { margin-top: 20px; }
 .track-select { display: flex; gap: 8px; overflow-x: auto; padding: 6px; margin: -6px; scroll-snap-type: x proximity; scrollbar-color: var(--accent) #263849; scrollbar-width: thin; }
 .track-select button { flex: 0 0 137px; min-height: 62px; border: 1px solid #6b7b89; border-radius: 3px; padding: 10px; background: #142334; text-align: left; scroll-snap-align: start; }
-.track-select button[aria-pressed="true"] { border-color: var(--accent); background: #303139; }
+.track-select button[aria-pressed="true"] { border-color: var(--accent); background: #303139; scroll-snap-align: center; } /* holds centerSelectedTrack against the start snap */
 .track-select button:hover:not(:disabled) { background: #2a3b4d; }
 .track-select button:disabled { opacity: .65; }
 .track-select strong { font-size: 12px; display: block; margin-bottom: 7px; }
@@ -1208,7 +1215,7 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
  .race-mode-rules[open] { max-height: 180px; overflow-y: auto; }
 }
 @media (max-width:370px) {
- .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); }
 }
 .mode-history-runs p { padding: 9px 0; border-bottom: 1px solid #405465; margin: 0; font-variant-numeric: tabular-nums; color: #e5edf4; }
 
@@ -1222,12 +1229,12 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-presets button:focus-visible { outline: 2px solid #a0edff; outline-offset: 2px; }
 
 /* Five mode cards adapt to narrow safe-area viewports without shrinking touch targets. */
-.race-mode-tabs { grid-template-columns: repeat(5,minmax(0,1fr)); }
+.race-mode-tabs { grid-template-columns: repeat(5,minmax(min-content,1fr)); } /* a column never narrower than its longest word, e.g. "Championship" */
 body[data-race-mode="free"] .race-presets,
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="rivals"]),
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
-@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
-@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(min-content,1fr)); } }
+@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); } }
 /* 501-966px-tall desktops: the picker costs ~100px, so it goes to one row and the tagline yields, keeping the flight tip whole. */
 @media (min-width: 1001px) and (min-height: 501px) and (max-height: 966px) {
  .intro-copy { display: none; }

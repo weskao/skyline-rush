@@ -53,10 +53,21 @@
     }
     return { id, frames, arrivedAt: to };
   };
+  window.worldTourLandmarks=()=>world.inspectLandmarks();
+  // Rivals that already crossed the line while the player is 60 m short of it.
+  window.worldTourFinishProbe=id=>{
+    const race=createRace(id), length=RACE_TRACKS[id].length;
+    race.phase='racing';
+    Object.assign(race.player,{distance:length-60,speed:72,altitude:0,miniBoost:0});
+    race.rivals.forEach((r,i)=>{r.distance=length+5+i*40;r.speed=60;});
+    world.render(race,1/60,0,{throttle:true,steer:0});
+    return world.inspectShowcase().map(a=>({name:a.name,visible:a.visible}));
+  };
   window.worldTourPreviewProbe=id=>{
     const race=createRace(id);
-    world.render(race,1/60,2,{});
-    return {id,actors:world.inspectShowcase()};
+    // One second of frames: the preview FOV eases to 50°, as on the real home.
+    for(let i=0;i<60;i++)world.render(race,1/60,2+i/60,{});
+    return {id,actors:world.inspectShowcase(),landmarks:world.inspectLandmarks()};
   };
     window.worldTourReady = true;
 </script>

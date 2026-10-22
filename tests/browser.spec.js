@@ -146,6 +146,17 @@ for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mob
   await expect(page.locator('#controls-panel')).toBeHidden();
 });
 
+// The transparent topbar overlaps the .aero-tools row: 14px of it on desktop, all of it on a landscape phone.
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) test(`${viewport.width}x${viewport.height} language button opens from its top border`, async ({ page }) => {
+  await page.setViewportSize(viewport);
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  const language = page.getByRole('combobox', { name: 'Language', exact: true });
+  const box = await language.boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + 1);
+  await expect(language).toHaveAttribute('aria-expanded', 'true');
+});
+
 test('mobile VFX controls fit, persist and respect reduced motion', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 });
   await page.emulateMedia({ reducedMotion: 'reduce' });

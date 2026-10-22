@@ -538,7 +538,10 @@ export function createWorld(canvas) {
 
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}) {
     const relative = car.distance - distance;
-    mesh.visible = isPlayer || (relative > -55 && relative < 900);
+    // Tour and sky routes end at the finish and trackPoint clamps there, so cars
+    // past it would pile up at the arch like parked cars; they leave the scene instead.
+    const pastFinish = (trackId === 'spiral' || TOUR_IDS.has(trackId)) && car.distance > RACE_TRACKS[trackId].length;
+    mesh.visible = isPlayer || (relative > -55 && relative < 900 && !pastFinish);
     if (!mesh.visible) return;
     if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
       if (trackId === 'spiral') mesh.position.fromArray(skyPosition(car.distance, car.x, car.altitude || 0, distance));
@@ -1029,6 +1032,47 @@ export function createWorld(canvas) {
           x:projected.x,y:projected.y,z:projected.z,
           screenWidth:Math.abs(left.x-right.x),jetsVisible:mesh.userData.jets.visible,
           worldY:mesh.position.y};
+      });
+    },
+    inspectLandmarks() {
+      // Read-only browser QA: projected NDC bounds of each World Tour landmark,
+      // so home showcases can assert their signature landmark is in frame.
+      camera.updateMatrixWorld(true);
+      const raycaster=new THREE.Raycaster();
+      const shown=object=>{for(let o=object;o;o=o.parent)if(!o.visible)return false;return true;};
+      return worldTourScene.landmarks().map(hero=>{
+        // Bounds from the projected mesh vertices: box corners overstate the
+        // on-screen extent of cones and rings seen at an angle.
+        const box=new THREE.Box3().setFromObject(hero),v=new THREE.Vector3();
+        let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,ahead=true;
+        hero.updateMatrixWorld(true);
+        hero.traverse(o=>{
+          if(!o.isMesh)return;
+          const p=o.geometry.attributes.position;
+          for(let i=0;i<p.count;i++){
+            v.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld).project(camera);
+            if(v.z>=1){ahead=false;continue;}
+            minX=Math.min(minX,v.x);maxX=Math.max(maxX,v.x);minY=Math.min(minY,v.y);maxY=Math.max(maxY,v.y);
+          }
+        });
+        const zs=[ahead?0:1];
+        // Unobstructed share: of the on-screen 9x9 grid rays that land on the
+        // landmark's own geometry (not ring holes or sky beside a tower), the
+        // share whose first scene hit is the landmark rather than a blocker.
+        let samples=0,hits=0;
+        if(hero.visible&&zs.every(z=>z<1))for(let i=0;i<9;i++)for(let j=0;j<9;j++){
+          const x=THREE.MathUtils.lerp(minX,maxX,(i+.5)/9),y=THREE.MathUtils.lerp(minY,maxY,(j+.5)/9);
+          if(Math.abs(x)>1||Math.abs(y)>1)continue;
+          raycaster.setFromCamera(new THREE.Vector2(x,y),camera);
+          if(!raycaster.intersectObject(hero,true).some(h=>h.object.isMesh))continue;
+          const hit=raycaster.intersectObjects(scene.children,true).find(h=>h.object.isMesh&&shown(h.object));
+          if(!hit)continue;samples++;
+          let node=hit.object;while(node&&node!==hero)node=node.parent;
+          if(node)hits++;
+        }
+        return {kind:hero.userData.entry.kind,visible:hero.visible,minX,maxX,minY,maxY,
+          inFront:zs.every(z=>z<1),unobstructed:samples?hits/samples:0,
+          distance:camera.position.distanceTo(box.getCenter(new THREE.Vector3()))};
       });
     },
     dispose() {

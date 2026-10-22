@@ -99,17 +99,24 @@ test('shared motion tokens control button feedback and comfort removes movement'
   await expect(page.locator('#start-button')).toHaveCSS('transition-duration', '0s');
 });
 
-test('buttons compress on press and spring back after a cancelled click', async ({ page }) => {
+test('buttons darken on press without shrinking, so a click at the border lands and a dragged-off one cancels', async ({ page }) => {
   await open(page);
   const button = page.locator('#start-button');
   const box = await button.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await expect(button).toHaveCSS('scale', '0.96');
+  await expect(button).toHaveCSS('filter', 'brightness(0.82)');
+  expect(await button.boundingBox()).toEqual(box);
   await page.mouse.move(1, 1);
   await page.mouse.up();
-  await expect(button).toHaveCSS('scale', '1');
+  await expect(button).toHaveCSS('filter', 'none');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+  // A shrinking press moved the edge out from under the pointer and sent this click to the container.
+  await page.mouse.move(box.x + 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(150);
+  await page.mouse.up();
+  await expect(page.locator('body')).not.toHaveAttribute('data-phase', 'ready');
 });
 
 test.describe('touch button feedback', () => {
@@ -118,21 +125,21 @@ test.describe('touch button feedback', () => {
     await open(page);
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    // AUTO holds throttle logically; only an actual press compresses the button.
+    // AUTO holds throttle logically; only an actual press darkens the button.
     await expect(page.locator('[data-control="throttle"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-control="throttle"]')).toHaveCSS('scale', '1');
+    await expect(page.locator('[data-control="throttle"]')).toHaveCSS('filter', 'none');
     const button = page.locator('[data-control="fly"]');
     const box = await button.boundingBox();
     const session = await context.newCDPSession(page);
     await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
     await expect(button).toHaveAttribute('aria-pressed', 'true');
     await expect(button).toHaveCSS('box-shadow', /rgb/);
-    await expect(button).toHaveCSS('scale', '0.96');
+    await expect(button).toHaveCSS('filter', 'brightness(0.82)');
     await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(button).toHaveAttribute('aria-pressed', 'false');
-    await expect(button).toHaveCSS('scale', '1');
+    await expect(button).toHaveCSS('filter', 'none');
     await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 2, x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
-    await expect(button).toHaveCSS('scale', '0.96');
+    await expect(button).toHaveCSS('filter', 'brightness(0.82)');
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
     await expect(page.locator('#race-status')).toHaveText('PAUSED');
     await expect(button).toHaveAttribute('aria-pressed', 'false');
