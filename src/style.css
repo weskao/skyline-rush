@@ -949,8 +949,8 @@ body[data-phase="ready"] .telemetry { display: none; }
   .intro-wordmark { margin-bottom: 6px; }
   .intro h1 { margin-bottom: 10px; }
   .intro-copy { margin-bottom: 12px; }
-  .race-mode-picker { margin-top: 9px; padding: 8px 10px; }
-  .race-mode-heading { margin-bottom: 6px; }
+  .intro .race-mode-picker { margin-top: 9px; padding: 8px 10px; }
+  .intro .race-mode-heading { margin-bottom: 6px; }
   .track-note { margin: 6px 0 9px; }
   .intro-controls { margin-top: 8px; row-gap: 5px; }
   .flight-tip { margin-top: 5px; }
