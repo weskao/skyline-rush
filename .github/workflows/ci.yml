@@ -3,7 +3,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feature/world-tour-landmark-boost-polish]
+    branches: [main, feature/world-tour-landmark-boost-polish, feature/race-modes-p0]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
