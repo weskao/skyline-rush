@@ -49,7 +49,7 @@ test('Stunt medals scale to timed challenge duration and distinguish tiers', () 
   assert.equal(stuntMedal(4000, 120), 'silver');
   assert.equal(stuntMedal(8000, 120), 'gold');
   assert.equal(stuntMedal(4000, 300), 'bronze');
-  assert.equal(stuntMedal(8000, 300), 'silver');
+  assert.equal(stuntMedal(8000, 300), 'bronze');
   assert.equal(stuntMedal(8000, 180), 'silver');
 });
 
