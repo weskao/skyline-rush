@@ -153,3 +153,15 @@ test('Championship Cup honestly requires three previously unlocked tracks', asyn
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('#track-note')).toContainText('Unlock at least 3 tracks');
 });
+
+test('Cup length cannot bypass locked tracks with Enter',async({page})=>{
+ await page.goto('/');
+ await page.locator('button[data-race-mode="cup"]').click();
+ await page.locator('#cup-length').evaluate(select=>{
+   select.value='5';select.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await expect(page.locator('#track-note')).toContainText('Unlock at least 5 tracks');
+ await expect(page.locator('#start-button')).toBeDisabled();
+ await page.keyboard.press('Enter');
+ await expect(page.locator('body')).toHaveAttribute('data-phase','ready');
+});

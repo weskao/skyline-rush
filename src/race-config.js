@@ -25,8 +25,8 @@ export function normalizeRaceConfig(value = {}) {
     ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
-    ...(mode === 'cup' && Array.isArray(value.cupTracks) && value.cupTracks.length === 3 &&
-       value.cupTracks.every(id => typeof id === 'string') && new Set(value.cupTracks).size === 3
+    ...(mode === 'cup' && Array.isArray(value.cupTracks) && [3,5].includes(value.cupTracks.length) &&
+       value.cupTracks.every(id => typeof id === 'string') && new Set(value.cupTracks).size === value.cupTracks.length
        ? { cupTracks: [...value.cupTracks] } : {}),
   });
 }

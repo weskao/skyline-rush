@@ -34,3 +34,9 @@ test('tie uses aggregate race time; missing rival completion extrapolates by dis
   assert.equal(cup.results[0].order[2],'ORBIT');
   assert.equal(cupStandings(cup).length,4);
 });
+
+test('five-track Cup accepts five unlocked tracks without repeat',()=>{
+ const unlocked=['coast','neon','canyon','aurora','spiral'];
+ assert.deepEqual(createCup(unlocked,'aurora',5).tracks,['aurora','spiral','coast','neon','canyon']);
+ assert.throws(()=>createCup(['coast','neon','canyon'],'coast',5));
+});

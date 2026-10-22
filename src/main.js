@@ -104,11 +104,12 @@ let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
 const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal', stages: 1 };
+const cupCount = () => Number($('#cup-length').value);
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 let cup = null; // Three unlocked point-to-point heats, with rival points carried between heats.
 const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules,
-  ...(selectedMode === 'cup' && unlockedTracks.size >= 3 && unlockedTracks.has(trackId)
-    ? { cupTracks: createCup([...unlockedTracks], trackId).tracks } : {}),
+  ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
+    ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
   ...(selectedMode === 'gauntlet' ? { hazardTier: $('#hazard-tier').value } : {}),
   ...(selectedMode === 'time' && $('#clean-trial').checked ? {clean:true} : {}) });
 let previousFuel = 100;
@@ -284,6 +285,7 @@ function showTracks() {
   $('#sprint-stages-setting').hidden = selectedMode !== 'custom';
   $('#gauntlet-rules').hidden = selectedMode !== 'gauntlet';
   $('#time-trial-rules').hidden = selectedMode !== 'time';
+  $('#cup-rules').hidden = selectedMode !== 'cup';
   $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
   for (const button of document.querySelectorAll('[data-race-preset]'))
     button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
@@ -306,14 +308,14 @@ function showTracks() {
     const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1];
     button.title = locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
   }
-  ui['start-button'].disabled = !daily && (!unlockedTracks.has(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < 3));
+  ui['start-button'].disabled = !daily && (!unlockedTracks.has(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount()));
   ui['start-button'].setAttribute('aria-describedby', 'track-note');
   $('.start-hint').hidden = ui['start-button'].disabled;
   $('#track-length').textContent = t('track.sprint', { km: track.length / 1000 });
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
   const previous = tracks[tracks.indexOf(race.trackId) - 1];
-  $('#track-note').textContent = (selectedMode === 'cup' && unlockedTracks.size < 3 ? t('mode.cupLocked') + ' · ' : '') + (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+  $('#track-note').textContent = (selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', {n:cupCount()}) + ' · ' : '') + (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
   const name = trackName(race.trackId, getLocale());
   const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
   $('.route-heading').textContent = route;
@@ -364,6 +366,7 @@ for (const button of document.querySelectorAll('[data-race-preset]')) button.add
 });
 $('#hazard-tier').addEventListener('change', changeRaceSelection);
 $('#clean-trial').addEventListener('change', changeRaceSelection);
+$('#cup-length').addEventListener('change', changeRaceSelection);
 for (const input of document.querySelectorAll('[data-race-rule]')) input.addEventListener('change', () => {
   raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule) ? Number(input.value) : input.value;
   changeRaceSelection();
@@ -531,11 +534,12 @@ function focusRace() {
 }
 
 function start() {
+  if (selectedMode === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   if (editingLayout) editLayout(false);
   controls.clear();
-  cup = race.mode === 'cup' && unlockedTracks.size >= 3 ? createCup([...unlockedTracks],race.trackId) : null;
+  cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   leaveIntro();
   startRace(race);
@@ -871,7 +875,7 @@ ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
 ui['again-button'].addEventListener('click', () => {
   if (sprintSeries) sprintSeries = createSprintSeries(sprintSeries.count);
-  if (cup) { cup = createCup([...unlockedTracks], cup.tracks[0]); restart(cup.tracks[0]); }
+  if (cup) { cup = createCup([...unlockedTracks], cup.tracks[0], cup.tracks.length); restart(cup.tracks[0]); }
   else restart();
 });
 $('#next-stage').addEventListener('click', () => {

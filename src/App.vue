@@ -133,6 +133,14 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
           <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
         </div>
+        <details class="race-mode-rules" id="cup-rules" hidden>
+          <summary data-i18n="mode.cupSettings">Championship format</summary>
+          <label><span data-i18n="mode.cupLength">Number of unique tracks</span>
+            <select id="cup-length" aria-label="Cup stages" data-i18n-aria-label="mode.cupLength">
+              <option value="3" selected>3</option><option value="5">5</option>
+            </select>
+          </label>
+        </details>
         <details class="race-mode-rules" id="time-trial-rules" hidden>
           <summary data-i18n="mode.cleanRules">Clean Time Trial</summary>
           <label><input type="checkbox" id="clean-trial"> <span data-i18n="mode.cleanDescription">No collisions allowed for a valid record</span></label>
