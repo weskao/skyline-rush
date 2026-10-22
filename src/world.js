@@ -248,7 +248,8 @@ function fitText(context, label, x, y, maxWidth, basePx, locale) {
 }
 
 export function createWorld(canvas) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
   let renderPixelRatio=Math.min(devicePixelRatio,1.5);
   renderer.setPixelRatio(renderPixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -259,7 +260,11 @@ export function createWorld(canvas) {
   scene.fog = new THREE.FogExp2('#94758a', 0.0013);
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 3000);
   const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
-  const composer = new EffectComposer(renderer);
+  // The scene is rendered into this target, not the canvas, so it must carry the MSAA samples or every
+  // edge stays jagged and crawls as the camera moves (the flicker seen on the start screen and in races).
+  const msaaSamples = quality => quality === 'low' ? 2 : 4;
+  const sceneTarget = samples => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples });
+  const composer = new EffectComposer(renderer, sceneTarget(4)); // configureVFX re-targets for the saved quality tier
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 1.1);
   composer.addPass(bloom);
@@ -516,8 +521,14 @@ export function createWorld(canvas) {
   let carBank = 0;
   let photoView = null, photoDefaults = null, photoCapture = null;
 
+  let sizeKey = '';
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
+    // setSize reallocates the drawing buffer and every composer target, blanking a frame; mobile URL-bar and
+    // dialog events fire resize with an unchanged size, so only act when size, pixel ratio or MSAA really changed.
+    const key = `${width}x${height}@${renderPixelRatio}/${composer.renderTarget1.samples}`;
+    if (key === sizeKey) return;
+    sizeKey = key;
     renderer.setSize(width, height, false);
     composer.setSize(width, height);
     camera.aspect = width / height;
@@ -579,12 +590,14 @@ export function createWorld(canvas) {
       // it; high quality stays at the original 1.5x DPR cap.
       const maxRatio=visual.quality==='low'?1:visual.quality==='medium'?1.25:1.5;
       const nextRatio=Math.min(devicePixelRatio,maxRatio);
+      const samples=msaaSamples(visual.quality);
+      if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
       if(Math.abs(nextRatio-renderPixelRatio)>.001){
         renderPixelRatio=nextRatio;
         renderer.setPixelRatio(nextRatio);
         composer.setPixelRatio(nextRatio);
-        resize();
       }
+      resize();
     },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
     setPhotoView(options) {
