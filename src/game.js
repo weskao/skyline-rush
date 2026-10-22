@@ -1,4 +1,5 @@
 import { seededRng } from './rng.js';
+import { raceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
@@ -227,13 +228,17 @@ export function dailyChallenge(date = new Date()) {
 export function createRace(trackId = 'coast', modifier = null) {
   const track = RACE_TRACKS[trackId];
   if (!track) throw new Error(`Unknown track: ${trackId}`);
-  if (modifier !== null && !DAILY_MODIFIERS.includes(modifier)) throw new Error(`Unknown modifier: ${modifier}`);
-  const density = track.trafficDensity * (modifier === 'double-traffic' ? 2 : 1);
-  const rings = createRings(track);
-  if (modifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
+  const dailyModifier = typeof modifier === 'string' ? modifier : null;
+  if (modifier !== null && !dailyModifier && (typeof modifier !== 'object' || Array.isArray(modifier))) throw new TypeError('Invalid race options');
+  if (dailyModifier && !DAILY_MODIFIERS.includes(dailyModifier)) throw new Error(`Unknown modifier: ${dailyModifier}`);
+  const config = raceConfig(trackId, dailyModifier ? undefined : modifier ?? undefined);
+  const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : trafficMultiplier(config.trafficDensity));
+  const rings = config.itemsEnabled ? createRings(track) : [];
+  if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
-    trackId, modifier, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
-    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: createPickups(track), rings,
+    trackId, modifier: dailyModifier, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
+    phase: 'ready', countdown: 3, elapsed: 0, result: null, endOfRoute: false,
+    pickups: config.itemsEnabled ? createPickups(track) : [], rings,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
@@ -245,7 +250,7 @@ export function createRace(trackId = 'coast', modifier = null) {
       drift: null, driftPayout: null, miniBoost: 0, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
     },
-    rivals: ['NOVA', 'ORBIT', 'APEX'].map((name, i) => ({
+    rivals: ['NOVA', 'ORBIT', 'APEX'].slice(0, config.rivalCount).map((name, i) => ({
       name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
       altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroTime: 0, nitroHop: -1,
     })),
@@ -292,7 +297,7 @@ function rivalWantsNitro(race, rival, hop) {
 }
 
 export function startRace(race) {
-  if (race.phase === 'ready') race.phase = 'countdown';
+  if (race.phase === 'ready') race.phase = race.config?.mode === 'free' ? 'racing' : 'countdown';
 }
 
 export function racePosition(race) {
@@ -320,7 +325,7 @@ function contact(race, kind, obstacleX, intensity, retention) {
   const side = Math.sign(car.x - obstacleX) || -1;
   const speedLost = car.speed * (1 - retention);
   car.impact = { kind, intensity, side, speedLost, x: car.x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
-  car.speed *= retention;
+  car.speed *= race.config?.collisionRule === 'relaxed' ? Math.max(retention, 0.8) : retention;
   car.x = clamp(car.x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
   car.cooldown = 1.5;
   car.collisions++;
@@ -508,7 +513,8 @@ export function stepRace(race, input, dt) {
       rival.nitroTime = RIVAL_NITRO_TIME;
     }
     rival.nitroTime = Math.max(0, rival.nitroTime - dt);
-    const cap = 70 + i * 3 + (rival.nitroTime > 0 ? RIVAL_NITRO_BONUS : 0);
+    const skill = race.config?.aiDifficulty === 'easy' ? -8 : race.config?.aiDifficulty === 'hard' ? 8 : 0;
+    const cap = 70 + i * 3 + skill + (rival.nitroTime > 0 ? RIVAL_NITRO_BONUS : 0);
     rival.speed = rival.speed > cap ? Math.max(cap, rival.speed - (14 + i) * dt) : Math.min(cap, rival.speed + (14 + i) * dt);
     const before = rival.distance;
     // Rubber band: a rival far ahead of the player eases off, one far behind speeds up, by at most RUBBER_BAND_MAX.
@@ -590,6 +596,12 @@ export function stepRace(race, input, dt) {
     car.cleanDistance %= 500;
   }
   if (car.altitude > 0 && car.speed >= 18) car.score += dt * 10;
+  if (car.distance >= race.length && race.config?.mode === 'free') {
+    car.distance = race.length;
+    car.speed = 0;
+    race.endOfRoute = true; // Free Drive stops at the authored end; it never grants an official finish.
+    return;
+  }
   if (car.distance >= race.length) {
     const finishTime = race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
