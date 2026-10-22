@@ -747,6 +747,23 @@ body.layout-editing #touch-controls { display: grid; }
 .guide-keys dd { margin: 0; color: #c3d0dc; }
 .guide-screen kbd { display: inline-block; padding: 4px 8px; margin: 2px; border: 1px solid #899eaf; border-bottom-width: 3px; border-radius: 5px; color: #f4f0e9; background: #20364b; font: inherit; font-size: 13px; }
 .guide-note { color: #c3d0dc; font-size: 13px; }
+.tutorial-start { width: 100%; min-height: 48px; margin-top: 12px; }
+.tutorial-coach { position: fixed; z-index: 12; top: max(84px, calc(var(--safe-top) + 64px)); left: max(12px, var(--safe-left)); width: min(400px, calc(100vw - 24px)); padding: 12px; border: 1px solid #899eaf; border-radius: 12px; color: #f4f0e9; background: #142334; box-shadow: 0 8px 24px rgb(0 9 22 / .3); }
+.tutorial-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tutorial-heading strong { font-size: 15px; line-height: 1.4; }
+.tutorial-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.tutorial-actions button { min-width: 44px; min-height: 44px; width: auto; padding: 8px; margin: 0; }
+.tutorial-coach progress { width: 100%; height: 6px; margin: 10px 0 6px; accent-color: #96e3ff; }
+.tutorial-copy { max-height: calc(55dvh - 174px); overflow: auto; overscroll-behavior: contain; }
+.tutorial-copy p { margin: 4px 0 10px; line-height: 1.5; font-size: 14px; }
+.tutorial-copy small { display: block; margin-top: 10px; color: #c3d0dc; font-size: 11px; line-height: 1.4; }
+#tutorial-input { font-weight: 700; font-size: 14px; color: #96e3ff; }
+#tutorial-input kbd { display: inline-block; min-width: 32px; padding: 5px 8px; margin: 2px; border: 1px solid #96e3ff; border-bottom-width: 3px; border-radius: 5px; background: #20364b; text-align: center; }
+.tutorial-target { outline: 3px solid #96e3ff; outline-offset: 4px; }
+.touch-pad.tutorial-target { outline-offset: -5px; background: rgb(150 227 255 / .08); }
+body[data-tutorial] :is(#race-route-map, #leaderboard, #practice-hud, #sprint-stage, #stunt-hud, #checkpoint-hud, #clean-trial-hud) { visibility: hidden; }
+body[data-tutorial] .tutorial-coach { pointer-events: auto; }
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { top: 70px; width: min(410px, calc(50vw - 24px)); padding: 8px; } .tutorial-copy { max-height: calc(55dvh - 154px); } .tutorial-copy small { display: none; } .tutorial-coach progress { margin: 4px 0; } .tutorial-copy p { margin: 2px 0 4px; font-size: 12px; } }
 @media (max-width: 540px) { .guide-keys > div { grid-template-columns: 1fr; gap: 6px; } }
 @media (max-width: 760px) { .guide-header { top: -20px; } }
 .history-screen[open] { animation: history-in var(--dur-base) var(--ease-out); }

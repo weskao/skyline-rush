@@ -13,6 +13,7 @@ import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
+import { createInteractiveTutorial, TUTORIAL_STEPS } from './interactive-tutorial.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, LEGACY_BEST_KEY } from './history.js';
@@ -68,6 +69,7 @@ function clearButtonPresses() {
 const touchPreference = matchMedia('(pointer: coarse)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let race = createRace();
+let tutorial = null, tutorialReturn = null, tutorialView = '';
 const racerRows = new Map(['YOU', ...race.rivals.map(rival => rival.name)].map((name, i) => [name, leaderboardRows[i]]));
 let leaderboardOrder = '';
 const speedNeedle = $('#speed-needle');
@@ -234,6 +236,7 @@ function showOneTimePerformanceNotice(){
   } catch { /* Still show once for this page when persistent storage is disabled. */ }
   showedPerformanceNotice=true;
   refreshPerformanceNotice();
+  if (tutorial) renderTutorial(true);
   performanceNotice.hidden=false;
 }
 const hidePerformanceNotice=()=>{ performanceNotice.hidden=true; };
@@ -496,6 +499,7 @@ garageScreen.addEventListener('close', () => {
 });
 for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
 function chooseTrack() {
+  if (tutorial) { endTutorial(); return; }
   controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
   previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
@@ -542,6 +546,7 @@ function focusRace() {
 }
 
 function start() {
+  if (tutorial) return;
   if (selectedMode === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
@@ -557,6 +562,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
+  if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !unlockedTracks.has(trackId))) return;
   if (contextLost) { location.reload(); return; }
   if (editingLayout) editLayout(false);
@@ -578,6 +584,7 @@ function restart(trackId = race.trackId) {
 }
 
 function pause() {
+  if (tutorial?.complete) return;
   if (editingLayout) editLayout(false);
   if (race.phase === 'paused') {
     race.phase = pausedPhase;
@@ -599,6 +606,7 @@ function showAssist() {
 }
 
 function toggleAssist() {
+  if (tutorial) return;
   autoThrottle = !autoThrottle;
   showAssist();
   sound.cue('ui');
@@ -789,7 +797,7 @@ const ARROWS = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight:
 const keyLabel = code => ARROWS[code] ?? code.replace(/^Key|^Digit/, '').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
 function showKeyMap() {
   // Start-screen legend: one kbd group per key slot (W A S D, then ↑ ← ↓ →), "/" between groups; Left/Right Shift read as one Shift.
-  for (const keys of document.querySelectorAll('.intro-controls [data-keys], #guide-screen [data-keys]')) {
+  for (const keys of document.querySelectorAll('.intro-controls [data-keys], #guide-screen [data-keys], #tutorial-input[data-keys]')) {
     const actions = keys.dataset.keys.split(' ');
     const seen = new Set();
     const groups = Array.from({ length: Math.max(...actions.map(action => keyMap[action].length)) }, (_, slot) => actions
@@ -961,6 +969,13 @@ function phaseUI() {
   if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
+  if (tutorial) {
+    ui['race-overlay'].hidden = true;
+    ui['controls-button'].disabled = true;
+    ui['restart-button'].hidden = true;
+    ui['pause-button'].disabled = tutorial.complete;
+  }
+  ui['assist-button'].disabled = !!tutorial;
   if (phase === 'paused') {
     $('#new-best').hidden = true;
     enter($('.overlay-content'), 'translateY(12px)');
@@ -1186,7 +1201,7 @@ function updateUI(now, input) {
     });
   }
   const practiceHud = $('#practice-hud');
-  practiceHud.hidden = !race.practice;
+  practiceHud.hidden = !race.practice || !!tutorial;
   if (race.practice) practiceHud.textContent = t('mode.practiceTelemetry', {
     km: (race.practice.travelled / 1000).toFixed(2),
     max: Math.round(race.practice.maxSpeed * 3.6),
@@ -1417,11 +1432,20 @@ try {
     // Discard background gaps; do not turn a tab switch into seconds of unseen racing.
     accumulator += rawDelta > 0.25 ? 0 : dt;
     const input = controls.read();
-    if (autoThrottle && !input.brake) input.throttle = true;
-    input.laneAssist = autoThrottle;
-    if (traceRace !== race) { traceRace = race; trace = []; }
+    if (tutorial) {
+      if (!['throttle', 'brake'].includes(tutorial.step) && !input.brake) input.throttle = true;
+    } else if (autoThrottle && !input.brake) input.throttle = true;
+    input.laneAssist = tutorial ? true : autoThrottle;
+    if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     while (accumulator >= 1 / 60) {
       stepRace(race, input, 1 / 60);
+      if (tutorial) {
+        tutorial.update(input, 1 / 60);
+        if (tutorial.complete && race.phase === 'racing') {
+          race.phase = 'paused'; controls.clear();
+          try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
+        }
+      }
       if (!race.modifier && (race.mode === 'classic' || race.mode === 'time')) recordGhost(trace, race);
       accumulator -= 1 / 60;
     }
@@ -1436,6 +1460,7 @@ try {
     hudElapsed += dt;
     if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
       updateUI(now / 1000, input);
+      if (tutorial) renderTutorial();
       hudElapsed = 0;
     }
     if (perfOverlay && race.phase === 'racing' && rawDelta <= 0.25) {
@@ -1471,6 +1496,77 @@ $('#world').addEventListener('webglcontextrestored', () => {
   contextLost = false;
   $('#error-message').hidden = true;
 });
+function beginTutorial() {
+  if (!world || contextLost || (!tutorial && !['ready', 'paused'].includes(race.phase))) return;
+  if (!tutorial) tutorialReturn = { race, pausedPhase, goUntil, previousFuel, previousNitro };
+  if (guideScreen.open) closeGuide();
+  if (editingLayout) editLayout(false);
+  controls.clear(); clearButtonPresses(); toggleControls(false); toggleSettings(false);
+  if (controlPrefs.mode === 'tilt' && !tiltGranted) {
+    inputPrefs = { ...inputPrefs, mode: 'slide' };
+    ui['touch-controls'].dataset.steerMode = 'slide';
+  }
+  tutorial = createInteractiveTutorial(); race = tutorial.race;
+  goUntil = 0; previousFuel = 100; previousNitro = 0; previousFlight = undefined;
+  document.body.dataset.tutorial = 'active';
+  $('#tutorial-coach').hidden = false;
+  $('#music-prompt').hidden = true; hidePerformanceNotice();
+  if (!ui.intro.hidden) leaveIntro();
+  showTracks(); phaseUI(); previousPhase = race.phase;
+  renderTutorial(true); focusRace();
+}
+function endTutorial() {
+  if (!tutorial) return;
+  ({ race, pausedPhase, goUntil, previousFuel, previousNitro } = tutorialReturn);
+  tutorial = null; tutorialReturn = null; tutorialView = '';
+  controls.clear(); clearButtonPresses();
+  delete document.body.dataset.tutorial;
+  applyControls(false);
+  $('#tutorial-coach').hidden = true;
+  for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
+  previousFlight = undefined;
+  showTracks(); phaseUI(); previousPhase = race.phase; showAssist();
+  (race.phase === 'paused' ? ui['resume-button'] : ui['start-button']).focus({ preventScroll: true });
+}
+function renderTutorial(force = false) {
+  if (!tutorial) return;
+  $('#tutorial-progress').value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
+  const view = `${tutorial.step}/${race.phase}/${touchPreference.matches}/${inputPrefs.mode}/${controlPrefs.flyMode}`;
+  if (!force && tutorialView === view) return;
+  tutorialView = view;
+  const step = tutorial.step;
+  const done = tutorial.complete;
+  const action = step === 'land' ? 'fly' : step;
+  $('#tutorial-coach').dataset.step = step ?? 'complete';
+  $('#tutorial-title').textContent = done ? t('tutorial.complete') : t('tutorial.step', { n: tutorial.index + 1, total: TUTORIAL_STEPS.length, action: t(step === 'land' ? 'tutorial.landTitle' : `keymap.${step}`) });
+  $('#tutorial-instruction').textContent = t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' : `tutorial.${step}`);
+  $('#tutorial-pause').textContent = t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause');
+  $('#tutorial-pause').hidden = done;
+  $('#tutorial-complete-actions').hidden = !done;
+  $('#tutorial-assist').hidden = done;
+  const hint = $('#tutorial-input');
+  hint.removeAttribute('data-keys'); hint.replaceChildren();
+  for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
+  if (done) return;
+  if (!touchPreference.matches) {
+    hint.dataset.keys = action;
+    showKeyMap();
+  } else {
+    let target = $(`#touch-controls [data-control="${action}"]`);
+    let hintKey = 'tutorial.touch.' + action;
+    if (['left', 'right', 'brake'].includes(step) && inputPrefs.mode === 'slide') {
+      target = $('.touch-pad'); hintKey = 'tutorial.slide.' + step;
+    } else if (['left', 'right'].includes(step) && inputPrefs.mode === 'tilt') hintKey = 'tutorial.tilt.' + step;
+    else if (step === 'land') hintKey = controlPrefs.flyMode === 'toggle' ? 'tutorial.touch.landToggle' : 'tutorial.touch.land';
+    else if (step === 'fly' && controlPrefs.flyMode === 'toggle') hintKey = 'tutorial.touch.flyToggle';
+    hint.textContent = t(hintKey);
+    target?.classList.add('tutorial-target');
+  }
+}
+for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id}`).addEventListener('click', beginTutorial);
+for (const id of ['tutorial-exit', 'tutorial-done']) $(`#${id}`).addEventListener('click', endTutorial);
+$('#tutorial-pause').addEventListener('click', () => { pause(); renderTutorial(true); });
+window.addEventListener('resize', () => { if (tutorial) renderTutorial(true); });
 const guideScreen = $('#guide-screen');
 guideScreen.addEventListener('keydown', event => {
   // Keep driving shortcuts inside the modal; input.js otherwise consumes Escape.
@@ -1486,6 +1582,11 @@ function selectGuideDevice(device) {
   }
 }
 function openGuide(opener = ui['start-button']) {
+  try {
+    const key = localStorage.getItem('skyline-rush-tutorial-completed') === '1' ? 'tutorial.retry' : 'tutorial.start';
+    $('#guide-practice').dataset.i18n = key;
+    $('#guide-practice').textContent = t(key);
+  } catch { /* Keep the default invitation without storage. */ }
   guideOpener = opener;
   if (editingLayout) editLayout(false);
   controls.clear(); toggleControls(false); toggleSettings(false);
@@ -1503,6 +1604,7 @@ function closeGuide() {
 $('#guide-close').addEventListener('click', closeGuide);
 guideScreen.addEventListener('cancel', event => { event.preventDefault(); closeGuide(); });
 guideScreen.addEventListener('close', () => {
+  if (tutorial) return;
   controls.clear(); guideOpener?.focus({ preventScroll: true });
 });
 let guideSeen = false;
