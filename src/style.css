@@ -1138,3 +1138,51 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .performance-notice button{justify-self:end;background:#264758;border:1px solid #85a8b2;
  border-radius:5px;color:#fff;padding:7px 13px;cursor:pointer;}
 @media(max-width:760px){.performance-notice{top:calc(190px + env(safe-area-inset-top,0px));right:12px;width:min(285px,calc(100vw - 24px));}}
+
+
+/* Race mode selector is intentionally compact: the 3D course showcase remains the hero. */
+.race-mode-picker { max-width: min(100%, 550px); margin: 15px 0 0; padding: 11px 12px; background: rgb(10 25 43 / .86); border: 1px solid #53738a; border-radius: 10px; backdrop-filter: blur(8px); }
+.race-mode-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+.race-mode-heading > span { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
+.race-mode-heading small { font-size: 10px; color: #d1e3ed; text-align: right; line-height: 1.4; }
+.race-mode-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
+.race-mode-tabs button { min-height: 38px; padding: 5px 7px; border: 1px solid #627c8d; border-radius: 5px; background: #22384a; color: #eef6f8; font: 700 11px/1.35 'Avenir Next','Segoe UI',sans-serif; }
+.race-mode-tabs button[aria-pressed="true"] { color: #102338; background: #ffb491; border-color: #ffcfb4; }
+.race-mode-tabs button:focus-visible { outline: 3px solid #9de4ff; outline-offset: 2px; }
+.race-mode-rules { margin-top: 10px; }
+.race-mode-rules summary { display: flex; justify-content: space-between; list-style: none; color: #aee7fa; font-size: 11px; font-weight: 700; cursor: pointer; padding-block: 5px; }
+.race-mode-rules summary::-webkit-details-marker { display: none; }
+.race-mode-rules summary::after { content: '＋'; }
+.race-mode-rules[open] summary::after { content: '－'; }
+.race-mode-rule-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; padding-top: 8px; }
+.race-mode-rule-grid label { display: flex; flex-direction: column; gap: 5px; color: #eaf3fa; font-size: 11px; }
+.race-mode-rule-grid select, .race-mode-rule-grid .custom-select > button { width: 100%; min-height: 36px; color: #f5f6f8; background: #1c3348; border: 1px solid #728aa0; border-radius: 4px; padding: 5px 10px; }
+.race-mode-rule-grid label.race-items { flex-direction: row; align-items: center; min-height: 36px; }
+.race-mode-rule-grid input { accent-color: #ffb491; }
+@media (max-width:760px) {
+ .race-mode-picker { padding: 8px; margin: 10px 0 0; }
+ .race-mode-tabs button { font-size: 10px; min-height: 36px; padding: 4px; }
+ .intro:has(.race-mode-picker) { max-height: calc(100dvh - 126px - env(safe-area-inset-bottom)); overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; padding: 2px 6px 12px; } /* 6px matches the track strip's -6px bleed */
+ .race-mode-rules[open] { max-height: 180px; overflow-y: auto; }
+}
+@media (max-width:370px) {
+ .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+.mode-history-runs p { padding: 9px 0; border-bottom: 1px solid #405465; margin: 0; font-variant-numeric: tabular-nums; color: #e5edf4; }
+
+.ghost-split { display: inline-block; margin-top: 14px; padding: 5px 11px; border: 1px solid #6498a7; border-radius: 4px; background: rgb(4 21 39 / .82); color: #c7edfa; font-size: 11px; letter-spacing: .8px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ghost-split[data-ahead="true"] { color: #91f0c5; border-color: #60b899; }
+.ghost-split[hidden] { display: none; }
+
+.race-presets { display: flex; flex-wrap: wrap; gap: 5px; margin: 7px 0; }
+.race-presets button { padding: 6px 8px; min-height: 34px; background: #16334b; color: #ddebf6; border: 1px solid #537c94; border-radius: 5px; font-size: 10px; font-weight: 700; }
+.race-presets button[aria-pressed="true"] { background: #eeb48c; color: #092138; border-color: #ffcca6; }
+.race-presets button:focus-visible { outline: 2px solid #a0edff; outline-offset: 2px; }
+
+/* Five mode cards adapt to narrow safe-area viewports without shrinking touch targets. */
+.race-mode-tabs { grid-template-columns: repeat(5,minmax(0,1fr)); }
+body[data-race-mode="free"] .race-presets,
+body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="rivals"]),
+body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
+@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); } }

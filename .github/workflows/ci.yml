@@ -3,7 +3,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feature/world-tour-landmark-boost-polish]
+    branches: [main, feature/world-tour-landmark-boost-polish, feature/game-modes-interactive-racing]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
@@ -26,6 +26,27 @@ jobs:
       - run: npm ci
       - run: npm test
 
+
+  # A focused gate gives real screenshots and feedback before the large 4-shard suite finishes.
+  race-mode-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright test tests/race-modes-browser.spec.js
+      - name: Upload original WebGL screenshots from the running game
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: race-mode-preview
+          path: test-results/race-mode-*.png
+          if-no-files-found: ignore
+
   # CPU-only WebGL makes the serial suite take ~24 min on one runner; shards run it in parallel.
   browser-tests:
     runs-on: ubuntu-latest
@@ -47,6 +68,13 @@ jobs:
         with:
           name: browser-failures-${{ matrix.shard }}
           path: test-results
+      - name: Upload actual race-mode game screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: race-mode-screenshots-${{ matrix.shard }}
+          path: test-results/race-mode-*.png
+          if-no-files-found: ignore
       - name: Upload actual World Tour screenshots
         if: always()
         uses: actions/upload-artifact@v4

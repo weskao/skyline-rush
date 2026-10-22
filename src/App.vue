@@ -122,6 +122,32 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
         <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
       </div>
+      <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
+        <div class="race-mode-heading"><span data-i18n="mode.heading">GAME MODE</span><small id="mode-description"></small></div>
+        <div class="race-mode-tabs">
+          <button type="button" data-race-mode="classic" aria-pressed="true" data-i18n="mode.classic">Classic Race</button>
+          <button type="button" data-race-mode="custom" aria-pressed="false" data-i18n="mode.custom">Custom Race</button>
+          <button type="button" data-race-mode="free" aria-pressed="false" data-i18n="mode.free">Free Drive</button>
+          <button type="button" data-race-mode="time" aria-pressed="false" data-i18n="mode.time">Time Attack</button>
+          <button type="button" data-race-mode="gauntlet" aria-pressed="false" data-i18n="mode.gauntlet">Obstacle Run</button>
+        </div>
+        <details class="race-mode-rules" id="race-mode-rules" hidden>
+          <summary data-i18n="mode.rules">Customize race rules</summary>
+          <div class="race-presets" role="group" aria-label="Rule presets" data-i18n-aria-label="mode.presets">
+            <button type="button" data-race-preset="standard" aria-pressed="true" data-i18n="mode.preset.standard">Standard</button>
+            <button type="button" data-race-preset="traffic" aria-pressed="false" data-i18n="mode.preset.traffic">Traffic Rush</button>
+            <button type="button" data-race-preset="noitems" aria-pressed="false" data-i18n="mode.preset.noitems">No Items</button>
+            <button type="button" data-race-preset="air" aria-pressed="false" data-i18n="mode.preset.air">Air Focus</button>
+            <button type="button" data-race-preset="precision" aria-pressed="false" data-i18n="mode.preset.precision">Precision</button>
+          </div>
+          <div class="race-mode-rule-grid">
+            <label><span data-i18n="mode.rivals">AI opponents</span><select data-race-rule="rivals" aria-label="AI opponents" data-i18n-aria-label="mode.rivals"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></label>
+            <label><span data-i18n="mode.difficulty">AI difficulty</span><select data-race-rule="difficulty" aria-label="AI difficulty" data-i18n-aria-label="mode.difficulty"><option value="easy" data-i18n="mode.easy">Easy</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="hard" data-i18n="mode.hard">Hard</option></select></label>
+            <label><span data-i18n="mode.traffic">Traffic</span><select data-race-rule="traffic" aria-label="Traffic density" data-i18n-aria-label="mode.traffic"><option value="off" data-i18n="mode.off">Off</option><option value="light" data-i18n="mode.light">Light</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="heavy" data-i18n="mode.heavy">Heavy</option></select></label>
+            <label class="race-items"><input data-race-rule="items" type="checkbox" checked> <span data-i18n="mode.items">NITRO pickups</span></label>
+          </div>
+        </details>
+      </div>
       <!-- data-keys: the actions whose bound keys showKeyMap() (main.js) draws, so remaps and the arrow / J K L alternates stay listed. -->
       <div class="intro-controls">
         <div><span class="keys" data-keys="throttle left brake right"></span><span data-i18n="hint.drive">Drive</span></div>
@@ -135,7 +161,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
       <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">04</strong><span>/ 04</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
-      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div></div>
+      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"></div>
     </section>
 
@@ -160,6 +186,11 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <figure class="history-trend"><figcaption id="history-trend-label"></figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"></svg></figure>
     <p id="history-empty" data-i18n="history.empty" hidden>No runs here yet. Finish a race to start your history.</p>
     <div id="history-runs" class="history-runs"></div>
+    <section class="history-extra" id="mode-history" aria-labelledby="mode-history-title">
+      <h3 id="mode-history-title" data-i18n="mode.historyTitle">Custom & Time Attack history</h3>
+      <p id="mode-history-empty" data-i18n="mode.historyEmpty">Complete a Custom Race or Time Attack to save a personal record.</p>
+      <div id="mode-history-runs" class="mode-history-runs"></div>
+    </section>
     <section id="daily-challenge" class="history-extra" aria-labelledby="daily-title">
       <h3 id="daily-title" data-i18n="daily.title">Daily challenge</h3>
       <p id="daily-status">No daily challenge is available yet.</p>

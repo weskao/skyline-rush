@@ -4,6 +4,7 @@ import App from './App.vue';
 import { icon } from './icons.js';
 import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
+import { RULE_PRESETS } from './race-config.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
@@ -11,7 +12,7 @@ import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
-import { recordRace, recordBest, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
+import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, LEGACY_BEST_KEY } from './history.js';
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
@@ -89,9 +90,19 @@ const sessionStars = loadStars();
 let equippedPaint = loadPaint(availablePaints(starTotal(sessionStars)));
 const ghosts = {}; // per-track best-run ghost, loaded and validated on first use
 const ghostFor = trackId => trackId in ghosts ? ghosts[trackId] : ghosts[trackId] = loadGhost(trackId);
+const modeGhosts = new Map();
+const modeGhostKey = race => race.trackId + ':' + JSON.stringify(race.config);
+const modeGhostFor = race => {
+  const key = modeGhostKey(race);
+  if (!modeGhosts.has(key)) modeGhosts.set(key, loadModeGhost(race.trackId, race.config));
+  return modeGhosts.get(key);
+};
 let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
+let selectedMode = 'classic';
+const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true };
+const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules });
 let previousFuel = 100;
 let previousNitro = 0;
 const presentation = createPresentation();
@@ -258,6 +269,22 @@ onLocaleChange(applyLocale);
 $('#locale-select').addEventListener('change', ({ target }) => { saveLocale(target.value); setLocale(target.value); });
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
+  document.body.dataset.raceMode = race.mode;
+  for (const button of document.querySelectorAll('button[data-race-mode]'))
+    button.setAttribute('aria-pressed', String(button.dataset.raceMode === selectedMode));
+  $('#race-mode-rules').hidden = !['custom', 'free'].includes(selectedMode);
+  $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
+  for (const button of document.querySelectorAll('[data-race-preset]'))
+    button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
+
+  $('#mode-description').textContent = t('mode.description.' + selectedMode);
+  $('.route-drivers').textContent = selectedMode === 'classic' ? t('intro.drivers') : t('mode.driverCount', { n: race.rivals.length + 1 });
+  // Solo sessions show elapsed time rather than a false "01 / 04" ranking.
+  const solo = race.rivals.length === 0;
+  $('.position-stat .stat-label').textContent = t(solo ? 'mode.' + race.mode : 'race.position');
+  $('.position-stat > div > span').textContent = solo ? '' : '/ ' + String(race.rivals.length + 1).padStart(2, '0');
+  if (race.phase === 'ready') ui.position.textContent = solo ? '—' : String(race.rivals.length + 1).padStart(2, '0');
+  ui.leaderboard.hidden = solo;
   ensureRouteMaps(); refreshTrackLabels();
   for (const button of document.querySelectorAll('[data-track]')) {
     const id = button.dataset.track;
@@ -275,25 +302,25 @@ function showTracks() {
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
   const previous = tracks[tracks.indexOf(race.trackId) - 1];
-  $('#track-note').textContent = (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+  $('#track-note').textContent = (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
   const name = trackName(race.trackId, getLocale());
-  const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : name).toUpperCase();
+  const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
   $('.route-heading').textContent = route;
   $('.overlay-route').textContent = `SKYLINE RUSH / ${route}`;
   $('#world').setAttribute('aria-label', t('world.aria', { track: name }));
   showGhost();
 }
 function showGhost() {
-  const ghost = ghostFor(race.trackId);
+  const ghost = race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null;
   const track = trackName(race.trackId, getLocale());
   $('#ghost-enabled').checked = controlPrefs.ghost;
-  $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
+  $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'custom' || race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
 }
 $('#ghost-enabled').addEventListener('change', ({ target }) => { controlPrefs = controlSettings({ ...controlPrefs, ghost: target.checked }); applyControls(); });
 for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
   if (race.phase !== 'ready') return;
   controls.clear();
-  race = createRace(button.dataset.track); daily = null;
+  race = selectedRace(button.dataset.track); daily = null;
   showTracks();
   sound.cue('ui');
 });
@@ -303,6 +330,30 @@ $('.track-select').addEventListener('keydown', event => {
   const buttons = [...document.querySelectorAll('[data-track]:not(:disabled)')];
   const index = buttons.indexOf(document.activeElement);
   buttons[(index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length].focus();
+});
+function changeRaceSelection() {
+  if (race.phase !== 'ready') return;
+  daily = null;
+  race = selectedRace(race.trackId);
+  showTracks();
+  phaseUI();
+  sound.cue('ui');
+}
+for (const button of document.querySelectorAll('button[data-race-mode]')) button.addEventListener('click', () => {
+  selectedMode = button.dataset.raceMode;
+  changeRaceSelection();
+});
+for (const button of document.querySelectorAll('[data-race-preset]')) button.addEventListener('click', () => {
+  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset]);
+  for (const input of document.querySelectorAll('[data-race-rule]'))
+    if (input.type === 'checkbox') input.checked = raceRules[input.dataset.raceRule];
+    else input.value = String(raceRules[input.dataset.raceRule]);
+  refreshCustomSelects();
+  changeRaceSelection();
+});
+for (const input of document.querySelectorAll('[data-race-rule]')) input.addEventListener('change', () => {
+  raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : input.dataset.raceRule === 'rivals' ? Number(input.value) : input.value;
+  changeRaceSelection();
 });
 showTracks();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
@@ -322,6 +373,13 @@ let historyOpener;
 function showHistory() {
   const trackId = $('#history-track').value;
   const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
+  const modes = loadModeHistory().filter(run => run.track === trackId).slice(-10).reverse();
+  $('#mode-history-empty').hidden = modes.length > 0;
+  $('#mode-history-runs').replaceChildren(...modes.map(run => {
+    const item = document.createElement('p');
+    item.textContent = `${t('mode.' + run.mode)} · ${timeString(run.time)} · ${shortDate(run.date)}`;
+    return item;
+  }));
   const stats = careerStats(sessionHistory);
   const count = (key, n) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
   $('#career-summary').textContent = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
@@ -362,6 +420,7 @@ function showHistory() {
 }
 $('#daily-start').addEventListener('click', () => {
   daily = dailyChallenge();
+  selectedMode = 'classic';
   historyScreen.close();
   controls.clear(); race = createRace(daily.track, daily.modifier); goUntil = 0; previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
@@ -413,7 +472,7 @@ garageScreen.addEventListener('close', () => {
 });
 for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
 function chooseTrack() {
-  controls.clear(); race = createRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
+  controls.clear(); race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
   previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
@@ -481,7 +540,7 @@ function restart(trackId = race.trackId) {
     const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
-  race = createRace(trackId, race.modifier);
+  race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config));
   previousFuel = 100; previousNitro = 0;
   goUntil = 0;
   startRace(race);
@@ -862,12 +921,21 @@ function phaseUI() {
     $('#result-links').hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
-    const medals = recordMedals(race.result).filter(id => !sessionMedals[id]); // history.js swallows storage failures
+    const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !sessionMedals[id]); // history.js swallows storage failures
     sessionMedals = { ...sessionMedals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
     const trackId = race.trackId ?? 'coast';
     let best, record;
     $('#next-button').hidden = true;
-    if (race.modifier) {
+    if (race.mode !== 'classic') {
+      ({ best, record } = recordModeRace(race));
+      if (race.mode === 'time' && record) {
+        const candidate = { time: race.elapsed, samples: trace };
+        if (traceRace === race && validGhost(candidate, trackId)) {
+          saveModeGhost(trackId, race.config, candidate);
+          modeGhosts.set(modeGhostKey(race), candidate);
+        }
+      }
+    } else if (race.modifier) {
       const run = recordDaily(daily, race);
       sessionDaily = [...sessionDaily, run].slice(-50);
       const board = dailyBoard(sessionDaily, daily.id);
@@ -900,7 +968,7 @@ function phaseUI() {
     ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;
     $('#new-best').hidden = !record;
-    $('#result-style').hidden = false;
+    $('#result-style').hidden = race.mode !== 'classic';
     $('#result-links').hidden = false;
     lastResult = { race, best, record, medals };
   }
@@ -920,10 +988,11 @@ function phaseText() {
   const { best, record, medals } = lastResult;
   const { result } = race;
   if (!$('#next-button').hidden) $('#next-track').textContent = trackName($('#next-button').dataset.next, getLocale());
-  ui['overlay-title'].textContent = t(result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
+  ui['overlay-title'].textContent = race.mode !== 'classic' ? t('mode.resultTitle') : t(result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
   ui['overlay-copy'].textContent = t(record ? 'overlay.recordCopy' : 'overlay.againCopy') + t('overlay.summary', { near: result.nearMisses, contacts: result.collisions })
+    + (race.mode === 'gauntlet' ? ' ' + t('mode.hazardResult', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length }) : '')
     + (medals.length ? t('overlay.medal', { list: medals.map(id => t(`medal.${id}`)).join(t('list.separator')) }) : '');
-  ui['result-stats'].innerHTML = `<div><span>${t('race.position')}</span><strong>${result.position}<small> / 4</small></strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(race.elapsed)}</strong></div><div><span>${t('result.best')}</span><strong>${timeString(best)}</strong></div>`;
+  ui['result-stats'].innerHTML = `<div><span>${t('race.position')}</span><strong>${race.rivals.length ? result.position : t('mode.solo')}<small> / ${race.rivals.length + 1}</small></strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(race.elapsed)}</strong></div><div><span>${t('result.best')}</span><strong>${timeString(best)}</strong></div>`;
   $('#result-style').setAttribute('aria-label', t('result.starsAria', { n: result.stars }));
   $('#result-style').innerHTML = `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${t('result.style', { score: result.score })}</strong><small>${t('result.styleHelp')}<br>${t('result.styleStars', { two: race.length * 0.25, three: race.length * 0.5 })}</small>`;
   resultCounts = [
@@ -961,8 +1030,8 @@ function updateUI(now, input) {
   speedNeedle.style.transform = `rotate(${-70 + Math.min(1, car.speed / (MAX_SPEED + 30)) * 140}deg)`;
   const position = racePosition(race);
   if (previousPosition !== position) {
-    ui.position.textContent = String(position).padStart(2, '0');
-    if (previousPosition !== null && race.phase === 'racing') {
+    ui.position.textContent = race.rivals.length ? String(position).padStart(2, '0') : '—';
+    if (race.rivals.length && previousPosition !== null && race.phase === 'racing') {
       const gained = position < previousPosition;
       positionChange.textContent = gained ? '↑' : '↓';
       positionChange.dataset.direction = ui.position.dataset.direction = gained ? 'gained' : 'lost';
@@ -984,13 +1053,21 @@ function updateUI(now, input) {
   ui.distance.textContent = (car.distance / 1000).toFixed(2);
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
   $('#race-length').textContent = (race.length / 1000).toFixed(2);
+  const timeGhost = race.mode === 'time' && controlPrefs.ghost ? modeGhostFor(race) : null;
+  const split = $('#ghost-split');
+  split.hidden = !timeGhost || race.phase !== 'racing';
+  if (!split.hidden) {
+    const delta = car.distance - ghostAt(timeGhost, race.elapsed).distance;
+    split.textContent = t(delta >= 0 ? 'mode.ahead' : 'mode.behind', { n: Math.abs(Math.round(delta)) });
+    split.dataset.ahead = String(delta >= 0);
+  }
   ui['fuel-value'].textContent = String(Math.round(car.fuel));
   ui['fuel-fill'].style.transform = `scaleX(${car.fuel / 100})`;
   ui['fuel-meter'].setAttribute('aria-valuenow', String(Math.round(car.fuel)));
   ui['fuel-meter'].setAttribute('aria-valuetext', `${car.fuel < 20 ? L['hud.lowCharge'] : ''}${Math.round(car.fuel)}%`);
   ui['fuel-meter'].dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
   previousFuel = car.fuel;
-  $('#style-score').textContent = interpolate(L['hud.style'], { n: Math.floor(car.score) });
+  $('#style-score').textContent = race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style'], { n: Math.floor(car.score) });
   ui.altitude.textContent = car.altitude.toFixed(1);
   const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
   // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
@@ -1116,7 +1193,8 @@ function updateUI(now, input) {
   countdownLabel.textContent = L[countdown ? autoThrottle ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline'];
   const length = race.length;
   let status = L[`phase.${race.phase}`];
-  if (race.phase === 'racing' && car.distance >= length - 500) {
+  if (race.mode === 'free' && car.distance >= length) status = L['mode.endOfRoad'];
+  else if (race.phase === 'racing' && race.mode === 'classic' && car.distance >= length - 500) {
     const { ahead, behind } = sprintGaps(race);
     status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
   }
@@ -1132,7 +1210,7 @@ function updateUI(now, input) {
     // FLIP reads geometry only on a rank change, with all reads batched before writes.
     const before = !calm && race.phase === 'racing' && leaderboardOrder ? new Map(leaderboardRows.map(row => [row, row.getBoundingClientRect().top])) : null;
     leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
-    ui.leaderboard.append(...racers.map(racer => racerRows.get(racer.name)));
+    ui.leaderboard.replaceChildren(...racers.map(racer => racerRows.get(racer.name)));
     const moves = before ? leaderboardRows.map(row => [row, before.get(row) - row.getBoundingClientRect().top]) : [];
     for (const [row, delta] of moves) if (delta) row.animate([{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }], motionOptions('base'));
     leaderboardOrder = order;
@@ -1171,7 +1249,7 @@ try {
     if (traceRace !== race) { traceRace = race; trace = []; }
     while (accumulator >= 1 / 60) {
       stepRace(race, input, 1 / 60);
-      if (!race.modifier) recordGhost(trace, race);
+      if (!race.modifier && (race.mode === 'classic' || race.mode === 'time')) recordGhost(trace, race);
       accumulator -= 1 / 60;
     }
     const calm = calmMotion();
@@ -1179,7 +1257,7 @@ try {
     if (calm && !wasCalm) stopPresentationMotion();
     wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
-    const ghost = controlPrefs.ghost && !race.modifier && race.phase !== 'ready' ? ghostFor(race.trackId) : null;
+    const ghost = controlPrefs.ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null : null;
     world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
     sound.update(race);
     hudElapsed += dt;

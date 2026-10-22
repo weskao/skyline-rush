@@ -46,6 +46,30 @@ export function recordRace(race, storage, now = new Date()) {
   return record;
 }
 
+
+// Practice, custom and Time Attack records never mutate Classic history or unlocks.
+export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
+export function loadModeHistory(storage) {
+  const saved = read(MODE_HISTORY_KEY, storage);
+  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet'].includes(run.mode) &&
+    typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
+}
+export function recordModeRace(race, storage, now = new Date()) {
+  if (!['custom', 'time', 'gauntlet'].includes(race.mode) || !race.result || !valid(race.result.time))
+    throw new TypeError('A finished practice race is required');
+  const rules = JSON.stringify(race.config);
+  const previous = loadModeHistory(storage);
+  const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
+  const previousBest = Math.min(Infinity, ...comparable.map(run => run.time));
+  const record = race.result.time < previousBest;
+  const best = Math.min(previousBest, race.result.time);
+  write(MODE_HISTORY_KEY, [...previous, {
+    date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
+    time: race.result.time, position: race.result.position, score: race.result.score,
+  }].slice(-HISTORY_LIMIT), storage);
+  return { best, record };
+}
+
 // Per-track bests; folds the legacy single best into coast (min, so re-running never overwrites a better time).
 export function loadBests(storage) {
   const stored = read(BEST_KEY, storage);
@@ -118,6 +142,23 @@ const GHOSTS_KEY = 'skyline-rush-ghosts';
 const loadGhosts = storage => { const saved = read(GHOSTS_KEY, storage); return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}; };
 export const loadGhost = (trackId, storage) => { const ghost = loadGhosts(storage)[trackId]; return validGhost(ghost, trackId) ? ghost : null; };
 export const saveGhost = (trackId, ghost, storage) => write(GHOSTS_KEY, { ...loadGhosts(storage), [trackId]: ghost }, storage);
+
+
+// Time Attack ghosts are keyed by full rule signature, not by Classic best.
+const MODE_GHOST_KEY = 'skyline-rush-mode-ghosts-v1';
+const modeGhostId = (trackId, config) => trackId + ':' + JSON.stringify(config);
+export function loadModeGhost(trackId, config, storage) {
+  const ghosts = read(MODE_GHOST_KEY, storage);
+  const item = ghosts && typeof ghosts === 'object' && !Array.isArray(ghosts) ? ghosts[modeGhostId(trackId, config)] : null;
+  return validGhost(item, trackId) ? item : null;
+}
+export function saveModeGhost(trackId, config, ghost, storage) {
+  if (!validGhost(ghost, trackId)) return false;
+  const previous = read(MODE_GHOST_KEY, storage);
+  const entries = previous && typeof previous === 'object' && !Array.isArray(previous) ? previous : {};
+  write(MODE_GHOST_KEY, { ...entries, [modeGhostId(trackId, config)]: ghost }, storage);
+  return true;
+}
 
 // Daily challenge runs live on their own board, never in history, bests, unlocks or ghosts.
 const DAILY_KEY = 'skyline-rush-daily';
