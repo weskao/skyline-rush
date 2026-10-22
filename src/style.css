@@ -138,8 +138,8 @@ body[data-phase="ready"] .build-version { display: block; }
 .event-callout span { display: block; margin-top: 2px; font: 500 10px/1.5 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 1px; }
 .event-callout[data-kind="perfect"], .event-callout[data-kind="nitro"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
 @media (max-width: 760px) and (min-height: 501px) { .event-callout { top: 272px; } .driving-message[data-tone='warning'] { top: 324px; } } /* warning sits under the callout, clear of the progress bar */
-/* Portrait phones have no room beside the flight director, so it steps aside for a brief callout. */
-@media (max-width: 760px) and (min-height: 501px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; } }
+/* Portrait phones have no room beside the flight director, so it steps aside for a brief callout — at once, since a fade would overlap the callout's first frames. */
+@media (max-width: 760px) and (min-height: 501px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; transition: none; } }
 @media (max-height: 500px) {
   .event-callout { top: 30%; right: auto; margin: 0; max-width: 230px; padding: 2px 10px; font-size: 20px; } /* left gutter: the centre holds the progress and mode panels */
   .event-callout > div { display: flex; align-items: center; gap: 10px; }
