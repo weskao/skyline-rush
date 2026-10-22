@@ -200,3 +200,23 @@ test('Stunt Attack offers a timed score challenge with live arcade feedback', as
   await expect(page.locator('#stunt-hud')).toContainText('HEAT 1');
   expect(errors).toEqual([]);
 });
+
+test('Stunt Attack displays its score HUD in a real desktop WebGL screenshot', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="stunt"]').click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#stunt-hud')).toBeVisible();
+  await page.screenshot({ path:'test-results/race-mode-stunt-attack.png' });
+});
+test('1920x1080 intro fits without clipping and VFX remains reachable after music consent', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  const overflow = await page.locator('#intro').evaluate(el => el.scrollHeight - el.clientHeight);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.locator('#vfx-panel > summary').click();
+  await expect(page.locator('#vfx-panel')).toHaveAttribute('open','');
+  await page.screenshot({ path:'test-results/race-mode-layout-desktop.png' });
+});
