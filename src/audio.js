@@ -304,13 +304,13 @@ export function createSound() {
       if (context) {
         enabled = next;
         if (!enabled) silenceCues();
-        master.gain.setTargetAtTime(enabled ? 0.8 * effectsLevel : 0, context.currentTime, 0.025);
+        master.gain.setTargetAtTime(enabled ? 1.6 * effectsLevel : 0, context.currentTime, 0.025);
       }
     } catch { fail(); }
     return enabled;
   }
   function setMusic(next, volume = 1) {
-    musicLevel = volume ** 2;
+    musicLevel = 2.5 * volume ** 2;
     try {
       if (next) open();
       musicOn = next && !!context;

@@ -167,7 +167,7 @@ test('each roll starts one noise whoosh; mute and pause consume it without repla
   assert.equal(bursts(), before + 2);
 });
 
-test('volume sliders scale the effects and music buses on a perceptual curve', t => {
+test('louder channel gains preserve slider curves, phase balance and mute', t => {
   const { nodes, sound } = installAudio(t);
   const race = createRace();
   race.phase = 'racing';
@@ -175,13 +175,20 @@ test('volume sliders scale the effects and music buses on a perceptual curve', t
   sound.setMusic(true, 0.5);
   sound.update(race);
   const [effects, music] = nodes.filter(node => node.kind === 'gain' && node.destination?.kind === 'compressor');
-  assert.equal(effects.gain.value, 0.8 * 0.25);
-  assert.equal(music.gain.value, 0.5 * 0.25);
+  assert.equal(effects.gain.value, 1.6 * 0.25);
+  assert.equal(music.gain.value, 1.25 * 0.25);
   sound.setEnabled(true);
   sound.setMusic(true);
   sound.update(race);
-  assert.equal(effects.gain.value, 0.8, 'full volume keeps the original mix');
-  assert.equal(music.gain.value, 0.5);
+  assert.equal(effects.gain.value, 1.6);
+  assert.equal(music.gain.value, 1.25);
+  race.phase = 'ready'; sound.update(race);
+  assert.equal(music.gain.value, 1.625);
+  race.phase = 'paused'; sound.update(race);
+  assert.equal(music.gain.value, 0.625);
+  sound.setEnabled(false); sound.setMusic(false); sound.update(race);
+  assert.equal(effects.gain.value, 0);
+  assert.equal(music.gain.value, 0);
 });
 
 test('each new arcade mode has a playable 50–70 second synthesized music loop', () => {
