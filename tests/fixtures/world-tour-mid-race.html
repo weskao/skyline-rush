@@ -53,9 +53,11 @@
     }
     return { id, frames, arrivedAt: to };
   };
+  window.worldTourLandmarks=()=>world.inspectLandmarks();
   window.worldTourPreviewProbe=id=>{
     const race=createRace(id);
-    world.render(race,1/60,2,{});
+    // One second of frames: the preview FOV eases to 50°, as on the real home.
+    for(let i=0;i<60;i++)world.render(race,1/60,2+i/60,{});
     return {id,actors:world.inspectShowcase(),landmarks:world.inspectLandmarks()};
   };
     window.worldTourReady = true;

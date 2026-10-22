@@ -1025,18 +1025,30 @@ export function createWorld(canvas) {
       const raycaster=new THREE.Raycaster();
       const shown=object=>{for(let o=object;o;o=o.parent)if(!o.visible)return false;return true;};
       return worldTourScene.landmarks().map(hero=>{
-        const box=new THREE.Box3().setFromObject(hero),xs=[],ys=[],zs=[];
-        for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){
-          const p=new THREE.Vector3(x,y,z).project(camera);xs.push(p.x);ys.push(p.y);zs.push(p.z);
-        }
-        const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-        // Unobstructed share: rays through a 5x5 grid of on-screen landmark
-        // samples whose first scene hit is the landmark itself.
+        // Bounds from the projected mesh vertices: box corners overstate the
+        // on-screen extent of cones and rings seen at an angle.
+        const box=new THREE.Box3().setFromObject(hero),v=new THREE.Vector3();
+        let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,ahead=true;
+        hero.updateMatrixWorld(true);
+        hero.traverse(o=>{
+          if(!o.isMesh)return;
+          const p=o.geometry.attributes.position;
+          for(let i=0;i<p.count;i++){
+            v.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld).project(camera);
+            if(v.z>=1){ahead=false;continue;}
+            minX=Math.min(minX,v.x);maxX=Math.max(maxX,v.x);minY=Math.min(minY,v.y);maxY=Math.max(maxY,v.y);
+          }
+        });
+        const zs=[ahead?0:1];
+        // Unobstructed share: of the on-screen 9x9 grid rays that land on the
+        // landmark's own geometry (not ring holes or sky beside a tower), the
+        // share whose first scene hit is the landmark rather than a blocker.
         let samples=0,hits=0;
-        if(hero.visible&&zs.every(z=>z<1))for(let i=0;i<5;i++)for(let j=0;j<5;j++){
-          const x=THREE.MathUtils.lerp(minX,maxX,(i+.5)/5),y=THREE.MathUtils.lerp(minY,maxY,(j+.5)/5);
+        if(hero.visible&&zs.every(z=>z<1))for(let i=0;i<9;i++)for(let j=0;j<9;j++){
+          const x=THREE.MathUtils.lerp(minX,maxX,(i+.5)/9),y=THREE.MathUtils.lerp(minY,maxY,(j+.5)/9);
           if(Math.abs(x)>1||Math.abs(y)>1)continue;
           raycaster.setFromCamera(new THREE.Vector2(x,y),camera);
+          if(!raycaster.intersectObject(hero,true).some(h=>h.object.isMesh))continue;
           const hit=raycaster.intersectObjects(scene.children,true).find(h=>h.object.isMesh&&shown(h.object));
           if(!hit)continue;samples++;
           let node=hit.object;while(node&&node!==hero)node=node.parent;
