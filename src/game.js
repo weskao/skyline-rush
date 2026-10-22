@@ -324,9 +324,10 @@ function contact(race, kind, obstacleX, intensity, retention) {
     return;
   }
   const side = Math.sign(car.x - obstacleX) || -1;
-  const speedLost = car.speed * (1 - retention);
+  const retainedSpeed = race.config.collision === 'relaxed' ? Math.max(retention, 0.8) : retention;
+  const speedLost = car.speed * (1 - retainedSpeed);
   car.impact = { kind, intensity, side, speedLost, x: car.x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
-  car.speed *= retention;
+  car.speed *= retainedSpeed;
   car.x = clamp(car.x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
   car.cooldown = 1.5;
   car.collisions++;

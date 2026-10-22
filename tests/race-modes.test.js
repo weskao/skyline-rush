@@ -203,3 +203,24 @@ test('Obstacle Gauntlet rewards safely passing an obstacle on another lane', () 
   assert.equal(hazard.passed, true);
   assert.ok(race.player.score > score);
 });
+
+
+test('relaxed Custom collisions cap the speed penalty and preserve impact readout', () => {
+  const collide = collision => {
+    const race = createRace('coast', { mode: 'custom', rivals: 0, traffic: 'off', collision });
+    startRace(race);
+    for (let i = 0; i < 181; i++) stepRace(race, {}, 1 / 60);
+    race.traffic = [{ x: race.player.x, distance: 1, speed: 0 }];
+    race.player.speed = 70;
+    stepRace(race, {}, 1 / 60);
+    assert.equal(race.player.collisions, 1);
+    return race;
+  };
+  const standard = collide('normal');
+  const relaxed = collide('relaxed');
+  assert.ok(relaxed.player.speed > standard.player.speed + 15);
+  assert.ok(relaxed.player.impact.speedLost < standard.player.impact.speedLost);
+  assert.ok(Math.abs(relaxed.player.impact.speedLost - (70 - 4/60) * .2) < .2);
+  assert.equal(createRace('coast', { mode:'classic', collision:'relaxed' }).config.collision, undefined);
+  assert.equal(createRace('coast', 'double-traffic').config.collision, undefined);
+});

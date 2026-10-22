@@ -101,7 +101,7 @@ let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
-const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true };
+const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal' };
 const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules });
 let previousFuel = 100;
 let previousNitro = 0;
@@ -344,7 +344,7 @@ for (const button of document.querySelectorAll('button[data-race-mode]')) button
   changeRaceSelection();
 });
 for (const button of document.querySelectorAll('[data-race-preset]')) button.addEventListener('click', () => {
-  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset]);
+  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal' });
   for (const input of document.querySelectorAll('[data-race-rule]'))
     if (input.type === 'checkbox') input.checked = raceRules[input.dataset.raceRule];
     else input.value = String(raceRules[input.dataset.raceRule]);
