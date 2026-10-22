@@ -17,7 +17,7 @@ export function normalizeRaceConfig(value = {}) {
     rulesVersion: 1,
     mode,
     rivals,
-    traffic: practice && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet'].includes(mode) ? 'off' : 'normal',
+    traffic: practice && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet', 'checkpoint'].includes(mode) ? 'off' : 'normal',
     difficulty: custom && DIFFICULTIES.includes(value.difficulty) ? value.difficulty : 'normal',
     items: practice && typeof value.items === 'boolean' ? value.items : true,
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.

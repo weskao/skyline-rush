@@ -1,5 +1,6 @@
 import { seededRng } from './rng.js';
 import { createHazards } from './hazards.js';
+import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
@@ -240,6 +241,7 @@ export function createRace(trackId = 'coast', modifier = null) {
     trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
     hazards: config.mode === 'gauntlet' ? createHazards(track, LANES) : [],
+    checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
@@ -611,14 +613,18 @@ export function stepRace(race, input, dt) {
     car.cleanDistance %= 500;
   }
   if (car.altitude > 0 && car.speed >= 18) car.score += dt * 10;
+  if (race.checkpoint) {
+    car.score += stepCheckpointRush(race.checkpoint, previousDistance, car, dt);
+  }
   if (race.mode === 'free' && car.distance >= race.length) {
     car.distance = race.length; // authored point-to-point road ends here; no fake infinite road
     car.speed = 0;
     car.thrusting = false;
     car.boosting = false;
   }
-  if (race.mode !== 'free' && car.distance >= race.length) {
-    const finishTime = race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
+  if (race.mode !== 'free' && (car.distance >= race.length || race.checkpoint?.expired)) {
+    const finishTime = race.checkpoint?.expired ? race.elapsed :
+      race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
     car.distance = race.length;
     race.elapsed = finishTime;
@@ -626,7 +632,8 @@ export function stepRace(race, input, dt) {
     race.result = { position, time: finishTime, collisions: car.collisions, nearMisses: car.nearMisses,
       nitroUses: car.nitroUses, nitroChain: car.nitroChain, longestCombo: car.longestCombo,
       rings: car.rings, perfectLines: car.perfectLines, fuelOuts: car.fuelOuts, gapFalls: car.falls, score,
-      stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1 };
+      stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1,
+      success: race.checkpoint ? !race.checkpoint.expired && race.checkpoint.passed === race.checkpoint.gates.length : true };
     race.phase = 'finished';
     car.thrusting = false;
     car.boosting = false;

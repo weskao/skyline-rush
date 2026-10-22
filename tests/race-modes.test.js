@@ -224,3 +224,42 @@ test('relaxed Custom collisions cap the speed penalty and preserve impact readou
   assert.equal(createRace('coast', { mode:'classic', collision:'relaxed' }).config.collision, undefined);
   assert.equal(createRace('coast', 'double-traffic').config.collision, undefined);
 });
+
+test('Checkpoint Rush awards gate-time bonus only for real gate crossings', () => {
+  const race = createRace('coast', {mode:'checkpoint'});
+  assert.equal(race.rivals.length, 0);
+  assert.equal(race.traffic.length, 0);
+  assert.ok(race.checkpoint.gates.length >= 4);
+  startRace(race);
+  for (let i = 0; i < 181; i++) stepRace(race, {}, 1 / 60);
+  const gate = race.checkpoint.gates[0];
+  race.player.distance = gate.distance - 1;
+  race.player.x = gate.x; race.player.altitude = gate.altitude; race.player.speed = 75;
+  const timeBefore = race.checkpoint.timeLeft;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.checkpoint.passed, 1);
+  assert.ok(race.checkpoint.timeLeft > timeBefore);
+  assert.ok(race.player.score >= 250);
+});
+test('Checkpoint Rush times out without recording an official finish or personal best', () => {
+  const race = createRace('coast',{mode:'checkpoint'});
+  startRace(race);
+  for (let i = 0; i < 181; i++) stepRace(race,{},1 / 60);
+  race.checkpoint.timeLeft = 0.01;
+  stepRace(race,{},1 / 60);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.success,false);
+  assert.throws(()=>recordModeRace(race));
+});
+test('Checkpoint Rush completes on the real finish after all gates are cleared', () => {
+  const race = createRace('coast',{mode:'checkpoint'});
+  startRace(race);
+  for (let i = 0; i < 181; i++) stepRace(race,{},1 / 60);
+  for (const gate of race.checkpoint.gates) gate.passed = true;
+  race.checkpoint.passed = race.checkpoint.gates.length;
+  race.player.distance = race.length - 0.1;
+  race.player.speed = 80;
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.success,true);
+});
