@@ -1,3 +1,42 @@
+## [0.16.0] - 2026-10-22
+
+### 🚀 Features
+
+- **audio:** Add music for neon canyon and aurora
+- **checkpoint:** Add deterministic timed gate challenge rules and red-green tests
+- **checkpoint:** Integrate timed gates into driving, results and records
+- **ui:** Render glowing checkpoint arches with bilingual timer HUD and safe retry
+- **gauntlet:** Add deterministic sweeping obstacles with RED-GREEN unit tests
+- **ui:** Introduce Extreme gauntlet with moving barriers, warnings and bilingual rules
+- **time-attack:** Add optional clean-run challenge with isolated bests and bilingual UX
+- **cup:** Add three-track championship scoring with RED-GREEN tests
+- **ui:** Add three-course Championship Cup, rival points and stage standings
+- **cup:** Support 3/5-track championships and prevent locked-track keyboard bypass
+- **practice:** Show live Free Drive telemetry with test-first stats
+- **practice:** Surface near-miss combo and complete practice HUD task
+- **stunt:** Add score-combo engine with test-first regression coverage
+- **stunt:** Integrate timed style attack with official-result isolation
+- **ui:** Launch bilingual timed Stunt Attack with score HUD and stage flow
+- **app:** Reload a home-screen app onto a new build
+
+### 🐛 Bug Fixes
+
+- **ui:** Fit eight game modes in the desktop intro
+
+### 💼 Other
+
+- **main:** Reconcile upstream browser fixtures and device UX
+
+### 📚 Documentation
+
+- **todo:** Mark new checkpoint, clean trial and gauntlet tier implementations
+- **todo:** Mark implemented 3/5-track Championship Cup; keep acceptance gates open
+- **readme:** Document seven race modes, gameplay rules and real CI screenshot gallery
+
+### 🧪 Testing
+
+- **ui:** Expand clean-trial details before toggling checkbox
+- **stunt:** Verify highest-score records and career save isolation
 ## [0.15.1] - 2026-10-22
 
 ### 🚀 Features
