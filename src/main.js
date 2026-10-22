@@ -789,7 +789,7 @@ const ARROWS = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight:
 const keyLabel = code => ARROWS[code] ?? code.replace(/^Key|^Digit/, '').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
 function showKeyMap() {
   // Start-screen legend: one kbd group per key slot (W A S D, then ↑ ← ↓ →), "/" between groups; Left/Right Shift read as one Shift.
-  for (const keys of document.querySelectorAll('.intro-controls [data-keys]')) {
+  for (const keys of document.querySelectorAll('.intro-controls [data-keys], #guide-screen [data-keys]')) {
     const actions = keys.dataset.keys.split(' ');
     const seen = new Set();
     const groups = Array.from({ length: Math.max(...actions.map(action => keyMap[action].length)) }, (_, slot) => actions
@@ -879,7 +879,7 @@ document.addEventListener('keydown', event => {
 for (const type of ['click', 'keydown']) window.addEventListener(type, unlockAudio, { capture: true });
 // Try autoplay; where the browser blocks it, ask instead. The answer is itself the unlocking gesture.
 unlockAudio();
-setTimeout(() => { $('#music-prompt').hidden = gestured || !audio.music || sound.running(); }, 600);
+setTimeout(() => { $('#music-prompt').hidden = !!document.querySelector('dialog[open]') || gestured || !audio.music || sound.running(); }, 600);
 $('#music-yes').addEventListener('click', () => setAudio('music', true));
 $('#music-no').addEventListener('click', () => setAudio('music', false));
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
@@ -1471,6 +1471,44 @@ $('#world').addEventListener('webglcontextrestored', () => {
   contextLost = false;
   $('#error-message').hidden = true;
 });
+const guideScreen = $('#guide-screen');
+guideScreen.addEventListener('keydown', event => {
+  // Keep driving shortcuts inside the modal; input.js otherwise consumes Escape.
+  event.stopPropagation();
+  if (event.code === 'Escape') { event.preventDefault(); closeGuide(); }
+});
+let guideOpener;
+function selectGuideDevice(device) {
+  for (const button of document.querySelectorAll('[data-guide-device]')) {
+    const selected = button.dataset.guideDevice === device;
+    button.setAttribute('aria-pressed', String(selected));
+    $(`#guide-${button.dataset.guideDevice}-panel`).hidden = !selected;
+  }
+}
+function openGuide(opener = ui['start-button']) {
+  guideOpener = opener;
+  if (editingLayout) editLayout(false);
+  controls.clear(); toggleControls(false); toggleSettings(false);
+  hidePerformanceNotice(); $('#music-prompt').hidden = true;
+  selectGuideDevice(touchPreference.matches ? 'mobile' : 'desktop');
+  showKeyMap();
+  guideScreen.showModal();
+}
+for (const button of document.querySelectorAll('[data-guide-device]')) button.addEventListener('click', () => selectGuideDevice(button.dataset.guideDevice));
+$('#guide-open').addEventListener('click', () => openGuide(ui['controls-button']));
+function closeGuide() {
+  try { localStorage.setItem('skyline-rush-guide-seen', '1'); } catch { /* Closing stays usable when storage is blocked. */ }
+  guideScreen.close();
+}
+$('#guide-close').addEventListener('click', closeGuide);
+guideScreen.addEventListener('cancel', event => { event.preventDefault(); closeGuide(); });
+guideScreen.addEventListener('close', () => {
+  controls.clear(); guideOpener?.focus({ preventScroll: true });
+});
+let guideSeen = false;
+try { guideSeen = localStorage.getItem('skyline-rush-guide-seen') === '1'; } catch { /* Show the guide when storage is unavailable. */ }
+if (!guideSeen) openGuide();
+
 window.addEventListener('pagehide', event => {
   // A cached page resumes the same animation, renderer and controls on back navigation.
   if (event.persisted) return;

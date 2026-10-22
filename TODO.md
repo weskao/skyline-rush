@@ -1,5 +1,16 @@
 # TODO — Gameplay depth design
 
+## 操作教學 v1（2026-10-23）
+
+- [x] Desktop：靜態鍵盤示意與目前自訂按鍵、中英文說明。
+- [x] Mobile：Slide／Buttons、加速、FLY、BOOST、NITRO 與暫停圖解。
+- [x] 首次進入自動展示；關閉後記住；Controls 可重新開啟並切換裝置說明。
+- [x] TDD 與整合驗證：首次／重開／儲存不可用／暫停、桌面與手機直橫向。
+- [ ] 後續版本：搭配遊戲畫面、實際操作與逐步完成判定的互動教學（本版不實作）。
+- [ ] 實體 iOS Safari／Android 觸控裝置驗收（目前以 Chrome 手機模擬驗證）。
+
+驗證：379 項單元測試、正式建置通過；297 項瀏覽器案例中 290 項首輪通過、7 項重跑或修正後通過。語言測試的延遲音樂提示改用實際可見狀態處理，4 個使用檔案的 73 項相關回歸全部通過。畫面證據位於 `artifacts/control-guide/`。
+
 Original baseline (everything below builds on these initial systems): a single 5 km coastal highway
 sprint (`RACE_LENGTH`), 3 rivals, 36 recycled traffic cars, flight and BOOST sharing one `fuel` pool,
 near-miss combos that recharge fuel, 7 purely decorative cyan rings in the sky (`world.js` gates),

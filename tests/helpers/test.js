@@ -7,7 +7,9 @@ import { test as base, expect, chromium } from '@playwright/test';
 export const CI_DEVICE = Object.freeze({ cores: 4, memoryGiB: 8 });
 
 export const test = base.extend({
-  context: async ({ context }, use) => {
+  guideSeen: [true, { option: true }],
+  context: async ({ context, guideSeen }, use) => {
+    if (guideSeen) await context.addInitScript(() => localStorage.setItem('skyline-rush-guide-seen', '1'));
     await context.addInitScript(({ cores, memoryGiB }) => {
       Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, get: () => cores });
       Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => memoryGiB });
