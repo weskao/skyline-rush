@@ -18,6 +18,8 @@ legibility, motion and camera scale.
 
 - Live Three.js world: player Roadster, three rivals, driveable road, landmarks, scenery. No
   flat illustration, thumbnail or empty sky.
+- Signature landmark: the showcase frames the map's main landmark (see CLAUDE.md "Home-screen
+  landmark showcase"); a pitched-up `lookHeight` is the only camera change allowed for it.
 - Composition: player hovers gently with visible jets; ≥1 rival flies with thrusters; other
   rivals stay near the road. Same model, lighting, paint, wing and physics visuals as in-race;
   never hide or shrink the player.
