@@ -6,6 +6,7 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallen
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
+import { checkpointDirection } from './checkpoint-rush.js';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.js';
 import { stuntMedal } from './stunt-attack.js';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
@@ -1130,7 +1131,7 @@ function phaseText() {
   if (race.mode === 'checkpoint' && !result.success) {
     ui['overlay-title'].textContent = t('mode.checkpointFailed');
     ui['overlay-copy'].textContent = t('mode.checkpointFailedCopy', { n: race.checkpoint.passed, total: race.checkpoint.gates.length });
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.gates')}</span><strong>${race.checkpoint.passed} / ${race.checkpoint.gates.length}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(race.elapsed)}</strong></div>`;
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.gates')}</span><strong>${race.checkpoint.passed} / ${race.checkpoint.gates.length} · ${t('mode.perfect')}: ${race.checkpoint.perfect}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(race.elapsed)}</strong></div>`;
     resultCounts = [];
     return;
   }
@@ -1190,6 +1191,8 @@ function updateUI(now, input) {
       n: race.checkpoint.passed, total: race.checkpoint.gates.length,
       seconds: race.checkpoint.timeLeft.toFixed(1),
       distance: next ? Math.max(0,Math.ceil(next.distance - race.player.distance)) : 0,
+      direction: next ? t('mode.direction.' + checkpointDirection(race.player, next)) : '—',
+      perfect: race.checkpoint.perfect,
     });
     checkpointHud.dataset.urgent = String(race.checkpoint.timeLeft < 10);
   }

@@ -13,7 +13,16 @@ export function createCheckpointRush(track) {
     gates.push({ distance, x: LANES[index % LANES.length], altitude: index % 3 === 2 ? 3 : 0,
       passed: false, missed: false });
   }
-  return { gates, timeLeft: 28, passed: 0, missed: 0, expired: false };
+  return { gates, timeLeft: 28, passed: 0, missed: 0, perfect: 0, expired: false };
+}
+
+export function checkpointDirection(car, gate) {
+  if (!car || !gate) return 'center';
+  if (gate.x < car.x - 1) return 'left';
+  if (gate.x > car.x + 1) return 'right';
+  if (gate.altitude > car.altitude + 1) return 'up';
+  if (gate.altitude < car.altitude - 1) return 'down';
+  return 'center';
 }
 
 export function stepCheckpointRush(state, previousDistance, car, dt) {
@@ -28,7 +37,9 @@ export function stepCheckpointRush(state, previousDistance, car, dt) {
     if (Math.abs(car.x - gate.x) <= 3 && Math.abs(car.altitude - gate.altitude) <= 3) {
       gate.passed = true;
       state.passed++;
-      bonus += 250;
+      const perfect = Math.abs(car.x - gate.x) <= 0.8 && Math.abs(car.altitude - gate.altitude) <= 0.8;
+      if (perfect) state.perfect++;
+      bonus += perfect ? 400 : 250;
       state.timeLeft = Math.min(60, state.timeLeft + 10);
     } else { gate.missed = true; state.missed++; }
   }

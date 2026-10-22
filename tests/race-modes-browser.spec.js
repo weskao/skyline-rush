@@ -237,3 +237,14 @@ test('completed Custom setup appears as a recent preset without touching unlocks
   await expect(page.locator('[data-track="coast"]')).toHaveAttribute('aria-pressed','true');
   await page.screenshot({path:'test-results/race-mode-recent-custom.png'});
 });
+
+test('Checkpoint Rush shows directional guidance and perfect gate counter', async ({ page }) => {
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="checkpoint"]').click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#checkpoint-hud')).toBeVisible();
+  await expect(page.locator('#checkpoint-hud')).toContainText('PERFECT 0');
+  await expect(page.locator('#checkpoint-hud')).toContainText('NEXT');
+  await page.screenshot({path:'test-results/race-mode-checkpoint-guidance.png'});
+});
