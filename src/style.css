@@ -1201,3 +1201,7 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
  .race-mode-heading small { text-align: left; max-width: 120px; }
  .race-mode-rules { grid-column: 1 / -1; }
 }
+
+/* The series counter sits in the race info without expanding the top HUD. */
+.sprint-stage { display: inline-block; margin-top: 5px; color: #c9f4ff; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+.sprint-stage[hidden], #sprint-stages-setting[hidden], #next-stage[hidden] { display: none !important; }

@@ -5,6 +5,7 @@ import { icon } from './icons.js';
 import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
+import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
@@ -101,7 +102,8 @@ let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
-const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal' };
+const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal', stages: 1 };
+let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules });
 let previousFuel = 100;
 let previousNitro = 0;
@@ -273,6 +275,7 @@ function showTracks() {
   for (const button of document.querySelectorAll('button[data-race-mode]'))
     button.setAttribute('aria-pressed', String(button.dataset.raceMode === selectedMode));
   $('#race-mode-rules').hidden = !['custom', 'free'].includes(selectedMode);
+  $('#sprint-stages-setting').hidden = selectedMode !== 'custom';
   $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
   for (const button of document.querySelectorAll('[data-race-preset]'))
     button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
@@ -344,7 +347,7 @@ for (const button of document.querySelectorAll('button[data-race-mode]')) button
   changeRaceSelection();
 });
 for (const button of document.querySelectorAll('[data-race-preset]')) button.addEventListener('click', () => {
-  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal' });
+  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', stages: 1 });
   for (const input of document.querySelectorAll('[data-race-rule]'))
     if (input.type === 'checkbox') input.checked = raceRules[input.dataset.raceRule];
     else input.value = String(raceRules[input.dataset.raceRule]);
@@ -472,7 +475,7 @@ garageScreen.addEventListener('close', () => {
 });
 for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
 function chooseTrack() {
-  controls.clear(); race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
+  controls.clear(); sprintSeries = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
   previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
@@ -522,6 +525,7 @@ function start() {
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   if (editingLayout) editLayout(false);
   controls.clear();
+  sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   leaveIntro();
   startRace(race);
   sound.cue('ui');
@@ -854,7 +858,13 @@ $('#music-no').addEventListener('click', () => setAudio('music', false));
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
 ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
-ui['again-button'].addEventListener('click', () => restart());
+ui['again-button'].addEventListener('click', () => {
+  if (sprintSeries) sprintSeries = createSprintSeries(sprintSeries.count);
+  restart();
+});
+$('#next-stage').addEventListener('click', () => {
+  if (sprintSeries && race.phase === 'finished' && sprintSeries.results.length < sprintSeries.count) restart();
+});
 $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
@@ -917,18 +927,27 @@ function phaseUI() {
     enter($('.overlay-content'), 'translateY(12px)');
     ui['resume-button'].hidden = false;
     $('#next-button').hidden = true;
+    $('#next-stage').hidden = true;
     ui['result-stats'].hidden = true;
     $('#result-style').hidden = true;
     $('#result-links').hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
+    if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
     const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !sessionMedals[id]); // history.js swallows storage failures
     sessionMedals = { ...sessionMedals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
     const trackId = race.trackId ?? 'coast';
     let best, record;
     $('#next-button').hidden = true;
-    if (race.mode !== 'classic') {
-      ({ best, record } = recordModeRace(race));
+    const intermediateStage = sprintSeries && sprintSeries.results.length < sprintSeries.count;
+    $('#next-stage').hidden = !intermediateStage;
+    if (intermediateStage) {
+      best = 0; record = false; // A partial series never writes a misleading individual best.
+    } else if (race.mode !== 'classic') {
+      const total = sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
+      const modeRace = sprintSeries ? { ...race, result: { ...race.result, time: total,
+        score: sprintSeries.results.reduce((score, stage) => score + stage.score, 0) } } : race;
+      ({ best, record } = recordModeRace(modeRace));
       if (race.mode === 'time' && record) {
         const candidate = { time: race.elapsed, samples: trace };
         if (traceRace === race && validGhost(candidate, trackId)) {
@@ -971,7 +990,7 @@ function phaseUI() {
     $('#new-best').hidden = !record;
     $('#result-style').hidden = race.mode !== 'classic';
     $('#result-links').hidden = false;
-    lastResult = { race, best, record, medals };
+    lastResult = { race, best, record, medals, series: sprintSeries };
   }
   phaseText();
 }
@@ -986,18 +1005,28 @@ function phaseText() {
     ui['overlay-copy'].textContent = t('overlay.pausedCopy');
   }
   if (phase !== 'finished' || lastResult?.race !== race) return;
-  const { best, record, medals } = lastResult;
+  const { best, record, medals, series } = lastResult;
   const { result } = race;
+  if (series && series.results.length < series.count) {
+    const index = series.results.length;
+    ui['overlay-title'].textContent = t('mode.stageComplete', { n: index, total: series.count });
+    ui['overlay-copy'].textContent = t('mode.stageContinue');
+    $('#next-stage').textContent = t('mode.nextStage', { n: index + 1, total: series.count });
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.stageTime')}</span><strong>${timeString(race.elapsed)}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(sprintTotal(series))}</strong></div>`;
+    resultCounts = [];
+    return;
+  }
+  const displayedTime = series ? sprintTotal(series) : race.elapsed;
   if (!$('#next-button').hidden) $('#next-track').textContent = trackName($('#next-button').dataset.next, getLocale());
-  ui['overlay-title'].textContent = race.mode !== 'classic' ? t('mode.resultTitle') : t(result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
+  ui['overlay-title'].textContent = series ? t('mode.seriesComplete') : race.mode !== 'classic' ? t('mode.resultTitle') : t(result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
   ui['overlay-copy'].textContent = t(record ? 'overlay.recordCopy' : 'overlay.againCopy') + t('overlay.summary', { near: result.nearMisses, contacts: result.collisions })
     + (race.mode === 'gauntlet' ? ' ' + t('mode.hazardResult', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length }) : '')
     + (medals.length ? t('overlay.medal', { list: medals.map(id => t(`medal.${id}`)).join(t('list.separator')) }) : '');
-  ui['result-stats'].innerHTML = `<div><span>${t('race.position')}</span><strong>${race.rivals.length ? result.position : t('mode.solo')}<small> / ${race.rivals.length + 1}</small></strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(race.elapsed)}</strong></div><div><span>${t('result.best')}</span><strong>${timeString(best)}</strong></div>`;
+  ui['result-stats'].innerHTML = `<div><span>${t('race.position')}</span><strong>${race.rivals.length ? result.position : t('mode.solo')}<small> / ${race.rivals.length + 1}</small></strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(displayedTime)}</strong></div><div><span>${t('result.best')}</span><strong>${timeString(best)}</strong></div>`;
   $('#result-style').setAttribute('aria-label', t('result.starsAria', { n: result.stars }));
   $('#result-style').innerHTML = `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${t('result.style', { score: result.score })}</strong><small>${t('result.styleHelp')}<br>${t('result.styleStars', { two: race.length * 0.25, three: race.length * 0.5 })}</small>`;
   resultCounts = [
-    { element: ui['result-stats'].children[1].querySelector('strong'), value: race.elapsed, format: timeString },
+    { element: ui['result-stats'].children[1].querySelector('strong'), value: displayedTime, format: timeString },
     { element: ui['result-stats'].children[2].querySelector('strong'), value: best, format: timeString },
     { element: $('#result-style > strong'), value: result.score, format: value => interpolate(L['result.style'], { score: Math.round(value) }) },
   ];
@@ -1023,6 +1052,12 @@ function updateUI(now, input) {
       element.textContent = format(value * (1 - (1 - progress) ** 3));
     });
   }
+  const counter = $('#sprint-stage');
+  counter.hidden = !sprintSeries;
+  if (sprintSeries) counter.textContent = t('mode.stageCounter', {
+    n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
+    total: sprintSeries.count,
+  });
   const car = race.player;
   const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
   const calm = visual.comfortable || reducedMotion.matches;
