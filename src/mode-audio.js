@@ -26,7 +26,15 @@ export function modeAudioCues(race, state) {
     else if(race.mode==='stunt') cues.push('stunt-finish');
   }
   state.phase=race.phase;
-  if (race.phase !== 'racing') return cues;
+  if (race.phase !== 'racing') {
+    state.passed=race.checkpoint?.passed || 0;
+    state.missed=race.checkpoint?.missed || 0;
+    state.hazardsPassed=race.hazards?.filter(h=>h.passed && !h.hit).length || 0;
+    state.hazardsHit=race.hazards?.filter(h=>h.hit).length || 0;
+    state.combo=race.styleAttack?.combo || 0;
+    state.trickPayout=race.player?.trickPayout;
+    return cues;
+  }
   const add = cue => {if (cues.length < 2) cues.push(cue);};
   if (race.mode==='checkpoint' && race.checkpoint) {
     const cp=race.checkpoint;

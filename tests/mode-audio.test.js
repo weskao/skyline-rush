@@ -63,3 +63,12 @@ test('mode finish and missed checkpoint use different cues', () => {
  cup.phase='finished';cup.result={success:true};
  assert.deepEqual(modeAudioCues(cup,state),['cup-stage']);
 });
+
+test('pausing consumes checkpoint state without replaying missed events on resume', () => {
+ const state=createModeAudioState(),r=race('checkpoint',{checkpoint:{passed:0,missed:0,timeLeft:20}});
+ modeAudioCues(r,state);
+ r.phase='paused';r.checkpoint.passed=1;
+ assert.deepEqual(modeAudioCues(r,state),[]);
+ r.phase='racing';
+ assert.deepEqual(modeAudioCues(r,state),[]);
+});
