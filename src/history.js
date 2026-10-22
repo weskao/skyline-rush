@@ -1,5 +1,6 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { validGhost } from './ghost.js';
+import { raceRulesKey } from './race-config.js';
 
 export const HISTORY_KEY = 'skyline-rush-history';
 export const BEST_KEY = 'skyline-rush-best-tracks';
@@ -44,6 +45,28 @@ export function recordRace(race, storage, now = new Date()) {
   write('skyline-rush-unlocked', loadUnlocks(storage, history), storage);
   write(HISTORY_KEY, history.slice(-HISTORY_LIMIT), storage);
   return record;
+}
+
+
+// Custom and Time Attack results are intentionally separate from Career, Daily and Classic bests.
+export const MODE_RUNS_KEY = 'skyline-rush-mode-runs';
+export function loadModeRuns(storage) {
+  const saved = read(MODE_RUNS_KEY, storage);
+  return Array.isArray(saved) ? saved.filter(run => run && Object.hasOwn(RACE_TRACKS, run.track) &&
+    ['custom', 'time'].includes(run.mode) && typeof run.rules === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
+}
+export function recordModeRace(race, storage, now = new Date()) {
+  if (!['custom', 'time'].includes(race.config?.mode) || !race.result || !valid(race.result.time)) {
+    throw new TypeError('Only finished Custom and Time Attack sessions have mode records');
+  }
+  const rules = raceRulesKey(race.config);
+  const previous = loadModeRuns(storage);
+  const best = Math.min(Infinity, ...previous.filter(run => run.rules === rules).map(run => run.time));
+  const record = race.result.time < best;
+  const run = { date: now.toISOString(), track: race.trackId, mode: race.config.mode, rules,
+    time: race.result.time, position: race.result.position, score: race.result.score };
+  write(MODE_RUNS_KEY, [...previous, run].slice(-HISTORY_LIMIT), storage);
+  return { run, best: Math.min(best, run.time), record };
 }
 
 // Per-track bests; folds the legacy single best into coast (min, so re-running never overwrites a better time).
