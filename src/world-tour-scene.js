@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { RACE_TRACKS } from './game.js';
+import { RACE_TRACKS, ROAD_LIMIT } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.js';
 import { roadRibbon } from './geometry.js';
 import { makeLandmark } from './world-tour-landmarks.js';
-import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight } from './world-tour-scenery.js';
+import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
 import { batchStaticChunk } from './world-tour-batching.js';
 
@@ -97,10 +97,40 @@ export function landmarkSafePlan(id,chunk,low=false){
   return items.map(item=>{
     if(!blocks(item))return item;
     const across={...item,side:-item.side},out=o=>({...item,offset:item.offset+o});
-    const moved=[out(24),across,out(40),{...across,distance:item.distance+13},out(60)].find(clear);
+    const moved=[out(24),across,out(40),{...across,distance:item.distance+13},out(60)].map(clearOfRoad).find(clear);
     if(moved)placed.push(moved);
     return moved||{...item,size:item.size*.45};
   });
+}
+
+// Prop parts within reach of the car (lateral, along-road distance and height
+// relative to the road), so scenery that reaches into the road is solid.
+const REACH=ROAD_LIMIT+.85;
+function solidParts(id,item){
+  const rise=terrainHeight(id,item.distance,item.side,item.offset),parts=[];
+  for(const b of propParts(item.kind)){
+    const left=item.side*item.offset+b.min.x*item.size,right=item.side*item.offset+b.max.x*item.size;
+    if(right>-REACH&&left<REACH)parts.push({from:item.distance-b.max.z*item.size,to:item.distance-b.min.z*item.size,
+      left,right,bottom:rise+b.min.y*item.size,top:rise+b.max.y*item.size,kind:item.kind});
+  }
+  return parts;
+}
+// Low detail drops half the props, but never one that is solid in the road.
+export function detailPlan(id,chunk,low=false){
+  const items=landmarkSafePlan(id,chunk);
+  return low?items.filter(item=>item.slot<2||solidParts(id,item).length):items;
+}
+// Every solid part on a World Tour road, sorted by distance; static per track, so cached for good.
+const obstacleCache=new Map();
+export function roadObstacles(id){
+  if(!WORLD_THEMES[id])return [];
+  if(!obstacleCache.has(id)){
+    const parts=[];
+    for(let c=0;c*SCENERY_CHUNK_METRES<=RACE_TRACKS[id].length;c++)
+      for(const item of landmarkSafePlan(id,c))parts.push(...solidParts(id,item));
+    obstacleCache.set(id,parts.sort((a,b)=>a.from-b.from));
+  }
+  return obstacleCache.get(id);
 }
 
 export function createWorldTourScene(scene){
@@ -169,7 +199,7 @@ export function createWorldTourScene(scene){
     for(let index=start;index<=end;index++){
       if(chunks.has(index))continue;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
-      for(const item of landmarkSafePlan(id,index,level==='low')){
+      for(const item of detailPlan(id,index,level==='low')){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));

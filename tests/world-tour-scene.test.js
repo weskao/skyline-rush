@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { WORLD_THEMES, createWorldTourScene, blocksLandmark, landmarkSafePlan } from '../src/world-tour-scene.js';
-import { sceneryPlan } from '../src/world-tour-scenery.js';
+import { WORLD_THEMES, createWorldTourScene, blocksLandmark, landmarkSafePlan, detailPlan, roadObstacles } from '../src/world-tour-scene.js';
+import { sceneryPlan, propParts, ROAD_CLEARANCE } from '../src/world-tour-scenery.js';
 import { makeLandmark } from '../src/world-tour-landmarks.js';
 import { RACE_TRACKS } from '../src/game.js';
 
@@ -78,4 +78,23 @@ test('landmark approaches keep every roadside prop; blockers move or shrink',()=
     }
     if(!low)assert.ok(moved>0,id+' never moves a blocker');
   }
+});
+test('roadside props may reach into the road as solid obstacles, never nearer the centre than ROAD_CLEARANCE',()=>{
+  // Does any part of the prop reach within `limit` of the centre line?
+  const reaches=(item,limit)=>propParts(item.kind).some(b=>
+    item.side*item.offset+b.max.x*item.size>-limit&&item.side*item.offset+b.min.x*item.size<limit);
+  let solidCount=0;
+  for(const id of ids){
+    for(let chunk=0;chunk<=Math.ceil(RACE_TRACKS[id].length/120);chunk++){
+      const high=landmarkSafePlan(id,chunk),low=detailPlan(id,chunk,true);
+      for(const item of high)assert.ok(!reaches(item,ROAD_CLEARANCE-1e-9),id+' '+item.kind+' @'+Math.round(item.distance)+' covers the centre lanes');
+      // Low detail keeps every prop the simulation treats as solid: no invisible walls.
+      const obstacles=high.filter(item=>reaches(item,11.05)); // ROAD_LIMIT + car half width
+      solidCount+=obstacles.length;
+      for(const item of obstacles)assert.ok(low.some(l=>l.distance===item.distance&&l.side===item.side&&l.kind===item.kind),id+' low detail hides a solid '+item.kind);
+    }
+    for(const p of roadObstacles(id))assert.ok(p.left>=ROAD_CLEARANCE-1e-9||p.right<=-ROAD_CLEARANCE+1e-9,id+' obstacle reaches the centre lanes');
+  }
+  assert.ok(solidCount>40,'solid props were checked against low detail');
+  assert.ok(roadObstacles('tokyo').some(p=>p.kind==='train'&&p.bottom<1),'Tokyo trains stay in the road as obstacles');
 });

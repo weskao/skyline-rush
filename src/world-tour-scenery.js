@@ -78,11 +78,33 @@ export function sceneryPlan(trackId, chunk, low = false) {
       :trackId==='alpine'?(compact?17:28)
       :trackId==='coastal'?(compact?20:32):34;
     const offsetSpan=trackId==='cosmic'?43:compact?9:16;
-    items.push({ distance, side, kind:type,
+    items.push(clearOfRoad({ distance, side, kind:type, slot:i,
       offset:offsetBase + Math.round(hash(seed,91)*offsetSpan),
-      size: .82 + hash(seed,44)*.46 });
+      size: .82 + hash(seed,44)*.46 }));
   }
   return items;
+}
+
+// Part boxes of each prop model at size 1, measured once from the real geometry
+// (static models, so the cache never goes stale). They drive road clearance and collision.
+const partCache = new Map();
+let measureKit = null;
+export function propParts(kind) {
+  if (!partCache.has(kind)) {
+    measureKit ??= createSceneryKit();
+    const group = measureKit.build('', kind, 1);
+    group.updateMatrixWorld(true);
+    partCache.set(kind, group.children.map(mesh => new THREE.Box3().setFromObject(mesh)));
+  }
+  return partCache.get(kind);
+}
+// Wide props (a 38 m Tokyo train) may reach into the road as obstacles, but never
+// nearer the centre line than this, so at least two lanes always stay open.
+export const ROAD_CLEARANCE = 4.5;
+export function clearOfRoad(item) {
+  const parts = propParts(item.kind);
+  const reach = item.side === 1 ? -Math.min(...parts.map(b => b.min.x)) : Math.max(...parts.map(b => b.max.x));
+  return { ...item, offset: Math.max(item.offset, ROAD_CLEARANCE + reach * item.size) };
 }
 
 const GEO = {
