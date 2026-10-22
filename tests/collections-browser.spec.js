@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test.js';
 
 for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [320, 740, true], [844, 390, true]]) {
   test.describe(`collections ${width}x${height}`, () => {

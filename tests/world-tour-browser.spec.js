@@ -1,5 +1,5 @@
 import { selectLocale } from './helpers/locale-browser.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 const ids = Object.keys(RACE_TRACKS);
 const newIds = ['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];

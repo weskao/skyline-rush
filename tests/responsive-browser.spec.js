@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test.js';
 import { CATALOGS } from '../src/i18n.js';
 
 for (const [width, height, hasTouch] of [

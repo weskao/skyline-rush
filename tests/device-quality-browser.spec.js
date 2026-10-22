@@ -1,5 +1,5 @@
 import { selectLocale } from './helpers/locale-browser.js';
-import { test,expect } from '@playwright/test';
+import { test,expect } from './helpers/test.js';
 
 const constrained=page=>page.addInitScript(()=>{
   Object.defineProperty(navigator,'hardwareConcurrency',{configurable:true,get:()=>2});
