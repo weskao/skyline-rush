@@ -1222,7 +1222,7 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-presets button:focus-visible { outline: 2px solid #a0edff; outline-offset: 2px; }
 
 /* Five mode cards adapt to narrow safe-area viewports without shrinking touch targets. */
-.race-mode-tabs { grid-template-columns: repeat(5,minmax(0,1fr)); }
+.race-mode-tabs { grid-template-columns: repeat(5,minmax(min-content,1fr)); } /* a column never narrower than its longest word, e.g. "Championship" */
 body[data-race-mode="free"] .race-presets,
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="rivals"]),
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
