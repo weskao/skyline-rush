@@ -1251,3 +1251,9 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .stunt-hud { display:inline-block; max-width:100%; margin-top:6px; padding:5px 10px; border:1px solid #ffc87988; border-radius:6px; color:#ffe6ae; background:#3b2544e6; font-size:clamp(9px,1.2vw,12px); font-weight:800; line-height:1.5; letter-spacing:.045em; text-shadow:0 0 10px #eb9f5488; }
 .stunt-hud[hidden], #stunt-rules[hidden] { display:none !important; }
 #stunt-rules label {display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:12px 4px;}
+
+/* Three local presets: compact, keyboard-reachable, and never show locked courses. */
+.recent-custom-runs { display: flex; flex-wrap: wrap; gap: 7px; padding: 8px 0 4px; }
+.recent-custom-runs button { min-height: 36px; padding: 6px 9px; border: 1px solid #5e91ad; border-radius: 5px; background: #173549; color: #daf2fa; font-size: 11px; text-align: left; }
+.recent-custom-runs button:focus-visible { outline: 2px solid #a3edff; outline-offset: 2px; }
+#recent-custom[hidden] { display: none !important; }

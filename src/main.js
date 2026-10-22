@@ -6,6 +6,7 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallen
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
+import { loadRecentCustom, saveRecentCustom } from './recent-custom.js';
 import { stuntMedal } from './stunt-attack.js';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
 import { createWorld } from './world.js';
@@ -293,6 +294,16 @@ function showTracks() {
   $('#time-trial-rules').hidden = selectedMode !== 'time';
   $('#cup-rules').hidden = selectedMode !== 'cup';
   $('#stunt-rules').hidden = selectedMode !== 'stunt';
+  const recent = selectedMode === 'custom' ? loadRecentCustom().filter(entry => unlockedTracks.has(entry.trackId)) : [];
+  $('#recent-custom').hidden = recent.length === 0;
+  $('#recent-custom-runs').replaceChildren(...recent.map((entry,index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.recent = String(index);
+    button.textContent = t('mode.recentSetup',{track:trackName(entry.trackId,getLocale()),
+      rivals:entry.config.rivals, traffic:t('mode.'+entry.config.traffic)});
+    return button;
+  }));
   $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
   for (const button of document.querySelectorAll('[data-race-preset]'))
     button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
@@ -375,6 +386,20 @@ $('#hazard-tier').addEventListener('change', changeRaceSelection);
 $('#clean-trial').addEventListener('change', changeRaceSelection);
 $('#cup-length').addEventListener('change', changeRaceSelection);
 $('#stunt-duration').addEventListener('change', changeRaceSelection);
+$('#recent-custom-runs').addEventListener('click', ({target}) => {
+  const index = Number(target.closest('button[data-recent]')?.dataset.recent);
+  const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
+  if (!entry || race.phase !== 'ready') return;
+  for (const key of Object.keys(raceRules)) if (Object.hasOwn(entry.config, key)) raceRules[key] = entry.config[key];
+  for (const input of document.querySelectorAll('[data-race-rule]')) {
+    const value = raceRules[input.dataset.raceRule];
+    if (input.type === 'checkbox') input.checked = value;
+    else input.value = String(value);
+  }
+  refreshCustomSelects();
+  race = selectedRace(entry.trackId);
+  daily = null; showTracks(); phaseUI(); sound.cue('ui');
+});
 for (const input of document.querySelectorAll('[data-race-rule]')) input.addEventListener('change', () => {
   raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule) ? Number(input.value) : input.value;
   changeRaceSelection();
@@ -554,6 +579,7 @@ function start() {
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
   stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, trackId:race.trackId } : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
+  if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
   leaveIntro();
   startRace(race);
   sound.cue('ui');

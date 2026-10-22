@@ -220,3 +220,20 @@ test('1920x1080 intro fits without clipping and VFX remains reachable after musi
   await expect(page.locator('#vfx-panel')).toHaveAttribute('open','');
   await page.screenshot({ path:'test-results/race-mode-layout-desktop.png' });
 });
+
+test('completed Custom setup appears as a recent preset without touching unlocks', async ({ page }) => {
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="custom"]').click();
+  await page.locator('#start-button').click();
+  await page.reload();
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="custom"]').click();
+  await expect(page.locator('#recent-custom')).toBeVisible();
+  await page.locator('#recent-custom > summary').click();
+  const preset=page.locator('#recent-custom-runs button').first();
+  await expect(preset).toContainText('Coast');
+  await preset.click();
+  await expect(page.locator('[data-track="coast"]')).toHaveAttribute('aria-pressed','true');
+  await page.screenshot({path:'test-results/race-mode-recent-custom.png'});
+});

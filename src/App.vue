@@ -134,6 +134,10 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
           <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
         </div>
+        <details class="race-mode-rules" id="recent-custom" hidden>
+          <summary data-i18n="mode.recent">RECENT CUSTOM SETUPS</summary>
+          <div id="recent-custom-runs" class="recent-custom-runs"></div>
+        </details>
         <details class="race-mode-rules" id="stunt-rules" hidden>
           <summary data-i18n="mode.stuntRules">Stunt Attack duration</summary>
           <label><span data-i18n="mode.stuntDuration">Active driving time</span>
