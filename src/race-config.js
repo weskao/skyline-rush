@@ -22,6 +22,7 @@ export function normalizeRaceConfig(value = {}) {
     items: practice && typeof value.items === 'boolean' ? value.items : true,
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
+    ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),
   });
 }
 
