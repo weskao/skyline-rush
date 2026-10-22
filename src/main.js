@@ -2,12 +2,16 @@ import './style.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
+import { createRace, startRace, stepRace, useHeldItem, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
+import { checkpointDirection } from './checkpoint-rush.js';
+import { loadRecentCustom, saveRecentCustom } from './recent-custom.js';
+import { stuntMedal } from './stunt-attack.js';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
 import { createWorld } from './world.js';
+import { photoFilename } from './photo-export.js';
 import { createSound } from './audio.js';
 import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
@@ -104,7 +108,7 @@ let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
-const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal', stages: 1 };
+const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, collision: 'normal', hazards: 'off', stages: 1 };
 const cupCount = () => Number($('#cup-length').value);
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 let cup = null; // Three unlocked point-to-point heats, with rival points carried between heats.
@@ -293,6 +297,16 @@ function showTracks() {
   $('#time-trial-rules').hidden = selectedMode !== 'time';
   $('#cup-rules').hidden = selectedMode !== 'cup';
   $('#stunt-rules').hidden = selectedMode !== 'stunt';
+  const recent = selectedMode === 'custom' ? loadRecentCustom().filter(entry => unlockedTracks.has(entry.trackId)) : [];
+  $('#recent-custom').hidden = recent.length === 0;
+  $('#recent-custom-runs').replaceChildren(...recent.map((entry,index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.recent = String(index);
+    button.textContent = t('mode.recentSetup',{track:trackName(entry.trackId,getLocale()),
+      rivals:entry.config.rivals, traffic:t('mode.'+entry.config.traffic)});
+    return button;
+  }));
   $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
   for (const button of document.querySelectorAll('[data-race-preset]'))
     button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
@@ -364,7 +378,7 @@ for (const button of document.querySelectorAll('button[data-race-mode]')) button
   changeRaceSelection();
 });
 for (const button of document.querySelectorAll('[data-race-preset]')) button.addEventListener('click', () => {
-  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', stages: 1 });
+  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', hazards: 'off', stages: 1, activeItems: false });
   for (const input of document.querySelectorAll('[data-race-rule]'))
     if (input.type === 'checkbox') input.checked = raceRules[input.dataset.raceRule];
     else input.value = String(raceRules[input.dataset.raceRule]);
@@ -375,6 +389,21 @@ $('#hazard-tier').addEventListener('change', changeRaceSelection);
 $('#clean-trial').addEventListener('change', changeRaceSelection);
 $('#cup-length').addEventListener('change', changeRaceSelection);
 $('#stunt-duration').addEventListener('change', changeRaceSelection);
+$('#recent-custom-runs').addEventListener('click', ({target}) => {
+  const index = Number(target.closest('button[data-recent]')?.dataset.recent);
+  const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
+  if (!entry || race.phase !== 'ready') return;
+  for (const key of Object.keys(raceRules)) if (Object.hasOwn(entry.config, key)) raceRules[key] = entry.config[key];
+  raceRules.hazards = entry.config.hazards ?? 'off';
+  for (const input of document.querySelectorAll('[data-race-rule]')) {
+    const value = raceRules[input.dataset.raceRule];
+    if (input.type === 'checkbox') input.checked = value;
+    else input.value = String(value);
+  }
+  refreshCustomSelects();
+  race = selectedRace(entry.trackId);
+  daily = null; showTracks(); phaseUI(); sound.cue('ui');
+});
 for (const input of document.querySelectorAll('[data-race-rule]')) input.addEventListener('change', () => {
   raceRules[input.dataset.raceRule] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule) ? Number(input.value) : input.value;
   changeRaceSelection();
@@ -401,7 +430,11 @@ function showHistory() {
   $('#mode-history-empty').hidden = modes.length > 0;
   $('#mode-history-runs').replaceChildren(...modes.map(run => {
     const item = document.createElement('p');
-    item.textContent = `${t('mode.' + run.mode)} · ${timeString(run.time)} · ${shortDate(run.date)}`;
+    item.textContent = run.mode === 'stunt'
+      ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
+        run.medal ? t('mode.medal.' + run.medal) : '',
+        t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) }), shortDate(run.date)].filter(Boolean).join(' · ')
+      : `${t('mode.' + run.mode)} · ${timeString(run.time)} · ${shortDate(run.date)}`;
     return item;
   }));
   const stats = careerStats(sessionHistory);
@@ -550,6 +583,7 @@ function start() {
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
   stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, trackId:race.trackId } : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
+  if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
   leaveIntro();
   startRace(race);
   sound.cue('ui');
@@ -686,12 +720,15 @@ function changeCamera() {
   ui['camera-button'].setAttribute('aria-pressed', String(mode === 1));
 }
 
+function triggerItem() {
+  if (useHeldItem(race)) sound.cue('pickup');
+}
 const controls = createControls(window, action => {
   if (document.querySelector('dialog[open]')) { controls.clear(); return; }
   if (action === 'pause') toggleSettings(false);
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
-  ({ start, restart, pause, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
+  ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
 }, { getSettings: getControlSettings, getKeyMap: () => keyMap, onTilt: () => {
   if (tiltSeen) return;
   tiltSeen = true; clearTimeout(tiltTimeout);
@@ -699,6 +736,7 @@ const controls = createControls(window, action => {
 } });
 const pad = $('.touch-pad');
 controls.bindSlidePad(pad, { getSettings: getControlSettings });
+$('#activate-item').addEventListener('click', triggerItem);
 // input.js keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.js).
 const PAD_BRAKE_PX = 40;
 const PAD_HINT_SECONDS = 4;
@@ -881,7 +919,7 @@ for (const type of ['click', 'keydown']) window.addEventListener(type, unlockAud
 unlockAudio();
 setTimeout(() => { $('#music-prompt').hidden = !!document.querySelector('dialog[open]') || gestured || !audio.music || sound.running(); }, 600);
 $('#music-yes').addEventListener('click', () => setAudio('music', true));
-$('#music-no').addEventListener('click', () => setAudio('music', false));
+$('#music-no').addEventListener('click', () => { $('#music-prompt').hidden = true; setAudio('music', false); });
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
 ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
@@ -901,6 +939,35 @@ $('#next-stage').addEventListener('click', () => {
 $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
+const photoDialog = $('#photo-screen');
+const updatePhotoView = () => world?.setPhotoView({
+  angle:Number($('#photo-orbit').value), fov:Number($('#photo-fov').value),
+  sky:$('#photo-sky').value,
+});
+$('#photo-open').addEventListener('click', () => {
+  if (race.mode !== 'free' || race.phase !== 'paused' || !world) return;
+  updatePhotoView();
+  photoDialog.showModal();
+  $('#photo-status').textContent=t('photo.status');
+  sound.cue('ui');
+});
+for (const id of ['photo-orbit','photo-fov','photo-sky']) $('#'+id).addEventListener('input', updatePhotoView);
+$('#photo-close').addEventListener('click',()=>photoDialog.close());
+photoDialog.addEventListener('close',()=>{ world?.setPhotoView(null); sound.cue('ui'); });
+$('#photo-save').addEventListener('click', async () => {
+  const button=$('#photo-save'); button.disabled=true;
+  try {
+    const blob=await world.capturePhoto();
+    const url=URL.createObjectURL(blob);
+    const download=document.createElement('a');
+    download.href=url; download.download=photoFilename(race.trackId);
+    download.click();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    $('#photo-status').textContent=t('photo.ready');
+    sound.cue('photo');
+  } catch { $('#photo-status').textContent=t('photo.error'); }
+  finally { button.disabled=false; }
+});
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
 audioSwitches.forEach(button => {
   const kind = button.dataset.audio, slider = button.nextElementSibling;
@@ -938,8 +1005,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && (race.phase === 'racing' || race.phase === 'countdown')) pause();
   if (!document.hidden) pickUpNewBuild();
 });
-// A home-screen app resumes the page it last loaded, and a cold launch can get a cached index.html for up to
-// 10 minutes after a deploy: on launch, resume and back-forward restore, swap in the newer build while nothing is at stake.
+// Only refresh an idle session after reload, resume or bfcache restore; don't interrupt a race.
 const pickUpNewBuild = () => refreshIfStale(() => race.phase === 'ready');
 window.addEventListener('pageshow', event => { if (event.persisted) pickUpNewBuild(); });
 pickUpNewBuild();
@@ -961,6 +1027,7 @@ function phaseUI() {
   if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
+  $('#photo-open').hidden = phase !== 'paused' || race.mode !== 'free';
   if (phase === 'paused') {
     $('#new-best').hidden = true;
     enter($('.overlay-content'), 'translateY(12px)');
@@ -994,7 +1061,7 @@ function phaseUI() {
     } else if (race.result.success === false && race.mode !== 'classic') {
       best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
     } else if (race.mode === 'stunt' && stunt) {
-      ({best,record} = recordModeRace({ ...race, result:{...race.result, time:stunt.elapsed, score:Math.round(stunt.score)} }));
+      ({best,record} = recordModeRace({ ...race, result:{...race.result, time:stunt.elapsed, score:Math.round(stunt.score), maxCombo:stunt.maxCombo, airTime:stunt.airTime} }));
     } else if (race.mode !== 'classic') {
       const total = cup ? cupTotalTime(cup) : sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
       const modeRace = cup ? { ...race, trackId: cup.tracks[0], result: { ...race.result, time: total,
@@ -1060,6 +1127,13 @@ function phaseText() {
   if (phase !== 'finished' || lastResult?.race !== race) return;
   const { best, record, medals, series, cup: finishedCup, stunt: finishedStunt } = lastResult;
   const { result } = race;
+  if (race.mode === 'elimination') {
+    ui['overlay-title'].textContent = t(result.success ? 'mode.eliminationWon' : 'mode.eliminationLost');
+    ui['overlay-copy'].textContent = t('mode.eliminationSummary',{n:race.elimination.eliminated.length});
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.eliminationPosition')}</span><strong>${result.position} / 4</strong></div>
+      <div><span>${t('mode.totalTime')}</span><strong>${timeString(result.time)}</strong></div>`;
+    resultCounts=[];return;
+  }
   if (finishedStunt) {
     const continuing = finishedStunt.elapsed < finishedStunt.duration && result.endReason === 'route';
     const left = Math.max(0, finishedStunt.duration - finishedStunt.elapsed);
@@ -1068,7 +1142,8 @@ function phaseText() {
       heats:finishedStunt.heats, max:finishedStunt.maxCombo, air:finishedStunt.airTime.toFixed(1),
     });
     if (continuing) $('#next-stage').textContent = t('mode.stuntNext', {sec:Math.ceil(left)});
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.stuntPoints')}</span><strong>${Math.round(finishedStunt.score)}</strong></div><div><span>${t('mode.stuntTime')}</span><strong>${Math.floor(finishedStunt.elapsed)} / ${finishedStunt.duration} s</strong></div>${continuing?'':`<div><span>${t('mode.stuntBest')}</span><strong>${Math.round(best)}</strong></div>`}`;
+    const medal = continuing ? null : stuntMedal(finishedStunt.score, finishedStunt.duration);
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.stuntPoints')}</span><strong>${Math.round(finishedStunt.score)}</strong></div><div><span>${t('mode.stuntTime')}</span><strong>${Math.floor(finishedStunt.elapsed)} / ${finishedStunt.duration} s</strong></div>${continuing?'':`<div><span>${t('mode.stuntBest')}</span><strong>${Math.round(best)}</strong></div><div><span>${t('mode.stuntMedal')}</span><strong>${medal ? t('mode.medal.' + medal) : t('mode.medal.none')}</strong></div>`}`;
     resultCounts=[];
     return;
   }
@@ -1105,7 +1180,7 @@ function phaseText() {
   if (race.mode === 'checkpoint' && !result.success) {
     ui['overlay-title'].textContent = t('mode.checkpointFailed');
     ui['overlay-copy'].textContent = t('mode.checkpointFailedCopy', { n: race.checkpoint.passed, total: race.checkpoint.gates.length });
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.gates')}</span><strong>${race.checkpoint.passed} / ${race.checkpoint.gates.length}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(race.elapsed)}</strong></div>`;
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.gates')}</span><strong>${race.checkpoint.passed} / ${race.checkpoint.gates.length} · ${t('mode.perfect')}: ${race.checkpoint.perfect}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(race.elapsed)}</strong></div>`;
     resultCounts = [];
     return;
   }
@@ -1153,10 +1228,19 @@ function updateUI(now, input) {
     cleanTrialHud.dataset.broken = String(race.player.collisions > 0);
   }
   const hazardWarning = $('#hazard-warning');
-  const hazardAhead = race.mode === 'gauntlet' ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;
+  const hazardAhead = race.hazards.length ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;
   const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
   hazardWarning.hidden = !hazardAhead || hazardDistance > 170 || race.phase !== 'racing';
   if (!hazardWarning.hidden) hazardWarning.textContent = t('mode.hazardWarning', { n: hazardDistance });
+  const eliminationHud=$('#elimination-hud');
+  eliminationHud.hidden = !race.elimination || race.phase === 'ready';
+  if (race.elimination) {
+    eliminationHud.textContent=t('mode.eliminationHud',{
+      active:race.rivals.length+1,
+      seconds:Math.max(0,Math.ceil(race.elimination.nextAt-race.elapsed)),
+    });
+    eliminationHud.dataset.urgent=String(race.elimination.nextAt-race.elapsed <= 3);
+  }
   const checkpointHud = $('#checkpoint-hud');
   checkpointHud.hidden = !race.checkpoint || race.phase === 'ready';
   if (race.checkpoint) {
@@ -1165,6 +1249,8 @@ function updateUI(now, input) {
       n: race.checkpoint.passed, total: race.checkpoint.gates.length,
       seconds: race.checkpoint.timeLeft.toFixed(1),
       distance: next ? Math.max(0,Math.ceil(next.distance - race.player.distance)) : 0,
+      direction: next ? t('mode.direction.' + checkpointDirection(race.player, next)) : '—',
+      perfect: race.checkpoint.perfect,
     });
     checkpointHud.dataset.urgent = String(race.checkpoint.timeLeft < 10);
   }
@@ -1175,6 +1261,12 @@ function updateUI(now, input) {
     n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
     total: sprintSeries.count,
   });
+  const slot = $('#item-slot'), carItem = race.player.heldItem;
+  slot.hidden = !race.config.activeItems || race.phase === 'ready';
+  if (!slot.hidden) {
+    $('#item-status').textContent = carItem ? t('mode.itemReady',{item:t('mode.item.'+carItem)}) : t('mode.itemEmpty');
+    $('#activate-item').disabled = !carItem || race.phase !== 'racing' || race.player.itemCooldown > 0;
+  }
   const stuntHud = $('#stunt-hud');
   stuntHud.hidden = !stunt || race.phase === 'ready';
   if (stunt) {

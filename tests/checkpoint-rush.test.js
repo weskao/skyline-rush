@@ -16,7 +16,8 @@ test('timed clean gate extends countdown and grants score once', () => {
   const state = createCheckpointRush(track);
   const g = state.gates[0];
   const score = stepCheckpointRush(state, g.distance - 1, { distance: g.distance + 1, x: g.x, altitude: g.altitude }, 0.1);
-  assert.equal(score, 250);
+  assert.equal(score, 400);
+  assert.equal(state.perfect, 1);
   assert.equal(state.passed, 1);
   assert.equal(state.missed, 0);
   assert.ok(state.timeLeft > 28);

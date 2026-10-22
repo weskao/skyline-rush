@@ -403,7 +403,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [x] Allow selectable **no AI**, traffic density and item availability. Reuse existing
   steering, cameras, drift, FLY, BOOST, NITRO and 3D scenery; do not build a new
   physics engine.
-- [ ] At the authored end of an open sprint, offer **Restart / Choose Track / End
+- [x] At the authored end of an open sprint, offer **Restart / Choose Track / End
   Session**, or stop safely in a designated free-drive area. Do **not** claim
   endless roadway, reverse-map continuity or loop back to the start until implemented.
 - [x] Optional practice HUD: current speed, air time, travel distance, max speed,
@@ -445,10 +445,10 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 9E. Stunt & Style Attack (P1)
 
-- [ ] **MODE-04 — Stunt Attack:** timed 2 / 3 / 5-minute score run for air tricks,
+- [x] **MODE-04 — Stunt Attack:** timed 2 / 3 / 5-minute score run for air tricks,
   sustained drift, near-misses, rings, PERFECT LINE groups and flying shortcuts.
   Reuse existing `player.score`, `trick`, `drift` and ring events.
-- [ ] Add explicit style-combo multiplier, clean landing bonus and fair combo
+- [x] Add explicit style-combo multiplier, clean landing bonus and fair combo
   break/decay on crashes; prevent stationary or repeated reset farming.
 - [ ] Save best score, combo, air time and medal thresholds by exact track/ruleset.
 - [ ] **Acceptance:** deterministic scoring independent of FPS and input device;
@@ -471,7 +471,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
   **unlocked** stages; award stage ranking points and a clear final champion.
 - [ ] Preserve stage standings across transitions with fair AI participation,
   an explicit continue/retry flow, and optional saved in-progress cup recovery.
-- [ ] Distinguish cup medals/bests from individual Classic times; a cup does
+- [x] Distinguish cup medals/bests from individual Classic times; a cup does
   not grant unearned unlocks for stages skipped or completed in practice mode.
 - [ ] **Acceptance:** ties, quit/resume, mid-cup restart, 0-rival rejection and
   incomplete data produce deterministic, understandable results.
@@ -551,7 +551,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 10B. Honest laps versus repeated sprints (P2)
 
-- [ ] **LAP-01 — Separate session types:** support multi-stage/repeated
+- [x] **LAP-01 — Separate session types:** support multi-stage/repeated
   **point-to-point** sprints first (P0/P1), and label them “Stage 1/3”,
   not “Lap 1/3”. The original 10 tracks must keep their authored geography.
 - [ ] **LAP-02 — Genuine closed circuits:** author at least one actual loop
@@ -594,7 +594,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
   such as `id`, `trackId`, `distance`, `lateralOffset`, `altitude`,
   `type`, `hitbox`, `triggerWindow`, `warningLeadSeconds`,
   `movementPattern`, `difficulty` and `seed`.
-- [ ] **ENV-03 — Logic/render separation:** calculate hits, passes,
+- [x] **ENV-03 — Logic/render separation:** calculate hits, passes,
   rewards and state changes in the pure simulation (`src/game.js` or
   extracted rules module), not by reading Three.js mesh positions.
   Render exactly the hazard state described by the simulation.
@@ -702,6 +702,12 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [ ] **ITEM-11 — Mode item rules:** Off / Classic Mystery Rings /
   Active Items / All Items. Resolve item positions from seeded
   streams and never place important rewards inside impossible gaps.
+- [x] **New-mode procedural audio (2026-10-22):** original Web Audio music loops
+  for Checkpoint Rush, Stunt Attack, Obstacle Run, Championship and Free Drive;
+  one-shot gate/challenge/near-hazard/Combo/landing cues, bounded event transitions,
+  separate music/SFX volume controls and unit tests (`src/mode-audio.js`,
+  `src/audio.js`, `tests/audio.test.js`, `tests/mode-audio.test.js`).
+  This does **not** complete ITEM-12's future active-item effects or special pickup visuals.
 - [ ] **ITEM-12 — Visual/audio feedback:** unique item outlines,
   landing sparks, pickup beams, cooldown audio and special hit FX
   that reuse `src/effects.js`, `src/audio.js` and comfort settings.

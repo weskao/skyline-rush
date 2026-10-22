@@ -158,7 +158,12 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
           <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
           <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
+          <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
         </div>
+        <details class="race-mode-rules" id="recent-custom" hidden>
+          <summary data-i18n="mode.recent">RECENT CUSTOM SETUPS</summary>
+          <div id="recent-custom-runs" class="recent-custom-runs"></div>
+        </details>
         <details class="race-mode-rules" id="stunt-rules" hidden>
           <summary data-i18n="mode.stuntRules">Stunt Attack duration</summary>
           <label><span data-i18n="mode.stuntDuration">Active driving time</span>
@@ -203,7 +208,9 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
             <label><span data-i18n="mode.traffic">Traffic</span><select data-race-rule="traffic" aria-label="Traffic density" data-i18n-aria-label="mode.traffic"><option value="off" data-i18n="mode.off">Off</option><option value="light" data-i18n="mode.light">Light</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="heavy" data-i18n="mode.heavy">Heavy</option></select></label>
             <label id="sprint-stages-setting"><span data-i18n="mode.stages">Sprint stages (not laps)</span><select data-race-rule="stages" aria-label="Sprint stages (not laps)" data-i18n-aria-label="mode.stages"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>
             <label><span data-i18n="mode.collision">Collision penalty</span><select data-race-rule="collision" aria-label="Collision penalty" data-i18n-aria-label="mode.collision"><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="relaxed" data-i18n="mode.relaxed">Relaxed</option></select></label>
+            <label><span data-i18n="mode.practiceHazards">Road hazards</span><select data-race-rule="hazards" aria-label="Road hazards" data-i18n-aria-label="mode.practiceHazards"><option value="off" selected data-i18n="mode.off">Off</option><option value="standard" data-i18n="mode.standard">Standard</option><option value="extreme" data-i18n="mode.extreme">Extreme</option></select></label>
             <label class="race-items"><input data-race-rule="items" type="checkbox" checked> <span data-i18n="mode.items">NITRO pickups</span></label>
+            <label class="race-items"><input data-race-rule="activeItems" type="checkbox"> <span data-i18n="mode.activeItems">Hold mystery power-ups</span></label>
           </div>
         </details>
       </div>
@@ -220,7 +227,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
       <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">04</strong><span>/ 04</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
-      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
+      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><div id="item-slot" class="item-slot" hidden><span id="item-status" role="status"></span><button type="button" id="activate-item" data-i18n="mode.itemActivate" disabled>USE · Q</button></div><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"></div>
     </section>
 
@@ -232,10 +239,28 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <div class="impact-report" id="impact-report" role="status" hidden><span class="impact-icon"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></span><div><strong id="impact-title">CONTACT</strong><span><span data-i18n="impact.stabilizing">STABILIZING ·</span> <b id="impact-loss">0</b> <span data-i18n="impact.lost">KM/H LOST</span></span></div></div>
 
     <section class="race-overlay" id="race-overlay" aria-labelledby="overlay-title" hidden>
-      <div class="overlay-content"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><span id="new-best" class="new-best" data-i18n="result.newBest" hidden>NEW BEST</span><div id="result-stats" class="result-stats" hidden></div><div id="result-style" class="result-style" hidden></div><button class="primary-button" id="resume-button" aria-label="Resume race" data-i18n-aria-label="resume.aria"><span data-i18n="resume.label">Back to the race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="primary-button next-button" id="next-stage" hidden>Next stage</button><button class="primary-button next-button" id="next-button" hidden><span><span data-i18n="result.next">Next ·</span> <b id="next-track"></b></span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button><div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.history">History</button></div></div>
+      <div class="overlay-content"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><span id="new-best" class="new-best" data-i18n="result.newBest" hidden>NEW BEST</span><div id="result-stats" class="result-stats" hidden></div><div id="result-style" class="result-style" hidden></div><button type="button" class="text-button" id="photo-open" hidden data-i18n="photo.open">PHOTO STUDIO</button><button class="primary-button" id="resume-button" aria-label="Resume race" data-i18n-aria-label="resume.aria"><span data-i18n="resume.label">Back to the race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="primary-button next-button" id="next-stage" hidden>Next stage</button><button class="primary-button next-button" id="next-button" hidden><span><span data-i18n="result.next">Next ·</span> <b id="next-track"></b></span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button><div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.history">History</button></div></div>
     </section>
     <div id="error-message" class="error-message" role="alert" hidden></div>
   </main>
+  <dialog id="photo-screen" class="photo-screen" aria-labelledby="photo-title">
+    <div class="photo-panel">
+      <h2 id="photo-title" data-i18n="photo.title">PHOTO STUDIO</h2>
+      <p data-i18n="photo.help">Free Drive is paused. Orbit and frame your car, then save a local PNG.</p>
+      <label><span data-i18n="photo.orbit">Camera orbit</span>
+        <input id="photo-orbit" type="range" min="0" max="360" step="15" value="30"></label>
+      <label><span data-i18n="photo.fov">Field of view</span>
+        <input id="photo-fov" type="range" min="35" max="85" value="58"></label>
+      <label><span data-i18n="photo.sky">Photo lighting</span>
+        <select id="photo-sky"><option value="original" data-i18n="photo.original">Original</option>
+          <option value="sunset" data-i18n="photo.sunset">Sunset</option>
+          <option value="night" data-i18n="photo.night">Night</option>
+          <option value="fog" data-i18n="photo.fog">Fog</option></select></label>
+      <p id="photo-status" role="status" data-i18n="photo.status">This photo stays on your device.</p>
+      <div class="photo-actions"><button type="button" id="photo-save" data-i18n="photo.save">SAVE PNG</button>
+        <button type="button" id="photo-close" data-i18n="photo.close">BACK</button></div>
+    </div>
+  </dialog>
   <div id="race-wipe" class="race-wipe" aria-hidden="true" hidden></div>
 
   <dialog id="history-screen" class="history-screen" aria-labelledby="history-title">

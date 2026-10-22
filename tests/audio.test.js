@@ -54,12 +54,20 @@ function heardFrequencies(t, trackId, phase) {
   return nodes.filter(item => item.kind === 'oscillator').map(item => item.frequency.value);
 }
 
+test('selecting Sky Spiral on the menu keeps the shared intro', t => {
+  const heard = heardFrequencies(t, 'spiral', 'ready');
+  assert.ok(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), 'shared intro plays on the menu');
+  assert.equal(heard.some(hz => Math.abs(hz - midiHz(56)) < 0.05), false, 'Sky Spiral music stays silent until the race starts');
+});
+
+test('racing Sky Spiral keeps its background music instead of the shared race song', t => {
+  const heard = heardFrequencies(t, 'spiral', 'racing');
+  assert.ok(heard.some(hz => Math.abs(hz - midiHz(56)) < 0.05), 'Sky Spiral pad plays during the race');
+  assert.equal(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05), false, 'shared race song stays silent');
+});
+
 // Opening pads sit outside the shared intro (57) and race (55) pads.
-// Coast is the first course and keeps the shared songs, so it is not in this map.
-const COURSE_PADS = {
-  spiral: 56, neon: 61, canyon: 68, aurora: 74,
-  taipei: 62, tokyo: 63, alpine: 58, coastal: 65, cosmic: 66,
-};
+const COURSE_PADS = { spiral:56, neon:61, canyon:68, aurora:74, taipei:62, tokyo:63, alpine:58, coastal:65, cosmic:66 };
 
 for (const [trackId, pad] of Object.entries(COURSE_PADS)) {
   test(`selecting ${trackId} on the menu keeps the shared intro`, t => {
@@ -74,12 +82,6 @@ for (const [trackId, pad] of Object.entries(COURSE_PADS)) {
     assert.equal(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05), false, `${trackId} leaves the shared race song silent`);
   });
 }
-
-test('racing Coast keeps the shared race song', t => {
-  const heard = heardFrequencies(t, 'coast', 'racing');
-  assert.ok(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05), 'Coast keeps the shared race pad');
-  assert.equal(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), false, 'Coast leaves the menu intro after the start');
-});
 
 test('sprintFactor leaves the tempo alone until the last 500 m, then ramps to 1.15 at the finish', () => {
   assert.equal(sprintFactor(0, 5000), 1);
@@ -180,4 +182,55 @@ test('volume sliders scale the effects and music buses on a perceptual curve', t
   sound.update(race);
   assert.equal(effects.gain.value, 0.8, 'full volume keeps the original mix');
   assert.equal(music.gain.value, 0.5);
+});
+
+test('each new arcade mode has a playable 50–70 second synthesized music loop', () => {
+  for (const [name, firstPad] of Object.entries({checkpoint:60,stunt:62,gauntlet:52,cup:64,cruise:67})) {
+    const track = TRACKS[name];
+    assert.ok(track, `${name} must define an original theme`);
+    assert.ok(track.bpm >= 110 && track.bpm <= 150, name);
+    assert.equal(track.lead.length, 64);
+    assert.equal(track.chords.length, 8);
+    assert.equal(track.chords[0][1], firstPad, `${name} has a distinct opening pad`);
+  }
+});
+
+test('Checkpoint Rush plays its own soundtrack instead of the general racing pad', t => {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace('coast', {mode:'checkpoint'});
+  race.phase='racing';
+  sound.setMusic(true);
+  sound.update(race);
+  const frequencies = nodes.filter(n=>n.kind==='oscillator').map(n=>n.frequency.value);
+  assert.ok(frequencies.some(hz=>Math.abs(hz-midiHz(60))<0.05));
+  assert.equal(frequencies.some(hz=>Math.abs(hz-midiHz(55))<0.05),false);
+});
+
+test('checkpoint pass triggers a new Web Audio tone once, and muted changes cannot replay', t => {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace('coast',{mode:'checkpoint'});
+  race.phase='racing';
+  sound.setEnabled(true);
+  const tones=()=>nodes.filter(n=>n.kind==='oscillator').length;
+  sound.update(race);
+  const count=tones();
+  race.checkpoint.passed++;
+  sound.update(race);
+  assert.ok(tones()>count, 'passed checkpoint emits special synthetic chime');
+  const after=tones();
+  sound.update(race);
+  assert.equal(tones(),after,'same gate cannot chime repeatedly');
+  sound.setEnabled(false);
+  race.checkpoint.passed++;
+  sound.update(race);
+  sound.setEnabled(true);
+  sound.update(race);
+  assert.equal(tones(),after,'events during mute are consumed');
+});
+
+
+test('racing Coast retains the shared race pad after new course songs are added', t => {
+  const heard = heardFrequencies(t, 'coast', 'racing');
+  assert.ok(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05));
+  assert.equal(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), false);
 });

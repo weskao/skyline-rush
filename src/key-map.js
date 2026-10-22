@@ -6,7 +6,7 @@ export const DEFAULT_KEY_MAP = {
   fly: ['Space'], boost: ['ShiftLeft', 'ShiftRight'], nitro: ['KeyE', 'KeyX'],
 };
 // Fixed one-shot actions; never rebindable so Esc/Enter/etc. always work. Restart/assist sit away from E/X so a nitro press can't hit them.
-export const ACTION_KEYS = { Escape: 'pause', KeyP: 'pause', Backspace: 'restart', KeyC: 'camera', KeyM: 'sound', F2: 'assist', KeyV: 'airflow', Enter: 'start' };
+export const ACTION_KEYS = { Escape: 'pause', KeyP: 'pause', Backspace: 'restart', KeyC: 'camera', KeyM: 'sound', F2: 'assist', KeyV: 'airflow', KeyQ: 'item', Enter: 'start' };
 
 export const resetKeyMap = () => Object.fromEntries(Object.entries(DEFAULT_KEY_MAP).map(([action, keys]) => [action, [...keys]]));
 

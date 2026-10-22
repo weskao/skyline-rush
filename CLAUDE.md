@@ -23,6 +23,35 @@ Detailed, file-scoped rules live in `.claude/rules/` and load only when their fi
 | `make run` | Unit + browser tests |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
 
+## UI/UX changes: audio and music assessment
+
+Whenever adding, redesigning, or modifying a UI element, screen, interaction, game mode,
+or player feedback, **explicitly evaluate whether sound effects or music would improve
+clarity, responsiveness, immersion, excitement, or accessibility**. Treat audio as part
+of the UI/UX design review rather than an optional afterthought.
+
+- Consider feedback for meaningful actions and state changes: selection/confirmation,
+  countdowns, pickups, NITRO/FLY/BOOST, checkpoints, collisions, combos, warnings,
+  achievements, victory/defeat, and entering or leaving a game mode.
+- Consider whether a new game mode, scene, or major UI transition warrants distinct
+  background music, an adaptive musical cue, or a change in music intensity.
+- **If audio adds useful feedback, implement the sound effect and/or music together
+  with the UI change in the same feature scope**, including appropriate tests.
+  If audio would be distracting, redundant, inaccessible, or irrelevant (such as
+  purely decorative changes), do not add it merely for consistency.
+- Reuse the existing Web Audio system in `src/audio.js` and one-shot event logic
+  in `src/mode-audio.js` where applicable. Keep sounds cohesive with the game's
+  arcade-racing identity; avoid unnecessary assets, dependencies, and duplicate mixers.
+- Respect separate music/SFX enablement and volume settings, mute, browser
+  user-gesture/autoplay restrictions, reduced-sensory-load preferences, and
+  desktop/mobile input. Never make sound the only indicator of important feedback.
+- Prevent repeated cues on every frame, overlapping voice spam, stale sounds after
+  pause/restart, and unwanted playback when audio is disabled.
+- For relevant changes, verify the UI **and** its audio behavior with deterministic
+  event tests (`tests/audio.test.js` / `tests/mode-audio.test.js`), and browser
+  regression tests when the controls or interaction flow change. State briefly in
+  the implementation summary whether audio was added or intentionally unnecessary.
+
 ## Verification
 
 - Gameplay / progression / build-config change → `npm test` + `npm run build`.
