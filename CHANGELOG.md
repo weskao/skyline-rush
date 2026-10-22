@@ -1,3 +1,108 @@
+## [0.14.0] - 2026-10-21
+
+### 🚀 Features
+
+- **dev:** Preview remote feature branches locally
+- **dev-feature:** [**breaking**] Accept positional branch names
+- **world-tour:** Add once-per-race speed tunnels with nitro rewards
+- **scene:** Author detailed procedural landmark silhouettes for five destinations
+- **scene:** Compose distinct Taipei Tokyo alpine coastal cosmic scenery and boost gateways
+- **vfx:** Align pickups and particles with 3D tracks and surface hyperdrive state
+- **scene:** Add orbit details to cosmic planets and acceleration gates
+- **vfx:** Add translucent Hyperdrive tunnel walls and camera HUD feedback
+- **spiral:** Give Sky Spiral its own sky and music
+- **world-tour:** Define 30 authored roadside assets and stable per-distance scenery chunks
+- **world-tour:** Add five distinct tunnel architectures with dark alpine railroad bore
+- **world-tour:** Replace looping placeholder roadside assets with persistent destination-specific scenery and tunnels
+- **world-tour:** Reduce central glare, add soft alpine tunnel illumination and five minimap skins
+- **world-tour:** Give each destination its own asphalt, road markings and natural roadside shoulders
+- **terrain:** Sculpt seamless Alpine hillsides and coastal cliffs from absolute route distance
+- **world-tour:** Stream continuous natural cliffs and mountains while disposing evicted terrain geometry
+- **audio:** Play course music after race start
+- **audio:** Scale effects and music buses by volume
+- **ui:** Add volume sliders and mute all to audio panel
+- **lighting:** Add restrained side-positioned practical street lamps to Taipei Tokyo and coast
+- **sky:** Remove purple central cloud glare from Cosmic and tone down clouds per destination
+- **scenery:** Bring Taipei Tokyo street furniture and storefronts close to the driving corridor
+- **performance:** Choose first-launch graphics tier and show one-time bilingual downgrade notice
+- **preview:** Stage Alpine and Cosmic cars and roadside scenery in visible road-relative hero views
+- **i18n:** Add English and zh-TW UI with switch
+- **i18n:** Add bilingual og and README screenshots
+- **ui:** Preview locked tracks but block starting them
+- **ui:** Refine language and shortcut controls
+- **garage:** Add cobalt and obsidian paints
+- **flight:** Refill flight charge from nitro rewards
+- **flight:** Add charge feedback, warning and stats
+- **hud:** Show glide recharge and gap charge warning
+
+### 🐛 Bug Fixes
+
+- **world-tour:** Keep landscape type visible to cached and per-frame scenery updates
+- **world-tour:** Prevent mid-race WebGL crash from missing boost-tunnel sign material
+- **scenery:** Align Alpine forest and coastal props to their actual sculpted ground height
+- **world-tour:** Place forest vegetation and seaside details on continuous sculpted terrain
+- **minimap:** Restore readable legacy track silhouettes and prominent Sky Spiral loop
+- **ui:** Display readable minimaps for legacy tracks, including compact screens
+- **showcase:** Restore flying car effects and matching home camera framing in Alpine and Cosmic
+- **showcase:** Match classic camera eye height when Alpine/Cosmic vehicles hover
+- **controls:** Move restart and assist keys off nitro
+
+### 📚 Documentation
+
+- **scene:** Document reference landmarks, boost mechanics and QA constraints
+- Describe audio volume sliders and mute all
+- **world-tour:** Record five distinct scenery systems, comfort budgets and direct branch workflow
+- **showcase:** Enforce matching airborne home previews and camera parity for Alpine and Cosmic
+- **i18n:** Document language support and detection
+- **claude:** Split CLAUDE.md into path-scoped rules
+- **readme:** Document new paint unlock thresholds
+- **readme:** Document flight refill from nitro and glide
+- **readme:** Document backspace, f2 and e/x keys
+- **readme:** Document flight charge feedback and gap warning
+- **readme:** Recapture zh-tw race results screenshot
+
+### ⚡ Performance
+
+- **world-tour:** Cache static road and instancing updates by 12-metre sector
+- **world-tour:** Batch repeated static roadside meshes into detail-preserving GPU instances
+- **docs:** Adapt GPU pixel budget, dispose batched buffers and mandate performance reviews
+
+### 🎨 Styling
+
+- **ui:** Distinguish locked track previews
+- **controls:** Align thumb action buttons
+- **hud:** Move phone route map below progress bar
+- **hud:** Raise callout backdrop to the 0.45 opacity cap
+
+### 🧪 Testing
+
+- **scene:** Verify detailed landmarks and real boost gates on all five courses
+- **boost:** Account for standard ground fuel regeneration
+- **scene:** Count low-quality hoops separately from shared glass panels
+- **regression:** Reproduce World Tour mid-race stalling and static mesh rebuild cost
+- **webgl:** Probe all five courses at 25–94% progress including speed tunnels
+- **webgl:** Sweep 180 consecutive animation frames across every speed tunnel
+- **webgl:** Inspect scene graph to identify undefined materials behind render freezes
+- **world-tour:** Verify distinct environments and seamless distance-anchored roadside scenery
+- **world-tour:** Validate five tunnel identities and railroad tunnel lining
+- **world-tour:** Assert comfortable road lighting, persistent scenery and seamless mountain chunk boundaries
+- **world-tour:** Find actual named chunk props rather than unnamed child meshes
+- **minimap:** Cover five legacy outlines, four live racers and small-screen visibility
+- **preview:** Assert Alpine and Cosmic camera frames player plus rivals in Chrome WebGL
+- **minimap:** Fix apostrophe in Sky Spiral overview regression name
+- **startup:** Cover bilingual one-time graphics downgrade and saved manual VFX preference
+- **device:** Cover Safari iOS missing memory hints and document four-platform quality support
+- **showcase:** Verify real flying jets, camera scale and Alpine/Cosmic homepage screenshots
+- **showcase:** Unlock Alpine and Cosmic before homepage screenshot selection
+- **i18n:** Cover locale detection, switch and layouts
+- **i18n:** Wait for music prompt before locale pick
+- **controls:** Cover backspace, f2 and e/x bindings
+- **hud:** Isolate flight HUD states from ring rewards
+
+### ⚙️ Miscellaneous Tasks
+
+- **world-tour:** Run tests and browser screenshots on direct feature-branch pushes
+- **readme:** Capture english screenshots with zh-tw
 ## [0.13.0] - 2026-10-21
 
 ### 🚀 Features

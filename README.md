@@ -17,13 +17,13 @@ Skyline Rush is a short, replayable arcade sprint in the browser: one player aga
 
 Races last about a minute. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
-![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261020b)
+![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261022a)
 
-![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261019b)
+![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261022a)
 
-![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261019b)
+![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261022a)
 
-![Race results with a new personal best](artifacts/race-results.jpeg?v=20261019b)
+![Race results with a new personal best](artifacts/race-results.jpeg?v=20261022a)
 
 ## Run locally
 
@@ -46,15 +46,14 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 | Fly | Hold Space once above 65 km/h |
 | Land | Release Space |
 | Boost | Hold Shift; consumes thruster charge |
-| NITRO | E (one full charge; press again during NITRO to extend it) |
-| Right-hand alternates | J = Fly, K = Boost, L = NITRO (the original keys still work) |
+| NITRO | E / X (one full charge; press again during NITRO to extend it). WASD hands use E; arrow-key players keep the left hand on Shift / X / Space |
 | Drift | Hold S + A / D above 162 km/h (ground only) |
 | Start | Enter |
 | Pause / resume | Esc / P |
-| Restart | R |
+| Restart | Backspace |
 | Change camera | C |
 | Mute / unmute all audio | M |
-| Auto accelerator on / off | T / AUTO button |
+| Auto accelerator on / off | F2 / AUTO button |
 | AIRFLOW showcase on / off | V / AIRFLOW button |
 
 Mobile layouts provide steering, accelerator, brake, boost, flight and NITRO buttons. Touch controls support simultaneous holds. AUTO holds the accelerator so you can concentrate on steering and flying; braking always overrides it. It starts on for touch devices and off for keyboard play, and the choice lasts until toggled or the page reloads. Leaving the tab pauses the race and clears held input. Clicking the SKYLINE RUSH logo mid-race pauses and asks first: **Keep racing**, **End race** (back to track select, run not saved) or **Back to home** (reloads); Esc leaves the race paused. Camera and sound shortcuts preserve held driving controls. On touch, sliding a thumb down on the steering pad brakes and sliding down and sideways drifts; in Buttons mode the brake sits under the steering buttons so brake + steer drifts there too.
@@ -81,11 +80,11 @@ Flight charge lasts about five seconds at full thrust. At zero charge the car de
 
 ### Handling
 
-Steering ramps to full over 0.15 s and the lateral speed is capped at 9 m/s at high speed. Holding Fly below 65 km/h is remembered for 1.5 s and lifts off automatically once fast enough. Releasing Fly in the air lowers the fall acceleration (11 → 7 m/s²) for softer landings. Vehicles are 1.7 m wide for collisions, so more passes count as near misses. A shallow guardrail touch is a scrape (0.92 speed kept, pushed back onto the road, no collision, combo kept); head-on hits still count as contact. With AUTO on, releasing steering also eases the car to the nearest lane centre (lane assist). Holding Fly + Boost drains 22 charge per second instead of 29, keeps the boost speed cap and displays AIR DASH.
+Steering ramps to full over 0.15 s and the lateral speed is capped at 9 m/s at high speed. Holding Fly below 65 km/h is remembered for 1.5 s and lifts off automatically once fast enough. Releasing Fly in the air lowers the fall acceleration (11 → 7 m/s²) for softer landings and slowly recharges flight (4 per second, a third of the ground rate; the charge caption reads GLIDE RECHARGE ACTIVE). An emptied thruster unlocks again once Fly is released and charge is back to 15, even in the air. Within 300 m of a broken bridge (not on Sky Spiral, whose ramps throw the car across), the centre of the HUD warns GAP AHEAD · NEED n% CHARGE while the charge left could not thrust across at the current speed. Vehicles are 1.7 m wide for collisions, so more passes count as near misses. A shallow guardrail touch is a scrape (0.92 speed kept, pushed back onto the road, no collision, combo kept); head-on hits still count as contact. With AUTO on, releasing steering also eases the car to the nearest lane centre (lane assist). Holding Fly + Boost drains 22 charge per second instead of 29, keeps the boost speed cap and displays AIR DASH.
 
 ### NITRO and drift
 
-NITRO has its own reserve (`player.nitro`, up to 3 charges, each fills as a float). The three-segment HUD shows partial charge, full segments glow, and NITRO MAX pulses when full (motion is suppressed in comfort/reduced-motion modes). Pickups along the track (blue cell +0.25, orange can +0.5, airborne gold tank +1, one rainbow overcharge that fills to the cap) are placed from the track seed; anything above the cap becomes charge (each 0.25 = +8). One charge gives 2.5 s with the speed cap raised by 30 m/s, stronger acceleration, exhaust and lens feedback; pressing again extends it by 2 s without stacking speed, so three presses chain into a 6.5 s burst. Traffic contact during NITRO keeps 70% speed instead of 45%.
+NITRO has its own reserve (`player.nitro`, up to 3 charges, each fills as a float). The three-segment HUD shows partial charge, full segments glow, and NITRO MAX pulses when full (motion is suppressed in comfort/reduced-motion modes). Pickups along the track (blue cell +0.25, orange can +0.5, airborne gold tank +1, one rainbow overcharge that fills to the cap) are placed from the track seed; every NITRO reward (pickups, drifts, barrel rolls, rings, slipstreams) also refills flight charge (each 0.25 banked = +5; the overcharge gives none), and anything above the cap becomes charge (each 0.25 = +8). One charge gives 2.5 s with the speed cap raised by 30 m/s, stronger acceleration, exhaust and lens feedback; pressing again extends it by 2 s without stacking speed, so three presses chain into a 6.5 s burst. Traffic contact during NITRO keeps 70% speed instead of 45%.
 
 Above 162 km/h on the ground, brake + steer drifts instead of hard braking: only 3 m/s² is lost, near-miss combo points double, and releasing pays NITRO plus a mini boost by drift time (1 s: +0.15 and 0.5 s, 2 s: +0.3 and 0.8 s, 3 s: +0.5 and 1.2 s). The body yaws 25°, smoke and blue/orange/purple sparks show the tier, tire screech builds, and the HUD names drift/mini-boost states. Taking off, falling into a gap, or hitting a car or barrier loses the build-up.
 
@@ -105,14 +104,14 @@ Staying right behind a rival or traffic car for 1.5 s gives +6 m/s of speed cap 
 
 ### Saved data
 
-All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50. Open **History** from the start or results screen to filter by track, see the best run and a chart of the latest ten times, and tap a run for details. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-unlocked`: track unlocks, preserved even after older runs leave History. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: driving and visual settings (the ghost toggle lives in controls). `skyline-rush-ghosts`: one best-run ghost per track. `skyline-rush-medals`, `skyline-rush-stars`, `skyline-rush-paint`: medals with award dates, best stars per track, equipped paint. `skyline-rush-daily`: daily challenge runs, latest 50. Every saved value is validated on load; anything malformed is ignored.
+All saves use try/catch, so the game still runs when storage is blocked. `skyline-rush-history`: one record per finished race, latest 50, including `fuelOuts` (times flight charge ran out) and `gapFalls` for tuning flight balance. Open **History** from the start or results screen to filter by track, see the best run and a chart of the latest ten times, and tap a run for details. `skyline-rush-best-tracks`: best time per track; the old single `skyline-rush-best` is migrated into `coast` once and is still written for coast. `skyline-rush-unlocked`: track unlocks, preserved even after older runs leave History. `skyline-rush-keymap`: key bindings. `skyline-rush-controls` and `skyline-rush-vfx`: driving and visual settings (the ghost toggle lives in controls). `skyline-rush-ghosts`: one best-run ghost per track. `skyline-rush-medals`, `skyline-rush-stars`, `skyline-rush-paint`: medals with award dates, best stars per track, equipped paint. `skyline-rush-daily`: daily challenge runs, latest 50. Every saved value is validated on load; anything malformed is ignored.
 
 ### Ghost, daily challenge, medals and Garage
 
 - **Ghost**: each run samples the car's distance, lane position and altitude 10 times per second. A new personal best on a track saves that run, and later races on the track show it as a translucent blue car. Turn it off with **Show best-run ghost** in Controls.
 - **Daily challenge**: History shows today's track and modifier, picked from the local date: no flight, double traffic, or gold rings only. Canyon never gets no flight, because its broken bridges need it. Daily runs go only on their own board (the fastest five today); they never touch history, best times, unlocks, stars or ghosts. Restart keeps the challenge, and **Choose track** leaves it.
 - **Medals**: First victory (win), Clean run (no collisions), Perfect flight (5 PERFECT LINEs in one race) and Triple burst (3 NITRO charges in one burst: one press plus two extensions). Any finished race can award them; each keeps the date it was first earned.
-- **Garage**: your best style stars on each track add up and unlock paints: Coral at 3, Glacier at 6 and Aurora at 9. Locked paints can still be previewed. Paint only changes the look, never the car's stats.
+- **Garage**: your best style stars on each track add up and unlock paints: Aurora at 3, Glacier at 6, Coral at 10, Cobalt at 16 and Obsidian at 24 (30 is the maximum). The most popular real-world car colours, blue and black, are the long-term goals. Locked paints can still be previewed. Paint only changes the look, never the car's stats.
 
 ### Sky Spiral (experimental fifth track)
 
@@ -130,7 +129,7 @@ Style points reward close passes (100 × combo, with drift's doubled combo), rin
 
 Fuel and nitro bars ease toward new values, warn below 20% capacity, shimmer on refills and pulse when a nitro charge completes. Comfort mode and system reduced motion disable those animations. The slide pad shows a floating ring/knob while held and a short hint at the start of a race; release returns steering to neutral.
 
-The HUD uses shared motion timings (120 / 240 / 480 ms). A speedometer needle eases with speed; place changes flip the position number with a green up or red down arrow, and leaderboard rows slide into their new places. Compact translucent event callouts sit above the centre of the view, clear of the HUD panels, and queue near misses, PERFECT LINEs, NITRO bursts, charge gains and drift spark tiers without overlapping. Pause, finish and restart clear the queue. Buttons compress while pressed and spring back on release; held touch controls stay illuminated. Optional **Haptic feedback** in VFX settings signals contacts, NITRO and drift rewards on supported touch devices. Comfort mode and system reduced motion keep the text and pressed-state colors while removing the new motion and vibration.
+The HUD uses shared motion timings (120 / 240 / 480 ms). A speedometer needle eases with speed; place changes flip the position number with a green up or red down arrow, and leaderboard rows slide into their new places. Compact translucent event callouts sit above the centre of the view, clear of the HUD panels, and queue near misses, PERFECT LINEs, NITRO bursts, charge gains and drift spark tiers without overlapping; a NITRO reward that also refills flight names it (NITRO · +20% CHARGE). Pause, finish and restart clear the queue. Buttons compress while pressed and spring back on release; held touch controls stay illuminated. Optional **Haptic feedback** in VFX settings signals contacts, NITRO and drift rewards on supported touch devices. Comfort mode and system reduced motion keep the text and pressed-state colors while removing the new motion and vibration.
 
 ### Language
 
@@ -180,7 +179,7 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 
 - `src/game.js`: deterministic arcade simulation, opponents, traffic and finish order.
 - `src/input.js`: keyboard and multi-pointer controls with cancellation and blur cleanup; reads the saved key map.
-- `src/key-map.js`: pure key map with J/K/L and E alternates, conflict-swapping rebind, validation and storage.
+- `src/key-map.js`: pure key map with E / X NITRO, conflict-swapping rebind, validation and storage.
 - `src/history.js`: saved gameplay data: race history (latest 50), per-track bests and legacy migration, career stats, medals, stars, equipped paint, ghosts and the daily board.
 - `src/ghost.js`: 10 Hz ghost recording, per-track validation and interpolated playback.
 - `src/appearance.js`: paint catalog and star unlock thresholds.

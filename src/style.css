@@ -73,7 +73,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .intro-controls { display: flex; flex-wrap: wrap; gap: 12px 27px; margin-top: 37px; }
 .intro-controls > div { display: flex; align-items: center; gap: 9px; color: #c0c8ce; font-size: 10px; }
 .keys { display: flex; gap: 3px; }
-.wide-key { min-width: 60px; }
+.keys { align-items: center; color: #8d9aa4; } /* the "/" between key groups (W A S D / ↑ ← ↓ →) */
 .flight-tip { color: #aab9c5; font-size: 10px; line-height: 1.7; max-width: 65ch; margin: 17px 0 0; }
 .telemetry { position: fixed; z-index: 3; left: 40px; right: 40px; bottom: 65px; display: flex; align-items: end; justify-content: space-between; gap: 30px; pointer-events: none; }
 .speedometer { width: 200px; }
@@ -134,18 +134,22 @@ body[data-phase="ready"] .build-version { display: block; }
 .racer > i { width: 3px; height: 3px; border-radius: 50%; background: #d4d0c7; }
 .racer.is-player { color: var(--accent); }
 .racer.is-player > i { background: var(--accent); }
-.event-callout { position: fixed; z-index: 3; top: 206px; left: 16px; right: 16px; margin: auto; width: fit-content; max-width: calc(100vw - 32px); padding: 4px 14px; text-align: center; pointer-events: none; color: #c3f7ff; background: rgb(7 26 40 / .35); border-radius: 999px; text-shadow: 0 2px 10px rgb(5 17 30 / .8); font: 700 clamp(18px, 2.6vw, 28px)/1.1 'Barlow Condensed', sans-serif; }
+.event-callout { position: fixed; z-index: 3; top: 206px; left: 16px; right: 16px; margin: auto; width: fit-content; max-width: calc(100vw - 32px); padding: 4px 14px; text-align: center; pointer-events: none; color: #c3f7ff; background: rgb(7 26 40 / .45); border-radius: 999px; text-shadow: 0 2px 10px rgb(5 17 30 / .8); font: 700 clamp(18px, 2.6vw, 28px)/1.1 'Barlow Condensed', sans-serif; }
 .event-callout span { display: block; margin-top: 2px; font: 500 10px/1.5 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 1px; }
 .event-callout[data-kind="perfect"], .event-callout[data-kind="nitro"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
-@media (max-width: 760px) and (min-height: 501px) { .event-callout { top: 272px; } }
+@media (max-width: 760px) and (min-height: 501px) { .event-callout { top: 272px; } .driving-message[data-tone='warning'] { top: 324px; } } /* warning sits under the callout, clear of the progress bar */
 @media (max-height: 500px) {
   .event-callout { top: 30%; right: auto; margin: 0; max-width: 230px; padding: 2px 10px; font-size: 20px; } /* left gutter: the centre holds the progress and mode panels */
   .event-callout > div { display: flex; align-items: center; gap: 10px; }
   .event-callout span { margin-top: 0; font-size: 9px; }
+  .driving-message[data-tone='warning'] { top: 214px; } /* under the mode panel, above the car */
 }
+@media (max-width: 760px) and (max-height: 500px) { .driving-message[data-tone='warning'] { top: 168px; } } /* small landscape: its mode panel sits higher and the progress panel lower */
 .perf-overlay { position: fixed; z-index: 6; top: max(4px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 4px; color: #c3f7ff; background: rgb(5 17 30 / .7); font: 11px/1.4 ui-monospace, monospace; white-space: nowrap; pointer-events: none; }
 .countdown { position: fixed; top: 35%; left: 50%; translate: -50% 0; width: max-content; max-width: calc(100vw - 24px); text-align: center; z-index: 4; font: 700 140px/1 'Barlow Condensed', sans-serif; text-shadow: 0 8px 60px rgb(5 17 30 / .4); pointer-events: none; }
 .driving-message { position: fixed; top: 30%; left: 10px; right: 10px; text-align: center; color: #fff0d9; font-size: 11px; letter-spacing: 2px; z-index: 3; pointer-events: none; text-shadow: 0 2px 8px #142333; }
+/* A pill so the warning stays legible over bright dusk skies. */
+.driving-message[data-tone='warning'] { width: fit-content; max-width: calc(100vw - 32px); margin: 0 auto; padding: 4px 14px; border-radius: 999px; color: #ffd6c8; background: rgb(74 20 12 / .62); font-weight: 700; }
 .collision .scene-shade { box-shadow: inset 0 0 110px rgb(255 92 60 / .3); }
 .race-overlay { position: fixed; z-index: 4; inset: 100px 0 45px; display: grid; place-items: center; background: rgb(9 22 36 / .72); backdrop-filter: blur(8px); }
 .overlay-content { width: min(560px, calc(100% - 48px)); text-align: center; }
@@ -218,7 +222,7 @@ body[data-phase="ready"] .build-version { display: block; }
   .fuel-caption { font-size: 6px; letter-spacing: .6px; }
   .bottomline { left: max(23px, env(safe-area-inset-left, 0px)); right: max(23px, env(safe-area-inset-right, 0px)); font-size: 6px; bottom: max(21px, env(safe-area-inset-bottom, 0px)); letter-spacing: 1.3px; }
   .bottomline > span:last-child { display: none; }
-  body:not([data-phase="ready"]) .touch-controls { display: flex; }
+  body:not([data-phase="ready"]) .touch-controls { display: grid; }
   body:not([data-phase="ready"]) .telemetry { bottom: 180px; }
   body:not([data-phase="ready"]) .mode-indicator { display: flex; position: fixed; top: 96px; left: 50%; transform: translateX(-50%); min-width: 0; gap: 5px; }
   body:not([data-phase="ready"]) .mode-icon svg { width: 19px; height: 19px; }
@@ -238,6 +242,7 @@ body[data-phase="ready"] .build-version { display: block; }
   .racer > i { display: none; }
   .countdown { top: 36%; font-size: 100px; }
   .driving-message { top: 30%; font-size: 8px; letter-spacing: 1px; }
+  .driving-message[data-tone='warning'] { font-size: 10px; padding: 2px 10px; }
   .overlay-content h2 { font-size: 58px; }
   .overlay-content > p { font-size: 11px; }
   .overlay-route { font-size: 7px; letter-spacing: 2px; }
@@ -256,7 +261,7 @@ body[data-phase="ready"] .build-version { display: block; }
 }
 @media (prefers-reduced-motion: reduce) { button, a, .scene-shade, .fuel-track > i { transition: none; } }
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) {
-  body:not([data-phase="ready"]) .touch-controls { display: flex; }
+  body:not([data-phase="ready"]) .touch-controls { display: grid; }
   body:not([data-phase="ready"]) .telemetry { bottom: 112px; }
   .touch-controls { bottom: max(18px, env(safe-area-inset-bottom)); }
   .topbar { height: 70px; padding: 12px 24px; }
@@ -481,6 +486,16 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .aero-tools { position: fixed; top: 98px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
 .aero-tools > button, .aero-tools > details > summary { min-height: 34px; padding: 6px 10px; border: 1px solid #6e9baa66; border-radius: 5px; background: #102432d9; color: #c6edfa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .aero-tools kbd { height: 20px; min-width: 20px; font-size: 9px; }
+/* Language dropdown (customSelect) heads the row under the toolbar: globe left, chevron right. 10px everywhere so 繁體中文 stays legible. */
+.aero-tools .custom-select > button { min-height: 34px; padding: 6px 26px 6px 28px; border: 1px solid #6e9baa66; border-radius: 5px; color: #c6edfa; font-size: 10px; letter-spacing: 1px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='1.8'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18'/%3E%3C/svg%3E") no-repeat left 9px center,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center, #102432d9; }
+/* Keyboard shortcut badges on the toolbar buttons; touch screens have no keys, like the Mute all M badge. */
+.toolbar .icon-button { position: relative; }
+.key-badge { position: absolute; right: -4px; bottom: -4px; min-width: 16px; height: 15px; padding: 0 3px; border-color: rgb(195 224 244 / .35); border-radius: 4px; background: #0c1d2c; color: #b9d3e2; font-size: 8px; letter-spacing: 0; pointer-events: none; }
+@media (pointer: coarse) { .key-badge { display: none; } }
+/* A setting, like CONTROLS: offered on the start screen, while paused and on results, so the racing HUD keeps its width. */
+body:is([data-phase="countdown"], [data-phase="racing"]) .aero-tools .custom-select { display: none; }
 #airflow-toggle[aria-pressed="true"] { background: #204858; border-color: #89d8ed; }
 #aero-start { display: none; }
 .airflow-active[data-phase="ready"] #aero-start { display: block; }
@@ -538,6 +553,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 @media (max-width: 760px) {
   .aero-tools { top: 70px; right: max(16px, env(safe-area-inset-right, 0px)); } /* ends above the 102px race info */
   .aero-tools > button, .aero-tools > details > summary { min-height: 30px; padding: 4px 8px; font-size: 8px; }
+  .aero-tools .custom-select > button { min-height: 30px; padding-block: 4px; }
   .vfx-settings { max-height: calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); width: min(310px, calc(100vw - 32px)); top: 36px; }
   .airflow-hud { top: 245px; left: 16px; width: 160px; padding: 10px; gap: 6px; }
   .airflow-hud > strong { font-size: 20px; }
@@ -593,11 +609,8 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   body:not([data-phase="ready"]):has(#touch-controls[data-steer-mode="buttons"]) .telemetry { bottom: calc(180px + max(0px, env(safe-area-inset-bottom, 0px) - 18px)); }
 }
 @media (max-width: 760px) and (min-height: 501px) {
-  body:not([data-phase="ready"]) .touch-controls { display: grid; grid-template-columns: auto auto; gap: 10px; }
-  .touch-steer { grid-column: 1; grid-row: 1 / 3; align-self: end; }
-  .touch-actions { grid-column: 2; grid-row: 1; }
-  .touch-pedals { grid-column: 2; grid-row: 2; }
-  .touch-steer, .touch-actions, .touch-pedals { gap: 10px; }
+  body:not([data-phase="ready"]) .touch-controls { display: grid; gap: 10px; }
+  .touch-steer { gap: 10px; }
   .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: calc(56px * var(--touch-scale, 1)); height: calc(60px * var(--touch-scale, 1)); font-size: 9px; }
   body:not([data-phase="ready"]) .telemetry { bottom: calc(180px + max(0px, env(safe-area-inset-bottom, 0px) - 18px)); }
 }
@@ -648,7 +661,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .touch-controls button.is-positioned { position: fixed; transform: translate(-50%, -50%); width: calc(54px * var(--touch-scale, 1)); }
 .layout-toolbar { position: fixed; left: 50%; top: 80px; transform: translateX(-50%); z-index: 12; width: max-content; max-width: calc(100vw - 24px); display: flex; align-items: center; gap: 14px; padding: 10px; background: #102b40; border: 1px solid #8ab8ce; border-radius: 10px; font-size: 12px; }
 .layout-toolbar button { min-height: 44px; padding: 8px 12px; border-radius: 6px; border: 1px solid #a9dced; background: #284b62; }
-body.layout-editing #touch-controls { display: flex; }
+body.layout-editing #touch-controls { display: grid; }
 .layout-editing .touch-controls button { transition: none; outline: 1px dashed #d4e5f1; outline-offset: 3px; cursor: move; }
 .layout-editing .touch-pad { pointer-events: none; }
 .layout-editing .telemetry { opacity: .35; pointer-events: none; }
@@ -664,11 +677,21 @@ body.layout-editing #touch-controls { display: flex; }
 @media (prefers-reduced-motion: reduce) { .nitro-meter.is-max, .nitro-segment i { animation: none; transition: none; } }
 @media (max-width: 560px) { .nitro-hud { font-size: 7px; letter-spacing: .4px; margin-top: 6px; } .layout-toolbar { top: 64px; font-size: 10px; gap: 8px; } }
 
-.touch-actions { display: grid; grid-template-columns: auto auto; margin-inline-start: auto; }
-.touch-actions .touch-nitro { grid-column: 1 / -1; justify-self: end; }
-.touch-actions .touch-boost { grid-column: 1; grid-row: 2; }
-.touch-actions .touch-fly { grid-column: 2; grid-row: 2; }
-.touch-actions .touch-fly { min-width: calc(64px * var(--touch-scale, 1)); min-height: calc(68px * var(--touch-scale, 1)); }
+/* Right-thumb cluster: one 2x2 block in the corner, [NITRO][GAS] over [BOOST][FLY]. BOOST and FLY share the bottom row so one thumb
+   slides across both (input.js bridges an 8px seam). The steering cluster takes the 1fr column; the slide pad is position:fixed, outside
+   the grid; data-hand="right" mirrors the columns through direction:rtl. --touch-cell is the square button size before --touch-scale. */
+.touch-controls { --touch-cell: 56px; grid-template-columns: 1fr auto auto; grid-template-rows: auto auto; align-items: end; }
+.touch-actions, .touch-pedals { display: contents; }
+.touch-steer { grid-column: 1; grid-row: 1 / 3; justify-self: start; align-self: end; }
+.touch-actions .touch-nitro { grid-column: 2; grid-row: 1; }
+.touch-pedals .touch-gas { grid-column: 3; grid-row: 1; }
+.touch-actions .touch-boost { grid-column: 2; grid-row: 2; }
+.touch-actions .touch-fly { grid-column: 3; grid-row: 2; }
+#touch-controls :is(.touch-actions, .touch-pedals) button { width: calc(var(--touch-cell) * var(--touch-scale, 1)); height: calc(var(--touch-cell) * var(--touch-scale, 1)); }
+@media (max-width: 760px) and (min-height: 501px) { .touch-controls { --touch-cell: 62px; } }
+@media (max-width: 370px) { .touch-controls { --touch-cell: 54px; } }
+@media (max-height: 500px) { .touch-controls { --touch-cell: 52px; } }
+@media (max-height: 380px) { .touch-controls { --touch-cell: 48px; gap: 8px; } }
 #touch-controls[data-steer-mode="tilt"] .touch-steer { display: none; }
 #touch-controls .touch-steer button.is-positioned { width: calc(54px * var(--touch-scale, 1)); }
 
@@ -748,7 +771,7 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
 .ghost-setting { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 6px; font-size: 12px; }
 .garage-preview { height: clamp(140px, 28dvh, 240px); overflow: hidden; border-radius: 6px; margin-block: 16px; }
 .garage-preview #world { position: static; width: 100%; height: 100%; }
-.paint-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.paint-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .paint-options button { display: grid; place-items: center; gap: 8px; min-height: 64px; padding: 8px 4px; border: 1px solid #5c7488; border-radius: 6px; background: #1b3044; font-size: 11px; }
 .paint-options button[aria-pressed="true"] { border-color: var(--accent); outline: 1px solid var(--accent); }
 .paint-options i { width: 28px; height: 12px; border-radius: 3px; }
@@ -872,8 +895,13 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
 .intro .track-select button:hover:not(:disabled):not([aria-pressed="true"]) { border-color: rgb(255 150 120 / .55); background: rgb(22 40 58 / .8); }
 .intro .track-select button[aria-pressed="true"] { border-color: var(--accent); background: linear-gradient(180deg, rgb(255 150 120 / .2), rgb(12 26 42 / .78)); box-shadow: inset 0 0 0 1px var(--accent), 0 8px 26px rgb(255 118 84 / .22); }
 .intro .track-select button[aria-pressed="true"]::before { content: ''; position: absolute; top: -1px; left: 10px; right: 10px; height: 2px; border-radius: 0 0 2px 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
-.intro .track-select button:disabled { opacity: .55; }
-.intro .track-select button:disabled strong { color: #aeb9c2; }
+.intro .track-select button.is-locked { opacity: .65; }
+.intro .track-select button.is-locked strong { color: #aeb9c2; }
+.intro .track-select button.is-locked .track-preview { filter: grayscale(.65); }
+.intro .track-select button.is-locked[aria-pressed="true"] { opacity: .85; }
+.intro .primary-button:disabled { opacity: 1; cursor: not-allowed; background: linear-gradient(100deg, #26394a, #1b2b3a); color: #aebfce; border: 1px solid #60778a; box-shadow: inset 0 1px 0 rgb(255 255 255 / .08); transform: none; }
+.intro .primary-button:disabled svg { background: #152432; color: #8fa6b9; }
+.intro .primary-button:disabled::after { animation: none; display: none; }
 @media (max-width: 760px) {
   .intro .primary-button { height: 58px; min-width: 210px; font-size: 20px; }
   .intro :is(.history-button, .garage-button) { margin-left: 8px; padding: 0 16px; }
@@ -953,9 +981,6 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-overview-line { fill:none; stroke: #76d9f4; stroke-width: 2.4; stroke-linejoin:round; stroke-linecap:round; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
-.route-locales {display:flex; gap:8px; margin-top:12px;}
-.route-locales button { padding:5px 11px; color:#d4e1eb; background:#102338; border:1px solid #456176; border-radius:4px; font-size:12px; line-height:1.2; white-space:nowrap; cursor:pointer; }
-.route-locales button[aria-pressed="true"] {color:#fff; border-color:#67d9ee; background:#23475a;}
 .race-route-map { position:fixed; top:292px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
@@ -968,11 +993,9 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
 /* Short screens: telemetry and touch buttons fill the sides, so the map moves to the bottom row (see the short-screen blocks below). */
 /* The compact in-race route map remains visible on small viewports. */
-/* Short landscape has ~9px of intro slack: draw the route over the sky strip and pin the language toggle top-right. */
+/* Short landscape has ~9px of intro slack: draw the route over the sky strip. */
 @media (max-height: 500px) and (min-width: 761px) {
   .track-route-map { position:absolute; top:8px; left:8px; right:8px; height:26px; margin:0; background:none; }
-  .route-locales { position:absolute; top:6px; right:6px; margin:0; }
-  .route-locales button { padding:3px 8px; font-size:11px; }
 }
 .leave-screen { width: min(420px, calc(100% - 32px)); text-align: center; }
 .leave-screen h2 { font: 700 42px/1 'Barlow Condensed', sans-serif; margin: 0 0 12px; }
@@ -984,7 +1007,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* Traditional Chinese (<html lang="zh-TW">). Han glyphs fall back to a Taiwan CJK family after the existing Latin stacks.
    Brand words and NITRO / FLY / BOOST carry lang="en" in App.vue, so they keep their Latin tracking. */
 :root { --cjk-fonts: 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei'; }
-:root:lang(zh-TW), .route-locales :lang(zh-TW) { font-family: 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; }
+:root:lang(zh-TW), .custom-select [lang="zh-TW"] { font-family: 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; }
 :is(h1, h2, .event-callout, .countdown, .impact-report strong, .vfx-heading strong, .airflow-hud > strong):lang(zh-TW), #flight-state:lang(zh-TW) { font-family: 'Barlow Condensed', 'Arial Narrow', var(--cjk-fonts), sans-serif; }
 :is(kbd, .event-callout span, .countdown > span, .altitude-stat small):lang(zh-TW) { font-family: 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; }
 /* Names Latin fonts that carry the arrow (macOS Lucida Grande, iOS Arial): zh-TW fallback would draw it ~8px wider in PingFang
@@ -1039,14 +1062,14 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- /* No top here: the earlier top:272px keeps portrait maps below the progress bar (250px/241px sat on it). */
- .race-route-map { width:75px;height:88px;right:18px; }
+ .race-route-map { width:75px;height:88px;right:18px;top:272px; } /* below the 262px progress bar */
 }
 @media(max-width:400px) {
- .race-route-map {width:59px;height:72px;right:14px;}
+ .race-route-map {width:59px;height:72px;right:14px;top:270px;}
 }
 @media(max-height:500px) and (min-width:761px) {
- .race-route-map {display:block;top:218px;right:16px;width:67px;height:73px;}
+ /* Bottom-aligned just left of the 2x2 touch cluster; 144px clears it at Large size (2 x 52px x 1.15 + gaps). */
+ .race-route-map {display:block;top:auto;bottom:max(18px, var(--safe-bottom));right:calc(max(12px, var(--safe-right)) + 144px);width:67px;height:73px;}
  .track-select button > span.track-route-map {
    position:absolute;top:8px;left:8px;right:8px;width:auto;height:28px;
  }
@@ -1103,7 +1126,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 /* One-time device auto-quality information. A small nonmodal notice does
    not hide the Start button, controls, route preview or player vehicle. */
 .performance-notice {
- position:fixed;z-index:18;top:calc(80px + env(safe-area-inset-top,0px));right:22px;
+ position:fixed;z-index:18;top:calc(220px + env(safe-area-inset-top,0px));right:22px;
  width:min(325px,calc(100vw - 32px));border:1px solid #6c90a0;
  border-radius:10px;background:#122535f5;color:#f2f5ef;padding:14px 16px;
  box-shadow:0 14px 34px #0006;display:grid;gap:7px;
@@ -1114,4 +1137,4 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .performance-notice p{font-size:12px;line-height:1.6;margin:0;color:#e0e5e5;}
 .performance-notice button{justify-self:end;background:#264758;border:1px solid #85a8b2;
  border-radius:5px;color:#fff;padding:7px 13px;cursor:pointer;}
-@media(max-width:760px){.performance-notice{top:calc(66px + env(safe-area-inset-top,0px));right:12px;width:min(285px,calc(100vw - 24px));}}
+@media(max-width:760px){.performance-notice{top:calc(190px + env(safe-area-inset-top,0px));right:12px;width:min(285px,calc(100vw - 24px));}}

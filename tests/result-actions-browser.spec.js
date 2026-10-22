@@ -1,3 +1,4 @@
+import { selectLocale } from './helpers/locale-browser.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
@@ -66,7 +67,7 @@ for (const [name, viewport, hasTouch] of [
   });
 
   test('NEXT names the unlocked track in the chosen language', async ({ gameplayPage: page }) => {
-    await page.locator('[data-locale="zh-TW"]').click();
+    await selectLocale(page, 'zh-TW');
     // The switch is global: the race HUD and results are Chinese too.
     await finishRace(page, { racing: '比賽中' });
     await expect(page.locator('#next-button')).toContainText('霓虹都會');

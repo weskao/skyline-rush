@@ -193,3 +193,36 @@ test('every VFX label and sign has a catalog entry in both locales, and en match
   for (const type of ['tunnel', 'gap', 'crosswind', 'ice', 'uphill', 'shortcut', 'launch', 'spiral', 'finish'])
     assert.ok(GAME['zh-TW'][`sign.${type}`] && GAME.en[`sign.${type}`]);
 });
+
+test('a NITRO reward that also refills flight charge says how much; a full charge keeps the plain detail', () => {
+  for (const [fuel, detail] of [[50, 'NITRO · +20% CHARGE'], [100, 'NITRO CHARGE']]) {
+    const race = running(), callouts = createCallouts();
+    Object.assign(race.player, { speed: 60, fuel });
+    race.traffic = []; race.rings = [];
+    race.pickups = [{ distance: race.player.distance + 0.5, x: race.player.x, altitude: 0, tier: 'tank' }];
+    callouts.update(race);
+    stepRace(race, {}, 1 / 60);
+    const callout = callouts.update(race);
+    assert.equal(callout.title, '+1');
+    assert.equal(callout.detail, detail, `fuel ${fuel}`);
+  }
+});
+
+test('a landed roll that refills flight charge names the charge in its detail', () => {
+  const race = running(), callouts = createCallouts();
+  Object.assign(race.player, { speed: 60, altitude: 4, fuel: 50 });
+  race.traffic = []; race.pickups = []; race.rings = [];
+  callouts.update(race);
+  stepRace(race, { steer: -1 }, 1 / 60);
+  callouts.update(race);
+  stepRace(race, { steer: 1 }, 1 / 60);
+  assert.equal(callouts.update(race)?.title, 'BARREL ROLL');
+  for (let i = 0; i < 48; i++) { stepRace(race, {}, 1 / 60); callouts.update(race); }
+  Object.assign(race.player, { altitude: .001, verticalSpeed: -1 });
+  stepRace(race, {}, 1 / 60);
+  callouts.update(race);
+  race.elapsed += 1.3;
+  const callout = callouts.update(race);
+  assert.equal(callout?.title, 'TRICK +0.25');
+  assert.equal(callout.detail, 'CLEAN LANDING · +5% CHARGE');
+});

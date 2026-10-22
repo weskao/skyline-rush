@@ -2,7 +2,7 @@ import './style.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, RACE_TRACKS, MAX_SPEED } from './game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
@@ -236,7 +236,7 @@ function ensureRouteMaps() {
 function refreshTrackLabels() {
   for (const button of document.querySelectorAll('[data-track]')) button.querySelector('strong').textContent = trackName(button.dataset.track, getLocale());
   for (const option of $('#history-track').options) option.textContent = trackName(option.value, getLocale());
-  for (const button of document.querySelectorAll('[data-locale]')) button.setAttribute('aria-pressed', String(button.dataset.locale === getLocale()));
+  $('#locale-select').value = getLocale();
 }
 // One-off re-render on a language switch (never per frame); world.js repaints its road signs via its own onLocaleChange.
 function applyLocale() {
@@ -255,24 +255,27 @@ function applyLocale() {
   previousFlight = undefined; // the next HUD tick rewrites the change-gated labels
 }
 onLocaleChange(applyLocale);
-for (const button of document.querySelectorAll('[data-locale]')) button.addEventListener('click', () => {
-  saveLocale(button.dataset.locale); setLocale(button.dataset.locale);
-});
+$('#locale-select').addEventListener('change', ({ target }) => { saveLocale(target.value); setLocale(target.value); });
 function showTracks() {
   const track = RACE_TRACKS[race.trackId];
   ensureRouteMaps(); refreshTrackLabels();
   for (const button of document.querySelectorAll('[data-track]')) {
     const id = button.dataset.track;
-    button.disabled = !unlockedTracks.has(id);
+    const locked = !unlockedTracks.has(id);
+    button.classList.toggle('is-locked', locked);
     button.setAttribute('aria-pressed', String(id === race.trackId));
-    button.querySelector('small').textContent = t(button.disabled ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
+    button.querySelector('small').textContent = t(locked ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
     const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1];
-    button.title = button.disabled ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
+    button.title = locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
   }
+  ui['start-button'].disabled = !daily && !unlockedTracks.has(race.trackId);
+  ui['start-button'].setAttribute('aria-describedby', 'track-note');
+  $('.start-hint').hidden = ui['start-button'].disabled;
   $('#track-length').textContent = t('track.sprint', { km: track.length / 1000 });
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
-  $('#track-note').textContent = t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+  const previous = tracks[tracks.indexOf(race.trackId) - 1];
+  $('#track-note').textContent = (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
   const name = trackName(race.trackId, getLocale());
   const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : name).toUpperCase();
   $('.route-heading').textContent = route;
@@ -288,7 +291,7 @@ function showGhost() {
 }
 $('#ghost-enabled').addEventListener('change', ({ target }) => { controlPrefs = controlSettings({ ...controlPrefs, ghost: target.checked }); applyControls(); });
 for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
-  if (race.phase !== 'ready' || !unlockedTracks.has(button.dataset.track)) return;
+  if (race.phase !== 'ready') return;
   controls.clear();
   race = createRace(button.dataset.track); daily = null;
   showTracks();
@@ -456,7 +459,7 @@ function focusRace() {
 }
 
 function start() {
-  if (!world || race.phase !== 'ready' || document.querySelector('dialog[open]')) return;
+  if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   if (editingLayout) editLayout(false);
   controls.clear();
@@ -467,7 +470,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
-  if (!world) return;
+  if (!world || (!daily && !unlockedTracks.has(trackId))) return;
   if (contextLost) { location.reload(); return; }
   if (editingLayout) editLayout(false);
   controls.clear();
@@ -691,15 +694,20 @@ async function enableTilt() {
 }
 $('#tilt-enable').addEventListener('click', enableTilt);
 $('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); applyControls(); sound.cue('ui'); });
-const keyLabel = code => code.replace(/^Key|^Digit/, '').replace(/^Arrow/, 'Arrow ').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
+const ARROWS = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
+const keyLabel = code => ARROWS[code] ?? code.replace(/^Key|^Digit/, '').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
 function showKeyMap() {
-  const introKeys = document.querySelector('.intro-controls .keys');
-  introKeys.replaceChildren(...['throttle', 'left', 'brake', 'right'].map(action => {
-    const key = document.createElement('kbd'); key.textContent = keyLabel(keyMap[action][0]); return key;
-  }));
-  const hints = document.querySelectorAll('.intro-controls > div');
-  hints[1].firstElementChild.textContent = keyLabel(keyMap.fly[0]);
-  hints[2].firstElementChild.textContent = keyLabel(keyMap.boost[0]);
+  // Start-screen legend: one kbd group per key slot (W A S D, then ↑ ← ↓ →), "/" between groups; Left/Right Shift read as one Shift.
+  for (const keys of document.querySelectorAll('.intro-controls [data-keys]')) {
+    const actions = keys.dataset.keys.split(' ');
+    const seen = new Set();
+    const groups = Array.from({ length: Math.max(...actions.map(action => keyMap[action].length)) }, (_, slot) => actions
+      .map(action => keyMap[action][slot]).filter(Boolean).map(code => keyLabel(code).replace(/^(Left|Right) Shift$/, 'Shift'))
+      .filter(label => !seen.has(label) && seen.add(label))).filter(group => group.length);
+    keys.replaceChildren(...groups.flatMap((group, i) => [...(i ? ['/'] : []), ...group.map(label => {
+      const key = document.createElement('kbd'); key.textContent = label; return key;
+    })]));
+  }
   for (const button of document.querySelectorAll('[data-rebind]')) {
     button.lastElementChild.textContent = keyMap[button.dataset.rebind].map(keyLabel).join(' / ');
     button.setAttribute('aria-pressed', String(rebinding === button.dataset.rebind));
@@ -1039,7 +1047,7 @@ function updateUI(now, input) {
   ui['flight-budget'].textContent = car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`;
   ui['flight-instruction'].textContent = car.thrusting ? interpolate(L['hud.steerAir'], { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend'] }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand'] : interpolate(L['hud.climbAgain'], { hold })
     : car.exhausted ? interpolate(L['hud.rechargeRoad'], { action: tap ? L['hud.tapLand'] : release }) : car.speed < 18 ? interpolate(L['hud.reachLift'], { hold }) : depleted ? L['hud.charging'] : interpolate(L[tap ? 'hud.lift' : 'hud.liftLand'], { hold });
-  ui['fuel-caption'].textContent = car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? 'hud.descendRoad' : 'hud.groundRecharge'];
+  ui['fuel-caption'].textContent = car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge'];
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 20);
@@ -1113,7 +1121,10 @@ function updateUI(now, input) {
     status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
   }
   ui['race-status'].textContent = status;
-  ui['driving-message'].textContent = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff'] : car.exhausted && input.fly ? L['hud.releaseRecharge'] : '';
+  const gapWarning = race.phase === 'racing' ? gapChargeWarning(race) : null;
+  ui['driving-message'].textContent = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff'] : car.exhausted && input.fly ? L['hud.releaseRecharge']
+    : gapWarning ? interpolate(L['hud.gapCharge'], { n: Math.ceil(gapWarning.need) }) : '';
+  if (gapWarning) ui['driving-message'].dataset.tone = 'warning'; else delete ui['driving-message'].dataset.tone;
   const racers = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
   const order = racers.map(racer => racer.name).join(',');
   if (calm || race.phase !== 'racing') leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));

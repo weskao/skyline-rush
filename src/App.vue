@@ -35,7 +35,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     </a>
     <div class="route-heading"><span class="live-dot"></span> COASTAL EXPRESSWAY <span class="route-divider">/</span> <span>DUSK RUN</span></div>
     <nav class="toolbar" aria-label="Game controls" data-i18n-aria-label="nav.toolbar">
-      <button class="icon-button assist-button" id="assist-button" aria-label="Auto accelerate" data-i18n-aria-label="assist.aria" aria-pressed="false" title="Auto accelerator · T"><svg v-bind="ICON_ATTRS" v-html="icons.assist"></svg><span data-i18n="assist.label">AUTO</span></button>
+      <button class="icon-button assist-button" id="assist-button" aria-label="Auto accelerate" data-i18n-aria-label="assist.aria" aria-pressed="false" title="Auto accelerator · F2" aria-keyshortcuts="F2"><svg v-bind="ICON_ATTRS" v-html="icons.assist"></svg><span data-i18n="assist.label">AUTO</span><kbd class="key-badge" aria-hidden="true">F2</kbd></button>
       <div class="settings">
         <button class="icon-button" id="settings-button" aria-label="Audio settings" data-i18n-aria-label="audio.settings" aria-expanded="false" aria-controls="settings-panel" title="Audio settings · M mutes all" data-i18n-title="audio.title"><svg v-bind="ICON_ATTRS" v-html="icons.sound"></svg></button>
         <div class="settings-panel" id="settings-panel" role="group" aria-label="Audio settings" data-i18n-aria-label="audio.settings" hidden>
@@ -62,19 +62,21 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <label class="controls-field controls-range"><span data-i18n="controls.opacity">Button opacity</span> <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Button opacity" data-i18n-aria-label="controls.opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
           <label class="controls-field controls-range"><span data-i18n="controls.sensitivity">Steering sensitivity</span> <output for="controls-sensitivity"></output><input id="controls-sensitivity" aria-label="Steering sensitivity" data-i18n-aria-label="controls.sensitivity" type="range" data-controls="sensitivity" min="0.4" max="1" step="0.1"></label>
           <fieldset class="controls-field keymap-field"><legend data-i18n="keymap.legend">Keyboard · select action, then press a key</legend><button v-for="action in ['throttle', 'brake', 'left', 'right', 'fly', 'boost', 'nitro']" class="keymap-binding" :data-rebind="action"><span :data-i18n="`keymap.${action}`">{{ action.toUpperCase() }}</span><b></b></button></fieldset>
-          <p id="keymap-status" role="status" class="controls-note" data-i18n="keymap.fixed">Fixed shortcuts: Esc pause · R restart · C camera.</p>
+          <p id="keymap-status" role="status" class="controls-note" data-i18n="keymap.fixed">Fixed shortcuts: Esc pause · Backspace restart · C camera.</p>
           <button class="controls-reset" id="keymap-reset" data-i18n="keymap.reset">Reset keyboard</button>
           <button class="controls-reset" id="layout-edit" data-i18n="layout.edit">Edit touch layout</button>
           <button class="controls-reset" id="layout-reset" data-i18n="layout.reset">Reset touch layout</button>
           <button class="controls-reset" id="controls-reset" data-i18n="controls.reset">Reset to defaults</button>
         </div>
       </div>
-      <button class="icon-button" id="camera-button" aria-label="Change camera" data-i18n-aria-label="camera.aria" aria-pressed="false" title="Camera · C" data-i18n-title="camera.title"><svg v-bind="ICON_ATTRS" v-html="icons.camera"></svg></button>
-      <button class="icon-button" id="restart-button" aria-label="Restart race" data-i18n-aria-label="restart.aria" title="Restart · R" data-i18n-title="restart.title" hidden><svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button>
-      <button class="icon-button" id="pause-button" aria-label="Pause race" data-i18n-aria-label="pause.aria" title="Pause · Esc" data-i18n-title="pause.title" disabled><svg v-bind="ICON_ATTRS" v-html="icons.pause"></svg></button>
+      <button class="icon-button" id="camera-button" aria-label="Change camera" data-i18n-aria-label="camera.aria" aria-pressed="false" title="Camera · C" data-i18n-title="camera.title" aria-keyshortcuts="C"><svg v-bind="ICON_ATTRS" v-html="icons.camera"></svg><kbd class="key-badge" aria-hidden="true">C</kbd></button>
+      <button class="icon-button" id="restart-button" aria-label="Restart race" data-i18n-aria-label="restart.aria" title="Restart · Backspace" data-i18n-title="restart.title" aria-keyshortcuts="Backspace" hidden><svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg><kbd class="key-badge" aria-hidden="true">⌫</kbd></button>
+      <button class="icon-button" id="pause-button" aria-label="Pause race" data-i18n-aria-label="pause.aria" title="Pause · Esc" data-i18n-title="pause.title" aria-keyshortcuts="Escape" disabled><svg v-bind="ICON_ATTRS" v-html="icons.pause"></svg><kbd class="key-badge" aria-hidden="true">Esc</kbd></button>
     </nav>
   </header>
   <aside class="aero-tools" aria-label="Airflow and visual effects" data-i18n-aria-label="aero.tools">
+    <!-- The one global language switch, drawn by customSelect (main.js); each option names its language in that language. -->
+    <select id="locale-select" aria-label="Language" data-i18n-aria-label="locale.switch"><option value="en" lang="en">English</option><option value="zh-TW" lang="zh-TW">繁體中文</option></select>
     <button id="airflow-toggle" aria-pressed="false" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><kbd>V</kbd> <span data-i18n="aero.airflow">AIRFLOW</span></button>
     <button id="aero-start" aria-label="Start race from showcase" data-i18n-aria-label="aero.startAria" data-i18n="aero.start">RACE →</button>
     <details id="vfx-panel"><summary><span data-i18n="vfx.summary">VFX</span> <span aria-hidden="true">＋</span></summary>
@@ -113,18 +115,19 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just</span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
       <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
       <div class="track-select" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="String(id === 'coast')"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
-      <!-- The one global language switch: exactly two [data-locale] buttons; each names its language in that language. -->
-      <div class="route-locales" role="group" aria-label="Language" data-i18n-aria-label="locale.switch"><button type="button" data-locale="en" lang="en" aria-pressed="true">EN</button><button type="button" data-locale="zh-TW" lang="zh-TW" aria-pressed="false">繁體中文</button></div><p id="track-note" class="track-note"></p>
+      <p id="track-note" class="track-note"></p>
       <div class="intro-actions">
         <button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
         <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
         <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
       </div>
+      <!-- data-keys: the actions whose bound keys showKeyMap() (main.js) draws, so remaps and the arrow / J K L alternates stay listed. -->
       <div class="intro-controls">
-        <div><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span data-i18n="hint.drive">Drive</span></div>
-        <div><kbd class="wide-key">SPACE</kbd><span data-i18n="hint.fly">Hold to fly</span></div>
-        <div><kbd>SHIFT</kbd><span data-i18n="hint.boost">Boost</span></div>
+        <div><span class="keys" data-keys="throttle left brake right"></span><span data-i18n="hint.drive">Drive</span></div>
+        <div><span class="keys" data-keys="fly"></span><span data-i18n="hint.fly">Hold to fly</span></div>
+        <div><span class="keys" data-keys="boost"></span><span data-i18n="hint.boost">Boost</span></div>
+        <div><span class="keys" data-keys="nitro"></span><span data-i18n="hint.nitro">Nitro</span></div>
         <div><kbd>V</kbd><span data-i18n="hint.airflow">Airflow</span></div>
       </div>
       <p class="flight-tip" data-i18n="intro.tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</p>

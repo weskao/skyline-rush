@@ -81,7 +81,7 @@ for (const [name, viewport, hasTouch] of [
 
 test('fresh progress locks tracks, empty History works and Escape restores menu focus', async ({ page }) => {
   await open(page);
-  await expect(page.locator('[data-track="neon"]')).toBeDisabled();
+  await expect(page.locator('[data-track="neon"]')).toBeEnabled();
   await expect(page.locator('#track-note')).toContainText('Finish top 3 on Coast to unlock Neon Downtown');
   await page.getByRole('button', { name: 'History', exact: true }).click();
   await expect(page.locator('#history-empty')).toBeVisible();
@@ -90,6 +90,35 @@ test('fresh progress locks tracks, empty History works and Escape restores menu 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Race history' })).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'History', exact: true })).toBeFocused();
+});
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) test.describe(`locked previews ${viewport.width}`, () => {
+  test.use({ viewport });
+  test('all tracks preview while locked starts stay blocked', async ({ page }) => {
+    await open(page);
+    const ids = await page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
+    for (const id of ids.slice(1)) {
+      const card = page.locator(`[data-track="${id}"]`);
+      await expect(card).toBeEnabled();
+      await expect(card).toHaveCSS('opacity', '0.65');
+      await card.click();
+      await expect(card).toHaveCSS('opacity', '0.85');
+      await expect(card).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('#world')).toHaveAttribute('aria-label', new RegExp(await card.locator('strong').innerText()));
+      await expect(page.locator('#start-button')).toBeDisabled();
+      await expect(page.locator('#track-note')).toContainText('Finish top 3');
+      await page.locator('#start-button').evaluate(button => button.click());
+      await page.locator('body').click({ position: { x: 2, y: 2 } });
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Backspace');
+      await expect(page.locator('.start-hint')).toBeHidden();
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+    }
+    await page.locator('[data-track="coast"]').click();
+    await expect(page.locator('#start-button')).toBeEnabled();
+    await page.locator('#start-button').click();
+    await expect(page.locator('body')).not.toHaveAttribute('data-phase', 'ready');
+  });
 });
 
 test('track changes render four distinct sky palettes in the WebGL framebuffer', async ({ page }) => {
@@ -181,5 +210,35 @@ for (const [name, viewport, hasTouch] of [
     }, name);
     await expect.poll(() => raised('shortcut-deck')).toBeGreaterThan(5);
     await expect.poll(() => raised('shortcut-pylons')).toBeGreaterThan(0);
+  });
+});
+
+for (const [name, viewport, hasTouch] of [
+  ['desktop', { width: 1440, height: 900 }, false],
+  ['phone', { width: 390, height: 844 }, true],
+]) gameplayTest.describe(`flight charge HUD ${name}`, () => {
+  gameplayTest.use({ viewport, hasTouch });
+  gameplayTest('gliding names its recharge, and a gap ahead warns when charge cannot cross it', async ({ gameplayPage: page }) => {
+    await page.locator('#start-button').click();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    await expect(page.locator('#countdown')).toBeHidden();
+    await page.evaluate(() => {
+      const race = window.gameplay.race;
+      race.traffic = []; race.pickups = []; race.rings = [];
+      Object.assign(race.player, { altitude: 10, verticalSpeed: 4, speed: 60, fuel: 50 });
+    });
+    await expect(page.locator('#fuel-caption')).toHaveText(/GLIDE RECHARGE/);
+    // A broken bridge 250 m ahead; pin the charge low so the regen cannot clear the warning.
+    await page.evaluate(() => {
+      const race = window.gameplay.race, car = race.player;
+      Object.assign(car, { altitude: 0, verticalSpeed: 0, fuel: 5 });
+      race.sections.push({ from: car.distance + 250, to: car.distance + 315, type: 'gap' });
+      const pin = () => { if (race.phase !== 'racing' || window.unpinCharge) return; Object.assign(car, { fuel: 5, speed: 60 }); requestAnimationFrame(pin); };
+      pin();
+    });
+    await expect(page.locator('#driving-message')).toHaveText(/GAP AHEAD · NEED \d+% CHARGE/);
+    await expect(page.locator('#driving-message')).toHaveAttribute('data-tone', 'warning');
+    await page.evaluate(() => { window.unpinCharge = true; window.gameplay.race.player.fuel = 100; });
+    await expect(page.locator('#driving-message')).toHaveText('');
   });
 });

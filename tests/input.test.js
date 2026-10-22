@@ -53,7 +53,7 @@ test('camera, audio, airflow and auto accelerator shortcuts preserve held drivin
   const controls = createControls(target, action => actions.push(action));
   send(target, 'keydown', { code: 'KeyW' });
   send(target, 'keydown', { code: 'Space' });
-  for (const code of ['KeyC', 'KeyM', 'KeyT', 'KeyV']) {
+  for (const code of ['KeyC', 'KeyM', 'F2', 'KeyV']) {
     send(target, 'keydown', { code });
     assert.equal(controls.read().throttle, true);
     assert.equal(controls.read().fly, true);
@@ -216,15 +216,17 @@ test('toggle fly latches on tap, survives release, clears via setFly/clear; hold
   controls.destroy();
 });
 
-test('alternate keys J/K/L and E drive fly, boost and nitro; originals still work', () => {
+test('Space, Shift and E/X drive fly, boost and nitro; old J/K/L alternates are unbound', () => {
   const target = new EventTarget();
   const controls = createControls(target);
-  for (const [code, name] of [['KeyJ', 'fly'], ['KeyK', 'boost'], ['KeyL', 'nitro'], ['KeyE', 'nitro'], ['Space', 'fly'], ['ShiftLeft', 'boost']]) {
+  for (const [code, name] of [['KeyE', 'nitro'], ['KeyX', 'nitro'], ['Space', 'fly'], ['ShiftLeft', 'boost'], ['ShiftRight', 'boost']]) {
     send(target, 'keydown', { code });
     assert.equal(controls.read()[name], true, code);
     send(target, 'keyup', { code });
     assert.equal(controls.read()[name], false, code);
   }
+  for (const code of ['KeyJ', 'KeyK', 'KeyL']) assert.equal(send(target, 'keydown', { code }).defaultPrevented, false, code);
+  assert.deepEqual([controls.read().fly, controls.read().boost, controls.read().nitro], [false, false, false]);
   controls.destroy();
 });
 
@@ -236,21 +238,21 @@ test('input follows the saved key map as it changes and ignores unbound keys', (
   assert.deepEqual([controls.read().boost, controls.read().fly], [true, false]);
   assert.ok(space.defaultPrevented);
   send(target, 'keyup', { code: 'Space' });
-  const j = send(target, 'keydown', { code: 'KeyJ' });
-  assert.equal(controls.read().fly, false);
-  assert.equal(j.defaultPrevented, false);
+  const shift = send(target, 'keydown', { code: 'ShiftLeft' });
+  assert.equal(controls.read().boost, false);
+  assert.equal(shift.defaultPrevented, false);
   keyMap = DEFAULT_KEY_MAP;
-  send(target, 'keydown', { code: 'KeyJ' });
-  assert.equal(controls.read().fly, true);
+  send(target, 'keydown', { code: 'ShiftLeft' });
+  assert.equal(controls.read().boost, true);
   controls.destroy();
 });
 
 test('two keys bound to one action keep it held until both are released', () => {
   const target = new EventTarget();
   const controls = createControls(target);
-  send(target, 'keydown', { code: 'KeyK' });
+  send(target, 'keydown', { code: 'ShiftRight' });
   send(target, 'keydown', { code: 'ShiftLeft' });
-  send(target, 'keyup', { code: 'KeyK' });
+  send(target, 'keyup', { code: 'ShiftRight' });
   assert.equal(controls.read().boost, true);
   send(target, 'keyup', { code: 'ShiftLeft' });
   assert.equal(controls.read().boost, false);

@@ -1,3 +1,4 @@
+import { selectLocale } from './helpers/locale-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync, appendFileSync, rmSync, writeFileSync } from 'node:fs';
 import { test } from './helpers/gameplay-browser.js';
@@ -172,7 +173,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
     test('walk start, tracks, panels, race HUD, callouts, pause, results, history and a live switch', async ({ gameplayPage: page }) => {
       test.setTimeout(420000);
       const cx = makeContext(page, `${locale}-${vpName}`, locale, htmlLang);
-      const pressed = async code => expect.soft(await page.locator(`.route-locales [data-locale="${code}"]`).getAttribute('aria-pressed'), `${cx.id} switch ${code}`).toBe(String(code === cx.locale));
+      const pressed = async code => expect.soft(await page.locator('#locale-select').inputValue() === code, `${cx.id} switch ${code}`).toBe(code === cx.locale);
 
       // Start screen, fresh profile: locked tracks show their unlock hints.
       await check(cx, 'start');
@@ -316,7 +317,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await check(cx, 'full-dom', { all: true });
 
       const other = cx.locale === 'en' ? 'zh-TW' : 'en';
-      await page.locator(`.route-locales [data-locale="${other}"]`).click();
+      await selectLocale(page, other);
       Object.assign(cx, { locale: other, htmlLang: other });
       await check(cx, `after-switch-to-${other}`);
       await page.locator('[data-open-history]').first().click();
@@ -338,7 +339,7 @@ test.describe('language detection and persistence', () => {
       test(`resolves to ${expected} and never persists the detected value`, async ({ page }) => {
         await page.goto('/');
         await expect(page.locator('html')).toHaveAttribute('lang', expected);
-        await expect(page.locator(`[data-locale="${expected}"]`)).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.locator('#locale-select')).toHaveValue(expected);
         expect(await page.evaluate(() => localStorage.getItem('skyline-rush-locale'))).toBeNull();
         const start = await page.locator('#start-button').innerText();
         expect(CJK.test(start)).toBe(expected === 'zh-TW');
@@ -362,12 +363,12 @@ test.describe('language detection and persistence', () => {
         test(`click ${pick}, reload, still ${pick}`, async ({ page }) => {
           await page.goto('/');
           await expect(page.locator('html')).toHaveAttribute('lang', other);
-          await page.locator(`[data-locale="${pick}"]`).click();
+          await selectLocale(page, pick);
           await expect(page.locator('html')).toHaveAttribute('lang', pick);
           expect(await page.evaluate(() => localStorage.getItem('skyline-rush-locale'))).toBe(pick);
           await page.reload();
           await expect(page.locator('html')).toHaveAttribute('lang', pick);
-          await expect(page.locator(`[data-locale="${pick}"]`)).toHaveAttribute('aria-pressed', 'true');
+          await expect(page.locator('#locale-select')).toHaveValue(pick);
           expect(CJK.test(await page.title())).toBe(pick === 'zh-TW');
         });
       });
@@ -442,7 +443,7 @@ for (const [locale, system] of LOCALES) test.describe(`road signs ${locale}`, ()
       expect.soft(sign.edge, `${locale} sign ${i} text touches the frame`).toBe(0);
     }
     const other = locale === 'en' ? 'zh-TW' : 'en';
-    await page.locator(`[data-locale="${other}"]`).click();
+    await selectLocale(page, other);
     const after = await signStats(page);
     await dump(`${locale}-then-${other}`);
     for (const [i, sign] of after.entries()) {

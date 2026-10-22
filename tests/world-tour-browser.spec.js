@@ -1,3 +1,4 @@
+import { selectLocale } from './helpers/locale-browser.js';
 import { test, expect } from '@playwright/test';
 import { RACE_TRACKS } from '../src/game.js';
 const ids = Object.keys(RACE_TRACKS);
@@ -23,12 +24,12 @@ test('ten full-route previews and bilingual names are available without exposing
   await expect(page.locator('.track-route-map svg')).toHaveCount(ids.length);
   await expect(page.locator('.track-route-map polyline')).toHaveCount(ids.length);
   for (const id of ids) await expect(page.locator(`.preview-${id}`), `${id} preview has its own sky`).not.toHaveCSS('background-image', 'none');
-  await page.locator('[data-locale="zh-TW"]').click();
+  await selectLocale(page, 'zh-TW');
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
   await expect(page.locator('[data-track="taipei"] strong')).toHaveText('台北古都');
   await expect(page.locator('[data-track="cosmic"] strong')).toHaveText('星際軌道');
   await expect(page.locator('#track-length')).toHaveText('5 KM 衝刺賽');
-  await page.locator('[data-locale="en"]').click();
+  await selectLocale(page, 'en');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('[data-track="taipei"] strong')).toHaveText('Taipei Heritage');
   await expect(page.locator('#track-length')).toHaveText('5 KM SPRINT');

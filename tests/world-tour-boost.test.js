@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RACE_TRACKS, createRace, startRace, stepRace } from '../src/game.js';
+import { RACE_TRACKS, NITRO_FUEL_BONUS, createRace, startRace, stepRace } from '../src/game.js';
 const ids=['taipei','tokyo','alpine','coastal','cosmic'];
 test('every World Tour track has one nonoverlapping boost tunnel in the main road', () => {
  for(const id of ids){
@@ -22,9 +22,9 @@ test('entering a boost tunnel once grants speed burst and nitro without draining
   assert.equal(race.player.boostTunnelClaimed[0],t.from,id);
   assert.ok(race.player.miniBoost>3,id);
   assert.ok(race.player.nitro>=0.55-1e-9,id);
-  // Standard ground regeneration still applies (+13/s); the portal never burns fuel.
-  assert.ok(race.player.fuel>=72&&race.player.fuel<=72+13/60+1e-9,id);
   const granted=race.player.nitro;
+  // Ground regeneration (+13/s) and the banked-nitro fuel bonus apply; the portal never burns fuel.
+  assert.ok(race.player.fuel>=72&&race.player.fuel<=72+13/60+(granted-0.3)*NITRO_FUEL_BONUS+1e-9,id);
   for(let i=0;i<40;i++)stepRace(race,{throttle:true},1/60);
   assert.equal(race.player.nitro,granted,id);
   assert.equal(race.player.boostTunnelClaimed.length,1,id);
