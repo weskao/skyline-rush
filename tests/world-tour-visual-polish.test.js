@@ -30,9 +30,13 @@ test('persistent roadside props do not teleport or recreate on 12-m road rebuild
     const secs=RACE_TRACKS[id].sections;
     renderer.update(id,1439.95,'high',secs,1,true);
     const layer=root.getObjectByName('Distance-anchored continuous scenery');
-    const chunk=layer.getObjectByName('world-tour-'+id+'-chunk-11');
+    // First chunk from 11 ahead that holds props (a landmark plaza may empty
+    // one); every one of them stays streamed across the 1440 m boundary.
+    const prop=c=>SCENERY_KINDS[id].includes(c.name)&&c.userData.batched;
+    const chunk=[11,12,13,14,15,16].map(n=>layer.getObjectByName('world-tour-'+id+'-chunk-'+n))
+      .find(c=>c?.children.some(prop));
     assert.ok(chunk,id+' has a persistent chunk');
-    const first=chunk.children.find(c=>SCENERY_KINDS[id].includes(c.name)&&c.userData.batched);
+    const first=chunk.children.find(prop);
     assert.ok(first,id+' has authored props');
     root.updateMatrixWorld(true);
     const before=new THREE.Vector3();first.getWorldPosition(before);

@@ -1018,6 +1018,35 @@ export function createWorld(canvas) {
           worldY:mesh.position.y};
       });
     },
+    inspectLandmarks() {
+      // Read-only browser QA: projected NDC bounds of each World Tour landmark,
+      // so home showcases can assert their signature landmark is in frame.
+      camera.updateMatrixWorld(true);
+      const raycaster=new THREE.Raycaster();
+      const shown=object=>{for(let o=object;o;o=o.parent)if(!o.visible)return false;return true;};
+      return worldTourScene.landmarks().map(hero=>{
+        const box=new THREE.Box3().setFromObject(hero),xs=[],ys=[],zs=[];
+        for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){
+          const p=new THREE.Vector3(x,y,z).project(camera);xs.push(p.x);ys.push(p.y);zs.push(p.z);
+        }
+        const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+        // Unobstructed share: rays through a 5x5 grid of on-screen landmark
+        // samples whose first scene hit is the landmark itself.
+        let samples=0,hits=0;
+        if(hero.visible&&zs.every(z=>z<1))for(let i=0;i<5;i++)for(let j=0;j<5;j++){
+          const x=THREE.MathUtils.lerp(minX,maxX,(i+.5)/5),y=THREE.MathUtils.lerp(minY,maxY,(j+.5)/5);
+          if(Math.abs(x)>1||Math.abs(y)>1)continue;
+          raycaster.setFromCamera(new THREE.Vector2(x,y),camera);
+          const hit=raycaster.intersectObjects(scene.children,true).find(h=>h.object.isMesh&&shown(h.object));
+          if(!hit)continue;samples++;
+          let node=hit.object;while(node&&node!==hero)node=node.parent;
+          if(node)hits++;
+        }
+        return {kind:hero.userData.entry.kind,visible:hero.visible,minX,maxX,minY,maxY,
+          inFront:zs.every(z=>z<1),unobstructed:samples?hits/samples:0,
+          distance:camera.position.distanceTo(box.getCenter(new THREE.Vector3()))};
+      });
+    },
     dispose() {
       stopLocaleSigns();
       skyScene.dispose(); worldTourScene.dispose();

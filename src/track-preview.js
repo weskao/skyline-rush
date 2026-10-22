@@ -3,6 +3,12 @@
 // Keep the 50° FOV / three-quarter chase camera at the ORIGINAL home-screen
 // distance and scale; cameraHeight is the offset ABOVE the hovering car. Use each 3D road's own tangent to avoid looking off-track.
 export const HERO_PREVIEWS = Object.freeze({
+  // Signature-landmark shots: the same chase camera pitched up (lookHeight)
+  // to frame the landmark ahead, right of the home UI panel.
+  taipei: { distance: 1250, landmark: 'office', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
+  tokyo: { distance: 3075, landmark: 'tower', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 8 },
   alpine: { distance: 1510, cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 1.4 },
   cosmic: { distance: 3940, cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,

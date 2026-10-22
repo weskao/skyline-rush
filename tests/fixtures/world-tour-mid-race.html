@@ -56,7 +56,7 @@
   window.worldTourPreviewProbe=id=>{
     const race=createRace(id);
     world.render(race,1/60,2,{});
-    return {id,actors:world.inspectShowcase()};
+    return {id,actors:world.inspectShowcase(),landmarks:world.inspectLandmarks()};
   };
     window.worldTourReady = true;
 </script>

@@ -13,7 +13,7 @@ export const WORLD_THEMES = {
   taipei: {
     top:'#405970',horizon:'#91a4a4',fog:'#74868b',rock:'#657e83',road:'#373e41',ground:'#536374',rail:'#929f9a',sun:'#c3c9c5',warmth:.08,
     buildings:'#ad6e59',accent:'#f3c47b',prop:'city',landmarks:[
-      {kind:'office',at:1150,side:-1,offset:94,scale:1.12},
+      {kind:'office',at:1750,side:1,offset:94,scale:1.7,yaw:.6,plaza:520},
       {kind:'gate',at:2630,side:1,offset:71,scale:1.12},
       {kind:'temple',at:4480,side:-1,offset:75,scale:1.25},
     ],
@@ -22,7 +22,7 @@ export const WORLD_THEMES = {
     top:'#121a31',horizon:'#38415e',fog:'#32364d',rock:'#252e44',road:'#202b3b',ground:'#232c40',rail:'#838a98',sun:'#a0a7bc',warmth:0,
     buildings:'#29305c',accent:'#ff49bd',prop:'neon',landmarks:[
       {kind:'crossing',at:1200,side:-1,offset:66,scale:1.2},
-      {kind:'tower',at:3200,side:1,offset:125,scale:1.25},
+      {kind:'tower',at:3300,side:-1,offset:110,scale:1.25,plaza:500},
       {kind:'railway',at:5180,side:-1,offset:78,scale:1.05},
     ],
   },
@@ -130,6 +130,10 @@ export function createWorldTourScene(scene){
       if(chunks.has(index))continue;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
       for(const item of sceneryPlan(id,index,level==='low')){
+        // An authored plaza (an open boulevard) keeps the sightline to a hero
+        // landmark free of roadside props on both kerbs.
+        if(WORLD_THEMES[id].landmarks.some(l=>l.plaza&&
+          item.distance>l.at-l.plaza&&item.distance<l.at+60))continue;
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
@@ -293,7 +297,8 @@ export function createWorldTourScene(scene){
       for(const hero of heroGroup.children){
         const entry=hero.userData.entry;
         pose(hero,id,entry.at,entry.side*(entry.offset||80),0,origin);
-        hero.rotateY(-entry.side*Math.PI*.5);
+        // Optional yaw turns a facade toward the showcase camera's sightline.
+        hero.rotateY(-entry.side*Math.PI*.5+(entry.yaw||0));
         hero.scale.setScalar(entry.scale||1);
       }
       if(water.visible)water.position.set(0,-33,-450);
@@ -358,6 +363,7 @@ export function createWorldTourScene(scene){
         }
       }
     },
+    landmarks(){return heroGroup.children;},
     hide(){group.visible=false;},
     dispose(){
       clearHeroes();clearChunks();kit.dispose();tunnelKit.dispose();group.removeFromParent();

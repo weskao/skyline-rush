@@ -1,6 +1,6 @@
 import { test,expect } from './helpers/test.js';
 
-for(const id of ['alpine','cosmic']) {
+for(const id of ['taipei','tokyo','alpine','cosmic']) {
   test(`${id}: home preview is a full, dynamic four-car airborne showcase with matching scale`,async({page},info)=>{
     const errors=[];
     page.on('pageerror',error=>errors.push(error.message));
@@ -33,13 +33,36 @@ for(const id of ['alpine','cosmic']) {
   });
 }
 
-test('Alpine and Cosmic selection keep the actual 3D showroom animated, not a static card',async({page},info)=>{
+for(const [id,kind] of [['taipei','office'],['tokyo','tower']]) {
+  for(const [layout,viewport] of [['landscape',{width:640,height:360}],['portrait',{width:390,height:844}]]) {
+    test(`${id}: ${layout} home preview frames its signature landmark`,async({page},info)=>{
+      await page.setViewportSize(viewport);
+      await page.goto('/tests/fixtures/world-tour-mid-race.html');
+      await page.waitForFunction(()=>window.worldTourReady===true);
+      const landmark=await page.evaluate(([id,kind])=>{
+        let probe;for(let i=0;i<3;i++)probe=window.worldTourPreviewProbe(id);
+        return probe.landmarks.find(entry=>entry.kind===kind);
+      },[id,kind]);
+      expect(landmark.visible&&landmark.inFront).toBe(true);
+      expect(landmark.maxY,'landmark top stays in frame').toBeLessThan(.98);
+      // Landscape home UI covers the left half: the landmark sits right of it.
+      if(layout==='landscape'){
+        expect(landmark.minX).toBeGreaterThan(.04);
+        expect(landmark.maxX).toBeLessThan(.98);
+      }else expect(Math.abs((landmark.minX+landmark.maxX)/2)).toBeLessThan(1);
+      expect(landmark.unobstructed,'roadside props must not hide the landmark').toBeGreaterThan(.2);
+      await page.screenshot({path:info.outputPath(`world-tour-${id}-${layout}-landmark-showcase.png`)});
+    });
+  }
+}
+
+test('World Tour selection keeps the actual 3D showroom animated, not a static card',async({page},info)=>{
   await page.addInitScript(()=>{
     localStorage.setItem('skyline-rush-unlocked',JSON.stringify(['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic']));
     localStorage.setItem('skyline-rush-music','off');
   });
   await page.goto('/');
-  for(const id of ['alpine','cosmic']) {
+  for(const id of ['taipei','tokyo','alpine','cosmic']) {
     await page.locator(`[data-track="${id}"]`).click();
     await page.waitForTimeout(650);
     await expect(page.locator('#start-button')).toBeVisible();
