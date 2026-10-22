@@ -427,7 +427,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [x] Reuse the existing 10 Hz best-run Ghost when the recorded trace and rules
   are compatible; show `Ahead / Behind` split against the personal record.
   Keep separate Ghost data for mode-specific bests if necessary.
-- [ ] Optional **Clean Time Trial** variant: collisions invalidate a clean medal or
+- [x] Optional **Clean Time Trial** variant: collisions invalidate a clean medal or
   apply an explicit time penalty; do not silently change legacy physics.
 - [ ] **Acceptance:** timed results/ghosts remain isolated from Classic bests;
   blocked localStorage never prevents play; mobile HUD remains readable.
@@ -445,7 +445,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 9F. Checkpoint Rush (P1)
 
-- [ ] **MODE-05 — Checkpoint Rush:** pass a deterministic sequence of grounded or
+- [x] **MODE-05 — Checkpoint Rush:** pass a deterministic sequence of grounded or
   aerial gates before time expires; each clean gate extends the timer.
 - [ ] Choose checkpoints from the **real track route and reachable flight envelopes**;
   prevent impossible gates inside tunnel roofs, road gaps or conflicting hazards.
@@ -470,7 +470,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [ ] **MODE-07 — Obstacle Gauntlet:** fixed-seed hazard challenges with
   escalating moving gates, road barricades, flying hoops, debris and safe/risky
   alternate lines. Keep the ordinary track drivable in Classic mode by default.
-- [ ] Add difficulty tiers based on warning time, obstacle spacing and
+- [x] Add difficulty tiers based on warning time, obstacle spacing and
   activation frequency **without random unavoidable collisions**.
 - [ ] Score clean obstacle passes, near-misses and finish time; practice and
   obstacle-mode records stay separate.
