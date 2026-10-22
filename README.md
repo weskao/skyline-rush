@@ -8,14 +8,14 @@ A playable 3D coastal highway sprint starring a flying electric sports car, mode
 
 ## The game
 
-Skyline Rush is a short, replayable arcade sprint in the browser: one player against three rivals and the traffic between them, on desktop or phone, with nothing to install.
+In Classic Race, Skyline Rush is a short, replayable arcade sprint in the browser: one player against three rivals and the traffic between them, on desktop or phone, with nothing to install. Other modes offer solo driving, custom rules and multi-stage challenges.
 
 - **Drive, then fly.** Above 65 km/h, hold FLY to lift off over traffic, through rings and across broken bridges. Flight and BOOST share one thruster charge that refills only on the road, so every climb is a choice.
 - **Earn NITRO by driving well.** Close passes, drifts, ring groups (PERFECT LINE), slipstreams, landed barrel rolls and pickups fill a three-charge NITRO reserve; spend it in one burst or chain presses to extend it.
 - **Ten tracks, unlocked in order.** Coast at dusk, rainy Neon Downtown with low tunnels, Canyon Skyway with bridge gaps and crosswinds, Aurora Pass with ice and uphill climbs, Sky Spiral's 360° elevated helix with jump ramps and broken skybridges, then the World Tour: Taipei Heritage, Tokyo Afterdark, Alpine Rail Pass, Coastal Horizon and Cosmic Orbit. Each has one aerial shortcut for players who can hold a line in the air.
 - **Something to chase.** Every finish scores style stars that unlock paints in the Garage. A best-run ghost, a daily challenge with its own board and four medals give reasons to race again.
 
-Races last about a minute. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
+A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
 ![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261022a)
 
@@ -24,6 +24,35 @@ Races last about a minute. Sound is synthesized in the browser, and progress sta
 ![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261022a)
 
 ![Race results with a new personal best](artifacts/race-results.jpeg?v=20261022a)
+
+## Game modes and replayability (development branch)
+
+> **Work in progress · 22 October 2026.** These mode additions are on [`feature/race-modes-p0`](https://github.com/weskao/skyline-rush/tree/feature/race-modes-p0), not necessarily on the [deployed GitHub Pages build](https://weskao.github.io/skyline-rush/). The existing screenshots above show earlier gameplay; current mode captures are linked below. The [roadmap](TODO.md) includes additional unfinished features.
+
+Select a **track you have unlocked**, choose **GAME MODE** below the track cards, expand its rules when needed, then press **Start race** (or Enter). Racing still uses the same Three.js road, flying, FLY / BOOST / NITRO and responsive touch controls. Seven modes are available in the development branch:
+
+| Mode | What changes | Win condition / progression |
+| --- | --- | --- |
+| **Classic Race** | Standard 3-rival sprint on one of 10 tracks, with traffic, shortcuts, rings and NITRO. | Podium finishes unlock the next track; Classic alone awards Career stars, medals and official bests. |
+| **Custom Race** | Choose **0–3 rivals**, Easy / Normal / Hard AI, Off / Light / Normal / Heavy traffic, NITRO pickups on/off, and Normal / Relaxed collision penalties. Five presets: Standard, Traffic Rush, No Items, Air Focus and Precision. | Unranked results have their own history. Run **1 / 2 / 3 / 5 sprint stages** and compare aggregate time. Stages replay point-to-point routes; they are **not circuit laps**. |
+| **Free Drive** | Explore any unlocked course alone, with adjustable road traffic and pickups, no race placing and no forced victory. | Drive, drift and fly freely, then restart or choose another track. The authored road has an endpoint; this is **not** an infinite-world mode. |
+| **Time Attack** | Solo timed sprint, compatible best-run Ghost and ahead/behind split. Optional **Clean Time Trial** toggle. | Track and rules-specific best times; a Clean run with any collision is invalidated and does not replace a personal best. |
+| **Obstacle Run** | Seeded roadside barriers; **Standard** or **Extreme** density. Some obstacles sweep sideways; warning HUD previews approaching danger. | Dodge hazards, earn style points for clean passes and use the ordinary route's finish. Obstacle placement and collision share deterministic logic; Classic is unchanged. |
+| **Checkpoint Rush** | Race through glowing 3D gate arches. Start with **28 seconds**; each clean gate grants **+10 seconds** (capped at 60) and **250 style points**. | Reach every gate and the finish before the clock expires. Missed gates and timeouts do **not** save a valid best. The HUD shows gates cleared, time remaining and distance to the next target. |
+| **Championship Cup** | Pick a **3- or 5-track** Cup made only of already unlocked routes; race NOVA, ORBIT and APEX on each stage. | Placements award **10 / 7 / 5 / 3 points**; cumulative standings and total time decide the champion, with ties broken by time. Cup results are separate from Career unlocks. |
+
+### Race setup, results and accessibility
+
+- Mode and track selection remain accessible by keyboard and touch; contextual panels only show options relevant to the selected mode. Unavailable Cups explain the number of tracks still required.
+- HUDs adapt to the mode: solo events hide misleading rival ranks; multi-stage and Cup runs show stage progress; Checkpoint Rush shows its live gate countdown; Obstacle Run warns of approaching barriers; Clean Time Trial visibly indicates an invalidated run.
+- Practice, Custom, Time Attack, Obstacle, Checkpoint and Cup results use the separate `skyline-rush-mode-history-v1` record key. Eligible practice Ghosts have their own saved ruleset; Classic unlocks, stars, medals, Daily records and official times are protected from practice runs.
+- Mode labels, result explanations, setup options and danger warnings support English and Traditional Chinese. Low-quality graphics, touch controls and reduced motion remain part of the verification plan.
+
+### Real game screenshots and verification
+
+The screenshots used to inspect these modes were taken **from the running browser game**, not concept art. [Download the actual Playwright capture set](https://github.com/weskao/skyline-rush/actions/runs/39742666980/artifacts/12410172411) (Custom solo, Free Drive, Time Attack, Obstacle Run, Extreme obstacles, Checkpoint Rush and mobile mode menu). GitHub Actions artifacts may require sign-in and expire; to recreate them locally, run `npx playwright test tests/race-modes-browser.spec.js` and open `test-results/race-mode-*.png`. CI screenshots are software-rendered at reduced resolution, not representative of final device image quality.
+
+**Verification snapshot, commit `beab3e2`:** `npm test`, the production build and the World Tour mid-race test passed; the focused race-mode browser job reported **11 passed / 1 failed** (Clean Time Trial browser test timeout). This branch is **not fully verified or deployed**. Future roadmap items—including Stunt Attack, unlimited procedural roads, genuine closed-circuit laps, active inventory and the course editor—remain pending unless marked `[x]` in [TODO.md](TODO.md).
 
 ## Run locally
 
@@ -110,7 +139,7 @@ All saves use try/catch, so the game still runs when storage is blocked. `skylin
 
 - **Ghost**: each run samples the car's distance, lane position and altitude 10 times per second. A new personal best on a track saves that run, and later races on the track show it as a translucent blue car. Turn it off with **Show best-run ghost** in Controls.
 - **Daily challenge**: History shows today's track and modifier, picked from the local date: no flight, double traffic, or gold rings only. Canyon never gets no flight, because its broken bridges need it. Daily runs go only on their own board (the fastest five today); they never touch history, best times, unlocks, stars or ghosts. Restart keeps the challenge, and **Choose track** leaves it.
-- **Medals**: First victory (win), Clean run (no collisions), Perfect flight (5 PERFECT LINEs in one race) and Triple burst (3 NITRO charges in one burst: one press plus two extensions). Any finished race can award them; each keeps the date it was first earned.
+- **Medals**: First victory (win), Clean run (no collisions), Perfect flight (5 PERFECT LINEs in one race) and Triple burst (3 NITRO charges in one burst: one press plus two extensions). Only eligible Classic Race finishes can award them; each keeps the date it was first earned.
 - **Garage**: your best style stars on each track add up and unlock paints: Aurora at 3, Glacier at 6, Coral at 10, Cobalt at 16 and Obsidian at 24 (30 is the maximum). The most popular real-world car colours, blue and black, are the long-term goals. Locked paints can still be previewed. Paint only changes the look, never the car's stats.
 
 ### Sky Spiral (experimental fifth track)
