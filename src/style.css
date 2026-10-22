@@ -109,7 +109,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .bottomline { position: fixed; bottom: max(20px, env(safe-area-inset-bottom, 0px)); left: max(40px, env(safe-area-inset-left, 0px)); right: max(40px, env(safe-area-inset-right, 0px)); display: flex; justify-content: space-between; font-size: 8px; letter-spacing: 1.9px; color: #a5b2bd; z-index: 3; }
 .bottomline > span { display: flex; align-items: center; gap: 8px; }
 .bottomline i { width: 4px; height: 4px; display: inline-block; border-radius: 50%; background: var(--accent); }
-.build-version { position: fixed; z-index: 3; left: 0; right: 0; bottom: max(4px, env(safe-area-inset-bottom)); text-align: center; font-size: 9px; letter-spacing: 1.5px; color: #8d9daa; pointer-events: none; display: none; }
+.build-version { position: fixed; z-index: 3; left: 0; right: 0; bottom: max(4px, env(safe-area-inset-bottom)); text-align: center; font-size: 11px; letter-spacing: 1.5px; color: #a5b2bd; font-variant-numeric: tabular-nums; pointer-events: none; display: none; }
 body[data-phase="ready"] .build-version { display: block; }
 .race-info { position: fixed; z-index: 3; inset: 135px 40px auto; display: flex; justify-content: space-between; gap: 35px; pointer-events: none; }
 .position-stat > div { display: flex; align-items: baseline; gap: 9px; margin-top: 6px; }
