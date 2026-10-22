@@ -1136,6 +1136,15 @@ function updateUI(now, input) {
     n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
     total: sprintSeries.count,
   });
+  const practiceHud = $('#practice-hud');
+  practiceHud.hidden = !race.practice;
+  if (race.practice) practiceHud.textContent = t('mode.practiceTelemetry', {
+    km: (race.practice.travelled / 1000).toFixed(2),
+    max: Math.round(race.practice.maxSpeed * 3.6),
+    air: race.practice.airTime.toFixed(1),
+    near: race.practice.nearMisses,
+    tricks: race.practice.tricks,
+  });
   const car = race.player;
   const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
   const calm = visual.comfortable || reducedMotion.matches;

@@ -167,3 +167,17 @@ test('Cup length cannot bypass locked tracks with Enter',async({page})=>{
  await page.keyboard.press('Enter');
  await expect(page.locator('body')).toHaveAttribute('data-phase','ready');
 });
+
+test('Free Drive shows live, zeroed practice telemetry without showing rival rank', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="free"]').click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#practice-hud')).toBeVisible();
+  await expect(page.locator('#practice-hud')).toContainText('AIR');
+  await expect(page.locator('#practice-hud')).toContainText('TRICKS');
+  await expect(page.locator('#leaderboard')).toBeHidden();
+  expect(errors).toEqual([]);
+});

@@ -1,6 +1,7 @@
 import { seededRng } from './rng.js';
 import { createHazards, hazardX } from './hazards.js';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
+import { createPracticeStats, samplePractice } from './practice-stats.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
@@ -242,6 +243,7 @@ export function createRace(trackId = 'coast', modifier = null) {
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
     hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) : [],
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
+    practice: config.mode === 'free' ? createPracticeStats() : null,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
@@ -617,6 +619,7 @@ export function stepRace(race, input, dt) {
   if (race.checkpoint) {
     car.score += stepCheckpointRush(race.checkpoint, previousDistance, car, dt);
   }
+  if (race.practice) samplePractice(race.practice, car, Math.max(0, Math.min(car.distance, race.length) - previousDistance), dt);
   if (race.mode === 'free' && car.distance >= race.length) {
     car.distance = race.length; // authored point-to-point road ends here; no fake infinite road
     car.speed = 0;
