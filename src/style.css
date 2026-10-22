@@ -1143,3 +1143,5 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 #custom-rules[hidden], .race-setup[hidden], #exit-free[hidden] { display: none; }
 #leaderboard .racer[hidden] { display: none; }
 @media (max-width: 760px) { .race-setup { width: 100%; } .race-setup-options { max-height: 54dvh; } }
+
+#leaderboard[hidden] { display: none !important; }

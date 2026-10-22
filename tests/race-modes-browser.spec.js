@@ -12,7 +12,7 @@ test('mode selection changes ready-screen rules without touching the campaign tr
     select.value = '0';
     select.dispatchEvent(new Event('change', { bubbles:true }));
   });
-  await expect(page.locator('.route-drivers')).toHaveText('1 DRIVERS');
+  await expect(page.locator('.route-drivers')).toHaveText('1 DRIVER');
   await expect(page.locator('#start-button')).toBeEnabled();
   await page.locator('#race-mode').evaluate(select => {
     select.value = 'time';
@@ -29,7 +29,7 @@ test('Free Drive does not show an official result at the normal finish', async (
     select.dispatchEvent(new Event('change', { bubbles:true }));
   });
   await page.locator('#start-button').click();
-  await expect(page.locator('#race-status')).toContainText('RACING');
+  await expect(page.locator('#race-status')).toHaveText('Free Drive');
   await page.keyboard.press('Escape');
   await expect(page.locator('#exit-free')).toBeVisible();
   await page.locator('#exit-free').click();

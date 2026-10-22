@@ -995,9 +995,13 @@ function updateUI(now, input) {
   const flying = car.altitude > 0.25;
   ui.speed.textContent = String(Math.round(car.speed * 3.6));
   speedNeedle.style.transform = `rotate(${-70 + Math.min(1, car.speed / (MAX_SPEED + 30)) * 140}deg)`;
-  $('#position-total').textContent = `/ ${String(race.rivals.length + 1).padStart(2, '0')}`;
+  const freeDrive = race.config?.mode === 'free';
+  $('.position-stat > .stat-label').textContent = t(freeDrive ? 'mode.free' : 'race.position');
+  ui.leaderboard.hidden = freeDrive;
+  $('#position-total').textContent = freeDrive ? '' : `/ ${String(race.rivals.length + 1).padStart(2, '0')}`;
+  if (freeDrive) { ui.position.textContent = '—'; previousPosition = null; }
   const position = racePosition(race);
-  if (previousPosition !== position) {
+  if (!freeDrive && previousPosition !== position) {
     ui.position.textContent = String(position).padStart(2, '0');
     if (previousPosition !== null && race.phase === 'racing') {
       const gained = position < previousPosition;
@@ -1014,7 +1018,7 @@ function updateUI(now, input) {
     }
     previousPosition = position;
   }
-  positionChange.hidden = race.phase !== 'racing' || now >= positionUntil;
+  positionChange.hidden = freeDrive || race.phase !== 'racing' || now >= positionUntil;
   if (positionChange.hidden) delete ui.position.dataset.direction;
   if (calm || race.phase !== 'racing') for (const element of [ui.position, positionChange]) element.getAnimations().forEach(animation => animation.cancel());
   ui.timer.textContent = timeString(race.elapsed);
@@ -1152,7 +1156,7 @@ function updateUI(now, input) {
   }
   countdownLabel.textContent = L[countdown ? autoThrottle ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline'];
   const length = race.length;
-  let status = L[`phase.${race.phase}`];
+  let status = race.phase === 'racing' && race.config?.mode === 'free' ? L['mode.free'] : L[`phase.${race.phase}`];
   if (race.config?.mode !== 'free' && race.phase === 'racing' && car.distance >= length - 500) {
     const { ahead, behind } = sprintGaps(race);
     status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
