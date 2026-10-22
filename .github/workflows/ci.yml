@@ -154,3 +154,39 @@ jobs:
             [ "$i" = 6 ] && { echo "page missing $js"; exit 1; }; sleep 10
           done
           curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors -o /dev/null "$origin$js"
+
+  # Failure-only pager: a notification on every push is one nobody reads. Credentials live in repo secrets
+  # (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Pull requests are excluded because fork PRs get no secrets.
+  notify-telegram:
+    needs: [unit-tests, race-mode-smoke, browser-tests, world-tour-mid-race, deploy]
+    if: ${{ failure() && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Notify Telegram
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # Unset secrets (a fork, or a clone never configured) skip quietly instead of adding a second red X.
+          if [ -z "$TOKEN" ] || [ -z "$CHAT_ID" ]; then
+            echo "::notice::TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set — skipping notification"
+            exit 0
+          fi
+          # parse_mode=HTML: a branch containing < & > would otherwise make Telegram reject the message.
+          esc() { printf '%s' "$1" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'; }
+          ci_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          message="🚨 <b>CI failed</b>
+
+          <b>Repository:</b> <code>$(esc "$GITHUB_REPOSITORY")</code>
+          <b>Branch:</b> <code>$(esc "$GITHUB_REF_NAME")</code>
+          <b>Event:</b> <code>$(esc "$GITHUB_EVENT_NAME")</code>
+          <b>Commit:</b> <code>$(esc "${GITHUB_SHA::7}")</code>
+
+          <a href=\"$ci_url\">Open failed CI run</a>"
+          curl --fail --silent --show-error --max-time 30 \
+            --data-urlencode "chat_id=$CHAT_ID" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text=$message" \
+            "https://api.telegram.org/bot$TOKEN/sendMessage"
