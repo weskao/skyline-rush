@@ -13,8 +13,9 @@ Detailed, file-scoped rules live in `.claude/rules/` and load only when their fi
 ## Home-screen landmark showcase
 
 Selecting a map on the home screen must show that map's signature landmark in the live 3D
-preview, and roadside props or terrain must not hide it there or while racing toward it. Every
-new map ships the same way; placement, occlusion and test rules are in
+preview, and roadside props or terrain must not hide it there or while racing toward it —
+without thinning the street: blocking props move or shrink, never disappear. Every new map
+ships the same way; placement, occlusion and test rules are in
 `.claude/rules/track-showcase.md` ("Signature landmark").
 
 ## Commands

@@ -57,9 +57,13 @@ gate). Every new map ships the same way.
   0.98. Portrait: center on screen.
 - **No occlusion, near or far**: geometry is fixed and only placement changes (`at`, `side`,
   `offset`, `scale`, `yaw` in `WORLD_THEMES`). The landmark's `plaza` (metres before it) runs
-  `blocksLandmark()` in `src/world-tour-scene.js`: a roadside prop is dropped only when, seen
-  from some approach point, it sits nearer than the landmark and inside its angular width.
-  Never clear whole kerbs; the street must stay populated. When terrain itself is the blocker
+  `blocksLandmark()` in `src/world-tour-scene.js`: a prop blocks when, seen from some approach
+  point, it sits nearer than the landmark and inside its angular width.
+- **Keep the street as rich as before**: `landmarkSafePlan()` never deletes a blocker. It
+  moves it to the first clear slot (one plot farther out, the other kerb, 13 m along it, or
+  farther out still); a prop with no clear slot stays in place at 45% size. The prop count per
+  chunk must equal `sceneryPlan()` (unit-tested). Never clear whole kerbs or thin the approach;
+  small props may cross the landmark's edges, never its main body. When terrain itself is the blocker
   (valley walls), open a `TERRAIN_VISTAS` entry in `src/world-tour-scenery.js` (terrain mesh
   and prop heights share `terrainHeight`, so no seams).
 - **Measure, do not eyeball**: `world.inspectLandmarks()` (QA only) reports projected
