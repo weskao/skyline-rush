@@ -226,7 +226,10 @@ function showOneTimePerformanceNotice(){
   refreshPerformanceNotice();
   performanceNotice.hidden=false;
 }
-performanceNoticeDismiss.addEventListener('click',()=>{ performanceNotice.hidden=true;});
+const hidePerformanceNotice=()=>{ performanceNotice.hidden=true; };
+performanceNoticeDismiss.addEventListener('click',hidePerformanceNotice);
+// The notice floats over the toolbar panels; opening one means the reader is already in the settings it points to.
+$('#vfx-panel').addEventListener('toggle',event=>{ if(event.target.open)hidePerformanceNotice(); });
 showOneTimePerformanceNotice();
 let raceRouteMap;
 const trackRouteMaps = new Map();
@@ -598,6 +601,7 @@ function toggleSound() {
 
 function toggleSettings(open = ui['settings-panel'].hidden) {
   ui['settings-panel'].hidden = !open;
+  if (open) hidePerformanceNotice();
   ui['settings-button'].setAttribute('aria-expanded', String(open));
 }
 
@@ -606,6 +610,7 @@ function toggleControls(open = ui['controls-panel'].hidden) {
   open &&= race.phase === 'ready' || race.phase === 'paused';
   if (!open) rebinding = null;
   ui['controls-panel'].hidden = !open;
+  if (open) hidePerformanceNotice();
   ui['controls-button'].setAttribute('aria-expanded', String(open));
 }
 
@@ -1039,6 +1044,7 @@ function updateUI(now, input) {
     if (previousPhase === 'countdown' && race.phase === 'racing') goUntil = now + 0.8;
     phaseUI();
     if (race.phase === 'countdown' && previousPhase !== 'paused') enter(ui.countdown, 'translateY(-24px)');
+    if (race.phase === 'countdown') hidePerformanceNotice(); // never over the race view
     previousPhase = race.phase;
   }
   if (race.phase === 'finished' && presentationState.results) {
