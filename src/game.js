@@ -3,6 +3,7 @@ import { createHazards, hazardX } from './hazards.js';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
 import { createPracticeStats, samplePractice } from './practice-stats.js';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
+import { createElimination, stepElimination } from './elimination.js';
 import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
@@ -247,6 +248,7 @@ export function createRace(trackId = 'coast', modifier = null) {
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     practice: config.mode === 'free' ? createPracticeStats() : null,
     styleAttack: config.mode === 'stunt' ? createStuntAttack() : null,
+    elimination: config.mode === 'elimination' ? createElimination() : null,
     stuntLimit: config.mode === 'stunt' ? config.duration : null,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
@@ -640,8 +642,21 @@ export function stepRace(race, input, dt) {
     car.thrusting = false;
     car.boosting = false;
   }
+  if (race.elimination) {
+    // Keep the original course bounded even if a future car tuning reaches the end early.
+    if (car.distance >= race.length) { car.distance = race.length; car.speed = 0; }
+    const knockout = stepElimination(race.elimination,race);
+    if (knockout?.outcome) {
+      race.result = {position:knockout.outcome === 'won' ? 1 : 4, time:race.elapsed,
+        success:knockout.outcome === 'won', score:Math.round(car.score),
+        collisions:car.collisions, nearMisses:car.nearMisses, nitroUses:car.nitroUses,
+        rings:car.rings, perfectLines:car.perfectLines, stars:1};
+      race.phase='finished'; car.speed=0; car.thrusting=false; car.boosting=false;
+      return;
+    }
+  }
   const stuntTimeUp = race.mode === 'stunt' && race.elapsed >= race.stuntLimit;
-  if (race.mode !== 'free' && (car.distance >= race.length || race.checkpoint?.expired || stuntTimeUp)) {
+  if (!['free','elimination'].includes(race.mode) && (car.distance >= race.length || race.checkpoint?.expired || stuntTimeUp)) {
     const finishTime = stuntTimeUp ? race.stuntLimit : race.checkpoint?.expired ? race.elapsed :
       race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;

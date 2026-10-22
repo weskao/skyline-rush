@@ -52,11 +52,11 @@ export function recordRace(race, storage, now = new Date()) {
 export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
 export function loadModeHistory(storage) {
   const saved = read(MODE_HISTORY_KEY, storage);
-  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt'].includes(run.mode) &&
+  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(run.mode) &&
     typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
 }
 export function recordModeRace(race, storage, now = new Date()) {
-  if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
+  if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
     (race.mode === 'stunt' && (!Number.isFinite(race.result.score) || race.result.score < 0)))
     throw new TypeError('A finished practice race is required');
   const rules = JSON.stringify(race.config);

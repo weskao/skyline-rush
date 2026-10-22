@@ -262,3 +262,15 @@ test('Custom active power-ups show a safe accessible item slot',async({page})=>{
   await page.screenshot({path:'test-results/race-mode-active-items.png'});
   expect(errors).toEqual([]);
 });
+
+test('Elimination mode shows a live knockout countdown in actual WebGL',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/');await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="elimination"]').click();
+  await expect(page.locator('#mode-description')).toContainText('knocked out');
+  await page.locator('#start-button').click();
+  await expect(page.locator('#elimination-hud')).toBeVisible();
+  await expect(page.locator('#elimination-hud')).toContainText('KNOCKOUT');
+  await page.screenshot({path:'test-results/race-mode-elimination.png'});
+  expect(errors).toEqual([]);
+});

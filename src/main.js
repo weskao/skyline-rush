@@ -1089,6 +1089,13 @@ function phaseText() {
   if (phase !== 'finished' || lastResult?.race !== race) return;
   const { best, record, medals, series, cup: finishedCup, stunt: finishedStunt } = lastResult;
   const { result } = race;
+  if (race.mode === 'elimination') {
+    ui['overlay-title'].textContent = t(result.success ? 'mode.eliminationWon' : 'mode.eliminationLost');
+    ui['overlay-copy'].textContent = t('mode.eliminationSummary',{n:race.elimination.eliminated.length});
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.eliminationPosition')}</span><strong>${result.position} / 4</strong></div>
+      <div><span>${t('mode.totalTime')}</span><strong>${timeString(result.time)}</strong></div>`;
+    resultCounts=[];return;
+  }
   if (finishedStunt) {
     const continuing = finishedStunt.elapsed < finishedStunt.duration && result.endReason === 'route';
     const left = Math.max(0, finishedStunt.duration - finishedStunt.elapsed);
@@ -1187,6 +1194,15 @@ function updateUI(now, input) {
   const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
   hazardWarning.hidden = !hazardAhead || hazardDistance > 170 || race.phase !== 'racing';
   if (!hazardWarning.hidden) hazardWarning.textContent = t('mode.hazardWarning', { n: hazardDistance });
+  const eliminationHud=$('#elimination-hud');
+  eliminationHud.hidden = !race.elimination || race.phase === 'ready';
+  if (race.elimination) {
+    eliminationHud.textContent=t('mode.eliminationHud',{
+      active:race.rivals.length+1,
+      seconds:Math.max(0,Math.ceil(race.elimination.nextAt-race.elapsed)),
+    });
+    eliminationHud.dataset.urgent=String(race.elimination.nextAt-race.elapsed <= 3);
+  }
   const checkpointHud = $('#checkpoint-hud');
   checkpointHud.hidden = !race.checkpoint || race.phase === 'ready';
   if (race.checkpoint) {

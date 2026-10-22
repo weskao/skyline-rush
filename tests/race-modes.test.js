@@ -333,3 +333,19 @@ test('active mystery inventory is opt-in and does not change Classic behavior', 
   assert.equal(custom.player.effects.shield,10);
   assert.equal(useHeldItem(classic),null);
 });
+
+test('Elimination begins with three AI and can end without awarding a Career unlock', () => {
+  const race=createRace('coast',{mode:'elimination'});
+  assert.equal(race.rivals.length,3);
+  assert.equal(race.elimination.nextAt,10);
+  race.phase='racing';race.elapsed=9.999;
+  race.player.distance=100;
+  for (const [i,r] of race.rivals.entries()) r.distance=80-i*20;
+  stepRace(race,{},.05);
+  assert.equal(race.elimination.eliminated[0],'APEX');
+  assert.equal(race.rivals.length,2);
+  race.elapsed=19.999;stepRace(race,{},.05);
+  race.elapsed=29.999;stepRace(race,{},.05);
+  assert.equal(race.phase,'finished');
+  assert.equal(race.result.success,true);
+});

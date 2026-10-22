@@ -1,5 +1,5 @@
 // A small, versioned contract for practice modes; Classic and Daily stay identical.
-export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt']);
+export const MODES = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination']);
 const TRAFFIC = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
 const DIFFICULTIES = ['easy', 'normal', 'hard'];
 
@@ -12,7 +12,7 @@ export function normalizeRaceConfig(value = {}) {
   // Only Custom has rivals. Free Drive can adjust traffic and pickups.
   const custom = mode === 'custom';
   const practice = custom || mode === 'free';
-  const rivals = custom && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' ? 3 : 0;
+  const rivals = custom && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' || mode === 'elimination' ? 3 : 0;
   return Object.freeze({
     rulesVersion: 1,
     mode,
