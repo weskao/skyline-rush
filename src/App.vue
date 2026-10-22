@@ -131,6 +131,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <button type="button" data-race-mode="time" aria-pressed="false" data-i18n="mode.time">Time Attack</button>
           <button type="button" data-race-mode="gauntlet" aria-pressed="false" data-i18n="mode.gauntlet">Obstacle Run</button>
           <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
+          <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
         </div>
         <details class="race-mode-rules" id="time-trial-rules" hidden>
           <summary data-i18n="mode.cleanRules">Clean Time Trial</summary>

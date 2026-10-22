@@ -145,3 +145,11 @@ test('Clean Time Trial shows accessible rule toggle and clean driving HUD', asyn
   await page.screenshot({path:'test-results/race-mode-clean-time-attack.png'});
   expect(errors).toEqual([]);
 });
+
+test('Championship Cup honestly requires three previously unlocked tracks', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('button[data-race-mode="cup"]').click();
+  await expect(page.locator('button[data-race-mode="cup"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#track-note')).toContainText('Unlock at least 3 tracks');
+});

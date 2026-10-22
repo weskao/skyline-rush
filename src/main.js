@@ -6,6 +6,7 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, dailyChallen
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
+import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
 import { createWorld } from './world.js';
 import { createSound } from './audio.js';
 import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
@@ -104,7 +105,10 @@ let daily = null; // the challenge being raced; its modifier lives on race.modif
 let selectedMode = 'classic';
 const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, collision: 'normal', stages: 1 };
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
+let cup = null; // Three unlocked point-to-point heats, with rival points carried between heats.
 const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules,
+  ...(selectedMode === 'cup' && unlockedTracks.size >= 3 && unlockedTracks.has(trackId)
+    ? { cupTracks: createCup([...unlockedTracks], trackId).tracks } : {}),
   ...(selectedMode === 'gauntlet' ? { hazardTier: $('#hazard-tier').value } : {}),
   ...(selectedMode === 'time' && $('#clean-trial').checked ? {clean:true} : {}) });
 let previousFuel = 100;
@@ -302,14 +306,14 @@ function showTracks() {
     const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1];
     button.title = locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
   }
-  ui['start-button'].disabled = !daily && !unlockedTracks.has(race.trackId);
+  ui['start-button'].disabled = !daily && (!unlockedTracks.has(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < 3));
   ui['start-button'].setAttribute('aria-describedby', 'track-note');
   $('.start-hint').hidden = ui['start-button'].disabled;
   $('#track-length').textContent = t('track.sprint', { km: track.length / 1000 });
   const tracks = Object.keys(RACE_TRACKS);
   const next = tracks[tracks.indexOf(race.trackId) + 1];
   const previous = tracks[tracks.indexOf(race.trackId) - 1];
-  $('#track-note').textContent = (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+  $('#track-note').textContent = (selectedMode === 'cup' && unlockedTracks.size < 3 ? t('mode.cupLocked') + ' · ' : '') + (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
   const name = trackName(race.trackId, getLocale());
   const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
   $('.route-heading').textContent = route;
@@ -481,7 +485,7 @@ garageScreen.addEventListener('close', () => {
 });
 for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
 function chooseTrack() {
-  controls.clear(); sprintSeries = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
+  controls.clear(); sprintSeries = null; cup = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
   previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
@@ -531,6 +535,7 @@ function start() {
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   if (editingLayout) editLayout(false);
   controls.clear();
+  cup = race.mode === 'cup' && unlockedTracks.size >= 3 ? createCup([...unlockedTracks],race.trackId) : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   leaveIntro();
   startRace(race);
@@ -866,10 +871,12 @@ ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
 ui['again-button'].addEventListener('click', () => {
   if (sprintSeries) sprintSeries = createSprintSeries(sprintSeries.count);
-  restart();
+  if (cup) { cup = createCup([...unlockedTracks], cup.tracks[0]); restart(cup.tracks[0]); }
+  else restart();
 });
 $('#next-stage').addEventListener('click', () => {
   if (sprintSeries && race.phase === 'finished' && sprintSeries.results.length < sprintSeries.count) restart();
+  else if (cup && race.phase === 'finished' && !cupComplete(cup)) restart(cup.tracks[cup.results.length]);
 });
 $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
 ui['pause-button'].addEventListener('click', pause);
@@ -940,20 +947,22 @@ function phaseUI() {
   } else if (phase === 'finished') {
     controls.clear();
     if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
+    if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
     const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !sessionMedals[id]); // history.js swallows storage failures
     sessionMedals = { ...sessionMedals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
     const trackId = race.trackId ?? 'coast';
     let best, record;
     $('#next-button').hidden = true;
-    const intermediateStage = sprintSeries && sprintSeries.results.length < sprintSeries.count;
+    const intermediateStage = (sprintSeries && sprintSeries.results.length < sprintSeries.count) || (cup && !cupComplete(cup));
     $('#next-stage').hidden = !intermediateStage;
     if (intermediateStage) {
       best = 0; record = false; // A partial series never writes a misleading individual best.
     } else if (race.result.success === false && race.mode !== 'classic') {
       best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
     } else if (race.mode !== 'classic') {
-      const total = sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
-      const modeRace = sprintSeries ? { ...race, result: { ...race.result, time: total,
+      const total = cup ? cupTotalTime(cup) : sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
+      const modeRace = cup ? { ...race, trackId: cup.tracks[0], result: { ...race.result, time: total,
+        score: cupStandings(cup).find(entry => entry.name === 'YOU').points } } : sprintSeries ? { ...race, result: { ...race.result, time: total,
         score: sprintSeries.results.reduce((score, stage) => score + stage.score, 0) } } : race;
       ({ best, record } = recordModeRace(modeRace));
       if (race.mode === 'time' && record) {
@@ -998,7 +1007,7 @@ function phaseUI() {
     $('#new-best').hidden = !record;
     $('#result-style').hidden = race.mode !== 'classic';
     $('#result-links').hidden = false;
-    lastResult = { race, best, record, medals, series: sprintSeries };
+    lastResult = { race, best, record, medals, series: sprintSeries, cup };
   }
   phaseText();
 }
@@ -1013,8 +1022,22 @@ function phaseText() {
     ui['overlay-copy'].textContent = t('overlay.pausedCopy');
   }
   if (phase !== 'finished' || lastResult?.race !== race) return;
-  const { best, record, medals, series } = lastResult;
+  const { best, record, medals, series, cup: finishedCup } = lastResult;
   const { result } = race;
+  if (finishedCup) {
+    const standings = cupStandings(finishedCup);
+    const complete = cupComplete(finishedCup);
+    const you = standings.find(entry => entry.name === 'YOU');
+    ui['overlay-title'].textContent = t(complete ? standings[0].name === 'YOU' ? 'mode.cupWon' : 'mode.cupComplete' : 'mode.cupStage', {
+      n: finishedCup.results.length, total: finishedCup.tracks.length,
+    });
+    ui['overlay-copy'].textContent = standings.map(({name,points},i) =>
+      `${i+1}. ${name} · ${points} ${t('mode.cupPts')}`).join('  ·  ');
+    $('#next-stage').textContent = complete ? '' : t('mode.cupNext', { track: trackName(finishedCup.tracks[finishedCup.results.length],getLocale()) });
+    ui['result-stats'].innerHTML = `<div><span>${t('mode.cupPts')}</span><strong>${you.points}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(cupTotalTime(finishedCup))}</strong></div>`;
+    resultCounts = [];
+    return;
+  }
   if (series && series.results.length < series.count) {
     const index = series.results.length;
     ui['overlay-title'].textContent = t('mode.stageComplete', { n: index, total: series.count });
@@ -1097,7 +1120,8 @@ function updateUI(now, input) {
     checkpointHud.dataset.urgent = String(race.checkpoint.timeLeft < 10);
   }
   const counter = $('#sprint-stage');
-  counter.hidden = !sprintSeries;
+  counter.hidden = !sprintSeries && !cup;
+  if (cup) counter.textContent = t('mode.cupHeat', { n: Math.min(cup.tracks.length, cup.results.length + (race.phase === 'finished' ? 0 : 1)), total: cup.tracks.length });
   if (sprintSeries) counter.textContent = t('mode.stageCounter', {
     n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
     total: sprintSeries.count,

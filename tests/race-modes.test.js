@@ -288,3 +288,11 @@ test('clean Time Attack never records runs after contact, while old Time Attack 
   assert.throws(()=>recordModeRace(race));
   assert.equal(createRace('coast',{mode:'classic',clean:true}).config.clean,undefined);
 });
+
+test('Championship is a distinct ranked 3-rival mode with no Career unlock eligibility', () => {
+  const race=createRace('coast',{mode:'cup',cupTracks:['coast','neon','canyon']});
+  assert.equal(race.mode,'cup');
+  assert.equal(race.rivals.length,3);
+  assert.deepEqual(race.config.cupTracks,['coast','neon','canyon']);
+  assert.equal(createRace('coast').config.cupTracks,undefined);
+});

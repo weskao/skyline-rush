@@ -1221,3 +1221,6 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
 .clean-trial-hud[data-broken="true"] { color:#ffbb94; }
 .clean-trial-hud[hidden], #time-trial-rules[hidden] { display:none !important; }
 #time-trial-rules label {display:flex; gap:12px; align-items:center; padding:12px 4px;}
+
+/* Cup standings reuse the existing result panel; preserve focus/contrast on mobile. */
+body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #b38542aa; }
