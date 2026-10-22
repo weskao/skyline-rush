@@ -44,7 +44,7 @@ export function modeAudioCues(race, state) {
     if (cp.timeLeft > 10) state.warning=false;
     if (cp.timeLeft>0 && cp.timeLeft<=8 && !state.warning) { add('countdown-urgent');state.warning=true; }
   }
-  if (race.mode==='gauntlet' && Array.isArray(race.hazards)) {
+  if (Array.isArray(race.hazards) && race.hazards.length) {
     const passed=race.hazards.filter(h=>h.passed && !h.hit).length;
     const hit=race.hazards.filter(h=>h.hit).length;
     if (passed > state.hazardsPassed) add('hazard-clear');

@@ -106,7 +106,7 @@ let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
-const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, collision: 'normal', stages: 1 };
+const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, collision: 'normal', hazards: 'off', stages: 1 };
 const cupCount = () => Number($('#cup-length').value);
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 let cup = null; // Three unlocked point-to-point heats, with rival points carried between heats.
@@ -376,7 +376,7 @@ for (const button of document.querySelectorAll('button[data-race-mode]')) button
   changeRaceSelection();
 });
 for (const button of document.querySelectorAll('[data-race-preset]')) button.addEventListener('click', () => {
-  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', stages: 1, activeItems: false });
+  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', hazards: 'off', stages: 1, activeItems: false });
   for (const input of document.querySelectorAll('[data-race-rule]'))
     if (input.type === 'checkbox') input.checked = raceRules[input.dataset.raceRule];
     else input.value = String(raceRules[input.dataset.raceRule]);
@@ -392,6 +392,7 @@ $('#recent-custom-runs').addEventListener('click', ({target}) => {
   const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
   if (!entry || race.phase !== 'ready') return;
   for (const key of Object.keys(raceRules)) if (Object.hasOwn(entry.config, key)) raceRules[key] = entry.config[key];
+  raceRules.hazards = entry.config.hazards ?? 'off';
   for (const input of document.querySelectorAll('[data-race-rule]')) {
     const value = raceRules[input.dataset.raceRule];
     if (input.type === 'checkbox') input.checked = value;
@@ -1190,7 +1191,7 @@ function updateUI(now, input) {
     cleanTrialHud.dataset.broken = String(race.player.collisions > 0);
   }
   const hazardWarning = $('#hazard-warning');
-  const hazardAhead = race.mode === 'gauntlet' ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;
+  const hazardAhead = race.hazards.length ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;
   const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
   hazardWarning.hidden = !hazardAhead || hazardDistance > 170 || race.phase !== 'racing';
   if (!hazardWarning.hidden) hazardWarning.textContent = t('mode.hazardWarning', { n: hazardDistance });

@@ -274,3 +274,22 @@ test('Elimination mode shows a live knockout countdown in actual WebGL',async({p
   await page.screenshot({path:'test-results/race-mode-elimination.png'});
   expect(errors).toEqual([]);
 });
+
+test('Custom hazards toggle off, then render with safe physics and warning UI', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="custom"]').click();
+  await page.locator('#race-mode-rules > summary').click();
+  await page.locator('[data-race-rule="hazards"]').evaluate(select => {
+    select.value = 'extreme';
+    select.dispatchEvent(new Event('change',{ bubbles:true }));
+  });
+  await expect(page.locator('[data-race-rule="hazards"]')).toHaveValue('extreme');
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode','custom');
+  await expect(page.locator('body')).toHaveAttribute('data-phase',/countdown|racing/);
+  await page.screenshot({path:'test-results/race-mode-custom-obstacles.png'});
+  expect(errors).toEqual([]);
+});

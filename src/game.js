@@ -244,7 +244,8 @@ export function createRace(trackId = 'coast', modifier = null) {
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
-    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) : [],
+    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) :
+      config.hazards ? createHazards(track, LANES, config.hazards) : [],
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     practice: config.mode === 'free' ? createPracticeStats() : null,
     styleAttack: config.mode === 'stunt' ? createStuntAttack() : null,

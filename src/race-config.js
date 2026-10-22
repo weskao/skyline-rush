@@ -23,6 +23,7 @@ export function normalizeRaceConfig(value = {}) {
     ...(practice && value.items !== false && value.activeItems === true ? { activeItems: true } : {}),
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
+    ...(practice && ['standard', 'extreme'].includes(value.hazards) ? { hazards: value.hazards } : {}),
     ...(custom && [2, 3, 5].includes(value.stages) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),

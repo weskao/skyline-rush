@@ -784,7 +784,7 @@ export function createWorld(canvas) {
       // Bounded InstancedMesh: one distinct marker per reachable barrier,
       // no scene allocations or three.js collision checks on the hot path.
       let visibleHazards = 0;
-      if (!preview && race.mode === 'gauntlet') for (const hazard of race.hazards) {
+      if (!preview && race.hazards.length) for (const hazard of race.hazards) {
         if (hazard.distance < distance - 16 || hazard.distance > distance + 550) continue;
         if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
         const x = hazardX(hazard, race.elapsed);
