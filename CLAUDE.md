@@ -23,8 +23,14 @@ ships the same way; placement, occlusion and test rules are in
 Anything drawn on or over the road is solid for every car: the player gets a barrier hit,
 rivals and traffic change lane around it ahead of time and return to their lane after it, and
 no car is drawn passing through it on any map. An obstacle never takes so much road that a
-stretch is impassable — at least two lanes stay open. Rules are in `.claude/rules/world-tour.md`
-("Solid props").
+stretch is impassable — at least two lanes stay open.
+
+Every vehicle obeys the same collision physics as the player car: rivals and traffic use the
+player's hitbox, hit props, barriers, Tokyo trains, hazards and each other, and get the same
+`knock()` response (speed loss, sideways shove, 1.5 s grace). A ram hurts both cars. AI steers
+around slower cars and the player before impact; traffic then recovers to cruise speed. Never
+give one class of car a special-case pass-through. Rules are in `.claude/rules/world-tour.md`
+("Solid props", "Shared collision physics").
 
 ## Commands
 

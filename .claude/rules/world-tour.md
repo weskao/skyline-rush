@@ -42,4 +42,21 @@ landmarks · `src/world.js` lighting · `src/route-map.js` + `src/style.css` rou
 - Non-player cars past the finish on clamped routes are hidden (`world.js`), not parked.
 - New solid props need a test in `tests/game.test.js` that fails without the collision.
 
+## Shared collision physics
+
+- One response for every car: `knock(race, car, side, intensity, retention)` in `game.js`. It
+  keeps 45% speed (70% with nitro active; the 'relaxed' setting floors it at 80%), shoves
+  sideways by `0.4 + intensity * 0.6`, and starts a 1.5 s cooldown. The player's `contact()` and
+  AI hits both use it — never add a separate AI-only bounce.
+- Car-vs-car uses the player's box (|Δd| < 4.4, |Δx| < 1.7, |Δalt| < 1.8). Player-vs-AI knocks
+  both cars in opposite directions; AI-vs-AI pairs go through `bumpCars`.
+- AI prop and hazard hits go through `aiImpacts`: swept `hitProp`, then `clearOf` puts the car on
+  the open side. Skipped while the car's cooldown runs, the same as the player.
+- `avoidObstacles` treats slower cars ahead and the player as blockers (`carBlocker`) so AI
+  changes lane before contact; collisions happen only when no lane is free.
+- Traffic has `cruise` speed and regains it at `TRAFFIC_ACCEL` after a knock; rivals keep
+  `pace` (speed after slowdowns), which also drives their finish time.
+- Pair checks are O(n²) over about 53 cars (about 15–23 µs per step). Measure with a bench before
+  adding cars.
+
 Docs: `docs/world-tour-scenic-redesign.md`, `docs/world-tour-landmark-polish.md`.
