@@ -209,9 +209,6 @@ const volumeSlider = (page, name) => page.getByRole('slider', { name: `${name} v
 
 test('each channel has a volume slider; muting keeps its level, unmuting restores it, and both survive a reload', async ({ page }) => {
   await page.goto('/');
-  // Accept music where autoplay is blocked; declining would switch it off before the test starts.
-  await page.waitForTimeout(700);
-  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-yes').click();
   await page.getByRole('button', { name: 'Audio settings' }).click();
   const music = volumeSlider(page, 'Music');
   await expect(music).toHaveValue('100');
@@ -297,60 +294,53 @@ test('intro music plays after the first interaction and race music replaces it',
   await expect.poll(() => page.evaluate(() => window.audioLevel()), { intervals: [50] }).toBeGreaterThan(0.001);
 });
 
-const musicPrompt = page => page.getByRole('group', { name: 'Play background music?' });
 // Playwright's autoplay behavior differs from a fresh visit, so emulate a browser that holds audio until a real gesture.
 const blockAutoplay = () => {
   let gesture = false;
-  for (const type of ['click', 'keydown']) window.addEventListener(type, () => { gesture = true; }, { capture: true });
+  for (const type of ['pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(type, () => { gesture = true; }, { capture: true });
   window.AudioContext = class extends AudioContext {
     constructor(...args) { super(...args); super.suspend(); }
     resume() { return gesture ? super.resume() : new Promise(() => {}); }
   };
 };
+const level = page => page.evaluate(() => window.audioLevel?.() ?? 0);
 
-test('where autoplay is allowed, intro music starts on page load without a prompt', async ({ baseURL }) => {
+test('where autoplay is allowed, intro music starts on page load', async ({ baseURL }) => {
   const browser = await chromium.launch({ channel: 'chrome', args: ['--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] });
   try {
     const page = await browser.newPage();
     await page.addInitScript(measureAudio);
     await page.goto(baseURL);
-    await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [50] }).toBeGreaterThan(0.001);
-    await page.waitForTimeout(1000);
-    await expect(musicPrompt(page)).toBeHidden();
+    await expect.poll(() => level(page), { intervals: [50] }).toBeGreaterThan(0.001);
   } finally {
     await browser.close();
   }
 });
 
-test('where autoplay is blocked, the start screen asks to play music', async ({ page }) => {
+for (const [name, gesture] of [['key', page => page.keyboard.press('Shift')], ['tap', page => page.locator('body').dispatchEvent('touchend')]]) {
+  test(`where autoplay is blocked, intro music starts on the first ${name} without a prompt`, async ({ page }) => {
+    await page.addInitScript(blockAutoplay);
+    await page.addInitScript(measureAudio);
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Start race' })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Play background music?' })).toHaveCount(0);
+    expect(await level(page)).toBeLessThan(0.0001);
+    await gesture(page);
+    await expect.poll(() => level(page), { intervals: [50] }).toBeGreaterThan(0.001);
+  });
+}
+
+test('a saved music-off choice stays silent after the first gesture and keeps sound effects on', async ({ page }) => {
   await page.addInitScript(blockAutoplay);
   await page.addInitScript(measureAudio);
+  await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; Path=/'; });
   await page.goto('/');
-  await expect(musicPrompt(page)).toBeVisible();
-  expect(await page.evaluate(() => window.audioLevel?.() ?? 0)).toBeLessThan(0.0001);
-  await musicPrompt(page).getByRole('button', { name: 'Play music' }).click();
-  await expect(musicPrompt(page)).toBeHidden();
-  await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [50] }).toBeGreaterThan(0.001);
-});
-
-test('declining the music prompt turns music off and keeps sound effects on', async ({ page }) => {
-  await page.addInitScript(blockAutoplay);
-  await page.goto('/');
-  await musicPrompt(page).getByRole('button', { name: 'Not now' }).click();
-  await expect(musicPrompt(page)).toBeHidden();
-  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('skyline-rush-music=off');
+  await page.keyboard.press('Shift');
+  await page.waitForTimeout(500);
+  expect(await level(page)).toBeLessThan(0.0001);
   await page.getByRole('button', { name: 'Audio settings' }).click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
-});
-
-test('a saved music-off choice skips the prompt', async ({ page }) => {
-  await page.addInitScript(blockAutoplay);
-  await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; Path=/'; });
-  await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Start race' })).toBeVisible();
-  await page.waitForTimeout(1000);
-  await expect(musicPrompt(page)).toBeHidden();
 });
 
 test('countdown lights, automatic accelerator and brake work without holding the gas', async ({ page }) => {

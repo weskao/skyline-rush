@@ -76,11 +76,6 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
             <input type="range" min="0" max="100" step="5" value="100" :aria-label="`${label} volume`" :data-i18n-aria-label="`audio.${kind}Volume`">
           </div>
         </div>
-        <div class="settings-panel music-prompt" id="music-prompt" role="group" aria-labelledby="music-prompt-title" hidden>
-          <p id="music-prompt-title" data-i18n="audio.prompt">Play background music?</p>
-          <button class="setting" id="music-yes"><span data-i18n="audio.play">Play music</span></button>
-          <button class="setting" id="music-no"><span data-i18n="audio.notNow">Not now</span></button>
-        </div>
       </div>
       <div class="controls-menu">
         <button class="controls-button" id="controls-button" aria-expanded="false" aria-controls="controls-panel" title="Driving controls" data-i18n-title="controls.title" data-i18n="controls.button">Controls</button>

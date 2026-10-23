@@ -49,9 +49,6 @@ for (const [name, panel] of Object.entries(panels)) {
     await page.addInitScript(() => Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, get: () => 4 }));
     await page.goto('/');
     await expect(page.locator('#performance-notice')).toBeVisible();
-    // The music prompt drops over the toolbar 600 ms after load; slow CI runners always reach it first, so answer it.
-    await expect(page.locator('#music-prompt')).toBeVisible();
-    await page.locator('#music-no').click();
     await panel.open(page);
     await expect(page.locator('#performance-notice')).toBeHidden();
     await panel.control(page).click({ timeout: ciTimeout(5000) });

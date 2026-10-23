@@ -728,12 +728,7 @@ function applyControls(persist = true) {
 }
 
 // Browsers that block autoplay start audio only after a user gesture, so saved choices are applied on the first one.
-let gestured = false;
-function unlockAudio(event) {
-  if (event) {
-    gestured = true;
-    $('#music-prompt').hidden = true;
-  }
+function unlockAudio() {
   if (!sound.running() && (audio.music || audio.sfx)) {
     setAudio('music', audio.music);
     setAudio('sfx', audio.sfx);
@@ -938,12 +933,9 @@ document.addEventListener('keydown', event => {
   toggleControls(false);
   ui['controls-button'].focus({ preventScroll: true });
 }, { capture: true });
-for (const type of ['click', 'keydown']) window.addEventListener(type, unlockAudio, { capture: true });
-// Try autoplay; where the browser blocks it, ask instead. The answer is itself the unlocking gesture.
-unlockAudio();
-setTimeout(() => { $('#music-prompt').hidden = !!document.querySelector('dialog[open]') || gestured || !audio.music || sound.running(); }, 600);
-$('#music-yes').addEventListener('click', () => setAudio('music', true));
-$('#music-no').addEventListener('click', () => { $('#music-prompt').hidden = true; setAudio('music', false); });
+// Every event that grants user activation (a tap, drag, click or key) starts audio, so blocked autoplay never waits on a prompt.
+for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(type, unlockAudio, { capture: true });
+unlockAudio(); // plays at once where the browser allows autoplay
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
 ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
@@ -1613,7 +1605,7 @@ function beginTutorial() {
   goUntil = 0; previousFuel = 100; previousNitro = 0; previousFlight = undefined;
   document.body.dataset.tutorial = 'active';
   $('#tutorial-coach').hidden = false;
-  $('#music-prompt').hidden = true; hidePerformanceNotice();
+  hidePerformanceNotice();
   if (!ui.intro.hidden) leaveIntro();
   showTracks(); phaseUI(); previousPhase = race.phase;
   renderTutorial(true); focusRace();
@@ -1693,7 +1685,7 @@ function openGuide(opener = ui['start-button']) {
   guideOpener = opener;
   if (editingLayout) editLayout(false);
   controls.clear(); toggleControls(false); toggleSettings(false);
-  hidePerformanceNotice(); $('#music-prompt').hidden = true;
+  hidePerformanceNotice();
   selectGuideDevice(touchPreference.matches ? 'mobile' : 'desktop');
   showKeyMap();
   guideScreen.showModal();

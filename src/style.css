@@ -57,8 +57,6 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 /* A styled WebKit scrollbar stays visible, so a cut-off panel on short screens reads as scrollable. */
 #settings-panel::-webkit-scrollbar { width: 6px; }
 #settings-panel::-webkit-scrollbar-thumb { border-radius: 3px; background: rgb(195 224 244 / .35); }
-.music-prompt p { margin: 0; padding: 10px 12px 4px; font-size: 13px; color: var(--muted); }
-.music-prompt #music-yes { color: var(--accent); }
 .intro { position: absolute; z-index: 2; left: 7%; top: 23%; max-width: 600px; }
 .route-label { display: flex; align-items: center; gap: 11px; font-size: 10px; letter-spacing: 2px; font-weight: 600; color: #dbd8d1; margin-bottom: 24px; }
 .route-label > span:not(.route-line, .route-drivers) { color: var(--accent); }
@@ -1004,10 +1002,6 @@ body[data-phase="ready"] .telemetry { display: none; }
   .intro .intro-copy { margin-bottom: 8px; }
   .intro .track-note { margin-bottom: 9px; }
 }
-/* Music consent must never block unrelated toolbar settings while waiting for an answer.
-   Its two explicit choices remain clickable, but the surrounding panel/text is click-through. */
-.music-prompt { pointer-events: none; }
-.music-prompt button { pointer-events: auto; }
 
 /* Insets are 0 when the OS already places the web view clear of the status bar
    (iOS standalone with an opaque bar, Android 14 and earlier). Android 15+
