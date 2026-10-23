@@ -1672,3 +1672,98 @@ test('in custom races with obstacles, rivals and traffic steer around the barrie
   assert.equal(rivalHits, 0, 'the rival never drives through a barrier');
   assert.equal(trafficHits, 0, 'traffic never drives through a barrier');
 });
+
+const car = (x, distance, speed) => ({ x, homeX: x, distance, speed, cruise: speed, altitude: 0, cooldown: 0 });
+const overlap = (a, b) => Math.abs(a.distance - b.distance) < 4.4 && Math.abs(a.x - b.x) < 1.7 && Math.abs((a.altitude || 0) - (b.altitude || 0)) < 1.8;
+
+test('faster traffic overtakes a slower car ahead by changing lane instead of driving through it, then returns', () => {
+  const race = racing();
+  race.rivals = [];
+  const slow = car(2.5, 400, 20), fast = car(2.5, 340, 35);
+  race.traffic = [slow, fast];
+  let overlaps = 0;
+  for (let i = 0; i < 60 * 12; i++) {
+    Object.assign(race.player, { distance: Math.min(slow.distance, fast.distance) - 30, x: -7.5, speed: 0 });
+    stepRace(race, {}, 1 / 60);
+    if (overlap(slow, fast)) overlaps++;
+  }
+  assert.ok(fast.distance > slow.distance + 40, 'the faster car got past');
+  assert.equal(overlaps, 0, 'it never drove through the slower car');
+  assert.equal(fast.speed, 35, 'a clean overtake costs no speed');
+  assert.equal(fast.x, 2.5, 'it returns to its lane');
+  assert.equal(slow.x, 2.5);
+});
+
+test('cars that cannot avoid each other take the player\'s knock: speed loss, a sideways shove, a grace period, then recovery', () => {
+  const race = racing();
+  race.rivals = [];
+  const rear = car(2.5, 400, 30), front = car(2.6, 402, 20);
+  race.traffic = [rear, front];
+  Object.assign(race.player, { distance: 300, x: -7.5, speed: 0 });
+  stepRace(race, {}, 1 / 60);
+  assert.ok(Math.abs(rear.speed - 30 * 0.45) < 1e-9 && Math.abs(front.speed - 20 * 0.45) < 1e-9, 'both keep 45 % of their speed, as the player does');
+  assert.ok(rear.x < 2.5 - 0.5 && front.x > 2.6 + 0.5, 'shoved apart sideways');
+  assert.equal(rear.cooldown, 1.5);
+  assert.equal(front.cooldown, 1.5);
+  for (let i = 0; i < 60 * 8; i++) {
+    Object.assign(race.player, { distance: Math.min(rear.distance, front.distance) - 30, speed: 0 });
+    stepRace(race, {}, 1 / 60);
+    assert.ok(!overlap(rear, front) || rear.cooldown > 0, 'no second pass-through once the grace ends');
+  }
+  assert.equal(rear.speed, 30, 'back up to cruise speed');
+  assert.equal(front.speed, 20);
+});
+
+test('ramming a traffic car knocks it too: it loses speed, is shoved away from the player, then regains cruise', () => {
+  const race = racing();
+  race.rivals = [];
+  const other = car(2.5, race.player.distance + 3, 30);
+  race.traffic = [other];
+  Object.assign(race.player, { x: 2, speed: 60, cooldown: 0 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.collisions, 1);
+  assert.equal(race.player.impact.kind, 'vehicle');
+  assert.ok(other.speed < 30 * 0.5, 'the traffic car loses speed');
+  assert.ok(other.x > 2.5 && race.player.x < 2, 'pushed apart');
+  for (let i = 0; i < 60 * 5; i++) {
+    Object.assign(race.player, { x: -7.5, speed: 0 });
+    stepRace(race, {}, 1 / 60);
+  }
+  assert.equal(other.speed, 30);
+});
+
+test('a rival steers around a stopped player instead of driving through the car', () => {
+  const race = racing();
+  const rival = race.rivals.find(r => r.x === 7.5);
+  race.rivals = [rival];
+  Object.assign(rival, { distance: race.player.distance - 120, speed: 70 });
+  Object.assign(race.player, { x: 7.5, speed: 0, cooldown: 0 });
+  let overlaps = 0;
+  for (let i = 0; i < 60 * 5; i++) {
+    race.player.speed = 0;
+    stepRace(race, {}, 1 / 60);
+    if (overlap(rival, race.player)) overlaps++;
+  }
+  assert.ok(rival.distance > race.player.distance + 50, 'the rival got past');
+  assert.equal(overlaps, 0);
+  assert.equal(race.player.collisions, 0);
+});
+
+test('a rival with no room to avoid a Tokyo train crashes into it like the player: speed loss, pushed to the open road', async () => {
+  const { roadObstacles } = await import('../src/world-tour-scene.js');
+  const props = roadObstacles('tokyo');
+  const train = props.find(p => p.kind === 'train' && p.bottom < 1 && p.top > 3 && p.left > 0 && p.left < 7.5 && p.from > 400);
+  const race = createRace('tokyo');
+  race.props = props;
+  startRace(race);
+  advance(race, 3.1);
+  race.traffic = [];
+  const rival = race.rivals[0];
+  race.rivals = [rival];
+  Object.assign(rival, { x: train.left + 1, homeX: train.left + 1, distance: train.from - 3, speed: 70, cooldown: 0 });
+  Object.assign(race.player, { distance: train.from - 40, x: -7.5, speed: 0 });
+  stepRace(race, {}, 1 / 60);
+  assert.ok(rival.speed < 70 * 0.5, 'the crash costs speed');
+  assert.ok(rival.x <= train.left - 1.1, 'pushed out to the open road');
+  assert.equal(rival.cooldown, 1.5);
+});
