@@ -823,6 +823,9 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
 .history-extra h4 { margin: 24px 0 8px; font-size: 14px; }
 .history-extra p, .collection-note { color: #ccd7e0; font-size: 12px; line-height: 1.7; }
 .history-extra .controls-reset { margin: 8px 0; padding: 10px 14px; }
+.sign-in-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 10px 14px; border-color: #dadce0; background: #fff; color: #1f1f1f; font-size: 14px; font-weight: 600; }
+.sign-in-button:hover:not(:disabled) { background: #f6f9fe; }
+.sign-in-button img { width: 20px; height: 20px; flex: none; }
 .achievement-list { list-style: none; margin: 0; padding: 0; }
 .achievement-list li { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #42596c; }
 .achievement-list li > svg { color: #c2c8cd; }
@@ -1349,6 +1352,9 @@ body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
 /* Home discoverability: medal tally on the route line, today's challenge as a card above the mode picker.
    Daily gold (#f5cf9c) matches the GAME MODE heading so the card reads as part of the same panel. */
 .medal-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 28px; margin-left: auto; padding: 0 11px; border: 1px solid rgb(245 207 156 / .35); border-radius: 999px; background: rgb(10 24 40 / .55); backdrop-filter: blur(8px); color: #f5cf9c; font: inherit; font-weight: 700; letter-spacing: .12em; cursor: pointer; }
+.cloud-chip { margin-left: 0; white-space: nowrap; }
+@media (max-width: 470px) { .route-label > span:nth-of-type(3), .route-drivers { display: none; } }
+@media (max-width: 370px) { .route-label .route-line { display: none; } .cloud-chip { padding-inline: 8px; } }
 .medal-chip::before { content: ''; position: absolute; inset: -8px -4px; } /* 44px tap target without a taller label line */
 .medal-chip svg { width: 13px; height: 13px; }
 .medal-chip.has-medals svg { fill: currentColor; }

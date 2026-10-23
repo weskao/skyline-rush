@@ -11,6 +11,7 @@
 - [x] 建立獨立 Firebase 專案、台灣區 Firestore Standard、Google 登入與 GitHub Pages 授權網域；部署僅本人可讀寫的規則。
 - [x] 查詢專案帳務設定，確認 `billingEnabled=false` 且未綁定付費帳戶；資料量與讀寫次數仍須遵守 Spark 免費額度。
 - [x] History 提供登入／登出、成功／待同步／失敗狀態；離線或雲端失敗時不阻止遊戲使用本機進度。
+- [x] 首頁提供容易發現的雲端儲存入口，開啟時直接帶到 Google 登入與同步狀態；驗證手機與桌面版面。
 - [x] `skyline-rush-unlocked` 已解鎖賽道：首次登入合併本機與雲端集合，完成 Classic 解鎖後同步；禁止未知賽道進入儲存資料。
 - [ ] 已發布網站實測「解鎖 → 儲存 → 清除 Cookie／Local Storage → 用同一 Google 帳號登入 → 還原」，另測不同裝置與手機 Safari 登入。
 - [ ] 在完成本地與模擬器驗證後，依專案發佈規則把新版網站上線；部署後再執行上述真實帳號驗收。

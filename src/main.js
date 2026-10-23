@@ -587,6 +587,7 @@ for (const button of document.querySelectorAll('[data-open-history]')) button.ad
   controls.clear(); historyOpener = button; $('#history-track').value = race.trackId;
   showHistory(); historyScreen.showModal();
   if (button.dataset.openHistory === 'medals') $('#achievements-title').scrollIntoView({ block: 'start' });
+  if (button.dataset.openHistory === 'cloud') ($('#cloud-login').hidden ? $('#cloud-logout') : $('#cloud-login')).focus();
 });
 $('#history-track').addEventListener('change', showHistory);
 function closeHistory() {
