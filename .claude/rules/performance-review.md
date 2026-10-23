@@ -57,3 +57,25 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
   prop, light or track keeps both green; extend them when adding an event that first shows
   something. Diagnose with `renderer.info.programs` and `renderer.properties.get(material)
   .currentProgram.cacheKey` to name the offending material.
+
+## One NaN pixel is a black frame
+
+The bloom blur spreads a single NaN/Inf texel in the HDR scene buffer into a screen-sized black
+rectangle around the car (nitro and the airflow showcase shipped this way). The high pass in
+`world.js` now zeroes non-finite texels so such a bug stays a one-pixel speck; never remove that guard,
+and never let the NaN happen:
+
+- Interpolated varyings leave their range: where MSAA covers a sliver triangle whose pixel centre lies
+  outside it, `vUv` is extrapolated far past [0, 1]. A nozzle rim near the camera gave `t = 1 - vUv.y`
+  of −13 and more, `exp(-t*7.)` overflowed to Inf and the zero `smoothstep` fade made 0 × Inf = NaN.
+  Clamp every uv-derived scalar before `exp()` or `pow()` (`clamp(1.-vUv.y,0.,1.)`); `pow()` bases
+  stay `max(0., …)`; a GLSL `max`/`clamp` does not sanitise a NaN that already exists.
+- Lit meshes need unit normals and non-degenerate instance matrices (zero scale → NaN lighting); park
+  unused instances below the scene instead of scaling them to 0.
+- Guards: `tests/shader-safety.test.js` lints every scene `ShaderMaterial` (`pow()` bases guarded, each
+  `exp()` argument a negated abs/dot/length/square or a `clamp()`ed scalar) and
+  `tests/black-frame-browser.spec.js` scans the composed scene buffer and the bloom high-pass output for
+  non-finite half-floats after every frame through airflow toggles, countdown, nitro and its fade-out.
+  A new shader or effect keeps both green. Diagnose by wrapping `composer.render`, reading the targets
+  back with `readRenderTargetPixels` (half-float NaN/Inf: `(h & 0x7c00) === 0x7c00`) and, on a bad
+  frame, re-rendering the frozen scene into an MSAA clone one leaf object at a time to name the source.

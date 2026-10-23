@@ -17,7 +17,7 @@ export const test = base.extend({
   gameplayPage: async ({ page, gameplayURL }, use) => {
     for (const [file, anchor, replacement] of [
       ['main.js', 'let race = createRace();', 'let race = createRace(); window.gameplay = { get race() { return race; } };'],
-      ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer };'],
+      ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer };'],
     ]) await page.route(`**/src/${file}`, async route => {
       const response = await route.fetch();
       const source = await response.text();

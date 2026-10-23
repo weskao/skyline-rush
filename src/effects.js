@@ -61,7 +61,7 @@ export function createEffects(scene, roadCenter) {
       void main(){vUv=uv;vec4 world=modelMatrix*vec4(position,1.);height=world.y;
         gl_Position=projectionMatrix*viewMatrix*world;}`,
     fragmentShader: `varying vec2 vUv;varying float height;uniform float time,power;
-      void main(){if(height<.09)discard;float downstream=1.-vUv.y;
+      void main(){if(height<.09)discard;float downstream=clamp(1.-vUv.y,0.,1.); // see the nozzle shader in aero-vfx.js
         float breakup=.65+.35*sin(vUv.x*37.+downstream*31.-time*38.);
         float envelope=pow(max(0.,1.-downstream),1.6)*smoothstep(0.,.06,downstream);
         gl_FragColor=vec4(.86,.94,1.,power*envelope*breakup*.5);}`,
