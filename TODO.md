@@ -438,11 +438,12 @@ finite entity positions, bounded counts and invalid external geometry are covere
 **Stage-wide acceptance remains open** until required browser/physical-device
 checks and access/persistence regressions are independently verified.
 
-Still open (historical note; now completed above): complete per-system named deterministic streams where applicable
-(traffic and checkpoint layouts are currently authored deterministic, not
-randomized), the rest of mode acceptance, browser and physical-device
-performance/UX checks. No operation-guide files, audio or UI were changed
-by MODE-00; no new sound cue is warranted for these pure simulation contracts.
+Still open: stage-wide mode acceptance, browser and physical-device
+performance/UX checks. Traffic and checkpoint layouts intentionally remain
+authored and deterministic; newly named seeds are available if those layouts
+later become procedural, without changing Classic/Daily replay rules.
+No operation-guide files, audio or UI were changed by MODE-00; no new sound
+cue is warranted for these pure simulation contracts.
 
 ---
 
