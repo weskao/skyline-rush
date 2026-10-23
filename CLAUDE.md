@@ -77,6 +77,16 @@ of the UI/UX design review rather than an optional afterthought.
 - `README.md` changed → sync `README.zh-TW.md` via `scripts/readme-zh.mjs` (hooks enforce it).
 - A commit on `main` is not a deploy; publication rules are in `.github/workflows/ci.yml`.
 
+## Release
+
+`/release` runs `scripts/release.sh`: `scripts/release-gate.sh` refuses to tag unless `main` equals
+`origin/main`, that exact commit has a successful CI run on `main` (a running one is waited for) and
+`npm test` + `npm run build` pass; only then does the shared release script commit, tag and publish.
+A red or missing run means fix the root cause, commit, push, wait for green and run `/release` again —
+never tag around the gate. The tag's CI run re-checks unit tests, confirms through `release-verified`
+that the code already passed the full suite on `main`, and deploys, so a release is live within minutes
+and a CI timing flake cannot leave a tag unpublished.
+
 ## Branch workflow
 
 Commit and push to the current development branch. No PR, no merge into `main`, no deploy
