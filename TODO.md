@@ -521,9 +521,9 @@ full `npm test` and production build passed. Frame-rate/device acceptance remain
   aerial gates before time expires; each clean gate extends the timer.
 - [x] Choose checkpoints from the **real track route and reachable flight envelopes**;
   prevent impossible gates inside tunnel roofs, road gaps or conflicting hazards.
-- [ ] Show next target distance/direction, time left, checkpoint chain and optional
+- [x] Show next target distance/direction, time left, checkpoint chain and optional
   perfect-gate rewards. Invalid/missed gates cannot secretly count.
-- [ ] **Acceptance:** gated time-extension and expiry have unit tests; minimap
+- [x] **Acceptance:** gated time-extension and expiry have unit tests; minimap
   uses the official main route and never reveals hidden shortcut geometry.
 
 **MODE-05 gate route/clearance verified (2026-10-23):** RED
@@ -539,6 +539,19 @@ WebGL browser smoke all GREEN; an actual game screenshot is in the
 roadside obstacle bounding boxes; impossible gates are skipped, and existing
 70 m tunnel/gap/shortcut safety buffers remain. Full stage acceptance and
 physical-device checks are still open.
+
+**MODE-05 navigation and route acceptance (2026-10-23):** The existing
+[`checkpoint-navigation.test.js`](https://github.com/weskao/skyline-rush/blob/feature/mode00-objective-contract/tests/checkpoint-navigation.test.js)
+and [`checkpoint-expiry.test.js`](https://github.com/weskao/skyline-rush/blob/feature/mode00-objective-contract/tests/checkpoint-expiry.test.js)
+cover precise/near/missed-gate scoring and fair timer expiry. The authored
+[`route-map.test.js`](https://github.com/weskao/skyline-rush/blob/feature/mode00-objective-contract/tests/route-map.test.js)
+covers all ten official main-route polylines; hidden shortcut geometry is
+not part of the route samples. Browser assertions
+[`391b28f`](https://github.com/weskao/skyline-rush/commit/391b28fd199a3a9fe04fba7b1d1ea41bd31d0d85)
+verify gate count, perfect count, distance, directional cue, remaining time.
+[Actions #39944609373](https://github.com/weskao/skyline-rush/actions/runs/39944609373)
+passed full unit tests, build and real desktop WebGL smoke. Mobile/device
+acceptance remains under the shared stage-wide QA, not claimed here.
 
 ### 9G. Multi-track Championship Cup (P1)
 
@@ -565,12 +578,25 @@ physical-device checks are still open.
 
 ### 9I. Elimination / Last Racer Standing (P2)
 
-- [ ] **MODE-08 — Elimination:** after an announced interval/checkpoint, eliminate
+- [x] **MODE-08 — Elimination:** after an announced interval/checkpoint, eliminate
   the last active racer until one remains; show a readable knockout countdown.
-- [ ] Define whether the player loses immediately or gets one short comeback window;
+- [x] Define whether the player loses immediately or gets one short comeback window;
   do not eliminate AI simply because an actor is off-camera.
-- [ ] **Acceptance:** active AI count/rank changes cleanly; results work after
+- [x] **Acceptance:** active AI count/rank changes cleanly; results work after
   early elimination and never award Classic progression.
+
+**MODE-08 elimination finishing/acceptance (2026-10-23):** RED
+[`884e057`](https://github.com/weskao/skyline-rush/commit/884e057659c21c711b53b5e7008ffed2801a42b0)
+([Actions #39944092143](https://github.com/weskao/skyline-rush/actions/runs/39944092143))
+exposed fixed-fourth-place results for second/third-round player eliminations.
+GREEN [`da8bd45`](https://github.com/weskao/skyline-rush/commit/da8bd4550226334138d2a29697a28a2646b3e571):
+position derives from actual contenders left; knockouts are based on track
+progress, not render/camera visibility. Tests
+[`912a832`](https://github.com/weskao/skyline-rush/commit/912a83264a23459068d1b37cd0645587fc4846d1)
+prove losses never persist results and challenge wins never grant Classic unlocks.
+[Actions #39944609373](https://github.com/weskao/skyline-rush/actions/runs/39944609373):
+unit suite, production build, Checkpoint Rush and Elimination live WebGL browser
+smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 
 ### 9J. Endless Highway / Distance Survival (P2)
 
