@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 const open = async page => {
   await page.goto('/');
@@ -136,7 +137,7 @@ test.describe('touch controls', () => {
 });
 
 test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(ciTimeout(90000));
   await open(page);
   await page.locator('#controls-button').click();
   await page.locator('#controls-sensitivity').focus();
@@ -157,9 +158,9 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   });
   await start(page);
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
-  const perfectLine = await page.evaluate(() => new Promise(resolve => {
+  const perfectLine = await page.evaluate(budget => new Promise(resolve => {
     let held = false;
-    const deadline = performance.now() + 65000;
+    const deadline = performance.now() + budget;
     const key = type => window.dispatchEvent(new KeyboardEvent(type, { code: 'Space', key: ' ', bubbles: true, cancelable: true }));
     const pilot = () => {
       const collected = !document.querySelector('#maneuver-report').hidden;
@@ -174,7 +175,7 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
       requestAnimationFrame(pilot);
     };
     pilot();
-  }));
+  }), ciTimeout(65000));
   expect(perfectLine, 'The visible first ring group must produce a real PERFECT LINE').toBe(true);
   expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();

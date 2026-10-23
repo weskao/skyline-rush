@@ -1,5 +1,6 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { validGhost } from './ghost.js';
+import { stuntMedal } from './stunt-attack.js';
 
 export const HISTORY_KEY = 'skyline-rush-history';
 export const BEST_KEY = 'skyline-rush-best-tracks';
@@ -51,11 +52,11 @@ export function recordRace(race, storage, now = new Date()) {
 export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
 export function loadModeHistory(storage) {
   const saved = read(MODE_HISTORY_KEY, storage);
-  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt'].includes(run.mode) &&
+  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(run.mode) &&
     typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
 }
 export function recordModeRace(race, storage, now = new Date()) {
-  if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
+  if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
     (race.mode === 'stunt' && (!Number.isFinite(race.result.score) || race.result.score < 0)))
     throw new TypeError('A finished practice race is required');
   const rules = JSON.stringify(race.config);
@@ -70,6 +71,11 @@ export function recordModeRace(race, storage, now = new Date()) {
   write(MODE_HISTORY_KEY, [...previous, {
     date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
     time: race.result.time, position: race.result.position, score: race.result.score,
+    ...(scoreAttack ? {
+      maxCombo: Number.isInteger(race.result.maxCombo) ? Math.max(0, race.result.maxCombo) : 0,
+      airTime: Number.isFinite(race.result.airTime) ? Math.max(0, race.result.airTime) : 0,
+      medal: stuntMedal(race.result.score, race.config?.duration),
+    } : {}),
   }].slice(-HISTORY_LIMIT), storage);
   return { best, record };
 }

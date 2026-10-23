@@ -1,7 +1,8 @@
-// 32-bar loops (intro ≈ 64 s, race ≈ 55 s, each course song 56–70 s).
+import { createModeAudioState, modeAudioCues, musicForMode } from './mode-audio.js';
+
+// 32-bar loops (intro ≈ 64 s, race ≈ 55 s, Sky Spiral ≈ 60 s, each World Tour course 56–70 s).
 // Each chord is [bass root, three pad/arp tones]; lead is eight eighth-notes per chord bar (0 = rest).
 // Layers enter at the listed bar so every pass builds up.
-// A course song uses the same id as its track. Coast has none and keeps `race`.
 export const TRACKS = {
   intro: {
     bpm: 120, arp: 2, bass: [0, 6, 8, 14], enter: { bass: 8, drums: 16, lead: 16 },
@@ -101,6 +102,19 @@ export const TRACKS = {
     ],
   },
 };
+// New tracks reuse the established instrument layers but vary melody, harmony and pace by mode.
+// 32 bars at these BPMs yield 51–69 second loops without downloading audio assets.
+const MODE_THEMES = { checkpoint: [145, 5], stunt: [148, 7], gauntlet: [150, -3], cup: [138, 9], cruise: [112, 12] };
+for (const [name, [bpm, shift]] of Object.entries(MODE_THEMES)) {
+  TRACKS[name] = {
+    ...TRACKS.race, bpm,
+    arp: name === 'cruise' ? 4 : name === 'stunt' ? 1 : 2,
+    bass: name === 'cruise' ? [0, 8] : [0, 4, 8, 12],
+    enter: name === 'cruise' ? { bass: 4, drums: 12, lead: 8 } : { bass: 0, drums: 4, lead: 8 },
+    chords: TRACKS.race.chords.map(chord => chord.map(note => note + shift)),
+    lead: TRACKS.race.lead.map(note => note ? note + shift : 0),
+  };
+}
 const LOOP_STEPS = 32 * 16;
 // Race tempo multiplier: 1 until the last 500 m, then a linear ramp to 1.15 at the finish.
 export const sprintFactor = (distance, length) => 1 + 0.15 * Math.min(1, Math.max(0, (distance - (length - 500)) / 500));
@@ -116,6 +130,7 @@ export function createSound() {
   let wasThrusting = false, wasBoosting = false, lowCharge = false;
   const voices = new Set();
   let collectedPickups = new WeakSet();
+  const modeAudioState = createModeAudioState();
 
   function track(source, nodes, end, cue = true) {
     if (cue) voices.add(source);
@@ -187,6 +202,19 @@ export function createSound() {
     else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
     else if (name === 'pickup') { tone(1047, 1568, 0.14, 0, 0.03); tone(1568, 2093, 0.18, 0.07, 0.02); }
     else if (name === 'low') { tone(440, 330, 0.14); tone(440, 330, 0.14, 0.2); }
+    else if (name === 'photo') { tone(1100, 840, .09, 0, .012); }
+    else if (name === 'gate-clear') { tone(790, 1185, .16); tone(1185, 1580, .26, .1, .028); }
+    else if (name === 'gate-miss') { tone(410, 245, .22); }
+    else if (name === 'countdown-urgent') { tone(740, 740, .11); tone(740, 740, .11, .18); }
+    else if (name === 'hazard-warning') { tone(360, 300, .14, 0, .03); tone(360, 300, .14, .18, .03); }
+    else if (name === 'hazard-clear') { tone(670, 990, .17, 0, .027); }
+    else if (name === 'hazard-impact') { tone(260, 115, .24, 0, .03); }
+    else if (name === 'combo-up') { tone(660, 880, .13); tone(880, 1320, .19, .11); }
+    else if (name === 'combo-break') { tone(480, 230, .2, 0, .028); }
+    else if (name === 'clean-landing') { tone(880, 1320, .25); tone(1175, 1760, .29, .08); }
+    else if (name === 'cup-stage') [523, 659, 784].forEach((hz,i) => tone(hz, hz * 1.04, .22, i * .13, .025));
+    else if (name === 'stunt-finish') [659, 784, 988].forEach((hz,i) => tone(hz, hz * 1.05, .26, i * .12, .025));
+    else if (name === 'mode-failed') { tone(400, 260, .25); tone(320, 205, .28, .15); }
     else if (name === 'pause') tone(520, 220, 0.15);
     else tone(name === 'tick' ? 440 : 720, name === 'tick' ? 440 : 1040, name === 'tick' ? 0.18 : 0.12);
   }
@@ -300,6 +328,8 @@ export function createSound() {
       const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
       const freshRace = race !== previousRace;
       const count = race.phase === 'countdown' ? Math.ceil(race.countdown) : null;
+      // Consume transitions even while muted: enabling audio never replays stale cues.
+      const modeEvents = modeAudioCues(race, modeAudioState);
       if (race !== previousRace) {
         silenceCues();
         previousRace = race;
@@ -312,7 +342,9 @@ export function createSound() {
       if (enabled) {
         if (count !== null && count !== previousCount) cue('tick');
         if (active && previousPhase === 'countdown') cue('go');
-        if (race.phase === 'finished' && previousPhase !== 'finished') cue('finish');
+        if (race.phase === 'finished' && previousPhase !== 'finished' &&
+            race.result?.success !== false && !['cup', 'stunt'].includes(race.mode)) cue('finish');
+        for (const event of modeEvents) cue(event);
         if (active) {
           if (car.impact && car.impact !== lastImpact && race.elapsed - car.impact.time < 0.2) impulse(car.impact.intensity, false, car.impact.kind === 'barrier');
           if (car.landing && car.landing !== lastLanding && race.elapsed - car.landing.time < 0.2) impulse(Math.min(1, car.landing.speed / 14), true);
@@ -337,10 +369,12 @@ export function createSound() {
         const skid = car.drift ? 0.035 + Math.min(3, Math.floor(car.drift.time)) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
         music.gain.setTargetAtTime(!musicOn ? 0 : musicLevel * (race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65), now, 0.1);
-        const name = !musicOn ? null : race.phase === 'ready' || race.phase === 'finished' ? 'intro' : TRACKS[race.trackId] ? race.trackId : 'race';
+        const name = !musicOn ? null : musicForMode(race);
         if (name !== song) { song = name; step = 0; }
         // Schedule ~0.2 s ahead from the frame loop; after a stalled frame, resume from now instead of bursting.
-        const sprint = active && song && song !== 'intro' ? sprintFactor(car.distance, race.length) : 1;
+        const urgency = race.mode === 'checkpoint' && race.checkpoint?.timeLeft < 10 ? 1.1 :
+          race.mode === 'stunt' && race.stuntLimit - race.elapsed < 20 ? 1.08 : 1;
+        const sprint = active && song && song !== 'intro' ? sprintFactor(car.distance, race.length) * urgency : 1;
         if (song) for (nextStep = Math.max(nextStep, now + 0.03); nextStep < now + 0.2; nextStep += 15 / (TRACKS[song].bpm * sprint), step = (step + 1) % LOOP_STEPS) playStep(TRACKS[song], step, nextStep);
       }
       previousPhase = race.phase;

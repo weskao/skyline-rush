@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { CATALOGS } from '../src/i18n.js';
+import { ciTimeout } from './helpers/ci.js';
 
 for (const [width, height, hasTouch] of [
   [320, 568, true], [390, 844, true], [568, 320, true], [844, 390, true],
@@ -12,6 +13,7 @@ for (const [width, height, hasTouch] of [
     test.use({ viewport: { width, height }, hasTouch });
 
     test('intro content stays clear of the HUD and actions remain reachable', async ({ page }) => {
+      test.setTimeout(ciTimeout(90000));
       await page.goto('/');
       await page.evaluate(() => document.fonts.ready);
       const intro = page.locator('#intro');
@@ -47,7 +49,8 @@ for (const [width, height, hasTouch] of [
       await page.locator('#start-button').click();
       await expect(intro).toBeHidden();
       await expect(page.locator('.telemetry')).toBeVisible();
-      await expect(page.locator('#race-status')).toHaveText('RACING');
+      // Big viewports render few frames on CI and each frame's step is clamped, so the countdown can outlast the default.
+      await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
     });
   });
 }
@@ -124,7 +127,7 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
     test.use({ viewport: { width, height }, hasTouch: true, isMobile: true, locale });
 
     test('every touch size, steering mode and hand', async ({ page, context }) => {
-      test.setTimeout(90000);
+      test.setTimeout(ciTimeout(90000));
       if (height < 380) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, top: 0, bottom: 21 } });
       // Music off up front: its prompt opens 600ms after load and would sit over START.
       await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; path=/'; });
@@ -257,7 +260,7 @@ for (const [width, height] of [[390, 844], [375, 667], [320, 568], [844, 390]]) 
   gameplayTest(`flight director and a mid-flight callout stay apart at ${width}x${height}`, async ({ gameplayPage: page }) => {
     await page.setViewportSize({ width, height });
     await page.locator('#start-button').click();
-    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: 15000 });
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
     await page.evaluate(() => { document.activeElement?.blur(); window.gameplay.race.player.speed = 90; });
     await page.keyboard.down('Space');
     await expect(page.locator('body')).toHaveClass(/airborne/);

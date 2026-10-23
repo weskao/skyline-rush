@@ -1,8 +1,8 @@
 import { test, expect, chromium } from './helpers/test.js';
 import { saveArtifact } from './helpers/artifact.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
+import { slow, ciTimeout } from './helpers/ci.js';
 
-const slow = process.env.CI ? 3 : 1; // CPU-only CI renders WebGL slowly; see playwright.config.js
 
 // Where autoplay is blocked (CI runners), the music prompt appears after 600ms over the settings buttons.
 const dismissMusicPrompt = async page => {
@@ -65,6 +65,7 @@ test('the UI is rendered by a mounted Vue app', async ({ page }) => {
 });
 
 test('airflow showcase, presets, views and boost coexist without shader errors', async ({ page }) => {
+  test.setTimeout(ciTimeout(120000));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -89,7 +90,8 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w'); await page.keyboard.down('Shift');
   await expect(page.locator('#boost-status')).toHaveText('THRUST ACTIVE');
-  await expect.poll(async () => Number(await page.locator('#fuel-value').textContent())).toBeLessThan(98);
+  // The first race frames after the showcase compile shaders; on CI each one advances the clamped game step only once.
+  await expect.poll(async () => Number(await page.locator('#fuel-value').textContent()), { timeout: ciTimeout(60000) }).toBeLessThan(98);
   await page.keyboard.press('v');
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#boost-status')).toHaveText('THRUST ACTIVE');
@@ -116,6 +118,45 @@ test('starting with a VFX control focused hands the keyboard back to driving', a
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(20);
   await page.keyboard.down('d');
   await expect.poll(async () => parseFloat(await page.evaluate(() => document.body.style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
+});
+
+for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) test(`${name} dropdowns close on an outside press or another button, one open at a time`, async ({ page }) => {
+  await page.setViewportSize(viewport);
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  const vfx = page.locator('#vfx-panel'), quality = page.getByRole('combobox', { name: 'Quality', exact: true });
+  await vfx.locator('> summary').click();
+  await quality.click();
+  await expect(quality).toHaveAttribute('aria-expanded', 'true');
+  // A press inside the VFX panel closes only the drawn select.
+  await page.locator('.vfx-settings').click({ position: { x: 8, y: 8 } });
+  await expect(quality).toHaveAttribute('aria-expanded', 'false');
+  await expect(vfx).toHaveAttribute('open');
+  // Left edge, mid-height: page background on both layouts, clear of every panel.
+  const outside = () => page.mouse.click(4, viewport.height / 2);
+  await outside();
+  await expect(vfx).not.toHaveAttribute('open');
+  // Another dropdown's button swaps them instead of stacking.
+  await vfx.locator('> summary').click();
+  await page.locator('#settings-button').click();
+  await expect(page.locator('#settings-panel')).toBeVisible();
+  await expect(vfx).not.toHaveAttribute('open');
+  await page.locator('#controls-button').click();
+  await expect(page.locator('#controls-panel')).toBeVisible();
+  await expect(page.locator('#settings-panel')).toBeHidden();
+  await outside();
+  await expect(page.locator('#controls-panel')).toBeHidden();
+});
+
+// The transparent topbar overlaps the .aero-tools row: 14px of it on desktop, all of it on a landscape phone.
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) test(`${viewport.width}x${viewport.height} language button opens from its top border`, async ({ page }) => {
+  await page.setViewportSize(viewport);
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  const language = page.getByRole('combobox', { name: 'Language', exact: true });
+  const box = await language.boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + 1);
+  await expect(language).toHaveAttribute('aria-expanded', 'true');
 });
 
 test('mobile VFX controls fit, persist and respect reduced motion', async ({ page }) => {

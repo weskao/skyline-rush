@@ -1,5 +1,6 @@
 import { selectLocale } from './helpers/locale-browser.js';
 import { test,expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 const constrained=page=>page.addInitScript(()=>{
   Object.defineProperty(navigator,'hardwareConcurrency',{configurable:true,get:()=>2});
@@ -53,7 +54,7 @@ for (const [name, panel] of Object.entries(panels)) {
     await page.locator('#music-no').click();
     await panel.open(page);
     await expect(page.locator('#performance-notice')).toBeHidden();
-    await panel.control(page).click({ timeout: 5000 });
+    await panel.control(page).click({ timeout: ciTimeout(5000) });
   });
 }
 test('starting a race puts the downgrade notice away so it never covers the race view', async ({ page }) => {

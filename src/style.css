@@ -8,18 +8,20 @@ button, a { -webkit-user-select: none; user-select: none; }
 button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
 button:disabled { opacity: .35; cursor: default; }
 button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
-button { scale: 1; transition: scale var(--dur-base) var(--ease-spring); }
-button:active:not(:disabled), button.is-pressed:not(:disabled) { scale: .96; transition-duration: var(--dur-fast); }
+/* Press feedback never changes the box: a shrinking button drops clicks released near its edge. */
+button { transition: filter var(--dur-base) var(--ease-spring); }
+button:active:not(:disabled), button.is-pressed:not(:disabled) { filter: brightness(.82); transition-duration: var(--dur-fast); }
 button[hidden], [hidden] { display: none !important; }
 .vfx-comfort button { transition: none; }
 @media (prefers-reduced-motion: reduce) { button { transition: none !important; } }
-.vfx-comfort button, .layout-editing button { scale: 1 !important; }
-@media (prefers-reduced-motion: reduce) { button { scale: 1 !important; } }
 svg { width: 22px; height: 22px; flex-shrink: 0; }
 #world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; touch-action: none; }
 .scene-shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(9 21 34 / .88) 0%, rgb(9 21 34 / .69) 25%, rgb(9 21 34 / .1) 58%, transparent 80%), linear-gradient(0deg, rgb(6 17 28 / .91), transparent 30%, transparent 78%, rgb(9 21 34 / .26)); transition: opacity .5s; }
 body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(6 17 28 / .86), transparent 28%, transparent 76%, rgb(9 21 34 / .6)); }
 .topbar { position: fixed; z-index: 5; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+/* The bar's empty gradient lets taps through to the .aero-tools row it overlaps; only its own controls catch them. */
+.topbar { pointer-events: none; }
+.topbar > * { pointer-events: auto; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #f4f0e9; }
 .brand > svg { width: 38px; height: 38px; color: var(--accent); }
 .brand > span { display: flex; align-items: baseline; gap: 7px; font-family: 'Barlow Condensed', sans-serif; font-size: 27px; letter-spacing: 2.5px; }
@@ -138,8 +140,8 @@ body[data-phase="ready"] .build-version { display: block; }
 .event-callout span { display: block; margin-top: 2px; font: 500 10px/1.5 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 1px; }
 .event-callout[data-kind="perfect"], .event-callout[data-kind="nitro"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
 @media (max-width: 760px) and (min-height: 501px) { .event-callout { top: 272px; } .driving-message[data-tone='warning'] { top: 324px; } } /* warning sits under the callout, clear of the progress bar */
-/* Portrait phones have no room beside the flight director, so it steps aside for a brief callout — at once, since a fade would overlap the callout's first frames. */
-@media (max-width: 760px) and (min-height: 501px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; transition: none; } }
+/* Portrait phones hide the flight director immediately while a callout is visible; no fade may overlap the first frames. */
+@media (max-width: 760px) and (min-height: 501px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; visibility: hidden; transition: none; } }
 @media (max-height: 500px) {
   .event-callout { top: 30%; right: auto; margin: 0; max-width: 230px; padding: 2px 10px; font-size: 20px; } /* left gutter: the centre holds the progress and mode panels */
   .event-callout > div { display: flex; align-items: center; gap: 10px; }
@@ -519,7 +521,7 @@ body:is([data-phase="countdown"], [data-phase="racing"]) .aero-tools .custom-sel
 summary:focus-visible, input:focus-visible, .custom-select > button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 /* Page-drawn controls: no OS select popup, checkbox or slider. */
 .custom-select { position: relative; display: inline-block; min-width: 0; max-width: 100%; }
-.custom-select > button { display: block; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; background: #1b3044 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center; scale: 1 !important; }
+.custom-select > button { display: block; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; background: #1b3044 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center; }
 .custom-select > button[aria-expanded="true"] { border-color: var(--blue); }
 .custom-select > [role="listbox"] { position: absolute; z-index: 6; top: calc(100% + 4px); right: 0; min-width: 100%; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 4px; list-style: none; background: #0b1c2bf8; border: 1px solid #5c8796; border-radius: 6px; box-shadow: 0 12px 32px #0009; }
 .custom-select [role="option"] { min-height: 40px; display: flex; align-items: center; padding: 8px 12px; border-radius: 4px; white-space: nowrap; cursor: pointer; }
@@ -579,6 +581,11 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   .airflow-hud { top: 150px; width: 160px; padding: 10px; }
   .aero-channels, .aero-disclaimer { display: none; }
   .vfx-settings { max-height: calc(100dvh - 110px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); top: 36px; }
+}
+/* A short mouse window keeps the full-height toolbar (its buttons end at 78px), so the row starts below it instead of under it. */
+@media (max-height: 500px) and (min-width: 761px) and (hover: hover) {
+  .aero-tools { top: 86px; }
+  .vfx-settings { max-height: calc(100dvh - 132px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .airflow-hud { transition: none; transform: none; }
@@ -705,7 +712,7 @@ body.layout-editing #touch-controls { display: grid; }
 .intro-controls { margin-top: 20px; }
 .track-select { display: flex; gap: 8px; overflow-x: auto; padding: 6px; margin: -6px; scroll-snap-type: x proximity; scrollbar-color: var(--accent) #263849; scrollbar-width: thin; }
 .track-select button { flex: 0 0 137px; min-height: 62px; border: 1px solid #6b7b89; border-radius: 3px; padding: 10px; background: #142334; text-align: left; scroll-snap-align: start; }
-.track-select button[aria-pressed="true"] { border-color: var(--accent); background: #303139; }
+.track-select button[aria-pressed="true"] { border-color: var(--accent); background: #303139; scroll-snap-align: center; } /* holds centerSelectedTrack against the start snap */
 .track-select button:hover:not(:disabled) { background: #2a3b4d; }
 .track-select button:disabled { opacity: .65; }
 .track-select strong { font-size: 12px; display: block; margin-bottom: 7px; }
@@ -979,12 +986,28 @@ body[data-phase="ready"] .telemetry { display: none; }
 /* Below ~967px tall the full desktop intro overflows by a few px and the scroller edge cuts the flight tip mid-line.
    Tighter spacing (54px) lets it fit from 900px tall; shorter screens still scroll to it. */
 @media (min-width: 1001px) and (min-height: 501px) and (max-height: 966px) {
-  .route-label { margin-bottom: 14px; }
-  .intro-copy { margin-bottom: 16px; }
-  .track-note { margin: 8px 0 12px; }
-  .intro-controls { margin-top: 12px; row-gap: 6px; }
-  .flight-tip { margin-top: 8px; }
+  .route-label { margin-bottom: 12px; }
+  .intro-wordmark { margin-bottom: 6px; }
+  .intro h1 { margin-bottom: 10px; }
+  .intro-copy { margin-bottom: 12px; }
+  .intro .race-mode-picker { margin-top: 9px; padding: 8px 10px; }
+  .intro .race-mode-heading { margin-bottom: 6px; }
+  .track-note { margin: 6px 0 9px; }
+  .intro-controls { margin-top: 8px; row-gap: 5px; }
+  .flight-tip { margin-top: 5px; }
 }
+
+/* Spacious desktop height still needs the complete intro visible without a clipped final line.
+   Keep the tagline while recovering the ~24px overflow observed at 1920x1080. */
+@media (min-width: 1001px) and (min-height: 967px) and (max-height: 1160px) {
+  .intro .route-label { margin-bottom: 17px; }
+  .intro .intro-copy { margin-bottom: 8px; }
+  .intro .track-note { margin-bottom: 9px; }
+}
+/* Music consent must never block unrelated toolbar settings while waiting for an answer.
+   Its two explicit choices remain clickable, but the surrounding panel/text is click-through. */
+.music-prompt { pointer-events: none; }
+.music-prompt button { pointer-events: auto; }
 
 /* Insets are 0 when the OS already places the web view clear of the status bar
    (iOS standalone with an opaque bar, Android 14 and earlier). Android 15+
@@ -1189,7 +1212,7 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-mode-heading > span { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
 .race-mode-heading small { font-size: 10px; color: #d1e3ed; text-align: right; line-height: 1.4; }
 .race-mode-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
-.race-mode-tabs button { min-height: 38px; padding: 5px 7px; border: 1px solid #627c8d; border-radius: 5px; background: #22384a; color: #eef6f8; font: 700 11px/1.35 'Avenir Next','Segoe UI',sans-serif; }
+.race-mode-tabs button { min-height: 36px; padding: 3px 5px; border: 1px solid #627c8d; border-radius: 5px; background: #22384a; color: #eef6f8; font: 700 10px/1.25 'Avenir Next','Segoe UI',sans-serif; overflow-wrap: normal; }
 .race-mode-tabs button[aria-pressed="true"] { color: #102338; background: #ffb491; border-color: #ffcfb4; }
 .race-mode-tabs button:focus-visible { outline: 3px solid #9de4ff; outline-offset: 2px; }
 .race-mode-rules { margin-top: 10px; }
@@ -1209,7 +1232,7 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
  .race-mode-rules[open] { max-height: 180px; overflow-y: auto; }
 }
 @media (max-width:370px) {
- .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); }
 }
 .mode-history-runs p { padding: 9px 0; border-bottom: 1px solid #405465; margin: 0; font-variant-numeric: tabular-nums; color: #e5edf4; }
 
@@ -1222,21 +1245,20 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-presets button[aria-pressed="true"] { background: #eeb48c; color: #092138; border-color: #ffcca6; }
 .race-presets button:focus-visible { outline: 2px solid #a0edff; outline-offset: 2px; }
 
-/* Mode cards adapt to narrow safe-area viewports without shrinking touch targets. */
-.race-mode-tabs { grid-template-columns: repeat(5,minmax(0,1fr)); }
-/* Desktop: all eight modes share one row, each card as wide as its longest word, so the intro still fits 900px tall. */
-@media (min-width:1001px) { .race-mode-tabs { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: auto; } }
+/* Five mode cards adapt to narrow safe-area viewports without shrinking touch targets. */
+.race-mode-tabs { grid-template-columns: repeat(5,minmax(min-content,1fr)); } /* a column never narrower than its longest word, e.g. "Championship" */
 body[data-race-mode="free"] .race-presets,
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="rivals"]),
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
-@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }
-@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-/* 501-966px-tall desktops: the picker costs ~100px, so it tightens and the tagline yields, keeping the flight tip whole. */
+@media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(min-content,1fr)); } }
+@media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); } }
+/* 501-966px-tall desktops: the picker costs ~100px, so it goes to one row and the tagline yields, keeping the flight tip whole. */
 @media (min-width: 1001px) and (min-height: 501px) and (max-height: 966px) {
  .intro-copy { display: none; }
- .race-mode-picker { padding: 7px 10px; margin-top: 10px; }
- .race-mode-heading { margin-bottom: 4px; }
- .race-mode-tabs button { min-height: 32px; padding: 2px 6px; font-size: 10px; line-height: 1.25; }
+ .race-mode-picker { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 14px; padding: 8px 10px; }
+ .race-mode-heading { flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; }
+ .race-mode-heading small { text-align: left; max-width: 120px; }
+ .race-mode-rules { grid-column: 1 / -1; }
 }
 
 /* The series counter sits in the race info without expanding the top HUD. */
@@ -1270,3 +1292,40 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .stunt-hud { display:inline-block; max-width:100%; margin-top:6px; padding:5px 10px; border:1px solid #ffc87988; border-radius:6px; color:#ffe6ae; background:#3b2544e6; font-size:clamp(9px,1.2vw,12px); font-weight:800; line-height:1.5; letter-spacing:.045em; text-shadow:0 0 10px #eb9f5488; }
 .stunt-hud[hidden], #stunt-rules[hidden] { display:none !important; }
 #stunt-rules label {display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:12px 4px;}
+
+/* Three local presets: compact, keyboard-reachable, and never show locked courses. */
+.recent-custom-runs { display: flex; flex-wrap: wrap; gap: 7px; padding: 8px 0 4px; }
+.recent-custom-runs button { min-height: 36px; padding: 6px 9px; border: 1px solid #5e91ad; border-radius: 5px; background: #173549; color: #daf2fa; font-size: 11px; text-align: left; }
+.recent-custom-runs button:focus-visible { outline: 2px solid #a3edff; outline-offset: 2px; }
+#recent-custom[hidden] { display: none !important; }
+
+/* Active inventory lives with race telemetry, not inside the adjustable touch driving grid. */
+.item-slot {display:flex;align-items:center;gap:8px;max-width:100%;margin-top:7px;padding:5px 7px;background:#152d41ec;border:1px solid #7bd6e59a;border-radius:6px;color:#bceefa;font-size:10px;font-weight:800;line-height:1.5;}
+.item-slot[hidden]{display:none!important;}
+.item-slot button{pointer-events:auto;min-height:34px;padding:5px 9px;border:1px solid #e8c079;border-radius:5px;background:#e5bb6e;color:#1c2834;font-size:11px;font-weight:800;cursor:pointer;}
+.item-slot button:disabled{opacity:.45;cursor:default;}
+.item-slot button:focus-visible{outline:2px solid #9cddff;outline-offset:2px;}
+@media(max-width:760px){.item-slot{flex-wrap:wrap;max-width:220px}.item-slot button{min-height:40px}}
+
+.elimination-hud{display:inline-block;max-width:100%;margin-top:7px;padding:5px 9px;border:1px solid #ffce8777;border-radius:5px;background:#482a31dd;color:#ffe7b2;font-size:11px;font-weight:800;letter-spacing:.06em;text-shadow:0 0 9px #fb914966;}
+.elimination-hud[hidden]{display:none!important;}
+.elimination-hud[data-urgent="true"]{border-color:#ffb19d;color:#fff0e9;background:#873a44ee;}
+
+/* Paused Free Drive Photo Studio: keep the scenery visible, no new dependencies. */
+.photo-screen { position: fixed; inset: 12px auto auto 12px; margin: 0; width: min(360px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
+.photo-screen::backdrop { background: transparent; }
+.photo-panel { display: grid; gap: 12px; padding: 18px; font-size: 13px; }
+.photo-panel h2 { margin: 0; font-size: 18px; letter-spacing: .12em; }
+.photo-panel p { margin: 0; line-height: 1.5; }
+.photo-panel label { display: grid; gap: 5px; }
+.photo-panel input { width: 100%; }
+.photo-panel select { min-height: 38px; }
+.photo-actions { display: flex; gap: 10px; }
+.photo-actions button { min-height: 44px; flex: 1; border-radius: 6px; border: 1px solid #81e9e7; background: #21536a; color: #efffff; font-weight: 700; }
+.photo-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.photo-screen[open] { z-index: 120; }
+body:has(#photo-screen[open]) .race-overlay,
+body:has(#photo-screen[open]) .race-info,
+body:has(#photo-screen[open]) .touch-controls,
+body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
+#photo-open[hidden] { display: none !important; }

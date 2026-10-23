@@ -1,4 +1,6 @@
 // Draws a native <select> as a page listbox (no OS popup); the hidden select keeps value and input/change events for existing callers.
+import { trackDropdown } from './dropdown.js';
+
 let count = 0;
 const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
 
@@ -46,6 +48,7 @@ export function customSelect(select) {
   const toggle = open => {
     list.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
+    trackDropdown(box, open, () => toggle(false));
     if (open) highlight(select.selectedIndex);
     else button.removeAttribute('aria-activedescendant');
   };

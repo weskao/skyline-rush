@@ -3,6 +3,8 @@ import { createHazards, hazardX } from './hazards.js';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
 import { createPracticeStats, samplePractice } from './practice-stats.js';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
+import { createElimination, stepElimination } from './elimination.js';
+import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
@@ -242,10 +244,13 @@ export function createRace(trackId = 'coast', modifier = null) {
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
-    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) : [],
+    props: [], // solid World Tour scenery parts; main.js fills them from roadObstacles()
+    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) :
+      config.hazards ? createHazards(track, LANES, config.hazards) : [],
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     practice: config.mode === 'free' ? createPracticeStats() : null,
     styleAttack: config.mode === 'stunt' ? createStuntAttack() : null,
+    elimination: config.mode === 'elimination' ? createElimination() : null,
     stuntLimit: config.mode === 'stunt' ? config.duration : null,
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
@@ -257,13 +262,14 @@ export function createRace(trackId = 'coast', modifier = null) {
       slipstream: { time: 0, active: false, paid: false },
       drift: null, driftPayout: null, miniBoost: 0, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
+      heldItem: null, itemCooldown: 0,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].slice(0, config.rivals).map((name, i) => ({
-      name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
+      name, x: LANES[i === 2 ? 3 : i], homeX: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
       altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroTime: 0, nitroHop: -1,
     })),
     traffic: Array.from({ length: Math.round(36 * density) }, (_, i) => ({
-      x: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / density,
+      x: LANES[(i * 7 + 1) % 4], homeX: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / density,
       speed: 23 + (i % 5) * 3, color: i % 5,
     })),
   };
@@ -282,7 +288,8 @@ function collectRing(race, ring, index) {
     car.score += RISK_SCORE;
   } else if (ring.type === 'mystery') {
     const effect = mysteryEffect(race.seed, index);
-    car.effects[effect] = EFFECT_TIMES[effect];
+    if (race.config.activeItems) bankItem(car, effect);
+    else car.effects[effect] = EFFECT_TIMES[effect];
   }
   car.groupHits[ring.group] = (car.groupHits[ring.group] ?? 0) + 1;
   if (car.groupHits[ring.group] === race.rings.filter(other => other.group === ring.group).length) {
@@ -308,6 +315,11 @@ export function startRace(race) {
   if (race.phase === 'ready') race.phase = race.mode === 'free' ? 'racing' : 'countdown';
 }
 
+export function useHeldItem(race) {
+  if (!race?.config?.activeItems || race.phase !== 'racing') return null;
+  return activateItem(race.player, race.rivals.length > 0);
+}
+
 export function racePosition(race) {
   return race.result?.position ?? 1 + race.rivals.filter(rival => rival.distance > race.player.distance).length;
 }
@@ -321,6 +333,55 @@ export function sprintGaps(race) {
     if (gap < 0 && (behind === null || -gap < behind)) behind = -gap;
   }
   return { ahead, behind };
+}
+
+// Car body against scenery parts (sorted by distance); the swept range catches thin parts at high speed.
+function hitProp(props, car, previousDistance) {
+  for (const p of props) {
+    if (p.from > car.distance + 2.2) break;
+    if (p.to > previousDistance - 2.2 && p.right > car.x - 0.85 && p.left < car.x + 0.85 &&
+      p.top > car.altitude && p.bottom < car.altitude + 1.8) return p;
+  }
+  return null;
+}
+
+// Rivals and traffic steer around solid scenery and gauntlet barriers ahead instead of driving through
+// them: they keep their own lane while it is clear, else take the nearest free line beside the obstacle.
+// Scenery parts stay under 20 m deep (largest: a scaled train, ~9 m), which bounds the look-back.
+const AI_LOOKAHEAD = 80, LANE_SHIFT = 6, AI_HALF_WIDTH = 0.85, AI_MARGIN = 1.4; // m ahead, m/s sideways, m, m
+const BARRIER_HALF_WIDTH = 1.55, BARRIER_HEIGHT = 2.5; // drawn gauntlet barrier: 3.1 x 2.5 m
+const blockers = []; // reused every call: no per-frame allocation on this hot path
+function laneFree(x) {
+  if (Math.abs(x) > ROAD_LIMIT) return false;
+  for (let i = 0; i < blockers.length; i += 2) if (x + AI_HALF_WIDTH > blockers[i] && x - AI_HALF_WIDTH < blockers[i + 1]) return false;
+  return true;
+}
+function avoidObstacles(race, other, dt) {
+  const { props, hazards } = race, d = other.distance, altitude = other.altitude || 0;
+  if (!props.length && !hazards.length) return;
+  blockers.length = 0;
+  let lo = 0, hi = props.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (props[mid].from < d - 20) lo = mid + 1; else hi = mid; }
+  for (let i = lo; i < props.length && props[i].from < d + AI_LOOKAHEAD; i++) {
+    const p = props[i];
+    if (p.to > d - 2.2 && p.top > altitude && p.bottom < altitude + 1.8) blockers.push(p.left, p.right);
+  }
+  if (altitude < BARRIER_HEIGHT) for (const h of hazards) {
+    if (h.distance > d + AI_LOOKAHEAD) break;
+    if (h.distance < d - 2.2) continue;
+    const reach = BARRIER_HALF_WIDTH + (h.moving ? 1.8 : 0); // a moving barrier blocks its whole sweep
+    blockers.push(h.x - reach, h.x + reach);
+  }
+  let target = other.homeX;
+  if (!laneFree(target)) {
+    target = other.x; // nowhere free: hold the line rather than swerve into something else
+    let best = Infinity;
+    for (let i = 0; i < blockers.length; i++) {
+      const x = i % 2 ? blockers[i] + AI_MARGIN : blockers[i] - AI_MARGIN;
+      if (Math.abs(x - other.x) < best && laneFree(x)) { best = Math.abs(x - other.x); target = x; }
+    }
+  }
+  other.x += clamp(target - other.x, -LANE_SHIFT * dt, LANE_SHIFT * dt);
 }
 
 function contact(race, kind, obstacleX, intensity, retention) {
@@ -354,6 +415,7 @@ export function stepRace(race, input, dt) {
   race.elapsed += dt;
   const car = race.player;
   const previousScore = car.score;
+  if (race.config.activeItems) tickItemCooldown(car, dt);
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
   car.section = section?.type ?? null;
   car.inShortcut = car.section === 'shortcut' && Math.abs(car.x - section.x) < SHORTCUT_HALF_WIDTH &&
@@ -510,6 +572,7 @@ export function stepRace(race, input, dt) {
 
   for (const traffic of race.traffic) {
     traffic.distance += traffic.speed * dt;
+    avoidObstacles(race, traffic, dt);
     // Recycle distant traffic so the same small scene stays populated for the full sprint.
     if (traffic.distance < car.distance - 60) traffic.distance += 1400;
   }
@@ -531,6 +594,7 @@ export function stepRace(race, input, dt) {
     const band = Math.sign(gap) * clamp((Math.abs(gap) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
     const slow = (car.effects.freeze > 0 ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
     rival.distance += rival.speed * slow * dt;
+    avoidObstacles(race, rival, dt);
     if (rival.distance >= race.length && rival.finishTime === null) {
       rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / (rival.speed * slow);
     }
@@ -541,10 +605,15 @@ export function stepRace(race, input, dt) {
       Math.abs(other.distance - car.distance) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
       Math.abs((other.altitude || 0) - car.altitude) < 1.8,
     );
+    const prop = car.effects.ghost > 0 ? null : hitProp(race.props, car, previousDistance);
     const pylon = car.section === 'shortcut' && shortcutPylons(section).find(p => p.distance > previousDistance && p.distance <= car.distance &&
       Math.abs(p.x - car.x) < PYLON_HALF_WIDTH && Math.abs(p.altitude - car.altitude) < SHORTCUT_TOLERANCE);
     if (obstacle) {
       contact(race, 'vehicle', obstacle.x, clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1), nitro ? 0.7 : 0.45);
+    } else if (prop) {
+      contact(race, 'barrier', (prop.left + prop.right) / 2, clamp(car.speed / 100, 0.25, 1), nitro ? 0.7 : 0.45);
+      // A solid prop cannot be driven through: step out to its open-road side (it never reaches past ROAD_CLEARANCE).
+      car.x = prop.left > 0 ? Math.min(car.x, prop.left - 1.1) : Math.max(car.x, prop.right + 1.1);
     } else if (roofHit) {
       contact(race, 'barrier', Math.sign(car.x) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75); // pushed toward the centre
     } else if (pylon) {
@@ -631,8 +700,21 @@ export function stepRace(race, input, dt) {
     car.thrusting = false;
     car.boosting = false;
   }
+  if (race.elimination) {
+    // Keep the original course bounded even if a future car tuning reaches the end early.
+    if (car.distance >= race.length) { car.distance = race.length; car.speed = 0; }
+    const knockout = stepElimination(race.elimination,race);
+    if (knockout?.outcome) {
+      race.result = {position:knockout.outcome === 'won' ? 1 : 4, time:race.elapsed,
+        success:knockout.outcome === 'won', score:Math.round(car.score),
+        collisions:car.collisions, nearMisses:car.nearMisses, nitroUses:car.nitroUses,
+        rings:car.rings, perfectLines:car.perfectLines, stars:1};
+      race.phase='finished'; car.speed=0; car.thrusting=false; car.boosting=false;
+      return;
+    }
+  }
   const stuntTimeUp = race.mode === 'stunt' && race.elapsed >= race.stuntLimit;
-  if (race.mode !== 'free' && (car.distance >= race.length || race.checkpoint?.expired || stuntTimeUp)) {
+  if (!['free','elimination'].includes(race.mode) && (car.distance >= race.length || race.checkpoint?.expired || stuntTimeUp)) {
     const finishTime = stuntTimeUp ? race.stuntLimit : race.checkpoint?.expired ? race.elapsed :
       race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;

@@ -33,3 +33,10 @@ export function scoreStuntAttack(state, car, earned, dt, elapsed) {
   state.bonus += bonus;
   return bonus;
 }
+
+/** Local Stunt medals scale with the selected driving duration; never Career medals. */
+export function stuntMedal(score, duration = 120) {
+  if (!Number.isFinite(score) || score < 0 || ![120, 180, 300].includes(duration)) return null;
+  const normalized = score * 120 / duration;
+  return normalized >= 8000 ? 'gold' : normalized >= 4000 ? 'silver' : normalized >= 1500 ? 'bronze' : null;
+}
