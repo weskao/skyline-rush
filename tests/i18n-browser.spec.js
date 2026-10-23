@@ -5,6 +5,7 @@ import { test } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { CATALOGS } from '../src/i18n.js';
 import { ciTimeout } from './helpers/ci.js';
+import { strayEnglish } from './helpers/i18n-english.js';
 
 // Both locales x desktop + phone through the real flow. Screenshots go to I18N_SHOT_DIR (default test-results/i18n-shots), never artifacts/.
 const SHOT_DIR = process.env.I18N_SHOT_DIR ?? 'test-results/i18n-shots';
@@ -12,8 +13,6 @@ const LOCALES = [['en', 'en-US', 'en'], ['zh-TW', 'zh-TW', 'zh-TW']]; // [catalo
 const VIEWPORTS = [['desktop', { width: 1440, height: 900 }, false], ['phone', { width: 390, height: 844 }, true]];
 const MIN_CJK_PX = 10;
 const CJK = /[㐀-鿿豈-﫿　-〿]/;
-// Brand/game terms, units and key names the zh-TW UI keeps in English.
-const ALLOWED = new Set(['SKYLINE', 'RUSH', 'NITRO', 'FLY', 'BOOST', 'NOVA', 'ORBIT', 'APEX', 'KM', 'ESC', 'SPACE', 'SHIFT', 'ENTER', 'BACKSPACE', 'CFD', 'GOOGLE']); // CFD: the technical acronym in "NOT CFD"; GOOGLE: the sign-in brand
 const KEY_PREFIXES = [...new Set(Object.keys(CATALOGS.en).map(key => key.split('.')[0]))];
 // A catalog key shown to the player: a whole-string dotted identifier, or a real catalog prefix glued to a dotted tail.
 const RAW_KEY = new RegExp(`^[a-z][A-Za-z0-9]*(\\.[A-Za-z0-9-]+)+$|(^|[^\\w.])(${KEY_PREFIXES.join('|')})\\.[A-Za-z][\\w.]*`);
@@ -140,7 +139,7 @@ async function check(cx, step, { hud = false, all = false, live = false } = {}) 
     // Han strokes need more pixels than Latin: below MIN_CJK_PX the glyphs blur together.
     if (locale === 'zh-TW' && px && px < MIN_CJK_PX && CJK.test(text)) bad.tinyCjk.push(`${where}: "${text.slice(0, 30)}" ${px}px`);
     if (locale === 'zh-TW' && override !== 'en' && !key) {
-      const stray = (text.match(/[A-Za-z][A-Za-z']*/g) ?? []).filter(word => word.length > 1 && !ALLOWED.has(word.toUpperCase()));
+      const stray = strayEnglish(text);
       if (stray.length) (all ? hiddenStray : bad.strayEnglish).push(`${where}: "${text}" -> ${stray.join(' ')}`);
     }
   }
