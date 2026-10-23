@@ -670,7 +670,7 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 
 ### 10C. Result/history isolation and safeguards (P0)
 
-- [ ] Store a stable `modeId + trackId + rulesVersion + rulesSignature` on
+- [x] Store a stable `modeId + trackId + rulesVersion + rulesSignature` on
   each **new-mode** result, plus appropriate time, score, distance,
   stage/lap data and item/hazard statistics. Keep legacy history readable.
 - [ ] Show per-mode bests, mode-filtered History and applicable Ghosts;
@@ -683,6 +683,19 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
   sessions unless a specific future rule explicitly grants eligibility.
 - [ ] Pausing, restarting, exiting, switching modes or closing a dialog
   cannot double-write a result or award the same benefit twice.
+
+**10C versioned mode records (2026-10-23):** RED
+[`e3581a7`](https://github.com/weskao/skyline-rush/commit/e3581a704557506d5dcb669b3ad253d8a10c6281)
+([Actions #39945181620](https://github.com/weskao/skyline-rush/actions/runs/39945181620));
+GREEN [`d25d025`](https://github.com/weskao/skyline-rush/commit/d25d0252dba9d0aac2ab691a090dbc5fdc6582cc)
+([Actions #39945279475](https://github.com/weskao/skyline-rush/actions/runs/39945279475)).
+New-mode runs store additive `modeId`, `trackId`, `rulesVersion`,
+`rulesSignature`, finite distance, sprint stage count (no fake circuit laps),
+bounded item activations and hazard statistics. Legacy records remain readable;
+no new storage key or changed best comparison; Classic history and unlocks
+remain isolated. Focused and full unit tests, production build, and two
+real desktop mode smoke tests passed. Other 10C UI/persistence acceptance
+items remain open.
 
 ## 11. Interactive scenery, track hazards and procedural world props
 
