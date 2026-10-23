@@ -38,4 +38,12 @@ for (const [device, options] of [['desktop', {}], ['phone', { viewport: { width:
     await raceThenLeave(page, tracks.at(-1), 'end');
     expect(await page.locator('.track-select').evaluate(row => Math.abs(row.scrollWidth - row.clientWidth - row.scrollLeft))).toBeLessThan(2);
   });
+
+  test('Clicking a track focuses it and scrolls it to the row centre', async ({ page }) => {
+    const id = tracks[Math.floor(tracks.length / 2)];
+    await page.locator('.track-select').evaluate(row => { row.scrollLeft = 0; });
+    await page.locator(`[data-track="${id}"]`).click();
+    await expect(page.locator(`[data-track="${id}"]`)).toBeFocused();
+    await expect.poll(async () => Math.abs(await offCentre(page, id))).toBeLessThan(2);
+  });
 });

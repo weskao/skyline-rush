@@ -366,6 +366,8 @@ for (const button of document.querySelectorAll('[data-track]')) button.addEventL
   controls.clear();
   race = selectedRace(button.dataset.track); daily = null;
   showTracks();
+  button.focus({ preventScroll: true }); // Safari does not focus buttons on click
+  centerSelectedTrack(true);
   sound.cue('ui');
 });
 $('.track-select').addEventListener('keydown', event => {
@@ -422,9 +424,9 @@ for (const input of document.querySelectorAll('[data-race-rule]')) input.addEven
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
 try { const last = sessionStorage.getItem(LAST_TRACK_KEY); if (unlockedTracks.has(last)) race = selectedRace(last); } catch { /* Coast stays the default without storage. */ }
 // The browser clamps scrollLeft, so the first and last tracks rest at the row's edges instead of the middle.
-function centerSelectedTrack() {
+function centerSelectedTrack(smooth = false) {
   const button = document.querySelector(`[data-track="${race.trackId}"]`), row = button.parentElement;
-  row.scrollLeft += button.getBoundingClientRect().left + button.offsetWidth / 2 - row.getBoundingClientRect().left - row.clientWidth / 2;
+  row.scrollBy({ left: button.getBoundingClientRect().left + button.offsetWidth / 2 - row.getBoundingClientRect().left - row.clientWidth / 2, behavior: smooth && !reducedMotion.matches ? 'smooth' : 'instant' });
 }
 showTracks(); centerSelectedTrack();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
