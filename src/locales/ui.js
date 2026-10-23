@@ -344,6 +344,10 @@ export const UI = Object.freeze({
     'cloud.local': 'Race progress is saved on this device only.',
     'cloud.syncing': 'Syncing race progress…',
     'cloud.saved': 'Race progress is saved to your Google account.',
+    'cloud.savedAt': 'Race progress is saved to your Google account. Last successful sync on this device: {time}',
+    'cloud.pending': 'Cloud sync pending. Your progress remains on this device and will retry when online.',
+    'cloud.pendingAt': 'Cloud sync pending; your local progress is safe. Last successful sync on this device: {time}',
+    'cloud.otherAccount': 'Your Google account changed. Switch to its saved progress before syncing.'
     'cloud.failed': 'Cloud save failed. Your progress remains available on this device.',
     'history.close': 'Close history',
     'history.track': 'Track',
@@ -909,6 +913,10 @@ export const UI = Object.freeze({
     'cloud.local': '比賽成果目前只儲存在本裝置。',
     'cloud.syncing': '正在同步比賽成果…',
     'cloud.saved': '比賽成果已儲存至你的 Google 帳號。',
+    'cloud.savedAt': '比賽成果已同步至 Google 帳號。本裝置上次成功同步：{time}',
+    'cloud.pending': '雲端同步待處理；進度仍保留在本裝置，恢復連線後會重試。',
+    'cloud.pendingAt': '雲端同步待處理，本機進度仍在。上次成功同步：{time}',
+    'cloud.otherAccount': 'Google 帳號已切換，需先載入此帳號的進度才能同步。'
     'cloud.failed': '雲端儲存失敗；本裝置的成果仍可使用。',
     'history.close': '關閉歷史紀錄',
     'history.track': '賽道',
