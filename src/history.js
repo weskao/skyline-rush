@@ -50,10 +50,19 @@ export function recordRace(race, storage, now = new Date()) {
 
 // Practice, custom and Time Attack records never mutate Classic history or unlocks.
 export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
+const MODE_TYPES = new Set(['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination']);
+const MODE_MAX_SECONDS = 7 * 24 * 60 * 60; // reasonable saved-run ceiling; protect rendering and comparisons
+const MODE_MAX_RULES_LENGTH = 4096;
+const validModeRun = run => run && typeof run === 'object' && !Array.isArray(run) &&
+  MODE_TYPES.has(run.mode) && Object.hasOwn(RACE_TRACKS, run.track) &&
+  typeof run.rules === 'string' && run.rules.length > 0 && run.rules.length <= MODE_MAX_RULES_LENGTH &&
+  valid(run.time) && run.time <= MODE_MAX_SECONDS &&
+  (run.score === undefined || (Number.isFinite(run.score) && run.score >= 0)) &&
+  (run.position === undefined || (Number.isInteger(run.position) && run.position >= 1 && run.position <= 4));
 export function loadModeHistory(storage) {
   const saved = read(MODE_HISTORY_KEY, storage);
-  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(run.mode) &&
-    typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
+  // Keep legacy v1 records readable: never require new additive rulesVersion/ID/telemetry fields.
+  return Array.isArray(saved) ? saved.filter(validModeRun).slice(-HISTORY_LIMIT) : [];
 }
 // Keep stunt peaks beyond the 50-run history limit without mixing tracks or rulesets.
 export const STUNT_BESTS_KEY = 'skyline-rush-stunt-bests-v1';
@@ -84,10 +93,17 @@ export function loadStuntBest(trackId, config, storage) {
 }
 
 export function recordModeRace(race, storage, now = new Date()) {
-  if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
-    (race.mode === 'stunt' && (!Number.isFinite(race.result.score) || race.result.score < 0)))
-    throw new TypeError('A finished practice race is required');
+  if (!MODE_TYPES.has(race.mode) || !Object.hasOwn(RACE_TRACKS, race.trackId) ||
+      !race.result || !valid(race.result.time) || race.result.time > MODE_MAX_SECONDS ||
+      race.result.success === false ||
+      (race.result.position !== undefined && (!Number.isInteger(race.result.position) ||
+        race.result.position < 1 || race.result.position > 4)) ||
+      (race.result.score !== undefined && (!Number.isFinite(race.result.score) || race.result.score < 0)) ||
+      (race.mode === 'stunt' && !Number.isFinite(race.result.score)))
+    throw new TypeError('A finished practice race with valid result and track is required');
   const rules = JSON.stringify(race.config);
+  if (typeof rules !== 'string' || !rules.length || rules.length > MODE_MAX_RULES_LENGTH)
+    throw new TypeError('Invalid practice race rules');
   const previous = loadModeHistory(storage);
   const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
   const scoreAttack = race.mode === 'stunt';
