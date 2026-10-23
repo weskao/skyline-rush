@@ -16,10 +16,11 @@ for (const [width, height] of [[1440, 900], [390, 844], [844, 390]]) {
       await expect.poll(async () => (await nitro.boundingBox()).width).toBeLessThan(medium * 0.9);
       await page.locator('[data-controls="opacity"]').fill('0.5');
       await expect.poll(() => keys.evaluate(el => getComputedStyle(el).opacity)).toBe('0.5');
-      // Stays visible while the sliders at the bottom of the scrolling panel are used.
-      await page.locator('[data-controls="opacity"]').scrollIntoViewIfNeeded();
-      const [panel, preview] = [await page.locator('#controls-panel').boundingBox(), await page.locator('.controls-preview').boundingBox()];
-      expect(preview.y).toBeGreaterThanOrEqual(panel.y - 1);
+      // Sits right under the opacity slider, so both are on screen while that slider is dragged.
+      await page.locator('.controls-preview').scrollIntoViewIfNeeded();
+      const [panel, slider, preview] = await Promise.all(['#controls-panel', '[data-controls="opacity"]', '.controls-preview'].map(s => page.locator(s).boundingBox()));
+      expect(slider.y).toBeGreaterThanOrEqual(panel.y - 1);
+      expect(preview.y).toBeGreaterThan(slider.y);
       expect(preview.y + preview.height).toBeLessThanOrEqual(panel.y + panel.height + 1);
     });
   });
