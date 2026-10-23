@@ -130,3 +130,10 @@ test('applyI18n and applyDocumentLocale fill attributes, text, lang, title and d
   assert.equal(doc.title, CATALOGS['zh-TW']['doc.title']);
   assert.equal(meta.attrs.content, CATALOGS['zh-TW']['doc.description']);
 });
+
+// Regression: Google is a proper noun, but Ghost is gameplay terminology to localize.
+test('Cloud save Traditional Chinese copy localizes ghost records', () => {
+  assert.match(CATALOGS['zh-TW']['cloud.explain'], /幽靈/);
+  assert.doesNotMatch(CATALOGS['zh-TW']['cloud.explain'], /\\bGhost\\b/);
+  assert.match(CATALOGS['zh-TW']['cloud.login'], /Google/);
+});
