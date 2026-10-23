@@ -699,7 +699,7 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
   stage/lap data and item/hazard statistics. Keep legacy history readable.
 - [ ] Show per-mode bests, mode-filtered History and applicable Ghosts;
   clearly distinguish personal practice milestones from official medals.
-- [ ] Use validated persistence with storage-failure fallbacks, reasonable
+- [x] Use validated persistence with storage-failure fallbacks, reasonable
   caps and migration tests; prevent a custom “no traffic” best from
   replacing an official Classic best.
 - [ ] Keep Classic Career unlocks, 1–3 stars, Garage paint unlocking,
@@ -720,6 +720,19 @@ no new storage key or changed best comparison; Classic history and unlocks
 remain isolated. Focused and full unit tests, production build, and two
 real desktop mode smoke tests passed. Other 10C UI/persistence acceptance
 items remain open.
+
+**10C storage safety TDD (2026-10-23):** RED
+[`d78e717`](https://github.com/weskao/skyline-rush/commit/d78e7178ef0314dd5f87eb224f12b0d72c59329d)
+([CI #39947103275](https://github.com/weskao/skyline-rush/actions/runs/39947103275))
+exposed invalid saved mode history, overlong rule strings and impossible
+new-mode records. GREEN
+[`3d4a5a8`](https://github.com/weskao/skyline-rush/commit/3d4a5a89cce60fab595ac1c1e7b4c9a23d6dda09)
+([CI #39947280443](https://github.com/weskao/skyline-rush/actions/runs/39947280443)):
+preserve legacy v1 records without newer metadata, filter non-existent
+tracks/bad positions/nonfinite or negative scores, cap times and rules,
+retain 50 latest valid runs and fail safely when storage is blocked.
+New-mode custom/no-traffic results cannot replace official Classic bests
+or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ## 11. Interactive scenery, track hazards and procedural world props
 
