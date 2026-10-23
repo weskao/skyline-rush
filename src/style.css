@@ -666,6 +666,17 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .keymap-binding { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 8px; text-align: left; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; background: transparent; font-size: 10px; }
 .keymap-binding b { color: #b4edff; font-size: 10px; font-weight: 500; text-align: right; }
 .keymap-binding[aria-pressed="true"] { border-color: var(--accent); background: #243b50; }
+/* Live preview of the touch buttons: stays at the top of the panel while the size and opacity controls below are used. */
+.controls-preview { position: sticky; top: -6px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 64px; margin: -6px -6px 4px; padding: 6px 12px; background: #0b1b2c; border-bottom: 1px solid rgb(195 224 244 / .2); border-radius: 12px 12px 0 0; }
+.controls-preview-label { color: #a3e8fb; font-size: 11px; letter-spacing: .08em; }
+.controls-preview-keys { display: flex; align-items: flex-end; gap: 6px; opacity: var(--touch-opacity, .9); }
+.controls-preview-keys i { display: flex; align-items: center; justify-content: center; width: calc(34px * var(--touch-scale, 1)); height: calc(36px * var(--touch-scale, 1)); border: 1px solid rgb(210 226 238 / .3); border-radius: 6px; background: rgb(25 44 60 / .7); color: #f4f0e9; transition: width var(--dur-fast), height var(--dur-fast), opacity var(--dur-fast); }
+.controls-preview-keys svg { width: 55%; height: 55%; }
+.controls-preview-keys .touch-nitro { color: #f8d59a; border-color: #cba36c; }
+.controls-preview-keys .touch-fly { color: #aeebff; border-color: #83ceeb; }
+.controls-preview-keys .touch-boost { color: #ffcc9d; border-color: #ffba88; }
+.controls-preview-keys .touch-gas { background: #e7916f; color: #192b3a; border-color: #e7916f; }
+@media (prefers-reduced-motion: reduce) { .controls-preview-keys i { transition: none; } }
 .controls-note { margin: 8px; font-size: 11px; line-height: 1.5; color: #c9dfed; }
 .touch-controls .touch-nitro { width: calc(50px * var(--touch-scale, 1)); height: calc(52px * var(--touch-scale, 1)); flex-direction: column; gap: 4px; color: #f8d59a; border-color: #cba36c; font-size: 7px; letter-spacing: .6px; }
 .touch-controls .touch-nitro.is-held { background: #7a613c; }

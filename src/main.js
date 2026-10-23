@@ -787,6 +787,9 @@ function applyControls(persist = true) {
   touch.dataset.size = controlPrefs.size;
   touch.style.setProperty('--touch-scale', String(TOUCH_SCALE[controlPrefs.size]));
   touch.style.setProperty('--touch-opacity', String(controlPrefs.opacity));
+  // The Controls panel's preview strip reads the same two values, so size and opacity changes show immediately.
+  ui['controls-panel'].style.setProperty('--touch-scale', touch.style.getPropertyValue('--touch-scale'));
+  ui['controls-panel'].style.setProperty('--touch-opacity', String(controlPrefs.opacity));
   controls.setFlyMode(controlPrefs.flyMode);
   $('#tilt-enable').hidden = controlPrefs.mode !== 'tilt';
   if (controlPrefs.mode !== 'tilt') { controls.setTilt(false); tiltGranted = false; clearTimeout(tiltTimeout); }
