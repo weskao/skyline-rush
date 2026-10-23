@@ -1,0 +1,26 @@
+name: MODE-00 TDD
+on:
+  push:
+    branches: [feature/mode00-objective-contract]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mode00-tdd-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: MODE-00 focused regression
+        run: node --test tests/mode00-streams.test.js
+      - name: Full unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
