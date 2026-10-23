@@ -55,6 +55,34 @@ export function loadModeHistory(storage) {
   return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(run.mode) &&
     typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
 }
+// Keep stunt peaks beyond the 50-run history limit without mixing tracks or rulesets.
+export const STUNT_BESTS_KEY = 'skyline-rush-stunt-bests-v1';
+export function loadStuntBest(trackId, config, storage) {
+  const id = JSON.stringify([trackId, config]);
+  const all = read(STUNT_BESTS_KEY, storage);
+  const saved = all && typeof all === 'object' && !Array.isArray(all) ? all[id] : null;
+  const validPeak = value => value && Number.isFinite(value.score) && value.score >= 0 &&
+    Number.isInteger(value.maxCombo) && value.maxCombo >= 0 &&
+    Number.isFinite(value.airTime) && value.airTime >= 0;
+  const older = loadModeHistory(storage).filter(run =>
+    run.mode === 'stunt' && run.track === trackId && run.rules === JSON.stringify(config) &&
+    Number.isFinite(run.score) && run.score >= 0
+  ).map(run => ({
+    score: run.score,
+    maxCombo: Number.isInteger(run.maxCombo) && run.maxCombo >= 0 ? run.maxCombo : 0,
+    airTime: Number.isFinite(run.airTime) && run.airTime >= 0 ? run.airTime : 0,
+  }));
+  const records = [...older, ...(validPeak(saved) ? [saved] : [])];
+  if (!records.length) return null;
+  const score = Math.max(...records.map(record => record.score));
+  return {
+    score,
+    maxCombo: Math.max(...records.map(record => record.maxCombo)),
+    airTime: Math.max(...records.map(record => record.airTime)),
+    medal: stuntMedal(score, config?.duration),
+  };
+}
+
 export function recordModeRace(race, storage, now = new Date()) {
   if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
     (race.mode === 'stunt' && (!Number.isFinite(race.result.score) || race.result.score < 0)))
@@ -63,7 +91,8 @@ export function recordModeRace(race, storage, now = new Date()) {
   const previous = loadModeHistory(storage);
   const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
   const scoreAttack = race.mode === 'stunt';
-  const previousBest = scoreAttack ? Math.max(-Infinity, ...comparable.filter(run => Number.isFinite(run.score)).map(run => run.score))
+  const preservedBest = scoreAttack ? loadStuntBest(race.trackId, race.config, storage) : null;
+  const previousBest = scoreAttack ? Math.max(preservedBest?.score ?? -Infinity, ...comparable.filter(run => Number.isFinite(run.score)).map(run => run.score))
     : Math.min(Infinity, ...comparable.map(run => run.time));
   const value = scoreAttack ? race.result.score : race.result.time;
   const record = scoreAttack ? value > previousBest : value < previousBest;
@@ -77,6 +106,13 @@ export function recordModeRace(race, storage, now = new Date()) {
       medal: stuntMedal(race.result.score, race.config?.duration),
     } : {}),
   }].slice(-HISTORY_LIMIT), storage);
+  if (scoreAttack) {
+    const id = JSON.stringify([race.trackId, race.config]);
+    const stored = read(STUNT_BESTS_KEY, storage);
+    const entries = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+    const peak = loadStuntBest(race.trackId, race.config, storage);
+    write(STUNT_BESTS_KEY, { ...entries, [id]: peak }, storage);
+  }
   return { best, record };
 }
 

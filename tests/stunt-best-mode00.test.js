@@ -18,14 +18,14 @@ test('MODE-04 RED: best stunt score, combo, air time, medal persist independentl
   const store = memory();
   const a = finished('coast', 120, 8200, 3, 15);
   const b = finished('coast', 120, 4100, 5, 26.5);
-  const c = finished('coast', 300, 9000, 4, 40);
+  const c = finished('coast', 300, 11000, 4, 40);
   const d = finished('neon', 120, 12000, 2, 12);
   for (const race of [a,b,c,d]) recordModeRace(race, store);
   assert.deepEqual(loadStuntBest('coast', a.config, store), {
     score: 8200, maxCombo: 5, airTime: 26.5, medal: 'gold',
   });
   assert.deepEqual(loadStuntBest('coast', c.config, store), {
-    score: 9000, maxCombo: 4, airTime: 40, medal: 'silver',
+    score: 11000, maxCombo: 4, airTime: 40, medal: 'silver',
   });
   assert.deepEqual(loadStuntBest('neon', d.config, store), {
     score: 12000, maxCombo: 2, airTime: 12, medal: 'gold',
