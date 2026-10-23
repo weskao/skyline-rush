@@ -97,8 +97,19 @@ export function recordModeRace(race, storage, now = new Date()) {
   const value = scoreAttack ? race.result.score : race.result.time;
   const record = scoreAttack ? value > previousBest : value < previousBest;
   const best = scoreAttack ? Math.max(previousBest, value) : Math.min(previousBest, value);
+  const nonnegativeInt = n => Number.isSafeInteger(n) && n >= 0 ? Math.min(n, 1000000) : 0;
+  const hazards = Array.isArray(race.hazards) ? race.hazards : [];
+  const distance = Number.isFinite(race.result.distance) && race.result.distance >= 0
+    ? Math.min(race.result.distance, 100000) : Number.isFinite(race.length) ? Math.max(0, race.length) : 0;
+  const stageCount = race.mode === 'cup' ? race.config?.cupTracks?.length ?? 3 : race.config?.stages ?? 1;
   write(MODE_HISTORY_KEY, [...previous, {
     date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
+    // Additive identity/telemetry: the v1 mode history key and best comparisons stay compatible.
+    modeId: race.mode, trackId: race.trackId, rulesVersion: race.config?.rulesVersion ?? 1,
+    rulesSignature: rules, distance, stageCount, lapCount: null,
+    itemsUsed: nonnegativeInt(race.result.itemUses),
+    hazardPasses: hazards.filter(h => h.passed).length,
+    hazardHits: hazards.filter(h => h.hit).length,
     time: race.result.time, position: race.result.position, score: race.result.score,
     ...(scoreAttack ? {
       maxCombo: Number.isInteger(race.result.maxCombo) ? Math.max(0, race.result.maxCombo) : 0,
