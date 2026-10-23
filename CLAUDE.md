@@ -74,10 +74,12 @@ of the UI/UX design review rather than an optional afterthought.
 - Rendering / navigation / controls / unlock visibility change → also `npm run test:browser`,
   desktop and mobile.
 - Home-screen content change (anything added to `#intro`) → before pushing, run
-  `npx playwright test tests/i18n-browser.spec.js -g "intro bottom edge"` and
-  `tests/race-modes-browser.spec.js`: the intro must fit without scrolling at ≥ 900 px tall
-  desktops in en and zh-TW. The height budget is fixed — a new block pays for itself by
-  compacting another, never by letting the intro scroll.
+  `npx playwright test tests/i18n-browser.spec.js -g "intro bottom edge"`,
+  `tests/race-modes-browser.spec.js`, `tests/home-shortcuts-browser.spec.js` and
+  `tests/responsive-browser.spec.js -g "start layout"`: the intro must fit without scrolling at
+  ≥ 900 px tall desktops in en and zh-TW, stay below the 112 px top bar and keep 44 px touch
+  targets. The height budget is fixed — a new block pays for itself by compacting another,
+  never by letting the intro scroll, moving into the top bar or shrinking a button.
 - Never delete or weaken tests to pass CI. Report any test you could not run.
 - `README.md` changed → sync `README.zh-TW.md` via `scripts/readme-zh.mjs` (hooks enforce it).
 - A commit on `main` is not a deploy; publication rules are in `.github/workflows/ci.yml`.
