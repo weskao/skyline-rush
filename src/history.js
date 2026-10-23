@@ -92,6 +92,31 @@ export function loadStuntBest(trackId, config, storage) {
   };
 }
 
+// Rule-scoped bests survive the 50-run list rollover. Old v1 history remains the fallback.
+export const MODE_BESTS_KEY = 'skyline-rush-mode-bests-v1';
+const modeBestId = (trackId, config) => JSON.stringify([trackId, config]);
+const validModeBest = (value, mode) => Number.isFinite(value) &&
+  (mode === 'stunt' ? value >= 0 : value > 0 && value <= MODE_MAX_SECONDS);
+export function loadModeBest(trackId, config, storage) {
+  if (!Object.hasOwn(RACE_TRACKS, trackId) || !MODE_TYPES.has(config?.mode)) return null;
+  const signature = JSON.stringify(config);
+  const mode = config.mode;
+  const values = loadModeHistory(storage)
+    .filter(run => run.track === trackId && run.rules === signature)
+    .map(run => mode === 'stunt' ? run.score : run.time)
+    .filter(value => validModeBest(value, mode));
+  const stored = read(MODE_BESTS_KEY, storage);
+  const saved = stored && typeof stored === 'object' && !Array.isArray(stored)
+    ? stored[modeBestId(trackId, config)] : undefined;
+  if (validModeBest(saved, mode)) values.push(saved);
+  // Stunt had a separate permanent best store before MODE_BESTS_KEY existed.
+  if (mode === 'stunt') {
+    const older = loadStuntBest(trackId, config, storage);
+    if (older && validModeBest(older.score, mode)) values.push(older.score);
+  }
+  return !values.length ? null : mode === 'stunt' ? Math.max(...values) : Math.min(...values);
+}
+
 export function recordModeRace(race, storage, now = new Date()) {
   if (!MODE_TYPES.has(race.mode) || !Object.hasOwn(RACE_TRACKS, race.trackId) ||
       !race.result || !valid(race.result.time) || race.result.time > MODE_MAX_SECONDS ||
@@ -107,9 +132,9 @@ export function recordModeRace(race, storage, now = new Date()) {
   const previous = loadModeHistory(storage);
   const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
   const scoreAttack = race.mode === 'stunt';
-  const preservedBest = scoreAttack ? loadStuntBest(race.trackId, race.config, storage) : null;
-  const previousBest = scoreAttack ? Math.max(preservedBest?.score ?? -Infinity, ...comparable.filter(run => Number.isFinite(run.score)).map(run => run.score))
-    : Math.min(Infinity, ...comparable.map(run => run.time));
+  const preservedBest = loadModeBest(race.trackId, race.config, storage);
+  const previousBest = scoreAttack ? Math.max(preservedBest ?? -Infinity, ...comparable.filter(run => Number.isFinite(run.score)).map(run => run.score))
+    : Math.min(preservedBest ?? Infinity, ...comparable.map(run => run.time));
   const value = scoreAttack ? race.result.score : race.result.time;
   const record = scoreAttack ? value > previousBest : value < previousBest;
   const best = scoreAttack ? Math.max(previousBest, value) : Math.min(previousBest, value);
@@ -140,6 +165,14 @@ export function recordModeRace(race, storage, now = new Date()) {
     const peak = loadStuntBest(race.trackId, race.config, storage);
     write(STUNT_BESTS_KEY, { ...entries, [id]: peak }, storage);
   }
+  const id = modeBestId(race.trackId, race.config);
+  const stored = read(MODE_BESTS_KEY, storage);
+  const entries = stored && typeof stored === 'object' && !Array.isArray(stored)
+    ? Object.entries(stored).filter(([, value]) => Number.isFinite(value) && value >= 0) : [];
+  // Keep the newest 200 rule variants, without losing this session's lifetime best.
+  const retained = Object.fromEntries(entries.filter(([key]) => key !== id).slice(-199));
+  retained[id] = best;
+  write(MODE_BESTS_KEY, retained, storage);
   return { best, record };
 }
 
