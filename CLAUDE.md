@@ -26,6 +26,13 @@ no car is drawn passing through it on any map. An obstacle never takes so much r
 stretch is impassable — at least two lanes stay open. Rules are in `.claude/rules/world-tour.md`
 ("Solid props").
 
+## No shader compiles mid-race
+
+Every material a race can show is attached to the scene (hidden is fine) before racing starts, and
+the visible-light count never changes within a track; `src/shader-warmup.js` draws it all once on
+the first frame. A first-draw shader build flashes black on iPhone. Rules and guard tests are in
+`.claude/rules/performance-review.md` ("Shaders compile at first draw").
+
 ## Commands
 
 | Command | Purpose |

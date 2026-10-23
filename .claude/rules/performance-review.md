@@ -33,7 +33,27 @@ batching/culling; real WebGL screenshots on all affected courses incl. pause/res
 switch, WebGL recovery, low-power devices, narrow phone/landscape. Final report names untested
 devices and remaining uncertainty.
 
-Shaders on toggles: a material that first appears when the player flips a setting (airflow, VFX
-preset) is drawn once, invisibly, on the first frame (see `warmup` in `src/aero-vfx.js`). WebKit
-(iPhone Safari/Chrome) builds shaders and GPU pipelines at first draw; doing that mid-preview
-stalls the frame and flashed black patches on iPhone. Cover it with a unit test.
+## Shaders compile at first draw — never mid-race
+
+WebKit (iPhone Safari/Chrome) builds shaders and Metal pipelines the first time a material is
+drawn; a first draw mid-race stalls the frame and flashes black patches. `warmupShaders`
+(`src/shader-warmup.js`) draws the whole scene graph once, hidden objects included, on the first
+frame and on every track change, so no per-module warmup flag is needed. Keep it complete:
+
+- Every material a race can show is attached to some object in the scene before racing starts;
+  hidden is fine. Pooled meshes carry every variant (`effects.js` rings/pickups cycle through all
+  tiers), and streamed content has a hidden sample (`shaderRack` in `world-tour-scene.js`: every
+  prop kind batched and plain, the terrain ribbon, all tunnel shells and entrances per track). A
+  material only used after a swap (`mesh.material = …`) must still sit on a pooled mesh at load.
+- The visible-light count is part of every lit shader's cache key. Never toggle `light.visible`
+  while a track runs; keep the light visible and drive `intensity` (alpine tunnel lights).
+  Changing the count recompiled 8 programs at the bore.
+- Instanced vs plain, `DoubleSide`, `flatShading`, `vertexColors` and `transparent` each make a
+  separate program: a new combination needs a placeholder too. Never mutate a shared material
+  (`material.side = …`) to get one; ask the kit for a dedicated material.
+- Guards: `tests/shader-warmup-browser.spec.js` (no program compiles after the first racing frame
+  through boost, afterimages, shockwave and top speed) and `tests/world-tour-mid-race-browser.spec.js`
+  (program count constant across each tunnel, `playwright.world-tour.config.js`). A new effect,
+  prop, light or track keeps both green; extend them when adding an event that first shows
+  something. Diagnose with `renderer.info.programs` and `renderer.properties.get(material)
+  .currentProgram.cacheKey` to name the offending material.

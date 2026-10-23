@@ -3,7 +3,7 @@ import { RACE_TRACKS, ROAD_LIMIT } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.js';
 import { roadRibbon } from './geometry.js';
 import { makeLandmark } from './world-tour-landmarks.js';
-import { createSceneryKit, sceneryPlan, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
+import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
 import { batchStaticChunk } from './world-tour-batching.js';
 
@@ -174,7 +174,7 @@ export function createWorldTourScene(scene){
   const heroGroup=new THREE.Group();group.add(heroGroup);
   const sceneryLayer=new THREE.Group();sceneryLayer.name='Distance-anchored continuous scenery';group.add(sceneryLayer);
   const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map();
-  let sceneryTrack=null,sceneryDetail=null;
+  let sceneryTrack=null,sceneryDetail=null,rack=null;
   function releaseChunk(node){
     node.traverse(object=>{
       if(object.userData?.ownGeometry)object.geometry.dispose();
@@ -216,6 +216,18 @@ export function createWorldTourScene(scene){
       chunk.userData.batchStats=stats;
       sceneryLayer.add(chunk);chunks.set(index,chunk);
     }
+  }
+  // Hidden sample of everything a track can stream in later — every prop kind batched (instanced) and plain, the
+  // terrain ribbon, every tunnel shell variant and entrance — so the first-frame shader warmup (world.js) builds
+  // their pipelines on track change; a chunk compiling a new shader mid-race stalls WebKit and flashes black.
+  function shaderRack(id){
+    const sample=new THREE.Group();sample.name='shader rack '+id;sample.visible=false;
+    for(const kind of SCENERY_KINDS[id])for(let i=0;i<3;i++)sample.add(kit.build(id,kind));
+    const earth=kit.terrain(id,0);if(earth)sample.add(earth);
+    sample.add(tunnelKit.buildChunk(id,0,['tunnel','tunnel','tunnel','boost-tunnel'].map(type=>({type,from:0,to:SCENERY_CHUNK_METRES}))));
+    batchStaticChunk(sample);
+    for(const kind of SCENERY_KINDS[id])sample.add(kit.build(id,kind)); // plain variant, as in a chunk with under three copies
+    return sample;
   }
   const boostGroup=new THREE.Group();boostGroup.name='Playable speed tunnel';group.add(boostGroup);
   const portalGeo=new THREE.TorusGeometry(13,0.36,8,48);
@@ -278,6 +290,7 @@ export function createWorldTourScene(scene){
   function configure(id){
     if(id===active)return;
     clearHeroes();clearChunks();sceneryTrack=null;active=id;
+    if(rack)releaseChunk(rack);rack=shaderRack(id);sceneryLayer.add(rack);
     cachedOrigin=null;cachedQuality=null; // theme switch must invalidate world geometry
     const theme=WORLD_THEMES[id];
     roadMat.color.set(ROAD_CHARACTER[id].pavement);

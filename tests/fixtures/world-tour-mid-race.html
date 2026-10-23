@@ -54,6 +54,7 @@
     return { id, frames, arrivedAt: to };
   };
   window.worldTourLandmarks=()=>world.inspectLandmarks();
+  window.worldTourPrograms=()=>world.inspectPrograms();
   // Rivals that already crossed the line while the player is 60 m short of it.
   window.worldTourFinishProbe=id=>{
     const race=createRace(id), length=RACE_TRACKS[id].length;
