@@ -34,7 +34,7 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { refreshIfStale } from './update-check.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress } from './cloud-save.js';
-import { readLocalProgress, saveLocalProgress } from './cloud-progress.js';
+import { claimCloudOwner, readLocalProgress, saveLocalProgress } from './cloud-progress.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -445,7 +445,7 @@ let cloudSync = Promise.resolve();
 function saveCloudProgress() {
   if (!cloudUser) return;
   const uid = cloudUser.uid;
-  if (cloudOwner && cloudOwner !== uid) {
+  if (cloudOwner !== uid) {
     say($('#cloud-status'), () => t('cloud.otherAccount'));
     return;
   }
@@ -465,9 +465,7 @@ function saveCloudProgress() {
     sessionModeHistory = merged.modeHistory;
     sessionMedals = merged.medals;
     sessionDaily = merged.daily;
-    cloudOwner = uid;
     cloudPending = false;
-    try { localStorage.setItem(CLOUD_OWNER_KEY, uid); } catch { /* In-memory owner still protects this page. */ }
     showTracks();
     if ($('#history-screen').open) showHistory();
     showGarage();
@@ -481,7 +479,13 @@ watchCloudUser(user => {
   $('#cloud-login').hidden = !!user;
   $('#cloud-logout').hidden = !user;
   say($('#cloud-status'), () => t(user ? 'cloud.syncing' : 'cloud.local'));
-  if (user) saveCloudProgress();
+  if (user) {
+    const owner = claimCloudOwner(cloudOwner, user.uid);
+    if (!owner) { say($('#cloud-status'), () => t('cloud.otherAccount')); return; }
+    cloudOwner = owner;
+    try { localStorage.setItem(CLOUD_OWNER_KEY, owner); } catch { /* In-memory owner still protects this page. */ }
+    saveCloudProgress();
+  }
 }, () => say($('#cloud-status'), () => t('cloud.failed')));
 window.addEventListener('online', () => { if (cloudPending) saveCloudProgress(); });
 $('#cloud-login').addEventListener('click', async () => {

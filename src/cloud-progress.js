@@ -1,30 +1,31 @@
-import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
+import { RACE_TRACKS } from './game.js';
 import { HISTORY_KEY, BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
-  HISTORY_LIMIT, MEDALS, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
+  HISTORY_LIMIT, MEDALS, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily,
+  validModeHistoryRun, validDaily, validStars } from './history.js';
 
 export function mergeUnlocks(local, remote) {
   const unlocked = new Set(['coast', ...(Array.isArray(local) ? local : []), ...(Array.isArray(remote) ? remote : [])]);
   return Object.keys(RACE_TRACKS).filter(id => unlocked.has(id));
 }
 
+export const claimCloudOwner = (owner, uid) => !owner || owner === uid ? uid : null;
+
 const validTime = value => Number.isFinite(value) && value > 0;
 const nonnegative = value => Number.isFinite(value) && value >= 0 ? value : 0;
 const date = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 const track = id => Object.hasOwn(RACE_TRACKS, id);
 const raceFields = ['collisions', 'nearMisses', 'rings', 'perfectLines', 'nitroUses', 'longestCombo', 'score', 'fuelOuts', 'gapFalls', 'distance'];
-const modeNames = ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'];
 
 function raceRun(run) {
   const when = date(run?.date);
-  if (!when || !track(run.track) || !validTime(run.time) || !Number.isInteger(run.position) || run.position < 1 || run.position > 4) return null;
+  if (!when || !track(run.track) || !validTime(run.time) || !Number.isInteger(run.position) || run.position < 0 || run.position > 4) return null;
   return { date: when, track: run.track, position: run.position, time: run.time,
     ...Object.fromEntries(raceFields.map(field => [field, nonnegative(run[field])])) };
 }
 
 function modeRun(run) {
   const when = date(run?.date);
-  if (!when || !track(run.track) || !modeNames.includes(run.mode) || !validTime(run.time) ||
-      typeof run.rules !== 'string' || run.rules.length > 2000) return null;
+  if (!when || !validModeHistoryRun(run) || !track(run.track) || run.rules.length > 2000) return null;
   return { date: when, mode: run.mode, track: run.track, rules: run.rules, time: run.time,
     position: Number.isInteger(run.position) ? run.position : 0, score: nonnegative(run.score),
     ...(run.mode === 'stunt' ? { maxCombo: nonnegative(run.maxCombo), airTime: nonnegative(run.airTime),
@@ -33,8 +34,7 @@ function modeRun(run) {
 
 function dailyRun(run) {
   const when = date(run?.date);
-  if (!when || !/^\d{4}-\d{2}-\d{2}$/.test(run.id) || !track(run.track) || !DAILY_MODIFIERS.includes(run.modifier) ||
-      !validTime(run.time) || !Number.isInteger(run.position) || run.position < 1 || run.position > 4) return null;
+  if (!when || !validDaily(run)) return null;
   return { id: run.id, track: run.track, modifier: run.modifier, time: run.time,
     position: run.position, score: nonnegative(run.score), date: when };
 }
@@ -52,8 +52,9 @@ export function mergeProgress(local = {}, cloud = null) {
   if (cloud && ![1, 2].includes(cloud.version)) throw new Error('Unsupported cloud save');
   const stars = {}, bests = {}, medals = {};
   for (const id of Object.keys(RACE_TRACKS)) {
-    const star = Math.max(local.stars?.[id] ?? 0, cloud?.stars?.[id] ?? 0);
-    if (Number.isInteger(star) && star >= 1 && star <= 3) stars[id] = star;
+    const star = Math.max(validStars(local.stars?.[id]) ? local.stars[id] : 0,
+      validStars(cloud?.stars?.[id]) ? cloud.stars[id] : 0);
+    if (star) stars[id] = star;
     const best = Math.min(validTime(local.bests?.[id]) ? local.bests[id] : Infinity,
       validTime(cloud?.bests?.[id]) ? cloud.bests[id] : Infinity);
     if (Number.isFinite(best)) bests[id] = best;

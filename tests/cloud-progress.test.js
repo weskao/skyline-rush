@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress } from '../src/cloud-progress.js';
+import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, claimCloudOwner } from '../src/cloud-progress.js';
 
 test('cloud unlocks merge with existing device progress in track order', () => {
   assert.deepEqual(mergeUnlocks(['coast', 'neon'], ['coast', 'canyon']), ['coast', 'neon', 'canyon']);
@@ -38,8 +38,38 @@ test('cloud merge keeps higher stars, lower times, earliest medals and unique la
   assert.deepEqual(mergeProgress(merged, cloud), merged);
 });
 
+test('an unranked Classic result remains in history without unlocking a track', () => {
+  const run = { date: '2026-10-23T00:00:00.000Z', track: 'coast', position: 0, time: 75, distance: 5000 };
+  const merged = mergeProgress({ unlocked: ['coast'], history: [run] });
+  assert.equal(merged.history.length, 1);
+  assert.deepEqual(merged.unlocked, ['coast']);
+});
+
+test('mode and daily records merge independently without duplicates', () => {
+  const mode = { date: '2026-10-21T00:00:00.000Z', mode: 'time', track: 'coast', rules: '{"mode":"time"}', time: 65, position: 1 };
+  const daily = { id: '2026-10-22', track: 'coast', modifier: 'no-flight', time: 67, position: 2, score: 500,
+    date: '2026-10-22T00:00:00.000Z' };
+  const merged = mergeProgress({ unlocked: ['coast'], history: [], modeHistory: [mode], daily: [daily] },
+    { version: 2, unlocked: ['coast'], modeHistory: [mode], daily: [daily] });
+  assert.equal(merged.history.length, 0);
+  assert.equal(merged.modeHistory.length, 1);
+  assert.equal(merged.daily.length, 1);
+  assert.deepEqual(mergeProgress(merged, merged), merged);
+});
+
+test('malformed cloud star values cannot overrule a valid result', () => {
+  const merged = mergeProgress({ stars: { coast: 2 } }, { version: 2, stars: { coast: '3', neon: 5 } });
+  assert.deepEqual(merged.stars, { coast: 2 });
+});
+
 test('unknown future cloud schema is never overwritten', () => {
   assert.throws(() => mergeProgress({ unlocked: ['coast'] }, { version: 3, unlocked: ['coast'] }), /Unsupported/);
+});
+
+test('device progress binds to the first account before network sync', () => {
+  assert.equal(claimCloudOwner(null, 'alice'), 'alice');
+  assert.equal(claimCloudOwner('alice', 'alice'), 'alice');
+  assert.equal(claimCloudOwner('alice', 'bob'), null);
 });
 
 test('restored progress writes only game results to local storage', () => {
@@ -50,4 +80,18 @@ test('restored progress writes only game results to local storage', () => {
   assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'neon']);
   assert.deepEqual(readLocalProgress(storage).stars, { neon: 2 });
   assert.equal(data.get('skyline-rush-vfx'), 'kept');
+});
+
+test('an empty browser store recovers all account progress fields', () => {
+  const data = new Map();
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  const remote = mergeProgress({ unlocked: ['coast', 'neon'], stars: { coast: 2 }, bests: { coast: 60 },
+    medals: { 'first-win': '2026-10-23T00:00:00.000Z' },
+    history: [{ date: '2026-10-23T00:00:00.000Z', track: 'coast', position: 1, time: 60 }],
+    modeHistory: [{ date: '2026-10-23T00:00:00.000Z', mode: 'time', track: 'coast', rules: '{}', time: 61 }],
+    daily: [{ id: '2026-10-23', date: '2026-10-23T00:00:00.000Z', track: 'coast', modifier: 'no-flight', time: 62, position: 1, score: 100 }] });
+  saveLocalProgress(mergeProgress(readLocalProgress(storage), remote), storage);
+  const restored = readLocalProgress(storage);
+  for (const field of ['unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
+    assert.deepEqual(restored[field], remote[field], field);
 });
