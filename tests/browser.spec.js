@@ -1,8 +1,8 @@
 import { test, expect, chromium } from './helpers/test.js';
 import { saveArtifact } from './helpers/artifact.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
+import { slow, ciTimeout } from './helpers/ci.js';
 
-const slow = process.env.CI ? 3 : 1; // CPU-only CI renders WebGL slowly; see playwright.config.js
 
 // Where autoplay is blocked (CI runners), the music prompt appears after 600ms over the settings buttons.
 const dismissMusicPrompt = async page => {
@@ -65,6 +65,7 @@ test('the UI is rendered by a mounted Vue app', async ({ page }) => {
 });
 
 test('airflow showcase, presets, views and boost coexist without shader errors', async ({ page }) => {
+  test.setTimeout(ciTimeout(120000));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -89,7 +90,8 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w'); await page.keyboard.down('Shift');
   await expect(page.locator('#boost-status')).toHaveText('THRUST ACTIVE');
-  await expect.poll(async () => Number(await page.locator('#fuel-value').textContent())).toBeLessThan(98);
+  // The first race frames after the showcase compile shaders; on CI each one advances the clamped game step only once.
+  await expect.poll(async () => Number(await page.locator('#fuel-value').textContent()), { timeout: ciTimeout(60000) }).toBeLessThan(98);
   await page.keyboard.press('v');
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#boost-status')).toHaveText('THRUST ACTIVE');

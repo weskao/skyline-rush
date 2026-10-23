@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 const open = async page => {
   await page.goto('/');
@@ -262,7 +263,7 @@ for (const [name, viewport] of [
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const callout = page.locator('#event-callout');
-    await expect(callout).toBeVisible({ timeout: 35000 });
+    await expect(callout).toBeVisible({ timeout: ciTimeout(35000) });
     await expect(page.locator('#event-callout > div:visible')).toHaveCount(1);
     // One synchronous read: the callout expires after 1.2s, so separate boundingBox() round trips can miss it on slow CI.
     const boxes = await page.evaluate(selectors => Object.fromEntries(selectors.map(selector => {

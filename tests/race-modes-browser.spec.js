@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 async function closeMusicPrompt(page) {
   await page.waitForTimeout(700);
@@ -33,7 +34,7 @@ test('custom 0-opponent race still starts; Classic remains selectable', async ({
   });
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
-  await expect(page.locator('#leaderboard .racer')).toHaveCount(1, { timeout: 15000 });
+  await expect(page.locator('#leaderboard .racer')).toHaveCount(1, { timeout: ciTimeout(15000) });
   await page.screenshot({ path: 'test-results/race-mode-custom-solo.png' });
   expect(errors).toEqual([]);
 });
