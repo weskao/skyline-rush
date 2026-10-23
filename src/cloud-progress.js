@@ -105,3 +105,30 @@ export function switchCloudAccount(previousUid, nextUid, storage = globalThis.lo
     return true;
   } catch { return false; }
 }
+
+const cloudSyncKey = uid => 'skyline-rush-cloud-sync:' + uid;
+const validCloudUser = uid => typeof uid === 'string' && uid.length > 0 && uid.length <= 128;
+const EMPTY_SYNC = Object.freeze({ pending: false, lastSuccess: null });
+
+// Success means Firestore answered successfully, never merely a successful localStorage write.
+export function readCloudSyncStatus(uid, storage) {
+  if (!validCloudUser(uid)) return { ...EMPTY_SYNC };
+  try {
+    const saved = JSON.parse((storage ?? globalThis.localStorage).getItem(cloudSyncKey(uid)));
+    return { pending: saved?.pending === true, lastSuccess: date(saved?.lastSuccess) };
+  } catch { return { ...EMPTY_SYNC }; }
+}
+
+export function writeCloudSyncStatus(uid, patch, storage) {
+  if (!validCloudUser(uid) || typeof patch?.pending !== 'boolean' ||
+      (patch.lastSuccess !== undefined && !date(patch.lastSuccess))) return false;
+  try {
+    const target = storage ?? globalThis.localStorage;
+    const previous = readCloudSyncStatus(uid, target);
+    target.setItem(cloudSyncKey(uid), JSON.stringify({
+      pending: patch.pending,
+      lastSuccess: patch.lastSuccess === undefined ? previous.lastSuccess : date(patch.lastSuccess),
+    }));
+    return true;
+  } catch { return false; }
+}
