@@ -534,6 +534,9 @@ test('a page preserved for back navigation keeps its renderer, animation and inp
 test('a complete 5 km sprint reaches results, saves a best time and can race again', async ({ page }) => {
   test.setTimeout(120000 * slow);
   await page.goto('/');
+  // AUTO's lane assist re-centres the car between taps, so the weave below never enters the near-miss band.
+  await page.getByRole('button', { name: 'Auto accelerate', exact: true }).click();
+  await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('button', { name: 'Start race' }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
