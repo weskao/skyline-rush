@@ -708,7 +708,7 @@ export function stepRace(race, input, dt) {
     if (car.distance >= race.length) { car.distance = race.length; car.speed = 0; }
     const knockout = stepElimination(race.elimination,race);
     if (knockout?.outcome) {
-      race.result = {position:knockout.outcome === 'won' ? 1 : 4, time:race.elapsed,
+      race.result = {position:knockout.outcome === 'won' ? 1 : race.rivals.length + 1, time:race.elapsed,
         success:knockout.outcome === 'won', score:Math.round(car.score),
         collisions:car.collisions, nearMisses:car.nearMisses, nitroUses:car.nitroUses,
         rings:car.rings, perfectLines:car.perfectLines, stars:1};
