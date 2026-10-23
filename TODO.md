@@ -573,7 +573,7 @@ acceptance remains under the shared stage-wide QA, not claimed here.
   activation frequency **without random unavoidable collisions**.
 - [x] Score clean obstacle passes, near-misses and finish time; practice and
   obstacle-mode records stay separate.
-- [ ] **Acceptance:** each generated hazard arrangement leaves a reasonable
+- [x] **Acceptance:** each generated hazard arrangement leaves a reasonable
   passable ground/air path and has predictable collision tests.
 
 **MODE-07 scoring TDD (2026-10-23):** RED
@@ -586,6 +586,19 @@ and increments the once-only nearMisses counter. Challenge records remain
 isolated from Classic Career. Focused/unit/build/actual WebGL smoke all passed
 [CI #39945865189](https://github.com/weskao/skyline-rush/actions/runs/39945865189).
 Full route navigability and hazard arrangement acceptance remain open.
+
+**MODE-07 generated-route acceptance (2026-10-23):** RED
+[`25e74f9`](https://github.com/weskao/skyline-rush/commit/25e74f9d3c3a20a6f40c052fc609ab2b9032260d)
+([CI #39946490119](https://github.com/weskao/skyline-rush/actions/runs/39946490119))
+demonstrated hazards placed over raised shortcut approaches and nonfinite
+positions under invalid elapsed time. GREEN
+[`8455a70`](https://github.com/weskao/skyline-rush/commit/8455a70b48be24eea0f74f948b576830152174e1)
+([CI #39946619729](https://github.com/weskao/skyline-rush/actions/runs/39946619729)):
+all ten tracks in standard/extreme tiers remain deterministic; at least two
+ground lanes and the air path are open at sampled motion times; spacing,
+safe section buffers and once-only collision/scoring tests pass. Full unit
+suite, production build and real WebGL smoke all GREEN. Device-specific
+manual QA remains tracked separately.
 
 ### 9I. Elimination / Last Racer Standing (P2)
 
