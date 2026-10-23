@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createElimination,stepElimination} from '../src/elimination.js';
 import {createRace,stepRace} from '../src/game.js';
+import {recordModeRace,loadModeHistory,loadHistory,loadUnlocks} from '../src/history.js';
 const make=(player,rivals,elapsed)=>({elapsed,player:{distance:player},rivals:rivals.map(([name,distance])=>({name,distance,speed:60}))});
 test('trailing AI is eliminated exactly once at each ten-second checkpoint',()=>{
  const state=createElimination(),race=make(100,[['NOVA',80],['ORBIT',60],['APEX',40]],9.9);
@@ -47,4 +48,27 @@ test('MODE-08: eliminated actors use real progress, not camera visibility',()=>{
   race.rivals[1].offscreen=false;
   assert.deepEqual(stepElimination(state,race),{eliminated:'ORBIT',outcome:null});
   assert.deepEqual(state.eliminated,['ORBIT']);
+});
+
+test('MODE-08: early knockout cannot award official career unlocks or persist a false best',()=>{
+  const storageData=new Map();
+  const store={getItem:key=>storageData.get(key)??null,setItem:(key,value)=>storageData.set(key,value)};
+  const lost=createRace('coast',{mode:'elimination'});
+  lost.phase='racing';lost.elapsed=9.99;lost.player.distance=0;
+  for (const rival of lost.rivals) rival.distance=200;
+  stepRace(lost,{},.05);
+  assert.equal(lost.phase,'finished');
+  assert.equal(lost.result.success,false);
+  assert.throws(()=>recordModeRace(lost,store),/finished practice/i);
+  assert.deepEqual(loadModeHistory(store),[]);
+  assert.deepEqual(loadHistory(store),[]);
+  assert.deepEqual(loadUnlocks(store),['coast']);
+  // Even a genuine challenge win never becomes an official Career finish.
+  const win=createRace('coast',{mode:'elimination'});
+  win.phase='finished';
+  win.result={time:30,position:1,success:true,score:300};
+  recordModeRace(win,store);
+  assert.equal(loadModeHistory(store).length,1);
+  assert.deepEqual(loadHistory(store),[]);
+  assert.deepEqual(loadUnlocks(store),['coast']);
 });
