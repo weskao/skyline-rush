@@ -519,12 +519,26 @@ full `npm test` and production build passed. Frame-rate/device acceptance remain
 
 - [x] **MODE-05 — Checkpoint Rush:** pass a deterministic sequence of grounded or
   aerial gates before time expires; each clean gate extends the timer.
-- [ ] Choose checkpoints from the **real track route and reachable flight envelopes**;
+- [x] Choose checkpoints from the **real track route and reachable flight envelopes**;
   prevent impossible gates inside tunnel roofs, road gaps or conflicting hazards.
 - [ ] Show next target distance/direction, time left, checkpoint chain and optional
   perfect-gate rewards. Invalid/missed gates cannot secretly count.
 - [ ] **Acceptance:** gated time-extension and expiry have unit tests; minimap
   uses the official main route and never reveals hidden shortcut geometry.
+
+**MODE-05 gate route/clearance verified (2026-10-23):** RED
+[`9be5f04`](https://github.com/weskao/skyline-rush/commit/9be5f04effbc832599dd1488ec4478c5fb7d086b)
+([Actions #39943129958](https://github.com/weskao/skyline-rush/actions/runs/39943129958)):
+three obstacle avoidance/bounds tests failed as intended. GREEN
+[`b4c2d17`](https://github.com/weskao/skyline-rush/commit/b4c2d17071f0e148399d3b83ad75e5e791be7c76);
+ten-route real-scenery regression [`88c7aa0`](https://github.com/weskao/skyline-rush/commit/88c7aa0ac4c0ed16e5473c2828ba484580ff24d7).
+[Actions #39943573134](https://github.com/weskao/skyline-rush/actions/runs/39943573134):
+focused MODE-00, full unit suite, production build and desktop Checkpoint Rush
+WebGL browser smoke all GREEN; an actual game screenshot is in the
+`checkpoint-rush-gameplay` Actions artifact. Lane selection avoids authored
+roadside obstacle bounding boxes; impossible gates are skipped, and existing
+70 m tunnel/gap/shortcut safety buffers remain. Full stage acceptance and
+physical-device checks are still open.
 
 ### 9G. Multi-track Championship Cup (P1)
 
