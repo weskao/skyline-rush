@@ -681,7 +681,12 @@ export function stepRace(race, input, dt) {
       hazard.hit = true;
     } else {
       hazard.passed = true;
-      if (!collision) car.score += 150;
+      if (!collision) {
+        // Risk/reward: a close, clean ground pass pays more than a distant lane change.
+        const near = car.altitude < 2.4 && Math.abs(car.x - obstacleX) < 4;
+        car.score += near ? 300 : 150;
+        if (near) car.nearMisses++;
+      }
     }
   }
   const travelled = Math.min(car.distance, race.length) - previousDistance;
