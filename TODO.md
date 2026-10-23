@@ -6,10 +6,23 @@
 - [x] Mobile：Slide／Buttons、加速、FLY、BOOST、NITRO 與暫停圖解。
 - [x] 首次進入自動展示；關閉後記住；Controls 可重新開啟並切換裝置說明。
 - [x] TDD 與整合驗證：首次／重開／儲存不可用／暫停、桌面與手機直橫向。
-- [ ] 後續版本：搭配遊戲畫面、實際操作與逐步完成判定的互動教學（本版不實作）。
+- [x] 搭配遊戲畫面、實際操作與逐步完成判定的互動教學（詳見下方互動操作教學）。
 - [ ] 實體 iOS Safari／Android 觸控裝置驗收（目前以 Chrome 手機模擬驗證）。
 
 驗證：379 項單元測試、正式建置通過；297 項瀏覽器案例中 290 項首輪通過、7 項重跑或修正後通過。語言測試的延遲音樂提示改用實際可見狀態處理，4 個使用檔案的 73 項相關回歸全部通過。畫面證據位於 `artifacts/control-guide/`。
+
+## 互動操作教學（2026-10-23）
+
+- [x] 真實 Free Drive 場景：加速、左轉、右轉、煞車、起飛、降落、BOOST、NITRO 八步，依實際輸入與車況判定完成。
+- [x] 畫面提示與控制高亮；中英文、目前鍵盤配置、Slide／Buttons／Tilt、手機與平板直橫向。
+- [x] 從操作教學與 Controls 開始；暫停、略過、退出、完成與重練流程。
+- [x] 教學隔離正式紀錄、解鎖、Ghost 與每日挑戰；退出還原原本選擇或暫停中的比賽。
+- [x] TDD 單元、桌面與手機實際操作瀏覽器回歸、正式建置。
+- [x] 傳送桌面／手機標註截圖與完成摘要。
+- [x] 錄製桌面／手機八步操作影片並傳送 Telegram。
+- [ ] 真機 Safari／Android／平板驗收（模擬器與瀏覽器尺寸測試不視為真機）。
+
+驗證：444 項單元、325 項完整瀏覽器回歸及正式建置通過；最新教學檔案另由主代理獨立重跑 11 項全數通過。額外以繁體中文橫向 Slide 完成八步，提示卡與滑動區沒有重疊。截圖、桌面／手機影片與驗證說明位於 `artifacts/interactive-tutorial/`，均已透過 Telegram 傳送。教學採暫時標準按鍵位置；未授權 Tilt 暫用 Slide，旋轉仍可操作，退出即還原偏好。
 
 Original baseline (everything below builds on these initial systems): a single 5 km coastal highway
 sprint (`RACE_LENGTH`), 3 rivals, 36 recycled traffic cars, flight and BOOST sharing one `fuel` pool,
