@@ -244,7 +244,6 @@ function showOneTimePerformanceNotice(){
   } catch { /* Still show once for this page when persistent storage is disabled. */ }
   showedPerformanceNotice=true;
   refreshPerformanceNotice();
-  if (tutorial) renderTutorial(true);
   performanceNotice.hidden=false;
 }
 const hidePerformanceNotice=()=>{ performanceNotice.hidden=true; };
@@ -290,6 +289,7 @@ function applyLocale() {
   for (const [element, text] of said) element.textContent = text();
   showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
   refreshPerformanceNotice();
+  if (tutorial) renderTutorial(true);
   nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
   if (positionChange.dataset.direction) positionChange.setAttribute('aria-label', t(positionChange.dataset.direction === 'gained' ? 'hud.gained' : 'hud.lost'));
   previousFlight = undefined; // the next HUD tick rewrites the change-gated labels
@@ -698,9 +698,9 @@ function toggleControls(open = ui['controls-panel'].hidden) {
 }
 
 function applyControls(persist = true) {
-  inputPrefs = { ...controlPrefs, editing: editingLayout };
+  inputPrefs = { ...controlPrefs, mode: tutorial && controlPrefs.mode === 'tilt' && !tiltGranted ? 'slide' : controlPrefs.mode, editing: editingLayout };
   const touch = ui['touch-controls'];
-  touch.dataset.steerMode = controlPrefs.mode;
+  touch.dataset.steerMode = inputPrefs.mode;
   touch.dataset.hand = controlPrefs.hand;
   touch.dataset.size = controlPrefs.size;
   touch.style.setProperty('--touch-scale', String(TOUCH_SCALE[controlPrefs.size]));
@@ -709,7 +709,7 @@ function applyControls(persist = true) {
   $('#tilt-enable').hidden = controlPrefs.mode !== 'tilt';
   if (controlPrefs.mode !== 'tilt') { controls.setTilt(false); tiltGranted = false; clearTimeout(tiltTimeout); }
   for (const button of touchButtons) {
-    const point = controlPrefs.layout[button.dataset.control];
+    const point = tutorial ? undefined : controlPrefs.layout[button.dataset.control];
     button.classList.toggle('is-positioned', !!point);
     if (point) {
       const halfWidth = button.offsetWidth / 2 || 32;
@@ -1607,11 +1607,8 @@ function beginTutorial() {
   if (guideScreen.open) closeGuide();
   if (editingLayout) editLayout(false);
   controls.clear(); clearButtonPresses(); toggleControls(false); toggleSettings(false);
-  if (controlPrefs.mode === 'tilt' && !tiltGranted) {
-    inputPrefs = { ...inputPrefs, mode: 'slide' };
-    ui['touch-controls'].dataset.steerMode = 'slide';
-  }
   tutorial = createInteractiveTutorial(); race = tutorial.race;
+  applyControls(false);
   goUntil = 0; previousFuel = 100; previousNitro = 0; previousFlight = undefined;
   document.body.dataset.tutorial = 'active';
   $('#tutorial-coach').hidden = false;

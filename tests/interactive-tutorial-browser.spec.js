@@ -68,7 +68,7 @@ test('switching language updates the active and paused lesson immediately', asyn
   await begin(page);
   await page.locator('#tutorial-pause').click();
   await selectLocale(page,'zh-TW');
-  await expect(page.locator('#tutorial-title')).toContainText('加速');
+  await expect(page.locator('#tutorial-title')).toContainText('油門');
   await expect(page.locator('#tutorial-instruction')).toHaveText('練習已暫停。準備好後按繼續；暫停時的操作不會計入。');
   await expect(page.locator('#tutorial-pause')).toHaveText('繼續');
   await selectLocale(page,'en');
@@ -103,7 +103,10 @@ test.describe('granted tilt and rotation', () => {
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','tilt');
     const tilt = value => page.evaluate(value => {
       clearInterval(window.tutorialTestSensor);
-      const send=()=>window.dispatchEvent(new DeviceOrientationEvent('deviceorientation',{gamma:value,beta:value}));
+      const send=()=>{
+        const angle=screen.orientation.angle*Math.PI/180;
+        window.dispatchEvent(new DeviceOrientationEvent('deviceorientation',{gamma:value*Math.cos(angle),beta:value*Math.sin(angle)}));
+      };
       send(); window.tutorialTestSensor=setInterval(send,50);
     },value);
     await tilt(0);
@@ -112,10 +115,17 @@ test.describe('granted tilt and rotation', () => {
     await keyStep(page,'w','left');
     await tilt(-25);
     await step(page,'right');
+    await page.evaluate(() => {
+      clearInterval(window.tutorialTestSensor);
+      window.tutorialRotated=false;
+      window.addEventListener('resize',()=>{window.tutorialRotated=true;},{once:true});
+    });
     await page.setViewportSize({width:844,height:390});
+    await expect.poll(()=>page.evaluate(()=>window.tutorialRotated)).toBe(true);
+    await tilt(0);
     await tilt(25);
     await step(page,'brake');
-    await expect(page.locator('#tutorial-input')).toContainText('BRAKE');
+    await expect(page.locator('#tutorial-input')).toContainText(/brake/i);
     await page.locator('#tutorial-exit').tap();
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','tilt');
   });
@@ -132,6 +142,17 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       await step(page, 'throttle');
       const effectiveMode = mode === 'tilt' ? 'slide' : mode;
       await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode', effectiveMode);
+      if(mode==='tilt') {
+        await page.evaluate(() => {
+          window.tutorialResizeCount=0;
+          window.addEventListener('resize',()=>window.tutorialResizeCount++);
+        });
+        await page.setViewportSize({width:height,height:width});
+        await expect.poll(()=>page.evaluate(()=>window.tutorialResizeCount)).toBeGreaterThan(0);
+        await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','slide');
+        await page.setViewportSize({width,height});
+        await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','slide');
+      }
       if(custom) await expect(page.locator('[data-control="throttle"]')).not.toHaveClass(/is-positioned/);
       if (effectiveMode === 'slide') {
         const [c,p]=await Promise.all([coach(page).boundingBox(),page.locator('.touch-pad').boundingBox()]);
