@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 // One NaN or Inf texel in the HDR scene buffer is spread by the bloom blur into a screen-sized black rectangle
 // (a nozzle shader hit 0*Inf on an MSAA-extrapolated sliver during nitro and the airflow showcase). Scan the
@@ -39,7 +40,7 @@ test('no NaN pixel reaches the bloom through the airflow showcase, nitro and its
   await expectClean(page, 'home airflow toggles');
   await page.locator('#start-button').click();
   // Reading two HDR buffers back every frame slows the countdown far past the default expect timeout on SwiftShader.
-  await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: 30_000 });
+  await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30_000) });
   await page.waitForTimeout(1000);
   await expectClean(page, 'countdown and first racing frames');
   await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; });
