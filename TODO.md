@@ -571,10 +571,21 @@ acceptance remains under the shared stage-wide QA, not claimed here.
   alternate lines. Keep the ordinary track drivable in Classic mode by default.
 - [x] Add difficulty tiers based on warning time, obstacle spacing and
   activation frequency **without random unavoidable collisions**.
-- [ ] Score clean obstacle passes, near-misses and finish time; practice and
+- [x] Score clean obstacle passes, near-misses and finish time; practice and
   obstacle-mode records stay separate.
 - [ ] **Acceptance:** each generated hazard arrangement leaves a reasonable
   passable ground/air path and has predictable collision tests.
+
+**MODE-07 scoring TDD (2026-10-23):** RED
+[`60a5e99`](https://github.com/weskao/skyline-rush/commit/60a5e99edfabc4c91d164ef6894c5ce52a2a5769)
+([CI #39945677012](https://github.com/weskao/skyline-rush/actions/runs/39945677012));
+GREEN [`7fbb126`](https://github.com/weskao/skyline-rush/commit/7fbb12667ae0372a7bb16876164df004f05bcd11)
+and WebGL smoke [`c2b6c8e`](https://github.com/weskao/skyline-rush/commit/c2b6c8ef68b7b46d893b5d9a7800bd1038884061).
+A safe barrier pass earns 150 points, a close clean near-miss earns 300
+and increments the once-only nearMisses counter. Challenge records remain
+isolated from Classic Career. Focused/unit/build/actual WebGL smoke all passed
+[CI #39945865189](https://github.com/weskao/skyline-rush/actions/runs/39945865189).
+Full route navigability and hazard arrangement acceptance remain open.
 
 ### 9I. Elimination / Last Racer Standing (P2)
 
