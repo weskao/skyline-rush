@@ -178,6 +178,7 @@ Localized images: `node scripts/capture-og-images.mjs` drives the real app in Ch
 npm test                 # Deterministic simulation, input lifecycle and geometry
 npm run build           # Production assets in dist/
 npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full race
+npm run test:layout     # Home-screen fit, top bar and touch targets (runs on pre-push)
 make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 ```
@@ -227,7 +228,7 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `src/audio-settings.js`: reads saved music/sound on/off and volume cookies, and the mute-keeps-level rule for sliders.
 - `tests/`: unit and browser behavior tests.
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
-- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
+- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `npm run test:layout` when pushed commits touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
 
 All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vue, Vite and Playwright retain their respective package licenses.
 
