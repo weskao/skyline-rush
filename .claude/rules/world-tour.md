@@ -28,4 +28,18 @@ landmarks · `src/world.js` lighting · `src/route-map.js` + `src/style.css` rou
 - Landmarks: recognizable skyline silhouettes from original geometry, with low/high quality and
   reduced-motion variants.
 
+## Solid props
+
+- A roadside prop whose box reaches within `ROAD_LIMIT + .85` of the centre line is solid:
+  `roadObstacles(trackId)` (`world-tour-scene.js`) exports it to `race.props`, and `hitProp`
+  in `game.js` gives the player a swept barrier hit and pushes the car to the open side.
+- `clearOfRoad` keeps every prop's inner edge >= `ROAD_CLEARANCE` (4.5 m) from the centre, so
+  at least the two middle lanes stay drivable; shortcut corridors stay unblocked.
+- Low detail always draws solid props (`detailPlan`) — never collide with something invisible.
+- Rivals and traffic run `avoidObstacles`: look 80 m ahead, move to the nearest free line at
+  `LANE_SHIFT` m/s, return to `homeX` once past. Moving hazards block their whole sweep; a rival
+  higher than the barrier passes over it. Overhead parts the car fits under are not blockers.
+- Non-player cars past the finish on clamped routes are hidden (`world.js`), not parked.
+- New solid props need a test in `tests/game.test.js` that fails without the collision.
+
 Docs: `docs/world-tour-scenic-redesign.md`, `docs/world-tour-landmark-polish.md`.

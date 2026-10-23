@@ -18,6 +18,14 @@ without thinning the street: blocking props move or shrink, never disappear. Eve
 ships the same way; placement, occlusion and test rules are in
 `.claude/rules/track-showcase.md` ("Signature landmark").
 
+## Solid obstacles and AI avoidance
+
+Anything drawn on or over the road is solid for every car: the player gets a barrier hit,
+rivals and traffic change lane around it ahead of time and return to their lane after it, and
+no car is drawn passing through it on any map. An obstacle never takes so much road that a
+stretch is impassable — at least two lanes stay open. Rules are in `.claude/rules/world-tour.md`
+("Solid props").
+
 ## Commands
 
 | Command | Purpose |

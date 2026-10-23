@@ -1,3 +1,80 @@
+## [0.17.0] - 2026-10-23
+
+### 🚀 Features
+
+- **ui:** Add a first-run controls guide
+- **audio:** Add test-first one-shot event rules for arcade modes
+- **audio:** Synthesize distinct arcade soundtracks and contextual game cues
+- **stunt:** Award duration-scaled style medals and save combo/air stats
+- **custom:** Replay the last three Custom setups with bilingual UI
+- **checkpoint:** Guide gates by road-relative direction and reward perfect lines
+- **items:** Add optional one-slot active mystery power-ups to practice modes
+- **elimination:** Add ten-second knockout arcade mode with dynamic rivals
+- **practice:** Opt-in Off/Standard/Extreme hazards in Custom and Free Drive
+- **photo:** Paused Free Drive studio with orbit, lens, lighting and local PNG
+- **ui:** Reopen the start screen on the last raced track
+- **ui:** Reopen the start screen on the last raced track
+- **world-tour:** Frame signature landmarks on home
+- **world-tour:** Showcase landmarks on all five maps
+- **world-tour:** Move landmark blockers, not delete
+- **world-tour:** Make road-reaching scenery solid
+- **game:** Steer rivals and traffic around obstacles
+
+### 🐛 Bug Fixes
+
+- **audio:** Consume paused mode events to prevent delayed cue playback
+- **ui:** Fit arcade mode menu and translate stunt timers on mobile/desktop
+- **ui:** Ensure compact intro styles override later mode picker defaults
+- **ui:** Keep desktop intro visible and music prompt from blocking VFX
+- **checkpoint:** Resolve gate crossings against remaining timer
+- **audio:** Raise music and effects output gain
+- **ui:** Close every dropdown on an outside press
+- **ui:** Make every button clickable up to its border
+- **render:** Stop screen flicker and edge crawl
+- **ui:** Keep long game-mode labels inside their tabs
+- **ui:** Keep mode tab columns as wide as their words
+- **world:** Stop finished cars parking at the arch
+- **ui:** Fit the championship cup label in its tab
+
+### 💼 Other
+
+- **main:** Integrate v0.15.1 release and phone UX updates
+- **main:** Integrate v0.16.0 release, PWA updates and three course songs
+
+### 📚 Documentation
+
+- **todo:** Track the controls guide v1 checklist
+- **ui:** Record controls guide verification
+- **todo:** Check independently verified sprint, stunt, hazard and audio work
+- **claude:** Assess and implement appropriate audio with UI and UX changes
+- Describe darken-only button press feedback
+- **readme:** Note home-screen landmark showcase
+- **claude:** Require landmark showcase for new maps
+- **readme:** Note landmarks on all world tour maps
+- **claude:** Move landmark rules to track-showcase
+- **claude:** Keep streets rich around landmarks
+- Document solid props and ai obstacle avoidance
+
+### 🎨 Styling
+
+- **ui:** Make the version label easier to read
+- **ui:** Punch up the controls guide title
+
+### 🧪 Testing
+
+- **ui:** Handle delayed music prompts in locale picks
+- **audio:** Specify per-mode music loops and checkpoint chimes (RED)
+- **stunt:** Specify duration-scaled medals and history stats before implementation
+- **stunt:** Correct long-duration threshold expectation before implementation
+- **practice:** Specify optional Off/Standard/Extreme hazards (RED)
+- **photo:** Drive native range sliders through input events in Playwright
+- **ui:** Cover outside-press and button-swap dropdown close
+- **ui:** Cover language button presses at its top border
+- **world-tour:** Measure landmarks as the home renders
+
+### ⚙️ Miscellaneous Tasks
+
+- Page telegram when checks or deploy fail
 ## [0.16.0] - 2026-10-22
 
 ### 🚀 Features

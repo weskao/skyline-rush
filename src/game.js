@@ -268,11 +268,11 @@ export function createRace(trackId = 'coast', modifier = null) {
       heldItem: null, itemCooldown: 0,
     },
     rivals: ['NOVA', 'ORBIT', 'APEX'].slice(0, config.rivals).map((name, i) => ({
-      name, x: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
+      name, x: LANES[i === 2 ? 3 : i], homeX: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
       altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroTime: 0, nitroHop: -1,
     })),
     traffic: Array.from({ length: Math.round(36 * density) }, (_, i) => ({
-      x: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / density,
+      x: LANES[(i * 7 + 1) % 4], homeX: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / density,
       speed: 23 + (i % 5) * 3, color: i % 5,
     })),
   };
@@ -346,6 +346,45 @@ function hitProp(props, car, previousDistance) {
       p.top > car.altitude && p.bottom < car.altitude + 1.8) return p;
   }
   return null;
+}
+
+// Rivals and traffic steer around solid scenery and gauntlet barriers ahead instead of driving through
+// them: they keep their own lane while it is clear, else take the nearest free line beside the obstacle.
+// Scenery parts stay under 20 m deep (largest: a scaled train, ~9 m), which bounds the look-back.
+const AI_LOOKAHEAD = 80, LANE_SHIFT = 6, AI_HALF_WIDTH = 0.85, AI_MARGIN = 1.4; // m ahead, m/s sideways, m, m
+const BARRIER_HALF_WIDTH = 1.55, BARRIER_HEIGHT = 2.5; // drawn gauntlet barrier: 3.1 x 2.5 m
+const blockers = []; // reused every call: no per-frame allocation on this hot path
+function laneFree(x) {
+  if (Math.abs(x) > ROAD_LIMIT) return false;
+  for (let i = 0; i < blockers.length; i += 2) if (x + AI_HALF_WIDTH > blockers[i] && x - AI_HALF_WIDTH < blockers[i + 1]) return false;
+  return true;
+}
+function avoidObstacles(race, other, dt) {
+  const { props, hazards } = race, d = other.distance, altitude = other.altitude || 0;
+  if (!props.length && !hazards.length) return;
+  blockers.length = 0;
+  let lo = 0, hi = props.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (props[mid].from < d - 20) lo = mid + 1; else hi = mid; }
+  for (let i = lo; i < props.length && props[i].from < d + AI_LOOKAHEAD; i++) {
+    const p = props[i];
+    if (p.to > d - 2.2 && p.top > altitude && p.bottom < altitude + 1.8) blockers.push(p.left, p.right);
+  }
+  if (altitude < BARRIER_HEIGHT) for (const h of hazards) {
+    if (h.distance > d + AI_LOOKAHEAD) break;
+    if (h.distance < d - 2.2) continue;
+    const reach = BARRIER_HALF_WIDTH + (h.moving ? 1.8 : 0); // a moving barrier blocks its whole sweep
+    blockers.push(h.x - reach, h.x + reach);
+  }
+  let target = other.homeX;
+  if (!laneFree(target)) {
+    target = other.x; // nowhere free: hold the line rather than swerve into something else
+    let best = Infinity;
+    for (let i = 0; i < blockers.length; i++) {
+      const x = i % 2 ? blockers[i] + AI_MARGIN : blockers[i] - AI_MARGIN;
+      if (Math.abs(x - other.x) < best && laneFree(x)) { best = Math.abs(x - other.x); target = x; }
+    }
+  }
+  other.x += clamp(target - other.x, -LANE_SHIFT * dt, LANE_SHIFT * dt);
 }
 
 function contact(race, kind, obstacleX, intensity, retention) {
@@ -536,6 +575,7 @@ export function stepRace(race, input, dt) {
 
   for (const traffic of race.traffic) {
     traffic.distance += traffic.speed * dt;
+    avoidObstacles(race, traffic, dt);
     // Recycle distant traffic so the same small scene stays populated for the full sprint.
     if (traffic.distance < car.distance - 60) traffic.distance += 1400;
   }
@@ -557,6 +597,7 @@ export function stepRace(race, input, dt) {
     const band = Math.sign(gap) * clamp((Math.abs(gap) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
     const slow = (car.effects.freeze > 0 ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
     rival.distance += rival.speed * slow * dt;
+    avoidObstacles(race, rival, dt);
     if (rival.distance >= race.length && rival.finishTime === null) {
       rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / (rival.speed * slow);
     }
