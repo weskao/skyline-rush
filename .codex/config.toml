@@ -1,0 +1,3 @@
+[mcp_servers.firebase]
+command = "npx"
+args = ["-y", "firebase-tools@15.34.1", "mcp", "--only", "auth,firestore"]
