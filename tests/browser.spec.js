@@ -362,8 +362,7 @@ test('a music-off saved by v0.18 or earlier plays music again after the first ge
 
 test('countdown lights, automatic accelerator and brake work without holding the gas', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Auto accelerate', exact: true }).click();
-  await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'true'); // on by default, desktop too
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('.start-lights')).toBeVisible();
   await expect(page.locator('#speed')).toHaveText('0');
@@ -381,6 +380,8 @@ test('countdown lights, automatic accelerator and brake work without holding the
   await expect(page.locator('#distance')).toHaveText(distance);
   await page.keyboard.press('p');
   await page.keyboard.press('F2');
+  await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'false');
+  await page.reload(); // only the player's own toggle is remembered
   await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'false');
 });
 

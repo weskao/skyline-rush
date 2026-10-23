@@ -1,3 +1,18 @@
+## [0.19.1] - 2026-10-23
+
+### 🐛 Bug Fixes
+
+- **audio:** Reset music-off saved by the old prompt
+- **audio:** Play through the iOS silent switch
+
+### 💼 Other
+
+- Gate home-screen pushes on layout tests
+
+### 📚 Documentation
+
+- Point the home-screen rule at test:layout
+- Describe first-gesture music and iOS playback
 ## [0.19.0] - 2026-10-23
 
 ### 🚀 Features

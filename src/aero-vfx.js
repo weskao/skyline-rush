@@ -79,7 +79,7 @@ export function createAeroVFX(scene, vehicle) {
     uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme;
-      void main(){float t=1.-vUv.y;
+      void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
         float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
         float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
         float core=exp(-t*7.);float fade=pow(max(0.,1.-t),1.7)*smoothstep(0.,.025,t);
@@ -131,15 +131,12 @@ export function createAeroVFX(scene, vehicle) {
     return { mesh, position: new THREE.Vector3(), life: 0 };
   });
   const shock = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 64), new THREE.MeshBasicMaterial({ color: '#bdeeff', transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0 }));
-  shock.visible = false; scene.add(shock);
+  shock.name = 'Ignition shockwave'; shock.visible = false; scene.add(shock);
   const shockPosition = new THREE.Vector3();
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   let hadPosition = false, wasBoosting = false, time = 0, reveal = 0, strength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
   let quality = 1, settings, delta, centerX, originDistance;
-  // First frame draws the hidden airflow meshes at zero alpha, so their shaders and GPU pipelines are built at load;
-  // building them on the first toggle stalled WebKit (iPhone Safari/Chrome) and flashed black patches over the preview.
-  let warmup = true;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
@@ -193,12 +190,12 @@ export function createAeroVFX(scene, vehicle) {
       fu.suction.value = settings.suction / (1 + Math.max(0, vehicle.position.y) * 2);
       fu.turbulence.value = settings.turbulence * (calm ? 0.3 : 1);
       fu.downforce.value = settings.aeroMode === 'downforce' ? 1 : 0;
-      flow.visible = reveal > 0.005 || warmup;
+      flow.visible = reveal > 0.005;
       pressure.visible = flow.visible && vehicle.position.y < 0.6;
       pressure.material.uniforms.power.value = reveal * fu.suction.value * (settings.aeroMode === 'downforce' ? 1 : 0.35);
       pressure.material.uniforms.time.value = time;
       jets.forEach((jet, i) => {
-        jet.visible = strength > 0.005 || warmup;
+        jet.visible = strength > 0.005;
         jet.scale.set(REAR_PORTS[i].size, REAR_PORTS[i].size, settings.exhaustLength * strength * (0.65 + car.speed / 200));
         const u = jet.material.uniforms;
         u.time.value = time + i * 0.13; u.power.value = strength;
@@ -275,7 +272,7 @@ export function createAeroVFX(scene, vehicle) {
       shock.position.copy(shockPosition); shock.position.x -= center; shock.position.z += distance;
       shock.scale.setScalar(0.5 + shockAge * 20);
       shock.material.opacity = Math.max(0, 1 - shockAge / 0.23) ** 2 * settings.shockwave * 0.45;
-      previous.copy(current); previousRotation.copy(vehicle.quaternion); warmup = false;
+      previous.copy(current); previousRotation.copy(vehicle.quaternion);
       direction.set(0, 0.64, 3).applyMatrix4(vehicle.matrixWorld);
       return { strength, ignition: boost ? Math.max(0, 1 - shockAge / 0.25) : 0, nozzle: direction, reveal };
     },

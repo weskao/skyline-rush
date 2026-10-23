@@ -10,11 +10,16 @@ for(const [id,[from,to,length]] of Object.entries(tracks)){
     await page.goto('/tests/fixtures/world-tour-mid-race.html');
     await page.waitForFunction(()=>window.worldTourReady===true);
     const positions=[0,length*.25,from-40,from+6,(from+to)/2,to+5,to+200,length*.94];
+    let programs;
     for(const distance of positions){
       const response=await page.evaluate(([name,d])=>window.worldTourProbe(name,d),[id,distance]);
       expect(response.id).toBe(id);
       expect(response.distance).toBeGreaterThanOrEqual(0);
       await page.waitForTimeout(90);
+      // The track's first frame warms up every shader; entering or leaving the tunnel must not compile more
+      // (a changing light count or a first-drawn material stalls WebKit and flashes black on iPhone).
+      programs??=await page.evaluate(()=>window.worldTourPrograms());
+      expect(await page.evaluate(()=>window.worldTourPrograms())).toBe(programs);
     }
     // Long-running RAF render checks the actual failure path around each
     // energy tunnel instead of taking only one isolated mid-race screenshot.

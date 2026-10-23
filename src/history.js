@@ -5,6 +5,7 @@ import { stuntMedal } from './stunt-attack.js';
 export const HISTORY_KEY = 'skyline-rush-history';
 export const BEST_KEY = 'skyline-rush-best-tracks';
 export const LEGACY_BEST_KEY = 'skyline-rush-best'; // single pre-tracks best; read-only here, still written by main.js for coast
+export const UNLOCKED_KEY = 'skyline-rush-unlocked';
 export const HISTORY_LIMIT = 50;
 
 // Storage is resolved inside each try: a blocked-storage localStorage getter throws SecurityError.
@@ -14,7 +15,7 @@ const valid = time => Number.isFinite(time) && time > 0;
 
 export function loadUnlocks(storage, history = loadHistory(storage)) {
   const tracks = Object.keys(RACE_TRACKS);
-  const saved = read('skyline-rush-unlocked', storage);
+  const saved = read(UNLOCKED_KEY, storage);
   const unlocked = new Set(Array.isArray(saved) ? saved.filter(id => tracks.includes(id)) : []);
   unlocked.add('coast');
   for (const run of history) {
@@ -42,7 +43,7 @@ export function recordRace(race, storage, now = new Date()) {
   };
   const history = [...loadHistory(storage), record];
   // Preserve legacy progress before trimming away the run that originally earned it.
-  write('skyline-rush-unlocked', loadUnlocks(storage, history), storage);
+  write(UNLOCKED_KEY, loadUnlocks(storage, history), storage);
   write(HISTORY_KEY, history.slice(-HISTORY_LIMIT), storage);
   return record;
 }
@@ -198,7 +199,7 @@ export function recordBest(trackId, time, storage) {
 }
 
 export const MEDALS = ['first-win', 'clean-run', 'perfect-five', 'nitro-chain'];
-const MEDALS_KEY = 'skyline-rush-medals';
+export const MEDALS_KEY = 'skyline-rush-medals';
 const MEDAL_RULES = {
   'first-win': result => result.position === 1,
   'clean-run': result => result.collisions === 0,
@@ -225,7 +226,7 @@ export function recordMedals(result, storage, now = new Date()) {
 }
 
 // Best style stars per track (1-3); their sum unlocks paints.
-const STARS_KEY = 'skyline-rush-stars';
+export const STARS_KEY = 'skyline-rush-stars';
 const validStars = stars => Number.isInteger(stars) && stars >= 1 && stars <= 3;
 export function loadStars(storage) {
   const saved = read(STARS_KEY, storage);
@@ -267,7 +268,7 @@ export function saveModeGhost(trackId, config, ghost, storage) {
 }
 
 // Daily challenge runs live on their own board, never in history, bests, unlocks or ghosts.
-const DAILY_KEY = 'skyline-rush-daily';
+export const DAILY_KEY = 'skyline-rush-daily';
 const validDaily = run => run && typeof run === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(run.id) && Object.hasOwn(RACE_TRACKS, run.track) &&
   DAILY_MODIFIERS.includes(run.modifier) && valid(run.time) && Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 &&
   Number.isFinite(run.score) && run.score >= 0 && typeof run.date === 'string';

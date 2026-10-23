@@ -61,7 +61,7 @@ export function createEffects(scene, roadCenter) {
       void main(){vUv=uv;vec4 world=modelMatrix*vec4(position,1.);height=world.y;
         gl_Position=projectionMatrix*viewMatrix*world;}`,
     fragmentShader: `varying vec2 vUv;varying float height;uniform float time,power;
-      void main(){if(height<.09)discard;float downstream=1.-vUv.y;
+      void main(){if(height<.09)discard;float downstream=clamp(1.-vUv.y,0.,1.); // see the nozzle shader in aero-vfx.js
         float breakup=.65+.35*sin(vUv.x*37.+downstream*31.-time*38.);
         float envelope=pow(max(0.,1.-downstream),1.6)*smoothstep(0.,.06,downstream);
         gl_FragColor=vec4(.86,.94,1.,power*envelope*breakup*.5);}`,
@@ -98,8 +98,10 @@ export function createEffects(scene, roadCenter) {
   const pickupRainbow = new Float32Array(pickupGeometry.attributes.position.count * 3);
   for (let i = 0; i < pickupGeometry.attributes.position.count; i++) tint.setHSL(i / pickupGeometry.attributes.position.count, 1, 0.6).toArray(pickupRainbow, i * 3);
   pickupGeometry.setAttribute('color', new THREE.BufferAttribute(pickupRainbow, 3));
-  for (let i = 0; i < 7; i++) gates.add(new THREE.Mesh(ringGeometry, ringMaterials.charge));
-  for (let i = 0; i < 40; i++) pickups.add(new THREE.Mesh(pickupGeometry, pickupMaterials.cell));
+  // Every ring and pickup material variant sits on a pooled mesh at load so the first-frame shader warmup (world.js) draws it.
+  const ringVariants = Object.values(ringMaterials), pickupVariants = Object.values(pickupMaterials);
+  for (let i = 0; i < 7; i++) gates.add(new THREE.Mesh(ringGeometry, ringVariants[i % ringVariants.length]));
+  for (let i = 0; i < 40; i++) pickups.add(new THREE.Mesh(pickupGeometry, pickupVariants[i % pickupVariants.length]));
   const pickupSizes = { cell: 0.28, can: 0.48, tank: 0.7, overcharge: 0.95 };
   let previousRace = null, seen = new WeakSet(), driftEmission = 0;
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {

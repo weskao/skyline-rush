@@ -10,6 +10,7 @@ import { canopy, carShell, roadRibbon } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.js';
+import { warmupShaders } from './shader-warmup.js';
 import { t, getLocale, onLocaleChange } from './i18n.js';
 import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
@@ -267,6 +268,11 @@ export function createWorld(canvas) {
   const composer = new EffectComposer(renderer, sceneTarget(4)); // configureVFX re-targets for the saved quality tier
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 1.1);
+  // The bloom blur spreads one NaN/Inf scene texel into a screen-sized black rectangle (seen when a nozzle shader hit
+  // 0*Inf at an MSAA sliver). Dropping non-finite texels at the high pass caps such a bug at a one-pixel speck.
+  const highPass = bloom.materialHighPassFilter, texel = 'vec4 texel = texture2D( tDiffuse, vUv );';
+  if (!highPass.fragmentShader.includes(texel)) throw new Error('UnrealBloomPass high pass changed: move the NaN guard');
+  highPass.fragmentShader = highPass.fragmentShader.replace(texel, `${texel} if ( any( isnan( texel ) ) || any( isinf( texel ) ) ) texel = vec4( 0.0 );`);
   composer.addPass(bloom);
   const lens = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, boost: { value: 0 }, impact: { value: 0 }, pressure: { value: 0 }, nozzle: { value: new THREE.Vector2() }, time: { value: 0 } },
@@ -521,7 +527,7 @@ export function createWorld(canvas) {
   let carBank = 0;
   let photoView = null, photoDefaults = null, photoCapture = null;
 
-  let sizeKey = '';
+  let sizeKey = '', warmupPending = true;
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
     // setSize reallocates the drawing buffer and every composer target, blanking a frame; mobile URL-bar and
@@ -535,6 +541,8 @@ export function createWorld(canvas) {
     camera.updateProjectionMatrix();
   }
   resize();
+  // iOS fires resize on rotation before the new layout lands; observing the canvas catches the settled size.
+  new ResizeObserver(resize).observe(canvas);
 
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}) {
     const relative = car.distance - distance;
@@ -673,6 +681,7 @@ export function createWorld(canvas) {
         surfaceMarks.visible = trackId === 'aurora';
         weather.material.size = trackId === 'neon' ? .12 : .24;
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
+        warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
       const distance = preview ? previewDistance(trackId) : car.distance;
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
@@ -687,7 +696,7 @@ export function createWorld(canvas) {
         ambient.intensity=base*(1-.67*tunnelFade);
         sunlight.intensity=.75*(1-.88*tunnelFade);
         tunnelLights.forEach((light,i)=>{
-          light.visible=tunnelFade>0;
+          light.visible=trackId==='alpine'; // constant per track: a changing visible-light count recompiles every lit shader (black flash at the bore)
           light.intensity=.65*tunnelFade;
           light.color.set(i===0?'#ba9c74':'#9c9989');
           light.position.fromArray(trackLocalPosition(trackId,distance+21,(i===0?-1:1)*11.7,8,distance));
@@ -1002,6 +1011,7 @@ export function createWorld(canvas) {
       lens.uniforms.time.value = time;
       bloom.strength = TOUR_IDS.has(trackId) ? .085 : .42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
+      if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
       composer.render(dt);
       if (photoCapture) {
         const request = photoCapture;
@@ -1020,6 +1030,7 @@ export function createWorld(canvas) {
         } catch (error) { request.reject(error); }
       }
     },
+    inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
       // Read-only projection for browser QA: verify the player and all three
       // rivals stay within the real camera on curving/elevated preview roads.

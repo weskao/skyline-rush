@@ -24,6 +24,15 @@ test('every VFX shader clamps pow() bases so edge pixels cannot produce NaN blac
   assert.ok(shaders.size >= 5);
   const unguarded = [...shaders].flatMap(source => source.split(/\bpow\(/).slice(1)).filter(arg => !/^(max\(0\.,|clamp\()/.test(arg));
   assert.deepEqual(unguarded.map(arg => `pow(${arg.slice(0, 30)}`), []);
+  // exp() overflows to Inf once its argument passes ~88, and a varying is extrapolated far past its range where MSAA
+  // covers a sliver triangle whose pixel centre lies outside it; Inf times a zero fade is the NaN that blacked out
+  // nitro. Every exp() argument must be a negated non-negative term: abs(), dot(), length(), a square, or a scalar
+  // the shader defined through clamp().
+  const unbounded = [...shaders].flatMap(source => source.split(/\bexp\(/).slice(1).map(arg => arg.replace(/\s/g, '')).filter(arg => {
+    const term = arg.match(/^-(abs\(|dot\(|length\(|clamp\(|(\w+)\*\2\b|(\w+)\b)/);
+    return !term || (term[3] && !source.includes(`float ${term[3]}=clamp(`));
+  }));
+  assert.deepEqual(unbounded.map(arg => `exp(${arg.slice(0, 30)}`), []);
 });
 
 // Lit materials divide by the interpolated normal: a missing normal attribute or a zero-scale instance matrix

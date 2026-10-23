@@ -144,7 +144,6 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   await page.keyboard.press('Home');
   await expect(page.locator('#controls-sensitivity')).toHaveValue('0.4');
   await page.locator('#controls-button').click();
-  await page.locator('#assist-button').click();
   // Snapshot the HUD in-page the moment charge reads 0.5; polling from the test misses the 0.6s refill window on slow CI.
   await page.evaluate(() => {
     const meter = document.querySelector('#nitro-meter');

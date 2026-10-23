@@ -535,11 +535,13 @@ input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; back
 input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px solid #0b1c2b; border-radius: 50%; background: #91e0f2; }
 .vfx-comfort input[type="checkbox"], .vfx-comfort input[type="checkbox"]::before { transition: none; }
 @media (prefers-reduced-motion: reduce) { input[type="checkbox"], input[type="checkbox"]::before { transition: none; } }
-.airflow-hud { position: fixed; top: 285px; left: 40px; z-index: 3; width: 214px; padding: 16px; background: linear-gradient(120deg,#0b2539e8,#0b25397a); border-left: 2px solid #83e1fa; border-radius: 0 6px 6px 0; display: grid; gap: 9px; opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s; pointer-events: none; }
+.airflow-hud { position: fixed; top: 285px; left: max(40px, env(safe-area-inset-left, 0px)); z-index: 3; width: 214px; padding: 16px; background: linear-gradient(120deg,#0b2539e8,#0b25397a); border-left: 2px solid #83e1fa; border-radius: 0 6px 6px 0; display: grid; gap: 9px; opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s; pointer-events: none; }
 .airflow-active .airflow-hud { opacity: 1; transform: translateY(0); }
 /* Airflow showcase hides the start panel but keeps the one standard Start button reachable. */
 .airflow-active[data-phase="ready"] .intro { visibility: hidden; }
 .airflow-active[data-phase="ready"] #start-button { visibility: visible; position: fixed; inset: auto 0 max(44px, calc(env(safe-area-inset-bottom, 0px) + 36px)); width: max-content; margin-inline: auto; }
+/* Wide screens: the showcased car sits mid-frame, so Start moves to the bottom-right gutter instead of covering it. */
+@media (min-width: 761px) { .airflow-active[data-phase="ready"] #start-button { inset-inline: auto max(40px, env(safe-area-inset-right, 0px)); margin-inline: 0; } }
 .airflow-active[data-phase="ready"] .scene-shade { opacity: .3; }
 .aero-eyebrow { font-size: 7px; letter-spacing: 1.7px; color: #a4c5d5; }
 .airflow-hud > strong { font: 700 24px 'Barlow Condensed', sans-serif; color: #d5f8ff; }
@@ -557,7 +559,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   .aero-tools > button, .aero-tools > details > summary { min-height: 30px; padding: 4px 8px; font-size: 8px; }
   .aero-tools .custom-select > button { min-height: 30px; padding-block: 4px; }
   .vfx-settings { max-height: calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); width: min(310px, calc(100vw - 32px)); top: 36px; }
-  .airflow-hud { top: 245px; left: 16px; width: 160px; padding: 10px; gap: 6px; }
+  .airflow-hud { top: 245px; left: max(16px, env(safe-area-inset-left, 0px)); width: 160px; padding: 10px; gap: 6px; }
   .airflow-hud > strong { font-size: 20px; }
   .aero-eyebrow { font-size: 6px; letter-spacing: 1px; }
   .aero-channels { gap: 7px; padding-top: 8px; }
@@ -664,6 +666,17 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .keymap-binding { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 8px; text-align: left; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; background: transparent; font-size: 10px; }
 .keymap-binding b { color: #b4edff; font-size: 10px; font-weight: 500; text-align: right; }
 .keymap-binding[aria-pressed="true"] { border-color: var(--accent); background: #243b50; }
+/* Live preview of the touch buttons: stays at the top of the panel while the size and opacity controls below are used. */
+.controls-preview { position: sticky; top: -6px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 64px; margin: -6px -6px 4px; padding: 6px 12px; background: #0b1b2c; border-bottom: 1px solid rgb(195 224 244 / .2); border-radius: 12px 12px 0 0; }
+.controls-preview-label { color: #a3e8fb; font-size: 11px; letter-spacing: .08em; }
+.controls-preview-keys { display: flex; align-items: flex-end; gap: 6px; opacity: var(--touch-opacity, .9); }
+.controls-preview-keys i { display: flex; align-items: center; justify-content: center; width: calc(34px * var(--touch-scale, 1)); height: calc(36px * var(--touch-scale, 1)); border: 1px solid rgb(210 226 238 / .3); border-radius: 6px; background: rgb(25 44 60 / .7); color: #f4f0e9; transition: width var(--dur-fast), height var(--dur-fast), opacity var(--dur-fast); }
+.controls-preview-keys svg { width: 55%; height: 55%; }
+.controls-preview-keys .touch-nitro { color: #f8d59a; border-color: #cba36c; }
+.controls-preview-keys .touch-fly { color: #aeebff; border-color: #83ceeb; }
+.controls-preview-keys .touch-boost { color: #ffcc9d; border-color: #ffba88; }
+.controls-preview-keys .touch-gas { background: #e7916f; color: #192b3a; border-color: #e7916f; }
+@media (prefers-reduced-motion: reduce) { .controls-preview-keys i { transition: none; } }
 .controls-note { margin: 8px; font-size: 11px; line-height: 1.5; color: #c9dfed; }
 .touch-controls .touch-nitro { width: calc(50px * var(--touch-scale, 1)); height: calc(52px * var(--touch-scale, 1)); flex-direction: column; gap: 4px; color: #f8d59a; border-color: #cba36c; font-size: 7px; letter-spacing: .6px; }
 .touch-controls .touch-nitro.is-held { background: #7a613c; }

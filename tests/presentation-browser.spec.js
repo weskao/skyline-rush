@@ -113,7 +113,6 @@ for (const [name, viewport, hasTouch, reducedMotion] of [
       observer.observe(document.body, { attributes: true, attributeFilter: ['data-phase'] });
       observer.observe(overlay, { attributes: true, attributeFilter: ['hidden'] });
     });
-    if (!hasTouch) await page.locator('#assist-button').click();
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     // The full 5 km production-bundle run lives in browser.spec.js; this test owns the finish transition.

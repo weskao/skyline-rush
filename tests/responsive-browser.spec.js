@@ -52,6 +52,31 @@ for (const [width, height, hasTouch] of [
       // Big viewports render few frames on CI and each frame's step is clamped, so the countdown can outlast the default.
       await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
     });
+
+    test('airflow showcase keeps Start clear of the car and the panels', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      await page.keyboard.press('v');
+      await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
+      const start = await page.locator('#start-button').boundingBox();
+      expect(start.x).toBeGreaterThanOrEqual(0);
+      expect(start.x + start.width).toBeLessThanOrEqual(width);
+      expect(start.y + start.height).toBeLessThanOrEqual(height);
+      for (const selector of ['.airflow-hud', '.aero-tools', '.bottomline']) {
+        const panel = page.locator(selector);
+        if (!await panel.isVisible()) continue;
+        const box = await panel.boundingBox();
+        expect(start.x + start.width <= box.x || box.x + box.width <= start.x ||
+          start.y + start.height <= box.y || box.y + box.height <= start.y, `Start overlaps ${selector}`).toBe(true);
+      }
+      // shortcut: the showcase car's projection isn't exposed to the page, so this checks the 40-68% column it is drawn in
+      // from 900 px up (narrower screens draw it above Start); assert real car bounds if world gains a QA hook.
+      if (width >= 900) {
+        expect(start.x, 'Start covers the showcased car').toBeGreaterThanOrEqual(width * 0.68);
+        await page.locator('#start-button').click();
+        await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
+      }
+    });
   });
 }
 
@@ -277,3 +302,29 @@ for (const [width, height] of [[390, 844], [375, 667], [320, 568], [844, 390]]) 
     `callout ${JSON.stringify(callout)} overlaps director ${JSON.stringify(director)}`).toBe(true);
   });
 }
+
+// iOS fires resize on rotation before the new layout lands, so the scene must follow the canvas box itself.
+test('scene aspect follows the canvas when its size changes without a resize event', async ({ page }) => {
+  await page.setViewportSize({ width: 402, height: 874 });
+  await page.goto('./');
+  const mismatch = () => page.locator('#world').evaluate(canvas =>
+    Math.abs(canvas.width / canvas.height - canvas.clientWidth / canvas.clientHeight));
+  await expect.poll(mismatch).toBeLessThan(0.02);
+  // The stale landscape box iOS can leave behind after rotating back to portrait.
+  await page.locator('#world').evaluate(canvas => { canvas.style.width = '874px'; canvas.style.height = '402px'; });
+  await expect.poll(mismatch).toBeLessThan(0.02);
+  await page.locator('#world').evaluate(canvas => canvas.removeAttribute('style'));
+  await expect.poll(mismatch).toBeLessThan(0.02);
+});
+
+test.describe('airflow panel in landscape', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 874, height: 402 } });
+
+  test('clears the Dynamic Island inset', async ({ page, context }) => {
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, bottom: 21, left: 62, right: 62 } });
+    await page.goto('./');
+    const left = await page.locator('#airflow-hud').evaluate(el => el.getBoundingClientRect().left);
+    expect(left).toBeGreaterThanOrEqual(62);
+  });
+});

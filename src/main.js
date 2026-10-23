@@ -33,6 +33,8 @@ import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { refreshIfStale } from './update-check.js';
+import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress } from './cloud-save.js';
+import { readLocalProgress, saveLocalProgress } from './cloud-progress.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -96,12 +98,15 @@ let previousFlight;
 let goUntil = 0;
 let { audio, volume } = readAudio();
 const audioSwitches = [...document.querySelectorAll('[data-audio]')];
-// Touch players start with AUTO on (checked once at load, never persisted); desktop starts off.
-let autoThrottle = touchPreference.matches;
+// AUTO starts on for every device; only a player's own toggle is remembered.
+const AUTO_KEY = 'skyline-rush-auto';
+let autoThrottle = true;
+try { autoThrottle = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
 let animationId;
 let pausedPhase = 'racing';
-const sessionBests = {};
+const sessionBests = loadBests();
 let sessionHistory = loadHistory();
+let sessionModeHistory = loadModeHistory();
 const unlockedTracks = new Set(availableTracks());
 // Session copies keep progression honest when storage is blocked.
 let sessionMedals = loadMedals();
@@ -437,6 +442,64 @@ function centerSelectedTrack(smooth = false) {
 showTracks(); centerSelectedTrack();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
+let cloudUser = null;
+const CLOUD_OWNER_KEY = 'skyline-rush-cloud-owner';
+let cloudOwner = null;
+try { cloudOwner = localStorage.getItem(CLOUD_OWNER_KEY); } catch { /* In-memory owner still prevents a same-page account mix. */ }
+let cloudPending = false;
+let cloudSync = Promise.resolve();
+function saveCloudProgress() {
+  if (!cloudUser) return;
+  const uid = cloudUser.uid;
+  if (cloudOwner && cloudOwner !== uid) {
+    say($('#cloud-status'), () => t('cloud.otherAccount'));
+    return;
+  }
+  cloudPending = true;
+  say($('#cloud-status'), () => t('cloud.syncing'));
+  cloudSync = cloudSync.catch(() => {}).then(() => cloudUser?.uid === uid && syncCloudProgress(() => ({
+    ...readLocalProgress(), unlocked: [...unlockedTracks], stars: sessionStars,
+    bests: { ...loadBests(), ...sessionBests }, medals: sessionMedals, history: sessionHistory,
+    modeHistory: sessionModeHistory, daily: sessionDaily,
+  }))).then(merged => {
+    if (!merged || cloudUser?.uid !== uid) return;
+    saveLocalProgress(merged);
+    for (const id of merged.unlocked) unlockedTracks.add(id);
+    Object.assign(sessionStars, merged.stars);
+    Object.assign(sessionBests, merged.bests);
+    sessionHistory = merged.history;
+    sessionModeHistory = merged.modeHistory;
+    sessionMedals = merged.medals;
+    sessionDaily = merged.daily;
+    cloudOwner = uid;
+    cloudPending = false;
+    try { localStorage.setItem(CLOUD_OWNER_KEY, uid); } catch { /* In-memory owner still protects this page. */ }
+    showTracks();
+    if ($('#history-screen').open) showHistory();
+    showGarage();
+    say($('#cloud-status'), () => t('cloud.saved'));
+  }).catch(() => {
+    if (cloudUser?.uid === uid) say($('#cloud-status'), () => t('cloud.pending'));
+  });
+}
+watchCloudUser(user => {
+  cloudUser = user;
+  $('#cloud-login').hidden = !!user;
+  $('#cloud-logout').hidden = !user;
+  say($('#cloud-status'), () => t(user ? 'cloud.syncing' : 'cloud.local'));
+  if (user) saveCloudProgress();
+}, () => say($('#cloud-status'), () => t('cloud.failed')));
+window.addEventListener('online', () => { if (cloudPending) saveCloudProgress(); });
+$('#cloud-login').addEventListener('click', async () => {
+  $('#cloud-login').disabled = true;
+  try { await signInToCloud(); }
+  catch { say($('#cloud-status'), () => t('cloud.failed')); }
+  finally { $('#cloud-login').disabled = false; }
+});
+$('#cloud-logout').addEventListener('click', () => {
+  signOutOfCloud().catch(() => say($('#cloud-status'), () => t('cloud.failed')));
+});
+
 const previewObserver = new IntersectionObserver(entries => {
   for (const entry of entries) entry.target.dataset.visible = String(entry.isIntersecting);
 }, { root: $('.track-select') });
@@ -453,7 +516,7 @@ function showHistory() {
   const trackId = $('#history-track').value;
   const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
   const modeFilter = $('#mode-history-filter').value;
-  const modeRows = loadModeHistory().filter(run => run.track === trackId);
+  const modeRows = sessionModeHistory.filter(run => run.track === trackId);
   const modes = modeRows.filter(run => modeFilter === 'all' || run.mode === modeFilter).slice(-10).reverse();
   $('#mode-history-empty').hidden = modes.length > 0;
   // Saved config fields are untrusted: parse with a guard, and render labels with textContent only.
@@ -485,7 +548,7 @@ function showHistory() {
   const stats = careerStats(sessionHistory);
   const count = (key, n) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
   $('#career-summary').textContent = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
-  const best = Math.min(loadBests()[trackId] ?? Infinity, ...runs.map(run => run.time));
+  const best = Math.min(sessionBests[trackId] ?? Infinity, ...runs.map(run => run.time));
   const recent = runs.slice(-10);
   $('#history-empty').hidden = runs.length > 0;
   $('.history-trend').hidden = recent.length === 0;
@@ -703,6 +766,7 @@ function showAssist() {
 function toggleAssist() {
   if (tutorial) return;
   autoThrottle = !autoThrottle;
+  try { localStorage.setItem(AUTO_KEY, autoThrottle ? 'on' : 'off'); } catch { /* The toggle lasts for this page without storage. */ }
   showAssist();
   sound.cue('ui');
 }
@@ -749,6 +813,9 @@ function applyControls(persist = true) {
   touch.dataset.size = controlPrefs.size;
   touch.style.setProperty('--touch-scale', String(TOUCH_SCALE[controlPrefs.size]));
   touch.style.setProperty('--touch-opacity', String(controlPrefs.opacity));
+  // The Controls panel's preview strip reads the same two values, so size and opacity changes show immediately.
+  ui['controls-panel'].style.setProperty('--touch-scale', touch.style.getPropertyValue('--touch-scale'));
+  ui['controls-panel'].style.setProperty('--touch-opacity', String(controlPrefs.opacity));
   controls.setFlyMode(controlPrefs.flyMode);
   $('#tilt-enable').hidden = controlPrefs.mode !== 'tilt';
   if (controlPrefs.mode !== 'tilt') { controls.setTilt(false); tiltGranted = false; clearTimeout(tiltTimeout); }
@@ -1126,12 +1193,14 @@ function phaseUI() {
       best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
     } else if (race.mode === 'stunt' && stunt) {
       ({best,record} = recordModeRace({ ...race, result:{...race.result, time:stunt.elapsed, score:Math.round(stunt.score), maxCombo:stunt.maxCombo, airTime:stunt.airTime} }));
+      sessionModeHistory = loadModeHistory();
     } else if (race.mode !== 'classic') {
       const total = cup ? cupTotalTime(cup) : sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
       const modeRace = cup ? { ...race, trackId: cup.tracks[0], result: { ...race.result, time: total,
         score: cupStandings(cup).find(entry => entry.name === 'YOU').points } } : sprintSeries ? { ...race, result: { ...race.result, time: total,
         score: sprintSeries.results.reduce((score, stage) => score + stage.score, 0) } } : race;
       ({ best, record } = recordModeRace(modeRace));
+      sessionModeHistory = loadModeHistory();
       if (race.mode === 'time' && record) {
         const candidate = { time: race.elapsed, samples: trace };
         if (traceRace === race && validGhost(candidate, trackId)) {
@@ -1151,7 +1220,7 @@ function phaseUI() {
       const next = tracks[tracks.indexOf(race.trackId) + 1];
       // NEXT drives progression only: hidden once every track was already open before this run.
       const campaignDone = tracks.every(id => unlockedTracks.has(id));
-      if (next && race.result.position <= 3) unlockedTracks.add(next);
+      if (next && race.result.position <= 3 && !unlockedTracks.has(next)) unlockedTracks.add(next);
       if (next && !campaignDone && unlockedTracks.has(next)) {
         $('#next-button').hidden = false;
         $('#next-button').dataset.next = next;
@@ -1168,6 +1237,7 @@ function phaseUI() {
       const ghost = { time: race.elapsed, samples: trace };
       if (record && traceRace === race && validGhost(ghost, trackId)) { saveGhost(trackId, ghost); ghosts[trackId] = ghost; }
     }
+    saveCloudProgress();
     showTracks();
     ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;
@@ -1559,7 +1629,6 @@ try {
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(visual);
   world.previewAppearance(PAINTS[equippedPaint]);
-  window.addEventListener('resize', world.resize);
   let previousTime = performance.now();
   let accumulator = 0;
   let hudElapsed = 0;
