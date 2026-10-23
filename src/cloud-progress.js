@@ -39,11 +39,15 @@ function dailyRun(run) {
     position: run.position, score: nonnegative(run.score), date: when };
 }
 
-function mergeRuns(local, cloud, normalize) {
+// Identity deliberately excludes mutable score/telemetry; the same attempt must not double-count on two devices.
+const classicRunId = run => JSON.stringify([run.date, run.track, run.position, run.time]);
+const modeRunId = run => JSON.stringify([run.date, run.mode, run.track, run.rules, run.time]);
+const dailyRunId = run => JSON.stringify([run.id, run.date, run.track, run.modifier, run.position, run.time]);
+function mergeRuns(local, cloud, normalize, identity) {
   const unique = new Map();
   for (const raw of [...(Array.isArray(local) ? local : []), ...(Array.isArray(cloud) ? cloud : [])]) {
     const run = normalize(raw);
-    if (run) unique.set(JSON.stringify(run), run);
+    if (run) unique.set(identity(run), run);
   }
   return [...unique.values()].sort((a, b) => a.date.localeCompare(b.date) || JSON.stringify(a).localeCompare(JSON.stringify(b))).slice(-HISTORY_LIMIT);
 }
@@ -65,9 +69,9 @@ export function mergeProgress(local = {}, cloud = null) {
   return {
     version: 2,
     unlocked: mergeUnlocks(local.unlocked, cloud?.unlocked), stars, bests, medals,
-    history: mergeRuns(local.history, cloud?.history, raceRun),
-    modeHistory: mergeRuns(local.modeHistory, cloud?.modeHistory, modeRun),
-    daily: mergeRuns(local.daily, cloud?.daily, dailyRun),
+    history: mergeRuns(local.history, cloud?.history, raceRun, classicRunId),
+    modeHistory: mergeRuns(local.modeHistory, cloud?.modeHistory, modeRun, modeRunId),
+    daily: mergeRuns(local.daily, cloud?.daily, dailyRun, dailyRunId),
   };
 }
 
