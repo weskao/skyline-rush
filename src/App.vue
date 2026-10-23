@@ -278,6 +278,13 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
   <dialog id="history-screen" class="history-screen" aria-labelledby="history-title">
     <header class="history-heading"><h2 id="history-title" data-i18n="history.title">Race history</h2><button class="controls-button" id="history-close" aria-label="Close history" data-i18n-aria-label="history.close" data-i18n="common.close">Close</button></header>
     <p id="career-summary" class="career-summary"></p>
+    <section class="history-extra" aria-labelledby="cloud-title">
+      <h3 id="cloud-title" data-i18n="cloud.title">Cloud save</h3>
+      <p data-i18n="cloud.explain">Sign in to save race progress and restore it after clearing browser data. Existing progress on this device will be merged. Device settings and ghosts stay here.</p>
+      <button type="button" class="controls-reset" id="cloud-login" data-i18n="cloud.login">Sign in with Google</button>
+      <button type="button" class="controls-reset" id="cloud-logout" data-i18n="cloud.logout" hidden>Sign out</button>
+      <p id="cloud-status" role="status" data-i18n="cloud.local">Race progress is saved on this device only.</p>
+    </section>
     <label class="history-filter"><span data-i18n="history.track">Track</span> <select id="history-track" aria-label="History track" data-i18n-aria-label="history.trackAria"><option v-for="(track, id) in RACE_TRACKS" :value="id">{{ track.name }}</option></select></label>
     <figure class="history-trend"><figcaption id="history-trend-label"></figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"></svg></figure>
     <p id="history-empty" data-i18n="history.empty" hidden>No runs here yet. Finish a race to start your history.</p>
