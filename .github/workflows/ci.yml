@@ -1,9 +1,9 @@
-# Check every push / PR; publish GitHub Pages on version tags or manual dispatch.
+# Check every push to main / PR; publish GitHub Pages on version tags or manual dispatch.
 name: CI
 
 on:
   push:
-    branches: [main, feature/world-tour-landmark-boost-polish, feature/game-modes-interactive-racing, feature/race-modes-p0]
+    branches: [main]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
@@ -14,8 +14,12 @@ concurrency:
   group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
+# `/release` pushes `docs: release X` to main and its tag together. The tag run covers that commit (unit tests,
+# release-verified, deploy), so every job skips the main-push run of the same commit; the browser suites also skip
+# tag runs, because release-verified proves the code already passed them on main.
 jobs:
   unit-tests:
+    if: "${{ !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,34 +30,16 @@ jobs:
       - run: npm ci
       - run: npm test
 
-
-  # A focused gate gives real screenshots and feedback before the large 4-shard suite finishes.
-  race-mode-smoke:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - run: npx playwright test tests/race-modes-browser.spec.js
-      - name: Upload original WebGL screenshots from the running game
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: race-mode-preview
-          path: test-results/race-mode-*.png
-          if-no-files-found: ignore
-
-  # CPU-only WebGL makes the serial suite take ~24 min on one runner; shards run it in parallel.
+  # CPU-only WebGL makes the serial suite take about two hours on one runner; shards run it in parallel. Playwright
+  # splits the alphabetical test list into equal contiguous slices, so more shards also keep one heavy spec file
+  # from dominating a slice.
   browser-tests:
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -62,7 +48,7 @@ jobs:
           cache: npm
       - run: npm ci
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
-      - run: npm run test:browser -- --shard=${{ matrix.shard }}/4
+      - run: npm run test:browser -- --shard=${{ matrix.shard }}/8
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -83,11 +69,11 @@ jobs:
           path: test-results/**/world-tour-*.png
           if-no-files-found: ignore
 
-
   # Catch WebGL crashes that short preview tests miss when the player reaches
   # the middle of all five long World Tour routes. Test-only Vite fixture:
   # it is not included in the distributable production build.
   world-tour-mid-race:
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,9 +91,35 @@ jobs:
           path: test-results/**/world-tour-*-mid-race.png
           if-no-files-found: ignore
 
+  # A release tag sits on `docs: release X`, a notes/version commit above code that already passed the full suite on
+  # main. Re-running two runner-hours of CPU WebGL there only adds a chance that a timing flake leaves the tag
+  # unpublished; instead confirm that main run and go straight to deploy. scripts/release-gate.sh enforces the same
+  # rule before a tag is ever created.
+  release-verified:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The commit to vouch for: the tagged one, or the nearest ancestor below its `docs: release` commits.
+          code=$(git log -1 --format=%H --invert-grep --grep='^docs: release ' HEAD)
+          extra=$(git diff --name-only "$code" HEAD | grep -vxE 'CHANGELOG\.md|package\.json|package-lock\.json' || true)
+          if [ -n "$extra" ]; then echo "::error::release commits above $code change more than the release files: $extra"; exit 1; fi
+          run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --commit "$code" --status success --limit 1 --json url --jq '.[0].url')
+          if [ -z "$run" ]; then echo "::error::$code has no successful CI run on main; push it to main, let CI pass, then tag"; exit 1; fi
+          echo "$code passed CI on main: $run"
+
   deploy:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
-    needs: [unit-tests, browser-tests]
+    # A tag run skips browser-tests and a manual run skips release-verified; either one still has to succeed where it runs.
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
+    needs: [unit-tests, browser-tests, release-verified]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -158,7 +170,7 @@ jobs:
   # Failure-only pager: a notification on every push is one nobody reads. Credentials live in repo secrets
   # (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Pull requests are excluded because fork PRs get no secrets.
   notify-telegram:
-    needs: [unit-tests, race-mode-smoke, browser-tests, world-tour-mid-race, deploy]
+    needs: [unit-tests, browser-tests, world-tour-mid-race, release-verified, deploy]
     if: ${{ failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
