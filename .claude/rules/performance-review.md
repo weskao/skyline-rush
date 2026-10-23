@@ -32,3 +32,8 @@ Tests: unit + browser regression for performance-sensitive code and scene correc
 batching/culling; real WebGL screenshots on all affected courses incl. pause/restart, track
 switch, WebGL recovery, low-power devices, narrow phone/landscape. Final report names untested
 devices and remaining uncertainty.
+
+Shaders on toggles: a material that first appears when the player flips a setting (airflow, VFX
+preset) is drawn once, invisibly, on the first frame (see `warmup` in `src/aero-vfx.js`). WebKit
+(iPhone Safari/Chrome) builds shaders and GPU pipelines at first draw; doing that mid-preview
+stalls the frame and flashed black patches on iPhone. Cover it with a unit test.

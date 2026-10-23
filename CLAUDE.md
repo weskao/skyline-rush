@@ -73,6 +73,11 @@ of the UI/UX design review rather than an optional afterthought.
 - Gameplay / progression / build-config change → `npm test` + `npm run build`.
 - Rendering / navigation / controls / unlock visibility change → also `npm run test:browser`,
   desktop and mobile.
+- Home-screen content change (anything added to `#intro`) → before pushing, run
+  `npx playwright test tests/i18n-browser.spec.js -g "intro bottom edge"` and
+  `tests/race-modes-browser.spec.js`: the intro must fit without scrolling at ≥ 900 px tall
+  desktops in en and zh-TW. The height budget is fixed — a new block pays for itself by
+  compacting another, never by letting the intro scroll.
 - Never delete or weaken tests to pass CI. Report any test you could not run.
 - `README.md` changed → sync `README.zh-TW.md` via `scripts/readme-zh.mjs` (hooks enforce it).
 - A commit on `main` is not a deploy; publication rules are in `.github/workflows/ci.yml`.
