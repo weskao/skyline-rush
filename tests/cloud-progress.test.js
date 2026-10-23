@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, switchCloudAccount } from '../src/cloud-progress.js';
+import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus } from '../src/cloud-progress.js';
 
 test('cloud unlocks merge with existing device progress in track order', () => {
   assert.deepEqual(mergeUnlocks(['coast', 'neon'], ['coast', 'canyon']), ['coast', 'neon', 'canyon']);
@@ -86,4 +86,32 @@ test('an unavailable storage or invalid account ID must fail closed rather than 
   assert.equal(switchCloudAccount('player-A', 'player-B', storage), false);
   assert.equal(data.get('skyline-rush-cloud-owner'), 'player-A');
   assert.equal(switchCloudAccount('player-A', '', storage), false);
+});
+
+test('cloud pending state is saved per Google account without pretending a failed sync succeeded', () => {
+  const data = new Map();
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  const empty = { pending: false, lastSuccess: null };
+  assert.deepEqual(readCloudSyncStatus('A', storage), empty);
+  assert.equal(writeCloudSyncStatus('A', { pending: true }, storage), true);
+  assert.deepEqual(readCloudSyncStatus('A', storage), { pending: true, lastSuccess: null });
+  assert.deepEqual(readCloudSyncStatus('B', storage), empty);
+  assert.equal(writeCloudSyncStatus('A', { pending: false, lastSuccess: '2026-10-24T00:00:00.000Z' }, storage), true);
+  assert.equal(writeCloudSyncStatus('A', { pending: true }, storage), true);
+  assert.deepEqual(readCloudSyncStatus('A', storage), {
+    pending: true, lastSuccess: '2026-10-24T00:00:00.000Z',
+  });
+  assert.deepEqual(readCloudSyncStatus('B', storage), empty);
+});
+
+test('invalid or unavailable cloud sync metadata never corrupts progress', () => {
+  const data = new Map([['skyline-rush-cloud-sync:A', '{"pending":false,"lastSuccess":"invalid"}']]);
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  assert.deepEqual(readCloudSyncStatus('A', storage), { pending: false, lastSuccess: null });
+  assert.equal(writeCloudSyncStatus('A', { pending: false, lastSuccess: 'invalid' }, storage), false);
+  assert.deepEqual(readCloudSyncStatus('', storage), { pending: false, lastSuccess: null });
+  assert.equal(writeCloudSyncStatus('', { pending: true }, storage), false);
+  const blocked = { getItem: () => { throw Error('denied'); }, setItem: () => { throw Error('denied'); } };
+  assert.deepEqual(readCloudSyncStatus('A', blocked), { pending: false, lastSuccess: null });
+  assert.equal(writeCloudSyncStatus('A', { pending: true }, blocked), false);
 });
