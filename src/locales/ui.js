@@ -891,7 +891,7 @@ export const UI = Object.freeze({
     'resume.label': '回到比賽',
     'history.title': '歷史紀錄',
     'cloud.title': '雲端儲存',
-    'cloud.explain': '登入後可儲存比賽成果，清除瀏覽器資料後再登入即可還原。本裝置現有進度會合併；裝置設定與 Ghost 留在本機。',
+    'cloud.explain': '登入後可儲存比賽成果，清除瀏覽器資料後再登入即可還原。本裝置現有進度會合併；裝置設定與幽靈車留在本機。',
     'cloud.login': '使用 Google 登入',
     'cloud.logout': '登出',
     'cloud.local': '比賽成果目前只儲存在本裝置。',
