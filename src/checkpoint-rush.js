@@ -3,7 +3,10 @@ const EXCLUDED = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']
 const LANES = [-2.5, 2.5, 7.5, -7.5];
 
 export function createCheckpointRush(track) {
-  if (!track || !Number.isFinite(track.length) || track.length < 800 || !Array.isArray(track.sections))
+  if (!track || !Number.isFinite(track.length) || track.length < 800 || track.length > 100000 ||
+      !Array.isArray(track.sections) || track.sections.length > 200 ||
+      !track.sections.every(section => Number.isFinite(section.from) && Number.isFinite(section.to) &&
+        section.from >= 0 && section.from < section.to && section.to <= track.length))
     throw new RangeError('Invalid checkpoint track');
   const gates = [];
   for (let distance = 330; distance < track.length - 180; distance += 450) {
