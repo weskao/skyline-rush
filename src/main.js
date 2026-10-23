@@ -871,8 +871,7 @@ function drawPad() {
     placePad(padKnob, rect.width / 2, rect.height / 2, padHint ? '0.45' : '0');
   }
 }
-pad.addEventListener('pointerdown', event => {
-  if (padTouch) return;
+pad.addEventListener('pointerdown', event => { // the newest finger owns the pad, as in input.js
   padTouch = { id: event.pointerId, ox: event.clientX, oy: event.clientY, x: event.clientX, y: event.clientY };
   drawPad();
 });

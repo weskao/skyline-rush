@@ -8,7 +8,7 @@ Preserve: existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
-`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase`.
+`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input`.
 
 ## Home-screen landmark showcase
 

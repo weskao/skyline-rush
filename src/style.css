@@ -636,8 +636,9 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 #touch-controls[data-steer-mode="slide"] { justify-content: flex-end; }
 #touch-controls[data-steer-mode="slide"] .touch-steer, #touch-controls[data-steer-mode="slide"] [data-control="brake"], #touch-controls[data-steer-mode="buttons"] .touch-pad { display: none; }
 #touch-controls[data-steer-mode="slide"] .touch-pedals { justify-content: flex-end; }
-.touch-pad { position: fixed; z-index: -1; top: 55%; bottom: 0; left: 0; width: min(38%, calc(50% - 70px)); touch-action: none; }
-#touch-controls[data-hand="right"] .touch-pad { left: auto; right: 0; }
+/* 20 px off the side edge: a touch starting there is the iOS back/forward edge swipe, whose release WebKit never reports. */
+.touch-pad { position: fixed; z-index: -1; top: 55%; bottom: 0; left: max(20px, env(safe-area-inset-left)); width: min(38%, calc(50% - 70px)); touch-action: none; }
+#touch-controls[data-hand="right"] .touch-pad { left: auto; right: max(20px, env(safe-area-inset-right)); }
 .pad-ring, .pad-knob { position: absolute; left: 0; top: 0; display: block; border-radius: 50%; pointer-events: none; }
 .pad-ring { width: 88px; height: 88px; border: 2px solid rgb(210 226 238 / .7); }
 .pad-knob { width: 40px; height: 40px; background: rgb(210 226 238 / .6); }
