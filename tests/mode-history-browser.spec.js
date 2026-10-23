@@ -51,3 +51,27 @@ test('10C RED: challenge History filters modes and shows rule-scoped PBs, eligib
   });
   await expect(page.locator('#mode-history-empty')).toBeVisible();
 });
+
+
+test('10C: filtered challenge records stay within a narrow phone-portrait History dialog',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.addInitScript(()=>{
+    localStorage.setItem('skyline-rush-mode-history-v1',JSON.stringify([{
+      mode:'time',track:'coast',rules:JSON.stringify({
+        rulesVersion:1,mode:'time',rivals:0,traffic:'off',difficulty:'normal',items:true,
+      }),time:67,score:150,position:1,date:'2026-10-23T11:00:00.000Z',
+    }]));
+  });
+  await page.goto('/');
+  await page.waitForTimeout(700);
+  if(await page.locator('#music-prompt').isVisible())await page.locator('#music-no').click();
+  await page.locator('.history-button').click();
+  await expect(page.locator('#mode-history-notice')).toBeVisible();
+  await page.locator('#mode-history-filter').evaluate(select=>{
+    select.value='time';select.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await expect(page.locator('#mode-history-runs > p')).toHaveCount(1);
+  const overflow=await page.locator('#history-screen').evaluate(el=>el.scrollWidth-el.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(2);
+  await page.screenshot({path:'test-results/race-mode-history-phone.png'});
+});
