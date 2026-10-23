@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress } from '../src/cloud-progress.js';
+import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, switchCloudAccount } from '../src/cloud-progress.js';
 
 test('cloud unlocks merge with existing device progress in track order', () => {
   assert.deepEqual(mergeUnlocks(['coast', 'neon'], ['coast', 'canyon']), ['coast', 'neon', 'canyon']);
@@ -50,4 +50,40 @@ test('restored progress writes only game results to local storage', () => {
   assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'neon']);
   assert.deepEqual(readLocalProgress(storage).stars, { neon: 2 });
   assert.equal(data.get('skyline-rush-vfx'), 'kept');
+});
+
+test('switching Google accounts snapshots A and restores B without leaking progress or changing device settings', () => {
+  const data = new Map([['skyline-rush-vfx', '{"quality":"low"}']]);
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  saveLocalProgress(mergeProgress({ unlocked: ['coast', 'neon'], stars: { neon: 3 }, bests: { neon: 66 } }), storage);
+  data.set('skyline-rush-cloud-owner', 'player-A');
+  const b = mergeProgress({ unlocked: ['coast', 'canyon'], stars: { canyon: 2 }, bests: { canyon: 77 } });
+  data.set('skyline-rush-cloud-account:player-B', JSON.stringify(b));
+  assert.equal(switchCloudAccount('player-A', 'player-B', storage), true);
+  assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'canyon']);
+  assert.deepEqual(readLocalProgress(storage).stars, { canyon: 2 });
+  assert.equal(data.get('skyline-rush-cloud-owner'), 'player-B');
+  assert.equal(data.get('skyline-rush-vfx'), '{"quality":"low"}');
+  assert.equal(switchCloudAccount('player-B', 'player-A', storage), true);
+  assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'neon']);
+  assert.deepEqual(readLocalProgress(storage).stars, { neon: 3 });
+});
+
+test('a new Google account starts with clean progress rather than inheriting previous account unlocks', () => {
+  const data = new Map();
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  saveLocalProgress(mergeProgress({ unlocked: ['coast', 'neon'], stars: { neon: 3 } }), storage);
+  data.set('skyline-rush-cloud-owner', 'player-A');
+  assert.equal(switchCloudAccount('player-A', 'fresh-player', storage), true);
+  assert.deepEqual(readLocalProgress(storage).unlocked, ['coast']);
+  assert.deepEqual(readLocalProgress(storage).stars, {});
+  assert.deepEqual(readLocalProgress(storage).history, []);
+});
+
+test('an unavailable storage or invalid account ID must fail closed rather than reassign progress', () => {
+  const data = new Map([['skyline-rush-cloud-owner', 'player-A']]);
+  const storage = { getItem: key => data.get(key) ?? null, setItem: () => { throw new Error('Storage unavailable'); } };
+  assert.equal(switchCloudAccount('player-A', 'player-B', storage), false);
+  assert.equal(data.get('skyline-rush-cloud-owner'), 'player-A');
+  assert.equal(switchCloudAccount('player-A', '', storage), false);
 });
