@@ -4,7 +4,7 @@
 
 - [x] Desktop：靜態鍵盤示意與目前自訂按鍵、中英文說明。
 - [x] Mobile：Slide／Buttons、加速、FLY、BOOST、NITRO 與暫停圖解。
-- [x] 首次進入自動展示；關閉後記住；Controls 可重新開啟並切換裝置說明。
+- [x] Controls 可開啟並切換裝置說明；關閉後視為已看過教學（不再於載入時自動跳出，見下方首次開始流程）。
 - [x] TDD 與整合驗證：首次／重開／儲存不可用／暫停、桌面與手機直橫向。
 - [x] 搭配遊戲畫面、實際操作與逐步完成判定的互動教學（詳見下方互動操作教學）。
 - [ ] 實體 iOS Safari／Android 觸控裝置驗收（目前以 Chrome 手機模擬驗證）。
@@ -16,6 +16,7 @@
 - [x] 真實 Free Drive 場景：加速、左轉、右轉、煞車、起飛、降落、BOOST、NITRO 八步，依實際輸入與車況判定完成。
 - [x] 畫面提示與控制高亮；中英文、目前鍵盤配置、Slide／Buttons／Tilt、手機與平板直橫向。
 - [x] 從操作教學與 Controls 開始；暫停、略過、退出、完成與重練流程。
+- [x] 首次按「開始比賽」自動進入互動練習：「跳過」或完成後的「開始比賽」直接開始所選比賽；看過說明或練習後不再自動帶入，儲存不可用時每頁一次。
 - [x] 教學隔離正式紀錄、解鎖、Ghost 與每日挑戰；退出還原原本選擇或暫停中的比賽。
 - [x] TDD 單元、桌面與手機實際操作瀏覽器回歸、正式建置。
 - [x] 傳送桌面／手機標註截圖與完成摘要。
@@ -385,7 +386,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 
 ### 9A. Common mode/session model (P0; prerequisite)
 
-- [ ] **MODE-00 — Versioned `RaceConfig` / session contract.** Define a validated, serializable
+- [x] **MODE-00 — Versioned `RaceConfig` / session contract.** Define a validated, serializable
   configuration with stable fields such as `mode`, `trackId`, `seed`, `rivalCount`,
   `aiDifficulty`, `trafficDensity`, `itemsEnabled`, `collisionRule`, `ghostEnabled`,
   `durationSeconds` / `stageCount` (only when applicable), `visualPreset` and `rulesVersion`.
@@ -395,7 +396,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
   sessions from `RaceConfig` **without breaking** existing `createRace('coast')` and
   `createRace(trackId, dailyModifier)` callers. Keep the current Daily Challenge seed,
   modifier rules and official Classic Race parameters identical.
-- [ ] Model explicit objectives and completion conditions per mode: `placement`,
+- [x] Model explicit objectives and completion conditions per mode: `placement`,
   `finish-time`, `score-target`, `checkpoint-timer`, `stage-points`, `survival` or
   `no-auto-finish`. Do not keep reusing `race.length` completion for every mode.
 - [x] Separate `Classic / Campaign` from `Custom / Practice / Challenge` in eligibility:
@@ -407,6 +408,31 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [ ] **Acceptance:** unit tests cover old call signatures, default-rule parity,
   incompatible/unknown options, deterministic replay, mode-specific finishing and
   access rules; all ten existing courses remain raceable.
+
+**MODE-00 implementation / verification (2026-10-23):** On
+`feature/mode00-objective-contract`, the pure, JSON-serializable `createRaceSessionContract`
+now separates fixed gameplay rules, a per-track seed, and presentation-only metadata
+(ghost visibility and visual preset). `validateRaceRequest` rejects invalid/unsupported
+new user options; tolerant legacy `normalizeRaceConfig` and existing mode best/Ghost
+signatures remain unchanged. Existing named RNG streams are centralized without
+changing their string values, and all nine shipped modes now have explicit finish
+objectives (Cup = stage-points; Stunt = timed-score; Free Drive = no auto-finish).
+
+Targeted unit tests **passed** at `da3d81a` (GitHub Actions
+`39865378561`). RED evidence: the Cup objective expectation fails at
+`2ce05e5` (run `39864803654`, unit job); implementation GREEN at
+`da3d81a`. The previous full CI had failed browser shards even though
+unit/smoke/World Tour passed, and main's prior run also contained browser
+failures. Do not mark the stage-wide acceptance as done or merge until
+**the final SHA** has all required CI checks green.
+
+Still open: complete per-system named deterministic streams where applicable
+(traffic and checkpoint layouts are currently authored deterministic, not
+randomized), the rest of mode acceptance, browser and physical-device
+performance/UX checks. No operation-guide files, audio or UI were changed
+by MODE-00; no new sound cue is warranted for these pure simulation contracts.
+
+---
 
 ### 9B. Free Drive / Practice mode (P0)
 

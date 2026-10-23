@@ -106,7 +106,6 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <!-- The one global language switch, drawn by customSelect (main.js); each option names its language in that language. -->
     <select id="locale-select" aria-label="Language" data-i18n-aria-label="locale.switch"><option value="en" lang="en">English</option><option value="zh-TW" lang="zh-TW">繁體中文</option></select>
     <button id="airflow-toggle" aria-pressed="false" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><kbd>V</kbd> <span data-i18n="aero.airflow">AIRFLOW</span></button>
-    <button id="aero-start" aria-label="Start race from showcase" data-i18n-aria-label="aero.startAria" data-i18n="aero.start">RACE →</button>
     <details id="vfx-panel"><summary><span data-i18n="vfx.summary">VFX</span> <span aria-hidden="true">＋</span></summary>
       <div class="vfx-settings">
         <div class="vfx-heading"><span data-i18n="vfx.eyebrow">AEROSPACE / VISUAL LAB</span><strong data-i18n="vfx.headline">Shape the rush.</strong><small data-i18n="vfx.subline">Visual simulation · driving physics unchanged</small></div>

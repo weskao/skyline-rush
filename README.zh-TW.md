@@ -1,4 +1,4 @@
-<!-- source-sha256: b39f4e955ba5917259d657cefe4e527cefee30d553112b7e9bab5f1215bc7bab generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 13b9def2050b831718b8cc529b47857798b9ee040602683b4edc7bebb11961ba generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -100,7 +100,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 場景包含泛光照明、日落水面、懸索橋、推進器蒸氣、碰撞火花與觸地漣漪。鏡頭運動與非必要的速度線會遵循你系統的減少動態偏好設定。音效則為推力、碰撞與落地提供各自獨立的回饋。
 
-**VFX**（右上角）可選擇 Realistic、Cinematic 或 Extreme 視覺風格、Low / Medium / High 畫質（Low 會關閉泛光並減少場景繪製）、Comfort 模式（無閃光、晃動、殘影或模糊）以及選用的觸覺回饋；**Fine tuning** 會將每個效果以滑桿呈現，**Reset visual settings** 則還原預設值。**AIRFLOW**（或 V）會將場景切換為空氣動力學展示：車身上的流線、遙測面板、Low drag 或 High downforce，以及駕駛、前方、後方、側面或環繞鏡頭。**Race** 可直接從展示畫面開始一場比賽。
+**VFX**（右上角）可選擇 Realistic、Cinematic 或 Extreme 視覺風格、Low / Medium / High 畫質（Low 會關閉泛光並減少場景繪製）、Comfort 模式（無閃光、晃動、殘影或模糊）以及選用的觸覺回饋；**Fine tuning** 會將每個效果以滑桿呈現，**Reset visual settings** 則還原預設值。**AIRFLOW**（或 V）會將場景切換為空氣動力學展示：車身上的流線、遙測面板、Low drag 或 High downforce，以及駕駛、前方、後方、側面或環繞鏡頭。展示期間開始面板會收起，只保留橘色的 **START RACE** 按鈕，停靠在畫面底部中央、車輛下方。
 
 三盞琥珀色起跑燈會在 GO 時轉為青色。玩家的車是低趴楔形跑車，配有煙燻快背式座艙、橫貫車尾的紅色燈條、四個後推進器噴口、會在加速推進、煞車與飛行時升起的青銅色彈出式尾翼、旋轉的五輻輪圈，以及可轉向的前輪。每名對手都有各自的輪廓與燈光特徵：NOVA 是長尾車身，配雙尾鰭與分段式洋紅燈光；ORBIT 是圓潤的 GT，配泡泡座艙與圓形青色車燈；APEX 是賽道車，配前分流器、車頂進氣口、高聳的端板尾翼與琥珀色 C 形燈。車流使用直立的通勤車造型。轉向會快速緩入，放開加速推進時車速會逐漸下降，而不是瞬間斷掉。所有駕駛與工具列按鈕的觸控目標至少為 44px，包括 320px 寬度時。
 

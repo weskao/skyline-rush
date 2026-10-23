@@ -1,4 +1,4 @@
-import { seededRng } from './rng.js';
+import { seededRng, RACE_STREAMS } from './rng.js';
 import { createHazards, hazardX } from './hazards.js';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
 import { createPracticeStats, samplePractice } from './practice-stats.js';
@@ -6,6 +6,8 @@ import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
 import { createElimination, stepElimination } from './elimination.js';
 import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
+import { raceCompletion } from './race-objectives.js';
+import { createRaceSessionContract } from './race-session.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
@@ -147,7 +149,7 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 // Pickups come only from the track's 'pickups' stream so every run of a track is identical.
 function createPickups(track) {
-  const random = seededRng(track.seed, 'pickups');
+  const random = seededRng(track.seed, RACE_STREAMS.pickups);
   const pick = list => list[Math.floor(random() * list.length)];
   // Ground pickups would sit over a gap's hole; air pickups would be stuck in a tunnel roof.
   const blocked = pickup => track.sections.some(s => pickup.distance >= s.from - 10 && pickup.distance < s.to + 10 &&
@@ -178,7 +180,7 @@ function createPickups(track) {
 // Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
 // other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
 function createRings(track) {
-  const random = seededRng(track.seed, 'rings');
+  const random = seededRng(track.seed, RACE_STREAMS.rings);
   const rings = [];
   const inTunnel = distance => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
   for (let distance = RING_SPACING; distance < track.length - 100;) {
@@ -208,7 +210,7 @@ function createRings(track) {
 }
 
 // The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
-export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `mystery${index}`)() * MYSTERY_EFFECTS.length)];
+export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `${RACE_STREAMS.mysteryPrefix}${index}`)() * MYSTERY_EFFECTS.length)];
 
 // Charges cap at NITRO_MAX; the excess becomes fuel so nothing is wasted. Banked charge also refills flight fuel.
 function addNitro(car, amount, fuelBonus = NITRO_FUEL_BONUS) {
@@ -238,11 +240,12 @@ export function createRace(trackId = 'coast', modifier = null) {
   const dailyModifier = options ? null : modifier;
   if (dailyModifier !== null && !DAILY_MODIFIERS.includes(dailyModifier)) throw new Error(`Unknown modifier: ${dailyModifier}`);
   const config = normalizeRaceConfig(options ?? {});
+  const session = createRaceSessionContract(trackId, track.seed, config);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
   const rings = createRings(track);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
-    trackId, modifier: dailyModifier, mode: config.mode, config, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
+    trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
     props: [], // solid World Tour scenery parts; main.js fills them from roadObstacles()
     hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) :
@@ -713,9 +716,9 @@ export function stepRace(race, input, dt) {
       return;
     }
   }
-  const stuntTimeUp = race.mode === 'stunt' && race.elapsed >= race.stuntLimit;
-  if (!['free','elimination'].includes(race.mode) && (car.distance >= race.length || race.checkpoint?.expired || stuntTimeUp)) {
-    const finishTime = stuntTimeUp ? race.stuntLimit : race.checkpoint?.expired ? race.elapsed :
+  const completion = raceCompletion(race);
+  if (completion.done) {
+    const finishTime = completion.reason === 'timer' ? race.stuntLimit : completion.reason === 'expired' ? race.elapsed :
       race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
     car.distance = Math.min(car.distance, race.length); // An expired timer must not teleport the car to the finish.
@@ -727,7 +730,7 @@ export function stepRace(race, input, dt) {
       stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1,
       success: race.checkpoint ? !race.checkpoint.expired && race.checkpoint.passed === race.checkpoint.gates.length :
         !(race.mode === 'time' && race.config.clean && car.collisions > 0),
-      ...(race.mode === 'stunt' ? { endReason: stuntTimeUp ? 'timer' : 'route' } : {}) };
+      ...(race.mode === 'stunt' ? { endReason: completion.reason } : {}) };
     race.phase = 'finished';
     car.thrusting = false;
     car.boosting = false;

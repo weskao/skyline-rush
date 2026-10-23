@@ -1,4 +1,4 @@
-import { seededRng } from './rng.js';
+import { seededRng, RACE_STREAMS } from './rng.js';
 const HAZARD_SECTION_TYPES = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel']);
 
 // Obstacles move across a single lane at most; the other lanes always stay open.
@@ -6,7 +6,7 @@ export function createHazards(track, lanes, tier = 'standard') {
   if (!['standard', 'extreme'].includes(tier) || !Number.isFinite(track?.length) ||
       track.length < 800 || !Number.isFinite(track.seed) || !Array.isArray(track.sections) ||
       !Array.isArray(lanes) || !lanes.length) throw new RangeError('Invalid gauntlet rules');
-  const random = seededRng(track.seed, 'gauntlet-hazards');
+  const random = seededRng(track.seed, RACE_STREAMS.hazards);
   const hazards = [];
   for (let distance = 450; distance < track.length - 220; distance += (tier === 'extreme' ? 200 : 290) + Math.floor(random() * 70)) {
     const blocked = track.sections.some(s => HAZARD_SECTION_TYPES.has(s.type) &&
