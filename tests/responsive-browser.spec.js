@@ -52,6 +52,31 @@ for (const [width, height, hasTouch] of [
       // Big viewports render few frames on CI and each frame's step is clamped, so the countdown can outlast the default.
       await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
     });
+
+    test('airflow showcase keeps Start clear of the car and the panels', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      await page.keyboard.press('v');
+      await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
+      const start = await page.locator('#start-button').boundingBox();
+      expect(start.x).toBeGreaterThanOrEqual(0);
+      expect(start.x + start.width).toBeLessThanOrEqual(width);
+      expect(start.y + start.height).toBeLessThanOrEqual(height);
+      for (const selector of ['.airflow-hud', '.aero-tools', '.bottomline']) {
+        const panel = page.locator(selector);
+        if (!await panel.isVisible()) continue;
+        const box = await panel.boundingBox();
+        expect(start.x + start.width <= box.x || box.x + box.width <= start.x ||
+          start.y + start.height <= box.y || box.y + box.height <= start.y, `Start overlaps ${selector}`).toBe(true);
+      }
+      // shortcut: the showcase car's projection isn't exposed to the page, so this checks the 40-68% column it is drawn in
+      // from 900 px up (narrower screens draw it above Start); assert real car bounds if world gains a QA hook.
+      if (width >= 900) {
+        expect(start.x, 'Start covers the showcased car').toBeGreaterThanOrEqual(width * 0.68);
+        await page.locator('#start-button').click();
+        await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
+      }
+    });
   });
 }
 

@@ -540,6 +540,8 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 /* Airflow showcase hides the start panel but keeps the one standard Start button reachable. */
 .airflow-active[data-phase="ready"] .intro { visibility: hidden; }
 .airflow-active[data-phase="ready"] #start-button { visibility: visible; position: fixed; inset: auto 0 max(44px, calc(env(safe-area-inset-bottom, 0px) + 36px)); width: max-content; margin-inline: auto; }
+/* Wide screens: the showcased car sits mid-frame, so Start moves to the bottom-right gutter instead of covering it. */
+@media (min-width: 761px) { .airflow-active[data-phase="ready"] #start-button { inset-inline: auto max(40px, env(safe-area-inset-right, 0px)); margin-inline: 0; } }
 .airflow-active[data-phase="ready"] .scene-shade { opacity: .3; }
 .aero-eyebrow { font-size: 7px; letter-spacing: 1.7px; color: #a4c5d5; }
 .airflow-hud > strong { font: 700 24px 'Barlow Condensed', sans-serif; color: #d5f8ff; }
