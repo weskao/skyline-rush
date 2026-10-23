@@ -145,7 +145,6 @@ test('track changes render four distinct sky palettes in the WebGL framebuffer',
 
 test('fuel warns below 20%, refill feedback appears and comfort disables gauge motion', async ({ page }) => {
   await open(page);
-  await page.locator('#assist-button').click();
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('Shift');

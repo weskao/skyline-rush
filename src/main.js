@@ -90,8 +90,10 @@ let previousFlight;
 let goUntil = 0;
 let { audio, volume } = readAudio();
 const audioSwitches = [...document.querySelectorAll('[data-audio]')];
-// Touch players start with AUTO on (checked once at load, never persisted); desktop starts off.
-let autoThrottle = touchPreference.matches;
+// AUTO starts on for every device; only a player's own toggle is remembered.
+const AUTO_KEY = 'skyline-rush-auto';
+let autoThrottle = true;
+try { autoThrottle = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
 let animationId;
 let pausedPhase = 'racing';
 const sessionBests = {};
@@ -677,6 +679,7 @@ function showAssist() {
 function toggleAssist() {
   if (tutorial) return;
   autoThrottle = !autoThrottle;
+  try { localStorage.setItem(AUTO_KEY, autoThrottle ? 'on' : 'off'); } catch { /* The toggle lasts for this page without storage. */ }
   showAssist();
   sound.cue('ui');
 }
