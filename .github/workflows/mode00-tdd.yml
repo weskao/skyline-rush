@@ -26,6 +26,8 @@ jobs:
         run: npm run build
       - name: Race modes WebGL smoke (desktop)
         run: npx playwright test tests/race-modes-browser.spec.js -g "Checkpoint Rush|Elimination|Obstacle Run"
+      - name: Mode History and PB WebGL browser regression
+        run: npx playwright test tests/mode-history-browser.spec.js
       - name: Upload real mode screenshots
         if: always()
         uses: actions/upload-artifact@v4
