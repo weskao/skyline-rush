@@ -1,3 +1,30 @@
+## [0.18.0] - 2026-10-23
+
+### 🚀 Features
+
+- Add interactive driving tutorial
+
+### 🐛 Bug Fixes
+
+- **tutorial:** Preserve hints and touch preferences
+
+### 💼 Other
+
+- **main:** Integrate v0.17.0 before completing interactive tutorial
+
+### 📚 Documentation
+
+- Add interactive tutorial plan and TODO checklist
+- **tutorial:** Record verified interactive practice
+
+### 🧪 Testing
+
+- Add interactive tutorial unit and browser tests
+
+### ⚙️ Miscellaneous Tasks
+
+- Add agent guidance for skyline-rush
+- **main:** Integrate v0.17.1 for release
 ## [0.17.1] - 2026-10-23
 
 ### 🐛 Bug Fixes
