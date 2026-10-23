@@ -30,6 +30,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <button id="guide-close" class="controls-reset" autofocus data-i18n="guide.close">Got it</button>
     </header>
     <p id="guide-intro" data-i18n="guide.intro">A quick control guide. Open it anytime from Practice on the home screen or Controls → How to play.</p>
+    <button id="guide-practice" class="controls-reset tutorial-start" data-i18n="tutorial.start">Start interactive practice</button>
     <div class="guide-devices" role="group" aria-label="Control guide" data-i18n-aria-label="guide.devices">
       <button class="controls-reset" data-guide-device="desktop" aria-pressed="true" aria-controls="guide-desktop-panel" data-i18n="guide.desktop">Keyboard</button>
       <button class="controls-reset" data-guide-device="mobile" aria-pressed="false" aria-controls="guide-mobile-panel" data-i18n="guide.mobile">Touch</button>
@@ -46,7 +47,6 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     </section>
     <section id="guide-mobile-panel" hidden><MobileGuide /></section>
     <p class="guide-note" data-i18n="guide.note">Illustrations only — close this guide to try the controls in a race.</p>
-    <button id="guide-practice" class="controls-reset tutorial-start" data-i18n="tutorial.start">Start interactive practice</button>
   </dialog>
   <aside id="tutorial-coach" class="tutorial-coach" aria-labelledby="tutorial-title" hidden>
     <header class="tutorial-heading"><strong id="tutorial-title"></strong><div class="tutorial-actions"><button id="tutorial-pause" class="controls-reset" data-i18n="tutorial.pause">Pause</button><button id="tutorial-exit" class="controls-reset" data-i18n="tutorial.exit">Exit</button></div></header>

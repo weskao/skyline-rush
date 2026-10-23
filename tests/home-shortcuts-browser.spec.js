@@ -12,6 +12,9 @@ test('home Practice opens the guide on the practice call to action, which starts
   await page.locator('#practice-button').click();
   await expect(page.locator('#guide-screen')).toBeVisible();
   await expect(page.locator('#guide-practice')).toBeFocused();
+  // The practice call to action leads the guide, above the device tabs and key list.
+  const [practiceBox, devicesBox] = [await page.locator('#guide-practice').boundingBox(), await page.locator('.guide-devices').boundingBox()];
+  expect(practiceBox.y + practiceBox.height).toBeLessThanOrEqual(devicesBox.y);
   await page.locator('#guide-practice').click();
   await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle');
   await page.locator('#tutorial-exit').click();

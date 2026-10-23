@@ -752,7 +752,12 @@ body.layout-editing #touch-controls { display: grid; }
 .guide-keys dd { margin: 0; color: #c3d0dc; }
 .guide-screen kbd { display: inline-block; padding: 4px 8px; margin: 2px; border: 1px solid #899eaf; border-bottom-width: 3px; border-radius: 5px; color: #f4f0e9; background: #20364b; font: inherit; font-size: 13px; }
 .guide-note { color: #c3d0dc; font-size: 13px; }
-.tutorial-start { width: 100%; min-height: 48px; margin-top: 12px; }
+/* The guide's main call to action sits right under the intro, styled like the home Start button. */
+.guide-screen .tutorial-start { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 52px; margin: 16px 0 4px; padding: 0 20px; border: 0; border-radius: 8px; background: var(--accent); color: #142333; font-size: 15px; font-weight: 700; box-shadow: 0 8px 24px rgb(255 137 102 / .22); transition: background var(--dur-fast); }
+.guide-screen .tutorial-start::after { content: '→'; font-size: 20px; line-height: 1; transition: transform .18s ease-out; }
+.guide-screen .tutorial-start:hover { background: #ffa487; }
+.guide-screen .tutorial-start:hover::after { transform: translateX(4px); }
+.guide-screen .tutorial-start:focus-visible { outline: 2px solid #f4f0e9; outline-offset: 3px; }
 .tutorial-coach { position: fixed; z-index: 12; top: max(84px, calc(var(--safe-top) + 64px)); left: max(12px, var(--safe-left)); width: min(400px, calc(100vw - 24px)); padding: 12px; border: 1px solid #899eaf; border-radius: 12px; color: #f4f0e9; background: #142334; box-shadow: 0 8px 24px rgb(0 9 22 / .3); }
 .tutorial-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .tutorial-heading strong { font-size: 15px; line-height: 1.4; }
