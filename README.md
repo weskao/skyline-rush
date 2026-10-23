@@ -17,13 +17,15 @@ In Classic Race, Skyline Rush is a short, replayable arcade sprint in the browse
 
 A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
-![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261022a)
+![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)
 
-![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261022a)
+![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261024a)
 
-![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261022a)
+![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261024a)
 
-![Race results with a new personal best](artifacts/race-results.jpeg?v=20261022a)
+![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261024a)
+
+![Race results with a new personal best](artifacts/race-results.jpeg?v=20261024a)
 
 ## Game modes and replayability (development branch)
 

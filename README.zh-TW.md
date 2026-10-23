@@ -1,4 +1,4 @@
-<!-- source-sha256: bcaf4f05686a9e1ebe642f4ec6ef4182e30213a024cad0f7c47458341c011cf3 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: d3ff5f9f4805e44d5932b1846fd23d3c90ef61474269c5e50977f2508debd24f generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -18,13 +18,15 @@
 
 一場經典衝刺約一分鐘；多階段挑戰則需要更久。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
 
-![開啟音訊設定的開始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261022a)
+![遊戲示範：倒數、飛越車流並降落在海岸公路](artifacts/readme-demo.gif)
 
-![Skyline Rush 飛行中](artifacts/readme-hero.zh-TW.jpeg?v=20261022a)
+![開啟音訊設定的開始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261024a)
 
-![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261022a)
+![Skyline Rush 飛行中](artifacts/readme-hero.zh-TW.jpeg?v=20261024a)
 
-![創下個人最佳成績的比賽結果](artifacts/race-results.zh-TW.jpeg?v=20261022a)
+![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261024a)
+
+![創下個人最佳成績的比賽結果](artifacts/race-results.zh-TW.jpeg?v=20261024a)
 
 ## 遊戲模式與重玩價值（開發分支）
 
