@@ -283,7 +283,20 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <p id="history-empty" data-i18n="history.empty" hidden>No runs here yet. Finish a race to start your history.</p>
     <div id="history-runs" class="history-runs"></div>
     <section class="history-extra" id="mode-history" aria-labelledby="mode-history-title">
-      <h3 id="mode-history-title" data-i18n="mode.historyTitle">Custom & Time Attack history</h3>
+      <h3 id="mode-history-title" data-i18n="mode.historyTitle">Challenge records</h3>
+      <p class="mode-history-disclaimer" id="mode-history-notice" data-i18n="mode.historyNotice">Personal challenge results do not award Career stars or official medals.</p>
+      <label class="history-filter mode-history-filter"><span data-i18n="mode.historyFilter">Mode</span>
+        <select id="mode-history-filter" aria-label="Challenge history mode" data-i18n-aria-label="mode.historyFilterAria">
+          <option value="all" data-i18n="mode.historyAll">All modes</option>
+          <option value="custom" data-i18n="mode.custom">Custom Race</option>
+          <option value="time" data-i18n="mode.time">Time Attack</option>
+          <option value="gauntlet" data-i18n="mode.gauntlet">Obstacle Run</option>
+          <option value="checkpoint" data-i18n="mode.checkpoint">Checkpoint Rush</option>
+          <option value="cup" data-i18n="mode.cup">Championship Cup</option>
+          <option value="stunt" data-i18n="mode.stunt">Stunt Attack</option>
+          <option value="elimination" data-i18n="mode.elimination">Elimination</option>
+        </select>
+      </label>
       <p id="mode-history-empty" data-i18n="mode.historyEmpty">Complete a Custom Race or Time Attack to save a personal record.</p>
       <div id="mode-history-runs" class="mode-history-runs"></div>
     </section>

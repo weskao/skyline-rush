@@ -1239,6 +1239,9 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
  .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); }
 }
 .mode-history-runs p { padding: 9px 0; border-bottom: 1px solid #405465; margin: 0; font-variant-numeric: tabular-nums; color: #e5edf4; }
+.mode-history-filter { flex-wrap: wrap; margin: 12px 0; }
+.mode-history-disclaimer { max-width: 62ch; }
+.mode-history-runs p[data-personal-best="true"] { border-left: 3px solid #73d9b0; padding-left: 10px; }
 
 .ghost-split { display: inline-block; margin-top: 14px; padding: 5px 11px; border: 1px solid #6498a7; border-radius: 4px; background: rgb(4 21 39 / .82); color: #c7edfa; font-size: 11px; letter-spacing: .8px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .ghost-split[data-ahead="true"] { color: #91f0c5; border-color: #60b899; }

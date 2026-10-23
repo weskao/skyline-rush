@@ -20,7 +20,7 @@ import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KE
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { createInteractiveTutorial, TUTORIAL_STEPS } from './interactive-tutorial.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
-import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
+import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.js';
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
@@ -452,15 +452,34 @@ let historyOpener;
 function showHistory() {
   const trackId = $('#history-track').value;
   const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
-  const modes = loadModeHistory().filter(run => run.track === trackId).slice(-10).reverse();
+  const modeFilter = $('#mode-history-filter').value;
+  const modeRows = loadModeHistory().filter(run => run.track === trackId);
+  const modes = modeRows.filter(run => modeFilter === 'all' || run.mode === modeFilter).slice(-10).reverse();
   $('#mode-history-empty').hidden = modes.length > 0;
+  // Saved config fields are untrusted: parse with a guard, and render labels with textContent only.
   $('#mode-history-runs').replaceChildren(...modes.map(run => {
     const item = document.createElement('p');
-    item.textContent = run.mode === 'stunt'
+    let config = null;
+    try {
+      const candidate = JSON.parse(run.rules);
+      if (candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
+          candidate.mode === run.mode) config = candidate;
+    } catch { /* Legacy signatures may be opaque strings; still display their record. */ }
+    const best = config ? loadModeBest(trackId, config) : null;
+    const personalBest = best !== null && (run.mode === 'stunt' ? run.score === best : run.time === best);
+    const ghost = run.mode === 'time' && !!config && !!loadModeGhost(trackId, config);
+    item.dataset.mode = run.mode;
+    item.dataset.personalBest = String(personalBest);
+    item.dataset.ghost = String(ghost);
+    const details = run.mode === 'stunt'
       ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
         run.medal ? t('mode.medal.' + run.medal) : '',
-        t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) }), shortDate(run.date)].filter(Boolean).join(' · ')
-      : `${t('mode.' + run.mode)} · ${timeString(run.time)} · ${shortDate(run.date)}`;
+        t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) })]
+      : [t('mode.' + run.mode), timeString(run.time)];
+    item.textContent = [
+      ...details, personalBest ? t('mode.historyPersonalBest') : null,
+      ghost ? t('mode.historyGhost') : null, shortDate(run.date),
+    ].filter(Boolean).join(' · ');
     return item;
   }));
   const stats = careerStats(sessionHistory);
@@ -528,6 +547,7 @@ for (const button of document.querySelectorAll('[data-open-history]')) button.ad
   if (button.dataset.openHistory === 'medals') $('#achievements-title').scrollIntoView({ block: 'start' });
 });
 $('#history-track').addEventListener('change', showHistory);
+$('#mode-history-filter').addEventListener('change', showHistory);
 function closeHistory() {
   if (calmMotion()) { historyScreen.close(); return; }
   const animation = historyScreen.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(36px)' }], motionOptions('fast'));
