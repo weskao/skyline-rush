@@ -43,6 +43,16 @@ function installAudio(t) {
   return { nodes, sound };
 }
 
+test('opening audio asks iOS for media playback so the silent switch does not mute it', t => {
+  const session = { type: 'auto' };
+  Object.defineProperty(navigator, 'audioSession', { value: session, configurable: true });
+  t.after(() => { delete navigator.audioSession; });
+  const { sound } = installAudio(t);
+  assert.equal(session.type, 'auto', 'nothing changes before audio is enabled');
+  assert.equal(sound.setMusic(true), true);
+  assert.equal(session.type, 'playback');
+});
+
 // Sky Spiral's first pad (MIDI 56) is not the shared intro pad (57) or race pad (55).
 function heardFrequencies(t, trackId, phase) {
   const { nodes, sound } = installAudio(t);

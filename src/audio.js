@@ -259,6 +259,8 @@ export function createSound() {
   }
   function open() {
     if (!context) {
+      // iOS mutes web audio while the silent switch is on unless the page asks for media playback.
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* Keep the browser's default session. */ }
       context = new AudioContext();
       oscillator = context.createOscillator();
       filter = context.createBiquadFilter();
