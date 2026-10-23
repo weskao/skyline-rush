@@ -31,6 +31,7 @@ test('keyboard practice requires real actions, completes all eight steps and pre
   await keyStep(page, 'Shift', 'nitro');
   await keyStep(page, 'e', 'complete');
   await expect(page.locator('#tutorial-retry')).toBeVisible();
+  await expect(page.locator('#tutorial-done')).toHaveText('Back to game');
   expect(await career(page)).toEqual(before);
   await page.locator('#tutorial-retry').click();
   await step(page, 'throttle');
@@ -77,10 +78,10 @@ test('switching language updates the active and paused lesson immediately', asyn
 
 test.describe('first visit without storage', () => {
   test.use({guideSeen:false});
-  test('guide entry completes practice even when storage is unavailable', async ({page}) => {
+  test('first Start completes practice without storage, then starts the race', async ({page}) => {
     await page.addInitScript(() => Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));
     await page.goto('/');
-    await page.locator('#guide-practice').click();
+    await page.locator('#start-button').click();
     await keyStep(page,'w','left');
     await keyStep(page,'a','right');
     await keyStep(page,'d','brake');
@@ -89,8 +90,10 @@ test.describe('first visit without storage', () => {
     await step(page,'boost');
     await keyStep(page,'Shift','nitro');
     await keyStep(page,'e','complete');
+    await expect(page.locator('#tutorial-done')).toHaveText('Start race');
     await page.locator('#tutorial-done').click();
-    await expect(page.locator('#start-button')).toBeFocused();
+    await expect(coach(page)).toBeHidden();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
   });
 });
 

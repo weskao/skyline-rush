@@ -77,7 +77,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 // World Tour scenery that reaches into the road is solid in the simulation too.
 const createRace = (...args) => { const created = createBareRace(...args); created.props = roadObstacles(created.trackId); return created; };
 let race = createRace();
-let tutorial = null, tutorialReturn = null, tutorialView = '';
+let tutorial = null, tutorialReturn = null, tutorialView = '', raceAfterTutorial = false;
 const racerRows = new Map(['YOU', ...race.rivals.map(rival => rival.name)].map((name, i) => [name, leaderboardRows[i]]));
 let leaderboardOrder = '';
 const speedNeedle = $('#speed-needle');
@@ -599,6 +599,8 @@ function start() {
   if (selectedMode === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
+  // A first-time player learns the controls at the moment they want to drive; Skip or completion starts this race.
+  if (!guideSeen) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
   if (editingLayout) editLayout(false);
   controls.clear();
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
@@ -1605,9 +1607,12 @@ $('#world').addEventListener('webglcontextrestored', () => {
 function beginTutorial() {
   if (!world || contextLost || (!tutorial && !['ready', 'paused'].includes(race.phase))) return;
   if (!tutorial) tutorialReturn = { race, pausedPhase, goUntil, previousFuel, previousNitro };
-  if (guideScreen.open) closeGuide();
+  closeGuide(); // also marks the player as onboarded
   if (editingLayout) editLayout(false);
   controls.clear(); clearButtonPresses(); toggleControls(false); toggleSettings(false);
+  $('#tutorial-exit').dataset.i18n = raceAfterTutorial ? 'tutorial.skip' : 'tutorial.exit';
+  $('#tutorial-done').dataset.i18n = raceAfterTutorial ? 'start.race' : 'tutorial.done';
+  applyI18n($('#tutorial-coach'));
   tutorial = createInteractiveTutorial(); race = tutorial.race;
   applyControls(false);
   goUntil = 0; previousFuel = 100; previousNitro = 0; previousFlight = undefined;
@@ -1630,6 +1635,7 @@ function endTutorial() {
   previousFlight = undefined;
   showTracks(); phaseUI(); previousPhase = race.phase; showAssist();
   (race.phase === 'paused' ? ui['resume-button'] : ui['start-button']).focus({ preventScroll: true });
+  if (raceAfterTutorial) { raceAfterTutorial = false; start(); }
 }
 function renderTutorial(force = false) {
   if (!tutorial) return;
@@ -1684,7 +1690,7 @@ function selectGuideDevice(device) {
     $(`#guide-${button.dataset.guideDevice}-panel`).hidden = !selected;
   }
 }
-function openGuide(opener = ui['start-button']) {
+function openGuide(opener) {
   try {
     const key = localStorage.getItem('skyline-rush-tutorial-completed') === '1' ? 'tutorial.retry' : 'tutorial.start';
     $('#guide-practice').dataset.i18n = key;
@@ -1700,7 +1706,10 @@ function openGuide(opener = ui['start-button']) {
 }
 for (const button of document.querySelectorAll('[data-guide-device]')) button.addEventListener('click', () => selectGuideDevice(button.dataset.guideDevice));
 $('#guide-open').addEventListener('click', () => openGuide(ui['controls-button']));
+let guideSeen = false;
+try { guideSeen = localStorage.getItem('skyline-rush-guide-seen') === '1'; } catch { /* Offer practice once per page when storage is unavailable. */ }
 function closeGuide() {
+  guideSeen = true;
   try { localStorage.setItem('skyline-rush-guide-seen', '1'); } catch { /* Closing stays usable when storage is blocked. */ }
   guideScreen.close();
 }
@@ -1710,9 +1719,6 @@ guideScreen.addEventListener('close', () => {
   if (tutorial) return;
   controls.clear(); guideOpener?.focus({ preventScroll: true });
 });
-let guideSeen = false;
-try { guideSeen = localStorage.getItem('skyline-rush-guide-seen') === '1'; } catch { /* Show the guide when storage is unavailable. */ }
-if (!guideSeen) openGuide();
 
 window.addEventListener('pagehide', event => {
   // A cached page resumes the same animation, renderer and controls on back navigation.
