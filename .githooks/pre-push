@@ -1,0 +1,20 @@
+#!/bin/sh
+# Run the home-screen layout browser tests before pushing commits that touch the UI, so an intro that
+# scrolls, overlaps the top bar or shrinks a touch target fails here instead of turning CI on main red.
+# Bypass once with SKIP_LAYOUT_GATE=1 git push ...
+[ "${SKIP_LAYOUT_GATE:-}" = 1 ] && exit 0
+zero=0000000000000000000000000000000000000000
+ui='^(index\.html|src/(App\.vue|main\.js|style\.css|locales/))'
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  base=$remote_sha
+  [ "$base" = "$zero" ] && base=$(git merge-base origin/main "$local_sha" 2>/dev/null)
+  [ -n "$base" ] || continue
+  git diff --name-only "$base" "$local_sha" | grep -Eq "$ui" && changed=1
+done
+[ -n "${changed:-}" ] || exit 0
+echo "pre-push: home-screen files changed; running npm run test:layout (a few minutes)..." >&2
+if ! npm run test:layout >&2; then
+  echo "pre-push: layout tests failed. Fix them before pushing (skip once: SKIP_LAYOUT_GATE=1 git push)." >&2
+  exit 1
+fi
