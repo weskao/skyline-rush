@@ -137,6 +137,9 @@ export function createAeroVFX(scene, vehicle) {
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   let hadPosition = false, wasBoosting = false, time = 0, reveal = 0, strength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
   let quality = 1, settings, delta, centerX, originDistance;
+  // First frame draws the hidden airflow meshes at zero alpha, so their shaders and GPU pipelines are built at load;
+  // building them on the first toggle stalled WebKit (iPhone Safari/Chrome) and flashed black patches over the preview.
+  let warmup = true;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
@@ -190,12 +193,12 @@ export function createAeroVFX(scene, vehicle) {
       fu.suction.value = settings.suction / (1 + Math.max(0, vehicle.position.y) * 2);
       fu.turbulence.value = settings.turbulence * (calm ? 0.3 : 1);
       fu.downforce.value = settings.aeroMode === 'downforce' ? 1 : 0;
-      flow.visible = reveal > 0.005;
+      flow.visible = reveal > 0.005 || warmup;
       pressure.visible = flow.visible && vehicle.position.y < 0.6;
       pressure.material.uniforms.power.value = reveal * fu.suction.value * (settings.aeroMode === 'downforce' ? 1 : 0.35);
       pressure.material.uniforms.time.value = time;
       jets.forEach((jet, i) => {
-        jet.visible = strength > 0.005;
+        jet.visible = strength > 0.005 || warmup;
         jet.scale.set(REAR_PORTS[i].size, REAR_PORTS[i].size, settings.exhaustLength * strength * (0.65 + car.speed / 200));
         const u = jet.material.uniforms;
         u.time.value = time + i * 0.13; u.power.value = strength;
@@ -272,7 +275,7 @@ export function createAeroVFX(scene, vehicle) {
       shock.position.copy(shockPosition); shock.position.x -= center; shock.position.z += distance;
       shock.scale.setScalar(0.5 + shockAge * 20);
       shock.material.opacity = Math.max(0, 1 - shockAge / 0.23) ** 2 * settings.shockwave * 0.45;
-      previous.copy(current); previousRotation.copy(vehicle.quaternion);
+      previous.copy(current); previousRotation.copy(vehicle.quaternion); warmup = false;
       direction.set(0, 0.64, 3).applyMatrix4(vehicle.matrixWorld);
       return { strength, ignition: boost ? Math.max(0, 1 - shockAge / 0.25) : 0, nozzle: direction, reveal };
     },

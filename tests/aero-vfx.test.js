@@ -105,3 +105,13 @@ test('collision discontinuity never interpolates exhaust through the rejected pa
   assert.ok(alpha.array.some(a => a > 0));
   for (let i = 0; i < alpha.array.length; i++) if (alpha.array[i] > 0) assert.ok(position.array[i * 3 + 2] < -30);
 });
+
+test('first frame draws hidden airflow meshes once so toggling airflow never builds shaders mid-preview', () => {
+  const { scene, race, options, vfx } = fixture();
+  race.phase = 'ready'; race.player.boosting = false; options.airflow = false;
+  const flow = scene.getObjectByName('Airflow showcase').children;
+  vfx.update(race, 0.05, 0, 0, options, false);
+  assert.ok(flow.every(mesh => mesh.visible), 'stream, pressure and nozzles join the first frame');
+  vfx.update(race, 0.05, 0, 0, options, false);
+  assert.ok(flow.every(mesh => !mesh.visible), 'hidden again from the second frame');
+});
