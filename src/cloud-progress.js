@@ -85,3 +85,23 @@ export function saveLocalProgress(progress, storage) {
     return true;
   } catch { return false; }
 }
+
+const CLOUD_OWNER_KEY = 'skyline-rush-cloud-owner';
+const accountKey = uid => 'skyline-rush-cloud-account:' + uid;
+
+// Keep saved results separate for every Google identity; device preferences are never touched.
+export function switchCloudAccount(previousUid, nextUid, storage = globalThis.localStorage) {
+  if (typeof nextUid !== 'string' || !nextUid || (previousUid && typeof previousUid !== 'string')) return false;
+  if (previousUid === nextUid) return true;
+  try {
+    const current = readLocalProgress(storage);
+    const stored = storage.getItem(accountKey(nextUid));
+    const next = stored ? mergeProgress({}, JSON.parse(stored)) : mergeProgress({});
+    // Prepare the destination snapshot before changing the active owner.
+    if (previousUid) storage.setItem(accountKey(previousUid), JSON.stringify(current));
+    storage.setItem(accountKey(nextUid), JSON.stringify(next));
+    if (!saveLocalProgress(next, storage)) return false;
+    storage.setItem(CLOUD_OWNER_KEY, nextUid);
+    return true;
+  } catch { return false; }
+}
