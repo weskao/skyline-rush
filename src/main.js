@@ -34,7 +34,7 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { refreshIfStale } from './update-check.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress } from './cloud-save.js';
-import { readLocalProgress, saveLocalProgress } from './cloud-progress.js';
+import { readLocalProgress, saveLocalProgress, switchCloudAccount } from './cloud-progress.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -483,6 +483,15 @@ function saveCloudProgress() {
   });
 }
 watchCloudUser(user => {
+  if (user && cloudOwner && cloudOwner !== user.uid) {
+    // Reload after swapping storage so every in-memory history/unlock cache belongs to the new player.
+    if (!switchCloudAccount(cloudOwner, user.uid)) {
+      say($('#cloud-status'), () => t('cloud.failed'));
+      return;
+    }
+    location.reload();
+    return;
+  }
   cloudUser = user;
   $('#cloud-login').hidden = !!user;
   $('#cloud-logout').hidden = !user;
