@@ -36,6 +36,7 @@ stretch is impassable — at least two lanes stay open. Rules are in `.claude/ru
 | `npm test` | Node unit tests |
 | `npm run build` | Production build + release-bundle lock assertion |
 | `npm run test:browser` | Playwright suite (pretest builds production assets) |
+| `npm run test:layout` | Home-screen layout browser tests (pre-push hook runs it on UI pushes) |
 | `make run` | Unit + browser tests |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
 
@@ -73,10 +74,10 @@ of the UI/UX design review rather than an optional afterthought.
 - Gameplay / progression / build-config change → `npm test` + `npm run build`.
 - Rendering / navigation / controls / unlock visibility change → also `npm run test:browser`,
   desktop and mobile.
-- Home-screen content change (anything added to `#intro`) → before pushing, run
-  `npx playwright test tests/i18n-browser.spec.js -g "intro bottom edge"`,
-  `tests/race-modes-browser.spec.js`, `tests/home-shortcuts-browser.spec.js` and
-  `tests/responsive-browser.spec.js -g "start layout"`: the intro must fit without scrolling at
+- Home-screen change (`src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`, `index.html`)
+  → `npm run test:layout` before pushing; the `.githooks/pre-push` hook runs it on such pushes and
+  blocks a red result (never bypass it with `SKIP_LAYOUT_GATE=1` to get a fix out — CI on `main`
+  gates every release). The intro must fit without scrolling at
   ≥ 900 px tall desktops in en and zh-TW, stay below the 112 px top bar and keep 44 px touch
   targets. The height budget is fixed — a new block pays for itself by compacting another,
   never by letting the intro scroll, moving into the top bar or shrinking a button.
