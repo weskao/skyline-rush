@@ -1,5 +1,5 @@
 import { seededRng, RACE_STREAMS } from './rng.js';
-const HAZARD_SECTION_TYPES = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel']);
+const HAZARD_SECTION_TYPES = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
 
 // Obstacles move across a single lane at most; the other lanes always stay open.
 export function createHazards(track, lanes, tier = 'standard') {
@@ -25,5 +25,6 @@ export function createHazards(track, lanes, tier = 'standard') {
 }
 
 export function hazardX(hazard, time) {
-  return hazard.moving ? Math.max(-9, Math.min(9, hazard.x + Math.sin(time * hazard.speed + hazard.phase) * 1.8)) : hazard.x;
+  const elapsed = Number.isFinite(time) ? time : 0; // fail safely on corrupt external timestamps
+  return hazard.moving ? Math.max(-9, Math.min(9, hazard.x + Math.sin(elapsed * hazard.speed + hazard.phase) * 1.8)) : hazard.x;
 }
