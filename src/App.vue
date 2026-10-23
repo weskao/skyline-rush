@@ -17,7 +17,7 @@ const CONTROL_CHOICES = {
   mode: ['Steering', [['buttons', 'Buttons'], ['slide', 'Slide'], ['tilt', 'Tilt']]],
   hand: ['Steering hand', [['left', 'Left'], ['right', 'Right']]],
   fullLock: ['Slide sensitivity', [[40, 'High'], [60, 'Medium'], [80, 'Low']]],
-  size: ['Button size', [['S', 'Small'], ['M', 'Medium'], ['L', 'Large']]],
+  size: ['Touch button size',[['S', 'Small'], ['M', 'Medium'], ['L', 'Large']]],
   flyMode: ['FLY button', [['hold', 'Hold'], ['toggle', 'Toggle']]],
 };
 const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-run', 'Clean run', 'Finish without a collision'], ['perfect-five', 'Perfect flight', 'Five PERFECT LINEs in one race'], ['nitro-chain', 'Triple burst', 'Chain three NITRO charges']];
@@ -87,7 +87,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <button id="tilt-enable" class="controls-reset" data-i18n="controls.tiltEnable" hidden>Enable / recenter tilt</button>
           <label class="ghost-setting"><input id="ghost-enabled" type="checkbox"><span data-i18n="controls.ghost">Show best-run ghost</span></label>
           <p id="ghost-status" class="controls-note">No best-run replay recorded yet.</p>
-          <label class="controls-field controls-range"><span data-i18n="controls.opacity">Button opacity</span> <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Button opacity" data-i18n-aria-label="controls.opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
+          <label class="controls-field controls-range"><span data-i18n="controls.opacity">Touch button opacity</span> <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Touch button opacity" data-i18n-aria-label="controls.opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
           <label class="controls-field controls-range"><span data-i18n="controls.sensitivity">Steering sensitivity</span> <output for="controls-sensitivity"></output><input id="controls-sensitivity" aria-label="Steering sensitivity" data-i18n-aria-label="controls.sensitivity" type="range" data-controls="sensitivity" min="0.4" max="1" step="0.1"></label>
           <fieldset class="controls-field keymap-field"><legend data-i18n="keymap.legend">Keyboard · select action, then press a key</legend><button v-for="action in ['throttle', 'brake', 'left', 'right', 'fly', 'boost', 'nitro']" class="keymap-binding" :data-rebind="action"><span :data-i18n="`keymap.${action}`">{{ action.toUpperCase() }}</span><b></b></button></fieldset>
           <p id="keymap-status" role="status" class="controls-note" data-i18n="keymap.fixed">Fixed shortcuts: Esc pause · Backspace restart · C camera.</p>
