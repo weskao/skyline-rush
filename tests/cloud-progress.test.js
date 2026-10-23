@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { careerStats } from '../src/history.js';
 import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus } from '../src/cloud-progress.js';
 
 test('cloud unlocks merge with existing device progress in track order', () => {
@@ -114,4 +115,28 @@ test('invalid or unavailable cloud sync metadata never corrupts progress', () =>
   const blocked = { getItem: () => { throw Error('denied'); }, setItem: () => { throw Error('denied'); } };
   assert.deepEqual(readCloudSyncStatus('A', blocked), { pending: false, lastSuccess: null });
   assert.equal(writeCloudSyncStatus('A', { pending: true }, blocked), false);
+});
+
+test('the same Classic race is deduplicated by stable run identity even if cloud telemetry differs', () => {
+  const record = { date: '2026-10-24T00:00:00.000Z', track: 'coast', position: 1, time: 61, score: 200, nearMisses: 1 };
+  const progress = mergeProgress({ history: [record] }, { version: 2, history: [{ ...record, nearMisses: 2 }] });
+  assert.equal(progress.history.length, 1);
+  assert.equal(careerStats(progress.history).races, 1);
+  assert.equal(careerStats(progress.history).wins, 1);
+  assert.deepEqual(mergeProgress(progress, { version: 2, history: [record] }).history.length, 1);
+});
+
+test('identical mode and daily attempts deduplicate without mixing rule signatures or challenge IDs', () => {
+  const stamp = '2026-10-24T00:00:00.000Z';
+  const mode = { date: stamp, track: 'coast', mode: 'stunt', rules: JSON.stringify({ mode: 'stunt' }), time: 45, score: 10, maxCombo: 3 };
+  const d = { id: '2026-10-24', track: 'coast', modifier: 'no-fly', position: 1, time: 60, score: 50, date: stamp };
+  const validModifier = (mergeProgress({ daily: [d] })).daily.length ? d.modifier : null;
+  // Use a real modifier from the catalog; cloud sanitization must keep these attempts valid.
+  const daily = { ...d, modifier: validModifier ?? 'double-fuel' };
+  const merged = mergeProgress({ modeHistory: [mode], daily: [daily] }, { version: 2,
+    modeHistory: [{ ...mode, score: 20 }, { ...mode, rules: JSON.stringify({ mode: 'stunt', activeItems: true }) }],
+    daily: [{ ...daily, score: 55 }, { ...daily, id: '2026-10-23' }],
+  });
+  assert.equal(merged.modeHistory.length, 2);
+  assert.equal(merged.daily.length, 2);
 });
