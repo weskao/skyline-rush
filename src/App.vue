@@ -29,7 +29,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <h2 id="guide-title" data-i18n="guide.title">Start your engines!</h2>
       <button id="guide-close" class="controls-reset" autofocus data-i18n="guide.close">Got it</button>
     </header>
-    <p id="guide-intro" data-i18n="guide.intro">A quick control guide. Reopen it anytime from Controls → How to play.</p>
+    <p id="guide-intro" data-i18n="guide.intro">A quick control guide. Open it anytime from Practice on the home screen or Controls → How to play.</p>
     <div class="guide-devices" role="group" aria-label="Control guide" data-i18n-aria-label="guide.devices">
       <button class="controls-reset" data-guide-device="desktop" aria-pressed="true" aria-controls="guide-desktop-panel" data-i18n="guide.desktop">Keyboard</button>
       <button class="controls-reset" data-guide-device="mobile" aria-pressed="false" aria-controls="guide-mobile-panel" data-i18n="guide.mobile">Touch</button>
@@ -138,7 +138,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <button type="button" id="performance-notice-dismiss">Got it</button>
     </section>
     <section class="intro" id="intro" aria-labelledby="intro-title">
-      <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span></div>
+      <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span><button class="medal-chip" id="medal-chip" data-open-history="medals"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">0/4</span></button></div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just</span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
       <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
@@ -146,10 +146,20 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <p id="track-note" class="track-note"></p>
       <div class="intro-actions">
         <button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
         <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
         <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
       </div>
+      <section class="daily-card" id="daily-card" aria-labelledby="daily-card-title">
+        <span class="daily-card-icon" aria-hidden="true"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg></span>
+        <div class="daily-card-copy">
+          <h2 id="daily-card-title" data-i18n="daily.title">Daily challenge</h2>
+          <strong id="daily-card-route"></strong>
+          <small id="daily-card-best"></small>
+        </div>
+        <button class="daily-card-start" id="daily-card-start" aria-describedby="daily-card-route"><span data-i18n="daily.play">Play</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+      </section>
       <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
         <div class="race-mode-heading"><span data-i18n="mode.heading">GAME MODE</span><small id="mode-description"></small></div>
         <div class="race-mode-tabs">

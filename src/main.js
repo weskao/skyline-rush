@@ -21,7 +21,7 @@ import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { createInteractiveTutorial, TUTORIAL_STEPS } from './interactive-tutorial.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
-  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, LEGACY_BEST_KEY } from './history.js';
+  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.js';
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
@@ -297,6 +297,7 @@ function applyLocale() {
 onLocaleChange(applyLocale);
 $('#locale-select').addEventListener('change', ({ target }) => { saveLocale(target.value); setLocale(target.value); });
 function showTracks() {
+  showHomeStatus();
   const track = RACE_TRACKS[race.trackId];
   document.body.dataset.raceMode = race.mode;
   for (const button of document.querySelectorAll('button[data-race-mode]'))
@@ -493,17 +494,31 @@ function showHistory() {
   }
   $('#achievement-status').textContent = t('medal.count', { n: Object.keys(sessionMedals).length });
 }
-$('#daily-start').addEventListener('click', () => {
+// Home status: today's challenge and the medal tally sit on the start screen instead of inside History.
+function showHomeStatus() {
+  const today = dailyChallenge();
+  const best = dailyBoard(sessionDaily, today.id)[0];
+  $('#daily-card-route').textContent = `${trackName(today.track, getLocale())} · ${t(`modifier.${today.modifier}`)}`;
+  $('#daily-card-best').textContent = best ? t('daily.best', { time: timeString(best.time), position: best.position }) : t('daily.fresh');
+  $('#daily-card-start').disabled = !world;
+  const medals = Object.keys(sessionMedals).length;
+  $('#medal-count').textContent = `${medals}/${MEDALS.length}`;
+  $('#medal-chip').setAttribute('aria-label', t('medal.count', { n: medals }));
+  $('#medal-chip').classList.toggle('has-medals', medals > 0);
+}
+function startDaily() {
   daily = dailyChallenge();
   selectedMode = 'classic';
   historyScreen.close();
   controls.clear(); race = createRace(daily.track, daily.modifier); goUntil = 0; previousFuel = 100; previousNitro = 0;
   showTracks(); phaseUI(); previousPhase = race.phase;
   start();
-});
+}
+for (const id of ['daily-start', 'daily-card-start']) $(`#${id}`).addEventListener('click', startDaily);
 for (const button of document.querySelectorAll('[data-open-history]')) button.addEventListener('click', () => {
   controls.clear(); historyOpener = button; $('#history-track').value = race.trackId;
   showHistory(); historyScreen.showModal();
+  if (button.dataset.openHistory === 'medals') $('#achievements-title').scrollIntoView({ block: 'start' });
 });
 $('#history-track').addEventListener('change', showHistory);
 function closeHistory() {
@@ -1512,6 +1527,7 @@ function updateUI(now, input) {
 
 try {
   world = createWorld($('#world'));
+  showHomeStatus(); // the daily card can start a race now
   world.configureVFX(visual);
   world.previewAppearance(PAINTS[equippedPaint]);
   window.addEventListener('resize', world.resize);
@@ -1692,6 +1708,11 @@ function openGuide(opener = ui['start-button']) {
 }
 for (const button of document.querySelectorAll('[data-guide-device]')) button.addEventListener('click', () => selectGuideDevice(button.dataset.guideDevice));
 $('#guide-open').addEventListener('click', () => openGuide(ui['controls-button']));
+// The home Practice entry lands on the practice call to action; the illustrations stay one scroll above it.
+$('#practice-button').addEventListener('click', ({ currentTarget }) => {
+  openGuide(currentTarget);
+  $('#guide-practice').focus();
+});
 function closeGuide() {
   try { localStorage.setItem('skyline-rush-guide-seen', '1'); } catch { /* Closing stays usable when storage is blocked. */ }
   guideScreen.close();
