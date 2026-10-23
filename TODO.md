@@ -4,6 +4,8 @@
 
 原則：需要在清除瀏覽器資料後還原的遊戲成果，以 Google 登入後的 Firestore 帳號資料為主、本機資料為離線副本；裝置操作偏好留在本機。Firestore 單一使用者文件採版本化格式，僅在登入、完成比賽及成果改變時同步，不按影格寫入。勾選只代表該項已實作並完成對應驗證。
 
+進度更新（2026-10-24，`feature/mode00-objective-contract`）：已直接於本分支提交 Google 帳號本機進度隔離、待同步／上次成功時間與 Classic／模式賽／Daily 穩定識別去重；同時已透過雙 Parent Merge Commit `f370f142` 將 main 最新九筆提交合入。相關 RED → GREEN commits、Notion 階段 15 與驗證界線見 [階段紀錄](https://app.notion.com/p/4021a2df84a7817da29afa84cf8bb326)。PR #10 已關閉、未 merge。由於完整 CI 與實際 Google 多帳號、Firestore 跨裝置及真機 QA 尚未通過，以下待辦仍維持 `[ ]`，不可因程式已提交而提前勾選。
+
 ### 雲端基礎與資料安全
 
 - [x] 建立獨立 Firebase 專案、台灣區 Firestore Standard、Google 登入與 GitHub Pages 授權網域；部署僅本人可讀寫的規則。
