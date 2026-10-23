@@ -34,7 +34,7 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { refreshIfStale } from './update-check.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress } from './cloud-save.js';
-import { readLocalProgress, saveLocalProgress, switchCloudAccount } from './cloud-progress.js';
+import { readLocalProgress, saveLocalProgress, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus } from './cloud-progress.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -448,6 +448,13 @@ let cloudOwner = null;
 try { cloudOwner = localStorage.getItem(CLOUD_OWNER_KEY); } catch { /* In-memory owner still prevents a same-page account mix. */ }
 let cloudPending = false;
 let cloudSync = Promise.resolve();
+function showCloudSyncStatus(uid, state) {
+  say($('#cloud-status'), () => {
+    const { lastSuccess } = readCloudSyncStatus(uid);
+    const time = lastSuccess ? new Date(lastSuccess).toLocaleString(getLocale() === 'zh-TW' ? 'zh-TW' : 'en-US') : null;
+    return time ? t(state === 'saved' ? 'cloud.savedAt' : 'cloud.pendingAt', { time }) : t('cloud.' + state);
+  });
+}
 function saveCloudProgress() {
   if (!cloudUser) return;
   const uid = cloudUser.uid;
@@ -456,6 +463,7 @@ function saveCloudProgress() {
     return;
   }
   cloudPending = true;
+  writeCloudSyncStatus(uid, { pending: true });
   say($('#cloud-status'), () => t('cloud.syncing'));
   cloudSync = cloudSync.catch(() => {}).then(() => cloudUser?.uid === uid && syncCloudProgress(() => ({
     ...readLocalProgress(), unlocked: [...unlockedTracks], stars: sessionStars,
@@ -473,13 +481,14 @@ function saveCloudProgress() {
     sessionDaily = merged.daily;
     cloudOwner = uid;
     cloudPending = false;
+    writeCloudSyncStatus(uid, { pending: false, lastSuccess: new Date().toISOString() });
     try { localStorage.setItem(CLOUD_OWNER_KEY, uid); } catch { /* In-memory owner still protects this page. */ }
     showTracks();
     if ($('#history-screen').open) showHistory();
     showGarage();
-    say($('#cloud-status'), () => t('cloud.saved'));
+    showCloudSyncStatus(uid, 'saved');
   }).catch(() => {
-    if (cloudUser?.uid === uid) say($('#cloud-status'), () => t('cloud.pending'));
+    if (cloudUser?.uid === uid) showCloudSyncStatus(uid, 'pending');
   });
 }
 watchCloudUser(user => {
