@@ -10,7 +10,7 @@ export function createHazards(track, lanes, tier = 'standard') {
       !track.sections.every(section => Number.isFinite(section.from) && Number.isFinite(section.to) &&
         section.from >= 0 && section.from < section.to && section.to <= track.length) ||
       !Array.isArray(lanes) || !lanes.length || lanes.length > 8 ||
-      !lanes.every(lane => Number.isFinite(lane) && Math.abs(lane) <= 9)) throw new RangeError('Invalid gauntlet rules');
+      !lanes.every(lane => Number.isFinite(lane) && Math.abs(lane) <= 9)) throw new RangeError('Invalid gauntlet rules: track or lane bounds');
   const random = seededRng(track.seed, RACE_STREAMS.hazards);
   const hazards = [];
   for (let distance = 450; distance < track.length - 220; distance += (tier === 'extreme' ? 200 : 290) + Math.floor(random() * 70)) {
