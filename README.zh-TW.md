@@ -1,4 +1,4 @@
-<!-- source-sha256: f9ea1f8d4488a324f775493207f61241ff0c0f61bfd6a61b6db0814d7641162f generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 426f1b1969c9a317021ab2771ca1a8afa6537152ffdc4b541e9a0e728a5844f7 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -47,6 +47,7 @@
 - 模式與賽道的選擇仍可用鍵盤與觸控操作；情境面板只顯示與所選模式相關的選項。無法使用的盃賽會說明還需要多少條賽道。
 - HUD 會依模式調整：單人賽事會隱藏容易誤導的對手名次；多階段與盃賽會顯示階段進度；檢查點競速會顯示即時的拱門倒數；障礙賽會警示逼近的障礙；無碰撞計時會明確標示該次成績已失效。
 - 練習、自訂、計時賽、障礙賽、檢查點競速與盃賽的結果，使用獨立的 `skyline-rush-mode-history-v1` 紀錄鍵。符合資格的練習幽靈有各自儲存的規則組合；經典賽的解鎖、星等、獎章、每日紀錄與官方時間不會受到練習成績影響。
+- 在 **History → 挑戰模式紀錄** 可依模式篩選，查看每條賽道、每組規則各自的個人最佳，以及適用的 Time Attack 幽靈紀錄。歷史紀錄輪替超過 50 場仍保留永久最佳成績（`skyline-rush-mode-bests-v1`）。個人挑戰不會授予職涯星等或官方獎章。
 - 模式名稱、結果說明、設定選項與危險警告支援英文與繁體中文。低畫質圖形、觸控操作與減少動態效果仍在驗證計畫之中。
 
 ### 實機遊戲截圖與驗證

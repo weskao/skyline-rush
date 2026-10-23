@@ -46,6 +46,7 @@ Select a **track you have unlocked**, choose **GAME MODE** below the track cards
 - Mode and track selection remain accessible by keyboard and touch; contextual panels only show options relevant to the selected mode. Unavailable Cups explain the number of tracks still required.
 - HUDs adapt to the mode: solo events hide misleading rival ranks; multi-stage and Cup runs show stage progress; Checkpoint Rush shows its live gate countdown; Obstacle Run warns of approaching barriers; Clean Time Trial visibly indicates an invalidated run.
 - Practice, Custom, Time Attack, Obstacle, Checkpoint and Cup results use the separate `skyline-rush-mode-history-v1` record key. Eligible practice Ghosts have their own saved ruleset; Classic unlocks, stars, medals, Daily records and official times are protected from practice runs.
+- In **History → Challenge records**, filter by mode to see personal bests per exact track/ruleset and eligible Time Attack Ghosts. The lifetime best stays saved even when the latest 50 runs rotate, under `skyline-rush-mode-bests-v1`. Challenge records are explicitly not Career medals or stars.
 - Mode labels, result explanations, setup options and danger warnings support English and Traditional Chinese. Low-quality graphics, touch controls and reduced motion remain part of the verification plan.
 
 ### Real game screenshots and verification
