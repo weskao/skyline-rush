@@ -24,3 +24,12 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
+      - name: Checkpoint Rush WebGL smoke (desktop)
+        run: npx playwright test tests/race-modes-browser.spec.js -g "Checkpoint Rush"
+      - name: Upload actual checkpoint gameplay screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkpoint-rush-gameplay
+          path: test-results/race-mode-checkpoint-rush.png
+          if-no-files-found: ignore
