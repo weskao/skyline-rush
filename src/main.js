@@ -14,7 +14,7 @@ import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.js';
 import { createSound } from './audio.js';
-import { AUDIO_COOKIES, readAudio, setVolume } from './audio-settings.js';
+import { AUDIO_COOKIES, AUDIO_VERSION, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
@@ -686,7 +686,7 @@ function setAudio(kind, on, level = volume[kind]) {
   audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
   const name = AUDIO_COOKIES[kind];
   try {
-    for (const pair of [`${name}=${audio[kind] ? 'on' : 'off'}`, `${name}-volume=${Math.round(level * 100)}`]) document.cookie = `${pair}; Max-Age=31536000; Path=/; SameSite=Lax`;
+    for (const pair of [`${name}=${audio[kind] ? 'on' : 'off'}`, `${name}-volume=${Math.round(level * 100)}`, AUDIO_VERSION]) document.cookie = `${pair}; Max-Age=31536000; Path=/; SameSite=Lax`;
   } catch { /* Audio still works when cookies are unavailable. */ }
   showAudio();
 }
