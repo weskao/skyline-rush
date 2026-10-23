@@ -402,7 +402,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [x] Separate `Classic / Campaign` from `Custom / Practice / Challenge` in eligibility:
   only qualifying Classic finishes unlock the next track or award career progression.
   A local test-all-unlocked run must never grant unlocks, stars or achievements.
-- [ ] Produce deterministic simulation seeds for traffic, checkpoints, obstacles and items
+- [x] Produce deterministic simulation seeds for traffic, checkpoints, obstacles and items
   with **separate named streams**, so adding decoration or an option cannot silently
   reshuffle the original pickups or rings. Validate finite coordinates and bounded counts.
 - [ ] **Acceptance:** unit tests cover old call signatures, default-rule parity,
@@ -426,7 +426,19 @@ unit/smoke/World Tour passed, and main's prior run also contained browser
 failures. Do not mark the stage-wide acceptance as done or merge until
 **the final SHA** has all required CI checks green.
 
-Still open: complete per-system named deterministic streams where applicable
+
+**MODE-00 deterministic seed / bounds completion (2026-10-23):** RED tests at
+`6d5f9ff` ([run #39939858288](https://github.com/weskao/skyline-rush/actions/runs/39939858288)); GREEN at
+`b1edafb` ([run #39940097050](https://github.com/weskao/skyline-rush/actions/runs/39940097050)):
+focused tests, full `npm test`, and `npm run build` passed. Stable, isolated
+32-bit seeds now exist for traffic, checkpoints, authored world obstacles,
+active items, original pickups/rings and hazards. Authored traffic/checkpoint
+layouts and Classic/Daily replay signatures remain unchanged. Ten track layouts,
+finite entity positions, bounded counts and invalid external geometry are covered.
+**Stage-wide acceptance remains open** until required browser/physical-device
+checks and access/persistence regressions are independently verified.
+
+Still open (historical note; now completed above): complete per-system named deterministic streams where applicable
 (traffic and checkpoint layouts are currently authored deterministic, not
 randomized), the rest of mode acceptance, browser and physical-device
 performance/UX checks. No operation-guide files, audio or UI were changed
