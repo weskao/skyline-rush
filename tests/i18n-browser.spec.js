@@ -4,6 +4,7 @@ import { mkdirSync, appendFileSync, rmSync, writeFileSync } from 'node:fs';
 import { test } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { CATALOGS } from '../src/i18n.js';
+import { ciTimeout } from './helpers/ci.js';
 
 // Both locales x desktop + phone through the real flow. Screenshots go to I18N_SHOT_DIR (default test-results/i18n-shots), never artifacts/.
 const SHOT_DIR = process.env.I18N_SHOT_DIR ?? 'test-results/i18n-shots';
@@ -168,10 +169,10 @@ const dismissMusic = async page => { if (await page.locator('#music-prompt').isV
 
 for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system, htmlLang] of LOCALES) {
   test.describe(`i18n flow ${locale} ${vpName}`, () => {
-    test.use({ viewport, hasTouch, isMobile: hasTouch, locale: system, actionTimeout: 15000 });
+    test.use({ viewport, hasTouch, isMobile: hasTouch, locale: system, actionTimeout: ciTimeout(15000) });
 
     test('walk start, tracks, panels, race HUD, callouts, pause, results, history and a live switch', async ({ gameplayPage: page }) => {
-      test.setTimeout(420000);
+      test.setTimeout(ciTimeout(420000));
       const cx = makeContext(page, `${locale}-${vpName}`, locale, htmlLang);
       const pressed = async code => expect.soft(await page.locator('#locale-select').inputValue() === code, `${cx.id} switch ${code}`).toBe(code === cx.locale);
 
@@ -259,10 +260,11 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       }
       await page.evaluate(() => { document.activeElement?.blur(); Object.assign(window.gameplay.race.player, { speed: 90 }); }); // the clicked toggle keeps focus and would swallow Space
       await page.keyboard.down('Space');
-      await page.waitForTimeout(700);
       // The flight HUD must really be showing: a focused toggle would swallow Space and leave the road HUD on screen.
-      expect.soft(await page.evaluate(() => document.body.classList.contains('airborne')), `${cx.id} airborne during flight`).toBe(true);
-      expect.soft(await page.locator('#flight-mode').textContent(), `${cx.id} flight mode label`).toBe(CATALOGS[cx.locale]['hud.flightMode']);
+      // Wait on the takeoff itself: game time is frame-bound, so a fixed sleep can end before a slow CI frame lifts off.
+      await expect.soft(page.locator('body'), `${cx.id} airborne during flight`).toHaveClass(/airborne/);
+      await expect.soft(page.locator('#flight-mode'), `${cx.id} flight mode label`).toHaveText(CATALOGS[cx.locale]['hud.flightMode']);
+      await page.waitForTimeout(700); // let the flight HUD settle before its screenshot
       await check(cx, 'race-hud-flight', { hud: true });
       await page.keyboard.up('Space');
       await expect(page.locator('body')).not.toHaveClass(/airborne/); // the callouts below belong on the road, not mid-descent

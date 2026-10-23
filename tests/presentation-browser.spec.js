@@ -88,7 +88,7 @@ test('enabling reduced motion interrupts an intro exit already in progress', asy
   await page.locator('#start-button').click();
   expect(await page.locator('#intro').evaluate(el => el.getAnimations().length)).toBeGreaterThan(0);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  // Leave room for a software-rendered frame, but fail before the 4 s animation expires naturally.
+  // Leave room for a software-rendered frame, but fail before the 4 s animation expires naturally (fixed budget: never scaled).
   await expect.poll(() => page.locator('#intro').evaluate(el => el.getAnimations().length), { timeout: 2000 }).toBe(0);
   await expect(page.locator('#intro')).toBeHidden();
 });

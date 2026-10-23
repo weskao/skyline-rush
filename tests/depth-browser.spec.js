@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 const records = Array.from({ length: 12 }, (_, i) => ({
   date: `2026-01-${String(i + 1).padStart(2, '0')}T12:00:00Z`, track: 'coast',
@@ -166,7 +167,7 @@ test.describe('slide-pad feedback', () => {
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const ring = page.locator('.pad-ring');
     await expect(ring).toHaveCSS('opacity', '0.25');
-    await expect(ring).toHaveCSS('opacity', '0', { timeout: 10000 });
+    await expect(ring).toHaveCSS('opacity', '0', { timeout: ciTimeout(10000) });
     const session = await context.newCDPSession(page);
     const pad = await page.locator('.touch-pad').boundingBox();
     const point = { id: 1, x: pad.x + 45, y: pad.y + 55 };

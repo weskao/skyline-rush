@@ -1519,8 +1519,9 @@ try {
     const rawDelta = (now - previousTime) / 1000;
     previousTime = now;
     const dt = Math.max(0, Math.min(rawDelta, 0.05));
-    // Discard background gaps; do not turn a tab switch into seconds of unseen racing.
-    accumulator += rawDelta > 0.25 ? 0 : dt;
+    // The 0.05s clamp already keeps a tab-switch gap from becoming unseen racing (hiding also pauses);
+    // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
+    accumulator += dt;
     const input = controls.read();
     if (autoThrottle && !input.brake) input.throttle = true;
     input.laneAssist = autoThrottle;

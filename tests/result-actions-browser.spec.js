@@ -103,3 +103,17 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#next-button')).toBeHidden();
   });
 });
+
+// CPU-only renderers can take longer than 250 ms per frame; such frames must still advance the race to its results.
+test('a race still reaches its results when every frame is slow', async ({ gameplayPage: page }) => {
+  await page.locator('#start-button').click();
+  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await page.evaluate(() => {
+    const raf = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = callback => raf(time => { const end = performance.now() + 300; while (performance.now() < end); callback(time); });
+    const race = window.gameplay.race;
+    race.elapsed = 80;
+    Object.assign(race.player, { distance: race.length - 10, speed: 60 });
+  });
+  await expect(page.locator('#race-overlay')).toBeVisible();
+});

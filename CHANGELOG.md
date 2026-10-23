@@ -1,3 +1,12 @@
+## [0.17.1] - 2026-10-23
+
+### 🐛 Bug Fixes
+
+- **game:** Keep advancing the race on slow frames
+
+### 🧪 Testing
+
+- **browser:** Scale per-test timeouts by the ci factor
 ## [0.17.0] - 2026-10-23
 
 ### 🚀 Features
