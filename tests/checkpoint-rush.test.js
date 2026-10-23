@@ -43,3 +43,34 @@ test('invalid distance and bad frame delta are safe', () => {
   assert.equal(state.passed,0);
   assert.equal(stepCheckpointRush(state,0,{distance:1,x:0,altitude:0},NaN),0);
 });
+
+
+test('RED MODE-05: checkpoints move into a clear, grounded lane when scenery blocks their gate', () => {
+  const obstacles = [{ from: 323, to: 337, left: -8, right: 0, bottom: 0, top: 6 }];
+  const gates = createCheckpointRush(track, obstacles).gates;
+  const first = gates.find(gate => gate.distance === 330);
+  assert.ok(first, 'a single blocked lane must not remove a reachable checkpoint');
+  assert.ok(first.x >= 2.5, 'the original -2.5 m lane overlaps the building');
+  assert.ok(gates.every(gate => obstacles.every(obstacle =>
+    gate.distance < obstacle.from - 4 || gate.distance > obstacle.to + 4 ||
+    gate.x + 3.2 < obstacle.left || gate.x - 3.2 > obstacle.right ||
+    gate.altitude > obstacle.top + 1 || gate.altitude + 4.8 < obstacle.bottom
+  )));
+});
+
+test('RED MODE-05: a completely blocked checkpoint is skipped rather than made impossible', () => {
+  const obstacles = [{ from: 320, to: 340, left: -12, right: 12, bottom: -1, top: 12 }];
+  const gates = createCheckpointRush(track, obstacles).gates;
+  assert.ok(!gates.some(gate => gate.distance === 330));
+  assert.ok(gates.some(gate => gate.distance > 330));
+  assert.deepEqual(gates, createCheckpointRush(track, obstacles).gates, 'repeated runs remain identical');
+});
+
+test('RED MODE-05: checkpoint obstacles must have finite ordered geometry', () => {
+  assert.throws(() => createCheckpointRush(track, [
+    { from: NaN, to: 400, left: -5, right: 5, bottom: 0, top: 2 },
+  ]), /obstacle|track|bounds|finite/i);
+  assert.throws(() => createCheckpointRush(track, [
+    { from: 350, to: 330, left: -5, right: 5, bottom: 0, top: 2 },
+  ]), /obstacle|track|bounds|finite/i);
+});
