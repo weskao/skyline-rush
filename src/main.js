@@ -6,7 +6,7 @@ import { createRace as createBareRace, startRace, stepRace, useHeldItem, racePos
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
-import { checkpointDirection } from './checkpoint-rush.js';
+import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.js';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.js';
 import { stuntMedal } from './stunt-attack.js';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
@@ -75,7 +75,13 @@ function clearButtonPresses() {
 const touchPreference = matchMedia('(pointer: coarse)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 // World Tour scenery that reaches into the road is solid in the simulation too.
-const createRace = (...args) => { const created = createBareRace(...args); created.props = roadObstacles(created.trackId); return created; };
+const createRace = (...args) => {
+  const created = createBareRace(...args);
+  created.props = roadObstacles(created.trackId);
+  if (created.checkpoint && created.props.length)
+    created.checkpoint = createCheckpointRush(RACE_TRACKS[created.trackId], created.props);
+  return created;
+};
 let race = createRace();
 let tutorial = null, tutorialReturn = null, tutorialView = '', raceAfterTutorial = false;
 const racerRows = new Map(['YOU', ...race.rivals.map(rival => rival.name)].map((name, i) => [name, leaderboardRows[i]]));

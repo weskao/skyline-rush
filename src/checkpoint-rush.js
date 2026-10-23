@@ -2,19 +2,31 @@
 const EXCLUDED = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
 const LANES = [-2.5, 2.5, 7.5, -7.5];
 
-export function createCheckpointRush(track) {
+export function createCheckpointRush(track, obstacles = []) {
   if (!track || !Number.isFinite(track.length) || track.length < 800 || track.length > 100000 ||
       !Array.isArray(track.sections) || track.sections.length > 200 ||
       !track.sections.every(section => Number.isFinite(section.from) && Number.isFinite(section.to) &&
         section.from >= 0 && section.from < section.to && section.to <= track.length))
     throw new RangeError('Invalid checkpoint track');
+  if (!Array.isArray(obstacles) || obstacles.length > 2000 || !obstacles.every(o =>
+    o && [o.from, o.to, o.left, o.right, o.bottom, o.top].every(Number.isFinite) &&
+    o.from < o.to && o.left < o.right && o.bottom < o.top))
+    throw new RangeError('Invalid checkpoint obstacle bounds');
   const gates = [];
   for (let distance = 330; distance < track.length - 180; distance += 450) {
     if (track.sections.some(section => EXCLUDED.has(section.type) &&
       distance >= section.from - 70 && distance <= section.to + 70)) continue;
     const index = gates.length;
-    gates.push({ distance, x: LANES[index % LANES.length], altitude: index % 3 === 2 ? 3 : 0,
-      passed: false, missed: false });
+    const altitude = index % 3 === 2 ? 3 : 0;
+    // Keep each gate on the real road; shift lanes before discarding a blocked checkpoint.
+    // The footprint includes its 6.4 m-wide frame, not just the car's centre.
+    const preferred = index % LANES.length;
+    const x = [...LANES.slice(preferred), ...LANES.slice(0, preferred)].find(lane =>
+      obstacles.every(o => distance < o.from - 4 || distance > o.to + 4 ||
+        lane + 3.2 < o.left || lane - 3.2 > o.right ||
+        altitude > o.top + 1 || altitude + 4.8 < o.bottom));
+    if (x === undefined) continue;
+    gates.push({ distance, x, altitude, passed: false, missed: false });
   }
   return { gates, timeLeft: 28, passed: 0, missed: 0, perfect: 0, expired: false };
 }
