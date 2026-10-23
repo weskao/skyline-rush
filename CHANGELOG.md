@@ -1,3 +1,51 @@
+## [0.19.0] - 2026-10-23
+
+### 🚀 Features
+
+- **audio:** Start music on first interaction, no prompt
+- **ui:** Surface practice, daily and medals on home
+- **mode-00:** Add explicit immutable per-mode race objectives
+- **mode-00:** Apply objective contract to race completion logic
+- **mode-00:** Reject malformed mode requests without changing legacy defaults
+- **mode-00:** Add versioned pure race session identity separate from presentation
+- **mode-00:** Attach immutable session contracts without changing Classic/Daily seeds
+- **mode-00:** GREEN Cup objective uses explicit stage-points semantics
+- **mode-00:** Validate raw session settings while preserving normalized legacy callers
+- **tutorial:** Start practice on a player's first race
+- **ui:** Keep one start button in airflow mode
+- **ui:** Focus and centre the clicked home track
+- **ui:** Lead the guide with the practice button
+
+### 🐛 Bug Fixes
+
+- **ui:** Keep long game-mode labels inside their tabs
+- **vfx:** Prebuild airflow shaders on the first frame
+- **ui:** Fit the home intro on 900-1160px desktops
+- **ui:** Keep the intro under the top bar on desktops
+
+### 🚜 Refactor
+
+- **mode-00:** Name independent deterministic race random streams
+- **mode-00:** Share stable hazard seed stream name
+- **ui:** Label touch controls as touch buttons
+
+### 📚 Documentation
+
+- **mode-00:** Record tested session contracts and outstanding acceptance gates
+- **tutorial:** Record first-start practice flow
+- Guard intro height budget and toggle shader warmup
+- Add top bar and touch checks to intro rule
+
+### 🧪 Testing
+
+- **mode-00:** Define RED acceptance for explicit race objectives
+- **mode-00:** RED contracts for strict validation, immutable sessions and seeded replay
+- **mode-00:** RED Cup uses stage-points objective instead of placement
+
+### ⚙️ Miscellaneous Tasks
+
+- Run 8 browser shards and verify tags from main
+- **release:** Gate tags on a green ci run
 ## [0.18.0] - 2026-10-23
 
 ### 🚀 Features
