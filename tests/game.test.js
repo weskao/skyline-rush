@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, GAP_WARN_DISTANCE, gapChargeWarning, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
+import { hazardX } from '../src/hazards.js';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -1610,4 +1611,64 @@ test('a Tokyo train reaching into the lanes is solid: hitting it is barrier cont
   const sign = props.find(p => p.bottom > 3 && !props.some(q => q !== p && q.bottom < 1.8 && q.from < p.to + 6 && q.to > p.from - 6));
   assert.ok(sign, 'an overhead part hangs over the lanes');
   assert.equal(run(sign, (Math.max(sign.left, -ROAD_LIMIT) + Math.min(sign.right, ROAD_LIMIT)) / 2).collisions, 0, 'driving under it is clear');
+});
+
+test('rivals and traffic change lane around a Tokyo train instead of driving through it, then return', async () => {
+  const { roadObstacles } = await import('../src/world-tour-scene.js');
+  const props = roadObstacles('tokyo');
+  assert.ok(props.every(p => p.to - p.from < 20), 'avoidance looks back 20 m, so every part must be shallower');
+  const blocksRightLane = p => p.right > 6.65 && p.left < 8.35 && p.bottom < 1.8;
+  // A train with open road behind it, so the lane can be seen to free up again.
+  const train = props.find(p => p.kind === 'train' && p.bottom < 1 && p.top > 3 && p.left > 0 && p.left < 7.5 && p.from > 400 &&
+    !props.some(q => q !== p && blocksRightLane(q) && q.from > p.from - 140 && q.from < p.to + 300 && Math.abs(q.from - p.from) > 1));
+  assert.ok(train, 'a ground-level train blocks the right lanes');
+  const race = createRace('tokyo');
+  race.props = props;
+  startRace(race);
+  advance(race, 3.1);
+  const rival = race.rivals.find(r => r.x === 7.5), traffic = race.traffic[0];
+  // The player trails both in the far-left lane: close enough that traffic is not recycled ahead.
+  const trail = () => Object.assign(race.player, { distance: Math.min(rival.distance, traffic.distance) - 30, x: -7.5, speed: 0 });
+  Object.assign(rival, { distance: train.from - 120, speed: 70 });
+  Object.assign(traffic, { x: 7.5, homeX: 7.5, distance: train.from - 100, speed: 30 });
+  race.traffic = [traffic];
+  const overlaps = car => props.some(p => car.distance + 2.2 > p.from && car.distance - 2.2 < p.to &&
+    car.x + 0.85 > p.left && car.x - 0.85 < p.right && p.top > (car.altitude || 0) && p.bottom < (car.altitude || 0) + 1.8);
+  let rivalHits = 0, trafficHits = 0, rivalMin = 7.5, trafficMin = 7.5;
+  for (let i = 0; i < 60 * 9; i++) {
+    trail();
+    stepRace(race, {}, 1 / 60);
+    if (overlaps(rival)) rivalHits++;
+    if (overlaps(traffic)) trafficHits++;
+    rivalMin = Math.min(rivalMin, rival.x); trafficMin = Math.min(trafficMin, traffic.x);
+  }
+  assert.ok(rival.distance > train.to + 50 && traffic.distance > train.to + 50, 'both drove past the train');
+  assert.equal(rivalHits, 0, 'the rival never drives through the train');
+  assert.equal(trafficHits, 0, 'traffic never drives through the train');
+  assert.ok(rivalMin <= train.left - 1.4 + 1e-9 && trafficMin <= train.left - 1.4 + 1e-9, 'both moved to the open side');
+  assert.equal(rival.x, 7.5, 'the rival returns to its lane');
+  assert.equal(traffic.x, 7.5, 'traffic returns to its lane');
+});
+
+test('in custom races with obstacles, rivals and traffic steer around the barriers instead of driving through them', () => {
+  const race = createRace('coast', { mode: 'custom', rivals: 3, hazards: 'standard', traffic: 'normal' });
+  startRace(race);
+  advance(race, 3.1);
+  const barrier = race.hazards.find(h => h.distance > 600);
+  const rival = race.rivals[0], traffic = race.traffic[0];
+  Object.assign(rival, { x: barrier.x, homeX: barrier.x, distance: barrier.distance - 120, speed: 70 });
+  Object.assign(traffic, { x: barrier.x, homeX: barrier.x, distance: barrier.distance - 90, speed: 30 });
+  race.traffic = [traffic];
+  const through = car => race.hazards.some(h => Math.abs(car.distance - h.distance) < 2.2 + 0.65 &&
+    Math.abs(car.x - hazardX(h, race.elapsed)) < 1.55 + 0.85 && (car.altitude || 0) < 2.5);
+  let rivalHits = 0, trafficHits = 0;
+  for (let i = 0; i < 60 * 6; i++) {
+    Object.assign(race.player, { distance: Math.min(rival.distance, traffic.distance) - 30, x: barrier.x > 0 ? -9 : 9, speed: 0 });
+    stepRace(race, {}, 1 / 60);
+    if (through(rival)) rivalHits++;
+    if (through(traffic)) trafficHits++;
+  }
+  assert.ok(rival.distance > barrier.distance + 20 && traffic.distance > barrier.distance + 20, 'both drove past the barrier');
+  assert.equal(rivalHits, 0, 'the rival never drives through a barrier');
+  assert.equal(trafficHits, 0, 'traffic never drives through a barrier');
 });
