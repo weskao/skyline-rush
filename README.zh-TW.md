@@ -1,4 +1,4 @@
-<!-- source-sha256: 4e6ab204dd28113b73a3866c940eabf99c7bb53f713a13a588987224689cfa21 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 96eb1379066d4ae8d1cabcac50b94a9a5125492c8e346cf17ac125643beb6bb7 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -18,13 +18,15 @@
 
 一場經典衝刺約一分鐘；多階段挑戰則需要更久。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
 
-![開啟音訊設定的開始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261022a)
+![遊戲示範：倒數、飛越車流並降落在海岸公路](artifacts/readme-demo.gif)
 
-![Skyline Rush 飛行中](artifacts/readme-hero.zh-TW.jpeg?v=20261022a)
+![開啟音訊設定的開始畫面](artifacts/readme-start.zh-TW.jpeg?v=20261024a)
 
-![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261022a)
+![Skyline Rush 飛行中](artifacts/readme-hero.zh-TW.jpeg?v=20261024a)
 
-![創下個人最佳成績的比賽結果](artifacts/race-results.zh-TW.jpeg?v=20261022a)
+![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261024a)
+
+![創下個人最佳成績的比賽結果](artifacts/race-results.zh-TW.jpeg?v=20261024a)
 
 ## 遊戲模式與重玩價值（開發分支）
 
@@ -139,7 +141,7 @@ NITRO 不消耗電量，因此 Fly + NITRO 永遠可以同時使用（Fly + Boos
 
 ### 幽靈、每日挑戰、獎章與車庫
 
-- **幽靈**：每次比賽會以每秒 10 次的頻率取樣車輛的距離、車道位置與高度。在某條賽道創下個人最佳時會儲存該次成績，之後在該賽道的比賽中會以半透明藍色車輛顯示。可在 Controls 中的 **Show best-run ghost** 將它關閉。
+- **幽靈**：每次比賽會以每秒 10 次的頻率取樣車輛的距離、車道位置與高度。在某條賽道創下個人最佳時會儲存該次成績，之後在該賽道的比賽中會以半透明藍色車輛顯示。預設為關閉，可在 Controls 中的 **Show best-run ghost** 將它開啟。
 - **每日挑戰**：History 會顯示今日的賽道與修飾條件，依當地日期挑選：禁止飛行、雙倍車流，或僅限金色光環。Canyon 永遠不會抽到禁止飛行，因為它的斷橋需要飛行。每日挑戰的成績只會記在自己的排行榜上（今日最快的前五名）；絕不會影響歷史紀錄、最佳時間、解鎖、星等或幽靈。重新開始會維持該挑戰，而 **Choose track** 則會離開它。
 - **獎章**：首勝（獲勝）、無碰撞完賽（沒有任何碰撞）、完美飛行（單場比賽達成 5 次 PERFECT LINE）與三連爆發（一次爆發中使用 3 格 NITRO：一次按下加上兩次延長）。只有符合資格的經典賽完賽才能獲得獎章；每枚獎章都會保留首次獲得的日期。
 - **車庫（Garage）**：你在各條賽道上的最佳風格星等會累加並解鎖塗裝：3 顆星解鎖 Aurora，6 顆解鎖 Glacier，10 顆解鎖 Coral，16 顆解鎖 Cobalt，24 顆解鎖 Obsidian（上限為 30）。現實世界中最受歡迎的車色——藍色與黑色——是長期目標。尚未解鎖的塗裝仍可預覽。塗裝只改變外觀，絕不影響車輛的數值。

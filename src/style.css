@@ -667,7 +667,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .keymap-binding b { color: #b4edff; font-size: 10px; font-weight: 500; text-align: right; }
 .keymap-binding[aria-pressed="true"] { border-color: var(--accent); background: #243b50; }
 /* Live preview of the touch buttons: stays at the top of the panel while the size and opacity controls below are used. */
-.controls-preview { position: sticky; top: -6px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 64px; margin: -6px -6px 4px; padding: 6px 12px; background: #0b1b2c; border-bottom: 1px solid rgb(195 224 244 / .2); border-radius: 12px 12px 0 0; }
+.controls-preview { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 64px; margin: -4px 6px 6px; padding: 6px 10px; background: rgb(0 9 22 / .35); border: 1px solid rgb(195 224 244 / .14); border-radius: 8px; }
 .controls-preview-label { color: #a3e8fb; font-size: 11px; letter-spacing: .08em; }
 .controls-preview-keys { display: flex; align-items: flex-end; gap: 6px; opacity: var(--touch-opacity, .9); }
 .controls-preview-keys i { display: flex; align-items: center; justify-content: center; width: calc(34px * var(--touch-scale, 1)); height: calc(36px * var(--touch-scale, 1)); border: 1px solid rgb(210 226 238 / .3); border-radius: 6px; background: rgb(25 44 60 / .7); color: #f4f0e9; transition: width var(--dur-fast), height var(--dur-fast), opacity var(--dur-fast); }

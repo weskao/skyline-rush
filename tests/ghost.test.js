@@ -74,8 +74,8 @@ test('ghosts are stored per track and only valid ones are loaded back', () => {
   assert.equal(loadGhost('coast', throwingStorage), null);
 });
 
-test('the ghost preference defaults on and only accepts booleans', () => {
-  assert.equal(controlSettings().ghost, true);
-  assert.equal(controlSettings({ version: 1, ghost: false }).ghost, false);
-  assert.equal(controlSettings({ version: 1, ghost: 'no' }).ghost, true);
+test('the ghost preference defaults off and only accepts booleans', () => {
+  assert.equal(controlSettings().ghost, false);
+  assert.equal(controlSettings({ version: 1, ghost: true }).ghost, true);
+  assert.equal(controlSettings({ version: 1, ghost: 'no' }).ghost, false);
 });

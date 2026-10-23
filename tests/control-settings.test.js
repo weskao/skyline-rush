@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CONTROLS_KEY, controlSettings } from '../src/control-settings.js';
 
-const defaults = { mode: 'slide', hand: 'left', fullLock: 60, size: 'M', opacity: 0.9, flyMode: 'hold', sensitivity: 1, ghost: true, layout: {}, version: 1 };
+const defaults = { mode: 'slide', hand: 'left', fullLock: 60, size: 'M', opacity: 0.9, flyMode: 'hold', sensitivity: 1, ghost: false, layout: {}, version: 1 };
 
 test('non-objects and outdated versions fall back to defaults', () => {
   assert.equal(CONTROLS_KEY, 'skyline-rush-controls');

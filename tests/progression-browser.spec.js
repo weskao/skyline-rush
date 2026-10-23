@@ -76,8 +76,10 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   await page.locator('#controls-button').click();
   const toggle = page.getByRole('checkbox', { name: 'Show best-run ghost' });
   await expect(toggle).toBeEnabled();
-  await expect(toggle).toBeChecked();
+  await expect(toggle).not.toBeChecked();
   await expect(page.locator('#ghost-status')).toContainText('00:50.00');
+  await toggle.check();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).ghost)).toBe(true);
   await toggle.uncheck();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).ghost)).toBe(false);
   await toggle.check();

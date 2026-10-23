@@ -1,3 +1,39 @@
+## [0.20.0] - 2026-10-23
+
+### 🚀 Features
+
+- **controls:** Start auto on for every device
+- **save:** Sync race progress to a Google account
+- **ui:** Preview touch buttons in controls panel
+- **ghost:** Default best-run ghost to off
+- **ui:** Show touch preview under the opacity slider
+
+### 🐛 Bug Fixes
+
+- **ui:** Keep scene aspect after device rotation
+- **ui:** Move airflow start clear of the car
+- **render:** Keep NaN texels out of the bloom blur
+- **scripts:** Seed guide-seen in readme capture
+- **i18n:** Keep cloud-save copy free of stray English
+- **i18n:** Name zh-TW controls by their on-screen labels
+
+### 📚 Documentation
+
+- **readme:** Recapture screenshots and add demo gif
+
+### ⚡ Performance
+
+- **render:** Compile every shader before racing
+
+### 🧪 Testing
+
+- **browser:** Scale black-frame countdown wait by CI factor
+- **browser:** Drive the 5 km sprint with AUTO off
+
+### ⚙️ Miscellaneous Tasks
+
+- **git:** Ignore firebase emulator logs
+- **codex:** Add firebase mcp server config
 ## [0.19.1] - 2026-10-23
 
 ### 🐛 Bug Fixes

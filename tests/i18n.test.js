@@ -8,6 +8,7 @@ import {
 import { UI } from '../src/locales/ui.js';
 import { GAME } from '../src/locales/game.js';
 import { RACE_TRACKS } from '../src/game.js';
+import { strayEnglish } from './helpers/i18n-english.js';
 
 test('all track IDs have English and Traditional Chinese labels', () => {
   for (const id of Object.keys(RACE_TRACKS)) {
@@ -136,4 +137,12 @@ test('Cloud save Traditional Chinese copy localizes ghost records', () => {
   assert.match(CATALOGS['zh-TW']['cloud.explain'], /幽靈/);
   assert.doesNotMatch(CATALOGS['zh-TW']['cloud.explain'], /\bGhost\b/);
   assert.match(CATALOGS['zh-TW']['cloud.login'], /Google/);
+});
+
+// The browser flow only sees strings it renders; this catches stray English in every zh-TW message.
+test('zh-TW catalog keeps English to the allowed brand terms', () => {
+  const stray = Object.entries(CATALOGS['zh-TW']).filter(([, text]) => typeof text === 'string')
+    .map(([key, text]) => [key, strayEnglish(text.replace(/\{\w+\}/g, ''))]).filter(([, words]) => words.length)
+    .map(([key, words]) => `${key}: ${words.join(' ')}`);
+  assert.deepEqual(stray, []);
 });
