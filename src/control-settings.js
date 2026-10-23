@@ -1,6 +1,6 @@
 // Driving-control preferences; persistence (localStorage under CONTROLS_KEY) lives in main.js.
 export const CONTROLS_KEY = 'skyline-rush-controls';
-export const CONTROL_DEFAULTS = { mode: 'slide', hand: 'left', fullLock: 60, size: 'M', opacity: 0.9, flyMode: 'hold', sensitivity: 1, ghost: true, layout: {}, version: 1 };
+export const CONTROL_DEFAULTS = { mode: 'slide', hand: 'left', fullLock: 60, size: 'M', opacity: 0.9, flyMode: 'hold', sensitivity: 1, ghost: false, layout: {}, version: 1 };
 export function controlSettings(values = {}) {
   if (!values || typeof values !== 'object' || Array.isArray(values) || values.version !== CONTROL_DEFAULTS.version) return { ...CONTROL_DEFAULTS, layout: {} };
   const d = CONTROL_DEFAULTS;

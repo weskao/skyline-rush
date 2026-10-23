@@ -137,7 +137,7 @@ All saves use try/catch, so the game still runs when storage is blocked. `skylin
 
 ### Ghost, daily challenge, medals and Garage
 
-- **Ghost**: each run samples the car's distance, lane position and altitude 10 times per second. A new personal best on a track saves that run, and later races on the track show it as a translucent blue car. Turn it off with **Show best-run ghost** in Controls.
+- **Ghost**: each run samples the car's distance, lane position and altitude 10 times per second. A new personal best on a track saves that run, and later races on the track show it as a translucent blue car. It is off by default; turn it on with **Show best-run ghost** in Controls.
 - **Daily challenge**: History shows today's track and modifier, picked from the local date: no flight, double traffic, or gold rings only. Canyon never gets no flight, because its broken bridges need it. Daily runs go only on their own board (the fastest five today); they never touch history, best times, unlocks, stars or ghosts. Restart keeps the challenge, and **Choose track** leaves it.
 - **Medals**: First victory (win), Clean run (no collisions), Perfect flight (5 PERFECT LINEs in one race) and Triple burst (3 NITRO charges in one burst: one press plus two extensions). Only eligible Classic Race finishes can award them; each keeps the date it was first earned.
 - **Garage**: your best style stars on each track add up and unlock paints: Aurora at 3, Glacier at 6, Coral at 10, Cobalt at 16 and Obsidian at 24 (30 is the maximum). The most popular real-world car colours, blue and black, are the long-term goals. Locked paints can still be previewed. Paint only changes the look, never the car's stats.
