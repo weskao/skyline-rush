@@ -501,9 +501,18 @@ by MODE-00; no new sound cue is warranted for these pure simulation contracts.
   Reuse existing `player.score`, `trick`, `drift` and ring events.
 - [x] Add explicit style-combo multiplier, clean landing bonus and fair combo
   break/decay on crashes; prevent stationary or repeated reset farming.
-- [ ] Save best score, combo, air time and medal thresholds by exact track/ruleset.
+- [x] Save best score, combo, air time and medal thresholds by exact track/ruleset.
 - [ ] **Acceptance:** deterministic scoring independent of FPS and input device;
   end-of-timer results work without reaching the sprint finish.
+
+**Stunt best persistence (2026-10-23):** RED [`b4c4262`](https://github.com/weskao/skyline-rush/commit/b4c4262cc4557d58cf58243f99f078dfcc54f863),
+[Actions #39940564407](https://github.com/weskao/skyline-rush/actions/runs/39940564407);
+GREEN [`5a7cb28`](https://github.com/weskao/skyline-rush/commit/5a7cb2886613a319a6dcb70ecc5293abfd3b99a2),
+[Actions #39940729574](https://github.com/weskao/skyline-rush/actions/runs/39940729574).
+Stores a validated, rule-scoped personal best score, longest combo, longest air
+time and derived medal; 50-run history rotation cannot lose lifetime bests.
+Existing records and Classic unlock rules are unchanged. Focused MODE-00 tests,
+full `npm test` and production build passed. Frame-rate/device acceptance remains open.
 
 ### 9F. Checkpoint Rush (P1)
 
