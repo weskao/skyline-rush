@@ -277,3 +277,29 @@ for (const [width, height] of [[390, 844], [375, 667], [320, 568], [844, 390]]) 
     `callout ${JSON.stringify(callout)} overlaps director ${JSON.stringify(director)}`).toBe(true);
   });
 }
+
+// iOS fires resize on rotation before the new layout lands, so the scene must follow the canvas box itself.
+test('scene aspect follows the canvas when its size changes without a resize event', async ({ page }) => {
+  await page.setViewportSize({ width: 402, height: 874 });
+  await page.goto('./');
+  const mismatch = () => page.locator('#world').evaluate(canvas =>
+    Math.abs(canvas.width / canvas.height - canvas.clientWidth / canvas.clientHeight));
+  await expect.poll(mismatch).toBeLessThan(0.02);
+  // The stale landscape box iOS can leave behind after rotating back to portrait.
+  await page.locator('#world').evaluate(canvas => { canvas.style.width = '874px'; canvas.style.height = '402px'; });
+  await expect.poll(mismatch).toBeLessThan(0.02);
+  await page.locator('#world').evaluate(canvas => canvas.removeAttribute('style'));
+  await expect.poll(mismatch).toBeLessThan(0.02);
+});
+
+test.describe('airflow panel in landscape', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 874, height: 402 } });
+
+  test('clears the Dynamic Island inset', async ({ page, context }) => {
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, bottom: 21, left: 62, right: 62 } });
+    await page.goto('./');
+    const left = await page.locator('#airflow-hud').evaluate(el => el.getBoundingClientRect().left);
+    expect(left).toBeGreaterThanOrEqual(62);
+  });
+});

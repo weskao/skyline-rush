@@ -535,6 +535,8 @@ export function createWorld(canvas) {
     camera.updateProjectionMatrix();
   }
   resize();
+  // iOS fires resize on rotation before the new layout lands; observing the canvas catches the settled size.
+  new ResizeObserver(resize).observe(canvas);
 
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}) {
     const relative = car.distance - distance;

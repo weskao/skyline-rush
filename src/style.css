@@ -535,7 +535,7 @@ input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; back
 input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px solid #0b1c2b; border-radius: 50%; background: #91e0f2; }
 .vfx-comfort input[type="checkbox"], .vfx-comfort input[type="checkbox"]::before { transition: none; }
 @media (prefers-reduced-motion: reduce) { input[type="checkbox"], input[type="checkbox"]::before { transition: none; } }
-.airflow-hud { position: fixed; top: 285px; left: 40px; z-index: 3; width: 214px; padding: 16px; background: linear-gradient(120deg,#0b2539e8,#0b25397a); border-left: 2px solid #83e1fa; border-radius: 0 6px 6px 0; display: grid; gap: 9px; opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s; pointer-events: none; }
+.airflow-hud { position: fixed; top: 285px; left: max(40px, env(safe-area-inset-left, 0px)); z-index: 3; width: 214px; padding: 16px; background: linear-gradient(120deg,#0b2539e8,#0b25397a); border-left: 2px solid #83e1fa; border-radius: 0 6px 6px 0; display: grid; gap: 9px; opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s; pointer-events: none; }
 .airflow-active .airflow-hud { opacity: 1; transform: translateY(0); }
 /* Airflow showcase hides the start panel but keeps the one standard Start button reachable. */
 .airflow-active[data-phase="ready"] .intro { visibility: hidden; }
@@ -557,7 +557,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   .aero-tools > button, .aero-tools > details > summary { min-height: 30px; padding: 4px 8px; font-size: 8px; }
   .aero-tools .custom-select > button { min-height: 30px; padding-block: 4px; }
   .vfx-settings { max-height: calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); width: min(310px, calc(100vw - 32px)); top: 36px; }
-  .airflow-hud { top: 245px; left: 16px; width: 160px; padding: 10px; gap: 6px; }
+  .airflow-hud { top: 245px; left: max(16px, env(safe-area-inset-left, 0px)); width: 160px; padding: 10px; gap: 6px; }
   .airflow-hud > strong { font-size: 20px; }
   .aero-eyebrow { font-size: 6px; letter-spacing: 1px; }
   .aero-channels { gap: 7px; padding-top: 8px; }

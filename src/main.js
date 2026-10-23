@@ -1536,7 +1536,6 @@ try {
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(visual);
   world.previewAppearance(PAINTS[equippedPaint]);
-  window.addEventListener('resize', world.resize);
   let previousTime = performance.now();
   let accumulator = 0;
   let hudElapsed = 0;
