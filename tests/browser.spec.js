@@ -338,7 +338,7 @@ for (const [name, gesture] of [['key', page => page.keyboard.press('Shift')], ['
 test('a saved music-off choice stays silent after the first gesture and keeps sound effects on', async ({ page }) => {
   await page.addInitScript(blockAutoplay);
   await page.addInitScript(measureAudio);
-  await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; Path=/'; });
+  await page.addInitScript(() => { for (const pair of ['skyline-rush-music=off', 'skyline-rush-audio-v=2']) document.cookie = `${pair}; Path=/`; });
   await page.goto('/');
   await page.keyboard.press('Shift');
   await page.waitForTimeout(500);
@@ -346,6 +346,18 @@ test('a saved music-off choice stays silent after the first gesture and keeps so
   await page.getByRole('button', { name: 'Audio settings' }).click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
+});
+
+test('a music-off saved by v0.18 or earlier plays music again after the first gesture', async ({ page }) => {
+  await page.addInitScript(blockAutoplay);
+  await page.addInitScript(measureAudio);
+  await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; Path=/'; });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Start race' })).toBeVisible();
+  await page.keyboard.press('Shift');
+  await expect.poll(() => level(page), { intervals: [50] }).toBeGreaterThan(0.001);
+  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('skyline-rush-audio-v=2');
+  expect(await page.evaluate(() => document.cookie)).toContain('skyline-rush-music=on');
 });
 
 test('countdown lights, automatic accelerator and brake work without holding the gas', async ({ page }) => {
@@ -374,7 +386,7 @@ test('countdown lights, automatic accelerator and brake work without holding the
 
 test('real audio output includes UI and countdown cues, then mutes and pauses cleanly', async ({ page }) => {
   await page.addInitScript(measureAudio);
-  await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; Path=/'; });
+  await page.addInitScript(() => { for (const pair of ['skyline-rush-music=off', 'skyline-rush-audio-v=2']) document.cookie = `${pair}; Path=/`; });
   await page.goto('/');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [20] }).toBeGreaterThan(0.001);
