@@ -354,6 +354,7 @@ export const UI = Object.freeze({
     'cloud.pending': 'Saved on this device. Cloud sync is pending; reconnect or sign in again to retry.',
     'cloud.quota': 'Cloud quota is full. Progress is saved on this device; try syncing again later.',
     'cloud.localFailed': 'Could not save on this device or the cloud. Keep this tab open and export your race progress.',
+    'cloud.deletePending': 'Deletion needs attention. This account is protected from accidental re-upload; connect and retry Delete race progress.',
     'cloud.otherAccount': 'This device has progress from another Google account. Use the original account or switch safely below.',
     'cloud.switch': 'Use this account',
     'cloud.switchConfirm': 'Switch Google accounts? This device keeps a separate copy of each account’s race results, including unsynced progress. The new account will then be restored. Device settings stay here.',
@@ -938,6 +939,7 @@ export const UI = Object.freeze({
     'cloud.pending': '成果已留在本裝置；待連線恢復會重試，也可重新登入。',
     'cloud.quota': '雲端免費額度已滿；成果已留在本裝置，請稍後重新登入同步。',
     'cloud.localFailed': '本裝置與雲端都未能儲存；請保持此分頁開啟，立即匯出比賽成果。',
+    'cloud.deletePending': '刪除作業尚未完成。系統已停止自動上傳此帳號的舊進度；請連線後再次選擇「刪除比賽成果」。'
     'cloud.otherAccount': '本裝置有另一個 Google 帳號的進度。請改用原帳號，或使用下方按鈕安全切換。',
     'cloud.switch': '使用此帳號',
     'cloud.switchConfirm': '確定切換 Google 帳號？本裝置會分別保留每個帳號的比賽成果與待同步進度，再還原新帳號資料。音量等裝置設定會保留。'
