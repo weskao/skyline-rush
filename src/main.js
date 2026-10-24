@@ -445,6 +445,30 @@ showTracks(); centerSelectedTrack();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
 let cloudUser = null;
+const CLOUD_STATE = Object.freeze({
+  'cloud.local': 'signed-out',
+  'cloud.signedOut': 'signed-out',
+  'cloud.syncing': 'syncing',
+  'cloud.saved': 'synced',
+  'cloud.savedAt': 'synced',
+  'cloud.pending': 'offline',
+  'cloud.pendingAt': 'offline',
+  'cloud.quota': 'error',
+  'cloud.failed': 'error',
+  'cloud.localFailed': 'local-error',
+  'cloud.otherAccount': 'other-account',
+  'cloud.deletePending': 'deleting',
+  'cloud.imported': 'imported',
+  'cloud.importFailed': 'error',
+});
+function announceCloud(key) {
+  const status = $('#cloud-status');
+  const state = CLOUD_STATE[key] ?? 'error';
+  status.dataset.cloudState = state;
+  status.setAttribute('aria-busy', String(state === 'syncing'));
+  say(status, () => t(key));
+}
+
 const CLOUD_OWNER_KEY = 'skyline-rush-cloud-owner';
 let cloudOwner = null;
 try { cloudOwner = localStorage.getItem(CLOUD_OWNER_KEY); } catch { /* Gracefully degrade in blocked storage. */ }
@@ -487,21 +511,21 @@ function saveCloudProgress() {
   if (!cloudUser || cloudDeleting) return Promise.resolve();
   const uid = cloudUser.uid;
   if (isCloudDeleting(uid)) {
-    say($('#cloud-status'), () => t('cloud.deletePending'));
+    announceCloud('cloud.deletePending');
     return Promise.resolve();
   }
   if (cloudOwner !== uid) {
-    say($('#cloud-status'), () => t('cloud.otherAccount'));
+    announceCloud('cloud.otherAccount');
     return Promise.resolve();
   }
   cloudPending = true;
   writeCloudSyncStatus(uid, { pending: true });
   const deviceSaved = saveLocalProgress(currentProgress());
   if (!navigator.onLine) {
-    say($('#cloud-status'), () => t(cloudFailureStatus({ code: 'unavailable' }, deviceSaved)));
+    announceCloud(cloudFailureStatus({ code: 'unavailable' }, deviceSaved));
     return Promise.resolve();
   }
-  say($('#cloud-status'), () => t('cloud.syncing'));
+  announceCloud('cloud.syncing');
   $('#cloud-sync-now').disabled = true;
   cloudSync = cloudSync.catch(() => {}).then(() => !cloudDeleting && cloudUser?.uid === uid && syncCloudProgress(currentProgress)).then(merged => {
     if (!merged || cloudUser?.uid !== uid) return;
@@ -521,10 +545,10 @@ function saveCloudProgress() {
     showTracks();
     if ($('#history-screen').open) showHistory();
     showGarage();
-    say($('#cloud-status'), () => t('cloud.saved'));
+    announceCloud('cloud.saved');
   }).catch(error => {
     if (cloudUser?.uid === uid && !cloudDeleting)
-      say($('#cloud-status'), () => t(cloudFailureStatus(error, deviceSaved)));
+      announceCloud(cloudFailureStatus(error, deviceSaved));
   }).finally(() => {
     if (cloudUser?.uid === uid && cloudOwner === uid && !cloudDeleting)
       $('#cloud-sync-now').disabled = false;
@@ -546,43 +570,43 @@ watchCloudUser(user => {
   $('#cloud-logout-note').hidden = !user;
   $('#cloud-delete').hidden = !user || cloudOwner && cloudOwner !== user.uid;
   $('#cloud-switch').hidden = true;
-  say($('#cloud-status'), () => t(user ? 'cloud.syncing' : 'cloud.local'));
+  announceCloud(user ? 'cloud.syncing' : 'cloud.local');
   if (user) {
     const owner = claimCloudOwner(cloudOwner, user.uid);
     if (!owner) {
       $('#cloud-switch').hidden = false;
       $('#cloud-delete').hidden = true;
-      say($('#cloud-status'), () => t('cloud.otherAccount'));
+      announceCloud('cloud.otherAccount');
       return;
     }
     cloudOwner = owner;
     try { localStorage.setItem(CLOUD_OWNER_KEY, owner); } catch { /* Owner stays in memory. */ }
     if (isCloudDeleting(user.uid)) {
-      say($('#cloud-status'), () => t('cloud.deletePending'));
+      announceCloud('cloud.deletePending');
       return;
     }
     showCloudSession();
     saveCloudProgress();
     profileSync = syncGoogleAccountDetails(user.uid).catch(error => console.warn('Cloud account details unavailable:', error));
   }
-}, () => say($('#cloud-status'), () => t('cloud.failed')));
+}, () => announceCloud('cloud.failed'));
 window.addEventListener('online', () => { if (cloudPending) saveCloudProgress(); });
 $('#cloud-sync-now').addEventListener('click', () => { if (cloudUser && cloudOwner === cloudUser.uid) saveCloudProgress(); });
 $('#cloud-login').addEventListener('click', async () => {
   $('#cloud-login').disabled = true;
   try { await signInToCloud(); }
-  catch (error) { console.error('Cloud sign-in failed:', error); say($('#cloud-status'), () => t('cloud.failed')); }
+  catch (error) { console.error('Cloud sign-in failed:', error); announceCloud('cloud.failed'); }
   finally { $('#cloud-login').disabled = false; }
 });
 $('#cloud-logout').addEventListener('click', () => {
-  signOutOfCloud().catch(() => say($('#cloud-status'), () => t('cloud.failed')));
+  signOutOfCloud().catch(() => announceCloud('cloud.failed'));
 });
 $('#cloud-switch').addEventListener('click', async () => {
   if (!cloudUser || cloudOwner === cloudUser.uid || !confirm(t('cloud.switchConfirm'))) return;
   const uid = cloudUser.uid;
   await cloudSync.catch(() => {});
   if (cloudUser?.uid !== uid || cloudOwner === uid || !switchCloudAccount(cloudOwner, uid)) {
-    say($('#cloud-status'), () => t('cloud.failed'));
+    announceCloud('cloud.failed');
     return;
   }
   cloudOwner = uid;
@@ -604,7 +628,7 @@ $('#cloud-import-file').addEventListener('change', async ({ target }) => {
   target.value = '';
   if (!file) return;
   if (cloudDeleting || (cloudUser && cloudOwner !== cloudUser.uid)) {
-    say($('#cloud-status'), () => t('cloud.otherAccount'));
+    announceCloud('cloud.otherAccount');
     return;
   }
   if (!confirm(t('cloud.importConfirm'))) return;
@@ -630,11 +654,11 @@ $('#cloud-import-file').addEventListener('change', async ({ target }) => {
     showTracks();
     if ($('#history-screen').open) showHistory();
     showGarage();
-    say($('#cloud-status'), () => t('cloud.imported'));
+    announceCloud('cloud.imported');
     if (cloudUser) saveCloudProgress();
   } catch (error) {
     console.warn('Cloud import failed:', error);
-    say($('#cloud-status'), () => t('cloud.importFailed'));
+    announceCloud('cloud.importFailed');
   }
 });
 $('#cloud-delete').addEventListener('click', async () => {
@@ -659,7 +683,7 @@ $('#cloud-delete').addEventListener('click', async () => {
     location.reload();
   } catch (error) {
     console.error('Cloud deletion failed:', error);
-    say($('#cloud-status'), () => t('cloud.deletePending'));
+    announceCloud('cloud.deletePending');
   } finally {
     cloudDeleting = false;
     $('#cloud-delete').disabled = false;
