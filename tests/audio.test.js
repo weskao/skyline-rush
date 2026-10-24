@@ -34,7 +34,8 @@ function installAudio(t) {
     createDynamicsCompressor() { return node('compressor'); }
     createBufferSource() { return node('buffer'); }
     createBuffer() { return { getChannelData: () => new Float32Array(100) }; }
-    resume() { return Promise.resolve(); }
+    resume() { this.state = 'running'; return Promise.resolve(); }
+    suspend() { this.state = 'suspended'; return Promise.resolve(); }
     close() { return Promise.resolve(); }
   };
   t.after(() => { delete globalThis.AudioContext; });
@@ -51,6 +52,21 @@ test('opening audio asks iOS for media playback so the silent switch does not mu
   assert.equal(session.type, 'auto', 'nothing changes before audio is enabled');
   assert.equal(sound.setMusic(true), true);
   assert.equal(session.type, 'playback');
+});
+
+test('a hidden page suspends audio so the playback session cannot keep music going in the background', t => {
+  const { sound } = installAudio(t);
+  sound.setHidden(true);
+  assert.equal(sound.setMusic(true), true);
+  assert.equal(sound.running(), false, 'enabling audio while hidden does not start it');
+  sound.setHidden(false);
+  assert.equal(sound.running(), true);
+  sound.setHidden(true);
+  assert.equal(sound.running(), false);
+  sound.setEnabled(true);
+  assert.equal(sound.running(), false, 'a settings change while hidden does not resume it');
+  sound.setHidden(false);
+  assert.equal(sound.running(), true);
 });
 
 // Sky Spiral's first pad (MIDI 56) is not the shared intro pad (57) or race pad (55).

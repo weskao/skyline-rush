@@ -24,6 +24,7 @@ const measureAudio = () => {
     if (destination instanceof AudioDestinationNode) {
       const analyser = this.context.createAnalyser();
       connect.call(this, analyser);
+      window.audioState = () => this.context.state;
       window.audioLevel = () => {
         const data = new Float32Array(analyser.fftSize);
         analyser.getFloatTimeDomainData(data);
@@ -296,6 +297,22 @@ test('intro music plays after the first interaction and race music replaces it',
   await audioSwitch(page, 'Music').click();
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
+  await expect.poll(() => page.evaluate(() => window.audioLevel()), { intervals: [50] }).toBeGreaterThan(0.001);
+});
+
+test('music stops while the page is hidden and comes back when it is shown', async ({ page }) => {
+  await page.addInitScript(measureAudio);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await expect.poll(() => page.evaluate(() => window.audioState?.())).toBe('running');
+  const setHidden = hidden => page.evaluate(hidden => {
+    Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, hidden);
+  await setHidden(true);
+  await expect.poll(() => page.evaluate(() => window.audioState())).toBe('suspended');
+  await setHidden(false);
+  await expect.poll(() => page.evaluate(() => window.audioState())).toBe('running');
   await expect.poll(() => page.evaluate(() => window.audioLevel()), { intervals: [50] }).toBeGreaterThan(0.001);
 });
 

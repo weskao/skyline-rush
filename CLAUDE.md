@@ -73,7 +73,8 @@ of the UI/UX design review rather than an optional afterthought.
   user-gesture/autoplay restrictions, reduced-sensory-load preferences, and
   desktop/mobile input. Never make sound the only indicator of important feedback.
 - Prevent repeated cues on every frame, overlapping voice spam, stale sounds after
-  pause/restart, and unwanted playback when audio is disabled.
+  pause/restart, and unwanted playback when audio is disabled or the page is hidden (iOS keeps
+  a `'playback'` audio session running in the background; `sound.setHidden` suspends it).
 - For relevant changes, verify the UI **and** its audio behavior with deterministic
   event tests (`tests/audio.test.js` / `tests/mode-audio.test.js`), and browser
   regression tests when the controls or interaction flow change. State briefly in

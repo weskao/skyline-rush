@@ -123,7 +123,7 @@ const pitch = note => 440 * 2 ** ((note - 69) / 12);
 export function createSound() {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0;
-  let enabled = false, musicOn = false, previousRace, previousPhase, previousCount;
+  let enabled = false, musicOn = false, hidden = false, previousRace, previousPhase, previousCount;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
   let effectsLevel = 1, musicLevel = 1;
   let lastImpact = null, lastLanding = null, lastNearMiss = null, lastTrick = null;
@@ -290,8 +290,15 @@ export function createSound() {
       hats = filtered('highpass', 7000);
       snares = filtered('bandpass', 1800);
     }
+    setHidden(hidden);
+  }
+  // A 'playback' session keeps iOS playing after the tab or app goes to the background, so stop the clock there.
+  function setHidden(next) {
+    hidden = next;
+    if (!context) return;
     // Not awaited: before the first user gesture resume() can stay pending; a later gesture retries it.
-    context.resume().catch(() => {});
+    if (hidden) context.suspend().catch(() => {});
+    else context.resume().catch(() => {});
   }
   function fail() {
     enabled = musicOn = false;
@@ -323,6 +330,7 @@ export function createSound() {
     cue,
     setEnabled,
     setMusic,
+    setHidden,
     running: () => context?.state === 'running',
     update(race) {
       const car = race.player;

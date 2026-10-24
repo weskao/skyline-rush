@@ -1199,6 +1199,7 @@ window.addEventListener('blur', () => {
 });
 document.addEventListener('visibilitychange', () => {
   document.body.classList.toggle('page-hidden', document.hidden);
+  sound.setHidden(document.hidden);
   if (document.hidden && (race.phase === 'racing' || race.phase === 'countdown')) pause();
   if (!document.hidden) pickUpNewBuild();
 });
