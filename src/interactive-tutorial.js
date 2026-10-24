@@ -2,6 +2,12 @@ import { createRace, startRace } from './game.js';
 
 export const TUTORIAL_STEPS = Object.freeze(['throttle', 'left', 'right', 'brake', 'fly', 'land', 'boost', 'nitro']);
 
+export function prepareTutorialInput(input, step) {
+  if (!['throttle', 'brake'].includes(step) && !input.brake) input.throttle = true;
+  input.laneAssist = false;
+  return input;
+}
+
 export function createInteractiveTutorial() {
   const race = createRace('coast', { mode: 'free', traffic: 'off', items: false, collision: 'relaxed' });
   race.rings = [];
@@ -13,7 +19,7 @@ export function createInteractiveTutorial() {
 
   function prepare() {
     const step = TUTORIAL_STEPS[index];
-    car.x = car.steering = 0;
+    if (index === 0) car.x = car.steering = 0;
     car.speed = step === 'throttle' ? 0 : 45;
     car.fuel = 100;
     car.exhausted = false;
