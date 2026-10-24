@@ -126,3 +126,17 @@ test('malformed steering cannot count residual steering momentum as an action', 
   tick(session, { steer: '-1' });
   assert.equal(session.progress, 0);
 });
+
+test('the steering lesson preserves the car position and steering when advancing', () => {
+  const session = createInteractiveTutorial();
+  perform(session, { throttle: true });
+  let before = null;
+  for (let frame = 0; frame < 120 && session.step === 'left'; frame++) {
+    tick(session, { steer: -1 });
+    if (session.step === 'left') before = { x: session.race.player.x, steering: session.race.player.steering };
+  }
+  assert.equal(session.step, 'right');
+  assert.ok(before && before.x < -0.3, 'real left steering moves the player');
+  assert.ok(Math.abs(session.race.player.x - before.x) < 0.25, 'step changes must not teleport the car sideways');
+  assert.ok(session.race.player.steering < -0.5, 'step changes must not discard held steering momentum');
+});
