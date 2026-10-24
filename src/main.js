@@ -18,7 +18,7 @@ import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
-import { createInteractiveTutorial, TUTORIAL_STEPS } from './interactive-tutorial.js';
+import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.js';
@@ -1831,10 +1831,11 @@ try {
     // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
     accumulator += dt;
     const input = controls.read();
-    if (tutorial) {
-      if (!['throttle', 'brake'].includes(tutorial.step) && !input.brake) input.throttle = true;
-    } else if (autoThrottle && !input.brake) input.throttle = true;
-    input.laneAssist = tutorial ? true : autoThrottle;
+    if (tutorial) prepareTutorialInput(input, tutorial.step);
+    else {
+      if (autoThrottle && !input.brake) input.throttle = true;
+      input.laneAssist = autoThrottle;
+    }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     while (accumulator >= 1 / 60) {
       stepRace(race, input, 1 / 60);
