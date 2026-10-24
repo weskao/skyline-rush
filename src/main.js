@@ -305,7 +305,7 @@ function renderReleaseNotes() {
       const unread = document.createElement('span');
       unread.className = 'release-tab-unread';
       unread.textContent = t('release.unread');
-      name.append(unread);
+      tab.append(unread);
     }
     return tab;
   });

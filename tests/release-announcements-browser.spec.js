@@ -128,6 +128,19 @@ test.describe('several releases missed', () => {
     await page.locator('#whats-new-open').click(); // opening the notes counted as reading every release
     await expect(dialog.locator('.release-tab-unread')).toHaveCount(0);
   });
+
+  for (const [width, height] of [[1440,900],[390,844]]) test(`the unread badge sits on the tab's top-right corner at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    const tab = page.locator('#whats-new-screen').getByRole('tab').first();
+    await expect(tab.locator('.release-tab-unread')).toBeVisible();
+    const [t, badge, label, rail] = await Promise.all([tab, tab.locator('.release-tab-unread'), tab.locator('.release-tab-version'), page.locator('#release-versions')].map(l => l.boundingBox()));
+    expect(Math.abs(badge.y + badge.height / 2 - t.y)).toBeLessThanOrEqual(2); // centred on the top border
+    expect(badge.x + badge.width).toBeGreaterThan(t.x + t.width); // overhangs the right edge
+    expect(badge.y + badge.height).toBeLessThanOrEqual(label.y + 1); // never covers the version
+    expect(badge.y).toBeGreaterThanOrEqual(rail.y); // not clipped by the scrolling rail
+    expect(label.x + label.width).toBeLessThanOrEqual(t.x + t.width); // the badge adds no width to the tab
+  });
 });
 
 test('a player already on the latest notes is not interrupted', async ({ page }) => {
