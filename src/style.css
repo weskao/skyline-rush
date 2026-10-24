@@ -1454,7 +1454,7 @@ body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
 .daily-card-icon svg { width: 20px; height: 20px; fill: currentColor; }
 .daily-card-copy { display: grid; gap: 2px; min-width: 0; }
 .daily-card h2 { margin: 0; color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
-.daily-card strong { overflow: hidden; color: #f4f0e9; font-size: 14px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+.daily-card strong { color: #f4f0e9; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
 .daily-card small { color: #c2d3de; font-size: 11px; }
 .daily-card-start { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 8px 0 16px; border: 1px solid var(--accent); border-radius: 4px; background: rgb(255 137 102 / .14); color: var(--accent); font: 700 15px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
 .daily-card-start svg { box-sizing: border-box; width: 28px; height: 28px; padding: 6px; border-radius: 3px; background: var(--accent); color: #10202f; }
