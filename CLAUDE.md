@@ -100,6 +100,13 @@ that genuinely shipped in the announced version; never present a mockup or roadm
 as released. Images are optional and must match the shipped content; always provide
 readable text when an image is missing. Follow `docs/release-announcements.md`.
 
+**Every release ships its What's New notes.** Before publishing a version, add its entry at the top
+of `RELEASE_NOTES` in `src/release-notes.js` (en + zh-TW, player-first). Add an image only when it
+makes the change easier to grasp; store it under `public/whats-new/<version>/` and keep every older
+release's entry and images in the repo — the dialog shows only the newest five versions, the rest
+stay archived. `scripts/release-gate.sh` runs `scripts/check-release-notes.mjs <version>` and refuses
+a release without a complete entry; never bypass it.
+
 ## Verification
 
 - Gameplay / progression / build-config change → `npm test` + `npm run build`.
