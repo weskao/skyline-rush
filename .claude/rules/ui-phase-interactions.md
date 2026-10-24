@@ -23,6 +23,10 @@ The finished screen, paused screen and ready screen are not exempt from input te
 - Keep the global language/VFX tool row, topbar camera/restart and results controls
   above noninteractive decoration and below only intentionally blocking dialogs.
   An overlay must never intercept clicks intended for global controls.
+- Stack order is results overlay 4 < `.aero-tools` 6 < `.topbar` 7 < `.perf-overlay` 8: the topbar's
+  Controls/Audio dropdowns open over the tool row, so raising the tool row to or past the topbar
+  covers "How to play" and the key bindings. Guards: `tests/guide-browser.spec.js`,
+  `tests/device-quality-browser.spec.js` (real clicks fail on a wrong order).
 - A restart/finish/pause must not leave a stale `<dialog open>`, inert ancestor,
   pointer capture, invisible full-screen clickable surface, or animation that traps
   interaction. Release active driving input and preserve keyboard, mouse, and touch.

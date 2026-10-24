@@ -18,7 +18,7 @@ svg { width: 22px; height: 22px; flex-shrink: 0; }
 #world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; touch-action: none; }
 .scene-shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(9 21 34 / .88) 0%, rgb(9 21 34 / .69) 25%, rgb(9 21 34 / .1) 58%, transparent 80%), linear-gradient(0deg, rgb(6 17 28 / .91), transparent 30%, transparent 78%, rgb(9 21 34 / .26)); transition: opacity .5s; }
 body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(6 17 28 / .86), transparent 28%, transparent 76%, rgb(9 21 34 / .6)); }
-.topbar { position: fixed; z-index: 5; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.topbar { position: fixed; z-index: 7; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 /* The bar's empty gradient lets taps through to the .aero-tools row it overlaps; only its own controls catch them. */
 .topbar { pointer-events: none; }
 .topbar > * { pointer-events: auto; }
@@ -147,7 +147,7 @@ body[data-phase="ready"] .build-version { display: block; }
   .driving-message[data-tone='warning'] { top: 214px; } /* under the mode panel, above the car */
 }
 @media (max-width: 760px) and (max-height: 500px) { .driving-message[data-tone='warning'] { top: 168px; } } /* small landscape: its mode panel sits higher and the progress panel lower */
-.perf-overlay { position: fixed; z-index: 6; top: max(4px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 4px; color: #c3f7ff; background: rgb(5 17 30 / .7); font: 11px/1.4 ui-monospace, monospace; white-space: nowrap; pointer-events: none; }
+.perf-overlay { position: fixed; z-index: 8; top: max(4px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 4px; color: #c3f7ff; background: rgb(5 17 30 / .7); font: 11px/1.4 ui-monospace, monospace; white-space: nowrap; pointer-events: none; }
 .countdown { position: fixed; top: 35%; left: 50%; translate: -50% 0; width: max-content; max-width: calc(100vw - 24px); text-align: center; z-index: 4; font: 700 140px/1 'Barlow Condensed', sans-serif; text-shadow: 0 8px 60px rgb(5 17 30 / .4); pointer-events: none; }
 .driving-message { position: fixed; top: 30%; left: 10px; right: 10px; text-align: center; color: #fff0d9; font-size: 11px; letter-spacing: 2px; z-index: 3; pointer-events: none; text-shadow: 0 2px 8px #142333; }
 /* A pill so the warning stays legible over bright dusk skies. */
@@ -485,7 +485,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .countdown[data-step="1"] .start-lights > i { background: #ffae79; border-color: #ffd0a6; box-shadow: 0 0 18px #fb895b; }
 .countdown[data-step="GO"] { color: #b0f5ff; }
 .countdown[data-step="GO"] .start-lights > i { background: #90efff; border-color: #c8faff; box-shadow: 0 0 22px #69d5ff; }
-/* The results overlay (z-index 4) is later in the DOM; keep global language/VFX controls above it so the overlay never swallows taps. */
+/* The results overlay (z-index 4) is later in the DOM; keep global language/VFX controls above it so the overlay never swallows taps. The topbar (7) stays above this row because its Controls/Audio dropdowns open over it. */
 .aero-tools { position: fixed; top: 98px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 6; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
 .aero-tools > button, .aero-tools > details > summary { min-height: 34px; padding: 6px 10px; border: 1px solid #6e9baa66; border-radius: 5px; background: #102432d9; color: #c6edfa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .aero-tools kbd { height: 20px; min-width: 20px; font-size: 9px; }
