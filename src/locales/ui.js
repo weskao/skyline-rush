@@ -4,6 +4,14 @@
 import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.js';
 export const UI = Object.freeze({
   en: {
+    'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
+    'release.title': "What's new",
+    'release.intro': "See what's new for your next race.",
+    'release.close': "Close what's new",
+    'release.continue': 'Continue',
+    'release.details': 'All changes',
+    'release.open': "What's new",
+    'release.language': 'Release notes language',
     "tutorial.start": "Start interactive practice",
     "tutorial.pause": "Pause",
     "tutorial.resume": "Resume",
@@ -585,6 +593,14 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
+    'release.eyebrow': 'SKYLINE RUSH / 版本新消息',
+    'release.title': '新版本功能',
+    'release.intro': '看看這次更新，為你的下一場比賽帶來哪些驚喜。',
+    'release.close': '關閉新版本公告',
+    'release.continue': '繼續遊戲',
+    'release.details': '完整更新紀錄',
+    'release.open': '查看更新',
+    'release.language': '公告顯示語言',
     "tutorial.start": "開始互動練習",
     "tutorial.pause": "暫停",
     "tutorial.resume": "繼續",
