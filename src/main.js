@@ -784,25 +784,31 @@ function clearSwipeScenes() {
   swipeScenes.replaceChildren();
   swipeScenes.style.transform = '';
   swipeSceneStep = 0;
-  worldCanvas.style.visibility = '';
+  worldCanvas.style.opacity = '';
 }
 function prepareSwipeScenes(step) {
   const button = swipeNeighbour(step);
   if (!button || !world || calmMotion()) return false;
   if (step === swipeSceneStep && swipeScenes.childElementCount === 2) return true;
-  const current = captureSwipeFrame();
   try {
-    world.render(selectedRace(button.dataset.track), 0, performance.now() / 1000);
+    const time = performance.now() / 1000;
+    // A non-preserved WebGL drawing buffer may be empty after compositing;
+    // explicitly render both frames immediately before copying their pixels.
+    world.render(race, 0, time);
+    const current = captureSwipeFrame();
+    world.render(selectedRace(button.dataset.track), 0, time);
     const neighbor = captureSwipeFrame();
-    world.render(race, 0, performance.now() / 1000);
     swipeScenes.replaceChildren(...(step > 0 ? [current, neighbor] : [neighbor, current]));
     swipeSceneStep = step;
-    worldCanvas.style.visibility = 'hidden';
+    // Opacity preserves pointer capture; visibility:hidden would lose hit-testing.
+    worldCanvas.style.opacity = '0';
     return true;
   } catch (error) {
     clearSwipeScenes();
     console.warn('Preview snapshot unavailable:', error);
     return false;
+  } finally {
+    world.render(race, 0, performance.now() / 1000);
   }
 }
 function positionSwipeScenes(offset) {
