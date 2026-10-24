@@ -8,7 +8,8 @@ Preserve: existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
-`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input`.
+`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` ·
+`release-notes`.
 
 ## Home-screen landmark showcase
 
@@ -104,8 +105,12 @@ readable text when an image is missing. Follow `docs/release-announcements.md`.
 of `RELEASE_NOTES` in `src/release-notes.js` (en + zh-TW, player-first). Add an image only when it
 makes the change easier to grasp; store it under `public/whats-new/<version>/` and keep every older
 release's entry and images in the repo — the dialog shows only the newest five versions, the rest
-stay archived. `scripts/release-gate.sh` runs `scripts/check-release-notes.mjs <version>` and refuses
-a release without a complete entry; never bypass it.
+stay archived. Leave out what players never need: fine tuning details, code structure or refactors,
+tests and tooling, back-office, admin or server setup, and anything sensitive (links, accounts, keys,
+unannounced plans). Then run `/review-release-notes <version>`: an automatic copy check, a fresh-eyes
+sub-agent review and your approval record the copy's fingerprint. `scripts/release-gate.sh` runs
+`scripts/check-release-notes.mjs <version>` and refuses a release whose entry is incomplete, fails the
+copy check, was never reviewed or changed after review; never bypass it.
 
 ## Verification
 
@@ -125,7 +130,10 @@ a release without a complete entry; never bypass it.
 
 ## Release
 
-`/release` runs `scripts/release.sh`: `scripts/release-gate.sh` refuses to tag unless `main` equals
+`/release` (project command `.claude/commands/release.md`) first checks the version's What's New notes
+and, when they are new or changed, runs `/review-release-notes` and commits the approved review — before
+any test run, intro or release write. It then runs `scripts/release.sh`: `scripts/release-gate.sh`
+re-checks the notes, then refuses to tag unless `main` equals
 `origin/main`, that exact commit has a successful CI run on `main` (a running one is waited for) and
 `npm test` + `npm run build` pass; only then does the shared release script commit, tag and publish.
 A red or missing run means fix the root cause, commit, push, wait for green and run `/release` again —

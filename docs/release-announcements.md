@@ -110,16 +110,34 @@ One frozen entry per **published** version, never generated from commits:
 
 1. Before publishing, add the new version's entry at the top of `RELEASE_NOTES`, with en + zh-TW copy
    written per the policy above and optional images under `public/whats-new/<version>/`.
-2. `/release <version>` runs `scripts/release-gate.sh`, which first runs
+2. `/review-release-notes <version>` (`.claude/commands/review-release-notes.md`) reviews the copy:
+   - **Automatic copy check** (`copyProblems` in `scripts/check-release-notes.mjs`): rejects developer
+     terms in en and zh-TW (refactor, shader, backend, database, CI, 重構, 後端, 後台, 資料庫, 架構,
+     程式…), links, emails, secret prefixes, file and code names, commit ids, and text over the
+     length limits (en 48/160, zh-TW 20/70 characters for title/description).
+   - **Fresh-eyes review**: a sub-agent that did not write the notes reads only the entry and what
+     shipped (its `CHANGELOG.md` section, or the commits since the last tag before `/release`
+     generates it) and judges player value, needless detail, behind-the-scenes work,
+     sensitive content, shipped-only and en/zh-TW quality, answering OK / Rewrite / Remove.
+   - **Approval**: after the user approves, `node scripts/check-release-notes.mjs --approve <version>`
+     stores a fingerprint of the copy in `scripts/release-notes-reviews.json`.
+   Every `AskUserQuestion` in the review offers a "(Recommended)" first option.
+3. `/release <version>` (project command `.claude/commands/release.md`) checks the notes before
+   anything else and runs the review when they are new or changed, committing the approved
+   review; only then do tests, the intro and the release script run. The script runs
+   `scripts/release-gate.sh`, which first runs
    `node scripts/check-release-notes.mjs <version>`: it refuses the release when that version has no
-   entry, a highlight lacks either language, or an image is not a file in `public/`.
-3. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
+   entry, was never reviewed or changed after review, a highlight lacks either language or fails the
+   copy check, or an image is not a file in `public/`.
+4. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
 
 ## 7. Tests
 
 - Unit (`tests/release-notes.test.js`): seen-version contract, first-time vs returning player,
   blocked storage stays silent, numeric version order, newest-five window with future versions hidden, every
-  entry complete with bundled images, release gate refuses a missing version.
+  entry complete with bundled images, release gate refuses a missing version, player copy check
+  (developer terms in both languages, links, emails, secrets, file and code names, length), every
+  stored entry passes it, and the gate refuses unreviewed or edited-after-review notes.
 - Browser (`tests/release-announcements-browser.spec.js`): read/dismiss/reopen, no external link,
   version tabs by click and keyboard (wrap, Home/End, language switch keeps the tab, reopen starts
   newest), localized hero, auto-show once for an older record, silent when up to date, silent first
