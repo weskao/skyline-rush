@@ -34,8 +34,8 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.js';
 import { refreshIfStale } from './update-check.js';
-import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails, deleteGoogleAccountDetails } from './cloud-save.js';
-import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus } from './cloud-progress.js';
+import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.js';
+import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, readLocalModeBests } from './cloud-progress.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -447,13 +447,33 @@ refreshCustomSelects(); // showTracks just localized the History options the dra
 let cloudUser = null;
 const CLOUD_OWNER_KEY = 'skyline-rush-cloud-owner';
 let cloudOwner = null;
-try { cloudOwner = localStorage.getItem(CLOUD_OWNER_KEY); } catch { /* In-memory owner still prevents a same-page account mix. */ }
+try { cloudOwner = localStorage.getItem(CLOUD_OWNER_KEY); } catch { /* Gracefully degrade in blocked storage. */ }
 let cloudPending = false;
+let cloudDeleting = false;
 let cloudSync = Promise.resolve();
+let profileSync = Promise.resolve();
 let lastCloudSync = null;
 const cloudSyncKey = uid => `skyline-rush-cloud-synced-${uid}`;
+const cloudDeletingKey = uid => `skyline-rush-cloud-deleting:${uid}`;
+const isCloudDeleting = uid => {
+  try { return localStorage.getItem(cloudDeletingKey(uid)) === '1'; } catch { return false; }
+};
+$('#cloud-avatar').addEventListener('error', () => {
+  $('#cloud-avatar').hidden = true;
+  $('#cloud-avatar-fallback').hidden = false;
+});
 function showCloudSession() {
-  say($('#cloud-identity'), () => cloudUser ? t('cloud.signedInAs', { email: cloudUser.email || cloudUser.uid }) : t('cloud.signedOut'));
+  const user = cloudUser;
+  const name = user?.displayName?.trim() || t('cloud.player');
+  $('#cloud-name').textContent = name;
+  say($('#cloud-identity'), () => user ? t('cloud.signedInAs', { email: user.email || user.uid }) : t('cloud.signedOut'));
+  const avatar = $('#cloud-avatar');
+  const url = user?.photoURL;
+  avatar.hidden = !(typeof url === 'string' && /^https:\/\//.test(url));
+  $('#cloud-avatar-fallback').hidden = !avatar.hidden;
+  if (!avatar.hidden && avatar.src !== url) avatar.src = url;
+  if (avatar.hidden) avatar.removeAttribute('src');
+  $('#cloud-sync-now').disabled = !user || cloudDeleting || cloudOwner !== user.uid;
   say($('#cloud-last-sync'), () => lastCloudSync
     ? t('cloud.lastSync', { time: new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short' }).format(lastCloudSync) })
     : t('cloud.neverSynced'));
@@ -464,22 +484,28 @@ const currentProgress = () => ({
   modeHistory: sessionModeHistory, daily: sessionDaily,
 });
 function saveCloudProgress() {
-  if (!cloudUser) return;
+  if (!cloudUser || cloudDeleting) return Promise.resolve();
   const uid = cloudUser.uid;
+  if (isCloudDeleting(uid)) {
+    say($('#cloud-status'), () => t('cloud.deletePending'));
+    return Promise.resolve();
+  }
   if (cloudOwner !== uid) {
     say($('#cloud-status'), () => t('cloud.otherAccount'));
-    return;
+    return Promise.resolve();
   }
   cloudPending = true;
+  writeCloudSyncStatus(uid, { pending: true });
   const deviceSaved = saveLocalProgress(currentProgress());
   if (!navigator.onLine) {
     say($('#cloud-status'), () => t(cloudFailureStatus({ code: 'unavailable' }, deviceSaved)));
-    return;
+    return Promise.resolve();
   }
   say($('#cloud-status'), () => t('cloud.syncing'));
-  cloudSync = cloudSync.catch(() => {}).then(() => cloudUser?.uid === uid && syncCloudProgress(currentProgress)).then(merged => {
+  $('#cloud-sync-now').disabled = true;
+  cloudSync = cloudSync.catch(() => {}).then(() => !cloudDeleting && cloudUser?.uid === uid && syncCloudProgress(currentProgress)).then(merged => {
     if (!merged || cloudUser?.uid !== uid) return;
-    saveLocalProgress(merged);
+    if (!saveLocalProgress(merged)) throw new Error('Could not restore cloud progress locally');
     for (const id of merged.unlocked) unlockedTracks.add(id);
     Object.assign(sessionStars, merged.stars);
     Object.assign(sessionBests, merged.bests);
@@ -489,23 +515,31 @@ function saveCloudProgress() {
     sessionDaily = merged.daily;
     cloudPending = false;
     lastCloudSync = new Date();
-    try { localStorage.setItem(cloudSyncKey(uid), lastCloudSync.toISOString()); } catch { /* The current page still shows the time. */ }
+    writeCloudSyncStatus(uid, { pending: false, lastSuccess: lastCloudSync.toISOString() });
+    try { localStorage.setItem(cloudSyncKey(uid), lastCloudSync.toISOString()); } catch { /* Legacy timestamp is optional. */ }
     showCloudSession();
     showTracks();
     if ($('#history-screen').open) showHistory();
     showGarage();
     say($('#cloud-status'), () => t('cloud.saved'));
   }).catch(error => {
-    if (cloudUser?.uid === uid) say($('#cloud-status'), () => t(cloudFailureStatus(error, deviceSaved)));
+    if (cloudUser?.uid === uid && !cloudDeleting)
+      say($('#cloud-status'), () => t(cloudFailureStatus(error, deviceSaved)));
+  }).finally(() => {
+    if (cloudUser?.uid === uid && cloudOwner === uid && !cloudDeleting)
+      $('#cloud-sync-now').disabled = false;
   });
+  return cloudSync;
 }
 watchCloudUser(user => {
   cloudUser = user;
-  lastCloudSync = null;
-  try {
-    const saved = user && localStorage.getItem(cloudSyncKey(user.uid));
-    if (saved && Number.isFinite(Date.parse(saved))) lastCloudSync = new Date(saved);
-  } catch { /* A blocked store has no retained timestamp. */ }
+  const status = user ? readCloudSyncStatus(user.uid) : { pending: false, lastSuccess: null };
+  cloudPending = status.pending;
+  lastCloudSync = status.lastSuccess ? new Date(status.lastSuccess) : null;
+  if (!lastCloudSync) try {
+    const legacy = user && localStorage.getItem(cloudSyncKey(user.uid));
+    if (legacy && Number.isFinite(Date.parse(legacy))) lastCloudSync = new Date(legacy);
+  } catch { /* No legacy sync time. */ }
   showCloudSession();
   $('#cloud-login').hidden = !!user;
   $('#cloud-logout').hidden = !user;
@@ -521,13 +555,18 @@ watchCloudUser(user => {
       return;
     }
     cloudOwner = owner;
-    try { localStorage.setItem(CLOUD_OWNER_KEY, owner); } catch { /* In-memory owner still protects this page. */ }
+    try { localStorage.setItem(CLOUD_OWNER_KEY, owner); } catch { /* Owner stays in memory. */ }
+    if (isCloudDeleting(user.uid)) {
+      say($('#cloud-status'), () => t('cloud.deletePending'));
+      return;
+    }
+    showCloudSession();
     saveCloudProgress();
-    // Account metadata is independent of race progress and must never block racing.
-    syncGoogleAccountDetails(user.uid).catch(error => console.warn('Cloud account details unavailable:', error));
+    profileSync = syncGoogleAccountDetails(user.uid).catch(error => console.warn('Cloud account details unavailable:', error));
   }
 }, () => say($('#cloud-status'), () => t('cloud.failed')));
 window.addEventListener('online', () => { if (cloudPending) saveCloudProgress(); });
+$('#cloud-sync-now').addEventListener('click', () => { if (cloudUser && cloudOwner === cloudUser.uid) saveCloudProgress(); });
 $('#cloud-login').addEventListener('click', async () => {
   $('#cloud-login').disabled = true;
   try { await signInToCloud(); }
@@ -541,16 +580,16 @@ $('#cloud-switch').addEventListener('click', async () => {
   if (!cloudUser || cloudOwner === cloudUser.uid || !confirm(t('cloud.switchConfirm'))) return;
   const uid = cloudUser.uid;
   await cloudSync.catch(() => {});
-  if (cloudUser?.uid !== uid || cloudOwner === uid || !clearLocalProgress()) {
+  if (cloudUser?.uid !== uid || cloudOwner === uid || !switchCloudAccount(cloudOwner, uid)) {
     say($('#cloud-status'), () => t('cloud.failed'));
     return;
   }
-  cloudOwner = cloudUser.uid;
-  try { localStorage.setItem(CLOUD_OWNER_KEY, cloudOwner); } catch { /* Storage may be unavailable. */ }
+  cloudOwner = uid;
   location.reload();
 });
 $('#cloud-export').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(currentProgress(), null, 2)], { type: 'application/json' });
+  const contents = { ...currentProgress(), permanent: readLocalModeBests() };
+  const blob = new Blob([JSON.stringify(contents, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -562,20 +601,29 @@ $('#cloud-delete').addEventListener('click', async () => {
   if (!cloudUser || !confirm(t('cloud.deleteConfirm'))) return;
   const uid = cloudUser.uid;
   $('#cloud-delete').disabled = true;
+  cloudDeleting = true;
   try {
+    // Set the guard before deletion, so a failed local cleanup can never re-upload deleted data.
+    localStorage.setItem(cloudDeletingKey(uid), '1');
     await cloudSync.catch(() => {});
+    await profileSync.catch(() => {});
     if (cloudUser?.uid !== uid) return;
-    await deleteGoogleAccountDetails(uid);
     await deleteCloudProgress(uid);
     if (!clearLocalProgress()) throw new Error('Could not clear local progress');
+    localStorage.removeItem('skyline-rush-cloud-account:' + uid);
+    localStorage.removeItem('skyline-rush-cloud-sync:' + uid);
     localStorage.removeItem(CLOUD_OWNER_KEY);
     localStorage.removeItem(cloudSyncKey(uid));
+    localStorage.removeItem(cloudDeletingKey(uid));
     await signOutOfCloud();
     location.reload();
   } catch (error) {
     console.error('Cloud deletion failed:', error);
-    say($('#cloud-status'), () => t('cloud.failed'));
-  } finally { $('#cloud-delete').disabled = false; }
+    say($('#cloud-status'), () => t('cloud.deletePending'));
+  } finally {
+    cloudDeleting = false;
+    $('#cloud-delete').disabled = false;
+  }
 });
 
 const previewObserver = new IntersectionObserver(entries => {
