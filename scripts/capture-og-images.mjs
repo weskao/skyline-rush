@@ -24,7 +24,11 @@ const browser = await chromium.launch({ channel: 'chrome', args: ['--enable-unsa
 const open = async (locale, viewport, mobile = false) => {
   const context = await browser.newContext({ locale, viewport, hasTouch: mobile, isMobile: mobile });
   // A returning player: otherwise the first Start opens the practice tutorial instead of a race.
-  await context.addInitScript(() => localStorage.setItem('skyline-rush-guide-seen', '1'));
+  // One who has read the latest notes, so the What's New dialog stays out of the cover.
+  await context.addInitScript(() => {
+    localStorage.setItem('skyline-rush-guide-seen', '1');
+    localStorage.setItem('skyline-rush-whats-new-seen-v1', '999.0.0');
+  });
   const page = await context.newPage();
   await page.goto(url);
   await page.locator('#start-button').waitFor();

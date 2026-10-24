@@ -28,15 +28,20 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 <template>
   <dialog id="whats-new-screen" class="history-screen release-screen" aria-labelledby="release-title" aria-describedby="release-intro">
     <header class="release-header">
-      <div><small data-i18n="release.eyebrow">SKYLINE RUSH / RELEASE NOTES</small><h2 id="release-title" data-i18n="release.title">What's new</h2></div>
-      <button id="release-close" type="button" class="controls-button" aria-label="Close what's new" data-i18n-aria-label="release.close">×</button>
+      <div>
+        <small data-i18n="release.eyebrow">SKYLINE RUSH / RELEASE NOTES</small>
+        <h2 id="release-title" data-i18n="release.title">What's new</h2>
+        <p id="release-intro" class="release-intro" data-i18n="release.intro">See what's new for your next race.</p>
+      </div>
+      <button id="release-close" type="button" class="release-close" aria-label="Close what's new" data-i18n-aria-label="release.close">×</button>
     </header>
-    <div class="release-meta"><span id="release-version"></span><span id="release-date"></span></div>
-    <img id="release-hero" class="release-hero" alt="" hidden>
-    <p id="release-intro" class="release-intro" data-i18n="release.intro">See what's new for your next race.</p>
-    <div id="release-items" class="release-entries"></div>
+    <div id="release-versions" class="release-versions" role="tablist" aria-label="Versions" data-i18n-aria-label="release.versions"></div>
+    <section id="release-panel" class="release-panel" role="tabpanel" tabindex="0">
+      <img id="release-hero" class="release-hero" alt="" hidden>
+      <div class="release-meta"><span id="release-version"></span><span id="release-date"></span></div>
+      <div id="release-items" class="release-entries"></div>
+    </section>
     <footer class="release-footer">
-      <a href="https://github.com/weskao/skyline-rush/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" data-i18n="release.details">All changes</a>
       <button type="button" class="primary-button" id="release-continue" data-i18n="release.continue">Continue</button>
     </footer>
   </dialog>
