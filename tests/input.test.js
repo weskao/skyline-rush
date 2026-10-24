@@ -115,6 +115,53 @@ test('one touch slides from FLY across the BOOST seam and releases both on cance
   controls.destroy();
 });
 
+// Buttons mode: BRAKE spans the row above [<][>] behind a 14 px gap.
+const steeringCluster = controls => {
+  const button = (control, rect) => { const el = new EventTarget(); el.getBoundingClientRect = () => rect; controls.bindButton(el, control); return el; };
+  return {
+    left: button('left', { left: 24, right: 80, top: 100, bottom: 160, width: 56, height: 60 }),
+    right: button('right', { left: 86, right: 142, top: 100, bottom: 160, width: 56, height: 60 }),
+    brake: button('brake', { left: 24, right: 142, top: 42, bottom: 86, width: 118, height: 44 }),
+  };
+};
+
+test('one thumb slides from an arrow up into BRAKE to drift: the steer holds, the brake follows the thumb', () => {
+  const controls = createControls(new EventTarget());
+  const { left } = steeringCluster(controls);
+  const move = (clientX, clientY) => send(left, 'pointermove', { pointerId: 1, pointerType: 'touch', clientX, clientY });
+  send(left, 'pointerdown', { pointerId: 1, pointerType: 'touch', clientX: 50, clientY: 130 });
+  assert.deepEqual([controls.read().steer, controls.read().brake], [-1, false]);
+  move(50, 93); // the gap: still only steering
+  assert.deepEqual([controls.read().steer, controls.read().brake], [-1, false]);
+  move(50, 60);
+  assert.deepEqual([controls.read().steer, controls.read().brake], [-1, true]);
+  move(120, 60); // drifting across BRAKE above [>] keeps the direction the thumb started with
+  assert.deepEqual([controls.read().steer, controls.read().brake], [-1, true]);
+  move(50, 130); // back down onto the arrow: the brake lets go, steering continues
+  assert.deepEqual([controls.read().steer, controls.read().brake], [-1, false]);
+  send(left, 'pointerup', { pointerId: 1 });
+  assert.deepEqual([controls.read().steer, controls.read().brake], [0, false]);
+  controls.destroy();
+});
+
+test('BRAKE bridging needs a steering touch over a visible BRAKE', () => {
+  const controls = createControls(new EventTarget());
+  const { right, brake } = steeringCluster(controls);
+  send(brake, 'pointerdown', { pointerId: 1, pointerType: 'touch', clientX: 50, clientY: 60 });
+  send(brake, 'pointermove', { pointerId: 1, pointerType: 'touch', clientX: 50, clientY: 130 });
+  assert.deepEqual([controls.read().steer, controls.read().brake], [0, true], 'a thumb that starts on BRAKE stays a plain brake');
+  send(brake, 'pointerup', { pointerId: 1 });
+  send(right, 'pointerdown', { pointerId: 2, pointerType: 'mouse', clientX: 110, clientY: 130 });
+  send(right, 'pointermove', { pointerId: 2, pointerType: 'mouse', clientX: 110, clientY: 60 });
+  assert.deepEqual([controls.read().steer, controls.read().brake], [1, false], 'a mouse drag never bridges');
+  send(right, 'pointerup', { pointerId: 2 });
+  brake.getBoundingClientRect = () => ({ left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 }); // display:none in slide mode
+  send(right, 'pointerdown', { pointerId: 3, pointerType: 'touch', clientX: 110, clientY: 130 });
+  send(right, 'pointermove', { pointerId: 3, pointerType: 'touch', clientX: 0, clientY: 0 });
+  assert.deepEqual([controls.read().steer, controls.read().brake], [1, false], 'a hidden BRAKE is never entered');
+  controls.destroy();
+});
+
 test('tilt calibrates neutral, ignores invalid samples, handles screen rotation and clears on blur', () => {
   const target = new EventTarget(); target.screen = { orientation: { angle: 0 } };
   const settings = { mode: 'tilt', sensitivity: 1 };
