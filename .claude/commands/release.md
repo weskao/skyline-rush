@@ -20,7 +20,8 @@ from the survey. Later phases reuse this answer and do not ask again.
 1. `node scripts/check-release-notes.mjs <version>` — read-only.
    - **Passes** → go to Phase T.
    - **No entry for the version** → stop. The notes are written first (CLAUDE.md "Every release
-     ships its What's New notes"); offer to draft them from the commits since the last tag.
+     ships its What's New notes"); offer to draft them from `node scripts/check-release-notes.mjs --changes` (player-facing
+     commits since the last tag), rewritten as player copy, then review them.
    - **Copy problems, not reviewed, or changed since review** → run
      `.claude/commands/review-release-notes.md` with the version: automatic check, fresh-eyes
      sub-agent review, the user's answers (every `AskUserQuestion` carries a "(Recommended)" first

@@ -13,9 +13,10 @@ whose notes were never reviewed, or were edited after their review. This command
    commit ids, over-long text, missing language). Only the "not reviewed" line may remain.
 2. **Fresh-eyes review.** Spawn one sub-agent that did not write the notes. Give it only the
    `$ARGUMENTS` entry (en + zh-TW) from `src/release-notes.js`, what shipped in that version and
-   this checklist; it reads no code and edits nothing. What shipped is the version's `CHANGELOG.md`
-   section, or — before `/release` has generated it — the commit subjects since the last tag:
-   `git log "$(git describe --tags --abbrev=0)"..HEAD --no-merges --format='%s'`. For each highlight it answers
+   this checklist; it reads no code and edits nothing. What shipped is
+   `node scripts/check-release-notes.mjs --changes` (the version's feat / fix / perf commits since
+   the last tag, tooling scopes removed — docs, tests, CI, build, release, hooks and dev setup
+   never reach players), plus the version's `CHANGELOG.md` section once `/release` has written it. For each highlight it answers
    **OK / Rewrite (with en + zh-TW wording) / Remove**, with one reason:
    - **Player value:** says what players can now do, see or feel, and why it matters to them.
    - **Too detailed:** internal numbers, tuning values, edge cases players never notice → cut.
@@ -24,8 +25,8 @@ whose notes were never reviewed, or were edited after their review. This command
      describe only that result.
    - **Sensitive:** links, accounts, emails, keys, internal addresses, people's names, unannounced
      plans, how a security or cheating problem worked → remove.
-   - **Shipped only:** every highlight matches a change that shipped in this version (quote it);
-     nothing from a roadmap or mock-up.
+   - **Shipped only:** every highlight matches a line of the `--changes` list (quote it); nothing
+     from a docs, test, CI, build or tooling commit, a roadmap or a mock-up.
    - **Language:** en and zh-TW say the same thing, each natural (Taiwan wording, not a word-for-word
      translation), plain and inviting.
 3. **Ask the user** about every finding that is not OK, with `AskUserQuestion` (one question per
