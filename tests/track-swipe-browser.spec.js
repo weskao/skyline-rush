@@ -136,10 +136,12 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
   expect(geometry[1].right).toBeGreaterThanOrEqual(1440);
   expect(geometry.every(part => part.width === 1440 && part.height > 0 && part.alpha === 255), 'both actual scenes remain fully opaque').toBe(true);
   expect(await selected(page)).toBe(first);
-  expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('');
+  // The live WebGL renderer stays transparent to interactions but behind opaque snapshots.
+  expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('0');
   await page.mouse.up();
   await expect.poll(() => selected(page)).toBe(second);
   await expect(pages).toHaveCount(0);
+  expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('');
 });
 
 test('desktop: a short drag snaps the joined previews back without changing track', async ({ page }) => {
