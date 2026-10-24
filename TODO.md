@@ -5,7 +5,9 @@
 - [x] Inspect failed CI run 40102405872: only browser-tests shard 6 failed; the existing Playwright RED shows expected `neon` but actual `alpine` during one prolonged wheel gesture. The aggregate quality-gate correctly failed because the browser shard was red.
 - [x] Trace `src/main.js` wheel gesture lifecycle: under CPU-heavy WebGL event gaps can exceed the 160 ms inactivity timer, rearming the same swipe and advancing several tracks.
 - [x] Add a dedicated browser regression simulating momentum event intervals beyond 160 ms in `tests/track-swipe-browser.spec.js`, committed before the fix.
-- [x] Apply the minimal shared fix: increase the wheel gesture idle window to 320 ms, still shorter than the 400 ms inter-gesture spacing used by the existing test.
+- [x] ~~Apply the minimal shared fix: increase the wheel gesture idle window to 320 ms~~ — replaced. Any CI delivery hiccup over 320 ms still split a swipe, and users would have to pause 320 ms between swipes.
+- [x] Root cause, measured: wheel events were stamped 16 ms apart (`event.timeStamp`), but Playwright/CDP delivered some 168–203 ms apart while frame times stayed under 50 ms. The 160 ms wall-clock timer read late delivery as a pause, and also reset unfinished drags. Fix in `src/main.js`: the gesture pause is timed on `event.timeStamp` (`WHEEL_END_MS` back to 160 ms), and the timer only springs an unfinished drag back.
+- [x] Deterministic RED/GREEN: both trackpad tests send CDP wheel events stamped 16 ms apart (`trackpadSwipe`): one delivers a single event 300 ms late, the other delivers every event 210 ms apart. On the original timer code: 3/3 RED (expected `neon`, got `canyon`/`aurora`). After the fix: the whole `tests/track-swipe-browser.spec.js` passes 30/30 local runs (6 repeats).
 - [ ] Obtain GREEN evidence on the final commit, including both trackpad tests and all CI shards, then mark the confirmed tests complete. The earlier RED was observed on the original test in the cited CI run; the new focused test was committed test-first but its isolated RED has not been separately observed.
 - [ ] Confirm real Mac trackpad gestures, momentum separation and touch/mouse swipes remain natural before calling this a fully device-verified fix.
 
@@ -17,9 +19,14 @@
 - [x] Add GitHub CI `quality-gate` that fails unless unit/browser/cloud/World Tour jobs all succeed; block manual feature-branch deployments and make deploy consider World Tour results.
 - [x] Run CI on future `feature/**` pushes while keeping the explicitly disabled `feature/mode00-objective-contract` branch excluded.
 - [ ] Confirm the complete `quality-gate` succeeds at the **final** feature HEAD; test infrastructure changes are not accepted based on an older SHA.
+  - `ddbeb3a` (run 40102405872) failed: the trackpad-swipe test above failed in shard 6; `main` `d2b35e5` fails CI on the same test. The fix is in the section above, and the gate is re-checked on the commit that carries it.
 - [ ] Complete real-game visual/interaction evidence for Sky Spiral road clipping and Tokyo finish controls on affected devices (automation alone cannot certify these).
+  - Done at `ddbeb3a` (headless Chromium, real WebGL, 1440×900 and 390×844 touch): Sky Spiral approach, helix entry, both quarter turns, left/right rail, helix exit and first ramp at ~305 km/h show the car seated on the banked road with no clipping, and 0 page errors. Tokyo finish after 2 real collisions: camera, language switch to zh-TW, Next and Race Again all respond to real clicks (`tests/tokyo-finish-controls-browser.spec.js`, 4/4).
+  - Still open: a human playthrough on a physical iPhone/Android (touch hardware, Safari WebGL) and on desktop Safari/Firefox.
 - [ ] Before user-approved merge, integrate latest `main`, resolve any conflicts, repeat exact-commit CI and assess manual evidence; do not claim merge readiness while behind or unchecked.
-- [ ] Consider configuring GitHub branch protection/ruleset to require `quality-gate` on `main` if repository administration permissions become available; documentation/CI do not by themselves prevent direct pushes.
+  - `main` (`d2b35e5`) is fully merged, with 0 commits behind and no conflicts. Still waiting on a green gate at the final HEAD, the physical-device check above and the user's merge approval.
+- [x] Consider configuring GitHub branch protection/ruleset to require `quality-gate` on `main` if repository administration permissions become available; documentation/CI do not by themselves prevent direct pushes.
+  - Ruleset `main requires quality-gate` (id 25785253, active, 2026-10-24) on the default branch. Repository admins can bypass it so the local-merge and `/release` flow keeps working; every other push or PR to `main` needs a green `quality-gate`.
 
 
 ## Sky Spiral & cross-track cornering stability (2026-10-24)
