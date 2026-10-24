@@ -1,5 +1,17 @@
 # TODO — Gameplay depth design
 
+## UX-Release-01 — 新版本功能公告（What's New）｜設計提案（2026-10-24）
+
+狀態：**僅完成規格提案，尚未實作**。完整 UI、版本觸發、儲存、i18n、無障礙、TDD 與桌面／手機驗收規範，見 [docs/release-announcements.md](docs/release-announcements.md)。
+
+- [ ] 以目前 `package.json` 版本與**隨版本打包、人工核對**的玩家公告資料判斷是否有值得展示的變更；`CHANGELOG.md` 供作者整理，不能直接展示開發／CI 雜訊。
+- [ ] 新版本未讀時，僅在**首頁／準備狀態**且沒有其他對話框或教學時自動顯示一次；比賽、暫停與結算不得被中斷。處理首次教學與裝置效能提示的顯示優先順序。
+- [ ] 使用原生 `<dialog>` 設計響應式「What's New／新版本功能」介面，支援 English／繁體中文、ESC／關閉／繼續、焦點管理、減少動態效果及至少 44px 觸控操作範圍。
+- [ ] 關閉後將目前版本寫入 Local Storage 的**公告已讀標記**；儲存受阻以記憶體保底；不得誤用 `src/update-check.js` 的 Session Storage 自動重新載入標記，亦不把公告偏好同步至 Firestore。
+- [ ] 現有首頁版本文字提供「查看更新／What's New」入口，關閉後仍可手動開啟；勿增加會破壞 900px 首頁高度限制的新按鈕列。
+- [ ] Superpowers TDD：先寫失敗的狀態／視窗／儲存／版本測試，最小化實作（Ponytail，不加新套件、後端或第二個 WebGL 畫布），通過 `npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`；完成真實畫面截圖及手機驗收才勾選。
+
+
 ## 最高優先：儲存與跨裝置還原（2026-10-23）
 
 原則：需要在清除瀏覽器資料後還原的遊戲成果，以 Google 登入後的 Firestore 帳號資料為主、本機資料為離線副本；裝置操作偏好留在本機。Firestore 單一使用者文件採版本化格式，僅在登入、完成比賽及成果改變時同步，不按影格寫入。勾選只代表該項已實作並完成對應驗證。
