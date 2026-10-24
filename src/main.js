@@ -819,7 +819,7 @@ worldCanvas.addEventListener('pointermove', event => {
 });
 // Trackpad two-finger swipe (horizontal wheel): the preview follows the scroll and changes track once it travels the swipe
 // distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it.
-const WHEEL_END_MS = 160;
+const WHEEL_END_MS = 320; // tolerate delayed momentum events under CPU-heavy WebGL; still below the 400ms gap between gestures
 worldCanvas.addEventListener('wheel', event => {
   if (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
   if (swipe || race.phase !== 'ready' || tutorial || editingLayout || document.querySelector('dialog[open]')) return;
