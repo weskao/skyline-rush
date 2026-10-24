@@ -1,0 +1,115 @@
+import { test, expect } from './helpers/test.js';
+
+const selected = page => page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
+const trackOrder = page => page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
+const chip = page => page.locator('#track-swipe');
+
+// Real touch input through CDP: start, a few moves, release; holdMs pauses before lifting (no flick).
+async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 0 } = {}) {
+  const cdp = await page.context().newCDPSession(page);
+  const point = x => [{ x, y, id: 1 }];
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point(from) });
+  for (let i = 1; i <= steps; i++) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: point(from + (to - from) * i / steps) });
+    await page.waitForTimeout(stepMs);
+  }
+  if (holdMs) await page.waitForTimeout(holdMs);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.detach();
+}
+
+test.describe('phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('first Airflow shows the animated swipe hint once, and swiping the preview pages through tracks', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto('/');
+    const [first, second] = await trackOrder(page);
+    await page.locator('#airflow-toggle').tap();
+    await expect(chip(page)).toHaveAttribute('data-state', 'hint');
+    await expect(chip(page)).toContainText('Swipe left or right to change track');
+    await expect(page.locator('.swipe-gesture i')).toBeVisible();
+    expect(await page.locator('.swipe-gesture i').evaluate(dot => getComputedStyle(dot).animationName)).toBe('swipe-gesture');
+    expect(await page.evaluate(() => document.elementFromPoint(195, 560)?.id)).toBe('world');
+
+    await touchSwipe(page, 195, 165, 560, { stepMs: 30, holdMs: 150 });
+    expect(await selected(page), 'a short slow drag snaps back').toBe(first);
+    await expect(page.locator('#world')).toHaveAttribute('style', /^(?!.*translate)/);
+
+    await touchSwipe(page, 320, 90, 560);
+    await expect.poll(() => selected(page)).toBe(second);
+    await expect(chip(page)).toHaveAttribute('data-state', 'done');
+    await expect(page.locator('#track-swipe-name')).not.toHaveText('');
+    await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.getAnimations().length + canvas.style.transform)).toBe('0');
+
+    await touchSwipe(page, 70, 300, 560);
+    await expect.poll(() => selected(page)).toBe(first);
+    await page.waitForTimeout(800);
+    await touchSwipe(page, 70, 300, 560);
+    await page.waitForTimeout(800);
+    expect(await selected(page), 'the first track rubber-bands instead of wrapping').toBe(first);
+
+    // A touch starting in the iOS edge-swipe zone is left to the browser.
+    await touchSwipe(page, 8, 260, 560);
+    await page.waitForTimeout(800);
+    expect(await selected(page)).toBe(first);
+
+    await page.reload();
+    await page.locator('#airflow-toggle').tap(); // airflow was saved on: off, then on again
+    await page.locator('#airflow-toggle').tap();
+    await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await page.waitForTimeout(300);
+    await expect(chip(page)).toHaveAttribute('data-state', '');
+    expect(errors).toEqual([]);
+  });
+
+  test('reduced motion still swipes, without sliding the scene', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const [, second] = await trackOrder(page);
+    await page.locator('#airflow-toggle').tap();
+    expect(await page.locator('.swipe-gesture i').evaluate(dot => getComputedStyle(dot).animationName)).toBe('none');
+    await touchSwipe(page, 320, 90, 560);
+    await expect.poll(() => selected(page)).toBe(second);
+    expect(await page.locator('#world').evaluate(canvas => canvas.style.transform)).toBe('');
+  });
+});
+
+test('desktop: dragging the preview with the mouse changes track from the regular home screen', async ({ page }) => {
+  await page.goto('/');
+  const [, second] = await trackOrder(page);
+  expect(await page.evaluate(() => document.elementFromPoint(1150, 600)?.id)).toBe('world');
+  expect(await page.locator('#world').evaluate(canvas => getComputedStyle(canvas).cursor)).toBe('grab');
+  await page.mouse.move(1150, 600);
+  await page.mouse.down();
+  for (let x = 1130; x >= 950; x -= 30) { await page.mouse.move(x, 600); await page.waitForTimeout(16); }
+  await expect(chip(page)).toHaveAttribute('data-state', 'drag');
+  await page.mouse.up();
+  await expect.poll(() => selected(page)).toBe(second);
+  await expect(page.locator(`[data-track="${second}"]`)).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('desktop: a two-finger trackpad swipe changes one track per gesture, momentum included', async ({ page }) => {
+  await page.goto('/');
+  const [first, second, third] = await trackOrder(page);
+  await page.mouse.move(1150, 600);
+  const scroll = async (deltaX, events) => { for (let i = 0; i < events; i++) { await page.mouse.wheel(deltaX, 0); await page.waitForTimeout(16); } };
+  await scroll(10, 4);
+  await page.waitForTimeout(400);
+  expect(await selected(page), 'a nudge springs back').toBe(first);
+  await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.style.transform)).toBe('');
+  await scroll(30, 20); // swipe plus its momentum tail: still one track
+  await expect.poll(() => selected(page)).toBe(second);
+  await page.waitForTimeout(400);
+  expect(await selected(page)).toBe(second);
+  await scroll(30, 6);
+  await expect.poll(() => selected(page)).toBe(third);
+  await page.waitForTimeout(400);
+  await scroll(-30, 6);
+  await expect.poll(() => selected(page)).toBe(second);
+  await page.waitForTimeout(400);
+  await page.mouse.wheel(0, 200); // vertical scrolling is not a swipe
+  await page.waitForTimeout(400);
+  expect(await selected(page)).toBe(second);
+});

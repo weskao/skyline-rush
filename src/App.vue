@@ -125,6 +125,8 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       </div>
     </details>
   </aside>
+  <!-- Home preview swipe (main.js): the track being swiped to, the track just chosen, or the one-time gesture hint. -->
+  <div class="track-swipe" id="track-swipe" role="status" data-state=""><span class="swipe-gesture" aria-hidden="true"><i></i></span><strong id="track-swipe-name"></strong><span id="track-swipe-note"></span><span class="swipe-dots" aria-hidden="true"></span></div>
   <section class="airflow-hud" id="airflow-hud" aria-label="Airflow status" data-i18n-aria-label="aero.status" aria-hidden="true">
     <span class="aero-eyebrow" data-i18n="aero.telemetry">AERODYNAMIC TELEMETRY</span><strong data-i18n="aero.active">AIRFLOW ACTIVE</strong>
     <span id="aero-mode">LOW DRAG</span>
