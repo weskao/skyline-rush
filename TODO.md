@@ -1,5 +1,15 @@
 # TODO — Gameplay depth design
 
+## CI regression: optional release hero images (2026-10-25)
+
+- [x] Trace the shard 5 failure: v0.22.0 intentionally has `image: null`; the browser test still assumes the latest release has v0.21.0's localized OG image. The renderer correctly hides absent images, as required by `docs/release-announcements.md`.
+- [x] RED: `PLAYWRIGHT_PORT=5193 npm run test:browser -- tests/release-announcements-browser.spec.js -g 'release hero image'` failed at the original visibility assertion (`Expected: visible`, `Received: hidden`) in real Chrome. No production change was needed: repair the test's version-dependent assumption.
+- [x] GREEN: the complete release-announcements browser file passed 11/11, including a final rerun after screenshot stabilization. The repaired test checks all five displayed releases in en/zh-TW: image visibility/path/decoding when supplied, readable text and no stale `src` when absent, plus Enter never starting a race.
+- [ ] Full `make verify` GREEN: unit tests passed 547 with 1 skipped; production build passed; browser suite finished 397 passed / 3 failed. The additional failures all reproduced in a separate 3-test run: `tests/i18n-browser.spec.js:173` en/zh-TW phone flows report `daily-card-route` clipping (`Aurora Pass · Double traffic`, 183px > 160px), and `tests/track-swipe-browser.spec.js:42` phone swipe stays on `coast` instead of `neon`. These are outside the announcement-test repair; the complete gate remains red.
+- [x] Independently run the World Tour gate skipped after the browser failure: `npx playwright test --config=playwright.world-tour.config.js --output=playwright-report/ci-release-hero/world-tour` passed 27/27.
+- [x] Inspect settled real-WebGL release-dialog screenshots using the requested premium-ui-design Web/adaptive playbooks: desktop en/zh-TW, 390x844, 320x740 and 844x390. Text hierarchy, scrolling content and Continue remain readable/reachable without requiring a hero. Capture animations at their finished state; evidence and full gate log are in `playwright-report/ci-release-hero/`. Physical-device/Safari checks remain unperformed.
+- [ ] Check GitHub CI `quality-gate` for the exact committing HEAD; this commit-only request does not push or establish remote CI success.
+
 ## Codebase structure: incremental Vue / type-checking adoption (2026-10-25)
 
 Context: `src/` is 64 `.js` files (~10.5k lines), 3 `.vue` files (460 lines), 0 `.ts`. `src/main.js` (2,244 lines) mounts `App.vue` and then drives the UI imperatively (164 `querySelector`/`getElementById`/`innerHTML`/`addEventListener` sites). Simulation and Three.js rendering stay plain JS. Each step ships on its own commit with `make verify` (plus `npm run test:layout` for home-screen changes).
