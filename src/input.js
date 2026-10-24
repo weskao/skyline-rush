@@ -55,7 +55,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
     tiltAt = Date.now();
     onTilt();
   });
-  for (const type of ['contextmenu', 'dragstart']) {
+  for (const type of ['contextmenu', 'dragstart', 'selectstart']) {
     listen(target, type, event => event.preventDefault());
   }
   return {

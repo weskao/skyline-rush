@@ -2,7 +2,8 @@
 :root { font-family: 'Avenir Next', 'Segoe UI', sans-serif; color: #f4f0e9; background: #040d1c; font-synthesis: none; --accent: #ff8966; --blue: #96e3ff; --muted: #c2c8cd; --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-spring: cubic-bezier(.2, 1.2, .3, 1); --dur-fast: 120ms; --dur-base: 240ms; --dur-slow: 480ms; }
 * { box-sizing: border-box; }
 html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
-#app { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* On the root, not #app: a long press anywhere must never open the Copy/Select All menu. */
+html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body { min-width: 320px; -webkit-tap-highlight-color: transparent; }
 button, a { -webkit-user-select: none; user-select: none; }
 button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }

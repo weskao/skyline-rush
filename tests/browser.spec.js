@@ -690,7 +690,9 @@ test.describe('phone game gestures', () => {
     await page.goto('/');
     const title = page.locator('h1');
     await expect(title).toHaveCSS('user-select', 'none');
-    for (const type of ['contextmenu', 'dragstart']) {
+    // The page root too: a long press outside #app must not start a selection or the Copy/Select All menu.
+    await expect(page.locator('html')).toHaveCSS('user-select', 'none');
+    for (const type of ['contextmenu', 'dragstart', 'selectstart']) {
       expect(await title.evaluate((element, type) => element.dispatchEvent(new Event(type, { bubbles: true, cancelable: true })), type)).toBe(false);
     }
     // Touch starts with AUTO on, which shows the gas as held; turn it off so the gas button reflects only the finger.
