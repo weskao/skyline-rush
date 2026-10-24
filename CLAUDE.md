@@ -10,6 +10,23 @@ browser support. Prefer small changes with deterministic unit tests + browser re
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
 `unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability` · `ui-phase-interactions`.
 
+## Mandatory regression-first workflow (every feature and bug fix)
+
+**Always follow `docs/regression-first-workflow.md`** before calling work complete:
+read the relevant rules and trace the shared root cause; reproduce with a failing
+test and observe RED; implement the minimal fix and observe GREEN; regression-check
+all affected tracks, vehicles, locales and inputs; run `make verify`; inspect
+real-game/WebGL and touch screenshots where behavior or rendering changed; then
+inspect the **full GitHub CI `quality-gate` for the exact HEAD commit**.
+Use `TODO.md` to track evidence. CI, manual visual confirmation and historical
+RED evidence are distinct gates — never claim one proves the others.
+
+Only mark the branch **merge-ready** when the latest `main` has been integrated,
+all required checks are green and the user-visible symptoms have been retested.
+Do not merge into `main`, create a PR or deploy without explicit user approval.
+Direct pushes cannot be prevented by Markdown; branch rulesets are required for
+server-enforced status protection.
+
 ## Home-screen landmark showcase
 
 Selecting a map on the home screen must show that map's signature landmark in the live 3D
@@ -82,6 +99,7 @@ compile at first draw", "One NaN pixel is a black frame").
 | `npm run test:browser` | Playwright suite (pretest builds production assets) |
 | `npm run test:layout` | Home-screen layout browser tests (pre-push hook runs it on UI pushes) |
 | `make run` | Unit + browser tests |
+| `make verify` | Full local regression gate: unit, build, browser, World Tour long-run |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
 
 ## UI/UX changes: audio and music assessment
@@ -132,6 +150,12 @@ of the UI/UX design review rather than an optional afterthought.
 - Never delete or weaken tests to pass CI. Report any test you could not run.
 - `README.md` changed → sync `README.zh-TW.md` via `scripts/readme-zh.mjs` (hooks enforce it).
 - A commit on `main` is not a deploy; publication rules are in `.github/workflows/ci.yml`.
+
+- All feature branches (except the explicitly disabled MODE-00 branch) run the same remote CI;
+  the `quality-gate` job requires unit, browser, cloud-save and World Tour checks to
+  succeed. A successful run on a previous commit does **not** validate the new HEAD.
+- CI runs and optional screenshot artifacts are evidence for review, not substitutes
+  for real vehicle/road contact or manual interaction testing on devices.
 
 ## Release
 
