@@ -1,4 +1,4 @@
-<!-- source-sha256: 7e2a840fbca102eb247488694e2c1f81b32706a7721aefd5bea2bbec3b7463ce generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 8b601d8b1ed2078b8c2b4a731dc8533caa403d8ffcfa37d6e8544657c50ebf5f generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -112,7 +112,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 想獲得額外的電量獎勵，可在地面上以超過 126 km/h 的速度貼近超越車流。五秒內連續的乾淨超車可累積連擊至 ×5，並回充 8–16% 的電量（上限 100%）。發生碰撞會中斷連擊；在空中、距離過遠與恢復期間的超車不會獲得獎勵。HUD 會播報每一次超車與最後 500 公尺；結果畫面會顯示近距離超車與碰撞的總次數。
 
-飛行電量在全推力下約可維持五秒。電量歸零時，車輛會自動下降；請放開飛行操作並在地面上行駛來回充。同一份電量也供加速推進使用。發生碰撞會讓車輛減速；飛得夠高就能避開車流。請在 NOVA、ORBIT 與 APEX 之前完成衝刺（依賽道不同為 4–8 公里）。在可使用儲存空間時，個人最佳時間會儲存在這個瀏覽器中。
+飛行電量在全推力下約可維持五秒。電量歸零時，車輛會自動下降；請放開飛行操作並在地面上行駛來回充。同一份電量也供加速推進使用。發生碰撞會讓車輛減速；飛得夠高就能避開車流。對手與車流遵守相同的碰撞規則：會繞開較慢的車輛與玩家，撞到道具、障礙與危險物的反應和你一樣；互相撞擊時，雙方都會減速並被推開（車流之後會加速回到巡航速度）。請在 NOVA、ORBIT 與 APEX 之前完成衝刺（依賽道不同為 4–8 公里）。在可使用儲存空間時，個人最佳時間會儲存在這個瀏覽器中。
 
 ### 操控細節
 

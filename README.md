@@ -111,7 +111,7 @@ Three amber start lights turn cyan at GO. The player car is a low wedge roadster
 
 For an extra charge reward, overtake traffic closely on the ground above 126 km/h. Clean passes within five seconds chain up to ×5 and refill 8–16% charge (capped at 100%). Collisions break the chain; airborne, distant and recovering passes earn no reward. The HUD announces each pass and the final 500 metres; results show total close passes and contacts.
 
-Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Finish the sprint (4–8 km depending on the track) ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
+Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Rivals and traffic obey the same collision rules: they steer around slower cars and the player, hit props, barriers and hazards like you do, and a ram slows and shoves both cars (traffic then speeds back up to cruise). Finish the sprint (4–8 km depending on the track) ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
 
 ### Handling
 
