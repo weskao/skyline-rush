@@ -1,6 +1,6 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
-  HISTORY_LIMIT, MEDALS, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
+  HISTORY_LIMIT, MEDALS, MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
 
 export function mergeUnlocks(local, remote) {
   const unlocked = new Set(['coast', ...(Array.isArray(local) ? local : []), ...(Array.isArray(remote) ? remote : [])]);
@@ -91,6 +91,79 @@ export function mergeProgress(local = {}, cloud = null) {
     modeHistory: mergeRuns(local.modeHistory, cloud?.modeHistory, modeRun, modeRunId),
     daily: mergeRuns(local.daily, cloud?.daily, dailyRun, dailyRunId),
   };
+}
+
+
+const BESTS_LIMIT = 200;
+const validModeKey = key => {
+  if (typeof key !== 'string' || key.length > 4200) return null;
+  try {
+    const parsed = JSON.parse(key);
+    return Array.isArray(parsed) && parsed.length === 2 && track(parsed[0]) &&
+      parsed[1] && typeof parsed[1] === 'object' && !Array.isArray(parsed[1]) &&
+      modeNames.includes(parsed[1].mode) ? parsed[1].mode : null;
+  } catch { return null; }
+};
+
+// Permanent per-ruleset records, independent of the rolling 50-run history.
+export function mergeModeBests(local = {}, remote = null) {
+  if (remote && remote.version !== 1) throw new Error('Unsupported mode bests');
+  const bests = {}, stunts = {};
+  for (const data of [remote?.bests, local?.bests]) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
+    for (const [key, value] of Object.entries(data)) {
+      const mode = validModeKey(key);
+      if (!mode || !Number.isFinite(value) || value < 0 || (mode !== 'stunt' && value === 0)) continue;
+      bests[key] = bests[key] === undefined ? value
+        : mode === 'stunt' ? Math.max(bests[key], value) : Math.min(bests[key], value);
+    }
+  }
+  for (const data of [remote?.stunts, local?.stunts]) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
+    for (const [key, value] of Object.entries(data)) {
+      if (validModeKey(key) !== 'stunt' || !value || !Number.isFinite(value.score) || value.score < 0) continue;
+      const old = stunts[key];
+      const peak = n => Number.isFinite(n) && n >= 0 ? n : 0;
+      stunts[key] = {
+        score: Math.max(value.score, old?.score ?? 0),
+        maxCombo: Math.max(peak(value.maxCombo), old?.maxCombo ?? 0),
+        airTime: Math.max(peak(value.airTime), old?.airTime ?? 0),
+        medal: value.score >= (old?.score ?? -1) ? (typeof value.medal === 'string' ? value.medal.slice(0, 32) : '')
+          : old.medal,
+      };
+      bests[key] = Math.max(bests[key] ?? 0, stunts[key].score);
+    }
+  }
+  return {
+    version: 1,
+    bests: Object.fromEntries(Object.entries(bests).slice(-BESTS_LIMIT)),
+    stunts: Object.fromEntries(Object.entries(stunts).slice(-BESTS_LIMIT)),
+  };
+}
+
+export function readLocalModeBests(storage) {
+  const target = storage ?? globalThis.localStorage;
+  const read = key => { try { return JSON.parse(target.getItem(key)) ?? {}; } catch { return {}; } };
+  return { bests: read(MODE_BESTS_KEY), stunts: read(STUNT_BESTS_KEY) };
+}
+
+export function saveLocalModeBests(value, storage) {
+  const target = storage ?? globalThis.localStorage;
+  try {
+    const merged = mergeModeBests(value);
+    const previous = [[MODE_BESTS_KEY, target.getItem(MODE_BESTS_KEY)],
+      [STUNT_BESTS_KEY, target.getItem(STUNT_BESTS_KEY)]];
+    try {
+      target.setItem(MODE_BESTS_KEY, JSON.stringify(merged.bests));
+      target.setItem(STUNT_BESTS_KEY, JSON.stringify(merged.stunts));
+      return true;
+    } catch {
+      for (const [key, old] of previous) {
+        try { if (old === null) target.removeItem(key); else target.setItem(key, old); } catch { /* best effort */ }
+      }
+      return false;
+    }
+  } catch { return false; }
 }
 
 export function readLocalProgress(storage) {
