@@ -32,7 +32,9 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .route-divider { opacity: .45; }
 .toolbar { position: relative; display: flex; gap: 7px; }
 .icon-button { width: 42px; height: 42px; border: 1px solid rgb(255 255 255 / .19); background: rgb(14 28 42 / .15); display: grid; place-items: center; border-radius: 50%; }
-.icon-button:hover:not(:disabled), .icon-button[aria-pressed="true"] { background: rgb(255 255 255 / .15); }
+.icon-button[aria-pressed="true"] { background: rgb(255 255 255 / .15); }
+/* Touch keeps :hover stuck after a tap, which would paint an OFF toggle like ON. */
+@media (hover: hover) { .icon-button:hover:not(:disabled) { background: rgb(255 255 255 / .15); } }
 /* Icons are re-rendered on audio changes; keep click targets on the stable button. */
 .icon-button svg { pointer-events: none; }
 .settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; max-height: calc(100dvh - 80px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
@@ -300,7 +302,7 @@ body[data-phase="ready"] .build-version { display: block; }
 .brand { text-shadow: 0 2px 18px rgb(0 9 24 / .6); }
 .route-heading { text-shadow: 0 1px 8px #091525; }
 .icon-button { background: rgb(8 22 38 / .55); border-color: rgb(195 224 244 / .25); }
-.icon-button:hover:not(:disabled) { border-color: var(--blue); background: #19384c; }
+@media (hover: hover) { .icon-button:hover:not(:disabled) { border-color: var(--blue); background: #19384c; } }
 .intro { animation: intro-arrival .7s cubic-bezier(.16, 1, .3, 1) both; }
 .intro-copy { color: #e1e4e9; }
 .primary-button { box-shadow: 0 8px 30px rgb(8 15 26 / .28); }
