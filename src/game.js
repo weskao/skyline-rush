@@ -258,7 +258,7 @@ export function createRace(trackId = 'coast', modifier = null) {
     player: {
       distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
-      impact: null, landing: null, steering: 0, boosting: false, braking: false,
+      impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       section: null, inShortcut: false, falls: 0, fall: null,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
@@ -560,6 +560,9 @@ export function stepRace(race, input, dt) {
     lateralPosition += (lane - lateralPosition) * (1 - Math.exp(-3 * dt));
   }
   car.x = clamp(lateralPosition, -ROAD_LIMIT, ROAD_LIMIT);
+  // A continuous press against the same rail is one contact, not a fresh crash
+  // each time collision grace expires. Re-arm after the car pulls clear.
+  if (Math.abs(car.x) < ROAD_LIMIT - 1.2) car.railContactSide = 0;
   car.cooldown = Math.max(0, car.cooldown - dt);
   car.scrapeCooldown = Math.max(0, car.scrapeCooldown - dt);
   if (car.nearMiss && race.elapsed - car.nearMiss.time > 5) car.combo = 0;
@@ -686,7 +689,7 @@ export function stepRace(race, input, dt) {
       contact(race, 'barrier', Math.sign(car.x) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75); // pushed toward the centre
     } else if (pylon) {
       contact(race, 'barrier', pylon.x, clamp(car.speed / 100, 0.25, 1), 0.75);
-    } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12) {
+    } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12 && car.railContactSide !== Math.sign(lateralPosition)) {
       const side = Math.sign(lateralPosition);
       if (Math.abs(car.steering) < 0.9 && Math.abs(car.steering * Math.min(9, car.speed * 0.22)) / car.speed < SCRAPE_RATIO) {
         car.x = side * (ROAD_LIMIT - 0.3);
@@ -697,6 +700,7 @@ export function stepRace(race, input, dt) {
         }
       } else {
         contact(race, 'barrier', side * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75);
+        car.railContactSide = side;
       }
     }
   }
