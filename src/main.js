@@ -765,39 +765,90 @@ function showSwipeHint() {
   } catch { /* Still shown once for this page when persistent storage is disabled. */ }
   showSwipeChip('hint', race.trackId, t(touchPreference.matches ? 'swipe.hintTouch' : 'swipe.hintMouse'));
 }
-// Releases the drag and springs the preview back to rest.
+// Keep both 3D scenes edge-to-edge while swiping. Only the active scene renders each frame;
+// the neighbor is drawn once into a temporary 2D snapshot (no second WebGL context).
+const swipeScenes = document.createElement('div');
+swipeScenes.id = 'track-swipe-scenes';
+swipeScenes.setAttribute('aria-hidden', 'true');
+worldCanvas.after(swipeScenes);
+let swipeSceneStep = 0;
+function captureSwipeFrame() {
+  const canvas = document.createElement('canvas');
+  canvas.width = worldCanvas.width;
+  canvas.height = worldCanvas.height;
+  canvas.getContext('2d').drawImage(worldCanvas, 0, 0);
+  return canvas;
+}
+function clearSwipeScenes() {
+  swipeScenes.getAnimations().forEach(animation => animation.cancel());
+  swipeScenes.replaceChildren();
+  swipeScenes.style.transform = '';
+  swipeSceneStep = 0;
+  worldCanvas.style.opacity = '';
+}
+function prepareSwipeScenes(step) {
+  const button = swipeNeighbour(step);
+  if (!button || !world || calmMotion()) return false;
+  if (step === swipeSceneStep && swipeScenes.childElementCount === 2) return true;
+  try {
+    const time = performance.now() / 1000;
+    // A non-preserved WebGL drawing buffer may be empty after compositing;
+    // explicitly render both frames immediately before copying their pixels.
+    world.render(race, 0, time);
+    const current = captureSwipeFrame();
+    world.render(selectedRace(button.dataset.track), 0, time);
+    const neighbor = captureSwipeFrame();
+    swipeScenes.replaceChildren(...(step > 0 ? [current, neighbor] : [neighbor, current]));
+    swipeSceneStep = step;
+    // Opacity preserves pointer capture; visibility:hidden would lose hit-testing.
+    worldCanvas.style.opacity = '0';
+    return true;
+  } catch (error) {
+    clearSwipeScenes();
+    console.warn('Preview snapshot unavailable:', error);
+    return false;
+  } finally {
+    world.render(race, 0, performance.now() / 1000);
+  }
+}
+function positionSwipeScenes(offset) {
+  swipeScenes.style.transform = `translateX(calc(${swipeSceneStep > 0 ? 0 : -100}vw + ${offset.toFixed(1)}px))`;
+}
+// On cancellation, the joined pages snap back without showing any underlying background.
 function cancelSwipe() {
   swipe = null; swipeTarget = null;
   if (swipeChip.dataset.state === 'drag') swipeChip.dataset.state = '';
-  if (!worldCanvas.style.transform) return;
-  const from = { transform: worldCanvas.style.transform, opacity: worldCanvas.style.opacity };
-  worldCanvas.style.transform = worldCanvas.style.opacity = '';
-  if (!calmMotion()) worldCanvas.animate([from, { transform: 'none', opacity: 1 }], motionOptions('base'));
+  if (!swipeScenes.childElementCount) return;
+  const from = swipeScenes.style.transform;
+  const to = swipeSceneStep > 0 ? 'translateX(0px)' : 'translateX(-100vw)';
+  if (calmMotion()) { clearSwipeScenes(); return; }
+  swipeBusy = true;
+  swipeScenes.animate([{ transform: from }, { transform: to }], motionOptions('fast')).finished
+    .catch(() => {}).then(() => { clearSwipeScenes(); swipeBusy = false; });
 }
-// The preview slides out toward the finger, the track changes behind it, and the new scene slides in from the other side.
+// Slide the outgoing and incoming track as adjacent full-screen pages, never as faded empty canvas.
 async function commitSwipe(button, step) {
   swipe = null; swipeTarget = null; swipeBusy = true;
-  const travel = -step * innerWidth * 0.3;
-  if (!calmMotion()) await worldCanvas.animate([{ transform: worldCanvas.style.transform || 'none', opacity: worldCanvas.style.opacity || 1 }, { transform: `translateX(${travel}px)`, opacity: 0 }], { ...motionOptions('fast'), fill: 'forwards' }).finished.catch(() => {});
-  worldCanvas.style.transform = worldCanvas.style.opacity = '';
+  const prepared = swipeSceneStep === step && swipeScenes.childElementCount === 2 || prepareSwipeScenes(step);
+  if (prepared && !calmMotion()) {
+    const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
+    const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';
+    await swipeScenes.animate([{ transform: from }, { transform: to }], motionOptions('base')).finished.catch(() => {});
+  }
   button.click();
   showSwipeChip('done', race.trackId);
-  if (!calmMotion()) {
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); // the new track has drawn once
-    worldCanvas.getAnimations().forEach(animation => animation.cancel());
-    await worldCanvas.animate([{ transform: `translateX(${-travel}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], motionOptions('base')).finished.catch(() => {});
-  }
-  worldCanvas.getAnimations().forEach(animation => animation.cancel());
+  // Wait for the live WebGL scene to reflect the new track before uncovering it.
+  if (prepared) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  clearSwipeScenes();
   swipeBusy = false;
 }
-// Moves the preview with the gesture and names the track it would land on.
+// The two complete scenes stay touching at the center seam throughout the drag.
 function dragSwipe(dx) {
-  const neighbour = swipeNeighbour(dx < 0 ? 1 : -1);
-  if (!calmMotion()) {
-    const offset = swipeOffset(dx, innerWidth, Boolean(neighbour));
-    worldCanvas.style.transform = `translateX(${offset.toFixed(1)}px)`;
-    worldCanvas.style.opacity = (1 - Math.min(0.5, Math.abs(offset) / innerWidth)).toFixed(3);
-  }
+  const step = dx < 0 ? 1 : -1;
+  const neighbour = swipeNeighbour(step);
+  if (!calmMotion() && neighbour && prepareSwipeScenes(step)) {
+    positionSwipeScenes(swipeOffset(dx, innerWidth, true));
+  } else if (swipeScenes.childElementCount) clearSwipeScenes();
   const target = neighbour?.dataset.track ?? race.trackId;
   if (target !== swipeTarget) { swipeTarget = target; showSwipeChip('drag', target, neighbour?.classList.contains('is-locked') ? t('track.locked') : ''); }
   swipeChip.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / swipeDistance(innerWidth)).toFixed(3));
