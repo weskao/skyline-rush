@@ -3,6 +3,24 @@
 > Status: **proposed specification, not implemented** (2026-10-24).
 > Related: [TODO.md](../TODO.md) · [CHANGELOG.md](../CHANGELOG.md) · [CLAUDE.md](../CLAUDE.md) · [update-check.js](../src/update-check.js).
 
+## Player-first copy policy (binding)
+
+Every displayed title, description, category and summary must be natural, **non-technical
+player-facing copy**, in both English and Traditional Chinese. Explain what players get to
+experience, not what developers changed internally. Never show CI, TDD, Firestore, shader,
+database, refactor, schema or file names in an in-game announcement. Link to the raw
+developer CHANGELOG only as an optional secondary action. This policy is also recorded
+in `CLAUDE.md` for all future releases.
+
+## Launch migration note
+
+Version `0.21.0` predates this announcement system: its verified notes may be opened
+manually via the version label, but `autoShow: false` prevents all existing player
+sessions and automated home-screen tests from being unexpectedly interrupted by an
+announcement that was added **after** that version shipped. Starting with a future
+published version, the curated entry can opt in with `autoShow: true`. A missing
+version entry displays nothing automatically; do not guess or invent release highlights.
+
 ## 1. Goal / Non-goals
 
 When a version of **Skyline Rush** with curated player-facing news is published, explain its major changes on the **home/ready** screen in a polished, dismissible announcement. Players can reopen the same information from the displayed build-version label. Work identically in **English / zh-TW**, desktop and mobile.
