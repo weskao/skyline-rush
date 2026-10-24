@@ -21,6 +21,18 @@ service cloud.firestore {
             && request.resource.data.email.matches('^.+@.+[.].+$')));
     }
 
+    match /modeBests/{uid} {
+      allow get, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['version', 'bests', 'stunts'])
+        && request.resource.data.keys().hasAll(['version', 'bests', 'stunts'])
+        && request.resource.data.version == 1
+        && request.resource.data.bests is map
+        && request.resource.data.stunts is map
+        && request.resource.data.bests.size() <= 200
+        && request.resource.data.stunts.size() <= 200;
+    }
+
     match /saves/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;
       allow delete: if request.auth != null && request.auth.uid == uid;
