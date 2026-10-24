@@ -9,7 +9,7 @@
 - [x] Root cause, measured: wheel events were stamped 16 ms apart (`event.timeStamp`), but Playwright/CDP delivered some 168–203 ms apart while frame times stayed under 50 ms. The 160 ms wall-clock timer read late delivery as a pause, and also reset unfinished drags. Fix in `src/main.js`: the gesture pause is timed on `event.timeStamp` (`WHEEL_END_MS` back to 160 ms), and the timer only springs an unfinished drag back.
 - [x] Deterministic RED/GREEN: both trackpad tests send CDP wheel events stamped 16 ms apart (`trackpadSwipe`): one delivers a single event 300 ms late, the other delivers every event 210 ms apart. On the original timer code: 3/3 RED (expected `neon`, got `canyon`/`aurora`). After the fix: the whole `tests/track-swipe-browser.spec.js` passes 30/30 local runs (6 repeats).
 - [x] CI run 40110604502 on `1fd4178` failed only on "a nudge springs back": the Linux runner scaled native CDP wheel deltas, so a 40 px nudge passed the 96 px swipe distance (macOS does not scale). `trackpadSwipe` now dispatches a `WheelEvent` with a pinned CSS-pixel delta and a pinned `timeStamp`. On the original timer code: 6/6 RED (got `canyon`/`coast`). On the fix: 20/20 GREEN locally.
-- [ ] Obtain GREEN evidence on the final commit, including both trackpad tests and all CI shards, then mark the confirmed tests complete. The earlier RED was observed on the original test in the cited CI run; the new focused test was committed test-first but its isolated RED has not been separately observed.
+- [x] Obtain GREEN evidence on the final commit, including both trackpad tests and all CI shards, then mark the confirmed tests complete. Done: run 40113913209 on `ab150f3` passed all eight browser shards, unit, cloud-save, World Tour and `quality-gate`. The earlier RED was observed on the original test in the cited CI run; the new focused test was committed test-first but its isolated RED has not been separately observed.
 - [ ] Confirm real Mac trackpad gestures, momentum separation and touch/mouse swipes remain natural before calling this a fully device-verified fix.
 
 ## Regression-first workflow adoption (2026-10-24)
@@ -19,7 +19,8 @@
 - [x] Provide `make verify` to run unit tests, production build via `pretest:browser`, all standard Playwright tests and the separate World Tour fixture suite.
 - [x] Add GitHub CI `quality-gate` that fails unless unit/browser/cloud/World Tour jobs all succeed; block manual feature-branch deployments and make deploy consider World Tour results.
 - [x] Run CI on future `feature/**` pushes while keeping the explicitly disabled `feature/mode00-objective-contract` branch excluded.
-- [ ] Confirm the complete `quality-gate` succeeds at the **final** feature HEAD; test infrastructure changes are not accepted based on an older SHA.
+- [x] Confirm the complete `quality-gate` succeeds at the **final** feature HEAD; test infrastructure changes are not accepted based on an older SHA.
+  - Green: run 40113913209 on `ab150f3`, the last code commit. Later commits that only touch `TODO.md` add no code to gate.
   - `ddbeb3a` (run 40102405872) failed: the trackpad-swipe test above failed in shard 6; `main` `d2b35e5` fails CI on the same test. The fix is in the section above, and the gate is re-checked on the commit that carries it.
   - `1fd4178` (run 40110604502, main merged in) failed only on the CDP delta scaling recorded above.
 - [ ] Complete real-game visual/interaction evidence for Sky Spiral road clipping and Tokyo finish controls on affected devices (automation alone cannot certify these).
