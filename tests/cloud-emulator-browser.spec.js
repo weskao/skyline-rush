@@ -256,3 +256,27 @@ test('cloud account data is stored in a private Firestore document after Google 
     return user ? (await getDoc(doc(getFirestore(), 'accounts', user.uid))).data()?.email : null;
   })).toBe('identity@example.test');
 });
+
+test('permanent rule-scoped Mode best restores to a second browser independent of 50-run history', async ({ browser, context, page }) => {
+  const key = JSON.stringify(['coast', { mode: 'time', duration: 180 }]);
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.addInitScript(key => {
+    localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [key]: 43.5 }));
+  }, key);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'permanent@example.test' });
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+
+  const fresh = await browser.newPage({ locale: 'en-US' });
+  await fresh.context().route(liveApis, route => route.abort());
+  await fresh.addInitScript(disableWebGL);
+  await fresh.goto('/?firebase-emulator=1');
+  await fresh.locator('#cloud-open').click();
+  await mockGoogleSignIn(fresh, { existing: true, email: 'permanent@example.test' });
+  await expect(fresh.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  await expect.poll(() => fresh.evaluate(key =>
+    JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBe(43.5);
+  await fresh.close();
+});
