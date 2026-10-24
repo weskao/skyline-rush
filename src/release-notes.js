@@ -46,5 +46,5 @@ export const releaseText = (value, locale) =>
 
 export function releaseImage(value, locale) {
   const path = releaseText(value, locale);
-  return typeof path === 'string' && /^(?!\/)[a-zA-Z0-9][a-zA-Z0-9/_-]*\.(?:png|jpe?g|webp|avif)$/.test(path) ? path : null;
+  return typeof path === 'string' && /^(?!\/)(?!.*\.\.)[a-zA-Z0-9][a-zA-Z0-9/_.-]*\.(?:png|jpe?g|webp|avif)$/.test(path) ? path : null;
 }
