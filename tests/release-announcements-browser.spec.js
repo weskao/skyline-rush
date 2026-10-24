@@ -29,7 +29,7 @@ test('players can read bilingual release notes, dismiss and reopen them', async 
   await page.locator('#locale-select').selectOption('zh-TW', { force: true });
   await expect(dialog.locator('#release-title')).toHaveText('新版本功能');
   await expect(dialog.locator('.release-entry').first().locator('strong')).toContainText(/[㐀-鿿]/);
-  await page.screenshot({path: test.info().outputPath('whats-new-zh-TW.png')});
+  await page.screenshot({path: test.info().outputPath('whats-new-zh-TW.png'), animations: 'disabled'});
   await page.locator('#release-continue').click();
   await expect(dialog).toBeHidden();
   await expect(opener).toBeFocused();
@@ -81,15 +81,27 @@ test('players switch between the latest releases by click and keyboard', async (
   await expect(tabs.first()).toHaveAttribute('aria-selected', 'true'); // reopening starts at the newest
 });
 
-test('release hero image uses bundled localized assets and notes do not leak racing shortcuts', async ({ page }) => {
+test('release notes support optional localized hero images without leaking racing shortcuts', async ({ page }) => {
   await page.goto('/');
   await page.locator('#whats-new-open').click();
   const dialog = page.locator('#whats-new-screen');
   const hero = dialog.locator('#release-hero');
-  await expect(hero).toBeVisible();
-  await expect(hero).toHaveAttribute('src', /og-image\.en\.jpeg/);
-  await page.locator('#locale-select').selectOption('zh-TW', { force: true });
-  await expect(hero).toHaveAttribute('src', /og-image\.zh-TW\.jpeg/);
+  for (const release of recentReleases()) {
+    await dialog.getByRole('tab').filter({ hasText: 'v' + release.version }).click();
+    for (const locale of ['en', 'zh-TW']) {
+      await page.locator('#locale-select').selectOption(locale, { force: true });
+      await expect(dialog.locator('.release-entry').first()).toBeVisible();
+      const image = typeof release.image === 'string' ? release.image : release.image?.[locale] ?? release.image?.en;
+      if (image) {
+        await expect(hero).toBeVisible();
+        await expect(hero).toHaveAttribute('src', '/' + image);
+        await expect.poll(() => hero.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+      } else {
+        await expect(hero).toBeHidden();
+        await expect(hero).not.toHaveAttribute('src');
+      }
+    }
+  }
   await page.keyboard.press('Enter'); // dialog control, not race start
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
 });
@@ -157,7 +169,7 @@ for (const [width, height] of [[1440,900],[390,844],[320,740],[844,390]]) {
       await page.locator('#whats-new-open').click();
       const d=page.locator('#whats-new-screen'), close=page.locator('#release-continue');
       await expect(d).toBeVisible();
-      await page.screenshot({ path: test.info().outputPath('whats-new-' + width + 'x' + height + '.png') });
+      await page.screenshot({ path: test.info().outputPath('whats-new-' + width + 'x' + height + '.png'), animations: 'disabled' });
       const box=await d.boundingBox();
       expect(box.x).toBeGreaterThanOrEqual(-1);
       expect(box.y).toBeGreaterThanOrEqual(-1);
