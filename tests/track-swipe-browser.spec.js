@@ -151,6 +151,7 @@ test('desktop: a short drag snaps the joined previews back without changing trac
   await page.mouse.down();
   await page.mouse.move(1120, 600, { steps: 4 });
   await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(2);
+  await page.waitForTimeout(160); // a held slow drag, not a 30px flick
   await page.mouse.up();
   await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
   expect(await selected(page)).toBe(first);
