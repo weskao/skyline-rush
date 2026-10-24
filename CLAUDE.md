@@ -8,7 +8,7 @@ Preserve: existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
-`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability`.
+`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability` · `ui-phase-interactions`.
 
 ## Home-screen landmark showcase
 
@@ -48,6 +48,17 @@ Fix shared root causes, then regression-check **Sky Spiral, all four legacy trac
 five World Tour tracks**, including AI cars, ghost, ramps and airborne maneuvers.
 Full scoped rules and exact TDD / WebGL verification requirements:
 `.claude/rules/vehicle-road-stability.md`.
+
+## Controls stay clickable after every race
+
+Finish/pause/restart overlays must **never intercept** clicks on the global language
+picker, topbar camera/restart or visible Next/Race Again buttons. A later DOM sibling
+at the same z-index can cover earlier controls even when they still look enabled.
+Check stacking contexts, native modal dialogs, stale inert/pointer capture and
+animation state before touching handlers. Regression-test **real pointer clicks**
+after steering and repeated impacts on Tokyo and the other routes, desktop and
+mobile, and verify both Next and Race Again transition correctly. See
+`.claude/rules/ui-phase-interactions.md`; report runtime errors and unrun tests.
 
 ## No shader compiles or NaN pixels mid-race
 
