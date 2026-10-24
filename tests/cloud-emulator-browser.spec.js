@@ -228,3 +228,31 @@ test('two devices merge different results and repeated sign-in does not duplicat
   expect((await results()).history).toHaveLength(4);
   await Promise.all([first.close(), second.close(), fresh.close()]);
 });
+
+test('Cloud save shows Google identity, avatar fallback and manual sync controls', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await expect(page.locator('#cloud-sync-now')).toBeDisabled();
+  await mockGoogleSignIn(page, { email: 'visible@example.test' });
+  await expect(page.locator('#cloud-identity')).toContainText('visible@example.test');
+  await expect(page.locator('#cloud-name')).not.toBeEmpty();
+  await expect(page.locator('#cloud-sync-now')).toBeEnabled();
+  await page.locator('#cloud-sync-now').click();
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+});
+
+test('cloud account data is stored in a private Firestore document after Google sign-in', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'identity@example.test' });
+  await expect.poll(() => page.evaluate(async () => {
+    const { getAuth } = await import('/node_modules/.vite/deps/firebase_auth.js');
+    const { getFirestore, doc, getDoc } = await import('/node_modules/.vite/deps/firebase_firestore.js');
+    const user = getAuth().currentUser;
+    return user ? (await getDoc(doc(getFirestore(), 'accounts', user.uid))).data()?.email : null;
+  })).toBe('identity@example.test');
+});
