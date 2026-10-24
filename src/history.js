@@ -59,7 +59,7 @@ const validModeRun = run => run && typeof run === 'object' && !Array.isArray(run
   typeof run.rules === 'string' && run.rules.length > 0 && run.rules.length <= MODE_MAX_RULES_LENGTH &&
   valid(run.time) && run.time <= MODE_MAX_SECONDS &&
   (run.score === undefined || (Number.isFinite(run.score) && run.score >= 0)) &&
-  (run.position === undefined || (Number.isInteger(run.position) && run.position >= 1 && run.position <= 4));
+  (run.position === undefined || (Number.isInteger(run.position) && run.position >= 0 && run.position <= 4));
 export const validModeHistoryRun = validModeRun;
 
 export function loadModeHistory(storage) {
