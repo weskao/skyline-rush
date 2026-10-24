@@ -61,13 +61,13 @@ test.describe('phone', () => {
 
     await touchSwipe(page, 195, 165, 560, { stepMs: 30, holdMs: 150 });
     expect(await selected(page), 'a short slow drag snaps back').toBe(first);
-    await expect(page.locator('#world')).toHaveAttribute('style', /^(?!.*translate)/);
+    await expect(page.locator('#track-swipe-scenes')).toHaveJSProperty('childElementCount', 0);
 
     await touchSwipe(page, 320, 90, 560);
     await expect.poll(() => selected(page)).toBe(second);
     await expect.poll(() => page.evaluate(() => window.__sawSwipeDone)).toBe(true);
     await expect(page.locator('#track-swipe-name')).not.toHaveText('');
-    await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.getAnimations().length + canvas.style.transform)).toBe('0');
+    await expect(page.locator('#track-swipe-scenes')).toHaveJSProperty('childElementCount', 0);
 
     await touchSwipe(page, 70, 300, 560);
     await expect.poll(() => selected(page)).toBe(first);

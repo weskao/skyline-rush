@@ -80,6 +80,27 @@ for (const [width, height, hasTouch] of [
   });
 }
 
+for (const width of [320, 390]) {
+  test.describe(`daily challenge title ${width}px`, () => {
+    test.use({ viewport: { width, height: 844 }, hasTouch: true, isMobile: true, timezoneId: 'UTC' });
+
+    test('the full title fits in both languages on a long-title day', async ({ page }) => {
+      await page.clock.install({ time: new Date('2026-10-25T12:00:00Z') });
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const title = page.locator('#daily-card-route');
+      await expect(title).toHaveText('Aurora Pass · Double traffic');
+      for (const locale of ['en', 'zh-TW']) {
+        await page.locator('#locale-select').selectOption(locale, { force: true });
+        await expect(title).toBeVisible();
+        expect(await title.evaluate(el => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight)).toBe(true);
+        expect((await page.locator('#daily-card-start').boundingBox()).height).toBeGreaterThanOrEqual(44);
+        await page.screenshot({ path: test.info().outputPath(`daily-title-${width}-${locale}.png`), animations: 'disabled' });
+      }
+    });
+  });
+}
+
 // 874x339 is iPhone landscape Safari with its toolbar showing (402 pt screen minus ~63 pt of chrome).
 for (const [width, height] of [[844, 390], [874, 339]]) {
   test.describe(`touch race HUD ${width}x${height}`, () => {
