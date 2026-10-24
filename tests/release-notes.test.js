@@ -110,7 +110,8 @@ test('image fields can be missing or localized and cannot contain remote or trav
   assert.equal(releaseImage('og-image.en.jpeg', 'en'), 'og-image.en.jpeg');
   assert.equal(releaseImage('a/../secret.png', 'en'), null);
   assert.equal(releaseImage('..png', 'en'), null);
-  assert.equal(releaseImage(CURRENT_RELEASE.image, 'zh-TW'), 'og-image.zh-TW.jpeg');
+  // Pinned: CURRENT_RELEASE follows package.json, so the next version bump would change what it holds.
+  assert.equal(releaseImage(releaseForVersion('0.21.0').image, 'zh-TW'), 'og-image.zh-TW.jpeg');
   assert.equal(releaseText({en:'New track','zh-TW':'全新賽道'}, 'zh-TW'), '全新賽道');
   assert.equal(releaseText({en:'New track','zh-TW':'全新賽道'}, 'fr'), 'New track');
 });
