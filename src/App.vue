@@ -397,5 +397,5 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span><button id="layout-done" data-i18n="layout.done">Done editing</button></div>
   <div class="bottomline"><span><i></i> <span data-i18n="footer.tagline">BEYOND THE ROAD</span></span><span data-i18n="footer.genre">AN ORIGINAL ARCADE FLIGHT RACER</span></div>
-  <button type="button" id="whats-new-open" class="build-version" :aria-label="`What’s new in v${version}`" data-i18n-title="release.open" title="What’s new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button>
+  <button type="button" id="whats-new-open" class="build-version" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button>
 </template>
