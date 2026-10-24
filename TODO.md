@@ -1,4 +1,84 @@
 # TODO — Gameplay depth design
+## Firebase 資料完整性、Google 帳號與 Cloud Save UI：實作清單（2026-10-25）
+
+**範圍：原先 P0／P1 35 項 + 新增 Google 名稱／Email 入 Firestore 1 項，共 36 項。** 原先 2 項 P2 保留未勾選、不在此次實作。僅項目經對應 TDD／回歸證據驗證通過後才改為 `[x]`。不可因存在程式碼、模擬器通過而把尚未驗收的正式站事項宣稱完成。
+
+**Spark-only／成本限制：** 使用現有 Firebase Authentication Google 登入和**既有免費 Firestore 資料庫**的文件讀寫，禁止啟用 Blaze、設定帳務、建立第二個資料庫、Cloud Functions、Firestore TTL、PITR、代管備份／還原等付費方案功能。Spark 有 1 GiB 儲存、每天 50,000 reads／20,000 writes／20,000 deletes 等限制，實際以官方方案與 Usage 頁為準。不得每影格同步；登入 profile 同值應跳過寫入。若功能需要付費：僅將其維持 `[ ]`，註明原因、免費替代方案與「經使用者明確同意升級／實測足夠配額才開始」條件，絕不自動升級。
+
+**實作流程：** 建立 feature 分支；每階段先寫會失敗的測試、驗證 RED，最小修正後驗證 GREEN、Refactor；每個成功階段就更新本清單與 commit。不得建立 PR，未收到合併指令不得合併 main。正式環境需更新 Rules 並實機驗證，不能把本地測試視為已發布。
+
+### A. Google 登入與帳號管理
+
+- [ ] **A1 (P1)** Cloud Save 顯示 Google displayName，沒有名稱時顯示合理替代值。
+- [ ] **A2 (P1)** Cloud Save 顯示並辨識目前 Google Email。
+- [ ] **A3 (P1)** 顯示 Google photoURL 頭像，讀取失敗有替代圖示。
+- [ ] **A4 (P1)** 登入、登出及 Auth 初始化時明確顯示使用者身分狀態。
+- [ ] **A5 (P0)** 安全切換 Google 帳號，避免不同 UID 的資料混用或遺失未同步進度。
+- [ ] **A6 (P0)** Firebase Auth／UID 管理身分，禁止遊戲資料儲存 Google 密碼、OAuth Token 與無關個資。
+- [ ] **A7 (P1)** 【新增需求】於免費 Spark 既有 Firestore 儲存 accounts/{uid}：Google displayName 與 email；登入／變更時更新，Rules 限本人存取，空值不覆蓋有效資料，刪除流程同步清理。
+
+### B. Firestore 儲存內容與資料版本
+
+- [ ] **B1 (P0)** 保留 saves/{uid} 既有版本化成果與相容性，不破壞舊帳號存檔。
+- [ ] **B2 (P0)** modeHistory 雲端保留 rulesVersion、distance、stageCount、itemsUsed、hazardPasses、hazardHits 等完整合法資料。
+- [ ] **B3 (P0)** 統一 mode rules 的本機與雲端長度上限和驗證契約（現有 4096／2000 不一致）。
+- [ ] **B4 (P0)** 永久 modeBests 跨裝置同步，避免最近 50 場輪替後永久紀錄消失。
+- [ ] **B5 (P0)** 永久 stuntBests（score、maxCombo、airTime、medal）跨裝置同步。
+- [ ] **B6 (P0)** 最近 50 場 history 與永久 best 分離；合併去重，不讓最佳成績倒退。
+- [ ] **B7 (P1)** 版本升級、無損遷移與向下相容；需要時保留 updatedAt，拒絕未知未來版本覆寫。
+
+### C. 雲端同步與本機資料可靠性
+
+- [ ] **C1 (P1)** 整合登入／完賽／成果改變／重連同步入口，不逐影格寫 Firestore。
+- [ ] **C2 (P0)** 各 UID 獨立本機快照，帳號切換安全保護未同步資料。
+- [ ] **C3 (P0)** 離線 pending 狀態按 UID 持久化；網路恢復與重新開啟時重試。
+- [ ] **C4 (P0)** 同帳號雙裝置並發交易與重複登入不丟最佳成績、不重複紀錄。
+- [ ] **C5 (P0)** 僅在 Firestore 成功確認後顯示已同步及更新最後成功時間。
+- [ ] **C6 (P1)** localStorage 多 Key 寫入一致性與失敗回復，禁止把寫入失敗誤報成功。
+
+### D. Rules、備份、刪除與安全
+
+- [ ] **D1 (P0)** Firestore Rules 驗證欄位、型別、範圍、合法賽道／模式、列表及字串長度。
+- [ ] **D2 (P0)** saves／accounts／永久最佳成績僅由對應登入 UID 私有讀寫，禁止列舉其他玩家。
+- [ ] **D3 (P0)** 刪除進度後避免舊本機副本／排隊同步使資料復活，帳號基本資訊的刪除範圍明確。
+- [ ] **D4 (P1)** 匯出及匯入 JSON：大小／版本／內容驗證與可理解的失敗提示。
+- [ ] **D5 (P1)** 清楚區分登出、刪除遊戲資料、未來可能的刪除 Firebase Auth 帳號。
+
+### E. Cloud Save UI／UX
+
+- [ ] **E1 (P1)** Cloud Save 保持遊戲視覺風格，顯示 Google 名稱、Email、頭像。
+- [ ] **E2 (P1)** 明確提供未登入／同步中／已同步／等待網路／雲端失敗／本機寫入失敗六種狀態。
+- [ ] **E3 (P1)** 最後同步時間只顯示實際 Firestore 成功結果。
+- [ ] **E4 (P1)** 新增手動「立即同步」，避免重複寫入及切換帳號期間觸發。
+- [ ] **E5 (P0)** 帳號切換確認 UI；清楚警告未同步資料並禁止破壞性切換。
+- [ ] **E6 (P1)** 登出／刪除／匯入／匯出提供明確 UX、成功與失敗回饋。
+- [ ] **E7 (P1)** 所有文案繁中／英文及無障礙 ARIA、鍵盤操作、焦點與狀態公告。
+- [ ] **E8 (P1)** 支援 Desktop／Mobile 直橫向，不遮擋比賽，沿用現有設計。
+
+### F. 裝置設定及本機進度
+
+- [ ] **F1 (P1)** Ghost／控制／音效／畫質／語言／塗裝選擇等裝置偏好保持本機，不額外產生雲端費用。
+- [ ] **F2 (P1)** 重要本機遊戲副本、同步資訊與帳號歸屬依 UID 隔離，既有 Local Storage Keys 相容遷移。
+
+### H. TDD／CI／正式環境驗收
+
+- [ ] **H1 (P0)** 每功能 Red→Green→Refactor，npm test／test:cloud／build／瀏覽器、Rules、安全、真實帳號 Chrome／Safari／跨裝置；正式站與用量驗收未完成前不得勾選。
+
+### G. P2 延後實作／啟動條件（本次不得勾選或實作）
+
+- [ ] **G1 (P2)** 玩家自訂暱稱與公開個人資料 profiles/{uid}。**延後原因與條件：**現在使用 Firebase Auth 的 Google 名稱／Email 即可；只有正式推出玩家自訂名稱、公開個人頁、可見的公開頭像與隱私授權需求時才設計獨立 Profile 與 Rules。
+
+- [ ] **G2 (P2)** 公開排行榜／比賽結果 leaderboards、raceResults。**延後原因與條件：**目前私人賽事成績可透過 saves 還原，瀏覽器提交的分數不能直接作競技可信依據；只有推出對外排名／競賽或防作弊驗證時再評估可信任後端與費用。Spark 不提供 Cloud Functions，若方案要求 Blaze 或其他付費服務，必須由使用者明確同意才做。
+
+### Spark 免費額度相關候選項目（只有符合條件才實作）
+
+- [ ] **S1 — 後端驗證／Cloud Functions**：Spark 無法使用 Cloud Functions。本次以 Firestore Rules 及本地驗證保護私人資料；若要防作弊或伺服端競技排行，需先有實際需求與**使用者明確同意 Blaze 或其他可用免費替代方案**才重新評估。
+- [ ] **S2 — 託管備份／PITR／TTL 刪除／Firestore 還原**：Firestore 免費額度不含這些功能。本次改用玩家手動 JSON 匯出／經驗證匯入；只有資料量、RPO／RTO 要求使本機匯出不夠且**經使用者明確同意付費**，才納入實作。
+- [ ] **S3 — 免費額度監控與升級門檻**：發布後先觀測現有 Firestore Usage；若讀寫、存量或使用者數接近 Spark 限制，先降低重複寫入／資料量，未經同意不得啟用任何付費服務。
+
+**官方參考**：https://firebase.google.com/pricing 、https://firebase.google.com/docs/firestore/pricing 、https://firebase.google.com/docs/projects/billing/firebase-pricing-plans
+
+
 
 ## 最高優先：儲存與跨裝置還原（2026-10-23）
 
