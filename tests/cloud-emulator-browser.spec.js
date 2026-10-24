@@ -250,10 +250,8 @@ test('cloud account data is stored in a private Firestore document after Google 
   await page.locator('#cloud-open').click();
   await mockGoogleSignIn(page, { email: 'identity@example.test' });
   await expect.poll(() => page.evaluate(async () => {
-    const { getAuth } = await import('/node_modules/.vite/deps/firebase_auth.js');
-    const { getFirestore, doc, getDoc } = await import('/node_modules/.vite/deps/firebase_firestore.js');
-    const user = getAuth().currentUser;
-    return user ? (await getDoc(doc(getFirestore(), 'accounts', user.uid))).data()?.email : null;
+    const { getSignedInAccountDetails } = await import('/src/cloud-save.js');
+    return (await getSignedInAccountDetails())?.email ?? null;
   })).toBe('identity@example.test');
 });
 
