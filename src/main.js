@@ -272,6 +272,7 @@ const releaseOpen = $('#whats-new-open');
 let releaseOpener = null;
 let releaseDismissedHere = false;
 let releaseAutoAttempted = false;
+const releaseStorage = () => { try { return localStorage; } catch { return null; } };
 
 function renderReleaseNotes() {
   if (!CURRENT_RELEASE) return;
@@ -306,7 +307,7 @@ function renderReleaseNotes() {
     return article;
   });
   $('#release-items').replaceChildren(...entries);
-  releaseOpen.classList.toggle('has-update', !releaseDismissedHere && shouldAnnounce(CURRENT_RELEASE, localStorage));
+  releaseOpen.classList.toggle('has-update', !releaseDismissedHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage()));
 }
 function openReleaseNotes(opener = null) {
   if (!CURRENT_RELEASE || race.phase !== 'ready' || tutorial || releaseDialog.open || document.querySelector('dialog[open]')) return false;
@@ -321,7 +322,7 @@ function openReleaseNotes(opener = null) {
   return true;
 }
 function maybeShowReleaseNotes() {
-  if (releaseDismissedHere || releaseAutoAttempted || !shouldAnnounce(CURRENT_RELEASE, localStorage)) return;
+  if (releaseDismissedHere || releaseAutoAttempted || !shouldAnnounce(CURRENT_RELEASE, releaseStorage())) return;
   if (!world || document.hidden || race.phase !== 'ready' || tutorial || document.querySelector('dialog[open]')) return;
   releaseAutoAttempted = openReleaseNotes();
 }
@@ -334,7 +335,7 @@ $('#release-language-zh').addEventListener('click', () => { saveLocale('zh-TW');
 releaseDialog.addEventListener('cancel', event => { event.preventDefault(); closeReleaseNotes(); });
 releaseDialog.addEventListener('keydown', event => event.stopPropagation());
 releaseDialog.addEventListener('close', () => {
-  markAnnouncementSeen(CURRENT_RELEASE, localStorage);
+  markAnnouncementSeen(CURRENT_RELEASE, releaseStorage());
   releaseDismissedHere = true;
   releaseOpen.classList.remove('has-update');
   (releaseOpener ?? releaseOpen).focus({ preventScroll: true });
