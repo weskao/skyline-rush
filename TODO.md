@@ -1032,3 +1032,14 @@ Reference entry points:
 **Scope reminder:** This is a backlog, not a claim that features exist or are
 approved for implementation. Preserve the earlier completed work and
 never conflate future modes with existing Control “steering mode” options.
+
+
+## Home showroom camera parity & discovery (2026-10-25)
+- [x] Identify camera precedence bug: curated maps bypass selected VFX view, while older maps require AIRFLOW.
+- [x] Create shared camera modes and reusable framing for every current and future track.
+- [x] Add homepage prev/next camera dock and synchronize it with VFX and zh-TW/en localization.
+- [x] Document reusable showroom camera rules in CLAUDE.md and .claude/rules/track-showcase.md.
+- [x] Commit unit and browser regression test cases on fix/home-showcase-camera-parity.
+- [ ] Run Node/Vite checks and confirm RED -> GREEN in CI (not verifiable from current tool runtime).
+- [ ] Verify real Chromium/Safari desktop and touch screenshots for all tracks; adjust overlapping elements if necessary.
+- [ ] Merge only after verified green CI and QA.
