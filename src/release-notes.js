@@ -1,4 +1,5 @@
-import { version } from '../package.json';
+import packageMeta from '../package.json' with { type: 'json' };
+const { version } = packageMeta;
 
 // Announcements are written for players, never generated directly from developer commits.
 // This release predates the announcement feature, so its notes are manually available;
