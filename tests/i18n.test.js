@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   SUPPORTED_LOCALES, TRACK_NAMES, trackName, loadLocale, saveLocale,
   CATALOGS, interpolate, detectLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, t,
@@ -132,10 +133,27 @@ test('applyI18n and applyDocumentLocale fill attributes, text, lang, title and d
   assert.equal(meta.attrs.content, CATALOGS['zh-TW']['doc.description']);
 });
 
+// Regression: Google is a proper noun, but Ghost is gameplay terminology to localize.
+test('Cloud save Traditional Chinese copy localizes ghost records', () => {
+  assert.match(CATALOGS['zh-TW']['cloud.explain'], /幽靈/);
+  assert.doesNotMatch(CATALOGS['zh-TW']['cloud.explain'], /\bGhost\b/);
+  assert.match(CATALOGS['zh-TW']['cloud.login'], /Google/);
+});
+
 // The browser flow only sees strings it renders; this catches stray English in every zh-TW message.
 test('zh-TW catalog keeps English to the allowed brand terms', () => {
   const stray = Object.entries(CATALOGS['zh-TW']).filter(([, text]) => typeof text === 'string')
     .map(([key, text]) => [key, strayEnglish(text.replace(/\{\w+\}/g, ''))]).filter(([, words]) => words.length)
     .map(([key, words]) => `${key}: ${words.join(' ')}`);
   assert.deepEqual(stray, []);
+});
+
+// Static template keys must be translated, not silently displayed as their raw identifiers.
+test('all static App.vue translation keys and mode History badges exist in both locales', () => {
+  const template = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
+  const keys = new Set([...template.matchAll(/data-i18n(?:-aria-label|-title)?="([\w.-]+)"/g)].map(match => match[1]));
+  keys.add('mode.historyPersonalBest');
+  keys.add('mode.historyGhost');
+  for (const locale of SUPPORTED_LOCALES) for (const key of keys)
+    assert.ok(typeof CATALOGS[locale][key] === 'string' && CATALOGS[locale][key].length > 0, `${locale}: ${key}`);
 });

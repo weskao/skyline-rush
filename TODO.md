@@ -11,7 +11,6 @@
 - [ ] Manually verify actual driving at Sky Spiral's helix entry, both quarter turns, exit, rails, elevations, ramps, and every other track; capture before/after gameplay screenshots or recordings.
 - [ ] Independently verify vehicle-to-road mesh clearance at high speeds and road edges with real WebGL rendering.
 
-
 ## 最高優先：儲存與跨裝置還原（2026-10-23）
 
 原則：需要在清除瀏覽器資料後還原的遊戲成果，以 Google 登入後的 Firestore 帳號資料為主、本機資料為離線副本；裝置操作偏好留在本機。Firestore 單一使用者文件採版本化格式，僅在登入、完成比賽及成果改變時同步，不按影格寫入。勾選只代表該項已實作並完成對應驗證。
@@ -57,6 +56,8 @@
 - [x] 教學已看／已完成、裝置效能提示：維持 Local Storage；瀏覽器資料清除後重新顯示不會損失遊戲成果。
 - [x] 上次賽道 `skyline-rush-last-track` 與更新檢查標記：維持 Session Storage，僅供目前分頁使用。
 - [x] 評估 Ghost 與偏好的可選匯出／匯入：目前維持裝置本機，理由與日後跨裝置方案見 `docs/cloud-save.md`；尚未提供這些項目的匯入／同步。
+
+進度更新（2026-10-24）：Firebase 雲端儲存功能已由 `feature/firebase-cloud-save` 合併至 `main`（`671416cd`）；本分支整合 main，保留 MODE-00 TDD 與玩法項目。雲端存檔正式站與 Safari 驗收尚未完成；請依 `docs/cloud-save.md` 驗證。詳見 [階段 15](https://app.notion.com/p/4021a2df84a7817da29afa84cf8bb326)。
 
 ## 操作教學 v1（2026-10-23）
 
@@ -463,7 +464,7 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [x] Separate `Classic / Campaign` from `Custom / Practice / Challenge` in eligibility:
   only qualifying Classic finishes unlock the next track or award career progression.
   A local test-all-unlocked run must never grant unlocks, stars or achievements.
-- [ ] Produce deterministic simulation seeds for traffic, checkpoints, obstacles and items
+- [x] Produce deterministic simulation seeds for traffic, checkpoints, obstacles and items
   with **separate named streams**, so adding decoration or an option cannot silently
   reshuffle the original pickups or rings. Validate finite coordinates and bounded counts.
 - [ ] **Acceptance:** unit tests cover old call signatures, default-rule parity,
@@ -487,11 +488,24 @@ unit/smoke/World Tour passed, and main's prior run also contained browser
 failures. Do not mark the stage-wide acceptance as done or merge until
 **the final SHA** has all required CI checks green.
 
-Still open: complete per-system named deterministic streams where applicable
-(traffic and checkpoint layouts are currently authored deterministic, not
-randomized), the rest of mode acceptance, browser and physical-device
-performance/UX checks. No operation-guide files, audio or UI were changed
-by MODE-00; no new sound cue is warranted for these pure simulation contracts.
+
+**MODE-00 deterministic seed / bounds completion (2026-10-23):** RED tests at
+`6d5f9ff` ([run #39939858288](https://github.com/weskao/skyline-rush/actions/runs/39939858288)); GREEN at
+`b1edafb` ([run #39940097050](https://github.com/weskao/skyline-rush/actions/runs/39940097050)):
+focused tests, full `npm test`, and `npm run build` passed. Stable, isolated
+32-bit seeds now exist for traffic, checkpoints, authored world obstacles,
+active items, original pickups/rings and hazards. Authored traffic/checkpoint
+layouts and Classic/Daily replay signatures remain unchanged. Ten track layouts,
+finite entity positions, bounded counts and invalid external geometry are covered.
+**Stage-wide acceptance remains open** until required browser/physical-device
+checks and access/persistence regressions are independently verified.
+
+Still open: stage-wide mode acceptance, browser and physical-device
+performance/UX checks. Traffic and checkpoint layouts intentionally remain
+authored and deterministic; newly named seeds are available if those layouts
+later become procedural, without changing Classic/Daily replay rules.
+No operation-guide files, audio or UI were changed by MODE-00; no new sound
+cue is warranted for these pure simulation contracts.
 
 ---
 
@@ -550,20 +564,56 @@ by MODE-00; no new sound cue is warranted for these pure simulation contracts.
   Reuse existing `player.score`, `trick`, `drift` and ring events.
 - [x] Add explicit style-combo multiplier, clean landing bonus and fair combo
   break/decay on crashes; prevent stationary or repeated reset farming.
-- [ ] Save best score, combo, air time and medal thresholds by exact track/ruleset.
+- [x] Save best score, combo, air time and medal thresholds by exact track/ruleset.
 - [ ] **Acceptance:** deterministic scoring independent of FPS and input device;
   end-of-timer results work without reaching the sprint finish.
+
+**Stunt best persistence (2026-10-23):** RED [`b4c4262`](https://github.com/weskao/skyline-rush/commit/b4c4262cc4557d58cf58243f99f078dfcc54f863),
+[Actions #39940564407](https://github.com/weskao/skyline-rush/actions/runs/39940564407);
+GREEN [`5a7cb28`](https://github.com/weskao/skyline-rush/commit/5a7cb2886613a319a6dcb70ecc5293abfd3b99a2),
+[Actions #39940729574](https://github.com/weskao/skyline-rush/actions/runs/39940729574).
+Stores a validated, rule-scoped personal best score, longest combo, longest air
+time and derived medal; 50-run history rotation cannot lose lifetime bests.
+Existing records and Classic unlock rules are unchanged. Focused MODE-00 tests,
+full `npm test` and production build passed. Frame-rate/device acceptance remains open.
 
 ### 9F. Checkpoint Rush (P1)
 
 - [x] **MODE-05 — Checkpoint Rush:** pass a deterministic sequence of grounded or
   aerial gates before time expires; each clean gate extends the timer.
-- [ ] Choose checkpoints from the **real track route and reachable flight envelopes**;
+- [x] Choose checkpoints from the **real track route and reachable flight envelopes**;
   prevent impossible gates inside tunnel roofs, road gaps or conflicting hazards.
-- [ ] Show next target distance/direction, time left, checkpoint chain and optional
+- [x] Show next target distance/direction, time left, checkpoint chain and optional
   perfect-gate rewards. Invalid/missed gates cannot secretly count.
-- [ ] **Acceptance:** gated time-extension and expiry have unit tests; minimap
+- [x] **Acceptance:** gated time-extension and expiry have unit tests; minimap
   uses the official main route and never reveals hidden shortcut geometry.
+
+**MODE-05 gate route/clearance verified (2026-10-23):** RED
+[`9be5f04`](https://github.com/weskao/skyline-rush/commit/9be5f04effbc832599dd1488ec4478c5fb7d086b)
+([Actions #39943129958](https://github.com/weskao/skyline-rush/actions/runs/39943129958)):
+three obstacle avoidance/bounds tests failed as intended. GREEN
+[`b4c2d17`](https://github.com/weskao/skyline-rush/commit/b4c2d17071f0e148399d3b83ad75e5e791be7c76);
+ten-route real-scenery regression [`88c7aa0`](https://github.com/weskao/skyline-rush/commit/88c7aa0ac4c0ed16e5473c2828ba484580ff24d7).
+[Actions #39943573134](https://github.com/weskao/skyline-rush/actions/runs/39943573134):
+focused MODE-00, full unit suite, production build and desktop Checkpoint Rush
+WebGL browser smoke all GREEN; an actual game screenshot is in the
+`checkpoint-rush-gameplay` Actions artifact. Lane selection avoids authored
+roadside obstacle bounding boxes; impossible gates are skipped, and existing
+70 m tunnel/gap/shortcut safety buffers remain. Full stage acceptance and
+physical-device checks are still open.
+
+**MODE-05 navigation and route acceptance (2026-10-23):** The existing
+[`checkpoint-navigation.test.js`](https://github.com/weskao/skyline-rush/blob/feature/mode00-objective-contract/tests/checkpoint-navigation.test.js)
+and [`checkpoint-expiry.test.js`](https://github.com/weskao/skyline-rush/blob/feature/mode00-objective-contract/tests/checkpoint-expiry.test.js)
+cover precise/near/missed-gate scoring and fair timer expiry. The authored
+[`route-map.test.js`](https://github.com/weskao/skyline-rush/blob/feature/mode00-objective-contract/tests/route-map.test.js)
+covers all ten official main-route polylines; hidden shortcut geometry is
+not part of the route samples. Browser assertions
+[`391b28f`](https://github.com/weskao/skyline-rush/commit/391b28fd199a3a9fe04fba7b1d1ea41bd31d0d85)
+verify gate count, perfect count, distance, directional cue, remaining time.
+[Actions #39944609373](https://github.com/weskao/skyline-rush/actions/runs/39944609373)
+passed full unit tests, build and real desktop WebGL smoke. Mobile/device
+acceptance remains under the shared stage-wide QA, not claimed here.
 
 ### 9G. Multi-track Championship Cup (P1)
 
@@ -583,19 +633,56 @@ by MODE-00; no new sound cue is warranted for these pure simulation contracts.
   alternate lines. Keep the ordinary track drivable in Classic mode by default.
 - [x] Add difficulty tiers based on warning time, obstacle spacing and
   activation frequency **without random unavoidable collisions**.
-- [ ] Score clean obstacle passes, near-misses and finish time; practice and
+- [x] Score clean obstacle passes, near-misses and finish time; practice and
   obstacle-mode records stay separate.
-- [ ] **Acceptance:** each generated hazard arrangement leaves a reasonable
+- [x] **Acceptance:** each generated hazard arrangement leaves a reasonable
   passable ground/air path and has predictable collision tests.
+
+**MODE-07 scoring TDD (2026-10-23):** RED
+[`60a5e99`](https://github.com/weskao/skyline-rush/commit/60a5e99edfabc4c91d164ef6894c5ce52a2a5769)
+([CI #39945677012](https://github.com/weskao/skyline-rush/actions/runs/39945677012));
+GREEN [`7fbb126`](https://github.com/weskao/skyline-rush/commit/7fbb12667ae0372a7bb16876164df004f05bcd11)
+and WebGL smoke [`c2b6c8e`](https://github.com/weskao/skyline-rush/commit/c2b6c8ef68b7b46d893b5d9a7800bd1038884061).
+A safe barrier pass earns 150 points, a close clean near-miss earns 300
+and increments the once-only nearMisses counter. Challenge records remain
+isolated from Classic Career. Focused/unit/build/actual WebGL smoke all passed
+[CI #39945865189](https://github.com/weskao/skyline-rush/actions/runs/39945865189).
+Full route navigability and hazard arrangement acceptance remain open.
+
+**MODE-07 generated-route acceptance (2026-10-23):** RED
+[`25e74f9`](https://github.com/weskao/skyline-rush/commit/25e74f9d3c3a20a6f40c052fc609ab2b9032260d)
+([CI #39946490119](https://github.com/weskao/skyline-rush/actions/runs/39946490119))
+demonstrated hazards placed over raised shortcut approaches and nonfinite
+positions under invalid elapsed time. GREEN
+[`8455a70`](https://github.com/weskao/skyline-rush/commit/8455a70b48be24eea0f74f948b576830152174e1)
+([CI #39946619729](https://github.com/weskao/skyline-rush/actions/runs/39946619729)):
+all ten tracks in standard/extreme tiers remain deterministic; at least two
+ground lanes and the air path are open at sampled motion times; spacing,
+safe section buffers and once-only collision/scoring tests pass. Full unit
+suite, production build and real WebGL smoke all GREEN. Device-specific
+manual QA remains tracked separately.
 
 ### 9I. Elimination / Last Racer Standing (P2)
 
-- [ ] **MODE-08 — Elimination:** after an announced interval/checkpoint, eliminate
+- [x] **MODE-08 — Elimination:** after an announced interval/checkpoint, eliminate
   the last active racer until one remains; show a readable knockout countdown.
-- [ ] Define whether the player loses immediately or gets one short comeback window;
+- [x] Define whether the player loses immediately or gets one short comeback window;
   do not eliminate AI simply because an actor is off-camera.
-- [ ] **Acceptance:** active AI count/rank changes cleanly; results work after
+- [x] **Acceptance:** active AI count/rank changes cleanly; results work after
   early elimination and never award Classic progression.
+
+**MODE-08 elimination finishing/acceptance (2026-10-23):** RED
+[`884e057`](https://github.com/weskao/skyline-rush/commit/884e057659c21c711b53b5e7008ffed2801a42b0)
+([Actions #39944092143](https://github.com/weskao/skyline-rush/actions/runs/39944092143))
+exposed fixed-fourth-place results for second/third-round player eliminations.
+GREEN [`da8bd45`](https://github.com/weskao/skyline-rush/commit/da8bd4550226334138d2a29697a28a2646b3e571):
+position derives from actual contenders left; knockouts are based on track
+progress, not render/camera visibility. Tests
+[`912a832`](https://github.com/weskao/skyline-rush/commit/912a83264a23459068d1b37cd0645587fc4846d1)
+prove losses never persist results and challenge wins never grant Classic unlocks.
+[Actions #39944609373](https://github.com/weskao/skyline-rush/actions/runs/39944609373):
+unit suite, production build, Checkpoint Rush and Elimination live WebGL browser
+smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 
 ### 9J. Endless Highway / Distance Survival (P2)
 
@@ -669,12 +756,16 @@ by MODE-00; no new sound cue is warranted for these pure simulation contracts.
 
 ### 10C. Result/history isolation and safeguards (P0)
 
-- [ ] Store a stable `modeId + trackId + rulesVersion + rulesSignature` on
+- [x] Store a stable `modeId + trackId + rulesVersion + rulesSignature` on
   each **new-mode** result, plus appropriate time, score, distance,
   stage/lap data and item/hazard statistics. Keep legacy history readable.
-- [ ] Show per-mode bests, mode-filtered History and applicable Ghosts;
+- [x] Show per-mode bests, mode-filtered History and applicable Ghosts;
   clearly distinguish personal practice milestones from official medals.
-- [ ] Use validated persistence with storage-failure fallbacks, reasonable
+  Verified 2026-10-24: 10C History WebGL browser regression, mode-focused tests,
+  full unit suite and production build passed on `cc24bb8c` (CI `40071240211`).
+  English/zh-TW notice, filters, PB and Ghost badges have complete translations;
+  unrelated full-browser CI shards and hardware QA remain tracked independently.
+- [x] Use validated persistence with storage-failure fallbacks, reasonable
   caps and migration tests; prevent a custom “no traffic” best from
   replacing an official Classic best.
 - [ ] Keep Classic Career unlocks, 1–3 stars, Garage paint unlocking,
@@ -682,6 +773,32 @@ by MODE-00; no new sound cue is warranted for these pure simulation contracts.
   sessions unless a specific future rule explicitly grants eligibility.
 - [ ] Pausing, restarting, exiting, switching modes or closing a dialog
   cannot double-write a result or award the same benefit twice.
+
+**10C versioned mode records (2026-10-23):** RED
+[`e3581a7`](https://github.com/weskao/skyline-rush/commit/e3581a704557506d5dcb669b3ad253d8a10c6281)
+([Actions #39945181620](https://github.com/weskao/skyline-rush/actions/runs/39945181620));
+GREEN [`d25d025`](https://github.com/weskao/skyline-rush/commit/d25d0252dba9d0aac2ab691a090dbc5fdc6582cc)
+([Actions #39945279475](https://github.com/weskao/skyline-rush/actions/runs/39945279475)).
+New-mode runs store additive `modeId`, `trackId`, `rulesVersion`,
+`rulesSignature`, finite distance, sprint stage count (no fake circuit laps),
+bounded item activations and hazard statistics. Legacy records remain readable;
+no new storage key or changed best comparison; Classic history and unlocks
+remain isolated. Focused and full unit tests, production build, and two
+real desktop mode smoke tests passed. Other 10C UI/persistence acceptance
+items remain open.
+
+**10C storage safety TDD (2026-10-23):** RED
+[`d78e717`](https://github.com/weskao/skyline-rush/commit/d78e7178ef0314dd5f87eb224f12b0d72c59329d)
+([CI #39947103275](https://github.com/weskao/skyline-rush/actions/runs/39947103275))
+exposed invalid saved mode history, overlong rule strings and impossible
+new-mode records. GREEN
+[`3d4a5a8`](https://github.com/weskao/skyline-rush/commit/3d4a5a89cce60fab595ac1c1e7b4c9a23d6dda09)
+([CI #39947280443](https://github.com/weskao/skyline-rush/actions/runs/39947280443)):
+preserve legacy v1 records without newer metadata, filter non-existent
+tracks/bad positions/nonfinite or negative scores, cap times and rules,
+retain 50 latest valid runs and fail safely when storage is blocked.
+New-mode custom/no-traffic results cannot replace official Classic bests
+or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ## 11. Interactive scenery, track hazards and procedural world props
 

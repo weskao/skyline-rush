@@ -13,7 +13,8 @@ function mulberry32(seed) {
 // FNV-1a hash of the stream name, mixed into the seed.
 const hash = text => [...text].reduce((h, char) => Math.imul(h ^ char.charCodeAt(0), 16777619), 2166136261) >>> 0;
 
-export const seededRng = (seed, streamName) => mulberry32((seed ^ hash(streamName)) >>> 0);
+export const streamSeed = (seed, streamName) => (seed ^ hash(streamName)) >>> 0;
+export const seededRng = (seed, streamName) => mulberry32(streamSeed(seed, streamName));
 
 // Stable stream names: never silently rename them or old generated courses change.
 // Adding or consuming a separate stream cannot change pickups and rings.
@@ -22,4 +23,8 @@ export const RACE_STREAMS = Object.freeze({
   rings: 'rings',
   hazards: 'gauntlet-hazards',
   mysteryPrefix: 'mystery',
+  traffic: 'traffic',
+  checkpoints: 'checkpoints',
+  obstacles: 'world-obstacles',
+  items: 'active-items',
 });

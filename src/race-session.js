@@ -1,6 +1,6 @@
 import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from './race-config.js';
 import { createRaceObjective } from './race-objectives.js';
-import { RACE_STREAMS } from './rng.js';
+import { RACE_STREAMS, streamSeed } from './rng.js';
 
 // Contract-only themes: they do not recolor the live WebGL scene. Presentation
 // may opt in separately without changing physics or mode record eligibility.
@@ -53,5 +53,8 @@ export function createRaceSessionContract(trackId, seed, settings = {}, presenta
     objective: createRaceObjective(config),
     rulesSignature: rulesSignature(config),
     randomStreams: RACE_STREAMS, // fixed names, not a shared mutable PRNG state
+    randomSeeds: Object.freeze(Object.fromEntries(
+      Object.entries(RACE_STREAMS).map(([system, stream]) => [system, streamSeed(seed, stream)]),
+    )), // authored traffic/checkpoints remain unchanged until procedural rules opt in
   });
 }
