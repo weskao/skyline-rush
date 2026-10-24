@@ -328,3 +328,34 @@ test('cloud save JSON import merges restored records and rejects malformed files
   await expect(page.locator('#cloud-status')).toContainText('Could not import this backup.');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toContain('neon');
 });
+
+test('an unsynced permanent record survives A to B to A account switching', async ({ context, page }) => {
+  const key = JSON.stringify(['coast', { mode: 'time' }]);
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'switch-A@example.test' });
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  await page.evaluate(key => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+    localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [key]: 47 }));
+  }, key);
+  await page.locator('#cloud-sync-now').click();
+  await expect(page.locator('#cloud-status')).toContainText('Cloud sync is pending');
+  await page.evaluate(() => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true }));
+  await page.locator('#cloud-logout').click();
+  await expect(page.locator('#cloud-login')).toBeVisible();
+  await mockGoogleSignIn(page, { email: 'switch-B@example.test' });
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#cloud-switch').click();
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBeUndefined();
+
+  await page.locator('#cloud-logout').click();
+  await mockGoogleSignIn(page, { existing: true, email: 'switch-A@example.test' });
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#cloud-switch').click();
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBe(47);
+});
