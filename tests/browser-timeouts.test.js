@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import config from '../playwright.config.js';
 import { ciTimeout, slow } from './helpers/ci.js';
 
@@ -18,6 +19,25 @@ test('the suite scales its default budgets by the CI factor', () => {
   assert.equal(ciTimeout(1000), 1000 * slow);
   assert.equal(config.timeout, ciTimeout(45000));
   assert.equal(config.expect.timeout, ciTimeout(10000));
+});
+
+test('a worktree can select its own browser preview port', () => {
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e',
+    "import config from './playwright.config.js'; console.log(JSON.stringify({ url: config.use.baseURL, server: config.webServer.url, command: config.webServer.command, reuse: config.webServer.reuseExistingServer }));"],
+  { cwd: new URL('..', import.meta.url), env: { ...process.env, PLAYWRIGHT_PORT: '5198' }, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const { url, server, command, reuse } = JSON.parse(result.stdout);
+  assert.equal(url, 'http://127.0.0.1:5198');
+  assert.equal(server, url);
+  assert.match(command, /--port 5198 --strictPort/);
+  assert.equal(reuse, false);
+});
+
+test('browser preview port rejects shell text', () => {
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e', "import './playwright.config.js';"],
+    { cwd: new URL('..', import.meta.url), env: { ...process.env, PLAYWRIGHT_PORT: '5198; exit 0' }, encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Invalid Playwright port/);
 });
 
 test('browser specs never set a wall-clock budget that skips the CI factor', () => {
