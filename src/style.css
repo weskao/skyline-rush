@@ -485,7 +485,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .countdown[data-step="1"] .start-lights > i { background: #ffae79; border-color: #ffd0a6; box-shadow: 0 0 18px #fb895b; }
 .countdown[data-step="GO"] { color: #b0f5ff; }
 .countdown[data-step="GO"] .start-lights > i { background: #90efff; border-color: #c8faff; box-shadow: 0 0 22px #69d5ff; }
-.aero-tools { position: fixed; top: 98px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
+/* The results overlay (z-index 4) is later in the DOM; keep global language/VFX controls above it so the overlay never swallows taps. */
+.aero-tools { position: fixed; top: 98px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 6; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
 .aero-tools > button, .aero-tools > details > summary { min-height: 34px; padding: 6px 10px; border: 1px solid #6e9baa66; border-radius: 5px; background: #102432d9; color: #c6edfa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .aero-tools kbd { height: 20px; min-width: 20px; font-size: 9px; }
 /* Language dropdown (customSelect) heads the row under the toolbar: globe left, chevron right. 10px everywhere so 繁體中文 stays legible. */
