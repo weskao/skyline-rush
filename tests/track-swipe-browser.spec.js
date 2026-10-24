@@ -26,6 +26,14 @@ test.describe('phone', () => {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
     const [first, second] = await trackOrder(page);
+    // Capture the brief completion state even if a slow software-rendered frame
+    // delays Playwright past the chip's 1.4s visibility window.
+    await chip(page).evaluate(element => {
+      window.__sawSwipeDone = false;
+      new MutationObserver(() => {
+        if (element.dataset.state === 'done') window.__sawSwipeDone = true;
+      }).observe(element, { attributes: true, attributeFilter: ['data-state'] });
+    });
     await page.locator('#airflow-toggle').tap();
     await expect(chip(page)).toHaveAttribute('data-state', 'hint');
     await expect(chip(page)).toContainText('Swipe left or right to change track');
@@ -39,7 +47,7 @@ test.describe('phone', () => {
 
     await touchSwipe(page, 320, 90, 560);
     await expect.poll(() => selected(page)).toBe(second);
-    await expect(chip(page)).toHaveAttribute('data-state', 'done');
+    await expect.poll(() => page.evaluate(() => window.__sawSwipeDone)).toBe(true);
     await expect(page.locator('#track-swipe-name')).not.toHaveText('');
     await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.getAnimations().length + canvas.style.transform)).toBe('0');
 

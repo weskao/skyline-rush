@@ -18,6 +18,20 @@ concurrency:
 # release-verified, deploy), so every job skips the main-push run of the same commit; the browser suites also skip
 # tag runs, because release-verified proves the code already passed them on main.
 jobs:
+  # Short-lived feature verification after the full suite found one
+  # timing-sensitive transient-state assertion. Not retained on main.
+  carousel-browser:
+    if: github.ref == 'refs/heads/feature/home-seamless-track-carousel'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:browser -- tests/track-swipe-browser.spec.js
+
   unit-tests:
     if: "${{ !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
@@ -34,7 +48,7 @@ jobs:
   # splits the alphabetical test list into equal contiguous slices, so more shards also keep one heavy spec file
   # from dominating a slice.
   browser-tests:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    if: "${{ github.ref != 'refs/heads/feature/home-seamless-track-carousel' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -96,7 +110,7 @@ jobs:
   # the middle of all five long World Tour routes. Test-only Vite fixture:
   # it is not included in the distributable production build.
   world-tour-mid-race:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    if: "${{ github.ref != 'refs/heads/feature/home-seamless-track-carousel' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
