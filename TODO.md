@@ -745,8 +745,12 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] Store a stable `modeId + trackId + rulesVersion + rulesSignature` on
   each **new-mode** result, plus appropriate time, score, distance,
   stage/lap data and item/hazard statistics. Keep legacy history readable.
-- [ ] Show per-mode bests, mode-filtered History and applicable Ghosts;
+- [x] Show per-mode bests, mode-filtered History and applicable Ghosts;
   clearly distinguish personal practice milestones from official medals.
+  Verified 2026-10-24: 10C History WebGL browser regression, mode-focused tests,
+  full unit suite and production build passed on `cc24bb8c` (CI `40071240211`).
+  English/zh-TW notice, filters, PB and Ghost badges have complete translations;
+  unrelated full-browser CI shards and hardware QA remain tracked independently.
 - [x] Use validated persistence with storage-failure fallbacks, reasonable
   caps and migration tests; prevent a custom “no traffic” best from
   replacing an official Classic best.
