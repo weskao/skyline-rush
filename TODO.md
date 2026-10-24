@@ -1,5 +1,17 @@
 # TODO — Gameplay depth design
 
+## Codebase structure: incremental Vue / type-checking adoption (2026-10-25)
+
+Context: `src/` is 64 `.js` files (~10.5k lines), 3 `.vue` files (460 lines), 0 `.ts`. `src/main.js` (2,244 lines) mounts `App.vue` and then drives the UI imperatively (164 `querySelector`/`getElementById`/`innerHTML`/`addEventListener` sites). Simulation and Three.js rendering stay plain JS. Each step ships on its own commit with `make verify` (plus `npm run test:layout` for home-screen changes).
+
+- [x] Step 0, conventions first: `CLAUDE.md` section "UI architecture: Vue panels, plain-JS game core" and `.claude/rules/ui-architecture.md` (scoped to `src/**/*.js`, `src/**/*.vue`).
+- [ ] Step 1, HUD per-frame DOM cost: `updateUI` (`src/main.js`) re-runs `$('#clean-trial-hud')`, `$('#hazard-warning')`, etc. and rewrites `textContent` every frame. Measure frame cost first; then cache the elements once and skip writes when the value is unchanged. Report the before/after numbers; run `npm run test:browser` desktop and mobile.
+- [ ] Step 2, type checking without renaming files: add `jsconfig.json` with `checkJs`, add `tsc --noEmit` to `make verify`, and JSDoc the shared shapes first (`race`, `player`, `rival`, track config) used across `game.js`, `world.js` and `main.js`.
+- [ ] Step 2b (optional, decide separately): add ESLint; the repo has no lint config today.
+- [ ] Step 3, split `src/main.js` by feature, move-only with no behavior change: release notes (~L280–391), track swipe (~L897–1060), history/daily (~L736–850), garage (~L852–895), settings/audio/controls (~L1065–1460), tutorial/guide (~L2115–2244). `main.js` keeps bootstrap and the frame loop.
+- [ ] Step 4, convert event-driven panels to Vue components one at a time: release notes dialog, history, garage, settings, tutorial (replaces the 13 `innerHTML` sites and manual show/hide). Keep the in-race HUD/speedometer out of Vue reactivity; it stays direct DOM writes from step 1. Re-check finish/pause overlay clickability per `.claude/rules/ui-phase-interactions.md`.
+- [ ] Not planned: rewriting `game.js`/`world.js` to `.ts`, or a one-shot UI rewrite — step 2 delivers most of the type-safety benefit, and the regression matrix cannot verify a big-bang change.
+
 ## Audio preference moves from cookies to localStorage; Chrome first-visit autoplay (2026-10-25)
 
 - [x] Repro in real Chrome with its default autoplay policy (Playwright strips `--autoplay-policy=no-user-gesture-required`; scratch script, 4 runs): `AudioContext` stays `suspended` on load as Chrome requires, and the first click or key resumes it (`running`, audible RMS > 0.01). Autoplay without a gesture cannot be fixed client-side; the existing first-gesture unlock (`unlockAudio`, `src/main.js`) is the fix and is kept.
