@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { careerStats } from '../src/history.js';
 import { DAILY_MODIFIERS } from '../src/game.js';
-import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, mergeModeBests, readLocalModeBests, saveLocalModeBests } from '../src/cloud-progress.js';
+import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, mergeModeBests, readLocalModeBests, saveLocalModeBests, parseProgressExport } from '../src/cloud-progress.js';
 
 test('cloud failure status reports whether a durable device copy exists', () => {
   assert.equal(cloudFailureStatus({ code: 'unavailable' }, false), 'cloud.localFailed');
@@ -296,4 +296,19 @@ test('a partial device write rolls back all changed progress fields', () => {
   const next = mergeProgress({ unlocked: ['coast','tokyo'], stars: { coast: 3 } });
   assert.equal(saveLocalProgress(next,storage),false);
   assert.deepEqual([...data.entries()],initial);
+});
+
+test('importing exported progress validates data and never accepts unbounded or future formats', () => {
+  const key = JSON.stringify(['coast', { mode: 'time' }]);
+  const raw = JSON.stringify({
+    version: 2, unlocked: ['coast', 'neon'], stars: { neon: 2 }, bests: {}, medals: {},
+    history: [], modeHistory: [], daily: [],
+    permanent: { version: 1, bests: { [key]: 61 }, stunts: {} },
+  });
+  const imported = parseProgressExport(raw);
+  assert.deepEqual(imported.progress.unlocked, ['coast', 'neon']);
+  assert.equal(imported.permanent.bests[key], 61);
+  assert.throws(() => parseProgressExport('{"version":999}'), /Unsupported|Invalid/);
+  assert.throws(() => parseProgressExport('not-json'), /Invalid/);
+  assert.throws(() => parseProgressExport('x'.repeat(1100000)), /large/);
 });
