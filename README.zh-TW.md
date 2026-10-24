@@ -1,4 +1,4 @@
-<!-- source-sha256: 8b601d8b1ed2078b8c2b4a731dc8533caa403d8ffcfa37d6e8544657c50ebf5f generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: ff2fa8cfbcf41a83c006be3049fba57b9c4d3f8e0169135399707850dd4e3a3d generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -100,7 +100,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 所有音訊都由 Web Audio 合成；不需要下載任何音訊檔。背景音樂有兩首循環播放的合成器浪潮（synthwave）曲目：開始與結果畫面使用的片頭主題曲（約 64 秒），以及從倒數開始播放、節奏更快的比賽主題曲（約 55 秒）。每一首都會在循環中逐步堆疊，並在暫停時降低音量。音效涵蓋選單確認、三聲倒數滴答與 GO、馬達／風聲、升空與加速、煞車、車輛／護欄碰撞、降落、低電量警告、近距離超車獎勵與終點旋律。將音效靜音會停止尚未播放的提示音，暫停則會讓駕駛音效淡出。低電量警告只有在電量回充超過 30% 後才會重新啟用。
 
-喇叭圖示會開啟音訊設定，內含音樂列與音效列，各有一個靜音開關與音量滑桿（開啟狀態見上方開始畫面截圖）。**Mute all**（或按 M）會同時讓兩者靜音。靜音時會保留各頻道的音量，因此取消靜音後會回到原本的音量；將滑桿拖到零，也會以同樣方式讓該頻道靜音。兩者預設皆為開啟、音量 100%，每個開關與音量都會以 cookie 記住一年（`skyline-rush-music`、`skyline-rush-sound`，以及記錄百分比的 `-volume` 變體）。在較矮的螢幕上，面板可以捲動。在瀏覽器允許自動播放的情況下，頁面一載入就會開始播放片頭音樂。若不允許（多數瀏覽器首次造訪時如此），第一次輕觸、點擊或按鍵就會開始播放。v0.20 之前儲存的音樂關閉設定（包含舊版「Play background music?」提示的 **Not now**）會重設為開啟一次，因為現在的儲存會附帶 `skyline-rush-audio-v=2`。在 iPhone 與 iPad 上，遊戲會要求媒體播放模式，因此靜音開關不會讓遊戲靜音；遊戲播放時也會暫停其他 App 的音訊。
+喇叭圖示會開啟音訊設定，內含音樂列與音效列，各有一個靜音開關與音量滑桿（開啟狀態見上方開始畫面截圖）。**Mute all**（或按 M）會同時讓兩者靜音。靜音時會保留各頻道的音量，因此取消靜音後會回到原本的音量；將滑桿拖到零，也會以同樣方式讓該頻道靜音。兩者預設皆為開啟、音量 100%，每個開關與音量都會記在 `localStorage`（`skyline-rush-music`、`skyline-rush-sound` 存 `on`/`off`，以及記錄百分比的 `-volume` 變體）；尚未儲存任何值時，兩個頻道皆為開啟並會存成 `on`。在較矮的螢幕上，面板可以捲動。在瀏覽器允許自動播放的情況下，頁面一載入就會開始播放片頭音樂。若不允許（Chrome 與多數瀏覽器首次造訪時如此），第一次輕觸、點擊或按鍵就會開始播放。在 iPhone 與 iPad 上，遊戲會要求媒體播放模式，因此靜音開關不會讓遊戲靜音；遊戲播放時也會暫停其他 App 的音訊。
 
 飛行面板會顯示爬升、巡航、下降與觸地四個階段、剩餘推進秒數，以及接下來該使用的操作。青色光環標示出空中通道，而且是遊戲玩法的一部分：請見下方的光環一節。手機版另有一個按住加速推進的按鈕。橘色的碰撞報告會顯示撞擊類型與損失的速度；護欄現在會讓地面上的車輛反彈並減速。飛到護欄上方則可越過它們。
 
@@ -232,7 +232,7 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、拉取請求、版本
 - `vite.config.js`：搭配 `@vitejs/plugin-vue` 的 Vite。
 - `src/perf.js`：供 `?perf` 裝置檢查讀數使用的影格時間百分位數。
 - `src/audio.js`：合成音效與循環播放的片頭／比賽音樂序列器。
-- `src/audio-settings.js`：讀取已儲存的音樂／音效開關與音量 cookie，以及滑桿的「靜音時保留音量」規則。
+- `src/audio-settings.js`：從 `localStorage` 讀取已儲存的音樂／音效開關與音量，以及滑桿的「靜音時保留音量」規則。
 - `tests/`：單元與瀏覽器行為測試。
 - `docs/design.md`、`docs/verification.md`：範圍與驗證證據。
 - `README.zh-TW.md`：本檔案的繁體中文翻譯，由 `scripts/readme-zh.mjs` 保持最新（`check`、以 `claude -p` 翻譯的 `sync`，以及手動編輯後使用的 `stamp`）。當 commit 變更 README.md 時，`.githooks/pre-commit` hook 會重新產生它（可用 `SKIP_README_ZH=1` 跳過一次），而當被推送的 commit 動到首頁（`index.html`、`src/App.vue`、`src/main.js`、`src/style.css`、`src/locales/`）時，`.githooks/pre-push` 會執行 `npm run test:layout`（可用 `SKIP_LAYOUT_GATE=1` 跳過一次）；`make` 會以 `git config core.hooksPath .githooks` 啟用這些 hook。`.claude/settings.json` 中的 Claude Code Stop hook，會在某一輪編輯了 README.md 卻沒有更新它時，讓 Claude 回頭去更新。

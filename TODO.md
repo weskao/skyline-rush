@@ -1,5 +1,13 @@
 # TODO — Gameplay depth design
 
+## Audio preference moves from cookies to localStorage; Chrome first-visit autoplay (2026-10-25)
+
+- [x] Repro in real Chrome with its default autoplay policy (Playwright strips `--autoplay-policy=no-user-gesture-required`; scratch script, 4 runs): `AudioContext` stays `suspended` on load as Chrome requires, and the first click or key resumes it (`running`, audible RMS > 0.01). Autoplay without a gesture cannot be fixed client-side; the existing first-gesture unlock (`unlockAudio`, `src/main.js`) is the fix and is kept.
+- [x] Preference storage: `src/audio-settings.js` `readAudio(localStorage)` reads `skyline-rush-music` / `skyline-rush-sound` (`on`/`off`) and `-volume` percent; `setAudio` in `src/main.js` writes them. Nothing stored → on at 100%, stored as `on` on the first `unlockAudio`. Cookie writes and the `skyline-rush-audio-v=2` legacy marker are gone.
+- [x] RED: `tests/audio-settings.test.js` rewritten against a storage object failed on the old module (`AUDIO_KEYS` missing). GREEN: `npm test` 533 pass; `npm run build` ok; `npx playwright test tests/browser.spec.js -g "music|audio|volume|sound"` 13/13 (off choice + volume survive reload from localStorage, saved off stays silent after the gesture, fresh visit stores both channels `on`).
+- [ ] Full `make verify` and CI `quality-gate` on the committing HEAD; a human check in desktop Chrome/Safari/Firefox and on a phone that the first tap starts the intro music.
+- [ ] Known loss: a music/sound-off saved in the old cookie is not migrated; those players hear audio once more and have to mute again.
+
 ## CI regression: trackpad momentum must select one course per swipe (2026-10-24)
 
 - [x] Inspect failed CI run 40102405872: only browser-tests shard 6 failed; the existing Playwright RED shows expected `neon` but actual `alpine` during one prolonged wheel gesture. The aggregate quality-gate correctly failed because the browser shard was red.

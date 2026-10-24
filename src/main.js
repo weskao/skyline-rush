@@ -14,7 +14,7 @@ import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.js';
 import { createSound } from './audio.js';
-import { AUDIO_COOKIES, AUDIO_VERSION, readAudio, setVolume } from './audio-settings.js';
+import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
@@ -143,7 +143,7 @@ const presentation = createPresentation();
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
 let nitroRefillUntil = 0;
-try { ({ audio, volume } = readAudio(document.cookie)); } catch { /* Audio defaults to on when cookies are unavailable. */ }
+try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults to on when storage is blocked. */ }
 const sound = createSound();
 // Initial quality selection is performed once; manual/previous settings win.
 let storedVisuals=null;
@@ -959,10 +959,11 @@ function toggleAssist() {
 function setAudio(kind, on, level = volume[kind]) {
   volume[kind] = level;
   audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
-  const name = AUDIO_COOKIES[kind];
+  const key = AUDIO_KEYS[kind];
   try {
-    for (const pair of [`${name}=${audio[kind] ? 'on' : 'off'}`, `${name}-volume=${Math.round(level * 100)}`, AUDIO_VERSION]) document.cookie = `${pair}; Max-Age=31536000; Path=/; SameSite=Lax`;
-  } catch { /* Audio still works when cookies are unavailable. */ }
+    localStorage.setItem(key, audio[kind] ? 'on' : 'off');
+    localStorage.setItem(`${key}-volume`, String(Math.round(level * 100)));
+  } catch { /* Audio still works when storage is blocked. */ }
   showAudio();
 }
 

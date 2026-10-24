@@ -193,16 +193,18 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   await expect(page.locator('#race-status')).toHaveText('RACING');
 });
 
-test('music and sound effects start on and each remember an off choice in a cookie', async ({ page }) => {
+const stored = (page, key) => page.evaluate(key => localStorage.getItem(key), key);
+
+test('music and sound effects start on and each remember an off choice in localStorage', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Audio settings' }).click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'true');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
   await audioSwitch(page, 'Music').click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
-  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('skyline-rush-music=off');
+  await expect.poll(() => stored(page, 'skyline-rush-music')).toBe('off');
   await audioSwitch(page, 'Sound effects').click();
-  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('skyline-rush-sound=off');
+  await expect.poll(() => stored(page, 'skyline-rush-sound')).toBe('off');
   await page.reload();
   await page.getByRole('button', { name: 'Audio settings' }).click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
@@ -223,7 +225,7 @@ test('each channel has a volume slider; muting keeps its level, unmuting restore
   for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowLeft');
   await expect(music).toHaveValue('40');
   await expect(music).toHaveAttribute('aria-valuetext', '40%');
-  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('skyline-rush-music-volume=40');
+  await expect.poll(() => stored(page, 'skyline-rush-music-volume')).toBe('40');
   await audioSwitch(page, 'Music').click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(music).toHaveValue('0');
@@ -355,7 +357,7 @@ for (const [name, gesture] of [['key', page => page.keyboard.press('Shift')], ['
 test('a saved music-off choice stays silent after the first gesture and keeps sound effects on', async ({ page }) => {
   await page.addInitScript(blockAutoplay);
   await page.addInitScript(measureAudio);
-  await page.addInitScript(() => { for (const pair of ['skyline-rush-music=off', 'skyline-rush-audio-v=2']) document.cookie = `${pair}; Path=/`; });
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/');
   await page.keyboard.press('Shift');
   await page.waitForTimeout(500);
@@ -365,16 +367,15 @@ test('a saved music-off choice stays silent after the first gesture and keeps so
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
 });
 
-test('a music-off saved by v0.18 or earlier plays music again after the first gesture', async ({ page }) => {
+test('a first visit with nothing stored plays music after the first gesture and stores both channels as on', async ({ page }) => {
   await page.addInitScript(blockAutoplay);
   await page.addInitScript(measureAudio);
-  await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; Path=/'; });
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Start race' })).toBeVisible();
   await page.keyboard.press('Shift');
   await expect.poll(() => level(page), { intervals: [50] }).toBeGreaterThan(0.001);
-  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('skyline-rush-audio-v=2');
-  expect(await page.evaluate(() => document.cookie)).toContain('skyline-rush-music=on');
+  expect(await stored(page, 'skyline-rush-music')).toBe('on');
+  expect(await stored(page, 'skyline-rush-sound')).toBe('on');
 });
 
 test('countdown lights, automatic accelerator and brake work without holding the gas', async ({ page }) => {
@@ -404,7 +405,7 @@ test('countdown lights, automatic accelerator and brake work without holding the
 
 test('real audio output includes UI and countdown cues, then mutes and pauses cleanly', async ({ page }) => {
   await page.addInitScript(measureAudio);
-  await page.addInitScript(() => { for (const pair of ['skyline-rush-music=off', 'skyline-rush-audio-v=2']) document.cookie = `${pair}; Path=/`; });
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [20] }).toBeGreaterThan(0.001);
@@ -693,8 +694,12 @@ test.describe('phone game gestures', () => {
       expect(await title.evaluate((element, type) => element.dispatchEvent(new Event(type, { bubbles: true, cancelable: true })), type)).toBe(false);
     }
     // Touch starts with AUTO on, which shows the gas as held; turn it off so the gas button reflects only the finger.
-    await page.locator('#assist-button').tap();
-    await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'false');
+    const assist = page.locator('#assist-button');
+    const onBorder = await assist.evaluate((element) => getComputedStyle(element).borderColor);
+    await assist.tap();
+    await expect(assist).toHaveAttribute('aria-pressed', 'false');
+    // A tap leaves :hover stuck on touch screens; it must not paint OFF with the ON border.
+    expect(await assist.evaluate((element) => getComputedStyle(element).borderColor)).not.toBe(onBorder);
     await page.getByRole('button', { name: 'Start race' }).tap();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const gas = page.locator('[data-control="throttle"]');
