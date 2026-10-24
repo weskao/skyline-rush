@@ -21,3 +21,20 @@ test('all tracks treat a sustained rail press as one contact until the car leave
     assert.equal(race.player.railContactSide, 0, `${id} can hit again after separating`);
   }
 });
+
+
+test('a hard rail hit cannot restart a rewarded drift while the car stays against the rail', () => {
+  const race = createRace('tokyo');
+  race.phase = 'racing';
+  race.traffic = [];
+  race.rivals = [];
+  Object.assign(race.player, { distance: 1300, speed: 70, x: ROAD_LIMIT, steering: 1 });
+  stepRace(race, { steer: 1, throttle: true }, 1 / 60);
+  assert.equal(race.player.railContactSide, 1);
+  assert.equal(race.player.collisions, 1);
+  for (let frame = 0; frame < 30; frame++) {
+    stepRace(race, { brake: true, steer: 1 }, 1 / 60);
+    assert.equal(race.player.drift, null, 'braking against a barrier is not a sustained drift');
+  }
+  assert.ok(race.player.speed < 50, 'braking must decelerate after the initial rail hit');
+});
