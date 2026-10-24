@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { careerStats } from '../src/history.js';
 import { DAILY_MODIFIERS } from '../src/game.js';
-import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus } from '../src/cloud-progress.js';
+import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, mergeModeBests, readLocalModeBests, saveLocalModeBests } from '../src/cloud-progress.js';
 
 test('cloud failure status reports whether a durable device copy exists', () => {
   assert.equal(cloudFailureStatus({ code: 'unavailable' }, false), 'cloud.localFailed');
@@ -228,4 +228,38 @@ test('cloud mode history preserves v1 additive telemetry and accepts local 4096-
     assert.deepEqual(merged.modeHistory[0][key], run[key], key);
   assert.equal(merged.modeHistory[0].rules, run.rules);
   assert.deepEqual(mergeProgress({}, merged).modeHistory, merged.modeHistory);
+});
+
+test('permanent mode records keep the fastest non-stunt result after 50 recent runs expire', () => {
+  const key = JSON.stringify(['coast', { mode: 'time', duration: 180 }]);
+  const a = mergeModeBests({ bests: { [key]: 61 } }, { version: 1, bests: { [key]: 67 } });
+  assert.equal(a.bests[key], 61);
+  assert.equal(mergeModeBests(a, { version: 1, bests: { [key]: 59 } }).bests[key], 59);
+});
+
+test('permanent Stunt scores and combo peaks merge without downgrading earlier achievements', () => {
+  const key = JSON.stringify(['tokyo', { mode: 'stunt', duration: 90 }]);
+  const local = { bests: { [key]: 9500 }, stunts: { [key]: { score: 9500, maxCombo: 12, airTime: 18, medal: 'gold' } } };
+  const cloud = { version: 1, bests: { [key]: 9000 }, stunts: { [key]: { score: 9000, maxCombo: 15, airTime: 10, medal: 'silver' } } };
+  const merged = mergeModeBests(local, cloud);
+  assert.equal(merged.bests[key], 9500);
+  assert.deepEqual(merged.stunts[key], { score: 9500, maxCombo: 15, airTime: 18, medal: 'gold' });
+  assert.deepEqual(mergeModeBests(merged, merged), merged);
+});
+
+test('permanent bests are local and can be restored without changing device preferences', () => {
+  const key = JSON.stringify(['coast', { mode: 'time' }]);
+  const data = new Map([['skyline-rush-vfx', 'high']]);
+  const storage = { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v) };
+  const snapshot = mergeModeBests({ bests: { [key]: 62.3 } });
+  assert.equal(saveLocalModeBests(snapshot, storage), true);
+  assert.deepEqual(mergeModeBests(readLocalModeBests(storage)), snapshot);
+  assert.equal(data.get('skyline-rush-vfx'), 'high');
+});
+
+test('permanent bests reject malformed keys and unsupported remote schemas', () => {
+  const accepted = JSON.stringify(['coast', { mode: 'time' }]);
+  const merged = mergeModeBests({ bests: { arbitrary: 1, [accepted]: 60 } });
+  assert.deepEqual(merged.bests, { [accepted]: 60 });
+  assert.throws(() => mergeModeBests({}, { version: 999, bests: {} }), /Unsupported/);
 });
