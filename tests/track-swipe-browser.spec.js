@@ -91,25 +91,27 @@ test('desktop: dragging the preview with the mouse changes track from the regula
 });
 
 test('desktop: a two-finger trackpad swipe changes one track per gesture, momentum included', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.goto('/');
   const [first, second, third] = await trackOrder(page);
-  await page.mouse.move(1150, 600);
-  const scroll = async (deltaX, events) => { for (let i = 0; i < events; i++) { await page.mouse.wheel(deltaX, 0); await page.waitForTimeout(16); } };
+  await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
+  // Pin CSS-pixel deltas and gesture time: native wheel scaling and slow WebGL frames vary by runner.
+  const scroll = async (deltaX, events, deltaY = 0) => { for (let i = 0; i < events; i++) { await page.locator('#world').dispatchEvent('wheel', { deltaX, deltaY, deltaMode: 0 }); await page.clock.runFor(16); } };
   await scroll(10, 4);
-  await page.waitForTimeout(400);
+  await page.clock.runFor(400);
   expect(await selected(page), 'a nudge springs back').toBe(first);
   await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.style.transform)).toBe('');
   await scroll(30, 20); // swipe plus its momentum tail: still one track
   await expect.poll(() => selected(page)).toBe(second);
-  await page.waitForTimeout(400);
+  await page.clock.runFor(400);
   expect(await selected(page)).toBe(second);
   await scroll(30, 6);
   await expect.poll(() => selected(page)).toBe(third);
-  await page.waitForTimeout(400);
+  await page.clock.runFor(400);
   await scroll(-30, 6);
   await expect.poll(() => selected(page)).toBe(second);
-  await page.waitForTimeout(400);
-  await page.mouse.wheel(0, 200); // vertical scrolling is not a swipe
-  await page.waitForTimeout(400);
+  await page.clock.runFor(400);
+  await scroll(0, 1, 200); // vertical scrolling is not a swipe
+  await page.clock.runFor(400);
   expect(await selected(page)).toBe(second);
 });
