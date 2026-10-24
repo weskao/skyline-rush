@@ -8,7 +8,7 @@ Preserve: existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
-`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input`.
+`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability`.
 
 ## Home-screen landmark showcase
 
@@ -31,6 +31,23 @@ player's hitbox, hit props, barriers, Tokyo trains, hazards and each other, and 
 around slower cars and the player before impact; traffic then recovers to cruise speed. Never
 give one class of car a special-case pass-through. Rules are in `.claude/rules/world-tour.md`
 ("Solid props", "Shared collision physics").
+
+## Vehicle stability and road contact — every track
+
+Always use the same road centreline and tangent/right/up frame for road geometry,
+vehicle placement and orientation. On curved, banked or elevated tracks, compose steering
+lean, drift, flight pitch and stunt rolls **relative to** the road-aligned quaternion
+(`orientCarOnRoad` in `src/vehicle-pose.js`); never overwrite its Euler X/Z angles.
+A vehicle must remain correctly aligned with the visible surface: verify the wheels and
+body, not only the mesh origin, even when turning close to either road edge.
+
+Continuous rail contact must not re-trigger a hard collision when the 1.5 s cooldown
+expires; the next collision is armed only after separation. Do not mask broken geometry
+or physics with arbitrary car-height offsets, smoothing, camera tricks or per-track patches.
+Fix shared root causes, then regression-check **Sky Spiral, all four legacy tracks and all
+five World Tour tracks**, including AI cars, ghost, ramps and airborne maneuvers.
+Full scoped rules and exact TDD / WebGL verification requirements:
+`.claude/rules/vehicle-road-stability.md`.
 
 ## No shader compiles or NaN pixels mid-race
 
@@ -91,6 +108,9 @@ of the UI/UX design review rather than an optional afterthought.
 - Gameplay / progression / build-config change → `npm test` + `npm run build`.
 - Rendering / navigation / controls / unlock visibility change → also `npm run test:browser`,
   desktop and mobile.
+- Road, car pose, collision or steering change → follow `vehicle-road-stability.md`: TDD
+  RED→GREEN, all-track coverage, frame-rate and road-clearance checks, plus real WebGL
+  capture where clipping or jitter was reported. Record unrun checks as pending.
 - Home-screen change (`src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`, `index.html`)
   → `npm run test:layout` before pushing; the `.githooks/pre-push` hook runs it on such pushes and
   blocks a red result (never bypass it with `SKIP_LAYOUT_GATE=1` to get a fix out — CI on `main`
