@@ -18,6 +18,20 @@ async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 
   await cdp.detach();
 }
 
+// Real trackpad wheel input through CDP over the preview. A trackpad stamps its events 16ms apart on its own clock however
+// late they reach the page (page.mouse.wheel stamps on delivery, so a slow CI round trip looks like the user pausing).
+// deliverMs spaces the deliveries; stallAt delays one delivery by 300ms.
+async function trackpadSwipe(page, deltaX, events, { deliverMs = 16, stallAt = -1 } = {}) {
+  const cdp = await page.context().newCDPSession(page);
+  const start = Date.now() / 1000;
+  for (let i = 0; i < events; i++) {
+    if (i === stallAt) await page.waitForTimeout(300);
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: 1150, y: 600, deltaX, deltaY: 0, timestamp: start + i * 0.016 });
+    await page.waitForTimeout(deliverMs);
+  }
+  await cdp.detach();
+}
+
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -94,12 +108,12 @@ test('desktop: a two-finger trackpad swipe changes one track per gesture, moment
   await page.goto('/');
   const [first, second, third] = await trackOrder(page);
   await page.mouse.move(1150, 600);
-  const scroll = async (deltaX, events) => { for (let i = 0; i < events; i++) { await page.mouse.wheel(deltaX, 0); await page.waitForTimeout(16); } };
+  const scroll = (deltaX, events, options) => trackpadSwipe(page, deltaX, events, options);
   await scroll(10, 4);
   await page.waitForTimeout(400);
   expect(await selected(page), 'a nudge springs back').toBe(first);
   await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.style.transform)).toBe('');
-  await scroll(30, 20); // swipe plus its momentum tail: still one track
+  await scroll(30, 20, { stallAt: 12 }); // swipe plus its momentum tail, one event delivered late: still one track
   await expect.poll(() => selected(page)).toBe(second);
   await page.waitForTimeout(400);
   expect(await selected(page)).toBe(second);
@@ -118,12 +132,9 @@ test('desktop: wheel momentum pauses over 160ms remain part of the same trackpad
   await page.goto('/');
   const [, second] = await trackOrder(page);
   await page.mouse.move(1150, 600);
-  // Under CPU-only WebGL, adjacent momentum events may be spaced >160ms.
-  // These 210ms gaps are still the same physical swipe, not new gestures.
-  for (let i = 0; i < 9; i++) {
-    await page.mouse.wheel(30, 0);
-    await page.waitForTimeout(210);
-  }
+  // Under CPU-only WebGL, adjacent momentum events may reach the page >160ms apart.
+  // Delivered 210ms apart but stamped 16ms apart, they are still the same physical swipe, not new gestures.
+  await trackpadSwipe(page, 30, 9, { deliverMs: 210 });
   await expect.poll(() => selected(page)).toBe(second);
   await page.waitForTimeout(400);
   expect(await selected(page)).toBe(second);
