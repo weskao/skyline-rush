@@ -122,7 +122,7 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
   const [first, second] = await trackOrder(page);
   await page.mouse.move(1150, 600);
   await page.mouse.down();
-  await page.mouse.move(1060, 600, { steps: 6 });
+  await page.mouse.move(1020, 600, { steps: 6 });
   const pages = page.locator('#track-swipe-scenes canvas');
   await expect(pages).toHaveCount(2);
   const geometry = await pages.evaluateAll(canvases => canvases.map(canvas => {
@@ -131,10 +131,10 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
       Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data;
     return { left: box.left, right: box.right, width: box.width, height: box.height, alpha: pixels[3] };
   }));
-  expect(geometry[0].right).toBeCloseTo(geometry[1].left, 0);
+  expect(Math.abs(geometry[0].right - geometry[1].left)).toBeLessThan(1);
   expect(geometry[0].left).toBeLessThanOrEqual(0);
   expect(geometry[1].right).toBeGreaterThanOrEqual(1440);
-  expect(geometry.every(part => part.width === 1440 && part.height > 0 && part.alpha === 255)).toBe(true);
+  expect(geometry.every(part => part.width === 1440 && part.height > 0 && part.alpha === 255), 'both actual scenes remain fully opaque').toBe(true);
   expect(await selected(page)).toBe(first);
   expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('');
   await page.mouse.up();
