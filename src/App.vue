@@ -26,6 +26,25 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 </script>
 
 <template>
+  <dialog id="whats-new-screen" class="history-screen release-screen" aria-labelledby="release-title" aria-describedby="release-intro">
+    <header class="release-header">
+      <div>
+        <small data-i18n="release.eyebrow">SKYLINE RUSH / RELEASE NOTES</small>
+        <h2 id="release-title" data-i18n="release.title">What's new</h2>
+        <p id="release-intro" class="release-intro" data-i18n="release.intro">See what's new for your next race.</p>
+      </div>
+      <button id="release-close" type="button" class="release-close" aria-label="Close what's new" data-i18n-aria-label="release.close">×</button>
+    </header>
+    <div id="release-versions" class="release-versions" role="tablist" aria-label="Versions" data-i18n-aria-label="release.versions"></div>
+    <section id="release-panel" class="release-panel" role="tabpanel" tabindex="0">
+      <img id="release-hero" class="release-hero" alt="" hidden>
+      <div class="release-meta"><span id="release-version"></span><span id="release-date"></span></div>
+      <div id="release-items" class="release-entries"></div>
+    </section>
+    <footer class="release-footer">
+      <button type="button" class="primary-button" id="release-continue" data-i18n="release.continue">Continue</button>
+    </footer>
+  </dialog>
   <dialog id="guide-screen" class="history-screen guide-screen" aria-labelledby="guide-title" aria-describedby="guide-intro">
     <header class="guide-header">
       <h2 id="guide-title" data-i18n="guide.title">Start your engines!</h2>
@@ -381,5 +400,5 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span><button id="layout-done" data-i18n="layout.done">Done editing</button></div>
   <div class="bottomline"><span><i></i> <span data-i18n="footer.tagline">BEYOND THE ROAD</span></span><span data-i18n="footer.genre">AN ORIGINAL ARCADE FLIGHT RACER</span></div>
-  <div class="build-version">v{{ version }}</div>
+  <button type="button" id="whats-new-open" class="build-version" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button>
 </template>
