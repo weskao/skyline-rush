@@ -125,6 +125,16 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       </div>
     </details>
   </aside>
+  <!-- The compact showroom camera dock stays available on every ready-screen track. -->
+  <nav class="showcase-camera-dock" id="showcase-camera-dock" aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
+    <span class="showcase-camera-heading" data-i18n="showcase.heading">CAMERA VIEW</span>
+    <div class="showcase-camera-actions">
+      <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous">‹</button>
+      <span id="showcase-camera-name" role="status" aria-live="polite"></span>
+      <button type="button" id="showcase-camera-next" aria-label="Next camera view" data-i18n-aria-label="showcase.next">›</button>
+    </div>
+    <span class="showcase-camera-dots" id="showcase-camera-dots" aria-hidden="true"></span>
+  </nav>
   <!-- Home preview swipe (main.js): the track being swiped to, the track just chosen, or the one-time gesture hint. -->
   <div class="track-swipe" id="track-swipe" role="status" data-state=""><span class="swipe-gesture" aria-hidden="true"><i></i></span><strong id="track-swipe-name"></strong><span id="track-swipe-note"></span><span class="swipe-dots" aria-hidden="true"></span></div>
   <section class="airflow-hud" id="airflow-hud" aria-label="Airflow status" data-i18n-aria-label="aero.status" aria-hidden="true">
