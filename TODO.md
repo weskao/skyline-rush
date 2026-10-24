@@ -5,9 +5,10 @@
 規格：[docs/release-announcements.md](docs/release-announcements.md)。開發於 `feature/whats-new-release-announcements`，從 `main` 建立。僅對已正式發布的新版本公告已確認的玩家體驗，不展示開發技術詞彙。
 
 - [ ] **TDD 狀態契約：**可發布公告判斷、每版本已讀、Local Storage 受阻與相容既有更新重載機制，先 RED 後 GREEN。
-- [ ] **玩家公告資料：**版本與日期、English／繁中標題及內文、可選圖片（無圖也能正常顯示）；只寫已推出且讓玩家有感的更新，不得暴露內部專業術語。
+- [x] **玩家公告資料：**已建立版本、日期、English／繁中玩家導向文字及可選圖片（無圖完整顯示）；Node 測試與正式建置已在 [Actions #40097497428](https://github.com/weskao/skyline-rush/actions/runs/40097497428) 對應提交成功，仍待最新 UI browser 驗收。
 - [ ] **桌面／手機公告 UI：**原生 dialog、版本與更新卡、圖片缺失降級、44px 控制、手機安全區、無障礙與減少動畫。
 - [ ] **觸發及互動：**僅首頁安全狀態首度顯示、關閉存已讀、Escape 與按鈕、首頁版本號可重新開啟，其他 dialog／教學／賽事不打斷。
+- [x] **公告文案英文規則：**`CLAUDE.md` 已規定所有公告從玩家角度描述新體驗，避免工程專業術語，且英／繁中同步更新；已重新讀取確認。
 - [ ] **雙語與可維護性：**介面及更新內容支援 en / zh-TW、開啟時可即時切換語言；CLAUDE.md 英文規則要求玩家導向文案；無新套件或後端。
 - [ ] **測試與驗收：**單元與瀏覽器 RED→GREEN，`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`，以及 CI 狀態；桌面/手機實際畫面佐證。未驗證不得打勾。
 - [ ] **實體裝置驗收：**iOS Safari／Android Chrome 觸控、短橫向、字體放大、返回首頁等（無真機則保留未完成）。
