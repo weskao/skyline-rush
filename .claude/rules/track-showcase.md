@@ -76,3 +76,12 @@ gate). Every new map ships the same way.
   default config ignores them).
 - **Visual proof before merge**: real-app home screenshots (not only the fixture) with each map
   selected, plus an in-race drive-through of the approach.
+
+## User-selectable showroom angles
+
+The landmark hero shot is the *default drive angle*, not an unconditional
+override. Apply the shared preview angle before any curated fallback in
+`src/world.js`. Each future track automatically receives drive/front/rear/
+left/right/orbit without adding UI branches. The camera dock is visible in the
+ready phase on desktop and touch, accessible and synchronized with the VFX
+select, without requiring AIRFLOW.
