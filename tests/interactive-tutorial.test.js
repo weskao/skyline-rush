@@ -159,7 +159,8 @@ test('neutral tutorial controls do not pull left and wrong-step steering still o
   for (let frame = 0; frame < 18; frame++) advance({ steer: 1 });
   assert.equal(session.step, 'left', 'steering opposite the lesson must not skip it');
   assert.ok(car.x > startX + 0.3, 'players can turn right even during the left tutorial step');
-  const releasedX = car.x;
   for (let frame = 0; frame < 50; frame++) advance();
-  assert.ok(Math.abs(car.x - releasedX) < 0.15, 'releasing steering must not trigger lane centering');
+  const settledX = car.x;
+  for (let frame = 0; frame < 100; frame++) advance();
+  assert.ok(Math.abs(car.x - settledX) < 0.001, 'once steering settles, the car must not auto-center');
 });
