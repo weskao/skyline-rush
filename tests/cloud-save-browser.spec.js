@@ -10,8 +10,8 @@ test('History exposes cloud recovery and sign-in on a narrow phone', async ({ pa
   await expect(dialog.locator('#cloud-title')).toHaveText('Cloud save');
   await expect(dialog.locator('#cloud-login')).toBeVisible();
   await expect(dialog.locator('#cloud-login')).toHaveAccessibleName('Sign in with Google');
+  await expect(dialog.locator('#cloud-status')).toHaveText('Cloud backup is off. Sign in to protect your race results.');
   await expect.poll(() => dialog.locator('#cloud-login img').evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
-  await expect(dialog.locator('#cloud-status')).toHaveText('Race progress is saved on this device only.');
   await expect(dialog.locator('#cloud-logout')).toBeHidden();
   await dialog.locator('#history-close').click();
   await selectLocale(page, 'zh-TW');

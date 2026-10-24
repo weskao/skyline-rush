@@ -10,6 +10,12 @@ export function mergeUnlocks(local, remote) {
 
 export const claimCloudOwner = (owner, uid) => !owner || owner === uid ? uid : null;
 
+export function cloudFailureStatus(error, deviceSaved) {
+  if (!deviceSaved) return 'cloud.localFailed';
+  if (error?.code === 'resource-exhausted') return 'cloud.quota';
+  return ['unavailable', 'deadline-exceeded', 'network-request-failed'].includes(error?.code) ? 'cloud.pending' : 'cloud.failed';
+}
+
 const validTime = value => Number.isFinite(value) && value > 0;
 const nonnegative = value => Number.isFinite(value) && value >= 0 ? value : 0;
 const date = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;

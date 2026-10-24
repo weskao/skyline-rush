@@ -132,7 +132,7 @@ test('offline map progress stays pending then syncs when the browser comes onlin
   });
   await page.reload();
   await page.locator('#cloud-open').click();
-  await expect(page.locator('#cloud-status')).toContainText('Cloud sync will retry');
+  await expect(page.locator('#cloud-status')).toContainText('Cloud sync is pending');
   await page.evaluate(() => {
     sessionStorage.removeItem('cloud-offline');
     dispatchEvent(new Event('online'));
@@ -148,6 +148,26 @@ test('offline map progress stays pending then syncs when the browser comes onlin
   await expect(restored.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await restored.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toContain('neon');
   await restored.close();
+});
+
+test('blocked device storage is not described as a saved offline copy', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'blocked-storage@example.test' });
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  await page.addInitScript(() => {
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'skyline-rush-unlocked') throw new DOMException('Storage blocked', 'QuotaExceededError');
+      return setItem.call(this, key, value);
+    };
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+  });
+  await page.reload();
+  await page.locator('#cloud-open').click();
+  await expect(page.locator('#cloud-status')).toContainText('Could not save on this device');
 });
 
 test('two devices merge different results and repeated sign-in does not duplicate races', async ({ browser }) => {

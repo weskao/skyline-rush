@@ -290,7 +290,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <button type="button" class="controls-reset" id="cloud-export" data-i18n="cloud.export">Export race progress</button>
       <button type="button" class="controls-reset" id="cloud-delete" data-i18n="cloud.delete" hidden>Delete race progress</button>
       <p id="cloud-identity" role="status">Not signed in</p>
-      <p id="cloud-status" role="status" data-i18n="cloud.local">Race progress is saved on this device only.</p>
+      <p id="cloud-status" role="status" data-i18n="cloud.local">Cloud backup is off. Sign in to protect your race results.</p>
       <p id="cloud-last-sync">Never synced</p>
     </section>
     <label class="history-filter"><span data-i18n="history.track">Track</span> <select id="history-track" aria-label="History track" data-i18n-aria-label="history.trackAria"><option v-for="(track, id) in RACE_TRACKS" :value="id">{{ track.name }}</option></select></label>

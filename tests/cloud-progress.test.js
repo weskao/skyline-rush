@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner } from '../src/cloud-progress.js';
+import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus } from '../src/cloud-progress.js';
+
+test('cloud failure status reports whether a durable device copy exists', () => {
+  assert.equal(cloudFailureStatus({ code: 'unavailable' }, false), 'cloud.localFailed');
+  assert.equal(cloudFailureStatus({ code: 'unavailable' }, true), 'cloud.pending');
+  assert.equal(cloudFailureStatus({ code: 'resource-exhausted' }, true), 'cloud.quota');
+  assert.equal(cloudFailureStatus({ code: 'permission-denied' }, true), 'cloud.failed');
+});
 
 test('cloud unlocks merge with existing device progress in track order', () => {
   assert.deepEqual(mergeUnlocks(['coast', 'neon'], ['coast', 'canyon']), ['coast', 'neon', 'canyon']);

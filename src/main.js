@@ -34,7 +34,7 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { refreshIfStale } from './update-check.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress } from './cloud-save.js';
-import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress } from './cloud-progress.js';
+import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus } from './cloud-progress.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -463,8 +463,9 @@ function saveCloudProgress() {
     return;
   }
   cloudPending = true;
+  const deviceSaved = saveLocalProgress(currentProgress());
   if (!navigator.onLine) {
-    say($('#cloud-status'), () => t('cloud.pending'));
+    say($('#cloud-status'), () => t(cloudFailureStatus({ code: 'unavailable' }, deviceSaved)));
     return;
   }
   say($('#cloud-status'), () => t('cloud.syncing'));
@@ -486,8 +487,8 @@ function saveCloudProgress() {
     if ($('#history-screen').open) showHistory();
     showGarage();
     say($('#cloud-status'), () => t('cloud.saved'));
-  }).catch(() => {
-    if (cloudUser?.uid === uid) say($('#cloud-status'), () => t('cloud.pending'));
+  }).catch(error => {
+    if (cloudUser?.uid === uid) say($('#cloud-status'), () => t(cloudFailureStatus(error, deviceSaved)));
   });
 }
 watchCloudUser(user => {
