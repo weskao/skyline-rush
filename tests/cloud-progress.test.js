@@ -283,3 +283,17 @@ test('clearing a cloud account removes permanent bests but keeps device settings
   assert.deepEqual(readLocalModeBests(storage), { bests: {}, stunts: {} });
   assert.equal(data.get('skyline-rush-vfx'), 'high');
 });
+
+test('a partial device write rolls back all changed progress fields', () => {
+  const data = new Map([['skyline-rush-unlocked','["coast","neon"]'],['skyline-rush-stars','{"coast":2}']]);
+  const initial = [...data.entries()];
+  let writes = 0;
+  const storage = {
+    getItem: k => data.get(k) ?? null,
+    setItem: (k,v) => { if (++writes === 2) throw new Error('quota'); data.set(k,v); },
+    removeItem: k => data.delete(k),
+  };
+  const next = mergeProgress({ unlocked: ['coast','tokyo'], stars: { coast: 3 } });
+  assert.equal(saveLocalProgress(next,storage),false);
+  assert.deepEqual([...data.entries()],initial);
+});
