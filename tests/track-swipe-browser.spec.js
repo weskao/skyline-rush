@@ -180,7 +180,7 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
 });
 
 
-test('desktop: completed carousel animation stays on the incoming scene until WebGL handoff', async ({ page }) => {
+test('desktop trackpad scroll: completed animation never re-exposes the departing track', async ({ page }) => {
   await page.goto('/');
   const [, second] = await trackOrder(page);
   // Observe the exact microtask where the selected track changes. The outgoing
@@ -197,13 +197,9 @@ test('desktop: completed carousel animation stays on the incoming scene until We
       window.__swipeHandoff = { outgoingRight: outgoing.right, incomingLeft: incoming.left, incomingRight: incoming.right };
     }).observe(tracks, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
   });
-  await page.mouse.move(1150, 600);
-  await page.mouse.down();
-  await page.mouse.move(1020, 600, { steps: 6 });
-  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(2);
-  await page.mouse.up();
+  await trackpadSwipe(page, 30, 8); // genuine horizontal wheel path; same handoff as drag/touch
   await expect.poll(() => selected(page)).toBe(second);
-  const frame = await expect.poll(() => page.evaluate(() => window.__swipeHandoff)).not.toBeNull();
+  await expect.poll(() => page.evaluate(() => window.__swipeHandoff)).not.toBeNull();
   const seen = await page.evaluate(() => window.__swipeHandoff);
   expect(seen.outgoingRight, 'old track must not reappear after snap animation finishes').toBeLessThanOrEqual(1);
   expect(seen.incomingLeft).toBeLessThanOrEqual(1);
