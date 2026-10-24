@@ -519,7 +519,8 @@ export function stepRace(race, input, dt) {
     addNitro(car, SLIPSTREAM_NITRO);
   }
   // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; releasing it pays out by drift time.
-  if (brake && steer !== 0 && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED) {
+  if (brake && steer !== 0 && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED &&
+      car.railContactSide !== Math.sign(steer)) {
     car.drift ??= { time: 0, dir: Math.sign(steer) };
     car.drift.time += dt;
   } else if (car.drift) {
