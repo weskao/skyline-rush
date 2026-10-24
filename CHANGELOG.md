@@ -1,3 +1,26 @@
+## [0.20.1] - 2026-10-24
+
+### 🚀 Features
+
+- **cloud:** Add reusable sign-in and home entry
+- **cloud:** Complete account save recovery flows
+
+### 🐛 Bug Fixes
+
+- **input:** Free touch controls stuck by ios edge swipe
+- **cloud:** Preserve and validate synced progress
+- **input:** Free touch controls stuck by ios edge swipe
+- **cloud:** Report local save failures accurately
+
+### 💼 Other
+
+- Integrate Firebase cloud save into main
+
+### 🧪 Testing
+
+- **browser:** Scale bloom guard timeout in CI
+- **cloud:** Cover sign-in restore with firebase emulators
+- **browser:** Isolate preview server ports
 ## [0.20.0] - 2026-10-23
 
 ### 🚀 Features
