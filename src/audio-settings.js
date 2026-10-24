@@ -1,14 +1,12 @@
-// Audio preferences: on/off plus a volume per channel. Cookie writes live in main.js; volumes are saved as `<name>-volume=<percent>`.
-export const AUDIO_COOKIES = { music: 'skyline-rush-music', sfx: 'skyline-rush-sound' };
-// Written with every save since v0.20. A music-off saved without it may come from the removed v0.16–v0.18 "Play background music?" prompt, so it reads as on.
-export const AUDIO_VERSION = 'skyline-rush-audio-v=2';
+// Audio preferences: on/off plus a volume per channel, kept in localStorage as `<key>` = on|off and `<key>-volume` = percent. Writes live in main.js.
+export const AUDIO_KEYS = { music: 'skyline-rush-music', sfx: 'skyline-rush-sound' };
 
-export function readAudio(cookie = '') {
-  const saved = Object.fromEntries(cookie.split('; ').map(pair => pair.split('=')));
-  const audio = {}, volume = {}, legacy = !cookie.split('; ').includes(AUDIO_VERSION);
-  for (const [kind, name] of Object.entries(AUDIO_COOKIES)) {
-    audio[kind] = saved[name] !== 'off' || (legacy && kind === 'music');
-    const percent = Number.parseInt(saved[`${name}-volume`], 10);
+// `storage` is localStorage-like; a channel with nothing saved is on at full volume.
+export function readAudio(storage = { getItem: () => null }) {
+  const audio = {}, volume = {};
+  for (const [kind, key] of Object.entries(AUDIO_KEYS)) {
+    audio[kind] = storage.getItem(key) !== 'off';
+    const percent = Number.parseInt(storage.getItem(`${key}-volume`), 10);
     // A stored level is never silent: silence is the off switch, so unmuting always has something to restore.
     volume[kind] = Number.isFinite(percent) ? Math.min(100, Math.max(5, percent)) / 100 : 1;
   }

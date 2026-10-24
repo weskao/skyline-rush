@@ -14,14 +14,14 @@ import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.js';
 import { createSound } from './audio.js';
-import { AUDIO_COOKIES, AUDIO_VERSION, readAudio, setVolume } from './audio-settings.js';
+import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
-  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.js';
+  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY, HISTORY_KEY } from './history.js';
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
@@ -34,6 +34,7 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.js';
 import { refreshIfStale } from './update-check.js';
+import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.js';
 import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.js';
 
@@ -143,7 +144,7 @@ const presentation = createPresentation();
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
 let nitroRefillUntil = 0;
-try { ({ audio, volume } = readAudio(document.cookie)); } catch { /* Audio defaults to on when cookies are unavailable. */ }
+try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults to on when storage is blocked. */ }
 const sound = createSound();
 // Initial quality selection is performed once; manual/previous settings win.
 let storedVisuals=null;
@@ -240,6 +241,7 @@ const performanceNotice=$('#performance-notice');
 const performanceNoticeText=$('#performance-notice-text');
 const performanceNoticeTitle=$('#performance-notice-title');
 const performanceNoticeDismiss=$('#performance-notice-dismiss');
+let performanceNoticeDismissed = false;
 let showedPerformanceNotice=false;
 function refreshPerformanceNotice(){
   if(!showedPerformanceNotice)return;
@@ -259,13 +261,161 @@ function showOneTimePerformanceNotice(){
   performanceNotice.hidden=false;
 }
 const hidePerformanceNotice=()=>{ performanceNotice.hidden=true; };
-performanceNoticeDismiss.addEventListener('click',hidePerformanceNotice);
+performanceNoticeDismiss.addEventListener('click', () => { performanceNoticeDismissed = true; hidePerformanceNotice(); });
 // The notice floats over the toolbar panels; opening one means the reader is already in the settings it points to.
 $('#vfx-panel').addEventListener('toggle', ({ target: panel }) => {
   if (panel.open) hidePerformanceNotice();
   trackDropdown(panel, panel.open, () => { panel.open = false; });
 });
 showOneTimePerformanceNotice();
+
+const releaseDialog = $('#whats-new-screen');
+const releaseOpen = $('#whats-new-open');
+const releasePanel = $('#release-panel');
+const RECENT_RELEASES = recentReleases();
+let releaseIndex = 0;
+let releaseOpener = null;
+let releaseShownHere = false;
+let releaseUnread = new Set();
+const releaseStorage = () => { try { return localStorage; } catch { return null; } };
+// Someone who finished the guide or saved a race played before the notes were recorded.
+const returningPlayer = () => {
+  try { return localStorage.getItem('skyline-rush-guide-seen') !== null || localStorage.getItem(HISTORY_KEY) !== null; }
+  catch { return false; }
+};
+const releaseDay = (date, options) => formatDate(new Date(date + 'T00:00:00'), options);
+
+function renderReleaseNotes() {
+  if (!CURRENT_RELEASE) return;
+  const locale = getLocale();
+  const tabs = RECENT_RELEASES.map((release, index) => {
+    const tab = document.createElement('button');
+    const selected = index === releaseIndex;
+    Object.assign(tab, { type: 'button', id: 'release-tab-' + index, className: 'release-tab', tabIndex: selected ? 0 : -1 });
+    tab.dataset.version = release.version;
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', 'release-panel');
+    tab.setAttribute('aria-selected', String(selected));
+    const name = document.createElement('span');
+    name.className = 'release-tab-version';
+    name.textContent = 'v' + release.version;
+    const note = document.createElement('span');
+    note.className = index ? 'release-tab-note' : 'release-tab-note release-tab-latest';
+    note.textContent = index ? releaseDay(release.date, { month: 'short', day: 'numeric' }) : t('release.latest');
+    tab.append(name, note);
+    if (releaseUnread.has(release.version)) {
+      const unread = document.createElement('span');
+      unread.className = 'release-tab-unread';
+      unread.textContent = t('release.unread');
+      name.append(unread);
+    }
+    return tab;
+  });
+  $('#release-versions').replaceChildren(...tabs);
+  releasePanel.setAttribute('aria-labelledby', 'release-tab-' + releaseIndex);
+  const release = RECENT_RELEASES[releaseIndex];
+  $('#release-version').textContent = 'v' + release.version;
+  $('#release-date').textContent = releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' });
+  const hero = $('#release-hero');
+  const heroImage = releaseImage(release.image, locale);
+  hero.hidden = !heroImage;
+  if (heroImage) hero.src = import.meta.env.BASE_URL + heroImage;
+  else hero.removeAttribute('src');
+  const entries = release.highlights.map(item => {
+    const article = document.createElement('article');
+    article.className = 'release-entry';
+    article.dataset.kind = item.kind;
+    const image = releaseImage(item.image, locale);
+    if (image) {
+      const thumb = document.createElement('img');
+      thumb.src = import.meta.env.BASE_URL + image;
+      thumb.alt = '';
+      thumb.loading = 'lazy';
+      thumb.addEventListener('error', () => thumb.remove(), { once: true });
+      article.append(thumb);
+    }
+    const copy = document.createElement('div');
+    const kind = document.createElement('span');
+    kind.className = 'release-kind';
+    kind.textContent = t('release.kind.' + item.kind);
+    const title = document.createElement('strong');
+    title.textContent = releaseText(item.title, locale);
+    const description = document.createElement('p');
+    description.textContent = releaseText(item.description, locale);
+    copy.append(kind, title, description);
+    article.append(copy);
+    return article;
+  });
+  $('#release-items').replaceChildren(...entries);
+  releaseOpen.classList.toggle('has-update', !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()));
+}
+function selectRelease(index) {
+  releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
+  renderReleaseNotes();
+  const tab = $('#release-tab-' + releaseIndex);
+  tab.focus({ preventScroll: true });
+  tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+  releasePanel.scrollTop = 0;
+  if (!reducedMotion.matches) releasePanel.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+}
+function openReleaseNotes(opener = null) {
+  if (!CURRENT_RELEASE || race.phase !== 'ready' || tutorial || releaseDialog.open || document.querySelector('dialog[open]')) return false;
+  releaseOpener = opener;
+  controls.clear();
+  toggleControls(false);
+  toggleSettings(false);
+  hidePerformanceNotice();
+  // Showing the notes is what counts as read: record it now so a reload or crash never repeats them.
+  // Everything newer than the previous record stays marked for this visit only.
+  const storage = releaseStorage(), returning = returningPlayer();
+  releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, storage, returning)).map(release => release.version));
+  markAnnouncementSeen(CURRENT_RELEASE, storage);
+  releaseShownHere = true;
+  releaseIndex = 0;
+  renderReleaseNotes();
+  releaseDialog.showModal();
+  $('#release-close').focus({ preventScroll: true });
+  return true;
+}
+function maybeShowReleaseNotes() {
+  if (releaseShownHere || !CURRENT_RELEASE) return;
+  const storage = releaseStorage(), returning = returningPlayer();
+  if (!shouldAnnounce(CURRENT_RELEASE, storage, returning)) {
+    // A first-time player starts from today's notes; the next release is the first one announced to them.
+    if (!returning) try { if (storage?.getItem(NOTES_SEEN_KEY) == null) markAnnouncementSeen(CURRENT_RELEASE, storage); } catch { /* nothing to record */ }
+    return;
+  }
+  if (!world || document.hidden || race.phase !== 'ready' || tutorial || document.querySelector('dialog[open]')) return;
+  openReleaseNotes();
+}
+function closeReleaseNotes() { if (releaseDialog.open) releaseDialog.close(); }
+releaseOpen.addEventListener('click', () => openReleaseNotes(releaseOpen));
+$('#release-close').addEventListener('click', closeReleaseNotes);
+$('#release-continue').addEventListener('click', closeReleaseNotes);
+$('#release-versions').addEventListener('click', ({ target }) => {
+  const tab = target.closest('[role="tab"]');
+  if (tab) selectRelease(Number(tab.id.slice('release-tab-'.length)));
+});
+$('#release-versions').addEventListener('keydown', event => {
+  const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+  const target = step ? releaseIndex + step : event.key === 'Home' ? 0 : event.key === 'End' ? RECENT_RELEASES.length - 1 : null;
+  if (target === null) return;
+  event.preventDefault();
+  selectRelease(target);
+});
+releaseDialog.addEventListener('cancel', event => { event.preventDefault(); closeReleaseNotes(); });
+releaseDialog.addEventListener('keydown', event => event.stopPropagation());
+releaseDialog.addEventListener('close', () => {
+  releaseOpen.classList.remove('has-update');
+  (releaseOpener ?? releaseOpen).focus({ preventScroll: true });
+  if (showedPerformanceNotice && !performanceNoticeDismissed && race.phase === 'ready') performanceNotice.hidden = false;
+});
+// A missing bundled image still leaves the entire description readable.
+$('#release-hero').addEventListener('error', ({ target }) => { target.hidden = true; });
+// A higher-priority modal may have been open during the first ready-state check.
+document.addEventListener('close', () => queueMicrotask(maybeShowReleaseNotes), true);
+releaseOpen.hidden = !CURRENT_RELEASE;
+
 let raceRouteMap;
 const trackRouteMaps = new Map();
 function ensureRouteMaps() {
@@ -300,7 +450,9 @@ function applyLocale() {
   if ($('#history-screen').open) showHistory();
   for (const [element, text] of said) element.textContent = text();
   showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
+  syncDailyFlightControl();
   refreshPerformanceNotice();
+  renderReleaseNotes();
   if (tutorial) renderTutorial(true);
   nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
   if (positionChange.dataset.direction) positionChange.setAttribute('aria-label', t(positionChange.dataset.direction === 'gained' ? 'hud.gained' : 'hud.lost'));
@@ -880,39 +1032,90 @@ function showSwipeHint() {
   } catch { /* Still shown once for this page when persistent storage is disabled. */ }
   showSwipeChip('hint', race.trackId, t(touchPreference.matches ? 'swipe.hintTouch' : 'swipe.hintMouse'));
 }
-// Releases the drag and springs the preview back to rest.
+// Keep both 3D scenes edge-to-edge while swiping. Only the active scene renders each frame;
+// the neighbor is drawn once into a temporary 2D snapshot (no second WebGL context).
+const swipeScenes = document.createElement('div');
+swipeScenes.id = 'track-swipe-scenes';
+swipeScenes.setAttribute('aria-hidden', 'true');
+worldCanvas.after(swipeScenes);
+let swipeSceneStep = 0;
+function captureSwipeFrame() {
+  const canvas = document.createElement('canvas');
+  canvas.width = worldCanvas.width;
+  canvas.height = worldCanvas.height;
+  canvas.getContext('2d').drawImage(worldCanvas, 0, 0);
+  return canvas;
+}
+function clearSwipeScenes() {
+  swipeScenes.getAnimations().forEach(animation => animation.cancel());
+  swipeScenes.replaceChildren();
+  swipeScenes.style.transform = '';
+  swipeSceneStep = 0;
+  worldCanvas.style.opacity = '';
+}
+function prepareSwipeScenes(step) {
+  const button = swipeNeighbour(step);
+  if (!button || !world || calmMotion()) return false;
+  if (step === swipeSceneStep && swipeScenes.childElementCount === 2) return true;
+  try {
+    const time = performance.now() / 1000;
+    // A non-preserved WebGL drawing buffer may be empty after compositing;
+    // explicitly render both frames immediately before copying their pixels.
+    world.render(race, 0, time);
+    const current = captureSwipeFrame();
+    world.render(selectedRace(button.dataset.track), 0, time);
+    const neighbor = captureSwipeFrame();
+    swipeScenes.replaceChildren(...(step > 0 ? [current, neighbor] : [neighbor, current]));
+    swipeSceneStep = step;
+    // Opacity preserves pointer capture; visibility:hidden would lose hit-testing.
+    worldCanvas.style.opacity = '0';
+    return true;
+  } catch (error) {
+    clearSwipeScenes();
+    console.warn('Preview snapshot unavailable:', error);
+    return false;
+  } finally {
+    world.render(race, 0, performance.now() / 1000);
+  }
+}
+function positionSwipeScenes(offset) {
+  swipeScenes.style.transform = `translateX(calc(${swipeSceneStep > 0 ? 0 : -100}vw + ${offset.toFixed(1)}px))`;
+}
+// On cancellation, the joined pages snap back without showing any underlying background.
 function cancelSwipe() {
   swipe = null; swipeTarget = null;
   if (swipeChip.dataset.state === 'drag') swipeChip.dataset.state = '';
-  if (!worldCanvas.style.transform) return;
-  const from = { transform: worldCanvas.style.transform, opacity: worldCanvas.style.opacity };
-  worldCanvas.style.transform = worldCanvas.style.opacity = '';
-  if (!calmMotion()) worldCanvas.animate([from, { transform: 'none', opacity: 1 }], motionOptions('base'));
+  if (!swipeScenes.childElementCount) return;
+  const from = swipeScenes.style.transform;
+  const to = swipeSceneStep > 0 ? 'translateX(0px)' : 'translateX(-100vw)';
+  if (calmMotion()) { clearSwipeScenes(); return; }
+  swipeBusy = true;
+  swipeScenes.animate([{ transform: from }, { transform: to }], motionOptions('fast')).finished
+    .catch(() => {}).then(() => { clearSwipeScenes(); swipeBusy = false; });
 }
-// The preview slides out toward the finger, the track changes behind it, and the new scene slides in from the other side.
+// Slide the outgoing and incoming track as adjacent full-screen pages, never as faded empty canvas.
 async function commitSwipe(button, step) {
   swipe = null; swipeTarget = null; swipeBusy = true;
-  const travel = -step * innerWidth * 0.3;
-  if (!calmMotion()) await worldCanvas.animate([{ transform: worldCanvas.style.transform || 'none', opacity: worldCanvas.style.opacity || 1 }, { transform: `translateX(${travel}px)`, opacity: 0 }], { ...motionOptions('fast'), fill: 'forwards' }).finished.catch(() => {});
-  worldCanvas.style.transform = worldCanvas.style.opacity = '';
+  const prepared = swipeSceneStep === step && swipeScenes.childElementCount === 2 || prepareSwipeScenes(step);
+  if (prepared && !calmMotion()) {
+    const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
+    const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';
+    await swipeScenes.animate([{ transform: from }, { transform: to }], motionOptions('base')).finished.catch(() => {});
+  }
   button.click();
   showSwipeChip('done', race.trackId);
-  if (!calmMotion()) {
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); // the new track has drawn once
-    worldCanvas.getAnimations().forEach(animation => animation.cancel());
-    await worldCanvas.animate([{ transform: `translateX(${-travel}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], motionOptions('base')).finished.catch(() => {});
-  }
-  worldCanvas.getAnimations().forEach(animation => animation.cancel());
+  // Wait for the live WebGL scene to reflect the new track before uncovering it.
+  if (prepared) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  clearSwipeScenes();
   swipeBusy = false;
 }
-// Moves the preview with the gesture and names the track it would land on.
+// The two complete scenes stay touching at the center seam throughout the drag.
 function dragSwipe(dx) {
-  const neighbour = swipeNeighbour(dx < 0 ? 1 : -1);
-  if (!calmMotion()) {
-    const offset = swipeOffset(dx, innerWidth, Boolean(neighbour));
-    worldCanvas.style.transform = `translateX(${offset.toFixed(1)}px)`;
-    worldCanvas.style.opacity = (1 - Math.min(0.5, Math.abs(offset) / innerWidth)).toFixed(3);
-  }
+  const step = dx < 0 ? 1 : -1;
+  const neighbour = swipeNeighbour(step);
+  if (!calmMotion() && neighbour && prepareSwipeScenes(step)) {
+    positionSwipeScenes(swipeOffset(dx, innerWidth, true));
+  } else if (swipeScenes.childElementCount) clearSwipeScenes();
   const target = neighbour?.dataset.track ?? race.trackId;
   if (target !== swipeTarget) { swipeTarget = target; showSwipeChip('drag', target, neighbour?.classList.contains('is-locked') ? t('track.locked') : ''); }
   swipeChip.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / swipeDistance(innerWidth)).toFixed(3));
@@ -933,15 +1136,19 @@ worldCanvas.addEventListener('pointermove', event => {
   dragSwipe(dx);
 });
 // Trackpad two-finger swipe (horizontal wheel): the preview follows the scroll and changes track once it travels the swipe
-// distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it.
+// distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it,
+// timed on the events' own timeStamp: a stalled frame or late delivery must not turn the momentum tail into a second swipe.
 const WHEEL_END_MS = 160;
 worldCanvas.addEventListener('wheel', event => {
+  if (wheelSwipe && event.timeStamp - wheelSwipe.stamp >= WHEEL_END_MS) { clearTimeout(wheelSwipe.timer); wheelSwipe = null; }
   if (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
   if (swipe || race.phase !== 'ready' || tutorial || editingLayout || document.querySelector('dialog[open]')) return;
   event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
   clearTimeout(wheelSwipe?.timer);
   wheelSwipe ??= { dx: 0, spent: swipeBusy };
-  wheelSwipe.timer = setTimeout(() => { const ended = wheelSwipe; wheelSwipe = null; if (!ended.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
+  wheelSwipe.stamp = event.timeStamp;
+  // No input for a while: spring an unfinished drag back. Only the timeStamp gap above ends the gesture itself.
+  wheelSwipe.timer = setTimeout(() => { if (!wheelSwipe.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
   if (wheelSwipe.spent) return;
   wheelSwipe.dx -= event.deltaX * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerWidth : 1); // lines / pages to px
   const step = swipeStep(wheelSwipe.dx, 0, innerWidth);
@@ -1070,10 +1277,11 @@ function toggleAssist() {
 function setAudio(kind, on, level = volume[kind]) {
   volume[kind] = level;
   audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
-  const name = AUDIO_COOKIES[kind];
+  const key = AUDIO_KEYS[kind];
   try {
-    for (const pair of [`${name}=${audio[kind] ? 'on' : 'off'}`, `${name}-volume=${Math.round(level * 100)}`, AUDIO_VERSION]) document.cookie = `${pair}; Max-Age=31536000; Path=/; SameSite=Lax`;
-  } catch { /* Audio still works when cookies are unavailable. */ }
+    localStorage.setItem(key, audio[kind] ? 'on' : 'off');
+    localStorage.setItem(`${key}-volume`, String(Math.round(level * 100)));
+  } catch { /* Audio still works when storage is blocked. */ }
   showAudio();
 }
 
@@ -1430,7 +1638,18 @@ const pickUpNewBuild = () => refreshIfStale(() => race.phase === 'ready');
 window.addEventListener('pageshow', event => { if (event.persisted) pickUpNewBuild(); });
 pickUpNewBuild();
 
+function syncDailyFlightControl() {
+  const blocked = race.modifier === 'no-flight';
+  controls.setFlyEnabled(!blocked);
+  const button = document.querySelector('#touch-controls [data-control="fly"]');
+  button.disabled = blocked;
+  button.setAttribute('aria-label', t(blocked ? 'daily.flightDisabled.aria' : 'hint.fly'));
+  button.title = blocked ? t('daily.flightDisabled.reason') : '';
+  if (blocked) button.setAttribute('aria-pressed', 'false');
+}
+
 function phaseUI() {
+  syncDailyFlightControl();
   const phase = race.phase;
   const ready = phase === 'ready';
   const overlay = phase === 'paused' || phase === 'finished';
@@ -1448,6 +1667,7 @@ function phaseUI() {
   if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
+  if (ready) queueMicrotask(maybeShowReleaseNotes);
   if (tutorial) {
     ui['race-overlay'].hidden = true;
     ui['controls-button'].disabled = true;
@@ -1776,7 +1996,7 @@ function updateUI(now, input) {
   const state = L[car.thrusting ? car.verticalSpeed > 0.2 ? 'hud.ascending' : 'hud.cruise' : car.altitude > 0.25 ? 'hud.descending' : touchdown ? 'hud.touchdown' : depleted ? 'hud.recharging' : car.speed >= 18 ? 'hud.readyToFly' : 'hud.buildSpeed'];
   const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
   const airDash = car.thrusting && car.boosting;
-  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro'] : airDash ? L['hud.airDash'] : nitroActive ? L['hud.nitroActive'] : car.trick && !car.trick.done ? L['hud.trick'] : car.inShortcut ? L['callout.shortcut']
+  ui['flight-state'].textContent = race.modifier === 'no-flight' ? L['daily.flightDisabled.state'] : car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro'] : airDash ? L['hud.airDash'] : nitroActive ? L['hud.nitroActive'] : car.trick && !car.trick.done ? L['hud.trick'] : car.inShortcut ? L['callout.shortcut']
     : car.drift ? interpolate(L['callout.drift'], { tier: L[car.drift.time >= 3 ? 'callout.drift.tier.3' : car.drift.time >= 2 ? 'callout.drift.tier.2' : car.drift.time >= 1 ? 'callout.drift.tier.1' : 'hud.driftBuilding'] }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost'] : state;
   nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
   nitroMeter.classList.toggle('is-max', car.nitro >= 3);
@@ -1817,10 +2037,10 @@ function updateUI(now, input) {
   }
   document.body.classList.toggle('nitro-active', nitroActive);
   // Inside a shortcut only BOOST drains (3/s); plain flight there is free.
-  ui['flight-budget'].textContent = car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`;
-  ui['flight-instruction'].textContent = car.thrusting ? interpolate(L['hud.steerAir'], { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend'] }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand'] : interpolate(L['hud.climbAgain'], { hold })
+  ui['flight-budget'].textContent = race.modifier === 'no-flight' ? '—' : car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`;
+  ui['flight-instruction'].textContent = race.modifier === 'no-flight' ? L['daily.flightDisabled.reason'] : car.thrusting ? interpolate(L['hud.steerAir'], { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend'] }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand'] : interpolate(L['hud.climbAgain'], { hold })
     : car.exhausted ? interpolate(L['hud.rechargeRoad'], { action: tap ? L['hud.tapLand'] : release }) : car.speed < 18 ? interpolate(L['hud.reachLift'], { hold }) : depleted ? L['hud.charging'] : interpolate(L[tap ? 'hud.lift' : 'hud.liftLand'], { hold });
-  ui['fuel-caption'].textContent = car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge'];
+  ui['fuel-caption'].textContent = race.modifier === 'no-flight' ? L['daily.flightDisabled.fuel'] : car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge'];
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 20);
@@ -1861,9 +2081,9 @@ function updateUI(now, input) {
     const active = control === 'left' ? input.steer < 0 : control === 'right' ? input.steer > 0 : !!input[control];
     button.classList.toggle('is-held', active);
     button.setAttribute('aria-pressed', String(active));
-    // Only toggle mode varies the label; written only when it changes (applyI18n resets it to 'hint.fly').
+    // Daily no-flight and toggle mode vary the label; written only when it changes (applyI18n resets it to 'hint.fly').
     if (control === 'fly') {
-      const label = L[tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
+      const label = L[race.modifier === 'no-flight' ? 'daily.flightDisabled.aria' : tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
       if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
     }
   });
@@ -1923,6 +2143,7 @@ function updateUI(now, input) {
 
 try {
   world = createWorld($('#world'));
+  requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(visual);
   world.previewAppearance(PAINTS[equippedPaint]);

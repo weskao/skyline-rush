@@ -1,4 +1,6 @@
 import { test, expect } from './helpers/test.js';
+import { dailyChallenge } from '../src/game.js';
+import { selectLocale } from './helpers/locale-browser.js';
 
 const dismissMusicPrompt = async page => {
   await page.waitForTimeout(700);
@@ -95,4 +97,68 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   expect(errors).toEqual([]);
+});
+
+const dailyDateFor = modifier => {
+  for (let i = 0; i < 120; i++) {
+    const date = new Date(2026, 9, 1 + i, 12);
+    if (dailyChallenge(date).modifier === modifier) return date;
+  }
+  throw Error('Daily challenge fixture missing ' + modifier);
+};
+
+for (const [modifier, label] of [['no-flight', 'No flight'], ['double-traffic', 'Double traffic'], ['gold-rings', 'Gold rings only']]) {
+  test('daily ' + modifier + ' keeps the FLY control and HUD consistent', async ({ page }) => {
+    await page.clock.install({ time: dailyDateFor(modifier) });
+    await page.goto('/');
+    await dismissMusicPrompt(page);
+    await expect(page.locator('#daily-card-route')).toContainText(label);
+    await page.locator('#daily-card-start').click();
+    const fly = page.locator('#touch-controls [data-control="fly"]');
+    if (modifier === 'no-flight') {
+      await expect(fly).toBeDisabled();
+      await expect(fly).toHaveAttribute('aria-label', 'Flight disabled in this daily challenge');
+      await expect(page.locator('#flight-state')).toHaveText('FLIGHT DISABLED');
+      await expect(page.locator('#flight-instruction')).toHaveText('Daily challenge rule: FLY is unavailable');
+      await expect(page.locator('#flight-budget')).toHaveText('—');
+      await page.keyboard.down('Space');
+      await expect(fly).toHaveAttribute('aria-pressed', 'false');
+      await page.keyboard.up('Space');
+      await page.locator('#restart-button').click();
+      await expect(fly).toBeDisabled();
+      await expect(page.locator('#flight-instruction')).toHaveText('Daily challenge rule: FLY is unavailable');
+      await page.locator('.brand').click();
+      await page.locator('#leave-end').click();
+      await expect(fly).toBeEnabled();
+      await page.locator('#start-button').click();
+      await expect(fly).toBeEnabled();
+      await expect(page.locator('#flight-instruction')).not.toContainText('FLY is unavailable');
+    } else {
+      await expect(fly).toBeEnabled();
+      await expect(page.locator('#flight-state')).not.toHaveText('FLIGHT DISABLED');
+      await expect(page.locator('#flight-instruction')).not.toContainText('FLY is unavailable');
+    }
+  });
+}
+
+test.describe('daily no-flight on touch', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('disabled touch FLY communicates restriction in both languages', async ({ page }) => {
+    await page.clock.install({ time: dailyDateFor('no-flight') });
+    await page.goto('/');
+    await dismissMusicPrompt(page);
+    await page.locator('#daily-card-start').click();
+    const fly = page.locator('#touch-controls [data-control="fly"]');
+    await expect(fly).toBeVisible();
+    await expect(fly).toBeDisabled();
+    await expect(fly.locator('.touch-fly-lock')).toBeVisible();
+    await expect(page.locator('#flight-state')).toHaveText('FLIGHT DISABLED');
+    // The language picker is hidden while racing; a player switches from the pause screen.
+    await page.locator('#pause-button').click();
+    await selectLocale(page, 'zh-TW');
+    await expect(fly).toHaveAttribute('aria-label', '本日挑戰禁止飛行');
+    await expect(page.locator('#flight-state')).toHaveText('禁止飛行');
+    await expect(page.locator('#flight-instruction')).toHaveText('每日挑戰規則：無法使用 FLY');
+    await expect(fly).toBeDisabled();
+  });
 });

@@ -1,9 +1,14 @@
-# Check every push to main / PR; publish GitHub Pages on version tags or manual dispatch.
+# Check main and feature branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
 name: CI
 
 on:
   push:
-    branches: [main, feature/firebase-data-integrity]
+    # Every new feature branch gets the same gate; the retired MODE-00 branch
+    # remains excluded per its explicit CI-stop request.
+    branches:
+      - main
+      - 'feature/**'
+      - '!feature/mode00-objective-contract'
     tags: ['v*']
   pull_request:
   workflow_dispatch:
@@ -61,6 +66,14 @@ jobs:
           name: race-mode-screenshots-${{ matrix.shard }}
           path: test-results/race-mode-*.png
           if-no-files-found: ignore
+      - name: Upload real post-finish interaction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finish-interaction-screenshots-${{ matrix.shard }}
+          path: test-results/**/tokyo-finish-controls.png
+          if-no-files-found: ignore
+
       - name: Upload actual World Tour screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -114,6 +127,29 @@ jobs:
           path: test-results/**/world-tour-*-mid-race.png
           if-no-files-found: ignore
 
+  # A single required status for every feature branch and normal main push.
+  # A branch ruleset can require this job; no direct-push protection is implied
+  # by the workflow file alone.
+  quality-gate:
+    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race]
+    if: "${{ always() && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every verification suite to pass
+        env:
+          UNIT: ${{ needs.unit-tests.result }}
+          BROWSER: ${{ needs.browser-tests.result }}
+          CLOUD: ${{ needs.cloud-save.result }}
+          WORLD_TOUR: ${{ needs.world-tour-mid-race.result }}
+        run: |
+          printf 'unit=%s browser=%s cloud=%s world-tour=%s\\n' "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"
+          for result in "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"; do
+            if [ "$result" != success ]; then
+              echo "::error::All four required CI suites must succeed on this commit."
+              exit 1
+            fi
+          done
+
   # A release tag sits on `docs: release X`, a notes/version commit above code that already passed the full suite on
   # main. Re-running two runner-hours of CPU WebGL there only adds a chance that a timing flake leaves the tag
   # unpublished; instead confirm that main run and go straight to deploy. scripts/release-gate.sh enforces the same
@@ -141,8 +177,8 @@ jobs:
 
   deploy:
     # A tag run skips browser and cloud suites; a manual run skips release-verified.
-    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.cloud-save.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
-    needs: [unit-tests, browser-tests, cloud-save, release-verified]
+    if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.cloud-save.result) && contains(fromJSON('["success", "skipped"]'), needs.world-tour-mid-race.result) && contains(fromJSON('["success", "skipped"]'), needs.quality-gate.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
+    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, quality-gate, release-verified]
     runs-on: ubuntu-latest
     permissions:
       contents: read

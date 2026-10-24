@@ -1,107 +1,100 @@
 # TODO — Gameplay depth design
-## Firebase 資料完整性、Google 帳號與 Cloud Save UI：實作清單（2026-10-25）
 
-**範圍：原先 P0／P1 35 項 + 新增 Google 名稱／Email 入 Firestore 1 項，共 36 項。** 原先 2 項 P2 保留未勾選、不在此次實作。僅項目經對應 TDD／回歸證據驗證通過後才改為 `[x]`。不可因存在程式碼、模擬器通過而把尚未驗收的正式站事項宣稱完成。
+## Audio preference moves from cookies to localStorage; Chrome first-visit autoplay (2026-10-25)
 
-**Spark-only／成本限制：** 使用現有 Firebase Authentication Google 登入和**既有免費 Firestore 資料庫**的文件讀寫，禁止啟用 Blaze、設定帳務、建立第二個資料庫、Cloud Functions、Firestore TTL、PITR、代管備份／還原等付費方案功能。Spark 有 1 GiB 儲存、每天 50,000 reads／20,000 writes／20,000 deletes 等限制，實際以官方方案與 Usage 頁為準。不得每影格同步；登入 profile 同值應跳過寫入。若功能需要付費：僅將其維持 `[ ]`，註明原因、免費替代方案與「經使用者明確同意升級／實測足夠配額才開始」條件，絕不自動升級。
+- [x] Repro in real Chrome with its default autoplay policy (Playwright strips `--autoplay-policy=no-user-gesture-required`; scratch script, 4 runs): `AudioContext` stays `suspended` on load as Chrome requires, and the first click or key resumes it (`running`, audible RMS > 0.01). Autoplay without a gesture cannot be fixed client-side; the existing first-gesture unlock (`unlockAudio`, `src/main.js`) is the fix and is kept.
+- [x] Preference storage: `src/audio-settings.js` `readAudio(localStorage)` reads `skyline-rush-music` / `skyline-rush-sound` (`on`/`off`) and `-volume` percent; `setAudio` in `src/main.js` writes them. Nothing stored → on at 100%, stored as `on` on the first `unlockAudio`. Cookie writes and the `skyline-rush-audio-v=2` legacy marker are gone.
+- [x] RED: `tests/audio-settings.test.js` rewritten against a storage object failed on the old module (`AUDIO_KEYS` missing). GREEN: `npm test` 533 pass; `npm run build` ok; `npx playwright test tests/browser.spec.js -g "music|audio|volume|sound"` 13/13 (off choice + volume survive reload from localStorage, saved off stays silent after the gesture, fresh visit stores both channels `on`).
+- [ ] Full `make verify` and CI `quality-gate` on the committing HEAD; a human check in desktop Chrome/Safari/Firefox and on a phone that the first tap starts the intro music.
+- [ ] Known loss: a music/sound-off saved in the old cookie is not migrated; those players hear audio once more and have to mute again.
 
-**實作流程：** 建立 feature 分支；每階段先寫會失敗的測試、驗證 RED，最小修正後驗證 GREEN、Refactor；每個成功階段就更新本清單與 commit。不得建立 PR，未收到合併指令不得合併 main。正式環境需更新 Rules 並實機驗證，不能把本地測試視為已發布。
+## CI regression: trackpad momentum must select one course per swipe (2026-10-24)
 
-### A. Google 登入與帳號管理
+- [x] Inspect failed CI run 40102405872: only browser-tests shard 6 failed; the existing Playwright RED shows expected `neon` but actual `alpine` during one prolonged wheel gesture. The aggregate quality-gate correctly failed because the browser shard was red.
+- [x] Trace `src/main.js` wheel gesture lifecycle: under CPU-heavy WebGL event gaps can exceed the 160 ms inactivity timer, rearming the same swipe and advancing several tracks.
+- [x] Add a dedicated browser regression simulating momentum event intervals beyond 160 ms in `tests/track-swipe-browser.spec.js`, committed before the fix.
+- [x] ~~Apply the minimal shared fix: increase the wheel gesture idle window to 320 ms~~ — replaced. Any CI delivery hiccup over 320 ms still split a swipe, and users would have to pause 320 ms between swipes.
+- [x] Root cause, measured: wheel events were stamped 16 ms apart (`event.timeStamp`), but Playwright/CDP delivered some 168–203 ms apart while frame times stayed under 50 ms. The 160 ms wall-clock timer read late delivery as a pause, and also reset unfinished drags. Fix in `src/main.js`: the gesture pause is timed on `event.timeStamp` (`WHEEL_END_MS` back to 160 ms), and the timer only springs an unfinished drag back.
+- [x] Deterministic RED/GREEN: both trackpad tests send CDP wheel events stamped 16 ms apart (`trackpadSwipe`): one delivers a single event 300 ms late, the other delivers every event 210 ms apart. On the original timer code: 3/3 RED (expected `neon`, got `canyon`/`aurora`). After the fix: the whole `tests/track-swipe-browser.spec.js` passes 30/30 local runs (6 repeats).
+- [x] CI run 40110604502 on `1fd4178` failed only on "a nudge springs back": the Linux runner scaled native CDP wheel deltas, so a 40 px nudge passed the 96 px swipe distance (macOS does not scale). `trackpadSwipe` now dispatches a `WheelEvent` with a pinned CSS-pixel delta and a pinned `timeStamp`. On the original timer code: 6/6 RED (got `canyon`/`coast`). On the fix: 20/20 GREEN locally.
+- [x] Obtain GREEN evidence on the final commit, including both trackpad tests and all CI shards, then mark the confirmed tests complete. Done: run 40113913209 on `ab150f3` passed all eight browser shards, unit, cloud-save, World Tour and `quality-gate`. The earlier RED was observed on the original test in the cited CI run; the new focused test was committed test-first but its isolated RED has not been separately observed.
+- [ ] Confirm real Mac trackpad gestures, momentum separation and touch/mouse swipes remain natural before calling this a fully device-verified fix.
 
-- [ ] **A1 (P1)** Cloud Save 顯示 Google displayName，沒有名稱時顯示合理替代值。
-- [x] **A2 (P1)** Cloud Save 顯示並辨識目前 Google Email。
-- [ ] **A3 (P1)** 顯示 Google photoURL 頭像，讀取失敗有替代圖示。
-- [x] **A4 (P1)** 登入、登出及 Auth 初始化時明確顯示使用者身分狀態。
-- [ ] **A5 (P0)** 安全切換 Google 帳號，避免不同 UID 的資料混用或遺失未同步進度。
-- [x] **A6 (P0)** Firebase Auth／UID 管理身分，禁止遊戲資料儲存 Google 密碼、OAuth Token 與無關個資。
-- [x] **A7 (P1)** 【新增需求】於免費 Spark 既有 Firestore 儲存 accounts/{uid}：Google displayName 與 email；登入／變更時更新，Rules 限本人存取，空值不覆蓋有效資料，刪除流程同步清理。
+## Regression-first workflow adoption (2026-10-24)
 
-### B. Firestore 儲存內容與資料版本
+- [x] Define one reusable six-gate development protocol in `docs/regression-first-workflow.md`: root-cause analysis, observed TDD RED, GREEN, cross-track/input matrix, local and manual WebGL checks, exact-commit CI before user-authorized merge.
+- [x] Reference the protocol from `CLAUDE.md` and `AGENTS.md`, alongside the existing file-scoped physics/UI regression rules.
+- [x] Provide `make verify` to run unit tests, production build via `pretest:browser`, all standard Playwright tests and the separate World Tour fixture suite.
+- [x] Add GitHub CI `quality-gate` that fails unless unit/browser/cloud/World Tour jobs all succeed; block manual feature-branch deployments and make deploy consider World Tour results.
+- [x] Run CI on future `feature/**` pushes while keeping the explicitly disabled `feature/mode00-objective-contract` branch excluded.
+- [x] Confirm the complete `quality-gate` succeeds at the **final** feature HEAD; test infrastructure changes are not accepted based on an older SHA.
+  - Green: run 40113913209 on `ab150f3`, the last code commit. Later commits that only touch `TODO.md` add no code to gate.
+  - `ddbeb3a` (run 40102405872) failed: the trackpad-swipe test above failed in shard 6; `main` `d2b35e5` fails CI on the same test. The fix is in the section above, and the gate is re-checked on the commit that carries it.
+  - `1fd4178` (run 40110604502, main merged in) failed only on the CDP delta scaling recorded above.
+- [ ] Complete real-game visual/interaction evidence for Sky Spiral road clipping and Tokyo finish controls on affected devices (automation alone cannot certify these).
+  - Done at `ddbeb3a` (headless Chromium, real WebGL, 1440×900 and 390×844 touch): Sky Spiral approach, helix entry, both quarter turns, left/right rail, helix exit and first ramp at ~305 km/h show the car seated on the banked road with no clipping, and 0 page errors. Tokyo finish after 2 real collisions: camera, language switch to zh-TW, Next and Race Again all respond to real clicks (`tests/tokyo-finish-controls-browser.spec.js`, 4/4).
+  - Still open: a human playthrough on a physical iPhone/Android (touch hardware, Safari WebGL) and on desktop Safari/Firefox.
+- [ ] Before user-approved merge, integrate latest `main`, resolve any conflicts, repeat exact-commit CI and assess manual evidence; do not claim merge readiness while behind or unchecked.
+  - `main` (`d2b35e5`) is fully merged, with 0 commits behind and no conflicts. Still waiting on a green gate at the final HEAD, the physical-device check above and the user's merge approval.
+- [x] Consider configuring GitHub branch protection/ruleset to require `quality-gate` on `main` if repository administration permissions become available; documentation/CI do not by themselves prevent direct pushes.
+  - Ruleset `main requires quality-gate` (id 25785253, active, 2026-10-24) on the default branch. Repository admins can bypass it so the local-merge and `/release` flow keeps working; every other push or PR to `main` needs a green `quality-gate`.
 
-- [x] **B1 (P0)** 保留 saves/{uid} 既有版本化成果與相容性，不破壞舊帳號存檔。
-- [x] **B2 (P0)** modeHistory 雲端保留 rulesVersion、distance、stageCount、itemsUsed、hazardPasses、hazardHits 等完整合法資料。
-- [x] **B3 (P0)** 統一 mode rules 的本機與雲端長度上限和驗證契約（現有 4096／2000 不一致）。
-- [x] **B4 (P0)** 永久 modeBests 跨裝置同步，避免最近 50 場輪替後永久紀錄消失。
-- [ ] **B5 (P0)** 永久 stuntBests（score、maxCombo、airTime、medal）跨裝置同步。
-- [x] **B6 (P0)** 最近 50 場 history 與永久 best 分離；合併去重，不讓最佳成績倒退。
-- [x] **B7 (P1)** 版本升級、無損遷移與向下相容；需要時保留 updatedAt，拒絕未知未來版本覆寫。
 
-### C. 雲端同步與本機資料可靠性
+## Sky Spiral & cross-track cornering stability (2026-10-24)
 
-- [x] **C1 (P1)** 整合登入／完賽／成果改變／重連同步入口，不逐影格寫 Firestore。
-- [x] **C2 (P0)** 各 UID 獨立本機快照，帳號切換安全保護未同步資料。
-- [x] **C3 (P0)** 離線 pending 狀態按 UID 持久化；網路恢復與重新開啟時重試。
-- [x] **C4 (P0)** 同帳號雙裝置並發交易與重複登入不丟最佳成績、不重複紀錄。
-- [x] **C5 (P0)** 僅在 Firestore 成功確認後顯示已同步及更新最後成功時間。
-- [x] **C6 (P1)** localStorage 多 Key 寫入一致性與失敗回復，禁止把寫入失敗誤報成功。
+- [x] Identify shared renderer issue: local road orientation was converted back into Euler angles, overwriting road pitch/banking in curved and elevated sections.
+- [x] Compose steering lean, airborne pitch, drift and trick roll as local quaternion offsets, keeping the canonical road frame on Sky Spiral and all five World Tour tracks.
+- [x] Prevent repeated rail crashes while steering continuously into the same road edge; re-arm only after pulling away; preserve first-contact collision and existing scrape behavior.
+- [x] Add pose-continuity, road-alignment and repeated-rail-contact regression test sources covering all routes.
+- [x] Run full `npm test` through GitHub Actions on feature commit `b4134c0` (unit-tests: success). Previous run exposed a braking regression, fixed by preventing drifting while pressed against the contacted rail.
+- [ ] Independently capture the initial RED for each newly introduced focused regression test; the full green unit run alone does not prove TDD test-first execution.
+- [ ] Run `npm run build`, desktop/mobile Playwright, and full GitHub CI on this feature branch.
+- [ ] Manually verify actual driving at Sky Spiral's helix entry, both quarter turns, exit, rails, elevations, ramps, and every other track; capture before/after gameplay screenshots or recordings.
+- [ ] Independently verify vehicle-to-road mesh clearance at high speeds and road edges with real WebGL rendering.
 
-### D. Rules、備份、刪除與安全
+## Tokyo finished-race UI controls (2026-10-24)
 
-- [ ] **D1 (P0)** Firestore Rules 驗證欄位、型別、範圍、合法賽道／模式、列表及字串長度。
-- [x] **D2 (P0)** saves／accounts／永久最佳成績僅由對應登入 UID 私有讀寫，禁止列舉其他玩家。
-- [x] **D3 (P0)** 刪除進度後避免舊本機副本／排隊同步使資料復活，帳號基本資訊的刪除範圍明確。
-- [ ] **D4 (P1)** 匯出及匯入 JSON：大小／版本／內容驗證與可理解的失敗提示。
-- [ ] **D5 (P1)** 清楚區分登出、刪除遊戲資料、未來可能的刪除 Firebase Auth 帳號。
+- [x] Merge latest `main` into `feature/sky-spiral-cornering-stability` using a true two-parent merge commit (`baa46ec`), retaining upstream game mode fixes and the feature changes.
+- [x] Fix a concrete click-interception risk: `.aero-tools` (language and VFX) was at the same stacking level as the later `.race-overlay`; lift it above the results overlay without removing either control.
+- [x] Add desktop and touch Playwright coverage for Tokyo: multiple actual simulation collisions, finish, camera click, language switch, Next, Race Again and page errors (`tests/tokyo-finish-controls-browser.spec.js`).
+- [x] Document UI layer/input invariants for future changes in `CLAUDE.md` and `.claude/rules/ui-phase-interactions.md`; document car pose and rail rules in `.claude/rules/vehicle-road-stability.md`.
+- [ ] Confirm actual Playwright results and pointer hit targets (desktop and mobile), plus real device/browser reproduction and before/after images. Script committed does not mean browser behavior passed.
+- [ ] Confirm all CI jobs are green at the final tested commit and report exact run URL; separate `playwright.world-tour.config.js` testing must also finish.
 
-### E. Cloud Save UI／UX
+## 每日挑戰：禁止飛行 UI / UX 修正（2026-10-25）
 
-- [ ] **E1 (P1)** Cloud Save 保持遊戲視覺風格，顯示 Google 名稱、Email、頭像。
-- [ ] **E2 (P1)** 明確提供未登入／同步中／已同步／等待網路／雲端失敗／本機寫入失敗六種狀態。
-- [x] **E3 (P1)** 最後同步時間只顯示實際 Firestore 成功結果。
-- [x] **E4 (P1)** 新增手動「立即同步」，避免重複寫入及切換帳號期間觸發。
-- [x] **E5 (P0)** 帳號切換確認 UI；清楚警告未同步資料並禁止破壞性切換。
-- [ ] **E6 (P1)** 登出／刪除／匯入／匯出提供明確 UX、成功與失敗回饋。
-- [ ] **E7 (P1)** 所有文案繁中／英文及無障礙 ARIA、鍵盤操作、焦點與狀態公告。
-- [ ] **E8 (P1)** 支援 Desktop／Mobile 直橫向，不遮擋比賽，沿用現有設計。
+- [x] 「禁止飛行」時 FLY 控制停用、清除 Toggle；鍵盤與觸控不得啟動起飛。
+- [x] FLY 顯示降彩度及鎖頭，HUD 改為禁止飛行與能源用途提示；中英文與 ARIA 同步。
+- [ ] 實機 iOS Safari 與 Android Chrome 手動確認禁用控制及輔助工具朗讀。
 
-### F. 裝置設定及本機進度
+## 每日挑戰獎勵規劃（未納入本次實作）
 
-- [x] **F1 (P1)** Ghost／控制／音效／畫質／語言／塗裝選擇等裝置偏好保持本機，不額外產生雲端費用。
-- [x] **F2 (P1)** 重要本機遊戲副本、同步資訊與帳號歸屬依 UID 隔離，既有 Local Storage Keys 相容遷移。
+保留目前每日獨立排行榜／最快成績及既有獎章規則。本階段僅記錄需求；獎勵數據結構、雲端同步及解鎖規則尚未設計或實作。
 
-### H. TDD／CI／正式環境驗收
+- [ ] 首次完成當日挑戰的獎勵：明確界定完賽、首次領取及每日重玩不重複發放，顯示領取狀態。
+- [ ] 三種挑戰（禁止飛行／雙倍車流／僅限金環）的專屬成就：設定條件、進度與中英文敘述。
+- [ ] 連續完成天數與獎勵：以本地日界或伺服器日界制定一致規則，處理跨時區、補登及中斷。
+- [ ] 每日挑戰限定車漆：設計達成門檻、展示／裝備流程；不影響車輛能力及既有星數解鎖。
+- [ ] 獎勵上線前補 TDD：本機防重領、Firestore 免費額度評估、跨裝置合併、離線重試及手機／桌面領獎驗收。
 
-- [ ] **H1 (P0)** 每功能 Red→Green→Refactor，npm test／test:cloud／build／瀏覽器、Rules、安全、真實帳號 Chrome／Safari／跨裝置；正式站與用量驗收未完成前不得勾選。
+## UX-Release-01 — 玩家可讀的新版本公告（What's New，2026-10-24）
 
-### G. P2 延後實作／啟動條件（本次不得勾選或實作）
+規格：[docs/release-announcements.md](docs/release-announcements.md)。開發於 `feature/whats-new-release-announcements`，從 `main` 建立。僅對已正式發布的新版本公告已確認的玩家體驗，不展示開發技術詞彙。
 
-- [ ] **G1 (P2)** 玩家自訂暱稱與公開個人資料 profiles/{uid}。**延後原因與條件：**現在使用 Firebase Auth 的 Google 名稱／Email 即可；只有正式推出玩家自訂名稱、公開個人頁、可見的公開頭像與隱私授權需求時才設計獨立 Profile 與 Rules。
-
-- [ ] **G2 (P2)** 公開排行榜／比賽結果 leaderboards、raceResults。**延後原因與條件：**目前私人賽事成績可透過 saves 還原，瀏覽器提交的分數不能直接作競技可信依據；只有推出對外排名／競賽或防作弊驗證時再評估可信任後端與費用。Spark 不提供 Cloud Functions，若方案要求 Blaze 或其他付費服務，必須由使用者明確同意才做。
-
-### Firebase 模擬器與 CI 通過驗證（2026-10-25）
-
-- **已驗證：** [CI #40122717700](https://github.com/weskao/skyline-rush/actions/runs/40122717700)，提交 `63e6432`：`unit-tests` 成功；`cloud-save` 成功，包含 **9 個 Auth／Firestore Emulator 瀏覽器案例**及 **3 個 Firestore Rules 測試**。
-- **勾選原則：** 上述已勾選項目具單元／模擬器驗收或維持既有已回歸行為；`H1` 仍未完成，**不可把 unit/cloud-save 的成功當作全套 Browser CI、正式網站或真機 Safari 驗收成功**。本檔文件提交後將重新觸發 CI，須以最新提交結果為準。
-- **尚未勾選：** 頭像失敗回退完整 UI 測試、Stunt 永久最佳成績獨立新裝置回歸、完整 Rules 內層數值約束、JSON 匯入端到端、所有錯誤狀態與無障礙、各個手機／桌面尺寸、完整 browser shards、正式站／真機 Safari。
-- **免費限制：** 使用者指定僅 Spark；不能以升級方案或付費 Cloud Functions 代替未完成項目。
-
-### 本輪 TDD 與 CI 驗證記錄（2026-10-25）
-
-- [x] **B2、B3**：cloud modeHistory 的額外統計與本機相同 4096 字元規則上限；回歸測試已納入 `npm test`。
-- [x] **C6**：localStorage 多 Key 寫入失敗採最佳努力回復，原本資料可還原時不遺留部分新成果；有單元回歸測試，無法保證已不可寫的瀏覽器儲存仍可回復。
-- **實際 CI 證據**：`https://github.com/weskao/skyline-rush/actions/runs/40122441074` 的 `unit-tests` job 已成功（SHA `6e5fffef`）。後續 SHA 對文件與文案有修改，須再檢查 CI。
-- **仍在進行或未驗證**：Auth／Firestore Emulator、全部瀏覽器分片、實機 Safari、正式 Google 帳號與 Firestore Rules 部署；A7、B4、B5、C2/C3/D3/D4、E1–E8 等維持 `[ ]`，直到其驗收證據確認。
-- **本批已提交的實作**：UID 私人帳號名稱／Email、永續 Mode／Stunt 最佳成績、離線 pending、帳號快照與切換、原子多文件刪除及重上傳防護、Google 帳號 UI、手動同步、JSON 匯入／匯出、雙語字串與專項測試。
-- **免費限制**：完全沿用 Firebase Spark，無 Blaze 升級、無 Cloud Functions 或其他付費服務。未實作的 P2 和付費候選項目維持原定條件。
-
-### 本分支實作紀錄（2026-10-25）
-
-- **已提交、待完整 CI／模擬器驗收：** A7 私人帳號資料 accounts/{uid} 的 displayName／email 正規化與登入同步、刪除流程清理；已新增純函式測試與 Firestore Rules 測試。此功能不使用 Blaze 或 Cloud Functions。
-- **已提交、待完整 CI／回歸驗收：** B2／B3 cloud modeHistory 保留規則版本、距離、關卡與障礙統計，接受與本機一致的 4096 字元 rules；已加入雲端合併回歸測試。
-- **驗證紀錄：** 帳號正規化的精簡 Node 隔離測試先 RED（模組不存在）後 GREEN（3/3）；**尚未在完整專案執行 npm test、npm run test:cloud、npm run build、browser CI，因此相關 checkbox 暫不勾選**。
-- **部署限制：** 新 accounts/{uid} Firestore Rules 尚未部署至正式 Firebase；任何正式站登入測試與 Usage 確認仍待完成。禁止把 GitHub commit 當作已上線證據。
-- **待執行的下一步：** 執行完整單元與 Firebase Emulator Rules／Browser 測試；若出錯先修正；通過後才將 A7、B2、B3 與相關驗證標記 [x]，再依 P0→P1 清單繼續。
-
-### Spark 免費額度相關候選項目（只有符合條件才實作）
-
-- [ ] **S1 — 後端驗證／Cloud Functions**：Spark 無法使用 Cloud Functions。本次以 Firestore Rules 及本地驗證保護私人資料；若要防作弊或伺服端競技排行，需先有實際需求與**使用者明確同意 Blaze 或其他可用免費替代方案**才重新評估。
-- [ ] **S2 — 託管備份／PITR／TTL 刪除／Firestore 還原**：Firestore 免費額度不含這些功能。本次改用玩家手動 JSON 匯出／經驗證匯入；只有資料量、RPO／RTO 要求使本機匯出不夠且**經使用者明確同意付費**，才納入實作。
-- [ ] **S3 — 免費額度監控與升級門檻**：發布後先觀測現有 Firestore Usage；若讀寫、存量或使用者數接近 Spark 限制，先降低重複寫入／資料量，未經同意不得啟用任何付費服務。
-
-**官方參考**：https://firebase.google.com/pricing 、https://firebase.google.com/docs/firestore/pricing 、https://firebase.google.com/docs/projects/billing/firebase-pricing-plans
-
+- [x] **TDD 狀態契約：**可發布公告判斷、每版本已讀、Local Storage 受阻與相容既有更新重載機制，先 RED 後 GREEN。
+- [x] **玩家公告資料：**已建立版本、日期、English／繁中玩家導向文字及可選圖片（無圖完整顯示）；Node 測試與正式建置已在 [Actions #40097497428](https://github.com/weskao/skyline-rush/actions/runs/40097497428) 對應提交成功，仍待最新 UI browser 驗收。
+- [ ] **桌面／手機公告 UI：**原生 dialog、版本與更新卡、圖片缺失降級、44px 控制、手機安全區、無障礙與減少動畫。
+- [ ] **觸發及互動：**僅首頁安全狀態首度顯示、關閉存已讀、Escape 與按鈕、首頁版本號可重新開啟，其他 dialog／教學／賽事不打斷。
+- [x] **公告文案英文規則：**`CLAUDE.md` 已規定所有公告從玩家角度描述新體驗，避免工程專業術語，且英／繁中同步更新；已重新讀取確認。
+- [x] **雙語與可維護性：**介面及更新內容支援 en / zh-TW、開啟時跟隨全站語言選單即時切換；CLAUDE.md 英文規則要求玩家導向文案；無新套件或後端。
+- [ ] **自動化測試與 CI：**改版後重新驗證：`npm test`、`npm run build`、`npm run test:browser`、`npm run test:layout` 全數通過；推送後的 CI 狀態另行確認。（2026-10-25：`npm test` 534/534、build 通過、`test:layout` 29＋42 通過；`test:browser` 修正封鎖儲存空間時自動彈出的問題後仍有 i18n 手機每日挑戰路線文字被截斷（183>160px），`origin/main` 同樣失敗，非本分支造成，待修）
+- [x] **真實畫面佐證：**改版後的桌面 1440×900（English）與手機 390×844（繁體中文）公告畫面已擷取、標註並傳送 Telegram（2026-10-25）。
+- [x] **移除完整更新紀錄：**公告內不再出現「完整更新紀錄 / All changes」連結，相關文字鍵與樣式一併移除；瀏覽器測試確認對話框內沒有外部連結。
+- [x] **最近五版切換：**以版本分頁顯示最新 3–5 個已發布版本（最多 5 個、不顯示尚未發布的版本），可點擊或用 ←/→、Home、End 切換，切換語言保留所選版本，重新開啟回到最新版。
+- [x] **自動顯示與已讀紀錄：**localStorage 記錄玩家看過的最新版本；有更新版本時自動顯示，一顯示就更新紀錄並清除提示點；新玩家不顯示舊消息但會記錄目前版本。
+- [x] **發版前更新公告：**`CLAUDE.md` 與規格要求每次發版前先寫好該版公告（圖片可選，存於 `public/whats-new/<version>/`，歷史內容與圖片保留在 repo）；`scripts/release-gate.sh` 透過 `scripts/check-release-notes.mjs` 擋下缺少公告的版本。
+- [x] **介面美化：**版本分頁、更新類型標籤、主視覺、置底的「繼續遊戲」按鈕與進場動畫（減少動畫時停用），桌面與手機四種尺寸皆不溢出。（2026-10-25：公告瀏覽器測試四種尺寸通過、`test:layout` 29＋42 通過，桌面／手機截圖已人工確認）
+- [ ] **實體裝置驗收：**iOS Safari／Android Chrome 觸控、短橫向、字體放大、返回首頁等（無真機則保留未完成）。
 
 
 ## 最高優先：儲存與跨裝置還原（2026-10-23）
@@ -1136,3 +1129,105 @@ Reference entry points:
 **Scope reminder:** This is a backlog, not a claim that features exist or are
 approved for implementation. Preserve the earlier completed work and
 never conflate future modes with existing Control “steering mode” options.
+
+## Firebase 資料完整性、Google 帳號與 Cloud Save UI：實作清單（2026-10-25）
+**範圍：原先 P0／P1 35 項 + 新增 Google 名稱／Email 入 Firestore 1 項，共 36 項。** 原先 2 項 P2 保留未勾選、不在此次實作。僅項目經對應 TDD／回歸證據驗證通過後才改為 `[x]`。不可因存在程式碼、模擬器通過而把尚未驗收的正式站事項宣稱完成。
+
+**Spark-only／成本限制：** 使用現有 Firebase Authentication Google 登入和**既有免費 Firestore 資料庫**的文件讀寫，禁止啟用 Blaze、設定帳務、建立第二個資料庫、Cloud Functions、Firestore TTL、PITR、代管備份／還原等付費方案功能。Spark 有 1 GiB 儲存、每天 50,000 reads／20,000 writes／20,000 deletes 等限制，實際以官方方案與 Usage 頁為準。不得每影格同步；登入 profile 同值應跳過寫入。若功能需要付費：僅將其維持 `[ ]`，註明原因、免費替代方案與「經使用者明確同意升級／實測足夠配額才開始」條件，絕不自動升級。
+
+**實作流程：** 建立 feature 分支；每階段先寫會失敗的測試、驗證 RED，最小修正後驗證 GREEN、Refactor；每個成功階段就更新本清單與 commit。不得建立 PR，未收到合併指令不得合併 main。正式環境需更新 Rules 並實機驗證，不能把本地測試視為已發布。
+
+### A. Google 登入與帳號管理
+
+- [ ] **A1 (P1)** Cloud Save 顯示 Google displayName，沒有名稱時顯示合理替代值。
+- [x] **A2 (P1)** Cloud Save 顯示並辨識目前 Google Email。
+- [ ] **A3 (P1)** 顯示 Google photoURL 頭像，讀取失敗有替代圖示。
+- [x] **A4 (P1)** 登入、登出及 Auth 初始化時明確顯示使用者身分狀態。
+- [ ] **A5 (P0)** 安全切換 Google 帳號，避免不同 UID 的資料混用或遺失未同步進度。
+- [x] **A6 (P0)** Firebase Auth／UID 管理身分，禁止遊戲資料儲存 Google 密碼、OAuth Token 與無關個資。
+- [x] **A7 (P1)** 【新增需求】於免費 Spark 既有 Firestore 儲存 accounts/{uid}：Google displayName 與 email；登入／變更時更新，Rules 限本人存取，空值不覆蓋有效資料，刪除流程同步清理。
+
+### B. Firestore 儲存內容與資料版本
+
+- [x] **B1 (P0)** 保留 saves/{uid} 既有版本化成果與相容性，不破壞舊帳號存檔。
+- [x] **B2 (P0)** modeHistory 雲端保留 rulesVersion、distance、stageCount、itemsUsed、hazardPasses、hazardHits 等完整合法資料。
+- [x] **B3 (P0)** 統一 mode rules 的本機與雲端長度上限和驗證契約（現有 4096／2000 不一致）。
+- [x] **B4 (P0)** 永久 modeBests 跨裝置同步，避免最近 50 場輪替後永久紀錄消失。
+- [ ] **B5 (P0)** 永久 stuntBests（score、maxCombo、airTime、medal）跨裝置同步。
+- [x] **B6 (P0)** 最近 50 場 history 與永久 best 分離；合併去重，不讓最佳成績倒退。
+- [x] **B7 (P1)** 版本升級、無損遷移與向下相容；需要時保留 updatedAt，拒絕未知未來版本覆寫。
+
+### C. 雲端同步與本機資料可靠性
+
+- [x] **C1 (P1)** 整合登入／完賽／成果改變／重連同步入口，不逐影格寫 Firestore。
+- [x] **C2 (P0)** 各 UID 獨立本機快照，帳號切換安全保護未同步資料。
+- [x] **C3 (P0)** 離線 pending 狀態按 UID 持久化；網路恢復與重新開啟時重試。
+- [x] **C4 (P0)** 同帳號雙裝置並發交易與重複登入不丟最佳成績、不重複紀錄。
+- [x] **C5 (P0)** 僅在 Firestore 成功確認後顯示已同步及更新最後成功時間。
+- [x] **C6 (P1)** localStorage 多 Key 寫入一致性與失敗回復，禁止把寫入失敗誤報成功。
+
+### D. Rules、備份、刪除與安全
+
+- [ ] **D1 (P0)** Firestore Rules 驗證欄位、型別、範圍、合法賽道／模式、列表及字串長度。
+- [x] **D2 (P0)** saves／accounts／永久最佳成績僅由對應登入 UID 私有讀寫，禁止列舉其他玩家。
+- [x] **D3 (P0)** 刪除進度後避免舊本機副本／排隊同步使資料復活，帳號基本資訊的刪除範圍明確。
+- [ ] **D4 (P1)** 匯出及匯入 JSON：大小／版本／內容驗證與可理解的失敗提示。
+- [ ] **D5 (P1)** 清楚區分登出、刪除遊戲資料、未來可能的刪除 Firebase Auth 帳號。
+
+### E. Cloud Save UI／UX
+
+- [ ] **E1 (P1)** Cloud Save 保持遊戲視覺風格，顯示 Google 名稱、Email、頭像。
+- [ ] **E2 (P1)** 明確提供未登入／同步中／已同步／等待網路／雲端失敗／本機寫入失敗六種狀態。
+- [x] **E3 (P1)** 最後同步時間只顯示實際 Firestore 成功結果。
+- [x] **E4 (P1)** 新增手動「立即同步」，避免重複寫入及切換帳號期間觸發。
+- [x] **E5 (P0)** 帳號切換確認 UI；清楚警告未同步資料並禁止破壞性切換。
+- [ ] **E6 (P1)** 登出／刪除／匯入／匯出提供明確 UX、成功與失敗回饋。
+- [ ] **E7 (P1)** 所有文案繁中／英文及無障礙 ARIA、鍵盤操作、焦點與狀態公告。
+- [ ] **E8 (P1)** 支援 Desktop／Mobile 直橫向，不遮擋比賽，沿用現有設計。
+
+### F. 裝置設定及本機進度
+
+- [x] **F1 (P1)** Ghost／控制／音效／畫質／語言／塗裝選擇等裝置偏好保持本機，不額外產生雲端費用。
+- [x] **F2 (P1)** 重要本機遊戲副本、同步資訊與帳號歸屬依 UID 隔離，既有 Local Storage Keys 相容遷移。
+
+### H. TDD／CI／正式環境驗收
+
+- [ ] **H1 (P0)** 每功能 Red→Green→Refactor，npm test／test:cloud／build／瀏覽器、Rules、安全、真實帳號 Chrome／Safari／跨裝置；正式站與用量驗收未完成前不得勾選。
+
+### G. P2 延後實作／啟動條件（本次不得勾選或實作）
+
+- [ ] **G1 (P2)** 玩家自訂暱稱與公開個人資料 profiles/{uid}。**延後原因與條件：**現在使用 Firebase Auth 的 Google 名稱／Email 即可；只有正式推出玩家自訂名稱、公開個人頁、可見的公開頭像與隱私授權需求時才設計獨立 Profile 與 Rules。
+
+- [ ] **G2 (P2)** 公開排行榜／比賽結果 leaderboards、raceResults。**延後原因與條件：**目前私人賽事成績可透過 saves 還原，瀏覽器提交的分數不能直接作競技可信依據；只有推出對外排名／競賽或防作弊驗證時再評估可信任後端與費用。Spark 不提供 Cloud Functions，若方案要求 Blaze 或其他付費服務，必須由使用者明確同意才做。
+
+### Firebase 模擬器與 CI 通過驗證（2026-10-25）
+
+- **已驗證：** [CI #40122717700](https://github.com/weskao/skyline-rush/actions/runs/40122717700)，提交 `63e6432`：`unit-tests` 成功；`cloud-save` 成功，包含 **9 個 Auth／Firestore Emulator 瀏覽器案例**及 **3 個 Firestore Rules 測試**。
+- **勾選原則：** 上述已勾選項目具單元／模擬器驗收或維持既有已回歸行為；`H1` 仍未完成，**不可把 unit/cloud-save 的成功當作全套 Browser CI、正式網站或真機 Safari 驗收成功**。本檔文件提交後將重新觸發 CI，須以最新提交結果為準。
+- **尚未勾選：** 頭像失敗回退完整 UI 測試、Stunt 永久最佳成績獨立新裝置回歸、完整 Rules 內層數值約束、JSON 匯入端到端、所有錯誤狀態與無障礙、各個手機／桌面尺寸、完整 browser shards、正式站／真機 Safari。
+- **免費限制：** 使用者指定僅 Spark；不能以升級方案或付費 Cloud Functions 代替未完成項目。
+
+### 本輪 TDD 與 CI 驗證記錄（2026-10-25）
+
+- [x] **B2、B3**：cloud modeHistory 的額外統計與本機相同 4096 字元規則上限；回歸測試已納入 `npm test`。
+- [x] **C6**：localStorage 多 Key 寫入失敗採最佳努力回復，原本資料可還原時不遺留部分新成果；有單元回歸測試，無法保證已不可寫的瀏覽器儲存仍可回復。
+- **實際 CI 證據**：`https://github.com/weskao/skyline-rush/actions/runs/40122441074` 的 `unit-tests` job 已成功（SHA `6e5fffef`）。後續 SHA 對文件與文案有修改，須再檢查 CI。
+- **仍在進行或未驗證**：Auth／Firestore Emulator、全部瀏覽器分片、實機 Safari、正式 Google 帳號與 Firestore Rules 部署；A7、B4、B5、C2/C3/D3/D4、E1–E8 等維持 `[ ]`，直到其驗收證據確認。
+- **本批已提交的實作**：UID 私人帳號名稱／Email、永續 Mode／Stunt 最佳成績、離線 pending、帳號快照與切換、原子多文件刪除及重上傳防護、Google 帳號 UI、手動同步、JSON 匯入／匯出、雙語字串與專項測試。
+- **免費限制**：完全沿用 Firebase Spark，無 Blaze 升級、無 Cloud Functions 或其他付費服務。未實作的 P2 和付費候選項目維持原定條件。
+
+### 本分支實作紀錄（2026-10-25）
+
+- **已提交、待完整 CI／模擬器驗收：** A7 私人帳號資料 accounts/{uid} 的 displayName／email 正規化與登入同步、刪除流程清理；已新增純函式測試與 Firestore Rules 測試。此功能不使用 Blaze 或 Cloud Functions。
+- **已提交、待完整 CI／回歸驗收：** B2／B3 cloud modeHistory 保留規則版本、距離、關卡與障礙統計，接受與本機一致的 4096 字元 rules；已加入雲端合併回歸測試。
+- **驗證紀錄：** 帳號正規化的精簡 Node 隔離測試先 RED（模組不存在）後 GREEN（3/3）；**尚未在完整專案執行 npm test、npm run test:cloud、npm run build、browser CI，因此相關 checkbox 暫不勾選**。
+- **部署限制：** 新 accounts/{uid} Firestore Rules 尚未部署至正式 Firebase；任何正式站登入測試與 Usage 確認仍待完成。禁止把 GitHub commit 當作已上線證據。
+- **待執行的下一步：** 執行完整單元與 Firebase Emulator Rules／Browser 測試；若出錯先修正；通過後才將 A7、B2、B3 與相關驗證標記 [x]，再依 P0→P1 清單繼續。
+
+### Spark 免費額度相關候選項目（只有符合條件才實作）
+
+- [ ] **S1 — 後端驗證／Cloud Functions**：Spark 無法使用 Cloud Functions。本次以 Firestore Rules 及本地驗證保護私人資料；若要防作弊或伺服端競技排行，需先有實際需求與**使用者明確同意 Blaze 或其他可用免費替代方案**才重新評估。
+- [ ] **S2 — 託管備份／PITR／TTL 刪除／Firestore 還原**：Firestore 免費額度不含這些功能。本次改用玩家手動 JSON 匯出／經驗證匯入；只有資料量、RPO／RTO 要求使本機匯出不夠且**經使用者明確同意付費**，才納入實作。
+- [ ] **S3 — 免費額度監控與升級門檻**：發布後先觀測現有 Firestore Usage；若讀寫、存量或使用者數接近 Spark 限制，先降低重複寫入／資料量，未經同意不得啟用任何付費服務。
+
+**官方參考**：https://firebase.google.com/pricing 、https://firebase.google.com/docs/firestore/pricing 、https://firebase.google.com/docs/projects/billing/firebase-pricing-plans

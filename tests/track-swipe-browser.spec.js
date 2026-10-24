@@ -18,6 +18,24 @@ async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 
   await cdp.detach();
 }
 
+// Trackpad wheel events on the preview. A trackpad stamps its events 16ms apart on its own clock however late they reach the
+// page (page.mouse.wheel stamps on delivery, so a slow CI round trip looks like the user pausing), and native wheel deltas are
+// scaled differently per runner (Linux CI turned a 40px nudge into a full swipe), so both delta and timeStamp are pinned here.
+// deliverMs spaces the deliveries; stallAt delays one delivery by 300ms.
+async function trackpadSwipe(page, deltaX, events, { deliverMs = 16, stallAt = -1 } = {}) {
+  const world = page.locator('#world');
+  const start = await page.evaluate(() => performance.now());
+  for (let i = 0; i < events; i++) {
+    if (i === stallAt) await page.waitForTimeout(300);
+    await world.evaluate((canvas, { deltaX, timeStamp }) => {
+      const event = new WheelEvent('wheel', { deltaX, deltaMode: 0, bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+      canvas.dispatchEvent(event);
+    }, { deltaX, timeStamp: start + i * 16 });
+    await page.waitForTimeout(deliverMs);
+  }
+}
+
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -26,6 +44,14 @@ test.describe('phone', () => {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
     const [first, second] = await trackOrder(page);
+    // Capture the brief completion state even if a slow software-rendered frame
+    // delays Playwright past the chip's 1.4s visibility window.
+    await chip(page).evaluate(element => {
+      window.__sawSwipeDone = false;
+      new MutationObserver(() => {
+        if (element.dataset.state === 'done') window.__sawSwipeDone = true;
+      }).observe(element, { attributes: true, attributeFilter: ['data-state'] });
+    });
     await page.locator('#airflow-toggle').tap();
     await expect(chip(page)).toHaveAttribute('data-state', 'hint');
     await expect(chip(page)).toContainText('Swipe left or right to change track');
@@ -39,7 +65,7 @@ test.describe('phone', () => {
 
     await touchSwipe(page, 320, 90, 560);
     await expect.poll(() => selected(page)).toBe(second);
-    await expect(chip(page)).toHaveAttribute('data-state', 'done');
+    await expect.poll(() => page.evaluate(() => window.__sawSwipeDone)).toBe(true);
     await expect(page.locator('#track-swipe-name')).not.toHaveText('');
     await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.getAnimations().length + canvas.style.transform)).toBe('0');
 
@@ -91,27 +117,78 @@ test('desktop: dragging the preview with the mouse changes track from the regula
 });
 
 test('desktop: a two-finger trackpad swipe changes one track per gesture, momentum included', async ({ page }) => {
-  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.goto('/');
   const [first, second, third] = await trackOrder(page);
-  await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
-  // Pin CSS-pixel deltas and gesture time: native wheel scaling and slow WebGL frames vary by runner.
-  const scroll = async (deltaX, events, deltaY = 0) => { for (let i = 0; i < events; i++) { await page.locator('#world').dispatchEvent('wheel', { deltaX, deltaY, deltaMode: 0 }); await page.clock.runFor(16); } };
+  await page.mouse.move(1150, 600);
+  const scroll = (deltaX, events, options) => trackpadSwipe(page, deltaX, events, options);
   await scroll(10, 4);
-  await page.clock.runFor(400);
+  await page.waitForTimeout(400);
   expect(await selected(page), 'a nudge springs back').toBe(first);
   await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.style.transform)).toBe('');
-  await scroll(30, 20); // swipe plus its momentum tail: still one track
+  await scroll(30, 20, { stallAt: 12 }); // swipe plus its momentum tail, one event delivered late: still one track
   await expect.poll(() => selected(page)).toBe(second);
-  await page.clock.runFor(400);
+  await page.waitForTimeout(400);
   expect(await selected(page)).toBe(second);
   await scroll(30, 6);
   await expect.poll(() => selected(page)).toBe(third);
-  await page.clock.runFor(400);
+  await page.waitForTimeout(400);
   await scroll(-30, 6);
   await expect.poll(() => selected(page)).toBe(second);
-  await page.clock.runFor(400);
-  await scroll(0, 1, 200); // vertical scrolling is not a swipe
-  await page.clock.runFor(400);
+  await page.waitForTimeout(400);
+  await page.mouse.wheel(0, 200); // vertical scrolling is not a swipe
+  await page.waitForTimeout(400);
   expect(await selected(page)).toBe(second);
+});
+
+test('desktop: wheel momentum pauses over 160ms remain part of the same trackpad gesture', async ({ page }) => {
+  await page.goto('/');
+  const [, second] = await trackOrder(page);
+  await page.mouse.move(1150, 600);
+  // Under CPU-only WebGL, adjacent momentum events may reach the page >160ms apart.
+  // Delivered 210ms apart but stamped 16ms apart, they are still the same physical swipe, not new gestures.
+  await trackpadSwipe(page, 30, 9, { deliverMs: 210 });
+  await expect.poll(() => selected(page)).toBe(second);
+  await page.waitForTimeout(400);
+  expect(await selected(page)).toBe(second);
+});
+
+
+test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with no exposed background', async ({ page }) => {
+  await page.goto('/');
+  const [first, second] = await trackOrder(page);
+  await page.mouse.move(1150, 600);
+  await page.mouse.down();
+  await page.mouse.move(1020, 600, { steps: 6 });
+  const pages = page.locator('#track-swipe-scenes canvas');
+  await expect(pages).toHaveCount(2);
+  const geometry = await pages.evaluateAll(canvases => canvases.map(canvas => {
+    const box = canvas.getBoundingClientRect();
+    const pixels = canvas.getContext('2d').getImageData(
+      Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data;
+    return { left: box.left, right: box.right, width: box.width, height: box.height, alpha: pixels[3] };
+  }));
+  expect(Math.abs(geometry[0].right - geometry[1].left)).toBeLessThan(1);
+  expect(geometry[0].left).toBeLessThanOrEqual(0);
+  expect(geometry[1].right).toBeGreaterThanOrEqual(1440);
+  expect(geometry.every(part => part.width === 1440 && part.height > 0 && part.alpha === 255), 'both actual scenes remain fully opaque').toBe(true);
+  expect(await selected(page)).toBe(first);
+  // The live WebGL renderer stays transparent to interactions but behind opaque snapshots.
+  expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('0');
+  await page.mouse.up();
+  await expect.poll(() => selected(page)).toBe(second);
+  await expect(pages).toHaveCount(0);
+  expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('');
+});
+
+test('desktop: a short drag snaps the joined previews back without changing track', async ({ page }) => {
+  await page.goto('/');
+  const [first] = await trackOrder(page);
+  await page.mouse.move(1150, 600);
+  await page.mouse.down();
+  await page.mouse.move(1120, 600, { steps: 4 });
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(2);
+  await page.waitForTimeout(160); // a held slow drag, not a 30px flick
+  await page.mouse.up();
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+  expect(await selected(page)).toBe(first);
 });
