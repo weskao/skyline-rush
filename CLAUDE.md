@@ -116,3 +116,15 @@ and a CI timing flake cannot leave a tag unpublished.
 
 Commit and push to the current development branch. No PR, no merge into `main`, no deploy
 unless the user explicitly asks.
+
+## Home showroom camera contract
+
+All existing and future tracks share the same six ready-screen camera views: drive,
+front, rear, left, right and orbit. The selected camera must work without enabling
+AIRFLOW or visual effects. The curated home landmark shot is the *drive* default
+only; it must never override another selected view. Keep the camera source of
+truth in `vfxSettings().view`, the view ordering in `SHOWCASE_VIEWS`, and
+the geometry-independent camera offsets in `showcaseCameraPose()`.
+The ready-screen camera dock and VFX menu must stay synchronized and localized.
+Use the local tangent frame for 3D roads, honor reduced motion, and test all
+`RACE_TRACKS` IDs plus an unknown future ID. Do not fork UI by map ID.
