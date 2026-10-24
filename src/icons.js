@@ -6,6 +6,7 @@ export const icons = {
   camera: '<rect x="3" y="6" width="18" height="14" rx="3"/><path d="m8 6 2-3h4l2 3"/><circle cx="12" cy="13" r="4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   restart: '<path d="M3 10a9 9 0 1 1 2 9M3 4v6h6"/>',
+  lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   fly: '<path d="m4 14 8-9 8 9M4 20l8-9 8 9"/>',
   road: '<path d="m6 3-4 18M18 3l4 18M12 3v3m0 4v4m0 4v3"/>',
   left: '<path d="m14 5-7 7 7 7"/>',
