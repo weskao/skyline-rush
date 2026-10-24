@@ -363,7 +363,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
      style --touch-opacity            0.4–1; control opacity
      children, in order (all siblings):
        .touch-pad[aria-hidden]        slide surface (pointer events, touch-action:none) > .pad-ring + .pad-knob (positioned later by main.js)
-       .touch-steer                   button[data-control=left|right] + button[data-control=brake] (brake sits under them, same thumb: brake + steer = drift)
+       .touch-steer                   button[data-control=left|right] + button[data-control=brake] (brake sits above them, off the thumb's rest row: brake + steer = drift)
        .touch-actions                 button.touch-fly[data-control=fly], button.touch-boost[data-control=boost]
        .touch-pedals                  button.touch-gas[data-control=throttle] (gas always visible, both modes)
      button.is-held / [aria-pressed=true] while active (existing).

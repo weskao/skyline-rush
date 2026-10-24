@@ -186,6 +186,8 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
         }
         const m = result.map;
         if (m.x < 0 || m.y < 0 || m.x + m.width > width + 0.5 || m.y + m.height > height + 0.5) hits.push(`${tag}: map off screen`);
+        // Portrait Buttons mode: [<][>] take the bottom row, so the map shares the BRAKE row; any higher and it covers the player's car.
+        if (result.brake && height > width && m.y < result.brake.y - 0.5) hits.push(`${tag}: map rises ${Math.round(result.brake.y - m.y)}px above the BRAKE row onto the car`);
         for (const [name, b] of result.others) {
           const apart = m.x + m.width <= b.x + 0.5 || b.x + b.width <= m.x + 0.5 || m.y + m.height <= b.y + 0.5 || b.y + b.height <= m.y + 0.5;
           if (!apart) hits.push(`${tag}: map × ${name} ${Math.round(Math.min(m.x + m.width - b.x, b.x + b.width - m.x))}px`);
