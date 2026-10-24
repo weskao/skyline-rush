@@ -700,6 +700,13 @@ test.describe('phone game gestures', () => {
     await expect(assist).toHaveAttribute('aria-pressed', 'false');
     // A tap leaves :hover stuck on touch screens; it must not paint OFF with the ON border.
     expect(await assist.evaluate((element) => getComputedStyle(element).borderColor)).not.toBe(onBorder);
+    const controlsButton = page.locator('#controls-button');
+    const closedBorder = await controlsButton.evaluate((element) => getComputedStyle(element).borderColor);
+    await controlsButton.tap();
+    await expect(controlsButton).toHaveAttribute('aria-expanded', 'true');
+    await controlsButton.tap();
+    await expect(controlsButton).toHaveAttribute('aria-expanded', 'false');
+    expect(await controlsButton.evaluate((element) => getComputedStyle(element).borderColor)).toBe(closedBorder);
     await page.getByRole('button', { name: 'Start race' }).tap();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const gas = page.locator('[data-control="throttle"]');

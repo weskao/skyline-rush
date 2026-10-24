@@ -42,7 +42,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 /* Chrome ignores ::-webkit-scrollbar once scrollbar-color is set, so the standard properties are for Firefox only. */
 @supports not selector(::-webkit-scrollbar) { #settings-panel { scrollbar-width: thin; scrollbar-color: rgb(195 224 244 / .35) transparent; } }
 .setting { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font-size: 13px; text-align: left; }
-.setting:hover { background: rgb(255 255 255 / .08); }
+@media (hover: hover) { .setting:hover { background: rgb(255 255 255 / .08); } }
 .setting span { flex: 1; }
 .setting svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
 .setting b { font-size: 10px; letter-spacing: 1.6px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -50,7 +50,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .setting[aria-checked="false"] svg { color: var(--muted); }
 .audio-head { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 4px 12px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
 .mute-all { display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid rgb(195 224 244 / .25); border-radius: 999px; background: rgb(255 255 255 / .04); font-size: 12px; letter-spacing: normal; text-transform: none; }
-.mute-all:hover { background: rgb(255 255 255 / .1); }
+@media (hover: hover) { .mute-all:hover { background: rgb(255 255 255 / .1); } }
 .mute-all kbd { padding: 0 5px; border: 1px solid rgb(195 224 244 / .3); border-radius: 4px; font: inherit; font-size: 10px; color: var(--muted); }
 @media (pointer: coarse) { .mute-all kbd { display: none; } }
 .audio-channel { display: grid; padding: 2px 0 8px; border-top: 1px solid rgb(195 224 244 / .1); }
@@ -684,13 +684,14 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .pad-knob { width: 40px; height: 40px; background: rgb(210 226 238 / .6); }
 .toolbar { margin-left: auto; }
 .controls-button { min-width: 44px; height: 44px; flex-shrink: 0; padding: 0 12px; border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; background: rgb(8 22 38 / .55); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; }
-.controls-button:hover:not(:disabled), .controls-button[aria-expanded="true"] { border-color: var(--blue); background: #19384c; }
+.controls-button[aria-expanded="true"] { border-color: var(--blue); background: #19384c; }
+@media (hover: hover) { .controls-button:hover:not(:disabled) { border-color: var(--blue); background: #19384c; } }
 .controls-panel { position: absolute; top: calc(100% + 10px); right: 0; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 100px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
 .controls-field { display: flex; gap: 6px; margin: 0; padding: 8px 6px; border: 0; }
 .controls-field legend { padding: 0 0 6px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
 .controls-choice { position: relative; flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; font-size: 12px; cursor: pointer; }
 .controls-choice input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.controls-choice:hover { background: rgb(255 255 255 / .08); }
+@media (hover: hover) { .controls-choice:hover { background: rgb(255 255 255 / .08); } }
 .controls-choice:has(input:checked) { color: var(--accent); border-color: var(--accent); background: rgb(255 255 255 / .1); }
 .controls-choice:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
 .controls-field.controls-range { display: grid; grid-template-columns: 1fr auto; align-items: center; font-size: 12px; }
