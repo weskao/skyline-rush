@@ -1,10 +1,18 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
-import { HISTORY_KEY, BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
+import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
   HISTORY_LIMIT, MEDALS, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
 
 export function mergeUnlocks(local, remote) {
   const unlocked = new Set(['coast', ...(Array.isArray(local) ? local : []), ...(Array.isArray(remote) ? remote : [])]);
   return Object.keys(RACE_TRACKS).filter(id => unlocked.has(id));
+}
+
+export const claimCloudOwner = (owner, uid) => !owner || owner === uid ? uid : null;
+
+export function cloudFailureStatus(error, deviceSaved) {
+  if (!deviceSaved) return 'cloud.localFailed';
+  if (error?.code === 'resource-exhausted') return 'cloud.quota';
+  return ['unavailable', 'deadline-exceeded', 'network-request-failed'].includes(error?.code) ? 'cloud.pending' : 'cloud.failed';
 }
 
 const validTime = value => Number.isFinite(value) && value > 0;
@@ -16,7 +24,7 @@ const modeNames = ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', '
 
 function raceRun(run) {
   const when = date(run?.date);
-  if (!when || !track(run.track) || !validTime(run.time) || !Number.isInteger(run.position) || run.position < 1 || run.position > 4) return null;
+  if (!when || !track(run.track) || !validTime(run.time) || !Number.isInteger(run.position) || run.position < 0 || run.position > 4) return null;
   return { date: when, track: run.track, position: run.position, time: run.time,
     ...Object.fromEntries(raceFields.map(field => [field, nonnegative(run[field])])) };
 }
@@ -56,8 +64,9 @@ export function mergeProgress(local = {}, cloud = null) {
   if (cloud && ![1, 2].includes(cloud.version)) throw new Error('Unsupported cloud save');
   const stars = {}, bests = {}, medals = {};
   for (const id of Object.keys(RACE_TRACKS)) {
-    const star = Math.max(local.stars?.[id] ?? 0, cloud?.stars?.[id] ?? 0);
-    if (Number.isInteger(star) && star >= 1 && star <= 3) stars[id] = star;
+    const validStar = n => Number.isInteger(n) && n >= 1 && n <= 3;
+    const star = Math.max(validStar(local.stars?.[id]) ? local.stars[id] : 0, validStar(cloud?.stars?.[id]) ? cloud.stars[id] : 0);
+    if (star) stars[id] = star;
     const best = Math.min(validTime(local.bests?.[id]) ? local.bests[id] : Infinity,
       validTime(cloud?.bests?.[id]) ? cloud.bests[id] : Infinity);
     if (Number.isFinite(best)) bests[id] = best;
@@ -133,6 +142,15 @@ export function writeCloudSyncStatus(uid, patch, storage) {
       pending: patch.pending,
       lastSuccess: patch.lastSuccess === undefined ? previous.lastSuccess : date(patch.lastSuccess),
     }));
+    return true;
+  } catch { return false; }
+}
+
+// Clear only race progress; retain device controls and preferences.
+export function clearLocalProgress(storage) {
+  try {
+    const target = storage ?? globalThis.localStorage;
+    for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY, DAILY_KEY, LEGACY_BEST_KEY]) target.removeItem(key);
     return true;
   } catch { return false; }
 }

@@ -69,6 +69,29 @@ jobs:
           path: test-results/**/world-tour-*.png
           if-no-files-found: ignore
 
+  cloud-save:
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - env:
+          FIREBASE_CLI_DISABLE_TELEMETRY: '1'
+        run: npm run test:cloud
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-save-failures
+          path: test-results
+
   # Catch WebGL crashes that short preview tests miss when the player reaches
   # the middle of all five long World Tour routes. Test-only Vite fixture:
   # it is not included in the distributable production build.
@@ -117,9 +140,9 @@ jobs:
           echo "$code passed CI on main: $run"
 
   deploy:
-    # A tag run skips browser-tests and a manual run skips release-verified; either one still has to succeed where it runs.
-    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
-    needs: [unit-tests, browser-tests, release-verified]
+    # A tag run skips browser and cloud suites; a manual run skips release-verified.
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.cloud-save.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
+    needs: [unit-tests, browser-tests, cloud-save, release-verified]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -170,7 +193,7 @@ jobs:
   # Failure-only pager: a notification on every push is one nobody reads. Credentials live in repo secrets
   # (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Pull requests are excluded because fork PRs get no secrets.
   notify-telegram:
-    needs: [unit-tests, browser-tests, world-tour-mid-race, release-verified, deploy]
+    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, release-verified, deploy]
     if: ${{ failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

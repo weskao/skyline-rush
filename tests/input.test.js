@@ -139,7 +139,7 @@ test('tilt calibrates neutral, ignores invalid samples, handles screen rotation 
   controls.destroy();
 });
 
-test('slide pad steers analog, reads live fullLock, ignores other pointers, resets on clear', () => {
+test('slide pad steers analog, reads live fullLock, ignores other pointers\' moves, resets on clear', () => {
   const settings = { fullLock: 100 };
   const controls = createControls(new EventTarget());
   const el = padTarget(controls, settings);
@@ -147,10 +147,6 @@ test('slide pad steers analog, reads live fullLock, ignores other pointers, rese
   send(el, 'pointermove', { pointerId: 1, clientX: 250, clientY: 300 });
   assert.equal(controls.read().steer, 0.5);
   send(el, 'pointermove', { pointerId: 2, clientX: 0, clientY: 300 });
-  assert.equal(controls.read().steer, 0.5);
-  const second = send(el, 'pointerdown', { pointerId: 2, clientX: 0, clientY: 0 });
-  assert.ok(second.defaultPrevented);
-  send(el, 'pointermove', { pointerId: 2, clientX: 90, clientY: 0 });
   assert.equal(controls.read().steer, 0.5);
   settings.fullLock = 50;
   send(el, 'pointermove', { pointerId: 1, clientX: 250, clientY: 300 });
@@ -307,5 +303,42 @@ test('layout editing blocks touch controls until editing ends', () => {
   assert.equal(controls.read().nitro, true);
   send(button, 'pointerup', { pointerId: 2 });
   assert.equal(controls.read().nitro, false);
+  controls.destroy();
+});
+
+// WebKit (iPhone Safari/Chrome) withholds pointerup/pointercancel for a touch that began as an edge-swipe
+// back/forward gesture, so a pad pointer can be held forever: the next finger down must take the pad over.
+test('the newest finger owns the slide pad, so a pointer whose release never arrives cannot pin the steering', () => {
+  const controls = createControls(new EventTarget());
+  const el = padTarget(controls);
+  send(el, 'pointerdown', { pointerId: 1, clientX: 0, clientY: 300 });
+  send(el, 'pointermove', { pointerId: 1, clientX: 100, clientY: 300 });
+  assert.equal(controls.read().steer, 1);
+  const second = send(el, 'pointerdown', { pointerId: 2, clientX: 200, clientY: 300 });
+  assert.ok(second.defaultPrevented);
+  assert.equal(controls.read().steer, 0);
+  send(el, 'pointermove', { pointerId: 1, clientX: 100, clientY: 300 }); // the stale pointer no longer steers
+  send(el, 'pointermove', { pointerId: 2, clientX: 150, clientY: 300 });
+  assert.equal(controls.read().steer, -0.5);
+  send(el, 'pointerup', { pointerId: 1 }); // a late release of the old pointer changes nothing
+  assert.equal(controls.read().steer, -0.5);
+  send(el, 'pointerup', { pointerId: 2 });
+  assert.equal(controls.read().steer, 0);
+  controls.destroy();
+});
+
+test('a new touch on a touch button releases an older pointer stuck on that same button', () => {
+  const controls = createControls(new EventTarget());
+  const right = new EventTarget();
+  const gas = new EventTarget();
+  controls.bindButton(right, 'right');
+  controls.bindButton(gas, 'throttle');
+  send(right, 'pointerdown', { pointerId: 1 });
+  send(gas, 'pointerdown', { pointerId: 2 });
+  send(right, 'pointerdown', { pointerId: 3 });
+  assert.equal(controls.read().steer, 1);
+  send(right, 'pointerup', { pointerId: 3 });
+  assert.equal(controls.read().steer, 0);
+  assert.equal(controls.read().throttle, true);
   controls.destroy();
 });

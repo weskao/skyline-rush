@@ -919,13 +919,16 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       }
     });
 
-    test('slide pad covers the bottom 45% of the steering half', async ({ page }) => {
+    // The pad stays EDGE_SWIPE_PX off the side edge: a touch starting there is the iOS back/forward swipe, whose
+    // release WebKit never reports, and it pinned the steering for the rest of the race.
+    const EDGE_SWIPE_PX = 20;
+    test('slide pad covers the bottom 45% of the steering half, clear of the edge-swipe zone', async ({ page }) => {
       await startTouchRace(page);
       await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', 'left');
       const box = await page.locator('.touch-pad').boundingBox();
       expect(Math.abs(box.height - height * 0.45)).toBeLessThanOrEqual(2);
       expect(Math.abs(box.y + box.height - height)).toBeLessThanOrEqual(2);
-      expect(Math.abs(box.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(box.x - EDGE_SWIPE_PX)).toBeLessThanOrEqual(1);
       expect(box.x + box.width).toBeLessThanOrEqual(width / 2);
     });
 
@@ -941,9 +944,9 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         const box = await page.locator('.touch-pad').boundingBox();
         if (hand === 'right') {
           expect(box.x).toBeGreaterThanOrEqual(width / 2 - 1);
-          expect(Math.abs(box.x + box.width - width)).toBeLessThanOrEqual(1);
+          expect(Math.abs(box.x + box.width - (width - EDGE_SWIPE_PX))).toBeLessThanOrEqual(1);
         } else {
-          expect(Math.abs(box.x)).toBeLessThanOrEqual(1);
+          expect(Math.abs(box.x - EDGE_SWIPE_PX)).toBeLessThanOrEqual(1);
           expect(box.x + box.width).toBeLessThanOrEqual(width / 2);
         }
         for (const [name, x] of Object.entries(await actionCenters())) {

@@ -80,6 +80,9 @@ export function createControls(target = window, onAction = () => {}, { getSettin
       listen(button, 'pointerdown', event => {
         event.preventDefault();
         if (defaultSettings()?.editing) return;
+        // WebKit withholds the release of a touch that became an edge-swipe gesture: a new finger on the
+        // same button takes it over from any pointer still holding it.
+        for (const [id, held] of pointers) if (held.includes(control)) pointers.set(id, held.filter(action => action !== control));
         if (control === 'fly' && flyMode === 'toggle') { flyLatched = !flyLatched; pointers.set(event.pointerId, []); }
         else pointers.set(event.pointerId, [control]);
         // Synthetic accessibility/test events do not own a native pointer to capture.
@@ -106,8 +109,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
       const syncLock = () => slide.pad.setFullLock(getSettings()?.fullLock);
       listen(element, 'pointerdown', event => {
         event.preventDefault();
-        if (slide.pointerId !== null) return;
-        slide.pointerId = event.pointerId;
+        slide.pointerId = event.pointerId; // the newest finger owns the pad (see bindButton)
         syncLock();
         slide.pad.down(event.clientX, event.clientY);
         // Synthetic accessibility/test events do not own a native pointer to capture.
