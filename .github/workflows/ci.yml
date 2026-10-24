@@ -1,13 +1,14 @@
-# Check main and feature branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
+# Check main, feature and fix branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
 name: CI
 
 on:
   push:
-    # Every new feature branch gets the same gate; the retired MODE-00 branch
+    # Feature and fix branches get the same gate; the retired MODE-00 branch
     # remains excluded per its explicit CI-stop request.
     branches:
       - main
       - 'feature/**'
+      - 'fix/**'
       - '!feature/mode00-objective-contract'
     tags: ['v*']
   pull_request:
