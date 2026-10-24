@@ -597,6 +597,12 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   .airflow-hud { transition: none; transform: none; }
   .boost-status { text-shadow: none; }
 }
+/* Two full-width still frames cover the screen throughout a home-track swipe.
+   The live renderer stays behind them; no extra WebGL context or gap is created. */
+#track-swipe-scenes { position: fixed; inset: 0 auto 0 0; display: flex; width: 200vw; height: 100%; pointer-events: none; visibility: hidden; overflow: hidden; }
+#track-swipe-scenes:has(canvas) { visibility: visible; }
+#track-swipe-scenes canvas { flex: none; display: block; width: 100vw; height: 100%; }
+
 /* Home preview swipe (main.js): the preview drags like a carousel page; the chip names the track and shows the hint. */
 body[data-phase="ready"] #world { cursor: grab; }
 body[data-phase="ready"] #world:active { cursor: grabbing; }
