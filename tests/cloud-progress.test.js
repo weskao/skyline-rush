@@ -213,3 +213,19 @@ test('identical mode and daily attempts deduplicate without mixing rule signatur
   assert.equal(merged.modeHistory.length, 2);
   assert.equal(merged.daily.length, 2);
 });
+
+test('cloud mode history preserves v1 additive telemetry and accepts local 4096-character rules', () => {
+  const run = {
+    date: '2026-10-24T00:00:00.000Z', mode: 'checkpoint', track: 'coast',
+    rules: 'x'.repeat(4096), time: 65, position: 1, score: 420,
+    modeId: 'checkpoint', trackId: 'coast', rulesVersion: 2,
+    rulesSignature: 'x'.repeat(4096), distance: 5000, stageCount: 3,
+    lapCount: null, itemsUsed: 2, hazardPasses: 3, hazardHits: 1,
+  };
+  const merged = mergeProgress({ modeHistory: [run] });
+  assert.equal(merged.modeHistory.length, 1);
+  for (const key of ['rulesVersion', 'distance', 'stageCount', 'lapCount', 'itemsUsed', 'hazardPasses', 'hazardHits'])
+    assert.deepEqual(merged.modeHistory[0][key], run[key], key);
+  assert.equal(merged.modeHistory[0].rules, run.rules);
+  assert.deepEqual(mergeProgress({}, merged).modeHistory, merged.modeHistory);
+});
