@@ -1,5 +1,27 @@
 # TODO — Gameplay depth design
 
+## CI regression: optional release hero images (2026-10-25)
+
+- [x] Trace the shard 5 failure: v0.22.0 intentionally has `image: null`; the browser test still assumes the latest release has v0.21.0's localized OG image. The renderer correctly hides absent images, as required by `docs/release-announcements.md`.
+- [x] RED: `PLAYWRIGHT_PORT=5193 npm run test:browser -- tests/release-announcements-browser.spec.js -g 'release hero image'` failed at the original visibility assertion (`Expected: visible`, `Received: hidden`) in real Chrome. No production change was needed: repair the test's version-dependent assumption.
+- [x] GREEN: the complete release-announcements browser file passed 11/11, including a final rerun after screenshot stabilization. The repaired test checks all five displayed releases in en/zh-TW: image visibility/path/decoding when supplied, readable text and no stale `src` when absent, plus Enter never starting a race.
+- [ ] Full `make verify` GREEN: unit tests passed 547 with 1 skipped; production build passed; browser suite finished 397 passed / 3 failed. The additional failures all reproduced in a separate 3-test run: `tests/i18n-browser.spec.js:173` en/zh-TW phone flows report `daily-card-route` clipping (`Aurora Pass · Double traffic`, 183px > 160px), and `tests/track-swipe-browser.spec.js:42` phone swipe stays on `coast` instead of `neon`. These are outside the announcement-test repair; the complete gate remains red.
+- [x] Independently run the World Tour gate skipped after the browser failure: `npx playwright test --config=playwright.world-tour.config.js --output=playwright-report/ci-release-hero/world-tour` passed 27/27.
+- [x] Inspect settled real-WebGL release-dialog screenshots using the requested premium-ui-design Web/adaptive playbooks: desktop en/zh-TW, 390x844, 320x740 and 844x390. Text hierarchy, scrolling content and Continue remain readable/reachable without requiring a hero. Capture animations at their finished state; evidence and full gate log are in `playwright-report/ci-release-hero/`. Physical-device/Safari checks remain unperformed.
+- [ ] Check GitHub CI `quality-gate` for the exact committing HEAD; this commit-only request does not push or establish remote CI success.
+
+## Codebase structure: incremental Vue / type-checking adoption (2026-10-25)
+
+Context: `src/` is 64 `.js` files (~10.5k lines), 3 `.vue` files (460 lines), 0 `.ts`. `src/main.js` (2,244 lines) mounts `App.vue` and then drives the UI imperatively (164 `querySelector`/`getElementById`/`innerHTML`/`addEventListener` sites). Simulation and Three.js rendering stay plain JS. Each step ships on its own commit with `make verify` (plus `npm run test:layout` for home-screen changes).
+
+- [x] Step 0, conventions first: `CLAUDE.md` section "UI architecture: Vue panels, plain-JS game core" and `.claude/rules/ui-architecture.md` (scoped to `src/**/*.js`, `src/**/*.vue`).
+- [ ] Step 1, HUD per-frame DOM cost: `updateUI` (`src/main.js`) re-runs `$('#clean-trial-hud')`, `$('#hazard-warning')`, etc. and rewrites `textContent` every frame. Measure frame cost first; then cache the elements once and skip writes when the value is unchanged. Report the before/after numbers; run `npm run test:browser` desktop and mobile.
+- [ ] Step 2, type checking without renaming files: add `jsconfig.json` with `checkJs`, add `tsc --noEmit` to `make verify`, and JSDoc the shared shapes first (`race`, `player`, `rival`, track config) used across `game.js`, `world.js` and `main.js`.
+- [ ] Step 2b (optional, decide separately): add ESLint; the repo has no lint config today.
+- [ ] Step 3, split `src/main.js` by feature, move-only with no behavior change: release notes (~L280–391), track swipe (~L897–1060), history/daily (~L736–850), garage (~L852–895), settings/audio/controls (~L1065–1460), tutorial/guide (~L2115–2244). `main.js` keeps bootstrap and the frame loop.
+- [ ] Step 4, convert event-driven panels to Vue components one at a time: release notes dialog, history, garage, settings, tutorial (replaces the 13 `innerHTML` sites and manual show/hide). Keep the in-race HUD/speedometer out of Vue reactivity; it stays direct DOM writes from step 1. Re-check finish/pause overlay clickability per `.claude/rules/ui-phase-interactions.md`.
+- [ ] Not planned: rewriting `game.js`/`world.js` to `.ts`, or a one-shot UI rewrite — step 2 delivers most of the type-safety benefit, and the regression matrix cannot verify a big-bang change.
+
 ## Audio preference moves from cookies to localStorage; Chrome first-visit autoplay (2026-10-25)
 
 - [x] Repro in real Chrome with its default autoplay policy (Playwright strips `--autoplay-policy=no-user-gesture-required`; scratch script, 4 runs): `AudioContext` stays `suspended` on load as Chrome requires, and the first click or key resumes it (`running`, audible RMS > 0.01). Autoplay without a gesture cannot be fixed client-side; the existing first-gesture unlock (`unlockAudio`, `src/main.js`) is the fix and is kept.

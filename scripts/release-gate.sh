@@ -28,5 +28,9 @@ while :; do
 done
 [[ $conclusion == success ]] || fail "CI $conclusion for $sha: $url — fix the cause, commit, push, wait for green, then release"
 echo "release-gate: CI green for $sha ($url)"
+# Test as the tag will: the release commit bumps package.json, and CURRENT_RELEASE follows that version.
+trap 'git checkout -q -- package.json' EXIT
+npm pkg set version="${1#v}"
 npm test
+git checkout -q -- package.json
 npm run build
