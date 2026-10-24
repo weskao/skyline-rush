@@ -818,15 +818,19 @@ worldCanvas.addEventListener('pointermove', event => {
   dragSwipe(dx);
 });
 // Trackpad two-finger swipe (horizontal wheel): the preview follows the scroll and changes track once it travels the swipe
-// distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it.
-const WHEEL_END_MS = 320; // tolerate delayed momentum events under CPU-heavy WebGL; still below the 400ms gap between gestures
+// distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it,
+// timed on the events' own timeStamp: a stalled frame or late delivery must not turn the momentum tail into a second swipe.
+const WHEEL_END_MS = 160;
 worldCanvas.addEventListener('wheel', event => {
+  if (wheelSwipe && event.timeStamp - wheelSwipe.stamp >= WHEEL_END_MS) { clearTimeout(wheelSwipe.timer); wheelSwipe = null; }
   if (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
   if (swipe || race.phase !== 'ready' || tutorial || editingLayout || document.querySelector('dialog[open]')) return;
   event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
   clearTimeout(wheelSwipe?.timer);
   wheelSwipe ??= { dx: 0, spent: swipeBusy };
-  wheelSwipe.timer = setTimeout(() => { const ended = wheelSwipe; wheelSwipe = null; if (!ended.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
+  wheelSwipe.stamp = event.timeStamp;
+  // No input for a while: spring an unfinished drag back. Only the timeStamp gap above ends the gesture itself.
+  wheelSwipe.timer = setTimeout(() => { if (!wheelSwipe.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
   if (wheelSwipe.spent) return;
   wheelSwipe.dx -= event.deltaX * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerWidth : 1); // lines / pages to px
   const step = swipeStep(wheelSwipe.dx, 0, innerWidth);

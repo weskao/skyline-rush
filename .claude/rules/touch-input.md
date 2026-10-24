@@ -4,6 +4,8 @@ paths:
   - "src/slide-pad.js"
   - "src/style.css"
   - "tests/input.test.js"
+  - "src/track-swipe.js"
+  - "tests/track-swipe-browser.spec.js"
 ---
 
 # Touch input survives a lost release
@@ -19,3 +21,12 @@ pins the car to one wall for the rest of the race.
   cannot start inside the edge-swipe zone. Guards: `tests/input.test.js` (stuck-pointer takeover)
   and the pad geometry tests in `tests/browser.spec.js`.
 - Never cure a stuck pointer with a timeout: a thumb held still is legitimate input.
+
+## Trackpad gestures are timed on the input's own clock
+
+A home-preview trackpad swipe (wheel handler in `src/main.js`) is one gesture until its events' own
+`event.timeStamp` shows a `WHEEL_END_MS` pause. Never end or reset a gesture with a wall-clock timer, and
+never widen the window to absorb lag: late delivery (a slow frame, a CI round trip) then splits one swipe
+into two tracks, or resets a half-finished drag. A timer may only spring the preview back. Browser tests
+send wheel input through `trackpadSwipe` (CDP, fixed 16 ms stamps), never through `page.mouse.wheel`, which
+stamps on delivery. Guards: both trackpad tests in `tests/track-swipe-browser.spec.js`.
