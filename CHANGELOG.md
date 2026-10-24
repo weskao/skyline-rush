@@ -1,3 +1,201 @@
+## [0.22.0] - 2026-10-24
+
+### 🚀 Features
+
+- **mode00:** GREEN — stable per-system seeds and bounded route inputs
+- **stunt:** GREEN — preserve rule-scoped best score, combo and air time across history trimming
+- **checkpoint:** GREEN — keep rendered gates clear of real roadside obstacles
+- **history:** GREEN — persist versioned mode identity and bounded item/hazard telemetry
+- **gauntlet:** GREEN — reward bounded one-time clean near-miss passes
+- **history:** GREEN — preserve per-mode personal bests beyond fifty-run history rotation
+- **history-ui:** GREEN — filter mode records with personal bests and eligible Ghosts
+- **cloud:** GREEN isolate local race progress by Google account
+- **cloud:** Reload account-specific progress before authenticating new player
+- **cloud:** GREEN persist per-account pending state and last Firestore success
+- **cloud:** Show last successful sync and offline pending state in History
+- **cloud:** GREEN deduplicate synced Classic/mode/daily attempts by stable identity
+- **touch:** Keep thumb controls off the screen corners
+- **home:** Swipe the 3d preview to change track
+- **audio:** Persist audio prefs in local storage
+- **release:** Add curated bilingual release data and seen-version contract
+- **release:** Display dismissible local release notes without interrupting races
+- **release:** Add responsive native What's New dialog and home entry
+- **i18n:** Translate release notes UI to English and Traditional Chinese
+- **whats-new:** Browse the latest five releases
+- **whats-new:** Mark every release missed since last visit
+- **input:** Slide a steering thumb into brake to drift
+
+### 🐛 Bug Fixes
+
+- Compose steering and pitch in the local road frame
+- Preserve road pitch and bank when rendering cars on curved tracks
+- Prevent repeat impacts while continuously steering into a road edge
+- **mode00:** Clarify bounded gauntlet input validation errors
+- **elimination:** GREEN — derive player knockout rank from contenders left
+- **gauntlet:** GREEN — skip raised shortcut hazards and guard nonfinite motion time
+- **history:** GREEN — bound untrusted mode history and reject impossible records
+- **ci:** Scale WebGL black-frame timeout and require all browser shards before main merge
+- **i18n:** Localize cloud Ghost copy; whitelist Google as untranslated brand
+- **i18n:** Localize pending, account switch and last successful cloud sync
+- **i18n:** Add missing commas in cloud sync locale keys (CI RED parse error)
+- **cloud:** Retain unranked mode histories restored from Firestore
+- **i18n:** GREEN localize mode history filters, notice and PB/Ghost badges
+- **cup:** GREEN reject unknown tracks and malformed rival scorecards
+- Keep language and VFX controls clickable above finished-race overlay
+- Preserve real braking instead of restarting drifts against a contacted rail
+- **ui:** Keep topbar dropdowns above the VFX tool row
+- **ui:** Lower ios footer into home-indicator inset
+- Keep one trackpad gesture alive through slow WebGL wheel-event pauses
+- **home:** Time trackpad gestures on the wheel events' own timestamps
+- **ci:** Make trackpad swipe regression deterministic
+- **ui:** Stop sticky touch hover on icon buttons
+- **ui:** Stop sticky touch hover on controls button
+- **tutorial:** Preserve steering across lessons and disable automatic lane centering
+- **tutorial:** Use free steering input in frame loop
+- **home:** Slide adjacent full-viewport track scenes without dimmed gaps
+- **home:** Capture fresh opaque WebGL frames and preserve pointer capture during swipe
+- **input:** Suppress and clear FLY when daily rule disables flight
+- **daily:** Synchronize locked FLY and HUD with challenge rule
+- **daily:** Synchronize locked FLY and HUD with challenge rule
+- **daily:** Synchronize locked FLY and HUD with challenge rule
+- **daily:** Synchronize locked FLY and HUD with challenge rule
+- **ui:** Add accessible locked-flight icon
+- **release:** Use Node-compatible JSON import for unit tests
+- **release:** Localize the version entry accessible label
+- **release:** Guard blocked storage without stopping the game
+- **release:** Keep home announcement entry above phone safe area
+- Harden release-note image paths
+- **ui:** Block system selection menus on long press
+- **daily:** Keep the no-flight FLY label through the frame loop
+
+### 💼 Other
+
+- Main into feature/mode00-objective-contract
+- Bring Firebase cloud save main into MODE-00 branch
+- Sync release v0.20.1 from main into MODE-00
+- Bring latest main audio lifecycle fix into MODE-00
+- Integrate latest main v0.21.0 into MODE-00
+- Ship MODE-00 objective contract to main
+- Add make verify for full local regression gate including World Tour
+- Bring main into feature/sky-spiral-cornering-stability
+- Bring origin/main tutorial steering fixes into local main
+- Seamless 3D home track previews and latest main fixes
+- Daily no-flight controls and HUD accessibility (preserve track swipe changes)
+- **release:** Refuse a release without its notes
+
+### 🚜 Refactor
+
+- **release:** Drop dialog language toggle
+
+### 📚 Documentation
+
+- Track cross-course stability fixes and unverified acceptance gates
+- Add scoped road-frame, wheel-clearance and rail-contact regression rules
+- Make all-track physics and renderer stability non-regression rules explicit
+- **mode00:** Mark deterministic streams and safety bounds complete after GREEN CI
+- **stunt:** Check off ruleset-scoped lifetime bests after GREEN unit/build
+- **mode00:** Clarify completed seeds versus outstanding stage acceptance
+- **checkpoint:** Mark real-route gate safety complete after unit and WebGL GREEN CI
+- **modes:** Check off verified Checkpoint and Elimination criteria after WebGL GREEN
+- **history:** Mark stable rule-versioned mode result contract complete after GREEN CI
+- **gauntlet:** Check off clean/near-miss scoring and isolated mode records after GREEN CI
+- **gauntlet:** Verify seeded passable paths and collision acceptance after GREEN CI
+- **history:** Validate safe migrated mode records and check off 10C persistence
+- **history:** Describe filtered challenge PBs and Ghosts in EN/zh-TW
+- **todo:** Record merged main and cloud TDD progress pending full verification
+- **todo:** Mark verified 10C mode History and PB/Ghost acceptance
+- Require real clickability regression checks after collisions and race finish
+- Make post-finish UI clickability an explicit project invariant
+- Record Tokyo post-finish fix, merged main and verified unit CI status
+- Define regression-first TDD, all-track validation and merge readiness gates
+- Require six-step regression-first workflow and exact-commit merge gate
+- Apply regression-first verification gates to Codex and other agents
+- Track enforceable regression-first workflow and outstanding acceptance gates
+- **readme:** Describe shared AI collision rules
+- Track trackpad-wheel RED evidence, fix and exact-commit CI acceptance
+- **todo:** Record trackpad root cause, regression gates and main ruleset
+- **todo:** Record the CI wheel-delta scaling failure
+- **todo:** Mark the final-head quality gate green
+- **todo:** Defer daily rewards and note flight UX verification
+- **todo:** Outline TDD release announcement checklist
+- Require player-friendly bilingual release announcements
+- Bring announcement UI specification to implementation branch
+- **release:** Require plain player-first copy and explain safe rollout
+- **todo:** Check verified release content and player-friendly writing rule
+- **todo:** Split verification items and tick verified TDD, screenshot and automated-test checks
+- **todo:** Tick bilingual and maintainability check
+- **todo:** Note notes follow the site language
+- **release:** Document what's new workflow
+- **release:** Document unread release marks
+- **input:** Describe sliding an arrow into brake to drift
+- **claude:** Add ui architecture conventions
+- **release:** Add what's new notes for 0.22.0
+- Enforce player-controlled steering throughout tutorial
+
+### 🎨 Styling
+
+- **home:** Render adjacent swipe pages at full viewport width
+- **release:** Fit player announcement on desktop and touch viewports
+
+### 🧪 Testing
+
+- Cover continuous road-aligned vehicle pose on curved tracks (RED)
+- Reproduce repeated rail collisions on every track (RED)
+- **mode00:** RED — require independent subsystem seeds and bounded layouts
+- **stunt:** RED — rule-scoped peak score, combo, air time survive history trimming
+- **checkpoint:** RED — require route-safe gates avoiding real obstacle footprints
+- **checkpoint:** Regress real-world scenery clearance on all ten routes
+- **elimination:** RED — rank eliminated player by active contenders, not fixed fourth
+- **modes:** Verify live checkpoint HUD metrics and Elimination WebGL in CI
+- **elimination:** Verify early knockout and challenge wins never mutate Career
+- **history:** RED — require versioned mode identity and bounded mode result metrics
+- **gauntlet:** RED — distinct near-miss reward and challenge-only hazard records
+- **gauntlet:** RED — keep all ten routes passable and reject nonfinite hazard positions
+- **history:** RED — reject malformed mode history and invalid new-mode records
+- **history:** RED — require durable rule-scoped personal bests for every challenge mode
+- **history-ui:** RED — mode filter, persistent PB, Ghost and personal-only History
+- **history-ui:** Verify mobile-portrait History filter layout and capture real screenshot
+- **i18n:** Ensure Ghost uses a real regex word boundary
+- **browser:** Make 5km sprint near-miss end-to-end deterministic via dev-only gameplay fixture
+- **cloud:** RED verify account-specific local progress isolation
+- **cloud:** RED pending and last successful sync remain account-scoped
+- **cloud:** RED stable race and challenge IDs prevent duplicate career totals
+- **cloud:** Use authoritative Daily Challenge modifier catalog
+- **i18n:** RED require App.vue and mode History translations in both locales
+- **cup:** RED reject malformed tracks and duplicated or nonfinite Cup standings
+- Reproduce Tokyo finish click interception after repeated collisions (RED)
+- Reproduce drift restarting against the same rail (RED)
+- Reproduce trackpad momentum double-switch on slow CI event cadence (RED)
+- **swipe:** Drive trackpad tests with CDP wheel events on a fixed clock
+- **tutorial:** Reproduce sideways teleport on lesson transition
+- **tutorial:** Require neutral steering and unrestricted practice input
+- **tutorial:** Account for natural steering ramp on release
+- **swipe:** Pin trackpad wheel deltas and stamps in-page
+- **home:** Specify edge-to-edge 3D preview carousel without dark gaps
+- **home:** Make full-page drag assertion deterministic and check opaque adjacent views
+- **home:** Assert snapshots cover transparent live canvas and restore opacity after swipe
+- **home:** Distinguish held short drag from intentional quick flick
+- **home:** Observe transient swipe chip without CPU-runner timing flake
+- **daily:** Specify no-flight input disabling and restoration
+- **browser:** Cover daily modifier FLY HUD touch and locale states
+- **release:** Define announcement state and bilingual browser expectations (RED)
+- **release:** Switch language within modal and verify ready state
+- **release:** Capture real desktop and mobile release dialog screenshots
+- **browser:** Cover one-thumb drift into brake on touch
+
+### ⚙️ Miscellaneous Tasks
+
+- **mode00:** Run focused TDD, unit and build on feature pushes
+- **mode00:** Verify Checkpoint Rush WebGL flow and capture real gameplay
+- **mode00:** Include Gauntlet browser smoke and save real mode screenshots
+- Run full test matrix on the road-stability feature branch
+- Enforce one quality-gate across suites and protect feature-branch deployments
+- **make:** Stop an earlier dev run before starting
+- **test:** Temporarily run full GitHub checks on carousel feature branch
+- **release:** Run unit/build/layout and bilingual browser checks on feature branch
+- **release:** Upload actual bilingual announcement UI screenshots
+- **release:** Cancel outdated runs on feature branch pushes
+- **release:** Verify new announcement browser tests before longer layout suite
 ## [0.21.0] - 2026-10-24
 
 ### 🚀 Features

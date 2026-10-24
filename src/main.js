@@ -14,11 +14,11 @@ import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.js';
 import { createSound } from './audio.js';
-import { AUDIO_COOKIES, AUDIO_VERSION, readAudio, setVolume } from './audio-settings.js';
+import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
-import { createInteractiveTutorial, TUTORIAL_STEPS } from './interactive-tutorial.js';
+import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY, HISTORY_KEY } from './history.js';
@@ -32,6 +32,7 @@ import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLo
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
+import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.js';
 import { refreshIfStale } from './update-check.js';
 import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress } from './cloud-save.js';
@@ -143,7 +144,7 @@ const presentation = createPresentation();
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
 let nitroRefillUntil = 0;
-try { ({ audio, volume } = readAudio(document.cookie)); } catch { /* Audio defaults to on when cookies are unavailable. */ }
+try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults to on when storage is blocked. */ }
 const sound = createSound();
 // Initial quality selection is performed once; manual/previous settings win.
 let storedVisuals=null;
@@ -223,6 +224,7 @@ function toggleAirflow() {
   if (!visual.enabled) return;
   visual.airflow = !visual.airflow;
   showVFX();
+  if (visual.airflow) showSwipeHint(); // the showcase hides the track picker, so swiping is how to change track
 }
 for (const control of vfxControls) control.addEventListener('input', () => {
   const key = control.dataset.vfx;
@@ -448,6 +450,7 @@ function applyLocale() {
   if ($('#history-screen').open) showHistory();
   for (const [element, text] of said) element.textContent = text();
   showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
+  syncDailyFlightControl();
   refreshPerformanceNotice();
   renderReleaseNotes();
   if (tutorial) renderTutorial(true);
@@ -886,6 +889,166 @@ function chooseTrack() {
 }
 $('#choose-track').addEventListener('click', chooseTrack);
 
+// Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
+const worldCanvas = $('#world');
+const swipeChip = $('#track-swipe');
+const SWIPE_HINT_KEY = 'skyline-rush-swipe-hint';
+let swipe = null, wheelSwipe = null, swipeTarget = null, swipeBusy = false, swipeChipTimer = 0, swipeHintSeen = false;
+const swipeTracks = () => [...document.querySelectorAll('[data-track]:not(:disabled)')];
+const swipeNeighbour = step => { const tracks = swipeTracks(); return tracks[tracks.findIndex(button => button.dataset.track === race.trackId) + step]; };
+function showSwipeChip(state, id, note = '') {
+  clearTimeout(swipeChipTimer);
+  swipeChip.dataset.state = state;
+  $('#track-swipe-name').textContent = trackName(id, getLocale()).toUpperCase();
+  $('#track-swipe-note').textContent = note;
+  swipeChip.querySelector('.swipe-dots').replaceChildren(...swipeTracks().map(button => {
+    const dot = document.createElement('i');
+    dot.classList.toggle('is-current', button.dataset.track === id);
+    return dot;
+  }));
+  if (state !== 'drag') swipeChipTimer = setTimeout(() => { swipeChip.dataset.state = ''; }, state === 'hint' ? 6000 : 1400);
+}
+function showSwipeHint() {
+  if (swipeHintSeen || race.phase !== 'ready' || tutorial) return;
+  swipeHintSeen = true;
+  try {
+    if (localStorage.getItem(SWIPE_HINT_KEY) === 'shown') return;
+    localStorage.setItem(SWIPE_HINT_KEY, 'shown');
+  } catch { /* Still shown once for this page when persistent storage is disabled. */ }
+  showSwipeChip('hint', race.trackId, t(touchPreference.matches ? 'swipe.hintTouch' : 'swipe.hintMouse'));
+}
+// Keep both 3D scenes edge-to-edge while swiping. Only the active scene renders each frame;
+// the neighbor is drawn once into a temporary 2D snapshot (no second WebGL context).
+const swipeScenes = document.createElement('div');
+swipeScenes.id = 'track-swipe-scenes';
+swipeScenes.setAttribute('aria-hidden', 'true');
+worldCanvas.after(swipeScenes);
+let swipeSceneStep = 0;
+function captureSwipeFrame() {
+  const canvas = document.createElement('canvas');
+  canvas.width = worldCanvas.width;
+  canvas.height = worldCanvas.height;
+  canvas.getContext('2d').drawImage(worldCanvas, 0, 0);
+  return canvas;
+}
+function clearSwipeScenes() {
+  swipeScenes.getAnimations().forEach(animation => animation.cancel());
+  swipeScenes.replaceChildren();
+  swipeScenes.style.transform = '';
+  swipeSceneStep = 0;
+  worldCanvas.style.opacity = '';
+}
+function prepareSwipeScenes(step) {
+  const button = swipeNeighbour(step);
+  if (!button || !world || calmMotion()) return false;
+  if (step === swipeSceneStep && swipeScenes.childElementCount === 2) return true;
+  try {
+    const time = performance.now() / 1000;
+    // A non-preserved WebGL drawing buffer may be empty after compositing;
+    // explicitly render both frames immediately before copying their pixels.
+    world.render(race, 0, time);
+    const current = captureSwipeFrame();
+    world.render(selectedRace(button.dataset.track), 0, time);
+    const neighbor = captureSwipeFrame();
+    swipeScenes.replaceChildren(...(step > 0 ? [current, neighbor] : [neighbor, current]));
+    swipeSceneStep = step;
+    // Opacity preserves pointer capture; visibility:hidden would lose hit-testing.
+    worldCanvas.style.opacity = '0';
+    return true;
+  } catch (error) {
+    clearSwipeScenes();
+    console.warn('Preview snapshot unavailable:', error);
+    return false;
+  } finally {
+    world.render(race, 0, performance.now() / 1000);
+  }
+}
+function positionSwipeScenes(offset) {
+  swipeScenes.style.transform = `translateX(calc(${swipeSceneStep > 0 ? 0 : -100}vw + ${offset.toFixed(1)}px))`;
+}
+// On cancellation, the joined pages snap back without showing any underlying background.
+function cancelSwipe() {
+  swipe = null; swipeTarget = null;
+  if (swipeChip.dataset.state === 'drag') swipeChip.dataset.state = '';
+  if (!swipeScenes.childElementCount) return;
+  const from = swipeScenes.style.transform;
+  const to = swipeSceneStep > 0 ? 'translateX(0px)' : 'translateX(-100vw)';
+  if (calmMotion()) { clearSwipeScenes(); return; }
+  swipeBusy = true;
+  swipeScenes.animate([{ transform: from }, { transform: to }], motionOptions('fast')).finished
+    .catch(() => {}).then(() => { clearSwipeScenes(); swipeBusy = false; });
+}
+// Slide the outgoing and incoming track as adjacent full-screen pages, never as faded empty canvas.
+async function commitSwipe(button, step) {
+  swipe = null; swipeTarget = null; swipeBusy = true;
+  const prepared = swipeSceneStep === step && swipeScenes.childElementCount === 2 || prepareSwipeScenes(step);
+  if (prepared && !calmMotion()) {
+    const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
+    const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';
+    await swipeScenes.animate([{ transform: from }, { transform: to }], motionOptions('base')).finished.catch(() => {});
+  }
+  button.click();
+  showSwipeChip('done', race.trackId);
+  // Wait for the live WebGL scene to reflect the new track before uncovering it.
+  if (prepared) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  clearSwipeScenes();
+  swipeBusy = false;
+}
+// The two complete scenes stay touching at the center seam throughout the drag.
+function dragSwipe(dx) {
+  const step = dx < 0 ? 1 : -1;
+  const neighbour = swipeNeighbour(step);
+  if (!calmMotion() && neighbour && prepareSwipeScenes(step)) {
+    positionSwipeScenes(swipeOffset(dx, innerWidth, true));
+  } else if (swipeScenes.childElementCount) clearSwipeScenes();
+  const target = neighbour?.dataset.track ?? race.trackId;
+  if (target !== swipeTarget) { swipeTarget = target; showSwipeChip('drag', target, neighbour?.classList.contains('is-locked') ? t('track.locked') : ''); }
+  swipeChip.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / swipeDistance(innerWidth)).toFixed(3));
+}
+// The newest finger takes the swipe over, so a touch whose release WebKit withholds cannot hold the preview.
+worldCanvas.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || race.phase !== 'ready' || tutorial || editingLayout || swipeBusy || document.querySelector('dialog[open]')) return;
+  if (event.pointerType !== 'mouse' && (event.clientX < SWIPE_EDGE_PX || event.clientX > innerWidth - SWIPE_EDGE_PX)) return;
+  swipe = { id: event.pointerId, x: event.clientX, y: event.clientY, axis: null, samples: [[event.timeStamp, event.clientX]] };
+  worldCanvas.setPointerCapture(event.pointerId);
+});
+worldCanvas.addEventListener('pointermove', event => {
+  if (event.pointerId !== swipe?.id) return;
+  const dx = event.clientX - swipe.x;
+  swipe.axis ??= swipeAxis(dx, event.clientY - swipe.y);
+  if (swipe.axis !== 'x') return;
+  addSwipeSample(swipe.samples, event.timeStamp, event.clientX);
+  dragSwipe(dx);
+});
+// Trackpad two-finger swipe (horizontal wheel): the preview follows the scroll and changes track once it travels the swipe
+// distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it,
+// timed on the events' own timeStamp: a stalled frame or late delivery must not turn the momentum tail into a second swipe.
+const WHEEL_END_MS = 160;
+worldCanvas.addEventListener('wheel', event => {
+  if (wheelSwipe && event.timeStamp - wheelSwipe.stamp >= WHEEL_END_MS) { clearTimeout(wheelSwipe.timer); wheelSwipe = null; }
+  if (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+  if (swipe || race.phase !== 'ready' || tutorial || editingLayout || document.querySelector('dialog[open]')) return;
+  event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
+  clearTimeout(wheelSwipe?.timer);
+  wheelSwipe ??= { dx: 0, spent: swipeBusy };
+  wheelSwipe.stamp = event.timeStamp;
+  // No input for a while: spring an unfinished drag back. Only the timeStamp gap above ends the gesture itself.
+  wheelSwipe.timer = setTimeout(() => { if (!wheelSwipe.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
+  if (wheelSwipe.spent) return;
+  wheelSwipe.dx -= event.deltaX * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerWidth : 1); // lines / pages to px
+  const step = swipeStep(wheelSwipe.dx, 0, innerWidth);
+  const button = step && swipeNeighbour(step);
+  if (button) { wheelSwipe.spent = true; commitSwipe(button, step); } else dragSwipe(wheelSwipe.dx);
+}, { passive: false });
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) worldCanvas.addEventListener(type, event => {
+  if (event.pointerId !== swipe?.id) return;
+  const { axis, x, samples } = swipe;
+  const dx = samples.at(-1)[1] - x; // pointercancel carries no position
+  const step = type === 'pointerup' && axis === 'x' ? swipeStep(dx, releaseVelocity(samples, event.timeStamp), innerWidth) : 0;
+  const button = step && swipeNeighbour(step);
+  if (button) commitSwipe(button, step); else cancelSwipe();
+});
+
 // Brand click mid-race pauses and asks first; on the intro/results screens the link just goes home.
 const leaveScreen = $('#leave-screen');
 leaveScreen.addEventListener('keydown', event => event.stopPropagation());
@@ -999,10 +1162,11 @@ function toggleAssist() {
 function setAudio(kind, on, level = volume[kind]) {
   volume[kind] = level;
   audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
-  const name = AUDIO_COOKIES[kind];
+  const key = AUDIO_KEYS[kind];
   try {
-    for (const pair of [`${name}=${audio[kind] ? 'on' : 'off'}`, `${name}-volume=${Math.round(level * 100)}`, AUDIO_VERSION]) document.cookie = `${pair}; Max-Age=31536000; Path=/; SameSite=Lax`;
-  } catch { /* Audio still works when cookies are unavailable. */ }
+    localStorage.setItem(key, audio[kind] ? 'on' : 'off');
+    localStorage.setItem(`${key}-volume`, String(Math.round(level * 100)));
+  } catch { /* Audio still works when storage is blocked. */ }
   showAudio();
 }
 
@@ -1359,13 +1523,25 @@ const pickUpNewBuild = () => refreshIfStale(() => race.phase === 'ready');
 window.addEventListener('pageshow', event => { if (event.persisted) pickUpNewBuild(); });
 pickUpNewBuild();
 
+function syncDailyFlightControl() {
+  const blocked = race.modifier === 'no-flight';
+  controls.setFlyEnabled(!blocked);
+  const button = document.querySelector('#touch-controls [data-control="fly"]');
+  button.disabled = blocked;
+  button.setAttribute('aria-label', t(blocked ? 'daily.flightDisabled.aria' : 'hint.fly'));
+  button.title = blocked ? t('daily.flightDisabled.reason') : '';
+  if (blocked) button.setAttribute('aria-pressed', 'false');
+}
+
 function phaseUI() {
+  syncDailyFlightControl();
   const phase = race.phase;
   const ready = phase === 'ready';
   const overlay = phase === 'paused' || phase === 'finished';
   if (ready || overlay) clearButtonPresses();
   document.body.dataset.phase = phase;
   if (!['racing', 'countdown'].includes(phase)) { padTouch = null; drawPad(); } // controls.clear() reset the real pad; drop the mirror with it
+  if (!ready) cancelSwipe();
   ui.intro.hidden = !ready && !ui.intro.getAnimations().length;
   if (ready) { ui.intro.inert = false; ui.intro.getAnimations().forEach(animation => animation.cancel()); }
   ui['race-info'].hidden = ready;
@@ -1705,7 +1881,7 @@ function updateUI(now, input) {
   const state = L[car.thrusting ? car.verticalSpeed > 0.2 ? 'hud.ascending' : 'hud.cruise' : car.altitude > 0.25 ? 'hud.descending' : touchdown ? 'hud.touchdown' : depleted ? 'hud.recharging' : car.speed >= 18 ? 'hud.readyToFly' : 'hud.buildSpeed'];
   const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
   const airDash = car.thrusting && car.boosting;
-  ui['flight-state'].textContent = car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro'] : airDash ? L['hud.airDash'] : nitroActive ? L['hud.nitroActive'] : car.trick && !car.trick.done ? L['hud.trick'] : car.inShortcut ? L['callout.shortcut']
+  ui['flight-state'].textContent = race.modifier === 'no-flight' ? L['daily.flightDisabled.state'] : car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro'] : airDash ? L['hud.airDash'] : nitroActive ? L['hud.nitroActive'] : car.trick && !car.trick.done ? L['hud.trick'] : car.inShortcut ? L['callout.shortcut']
     : car.drift ? interpolate(L['callout.drift'], { tier: L[car.drift.time >= 3 ? 'callout.drift.tier.3' : car.drift.time >= 2 ? 'callout.drift.tier.2' : car.drift.time >= 1 ? 'callout.drift.tier.1' : 'hud.driftBuilding'] }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost'] : state;
   nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
   nitroMeter.classList.toggle('is-max', car.nitro >= 3);
@@ -1746,10 +1922,10 @@ function updateUI(now, input) {
   }
   document.body.classList.toggle('nitro-active', nitroActive);
   // Inside a shortcut only BOOST drains (3/s); plain flight there is free.
-  ui['flight-budget'].textContent = car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`;
-  ui['flight-instruction'].textContent = car.thrusting ? interpolate(L['hud.steerAir'], { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend'] }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand'] : interpolate(L['hud.climbAgain'], { hold })
+  ui['flight-budget'].textContent = race.modifier === 'no-flight' ? '—' : car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`;
+  ui['flight-instruction'].textContent = race.modifier === 'no-flight' ? L['daily.flightDisabled.reason'] : car.thrusting ? interpolate(L['hud.steerAir'], { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend'] }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand'] : interpolate(L['hud.climbAgain'], { hold })
     : car.exhausted ? interpolate(L['hud.rechargeRoad'], { action: tap ? L['hud.tapLand'] : release }) : car.speed < 18 ? interpolate(L['hud.reachLift'], { hold }) : depleted ? L['hud.charging'] : interpolate(L[tap ? 'hud.lift' : 'hud.liftLand'], { hold });
-  ui['fuel-caption'].textContent = car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge'];
+  ui['fuel-caption'].textContent = race.modifier === 'no-flight' ? L['daily.flightDisabled.fuel'] : car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge'];
   ui['climb-rate'].textContent = `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`;
   ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
   document.body.classList.toggle('low-charge', car.fuel < 20);
@@ -1790,9 +1966,9 @@ function updateUI(now, input) {
     const active = control === 'left' ? input.steer < 0 : control === 'right' ? input.steer > 0 : !!input[control];
     button.classList.toggle('is-held', active);
     button.setAttribute('aria-pressed', String(active));
-    // Only toggle mode varies the label; written only when it changes (applyI18n resets it to 'hint.fly').
+    // Daily no-flight and toggle mode vary the label; written only when it changes (applyI18n resets it to 'hint.fly').
     if (control === 'fly') {
-      const label = L[tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
+      const label = L[race.modifier === 'no-flight' ? 'daily.flightDisabled.aria' : tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
       if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
     }
   });
@@ -1871,10 +2047,11 @@ try {
     // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
     accumulator += dt;
     const input = controls.read();
-    if (tutorial) {
-      if (!['throttle', 'brake'].includes(tutorial.step) && !input.brake) input.throttle = true;
-    } else if (autoThrottle && !input.brake) input.throttle = true;
-    input.laneAssist = tutorial ? true : autoThrottle;
+    if (tutorial) prepareTutorialInput(input, tutorial.step);
+    else {
+      if (autoThrottle && !input.brake) input.throttle = true;
+      input.laneAssist = autoThrottle;
+    }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     while (accumulator >= 1 / 60) {
       stepRace(race, input, 1 / 60);

@@ -4,6 +4,15 @@ Read applicable `CLAUDE.md`, `.claude/CLAUDE.md`, and `.claude/rules/*.md` instr
 At conversation startup, also read `$HOME/.claude/CLAUDE.md` and applicable rules under
 `$HOME/.claude/rules/`. Treat these as supplementary guidance, subject to instruction priority.
 
+## Required quality workflow
+
+For any implementation, follow `docs/regression-first-workflow.md` and its
+six gates: source/rules review → test-first RED → shared root-cause GREEN →
+cross-track/input regression → `make verify` + real-game visual evidence →
+exact-commit GitHub CI `quality-gate`. Record results in `TODO.md`.
+Never equate a successful unit test with a complete browser/manual acceptance,
+and do not merge, create a PR, tag or deploy without user authorization.
+
 ## Codex Fast mode troubleshooting
 
 Verified 2026-10-23 against official OpenAI documentation and installed Codex CLI 0.163.0.

@@ -1,5 +1,114 @@
 # TODO — Gameplay depth design
 
+## Remaining phone browser regressions (2026-10-25)
+
+- [x] RED: the unchanged implementation reproduced all three original failures. The new fixed-date title regressions also failed at 320px and 390px on 2026-10-25's `Aurora Pass · Double traffic` title; full text overflowed its box.
+- [x] Fixed-date title regressions pass at 320px and 390px in en/zh-TW after removing single-line clipping. The original two phone i18n flows pass too. Typography stays 14px and the Daily button remains at least 44px tall.
+- [x] Pointer-event traces confirm that the next gesture starts during the previous snap-back: snapshot canvases still exist and `swipeBusy` rejects the new pointerdown. Wait for `#track-swipe-scenes.childElementCount === 0` after cancel/commit, rather than checking the unanimated `#world`. All 7 swipe tests pass; temporary event tracing was removed. Short-drag, next/previous-track, edge-swipe and hint-persistence checks remain intact.
+- [x] Inspect real WebGL phone screenshots (320/390px, both locales) and desktop screenshots (1280/1440/1804px wide, 900px tall, both locales). All six desktop checks retain the 740px intro height without scrolling; typography wrapping needs no new audio. Evidence is in `playwright-report/phone-regressions/`.
+- Local gate receipt: unit tests passed 547 with 1 skipped and production build passed. The first full browser run was interrupted at the user's explicit request to commit and safe-push first; its partial results are preserved in `playwright-report/phone-regressions/make-verify-interrupted.log`. After pushing, run the complete `make verify` again; its final output is recorded in `playwright-report/phone-regressions/make-verify.log`.
+- Push/CI receipts: the mandatory home layout hook output is preserved in `playwright-report/phone-regressions/safe-push.log`; the exact pushed commit, workflow URL and final required-job conclusions are written after the run to `playwright-report/phone-regressions/ci-status.json`. These receipts distinguish observed results from pending checks without requiring a second documentation-only CI run.
+- [ ] Physical device: Android has no attached device; paired iPhone is unavailable in CoreDevice. Ask for a connected/unlocked phone; do not equate emulation with hardware acceptance.
+
+## CI regression: optional release hero images (2026-10-25)
+
+- [x] Trace the shard 5 failure: v0.22.0 intentionally has `image: null`; the browser test still assumes the latest release has v0.21.0's localized OG image. The renderer correctly hides absent images, as required by `docs/release-announcements.md`.
+- [x] RED: `PLAYWRIGHT_PORT=5193 npm run test:browser -- tests/release-announcements-browser.spec.js -g 'release hero image'` failed at the original visibility assertion (`Expected: visible`, `Received: hidden`) in real Chrome. No production change was needed: repair the test's version-dependent assumption.
+- [x] GREEN: the complete release-announcements browser file passed 11/11, including a final rerun after screenshot stabilization. The repaired test checks all five displayed releases in en/zh-TW: image visibility/path/decoding when supplied, readable text and no stale `src` when absent, plus Enter never starting a race.
+- Historical full run before the phone follow-up: unit tests passed 547 with 1 skipped; production build passed; browser suite finished 397 passed / 3 failed. All three failures reproduced: `tests/i18n-browser.spec.js:173` en/zh-TW phone flows reported `daily-card-route` clipping (`Aurora Pass · Double traffic`, 183px > 160px), and `tests/track-swipe-browser.spec.js:42` phone swipe stayed on `coast` instead of `neon`. Their repair and current verification receipts are recorded above.
+- [x] Independently run the World Tour gate skipped after the browser failure: `npx playwright test --config=playwright.world-tour.config.js --output=playwright-report/ci-release-hero/world-tour` passed 27/27.
+- [x] Inspect settled real-WebGL release-dialog screenshots using the requested premium-ui-design Web/adaptive playbooks: desktop en/zh-TW, 390x844, 320x740 and 844x390. Text hierarchy, scrolling content and Continue remain readable/reachable without requiring a hero. Capture animations at their finished state; evidence and full gate log are in `playwright-report/ci-release-hero/`. Physical-device/Safari checks remain unperformed.
+- At the announcement-only handoff, exact-commit remote CI was unverified. The follow-up repair's push and CI evidence are recorded above.
+
+## Codebase structure: incremental Vue / type-checking adoption (2026-10-25)
+
+Context: `src/` is 64 `.js` files (~10.5k lines), 3 `.vue` files (460 lines), 0 `.ts`. `src/main.js` (2,244 lines) mounts `App.vue` and then drives the UI imperatively (164 `querySelector`/`getElementById`/`innerHTML`/`addEventListener` sites). Simulation and Three.js rendering stay plain JS. Each step ships on its own commit with `make verify` (plus `npm run test:layout` for home-screen changes).
+
+- [x] Step 0, conventions first: `CLAUDE.md` section "UI architecture: Vue panels, plain-JS game core" and `.claude/rules/ui-architecture.md` (scoped to `src/**/*.js`, `src/**/*.vue`).
+- [ ] Step 1, HUD per-frame DOM cost: `updateUI` (`src/main.js`) re-runs `$('#clean-trial-hud')`, `$('#hazard-warning')`, etc. and rewrites `textContent` every frame. Measure frame cost first; then cache the elements once and skip writes when the value is unchanged. Report the before/after numbers; run `npm run test:browser` desktop and mobile.
+- [ ] Step 2, type checking without renaming files: add `jsconfig.json` with `checkJs`, add `tsc --noEmit` to `make verify`, and JSDoc the shared shapes first (`race`, `player`, `rival`, track config) used across `game.js`, `world.js` and `main.js`.
+- [ ] Step 2b (optional, decide separately): add ESLint; the repo has no lint config today.
+- [ ] Step 3, split `src/main.js` by feature, move-only with no behavior change: release notes (~L280–391), track swipe (~L897–1060), history/daily (~L736–850), garage (~L852–895), settings/audio/controls (~L1065–1460), tutorial/guide (~L2115–2244). `main.js` keeps bootstrap and the frame loop.
+- [ ] Step 4, convert event-driven panels to Vue components one at a time: release notes dialog, history, garage, settings, tutorial (replaces the 13 `innerHTML` sites and manual show/hide). Keep the in-race HUD/speedometer out of Vue reactivity; it stays direct DOM writes from step 1. Re-check finish/pause overlay clickability per `.claude/rules/ui-phase-interactions.md`.
+- [ ] Not planned: rewriting `game.js`/`world.js` to `.ts`, or a one-shot UI rewrite — step 2 delivers most of the type-safety benefit, and the regression matrix cannot verify a big-bang change.
+
+## Audio preference moves from cookies to localStorage; Chrome first-visit autoplay (2026-10-25)
+
+- [x] Repro in real Chrome with its default autoplay policy (Playwright strips `--autoplay-policy=no-user-gesture-required`; scratch script, 4 runs): `AudioContext` stays `suspended` on load as Chrome requires, and the first click or key resumes it (`running`, audible RMS > 0.01). Autoplay without a gesture cannot be fixed client-side; the existing first-gesture unlock (`unlockAudio`, `src/main.js`) is the fix and is kept.
+- [x] Preference storage: `src/audio-settings.js` `readAudio(localStorage)` reads `skyline-rush-music` / `skyline-rush-sound` (`on`/`off`) and `-volume` percent; `setAudio` in `src/main.js` writes them. Nothing stored → on at 100%, stored as `on` on the first `unlockAudio`. Cookie writes and the `skyline-rush-audio-v=2` legacy marker are gone.
+- [x] RED: `tests/audio-settings.test.js` rewritten against a storage object failed on the old module (`AUDIO_KEYS` missing). GREEN: `npm test` 533 pass; `npm run build` ok; `npx playwright test tests/browser.spec.js -g "music|audio|volume|sound"` 13/13 (off choice + volume survive reload from localStorage, saved off stays silent after the gesture, fresh visit stores both channels `on`).
+- [ ] Full `make verify` and CI `quality-gate` on the committing HEAD; a human check in desktop Chrome/Safari/Firefox and on a phone that the first tap starts the intro music.
+- [ ] Known loss: a music/sound-off saved in the old cookie is not migrated; those players hear audio once more and have to mute again.
+
+## CI regression: trackpad momentum must select one course per swipe (2026-10-24)
+
+- [x] Inspect failed CI run 40102405872: only browser-tests shard 6 failed; the existing Playwright RED shows expected `neon` but actual `alpine` during one prolonged wheel gesture. The aggregate quality-gate correctly failed because the browser shard was red.
+- [x] Trace `src/main.js` wheel gesture lifecycle: under CPU-heavy WebGL event gaps can exceed the 160 ms inactivity timer, rearming the same swipe and advancing several tracks.
+- [x] Add a dedicated browser regression simulating momentum event intervals beyond 160 ms in `tests/track-swipe-browser.spec.js`, committed before the fix.
+- [x] ~~Apply the minimal shared fix: increase the wheel gesture idle window to 320 ms~~ — replaced. Any CI delivery hiccup over 320 ms still split a swipe, and users would have to pause 320 ms between swipes.
+- [x] Root cause, measured: wheel events were stamped 16 ms apart (`event.timeStamp`), but Playwright/CDP delivered some 168–203 ms apart while frame times stayed under 50 ms. The 160 ms wall-clock timer read late delivery as a pause, and also reset unfinished drags. Fix in `src/main.js`: the gesture pause is timed on `event.timeStamp` (`WHEEL_END_MS` back to 160 ms), and the timer only springs an unfinished drag back.
+- [x] Deterministic RED/GREEN: both trackpad tests send CDP wheel events stamped 16 ms apart (`trackpadSwipe`): one delivers a single event 300 ms late, the other delivers every event 210 ms apart. On the original timer code: 3/3 RED (expected `neon`, got `canyon`/`aurora`). After the fix: the whole `tests/track-swipe-browser.spec.js` passes 30/30 local runs (6 repeats).
+- [x] CI run 40110604502 on `1fd4178` failed only on "a nudge springs back": the Linux runner scaled native CDP wheel deltas, so a 40 px nudge passed the 96 px swipe distance (macOS does not scale). `trackpadSwipe` now dispatches a `WheelEvent` with a pinned CSS-pixel delta and a pinned `timeStamp`. On the original timer code: 6/6 RED (got `canyon`/`coast`). On the fix: 20/20 GREEN locally.
+- [x] Obtain GREEN evidence on the final commit, including both trackpad tests and all CI shards, then mark the confirmed tests complete. Done: run 40113913209 on `ab150f3` passed all eight browser shards, unit, cloud-save, World Tour and `quality-gate`. The earlier RED was observed on the original test in the cited CI run; the new focused test was committed test-first but its isolated RED has not been separately observed.
+- [ ] Confirm real Mac trackpad gestures, momentum separation and touch/mouse swipes remain natural before calling this a fully device-verified fix.
+
+## Regression-first workflow adoption (2026-10-24)
+
+- [x] Define one reusable six-gate development protocol in `docs/regression-first-workflow.md`: root-cause analysis, observed TDD RED, GREEN, cross-track/input matrix, local and manual WebGL checks, exact-commit CI before user-authorized merge.
+- [x] Reference the protocol from `CLAUDE.md` and `AGENTS.md`, alongside the existing file-scoped physics/UI regression rules.
+- [x] Provide `make verify` to run unit tests, production build via `pretest:browser`, all standard Playwright tests and the separate World Tour fixture suite.
+- [x] Add GitHub CI `quality-gate` that fails unless unit/browser/cloud/World Tour jobs all succeed; block manual feature-branch deployments and make deploy consider World Tour results.
+- [x] Run CI on future `feature/**` pushes while keeping the explicitly disabled `feature/mode00-objective-contract` branch excluded.
+- [x] Confirm the complete `quality-gate` succeeds at the **final** feature HEAD; test infrastructure changes are not accepted based on an older SHA.
+  - Green: run 40113913209 on `ab150f3`, the last code commit. Later commits that only touch `TODO.md` add no code to gate.
+  - `ddbeb3a` (run 40102405872) failed: the trackpad-swipe test above failed in shard 6; `main` `d2b35e5` fails CI on the same test. The fix is in the section above, and the gate is re-checked on the commit that carries it.
+  - `1fd4178` (run 40110604502, main merged in) failed only on the CDP delta scaling recorded above.
+- [ ] Complete real-game visual/interaction evidence for Sky Spiral road clipping and Tokyo finish controls on affected devices (automation alone cannot certify these).
+  - Done at `ddbeb3a` (headless Chromium, real WebGL, 1440×900 and 390×844 touch): Sky Spiral approach, helix entry, both quarter turns, left/right rail, helix exit and first ramp at ~305 km/h show the car seated on the banked road with no clipping, and 0 page errors. Tokyo finish after 2 real collisions: camera, language switch to zh-TW, Next and Race Again all respond to real clicks (`tests/tokyo-finish-controls-browser.spec.js`, 4/4).
+  - Still open: a human playthrough on a physical iPhone/Android (touch hardware, Safari WebGL) and on desktop Safari/Firefox.
+- [ ] Before user-approved merge, integrate latest `main`, resolve any conflicts, repeat exact-commit CI and assess manual evidence; do not claim merge readiness while behind or unchecked.
+  - `main` (`d2b35e5`) is fully merged, with 0 commits behind and no conflicts. Still waiting on a green gate at the final HEAD, the physical-device check above and the user's merge approval.
+- [x] Consider configuring GitHub branch protection/ruleset to require `quality-gate` on `main` if repository administration permissions become available; documentation/CI do not by themselves prevent direct pushes.
+  - Ruleset `main requires quality-gate` (id 25785253, active, 2026-10-24) on the default branch. Repository admins can bypass it so the local-merge and `/release` flow keeps working; every other push or PR to `main` needs a green `quality-gate`.
+
+
+## Sky Spiral & cross-track cornering stability (2026-10-24)
+
+- [x] Identify shared renderer issue: local road orientation was converted back into Euler angles, overwriting road pitch/banking in curved and elevated sections.
+- [x] Compose steering lean, airborne pitch, drift and trick roll as local quaternion offsets, keeping the canonical road frame on Sky Spiral and all five World Tour tracks.
+- [x] Prevent repeated rail crashes while steering continuously into the same road edge; re-arm only after pulling away; preserve first-contact collision and existing scrape behavior.
+- [x] Add pose-continuity, road-alignment and repeated-rail-contact regression test sources covering all routes.
+- [x] Run full `npm test` through GitHub Actions on feature commit `b4134c0` (unit-tests: success). Previous run exposed a braking regression, fixed by preventing drifting while pressed against the contacted rail.
+- [ ] Independently capture the initial RED for each newly introduced focused regression test; the full green unit run alone does not prove TDD test-first execution.
+- [ ] Run `npm run build`, desktop/mobile Playwright, and full GitHub CI on this feature branch.
+- [ ] Manually verify actual driving at Sky Spiral's helix entry, both quarter turns, exit, rails, elevations, ramps, and every other track; capture before/after gameplay screenshots or recordings.
+- [ ] Independently verify vehicle-to-road mesh clearance at high speeds and road edges with real WebGL rendering.
+
+## Tokyo finished-race UI controls (2026-10-24)
+
+- [x] Merge latest `main` into `feature/sky-spiral-cornering-stability` using a true two-parent merge commit (`baa46ec`), retaining upstream game mode fixes and the feature changes.
+- [x] Fix a concrete click-interception risk: `.aero-tools` (language and VFX) was at the same stacking level as the later `.race-overlay`; lift it above the results overlay without removing either control.
+- [x] Add desktop and touch Playwright coverage for Tokyo: multiple actual simulation collisions, finish, camera click, language switch, Next, Race Again and page errors (`tests/tokyo-finish-controls-browser.spec.js`).
+- [x] Document UI layer/input invariants for future changes in `CLAUDE.md` and `.claude/rules/ui-phase-interactions.md`; document car pose and rail rules in `.claude/rules/vehicle-road-stability.md`.
+- [ ] Confirm actual Playwright results and pointer hit targets (desktop and mobile), plus real device/browser reproduction and before/after images. Script committed does not mean browser behavior passed.
+- [ ] Confirm all CI jobs are green at the final tested commit and report exact run URL; separate `playwright.world-tour.config.js` testing must also finish.
+
+## 每日挑戰：禁止飛行 UI / UX 修正（2026-10-25）
+
+- [x] 「禁止飛行」時 FLY 控制停用、清除 Toggle；鍵盤與觸控不得啟動起飛。
+- [x] FLY 顯示降彩度及鎖頭，HUD 改為禁止飛行與能源用途提示；中英文與 ARIA 同步。
+- [ ] 實機 iOS Safari 與 Android Chrome 手動確認禁用控制及輔助工具朗讀。
+
+## 每日挑戰獎勵規劃（未納入本次實作）
+
+保留目前每日獨立排行榜／最快成績及既有獎章規則。本階段僅記錄需求；獎勵數據結構、雲端同步及解鎖規則尚未設計或實作。
+
+- [ ] 首次完成當日挑戰的獎勵：明確界定完賽、首次領取及每日重玩不重複發放，顯示領取狀態。
+- [ ] 三種挑戰（禁止飛行／雙倍車流／僅限金環）的專屬成就：設定條件、進度與中英文敘述。
+- [ ] 連續完成天數與獎勵：以本地日界或伺服器日界制定一致規則，處理跨時區、補登及中斷。
+- [ ] 每日挑戰限定車漆：設計達成門檻、展示／裝備流程；不影響車輛能力及既有星數解鎖。
+- [ ] 獎勵上線前補 TDD：本機防重領、Firestore 免費額度評估、跨裝置合併、離線重試及手機／桌面領獎驗收。
+
 ## UX-Release-01 — 玩家可讀的新版本公告（What's New，2026-10-24）
 
 規格：[docs/release-announcements.md](docs/release-announcements.md)。開發於 `feature/whats-new-release-announcements`，從 `main` 建立。僅對已正式發布的新版本公告已確認的玩家體驗，不展示開發技術詞彙。

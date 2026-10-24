@@ -8,8 +8,47 @@ Preserve: existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
-`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` ·
-`release-notes`.
+`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability` · `ui-phase-interactions` · `ui-architecture` · `release-notes`.
+
+## UI architecture: Vue panels, plain-JS game core
+
+Simulation and rendering (`game.js`, `world.js`, effects, scenes) stay plain JS and never import
+Vue. New event-driven UI — dialogs, panels, menus, settings — is a Vue component, not more
+imperative DOM code in `src/main.js`; existing panels move to Vue one per commit. The in-race HUD
+stays out of Vue reactivity: cache element refs once, write only changed values, no DOM queries
+in the frame loop. `src/main.js` does not grow — a new feature gets its own module. Type safety
+comes from JSDoc on exported functions and shared shapes, not `.ts` rewrites. Migration steps are
+tracked in `TODO.md`; rules in `.claude/rules/ui-architecture.md`.
+
+## Mandatory regression-first workflow (every feature and bug fix)
+
+**Always follow `docs/regression-first-workflow.md`** before calling work complete:
+read the relevant rules and trace the shared root cause; reproduce with a failing
+test and observe RED; implement the minimal fix and observe GREEN; regression-check
+all affected tracks, vehicles, locales and inputs; run `make verify`; inspect
+real-game/WebGL and touch screenshots where behavior or rendering changed; then
+inspect the **full GitHub CI `quality-gate` for the exact HEAD commit**.
+Use `TODO.md` to track evidence. CI, manual visual confirmation and historical
+RED evidence are distinct gates — never claim one proves the others.
+
+Only mark the branch **merge-ready** when the latest `main` has been integrated,
+all required checks are green and the user-visible symptoms have been retested.
+Do not merge into `main`, create a PR or deploy without explicit user approval.
+Direct pushes cannot be prevented by Markdown; branch rulesets are required for
+server-enforced status protection.
+
+## Tutorial driving: player control authority
+
+Tutorial steps must **observe and validate player actions, never take control of the car**.
+The tutorial is a safe practice environment, not an autopilot.
+
+- Never inject steering, lane-centering or lane-assist movement without the player's explicit intent. Neutral steering input must not cause lateral movement on its own.
+- Initialize the car's position and steering only when a practice session begins (or when recovery from the end of the track requires it). Do **not** reset lateral position or steering when advancing to a new lesson.
+- Preserve continuous movement and the normal steering ramp across lesson transitions and after releasing a direction. Do not teleport, snap to center or override opposite-direction input.
+- Players may freely steer left or right, brake, accelerate, fly and use the available controls during any lesson. The current lesson determines **what counts as completion**, not which other controls are allowed.
+- Keep tutorial-specific input overrides separate from normal-race assistance, and do not change ordinary race-control behavior to solve a tutorial-only bug.
+- Follow RED → GREEN → REFACTOR for every tutorial/control change. Include regression tests for neutral input, opposite-direction steering, released steering, step-transition continuity and completing all lessons.
+- Test real keyboard and mobile touch input in the browser, including pause/resume and lesson transitions, before claiming the change verified. Run the project's required unit, build, browser and CI gates; report any test that could not be run.
 
 ## Home-screen landmark showcase
 
@@ -33,6 +72,34 @@ around slower cars and the player before impact; traffic then recovers to cruise
 give one class of car a special-case pass-through. Rules are in `.claude/rules/world-tour.md`
 ("Solid props", "Shared collision physics").
 
+## Vehicle stability and road contact — every track
+
+Always use the same road centreline and tangent/right/up frame for road geometry,
+vehicle placement and orientation. On curved, banked or elevated tracks, compose steering
+lean, drift, flight pitch and stunt rolls **relative to** the road-aligned quaternion
+(`orientCarOnRoad` in `src/vehicle-pose.js`); never overwrite its Euler X/Z angles.
+A vehicle must remain correctly aligned with the visible surface: verify the wheels and
+body, not only the mesh origin, even when turning close to either road edge.
+
+Continuous rail contact must not re-trigger a hard collision when the 1.5 s cooldown
+expires; the next collision is armed only after separation. Do not mask broken geometry
+or physics with arbitrary car-height offsets, smoothing, camera tricks or per-track patches.
+Fix shared root causes, then regression-check **Sky Spiral, all four legacy tracks and all
+five World Tour tracks**, including AI cars, ghost, ramps and airborne maneuvers.
+Full scoped rules and exact TDD / WebGL verification requirements:
+`.claude/rules/vehicle-road-stability.md`.
+
+## Controls stay clickable after every race
+
+Finish/pause/restart overlays must **never intercept** clicks on the global language
+picker, topbar camera/restart or visible Next/Race Again buttons. A later DOM sibling
+at the same z-index can cover earlier controls even when they still look enabled.
+Check stacking contexts, native modal dialogs, stale inert/pointer capture and
+animation state before touching handlers. Regression-test **real pointer clicks**
+after steering and repeated impacts on Tokyo and the other routes, desktop and
+mobile, and verify both Next and Race Again transition correctly. See
+`.claude/rules/ui-phase-interactions.md`; report runtime errors and unrun tests.
+
 ## No shader compiles or NaN pixels mid-race
 
 Every material a race can show is attached to the scene (hidden is fine) before racing starts, and
@@ -55,6 +122,7 @@ compile at first draw", "One NaN pixel is a black frame").
 | `npm run test:browser` | Playwright suite (pretest builds production assets) |
 | `npm run test:layout` | Home-screen layout browser tests (pre-push hook runs it on UI pushes) |
 | `make run` | Unit + browser tests |
+| `make verify` | Full local regression gate: unit, build, browser, World Tour long-run |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
 
 ## UI/UX changes: audio and music assessment
@@ -117,6 +185,9 @@ copy check, was never reviewed or changed after review; never bypass it.
 - Gameplay / progression / build-config change → `npm test` + `npm run build`.
 - Rendering / navigation / controls / unlock visibility change → also `npm run test:browser`,
   desktop and mobile.
+- Road, car pose, collision or steering change → follow `vehicle-road-stability.md`: TDD
+  RED→GREEN, all-track coverage, frame-rate and road-clearance checks, plus real WebGL
+  capture where clipping or jitter was reported. Record unrun checks as pending.
 - Home-screen change (`src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`, `index.html`)
   → `npm run test:layout` before pushing; the `.githooks/pre-push` hook runs it on such pushes and
   blocks a red result (never bypass it with `SKIP_LAYOUT_GATE=1` to get a fix out — CI on `main`
@@ -127,6 +198,12 @@ copy check, was never reviewed or changed after review; never bypass it.
 - Never delete or weaken tests to pass CI. Report any test you could not run.
 - `README.md` changed → sync `README.zh-TW.md` via `scripts/readme-zh.mjs` (hooks enforce it).
 - A commit on `main` is not a deploy; publication rules are in `.github/workflows/ci.yml`.
+
+- All feature branches (except the explicitly disabled MODE-00 branch) run the same remote CI;
+  the `quality-gate` job requires unit, browser, cloud-save and World Tour checks to
+  succeed. A successful run on a previous commit does **not** validate the new HEAD.
+- CI runs and optional screenshot artifacts are evidence for review, not substitutes
+  for real vehicle/road contact or manual interaction testing on devices.
 
 ## Release
 

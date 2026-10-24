@@ -144,6 +144,8 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       </div>
     </details>
   </aside>
+  <!-- Home preview swipe (main.js): the track being swiped to, the track just chosen, or the one-time gesture hint. -->
+  <div class="track-swipe" id="track-swipe" role="status" data-state=""><span class="swipe-gesture" aria-hidden="true"><i></i></span><strong id="track-swipe-name"></strong><span id="track-swipe-note"></span><span class="swipe-dots" aria-hidden="true"></span></div>
   <section class="airflow-hud" id="airflow-hud" aria-label="Airflow status" data-i18n-aria-label="aero.status" aria-hidden="true">
     <span class="aero-eyebrow" data-i18n="aero.telemetry">AERODYNAMIC TELEMETRY</span><strong data-i18n="aero.active">AIRFLOW ACTIVE</strong>
     <span id="aero-mode">LOW DRAG</span>
@@ -382,7 +384,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
      style --touch-opacity            0.4–1; control opacity
      children, in order (all siblings):
        .touch-pad[aria-hidden]        slide surface (pointer events, touch-action:none) > .pad-ring + .pad-knob (positioned later by main.js)
-       .touch-steer                   button[data-control=left|right] + button[data-control=brake] (brake sits under them, same thumb: brake + steer = drift)
+       .touch-steer                   button[data-control=left|right] + button[data-control=brake] (brake sits above them, off the thumb's rest row; an arrow touch slid up into it holds brake + steer = drift)
        .touch-actions                 button.touch-fly[data-control=fly], button.touch-boost[data-control=boost]
        .touch-pedals                  button.touch-gas[data-control=throttle] (gas always visible, both modes)
      button.is-held / [aria-pressed=true] while active (existing).
@@ -393,7 +395,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
   <div class="touch-controls" id="touch-controls" aria-label="Touch driving controls" data-i18n-aria-label="touch.controls" hidden>
     <div class="touch-pad" aria-hidden="true"><i class="pad-ring"></i><i class="pad-knob"></i></div>
     <div class="touch-steer"><button data-control="left" aria-label="Steer left" data-i18n-aria-label="touch.left"><svg v-bind="ICON_ATTRS" v-html="icons.left"></svg></button><button data-control="right" aria-label="Steer right" data-i18n-aria-label="touch.right"><svg v-bind="ICON_ATTRS" v-html="icons.right"></svg></button><button data-control="brake" aria-label="Brake" data-i18n-aria-label="touch.brake"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></button></div>
-    <div class="touch-actions"><button class="touch-nitro" data-control="nitro" aria-label="Activate nitro" data-i18n-aria-label="touch.nitro"><svg v-bind="ICON_ATTRS" v-html="icons.nitro"></svg><span lang="en">NITRO</span></button><button class="touch-fly" data-control="fly" aria-label="Hold to fly" data-i18n-aria-label="hint.fly"><svg v-bind="ICON_ATTRS" v-html="icons.fly"></svg><span lang="en">FLY</span></button><button class="touch-boost" data-control="boost" aria-label="Hold to boost" data-i18n-aria-label="touch.boost"><svg v-bind="ICON_ATTRS" v-html="icons.boost"></svg><span lang="en">BOOST</span></button></div>
+    <div class="touch-actions"><button class="touch-nitro" data-control="nitro" aria-label="Activate nitro" data-i18n-aria-label="touch.nitro"><svg v-bind="ICON_ATTRS" v-html="icons.nitro"></svg><span lang="en">NITRO</span></button><button class="touch-fly" data-control="fly" aria-label="Hold to fly" data-i18n-aria-label="hint.fly"><svg v-bind="ICON_ATTRS" v-html="icons.fly"></svg><svg class="touch-fly-lock" v-bind="ICON_ATTRS" v-html="icons.lock"></svg><span lang="en">FLY</span></button><button class="touch-boost" data-control="boost" aria-label="Hold to boost" data-i18n-aria-label="touch.boost"><svg v-bind="ICON_ATTRS" v-html="icons.boost"></svg><span lang="en">BOOST</span></button></div>
     <div class="touch-pedals"><button class="touch-gas" data-control="throttle" aria-label="Accelerate" data-i18n-aria-label="touch.throttle"><svg v-bind="ICON_ATTRS" v-html="icons.pedal"></svg></button></div>
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span><button id="layout-done" data-i18n="layout.done">Done editing</button></div>

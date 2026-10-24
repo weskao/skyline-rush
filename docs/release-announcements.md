@@ -130,14 +130,15 @@ One frozen entry per **published** version, never generated from commits:
    entry, was never reviewed or changed after review, a highlight lacks either language or fails the
    copy check, or an image is not a file in `public/`.
 4. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
+5. The gate then runs `npm test` with `package.json` set to the new version, as the tag's CI will.
+   `CURRENT_RELEASE` follows that version, so a test about a specific entry's content pins it with
+   `releaseForVersion('<version>')` — v0.22.0's tag run failed on an unpinned `CURRENT_RELEASE.image`.
 
 ## 7. Tests
 
 - Unit (`tests/release-notes.test.js`): seen-version contract, first-time vs returning player,
   blocked storage stays silent, numeric version order, newest-five window with future versions hidden, every
   entry complete with bundled images, release gate refuses a missing version, player copy check
-  (developer terms in both languages, links, emails, secrets, file and code names, length), every
-  stored entry passes it, and the gate refuses unreviewed or edited-after-review notes.
 - Browser (`tests/release-announcements-browser.spec.js`): read/dismiss/reopen, no external link,
   version tabs by click and keyboard (wrap, Home/End, language switch keeps the tab, reopen starts
   newest), localized hero, auto-show once for an older record, silent when up to date, silent first
