@@ -246,6 +246,31 @@ test.describe('device safe areas', () => {
       await cdp.detach();
     }
   });
+
+  // Chromium never matches the iOS-only @supports block, so the test applies its real rules by hand.
+  test('iOS footer and version sit in the home-indicator inset, clear of the bar', async ({ page, context }) => {
+    for (const [name, bottom, width, height] of [['notch iphone', 34, 390, 844], ['dynamic island', 34, 402, 874], ['ipad portrait', 20, 820, 1180]]) {
+      await page.setViewportSize({ width, height });
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 47, bottom, left: 0, right: 0 } });
+      await page.goto('./');
+      await page.evaluate(() => document.fonts.ready);
+      const iosRules = await page.evaluate(() => [...document.styleSheets].flatMap(sheet => [...sheet.cssRules])
+        .filter(rule => rule instanceof CSSSupportsRule && rule.conditionText.includes('-webkit-touch-callout'))
+        .flatMap(rule => [...rule.cssRules].map(inner => inner.cssText)).join('\n'));
+      expect(iosRules, 'iOS @supports block').toContain('.build-version');
+      await page.addStyleTag({ content: iosRules });
+      // iOS draws the home indicator 8-13px above the bottom edge.
+      for (const selector of ['.bottomline', '.build-version']) {
+        if (!await page.locator(selector).isVisible()) continue; // touch tablets hide the footer
+        const box = await page.locator(selector).boundingBox();
+        const gap = height - (box.y + box.height);
+        expect(gap, `${name} ${selector}`).toBeGreaterThanOrEqual(16);
+        if (bottom > 21) expect(gap, `${name} ${selector}`).toBeLessThan(bottom);
+      }
+      await cdp.detach();
+    }
+  });
 });
 
 // iOS keeps the status-bar style an icon was installed with. Icons added under black-translucent

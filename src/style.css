@@ -252,6 +252,12 @@ body[data-phase="ready"] .build-version { display: block; }
   .result-stats strong { font-size: 26px; }
   .error-message { bottom: 220px; left: 20px; right: 20px; font-size: 12px; }
 }
+/* iOS only: its home indicator is a thin bar 8-13px off the bottom, so non-interactive text may sit in the rest of the inset.
+   Android's 48px inset can be a button bar, so other platforms keep clearing the whole inset. */
+@supports (-webkit-touch-callout: none) {
+  .bottomline { bottom: 21px; }
+  .build-version { bottom: clamp(4px, env(safe-area-inset-bottom, 0px), 18px); }
+}
 @media (max-height: 650px) and (max-width: 760px) {
   .intro { top: 95px; }
   h1 { font-size: 48px; }
