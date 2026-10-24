@@ -1,5 +1,17 @@
 # TODO — Gameplay depth design
 
+## Sky Spiral & cross-track cornering stability (2026-10-24)
+
+- [x] Identify shared renderer issue: local road orientation was converted back into Euler angles, overwriting road pitch/banking in curved and elevated sections.
+- [x] Compose steering lean, airborne pitch, drift and trick roll as local quaternion offsets, keeping the canonical road frame on Sky Spiral and all five World Tour tracks.
+- [x] Prevent repeated rail crashes while steering continuously into the same road edge; re-arm only after pulling away; preserve first-contact collision and existing scrape behavior.
+- [x] Add pose-continuity, road-alignment and repeated-rail-contact regression test sources covering all routes.
+- [ ] Run new regression tests RED → GREEN plus the full `npm test` suite (environment currently has no installed Node dependencies or direct GitHub clone connectivity).
+- [ ] Run `npm run build`, desktop/mobile Playwright, and full GitHub CI on this feature branch.
+- [ ] Manually verify actual driving at Sky Spiral's helix entry, both quarter turns, exit, rails, elevations, ramps, and every other track; capture before/after gameplay screenshots or recordings.
+- [ ] Independently verify vehicle-to-road mesh clearance at high speeds and road edges with real WebGL rendering.
+
+
 ## 最高優先：儲存與跨裝置還原（2026-10-23）
 
 原則：需要在清除瀏覽器資料後還原的遊戲成果，以 Google 登入後的 Firestore 帳號資料為主、本機資料為離線副本；裝置操作偏好留在本機。Firestore 單一使用者文件採版本化格式，僅在登入、完成比賽及成果改變時同步，不按影格寫入。勾選只代表該項已實作並完成對應驗證。
