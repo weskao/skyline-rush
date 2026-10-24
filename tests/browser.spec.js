@@ -968,6 +968,26 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       }
     });
 
+    test('one thumb drifts: an arrow slid up into BRAKE holds steer + brake, the gap and the way back only steer', async ({ page, context }) => {
+      const send = await touchDriver(page, context);
+      await useControls(page, { mode: 'buttons' });
+      await startTouchRace(page);
+      const [left, brake] = ['Steer left', 'Brake'].map(name => page.getByRole('button', { name, exact: true }));
+      const [arrow, top] = await Promise.all([centerOf(left), brake.boundingBox()]);
+      const pressed = async () => [await left.getAttribute('aria-pressed'), await brake.getAttribute('aria-pressed')];
+      await send('touchStart', { id: 1, ...arrow });
+      await expect.poll(pressed).toEqual(['true', 'false']);
+      // Halfway up the gap between the arrow and BRAKE: a resting or slipping thumb never brakes.
+      await send('touchMove', { id: 1, x: arrow.x, y: (top.y + top.height + (arrow.y - (await left.boundingBox()).height / 2)) / 2 });
+      await expect.poll(pressed).toEqual(['true', 'false']);
+      await send('touchMove', { id: 1, x: arrow.x, y: top.y + top.height / 2 });
+      await expect.poll(pressed).toEqual(['true', 'true']);
+      await send('touchMove', { id: 1, ...arrow });
+      await expect.poll(pressed).toEqual(['true', 'false']);
+      await send('touchEnd');
+      await expect.poll(pressed).toEqual(['false', 'false']);
+    });
+
     test('thumb controls stay off the corner and BRAKE sits above the steering row', async ({ page }) => {
       await useControls(page, { mode: 'buttons' });
       await startTouchRace(page);

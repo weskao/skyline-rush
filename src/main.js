@@ -292,6 +292,7 @@ const RECENT_RELEASES = recentReleases();
 let releaseIndex = 0;
 let releaseOpener = null;
 let releaseShownHere = false;
+let releaseUnread = new Set();
 const releaseStorage = () => { try { return localStorage; } catch { return null; } };
 // Someone who finished the guide or saved a race played before the notes were recorded.
 const returningPlayer = () => {
@@ -318,6 +319,12 @@ function renderReleaseNotes() {
     note.className = index ? 'release-tab-note' : 'release-tab-note release-tab-latest';
     note.textContent = index ? releaseDay(release.date, { month: 'short', day: 'numeric' }) : t('release.latest');
     tab.append(name, note);
+    if (releaseUnread.has(release.version)) {
+      const unread = document.createElement('span');
+      unread.className = 'release-tab-unread';
+      unread.textContent = t('release.unread');
+      name.append(unread);
+    }
     return tab;
   });
   $('#release-versions').replaceChildren(...tabs);
@@ -375,7 +382,10 @@ function openReleaseNotes(opener = null) {
   toggleSettings(false);
   hidePerformanceNotice();
   // Showing the notes is what counts as read: record it now so a reload or crash never repeats them.
-  markAnnouncementSeen(CURRENT_RELEASE, releaseStorage());
+  // Everything newer than the previous record stays marked for this visit only.
+  const storage = releaseStorage(), returning = returningPlayer();
+  releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, storage, returning)).map(release => release.version));
+  markAnnouncementSeen(CURRENT_RELEASE, storage);
   releaseShownHere = true;
   releaseIndex = 0;
   renderReleaseNotes();
@@ -1973,9 +1983,9 @@ function updateUI(now, input) {
     const active = control === 'left' ? input.steer < 0 : control === 'right' ? input.steer > 0 : !!input[control];
     button.classList.toggle('is-held', active);
     button.setAttribute('aria-pressed', String(active));
-    // Only toggle mode varies the label; written only when it changes (applyI18n resets it to 'hint.fly').
+    // Daily no-flight and toggle mode vary the label; written only when it changes (applyI18n resets it to 'hint.fly').
     if (control === 'fly') {
-      const label = L[tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
+      const label = L[race.modifier === 'no-flight' ? 'daily.flightDisabled.aria' : tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
       if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
     }
   });
