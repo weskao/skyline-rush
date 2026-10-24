@@ -152,7 +152,7 @@ test.describe('daily no-flight on touch', () => {
     await expect(fly).toBeDisabled();
     await expect(fly.locator('.touch-fly-lock')).toBeVisible();
     await expect(page.locator('#flight-state')).toHaveText('FLIGHT DISABLED');
-    await page.locator('#locale-select').selectOption('zh-TW');
+    // The native select is hidden behind the custom combobox during a race; dispatch its real change event.\n    await page.locator('#locale-select').evaluate(select => {\n      select.value = 'zh-TW';\n      select.dispatchEvent(new Event('change', { bubbles: true }));\n    });
     await expect(fly).toHaveAttribute('aria-label', '本日挑戰禁止飛行');
     await expect(page.locator('#flight-state')).toHaveText('禁止飛行');
     await expect(page.locator('#flight-instruction')).toHaveText('每日挑戰規則：無法使用 FLY');

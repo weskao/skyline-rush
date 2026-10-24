@@ -1828,7 +1828,7 @@ function updateUI(now, input) {
     button.setAttribute('aria-pressed', String(active));
     // Only toggle mode varies the label; written only when it changes (applyI18n resets it to 'hint.fly').
     if (control === 'fly') {
-      const label = L[tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
+      const label = race.modifier === 'no-flight' ? L['daily.flightDisabled.aria'] : L[tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
       if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
     }
   });
