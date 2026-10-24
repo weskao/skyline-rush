@@ -34,7 +34,7 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.js';
 import { refreshIfStale } from './update-check.js';
-import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress } from './cloud-save.js';
+import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails, deleteGoogleAccountDetails } from './cloud-save.js';
 import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus } from './cloud-progress.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
@@ -523,6 +523,8 @@ watchCloudUser(user => {
     cloudOwner = owner;
     try { localStorage.setItem(CLOUD_OWNER_KEY, owner); } catch { /* In-memory owner still protects this page. */ }
     saveCloudProgress();
+    // Account metadata is independent of race progress and must never block racing.
+    syncGoogleAccountDetails(user.uid).catch(error => console.warn('Cloud account details unavailable:', error));
   }
 }, () => say($('#cloud-status'), () => t('cloud.failed')));
 window.addEventListener('online', () => { if (cloudPending) saveCloudProgress(); });
@@ -563,6 +565,7 @@ $('#cloud-delete').addEventListener('click', async () => {
   try {
     await cloudSync.catch(() => {});
     if (cloudUser?.uid !== uid) return;
+    await deleteGoogleAccountDetails(uid);
     await deleteCloudProgress(uid);
     if (!clearLocalProgress()) throw new Error('Could not clear local progress');
     localStorage.removeItem(CLOUD_OWNER_KEY);
