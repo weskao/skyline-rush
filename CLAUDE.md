@@ -86,6 +86,20 @@ of the UI/UX design review rather than an optional afterthought.
   regression tests when the controls or interaction flow change. State briefly in
   the implementation summary whether audio was added or intentionally unnecessary.
 
+## Player-facing release announcement writing
+
+Every What's New announcement and release note shown **inside the game** must be written
+from the player's point of view in **plain, inviting language**. Describe what players
+can now do, see, discover or enjoy, and why the change matters to them. Do not expose
+implementation details or developer jargon such as CI, TDD, Firestore, shader, refactor,
+schema, internal file names or framework names. Replace technical labels with everyday
+benefits (e.g. "Other cars react more naturally when bumped", not "Unified AI collision
+physics"). Write and review **both English and Traditional Chinese (zh-TW)** copy together,
+with native-sounding wording rather than word-for-word translation. Show only features
+that genuinely shipped in the announced version; never present a mockup or roadmap item
+as released. Images are optional and must match the shipped content; always provide
+readable text when an image is missing. Follow `docs/release-announcements.md`.
+
 ## Verification
 
 - Gameplay / progression / build-config change → `npm test` + `npm run build`.
