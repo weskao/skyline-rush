@@ -8,8 +8,10 @@ import { VFX_RANGES, vfxLabelKey } from './vfx-settings.js';
 import { icons, ICON_ATTRS } from './icons.js';
 import { PAINTS } from './appearance.js';
 import MobileGuide from './MobileGuide.vue';
+import SignInButton from './SignInButton.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
+const GOOGLE_ICON = `${import.meta.env.BASE_URL}icons/google-sign-in.webp`;
 
 // Controls-panel radio groups: settings key → [legend, [value, label]...]; values must match controlSettings().
 // Catalog keys: `controls.<key>` for the legend, `controls.<key>.<value>` for each option.
@@ -138,7 +140,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <button type="button" id="performance-notice-dismiss">Got it</button>
     </section>
     <section class="intro" id="intro" aria-labelledby="intro-title">
-      <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span><button class="medal-chip" id="medal-chip" data-open-history="medals"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">0/4</span></button></div>
+      <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">0/4</span></button></div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just</span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
       <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
@@ -282,9 +284,14 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <section class="history-extra" aria-labelledby="cloud-title">
       <h3 id="cloud-title" data-i18n="cloud.title">Cloud save</h3>
       <p data-i18n="cloud.explain">Sign in to save race progress and restore it after clearing browser data. Existing progress on this device will be merged. Device settings and ghosts stay here.</p>
-      <button type="button" class="controls-reset" id="cloud-login" data-i18n="cloud.login">Sign in with Google</button>
+      <SignInButton id="cloud-login" :icon="GOOGLE_ICON" label-key="cloud.login">Sign in with Google</SignInButton>
       <button type="button" class="controls-reset" id="cloud-logout" data-i18n="cloud.logout" hidden>Sign out</button>
-      <p id="cloud-status" role="status" data-i18n="cloud.local">Race progress is saved on this device only.</p>
+      <button type="button" class="controls-reset" id="cloud-switch" data-i18n="cloud.switch" hidden>Use this account</button>
+      <button type="button" class="controls-reset" id="cloud-export" data-i18n="cloud.export">Export race progress</button>
+      <button type="button" class="controls-reset" id="cloud-delete" data-i18n="cloud.delete" hidden>Delete race progress</button>
+      <p id="cloud-identity" role="status">Not signed in</p>
+      <p id="cloud-status" role="status" data-i18n="cloud.local">Cloud backup is off. Sign in to protect your race results.</p>
+      <p id="cloud-last-sync">Never synced</p>
     </section>
     <label class="history-filter"><span data-i18n="history.track">Track</span> <select id="history-track" aria-label="History track" data-i18n-aria-label="history.trackAria"><option v-for="(track, id) in RACE_TRACKS" :value="id">{{ track.name }}</option></select></label>
     <figure class="history-trend"><figcaption id="history-trend-label"></figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"></svg></figure>

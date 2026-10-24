@@ -4,26 +4,35 @@
 
 原則：需要在清除瀏覽器資料後還原的遊戲成果，以 Google 登入後的 Firestore 帳號資料為主、本機資料為離線副本；裝置操作偏好留在本機。Firestore 單一使用者文件採版本化格式，僅在登入、完成比賽及成果改變時同步，不按影格寫入。勾選只代表該項已實作並完成對應驗證。
 
+執行順序：先針對每個雲端欄位與跨裝置情境寫會失敗的單元／規則／瀏覽器測試，再寫最小實作，最後跑單元、Firestore 模擬器、正式建置與相關瀏覽器測試。共用 `history.js` 既有讀寫與驗證邏輯；合併規則集中一處，不複製每個模式的儲存流程。每項通過對應驗證後才改為 `[x]`。
+
 ### 雲端基礎與資料安全
 
 - [x] 建立獨立 Firebase 專案、台灣區 Firestore Standard、Google 登入與 GitHub Pages 授權網域；部署僅本人可讀寫的規則。
-- [x] History 提供登入／登出與同步狀態；離線或雲端失敗時不阻止遊戲使用本機進度。
+- [x] 查詢專案帳務設定，確認 `billingEnabled=false` 且未綁定付費帳戶；資料量與讀寫次數仍須遵守 Spark 免費額度。
+- [x] History 提供登入／登出、成功／待同步／失敗狀態；離線或雲端失敗時不阻止遊戲使用本機進度。
+- [x] 首頁提供容易發現的雲端儲存入口，開啟時直接帶到 Google 登入與同步狀態；驗證手機與桌面版面。
 - [x] `skyline-rush-unlocked` 已解鎖賽道：首次登入合併本機與雲端集合，完成 Classic 解鎖後同步；禁止未知賽道進入儲存資料。
 - [ ] 已發布網站實測「解鎖 → 儲存 → 清除 Cookie／Local Storage → 用同一 Google 帳號登入 → 還原」，另測不同裝置與手機 Safari 登入。
-- [ ] 帳號切換時隔離不同玩家的本機副本，避免共用裝置將甲的進度自動上傳到乙的帳號。
-- [ ] 網路恢復後自動重試未同步成果；提供「上次成功同步時間／待同步」狀態，避免把本機成功誤認為雲端成功。
-- [ ] 提供本人刪除雲端進度與匯出資料的操作；驗證登出、刪除與重新登入的結果。
-- [ ] 監測 Spark 免費額度與文件大小；超額或服務不可用時明確顯示本機副本仍在。
+- [ ] 在完成本地與模擬器驗證後，依專案發佈規則把新版網站上線；部署後再執行上述真實帳號驗收。
+- [x] 帳號切換時隔離不同玩家的本機副本，避免共用裝置將甲的進度自動上傳到乙的帳號；提供可理解的安全切換路徑。（Firebase Auth／Firestore 模擬器驗證）
+- [x] 網路恢復後自動重試未同步成果；提供「上次成功同步時間／待同步」狀態，避免把本機成功誤認為雲端成功。（離線回線與跨瀏覽器還原模擬器驗證）
+- [x] 提供本人刪除雲端進度與匯出資料的操作；驗證登出、刪除與重新登入的結果。（模擬器通過；正式站需先發布新版規則與程式）
+- [x] 限制進度文件大小，並區分額度耗盡、服務不可用與本機寫入失敗；只有確認本機寫入成功才顯示「成果已留在本裝置」。（單元與模擬器瀏覽器測試）
+- [ ] 發布後查看 Spark Usage 儀表板的實際儲存量及每日讀／寫量，並在正式站驗收服務故障提示；操作步驟見 `docs/cloud-save.md`。
+- [x] 明確區分 Firebase 登入狀態與資料同步狀態；清除 Cookie、Local Storage 或 IndexedDB 後需重新登入，但不能把未同步資料誤標為已備份。（全新瀏覽器資料模擬器驗證）
 
 ### 要同步的遊戲成果（同一份版本化帳號進度）
 
-- [ ] `skyline-rush-stars`：各賽道最佳星數取較高值；還原後重新計算塗裝解鎖。
-- [ ] `skyline-rush-best-tracks` 與舊版 `skyline-rush-best`：各賽道最佳時間取較低值，舊版 Coast 成績只用來遷移。
-- [ ] `skyline-rush-medals`：獎章取聯集，同一獎章保留較早取得日期。
-- [ ] `skyline-rush-history`：Classic 最近 50 場紀錄；依穩定識別去重、驗證欄位，合併時保留最新 50 場，並重算生涯統計。
-- [ ] `skyline-rush-mode-history-v1`：Custom、Time Attack、Cup、Stunt 等模式的最近 50 場紀錄；沿用原模式／規則簽章與最佳成績計算。
-- [ ] `skyline-rush-daily`：每日挑戰最近 50 筆；依挑戰 ID 保留獨立排行，避免誤併進 Classic 解鎖。
-- [ ] 替上述欄位新增版本遷移、Firestore 規則、跨裝置合併測試及還原後 UI 更新；雲端舊版地圖資料不可被新版本覆蓋或遺失。
+- [x] `skyline-rush-stars`：各賽道最佳星數取較高值；還原後重新計算塗裝解鎖。
+- [x] `skyline-rush-best-tracks` 與舊版 `skyline-rush-best`：各賽道最佳時間取較低值，舊版 Coast 成績只用來遷移。
+- [x] `skyline-rush-medals`：獎章取聯集，同一獎章保留較早取得日期。
+- [x] `skyline-rush-history`：Classic 最近 50 場紀錄；依紀錄內容去重、驗證欄位，合併時保留最新 50 場，並重算生涯統計。
+- [x] `skyline-rush-mode-history-v1`：Custom、Time Attack、Cup、Stunt 等模式的最近 50 場紀錄；沿用原模式／規則簽章與最佳成績計算。
+- [x] `skyline-rush-daily`：每日挑戰最近 50 筆；依挑戰 ID 保留獨立排行，避免誤併進 Classic 解鎖。
+- [x] 替上述欄位新增版本遷移、Firestore 規則、模擬跨裝置合併測試及還原後 UI 更新；雲端舊版地圖資料不可被新版本覆蓋或遺失。
+- [x] 對同帳號雙裝置同時完成比賽、重複登入、離線後回線與受損雲端資料做回歸；重試不得重複紀錄或倒退最佳成績。（雙瀏覽器並行交易、離線回線、重複登入與合併單元測試通過）
+- [x] 重要合併、復原與帳號隔離問題先以失敗測試重現再修正；共用賽道清單與既有資料驗證，通過完整單元、Firestore 規則模擬器、相關瀏覽器案例與正式建置檢查。
 
 ### 維持裝置本機儲存的項目
 
@@ -31,10 +40,11 @@
 - [x] 駕駛控制與觸控配置 `skyline-rush-controls`、鍵盤改鍵 `skyline-rush-keymap`、AUTO `skyline-rush-auto`：裝置與輸入方式相關，維持 Local Storage。
 - [x] 畫質／特效 `skyline-rush-vfx`、語言 `skyline-rush-locale`：維持 Local Storage，換裝置使用該裝置預設值或自行選擇。
 - [x] 已選塗裝 `skyline-rush-paint`、最近 3 組 Custom 設定 `skyline-rush-recent-custom-v1`：屬便利偏好，維持 Local Storage；塗裝的**解鎖資格**由雲端星數還原。
-- [x] Classic／Time Attack Ghost `skyline-rush-ghosts`、`skyline-rush-mode-ghosts-v1`：體積較大且可再跑出，暫留 Local Storage，不塞進 Firestore 進度文件。
+- [x] Classic／Time Attack Ghost `skyline-rush-ghosts`、`skyline-rush-mode-ghosts-v1`：體積較大且可再跑出，保持裝置本機，不塞進 Firestore 進度文件。
+- [x] 為 Ghost 設容量上限或遷往本機 IndexedDB，避免 Local Storage 額滿導致重要成果的本機副本無法寫入。（Classic／模式 Ghost 各限 512 Ki 字元，超過時淘汰最舊重播；單元測試驗證）
 - [x] 教學已看／已完成、裝置效能提示：維持 Local Storage；瀏覽器資料清除後重新顯示不會損失遊戲成果。
 - [x] 上次賽道 `skyline-rush-last-track` 與更新檢查標記：維持 Session Storage，僅供目前分頁使用。
-- [ ] 評估 Ghost 與偏好的可選匯出／匯入；若使用者日後需要跨裝置，再設獨立容量上限與同步機制。
+- [x] 評估 Ghost 與偏好的可選匯出／匯入：目前維持裝置本機，理由與日後跨裝置方案見 `docs/cloud-save.md`；尚未提供這些項目的匯入／同步。
 
 ## 操作教學 v1（2026-10-23）
 

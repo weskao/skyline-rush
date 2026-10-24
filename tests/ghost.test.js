@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace } from '../src/game.js';
 import { recordGhost, validGhost, ghostAt } from '../src/ghost.js';
-import { loadGhost, saveGhost } from '../src/history.js';
+import { loadGhost, saveGhost, loadModeGhost, saveModeGhost } from '../src/history.js';
 import { controlSettings } from '../src/control-settings.js';
 
 const memoryStorage = (initial = {}) => {
@@ -72,6 +72,14 @@ test('ghosts are stored per track and only valid ones are loaded back', () => {
   assert.equal(loadGhost('coast', storage), null);
   saveGhost('coast', ghost, throwingStorage);
   assert.equal(loadGhost('coast', throwingStorage), null);
+});
+
+test('many mode ghosts stay below a local storage budget while the newest replay survives', () => {
+  const { ghost } = recordedRun();
+  const storage = memoryStorage();
+  for (let i = 0; i < 200; i++) assert.equal(saveModeGhost('coast', { variant: i }, ghost, storage), true);
+  assert.ok(storage.data['skyline-rush-mode-ghosts-v1'].length <= 512 * 1024);
+  assert.deepEqual(loadModeGhost('coast', { variant: 199 }, storage), ghost);
 });
 
 test('the ghost preference defaults off and only accepts booleans', () => {

@@ -11,6 +11,7 @@
     "build": "vite build && node scripts/assert-production-locked.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test tests/*.test.js",
+    "test:cloud": "npx -y firebase-tools@15.34.1 emulators:exec --project skyline-rush-weskao --only auth,firestore 'playwright test -c playwright.cloud.config.js && node --test tests/firestore-rules.test.js'",
     "pretest:browser": "npm run build",
     "test:browser": "playwright test",
     "test:layout": "npm run build && playwright test tests/race-modes-browser.spec.js tests/home-shortcuts-browser.spec.js && playwright test tests/i18n-browser.spec.js tests/responsive-browser.spec.js -g \"intro bottom edge|start layout\""

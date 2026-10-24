@@ -51,13 +51,15 @@ export function recordRace(race, storage, now = new Date()) {
 
 // Practice, custom and Time Attack records never mutate Classic history or unlocks.
 export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
+const MODE_HISTORY_MODES = ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'];
+export const validModeHistoryRun = run => run && MODE_HISTORY_MODES.includes(run.mode) &&
+  typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time);
 export function loadModeHistory(storage) {
   const saved = read(MODE_HISTORY_KEY, storage);
-  return Array.isArray(saved) ? saved.filter(run => run && ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(run.mode) &&
-    typeof run.rules === 'string' && typeof run.track === 'string' && valid(run.time)).slice(-HISTORY_LIMIT) : [];
+  return Array.isArray(saved) ? saved.filter(validModeHistoryRun).slice(-HISTORY_LIMIT) : [];
 }
 export function recordModeRace(race, storage, now = new Date()) {
-  if (!['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'].includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
+  if (!MODE_HISTORY_MODES.includes(race.mode) || !race.result || !valid(race.result.time) || race.result.success === false ||
     (race.mode === 'stunt' && (!Number.isFinite(race.result.score) || race.result.score < 0)))
     throw new TypeError('A finished practice race is required');
   const rules = JSON.stringify(race.config);
@@ -131,7 +133,7 @@ export function recordMedals(result, storage, now = new Date()) {
 
 // Best style stars per track (1-3); their sum unlocks paints.
 export const STARS_KEY = 'skyline-rush-stars';
-const validStars = stars => Number.isInteger(stars) && stars >= 1 && stars <= 3;
+export const validStars = stars => Number.isInteger(stars) && stars >= 1 && stars <= 3;
 export function loadStars(storage) {
   const saved = read(STARS_KEY, storage);
   const stars = {};
@@ -150,9 +152,23 @@ export const savePaint = (id, storage) => write(PAINT_KEY, id, storage);
 
 // One best-run ghost per track: { trackId: { time, samples } }.
 const GHOSTS_KEY = 'skyline-rush-ghosts';
+const GHOST_STORAGE_LIMIT = 512 * 1024; // characters per key; keeps replay data well below common localStorage quotas
+function boundedGhosts(previous, key, ghost) {
+  try {
+    const entries = { ...previous };
+    delete entries[key];
+    entries[key] = ghost;
+    while (JSON.stringify(entries).length > GHOST_STORAGE_LIMIT && Object.keys(entries).length > 1)
+      delete entries[Object.keys(entries)[0]];
+    return JSON.stringify(entries).length <= GHOST_STORAGE_LIMIT ? entries : null;
+  } catch { return null; }
+}
 const loadGhosts = storage => { const saved = read(GHOSTS_KEY, storage); return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}; };
 export const loadGhost = (trackId, storage) => { const ghost = loadGhosts(storage)[trackId]; return validGhost(ghost, trackId) ? ghost : null; };
-export const saveGhost = (trackId, ghost, storage) => write(GHOSTS_KEY, { ...loadGhosts(storage), [trackId]: ghost }, storage);
+export const saveGhost = (trackId, ghost, storage) => {
+  const entries = boundedGhosts(loadGhosts(storage), trackId, ghost);
+  if (entries) write(GHOSTS_KEY, entries, storage);
+};
 
 
 // Time Attack ghosts are keyed by full rule signature, not by Classic best.
@@ -167,13 +183,15 @@ export function saveModeGhost(trackId, config, ghost, storage) {
   if (!validGhost(ghost, trackId)) return false;
   const previous = read(MODE_GHOST_KEY, storage);
   const entries = previous && typeof previous === 'object' && !Array.isArray(previous) ? previous : {};
-  write(MODE_GHOST_KEY, { ...entries, [modeGhostId(trackId, config)]: ghost }, storage);
+  const bounded = boundedGhosts(entries, modeGhostId(trackId, config), ghost);
+  if (!bounded) return false;
+  write(MODE_GHOST_KEY, bounded, storage);
   return true;
 }
 
 // Daily challenge runs live on their own board, never in history, bests, unlocks or ghosts.
 export const DAILY_KEY = 'skyline-rush-daily';
-const validDaily = run => run && typeof run === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(run.id) && Object.hasOwn(RACE_TRACKS, run.track) &&
+export const validDaily = run => run && typeof run === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(run.id) && Object.hasOwn(RACE_TRACKS, run.track) &&
   DAILY_MODIFIERS.includes(run.modifier) && valid(run.time) && Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 &&
   Number.isFinite(run.score) && run.score >= 0 && typeof run.date === 'string';
 export function loadDaily(storage) {
