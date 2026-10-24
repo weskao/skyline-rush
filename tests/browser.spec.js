@@ -642,6 +642,24 @@ test('reduced motion keeps flight instructions while hiding nonessential speed s
   await expect(page.locator('.speed-streaks')).toHaveCSS('display', 'none');
 });
 
+test.describe('tablet touch screen', () => {
+  test.use({ viewport: { width: 1180, height: 820 }, hasTouch: true, isMobile: true });
+  test('thumb clusters grow and lift toward the grip without covering the gauges', async ({ page }) => {
+    for (const mode of ['slide', 'buttons']) {
+      await useControls(page, { mode, size: 'L' });
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Start race' }).tap();
+      await expect(page.locator('#race-status')).toHaveText('RACING');
+      const fly = await page.getByRole('button', { name: 'Hold to fly', exact: true }).boundingBox();
+      expect(fly.width, mode).toBeGreaterThanOrEqual(64);
+      expect(820 - (fly.y + fly.height), mode).toBeGreaterThanOrEqual(48);
+      expect(1180 - (fly.x + fly.width), mode).toBeGreaterThanOrEqual(32);
+      const [cluster, gauges] = await Promise.all([page.getByRole('button', { name: 'Activate nitro', exact: true }).boundingBox(), page.locator('.fuel-stat').boundingBox()]);
+      expect(gauges.y + gauges.height, mode).toBeLessThanOrEqual(cluster.y);
+    }
+  });
+});
+
 test.describe('narrow touch screen', () => {
   test.use({ viewport: { width: 320, height: 740 }, hasTouch: true, isMobile: true });
   test('all seven controls remain onscreen with usable touch targets', async ({ page }) => {
@@ -934,6 +952,20 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
         for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Activate nitro'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
       }
+    });
+
+    test('thumb controls stay off the corner and BRAKE sits above the steering row', async ({ page }) => {
+      await useControls(page, { mode: 'buttons' });
+      await startTouchRace(page);
+      const box = name => page.getByRole('button', { name, exact: true }).boundingBox();
+      const [left, right, brake, fly] = await Promise.all(['Steer left', 'Steer right', 'Brake', 'Hold to fly'].map(box));
+      // The thumb pivots on the side edge: the outermost buttons keep a 24px margin instead of hugging the corner.
+      expect(width - (fly.x + fly.width)).toBeGreaterThanOrEqual(24);
+      expect(left.x).toBeGreaterThanOrEqual(24);
+      // Rarely used BRAKE: above the row the thumb rests on, behind a gap, and slimmer than the steering buttons.
+      for (const steer of [left, right]) expect(steer.y - (brake.y + brake.height)).toBeGreaterThanOrEqual(12);
+      expect(brake.height).toBeLessThan(left.height);
+      expect(brake.height).toBeGreaterThanOrEqual(44);
     });
 
     // The pad stays EDGE_SWIPE_PX off the side edge: a touch starting there is the iOS back/forward swipe, whose

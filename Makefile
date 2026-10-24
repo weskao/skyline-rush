@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: dev dev-unlocked dev-feature test-unlocked run verify deploy
+.PHONY: dev dev-unlocked dev-feature test-unlocked run verify deploy stop-old-dev
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -10,11 +10,25 @@ NPM := npm
 JAVA21_HOME := $(shell /usr/libexec/java_home -v 21+ 2>/dev/null)
 WITH_EMULATORS := $(if $(JAVA21_HOME),PATH="$(JAVA21_HOME)/bin:$$PATH" )VITE_FIREBASE_EMULATOR=1 npx -y firebase-tools@15.34.1 emulators:exec --project skyline-rush-weskao --only auth,firestore
 
-dev: node_modules ## `make`: Vite + Vue dev server with hot reload and Firebase emulators on http://127.0.0.1:5173
+# A second emulator run dies on port 9099 ("port taken"), so stop the earlier run first. Its
+# emulators:exec process and every child (Vite would be orphaned otherwise) are stopped, then ports re-checked.
+stop-old-dev:
+	@pid=$$(lsof -nP -tiTCP:9099 -sTCP:LISTEN 2>/dev/null | head -1); \
+	if [ -n "$$pid" ]; then \
+	  echo "Stopping earlier dev run (pid $$pid, started $$(ps -o etime= -p $$pid | xargs) ago)"; \
+	  all=$$pid; q=$$pid; \
+	  while [ -n "$$q" ]; do q=$$(for p in $$q; do pgrep -P $$p; done); all="$$all $$q"; done; \
+	  kill $$all; \
+	  for i in $$(seq 30); do \
+	    [ -z "$$(lsof -nP -iTCP:9099 -iTCP:8080 -sTCP:LISTEN 2>/dev/null)" ] && exit 0; sleep 0.5; \
+	  done; \
+	  echo "Ports 9099/8080 still busy after 15 s; stop the old run by hand"; exit 1; fi
+
+dev: stop-old-dev node_modules ## `make`: Vite + Vue dev server with hot reload and Firebase emulators on http://127.0.0.1:5173
 	$(WITH_EMULATORS) '$(NPM) run dev'
 
 # Compile with the development-only access implementation. Never produces a distributable build.
-dev-unlocked: node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
+dev-unlocked: stop-old-dev node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
 	$(WITH_EMULATORS) '$(NPM) run dev -- --config vite.unlocked.config.js'
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server

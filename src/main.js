@@ -32,6 +32,7 @@ import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLo
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
+import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.js';
 import { refreshIfStale } from './update-check.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress } from './cloud-save.js';
 import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus } from './cloud-progress.js';
@@ -222,6 +223,7 @@ function toggleAirflow() {
   if (!visual.enabled) return;
   visual.airflow = !visual.airflow;
   showVFX();
+  if (visual.airflow) showSwipeHint(); // the showcase hides the track picker, so swiping is how to change track
 }
 for (const control of vfxControls) control.addEventListener('input', () => {
   const key = control.dataset.vfx;
@@ -735,6 +737,111 @@ function chooseTrack() {
 }
 $('#choose-track').addEventListener('click', chooseTrack);
 
+// Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
+const worldCanvas = $('#world');
+const swipeChip = $('#track-swipe');
+const SWIPE_HINT_KEY = 'skyline-rush-swipe-hint';
+let swipe = null, wheelSwipe = null, swipeTarget = null, swipeBusy = false, swipeChipTimer = 0, swipeHintSeen = false;
+const swipeTracks = () => [...document.querySelectorAll('[data-track]:not(:disabled)')];
+const swipeNeighbour = step => { const tracks = swipeTracks(); return tracks[tracks.findIndex(button => button.dataset.track === race.trackId) + step]; };
+function showSwipeChip(state, id, note = '') {
+  clearTimeout(swipeChipTimer);
+  swipeChip.dataset.state = state;
+  $('#track-swipe-name').textContent = trackName(id, getLocale()).toUpperCase();
+  $('#track-swipe-note').textContent = note;
+  swipeChip.querySelector('.swipe-dots').replaceChildren(...swipeTracks().map(button => {
+    const dot = document.createElement('i');
+    dot.classList.toggle('is-current', button.dataset.track === id);
+    return dot;
+  }));
+  if (state !== 'drag') swipeChipTimer = setTimeout(() => { swipeChip.dataset.state = ''; }, state === 'hint' ? 6000 : 1400);
+}
+function showSwipeHint() {
+  if (swipeHintSeen || race.phase !== 'ready' || tutorial) return;
+  swipeHintSeen = true;
+  try {
+    if (localStorage.getItem(SWIPE_HINT_KEY) === 'shown') return;
+    localStorage.setItem(SWIPE_HINT_KEY, 'shown');
+  } catch { /* Still shown once for this page when persistent storage is disabled. */ }
+  showSwipeChip('hint', race.trackId, t(touchPreference.matches ? 'swipe.hintTouch' : 'swipe.hintMouse'));
+}
+// Releases the drag and springs the preview back to rest.
+function cancelSwipe() {
+  swipe = null; swipeTarget = null;
+  if (swipeChip.dataset.state === 'drag') swipeChip.dataset.state = '';
+  if (!worldCanvas.style.transform) return;
+  const from = { transform: worldCanvas.style.transform, opacity: worldCanvas.style.opacity };
+  worldCanvas.style.transform = worldCanvas.style.opacity = '';
+  if (!calmMotion()) worldCanvas.animate([from, { transform: 'none', opacity: 1 }], motionOptions('base'));
+}
+// The preview slides out toward the finger, the track changes behind it, and the new scene slides in from the other side.
+async function commitSwipe(button, step) {
+  swipe = null; swipeTarget = null; swipeBusy = true;
+  const travel = -step * innerWidth * 0.3;
+  if (!calmMotion()) await worldCanvas.animate([{ transform: worldCanvas.style.transform || 'none', opacity: worldCanvas.style.opacity || 1 }, { transform: `translateX(${travel}px)`, opacity: 0 }], { ...motionOptions('fast'), fill: 'forwards' }).finished.catch(() => {});
+  worldCanvas.style.transform = worldCanvas.style.opacity = '';
+  button.click();
+  showSwipeChip('done', race.trackId);
+  if (!calmMotion()) {
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); // the new track has drawn once
+    worldCanvas.getAnimations().forEach(animation => animation.cancel());
+    await worldCanvas.animate([{ transform: `translateX(${-travel}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], motionOptions('base')).finished.catch(() => {});
+  }
+  worldCanvas.getAnimations().forEach(animation => animation.cancel());
+  swipeBusy = false;
+}
+// Moves the preview with the gesture and names the track it would land on.
+function dragSwipe(dx) {
+  const neighbour = swipeNeighbour(dx < 0 ? 1 : -1);
+  if (!calmMotion()) {
+    const offset = swipeOffset(dx, innerWidth, Boolean(neighbour));
+    worldCanvas.style.transform = `translateX(${offset.toFixed(1)}px)`;
+    worldCanvas.style.opacity = (1 - Math.min(0.5, Math.abs(offset) / innerWidth)).toFixed(3);
+  }
+  const target = neighbour?.dataset.track ?? race.trackId;
+  if (target !== swipeTarget) { swipeTarget = target; showSwipeChip('drag', target, neighbour?.classList.contains('is-locked') ? t('track.locked') : ''); }
+  swipeChip.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / swipeDistance(innerWidth)).toFixed(3));
+}
+// The newest finger takes the swipe over, so a touch whose release WebKit withholds cannot hold the preview.
+worldCanvas.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || race.phase !== 'ready' || tutorial || editingLayout || swipeBusy || document.querySelector('dialog[open]')) return;
+  if (event.pointerType !== 'mouse' && (event.clientX < SWIPE_EDGE_PX || event.clientX > innerWidth - SWIPE_EDGE_PX)) return;
+  swipe = { id: event.pointerId, x: event.clientX, y: event.clientY, axis: null, samples: [[event.timeStamp, event.clientX]] };
+  worldCanvas.setPointerCapture(event.pointerId);
+});
+worldCanvas.addEventListener('pointermove', event => {
+  if (event.pointerId !== swipe?.id) return;
+  const dx = event.clientX - swipe.x;
+  swipe.axis ??= swipeAxis(dx, event.clientY - swipe.y);
+  if (swipe.axis !== 'x') return;
+  addSwipeSample(swipe.samples, event.timeStamp, event.clientX);
+  dragSwipe(dx);
+});
+// Trackpad two-finger swipe (horizontal wheel): the preview follows the scroll and changes track once it travels the swipe
+// distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it.
+const WHEEL_END_MS = 160;
+worldCanvas.addEventListener('wheel', event => {
+  if (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+  if (swipe || race.phase !== 'ready' || tutorial || editingLayout || document.querySelector('dialog[open]')) return;
+  event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
+  clearTimeout(wheelSwipe?.timer);
+  wheelSwipe ??= { dx: 0, spent: swipeBusy };
+  wheelSwipe.timer = setTimeout(() => { const ended = wheelSwipe; wheelSwipe = null; if (!ended.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
+  if (wheelSwipe.spent) return;
+  wheelSwipe.dx -= event.deltaX * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerWidth : 1); // lines / pages to px
+  const step = swipeStep(wheelSwipe.dx, 0, innerWidth);
+  const button = step && swipeNeighbour(step);
+  if (button) { wheelSwipe.spent = true; commitSwipe(button, step); } else dragSwipe(wheelSwipe.dx);
+}, { passive: false });
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) worldCanvas.addEventListener(type, event => {
+  if (event.pointerId !== swipe?.id) return;
+  const { axis, x, samples } = swipe;
+  const dx = samples.at(-1)[1] - x; // pointercancel carries no position
+  const step = type === 'pointerup' && axis === 'x' ? swipeStep(dx, releaseVelocity(samples, event.timeStamp), innerWidth) : 0;
+  const button = step && swipeNeighbour(step);
+  if (button) commitSwipe(button, step); else cancelSwipe();
+});
+
 // Brand click mid-race pauses and asks first; on the intro/results screens the link just goes home.
 const leaveScreen = $('#leave-screen');
 leaveScreen.addEventListener('keydown', event => event.stopPropagation());
@@ -1215,6 +1322,7 @@ function phaseUI() {
   if (ready || overlay) clearButtonPresses();
   document.body.dataset.phase = phase;
   if (!['racing', 'countdown'].includes(phase)) { padTouch = null; drawPad(); } // controls.clear() reset the real pad; drop the mirror with it
+  if (!ready) cancelSwipe();
   ui.intro.hidden = !ready && !ui.intro.getAnimations().length;
   if (ready) { ui.intro.inert = false; ui.intro.getAnimations().forEach(animation => animation.cancel()); }
   ui['race-info'].hidden = ready;

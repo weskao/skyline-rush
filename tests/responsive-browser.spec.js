@@ -186,6 +186,8 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
         }
         const m = result.map;
         if (m.x < 0 || m.y < 0 || m.x + m.width > width + 0.5 || m.y + m.height > height + 0.5) hits.push(`${tag}: map off screen`);
+        // Portrait Buttons mode: [<][>] take the bottom row, so the map shares the BRAKE row; any higher and it covers the player's car.
+        if (result.brake && height > width && m.y < result.brake.y - 0.5) hits.push(`${tag}: map rises ${Math.round(result.brake.y - m.y)}px above the BRAKE row onto the car`);
         for (const [name, b] of result.others) {
           const apart = m.x + m.width <= b.x + 0.5 || b.x + b.width <= m.x + 0.5 || m.y + m.height <= b.y + 0.5 || b.y + b.height <= m.y + 0.5;
           if (!apart) hits.push(`${tag}: map × ${name} ${Math.round(Math.min(m.x + m.width - b.x, b.x + b.width - m.x))}px`);
@@ -243,6 +245,31 @@ test.describe('device safe areas', () => {
       const start = await page.locator('#start-button').boundingBox();
       expect(start.y, `${name} start`).toBeGreaterThanOrEqual(insets.top - 1);
       expect(start.y + start.height, `${name} start`).toBeLessThanOrEqual(height - insets.bottom + 1);
+      await cdp.detach();
+    }
+  });
+
+  // Chromium never matches the iOS-only @supports block, so the test applies its real rules by hand.
+  test('iOS footer and version sit in the home-indicator inset, clear of the bar', async ({ page, context }) => {
+    for (const [name, bottom, width, height] of [['notch iphone', 34, 390, 844], ['dynamic island', 34, 402, 874], ['ipad portrait', 20, 820, 1180]]) {
+      await page.setViewportSize({ width, height });
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 47, bottom, left: 0, right: 0 } });
+      await page.goto('./');
+      await page.evaluate(() => document.fonts.ready);
+      const iosRules = await page.evaluate(() => [...document.styleSheets].flatMap(sheet => [...sheet.cssRules])
+        .filter(rule => rule instanceof CSSSupportsRule && rule.conditionText.includes('-webkit-touch-callout'))
+        .flatMap(rule => [...rule.cssRules].map(inner => inner.cssText)).join('\n'));
+      expect(iosRules, 'iOS @supports block').toContain('.build-version');
+      await page.addStyleTag({ content: iosRules });
+      // iOS draws the home indicator 8-13px above the bottom edge.
+      for (const selector of ['.bottomline', '.build-version']) {
+        if (!await page.locator(selector).isVisible()) continue; // touch tablets hide the footer
+        const box = await page.locator(selector).boundingBox();
+        const gap = height - (box.y + box.height);
+        expect(gap, `${name} ${selector}`).toBeGreaterThanOrEqual(16);
+        if (bottom > 21) expect(gap, `${name} ${selector}`).toBeLessThan(bottom);
+      }
       await cdp.detach();
     }
   });
