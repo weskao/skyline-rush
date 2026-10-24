@@ -4,12 +4,18 @@ NPM := npm
 
 .PHONY: dev dev-unlocked dev-feature test-unlocked run deploy
 
-dev: node_modules ## `make`: Vite + Vue dev server with hot reload on http://127.0.0.1:5173
-	$(NPM) run dev
+# Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
+# touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
+# firebase-tools needs Java 21+, which need not be the JDK first on PATH (Android tooling often pins 17).
+JAVA21_HOME := $(shell /usr/libexec/java_home -v 21+ 2>/dev/null)
+WITH_EMULATORS := $(if $(JAVA21_HOME),PATH="$(JAVA21_HOME)/bin:$$PATH" )VITE_FIREBASE_EMULATOR=1 npx -y firebase-tools@15.34.1 emulators:exec --project skyline-rush-weskao --only auth,firestore
+
+dev: node_modules ## `make`: Vite + Vue dev server with hot reload and Firebase emulators on http://127.0.0.1:5173
+	$(WITH_EMULATORS) '$(NPM) run dev'
 
 # Compile with the development-only access implementation. Never produces a distributable build.
 dev-unlocked: node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
-	$(NPM) run dev -- --config vite.unlocked.config.js
+	$(WITH_EMULATORS) '$(NPM) run dev -- --config vite.unlocked.config.js'
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
 

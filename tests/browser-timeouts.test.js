@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
+import net from 'node:net';
 import { spawnSync } from 'node:child_process';
 import config from '../playwright.config.js';
 import { ciTimeout, slow } from './helpers/ci.js';
@@ -38,6 +39,21 @@ test('browser preview port rejects shell text', () => {
     { cwd: new URL('..', import.meta.url), env: { ...process.env, PLAYWRIGHT_PORT: '5198; exit 0' }, encoding: 'utf8' });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /Invalid Playwright port/);
+});
+
+test('the pre-push layout gate runs on a free port, not the default one a stray server may hold', async () => {
+  const hook = readFileSync(new URL('../.githooks/pre-push', import.meta.url), 'utf8');
+  const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)$/m);
+  assert.ok(pick, 'pre-push must assign PLAYWRIGHT_PORT');
+  assert.match(hook, /^export PLAYWRIGHT_PORT$/m);
+  assert.ok(hook.indexOf('export PLAYWRIGHT_PORT') < hook.indexOf('npm run test:layout >&2'), 'export before the gate runs');
+  const held = net.createServer();
+  await new Promise(resolve => held.listen(5178, '127.0.0.1', resolve).on('error', resolve));
+  try {
+    const port = spawnSync('sh', ['-c', pick[1]], { encoding: 'utf8' }).stdout.trim();
+    assert.match(port, /^\d{1,5}$/);
+    assert.notEqual(port, '5178');
+  } finally { held.close(); }
 });
 
 test('browser specs never set a wall-clock budget that skips the CI factor', () => {

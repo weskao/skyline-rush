@@ -823,7 +823,7 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
 .history-extra h3 { margin: 0 0 12px; font-size: 20px; }
 .history-extra h4 { margin: 24px 0 8px; font-size: 14px; }
 .history-extra p, .collection-note { color: #ccd7e0; font-size: 12px; line-height: 1.7; }
-.history-extra .controls-reset { margin: 8px 0; padding: 10px 14px; }
+.history-extra .controls-reset { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; min-height: 44px; margin: 8px 1px; padding: 10px 14px; }
 .sign-in-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 10px 14px; border-color: #dadce0; background: #fff; color: #1f1f1f; font-size: 14px; font-weight: 600; }
 .sign-in-button:hover:not(:disabled) { background: #f6f9fe; }
 .sign-in-button img { width: 20px; height: 20px; flex: none; }

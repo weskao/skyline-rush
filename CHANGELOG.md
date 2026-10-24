@@ -1,3 +1,25 @@
+## [0.21.0] - 2026-10-24
+
+### 🚀 Features
+
+- **dev:** Run dev servers on firebase emulators
+- **game:** Give ai cars the player's collision physics
+
+### 🐛 Bug Fixes
+
+- **hooks:** Run the layout gate on a free port
+- **ui:** Align cloud save buttons
+
+### 📚 Documentation
+
+- Clarify feature branch workflow
+- Document shared collision physics for all cars
+- **readme:** Link cloud-save operations guide
+## [0.20.2] - 2026-10-24
+
+### 🐛 Bug Fixes
+
+- **audio:** Suspend audio while the page is hidden
 ## [0.20.1] - 2026-10-24
 
 ### 🚀 Features

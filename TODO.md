@@ -82,6 +82,9 @@ Implementation rules: game rules live in the pure simulation layer `src/game.js`
 `tests/game.test.js` (TDD). `world.js` only renders, `main.js` owns the HUD and persistence. Pickup
 and ring placement comes from a per-track seed so runs are reproducible and testable.
 
+Branch rules: implement every new feature on its own new `feature/<name>` branch and commit to it
+directly. Do **not** open a pull request for feature work.
+
 Current scope: all gamepad-related work (input support, mapping UI, and acceptance checks)
 is **Lowest priority** and **out of scope for this iteration**. Gamepad references below
 describe future work, not current requirements.
