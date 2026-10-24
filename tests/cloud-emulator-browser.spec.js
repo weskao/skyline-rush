@@ -377,3 +377,39 @@ test('cloud dialog explains sign-out separately from deleting Google identity', 
   await page.locator('#cloud-logout').click();
   await expect(page.locator('#cloud-logout-note')).toBeHidden();
 });
+
+test('Cloud save announces typed sync states, with a recoverable offline state', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'signed-out');
+  await mockGoogleSignIn(page, { email: 'status@example.test' });
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'synced');
+  await page.evaluate(() => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false }));
+  await page.locator('#cloud-sync-now').click();
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'offline');
+  await expect(page.locator('#cloud-status')).toHaveAttribute('role', 'status');
+  await page.evaluate(() => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true }));
+  await page.locator('#cloud-sync-now').click();
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'synced');
+});
+
+test('Cloud save profile provides an avatar fallback and accessible account identity', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'avatar@example.test' });
+  await expect(page.locator('#cloud-identity')).toContainText('avatar@example.test');
+  await expect(page.locator('#cloud-name')).not.toBeEmpty();
+  await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
+  await page.evaluate(() => {
+    const img = document.querySelector('#cloud-avatar');
+    img.hidden = false;
+    document.querySelector('#cloud-avatar-fallback').hidden = true;
+    img.dispatchEvent(new Event('error'));
+  });
+  await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
+  await expect(page.locator('#cloud-avatar')).toBeHidden();
+});
