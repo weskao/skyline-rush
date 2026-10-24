@@ -291,6 +291,8 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <button type="button" class="controls-reset" id="cloud-switch" data-i18n="cloud.switch" hidden>Use this account</button>
       <button type="button" class="controls-reset" id="cloud-sync-now" data-i18n="cloud.syncNow" disabled>Sync now</button>
       <button type="button" class="controls-reset" id="cloud-export" data-i18n="cloud.export">Export race progress</button>
+      <button type="button" class="controls-reset" id="cloud-import" data-i18n="cloud.import">Import race progress</button>
+      <input id="cloud-import-file" type="file" accept=".json,application/json" hidden />
       <button type="button" class="controls-reset" id="cloud-delete" data-i18n="cloud.delete" hidden>Delete race progress</button>
       <div class="cloud-player" aria-live="polite">
         <img id="cloud-avatar" class="cloud-avatar" alt="" referrerpolicy="no-referrer" hidden />
