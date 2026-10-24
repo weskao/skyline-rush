@@ -20,8 +20,8 @@
 ### B. Firestore 儲存內容與資料版本
 
 - [ ] **B1 (P0)** 保留 saves/{uid} 既有版本化成果與相容性，不破壞舊帳號存檔。
-- [ ] **B2 (P0)** modeHistory 雲端保留 rulesVersion、distance、stageCount、itemsUsed、hazardPasses、hazardHits 等完整合法資料。
-- [ ] **B3 (P0)** 統一 mode rules 的本機與雲端長度上限和驗證契約（現有 4096／2000 不一致）。
+- [x] **B2 (P0)** modeHistory 雲端保留 rulesVersion、distance、stageCount、itemsUsed、hazardPasses、hazardHits 等完整合法資料。
+- [x] **B3 (P0)** 統一 mode rules 的本機與雲端長度上限和驗證契約（現有 4096／2000 不一致）。
 - [ ] **B4 (P0)** 永久 modeBests 跨裝置同步，避免最近 50 場輪替後永久紀錄消失。
 - [ ] **B5 (P0)** 永久 stuntBests（score、maxCombo、airTime、medal）跨裝置同步。
 - [ ] **B6 (P0)** 最近 50 場 history 與永久 best 分離；合併去重，不讓最佳成績倒退。
@@ -34,7 +34,7 @@
 - [ ] **C3 (P0)** 離線 pending 狀態按 UID 持久化；網路恢復與重新開啟時重試。
 - [ ] **C4 (P0)** 同帳號雙裝置並發交易與重複登入不丟最佳成績、不重複紀錄。
 - [ ] **C5 (P0)** 僅在 Firestore 成功確認後顯示已同步及更新最後成功時間。
-- [ ] **C6 (P1)** localStorage 多 Key 寫入一致性與失敗回復，禁止把寫入失敗誤報成功。
+- [x] **C6 (P1)** localStorage 多 Key 寫入一致性與失敗回復，禁止把寫入失敗誤報成功。
 
 ### D. Rules、備份、刪除與安全
 
@@ -69,6 +69,15 @@
 - [ ] **G1 (P2)** 玩家自訂暱稱與公開個人資料 profiles/{uid}。**延後原因與條件：**現在使用 Firebase Auth 的 Google 名稱／Email 即可；只有正式推出玩家自訂名稱、公開個人頁、可見的公開頭像與隱私授權需求時才設計獨立 Profile 與 Rules。
 
 - [ ] **G2 (P2)** 公開排行榜／比賽結果 leaderboards、raceResults。**延後原因與條件：**目前私人賽事成績可透過 saves 還原，瀏覽器提交的分數不能直接作競技可信依據；只有推出對外排名／競賽或防作弊驗證時再評估可信任後端與費用。Spark 不提供 Cloud Functions，若方案要求 Blaze 或其他付費服務，必須由使用者明確同意才做。
+
+### 本輪 TDD 與 CI 驗證記錄（2026-10-25）
+
+- [x] **B2、B3**：cloud modeHistory 的額外統計與本機相同 4096 字元規則上限；回歸測試已納入 `npm test`。
+- [x] **C6**：localStorage 多 Key 寫入失敗採最佳努力回復，原本資料可還原時不遺留部分新成果；有單元回歸測試，無法保證已不可寫的瀏覽器儲存仍可回復。
+- **實際 CI 證據**：`https://github.com/weskao/skyline-rush/actions/runs/40122441074` 的 `unit-tests` job 已成功（SHA `6e5fffef`）。後續 SHA 對文件與文案有修改，須再檢查 CI。
+- **仍在進行或未驗證**：Auth／Firestore Emulator、全部瀏覽器分片、實機 Safari、正式 Google 帳號與 Firestore Rules 部署；A7、B4、B5、C2/C3/D3/D4、E1–E8 等維持 `[ ]`，直到其驗收證據確認。
+- **本批已提交的實作**：UID 私人帳號名稱／Email、永續 Mode／Stunt 最佳成績、離線 pending、帳號快照與切換、原子多文件刪除及重上傳防護、Google 帳號 UI、手動同步、JSON 匯入／匯出、雙語字串與專項測試。
+- **免費限制**：完全沿用 Firebase Spark，無 Blaze 升級、無 Cloud Functions 或其他付費服務。未實作的 P2 和付費候選項目維持原定條件。
 
 ### 本分支實作紀錄（2026-10-25）
 
