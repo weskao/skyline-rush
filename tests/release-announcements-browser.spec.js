@@ -12,6 +12,7 @@ test('players can read bilingual release notes, dismiss and reopen them', async 
   await dialog.locator('#release-language-zh').click();
   await expect(dialog.locator('#release-title')).toHaveText('新版本功能');
   await expect(dialog.locator('.release-entry').first().locator('strong')).toContainText(/[\u3400-\u9fff]/);
+  await page.screenshot({path: test.info().outputPath('whats-new-zh-TW.png')});
   await page.locator('#release-continue').click();
   await expect(dialog).toBeHidden();
   await expect(opener).toBeFocused();
@@ -44,6 +45,7 @@ for (const [width, height] of [[1440,900],[390,844],[320,740],[844,390]]) {
       await page.locator('#whats-new-open').click();
       const d=page.locator('#whats-new-screen'), close=page.locator('#release-continue');
       await expect(d).toBeVisible();
+      await page.screenshot({ path: test.info().outputPath('whats-new-' + width + 'x' + height + '.png') });
       const box=await d.boundingBox();
       expect(box.x).toBeGreaterThanOrEqual(-1);
       expect(box.y).toBeGreaterThanOrEqual(-1);
