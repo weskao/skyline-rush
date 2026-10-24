@@ -288,6 +288,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <p data-i18n="cloud.explain">Sign in to save race progress and restore it after clearing browser data. Existing progress on this device will be merged. Device settings and ghosts stay here.</p>
       <SignInButton id="cloud-login" :icon="GOOGLE_ICON" label-key="cloud.login">Sign in with Google</SignInButton>
       <button type="button" class="controls-reset" id="cloud-logout" data-i18n="cloud.logout" hidden>Sign out</button>
+      <p id="cloud-logout-note" class="cloud-logout-note" data-i18n="cloud.logoutNote" hidden>Signing out does not delete cloud results or your Google account.</p>
       <button type="button" class="controls-reset" id="cloud-switch" data-i18n="cloud.switch" hidden>Use this account</button>
       <button type="button" class="controls-reset" id="cloud-sync-now" data-i18n="cloud.syncNow" disabled>Sync now</button>
       <button type="button" class="controls-reset" id="cloud-export" data-i18n="cloud.export">Export race progress</button>
