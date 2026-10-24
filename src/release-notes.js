@@ -7,6 +7,59 @@ const { version } = packageMeta;
 // stops a release whose version has no entry.
 export const RELEASE_NOTES = Object.freeze([
   {
+    version: '0.22.0', date: '2026-10-25', image: null,
+    highlights: [
+      {
+        id: 'track-swipe', kind: 'new', image: null,
+        title: { en: 'Swipe to pick your track', 'zh-TW': '滑一下就能換賽道' },
+        description: {
+          en: 'On the home screen, swipe or drag the 3D preview left or right to flip between tracks. Trackpad two-finger swipes work too.',
+          'zh-TW': '在首頁左右滑動或拖曳 3D 預覽畫面就能切換賽道，觸控板雙指滑動也可以。'
+        }
+      },
+      {
+        id: 'one-thumb-drift', kind: 'new', image: null,
+        title: { en: 'Drift with one thumb', 'zh-TW': '單手拇指就能甩尾' },
+        description: {
+          en: 'With touch buttons, slide your thumb from ← or → up onto BRAKE to drift while you keep steering. Slide back down to let go of the brake.',
+          'zh-TW': '使用觸控按鈕時，拇指從 ← 或 → 往上滑到煞車鍵，就能一邊轉向一邊甩尾；往下滑回就放開煞車。'
+        }
+      },
+      {
+        id: 'challenge-history', kind: 'new', image: null,
+        title: { en: 'Your best challenge runs, kept for good', 'zh-TW': '挑戰模式最佳成績完整保留' },
+        description: {
+          en: 'Filter History by challenge mode to see your personal best for each one, and which runs have a ghost ready to race.',
+          'zh-TW': '在紀錄中依挑戰模式篩選，就能看到每個模式的個人最佳，以及哪些成績可以和幽靈車再比一次。'
+        }
+      },
+      {
+        id: 'whats-new', kind: 'new', image: null,
+        title: { en: "Catch up on what's new", 'zh-TW': '隨時查看更新內容' },
+        description: {
+          en: 'Tap the version number on the home screen to read about recent updates. Ones you have not seen yet are marked New.',
+          'zh-TW': '點首頁的版本號就能看最近幾次更新的內容，還沒看過的會標上「未讀」。'
+        }
+      },
+      {
+        id: 'road-grip', kind: 'improvement', image: null,
+        title: { en: 'Cars hug curved roads', 'zh-TW': '彎道上車身更貼地' },
+        description: {
+          en: 'Your car now follows banked and twisting roads more closely, and grazing a wall no longer bumps you again and again.',
+          'zh-TW': '車輛在傾斜和蜿蜒的路段更貼合路面，擦到護欄時也不會一直被反覆撞開。'
+        }
+      },
+      {
+        id: 'daily-no-flight', kind: 'fix', image: null,
+        title: { en: 'Clearer no-flight daily challenges', 'zh-TW': '禁止飛行的每日挑戰更清楚' },
+        description: {
+          en: 'When a daily challenge turns off flying, the FLY button shows a lock and explains why, and your charge still powers BOOST.',
+          'zh-TW': '每日挑戰禁止飛行時，FLY 按鈕會顯示鎖頭並說明原因，累積的能量仍可用來 BOOST 加速。'
+        }
+      }
+    ]
+  },
+  {
     version: '0.21.0', date: '2026-10-24',
     image: { en: 'og-image.en.jpeg', 'zh-TW': 'og-image.zh-TW.jpeg' },
     highlights: [
