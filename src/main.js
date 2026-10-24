@@ -35,7 +35,7 @@ import { trackDropdown } from './dropdown.js';
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.js';
 import { refreshIfStale } from './update-check.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.js';
-import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, readLocalModeBests } from './cloud-progress.js';
+import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.js';
 
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
@@ -596,6 +596,45 @@ $('#cloud-export').addEventListener('click', () => {
   link.download = 'skyline-rush-progress.json';
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 0);
+});
+$('#cloud-import').addEventListener('click', () => $('#cloud-import-file').click());
+$('#cloud-import-file').addEventListener('change', async ({ target }) => {
+  const file = target.files?.[0];
+  target.value = '';
+  if (!file) return;
+  if (cloudDeleting || (cloudUser && cloudOwner !== cloudUser.uid)) {
+    say($('#cloud-status'), () => t('cloud.otherAccount'));
+    return;
+  }
+  if (!confirm(t('cloud.importConfirm'))) return;
+  try {
+    if (file.size > 1024 * 1024) throw new Error('Backup file is too large');
+    const imported = parseProgressExport(await file.text());
+    const previousProgress = currentProgress();
+    const previousPermanent = readLocalModeBests();
+    const merged = mergeProgress(previousProgress, imported.progress);
+    const permanent = mergeModeBests(previousPermanent, imported.permanent);
+    if (!saveLocalProgress(merged)) throw new Error('Could not import into device storage');
+    if (!saveLocalModeBests(permanent)) {
+      saveLocalProgress(previousProgress);
+      throw new Error('Could not import permanent results');
+    }
+    for (const id of merged.unlocked) unlockedTracks.add(id);
+    Object.assign(sessionStars, merged.stars);
+    Object.assign(sessionBests, merged.bests);
+    sessionHistory = merged.history;
+    sessionModeHistory = merged.modeHistory;
+    sessionMedals = merged.medals;
+    sessionDaily = merged.daily;
+    showTracks();
+    if ($('#history-screen').open) showHistory();
+    showGarage();
+    say($('#cloud-status'), () => t('cloud.imported'));
+    if (cloudUser) saveCloudProgress();
+  } catch (error) {
+    console.warn('Cloud import failed:', error);
+    say($('#cloud-status'), () => t('cloud.importFailed'));
+  }
 });
 $('#cloud-delete').addEventListener('click', async () => {
   if (!cloudUser || !confirm(t('cloud.deleteConfirm'))) return;
