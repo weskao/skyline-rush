@@ -113,6 +113,9 @@ One frozen entry per **published** version, never generated from commits:
    `node scripts/check-release-notes.mjs <version>`: it refuses the release when that version has no
    entry, a highlight lacks either language, or an image is not a file in `public/`.
 3. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
+4. The gate then runs `npm test` with `package.json` set to the new version, as the tag's CI will.
+   `CURRENT_RELEASE` follows that version, so a test about a specific entry's content pins it with
+   `releaseForVersion('<version>')` — v0.22.0's tag run failed on an unpinned `CURRENT_RELEASE.image`.
 
 ## 7. Tests
 
