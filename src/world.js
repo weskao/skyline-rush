@@ -16,7 +16,7 @@ import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
-import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival } from './track-preview.js';
+import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.js';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
@@ -932,6 +932,26 @@ export function createWorld(canvas) {
       } else if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
+      } else if (preview && visual.view !== 'drive') {
+        // The selected view wins over curated showcase framing on every map.
+        const pose = showcaseCameraPose(trackId,visual.view,time,portrait);
+        const frame = TOUR_IDS.has(trackId) ? trackFrame(trackId,distance)
+          : trackId === 'spiral' ? skyFrame(distance) : null;
+        if (frame) {
+          const right = new THREE.Vector3(...frame.right);
+          const forward = new THREE.Vector3(...frame.forward);
+          desiredCamera.copy(player.position).addScaledVector(right,pose.cameraSide)
+            .addScaledVector(forward,-pose.cameraBack)
+            .add(new THREE.Vector3(0,pose.cameraHeight,0));
+          lookTarget.copy(player.position).addScaledVector(right,pose.lookSide)
+            .addScaledVector(forward,pose.lookAhead)
+            .add(new THREE.Vector3(0,pose.lookHeight-1.6,0));
+        } else {
+          desiredCamera.set(player.position.x+pose.cameraSide,
+            player.position.y+pose.cameraHeight,player.position.z+pose.cameraBack);
+          lookTarget.copy(player.position);
+          lookTarget.y+=pose.lookHeight-1.6;
+        }
       } else if (preview && HERO_PREVIEWS[trackId]) {
         // Same shot scale and 3/4 chase angle as the original five course
         // previews, rotated into the local road frame (including hills).
@@ -949,7 +969,7 @@ export function createWorld(canvas) {
           .addScaledVector(right,portrait?1:info.lookSide)
           .addScaledVector(forward,info.lookAhead)
           .add(new THREE.Vector3(0,info.lookHeight-1.6,0));
-      } else if (visual.enabled && visual.airflow && visual.view !== 'drive') {
+      } else if (!preview && visual.enabled && visual.airflow && visual.view !== 'drive') {
         const angle = visual.view === 'orbit' ? time * 0.18 : { front: Math.PI, rear: 0, left: -Math.PI / 2, right: Math.PI / 2 }[visual.view];
         desiredCamera.set(player.position.x + Math.sin(angle) * 9, player.position.y + 3.6, Math.cos(angle) * 9);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
