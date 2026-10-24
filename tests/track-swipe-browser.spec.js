@@ -85,8 +85,7 @@ test.describe('phone', () => {
     await page.locator('#airflow-toggle').tap(); // airflow was saved on: off, then on again
     await page.locator('#airflow-toggle').tap();
     await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
-    await page.waitForTimeout(300);
-    await expect(chip(page)).toHaveAttribute('data-state', '');
+    await expect(chip(page)).toHaveAttribute('data-state', 'hint'); // each new page load gets one hint
     expect(errors).toEqual([]);
   });
 
