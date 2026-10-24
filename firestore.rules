@@ -6,7 +6,6 @@ service cloud.firestore {
   }
 
   match /databases/{database}/documents {
-    // Minimal private identity cache. Firebase Authentication remains the source of truth.
     match /accounts/{uid} {
       allow get, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
@@ -19,30 +18,7 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['email'])
           || (request.resource.data.email is string
             && request.resource.data.email.size() <= 320
-            && request.resource.data.email.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+
-      allow get: if request.auth != null && request.auth.uid == uid;
-      allow delete: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
-        && request.resource.data.keys().hasAll(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
-        && request.resource.data.version == 2
-        && request.resource.data.unlocked is list
-        && request.resource.data.unlocked.size() <= 10
-        && request.resource.data.unlocked.hasAll(['coast'])
-        && request.resource.data.unlocked.hasOnly(trackIds())
-        && request.resource.data.stars is map
-        && request.resource.data.bests is map
-        && request.resource.data.medals is map
-        && request.resource.data.stars.keys().hasOnly(trackIds())
-        && request.resource.data.bests.keys().hasOnly(trackIds())
-        && request.resource.data.medals.keys().hasOnly(['first-win', 'clean-run', 'perfect-five', 'nitro-chain'])
-        && request.resource.data.history is list && request.resource.data.history.size() <= 50
-        && request.resource.data.modeHistory is list && request.resource.data.modeHistory.size() <= 50
-        && request.resource.data.daily is list && request.resource.data.daily.size() <= 50;
-    }
-  }
-}
-)));
+            && request.resource.data.email.matches('^.+@.+[.].+$')));
     }
 
     match /saves/{uid} {
