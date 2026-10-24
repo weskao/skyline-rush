@@ -155,7 +155,7 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
       test.setTimeout(ciTimeout(90000));
       if (height < 380) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, top: 0, bottom: 21 } });
       // Music off up front: its prompt opens 600ms after load and would sit over START.
-      await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; path=/'; });
+      await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
       await page.goto('/');
       const others = ['.position-stat', '.leaderboard', '.race-progress', '.mode-indicator', '.speedometer', '.flight-telemetry', '.aero-tools',
         '#controls-button', '#pause-button', ...['left', 'right', 'brake', 'fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];

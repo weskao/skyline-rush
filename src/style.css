@@ -2,7 +2,8 @@
 :root { font-family: 'Avenir Next', 'Segoe UI', sans-serif; color: #f4f0e9; background: #040d1c; font-synthesis: none; --accent: #ff8966; --blue: #96e3ff; --muted: #c2c8cd; --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-spring: cubic-bezier(.2, 1.2, .3, 1); --dur-fast: 120ms; --dur-base: 240ms; --dur-slow: 480ms; }
 * { box-sizing: border-box; }
 html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
-#app { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* On the root, not #app: a long press anywhere must never open the Copy/Select All menu. */
+html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body { min-width: 320px; -webkit-tap-highlight-color: transparent; }
 button, a { -webkit-user-select: none; user-select: none; }
 button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
@@ -18,7 +19,7 @@ svg { width: 22px; height: 22px; flex-shrink: 0; }
 #world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; touch-action: none; }
 .scene-shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(9 21 34 / .88) 0%, rgb(9 21 34 / .69) 25%, rgb(9 21 34 / .1) 58%, transparent 80%), linear-gradient(0deg, rgb(6 17 28 / .91), transparent 30%, transparent 78%, rgb(9 21 34 / .26)); transition: opacity .5s; }
 body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(6 17 28 / .86), transparent 28%, transparent 76%, rgb(9 21 34 / .6)); }
-.topbar { position: fixed; z-index: 5; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.topbar { position: fixed; z-index: 7; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 /* The bar's empty gradient lets taps through to the .aero-tools row it overlaps; only its own controls catch them. */
 .topbar { pointer-events: none; }
 .topbar > * { pointer-events: auto; }
@@ -32,7 +33,9 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .route-divider { opacity: .45; }
 .toolbar { position: relative; display: flex; gap: 7px; }
 .icon-button { width: 42px; height: 42px; border: 1px solid rgb(255 255 255 / .19); background: rgb(14 28 42 / .15); display: grid; place-items: center; border-radius: 50%; }
-.icon-button:hover:not(:disabled), .icon-button[aria-pressed="true"] { background: rgb(255 255 255 / .15); }
+.icon-button[aria-pressed="true"] { background: rgb(255 255 255 / .15); }
+/* Touch keeps :hover stuck after a tap, which would paint an OFF toggle like ON. */
+@media (hover: hover) { .icon-button:hover:not(:disabled) { background: rgb(255 255 255 / .15); } }
 /* Icons are re-rendered on audio changes; keep click targets on the stable button. */
 .icon-button svg { pointer-events: none; }
 .settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; max-height: calc(100dvh - 80px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
@@ -40,7 +43,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 /* Chrome ignores ::-webkit-scrollbar once scrollbar-color is set, so the standard properties are for Firefox only. */
 @supports not selector(::-webkit-scrollbar) { #settings-panel { scrollbar-width: thin; scrollbar-color: rgb(195 224 244 / .35) transparent; } }
 .setting { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font-size: 13px; text-align: left; }
-.setting:hover { background: rgb(255 255 255 / .08); }
+@media (hover: hover) { .setting:hover { background: rgb(255 255 255 / .08); } }
 .setting span { flex: 1; }
 .setting svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
 .setting b { font-size: 10px; letter-spacing: 1.6px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -48,7 +51,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .setting[aria-checked="false"] svg { color: var(--muted); }
 .audio-head { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 4px 12px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
 .mute-all { display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid rgb(195 224 244 / .25); border-radius: 999px; background: rgb(255 255 255 / .04); font-size: 12px; letter-spacing: normal; text-transform: none; }
-.mute-all:hover { background: rgb(255 255 255 / .1); }
+@media (hover: hover) { .mute-all:hover { background: rgb(255 255 255 / .1); } }
 .mute-all kbd { padding: 0 5px; border: 1px solid rgb(195 224 244 / .3); border-radius: 4px; font: inherit; font-size: 10px; color: var(--muted); }
 @media (pointer: coarse) { .mute-all kbd { display: none; } }
 .audio-channel { display: grid; padding: 2px 0 8px; border-top: 1px solid rgb(195 224 244 / .1); }
@@ -147,7 +150,7 @@ body[data-phase="ready"] .build-version { display: block; }
   .driving-message[data-tone='warning'] { top: 214px; } /* under the mode panel, above the car */
 }
 @media (max-width: 760px) and (max-height: 500px) { .driving-message[data-tone='warning'] { top: 168px; } } /* small landscape: its mode panel sits higher and the progress panel lower */
-.perf-overlay { position: fixed; z-index: 6; top: max(4px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 4px; color: #c3f7ff; background: rgb(5 17 30 / .7); font: 11px/1.4 ui-monospace, monospace; white-space: nowrap; pointer-events: none; }
+.perf-overlay { position: fixed; z-index: 8; top: max(4px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 4px; color: #c3f7ff; background: rgb(5 17 30 / .7); font: 11px/1.4 ui-monospace, monospace; white-space: nowrap; pointer-events: none; }
 .countdown { position: fixed; top: 35%; left: 50%; translate: -50% 0; width: max-content; max-width: calc(100vw - 24px); text-align: center; z-index: 4; font: 700 140px/1 'Barlow Condensed', sans-serif; text-shadow: 0 8px 60px rgb(5 17 30 / .4); pointer-events: none; }
 .driving-message { position: fixed; top: 30%; left: 10px; right: 10px; text-align: center; color: #fff0d9; font-size: 11px; letter-spacing: 2px; z-index: 3; pointer-events: none; text-shadow: 0 2px 8px #142333; }
 /* A pill so the warning stays legible over bright dusk skies. */
@@ -304,7 +307,7 @@ body[data-phase="ready"] .build-version { display: block; }
 .brand { text-shadow: 0 2px 18px rgb(0 9 24 / .6); }
 .route-heading { text-shadow: 0 1px 8px #091525; }
 .icon-button { background: rgb(8 22 38 / .55); border-color: rgb(195 224 244 / .25); }
-.icon-button:hover:not(:disabled) { border-color: var(--blue); background: #19384c; }
+@media (hover: hover) { .icon-button:hover:not(:disabled) { border-color: var(--blue); background: #19384c; } }
 .intro { animation: intro-arrival .7s cubic-bezier(.16, 1, .3, 1) both; }
 .intro-copy { color: #e1e4e9; }
 .primary-button { box-shadow: 0 8px 30px rgb(8 15 26 / .28); }
@@ -495,7 +498,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .countdown[data-step="1"] .start-lights > i { background: #ffae79; border-color: #ffd0a6; box-shadow: 0 0 18px #fb895b; }
 .countdown[data-step="GO"] { color: #b0f5ff; }
 .countdown[data-step="GO"] .start-lights > i { background: #90efff; border-color: #c8faff; box-shadow: 0 0 22px #69d5ff; }
-.aero-tools { position: fixed; top: 98px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 4; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
+/* The results overlay (z-index 4) is later in the DOM; keep global language/VFX controls above it so the overlay never swallows taps. The topbar (7) stays above this row because its Controls/Audio dropdowns open over it. */
+.aero-tools { position: fixed; top: 98px; right: max(40px, env(safe-area-inset-right, 0px)); z-index: 6; display: flex; gap: 6px; font-size: 10px; letter-spacing: 1px; }
 .aero-tools > button, .aero-tools > details > summary { min-height: 34px; padding: 6px 10px; border: 1px solid #6e9baa66; border-radius: 5px; background: #102432d9; color: #c6edfa; display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .aero-tools kbd { height: 20px; min-width: 20px; font-size: 9px; }
 /* Language dropdown (customSelect) heads the row under the toolbar: globe left, chevron right. 10px everywhere so 繁體中文 stays legible. */
@@ -691,13 +695,14 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .pad-knob { width: 40px; height: 40px; background: rgb(210 226 238 / .6); }
 .toolbar { margin-left: auto; }
 .controls-button { min-width: 44px; height: 44px; flex-shrink: 0; padding: 0 12px; border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; background: rgb(8 22 38 / .55); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; }
-.controls-button:hover:not(:disabled), .controls-button[aria-expanded="true"] { border-color: var(--blue); background: #19384c; }
+.controls-button[aria-expanded="true"] { border-color: var(--blue); background: #19384c; }
+@media (hover: hover) { .controls-button:hover:not(:disabled) { border-color: var(--blue); background: #19384c; } }
 .controls-panel { position: absolute; top: calc(100% + 10px); right: 0; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 100px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
 .controls-field { display: flex; gap: 6px; margin: 0; padding: 8px 6px; border: 0; }
 .controls-field legend { padding: 0 0 6px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
 .controls-choice { position: relative; flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; font-size: 12px; cursor: pointer; }
 .controls-choice input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.controls-choice:hover { background: rgb(255 255 255 / .08); }
+@media (hover: hover) { .controls-choice:hover { background: rgb(255 255 255 / .08); } }
 .controls-choice:has(input:checked) { color: var(--accent); border-color: var(--accent); background: rgb(255 255 255 / .1); }
 .controls-choice:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
 .controls-field.controls-range { display: grid; grid-template-columns: 1fr auto; align-items: center; font-size: 12px; }
@@ -1491,3 +1496,73 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 @media (max-width:760px) and (max-height:500px) {
  .showcase-camera-dock { top:80px; bottom:auto; right:12px; width:148px; }
 }
+
+
+/* Release notes reuse the native History dialog and the existing version-label slot. */
+.build-version { left: 50%; right: auto; transform: translateX(-50%); bottom: max(4px, env(safe-area-inset-bottom, 0px)); min-height: 44px; padding: 0 10px; border: 0; background: transparent; pointer-events: auto; }
+.build-version:hover { color: #f4f0e9; }
+.release-unread { display: none; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
+.build-version.has-update .release-unread { display: inline-block; }
+.release-screen {
+  --rp: 24px;
+  width: min(600px, calc(100% - 24px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  padding: var(--rp) var(--rp) 0; border: 1px solid rgb(150 227 255 / .22); border-radius: 18px; overflow-y: auto;
+  /* The hairline and glows paint on the dialog box itself, so they stay put while the notes scroll. */
+  background:
+    linear-gradient(90deg, var(--accent), var(--blue)) top / 100% 3px no-repeat,
+    radial-gradient(110% 55% at 100% 0%, rgb(255 137 102 / .16), transparent 62%),
+    radial-gradient(90% 45% at 0% 0%, rgb(150 227 255 / .12), transparent 58%),
+    linear-gradient(180deg, #13263a, #0c1a29);
+  box-shadow: 0 30px 90px rgb(0 6 16 / .6), inset 0 1px 0 rgb(255 255 255 / .04);
+}
+.release-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.release-header small { display: inline-flex; align-items: center; gap: 8px; color: #a2ddf1; font-size: 10px; letter-spacing: .2em; }
+.release-header small::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.release-header h2 { margin: 8px 0 0; font: 700 clamp(32px, 6vw, 48px)/.95 'Barlow Condensed', sans-serif; letter-spacing: .02em; background: linear-gradient(100deg, #fff 30%, #a5e7f5); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.release-close { flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgb(150 227 255 / .25); border-radius: 50%; color: #f4f0e9; background: rgb(255 255 255 / .06); font-size: 24px; line-height: 1; cursor: pointer; transition: background var(--dur-fast), border-color var(--dur-fast); }
+.release-close:hover { border-color: var(--blue); background: rgb(255 255 255 / .12); }
+.release-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.release-intro { margin: 10px 0 0; font-size: 14px; line-height: 1.55; color: #b9cad6; }
+.release-versions { display: flex; gap: 8px; margin: 18px calc(-1 * var(--rp)) 0; padding: 2px var(--rp) 6px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: var(--rp); scrollbar-width: none; overscroll-behavior-x: contain; }
+.release-versions::-webkit-scrollbar { display: none; }
+.release-tab { flex: none; display: grid; justify-items: start; align-content: center; gap: 3px; min-width: 96px; min-height: 52px; padding: 8px 14px; border: 1px solid rgb(150 227 255 / .18); border-radius: 12px; color: #c9d9e4; background: rgb(255 255 255 / .04); font: inherit; text-align: left; cursor: pointer; scroll-snap-align: start; transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-base) var(--ease-out); }
+.release-tab:hover { border-color: rgb(150 227 255 / .45); color: #f1fbff; background: rgb(255 255 255 / .07); }
+.release-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.release-tab[aria-selected="true"] { color: #0b1f30; border-color: transparent; background: linear-gradient(135deg, #c3f1fb, #7fd2ea); box-shadow: 0 8px 22px rgb(127 210 234 / .28); }
+.release-tab-version { font: 700 18px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.release-tab-note { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+.release-tab-latest { color: var(--accent); font-weight: 800; opacity: 1; }
+.release-tab[aria-selected="true"] .release-tab-latest { color: #b8431f; }
+.release-panel { margin-top: 14px; border-radius: 14px; }
+.release-panel:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+.release-hero { display: block; width: 100%; aspect-ratio: 16 / 7; max-height: 210px; border: 1px solid rgb(150 227 255 / .2); border-radius: 14px; object-fit: cover; object-position: top; box-shadow: 0 14px 34px rgb(0 6 16 / .45); }
+.release-meta { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin: 14px 0 12px; }
+.release-meta span:first-child { font: 700 26px/1 'Barlow Condensed', sans-serif; letter-spacing: .03em; color: var(--accent); }
+.release-meta span:last-child { color: #9fb4c3; font-size: 12px; letter-spacing: .08em; }
+.release-entries { display: grid; gap: 10px; }
+.release-entry { --kind: var(--blue); display: grid; grid-template-columns: minmax(0,1fr); align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid rgb(150 227 255 / .14); border-left: 3px solid var(--kind); border-radius: 12px; background: linear-gradient(135deg, rgb(255 255 255 / .06), rgb(255 255 255 / .02)); }
+.release-entry[data-kind="new"] { --kind: var(--accent); }
+.release-entry[data-kind="fix"] { --kind: #8fe3a8; }
+.release-entry:has(img) { grid-template-columns: minmax(80px, 34%) minmax(0,1fr); }
+.release-entry img { width: 100%; max-height: 100px; border-radius: 8px; object-fit: cover; }
+.release-kind { display: inline-block; margin-bottom: 6px; padding: 3px 8px; border-radius: 999px; color: var(--kind); background: rgb(255 255 255 / .07); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.release-entry strong { display: block; font-size: 15px; line-height: 1.45; color: #eefbff; }
+.release-entry p { margin: 5px 0 0; font-size: 13px; line-height: 1.6; color: #bfd0dc; overflow-wrap: anywhere; }
+.release-screen[open] .release-entry { animation: release-card-in var(--dur-slow) var(--ease-out) both; }
+.release-screen[open] .release-entry:nth-child(2) { animation-delay: 50ms; }
+.release-screen[open] .release-entry:nth-child(3) { animation-delay: 100ms; }
+.release-screen[open] .release-entry:nth-child(n+4) { animation-delay: 150ms; }
+@keyframes release-card-in { from { opacity: 0; transform: translateY(8px); } }
+/* Continue stays in reach while the notes scroll underneath, even on a short landscape phone. */
+.release-footer { position: sticky; bottom: 0; display: flex; justify-content: flex-end; margin: 6px calc(-1 * var(--rp)) 0; padding: 18px var(--rp) var(--rp); background: linear-gradient(to bottom, rgb(12 26 41 / 0), #0c1a29 42%); }
+.release-footer .primary-button { min-height: 44px; min-width: 160px; justify-content: center; }
+@media (max-width: 480px), (max-height: 500px) {
+  .release-screen { --rp: 16px; border-radius: 16px; }
+  .release-hero { aspect-ratio: 16 / 8; max-height: 120px; }
+  .release-entry { padding: 11px 13px; }
+  .release-tab { min-width: 86px; min-height: 48px; padding: 7px 12px; }
+  .release-header h2 { font-size: 32px; }
+  .release-meta span:first-child { font-size: 22px; }
+}
+@media (max-height: 420px) { .release-hero { display: none; } .release-intro { display: none; } .release-versions { margin-top: 12px; } }
+@media (prefers-reduced-motion: reduce) { .release-screen, .release-entry, .release-tab { animation: none !important; transition: none !important; } }

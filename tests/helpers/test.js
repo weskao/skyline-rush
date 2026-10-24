@@ -8,8 +8,11 @@ export const CI_DEVICE = Object.freeze({ cores: 4, memoryGiB: 8 });
 
 export const test = base.extend({
   guideSeen: [true, { option: true }],
-  context: async ({ context, guideSeen }, use) => {
+  // A seeded guide marks a returning player, who would get the What's New notes on load; mark them read.
+  whatsNewSeen: ['999.0.0', { option: true }],
+  context: async ({ context, guideSeen, whatsNewSeen }, use) => {
     if (guideSeen) await context.addInitScript(() => localStorage.setItem('skyline-rush-guide-seen', '1'));
+    if (whatsNewSeen) await context.addInitScript(seen => localStorage.setItem('skyline-rush-whats-new-seen-v1', seen), whatsNewSeen);
     await context.addInitScript(({ cores, memoryGiB }) => {
       Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, get: () => cores });
       Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => memoryGiB });

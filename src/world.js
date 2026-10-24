@@ -15,6 +15,7 @@ import { t, getLocale, onLocaleChange } from './i18n.js';
 import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
+import { orientCarOnRoad } from './vehicle-pose.js';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.js';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
@@ -558,20 +559,25 @@ export function createWorld(canvas) {
         mesh.position.set(p.x-o.x+f.right[0]*car.x+f.up[0]*(car.altitude||0),p.y-o.y+f.right[1]*car.x+f.up[1]*(car.altitude||0),p.z-o.z+f.right[2]*car.x+f.up[2]*(car.altitude||0));
       }
       const frame = trackId === 'spiral' ? skyFrame(car.distance) : trackFrame(trackId,car.distance);
-      const basis = new THREE.Matrix4().makeBasis(
-        new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate());
-      mesh.quaternion.setFromRotationMatrix(basis);
-    } else mesh.position.set(roadCenter(car.distance) - center + car.x, car.altitude || 0, -relative);
-    const driftYaw = car.drift ? -car.drift.dir * Math.PI * 25 / 180 : 0;
-    if (trackId === 'spiral' || TOUR_IDS.has(trackId)) mesh.rotateY(driftYaw);
-    else mesh.rotation.y = -roadHeading(car.distance) + driftYaw;
-    const bank = isPlayer ? -(car.steering || 0) * (car.altitude > 0.8 ? 0.12 : 0.045) : 0;
-    // Reduced motion and comfort keep the steering bank but drop the roll; the trick still pays.
-    const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
-    // Wrap completed turns before banking again, so landing never unwinds a full roll.
-    const bankFrom = THREE.MathUtils.euclideanModulo(mesh.rotation.z + Math.PI, Math.PI * 2) - Math.PI;
-    mesh.rotation.z = trick ? bank + trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : THREE.MathUtils.damp(bankFrom, bank, 8, dt);
-    mesh.rotation.x = THREE.MathUtils.damp(mesh.rotation.x, car.thrusting ? -0.06 : Math.min(0.08, -(car.verticalSpeed || 0) * 0.006), 7, dt);
+      // Compose every visual offset in local car axes, retaining the actual road pitch/bank.
+      // Reading/writing Euler rotation after setting the track quaternion used to
+      // overwrite its banking and snap near 90-degree spiral headings.
+      const driftYaw = car.drift ? -car.drift.dir * Math.PI * 25 / 180 : 0;
+      const bank = isPlayer ? -(car.steering || 0) * (car.altitude > 0.8 ? 0.12 : 0.045) : 0;
+      const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
+      const trickRoll = trick ? trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : 0;
+      const pitch = car.thrusting ? -0.06 : Math.min(0.08, -(car.verticalSpeed || 0) * 0.006);
+      orientCarOnRoad(mesh, frame, bank + trickRoll, pitch, driftYaw);
+    } else {
+      mesh.position.set(roadCenter(car.distance) - center + car.x, car.altitude || 0, -relative);
+      const driftYaw = car.drift ? -car.drift.dir * Math.PI * 25 / 180 : 0;
+      mesh.rotation.y = -roadHeading(car.distance) + driftYaw;
+      const bank = isPlayer ? -(car.steering || 0) * (car.altitude > 0.8 ? 0.12 : 0.045) : 0;
+      const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
+      const bankFrom = THREE.MathUtils.euclideanModulo(mesh.rotation.z + Math.PI, Math.PI * 2) - Math.PI;
+      mesh.rotation.z = trick ? bank + trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : THREE.MathUtils.damp(bankFrom, bank, 8, dt);
+      mesh.rotation.x = THREE.MathUtils.damp(mesh.rotation.x, car.thrusting ? -0.06 : Math.min(0.08, -(car.verticalSpeed || 0) * 0.006), 7, dt);
+    }
     mesh.userData.jets.visible = !!car.thrusting;
     mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(car.braking ? 2.3 : 1);
     const { wing } = mesh.userData;

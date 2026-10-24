@@ -14,14 +14,14 @@ import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.js';
 import { createSound } from './audio.js';
-import { AUDIO_COOKIES, AUDIO_VERSION, readAudio, setVolume } from './audio-settings.js';
+import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.js';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
-  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.js';
+  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY, HISTORY_KEY } from './history.js';
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
@@ -34,6 +34,7 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.js';
 import { refreshIfStale } from './update-check.js';
+import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress } from './cloud-save.js';
 import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus } from './cloud-progress.js';
 
@@ -143,7 +144,7 @@ const presentation = createPresentation();
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
 let nitroRefillUntil = 0;
-try { ({ audio, volume } = readAudio(document.cookie)); } catch { /* Audio defaults to on when cookies are unavailable. */ }
+try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults to on when storage is blocked. */ }
 const sound = createSound();
 // Initial quality selection is performed once; manual/previous settings win.
 let storedVisuals=null;
@@ -256,6 +257,7 @@ const performanceNotice=$('#performance-notice');
 const performanceNoticeText=$('#performance-notice-text');
 const performanceNoticeTitle=$('#performance-notice-title');
 const performanceNoticeDismiss=$('#performance-notice-dismiss');
+let performanceNoticeDismissed = false;
 let showedPerformanceNotice=false;
 function refreshPerformanceNotice(){
   if(!showedPerformanceNotice)return;
@@ -275,13 +277,151 @@ function showOneTimePerformanceNotice(){
   performanceNotice.hidden=false;
 }
 const hidePerformanceNotice=()=>{ performanceNotice.hidden=true; };
-performanceNoticeDismiss.addEventListener('click',hidePerformanceNotice);
+performanceNoticeDismiss.addEventListener('click', () => { performanceNoticeDismissed = true; hidePerformanceNotice(); });
 // The notice floats over the toolbar panels; opening one means the reader is already in the settings it points to.
 $('#vfx-panel').addEventListener('toggle', ({ target: panel }) => {
   if (panel.open) hidePerformanceNotice();
   trackDropdown(panel, panel.open, () => { panel.open = false; });
 });
 showOneTimePerformanceNotice();
+
+const releaseDialog = $('#whats-new-screen');
+const releaseOpen = $('#whats-new-open');
+const releasePanel = $('#release-panel');
+const RECENT_RELEASES = recentReleases();
+let releaseIndex = 0;
+let releaseOpener = null;
+let releaseShownHere = false;
+const releaseStorage = () => { try { return localStorage; } catch { return null; } };
+// Someone who finished the guide or saved a race played before the notes were recorded.
+const returningPlayer = () => {
+  try { return localStorage.getItem('skyline-rush-guide-seen') !== null || localStorage.getItem(HISTORY_KEY) !== null; }
+  catch { return false; }
+};
+const releaseDay = (date, options) => formatDate(new Date(date + 'T00:00:00'), options);
+
+function renderReleaseNotes() {
+  if (!CURRENT_RELEASE) return;
+  const locale = getLocale();
+  const tabs = RECENT_RELEASES.map((release, index) => {
+    const tab = document.createElement('button');
+    const selected = index === releaseIndex;
+    Object.assign(tab, { type: 'button', id: 'release-tab-' + index, className: 'release-tab', tabIndex: selected ? 0 : -1 });
+    tab.dataset.version = release.version;
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', 'release-panel');
+    tab.setAttribute('aria-selected', String(selected));
+    const name = document.createElement('span');
+    name.className = 'release-tab-version';
+    name.textContent = 'v' + release.version;
+    const note = document.createElement('span');
+    note.className = index ? 'release-tab-note' : 'release-tab-note release-tab-latest';
+    note.textContent = index ? releaseDay(release.date, { month: 'short', day: 'numeric' }) : t('release.latest');
+    tab.append(name, note);
+    return tab;
+  });
+  $('#release-versions').replaceChildren(...tabs);
+  releasePanel.setAttribute('aria-labelledby', 'release-tab-' + releaseIndex);
+  const release = RECENT_RELEASES[releaseIndex];
+  $('#release-version').textContent = 'v' + release.version;
+  $('#release-date').textContent = releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' });
+  const hero = $('#release-hero');
+  const heroImage = releaseImage(release.image, locale);
+  hero.hidden = !heroImage;
+  if (heroImage) hero.src = import.meta.env.BASE_URL + heroImage;
+  else hero.removeAttribute('src');
+  const entries = release.highlights.map(item => {
+    const article = document.createElement('article');
+    article.className = 'release-entry';
+    article.dataset.kind = item.kind;
+    const image = releaseImage(item.image, locale);
+    if (image) {
+      const thumb = document.createElement('img');
+      thumb.src = import.meta.env.BASE_URL + image;
+      thumb.alt = '';
+      thumb.loading = 'lazy';
+      thumb.addEventListener('error', () => thumb.remove(), { once: true });
+      article.append(thumb);
+    }
+    const copy = document.createElement('div');
+    const kind = document.createElement('span');
+    kind.className = 'release-kind';
+    kind.textContent = t('release.kind.' + item.kind);
+    const title = document.createElement('strong');
+    title.textContent = releaseText(item.title, locale);
+    const description = document.createElement('p');
+    description.textContent = releaseText(item.description, locale);
+    copy.append(kind, title, description);
+    article.append(copy);
+    return article;
+  });
+  $('#release-items').replaceChildren(...entries);
+  releaseOpen.classList.toggle('has-update', !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()));
+}
+function selectRelease(index) {
+  releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
+  renderReleaseNotes();
+  const tab = $('#release-tab-' + releaseIndex);
+  tab.focus({ preventScroll: true });
+  tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+  releasePanel.scrollTop = 0;
+  if (!reducedMotion.matches) releasePanel.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+}
+function openReleaseNotes(opener = null) {
+  if (!CURRENT_RELEASE || race.phase !== 'ready' || tutorial || releaseDialog.open || document.querySelector('dialog[open]')) return false;
+  releaseOpener = opener;
+  controls.clear();
+  toggleControls(false);
+  toggleSettings(false);
+  hidePerformanceNotice();
+  // Showing the notes is what counts as read: record it now so a reload or crash never repeats them.
+  markAnnouncementSeen(CURRENT_RELEASE, releaseStorage());
+  releaseShownHere = true;
+  releaseIndex = 0;
+  renderReleaseNotes();
+  releaseDialog.showModal();
+  $('#release-close').focus({ preventScroll: true });
+  return true;
+}
+function maybeShowReleaseNotes() {
+  if (releaseShownHere || !CURRENT_RELEASE) return;
+  const storage = releaseStorage(), returning = returningPlayer();
+  if (!shouldAnnounce(CURRENT_RELEASE, storage, returning)) {
+    // A first-time player starts from today's notes; the next release is the first one announced to them.
+    if (!returning) try { if (storage?.getItem(NOTES_SEEN_KEY) == null) markAnnouncementSeen(CURRENT_RELEASE, storage); } catch { /* nothing to record */ }
+    return;
+  }
+  if (!world || document.hidden || race.phase !== 'ready' || tutorial || document.querySelector('dialog[open]')) return;
+  openReleaseNotes();
+}
+function closeReleaseNotes() { if (releaseDialog.open) releaseDialog.close(); }
+releaseOpen.addEventListener('click', () => openReleaseNotes(releaseOpen));
+$('#release-close').addEventListener('click', closeReleaseNotes);
+$('#release-continue').addEventListener('click', closeReleaseNotes);
+$('#release-versions').addEventListener('click', ({ target }) => {
+  const tab = target.closest('[role="tab"]');
+  if (tab) selectRelease(Number(tab.id.slice('release-tab-'.length)));
+});
+$('#release-versions').addEventListener('keydown', event => {
+  const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+  const target = step ? releaseIndex + step : event.key === 'Home' ? 0 : event.key === 'End' ? RECENT_RELEASES.length - 1 : null;
+  if (target === null) return;
+  event.preventDefault();
+  selectRelease(target);
+});
+releaseDialog.addEventListener('cancel', event => { event.preventDefault(); closeReleaseNotes(); });
+releaseDialog.addEventListener('keydown', event => event.stopPropagation());
+releaseDialog.addEventListener('close', () => {
+  releaseOpen.classList.remove('has-update');
+  (releaseOpener ?? releaseOpen).focus({ preventScroll: true });
+  if (showedPerformanceNotice && !performanceNoticeDismissed && race.phase === 'ready') performanceNotice.hidden = false;
+});
+// A missing bundled image still leaves the entire description readable.
+$('#release-hero').addEventListener('error', ({ target }) => { target.hidden = true; });
+// A higher-priority modal may have been open during the first ready-state check.
+document.addEventListener('close', () => queueMicrotask(maybeShowReleaseNotes), true);
+releaseOpen.hidden = !CURRENT_RELEASE;
+
 let raceRouteMap;
 const trackRouteMaps = new Map();
 function ensureRouteMaps() {
@@ -319,6 +459,7 @@ function applyLocale() {
   syncDailyFlightControl();
   $('#showcase-camera-name').textContent = t('vfx.view.'+visual.view);
   refreshPerformanceNotice();
+  renderReleaseNotes();
   if (tutorial) renderTutorial(true);
   nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
   if (positionChange.dataset.direction) positionChange.setAttribute('aria-label', t(positionChange.dataset.direction === 'gained' ? 'hud.gained' : 'hud.lost'));
@@ -887,15 +1028,19 @@ worldCanvas.addEventListener('pointermove', event => {
   dragSwipe(dx);
 });
 // Trackpad two-finger swipe (horizontal wheel): the preview follows the scroll and changes track once it travels the swipe
-// distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it.
+// distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it,
+// timed on the events' own timeStamp: a stalled frame or late delivery must not turn the momentum tail into a second swipe.
 const WHEEL_END_MS = 160;
 worldCanvas.addEventListener('wheel', event => {
+  if (wheelSwipe && event.timeStamp - wheelSwipe.stamp >= WHEEL_END_MS) { clearTimeout(wheelSwipe.timer); wheelSwipe = null; }
   if (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
   if (swipe || race.phase !== 'ready' || tutorial || editingLayout || document.querySelector('dialog[open]')) return;
   event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
   clearTimeout(wheelSwipe?.timer);
   wheelSwipe ??= { dx: 0, spent: swipeBusy };
-  wheelSwipe.timer = setTimeout(() => { const ended = wheelSwipe; wheelSwipe = null; if (!ended.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
+  wheelSwipe.stamp = event.timeStamp;
+  // No input for a while: spring an unfinished drag back. Only the timeStamp gap above ends the gesture itself.
+  wheelSwipe.timer = setTimeout(() => { if (!wheelSwipe.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
   if (wheelSwipe.spent) return;
   wheelSwipe.dx -= event.deltaX * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerWidth : 1); // lines / pages to px
   const step = swipeStep(wheelSwipe.dx, 0, innerWidth);
@@ -1024,10 +1169,11 @@ function toggleAssist() {
 function setAudio(kind, on, level = volume[kind]) {
   volume[kind] = level;
   audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
-  const name = AUDIO_COOKIES[kind];
+  const key = AUDIO_KEYS[kind];
   try {
-    for (const pair of [`${name}=${audio[kind] ? 'on' : 'off'}`, `${name}-volume=${Math.round(level * 100)}`, AUDIO_VERSION]) document.cookie = `${pair}; Max-Age=31536000; Path=/; SameSite=Lax`;
-  } catch { /* Audio still works when cookies are unavailable. */ }
+    localStorage.setItem(key, audio[kind] ? 'on' : 'off');
+    localStorage.setItem(`${key}-volume`, String(Math.round(level * 100)));
+  } catch { /* Audio still works when storage is blocked. */ }
   showAudio();
 }
 
@@ -1413,6 +1559,7 @@ function phaseUI() {
   if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
+  if (ready) queueMicrotask(maybeShowReleaseNotes);
   if (tutorial) {
     ui['race-overlay'].hidden = true;
     ui['controls-button'].disabled = true;
@@ -1888,6 +2035,7 @@ function updateUI(now, input) {
 
 try {
   world = createWorld($('#world'));
+  requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(visual);
   world.previewAppearance(PAINTS[equippedPaint]);
