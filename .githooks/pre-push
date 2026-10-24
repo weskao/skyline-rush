@@ -14,6 +14,9 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 done
 [ -n "${changed:-}" ] || exit 0
 echo "pre-push: home-screen files changed; running npm run test:layout (a few minutes)..." >&2
+# A preview server another worktree's test run still holds on 5178 would abort the gate; take a free port.
+PLAYWRIGHT_PORT=$(node -e "const s=require('net').createServer().listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})")
+export PLAYWRIGHT_PORT
 if ! npm run test:layout >&2; then
   echo "pre-push: layout tests failed. Fix them before pushing (skip once: SKIP_LAYOUT_GATE=1 git push)." >&2
   exit 1

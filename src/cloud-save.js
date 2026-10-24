@@ -11,7 +11,8 @@ const app = initializeApp({
 });
 const auth = getAuth(app);
 const db = getFirestore(app);
-if (import.meta.env.DEV && location.hostname === '127.0.0.1' && new URLSearchParams(location.search).has('firebase-emulator')) {
+if (import.meta.env.DEV && location.hostname === '127.0.0.1'
+  && (import.meta.env.VITE_FIREBASE_EMULATOR || new URLSearchParams(location.search).has('firebase-emulator'))) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
 }

@@ -67,6 +67,8 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the font are bundled locally; gameplay makes no external requests. No backend or account is needed.
 
+`make` and `make dev-unlocked` also start local Firebase Auth/Firestore emulators (needs Java 21+), so the cloud-save Google sign-in works with fake test accounts and never touches real saves.
+
 ## Controls
 
 | Action | Keyboard |
