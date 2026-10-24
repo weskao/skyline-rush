@@ -70,6 +70,14 @@
 
 - [ ] **G2 (P2)** 公開排行榜／比賽結果 leaderboards、raceResults。**延後原因與條件：**目前私人賽事成績可透過 saves 還原，瀏覽器提交的分數不能直接作競技可信依據；只有推出對外排名／競賽或防作弊驗證時再評估可信任後端與費用。Spark 不提供 Cloud Functions，若方案要求 Blaze 或其他付費服務，必須由使用者明確同意才做。
 
+### 本分支實作紀錄（2026-10-25）
+
+- **已提交、待完整 CI／模擬器驗收：** A7 私人帳號資料 accounts/{uid} 的 displayName／email 正規化與登入同步、刪除流程清理；已新增純函式測試與 Firestore Rules 測試。此功能不使用 Blaze 或 Cloud Functions。
+- **已提交、待完整 CI／回歸驗收：** B2／B3 cloud modeHistory 保留規則版本、距離、關卡與障礙統計，接受與本機一致的 4096 字元 rules；已加入雲端合併回歸測試。
+- **驗證紀錄：** 帳號正規化的精簡 Node 隔離測試先 RED（模組不存在）後 GREEN（3/3）；**尚未在完整專案執行 npm test、npm run test:cloud、npm run build、browser CI，因此相關 checkbox 暫不勾選**。
+- **部署限制：** 新 accounts/{uid} Firestore Rules 尚未部署至正式 Firebase；任何正式站登入測試與 Usage 確認仍待完成。禁止把 GitHub commit 當作已上線證據。
+- **待執行的下一步：** 執行完整單元與 Firebase Emulator Rules／Browser 測試；若出錯先修正；通過後才將 A7、B2、B3 與相關驗證標記 [x]，再依 P0→P1 清單繼續。
+
 ### Spark 免費額度相關候選項目（只有符合條件才實作）
 
 - [ ] **S1 — 後端驗證／Cloud Functions**：Spark 無法使用 Cloud Functions。本次以 Firestore Rules 及本地驗證保護私人資料；若要防作弊或伺服端競技排行，需先有實際需求與**使用者明確同意 Blaze 或其他可用免費替代方案**才重新評估。
