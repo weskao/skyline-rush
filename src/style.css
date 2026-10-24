@@ -1510,6 +1510,7 @@ body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
 .release-tab-note { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
 .release-tab-latest { color: var(--accent); font-weight: 800; opacity: 1; }
 .release-tab[aria-selected="true"] .release-tab-latest { color: #b8431f; }
+.release-tab-unread { display: inline-block; margin-left: 6px; padding: 2px 5px; vertical-align: 2px; border-radius: 999px; color: #0b1f30; background: var(--accent); font-size: 9px; font-weight: 800; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; }
 .release-panel { margin-top: 14px; border-radius: 14px; }
 .release-panel:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
 .release-hero { display: block; width: 100%; aspect-ratio: 16 / 7; max-height: 210px; border: 1px solid rgb(150 227 255 / .2); border-radius: 14px; object-fit: cover; object-position: top; box-shadow: 0 14px 34px rgb(0 6 16 / .45); }

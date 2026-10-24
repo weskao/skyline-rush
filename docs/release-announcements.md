@@ -98,6 +98,10 @@ One frozen entry per **published** version, never generated from commits:
   dialog closes. It defers behind dialogs, the tutorial and a hidden page.
 - **Showing the dialog records it**: the stored version moves to the newest release and the unread
   dot clears the moment it opens, automatically or by hand, so a reload or crash never repeats it.
+- **Unread marks**: while that visit's dialog is open, every listed release newer than the previous
+  stored version shows a **New / 未讀** badge on its tab, so a player who missed several updates
+  sees each one. No extra key is stored — the single seen version is the watermark — and the next
+  opening shows no badges.
 - Manual entry: the version label always reopens the dialog on the newest tab. Close, Escape and
   Continue restore focus to the opener; game hotkeys never leak through the modal.
 
