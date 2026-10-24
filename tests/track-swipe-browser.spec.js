@@ -211,7 +211,9 @@ test('desktop: completed carousel animation stays on the incoming scene until We
   expect(seen.incomingRight).toBeGreaterThanOrEqual(1439);
 });
 
-test('phone: swipe hint appears once per page load, even after a previous visit saved a hint marker', async ({ page }) => {
+test.describe('phone reload hint', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('swipe hint appears once per page load, even after a previous visit saved a hint marker', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-swipe-hint', 'shown'));
   await page.goto('/');
   const seen = () => page.evaluate(() => window.__hintCount);
@@ -236,6 +238,7 @@ test('phone: swipe hint appears once per page load, even after a previous visit 
   await page.locator('#airflow-toggle').click();
   await expect(chip(page)).toHaveAttribute('data-state', 'hint');
   await expect.poll(seen).toBe(1);
+  });
 });
 
 test('desktop: a short drag snaps the joined previews back without changing track', async ({ page }) => {
