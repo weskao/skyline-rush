@@ -369,10 +369,11 @@ test('cloud dialog explains sign-out separately from deleting Google identity', 
   await expect(page.locator('#cloud-logout-note')).toContainText('Signing out does not delete');
   await expect(page.locator('#cloud-delete')).toBeVisible();
   const warning = page.waitForEvent('dialog');
-  await page.locator('#cloud-delete').click({ noWaitAfter: true });
+  const click = page.locator('#cloud-delete').click({ noWaitAfter: true });
   const confirmation = await warning;
   expect(confirmation.message()).toContain('does not delete your Google sign-in account');
   await confirmation.dismiss();
+  await click;
   await page.locator('#cloud-logout').click();
   await expect(page.locator('#cloud-logout-note')).toBeHidden();
 });
