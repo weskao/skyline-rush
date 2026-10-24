@@ -53,3 +53,24 @@ test('Google account documents are private, limited to name/email, and cannot be
   await assertFails(deleteDoc(doc(other, 'accounts/profile-owner')));
   await assertSucceeds(deleteDoc(account));
 });
+
+test('permanent mode records are private and bounded on Spark Firestore', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
+  const env = await initializeTestEnvironment({
+    projectId: 'demo-skyline-rush',
+    firestore: { rules: readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8') },
+  });
+  t.after(() => env.cleanup());
+  const owner = env.authenticatedContext('owner').firestore();
+  const other = env.authenticatedContext('other').firestore();
+  const path = 'modeBests/owner';
+  const records = { version: 1, bests: {}, stunts: {} };
+  await assertSucceeds(setDoc(doc(owner, path), records));
+  await assertSucceeds(getDoc(doc(owner, path)));
+  await assertFails(getDoc(doc(other, path)));
+  await assertFails(getDocs(collection(owner, 'modeBests')));
+  await assertFails(setDoc(doc(other, path), records));
+  await assertFails(setDoc(doc(owner, path), { ...records, version: 2 }));
+  await assertFails(setDoc(doc(owner, path), { ...records, secret: true }));
+  await assertFails(deleteDoc(doc(other, path)));
+  await assertSucceeds(deleteDoc(doc(owner, path)));
+});
