@@ -32,10 +32,6 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <button id="release-close" type="button" class="controls-button" aria-label="Close what's new" data-i18n-aria-label="release.close">×</button>
     </header>
     <div class="release-meta"><span id="release-version"></span><span id="release-date"></span></div>
-    <div class="release-languages" role="group" aria-label="Release notes language" data-i18n-aria-label="release.language">
-      <button type="button" id="release-language-en" aria-pressed="true" lang="en">English</button>
-      <button type="button" id="release-language-zh" aria-pressed="false" lang="zh-TW">繁體中文</button>
-    </div>
     <img id="release-hero" class="release-hero" alt="" hidden>
     <p id="release-intro" class="release-intro" data-i18n="release.intro">See what's new for your next race.</p>
     <div id="release-items" class="release-entries"></div>

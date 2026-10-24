@@ -283,8 +283,6 @@ function renderReleaseNotes() {
   const heroImage = releaseImage(CURRENT_RELEASE.image, locale);
   hero.hidden = !heroImage;
   if (heroImage) hero.src = import.meta.env.BASE_URL + heroImage;
-  $('#release-language-en').setAttribute('aria-pressed', String(locale === 'en'));
-  $('#release-language-zh').setAttribute('aria-pressed', String(locale === 'zh-TW'));
   const entries = CURRENT_RELEASE.highlights.map(item => {
     const article = document.createElement('article');
     article.className = 'release-entry';
@@ -330,8 +328,6 @@ function closeReleaseNotes() { if (releaseDialog.open) releaseDialog.close(); }
 releaseOpen.addEventListener('click', () => openReleaseNotes(releaseOpen));
 $('#release-close').addEventListener('click', closeReleaseNotes);
 $('#release-continue').addEventListener('click', closeReleaseNotes);
-$('#release-language-en').addEventListener('click', () => { saveLocale('en'); setLocale('en'); });
-$('#release-language-zh').addEventListener('click', () => { saveLocale('zh-TW'); setLocale('zh-TW'); });
 releaseDialog.addEventListener('cancel', event => { event.preventDefault(); closeReleaseNotes(); });
 releaseDialog.addEventListener('keydown', event => event.stopPropagation());
 releaseDialog.addEventListener('close', () => {

@@ -9,7 +9,7 @@ test('players can read bilingual release notes, dismiss and reopen them', async 
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('#release-title')).toHaveText("What's new");
   await expect(dialog.locator('.release-entry')).not.toHaveCount(0);
-  await dialog.locator('#release-language-zh').click();
+  await page.locator('#locale-select').selectOption('zh-TW', { force: true });
   await expect(dialog.locator('#release-title')).toHaveText('新版本功能');
   await expect(dialog.locator('.release-entry').first().locator('strong')).toContainText(/[\u3400-\u9fff]/);
   await page.screenshot({path: test.info().outputPath('whats-new-zh-TW.png')});
@@ -31,7 +31,7 @@ test('release hero image uses bundled localized assets and notes do not leak rac
   const hero = dialog.locator('#release-hero');
   await expect(hero).toBeVisible();
   await expect(hero).toHaveAttribute('src', /og-image\.en\.jpeg/);
-  await dialog.locator('#release-language-zh').click();
+  await page.locator('#locale-select').selectOption('zh-TW', { force: true });
   await expect(hero).toHaveAttribute('src', /og-image\.zh-TW\.jpeg/);
   await page.keyboard.press('Enter'); // dialog control, not race start
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
