@@ -263,3 +263,23 @@ test('permanent bests reject malformed keys and unsupported remote schemas', () 
   assert.deepEqual(merged.bests, { [accepted]: 60 });
   assert.throws(() => mergeModeBests({}, { version: 999, bests: {} }), /Unsupported/);
 });
+
+test('switching accounts preserves each UID permanent records and does not leak local rule bests', () => {
+  const data = new Map();
+  const storage = { getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v), removeItem: k => data.delete(k) };
+  const rule = JSON.stringify(['coast', { mode: 'time' }]);
+  saveLocalModeBests(mergeModeBests({ bests: { [rule]: 41 } }), storage);
+  assert.equal(switchCloudAccount('first', 'second', storage), true);
+  assert.deepEqual(readLocalModeBests(storage).bests, {});
+  assert.equal(switchCloudAccount('second', 'first', storage), true);
+  assert.equal(readLocalModeBests(storage).bests[rule], 41);
+});
+
+test('clearing a cloud account removes permanent bests but keeps device settings', () => {
+  const data = new Map([['skyline-rush-vfx', 'high']]);
+  const storage = { getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v), removeItem: k => data.delete(k) };
+  saveLocalModeBests(mergeModeBests({ bests: { [JSON.stringify(['coast',{mode:'time'}])]: 50 } }), storage);
+  assert.equal(clearLocalProgress(storage), true);
+  assert.deepEqual(readLocalModeBests(storage), { bests: {}, stunts: {} });
+  assert.equal(data.get('skyline-rush-vfx'), 'high');
+});
