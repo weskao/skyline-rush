@@ -44,6 +44,14 @@ test.describe('phone', () => {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
     const [first, second] = await trackOrder(page);
+    // Capture the brief completion state even if a slow software-rendered frame
+    // delays Playwright past the chip's 1.4s visibility window.
+    await chip(page).evaluate(element => {
+      window.__sawSwipeDone = false;
+      new MutationObserver(() => {
+        if (element.dataset.state === 'done') window.__sawSwipeDone = true;
+      }).observe(element, { attributes: true, attributeFilter: ['data-state'] });
+    });
     await page.locator('#airflow-toggle').tap();
     await expect(chip(page)).toHaveAttribute('data-state', 'hint');
     await expect(chip(page)).toContainText('Swipe left or right to change track');
@@ -57,7 +65,7 @@ test.describe('phone', () => {
 
     await touchSwipe(page, 320, 90, 560);
     await expect.poll(() => selected(page)).toBe(second);
-    await expect(chip(page)).toHaveAttribute('data-state', 'done');
+    await expect.poll(() => page.evaluate(() => window.__sawSwipeDone)).toBe(true);
     await expect(page.locator('#track-swipe-name')).not.toHaveText('');
     await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.getAnimations().length + canvas.style.transform)).toBe('0');
 
@@ -142,4 +150,45 @@ test('desktop: wheel momentum pauses over 160ms remain part of the same trackpad
   await expect.poll(() => selected(page)).toBe(second);
   await page.waitForTimeout(400);
   expect(await selected(page)).toBe(second);
+});
+
+
+test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with no exposed background', async ({ page }) => {
+  await page.goto('/');
+  const [first, second] = await trackOrder(page);
+  await page.mouse.move(1150, 600);
+  await page.mouse.down();
+  await page.mouse.move(1020, 600, { steps: 6 });
+  const pages = page.locator('#track-swipe-scenes canvas');
+  await expect(pages).toHaveCount(2);
+  const geometry = await pages.evaluateAll(canvases => canvases.map(canvas => {
+    const box = canvas.getBoundingClientRect();
+    const pixels = canvas.getContext('2d').getImageData(
+      Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data;
+    return { left: box.left, right: box.right, width: box.width, height: box.height, alpha: pixels[3] };
+  }));
+  expect(Math.abs(geometry[0].right - geometry[1].left)).toBeLessThan(1);
+  expect(geometry[0].left).toBeLessThanOrEqual(0);
+  expect(geometry[1].right).toBeGreaterThanOrEqual(1440);
+  expect(geometry.every(part => part.width === 1440 && part.height > 0 && part.alpha === 255), 'both actual scenes remain fully opaque').toBe(true);
+  expect(await selected(page)).toBe(first);
+  // The live WebGL renderer stays transparent to interactions but behind opaque snapshots.
+  expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('0');
+  await page.mouse.up();
+  await expect.poll(() => selected(page)).toBe(second);
+  await expect(pages).toHaveCount(0);
+  expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('');
+});
+
+test('desktop: a short drag snaps the joined previews back without changing track', async ({ page }) => {
+  await page.goto('/');
+  const [first] = await trackOrder(page);
+  await page.mouse.move(1150, 600);
+  await page.mouse.down();
+  await page.mouse.move(1120, 600, { steps: 4 });
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(2);
+  await page.waitForTimeout(160); // a held slow drag, not a 30px flick
+  await page.mouse.up();
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+  expect(await selected(page)).toBe(first);
 });

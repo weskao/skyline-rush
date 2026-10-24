@@ -15,6 +15,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
   let tiltEnabled = false, tiltBase = null, tiltAngle = null, tiltSteer = 0, tiltAt = 0;
   let flyMode = 'hold';
   let flyLatched = false;
+  let flyEnabled = true;
   const cleanups = [];
   function listen(element, type, handler) {
     element.addEventListener(type, handler);
@@ -72,14 +73,14 @@ export function createControls(target = window, onAction = () => {}, { getSettin
       }
       return {
         throttle: held.has('throttle'), brake, steer,
-        fly: held.has('fly') || flyLatched, boost: held.has('boost'), nitro: held.has('nitro'),
+        fly: flyEnabled && (held.has('fly') || flyLatched), boost: held.has('boost'), nitro: held.has('nitro'),
       };
     },
     bindButton(button, control) {
       if (control === 'fly' || control === 'boost') actionButtons.set(control, button);
       listen(button, 'pointerdown', event => {
         event.preventDefault();
-        if (defaultSettings()?.editing) return;
+        if (defaultSettings()?.editing || button.disabled || (control === 'fly' && !flyEnabled)) return;
         // WebKit withholds the release of a touch that became an edge-swipe gesture: a new finger on the
         // same button takes it over from any pointer still holding it.
         for (const [id, held] of pointers) if (held.includes(control)) pointers.set(id, held.filter(action => action !== control));
@@ -94,7 +95,7 @@ export function createControls(target = window, onAction = () => {}, { getSettin
         for (const [action, element] of actionButtons) {
           const rect = element.getBoundingClientRect();
           // An 8 px seam lets one thumb bridge adjacent buttons; edited distant buttons stay separate.
-          if (event.clientX >= rect.left - 8 && event.clientX <= rect.right + 8 && event.clientY >= rect.top && event.clientY <= rect.bottom &&
+          if (!element.disabled && !(action === 'fly' && !flyEnabled) && event.clientX >= rect.left - 8 && event.clientX <= rect.right + 8 && event.clientY >= rect.top && event.clientY <= rect.bottom &&
             !(action === 'fly' && flyMode === 'toggle')) held.push(action);
         }
         pointers.set(event.pointerId, held);
@@ -129,6 +130,13 @@ export function createControls(target = window, onAction = () => {}, { getSettin
       }
     },
     setFlyMode(mode) { flyMode = mode === 'toggle' ? 'toggle' : 'hold'; if (flyMode === 'hold') flyLatched = false; },
+    setFlyEnabled(enabled) {
+      flyEnabled = !!enabled;
+      if (!flyEnabled) {
+        flyLatched = false;
+        for (const [id, held] of pointers) pointers.set(id, held.filter(action => action !== 'fly'));
+      }
+    },
     setTilt(enabled) { tiltEnabled = !!enabled; tiltBase = null; tiltSteer = 0; },
     toggleFly() { flyLatched = !flyLatched; },
     setFly(on) { flyLatched = Boolean(on); },
