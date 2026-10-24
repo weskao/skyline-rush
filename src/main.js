@@ -33,6 +33,7 @@ import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { refreshIfStale } from './update-check.js';
+import { CURRENT_RELEASE, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.js';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress } from './cloud-save.js';
 import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus } from './cloud-progress.js';
 
@@ -238,6 +239,7 @@ const performanceNotice=$('#performance-notice');
 const performanceNoticeText=$('#performance-notice-text');
 const performanceNoticeTitle=$('#performance-notice-title');
 const performanceNoticeDismiss=$('#performance-notice-dismiss');
+let performanceNoticeDismissed = false;
 let showedPerformanceNotice=false;
 function refreshPerformanceNotice(){
   if(!showedPerformanceNotice)return;
@@ -257,13 +259,93 @@ function showOneTimePerformanceNotice(){
   performanceNotice.hidden=false;
 }
 const hidePerformanceNotice=()=>{ performanceNotice.hidden=true; };
-performanceNoticeDismiss.addEventListener('click',hidePerformanceNotice);
+performanceNoticeDismiss.addEventListener('click', () => { performanceNoticeDismissed = true; hidePerformanceNotice(); });
 // The notice floats over the toolbar panels; opening one means the reader is already in the settings it points to.
 $('#vfx-panel').addEventListener('toggle', ({ target: panel }) => {
   if (panel.open) hidePerformanceNotice();
   trackDropdown(panel, panel.open, () => { panel.open = false; });
 });
 showOneTimePerformanceNotice();
+
+const releaseDialog = $('#whats-new-screen');
+const releaseOpen = $('#whats-new-open');
+let releaseOpener = null;
+let releaseDismissedHere = false;
+let releaseAutoAttempted = false;
+
+function renderReleaseNotes() {
+  if (!CURRENT_RELEASE) return;
+  const locale = getLocale();
+  $('#release-version').textContent = 'v' + CURRENT_RELEASE.version;
+  $('#release-date').textContent = CURRENT_RELEASE.date;
+  const hero = $('#release-hero');
+  const heroImage = releaseImage(CURRENT_RELEASE.image, locale);
+  hero.hidden = !heroImage;
+  if (heroImage) hero.src = import.meta.env.BASE_URL + heroImage;
+  $('#release-language-en').setAttribute('aria-pressed', String(locale === 'en'));
+  $('#release-language-zh').setAttribute('aria-pressed', String(locale === 'zh-TW'));
+  const entries = CURRENT_RELEASE.highlights.map(item => {
+    const article = document.createElement('article');
+    article.className = 'release-entry';
+    const image = releaseImage(item.image, locale);
+    if (image) {
+      const thumb = document.createElement('img');
+      thumb.src = import.meta.env.BASE_URL + image;
+      thumb.alt = '';
+      thumb.loading = 'lazy';
+      thumb.addEventListener('error', () => thumb.remove(), { once: true });
+      article.append(thumb);
+    }
+    const copy = document.createElement('div');
+    const title = document.createElement('strong');
+    title.textContent = releaseText(item.title, locale);
+    const description = document.createElement('p');
+    description.textContent = releaseText(item.description, locale);
+    copy.append(title, description);
+    article.append(copy);
+    return article;
+  });
+  $('#release-items').replaceChildren(...entries);
+  releaseOpen.classList.toggle('has-update', !releaseDismissedHere && shouldAnnounce(CURRENT_RELEASE, localStorage));
+}
+function openReleaseNotes(opener = null) {
+  if (!CURRENT_RELEASE || race.phase !== 'ready' || tutorial || releaseDialog.open || document.querySelector('dialog[open]')) return false;
+  releaseOpener = opener;
+  controls.clear();
+  toggleControls(false);
+  toggleSettings(false);
+  hidePerformanceNotice();
+  renderReleaseNotes();
+  releaseDialog.showModal();
+  $('#release-close').focus({ preventScroll: true });
+  return true;
+}
+function maybeShowReleaseNotes() {
+  if (releaseDismissedHere || releaseAutoAttempted || !shouldAnnounce(CURRENT_RELEASE, localStorage)) return;
+  if (!world || document.hidden || race.phase !== 'ready' || tutorial || document.querySelector('dialog[open]')) return;
+  releaseAutoAttempted = openReleaseNotes();
+}
+function closeReleaseNotes() { if (releaseDialog.open) releaseDialog.close(); }
+releaseOpen.addEventListener('click', () => openReleaseNotes(releaseOpen));
+$('#release-close').addEventListener('click', closeReleaseNotes);
+$('#release-continue').addEventListener('click', closeReleaseNotes);
+$('#release-language-en').addEventListener('click', () => { saveLocale('en'); setLocale('en'); });
+$('#release-language-zh').addEventListener('click', () => { saveLocale('zh-TW'); setLocale('zh-TW'); });
+releaseDialog.addEventListener('cancel', event => { event.preventDefault(); closeReleaseNotes(); });
+releaseDialog.addEventListener('keydown', event => event.stopPropagation());
+releaseDialog.addEventListener('close', () => {
+  markAnnouncementSeen(CURRENT_RELEASE, localStorage);
+  releaseDismissedHere = true;
+  releaseOpen.classList.remove('has-update');
+  (releaseOpener ?? releaseOpen).focus({ preventScroll: true });
+  if (showedPerformanceNotice && !performanceNoticeDismissed && race.phase === 'ready') performanceNotice.hidden = false;
+});
+// A missing bundled image still leaves the entire description readable.
+$('#release-hero').addEventListener('error', ({ target }) => { target.hidden = true; });
+// A higher-priority modal may have been open during the first ready-state check.
+document.addEventListener('close', () => queueMicrotask(maybeShowReleaseNotes), true);
+releaseOpen.hidden = !CURRENT_RELEASE;
+
 let raceRouteMap;
 const trackRouteMaps = new Map();
 function ensureRouteMaps() {
@@ -299,6 +381,7 @@ function applyLocale() {
   for (const [element, text] of said) element.textContent = text();
   showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
   refreshPerformanceNotice();
+  renderReleaseNotes();
   if (tutorial) renderTutorial(true);
   nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
   if (positionChange.dataset.direction) positionChange.setAttribute('aria-label', t(positionChange.dataset.direction === 'gained' ? 'hud.gained' : 'hud.lost'));
@@ -1225,6 +1308,7 @@ function phaseUI() {
   if (ui['controls-button'].disabled) toggleControls(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
+  if (ready) queueMicrotask(maybeShowReleaseNotes);
   if (tutorial) {
     ui['race-overlay'].hidden = true;
     ui['controls-button'].disabled = true;
@@ -1700,6 +1784,7 @@ function updateUI(now, input) {
 
 try {
   world = createWorld($('#world'));
+  requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(visual);
   world.previewAppearance(PAINTS[equippedPaint]);
