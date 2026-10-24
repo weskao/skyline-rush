@@ -1,5 +1,14 @@
 # TODO — Gameplay depth design
 
+## CI regression: trackpad momentum must select one course per swipe (2026-10-24)
+
+- [x] Inspect failed CI run 40102405872: only browser-tests shard 6 failed; the existing Playwright RED shows expected `neon` but actual `alpine` during one prolonged wheel gesture. The aggregate quality-gate correctly failed because the browser shard was red.
+- [x] Trace `src/main.js` wheel gesture lifecycle: under CPU-heavy WebGL event gaps can exceed the 160 ms inactivity timer, rearming the same swipe and advancing several tracks.
+- [x] Add a dedicated browser regression simulating momentum event intervals beyond 160 ms in `tests/track-swipe-browser.spec.js`, committed before the fix.
+- [x] Apply the minimal shared fix: increase the wheel gesture idle window to 320 ms, still shorter than the 400 ms inter-gesture spacing used by the existing test.
+- [ ] Obtain GREEN evidence on the final commit, including both trackpad tests and all CI shards, then mark the confirmed tests complete. The earlier RED was observed on the original test in the cited CI run; the new focused test was committed test-first but its isolated RED has not been separately observed.
+- [ ] Confirm real Mac trackpad gestures, momentum separation and touch/mouse swipes remain natural before calling this a fully device-verified fix.
+
 ## Regression-first workflow adoption (2026-10-24)
 
 - [x] Define one reusable six-gate development protocol in `docs/regression-first-workflow.md`: root-cause analysis, observed TDD RED, GREEN, cross-track/input matrix, local and manual WebGL checks, exact-commit CI before user-authorized merge.
