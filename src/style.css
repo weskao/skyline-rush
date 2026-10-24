@@ -792,7 +792,8 @@ body.layout-editing #touch-controls { display: grid; }
   body:not([data-phase="ready"]):has(#touch-controls[data-steer-mode="buttons"]) .telemetry { bottom: 220px; }
 }
 /* Buttons mode: BRAKE is rarely needed (AUTO drives; drift is its main use), so it sits ABOVE [<][>], off the row the thumb
-   rests on, slimmer and quieter, behind a 14px gap: reaching it is deliberate, a resting or sliding thumb never grazes it. */
+   rests on, slimmer and quieter, behind a 14px gap: reaching it is deliberate, a resting thumb never grazes it. An arrow touch slid up into it
+   drifts (brake + steer, src/input.js). */
 #touch-controls .touch-steer { row-gap: 14px; }
 .touch-steer :is([data-control="left"], [data-control="right"]) { grid-row: 2; }
 .touch-controls .touch-steer [data-control="brake"] { grid-row: 1; height: calc(44px * var(--touch-scale, 1)); background: rgb(25 44 60 / .45); border-color: rgb(255 140 120 / .45); color: #ffb3a3; }
