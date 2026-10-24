@@ -1,3 +1,8 @@
+## [0.20.2] - 2026-10-24
+
+### 🐛 Bug Fixes
+
+- **audio:** Suspend audio while the page is hidden
 ## [0.20.1] - 2026-10-24
 
 ### 🚀 Features
