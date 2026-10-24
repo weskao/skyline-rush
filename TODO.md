@@ -1,14 +1,24 @@
 # TODO — Gameplay depth design
 
+## Remaining phone browser regressions (2026-10-25)
+
+- [x] RED: the unchanged implementation reproduced all three original failures. The new fixed-date title regressions also failed at 320px and 390px on 2026-10-25's `Aurora Pass · Double traffic` title; full text overflowed its box.
+- [x] Fixed-date title regressions pass at 320px and 390px in en/zh-TW after removing single-line clipping. The original two phone i18n flows pass too. Typography stays 14px and the Daily button remains at least 44px tall.
+- [x] Pointer-event traces confirm that the next gesture starts during the previous snap-back: snapshot canvases still exist and `swipeBusy` rejects the new pointerdown. Wait for `#track-swipe-scenes.childElementCount === 0` after cancel/commit, rather than checking the unanimated `#world`. All 7 swipe tests pass; temporary event tracing was removed. Short-drag, next/previous-track, edge-swipe and hint-persistence checks remain intact.
+- [x] Inspect real WebGL phone screenshots (320/390px, both locales) and desktop screenshots (1280/1440/1804px wide, 900px tall, both locales). All six desktop checks retain the 740px intro height without scrolling; typography wrapping needs no new audio. Evidence is in `playwright-report/phone-regressions/`.
+- Local gate receipt: unit tests passed 547 with 1 skipped and production build passed. The first full browser run was interrupted at the user's explicit request to commit and safe-push first; its partial results are preserved in `playwright-report/phone-regressions/make-verify-interrupted.log`. After pushing, run the complete `make verify` again; its final output is recorded in `playwright-report/phone-regressions/make-verify.log`.
+- Push/CI receipts: the mandatory home layout hook output is preserved in `playwright-report/phone-regressions/safe-push.log`; the exact pushed commit, workflow URL and final required-job conclusions are written after the run to `playwright-report/phone-regressions/ci-status.json`. These receipts distinguish observed results from pending checks without requiring a second documentation-only CI run.
+- [ ] Physical device: Android has no attached device; paired iPhone is unavailable in CoreDevice. Ask for a connected/unlocked phone; do not equate emulation with hardware acceptance.
+
 ## CI regression: optional release hero images (2026-10-25)
 
 - [x] Trace the shard 5 failure: v0.22.0 intentionally has `image: null`; the browser test still assumes the latest release has v0.21.0's localized OG image. The renderer correctly hides absent images, as required by `docs/release-announcements.md`.
 - [x] RED: `PLAYWRIGHT_PORT=5193 npm run test:browser -- tests/release-announcements-browser.spec.js -g 'release hero image'` failed at the original visibility assertion (`Expected: visible`, `Received: hidden`) in real Chrome. No production change was needed: repair the test's version-dependent assumption.
 - [x] GREEN: the complete release-announcements browser file passed 11/11, including a final rerun after screenshot stabilization. The repaired test checks all five displayed releases in en/zh-TW: image visibility/path/decoding when supplied, readable text and no stale `src` when absent, plus Enter never starting a race.
-- [ ] Full `make verify` GREEN: unit tests passed 547 with 1 skipped; production build passed; browser suite finished 397 passed / 3 failed. The additional failures all reproduced in a separate 3-test run: `tests/i18n-browser.spec.js:173` en/zh-TW phone flows report `daily-card-route` clipping (`Aurora Pass · Double traffic`, 183px > 160px), and `tests/track-swipe-browser.spec.js:42` phone swipe stays on `coast` instead of `neon`. These are outside the announcement-test repair; the complete gate remains red.
+- Historical full run before the phone follow-up: unit tests passed 547 with 1 skipped; production build passed; browser suite finished 397 passed / 3 failed. All three failures reproduced: `tests/i18n-browser.spec.js:173` en/zh-TW phone flows reported `daily-card-route` clipping (`Aurora Pass · Double traffic`, 183px > 160px), and `tests/track-swipe-browser.spec.js:42` phone swipe stayed on `coast` instead of `neon`. Their repair and current verification receipts are recorded above.
 - [x] Independently run the World Tour gate skipped after the browser failure: `npx playwright test --config=playwright.world-tour.config.js --output=playwright-report/ci-release-hero/world-tour` passed 27/27.
 - [x] Inspect settled real-WebGL release-dialog screenshots using the requested premium-ui-design Web/adaptive playbooks: desktop en/zh-TW, 390x844, 320x740 and 844x390. Text hierarchy, scrolling content and Continue remain readable/reachable without requiring a hero. Capture animations at their finished state; evidence and full gate log are in `playwright-report/ci-release-hero/`. Physical-device/Safari checks remain unperformed.
-- [ ] Check GitHub CI `quality-gate` for the exact committing HEAD; this commit-only request does not push or establish remote CI success.
+- At the announcement-only handoff, exact-commit remote CI was unverified. The follow-up repair's push and CI evidence are recorded above.
 
 ## Codebase structure: incremental Vue / type-checking adoption (2026-10-25)
 
