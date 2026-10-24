@@ -5,6 +5,84 @@ service cloud.firestore {
       'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
   }
 
+  function validStar(map, id) {
+    return !map.keys().hasAny([id]) || (map[id] is int && map[id] >= 1 && map[id] <= 3);
+  }
+  function validBest(map, id) {
+    return !map.keys().hasAny([id]) || (map[id] is number && map[id] > 0 && map[id] <= 604800);
+  }
+  function validMedal(map, id) {
+    return !map.keys().hasAny([id]) || (map[id] is string &&
+      map[id].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z
+    match /accounts/{uid} {
+      allow get, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['displayName', 'email'])
+        && request.resource.data.keys().hasAny(['displayName', 'email'])
+        && (!request.resource.data.keys().hasAny(['displayName'])
+          || (request.resource.data.displayName is string
+            && request.resource.data.displayName.size() > 0
+            && request.resource.data.displayName.size() <= 200))
+        && (!request.resource.data.keys().hasAny(['email'])
+          || (request.resource.data.email is string
+            && request.resource.data.email.size() <= 320
+            && request.resource.data.email.matches('^.+@.+[.].+$')));
+    }
+
+    match /modeBests/{uid} {
+      allow get, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['version', 'bests', 'stunts'])
+        && request.resource.data.keys().hasAll(['version', 'bests', 'stunts'])
+        && request.resource.data.version == 1
+        && request.resource.data.bests is map
+        && request.resource.data.stunts is map
+        && request.resource.data.bests.size() <= 200
+        && request.resource.data.stunts.size() <= 200;
+    }
+
+    match /saves/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
+        && request.resource.data.keys().hasAll(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
+        && request.resource.data.version == 2
+        && request.resource.data.unlocked is list
+        && request.resource.data.unlocked.size() <= 10
+        && request.resource.data.unlocked.hasAll(['coast'])
+        && request.resource.data.unlocked.hasOnly(trackIds())
+        && validScoreMaps(request.resource.data)
+        && request.resource.data.history is list && request.resource.data.history.size() <= 50
+        && request.resource.data.modeHistory is list && request.resource.data.modeHistory.size() <= 50
+        && request.resource.data.daily is list && request.resource.data.daily.size() <= 50;
+    }
+  }
+}
+));
+  }
+
+  function validScoreMaps(data) {
+    return data.stars is map && data.bests is map && data.medals is map
+      && data.stars.keys().hasOnly(trackIds())
+      && data.bests.keys().hasOnly(trackIds())
+      && data.medals.keys().hasOnly(['first-win', 'clean-run', 'perfect-five', 'nitro-chain'])
+      && validStar(data.stars, 'coast') && validBest(data.bests, 'coast')
+      && validStar(data.stars, 'neon') && validBest(data.bests, 'neon')
+      && validStar(data.stars, 'canyon') && validBest(data.bests, 'canyon')
+      && validStar(data.stars, 'aurora') && validBest(data.bests, 'aurora')
+      && validStar(data.stars, 'spiral') && validBest(data.bests, 'spiral')
+      && validStar(data.stars, 'taipei') && validBest(data.bests, 'taipei')
+      && validStar(data.stars, 'tokyo') && validBest(data.bests, 'tokyo')
+      && validStar(data.stars, 'alpine') && validBest(data.bests, 'alpine')
+      && validStar(data.stars, 'coastal') && validBest(data.bests, 'coastal')
+      && validStar(data.stars, 'cosmic') && validBest(data.bests, 'cosmic')
+      && validMedal(data.medals, 'first-win')
+      && validMedal(data.medals, 'clean-run')
+      && validMedal(data.medals, 'perfect-five')
+      && validMedal(data.medals, 'nitro-chain');
+  }
+
   match /databases/{database}/documents {
     match /accounts/{uid} {
       allow get, delete: if request.auth != null && request.auth.uid == uid;
