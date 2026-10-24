@@ -52,6 +52,12 @@ export async function syncCloudProgress(localProgress) {
   return result.progress;
 }
 
+// Owner-only account lookup used by the game's private profile checks.
+export async function getSignedInAccountDetails() {
+  const uid = auth.currentUser?.uid;
+  return uid ? (await getDoc(doc(db, 'accounts', uid))).data() ?? null : null;
+}
+
 // Cache only explicitly requested Google profile fields in the Spark Firestore database.
 export async function syncGoogleAccountDetails(expectedUid) {
   const user = auth.currentUser;
