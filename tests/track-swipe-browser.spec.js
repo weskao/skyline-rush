@@ -113,3 +113,18 @@ test('desktop: a two-finger trackpad swipe changes one track per gesture, moment
   await page.waitForTimeout(400);
   expect(await selected(page)).toBe(second);
 });
+
+test('desktop: wheel momentum pauses over 160ms remain part of the same trackpad gesture', async ({ page }) => {
+  await page.goto('/');
+  const [, second] = await trackOrder(page);
+  await page.mouse.move(1150, 600);
+  // Under CPU-only WebGL, adjacent momentum events may be spaced >160ms.
+  // These 210ms gaps are still the same physical swipe, not new gestures.
+  for (let i = 0; i < 9; i++) {
+    await page.mouse.wheel(30, 0);
+    await page.waitForTimeout(210);
+  }
+  await expect.poll(() => selected(page)).toBe(second);
+  await page.waitForTimeout(400);
+  expect(await selected(page)).toBe(second);
+});
