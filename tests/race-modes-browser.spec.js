@@ -245,8 +245,10 @@ test('Checkpoint Rush shows directional guidance and perfect gate counter', asyn
   await page.locator('button[data-race-mode="checkpoint"]').click();
   await page.locator('#start-button').click();
   await expect(page.locator('#checkpoint-hud')).toBeVisible();
+  await expect(page.locator('#checkpoint-hud')).toContainText('GATES 0/');
   await expect(page.locator('#checkpoint-hud')).toContainText('PERFECT 0');
-  await expect(page.locator('#checkpoint-hud')).toContainText('NEXT');
+  await expect(page.locator('#checkpoint-hud')).toContainText(/\d+\.\ds LEFT/);
+  await expect(page.locator('#checkpoint-hud')).toContainText(/NEXT [←→↑↓◎]/);
   await page.screenshot({path:'test-results/race-mode-checkpoint-guidance.png'});
 });
 

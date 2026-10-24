@@ -1,7 +1,6 @@
-import { RACE_TRACKS } from './game.js';
+import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
-  HISTORY_LIMIT, MEDALS, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily,
-  validModeHistoryRun, validDaily, validStars } from './history.js';
+  HISTORY_LIMIT, MEDALS, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
 
 export function mergeUnlocks(local, remote) {
   const unlocked = new Set(['coast', ...(Array.isArray(local) ? local : []), ...(Array.isArray(remote) ? remote : [])]);
@@ -21,6 +20,7 @@ const nonnegative = value => Number.isFinite(value) && value >= 0 ? value : 0;
 const date = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 const track = id => Object.hasOwn(RACE_TRACKS, id);
 const raceFields = ['collisions', 'nearMisses', 'rings', 'perfectLines', 'nitroUses', 'longestCombo', 'score', 'fuelOuts', 'gapFalls', 'distance'];
+const modeNames = ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'];
 
 function raceRun(run) {
   const when = date(run?.date);
@@ -31,7 +31,8 @@ function raceRun(run) {
 
 function modeRun(run) {
   const when = date(run?.date);
-  if (!when || !validModeHistoryRun(run) || !track(run.track) || run.rules.length > 2000) return null;
+  if (!when || !track(run.track) || !modeNames.includes(run.mode) || !validTime(run.time) ||
+      typeof run.rules !== 'string' || run.rules.length > 2000) return null;
   return { date: when, mode: run.mode, track: run.track, rules: run.rules, time: run.time,
     position: Number.isInteger(run.position) ? run.position : 0, score: nonnegative(run.score),
     ...(run.mode === 'stunt' ? { maxCombo: nonnegative(run.maxCombo), airTime: nonnegative(run.airTime),
@@ -40,16 +41,21 @@ function modeRun(run) {
 
 function dailyRun(run) {
   const when = date(run?.date);
-  if (!when || !validDaily(run)) return null;
+  if (!when || !/^\d{4}-\d{2}-\d{2}$/.test(run.id) || !track(run.track) || !DAILY_MODIFIERS.includes(run.modifier) ||
+      !validTime(run.time) || !Number.isInteger(run.position) || run.position < 1 || run.position > 4) return null;
   return { id: run.id, track: run.track, modifier: run.modifier, time: run.time,
     position: run.position, score: nonnegative(run.score), date: when };
 }
 
-function mergeRuns(local, cloud, normalize) {
+// Identity deliberately excludes mutable score/telemetry; the same attempt must not double-count on two devices.
+const classicRunId = run => JSON.stringify([run.date, run.track, run.position, run.time]);
+const modeRunId = run => JSON.stringify([run.date, run.mode, run.track, run.rules, run.time]);
+const dailyRunId = run => JSON.stringify([run.id, run.date, run.track, run.modifier, run.position, run.time]);
+function mergeRuns(local, cloud, normalize, identity) {
   const unique = new Map();
   for (const raw of [...(Array.isArray(local) ? local : []), ...(Array.isArray(cloud) ? cloud : [])]) {
     const run = normalize(raw);
-    if (run) unique.set(JSON.stringify(run), run);
+    if (run) unique.set(identity(run), run);
   }
   return [...unique.values()].sort((a, b) => a.date.localeCompare(b.date) || JSON.stringify(a).localeCompare(JSON.stringify(b))).slice(-HISTORY_LIMIT);
 }
@@ -58,8 +64,8 @@ export function mergeProgress(local = {}, cloud = null) {
   if (cloud && ![1, 2].includes(cloud.version)) throw new Error('Unsupported cloud save');
   const stars = {}, bests = {}, medals = {};
   for (const id of Object.keys(RACE_TRACKS)) {
-    const star = Math.max(validStars(local.stars?.[id]) ? local.stars[id] : 0,
-      validStars(cloud?.stars?.[id]) ? cloud.stars[id] : 0);
+    const validStar = n => Number.isInteger(n) && n >= 1 && n <= 3;
+    const star = Math.max(validStar(local.stars?.[id]) ? local.stars[id] : 0, validStar(cloud?.stars?.[id]) ? cloud.stars[id] : 0);
     if (star) stars[id] = star;
     const best = Math.min(validTime(local.bests?.[id]) ? local.bests[id] : Infinity,
       validTime(cloud?.bests?.[id]) ? cloud.bests[id] : Infinity);
@@ -72,9 +78,9 @@ export function mergeProgress(local = {}, cloud = null) {
   return {
     version: 2,
     unlocked: mergeUnlocks(local.unlocked, cloud?.unlocked), stars, bests, medals,
-    history: mergeRuns(local.history, cloud?.history, raceRun),
-    modeHistory: mergeRuns(local.modeHistory, cloud?.modeHistory, modeRun),
-    daily: mergeRuns(local.daily, cloud?.daily, dailyRun),
+    history: mergeRuns(local.history, cloud?.history, raceRun, classicRunId),
+    modeHistory: mergeRuns(local.modeHistory, cloud?.modeHistory, modeRun, modeRunId),
+    daily: mergeRuns(local.daily, cloud?.daily, dailyRun, dailyRunId),
   };
 }
 
@@ -83,22 +89,68 @@ export function readLocalProgress(storage) {
     medals: loadMedals(storage), history: loadHistory(storage), modeHistory: loadModeHistory(storage), daily: loadDaily(storage) };
 }
 
-const PROGRESS_KEYS = { unlocked: UNLOCKED_KEY, stars: STARS_KEY, bests: BEST_KEY, medals: MEDALS_KEY,
-  history: HISTORY_KEY, modeHistory: MODE_HISTORY_KEY, daily: DAILY_KEY };
-
 export function saveLocalProgress(progress, storage) {
+  const fields = [[UNLOCKED_KEY, progress.unlocked], [STARS_KEY, progress.stars], [BEST_KEY, progress.bests],
+    [MEDALS_KEY, progress.medals], [HISTORY_KEY, progress.history], [MODE_HISTORY_KEY, progress.modeHistory], [DAILY_KEY, progress.daily]];
   try {
     const target = storage ?? globalThis.localStorage;
-    for (const [field, key] of Object.entries(PROGRESS_KEYS)) target.setItem(key, JSON.stringify(progress[field]));
+    for (const [key, value] of fields) target.setItem(key, JSON.stringify(value));
     return true;
   } catch { return false; }
 }
 
+const CLOUD_OWNER_KEY = 'skyline-rush-cloud-owner';
+const accountKey = uid => 'skyline-rush-cloud-account:' + uid;
+
+// Keep saved results separate for every Google identity; device preferences are never touched.
+export function switchCloudAccount(previousUid, nextUid, storage = globalThis.localStorage) {
+  if (typeof nextUid !== 'string' || !nextUid || (previousUid && typeof previousUid !== 'string')) return false;
+  if (previousUid === nextUid) return true;
+  try {
+    const current = readLocalProgress(storage);
+    const stored = storage.getItem(accountKey(nextUid));
+    const next = stored ? mergeProgress({}, JSON.parse(stored)) : mergeProgress({});
+    // Prepare the destination snapshot before changing the active owner.
+    if (previousUid) storage.setItem(accountKey(previousUid), JSON.stringify(current));
+    storage.setItem(accountKey(nextUid), JSON.stringify(next));
+    if (!saveLocalProgress(next, storage)) return false;
+    storage.setItem(CLOUD_OWNER_KEY, nextUid);
+    return true;
+  } catch { return false; }
+}
+
+const cloudSyncKey = uid => 'skyline-rush-cloud-sync:' + uid;
+const validCloudUser = uid => typeof uid === 'string' && uid.length > 0 && uid.length <= 128;
+const EMPTY_SYNC = Object.freeze({ pending: false, lastSuccess: null });
+
+// Success means Firestore answered successfully, never merely a successful localStorage write.
+export function readCloudSyncStatus(uid, storage) {
+  if (!validCloudUser(uid)) return { ...EMPTY_SYNC };
+  try {
+    const saved = JSON.parse((storage ?? globalThis.localStorage).getItem(cloudSyncKey(uid)));
+    return { pending: saved?.pending === true, lastSuccess: date(saved?.lastSuccess) };
+  } catch { return { ...EMPTY_SYNC }; }
+}
+
+export function writeCloudSyncStatus(uid, patch, storage) {
+  if (!validCloudUser(uid) || typeof patch?.pending !== 'boolean' ||
+      (patch.lastSuccess !== undefined && !date(patch.lastSuccess))) return false;
+  try {
+    const target = storage ?? globalThis.localStorage;
+    const previous = readCloudSyncStatus(uid, target);
+    target.setItem(cloudSyncKey(uid), JSON.stringify({
+      pending: patch.pending,
+      lastSuccess: patch.lastSuccess === undefined ? previous.lastSuccess : date(patch.lastSuccess),
+    }));
+    return true;
+  } catch { return false; }
+}
+
+// Clear only race progress; retain device controls and preferences.
 export function clearLocalProgress(storage) {
   try {
     const target = storage ?? globalThis.localStorage;
-    for (const key of [...Object.values(PROGRESS_KEYS), LEGACY_BEST_KEY])
-      target.removeItem(key);
+    for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY, DAILY_KEY, LEGACY_BEST_KEY]) target.removeItem(key);
     return true;
   } catch { return false; }
 }

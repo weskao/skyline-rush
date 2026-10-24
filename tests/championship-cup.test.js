@@ -40,3 +40,16 @@ test('five-track Cup accepts five unlocked tracks without repeat',()=>{
  assert.deepEqual(createCup(unlocked,'aurora',5).tracks,['aurora','spiral','coast','neon','canyon']);
  assert.throws(()=>createCup(['coast','neon','canyon'],'coast',5));
 });
+
+// A malformed Cup can otherwise award duplicate AI points or NaN standings.
+test('Cup rejects unknown tracks, duplicate drivers and nonfinite AI projections', () => {
+  assert.throws(() => createCup(['coast', 'neon', 'not-a-track'], 'coast'), /unlocked courses/);
+  const cup = createCup(tracks, 'coast');
+  const duplicate = finish('coast', 40, [41, 42, 43]);
+  duplicate.rivals[1].name = 'NOVA';
+  assert.throws(() => addCupResult(cup, duplicate), /Invalid completed Cup heat/);
+  const malformed = finish('coast', 40, [41, 42, 43]);
+  malformed.rivals[0].finishTime = null;
+  malformed.rivals[0].distance = NaN;
+  assert.throws(() => addCupResult(cup, malformed), /Invalid completed Cup heat/);
+});
