@@ -189,14 +189,25 @@ export function switchCloudAccount(previousUid, nextUid, storage = globalThis.lo
   if (typeof nextUid !== 'string' || !nextUid || (previousUid && typeof previousUid !== 'string')) return false;
   if (previousUid === nextUid) return true;
   try {
-    const current = readLocalProgress(storage);
+    const current = { ...readLocalProgress(storage), permanent: readLocalModeBests(storage) };
     const stored = storage.getItem(accountKey(nextUid));
-    const next = stored ? mergeProgress({}, JSON.parse(stored)) : mergeProgress({});
-    // Prepare the destination snapshot before changing the active owner.
+    const rawNext = stored ? JSON.parse(stored) : null;
+    const next = rawNext ? mergeProgress({}, rawNext) : mergeProgress({});
+    const permanent = mergeModeBests(rawNext?.permanent);
+    // Snapshot the original account before touching active keys. Failed transitions restore it.
     if (previousUid) storage.setItem(accountKey(previousUid), JSON.stringify(current));
-    storage.setItem(accountKey(nextUid), JSON.stringify(next));
-    if (!saveLocalProgress(next, storage)) return false;
-    storage.setItem(CLOUD_OWNER_KEY, nextUid);
+    if (!saveLocalProgress(next, storage) || !saveLocalModeBests(permanent, storage)) {
+      saveLocalProgress(current, storage);
+      saveLocalModeBests(current.permanent, storage);
+      return false;
+    }
+    try {
+      storage.setItem(CLOUD_OWNER_KEY, nextUid);
+    } catch {
+      saveLocalProgress(current, storage);
+      saveLocalModeBests(current.permanent, storage);
+      return false;
+    }
     return true;
   } catch { return false; }
 }
@@ -232,7 +243,7 @@ export function writeCloudSyncStatus(uid, patch, storage) {
 export function clearLocalProgress(storage) {
   try {
     const target = storage ?? globalThis.localStorage;
-    for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY, DAILY_KEY, LEGACY_BEST_KEY]) target.removeItem(key);
+    for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY, DAILY_KEY, LEGACY_BEST_KEY, MODE_BESTS_KEY, STUNT_BESTS_KEY]) target.removeItem(key);
     return true;
   } catch { return false; }
 }
