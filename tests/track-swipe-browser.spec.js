@@ -18,18 +18,22 @@ async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 
   await cdp.detach();
 }
 
-// Real trackpad wheel input through CDP over the preview. A trackpad stamps its events 16ms apart on its own clock however
-// late they reach the page (page.mouse.wheel stamps on delivery, so a slow CI round trip looks like the user pausing).
+// Trackpad wheel events on the preview. A trackpad stamps its events 16ms apart on its own clock however late they reach the
+// page (page.mouse.wheel stamps on delivery, so a slow CI round trip looks like the user pausing), and native wheel deltas are
+// scaled differently per runner (Linux CI turned a 40px nudge into a full swipe), so both delta and timeStamp are pinned here.
 // deliverMs spaces the deliveries; stallAt delays one delivery by 300ms.
 async function trackpadSwipe(page, deltaX, events, { deliverMs = 16, stallAt = -1 } = {}) {
-  const cdp = await page.context().newCDPSession(page);
-  const start = Date.now() / 1000;
+  const world = page.locator('#world');
+  const start = await page.evaluate(() => performance.now());
   for (let i = 0; i < events; i++) {
     if (i === stallAt) await page.waitForTimeout(300);
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: 1150, y: 600, deltaX, deltaY: 0, timestamp: start + i * 0.016 });
+    await world.evaluate((canvas, { deltaX, timeStamp }) => {
+      const event = new WheelEvent('wheel', { deltaX, deltaMode: 0, bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+      canvas.dispatchEvent(event);
+    }, { deltaX, timeStamp: start + i * 16 });
     await page.waitForTimeout(deliverMs);
   }
-  await cdp.detach();
 }
 
 test.describe('phone', () => {

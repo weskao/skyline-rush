@@ -28,5 +28,7 @@ A home-preview trackpad swipe (wheel handler in `src/main.js`) is one gesture un
 `event.timeStamp` shows a `WHEEL_END_MS` pause. Never end or reset a gesture with a wall-clock timer, and
 never widen the window to absorb lag: late delivery (a slow frame, a CI round trip) then splits one swipe
 into two tracks, or resets a half-finished drag. A timer may only spring the preview back. Browser tests
-send wheel input through `trackpadSwipe` (CDP, fixed 16 ms stamps), never through `page.mouse.wheel`, which
-stamps on delivery. Guards: both trackpad tests in `tests/track-swipe-browser.spec.js`.
+send wheel input through `trackpadSwipe` (dispatched `WheelEvent`, pinned CSS-pixel delta, fixed 16 ms
+`timeStamp`), never through `page.mouse.wheel` or CDP `mouseWheel`: those stamp on delivery and scale deltas
+per runner (Linux CI made a 40 px nudge a full swipe). Guards: both trackpad tests in
+`tests/track-swipe-browser.spec.js`.
