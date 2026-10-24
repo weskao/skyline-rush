@@ -24,6 +24,11 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertFails(setDoc(doc(other, 'saves/owner'), progress));
   await assertFails(setDoc(save, { ...progress, unlocked: ['coast', 'unknown'] }));
   await assertFails(setDoc(save, { ...progress, stars: { unknown: 3 } }));
+  await assertFails(setDoc(save, { ...progress, stars: { coast: 7 } }));
+  await assertFails(setDoc(save, { ...progress, stars: { coast: '3' } }));
+  await assertFails(setDoc(save, { ...progress, bests: { coast: -2 } }));
+  await assertFails(setDoc(save, { ...progress, bests: { coast: '60' } }));
+  await assertFails(setDoc(save, { ...progress, medals: { 'first-win': 'not-a-date' } }));
   await assertFails(deleteDoc(doc(other, 'saves/owner')));
   await assertFails(deleteDoc(doc(guest, 'saves/owner')));
   await assertSucceeds(deleteDoc(save));
