@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: dev dev-unlocked dev-feature test-unlocked run deploy
+.PHONY: dev dev-unlocked dev-feature test-unlocked run verify deploy
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -36,6 +36,14 @@ endif
 run: node_modules ## `make run`: unit tests, production build and Chrome browser tests
 	$(NPM) test
 	$(NPM) run test:browser
+
+# The complete local merge-readiness gate: default browser tests already build the locked
+# production bundle; the authored World Tour fixture uses its own Playwright config.
+# Manual real-game/WebGL evidence and exact-commit CI still need separate review.
+verify: node_modules ## `make verify`: units, production build, browser and long-run World Tour suites
+	$(NPM) test
+	$(NPM) run test:browser
+	npx playwright test --config=playwright.world-tour.config.js
 
 # Requires an authenticated GitHub CLI; CI checks the pushed main branch before publishing.
 deploy: ## `make deploy`: trigger CI checks and GitHub Pages deployment of remote main
