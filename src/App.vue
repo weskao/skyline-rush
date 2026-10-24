@@ -286,7 +286,12 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <p data-i18n="cloud.explain">Sign in to save race progress and restore it after clearing browser data. Existing progress on this device will be merged. Device settings and ghosts stay here.</p>
       <SignInButton id="cloud-login" :icon="GOOGLE_ICON" label-key="cloud.login">Sign in with Google</SignInButton>
       <button type="button" class="controls-reset" id="cloud-logout" data-i18n="cloud.logout" hidden>Sign out</button>
+      <button type="button" class="controls-reset" id="cloud-switch" data-i18n="cloud.switch" hidden>Use this account</button>
+      <button type="button" class="controls-reset" id="cloud-export" data-i18n="cloud.export">Export race progress</button>
+      <button type="button" class="controls-reset" id="cloud-delete" data-i18n="cloud.delete" hidden>Delete race progress</button>
+      <p id="cloud-identity" role="status">Not signed in</p>
       <p id="cloud-status" role="status" data-i18n="cloud.local">Race progress is saved on this device only.</p>
+      <p id="cloud-last-sync">Never synced</p>
     </section>
     <label class="history-filter"><span data-i18n="history.track">Track</span> <select id="history-track" aria-label="History track" data-i18n-aria-label="history.trackAria"><option v-for="(track, id) in RACE_TRACKS" :value="id">{{ track.name }}</option></select></label>
     <figure class="history-trend"><figcaption id="history-trend-label"></figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"></svg></figure>

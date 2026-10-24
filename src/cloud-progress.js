@@ -1,5 +1,5 @@
 import { RACE_TRACKS } from './game.js';
-import { HISTORY_KEY, BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
+import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
   HISTORY_LIMIT, MEDALS, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily,
   validModeHistoryRun, validDaily, validStars } from './history.js';
 
@@ -77,12 +77,22 @@ export function readLocalProgress(storage) {
     medals: loadMedals(storage), history: loadHistory(storage), modeHistory: loadModeHistory(storage), daily: loadDaily(storage) };
 }
 
+const PROGRESS_KEYS = { unlocked: UNLOCKED_KEY, stars: STARS_KEY, bests: BEST_KEY, medals: MEDALS_KEY,
+  history: HISTORY_KEY, modeHistory: MODE_HISTORY_KEY, daily: DAILY_KEY };
+
 export function saveLocalProgress(progress, storage) {
-  const fields = [[UNLOCKED_KEY, progress.unlocked], [STARS_KEY, progress.stars], [BEST_KEY, progress.bests],
-    [MEDALS_KEY, progress.medals], [HISTORY_KEY, progress.history], [MODE_HISTORY_KEY, progress.modeHistory], [DAILY_KEY, progress.daily]];
   try {
     const target = storage ?? globalThis.localStorage;
-    for (const [key, value] of fields) target.setItem(key, JSON.stringify(value));
+    for (const [field, key] of Object.entries(PROGRESS_KEYS)) target.setItem(key, JSON.stringify(progress[field]));
+    return true;
+  } catch { return false; }
+}
+
+export function clearLocalProgress(storage) {
+  try {
+    const target = storage ?? globalThis.localStorage;
+    for (const key of [...Object.values(PROGRESS_KEYS), LEGACY_BEST_KEY])
+      target.removeItem(key);
     return true;
   } catch { return false; }
 }

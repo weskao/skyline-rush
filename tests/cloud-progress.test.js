@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, claimCloudOwner } from '../src/cloud-progress.js';
+import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner } from '../src/cloud-progress.js';
 
 test('cloud unlocks merge with existing device progress in track order', () => {
   assert.deepEqual(mergeUnlocks(['coast', 'neon'], ['coast', 'canyon']), ['coast', 'neon', 'canyon']);
@@ -57,6 +57,16 @@ test('mode and daily records merge independently without duplicates', () => {
   assert.deepEqual(mergeProgress(merged, merged), merged);
 });
 
+test('the largest accepted progress history stays well below one Firestore document', () => {
+  const modeHistory = Array.from({ length: 50 }, (_, i) => ({
+    date: new Date(Date.UTC(2026, 9, 20, 0, i)).toISOString(), mode: 'time', track: 'coast',
+    rules: 'x'.repeat(2000), time: 60 + i, position: 1,
+  }));
+  const progress = mergeProgress({ modeHistory });
+  assert.equal(progress.modeHistory.length, 50);
+  assert.ok(Buffer.byteLength(JSON.stringify(progress), 'utf8') < 256 * 1024);
+});
+
 test('malformed cloud star values cannot overrule a valid result', () => {
   const merged = mergeProgress({ stars: { coast: 2 } }, { version: 2, stars: { coast: '3', neon: 5 } });
   assert.deepEqual(merged.stars, { coast: 2 });
@@ -80,6 +90,20 @@ test('restored progress writes only game results to local storage', () => {
   assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'neon']);
   assert.deepEqual(readLocalProgress(storage).stars, { neon: 2 });
   assert.equal(data.get('skyline-rush-vfx'), 'kept');
+});
+
+test('account switch clears all race results including legacy best but keeps device settings', () => {
+  const data = new Map([
+    ['skyline-rush-unlocked', '["coast","neon"]'],
+    ['skyline-rush-best', '60'],
+    ['skyline-rush-history', '[]'],
+    ['skyline-rush-vfx', 'low'],
+  ]);
+  const storage = { getItem: key => data.get(key) ?? null, removeItem: key => data.delete(key) };
+  assert.equal(clearLocalProgress(storage), true);
+  assert.deepEqual(readLocalProgress(storage).unlocked, ['coast']);
+  assert.deepEqual(readLocalProgress(storage).bests, {});
+  assert.equal(data.get('skyline-rush-vfx'), 'low');
 });
 
 test('an empty browser store recovers all account progress fields', () => {

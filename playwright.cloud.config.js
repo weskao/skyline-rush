@@ -8,6 +8,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: 'list',
   use: {
+    channel: 'chrome',
     baseURL: 'http://127.0.0.1:5187',
     locale: 'en-US',
     launchOptions: { args: ['--enable-unsafe-swiftshader'] },

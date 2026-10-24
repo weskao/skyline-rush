@@ -8,6 +8,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /saves/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
         && request.resource.data.keys().hasAll(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])

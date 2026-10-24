@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, connectAuthEmulator } from 'firebase/auth';
-import { doc, getFirestore, runTransaction, connectFirestoreEmulator } from 'firebase/firestore';
+import { doc, getFirestore, runTransaction, deleteDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { mergeProgress } from './cloud-progress.js';
 
 const app = initializeApp({
@@ -19,6 +19,10 @@ if (import.meta.env.DEV && location.hostname === '127.0.0.1' && new URLSearchPar
 export const watchCloudUser = (onUser, onError) => onAuthStateChanged(auth, onUser, onError);
 export const signInToCloud = () => signInWithPopup(auth, new GoogleAuthProvider());
 export const signOutOfCloud = () => signOut(auth);
+export const deleteCloudProgress = expectedUid => {
+  if (auth.currentUser?.uid !== expectedUid) throw new Error('Cloud account changed');
+  return deleteDoc(doc(db, 'saves', expectedUid));
+};
 
 export async function syncCloudProgress(localProgress) {
   const user = auth.currentUser;
