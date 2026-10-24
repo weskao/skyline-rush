@@ -1,4 +1,4 @@
-<!-- source-sha256: 0bc19ad226fa7f05bf70120d4a2e9160b0d79e4e30db096373c12121c090afef generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: e132b86b5c3ac9c749999fcfb75f363ca22dcbf40f6b4c635d812eb50fd5ea0e generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -65,6 +65,8 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 ```
 
 開啟 Vite 印出的本機網址（通常是 http://127.0.0.1:5173）。資源與字型皆已內建於本機；遊戲過程不會發出任何外部請求。不需要後端或帳號。
+
+`make` 與 `make dev-unlocked` 也會啟動本機 Firebase Auth／Firestore 模擬器（需要 Java 21 以上），因此雲端存檔的 Google 登入會使用假的測試帳號，絕不會動到真實存檔。
 
 ## 操作方式
 
