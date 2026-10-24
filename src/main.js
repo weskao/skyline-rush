@@ -1956,9 +1956,9 @@ function updateUI(now, input) {
     const active = control === 'left' ? input.steer < 0 : control === 'right' ? input.steer > 0 : !!input[control];
     button.classList.toggle('is-held', active);
     button.setAttribute('aria-pressed', String(active));
-    // Only toggle mode varies the label; written only when it changes (applyI18n resets it to 'hint.fly').
+    // Daily no-flight and toggle mode vary the label; written only when it changes (applyI18n resets it to 'hint.fly').
     if (control === 'fly') {
-      const label = L[tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
+      const label = L[race.modifier === 'no-flight' ? 'daily.flightDisabled.aria' : tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
       if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
     }
   });

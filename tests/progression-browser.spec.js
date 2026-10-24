@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { dailyChallenge } from '../src/game.js';
+import { selectLocale } from './helpers/locale-browser.js';
 
 const dismissMusicPrompt = async page => {
   await page.waitForTimeout(700);
@@ -152,7 +153,9 @@ test.describe('daily no-flight on touch', () => {
     await expect(fly).toBeDisabled();
     await expect(fly.locator('.touch-fly-lock')).toBeVisible();
     await expect(page.locator('#flight-state')).toHaveText('FLIGHT DISABLED');
-    await page.locator('#locale-select').selectOption('zh-TW');
+    // The language picker is hidden while racing; a player switches from the pause screen.
+    await page.locator('#pause-button').click();
+    await selectLocale(page, 'zh-TW');
     await expect(fly).toHaveAttribute('aria-label', '本日挑戰禁止飛行');
     await expect(page.locator('#flight-state')).toHaveText('禁止飛行');
     await expect(page.locator('#flight-instruction')).toHaveText('每日挑戰規則：無法使用 FLY');
