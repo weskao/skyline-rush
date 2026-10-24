@@ -172,6 +172,10 @@ body[data-phase="ready"] .build-version { display: block; }
 .touch-controls button:active { background: #4b7187; }
 .touch-steer, .touch-pedals { display: flex; gap: 6px; }
 .touch-controls .touch-fly { width: calc(62px * var(--touch-scale, 1)); height: calc(68px * var(--touch-scale, 1)); border-color: #83ceeb; color: #aeebff; flex-direction: column; gap: 5px; font-size: 8px; letter-spacing: 1px; }
+.touch-controls .touch-fly .touch-fly-lock { display: none; }
+.touch-controls .touch-fly:disabled { opacity: .8; color: #a4adb5; border-color: #75838d; background: #27333d; filter: grayscale(.85); cursor: not-allowed; }
+.touch-controls .touch-fly:disabled .touch-fly-lock { display: block; width: 15px; height: 15px; }
+.touch-controls .touch-fly:disabled:active { background: #27333d; }
 .touch-controls .touch-gas { background: #e7916f; color: #192b3a; border-color: #e7916f; }
 @media (max-height: 760px) and (min-width: 761px) {
   .intro { top: 20%; }
