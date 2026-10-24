@@ -359,3 +359,20 @@ test('an unsynced permanent record survives A to B to A account switching', asyn
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBe(47);
 });
+
+test('cloud dialog explains sign-out separately from deleting Google identity', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'logout-copy@example.test' });
+  await expect(page.locator('#cloud-logout-note')).toContainText('Signing out does not delete');
+  await expect(page.locator('#cloud-delete')).toBeVisible();
+  const warning = page.waitForEvent('dialog');
+  await page.locator('#cloud-delete').click({ noWaitAfter: true });
+  const confirmation = await warning;
+  expect(confirmation.message()).toContain('does not delete your Google sign-in account');
+  await confirmation.dismiss();
+  await page.locator('#cloud-logout').click();
+  await expect(page.locator('#cloud-logout-note')).toBeHidden();
+});
