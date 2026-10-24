@@ -543,6 +543,7 @@ watchCloudUser(user => {
   showCloudSession();
   $('#cloud-login').hidden = !!user;
   $('#cloud-logout').hidden = !user;
+  $('#cloud-logout-note').hidden = !user;
   $('#cloud-delete').hidden = !user || cloudOwner && cloudOwner !== user.uid;
   $('#cloud-switch').hidden = true;
   say($('#cloud-status'), () => t(user ? 'cloud.syncing' : 'cloud.local'));
