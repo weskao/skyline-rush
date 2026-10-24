@@ -41,6 +41,9 @@ function modeRun(run) {
   if (Number.isFinite(run.distance) && run.distance >= 0 && run.distance <= 100000) telemetry.distance = run.distance;
   if (run.lapCount === null) telemetry.lapCount = null;
   else if (nonnegativeInt(run.lapCount)) telemetry.lapCount = run.lapCount;
+  if (run.modeId === run.mode) telemetry.modeId = run.mode;
+  if (run.trackId === run.track) telemetry.trackId = run.track;
+  if (run.rulesSignature === run.rules) telemetry.rulesSignature = run.rules;
   return { date: when, mode: run.mode, track: run.track, rules: run.rules, time: run.time,
     position: Number.isInteger(run.position) ? run.position : 0, score: nonnegative(run.score),
     ...telemetry,
@@ -164,6 +167,17 @@ export function saveLocalModeBests(value, storage) {
       return false;
     }
   } catch { return false; }
+}
+
+// Import validates the complete export before any device or cloud state is mutated.
+export function parseProgressExport(text) {
+  if (typeof text !== 'string' || new TextEncoder().encode(text).length > 1024 * 1024)
+    throw new Error('Backup file is too large');
+  let raw;
+  try { raw = JSON.parse(text); } catch { throw new Error('Invalid backup JSON'); }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || ![1, 2].includes(raw.version))
+    throw new Error('Unsupported backup version');
+  return { progress: mergeProgress({}, raw), permanent: mergeModeBests(raw.permanent ?? {}) };
 }
 
 export function readLocalProgress(storage) {
