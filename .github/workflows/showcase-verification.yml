@@ -1,0 +1,23 @@
+name: Showcase Verification
+on:
+  push:
+    branches: [ci/showcase-camera-verification]
+permissions:
+  contents: read
+jobs:
+  showcase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: All-track showroom camera browser regression
+        run: npx playwright test tests/showcase-camera-browser.spec.js
+      - name: Daily no-flight controls and locale regression
+        run: npx playwright test tests/progression-browser.spec.js -g "daily no-flight"
