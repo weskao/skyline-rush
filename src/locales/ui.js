@@ -951,7 +951,7 @@ export const UI = Object.freeze({
     'cloud.import': '匯入比賽成果',
     'cloud.importConfirm': '要將這份備份合併到目前遊戲成果嗎？既有最佳時間與成就會保留。',
     'cloud.imported': '已將備份匯入本裝置。請登入或同步以備份這些成果。',
-    'cloud.importFailed': '無法匯入備份。請確認檔案是有效的 Skyline Rush JSON，且大小不超過 1 MB。',
+    'cloud.importFailed': '無法匯入備份。請確認檔案格式正確，且大小不超過約 100 萬位元組。',
     'cloud.delete': '刪除比賽成果',
     'cloud.deleteConfirm': '確定永久刪除此 Google 帳號與本裝置的比賽成果？如需保留，請先匯出副本。音量等裝置設定與 Ghost 會保留。',
     'cloud.signedInAs': '已登入：{email}',
