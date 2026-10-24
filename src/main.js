@@ -274,6 +274,7 @@ const RECENT_RELEASES = recentReleases();
 let releaseIndex = 0;
 let releaseOpener = null;
 let releaseShownHere = false;
+let releaseUnread = new Set();
 const releaseStorage = () => { try { return localStorage; } catch { return null; } };
 // Someone who finished the guide or saved a race played before the notes were recorded.
 const returningPlayer = () => {
@@ -300,6 +301,12 @@ function renderReleaseNotes() {
     note.className = index ? 'release-tab-note' : 'release-tab-note release-tab-latest';
     note.textContent = index ? releaseDay(release.date, { month: 'short', day: 'numeric' }) : t('release.latest');
     tab.append(name, note);
+    if (releaseUnread.has(release.version)) {
+      const unread = document.createElement('span');
+      unread.className = 'release-tab-unread';
+      unread.textContent = t('release.unread');
+      name.append(unread);
+    }
     return tab;
   });
   $('#release-versions').replaceChildren(...tabs);
@@ -357,7 +364,10 @@ function openReleaseNotes(opener = null) {
   toggleSettings(false);
   hidePerformanceNotice();
   // Showing the notes is what counts as read: record it now so a reload or crash never repeats them.
-  markAnnouncementSeen(CURRENT_RELEASE, releaseStorage());
+  // Everything newer than the previous record stays marked for this visit only.
+  const storage = releaseStorage(), returning = returningPlayer();
+  releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, storage, returning)).map(release => release.version));
+  markAnnouncementSeen(CURRENT_RELEASE, storage);
   releaseShownHere = true;
   releaseIndex = 0;
   renderReleaseNotes();

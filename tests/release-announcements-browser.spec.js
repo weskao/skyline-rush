@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { test, expect } from './helpers/test.js';
+import { recentReleases } from '../src/release-notes.js';
 
 const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const SEEN_KEY = 'skyline-rush-whats-new-seen-v1';
@@ -105,6 +106,28 @@ test('a returning player on an older version gets the notes once, and the record
   await page.reload();
   await settle(page);
   await expect(dialog).toBeHidden();
+});
+
+test.describe('several releases missed', () => {
+  const shown = recentReleases().map(release => release.version);
+  test.use({ whatsNewSeen: shown[2] });
+  test('every release newer than the last one read is marked new until the notes are reopened', async ({ page }) => {
+    await page.goto('/');
+    const dialog = page.locator('#whats-new-screen');
+    await expect(dialog).toBeVisible();
+    const marked = dialog.getByRole('tab').filter({ has: page.locator('.release-tab-unread') });
+    await expect(marked).toHaveCount(2);
+    await expect(marked.nth(0)).toHaveAttribute('data-version', shown[0]);
+    await expect(marked.nth(1)).toHaveAttribute('data-version', shown[1]);
+    await expect(marked.nth(1)).toContainText('New');
+    await marked.nth(1).click(); // switching releases keeps the marks for this visit
+    await page.locator('#locale-select').selectOption('zh-TW', { force: true });
+    await expect(marked).toHaveCount(2);
+    await expect(marked.nth(1)).toContainText('未讀');
+    await page.locator('#release-continue').click();
+    await page.locator('#whats-new-open').click(); // opening the notes counted as reading every release
+    await expect(dialog.locator('.release-tab-unread')).toHaveCount(0);
+  });
 });
 
 test('a player already on the latest notes is not interrupted', async ({ page }) => {
