@@ -6,10 +6,20 @@
 - [x] Compose steering lean, airborne pitch, drift and trick roll as local quaternion offsets, keeping the canonical road frame on Sky Spiral and all five World Tour tracks.
 - [x] Prevent repeated rail crashes while steering continuously into the same road edge; re-arm only after pulling away; preserve first-contact collision and existing scrape behavior.
 - [x] Add pose-continuity, road-alignment and repeated-rail-contact regression test sources covering all routes.
-- [ ] Run new regression tests RED → GREEN plus the full `npm test` suite (environment currently has no installed Node dependencies or direct GitHub clone connectivity).
+- [x] Run full `npm test` through GitHub Actions on feature commit `b4134c0` (unit-tests: success). Previous run exposed a braking regression, fixed by preventing drifting while pressed against the contacted rail.
+- [ ] Independently capture the initial RED for each newly introduced focused regression test; the full green unit run alone does not prove TDD test-first execution.
 - [ ] Run `npm run build`, desktop/mobile Playwright, and full GitHub CI on this feature branch.
 - [ ] Manually verify actual driving at Sky Spiral's helix entry, both quarter turns, exit, rails, elevations, ramps, and every other track; capture before/after gameplay screenshots or recordings.
 - [ ] Independently verify vehicle-to-road mesh clearance at high speeds and road edges with real WebGL rendering.
+
+## Tokyo finished-race UI controls (2026-10-24)
+
+- [x] Merge latest `main` into `feature/sky-spiral-cornering-stability` using a true two-parent merge commit (`baa46ec`), retaining upstream game mode fixes and the feature changes.
+- [x] Fix a concrete click-interception risk: `.aero-tools` (language and VFX) was at the same stacking level as the later `.race-overlay`; lift it above the results overlay without removing either control.
+- [x] Add desktop and touch Playwright coverage for Tokyo: multiple actual simulation collisions, finish, camera click, language switch, Next, Race Again and page errors (`tests/tokyo-finish-controls-browser.spec.js`).
+- [x] Document UI layer/input invariants for future changes in `CLAUDE.md` and `.claude/rules/ui-phase-interactions.md`; document car pose and rail rules in `.claude/rules/vehicle-road-stability.md`.
+- [ ] Confirm actual Playwright results and pointer hit targets (desktop and mobile), plus real device/browser reproduction and before/after images. Script committed does not mean browser behavior passed.
+- [ ] Confirm all CI jobs are green at the final tested commit and report exact run URL; separate `playwright.world-tour.config.js` testing must also finish.
 
 ## 最高優先：儲存與跨裝置還原（2026-10-23）
 
