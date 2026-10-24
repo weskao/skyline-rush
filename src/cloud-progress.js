@@ -176,8 +176,16 @@ export function saveLocalProgress(progress, storage) {
     [MEDALS_KEY, progress.medals], [HISTORY_KEY, progress.history], [MODE_HISTORY_KEY, progress.modeHistory], [DAILY_KEY, progress.daily]];
   try {
     const target = storage ?? globalThis.localStorage;
-    for (const [key, value] of fields) target.setItem(key, JSON.stringify(value));
-    return true;
+    const previous = fields.map(([key]) => [key, target.getItem(key)]);
+    try {
+      for (const [key, value] of fields) target.setItem(key, JSON.stringify(value));
+      return true;
+    } catch {
+      for (const [key, old] of previous) {
+        try { if (old === null) target.removeItem(key); else target.setItem(key, old); } catch { /* Quota / permissions still blocked. */ }
+      }
+      return false;
+    }
   } catch { return false; }
 }
 
