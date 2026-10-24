@@ -180,6 +180,64 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
   expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('');
 });
 
+
+test('desktop: completed carousel animation stays on the incoming scene until WebGL handoff', async ({ page }) => {
+  await page.goto('/');
+  const [, second] = await trackOrder(page);
+  // Observe the exact microtask where the selected track changes. The outgoing
+  // snapshot MUST already be entirely off-screen even before the layer is removed.
+  await page.evaluate(() => {
+    window.__swipeHandoff = null;
+    const tracks = document.querySelector('.track-select');
+    new MutationObserver(() => {
+      if (window.__swipeHandoff || !document.querySelector('#track-swipe-scenes canvas')) return;
+      const canvases = document.querySelectorAll('#track-swipe-scenes canvas');
+      if (canvases.length !== 2 || !document.querySelector('[data-track="neon"][aria-pressed="true"]')) return;
+      const outgoing = canvases[0].getBoundingClientRect();
+      const incoming = canvases[1].getBoundingClientRect();
+      window.__swipeHandoff = { outgoingRight: outgoing.right, incomingLeft: incoming.left, incomingRight: incoming.right };
+    }).observe(tracks, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
+  });
+  await page.mouse.move(1150, 600);
+  await page.mouse.down();
+  await page.mouse.move(1020, 600, { steps: 6 });
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(2);
+  await page.mouse.up();
+  await expect.poll(() => selected(page)).toBe(second);
+  const frame = await expect.poll(() => page.evaluate(() => window.__swipeHandoff)).not.toBeNull();
+  const seen = await page.evaluate(() => window.__swipeHandoff);
+  expect(seen.outgoingRight, 'old track must not reappear after snap animation finishes').toBeLessThanOrEqual(1);
+  expect(seen.incomingLeft).toBeLessThanOrEqual(1);
+  expect(seen.incomingRight).toBeGreaterThanOrEqual(1439);
+});
+
+test('phone: swipe hint appears once per page load, even after a previous visit saved a hint marker', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-swipe-hint', 'shown'));
+  await page.goto('/');
+  const seen = () => page.evaluate(() => window.__hintCount);
+  const watch = () => page.evaluate(() => {
+    window.__hintCount = 0;
+    new MutationObserver(() => {
+      if (document.querySelector('#track-swipe')?.dataset.state === 'hint') window.__hintCount++;
+    }).observe(document.querySelector('#track-swipe'), { attributes: true, attributeFilter: ['data-state'] });
+  });
+  await watch();
+  await page.locator('#airflow-toggle').click();
+  await expect(chip(page)).toHaveAttribute('data-state', 'hint');
+  await expect.poll(seen).toBe(1);
+  await page.locator('#airflow-toggle').click();
+  await page.locator('#airflow-toggle').click();
+  expect(await seen(), 'toggle off/on again in same loaded page must not repeat hint').toBe(1);
+
+  await page.reload();
+  await watch();
+  // Airflow setting persists; switch off then back on to trigger this page's first enable.
+  await page.locator('#airflow-toggle').click();
+  await page.locator('#airflow-toggle').click();
+  await expect(chip(page)).toHaveAttribute('data-state', 'hint');
+  await expect.poll(seen).toBe(1);
+});
+
 test('desktop: a short drag snaps the joined previews back without changing track', async ({ page }) => {
   await page.goto('/');
   const [first] = await trackOrder(page);
