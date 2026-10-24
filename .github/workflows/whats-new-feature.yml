@@ -5,6 +5,10 @@ on:
     branches: [feature/whats-new-release-announcements]
   workflow_dispatch:
 
+concurrency:
+  group: whats-new-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release-notes:
     runs-on: ubuntu-latest
