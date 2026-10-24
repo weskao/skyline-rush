@@ -32,9 +32,18 @@ function raceRun(run) {
 function modeRun(run) {
   const when = date(run?.date);
   if (!when || !track(run.track) || !modeNames.includes(run.mode) || !validTime(run.time) ||
-      typeof run.rules !== 'string' || run.rules.length > 2000) return null;
+      typeof run.rules !== 'string' || !run.rules.length || run.rules.length > 4096) return null;
+  const nonnegativeInt = value => Number.isSafeInteger(value) && value >= 0 && value <= 1000000;
+  const telemetry = {};
+  for (const key of ['rulesVersion', 'stageCount', 'itemsUsed', 'hazardPasses', 'hazardHits']) {
+    if (nonnegativeInt(run[key])) telemetry[key] = run[key];
+  }
+  if (Number.isFinite(run.distance) && run.distance >= 0 && run.distance <= 100000) telemetry.distance = run.distance;
+  if (run.lapCount === null) telemetry.lapCount = null;
+  else if (nonnegativeInt(run.lapCount)) telemetry.lapCount = run.lapCount;
   return { date: when, mode: run.mode, track: run.track, rules: run.rules, time: run.time,
     position: Number.isInteger(run.position) ? run.position : 0, score: nonnegative(run.score),
+    ...telemetry,
     ...(run.mode === 'stunt' ? { maxCombo: nonnegative(run.maxCombo), airTime: nonnegative(run.airTime),
       medal: typeof run.medal === 'string' ? run.medal.slice(0, 32) : '' } : {}) };
 }
