@@ -946,7 +946,7 @@ export const UI = Object.freeze({
     'cloud.deletePending': '刪除作業尚未完成。系統已停止自動上傳此帳號的舊進度；請連線後再次選擇「刪除比賽成果」。',
     'cloud.otherAccount': '本裝置有另一個 Google 帳號的進度。請改用原帳號，或使用下方按鈕安全切換。',
     'cloud.switch': '使用此帳號',
-    'cloud.switchConfirm': '確定切換 Google 帳號？本裝置會分別保留每個帳號的比賽成果與待同步進度，再還原新帳號資料。音量等裝置設定會保留。'
+    'cloud.switchConfirm': '確定切換 Google 帳號？本裝置會分別保留每個帳號的比賽成果與待同步進度，再還原新帳號資料。音量等裝置設定會保留。',
     'cloud.export': '匯出比賽成果',
     'cloud.import': '匯入比賽成果',
     'cloud.importConfirm': '要將這份備份合併到目前遊戲成果嗎？既有最佳時間與成就會保留。',
