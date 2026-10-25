@@ -555,6 +555,21 @@ export function createWorld(canvas) {
     return {minX,maxX,minY,maxY};
   }
 
+  // Bounds of the visible landmark nearest the look target; null when none is shown.
+  const apexBox = new THREE.Box3();
+  function landmarkBounds(look) {
+    let best = null, bestDistance = Infinity;
+    for(const hero of worldTourScene.landmarks()) {
+      if(!hero.visible) continue;
+      apexBox.setFromObject(hero);
+      if(apexBox.isEmpty()) continue;
+      const d = apexBox.distanceToPoint(look);
+      if(d < bestDistance) { bestDistance = d; best = hero; }
+    }
+    if(!best) return null;
+    return apexBox.setFromObject(best);
+  }
+
   function frameShowcaseCar(distance,time) {
     const key=[trackId,visual.view,visual.airflow,visual.quality,
       camera.aspect.toFixed(3),visual.view==='orbit'?Math.floor(time/1.5):0].join(':');
@@ -569,18 +584,53 @@ export function createWorld(canvas) {
         new THREE.Vector3(0,0,1);
       // Try the smallest look adjustment first, then dolly out if a wide
       // vehicle cannot fit. No per-track offsets or expensive per-frame probes.
-      search: for(const back of [0,2,4,6,9,12]) {
+      // A portrait phone (aspect ~0.46) needs far more dolly than a desktop; when
+      // nothing fits, keep the least-cropped candidate instead of the unframed shot.
+      let found=false, bestScore=Infinity, bestLookY=0;
+      const bestEye=new THREE.Vector3();
+      // The drive shot also owns the signature landmark: tilting down to catch the wheels
+      // must not push its top out of frame, so that top is a fit constraint too.
+      const landmark=visual.view==='drive'&&TOUR_IDS.has(trackId)?landmarkBounds(originalLook):null;
+      // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
+      const clearLeft=camera.aspect>1;
+      // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
+      search: for(const back of [0,1,2,3,4,5,6,7,8,9,10,12,14,16,20,26,32,40]) {
         const eye=originalEye.clone().addScaledVector(backward,back);
-        for(const down of [0,.5,1,1.5,2,3,4,5,6,8,10,12]) {
+        for(const down of [0,.25,.5,.75,1,1.5,2,3,4,5,6,8,10,12]) {
           const look=originalLook.clone();look.y-=down;
           const b=projectedCarBounds(eye,look);
-          if(b.minX>-.94&&b.maxX<.94&&b.minY>-.90&&b.maxY<.90) {
+          // Fit inside the edge limits with a small margin: the hovering car bobs after this
+          // one-off search, so a zero-margin fit crops it again a moment later.
+          const carMiss=Math.max(-.92-b.minX,b.maxX-.92,-.88-b.minY,b.maxY-.88);
+          let miss=carMiss;
+          if(landmark) {
+            carCorner.set((landmark.min.x+landmark.max.x)/2,landmark.max.y,(landmark.min.z+landmark.max.z)/2)
+              .project(showcaseProbe);
+            if(carCorner.z<1) miss=Math.max(miss,carCorner.y-.97);
+            if(clearLeft) for(const x of [landmark.min.x,landmark.max.x])
+              for(const y of [landmark.min.y,landmark.max.y])
+                for(const z of [landmark.min.z,landmark.max.z]) {
+                  carCorner.set(x,y,z).project(showcaseProbe);
+                  if(carCorner.z<1) miss=Math.max(miss,.03-carCorner.x);
+                }
+          }
+          // The whole car is the hard requirement; the landmark only breaks ties among the
+          // candidates that fit it. With no fit at all, keep the least-cropped car.
+          const score=carMiss<0?miss-1e3:carMiss;
+          if(score<bestScore) {
+            bestScore=score;
+            bestEye.copy(eye).sub(originalEye);
+            bestLookY=-down;
+          }
+          if(miss<0) {
             framingEye.copy(eye).sub(originalEye);
             framingLookY=-down;
+            found=true;
             break search;
           }
         }
       }
+      if(!found) { framingEye.copy(bestEye); framingLookY=bestLookY; }
     }
     desiredCamera.add(framingEye);
     lookTarget.y+=framingLookY;
