@@ -9,7 +9,23 @@ export function createCup(unlocked, startingTrack, count = 3) {
   const start = unlocked.indexOf(startingTrack);
   return { tracks: Array.from({length:count},(_,i)=>unlocked[(start+i)%unlocked.length]), results:[] };
 }
+// A saved or interrupted Cup must not turn missing drivers into undefined points/NaN times.
+function assertCupStandings(cup) {
+  const validTracks = Array.isArray(cup?.tracks) && [3, 5].includes(cup.tracks.length) &&
+    new Set(cup.tracks).size === cup.tracks.length &&
+    cup.tracks.every(track => Object.hasOwn(RACE_TRACKS, track));
+  if (!validTracks || !Array.isArray(cup.results) || cup.results.length > cup.tracks.length)
+    throw new RangeError('Invalid Cup standings');
+  for (const [index, result] of cup.results.entries()) {
+    if (result?.track !== cup.tracks[index] || !Number.isFinite(result.time) || result.time <= 0 ||
+      !Array.isArray(result.order) || result.order.length !== NAMES.length ||
+      new Set(result.order).size !== NAMES.length ||
+      NAMES.some(name => !result.order.includes(name) || !Number.isFinite(result.times?.[name]) || result.times[name] <= 0) ||
+      result.times.YOU !== result.time) throw new RangeError('Invalid Cup standings');
+  }
+}
 export function addCupResult(cup, race) {
+  assertCupStandings(cup);
   if (!cup || !Array.isArray(cup.tracks) || !Array.isArray(cup.results) ||
     race?.trackId !== cup.tracks[cup.results.length] || race.phase !== 'finished' ||
     !Number.isFinite(race.result?.time) || race.result.time <= 0 ||
@@ -30,6 +46,7 @@ export function addCupResult(cup, race) {
   }] };
 }
 export function cupStandings(cup) {
+  assertCupStandings(cup);
   return NAMES.map(name=>({name,
     points:cup.results.reduce((sum,r)=>sum+POINTS[r.order.indexOf(name)],0),
     time:cup.results.reduce((sum,r)=>sum+r.times[name],0),
