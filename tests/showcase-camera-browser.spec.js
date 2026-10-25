@@ -48,3 +48,30 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:84
     await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view','front');
   });
 }
+
+const worldTourMaps=['taipei','tokyo','alpine','coastal','cosmic'];
+for(const id of worldTourMaps) {
+  for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
+    test(`${id}: AIRFLOW on-road preview keeps every camera button usable at ${viewport.width}px`,async({page},info)=>{
+      await page.setViewportSize(viewport);
+      await page.addInitScript(()=>{
+        localStorage.setItem('skyline-rush-unlocked',JSON.stringify(['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic']));
+        localStorage.setItem('skyline-rush-music','off');
+      });
+      await page.goto('/');
+      await page.locator(`[data-track="${id}"]`).click();
+      const airflow=page.locator('#airflow-toggle');
+      await airflow.click(); // never force-click past an overlay
+      await expect(airflow).toHaveAttribute('aria-pressed','true');
+      const dock=page.locator('#showcase-camera-dock');
+      await expect(dock).toBeVisible();
+      for(const mode of ['front','rear','left','right','orbit','drive']) {
+        await page.locator('#showcase-camera-next').click();
+        await expect(dock).toHaveAttribute('data-view',mode);
+      }
+      await page.screenshot({path:info.outputPath(`${id}-airflow-${viewport.width}.png`),animations:'disabled'});
+      await airflow.click();
+      await expect(airflow).toHaveAttribute('aria-pressed','false');
+    });
+  }
+}
