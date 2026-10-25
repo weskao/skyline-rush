@@ -1,6 +1,7 @@
 import { PAINTS } from './appearance.js';
 import { t } from './i18n.js';
-import { availablePaints } from '@progression-access';
+// Same locked production source as Vite's @progression-access alias; also importable by node:test.
+import { availablePaints } from './access/production.js';
 
 /**
  * @param {string} id
