@@ -12,6 +12,20 @@ test('ready screen offers a discoverable camera dock across all tracks',async({p
   }
 });
 
+test('desktop camera control is not covered by the device quality notice',async({page})=>{
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/');
+  const notice=page.locator('#performance-notice');
+  const button=page.locator('#showcase-camera-next');
+  await expect(notice).toBeVisible();
+  const a=await notice.boundingBox(), b=await button.boundingBox();
+  const overlaps=a.x < b.x+b.width && b.x < a.x+a.width &&
+    a.y < b.y+b.height && b.y < a.y+a.height;
+  expect(overlaps,'The first-launch performance notice must not cover the camera controls').toBe(false);
+  await button.click();
+  await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view','front');
+});
+
 test('home camera cycles independently of AIRFLOW and follows language changes',async({page})=>{
   await page.goto('/');
   const dock=page.locator('#showcase-camera-dock');
