@@ -35,6 +35,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Strict TS + real Vue SFC template semantic check + documented JS islands.
+      - run: npm run typecheck
       - run: npm test
 
   # CPU-only WebGL makes the serial suite take about two hours on one runner; shards run it in parallel. Playwright
