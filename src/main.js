@@ -179,7 +179,10 @@ const calloutReports = [$('#maneuver-report'), ui['skill-report'], $('#action-re
 let shownCallout = null;
 let feedbackCar, lastImpact, lastDriftPayout, lastTrickPayout, lastNitroTime = 0;
 const motionTokens = getComputedStyle(document.documentElement);
-const motionOptions = duration => ({ duration: parseFloat(motionTokens.getPropertyValue(`--dur-${duration}`)), easing: motionTokens.getPropertyValue('--ease-out').trim() });
+const motionOptions = duration => {
+  const time = motionTokens.getPropertyValue(`--dur-${duration}`).trim();
+  return { duration: parseFloat(time) * (time.endsWith('ms') ? 1 : 1000), easing: motionTokens.getPropertyValue('--ease-out').trim() };
+};
 const calmMotion = () => visual.comfortable || reducedMotion.matches;
 function stopPresentationMotion() {
   if (calmMotion()) document.getAnimations().forEach(animation => animation.cancel());
@@ -1050,7 +1053,7 @@ const swipeScenes = document.createElement('div');
 swipeScenes.id = 'track-swipe-scenes';
 swipeScenes.setAttribute('aria-hidden', 'true');
 worldCanvas.after(swipeScenes);
-let swipeSceneStep = 0;
+let swipeSceneStep = 0, swipeSnapback = null;
 function captureSwipeFrame() {
   const canvas = document.createElement('canvas');
   canvas.width = worldCanvas.width;
@@ -1059,15 +1062,19 @@ function captureSwipeFrame() {
   return canvas;
 }
 function clearSwipeScenes() {
+  swipeSnapback = null;
   swipeScenes.getAnimations().forEach(animation => animation.cancel());
   swipeScenes.replaceChildren();
   swipeScenes.style.transform = '';
   swipeSceneStep = 0;
   worldCanvas.style.opacity = '';
+  swipeBusy = false;
 }
 function prepareSwipeScenes(step) {
   const button = swipeNeighbour(step);
   if (!button || !world || calmMotion()) return false;
+  swipeSnapback = null;
+  swipeScenes.getAnimations().forEach(animation => animation.cancel());
   if (step === swipeSceneStep && swipeScenes.childElementCount === 2) return true;
   try {
     const time = performance.now() / 1000;
@@ -1104,13 +1111,14 @@ function cancelSwipe() {
   swipeBusy = true;
   // Keep the last keyframe painted until the snapshot layer is removed.
   // Without fill, Web Animations reverts to the drag's inline transform for a frame.
-  swipeScenes.animate([{ transform: from }, { transform: to }], { ...motionOptions('fast'), fill: 'forwards' }).finished
-    .catch(() => {}).then(() => { clearSwipeScenes(); swipeBusy = false; });
+  // A resumed swipe cancels this snap-back and owns the snapshots from then on.
+  const animation = swipeSnapback = swipeScenes.animate([{ transform: from }, { transform: to }], { ...motionOptions('fast'), fill: 'forwards' });
+  animation.finished.catch(() => {}).then(() => { if (swipeSnapback === animation) clearSwipeScenes(); });
 }
 // Slide the outgoing and incoming track as adjacent full-screen pages, never as faded empty canvas.
 async function commitSwipe(button, step) {
   swipe = null; swipeTarget = null; swipeBusy = true;
-  const prepared = swipeSceneStep === step && swipeScenes.childElementCount === 2 || prepareSwipeScenes(step);
+  const prepared = prepareSwipeScenes(step);
   if (prepared && !calmMotion()) {
     const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
     const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';
@@ -1126,10 +1134,10 @@ async function commitSwipe(button, step) {
   // Wait for the live WebGL scene to reflect the new track before uncovering it.
   if (prepared) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   clearSwipeScenes();
-  swipeBusy = false;
 }
 // The two complete scenes stay touching at the center seam throughout the drag.
 function dragSwipe(dx) {
+  swipeBusy = false;
   const step = dx < 0 ? 1 : -1;
   const neighbour = swipeNeighbour(step);
   if (!calmMotion() && neighbour && prepareSwipeScenes(step)) {
