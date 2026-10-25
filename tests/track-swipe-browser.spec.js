@@ -185,18 +185,21 @@ test('desktop trackpad scroll: completed animation never re-exposes the departin
   const [, second] = await trackOrder(page);
   // Observe the exact microtask where the selected track changes. The outgoing
   // snapshot MUST already be entirely off-screen even before the layer is removed.
-  await page.evaluate(() => {
+  await page.evaluate(targetTrack => {
     window.__swipeHandoff = null;
-    const tracks = document.querySelector('.track-select');
+    // Watch all track selections, not a hard-coded track ID. Different modes
+    // and saved progress may start with different tracks.
     new MutationObserver(() => {
-      if (window.__swipeHandoff || !document.querySelector('#track-swipe-scenes canvas')) return;
+      if (window.__swipeHandoff) return;
+      const selected = document.querySelector('[data-track][aria-pressed="true"]')?.dataset.track;
+      if (selected !== targetTrack) return;
       const canvases = document.querySelectorAll('#track-swipe-scenes canvas');
-      if (canvases.length !== 2 || !document.querySelector('[data-track="neon"][aria-pressed="true"]')) return;
+      if (canvases.length !== 2) return;
       const outgoing = canvases[0].getBoundingClientRect();
       const incoming = canvases[1].getBoundingClientRect();
       window.__swipeHandoff = { outgoingRight: outgoing.right, incomingLeft: incoming.left, incomingRight: incoming.right };
-    }).observe(tracks, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
-  });
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
+  }, second);
   await trackpadSwipe(page, 30, 8); // genuine horizontal wheel path; same handoff as drag/touch
   await expect.poll(() => selected(page)).toBe(second);
   await expect.poll(() => page.evaluate(() => window.__swipeHandoff)).not.toBeNull();
