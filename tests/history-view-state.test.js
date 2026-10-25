@@ -22,7 +22,7 @@ test('History Vue also owns challenge mode records, daily board and medals witho
   assert.match(template, /v-for="[^"]*historyView\.modeRuns"/);
   assert.match(template, /v-for="[^"]*historyView\.dailyBoard"/);
   assert.match(template, /historyView\.medalAwards\[id\]/);
-  const renderer = readFileSync(new URL('../src/history-ui.js', import.meta.url), 'utf8');
+  const renderer = readFileSync(new URL('../src/history-ui.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(renderer, /\$\('#mode-history-runs'\)\.replaceChildren/);
   assert.doesNotMatch(renderer, /\$\('#daily-board'\)\.replaceChildren/);
   assert.doesNotMatch(renderer, /document\.querySelectorAll\('\[data-medal\]'\)/);
