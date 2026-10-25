@@ -5,7 +5,7 @@ import { createHistoryView } from './history-ui.js';
 import { setupGuideUI } from './guide-ui.ts';
 import { setupAudioUI } from './audio-ui.ts';
 import { setupControlPanels } from './controls-panels-ui.ts';
-import { setupTutorialUI } from './tutorial-ui.js';
+import { setupTutorialUI } from './tutorial-ui.ts';
 import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tutorialHintKey } from '../src/tutorial-ui.js';
+import { tutorialHintKey } from '../src/tutorial-ui.ts';
 
 test('touch guide distinguishes slider, tilt and toggle-to-land variants', () => {
   assert.equal(tutorialHintKey('left', 'slide', 'hold'), 'tutorial.slide.left');
