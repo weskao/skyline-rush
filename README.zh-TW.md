@@ -1,4 +1,4 @@
-<!-- source-sha256: fab740b8bb4f02331d7be2ba4edc67ae601a71b0d2a481e1ec4f67e82c419a4d generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 080cdd0b39b24c2ebd783eb1196f6438ee19e353816347b8cf1372a684e3e854 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -17,6 +17,18 @@
 - **值得追逐的目標。** 每次完賽都會評定風格星等，用來解鎖車庫（Garage）中的塗裝。最佳成績幽靈、擁有專屬排行榜的每日挑戰，以及四枚獎章，都是再次出賽的理由。
 
 一場經典衝刺約一分鐘；多階段挑戰則需要更久。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
+
+**主畫面** — 選擇賽道和鏡頭角度，然後開始比賽。
+
+<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/home_screen.mp4" controls muted playsinline width="100%">
+  <a href="artifacts/home_screen.mp4">觀看主畫面影片</a>
+</video>
+
+**比賽** — 在其中一條賽道上跑完一整場。
+
+<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/Play.mp4" controls muted playsinline width="100%">
+  <a href="artifacts/Play.mp4">觀看遊戲影片</a>
+</video>
 
 ![遊戲示範：倒數、飛越車流並降落在海岸公路](artifacts/readme-demo.gif)
 
