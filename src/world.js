@@ -556,9 +556,12 @@ export function createWorld(canvas) {
       showcaseRay.set(eye,sightDirection.multiplyScalar(1/length));
       showcaseRay.far=length-.4;
       const obscured=showcaseRay.intersectObject(showcaseOccluders,true).some(hit=>{
-        const material=hit.object.material;
-        return hit.object.isMesh && !Array.isArray(material) &&
-          material?.depthWrite!==false && !(material?.transparent && material.opacity<.65);
+        if(!hit.object.isMesh)return false;
+        const materials=[].concat(hit.object.material||[]);
+        // Transparent ghost particles and non-depth-writing water should not
+        // count as opaque obstacles; multi-material facades still must count.
+        return materials.some(material=>material &&
+          material.depthWrite!==false && !(material.transparent && material.opacity<.65));
       });
       if(!obscured)clear++;
     }
