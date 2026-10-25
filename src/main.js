@@ -1007,7 +1007,6 @@ $('#choose-track').addEventListener('click', chooseTrack);
 // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
 const worldCanvas = $('#world');
 const swipeChip = $('#track-swipe');
-const SWIPE_HINT_KEY = 'skyline-rush-swipe-hint';
 let swipe = null, wheelSwipe = null, swipeTarget = null, swipeBusy = false, swipeChipTimer = 0, swipeHintSeen = false;
 const swipeTracks = () => [...document.querySelectorAll('[data-track]:not(:disabled)')];
 const swipeNeighbour = step => { const tracks = swipeTracks(); return tracks[tracks.findIndex(button => button.dataset.track === race.trackId) + step]; };
@@ -1025,11 +1024,7 @@ function showSwipeChip(state, id, note = '') {
 }
 function showSwipeHint() {
   if (swipeHintSeen || race.phase !== 'ready' || tutorial) return;
-  swipeHintSeen = true;
-  try {
-    if (localStorage.getItem(SWIPE_HINT_KEY) === 'shown') return;
-    localStorage.setItem(SWIPE_HINT_KEY, 'shown');
-  } catch { /* Still shown once for this page when persistent storage is disabled. */ }
+  swipeHintSeen = true; // Per page load, not localStorage: reload makes the gesture discoverable again.
   showSwipeChip('hint', race.trackId, t(touchPreference.matches ? 'swipe.hintTouch' : 'swipe.hintMouse'));
 }
 // Keep both 3D scenes edge-to-edge while swiping. Only the active scene renders each frame;
@@ -1090,7 +1085,9 @@ function cancelSwipe() {
   const to = swipeSceneStep > 0 ? 'translateX(0px)' : 'translateX(-100vw)';
   if (calmMotion()) { clearSwipeScenes(); return; }
   swipeBusy = true;
-  swipeScenes.animate([{ transform: from }, { transform: to }], motionOptions('fast')).finished
+  // Keep the last keyframe painted until the snapshot layer is removed.
+  // Without fill, Web Animations reverts to the drag's inline transform for a frame.
+  swipeScenes.animate([{ transform: from }, { transform: to }], { ...motionOptions('fast'), fill: 'forwards' }).finished
     .catch(() => {}).then(() => { clearSwipeScenes(); swipeBusy = false; });
 }
 // Slide the outgoing and incoming track as adjacent full-screen pages, never as faded empty canvas.
@@ -1100,7 +1097,12 @@ async function commitSwipe(button, step) {
   if (prepared && !calmMotion()) {
     const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
     const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';
-    await swipeScenes.animate([{ transform: from }, { transform: to }], motionOptions('base')).finished.catch(() => {});
+    const animation = swipeScenes.animate([{ transform: from }, { transform: to }], { ...motionOptions('base'), fill: 'forwards' });
+    await animation.finished.catch(() => {});
+    // Persist the final (incoming-only) position before cancelling the finished animation.
+    // Otherwise its original dragged transform briefly uncovers the outgoing track again.
+    swipeScenes.style.transform = to;
+    animation.cancel();
   }
   button.click();
   showSwipeChip('done', race.trackId);
