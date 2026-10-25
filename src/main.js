@@ -5,6 +5,7 @@ import { createHistoryView } from './history-ui.js';
 import { setupGuideUI } from './guide-ui.js';
 import { setupAudioUI } from './audio-ui.js';
 import { setupControlPanels } from './controls-panels-ui.js';
+import { setupTutorialUI } from './tutorial-ui.js';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
@@ -97,7 +98,7 @@ const createRace = (...args) => {
   return created;
 };
 let race = createRace();
-let tutorial = null, tutorialReturn = null, tutorialView = '', raceAfterTutorial = false;
+let tutorial = null, tutorialReturn = null, raceAfterTutorial = false;
 const racerRows = new Map(['YOU', ...race.rivals.map(rival => rival.name)].map((name, i) => [name, leaderboardRows[i]]));
 let leaderboardOrder = '';
 const speedNeedle = $('#speed-needle');
@@ -1832,7 +1833,7 @@ function beginTutorial() {
 function endTutorial() {
   if (!tutorial) return;
   ({ race, pausedPhase, goUntil, previousFuel, previousNitro } = tutorialReturn);
-  tutorial = null; tutorialReturn = null; tutorialView = '';
+  tutorial = null; tutorialReturn = null; resetTutorialView();
   controls.clear(); clearButtonPresses();
   delete document.body.dataset.tutorial;
   applyControls(false);
@@ -1843,41 +1844,14 @@ function endTutorial() {
   (race.phase === 'paused' ? ui['resume-button'] : ui['start-button']).focus({ preventScroll: true });
   if (raceAfterTutorial) { raceAfterTutorial = false; start(); }
 }
-function renderTutorial(force = false) {
-  if (!tutorial) return;
-  $('#tutorial-progress').value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
-  const view = `${tutorial.step}/${race.phase}/${touchPreference.matches}/${inputPrefs.mode}/${controlPrefs.flyMode}`;
-  if (!force && tutorialView === view) return;
-  tutorialView = view;
-  const step = tutorial.step;
-  const done = tutorial.complete;
-  const action = step === 'land' ? 'fly' : step;
-  $('#tutorial-coach').dataset.step = step ?? 'complete';
-  $('#tutorial-title').textContent = done ? t('tutorial.complete') : t('tutorial.step', { n: tutorial.index + 1, total: TUTORIAL_STEPS.length, action: t(step === 'land' ? 'tutorial.landTitle' : `keymap.${step}`) });
-  $('#tutorial-instruction').textContent = t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' : `tutorial.${step}`);
-  $('#tutorial-pause').textContent = t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause');
-  $('#tutorial-pause').hidden = done;
-  $('#tutorial-complete-actions').hidden = !done;
-  $('#tutorial-assist').hidden = done;
-  const hint = $('#tutorial-input');
-  hint.removeAttribute('data-keys'); hint.replaceChildren();
-  for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
-  if (done) return;
-  if (!touchPreference.matches) {
-    hint.dataset.keys = action;
-    showKeyMap();
-  } else {
-    let target = $(`#touch-controls [data-control="${action}"]`);
-    let hintKey = 'tutorial.touch.' + action;
-    if (['left', 'right', 'brake'].includes(step) && inputPrefs.mode === 'slide') {
-      target = $('.touch-pad'); hintKey = 'tutorial.slide.' + step;
-    } else if (['left', 'right'].includes(step) && inputPrefs.mode === 'tilt') hintKey = 'tutorial.tilt.' + step;
-    else if (step === 'land') hintKey = controlPrefs.flyMode === 'toggle' ? 'tutorial.touch.landToggle' : 'tutorial.touch.land';
-    else if (step === 'fly' && controlPrefs.flyMode === 'toggle') hintKey = 'tutorial.touch.flyToggle';
-    hint.textContent = t(hintKey);
-    target?.classList.add('tutorial-target');
-  }
-}
+const { renderTutorial, resetTutorialView } = setupTutorialUI({
+  getTutorial: () => tutorial,
+  getRace: () => race,
+  getTouchMatches: () => touchPreference.matches,
+  getInputPrefs: () => inputPrefs,
+  getControlPrefs: () => controlPrefs,
+  showKeyMap: () => showKeyMap(),
+});
 for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id}`).addEventListener('click', beginTutorial);
 for (const id of ['tutorial-exit', 'tutorial-done']) $(`#${id}`).addEventListener('click', endTutorial);
 $('#tutorial-pause').addEventListener('click', () => { pause(); renderTutorial(true); });
