@@ -243,3 +243,19 @@ at road altitude 0 with hover jets off on every existing or future track, even
 when `HERO_PREVIEWS` supplies a landmark camera. AIRFLOW off keeps the original
 airborne hero; all six camera views must work in both states. Do not fork UI or
 vehicle pose by map ID.
+
+
+### Complete car framing on home previews
+
+Never treat a visible car center, projected body width or five unobstructed
+sample points as proof that the entire vehicle is visible. Check the projected
+full 3D model bounds **including wheels, nose, tail and wings** against the
+actual canvas aspect ratio with safety margins on all home showcase tracks.
+A high landmark-directed look target (notably on Alpine Rail Pass) can crop
+the car at the bottom while older occlusion checks still pass. Keep
+the landmark shot and road frame, apply the smallest shared camera
+reframing necessary and never shrink or hide the car or remove scenery.
+Test AIRFLOW on/off at desktop 1440×900, ultrawide 1777×863 and
+portrait 390×844, across all existing tracks, as well as all six angles.
+Extend the same regression whenever a new track is added; do not add
+track-specific clipping workarounds.
