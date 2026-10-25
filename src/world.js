@@ -530,6 +530,62 @@ export function createWorld(canvas) {
   const sightDirection = new THREE.Vector3();
   const projectedSight = new THREE.Vector3();
   let clearanceKey = '', clearanceShift = new THREE.Vector3();
+  // Frame the entire vehicle, including wheels and aero parts; the five
+  // sightline points alone cannot detect a cropped bumper or wheel.
+  const carBox = new THREE.Box3();
+  const carCorner = new THREE.Vector3();
+  let framingKey = '', framingEye = new THREE.Vector3(), framingLookY = 0;
+  function projectedCarBounds(eye, look) {
+    showcaseProbe.fov=50;
+    showcaseProbe.aspect=camera.aspect;
+    showcaseProbe.position.copy(eye);
+    showcaseProbe.lookAt(look);
+    showcaseProbe.updateProjectionMatrix();
+    showcaseProbe.updateMatrixWorld(true);
+    player.updateMatrixWorld(true);
+    carBox.setFromObject(player,true);
+    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+    for(const x of [carBox.min.x,carBox.max.x])
+      for(const y of [carBox.min.y,carBox.max.y])
+        for(const z of [carBox.min.z,carBox.max.z]) {
+          carCorner.set(x,y,z).project(showcaseProbe);
+          minX=Math.min(minX,carCorner.x);maxX=Math.max(maxX,carCorner.x);
+          minY=Math.min(minY,carCorner.y);maxY=Math.max(maxY,carCorner.y);
+        }
+    return {minX,maxX,minY,maxY};
+  }
+
+  function frameShowcaseCar(distance,time) {
+    const key=[trackId,visual.view,visual.airflow,visual.quality,
+      camera.aspect.toFixed(3),visual.view==='orbit'?Math.floor(time/1.5):0].join(':');
+    if(key!==framingKey) {
+      framingKey=key;
+      framingEye.set(0,0,0);
+      framingLookY=0;
+      const originalEye=desiredCamera.clone(), originalLook=lookTarget.clone();
+      const frame=trackId==='spiral'?skyFrame(distance):
+        TOUR_IDS.has(trackId)?trackFrame(trackId,distance):null;
+      const backward=frame?new THREE.Vector3(...frame.forward).negate():
+        new THREE.Vector3(0,0,1);
+      // Try the smallest look adjustment first, then dolly out if a wide
+      // vehicle cannot fit. No per-track offsets or expensive per-frame probes.
+      search: for(const back of [0,2,4,6,9,12]) {
+        const eye=originalEye.clone().addScaledVector(backward,back);
+        for(const down of [0,.5,1,1.5,2,3,4,5,6,8,10,12]) {
+          const look=originalLook.clone();look.y-=down;
+          const b=projectedCarBounds(eye,look);
+          if(b.minX>-.94&&b.maxX<.94&&b.minY>-.90&&b.maxY<.90) {
+            framingEye.copy(eye).sub(originalEye);
+            framingLookY=-down;
+            break search;
+          }
+        }
+      }
+    }
+    desiredCamera.add(framingEye);
+    lookTarget.y+=framingLookY;
+  }
+
 
   function showroomClearShare(eye, look, projection = null) {
     if(!showcaseOccluders?.visible) return 1;
@@ -1100,10 +1156,11 @@ export function createWorld(canvas) {
         desiredCamera.x += Math.sin(time * 65) * feedback.ignition * visual.shake * 0.12;
         desiredCamera.z += boostStrength * (visual.enabled ? 0.22 : 0);
       }
-      if(preview && TOUR_IDS.has(trackId)) {
-        // Keep the local-road framing, adjusting the eye only if terrain,
-        // tunnels or roadside structures conceal the actual player vehicle.
-        avoidShowcaseObstruction(distance,time);
+      if(preview) {
+        // Preserve scenery clearance, then fit the complete car within the
+        // actual viewport, regardless of track and selected camera angle.
+        if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance,time);
+        frameShowcaseCar(distance,time);
       }
       const smoothing = 1 - Math.exp(-dt * 7);
       if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
@@ -1166,7 +1223,12 @@ export function createWorld(canvas) {
           x:projected.x,y:projected.y,z:projected.z,
           screenWidth:maxX-minX,jetsVisible:mesh.userData.jets.visible,
           worldY:mesh.position.y,
-          ...(i===0?{bodyClearShare:showroomClearShare(camera.position,smoothLook,camera)}:{})};
+          ...(i===0?{bodyClearShare:showroomClearShare(camera.position,smoothLook,camera),
+            carBounds:(() => {
+              // Reuse the same complete-silhouette bounds for QA assertions.
+              const bounds=projectedCarBounds(camera.position,smoothLook);
+              return bounds;
+            })()}:{})};
       });
     },
     inspectLandmarks() {
