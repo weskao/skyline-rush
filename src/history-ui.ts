@@ -111,7 +111,7 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
       trendCircles: points.map(([x, y], i) => ({ x, y, title: timeString(recent[i].time) })),
     });
     // Vue interpolation keeps all persisted fields escaped, including legacy records.
-    const historyRuns = runs.toReversed().map(run => {
+    const historyRuns = [...runs].reverse().map(run => {
       const fields = [
         shortDate(run.date), timeString(run.time),
         t('history.position', { n: typeof run.position === 'number' && Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—' }),
