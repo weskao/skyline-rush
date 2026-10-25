@@ -1,6 +1,6 @@
 import { icon } from './icons.js';
 import { t } from './i18n.js';
-import { AUDIO_KEYS } from './audio-settings.js';
+import { AUDIO_KEYS } from './audio-settings.ts';
 
 type Channel = 'music' | 'sfx';
 type AudioSettings = Record<Channel, boolean>;

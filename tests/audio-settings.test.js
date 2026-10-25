@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AUDIO_KEYS, readAudio, setVolume } from '../src/audio-settings.js';
+import { AUDIO_KEYS, readAudio, setVolume } from '../src/audio-settings.ts';
 
 const storage = (entries = {}) => ({ getItem: key => entries[key] ?? null });
 
