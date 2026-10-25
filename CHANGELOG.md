@@ -1,3 +1,137 @@
+## [0.22.1] - 2026-10-25
+
+### 🚀 Features
+
+- **cloud:** Minimize persisted Google identity to name and email
+- **cloud:** Restrict account name/email documents to owning UID
+- **cloud:** Sync private Google name and email on account sign-in
+- **cloud:** Persist private Google account details and delete with save
+- **cloud:** Preserve permanent mode and Stunt bests independently of rolling history
+- **cloud:** Apply UID-only rules for permanent mode/stunt results
+- **cloud:** Transactionally merge permanent modes and atomically delete all private cloud docs
+- **ui:** Show Google player profile and manual cloud sync action
+- **i18n:** Localize cloud profile, manual sync and safe account switch copy
+- **cloud-ui:** Safe per-UID switch, durable sync state, Google identity and guarded atomic delete
+- **i18n:** Describe protected deletion retry in English and Traditional Chinese
+- **cloud:** Validate versioned backup imports and keep additional mode metadata
+- **ui:** Expose validated progress import alongside export
+- **cloud:** Restore validated JSON progress and permanent bests with user confirmation
+- **i18n:** Localize safe JSON import flow and failure guidance
+- **cloud:** Validate nested Star, best-time and medal values in Spark Rules
+- **ui:** Explain that signing out keeps Google identity and saved results
+- **ui:** Reveal cloud sign-out explanation only for signed-in players
+- **i18n:** Clarify sign-out and progress deletion do not remove Google accounts
+- **ui:** Announce explicit cloud sync state with ARIA busy and offline recovery
+- **release:** Gate notes on player copy and review
+- **release:** Filter developer-only notes harder
+
+### 🐛 Bug Fixes
+
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **ui:** Resolve phone browser regressions
+- **showcase:** Keep camera controls clear of quality notice and readable in zh-TW
+- **cloud:** Restore valid Firestore rules with private account schema
+- **cloud:** Retain mode telemetry and 4096-character rule signatures
+- **cloud:** Preserve per-account permanent records and clear them on deletion
+- **i18n:** Separate Traditional Chinese cloud deletion message key
+- **cloud:** Roll back partial browser progress writes when localStorage fails
+- **i18n:** Repair comma in Traditional Chinese cloud switch translation
+- **i18n:** Remove disallowed English technical terms from Chinese import error
+- **cloud:** Use the initialized Firestore instance for private account lookup
+- **cloud:** Repair duplicated Firestore Rules structure and validate private progress fields
+- **whats-new:** Pin unread tag to the tab corner
+- **home:** Hold incoming frame through swipe completion and show Airflow hint once per reload
+- **showcase:** Ground all track preview cars while AIRFLOW is enabled
+- **showcase:** Adapt curated camera eye to clear roadside occlusion without losing landmarks
+- **showcase:** Count opaque multi-material structures in camera obstruction probe
+- **showcase:** Preserve full Tokyo Alpine vehicle with dolly-back before raising camera
+- **qa:** Measure projected showroom body width
+- **home:** Preserve swipe snapshots across interruption
+- **home:** Center version in the footer grid
+
+### 💼 Other
+
+- **release:** Run the gate tests at the tagged version
+- Sync main into Whats New announcement feature branch
+- Main into feature/home-seamless-track-carousel
+- Main into feature/home-seamless-track-carousel
+- Home seamless track carousel flicker fix and per-load Airflow hint
+
+### 📚 Documentation
+
+- **showcase:** Track validation gates in TODO
+- Plan Spark-compatible Firebase integrity tasks with 36 P0/P1 checks
+- Record partial TDD implementation and unverifed Spark launch gates
+- **cloud:** Document Spark-only private account, permanent best and backup flows
+- **todo:** Mark verified pure-data tasks and record CI evidence without claiming cloud acceptance
+- **todo:** Check evidenced P0/P1 tasks after green unit, emulator and rules CI
+- **release:** Describe the unread corner tag
+- **release:** Add notes review and release commands
+- **release:** Draft and review from player changes
+- **showcase:** Specify AIRFLOW-grounded hero across all tracks
+- **showcase:** Require ground pose with AIRFLOW for new tracks
+- **todo:** Track AIRFLOW grounded parity and verification gates
+- **showcase:** Require occlusion-free landmark and AIRFLOW camera views
+- **claude:** Enforce real car visibility in every World Tour preview
+- **todo:** Track showroom obstruction fix and QA gates
+- **todo:** Classify Firebase tasks into Spark-now, production acceptance and future triggers
+- **release:** Review 0.22.1 notes
+- **todo:** Track home footer alignment gates
+
+### 🎨 Styling
+
+- **ui:** Add responsive Google cloud identity row and sync button
+
+### 🧪 Testing
+
+- **showcase:** Add failing shared camera regression tests
+- **showcase:** Cover all tracks and responsive camera dock
+- **release:** Pin the localized image check to 0.21.0
+- **release:** Handle optional announcement images
+- **showcase:** Reproduce performance-notice blocking camera dock
+- **cloud:** Specify minimal private Google account fields before implementation
+- **cloud:** Specify private Firestore Google account document rules
+- **cloud:** Preserve mode telemetry and full-length rules on device sync
+- **cloud:** Specify permanent mode/stunt bests restore and merge before implementation
+- **cloud:** Require owner-only bounded permanent-best Firestore documents
+- **cloud:** Guard permanent modes across account switch and deletion
+- **cloud:** Specify profile UI, manual sync and private account persistence
+- **cloud:** Verify permanent Time Attack best survives fresh-browser login
+- **cloud:** A failed local multi-key save must roll back partial changes
+- **cloud:** Validate versioned JSON backup import and cap file size
+- **cloud:** Avoid duplicate Firebase SDK instances in profile emulator assertion
+- **cloud:** Verify Stunt records and JSON import across Firebase emulator browsers
+- **cloud:** Preserve offline per-account bests while switching Google identities
+- **cloud:** Reject malformed nested stars, times and medal dates in Firestore Rules
+- **ui:** Distinguish signing out, deleting game data and deleting Google identity
+- **ui:** Dismiss native confirmation before awaiting click completion
+- **ui:** Require accessible cloud sync states and avatar fallback
+- **cloud:** Reopen save dialog after account-switch navigation
+- **home:** Reproduce stale track flash at animation handoff and restore swipe hint on reload
+- **home:** Run per-load Airflow hint regression in real touch viewport
+- **home:** Update existing phone reload acceptance for per-load swipe hint
+- **home:** Verify no outgoing-frame flash on trackpad scroll handoff
+- **home:** Watch actual incoming track during carousel handoff
+- **showcase:** Require grounded AIRFLOW on curated and future tracks
+- **showcase:** Let WebGL QA probe airflow and camera views
+- **showcase:** Verify grounded airflow and six camera angles in real WebGL
+- **showcase:** Enforce unoccluded car body in Tokyo Alpine and all World Tour views
+- **showcase:** Exercise unobstructed AIRFLOW camera UI on every World Tour map
+- **showcase:** Honor WebGL probe frame count for six-angle checks
+
+### ⚙️ Miscellaneous Tasks
+
+- Temporarily validate showcase branch before merging
+- Run full automated checks on Firebase integrity feature branch
+- **git:** Ignore node_modules symlinks in worktrees
 ## [0.22.0] - 2026-10-24
 
 ### 🚀 Features
