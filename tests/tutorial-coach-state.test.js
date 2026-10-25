@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { coachView, updateCoachView } from '../src/tutorial-coach-state.js';
+import { coachView, updateCoachView } from '../src/tutorial-coach-state.ts';
 
 test('tutorial coach Vue state changes only between steps, while progress is maintained separately', () => {
   updateCoachView({ visible: true, step: 'fly', title: 'Lift off', hintKeys: 'fly', hintText: '', pauseHidden: false });

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { guideView, updateGuideView } from '../src/guide-view-state.js';
+import { guideView, updateGuideView } from '../src/guide-view-state.ts';
 
 test('guide Vue state keeps device panel and instruction text in sync', () => {
   updateGuideView({ selectedDevice: 'mobile', practiceKey: 'tutorial.retry', practiceText: 'Retry' });

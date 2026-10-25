@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { panelsView, updatePanelsView } from '../src/control-panels-view-state.js';
+import { panelsView, updatePanelsView } from '../src/control-panels-view-state.ts';
 
 test('settings and controls dropdowns preserve independent reactive visibility', () => {
   updatePanelsView({ settingsOpen: true, controlsOpen: false });

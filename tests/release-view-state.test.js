@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { releaseView, updateReleaseView } from '../src/release-view-state.js';
+import { releaseView, updateReleaseView } from '../src/release-view-state.ts';
 
 test('release notes view model atomically replaces active tab and content', () => {
   updateReleaseView({ panelLabel: 'release-tab-1', tabs: [{ version: '0.22.0' }], entries: [{ title: 'New feature' }], heroSrc: '' });

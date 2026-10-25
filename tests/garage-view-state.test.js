@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { garageView, updateGarageView } from '../src/garage-view-state.js';
+import { garageView, updateGarageView } from '../src/garage-view-state.ts';
 
 test('garage reactive state moves focus and status together, without game-frame updates', () => {
   updateGarageView({ selected: 'pearl', status: 'Pearl equipped', equipDisabled: true, equipLabel: 'Equipped' });
