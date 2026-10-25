@@ -1,6 +1,7 @@
 import { formatDate, t, trackName, getLocale } from './i18n.js';
 import { loadModeBest, loadModeGhost, careerStats, dailyBoard, MEDALS } from './history.js';
 import { dailyChallenge } from './game.js';
+import { updateHistoryView } from './history-view-state.ts';
 
 /** Pure chart projection, preserving the original coordinates exactly. */
 export function historyTrendPoints(recent) {
@@ -57,27 +58,32 @@ export function createHistoryView({ getData, timeString }) {
     }));
     const stats = careerStats(sessionHistory);
     const count = (key, n) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
-    $('#career-summary').textContent = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
+    const careerSummary = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
     const best = Math.min(sessionBests[trackId] ?? Infinity, ...runs.map(run => run.time));
     const recent = runs.slice(-10);
-    $('#history-empty').hidden = runs.length > 0;
-    $('.history-trend').hidden = recent.length === 0;
-    $('#history-trend-label').textContent = count('history.trend', recent.length);
     const points = historyTrendPoints(recent);
-    $('#history-chart').innerHTML = `<polyline points="${points.map(point => point.join(',')).join(' ')}"/>${points.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="3"><title>${timeString(recent[i].time)}</title></circle>`).join('')}`;
-    // Storage is untrusted: put saved fields into textContent, never HTML.
-    $('#history-runs').replaceChildren(...runs.toReversed().map(run => {
-      const row = document.createElement('details'); row.className = 'history-run';
-      const summary = document.createElement('summary');
-      for (const text of [shortDate(run.date), timeString(run.time), t('history.position', { n: Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—' })]) {
-        const field = document.createElement('span'); field.textContent = text; summary.append(field);
-      }
-      if (run.time === best) { const badge = document.createElement('b'); badge.className = 'history-best'; badge.textContent = t('history.best'); summary.append(badge); }
-      const detail = document.createElement('p');
+    updateHistoryView({
+      careerSummary,
+      historyEmpty: runs.length === 0,
+      trendVisible: recent.length !== 0,
+      trendLabel: count('history.trend', recent.length),
+      trendPolyPoints: points.map(point => point.join(',')).join(' '),
+      trendCircles: points.map(([x, y], i) => ({ x, y, title: timeString(recent[i].time) })),
+    });
+    // Vue interpolation keeps all persisted fields escaped, including legacy records.
+    const historyRuns = runs.toReversed().map(run => {
+      const fields = [
+        shortDate(run.date), timeString(run.time),
+        t('history.position', { n: Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—' }),
+      ];
       const number = value => Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
-      detail.textContent = t('history.detail', { score: number(run.score), contacts: number(run.collisions), near: number(run.nearMisses), rings: number(run.rings), perfect: number(run.perfectLines), nitro: number(run.nitroUses) });
-      row.append(summary, detail); return row;
-    }));
+      const detail = t('history.detail', {
+        score: number(run.score), contacts: number(run.collisions), near: number(run.nearMisses),
+        rings: number(run.rings), perfect: number(run.perfectLines), nitro: number(run.nitroUses),
+      });
+      return { fields, best: run.time === best, bestLabel: t('history.best'), detail };
+    });
+    updateHistoryView({ historyRuns });
     const today = dailyChallenge();
     $('#daily-status').textContent = t('daily.status', { track: trackName(today.track, getLocale()), modifier: t(`modifier.${today.modifier}`) });
     $('#daily-start').disabled = !world;

@@ -2,6 +2,7 @@
 import { RACE_TRACKS } from './game.js';
 import { icons, ICON_ATTRS } from './icons.js';
 import SignInButton from './SignInButton.vue';
+import { historyView } from './history-view-state.ts';
 
 const GOOGLE_ICON = `${import.meta.env.BASE_URL}icons/google-sign-in.webp`;
 const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-run', 'Clean run', 'Finish without a collision'], ['perfect-five', 'Perfect flight', 'Five PERFECT LINEs in one race'], ['nitro-chain', 'Triple burst', 'Chain three NITRO charges']];
@@ -10,7 +11,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 <template>
   <dialog id="history-screen" class="history-screen" aria-labelledby="history-title">
     <header class="history-heading"><h2 id="history-title" data-i18n="history.title">Race history</h2><button class="controls-button" id="history-close" aria-label="Close history" data-i18n-aria-label="history.close" data-i18n="common.close">Close</button></header>
-    <p id="career-summary" class="career-summary"></p>
+    <p id="career-summary" class="career-summary">{{ historyView.careerSummary }}</p>
     <section class="history-extra" aria-labelledby="cloud-title">
       <h3 id="cloud-title" data-i18n="cloud.title">Cloud save</h3>
       <p data-i18n="cloud.explain">Sign in to save race progress and restore it after clearing browser data. Existing progress on this device will be merged. Device settings and ghosts stay here.</p>
@@ -35,9 +36,9 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <p id="cloud-last-sync">Never synced</p>
     </section>
     <label class="history-filter"><span data-i18n="history.track">Track</span> <select id="history-track" aria-label="History track" data-i18n-aria-label="history.trackAria"><option v-for="(track, id) in RACE_TRACKS" :value="id">{{ track.name }}</option></select></label>
-    <figure class="history-trend"><figcaption id="history-trend-label"></figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"></svg></figure>
-    <p id="history-empty" data-i18n="history.empty" hidden>No runs here yet. Finish a race to start your history.</p>
-    <div id="history-runs" class="history-runs"></div>
+    <figure class="history-trend" :hidden="!historyView.trendVisible"><figcaption id="history-trend-label">{{ historyView.trendLabel }}</figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"><polyline :points="historyView.trendPolyPoints"/><circle v-for="(point, i) in historyView.trendCircles" :key="i" :cx="point.x" :cy="point.y" r="3"><title>{{ point.title }}</title></circle></svg></figure>
+    <p id="history-empty" data-i18n="history.empty" :hidden="!historyView.historyEmpty">No runs here yet. Finish a race to start your history.</p>
+    <div id="history-runs" class="history-runs"><details v-for="(run, i) in historyView.historyRuns" :key="i" class="history-run"><summary><span v-for="(field, j) in run.fields" :key="j">{{ field }}</span><b v-if="run.best" class="history-best">{{ run.bestLabel }}</b></summary><p>{{ run.detail }}</p></details></div>
     <section class="history-extra" id="mode-history" aria-labelledby="mode-history-title">
       <h3 id="mode-history-title" data-i18n="mode.historyTitle">Challenge records</h3>
       <p class="mode-history-disclaimer" id="mode-history-notice" data-i18n="mode.historyNotice">Personal challenge results do not award Career stars or official medals.</p>
