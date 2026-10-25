@@ -1282,3 +1282,13 @@ never conflate future modes with existing Control “steering mode” options.
 - [ ] Verify tests RED → GREEN by executing Node unit tests and the World Tour WebGL suite at this exact HEAD (CI pending).
 - [ ] Confirm real home-screen AIRFLOW, all six camera views, full landscape/portrait screenshots and roadmap landmarks on actual browser/devices.
 - [ ] Confirm full GitHub quality-gate green on this exact branch HEAD before merging to main.
+
+## Home showroom vehicle occlusion / AIRFLOW layout (2026-10-25)
+- [x] Trace the coverage gap: existing showroom checks only asserted that the car's screen-space center/width were finite; opaque scenery between the camera and the real vehicle was not measured.
+- [x] Add real-WebGL five-body-point ray visibility assertions, for all five World Tour maps, all six camera views, AIRFLOW enabled and disabled. Threshold: at least 4/5 body points unobscured and within the viewport.
+- [x] Implement cached preview-only camera clearance. Prefer the reference angle; if blocked, try small dolly-back / local-road sideways and vertical offsets while retaining each track's landmark look target. No removal of scenery or change to in-race camera.
+- [x] Add desktop 1440×900 and mobile 390×844 home UI regression cases that select each of the five maps, activate AIRFLOW and cycle six camera views via real click/touch targets, capturing screenshots.
+- [x] Document camera visibility, visual fidelity, and frame-performance rules in CLAUDE.md and the scoped showroom rule.
+- [ ] Run and inspect latest branch HEAD Node/unit/build, all browser shards, World Tour and cloud-save GitHub CI with quality-gate green (still pending).
+- [ ] Review actual screenshots of Tokyo, Alpine, Taipei, Coastal and Cosmic with AIRFLOW on/off, verify car wheel/ground contact, body fully unobscured, landmark framing and nonblocking HUD across both orientations; real iOS/Android hardware acceptance pending.
+- [ ] Only after exact-HEAD CI success, sync any newer main and obtain CI success again before merging feature branch directly into main.
