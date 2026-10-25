@@ -1,5 +1,6 @@
 import './style.css';
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.js';
+import { setupGarageUI } from './garage-ui.js';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
@@ -850,38 +851,15 @@ function closeHistory() {
 $('#history-close').addEventListener('click', closeHistory);
 historyScreen.addEventListener('cancel', event => { event.preventDefault(); closeHistory(); });
 historyScreen.addEventListener('close', () => historyOpener?.focus({ preventScroll: true }));
-const garageScreen = $('#garage-screen');
-let previewing = equippedPaint;
-function previewPaint(id) {
-  previewing = id;
-  world?.previewAppearance(PAINTS[id]);
-  document.querySelectorAll('[data-paint]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.paint === id)));
-  showGarage();
-}
-function showGarage(id = previewing) {
-  const stars = starTotal(sessionStars);
-  const owned = availablePaints(stars).includes(id);
-  const name = t(`paint.${id}`); // display name from the catalog; PAINTS keys stay the identity
-  const need = PAINTS[id].stars;
-  $('#garage-status').textContent = t(id === equippedPaint ? 'garage.status.equipped' : owned ? 'garage.status.owned' : 'garage.status.locked', { name, stars: need, have: stars });
-  $('#garage-equip').disabled = !owned || id === equippedPaint;
-  $('#garage-equip').textContent = t(id === equippedPaint ? 'garage.btn.equipped' : owned ? 'garage.btn.equip' : 'garage.btn.locked', { name, stars: need });
-}
-$('#garage-equip').addEventListener('click', () => { equippedPaint = previewing; savePaint(equippedPaint); previewPaint(equippedPaint); });
-showGarage();
-$('#garage-button').addEventListener('click', () => {
-  if (!world || race.phase !== 'ready') return;
-  controls.clear(); garageScreen.showModal();
-  $('#garage-preview').append($('#world'));
-  world.resize(); previewPaint(equippedPaint);
+const { showGarage } = setupGarageUI({
+  getWorld: () => world,
+  canOpen: () => race.phase === 'ready',
+  clearControls: () => controls.clear(),
+  getEquippedPaint: () => equippedPaint,
+  setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
+  getStars: () => starTotal(sessionStars),
 });
-document.querySelectorAll('[data-paint]').forEach(button => button.addEventListener('click', () => previewPaint(button.dataset.paint)));
-$('#garage-close').addEventListener('click', () => garageScreen.close());
-garageScreen.addEventListener('close', () => {
-  $('#app').prepend($('#world')); world.resize(); previewPaint(equippedPaint);
-  controls.clear(); $('#garage-button').focus({ preventScroll: true });
-});
-for (const dialog of [historyScreen, garageScreen]) dialog.addEventListener('keydown', event => event.stopPropagation());
+historyScreen.addEventListener('keydown', event => event.stopPropagation());
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
   controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
