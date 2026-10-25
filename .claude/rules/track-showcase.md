@@ -99,3 +99,22 @@ on and off, independently of VFX for camera selection. Preserve per-track landma
 framing; do not copy and paste camera or vehicle rules for newly added tracks.
 Maintain full `RACE_TRACKS` plus unknown-future-ID unit coverage and real WebGL
 checks for all World Tour routes at each of the six camera angles.
+
+## Prevent car occlusion without hiding scenery (Tokyo, Alpine and future maps)
+
+- The camera and the hero must have an unobstructed line of sight; merely
+  projecting the car center into the viewport is not sufficient. Sample the
+  actual 3D body at multiple roof, nose and side points and raycast against
+  opaque World Tour scenery. Count points outside the camera frustum as hidden.
+- If the default eye is occluded, try a small dolly-back first, then a modest
+  side/height offset along the sampled local road axes. Only recalculate when
+  the track, view, quality, portrait state or AIRFLOW mode changes (or at
+  spaced orbit checkpoints); never raycast or rebuild geometry every frame.
+- Retain the landmark-directed look target, original course meshes, details,
+  buildings, tunnel scenery and hillside meshes. No transparent/hidden walls,
+  scenery wholesale deletion, force-click workaround or copied per-track UI.
+- On all five World Tour maps, test AIRFLOW off/on × six camera modes in real
+  WebGL, plus actual desktop and phone Home UI interaction and screenshots.
+  Require at least four of five sampled vehicle body points unobstructed and
+  in frame, and preserve all landmark framing/visibility acceptance checks.
+  Inspect the exact CI HEAD and physical-device imagery before shipping.
