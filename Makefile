@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: dev dev-unlocked dev-feature test-unlocked run verify deploy stop-old-dev
+.PHONY: dev dev-unlocked dev-feature test-unlocked phone run verify deploy stop-old-dev
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -33,14 +33,21 @@ dev-unlocked: stop-old-dev node_modules ## `make dev-unlocked`: local-only Vite 
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
 
+# Same menu and flags as the personal /phone-dev skill. Serves the normal locked config with no emulators;
+# the unlocked config stays desktop-only. `make phone <name>` serves that branch (or feature/<name>) from its worktree.
+PHONE_DEV := $(HOME)/.claude/skills/phone-dev/scripts/phone_dev.py
+phone: node_modules ## `make phone [name]`: menu to start, check or stop a dev server a phone can open
+	@test -f "$(PHONE_DEV)" || { echo "make phone needs the phone-dev skill at $(PHONE_DEV)"; exit 1; }
+	@python3 "$(PHONE_DEV)" --interactive $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME))
+
 # Fetches origin/feature/<name> into .claude/worktrees/<name> without checking it out here.
 # The branch name is an extra goal; an empty rule stops make from requiring a file by that name.
 dev-feature: ## `make dev-feature <name>`: that feature branch, all-unlocked, https://127.0.0.1:5443
 	node scripts/dev-feature.mjs $(filter-out $@,$(MAKECMDGOALS))
 
-DEV_FEATURE_ARGS := $(filter-out dev-feature,$(MAKECMDGOALS))
+DEV_FEATURE_ARGS := $(filter-out dev-feature phone,$(MAKECMDGOALS))
 DEV_FEATURE_NAME := $(filter-out dev dev-unlocked test-unlocked run deploy node_modules,$(DEV_FEATURE_ARGS))
-ifneq ($(filter dev-feature,$(MAKECMDGOALS)),)
+ifneq ($(filter dev-feature phone,$(MAKECMDGOALS)),)
 ifneq ($(DEV_FEATURE_NAME),)
 $(eval $(DEV_FEATURE_NAME):;@:)
 endif

@@ -1,4 +1,4 @@
-<!-- source-sha256: 2be943b32ad8e432f35c561d700564b8587c119e7835949472a16699464b39c1 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: fab740b8bb4f02331d7be2ba4edc67ae601a71b0d2a481e1ec4f67e82c419a4d generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -70,6 +70,8 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 開啟 Vite 印出的本機網址（通常是 http://127.0.0.1:5173）。資源與字型皆已內建於本機；遊戲過程不會發出任何外部請求。不需要後端或帳號。
 
 `make` 與 `make dev-unlocked` 也會啟動本機 Firebase Auth／Firestore 模擬器（需要 Java 21 以上），因此雲端存檔的 Google 登入會使用假的測試帳號，絕不會動到真實存檔。專案擁有者的雲端存檔維運與 Spark 額度檢查步驟見 `docs/cloud-save.md`。
+
+`make phone` 會開啟終端機選單，讓你啟動、檢查或停止手機可開啟的 dev server（透過 Tailscale 或同一個 Wi-Fi），並在網址確實能連線後印出手機網址。選單會列出目前的 checkout、其他 worktree 與最近的 branch，也可以直接輸入 branch 名稱；`make phone <name>` 會直接使用該 branch（或 `feature/<name>`），需要時在 `.claude/worktrees/` 底下建立 worktree。它一律提供一般的上鎖版本：全解鎖的 server（`make dev-unlocked`、`make dev-feature`）仍只能在電腦上開啟。它需要個人的 `phone-dev` Claude Code skill（`/phone-dev` 會問同一份選單），且不會啟動模擬器，因此手機上的雲端存檔登入會使用真實專案。
 
 ## 操作方式
 
