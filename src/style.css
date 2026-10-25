@@ -109,11 +109,13 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .fuel-track { height: 3px; width: 100%; background: #4a5b68; margin: 10px 0; overflow: hidden; }
 .fuel-track > i { height: 100%; display: block; background: var(--blue); width: 100%; transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
 .fuel-caption { display: block; font-size: 7px; letter-spacing: 1.2px; color: #b3c4d0; }
-.bottomline { position: fixed; bottom: max(20px, env(safe-area-inset-bottom, 0px)); left: max(40px, env(safe-area-inset-left, 0px)); right: max(40px, env(safe-area-inset-right, 0px)); display: flex; justify-content: space-between; font-size: 8px; letter-spacing: 1.9px; color: #a5b2bd; z-index: 3; }
+.bottomline { position: fixed; bottom: max(20px, env(safe-area-inset-bottom, 0px)); left: max(40px, env(safe-area-inset-left, 0px)); right: max(40px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; pointer-events: none; font-size: 8px; letter-spacing: 1.9px; color: #a5b2bd; z-index: 3; }
 .bottomline > span { display: flex; align-items: center; gap: 8px; }
+.bottomline > span:last-child { grid-column: 3; justify-self: end; }
 .bottomline i { width: 4px; height: 4px; display: inline-block; border-radius: 50%; background: var(--accent); }
-.build-version { position: fixed; z-index: 3; left: 0; right: 0; bottom: max(4px, env(safe-area-inset-bottom)); text-align: center; font-size: 11px; letter-spacing: 1.5px; color: #a5b2bd; font-variant-numeric: tabular-nums; pointer-events: none; display: none; }
+.build-version { grid-column: 2; grid-row: 1; text-align: center; font-size: 11px; letter-spacing: 1.5px; color: #a5b2bd; font-variant-numeric: tabular-nums; display: none; }
 body[data-phase="ready"] .build-version { display: block; }
+body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bottom, 0px)); }
 .race-info { position: fixed; z-index: 3; inset: 135px 40px auto; display: flex; justify-content: space-between; gap: 35px; pointer-events: none; }
 .position-stat > div { display: flex; align-items: baseline; gap: 9px; margin-top: 6px; }
 .position-stat strong { font: 700 66px/.9 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
@@ -262,8 +264,7 @@ body[data-phase="ready"] .build-version { display: block; }
 /* iOS only: its home indicator is a thin bar 8-13px off the bottom, so non-interactive text may sit in the rest of the inset.
    Android's 48px inset can be a button bar, so other platforms keep clearing the whole inset. */
 @supports (-webkit-touch-callout: none) {
-  .bottomline { bottom: 21px; }
-  .build-version { bottom: clamp(4px, env(safe-area-inset-bottom, 0px), 18px); }
+  .bottomline, body[data-phase="ready"] .bottomline { bottom: 21px; }
 }
 @media (max-height: 650px) and (max-width: 760px) {
   .intro { top: 95px; }
@@ -284,7 +285,7 @@ body[data-phase="ready"] .build-version { display: block; }
   h1 { font-size: 48px; }
   .route-label { margin-bottom: 12px; }
   .intro-copy { margin-bottom: 15px; }
-  .intro-controls, .flight-tip, .speed-caption, .mode-key, .bottomline { display: none; }
+  .intro-controls, .flight-tip, .speed-caption, .mode-key, .bottomline > span { display: none; }
   body[data-phase="ready"] .telemetry { bottom: 28px; }
   .speed-number > strong { font-size: 43px; }
   .race-info { top: 82px; }
@@ -553,7 +554,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .airflow-active .airflow-hud { opacity: 1; transform: translateY(0); }
 /* Airflow showcase hides the start panel but keeps the one standard Start button reachable. */
 .airflow-active[data-phase="ready"] .intro { visibility: hidden; }
-.airflow-active[data-phase="ready"] #start-button { visibility: visible; position: fixed; inset: auto 0 max(44px, calc(env(safe-area-inset-bottom, 0px) + 36px)); width: max-content; margin-inline: auto; }
+.airflow-active[data-phase="ready"] #start-button { visibility: visible; position: fixed; inset: auto 0 max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)); width: max-content; margin-inline: auto; }
 /* Wide screens: the showcased car sits mid-frame, so Start moves to the bottom-right gutter instead of covering it. */
 @media (min-width: 761px) { .airflow-active[data-phase="ready"] #start-button { inset-inline: auto max(40px, env(safe-area-inset-right, 0px)); margin-inline: 0; } }
 .airflow-active[data-phase="ready"] .scene-shade { opacity: .3; }
@@ -1064,11 +1065,11 @@ body[data-phase="ready"] .telemetry { display: none; }
 .intro {
   top: clamp(124px, 17dvh, 180px);
   right: max(20px, env(safe-area-inset-right));
-  bottom: max(48px, env(safe-area-inset-bottom, 0px));
+  bottom: calc(54px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   overscroll-behavior: contain;
   scroll-padding-block: 8px;
-  padding: 6px;
+  padding: 6px 6px 1px;
   margin: -6px;
   scrollbar-width: thin;
   scrollbar-color: var(--accent) #263849;
@@ -1500,7 +1501,7 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 
 
 /* Release notes reuse the native History dialog and the existing version-label slot. */
-.build-version { left: 50%; right: auto; transform: translateX(-50%); bottom: max(4px, env(safe-area-inset-bottom, 0px)); min-height: 44px; padding: 0 10px; border: 0; background: transparent; pointer-events: auto; }
+.build-version { min-height: 44px; padding: 0 10px; border: 0; background: transparent; pointer-events: auto; }
 .build-version:hover { color: #f4f0e9; }
 .release-unread { display: none; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
 .build-version.has-update .release-unread { display: inline-block; }
