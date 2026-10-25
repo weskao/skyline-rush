@@ -52,5 +52,5 @@ export function cupStandings(cup) {
     time:cup.results.reduce((sum,r)=>sum+r.times[name],0),
   })).sort((a,b)=>b.points-a.points || a.time-b.time || a.name.localeCompare(b.name));
 }
-export const cupComplete = cup => cup.results.length === cup.tracks.length;
-export const cupTotalTime = cup => cup.results.reduce((t,r)=>t+r.time,0);
+export const cupComplete = cup => { assertCupStandings(cup); return cup.results.length === cup.tracks.length; };
+export const cupTotalTime = cup => { assertCupStandings(cup); return cup.results.reduce((t,r)=>t+r.time,0); };
