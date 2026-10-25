@@ -742,6 +742,11 @@ const previewObserver = new IntersectionObserver(entries => {
 }, { root: $('.track-select') });
 document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
 
+// History data rendering lives in history-ui.ts; dialog ownership/focus stays
+// at this bootstrap boundary until the dialog lifecycle migrates to TypeScript.
+// Never rely on variables captured inside another module's factory.
+const historyScreen = $('#history-screen');
+let historyOpener = null;
 const { showHistory, showHomeStatus } = createHistoryView({
   getData: () => ({ sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world }),
   timeString,
