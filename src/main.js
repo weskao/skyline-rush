@@ -1,9 +1,9 @@
 import './style.css';
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.js';
-import { setupGarageUI } from './garage-ui.js';
+import { setupGarageUI } from './garage-ui.ts';
 import { createHistoryView } from './history-ui.js';
 import { setupGuideUI } from './guide-ui.ts';
-import { setupAudioUI } from './audio-ui.js';
+import { setupAudioUI } from './audio-ui.ts';
 import { setupControlPanels } from './controls-panels-ui.ts';
 import { setupTutorialUI } from './tutorial-ui.js';
 import { updateCoachView } from './tutorial-coach-state.ts';

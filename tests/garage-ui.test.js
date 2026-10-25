@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { garagePresentation } from '../src/garage-ui.js';
+import { garagePresentation } from '../src/garage-ui.ts';
 
 test('garage presentation distinguishes locked, owned and equipped paint', () => {
   const paints = { silver: { stars: 0 }, blue: { stars: 2 }, gold: { stars: 5 } };

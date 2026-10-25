@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { audioChannelPresentation } from '../src/audio-ui.js';
+import { audioChannelPresentation } from '../src/audio-ui.ts';
 
 test('muted audio keeps saved level but renders accessible zero slider', () => {
   assert.deepEqual(audioChannelPresentation(false, 0.65), { level: 0, percent: '65%', enabled: false });
