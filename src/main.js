@@ -2,6 +2,7 @@ import './style.css';
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.js';
 import { setupGarageUI } from './garage-ui.js';
 import { createHistoryView } from './history-ui.js';
+import { setupGuideUI } from './guide-ui.js';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
@@ -996,7 +997,7 @@ function start() {
   if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   // First Start presents the live practice; Skip / completion returns to this selected race.
-  if (!guideSeen) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
+  if (!hasSeenGuide()) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
   if (editingLayout) editLayout(false);
   controls.clear();
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
@@ -2088,55 +2089,17 @@ for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id
 for (const id of ['tutorial-exit', 'tutorial-done']) $(`#${id}`).addEventListener('click', endTutorial);
 $('#tutorial-pause').addEventListener('click', () => { pause(); renderTutorial(true); });
 window.addEventListener('resize', () => { if (tutorial) renderTutorial(true); });
-const guideScreen = $('#guide-screen');
-guideScreen.addEventListener('keydown', event => {
-  // Keep driving shortcuts inside the modal; input.js otherwise consumes Escape.
-  event.stopPropagation();
-  if (event.code === 'Escape') { event.preventDefault(); closeGuide(); }
+const { closeGuide, hasSeenGuide } = setupGuideUI({
+  beforeOpen: () => {
+    if (editingLayout) editLayout(false);
+    controls.clear(); toggleControls(false); toggleSettings(false);
+    hidePerformanceNotice();
+  },
+  touchMatches: () => touchPreference.matches,
+  renderKeyMap: () => showKeyMap(),
+  isTutorialActive: () => !!tutorial,
+  clearControls: () => controls.clear(),
 });
-let guideOpener;
-function selectGuideDevice(device) {
-  for (const button of document.querySelectorAll('[data-guide-device]')) {
-    const selected = button.dataset.guideDevice === device;
-    button.setAttribute('aria-pressed', String(selected));
-    $(`#guide-${button.dataset.guideDevice}-panel`).hidden = !selected;
-  }
-}
-function openGuide(opener) {
-  try {
-    const key = localStorage.getItem('skyline-rush-tutorial-completed') === '1' ? 'tutorial.retry' : 'tutorial.start';
-    $('#guide-practice').dataset.i18n = key;
-    $('#guide-practice').textContent = t(key);
-  } catch { /* Keep the default invitation without storage. */ }
-  guideOpener = opener;
-  if (editingLayout) editLayout(false);
-  controls.clear(); toggleControls(false); toggleSettings(false);
-  hidePerformanceNotice();
-  selectGuideDevice(touchPreference.matches ? 'mobile' : 'desktop');
-  showKeyMap();
-  guideScreen.showModal();
-}
-for (const button of document.querySelectorAll('[data-guide-device]')) button.addEventListener('click', () => selectGuideDevice(button.dataset.guideDevice));
-$('#guide-open').addEventListener('click', () => openGuide(ui['controls-button']));
-// The home Practice entry lands on the practice call to action; the illustrations stay one scroll above it.
-$('#practice-button').addEventListener('click', ({ currentTarget }) => {
-  openGuide(currentTarget);
-  $('#guide-practice').focus();
-});
-let guideSeen = false;
-try { guideSeen = localStorage.getItem('skyline-rush-guide-seen') === '1'; } catch { /* Offer practice once per page when storage is unavailable. */ }
-function closeGuide() {
-  guideSeen = true;
-  try { localStorage.setItem('skyline-rush-guide-seen', '1'); } catch { /* Closing stays usable when storage is blocked. */ }
-  guideScreen.close();
-}
-$('#guide-close').addEventListener('click', closeGuide);
-guideScreen.addEventListener('cancel', event => { event.preventDefault(); closeGuide(); });
-guideScreen.addEventListener('close', () => {
-  if (tutorial) return;
-  controls.clear(); guideOpener?.focus({ preventScroll: true });
-});
-
 window.addEventListener('pagehide', event => {
   // A cached page resumes the same animation, renderer and controls on back navigation.
   if (event.persisted) return;
