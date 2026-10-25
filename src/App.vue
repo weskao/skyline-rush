@@ -10,6 +10,8 @@ import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
 import TutorialCoach from './TutorialCoach.vue';
+import SettingsPanel from './SettingsPanel.vue';
+import ControlsPanel from './ControlsPanel.vue';
 import SignInButton from './SignInButton.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
@@ -17,13 +19,6 @@ const GOOGLE_ICON = `${import.meta.env.BASE_URL}icons/google-sign-in.webp`;
 
 // Controls-panel radio groups: settings key → [legend, [value, label]...]; values must match controlSettings().
 // Catalog keys: `controls.<key>` for the legend, `controls.<key>.<value>` for each option.
-const CONTROL_CHOICES = {
-  mode: ['Steering', [['buttons', 'Buttons'], ['slide', 'Slide'], ['tilt', 'Tilt']]],
-  hand: ['Steering hand', [['left', 'Left'], ['right', 'Right']]],
-  fullLock: ['Slide sensitivity', [[40, 'High'], [60, 'Medium'], [80, 'Low']]],
-  size: ['Touch button size',[['S', 'Small'], ['M', 'Medium'], ['L', 'Large']]],
-  flyMode: ['FLY button', [['hold', 'Hold'], ['toggle', 'Toggle']]],
-};
 const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-run', 'Clean run', 'Finish without a collision'], ['perfect-five', 'Perfect flight', 'Five PERFECT LINEs in one race'], ['nitro-chain', 'Triple burst', 'Chain three NITRO charges']];
 </script>
 
@@ -44,37 +39,8 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <div class="route-heading"><span class="live-dot"></span> COASTAL EXPRESSWAY <span class="route-divider">/</span> <span>DUSK RUN</span></div>
     <nav class="toolbar" aria-label="Game controls" data-i18n-aria-label="nav.toolbar">
       <button class="icon-button assist-button" id="assist-button" aria-label="Auto accelerate" data-i18n-aria-label="assist.aria" aria-pressed="false" title="Auto accelerator · F2" aria-keyshortcuts="F2"><svg v-bind="ICON_ATTRS" v-html="icons.assist"></svg><span data-i18n="assist.label">AUTO</span><kbd class="key-badge" aria-hidden="true">F2</kbd></button>
-      <div class="settings">
-        <button class="icon-button" id="settings-button" aria-label="Audio settings" data-i18n-aria-label="audio.settings" aria-expanded="false" aria-controls="settings-panel" title="Audio settings · M mutes all" data-i18n-title="audio.title"><svg v-bind="ICON_ATTRS" v-html="icons.sound"></svg></button>
-        <div class="settings-panel" id="settings-panel" role="group" aria-label="Audio settings" data-i18n-aria-label="audio.settings" hidden>
-          <div class="audio-head"><span data-i18n="audio.head">Audio</span><button class="mute-all" id="mute-all" aria-keyshortcuts="M"><span data-i18n="audio.muteAll">Mute all</span><kbd aria-hidden="true">M</kbd></button></div>
-          <div class="audio-channel" v-for="[kind, label] in [['music', 'Music'], ['sfx', 'Sound effects']]" :key="kind">
-            <button class="setting" role="switch" :data-audio="kind" aria-checked="true"><svg v-bind="ICON_ATTRS" v-html="icons.sound"></svg><span :data-i18n="`audio.${kind}`">{{ label }}</span><b aria-hidden="true">100%</b></button>
-            <input type="range" min="0" max="100" step="5" value="100" :aria-label="`${label} volume`" :data-i18n-aria-label="`audio.${kind}Volume`">
-          </div>
-        </div>
-      </div>
-      <div class="controls-menu">
-        <button class="controls-button" id="controls-button" aria-expanded="false" aria-controls="controls-panel" title="Driving controls" data-i18n-title="controls.title" data-i18n="controls.button">Controls</button>
-        <div class="controls-panel" id="controls-panel" role="group" aria-label="Driving controls" data-i18n-aria-label="controls.title" hidden>
-          <button class="controls-reset" id="guide-open" data-i18n="guide.open">How to play</button>
-          <button class="controls-reset" id="tutorial-open" data-i18n="tutorial.start">Start interactive practice</button>
-          <fieldset v-for="([legend, options], key) in CONTROL_CHOICES" class="controls-field"><legend :data-i18n="`controls.${key}`">{{ legend }}</legend><label v-for="[value, label] in options" class="controls-choice"><input type="radio" :name="`controls-${key}`" :data-controls="key" :value="value"><span :data-i18n="`controls.${key}.${value}`">{{ label }}</span></label></fieldset>
-          <p id="tilt-status" role="status" class="controls-note" data-i18n="controls.tiltNote">Tilt asks permission only when selected. Hold your phone comfortably to set neutral.</p>
-          <button id="tilt-enable" class="controls-reset" data-i18n="controls.tiltEnable" hidden>Enable / recenter tilt</button>
-          <label class="ghost-setting"><input id="ghost-enabled" type="checkbox"><span data-i18n="controls.ghost">Show best-run ghost</span></label>
-          <p id="ghost-status" class="controls-note">No best-run replay recorded yet.</p>
-          <label class="controls-field controls-range"><span data-i18n="controls.opacity">Touch button opacity</span> <output for="controls-opacity"></output><input id="controls-opacity" aria-label="Touch button opacity" data-i18n-aria-label="controls.opacity" type="range" data-controls="opacity" min="0.4" max="1" step="0.05"></label>
-          <div class="controls-preview" aria-hidden="true"><span class="controls-preview-label" data-i18n="controls.preview">Preview</span><span class="controls-preview-keys"><i class="touch-nitro"><svg v-bind="ICON_ATTRS" v-html="icons.nitro"></svg></i><i class="touch-fly"><svg v-bind="ICON_ATTRS" v-html="icons.fly"></svg></i><i class="touch-boost"><svg v-bind="ICON_ATTRS" v-html="icons.boost"></svg></i><i class="touch-gas"><svg v-bind="ICON_ATTRS" v-html="icons.pedal"></svg></i></span></div>
-          <label class="controls-field controls-range"><span data-i18n="controls.sensitivity">Steering sensitivity</span> <output for="controls-sensitivity"></output><input id="controls-sensitivity" aria-label="Steering sensitivity" data-i18n-aria-label="controls.sensitivity" type="range" data-controls="sensitivity" min="0.4" max="1" step="0.1"></label>
-          <fieldset class="controls-field keymap-field"><legend data-i18n="keymap.legend">Keyboard · select action, then press a key</legend><button v-for="action in ['throttle', 'brake', 'left', 'right', 'fly', 'boost', 'nitro']" class="keymap-binding" :data-rebind="action"><span :data-i18n="`keymap.${action}`">{{ action.toUpperCase() }}</span><b></b></button></fieldset>
-          <p id="keymap-status" role="status" class="controls-note" data-i18n="keymap.fixed">Fixed shortcuts: Esc pause · Backspace restart · C camera.</p>
-          <button class="controls-reset" id="keymap-reset" data-i18n="keymap.reset">Reset keyboard</button>
-          <button class="controls-reset" id="layout-edit" data-i18n="layout.edit">Edit touch layout</button>
-          <button class="controls-reset" id="layout-reset" data-i18n="layout.reset">Reset touch layout</button>
-          <button class="controls-reset" id="controls-reset" data-i18n="controls.reset">Reset to defaults</button>
-        </div>
-      </div>
+      <SettingsPanel />
+      <ControlsPanel />
       <button class="icon-button" id="camera-button" aria-label="Change camera" data-i18n-aria-label="camera.aria" aria-pressed="false" title="Camera · C" data-i18n-title="camera.title" aria-keyshortcuts="C"><svg v-bind="ICON_ATTRS" v-html="icons.camera"></svg><kbd class="key-badge" aria-hidden="true">C</kbd></button>
       <button class="icon-button" id="restart-button" aria-label="Restart race" data-i18n-aria-label="restart.aria" title="Restart · Backspace" data-i18n-title="restart.title" aria-keyshortcuts="Backspace" hidden><svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg><kbd class="key-badge" aria-hidden="true">⌫</kbd></button>
       <button class="icon-button" id="pause-button" aria-label="Pause race" data-i18n-aria-label="pause.aria" title="Pause · Esc" data-i18n-title="pause.title" aria-keyshortcuts="Escape" disabled><svg v-bind="ICON_ATTRS" v-html="icons.pause"></svg><kbd class="key-badge" aria-hidden="true">Esc</kbd></button>
