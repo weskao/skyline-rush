@@ -2114,7 +2114,7 @@ function updateUI(now, input) {
   });
   const hint = !padTouch && race.phase === 'racing' && race.elapsed < PAD_HINT_SECONDS && controlPrefs.mode === 'slide';
   if (hint !== padHint) { padHint = hint; drawPad(); }
-  ui['speed-caption'].textContent = L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : autoThrottle ? 'hud.autoOverride' : 'hud.tagline'];
+  setHudText(ui['speed-caption'], L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : autoThrottle ? 'hud.autoOverride' : 'hud.tagline']);
   document.body.classList.toggle('airborne', flying);
   document.body.classList.toggle('collision', impactAge < 0.45 && race.phase === 'racing');
   if (previousFlight !== flying) {
@@ -2131,7 +2131,7 @@ function updateUI(now, input) {
     ui.countdown.dataset.step = step;
     if (!calm) countdownNumber.animate([{ opacity: 0.4, transform: `scale(${countdown ? 1.3 : 0.65})` }, { opacity: 1, transform: 'scale(1)' }], motionOptions(countdown ? 'base' : 'slow'));
   }
-  countdownLabel.textContent = L[countdown ? autoThrottle ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline'];
+  setHudText(countdownLabel, L[countdown ? autoThrottle ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline']);
   const length = race.length;
   let status = L[`phase.${race.phase}`];
   if (race.mode === 'free' && car.distance >= length) status = L['mode.endOfRoad'];
@@ -2139,7 +2139,7 @@ function updateUI(now, input) {
     const { ahead, behind } = sprintGaps(race);
     status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
   }
-  ui['race-status'].textContent = status;
+  setHudText(ui['race-status'], status);
   const gapWarning = race.phase === 'racing' ? gapChargeWarning(race) : null;
   ui['driving-message'].textContent = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff'] : car.exhausted && input.fly ? L['hud.releaseRecharge']
     : gapWarning ? interpolate(L['hud.gapCharge'], { n: Math.ceil(gapWarning.need) }) : '';
