@@ -7,6 +7,27 @@ const { version } = packageMeta;
 // stops a release whose version has no entry.
 export const RELEASE_NOTES = Object.freeze([
   {
+    version: '0.23.0', date: '2026-10-25', image: null,
+    highlights: [
+      {
+        id: 'whole-car-preview', kind: 'fix', image: null,
+        title: { en: 'Your whole car stays in the picture', 'zh-TW': '整台車都留在畫面裡' },
+        description: {
+          en: 'On the home screen, the car preview now fits completely on every track and screen shape, including Alpine Rail Pass, wide monitors and phones held upright.',
+          'zh-TW': '首頁的車輛預覽現在在每條賽道、每種螢幕比例下都能完整入鏡，包括山岳鐵道、超寬螢幕和直立的手機。'
+        }
+      },
+      {
+        id: 'camera-start-spacing', kind: 'fix', image: null,
+        title: { en: 'Camera buttons and Start have room to breathe', 'zh-TW': '鏡頭按鈕與開始鍵不再互相擠壓' },
+        description: {
+          en: 'On the home screen, the camera buttons and the Start button no longer crowd each other, on computers or phones in either direction, so they are easier to tap.',
+          'zh-TW': '首頁的鏡頭按鈕和開始鍵現在不會擠在一起，不論用電腦或直式、橫式手機都更容易點到。'
+        }
+      }
+    ]
+  },
+  {
     version: '0.22.1', date: '2026-10-25', image: null,
     highlights: [
       {
