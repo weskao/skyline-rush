@@ -349,6 +349,7 @@ test('an unsynced permanent record survives A to B to A account switching', asyn
   await mockGoogleSignIn(page, { email: 'switch-B@example.test' });
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-switch').click();
+  await page.locator('#cloud-open').click(); // Account switch reloads the page and closes this dialog.
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBeUndefined();
 
@@ -356,6 +357,7 @@ test('an unsynced permanent record survives A to B to A account switching', asyn
   await mockGoogleSignIn(page, { existing: true, email: 'switch-A@example.test' });
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-switch').click();
+  await page.locator('#cloud-open').click(); // The second switch also performs a reload.
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBe(47);
 });
