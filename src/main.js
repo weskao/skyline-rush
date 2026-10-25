@@ -1,4 +1,5 @@
 import './style.css';
+import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.js';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
@@ -1879,11 +1880,6 @@ function phaseText() {
 }
 
 const hudNodes = Object.fromEntries(["clean-trial-hud","hazard-warning","elimination-hud","checkpoint-hud","sprint-stage","item-slot","item-status","activate-item","stunt-hud","practice-hud","race-length","ghost-split","style-score","aero-flow","aero-floor","aero-jet"].map(id => [id, document.getElementById(id)]));
-// Avoid redundant DOM mutations on steady HUD fields. Values still refresh after locale changes.
-function setHudText(node, value) {
-  if (node.textContent !== value) node.textContent = value;
-}
-
 function updateUI(now, input) {
   if (raceRouteMap?.trackId !== race.trackId) ensureRouteMaps();
   raceRouteMap.updateDrivers([{ id: 'YOU', distance: race.player.distance, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance }))]);
@@ -1906,76 +1902,76 @@ function updateUI(now, input) {
     });
   }
   const cleanTrialHud = hudNodes['clean-trial-hud'];
-  cleanTrialHud.hidden = race.mode !== 'time' || !race.config.clean || race.phase === 'ready';
+  setHudHidden(cleanTrialHud, race.mode !== 'time' || !race.config.clean || race.phase === 'ready');
   if (!cleanTrialHud.hidden) {
-    cleanTrialHud.textContent = t(race.player.collisions ? 'mode.cleanBroken' : 'mode.cleanActive');
+    setHudText(cleanTrialHud, t(race.player.collisions ? 'mode.cleanBroken' : 'mode.cleanActive'));
     cleanTrialHud.dataset.broken = String(race.player.collisions > 0);
   }
   const hazardWarning = hudNodes['hazard-warning'];
   const hazardAhead = race.hazards.length ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;
   const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
-  hazardWarning.hidden = !hazardAhead || hazardDistance > 170 || race.phase !== 'racing';
-  if (!hazardWarning.hidden) hazardWarning.textContent = t('mode.hazardWarning', { n: hazardDistance });
+  setHudHidden(hazardWarning, !hazardAhead || hazardDistance > 170 || race.phase !== 'racing');
+  if (!hazardWarning.hidden) setHudText(hazardWarning, t('mode.hazardWarning', { n: hazardDistance }));
   const eliminationHud=hudNodes['elimination-hud'];
-  eliminationHud.hidden = !race.elimination || race.phase === 'ready';
+  setHudHidden(eliminationHud, !race.elimination || race.phase === 'ready');
   if (race.elimination) {
-    eliminationHud.textContent=t('mode.eliminationHud',{
+    setHudText(eliminationHud, t('mode.eliminationHud',{
       active:race.rivals.length+1,
       seconds:Math.max(0,Math.ceil(race.elimination.nextAt-race.elapsed)),
-    });
+    }));
     eliminationHud.dataset.urgent=String(race.elimination.nextAt-race.elapsed <= 3);
   }
   const checkpointHud = hudNodes['checkpoint-hud'];
-  checkpointHud.hidden = !race.checkpoint || race.phase === 'ready';
+  setHudHidden(checkpointHud, !race.checkpoint || race.phase === 'ready');
   if (race.checkpoint) {
     const next = race.checkpoint.gates.find(g => !g.passed && !g.missed);
-    checkpointHud.textContent = t('mode.checkpointHud', {
+    setHudText(checkpointHud, t('mode.checkpointHud', {
       n: race.checkpoint.passed, total: race.checkpoint.gates.length,
       seconds: race.checkpoint.timeLeft.toFixed(1),
       distance: next ? Math.max(0,Math.ceil(next.distance - race.player.distance)) : 0,
       direction: next ? t('mode.direction.' + checkpointDirection(race.player, next)) : '—',
       perfect: race.checkpoint.perfect,
-    });
+    }));
     checkpointHud.dataset.urgent = String(race.checkpoint.timeLeft < 10);
   }
   const counter = hudNodes['sprint-stage'];
-  counter.hidden = !sprintSeries && !cup;
-  if (cup) counter.textContent = t('mode.cupHeat', { n: Math.min(cup.tracks.length, cup.results.length + (race.phase === 'finished' ? 0 : 1)), total: cup.tracks.length });
-  if (sprintSeries) counter.textContent = t('mode.stageCounter', {
+  setHudHidden(counter, !sprintSeries && !cup);
+  if (cup) setHudText(counter, t('mode.cupHeat', { n: Math.min(cup.tracks.length, cup.results.length + (race.phase === 'finished' ? 0 : 1)), total: cup.tracks.length }));
+  if (sprintSeries) setHudText(counter, t('mode.stageCounter', {
     n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
     total: sprintSeries.count,
-  });
+  }));
   const slot = hudNodes['item-slot'], carItem = race.player.heldItem;
-  slot.hidden = !race.config.activeItems || race.phase === 'ready';
+  setHudHidden(slot, !race.config.activeItems || race.phase === 'ready');
   if (!slot.hidden) {
     hudNodes['item-status'].textContent = carItem ? t('mode.itemReady',{item:t('mode.item.'+carItem)}) : t('mode.itemEmpty');
     hudNodes['activate-item'].disabled = !carItem || race.phase !== 'racing' || race.player.itemCooldown > 0;
   }
   const stuntHud = hudNodes['stunt-hud'];
-  stuntHud.hidden = !stunt || race.phase === 'ready';
+  setHudHidden(stuntHud, !stunt || race.phase === 'ready');
   if (stunt) {
     const active = race.phase === 'finished' ? 0 : race.elapsed;
-    stuntHud.textContent = t('mode.stuntHud', {
+    setHudText(stuntHud, t('mode.stuntHud', {
       time:Math.ceil(Math.max(0, stunt.duration - stunt.elapsed - active)),
       score:Math.round(stunt.score + (race.phase === 'finished' ? 0 : race.player.score)),
       combo:race.styleAttack?.combo ?? 0, heat:stunt.heats + (race.phase === 'finished' ? 0 : 1),
-    });
+    }));
   }
   const practiceHud = hudNodes['practice-hud'];
-  practiceHud.hidden = !race.practice || !!tutorial;
-  if (race.practice) practiceHud.textContent = t('mode.practiceTelemetry', {
+  setHudHidden(practiceHud, !race.practice || !!tutorial);
+  if (race.practice) setHudText(practiceHud, t('mode.practiceTelemetry', {
     km: (race.practice.travelled / 1000).toFixed(2),
     max: Math.round(race.practice.maxSpeed * 3.6),
     air: race.practice.airTime.toFixed(1),
     near: race.practice.nearMisses,
     combo: race.player.combo,
     tricks: race.practice.tricks,
-  });
+  }));
   const car = race.player;
   const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
   const calm = visual.comfortable || reducedMotion.matches;
   const flying = car.altitude > 0.25;
-  ui.speed.textContent = String(Math.round(car.speed * 3.6));
+  setHudText(ui.speed, String(Math.round(car.speed * 3.6)));
   speedNeedle.style.transform = `rotate(${-70 + Math.min(1, car.speed / (MAX_SPEED + 30)) * 140}deg)`;
   const position = racePosition(race);
   if (previousPosition !== position) {
@@ -1998,26 +1994,26 @@ function updateUI(now, input) {
   positionChange.hidden = race.phase !== 'racing' || now >= positionUntil;
   if (positionChange.hidden) delete ui.position.dataset.direction;
   if (calm || race.phase !== 'racing') for (const element of [ui.position, positionChange]) element.getAnimations().forEach(animation => animation.cancel());
-  ui.timer.textContent = timeString(race.elapsed);
-  ui.distance.textContent = (car.distance / 1000).toFixed(2);
+  setHudText(ui.timer, timeString(race.elapsed));
+  setHudText(ui.distance, (car.distance / 1000).toFixed(2));
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
   setHudText(hudNodes['race-length'], (race.length / 1000).toFixed(2));
   const timeGhost = race.mode === 'time' && controlPrefs.ghost ? modeGhostFor(race) : null;
   const split = hudNodes['ghost-split'];
-  split.hidden = !timeGhost || race.phase !== 'racing';
+  setHudHidden(split, !timeGhost || race.phase !== 'racing');
   if (!split.hidden) {
     const delta = car.distance - ghostAt(timeGhost, race.elapsed).distance;
-    split.textContent = t(delta >= 0 ? 'mode.ahead' : 'mode.behind', { n: Math.abs(Math.round(delta)) });
+    setHudText(split, t(delta >= 0 ? 'mode.ahead' : 'mode.behind', { n: Math.abs(Math.round(delta)) }));
     split.dataset.ahead = String(delta >= 0);
   }
-  ui['fuel-value'].textContent = String(Math.round(car.fuel));
+  setHudText(ui['fuel-value'], String(Math.round(car.fuel)));
   ui['fuel-fill'].style.transform = `scaleX(${car.fuel / 100})`;
   ui['fuel-meter'].setAttribute('aria-valuenow', String(Math.round(car.fuel)));
   ui['fuel-meter'].setAttribute('aria-valuetext', `${car.fuel < 20 ? L['hud.lowCharge'] : ''}${Math.round(car.fuel)}%`);
   ui['fuel-meter'].dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
   previousFuel = car.fuel;
   hudNodes['style-score'].textContent = race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style'], { n: Math.floor(car.score) });
-  ui.altitude.textContent = car.altitude.toFixed(1);
+  setHudText(ui.altitude, car.altitude.toFixed(1));
   const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
   // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
   if (controlPrefs.flyMode === 'toggle' && input.fly && (car.exhausted || car.fuel <= 0)) controls.setFly(false);
@@ -2036,7 +2032,7 @@ function updateUI(now, input) {
   nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
   if (car.nitro > previousNitro && race.phase === 'racing') nitroRefillUntil = now + .6;
   nitroMeter.dataset.refilling = String(race.phase === 'racing' && now < nitroRefillUntil);
-  nitroStatus.textContent = nitroActive ? L['hud.nitroActive'] : car.nitro >= 3 ? L['hud.nitroMax'] : interpolate(L['hud.nitroCount'], { n: car.nitro.toFixed(2) });
+  setHudText(nitroStatus, nitroActive ? L['hud.nitroActive'] : car.nitro >= 3 ? L['hud.nitroMax'] : interpolate(L['hud.nitroCount'], { n: car.nitro.toFixed(2) }));
   for (const [index, segment] of nitroSegments.entries()) {
     const fill = Math.min(1, Math.max(0, car.nitro - index));
     segment.firstElementChild.style.transform = `scaleX(${fill})`;
@@ -2048,7 +2044,7 @@ function updateUI(now, input) {
   previousNitro = car.nitro;
   const callout = callouts.update(race, impactAge <= 1.1);
   if (!callout || calm) eventCallout.getAnimations().forEach(animation => animation.cancel());
-  eventCallout.hidden = !callout;
+  setHudHidden(eventCallout, !callout);
   if (callout !== shownCallout) {
     for (const report of calloutReports) report.hidden = true;
     if (callout) {
@@ -2070,7 +2066,7 @@ function updateUI(now, input) {
   }
   document.body.classList.toggle('nitro-active', nitroActive);
   // Inside a shortcut only BOOST drains (3/s); plain flight there is free.
-  ui['flight-budget'].textContent = race.modifier === 'no-flight' ? '—' : car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`;
+  setHudText(ui['flight-budget'], race.modifier === 'no-flight' ? '—' : car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`);
   ui['flight-instruction'].textContent = race.modifier === 'no-flight' ? L['daily.flightDisabled.reason'] : car.thrusting ? interpolate(L['hud.steerAir'], { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend'] }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand'] : interpolate(L['hud.climbAgain'], { hold })
     : car.exhausted ? interpolate(L['hud.rechargeRoad'], { action: tap ? L['hud.tapLand'] : release }) : car.speed < 18 ? interpolate(L['hud.reachLift'], { hold }) : depleted ? L['hud.charging'] : interpolate(L[tap ? 'hud.lift' : 'hud.liftLand'], { hold });
   ui['fuel-caption'].textContent = race.modifier === 'no-flight' ? L['daily.flightDisabled.fuel'] : car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge'];
@@ -2081,7 +2077,7 @@ function updateUI(now, input) {
   const tunnelBoost = car.miniBoost > 0 && car.boostTunnelEvent &&
     race.elapsed - car.boostTunnelEvent.time < 3.6;
   const boost = (car.boosting || nitroActive || tunnelBoost) && race.phase === 'racing';
-  boostStatus.textContent = L[tunnelBoost ? 'hud.hyperdrive' : boost ? 'hud.thrustActive' : car.fuel === 0 ? 'hud.chargeEmpty' : car.fuel < 100 && !flying ? 'hud.recharging' : 'hud.boostReady'];
+  setHudText(boostStatus, L[tunnelBoost ? 'hud.hyperdrive' : boost ? 'hud.thrustActive' : car.fuel === 0 ? 'hud.chargeEmpty' : car.fuel < 100 && !flying ? 'hud.recharging' : 'hud.boostReady']);
   boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
   if (boost && !previousBoost && visual.enabled && !calm) {
     boostStatus.animate([{ opacity: 0.4, transform: 'translateX(-5px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180 });
@@ -2104,7 +2100,7 @@ function updateUI(now, input) {
   setHudText(hudNodes['aero-jet'], L[boost ? 'hud.thrustActive' : race.phase === 'ready' ? 'hud.demo' : 'hud.standby']);
   document.body.style.setProperty('--flight-bank', `${-car.steering * 5}deg`);
   document.body.style.setProperty('--streak-opacity', visual.enabled && !calm && race.phase === 'racing' ? String(boost ? visual.speedLines : 0) : '0');
-  ui['impact-report'].hidden = race.phase !== 'racing' || impactAge > 1.1;
+  setHudHidden(ui['impact-report'], race.phase !== 'racing' || impactAge > 1.1);
   if (!ui['impact-report'].hidden) {
     ui['impact-title'].textContent = L[car.impact.kind === 'barrier' ? 'hud.barrier' : 'hud.vehicle'];
     ui['impact-loss'].textContent = String(Math.round(car.impact.speedLost * 3.6));
@@ -2131,7 +2127,7 @@ function updateUI(now, input) {
     previousFlight = flying;
   }
   const countdown = race.phase === 'countdown';
-  ui.countdown.hidden = !(countdown || (race.phase === 'racing' && now < goUntil));
+  setHudHidden(ui.countdown, !(countdown || (race.phase === 'racing' && now < goUntil)));
   const step = countdown ? String(Math.ceil(race.countdown)) : 'GO'; // the step stays a CSS hook; only the shown text is translated
   const countdownText = countdown ? step : L['hud.go'];
   if (countdownNumber.textContent !== countdownText) {
