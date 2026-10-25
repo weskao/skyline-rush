@@ -3,6 +3,28 @@ import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { CATALOGS } from '../src/i18n.js';
 import { ciTimeout } from './helpers/ci.js';
 
+test('home version stays vertically centered beside the footer tagline in both languages', async ({ page }) => {
+  for (const [width, height] of [[320, 740], [390, 844], [844, 390], [1440, 900]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    for (const locale of ['en', 'zh-TW']) {
+      await page.locator('#locale-select').selectOption(locale, { force: true });
+      const [tagline, version] = await Promise.all([
+        page.locator('[data-i18n="footer.tagline"]').boundingBox(),
+        page.locator('#whats-new-open').boundingBox(),
+      ]);
+      await page.screenshot({ path: test.info().outputPath(`footer-${width}-${locale}.png`), animations: 'disabled' });
+      expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2), `${width}px ${locale} footer alignment`).toBeLessThanOrEqual(1);
+      expect(tagline.x + tagline.width).toBeLessThanOrEqual(version.x);
+      expect(version.height).toBeGreaterThanOrEqual(44);
+      await page.locator('#whats-new-open').click();
+      await expect(page.locator('#whats-new-screen')).toBeVisible();
+      await page.locator('#release-close').click();
+    }
+  }
+});
+
 for (const [width, height, hasTouch] of [
   [320, 568, true], [390, 844, true], [568, 320, true], [844, 390, true],
   [768, 1024, true], [768, 600, true], [761, 501, false], [760, 501, true],
@@ -281,7 +303,7 @@ test.describe('device safe areas', () => {
       const iosRules = await page.evaluate(() => [...document.styleSheets].flatMap(sheet => [...sheet.cssRules])
         .filter(rule => rule instanceof CSSSupportsRule && rule.conditionText.includes('-webkit-touch-callout'))
         .flatMap(rule => [...rule.cssRules].map(inner => inner.cssText)).join('\n'));
-      expect(iosRules, 'iOS @supports block').toContain('.build-version');
+      expect(iosRules, 'iOS @supports block').toContain('.bottomline');
       await page.addStyleTag({ content: iosRules });
       // iOS draws the home indicator 8-13px above the bottom edge.
       for (const selector of ['.bottomline', '.build-version']) {

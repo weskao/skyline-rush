@@ -180,13 +180,23 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
 });
 
 
-test('desktop trackpad scroll: completed animation never re-exposes the departing track', async ({ page }) => {
+for (const deliverMs of [16, 210]) {
+test(`desktop trackpad scroll (${deliverMs}ms delivery): completed animation never re-exposes the departing track`, async ({ page }, info) => {
   await page.goto('/');
   const [, second] = await trackOrder(page);
+  // Cover native ms tokens as well as the production bundle's minified seconds.
+  if (deliverMs === 210) await page.evaluate(() => document.documentElement.style.setProperty('--dur-base', '240ms'));
   // Observe the exact microtask where the selected track changes. The outgoing
   // snapshot MUST already be entirely off-screen even before the layer is removed.
   await page.evaluate(targetTrack => {
     window.__swipeHandoff = null;
+    window.__swipeDurations = [];
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options) {
+      const animation = animate.call(this, frames, options);
+      if (this.id === 'track-swipe-scenes') window.__swipeDurations.push(animation.effect.getTiming().duration);
+      return animation;
+    };
     // Watch all track selections, not a hard-coded track ID. Different modes
     // and saved progress may start with different tracks.
     new MutationObserver(() => {
@@ -200,13 +210,32 @@ test('desktop trackpad scroll: completed animation never re-exposes the departin
       window.__swipeHandoff = { outgoingRight: outgoing.right, incomingLeft: incoming.left, incomingRight: incoming.right };
     }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
   }, second);
-  await trackpadSwipe(page, 30, 8); // genuine horizontal wheel path; same handoff as drag/touch
+  await trackpadSwipe(page, 30, 8, { deliverMs }); // delayed delivery must keep the snapshot handoff intact
+  expect(await page.evaluate(() => window.__swipeDurations), 'production slide keeps its 240ms motion token').toContain(240);
   await expect.poll(() => selected(page)).toBe(second);
   await expect.poll(() => page.evaluate(() => window.__swipeHandoff)).not.toBeNull();
   const seen = await page.evaluate(() => window.__swipeHandoff);
   expect(seen.outgoingRight, 'old track must not reappear after snap animation finishes').toBeLessThanOrEqual(1);
   expect(seen.incomingLeft).toBeLessThanOrEqual(1);
   expect(seen.incomingRight).toBeGreaterThanOrEqual(1439);
+  await page.screenshot({ path: info.outputPath('trackpad-handoff.png') });
+});
+}
+
+test('desktop: reduced motion cancels a snap-back without blocking the next swipe', async ({ page }) => {
+  await page.goto('/');
+  const [, second] = await trackOrder(page);
+  await page.evaluate(() => document.documentElement.style.setProperty('--dur-fast', '4000ms'));
+  await trackpadSwipe(page, 10, 4);
+  const layer = page.locator('#track-swipe-scenes');
+  await expect.poll(() => layer.evaluate(element => element.getAnimations().length)).toBeGreaterThan(0);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(layer).toHaveJSProperty('childElementCount', 0);
+  await page.mouse.move(1150, 600);
+  await page.mouse.down();
+  await page.mouse.move(950, 600, { steps: 8 });
+  await page.mouse.up();
+  await expect.poll(() => selected(page)).toBe(second);
 });
 
 test.describe('phone reload hint', () => {

@@ -17,6 +17,13 @@ Branch: `feature/todo-nonfirebase-20261025` from `main` `f53bf0fc`. Evidence: [N
 Firebase and Gamepad are explicitly excluded. Do not retick historical requirements or claim that a pushed commit is a passed test.
 
 
+## Home version footer alignment (2026-10-25)
+
+- [x] RED: the real Chrome regression observed a 2.5px center difference in zh-TW at 320px. Put the version inside the shared footer grid with centered alignment; retain the 44px What's New button and tablet access. No audio change is needed for static alignment.
+- [x] GREEN: en/zh-TW at 320px/390px portrait, 844px landscape and 1440px desktop align within 1px and the version opens What's New through real clicks. The iOS safe-area regression passes. Real WebGL screenshots are in `playwright-report/footer-alignment/green/`.
+- [ ] Finish `make verify` and `npm run test:layout`; receipts are in `playwright-report/footer-alignment/`. The first layout run hit a transient preview HTTP failure while another build rewrote the shared `dist/`; rerun sequentially.
+- [ ] Exact-commit GitHub CI `quality-gate` and physical-device/Safari acceptance remain separate gates.
+
 ## CI regression: side-view showroom size measurement (2026-10-25)
 
 - [x] Trace feature CI run 40157117052: all 10 AIRFLOW/hovering World Tour checks fail on the left camera's near-zero `screenWidth`; unit, eight browser shards and cloud-save pass.
@@ -24,7 +31,17 @@ Firebase and Gamepad are explicitly excluded. Do not retick historical requireme
 - [x] Fix the shared QA projection in `inspectShowcase`: project the actual body mesh vertices instead of two axle endpoints that overlap in a side view. This only runs when QA requests inspection; camera, scenery, physics and audio need no change.
 - [x] GREEN: the complete World Tour showcase browser file passes 37/37, including all five tracks, both AIRFLOW states and six angles with existing size/occlusion assertions unchanged. Real WebGL screenshots are preserved in `playwright-report/ci-showcase-width/green/`.
 - [x] Unit tests: 575 passed, 3 skipped; production build and production-lock assertion pass. The initial full gate stopped because another process owned port 5178; rerun `make verify` with a free `PLAYWRIGHT_PORT` without stopping that process.
-- [ ] Full `make verify` and exact-commit `main` CI `quality-gate`: receipts are saved in `playwright-report/ci-showcase-width/make-verify.log` and `ci-status.json` after completion. Physical-device/Safari acceptance remains separate.
+- [x] Full `make verify`: 575 unit tests passed / 3 skipped, production build, 422 browser tests and 42 World Tour tests passed. Log: `playwright-report/ci-showcase-width/make-verify.log`.
+- [x] Inspect exact-commit main run 40161135561 on `94c44a3`: World Tour, unit, cloud-save and seven browser shards pass; shard 6 fails only on the trackpad handoff below. The aggregate gate is red, so release remains blocked.
+
+## CI regression: trackpad snapshot handoff under delayed input (2026-10-25)
+
+- [x] Trace main run 40161135561: the next track is selected, but the visual handoff observer sees no snapshot pair. Production CSS minifies `240ms` to `.24s`; `parseFloat` incorrectly schedules a 0.24 ms animation.
+- [x] RED: the built-app regression reports `[0.24]` instead of 240 ms. After correcting time units, 210 ms input delivery reproduces the exact missing-handoff failure: a prior snap-back completes during a resumed swipe and clears its snapshots.
+- [x] Shared fix: convert CSS seconds to milliseconds, cancel obsolete layer animations on resumed preparation, and clear snapshots only when the snap-back still owns them. Commit uses the same preparation path; shared cleanup releases the busy flag. Existing UI sounds remain appropriate; no audio change is needed.
+- [x] Independent review found cancellation by reduced motion could leave input busy; its new regression reproduced RED (two stale snapshot children). An animation identity guard preserves successor snapshots and still unlocks when the current animation is canceled. Final read-only review found no blockers.
+- [x] Full swipe browser file: 11/11 pass with unchanged handoff geometry assertions, including ordinary/delayed input, phone touch, reduced-motion interruption, momentum and edge behavior. Final regressions cover both native milliseconds and minified seconds, with real-game screenshots under `playwright-report/ci-swipe-handoff/`.
+- [ ] Run full `make verify`, inspect exact-commit main CI, and continue Telegram job-status tables until all required checks pass. Physical-device/Safari acceptance remains separate.
 
 ## Remaining phone browser regressions (2026-10-25)
 
