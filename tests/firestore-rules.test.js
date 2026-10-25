@@ -24,8 +24,58 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertFails(setDoc(doc(other, 'saves/owner'), progress));
   await assertFails(setDoc(save, { ...progress, unlocked: ['coast', 'unknown'] }));
   await assertFails(setDoc(save, { ...progress, stars: { unknown: 3 } }));
+  await assertFails(setDoc(save, { ...progress, stars: { coast: 7 } }));
+  await assertFails(setDoc(save, { ...progress, stars: { coast: '3' } }));
+  await assertFails(setDoc(save, { ...progress, bests: { coast: -2 } }));
+  await assertFails(setDoc(save, { ...progress, bests: { coast: '60' } }));
+  await assertFails(setDoc(save, { ...progress, medals: { 'first-win': 'not-a-date' } }));
   await assertFails(deleteDoc(doc(other, 'saves/owner')));
   await assertFails(deleteDoc(doc(guest, 'saves/owner')));
   await assertSucceeds(deleteDoc(save));
   assert.equal((await getDoc(save)).exists(), false);
+});
+
+test('Google account documents are private, limited to name/email, and cannot be listed', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
+  const env = await initializeTestEnvironment({
+    projectId: 'demo-skyline-rush',
+    firestore: { rules: readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8') },
+  });
+  t.after(() => env.cleanup());
+  const owner = env.authenticatedContext('profile-owner').firestore();
+  const other = env.authenticatedContext('other').firestore();
+  const guest = env.unauthenticatedContext().firestore();
+  const account = doc(owner, 'accounts/profile-owner');
+  await assertSucceeds(setDoc(account, { displayName: 'Player', email: 'player@gmail.com' }));
+  await assertSucceeds(getDoc(account));
+  await assertSucceeds(setDoc(account, { displayName: 'New name', email: 'player@gmail.com' }));
+  await assertFails(getDoc(doc(other, 'accounts/profile-owner')));
+  await assertFails(getDoc(doc(guest, 'accounts/profile-owner')));
+  await assertFails(getDocs(collection(owner, 'accounts')));
+  await assertFails(setDoc(doc(other, 'accounts/profile-owner'), { email: 'other@gmail.com' }));
+  await assertFails(setDoc(account, { displayName: 'Player', email: 'player@gmail.com', password: 'secret' }));
+  await assertFails(setDoc(account, { displayName: 'x'.repeat(201), email: 'player@gmail.com' }));
+  await assertFails(setDoc(account, { displayName: 'Player', email: 'not-an-email' }));
+  await assertFails(deleteDoc(doc(other, 'accounts/profile-owner')));
+  await assertSucceeds(deleteDoc(account));
+});
+
+test('permanent mode records are private and bounded on Spark Firestore', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
+  const env = await initializeTestEnvironment({
+    projectId: 'demo-skyline-rush',
+    firestore: { rules: readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8') },
+  });
+  t.after(() => env.cleanup());
+  const owner = env.authenticatedContext('owner').firestore();
+  const other = env.authenticatedContext('other').firestore();
+  const path = 'modeBests/owner';
+  const records = { version: 1, bests: {}, stunts: {} };
+  await assertSucceeds(setDoc(doc(owner, path), records));
+  await assertSucceeds(getDoc(doc(owner, path)));
+  await assertFails(getDoc(doc(other, path)));
+  await assertFails(getDocs(collection(owner, 'modeBests')));
+  await assertFails(setDoc(doc(other, path), records));
+  await assertFails(setDoc(doc(owner, path), { ...records, version: 2 }));
+  await assertFails(setDoc(doc(owner, path), { ...records, secret: true }));
+  await assertFails(deleteDoc(doc(other, path)));
+  await assertSucceeds(deleteDoc(doc(owner, path)));
 });

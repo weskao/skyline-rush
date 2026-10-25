@@ -1,6 +1,6 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
-  HISTORY_LIMIT, MEDALS, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
+  HISTORY_LIMIT, MEDALS, MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
 
 export function mergeUnlocks(local, remote) {
   const unlocked = new Set(['coast', ...(Array.isArray(local) ? local : []), ...(Array.isArray(remote) ? remote : [])]);
@@ -32,9 +32,21 @@ function raceRun(run) {
 function modeRun(run) {
   const when = date(run?.date);
   if (!when || !track(run.track) || !modeNames.includes(run.mode) || !validTime(run.time) ||
-      typeof run.rules !== 'string' || run.rules.length > 2000) return null;
+      typeof run.rules !== 'string' || !run.rules.length || run.rules.length > 4096) return null;
+  const nonnegativeInt = value => Number.isSafeInteger(value) && value >= 0 && value <= 1000000;
+  const telemetry = {};
+  for (const key of ['rulesVersion', 'stageCount', 'itemsUsed', 'hazardPasses', 'hazardHits']) {
+    if (nonnegativeInt(run[key])) telemetry[key] = run[key];
+  }
+  if (Number.isFinite(run.distance) && run.distance >= 0 && run.distance <= 100000) telemetry.distance = run.distance;
+  if (run.lapCount === null) telemetry.lapCount = null;
+  else if (nonnegativeInt(run.lapCount)) telemetry.lapCount = run.lapCount;
+  if (run.modeId === run.mode) telemetry.modeId = run.mode;
+  if (run.trackId === run.track) telemetry.trackId = run.track;
+  if (run.rulesSignature === run.rules) telemetry.rulesSignature = run.rules;
   return { date: when, mode: run.mode, track: run.track, rules: run.rules, time: run.time,
     position: Number.isInteger(run.position) ? run.position : 0, score: nonnegative(run.score),
+    ...telemetry,
     ...(run.mode === 'stunt' ? { maxCombo: nonnegative(run.maxCombo), airTime: nonnegative(run.airTime),
       medal: typeof run.medal === 'string' ? run.medal.slice(0, 32) : '' } : {}) };
 }
@@ -84,6 +96,90 @@ export function mergeProgress(local = {}, cloud = null) {
   };
 }
 
+
+const BESTS_LIMIT = 200;
+const validModeKey = key => {
+  if (typeof key !== 'string' || key.length > 4200) return null;
+  try {
+    const parsed = JSON.parse(key);
+    return Array.isArray(parsed) && parsed.length === 2 && track(parsed[0]) &&
+      parsed[1] && typeof parsed[1] === 'object' && !Array.isArray(parsed[1]) &&
+      modeNames.includes(parsed[1].mode) ? parsed[1].mode : null;
+  } catch { return null; }
+};
+
+// Permanent per-ruleset records, independent of the rolling 50-run history.
+export function mergeModeBests(local = {}, remote = null) {
+  if (remote && remote.version !== 1) throw new Error('Unsupported mode bests');
+  const bests = {}, stunts = {};
+  for (const data of [remote?.bests, local?.bests]) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
+    for (const [key, value] of Object.entries(data)) {
+      const mode = validModeKey(key);
+      if (!mode || !Number.isFinite(value) || value < 0 || (mode !== 'stunt' && value === 0)) continue;
+      bests[key] = bests[key] === undefined ? value
+        : mode === 'stunt' ? Math.max(bests[key], value) : Math.min(bests[key], value);
+    }
+  }
+  for (const data of [remote?.stunts, local?.stunts]) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
+    for (const [key, value] of Object.entries(data)) {
+      if (validModeKey(key) !== 'stunt' || !value || !Number.isFinite(value.score) || value.score < 0) continue;
+      const old = stunts[key];
+      const peak = n => Number.isFinite(n) && n >= 0 ? n : 0;
+      stunts[key] = {
+        score: Math.max(value.score, old?.score ?? 0),
+        maxCombo: Math.max(peak(value.maxCombo), old?.maxCombo ?? 0),
+        airTime: Math.max(peak(value.airTime), old?.airTime ?? 0),
+        medal: value.score >= (old?.score ?? -1) ? (typeof value.medal === 'string' ? value.medal.slice(0, 32) : '')
+          : old.medal,
+      };
+      bests[key] = Math.max(bests[key] ?? 0, stunts[key].score);
+    }
+  }
+  return {
+    version: 1,
+    bests: Object.fromEntries(Object.entries(bests).slice(-BESTS_LIMIT)),
+    stunts: Object.fromEntries(Object.entries(stunts).slice(-BESTS_LIMIT)),
+  };
+}
+
+export function readLocalModeBests(storage) {
+  const target = storage ?? globalThis.localStorage;
+  const read = key => { try { return JSON.parse(target.getItem(key)) ?? {}; } catch { return {}; } };
+  return { bests: read(MODE_BESTS_KEY), stunts: read(STUNT_BESTS_KEY) };
+}
+
+export function saveLocalModeBests(value, storage) {
+  const target = storage ?? globalThis.localStorage;
+  try {
+    const merged = mergeModeBests(value);
+    const previous = [[MODE_BESTS_KEY, target.getItem(MODE_BESTS_KEY)],
+      [STUNT_BESTS_KEY, target.getItem(STUNT_BESTS_KEY)]];
+    try {
+      target.setItem(MODE_BESTS_KEY, JSON.stringify(merged.bests));
+      target.setItem(STUNT_BESTS_KEY, JSON.stringify(merged.stunts));
+      return true;
+    } catch {
+      for (const [key, old] of previous) {
+        try { if (old === null) target.removeItem(key); else target.setItem(key, old); } catch { /* best effort */ }
+      }
+      return false;
+    }
+  } catch { return false; }
+}
+
+// Import validates the complete export before any device or cloud state is mutated.
+export function parseProgressExport(text) {
+  if (typeof text !== 'string' || new TextEncoder().encode(text).length > 1024 * 1024)
+    throw new Error('Backup file is too large');
+  let raw;
+  try { raw = JSON.parse(text); } catch { throw new Error('Invalid backup JSON'); }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || ![1, 2].includes(raw.version))
+    throw new Error('Unsupported backup version');
+  return { progress: mergeProgress({}, raw), permanent: mergeModeBests(raw.permanent ?? {}) };
+}
+
 export function readLocalProgress(storage) {
   return { version: 2, unlocked: loadUnlocks(storage), stars: loadStars(storage), bests: loadBests(storage),
     medals: loadMedals(storage), history: loadHistory(storage), modeHistory: loadModeHistory(storage), daily: loadDaily(storage) };
@@ -94,8 +190,16 @@ export function saveLocalProgress(progress, storage) {
     [MEDALS_KEY, progress.medals], [HISTORY_KEY, progress.history], [MODE_HISTORY_KEY, progress.modeHistory], [DAILY_KEY, progress.daily]];
   try {
     const target = storage ?? globalThis.localStorage;
-    for (const [key, value] of fields) target.setItem(key, JSON.stringify(value));
-    return true;
+    const previous = fields.map(([key]) => [key, target.getItem(key)]);
+    try {
+      for (const [key, value] of fields) target.setItem(key, JSON.stringify(value));
+      return true;
+    } catch {
+      for (const [key, old] of previous) {
+        try { if (old === null) target.removeItem(key); else target.setItem(key, old); } catch { /* Quota / permissions still blocked. */ }
+      }
+      return false;
+    }
   } catch { return false; }
 }
 
@@ -107,14 +211,25 @@ export function switchCloudAccount(previousUid, nextUid, storage = globalThis.lo
   if (typeof nextUid !== 'string' || !nextUid || (previousUid && typeof previousUid !== 'string')) return false;
   if (previousUid === nextUid) return true;
   try {
-    const current = readLocalProgress(storage);
+    const current = { ...readLocalProgress(storage), permanent: readLocalModeBests(storage) };
     const stored = storage.getItem(accountKey(nextUid));
-    const next = stored ? mergeProgress({}, JSON.parse(stored)) : mergeProgress({});
-    // Prepare the destination snapshot before changing the active owner.
+    const rawNext = stored ? JSON.parse(stored) : null;
+    const next = rawNext ? mergeProgress({}, rawNext) : mergeProgress({});
+    const permanent = mergeModeBests(rawNext?.permanent);
+    // Snapshot the original account before touching active keys. Failed transitions restore it.
     if (previousUid) storage.setItem(accountKey(previousUid), JSON.stringify(current));
-    storage.setItem(accountKey(nextUid), JSON.stringify(next));
-    if (!saveLocalProgress(next, storage)) return false;
-    storage.setItem(CLOUD_OWNER_KEY, nextUid);
+    if (!saveLocalProgress(next, storage) || !saveLocalModeBests(permanent, storage)) {
+      saveLocalProgress(current, storage);
+      saveLocalModeBests(current.permanent, storage);
+      return false;
+    }
+    try {
+      storage.setItem(CLOUD_OWNER_KEY, nextUid);
+    } catch {
+      saveLocalProgress(current, storage);
+      saveLocalModeBests(current.permanent, storage);
+      return false;
+    }
     return true;
   } catch { return false; }
 }
@@ -150,7 +265,7 @@ export function writeCloudSyncStatus(uid, patch, storage) {
 export function clearLocalProgress(storage) {
   try {
     const target = storage ?? globalThis.localStorage;
-    for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY, DAILY_KEY, LEGACY_BEST_KEY]) target.removeItem(key);
+    for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY, DAILY_KEY, LEGACY_BEST_KEY, MODE_BESTS_KEY, STUNT_BESTS_KEY]) target.removeItem(key);
     return true;
   } catch { return false; }
 }

@@ -85,8 +85,7 @@ test.describe('phone', () => {
     await page.locator('#airflow-toggle').tap(); // airflow was saved on: off, then on again
     await page.locator('#airflow-toggle').tap();
     await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
-    await page.waitForTimeout(300);
-    await expect(chip(page)).toHaveAttribute('data-state', '');
+    await expect(chip(page)).toHaveAttribute('data-state', 'hint'); // each new page load gets one hint
     expect(errors).toEqual([]);
   });
 
@@ -178,6 +177,66 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
   await expect.poll(() => selected(page)).toBe(second);
   await expect(pages).toHaveCount(0);
   expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('');
+});
+
+
+test('desktop trackpad scroll: completed animation never re-exposes the departing track', async ({ page }) => {
+  await page.goto('/');
+  const [, second] = await trackOrder(page);
+  // Observe the exact microtask where the selected track changes. The outgoing
+  // snapshot MUST already be entirely off-screen even before the layer is removed.
+  await page.evaluate(targetTrack => {
+    window.__swipeHandoff = null;
+    // Watch all track selections, not a hard-coded track ID. Different modes
+    // and saved progress may start with different tracks.
+    new MutationObserver(() => {
+      if (window.__swipeHandoff) return;
+      const selected = document.querySelector('[data-track][aria-pressed="true"]')?.dataset.track;
+      if (selected !== targetTrack) return;
+      const canvases = document.querySelectorAll('#track-swipe-scenes canvas');
+      if (canvases.length !== 2) return;
+      const outgoing = canvases[0].getBoundingClientRect();
+      const incoming = canvases[1].getBoundingClientRect();
+      window.__swipeHandoff = { outgoingRight: outgoing.right, incomingLeft: incoming.left, incomingRight: incoming.right };
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
+  }, second);
+  await trackpadSwipe(page, 30, 8); // genuine horizontal wheel path; same handoff as drag/touch
+  await expect.poll(() => selected(page)).toBe(second);
+  await expect.poll(() => page.evaluate(() => window.__swipeHandoff)).not.toBeNull();
+  const seen = await page.evaluate(() => window.__swipeHandoff);
+  expect(seen.outgoingRight, 'old track must not reappear after snap animation finishes').toBeLessThanOrEqual(1);
+  expect(seen.incomingLeft).toBeLessThanOrEqual(1);
+  expect(seen.incomingRight).toBeGreaterThanOrEqual(1439);
+});
+
+test.describe('phone reload hint', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('swipe hint appears once per page load, even after a previous visit saved a hint marker', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-swipe-hint', 'shown'));
+  await page.goto('/');
+  const seen = () => page.evaluate(() => window.__hintCount);
+  const watch = () => page.evaluate(() => {
+    window.__hintCount = 0;
+    new MutationObserver(() => {
+      if (document.querySelector('#track-swipe')?.dataset.state === 'hint') window.__hintCount++;
+    }).observe(document.querySelector('#track-swipe'), { attributes: true, attributeFilter: ['data-state'] });
+  });
+  await watch();
+  await page.locator('#airflow-toggle').click();
+  await expect(chip(page)).toHaveAttribute('data-state', 'hint');
+  await expect.poll(seen).toBe(1);
+  await page.locator('#airflow-toggle').click();
+  await page.locator('#airflow-toggle').click();
+  expect(await seen(), 'toggle off/on again in same loaded page must not repeat hint').toBe(1);
+
+  await page.reload();
+  await watch();
+  // Airflow setting persists; switch off then back on to trigger this page's first enable.
+  await page.locator('#airflow-toggle').click();
+  await page.locator('#airflow-toggle').click();
+  await expect(chip(page)).toHaveAttribute('data-state', 'hint');
+  await expect.poll(seen).toBe(1);
+  });
 });
 
 test('desktop: a short drag snaps the joined previews back without changing track', async ({ page }) => {

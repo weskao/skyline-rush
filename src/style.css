@@ -1524,9 +1524,9 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .release-close:hover { border-color: var(--blue); background: rgb(255 255 255 / .12); }
 .release-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .release-intro { margin: 10px 0 0; font-size: 14px; line-height: 1.55; color: #b9cad6; }
-.release-versions { display: flex; gap: 8px; margin: 18px calc(-1 * var(--rp)) 0; padding: 2px var(--rp) 6px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: var(--rp); scrollbar-width: none; overscroll-behavior-x: contain; }
+.release-versions { display: flex; gap: 8px; margin: 10px calc(-1 * var(--rp)) 0; padding: 10px var(--rp) 6px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: var(--rp); scrollbar-width: none; overscroll-behavior-x: contain; }
 .release-versions::-webkit-scrollbar { display: none; }
-.release-tab { flex: none; display: grid; justify-items: start; align-content: center; gap: 3px; min-width: 96px; min-height: 52px; padding: 8px 14px; border: 1px solid rgb(150 227 255 / .18); border-radius: 12px; color: #c9d9e4; background: rgb(255 255 255 / .04); font: inherit; text-align: left; cursor: pointer; scroll-snap-align: start; transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-base) var(--ease-out); }
+.release-tab { position: relative; flex: none; display: grid; justify-items: start; align-content: center; gap: 3px; min-width: 96px; min-height: 52px; padding: 8px 14px; border: 1px solid rgb(150 227 255 / .18); border-radius: 12px; color: #c9d9e4; background: rgb(255 255 255 / .04); font: inherit; text-align: left; cursor: pointer; scroll-snap-align: start; transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-base) var(--ease-out); }
 .release-tab:hover { border-color: rgb(150 227 255 / .45); color: #f1fbff; background: rgb(255 255 255 / .07); }
 .release-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .release-tab[aria-selected="true"] { color: #0b1f30; border-color: transparent; background: linear-gradient(135deg, #c3f1fb, #7fd2ea); box-shadow: 0 8px 22px rgb(127 210 234 / .28); }
@@ -1534,7 +1534,8 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .release-tab-note { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
 .release-tab-latest { color: var(--accent); font-weight: 800; opacity: 1; }
 .release-tab[aria-selected="true"] .release-tab-latest { color: #b8431f; }
-.release-tab-unread { display: inline-block; margin-left: 6px; padding: 2px 5px; vertical-align: 2px; border-radius: 999px; color: #0b1f30; background: var(--accent); font-size: 9px; font-weight: 800; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; }
+/* Corner tag straddling the top border, as in live-service game menus; the dark ring cuts it out of the border line. */
+.release-tab-unread { position: absolute; top: 0; right: -6px; transform: translateY(-50%); padding: 2px 6px; border-radius: 999px; color: #0b1f30; background: var(--accent); box-shadow: 0 0 0 2px #040d1c, 0 2px 8px rgb(255 137 102 / .45); font-size: 9px; font-weight: 800; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; }
 .release-panel { margin-top: 14px; border-radius: 14px; }
 .release-panel:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
 .release-hero { display: block; width: 100%; aspect-ratio: 16 / 7; max-height: 210px; border: 1px solid rgb(150 227 255 / .2); border-radius: 14px; object-fit: cover; object-position: top; box-shadow: 0 14px 34px rgb(0 6 16 / .45); }
@@ -1566,5 +1567,15 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
   .release-header h2 { font-size: 32px; }
   .release-meta span:first-child { font-size: 22px; }
 }
-@media (max-height: 420px) { .release-hero { display: none; } .release-intro { display: none; } .release-versions { margin-top: 12px; } }
+@media (max-height: 420px) { .release-hero { display: none; } .release-intro { display: none; } .release-versions { margin-top: 4px; } }
 @media (prefers-reduced-motion: reduce) { .release-screen, .release-entry, .release-tab { animation: none !important; transition: none !important; } }
+
+/* Cloud identity sits alongside the existing History controls on narrow phones. */
+.cloud-player { display: flex; align-items: center; gap: 12px; min-width: 0; margin: 10px 0; }
+.cloud-avatar, .cloud-avatar-fallback { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 50%; object-fit: cover; }
+.cloud-avatar-fallback { display: grid; place-items: center; color: #e7f8ff; background: linear-gradient(135deg, #16465b, #253267); border: 1px solid #5e8fa7; font-size: 20px; font-weight: 800; }
+.cloud-avatar-fallback[hidden], .cloud-avatar[hidden] { display: none; }
+.cloud-player-details { min-width: 0; overflow-wrap: anywhere; }
+.cloud-player-details strong { display: block; font-size: 15px; color: #f3f9ff; }
+.cloud-player-details p { margin: 3px 0 0; font-size: 13px; color: #c5d7e2; }
+#cloud-sync-now:not(:disabled) { border-color: #66c6d5; }

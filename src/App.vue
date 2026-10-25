@@ -317,10 +317,21 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <p data-i18n="cloud.explain">Sign in to save race progress and restore it after clearing browser data. Existing progress on this device will be merged. Device settings and ghosts stay here.</p>
       <SignInButton id="cloud-login" :icon="GOOGLE_ICON" label-key="cloud.login">Sign in with Google</SignInButton>
       <button type="button" class="controls-reset" id="cloud-logout" data-i18n="cloud.logout" hidden>Sign out</button>
+      <p id="cloud-logout-note" class="cloud-logout-note" data-i18n="cloud.logoutNote" hidden>Signing out does not delete cloud results or your Google account.</p>
       <button type="button" class="controls-reset" id="cloud-switch" data-i18n="cloud.switch" hidden>Use this account</button>
+      <button type="button" class="controls-reset" id="cloud-sync-now" data-i18n="cloud.syncNow" disabled>Sync now</button>
       <button type="button" class="controls-reset" id="cloud-export" data-i18n="cloud.export">Export race progress</button>
+      <button type="button" class="controls-reset" id="cloud-import" data-i18n="cloud.import">Import race progress</button>
+      <input id="cloud-import-file" type="file" accept=".json,application/json" hidden />
       <button type="button" class="controls-reset" id="cloud-delete" data-i18n="cloud.delete" hidden>Delete race progress</button>
-      <p id="cloud-identity" role="status">Not signed in</p>
+      <div class="cloud-player" aria-live="polite">
+        <img id="cloud-avatar" class="cloud-avatar" alt="" referrerpolicy="no-referrer" hidden />
+        <span id="cloud-avatar-fallback" class="cloud-avatar-fallback" aria-hidden="true">G</span>
+        <div class="cloud-player-details">
+          <strong id="cloud-name" data-i18n="cloud.player">Player</strong>
+          <p id="cloud-identity">Not signed in</p>
+        </div>
+      </div>
       <p id="cloud-status" role="status" data-i18n="cloud.local">Cloud backup is off. Sign in to protect your race results.</p>
       <p id="cloud-last-sync">Never synced</p>
     </section>

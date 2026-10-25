@@ -1,7 +1,7 @@
 # Cloud save operations
 
 GitHub Pages continues to host the website. Google sign-in and Firestore use the Firebase Spark project `skyline-rush-weskao`; Firebase Hosting is not required. The published GitHub Pages domain must remain in Firebase Authentication's authorized domains.
-The game keeps race results in `saves/{uid}` and device settings and Ghosts in browser storage.
+The game keeps versioned race results in `saves/{uid}`, permanent per-ruleset Mode/Stunt bests in `modeBests/{uid}`, and an intentionally minimal Google display name/email cache in `accounts/{uid}`. The three document paths are private by UID. Firebase Authentication remains the identity source of truth; no Google passwords or OAuth tokens are saved in Firestore. Device settings and Ghosts remain in browser storage.
 
 ## Local verification
 
@@ -14,6 +14,15 @@ npm run build
 ```
 
 `test:cloud` starts local Firebase Auth and Firestore emulators. Its Google account form uses mock identities and does not touch production data. The browser tests cover map recovery after clearing site data, account switching, export and delete, reconnect, and concurrent devices. Firestore rules tests cover owner-only reads, writes and deletion.
+
+## Account data and safe progress restore
+
+- Google login caches only `displayName` and `email` in `accounts/{uid}`, reading existing fields to avoid duplicate writes. Empty/invalid Google values do not wipe previously saved valid values. This uses the existing Spark database.
+- Permanent mode records are synced separately from the last 50 `modeHistory` items. Private `modeBests/{uid}` contains versioned `bests` and `stunts` maps (maximum 200 entries each); device-specific Ghost traces remain local.
+- The Cloud save dialog shows the current Google name, email and avatar with a fallback. The Sync now action reuses the normal transaction path; only acknowledged Firestore writes update the successful sync time.
+- Switching Google identities keeps per-account local snapshots, including unsynced permanent results. Deleting cloud progress uses a single Firestore batch to delete `saves/{uid}`, `modeBests/{uid}` and `accounts/{uid}`; a local deletion marker blocks any accidental re-upload until browser cleanup has succeeded.
+- Export generates a versioned JSON save with permanent records but without Google account metadata or Ghosts. Import accepts at most 1 MiB and validates the schema before merging. Neither operation upgrades the Firebase plan.
+- **Production deployment is separate**: merging this branch or building the site does not deploy changed Firestore Rules. Do not test live private documents until both the published site and its rules are updated. Verify Spark quotas in Firebase Console and test with real Google accounts on Chrome and Safari.
 
 ## Spark usage and release
 

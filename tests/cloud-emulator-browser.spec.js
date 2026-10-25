@@ -228,3 +228,190 @@ test('two devices merge different results and repeated sign-in does not duplicat
   expect((await results()).history).toHaveLength(4);
   await Promise.all([first.close(), second.close(), fresh.close()]);
 });
+
+test('Cloud save shows Google identity, avatar fallback and manual sync controls', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await expect(page.locator('#cloud-sync-now')).toBeDisabled();
+  await mockGoogleSignIn(page, { email: 'visible@example.test' });
+  await expect(page.locator('#cloud-identity')).toContainText('visible@example.test');
+  await expect(page.locator('#cloud-name')).not.toBeEmpty();
+  await expect(page.locator('#cloud-sync-now')).toBeEnabled();
+  await page.locator('#cloud-sync-now').click();
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+});
+
+test('cloud account data is stored in a private Firestore document after Google sign-in', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'identity@example.test' });
+  await expect.poll(() => page.evaluate(async () => {
+    const { getSignedInAccountDetails } = await import('/src/cloud-save.js');
+    return (await getSignedInAccountDetails())?.email ?? null;
+  })).toBe('identity@example.test');
+});
+
+test('permanent rule-scoped Mode best restores to a second browser independent of 50-run history', async ({ browser, context, page }) => {
+  const key = JSON.stringify(['coast', { mode: 'time', duration: 180 }]);
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.addInitScript(key => {
+    localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [key]: 43.5 }));
+  }, key);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'permanent@example.test' });
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+
+  const fresh = await browser.newPage({ locale: 'en-US' });
+  await fresh.context().route(liveApis, route => route.abort());
+  await fresh.addInitScript(disableWebGL);
+  await fresh.goto('/?firebase-emulator=1');
+  await fresh.locator('#cloud-open').click();
+  await mockGoogleSignIn(fresh, { existing: true, email: 'permanent@example.test' });
+  await expect(fresh.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  await expect.poll(() => fresh.evaluate(key =>
+    JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBe(43.5);
+  await fresh.close();
+});
+
+test('permanent Stunt score, combo and air time restore to a clean device', async ({ browser, context, page }) => {
+  const key = JSON.stringify(['tokyo', { mode: 'stunt', duration: 90 }]);
+  const peak = { score: 9500, maxCombo: 12, airTime: 18.5, medal: 'gold' };
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.addInitScript(({ key, peak }) => {
+    localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [key]: peak.score }));
+    localStorage.setItem('skyline-rush-stunt-bests-v1', JSON.stringify({ [key]: peak }));
+  }, { key, peak });
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'stunt-best@example.test' });
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+
+  const fresh = await browser.newPage({ locale: 'en-US' });
+  await fresh.context().route(liveApis, route => route.abort());
+  await fresh.addInitScript(disableWebGL);
+  await fresh.goto('/?firebase-emulator=1');
+  await fresh.locator('#cloud-open').click();
+  await mockGoogleSignIn(fresh, { existing: true, email: 'stunt-best@example.test' });
+  await expect(fresh.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  await expect.poll(() => fresh.evaluate(key => {
+    const data = JSON.parse(localStorage.getItem('skyline-rush-stunt-bests-v1') || '{}');
+    return data[key] ?? null;
+  }, key)).toEqual(peak);
+  await fresh.close();
+});
+
+test('cloud save JSON import merges restored records and rejects malformed files', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#cloud-import-file').setInputFiles({
+    name: 'skyline-rush-progress.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ version: 2, unlocked: ['coast', 'neon'], stars: { neon: 2 }, bests: {},
+      medals: {}, history: [], modeHistory: [], daily: [] })),
+  });
+  await expect(page.locator('#cloud-status')).toContainText('Backup imported on this device.');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toContain('neon');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#cloud-import-file').setInputFiles({
+    name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('not-json'),
+  });
+  await expect(page.locator('#cloud-status')).toContainText('Could not import this backup.');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toContain('neon');
+});
+
+test('an unsynced permanent record survives A to B to A account switching', async ({ context, page }) => {
+  const key = JSON.stringify(['coast', { mode: 'time' }]);
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'switch-A@example.test' });
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  await page.evaluate(key => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+    localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [key]: 47 }));
+  }, key);
+  await page.locator('#cloud-sync-now').click();
+  await expect(page.locator('#cloud-status')).toContainText('Cloud sync is pending');
+  await page.evaluate(() => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true }));
+  await page.locator('#cloud-logout').click();
+  await expect(page.locator('#cloud-login')).toBeVisible();
+  await mockGoogleSignIn(page, { email: 'switch-B@example.test' });
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#cloud-switch').click();
+  await page.locator('#cloud-open').click(); // Account switch reloads the page and closes this dialog.
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBeUndefined();
+
+  await page.locator('#cloud-logout').click();
+  await mockGoogleSignIn(page, { existing: true, email: 'switch-A@example.test' });
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#cloud-switch').click();
+  await page.locator('#cloud-open').click(); // The second switch also performs a reload.
+  await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBe(47);
+});
+
+test('cloud dialog explains sign-out separately from deleting Google identity', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'logout-copy@example.test' });
+  await expect(page.locator('#cloud-logout-note')).toContainText('Signing out does not delete');
+  await expect(page.locator('#cloud-delete')).toBeVisible();
+  const warning = page.waitForEvent('dialog');
+  const click = page.locator('#cloud-delete').click({ noWaitAfter: true });
+  const confirmation = await warning;
+  expect(confirmation.message()).toContain('does not delete your Google sign-in account');
+  await confirmation.dismiss();
+  await click;
+  await page.locator('#cloud-logout').click();
+  await expect(page.locator('#cloud-logout-note')).toBeHidden();
+});
+
+test('Cloud save announces typed sync states, with a recoverable offline state', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'signed-out');
+  await mockGoogleSignIn(page, { email: 'status@example.test' });
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'synced');
+  await page.evaluate(() => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false }));
+  await page.locator('#cloud-sync-now').click();
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'offline');
+  await expect(page.locator('#cloud-status')).toHaveAttribute('role', 'status');
+  await page.evaluate(() => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true }));
+  await page.locator('#cloud-sync-now').click();
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'synced');
+});
+
+test('Cloud save profile provides an avatar fallback and accessible account identity', async ({ context, page }) => {
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email: 'avatar@example.test' });
+  await expect(page.locator('#cloud-identity')).toContainText('avatar@example.test');
+  await expect(page.locator('#cloud-name')).not.toBeEmpty();
+  await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
+  await page.evaluate(() => {
+    const img = document.querySelector('#cloud-avatar');
+    img.hidden = false;
+    document.querySelector('#cloud-avatar-fallback').hidden = true;
+    img.dispatchEvent(new Event('error'));
+  });
+  await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
+  await expect(page.locator('#cloud-avatar')).toBeHidden();
+});
