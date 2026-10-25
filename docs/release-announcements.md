@@ -99,7 +99,8 @@ One frozen entry per **published** version, never generated from commits:
 - **Showing the dialog records it**: the stored version moves to the newest release and the unread
   dot clears the moment it opens, automatically or by hand, so a reload or crash never repeats it.
 - **Unread marks**: while that visit's dialog is open, every listed release newer than the previous
-  stored version shows a **New / 未讀** badge on its tab, so a player who missed several updates
+  stored version shows a **New / 未讀** corner tag (straddling the tab's top border at its top-right
+  corner, so it adds no width to the tab) on its tab, so a player who missed several updates
   sees each one. No extra key is stored — the single seen version is the watermark — and the next
   opening shows no badges.
 - Manual entry: the version label always reopens the dialog on the newest tab. Close, Escape and
@@ -109,11 +110,32 @@ One frozen entry per **published** version, never generated from commits:
 
 1. Before publishing, add the new version's entry at the top of `RELEASE_NOTES`, with en + zh-TW copy
    written per the policy above and optional images under `public/whats-new/<version>/`.
-2. `/release <version>` runs `scripts/release-gate.sh`, which first runs
+2. `/review-release-notes <version>` (`.claude/commands/review-release-notes.md`) reviews the copy:
+   - **Automatic copy check** (`copyProblems` in `scripts/check-release-notes.mjs`): rejects developer
+     terms in en and zh-TW (refactor, shader, backend, database, CI, 重構, 後端, 後台, 資料庫, 架構,
+     程式…), links, emails, secret prefixes, file and code names, commit ids, and text over the
+     length limits (en 48/160, zh-TW 20/70 characters for title/description). It also catches test and
+     team-process words (workflow, branch, contract, legacy, fixtures, acceptance, RED/GREEN, P0,
+     測試, 分支, 規格, 待辦…), branch names and version numbers. `tests/release-notes.test.js` keeps a
+     list of real developer-record lines that must fail and everyday player lines that must pass.
+   - **Player-facing sources only**: `node scripts/check-release-notes.mjs --changes` lists the
+     feat / fix / perf commits since the last tag outside tooling scopes (dev, hooks, release, CI,
+     build, tests, docs…); notes are drafted and reviewed against that list only.
+   - **Fresh-eyes review**: a sub-agent that did not write the notes reads only the entry and the
+     `--changes` list (plus the `CHANGELOG.md` section once written) and judges player value, needless detail, behind-the-scenes work,
+     sensitive content, shipped-only and en/zh-TW quality, answering OK / Rewrite / Remove.
+   - **Approval**: after the user approves, `node scripts/check-release-notes.mjs --approve <version>`
+     stores a fingerprint of the copy in `scripts/release-notes-reviews.json`.
+   Every `AskUserQuestion` in the review offers a "(Recommended)" first option.
+3. `/release <version>` (project command `.claude/commands/release.md`) checks the notes before
+   anything else and runs the review when they are new or changed, committing the approved
+   review; only then do tests, the intro and the release script run. The script runs
+   `scripts/release-gate.sh`, which first runs
    `node scripts/check-release-notes.mjs <version>`: it refuses the release when that version has no
-   entry, a highlight lacks either language, or an image is not a file in `public/`.
-3. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
-4. The gate then runs `npm test` with `package.json` set to the new version, as the tag's CI will.
+   entry, was never reviewed or changed after review, a highlight lacks either language or fails the
+   copy check, or an image is not a file in `public/`.
+4. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
+5. The gate then runs `npm test` with `package.json` set to the new version, as the tag's CI will.
    `CURRENT_RELEASE` follows that version, so a test about a specific entry's content pins it with
    `releaseForVersion('<version>')` — v0.22.0's tag run failed on an unpinned `CURRENT_RELEASE.image`.
 
@@ -121,7 +143,7 @@ One frozen entry per **published** version, never generated from commits:
 
 - Unit (`tests/release-notes.test.js`): seen-version contract, first-time vs returning player,
   blocked storage stays silent, numeric version order, newest-five window with future versions hidden, every
-  entry complete with bundled images, release gate refuses a missing version.
+  entry complete with bundled images, release gate refuses a missing version, player copy check
 - Browser (`tests/release-announcements-browser.spec.js`): read/dismiss/reopen, no external link,
   version tabs by click and keyboard (wrap, Home/End, language switch keeps the tab, reopen starts
   newest), localized hero, auto-show once for an older record, silent when up to date, silent first
