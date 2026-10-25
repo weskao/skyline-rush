@@ -78,17 +78,35 @@ Firebase and Gamepad are explicitly excluded. Do not retick historical requireme
 - [x] Inspect settled real-WebGL release-dialog screenshots using the requested premium-ui-design Web/adaptive playbooks: desktop en/zh-TW, 390x844, 320x740 and 844x390. Text hierarchy, scrolling content and Continue remain readable/reachable without requiring a hero. Capture animations at their finished state; evidence and full gate log are in `playwright-report/ci-release-hero/`. Physical-device/Safari checks remain unperformed.
 - At the announcement-only handoff, exact-commit remote CI was unverified. The follow-up repair's push and CI evidence are recorded above.
 
-## Codebase structure: incremental Vue / type-checking adoption (2026-10-25)
+## Codebase refactor: Vue 3 + strict TypeScript as the primary stack (2026-10-25)
 
-Context: `src/` is 64 `.js` files (~10.5k lines), 3 `.vue` files (460 lines), 0 `.ts`. `src/main.js` (2,244 lines) mounts `App.vue` and then drives the UI imperatively (164 `querySelector`/`getElementById`/`innerHTML`/`addEventListener` sites). Simulation and Three.js rendering stay plain JS. Each step ships on its own commit with `make verify` (plus `npm run test:layout` for home-screen changes).
+**Supersedes the earlier JSDoc-first migration plan for this dedicated refactor branch.**
+The game loop, physics, WebGL renderer and hot-path HUD may remain `.js` only as measured,
+documented exceptions. UI, state, business logic, services and new components default to
+Vue 3 SFCs with `<script setup lang="ts">` and `.ts` modules. `jsconfig.json` checking a few
+legacy files is *not* completion of TypeScript migration. Never tick incomplete coverage.
 
-- [x] Step 0, conventions first: `CLAUDE.md` section "UI architecture: Vue panels, plain-JS game core" and `.claude/rules/ui-architecture.md` (scoped to `src/**/*.js`, `src/**/*.vue`).
-- [ ] Step 1, HUD per-frame DOM cost: `updateUI` (`src/main.js`) re-runs `$('#clean-trial-hud')`, `$('#hazard-warning')`, etc. and rewrites `textContent` every frame. Measure frame cost first; then cache the elements once and skip writes when the value is unchanged. Report the before/after numbers; run `npm run test:browser` desktop and mobile.
-- [ ] Step 2, type checking without renaming files: add `jsconfig.json` with `checkJs`, add `tsc --noEmit` to `make verify`, and JSDoc the shared shapes first (`race`, `player`, `rival`, track config) used across `game.js`, `world.js` and `main.js`.
-- [ ] Step 2b (optional, decide separately): add ESLint; the repo has no lint config today.
-- [ ] Step 3, split `src/main.js` by feature, move-only with no behavior change: release notes (~L280–391), track swipe (~L897–1060), history/daily (~L736–850), garage (~L852–895), settings/audio/controls (~L1065–1460), tutorial/guide (~L2115–2244). `main.js` keeps bootstrap and the frame loop.
-- [ ] Step 4, convert event-driven panels to Vue components one at a time: release notes dialog, history, garage, settings, tutorial (replaces the 13 `innerHTML` sites and manual show/hide). Keep the in-race HUD/speedometer out of Vue reactivity; it stays direct DOM writes from step 1. Re-check finish/pause overlay clickability per `.claude/rules/ui-phase-interactions.md`.
-- [ ] Not planned: rewriting `game.js`/`world.js` to `.ts`, or a one-shot UI rewrite — step 2 delivers most of the type-safety benefit, and the regression matrix cannot verify a big-bang change.
+- [x] Step 0: establish Vue 3 + TypeScript-first architectural policy in `CLAUDE.md` and
+  `.claude/rules/ui-architecture.md` (replaces the former JSDoc-only guidance).
+- [ ] Step 1: profile baseline/optimized HUD frame cost (p50/p95 on desktop/mobile),
+  confirm no redundant DOM writes and full regression suite before marking complete.
+- [ ] Step 2: strict `tsconfig.json`, shared TypeScript race/player/track interfaces,
+  `<script setup lang="ts">` on Vue components and typed props; `npm run typecheck`
+  must check TypeScript (and Vue SFCs), while explicitly separating legacy `checkJs` coverage.
+- [ ] Step 2b (optional): decide on ESLint + TypeScript/Vue rules with a measured maintenance
+  benefit; do not block feature parity merely to add tooling.
+- [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
+  `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
+  Main bootstrap/frame loop remains only as a documented performance exception.
+- [ ] Step 4: move event-driven dialogs and panels to Vue 3 TypeScript one at a time
+  (release notes, history, garage, audio/settings, guide/tutorial, etc.);
+  remove duplicate imperative DOM ownership. Run desktop/mobile, accessibility,
+  localization, Firebase/cloud-save, finish/pause and World Tour regressions.
+- [ ] Step 5: final architecture and feature-parity audit: all new UI/business code
+  uses TypeScript, `tsconfig` coverage is reported, remaining plain-JS exceptions
+  are documented, and exact-HEAD `make verify`, layout and CI quality-gate pass.
+- [ ] Not planned: a mandatory Big Bang `.ts` rewrite of WebGL rendering/physics
+  or reactive per-frame HUD; performance correctness takes priority.
 
 ## Audio preference moves from cookies to localStorage; Chrome first-visit autoplay (2026-10-25)
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { icons, ICON_ATTRS } from './icons.js';
 import { panelsView } from './control-panels-view-state.js';
 const CONTROL_CHOICES = {

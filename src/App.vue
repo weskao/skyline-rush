@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Static shell: no reactive state, so Vue renders once and main.js drives this DOM imperatively.
 // Static text carries data-i18n / data-i18n-title / data-i18n-aria-label keys; applyI18n() (src/i18n.js) fills them per locale.
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.

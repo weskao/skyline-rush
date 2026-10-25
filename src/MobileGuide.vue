@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { MOBILE_GUIDE_COPY } from './mobile-guide-copy.js';
 
-const topics = ['slide', 'buttons', 'auto', 'fly', 'boost', 'nitro', 'settings'];
+type Topic = 'slide' | 'buttons' | 'auto' | 'fly' | 'boost' | 'nitro' | 'settings';
+const topics: Topic[] = ['slide', 'buttons', 'auto', 'fly', 'boost', 'nitro', 'settings'];
 const symbols = { auto: 'A', fly: '↑', boost: '»', nitro: 'ϟ', settings: 'Ⅱ' };
 </script>
 

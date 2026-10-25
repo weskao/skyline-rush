@@ -15,7 +15,10 @@
     "pretest:browser": "npm run build",
     "test:browser": "playwright test",
     "test:layout": "npm run build && playwright test tests/race-modes-browser.spec.js tests/home-shortcuts-browser.spec.js && playwright test tests/i18n-browser.spec.js tests/responsive-browser.spec.js -g \"intro bottom edge|start layout\"",
-    "typecheck": "tsc --noEmit --project jsconfig.json"
+    "typecheck": "npm run typecheck:ts && npm run typecheck:vue && npm run typecheck:js",
+    "typecheck:ts": "tsc --noEmit --project tsconfig.json",
+    "typecheck:js": "tsc --noEmit --project jsconfig.json",
+    "typecheck:vue": "node scripts/check-vue-types.mjs"
   },
   "dependencies": {
     "firebase": "^13.1.0",

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { coachView } from './tutorial-coach-state.js';
 </script>
 <template>

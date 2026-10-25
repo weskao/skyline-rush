@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { releaseView } from './release-view-state.js';
 </script>
 <template>
