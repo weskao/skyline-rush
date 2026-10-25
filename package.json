@@ -18,7 +18,7 @@
     "typecheck": "npm run typecheck:ts && npm run typecheck:vue && npm run typecheck:js",
     "typecheck:ts": "tsc --noEmit --project tsconfig.json",
     "typecheck:js": "tsc --noEmit --project jsconfig.json",
-    "typecheck:vue": "npx --yes vue-tsc@3.3.13 --noEmit --project tsconfig.json"
+    "typecheck:vue": "npm exec --yes --package=typescript@5.9.3 --package=vue-tsc@3.3.13 -- vue-tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "firebase": "^13.1.0",
