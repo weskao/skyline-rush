@@ -1853,6 +1853,12 @@ function phaseText() {
   ];
 }
 
+const hudNodes = Object.fromEntries(["clean-trial-hud","hazard-warning","elimination-hud","checkpoint-hud","sprint-stage","item-slot","item-status","activate-item","stunt-hud","practice-hud","race-length","ghost-split","style-score","aero-flow","aero-floor","aero-jet"].map(id => [id, document.getElementById(id)]));
+// Avoid redundant DOM mutations on steady HUD fields. Values still refresh after locale changes.
+function setHudText(node, value) {
+  if (node.textContent !== value) node.textContent = value;
+}
+
 function updateUI(now, input) {
   if (raceRouteMap?.trackId !== race.trackId) ensureRouteMaps();
   raceRouteMap.updateDrivers([{ id: 'YOU', distance: race.player.distance, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance }))]);
@@ -1874,18 +1880,18 @@ function updateUI(now, input) {
       element.textContent = format(value * (1 - (1 - progress) ** 3));
     });
   }
-  const cleanTrialHud = $('#clean-trial-hud');
+  const cleanTrialHud = hudNodes['clean-trial-hud'];
   cleanTrialHud.hidden = race.mode !== 'time' || !race.config.clean || race.phase === 'ready';
   if (!cleanTrialHud.hidden) {
     cleanTrialHud.textContent = t(race.player.collisions ? 'mode.cleanBroken' : 'mode.cleanActive');
     cleanTrialHud.dataset.broken = String(race.player.collisions > 0);
   }
-  const hazardWarning = $('#hazard-warning');
+  const hazardWarning = hudNodes['hazard-warning'];
   const hazardAhead = race.hazards.length ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;
   const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
   hazardWarning.hidden = !hazardAhead || hazardDistance > 170 || race.phase !== 'racing';
   if (!hazardWarning.hidden) hazardWarning.textContent = t('mode.hazardWarning', { n: hazardDistance });
-  const eliminationHud=$('#elimination-hud');
+  const eliminationHud=hudNodes['elimination-hud'];
   eliminationHud.hidden = !race.elimination || race.phase === 'ready';
   if (race.elimination) {
     eliminationHud.textContent=t('mode.eliminationHud',{
@@ -1894,7 +1900,7 @@ function updateUI(now, input) {
     });
     eliminationHud.dataset.urgent=String(race.elimination.nextAt-race.elapsed <= 3);
   }
-  const checkpointHud = $('#checkpoint-hud');
+  const checkpointHud = hudNodes['checkpoint-hud'];
   checkpointHud.hidden = !race.checkpoint || race.phase === 'ready';
   if (race.checkpoint) {
     const next = race.checkpoint.gates.find(g => !g.passed && !g.missed);
@@ -1907,20 +1913,20 @@ function updateUI(now, input) {
     });
     checkpointHud.dataset.urgent = String(race.checkpoint.timeLeft < 10);
   }
-  const counter = $('#sprint-stage');
+  const counter = hudNodes['sprint-stage'];
   counter.hidden = !sprintSeries && !cup;
   if (cup) counter.textContent = t('mode.cupHeat', { n: Math.min(cup.tracks.length, cup.results.length + (race.phase === 'finished' ? 0 : 1)), total: cup.tracks.length });
   if (sprintSeries) counter.textContent = t('mode.stageCounter', {
     n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
     total: sprintSeries.count,
   });
-  const slot = $('#item-slot'), carItem = race.player.heldItem;
+  const slot = hudNodes['item-slot'], carItem = race.player.heldItem;
   slot.hidden = !race.config.activeItems || race.phase === 'ready';
   if (!slot.hidden) {
-    $('#item-status').textContent = carItem ? t('mode.itemReady',{item:t('mode.item.'+carItem)}) : t('mode.itemEmpty');
-    $('#activate-item').disabled = !carItem || race.phase !== 'racing' || race.player.itemCooldown > 0;
+    hudNodes['item-status'].textContent = carItem ? t('mode.itemReady',{item:t('mode.item.'+carItem)}) : t('mode.itemEmpty');
+    hudNodes['activate-item'].disabled = !carItem || race.phase !== 'racing' || race.player.itemCooldown > 0;
   }
-  const stuntHud = $('#stunt-hud');
+  const stuntHud = hudNodes['stunt-hud'];
   stuntHud.hidden = !stunt || race.phase === 'ready';
   if (stunt) {
     const active = race.phase === 'finished' ? 0 : race.elapsed;
@@ -1930,7 +1936,7 @@ function updateUI(now, input) {
       combo:race.styleAttack?.combo ?? 0, heat:stunt.heats + (race.phase === 'finished' ? 0 : 1),
     });
   }
-  const practiceHud = $('#practice-hud');
+  const practiceHud = hudNodes['practice-hud'];
   practiceHud.hidden = !race.practice || !!tutorial;
   if (race.practice) practiceHud.textContent = t('mode.practiceTelemetry', {
     km: (race.practice.travelled / 1000).toFixed(2),
@@ -1970,9 +1976,9 @@ function updateUI(now, input) {
   ui.timer.textContent = timeString(race.elapsed);
   ui.distance.textContent = (car.distance / 1000).toFixed(2);
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
-  $('#race-length').textContent = (race.length / 1000).toFixed(2);
+  setHudText(hudNodes['race-length'], (race.length / 1000).toFixed(2));
   const timeGhost = race.mode === 'time' && controlPrefs.ghost ? modeGhostFor(race) : null;
-  const split = $('#ghost-split');
+  const split = hudNodes['ghost-split'];
   split.hidden = !timeGhost || race.phase !== 'racing';
   if (!split.hidden) {
     const delta = car.distance - ghostAt(timeGhost, race.elapsed).distance;
@@ -1985,7 +1991,7 @@ function updateUI(now, input) {
   ui['fuel-meter'].setAttribute('aria-valuetext', `${car.fuel < 20 ? L['hud.lowCharge'] : ''}${Math.round(car.fuel)}%`);
   ui['fuel-meter'].dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
   previousFuel = car.fuel;
-  $('#style-score').textContent = race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style'], { n: Math.floor(car.score) });
+  hudNodes['style-score'].textContent = race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style'], { n: Math.floor(car.score) });
   ui.altitude.textContent = car.altitude.toFixed(1);
   const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
   // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
@@ -2068,9 +2074,9 @@ function updateUI(now, input) {
   lastDriftPayout = car.driftPayout;
   lastTrickPayout = car.trickPayout;
   previousBoost = boost;
-  $('#aero-flow').textContent = L[boost ? 'hud.highVelocity' : 'hud.streamlines'];
-  $('#aero-floor').textContent = L[flying ? 'hud.downwash' : visual.aeroMode === 'downforce' ? 'hud.suction' : 'hud.lowDrag'];
-  $('#aero-jet').textContent = L[boost ? 'hud.thrustActive' : race.phase === 'ready' ? 'hud.demo' : 'hud.standby'];
+  setHudText(hudNodes['aero-flow'], L[boost ? 'hud.highVelocity' : 'hud.streamlines']);
+  setHudText(hudNodes['aero-floor'], L[flying ? 'hud.downwash' : visual.aeroMode === 'downforce' ? 'hud.suction' : 'hud.lowDrag']);
+  setHudText(hudNodes['aero-jet'], L[boost ? 'hud.thrustActive' : race.phase === 'ready' ? 'hud.demo' : 'hud.standby']);
   document.body.style.setProperty('--flight-bank', `${-car.steering * 5}deg`);
   document.body.style.setProperty('--streak-opacity', visual.enabled && !calm && race.phase === 'racing' ? String(boost ? visual.speedLines : 0) : '0');
   ui['impact-report'].hidden = race.phase !== 'racing' || impactAge > 1.1;
