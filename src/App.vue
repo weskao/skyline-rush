@@ -9,6 +9,7 @@ import { icons, ICON_ATTRS } from './icons.js';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
+import TutorialCoach from './TutorialCoach.vue';
 import SignInButton from './SignInButton.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
@@ -29,12 +30,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 <template>
   <ReleaseNotesPanel />
   <GuidePanel />
-  <aside id="tutorial-coach" class="tutorial-coach" aria-labelledby="tutorial-title" hidden>
-    <header class="tutorial-heading"><strong id="tutorial-title"></strong><div class="tutorial-actions"><button id="tutorial-pause" class="controls-reset" data-i18n="tutorial.pause">Pause</button><button id="tutorial-exit" class="controls-reset" data-i18n="tutorial.exit">Exit</button></div></header>
-    <progress id="tutorial-progress" max="8" value="0" aria-label="Practice progress" data-i18n-aria-label="tutorial.progress"></progress>
-    <div class="tutorial-copy"><p id="tutorial-instruction" role="status" aria-live="polite"></p><div id="tutorial-input"></div><small id="tutorial-assist" data-i18n="tutorial.assist">Practice only · assisted cruising · no career rewards</small></div>
-    <div id="tutorial-complete-actions" class="tutorial-actions" hidden><button id="tutorial-retry" class="controls-reset" data-i18n="tutorial.retry">Practice again</button><button id="tutorial-done" class="controls-reset" data-i18n="tutorial.done">Back to game</button></div>
-  </aside>
+  <TutorialCoach />
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
   <div class="scene-shade"></div>
   <div class="speed-streaks" aria-hidden="true"><i v-for="i in 18" :style="{ '--angle': `${(i - 1) * 20 + 6}deg`, '--delay': `${-(i - 1) * 0.13}s` }"></i></div>

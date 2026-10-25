@@ -1,3 +1,5 @@
+import { nextTick } from 'vue';
+import { updateCoachView } from './tutorial-coach-state.js';
 import { t } from './i18n.js';
 import { TUTORIAL_STEPS } from './interactive-tutorial.js';
 
@@ -24,24 +26,24 @@ export function setupTutorialUI({ getTutorial, getRace, getTouchMatches, getInpu
     const step = tutorial.step;
     const done = tutorial.complete;
     const action = step === 'land' ? 'fly' : step;
-    $('#tutorial-coach').dataset.step = step ?? 'complete';
-    $('#tutorial-title').textContent = done ? t('tutorial.complete') : t('tutorial.step', { n: tutorial.index + 1, total: TUTORIAL_STEPS.length, action: t(step === 'land' ? 'tutorial.landTitle' : `keymap.${step}`) });
-    $('#tutorial-instruction').textContent = t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' : `tutorial.${step}`);
-    $('#tutorial-pause').textContent = t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause');
-    $('#tutorial-pause').hidden = done;
-    $('#tutorial-complete-actions').hidden = !done;
-    $('#tutorial-assist').hidden = done;
-    const hint = $('#tutorial-input');
-    hint.removeAttribute('data-keys'); hint.replaceChildren();
+    updateCoachView({
+      step: step ?? 'complete',
+      title: done ? t('tutorial.complete') : t('tutorial.step', { n: tutorial.index + 1, total: TUTORIAL_STEPS.length, action: t(step === 'land' ? 'tutorial.landTitle' : `keymap.${step}`) }),
+      instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' : `tutorial.${step}`),
+      pauseText: t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause'),
+      pauseHidden: done,
+      completeActionsHidden: !done,
+      assistHidden: done,
+      hintKeys: done || touchPreference.matches ? '' : action,
+      hintText: !done && touchPreference.matches ? t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode)) : '',
+    });
     for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
     if (done) return;
     if (!touchPreference.matches) {
-      hint.dataset.keys = action;
-      showKeyMap();
+      nextTick(() => showKeyMap());
     } else {
       let target = $('#touch-controls [data-control="' + action + '"]');
       if (['left', 'right', 'brake'].includes(step) && inputPrefs.mode === 'slide') target = $('.touch-pad');
-      hint.textContent = t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode));
       target?.classList.add('tutorial-target');
     }
   }

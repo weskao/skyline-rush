@@ -6,6 +6,7 @@ import { setupGuideUI } from './guide-ui.js';
 import { setupAudioUI } from './audio-ui.js';
 import { setupControlPanels } from './controls-panels-ui.js';
 import { setupTutorialUI } from './tutorial-ui.js';
+import { updateCoachView } from './tutorial-coach-state.js';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
@@ -1824,7 +1825,7 @@ function beginTutorial() {
   applyControls(false);
   goUntil = 0; previousFuel = 100; previousNitro = 0; previousFlight = undefined;
   document.body.dataset.tutorial = 'active';
-  $('#tutorial-coach').hidden = false;
+  updateCoachView({ visible: true });
   hidePerformanceNotice();
   if (!ui.intro.hidden) leaveIntro();
   showTracks(); phaseUI(); previousPhase = race.phase;
@@ -1837,7 +1838,7 @@ function endTutorial() {
   controls.clear(); clearButtonPresses();
   delete document.body.dataset.tutorial;
   applyControls(false);
-  $('#tutorial-coach').hidden = true;
+  updateCoachView({ visible: false });
   for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
   previousFlight = undefined;
   showTracks(); phaseUI(); previousPhase = race.phase; showAssist();
