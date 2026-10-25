@@ -3,8 +3,57 @@ import { loadModeBest, loadModeGhost, careerStats, dailyBoard, MEDALS } from './
 import { dailyChallenge } from './game.js';
 import { updateHistoryView } from './history-view-state.ts';
 
+interface SavedRace {
+  track: string;
+  time: number;
+  date?: string;
+  position?: number;
+  score?: number;
+  collisions?: number;
+  nearMisses?: number;
+  rings?: number;
+  perfectLines?: number;
+  nitroUses?: number;
+  distance?: number;
+  longestCombo?: number;
+}
+interface SavedModeRace {
+  track: string;
+  mode: string;
+  rules: string;
+  time: number;
+  score?: number;
+  medal?: string;
+  maxCombo?: number;
+  airTime?: number;
+  date?: string;
+}
+interface SavedDailyRace {
+  id: string;
+  track: string;
+  modifier: string;
+  time: number;
+  position: number;
+  score: number;
+  date: string;
+}
+interface HistoryData {
+  sessionHistory: SavedRace[];
+  sessionModeHistory: SavedModeRace[];
+  sessionBests: Record<string, number>;
+  sessionDaily: SavedDailyRace[];
+  sessionMedals: Record<string, string>;
+  world: unknown | null | undefined;
+}
+interface HistoryDependencies {
+  getData(): HistoryData;
+  timeString(seconds: number): string;
+}
+type TrendRace = { time: number };
+
+
 /** Pure chart projection, preserving the original coordinates exactly. */
-export function historyTrendPoints(recent) {
+export function historyTrendPoints(recent: TrendRace[]): Array<[number, number]> {
   if (!recent.length) return [];
   const low = Math.min(...recent.map(run => run.time));
   const high = Math.max(...recent.map(run => run.time));
@@ -13,20 +62,18 @@ export function historyTrendPoints(recent) {
 }
 
 // Live selectors are read at render time (cloud sync can replace progress).
-export function createHistoryView({ getData, timeString }) {
-  const $ = selector => document.querySelector(selector);
+export function createHistoryView({ getData, timeString }: HistoryDependencies) {
+  const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   // Saved dates are untrusted, and Intl throws on an invalid date.
-  function shortDate(value) {
-    const date = new Date(value);
+  function shortDate(value?: string): string {
+    const date = new Date(value ?? '');
     return Number.isFinite(date.getTime()) ? formatDate(date, { month: 'short', day: 'numeric' }) : t('history.noDate');
   }
-  const historyScreen = $('#history-screen');
-  let historyOpener;
   function showHistory() {
     const { sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world } = getData();
-    const trackId = $('#history-track').value;
+    const trackId = document.querySelector<HTMLSelectElement>('#history-track')!.value;
     const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
-    const modeFilter = $('#mode-history-filter').value;
+    const modeFilter = document.querySelector<HTMLSelectElement>('#mode-history-filter')!.value;
     const modes = sessionModeHistory.filter(run => run.track === trackId)
       .filter(run => modeFilter === 'all' || run.mode === modeFilter).slice(-10).reverse();
     const modeRuns = modes.map(run => {
@@ -50,7 +97,7 @@ export function createHistoryView({ getData, timeString }) {
     });
     updateHistoryView({ modeHistoryEmpty: modes.length === 0, modeRuns });
     const stats = careerStats(sessionHistory);
-    const count = (key, n) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
+    const count = (key: string, n: number) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
     const careerSummary = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
     const best = Math.min(sessionBests[trackId] ?? Infinity, ...runs.map(run => run.time));
     const recent = runs.slice(-10);
@@ -67,9 +114,9 @@ export function createHistoryView({ getData, timeString }) {
     const historyRuns = runs.toReversed().map(run => {
       const fields = [
         shortDate(run.date), timeString(run.time),
-        t('history.position', { n: Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—' }),
+        t('history.position', { n: typeof run.position === 'number' && Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—' }),
       ];
-      const number = value => Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
+      const number = (value?: number): number => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
       const detail = t('history.detail', {
         score: number(run.score), contacts: number(run.collisions), near: number(run.nearMisses),
         rings: number(run.rings), perfect: number(run.perfectLines), nitro: number(run.nitroUses),
@@ -103,7 +150,7 @@ export function createHistoryView({ getData, timeString }) {
     const best = dailyBoard(sessionDaily, today.id)[0];
     $('#daily-card-route').textContent = `${trackName(today.track, getLocale())} · ${t(`modifier.${today.modifier}`)}`;
     $('#daily-card-best').textContent = best ? t('daily.best', { time: timeString(best.time), position: best.position }) : t('daily.fresh');
-    $('#daily-card-start').disabled = !world;
+    document.querySelector<HTMLButtonElement>('#daily-card-start')!.disabled = !world;
     const medals = Object.keys(sessionMedals).length;
     $('#medal-count').textContent = `${medals}/${MEDALS.length}`;
     $('#medal-chip').setAttribute('aria-label', t('medal.count', { n: medals }));
