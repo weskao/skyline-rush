@@ -75,3 +75,34 @@ for(const id of worldTourMaps) {
     });
   }
 }
+
+
+// Regression: AIRFLOW anchors Start near the bottom; the camera dock must sit above it,
+// not merely remain clickable while overlapping the button (especially on phones).
+for (const [width, height] of [[320, 568], [390, 844], [760, 501], [768, 1024], [844, 390], [1440, 900]]) {
+  test(`AIRFLOW camera dock stays above Start with breathing room at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    await page.locator('#airflow-toggle').click();
+    await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
+
+    for (const locale of ['en', 'zh-TW']) {
+      await page.locator('#locale-select').selectOption(locale, { force: true });
+      const [camera, start] = await Promise.all([
+        page.locator('#showcase-camera-dock').boundingBox(),
+        page.locator('#start-button').boundingBox(),
+      ]);
+      expect(camera.y, `${width}x${height} ${locale}: camera off-screen`).toBeGreaterThanOrEqual(0);
+      expect(camera.x, `${width}x${height} ${locale}: camera off-screen`).toBeGreaterThanOrEqual(0);
+      expect(camera.x + camera.width, `${width}x${height} ${locale}: camera clipped`).toBeLessThanOrEqual(width);
+      expect(camera.y + camera.height + 18, `${width}x${height} ${locale}: camera overlaps Start`)
+        .toBeLessThanOrEqual(start.y + 0.5);
+    }
+
+    await page.locator('#showcase-camera-next').click();
+    await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'front');
+    await page.locator('#start-button').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+  });
+}
