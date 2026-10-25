@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
@@ -11,8 +15,18 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "useDefineForClassFields": true,
-    "types": ["vite/client"]
+    "types": [
+      "vite/client"
+    ],
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "src/**/*.vue"],
-  "exclude": ["node_modules", "dist", "tests/type-fixtures"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests/type-fixtures"
+  ]
 }
