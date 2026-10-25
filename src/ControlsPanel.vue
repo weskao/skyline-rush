@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { icons, ICON_ATTRS } from './icons.js';
-import { panelsView } from './control-panels-view-state.js';
+import { panelsView } from './control-panels-view-state.ts';
 const CONTROL_CHOICES = {
   mode: ['Steering', [['buttons', 'Buttons'], ['slide', 'Slide'], ['tilt', 'Tilt']]],
   hand: ['Steering hand', [['left', 'Left'], ['right', 'Right']]],

@@ -1,5 +1,5 @@
 import { nextTick } from 'vue';
-import { updateCoachView } from './tutorial-coach-state.js';
+import { updateCoachView } from './tutorial-coach-state.ts';
 import { t } from './i18n.js';
 import { TUTORIAL_STEPS } from './interactive-tutorial.js';
 

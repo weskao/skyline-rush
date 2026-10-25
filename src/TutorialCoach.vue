@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { coachView } from './tutorial-coach-state.js';
+import { coachView } from './tutorial-coach-state.ts';
 </script>
 <template>
   <aside id="tutorial-coach" class="tutorial-coach" aria-labelledby="tutorial-title" :hidden="!coachView.visible" :data-step="coachView.step">

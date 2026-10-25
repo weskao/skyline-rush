@@ -6,7 +6,7 @@ import { setupGuideUI } from './guide-ui.js';
 import { setupAudioUI } from './audio-ui.js';
 import { setupControlPanels } from './controls-panels-ui.js';
 import { setupTutorialUI } from './tutorial-ui.js';
-import { updateCoachView } from './tutorial-coach-state.js';
+import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';

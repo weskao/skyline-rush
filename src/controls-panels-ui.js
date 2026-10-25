@@ -1,4 +1,4 @@
-import { panelsView, updatePanelsView } from './control-panels-view-state.js';
+import { panelsView, updatePanelsView } from './control-panels-view-state.ts';
 export const canOpenControlsPanel = phase => phase === 'ready' || phase === 'paused';
 
 // Audio settings and control layout are event driven, never updated per frame.
