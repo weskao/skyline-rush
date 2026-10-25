@@ -54,18 +54,18 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <option value="elimination" data-i18n="mode.elimination">Elimination</option>
         </select>
       </label>
-      <p id="mode-history-empty" data-i18n="mode.historyEmpty">Complete a Custom Race or Time Attack to save a personal record.</p>
-      <div id="mode-history-runs" class="mode-history-runs"></div>
+      <p id="mode-history-empty" data-i18n="mode.historyEmpty" :hidden="!historyView.modeHistoryEmpty">Complete a Custom Race or Time Attack to save a personal record.</p>
+      <div id="mode-history-runs" class="mode-history-runs"><p v-for="(run, i) in historyView.modeRuns" :key="i" :data-mode="run.mode" :data-personal-best="String(run.personalBest)" :data-ghost="String(run.ghost)">{{ run.text }}</p></div>
     </section>
     <section id="daily-challenge" class="history-extra" aria-labelledby="daily-title">
       <h3 id="daily-title" data-i18n="daily.title">Daily challenge</h3>
-      <p id="daily-status">No daily challenge is available yet.</p>
-      <button id="daily-start" class="controls-reset" data-i18n="daily.start" disabled>Start daily challenge</button>
-      <h4 data-i18n="daily.board">Daily board</h4><div id="daily-board"><p>No challenge runs recorded yet.</p></div>
+      <p id="daily-status">{{ historyView.dailyStatus }}</p>
+      <button id="daily-start" class="controls-reset" data-i18n="daily.start" :disabled="historyView.dailyStartDisabled">Start daily challenge</button>
+      <h4 data-i18n="daily.board">Daily board</h4><div id="daily-board"><p v-for="(line, i) in historyView.dailyBoard" :key="i">{{ line }}</p></div>
     </section>
     <section class="history-extra" aria-labelledby="achievements-title">
-      <h3 id="achievements-title" data-i18n="medal.title">Medals</h3><p id="achievement-status">Your awarded medals will appear here when available.</p>
-      <ul id="achievement-list" class="achievement-list"><li v-for="[id, name, detail] in MEDALS" :data-medal="id"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><div><strong :data-i18n="`medal.${id}`">{{ name }}</strong><span :data-i18n="`medal.${id}.detail`">{{ detail }}</span></div><small>Not awarded</small></li></ul>
+      <h3 id="achievements-title" data-i18n="medal.title">Medals</h3><p id="achievement-status">{{ historyView.achievementStatus }}</p>
+      <ul id="achievement-list" class="achievement-list"><li v-for="[id, name, detail] in MEDALS" :data-medal="id" :class="{ 'is-awarded': Boolean(historyView.medalAwards[id]) }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><div><strong :data-i18n="`medal.${id}`">{{ name }}</strong><span :data-i18n="`medal.${id}.detail`">{{ detail }}</span></div><small>{{ historyView.medalAwards[id] ?? historyView.medalNotAwarded }}</small></li></ul>
     </section>
   </dialog>
 </template>

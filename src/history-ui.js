@@ -27,35 +27,28 @@ export function createHistoryView({ getData, timeString }) {
     const trackId = $('#history-track').value;
     const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
     const modeFilter = $('#mode-history-filter').value;
-    const modeRows = sessionModeHistory.filter(run => run.track === trackId);
-    const modes = modeRows.filter(run => modeFilter === 'all' || run.mode === modeFilter).slice(-10).reverse();
-    $('#mode-history-empty').hidden = modes.length > 0;
-    // Saved config fields are untrusted: parse with a guard, and render labels with textContent only.
-    $('#mode-history-runs').replaceChildren(...modes.map(run => {
-      const item = document.createElement('p');
+    const modes = sessionModeHistory.filter(run => run.track === trackId)
+      .filter(run => modeFilter === 'all' || run.mode === modeFilter).slice(-10).reverse();
+    const modeRuns = modes.map(run => {
       let config = null;
       try {
         const candidate = JSON.parse(run.rules);
         if (candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
             candidate.mode === run.mode) config = candidate;
-      } catch { /* Legacy signatures may be opaque strings; still display their record. */ }
+      } catch { /* Opaque legacy rules still display as text. */ }
       const best = config ? loadModeBest(trackId, config) : null;
       const personalBest = best !== null && (run.mode === 'stunt' ? run.score === best : run.time === best);
       const ghost = run.mode === 'time' && !!config && !!loadModeGhost(trackId, config);
-      item.dataset.mode = run.mode;
-      item.dataset.personalBest = String(personalBest);
-      item.dataset.ghost = String(ghost);
       const details = run.mode === 'stunt'
         ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
           run.medal ? t('mode.medal.' + run.medal) : '',
           t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) })]
         : [t('mode.' + run.mode), timeString(run.time)];
-      item.textContent = [
-        ...details, personalBest ? t('mode.historyPersonalBest') : null,
-        ghost ? t('mode.historyGhost') : null, shortDate(run.date),
-      ].filter(Boolean).join(' · ');
-      return item;
-    }));
+      const text = [...details, personalBest ? t('mode.historyPersonalBest') : null,
+        ghost ? t('mode.historyGhost') : null, shortDate(run.date)].filter(Boolean).join(' · ');
+      return { mode: run.mode, personalBest, ghost, text };
+    });
+    updateHistoryView({ modeHistoryEmpty: modes.length === 0, modeRuns });
     const stats = careerStats(sessionHistory);
     const count = (key, n) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
     const careerSummary = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
@@ -85,17 +78,23 @@ export function createHistoryView({ getData, timeString }) {
     });
     updateHistoryView({ historyRuns });
     const today = dailyChallenge();
-    $('#daily-status').textContent = t('daily.status', { track: trackName(today.track, getLocale()), modifier: t(`modifier.${today.modifier}`) });
-    $('#daily-start').disabled = !world;
     const board = dailyBoard(sessionDaily, today.id).slice(0, 5);
-    const line = text => { const row = document.createElement('p'); row.textContent = text; return row; };
-    $('#daily-board').replaceChildren(...board.length ? board.map((run, i) => line(t('daily.line', { rank: i + 1, time: timeString(run.time), position: run.position, score: Math.round(run.score) }))) : [line(t('daily.empty'))]);
-    for (const item of document.querySelectorAll('[data-medal]')) {
-      const awarded = sessionMedals[item.dataset.medal];
-      item.classList.toggle('is-awarded', !!awarded);
-      item.querySelector('small').textContent = awarded ? t('medal.awarded', { date: shortDate(awarded) }) : t('medal.notAwarded');
-    }
-    $('#achievement-status').textContent = t('medal.count', { n: Object.keys(sessionMedals).length });
+    updateHistoryView({
+      dailyStatus: t('daily.status', { track: trackName(today.track, getLocale()), modifier: t('modifier.' + today.modifier) }),
+      dailyStartDisabled: !world,
+      dailyBoard: board.length
+        ? board.map((run, i) => t('daily.line', {
+          rank: i + 1, time: timeString(run.time), position: run.position, score: Math.round(run.score),
+        })) : [t('daily.empty')],
+    });
+    const medalAwards = Object.fromEntries(MEDALS.map(id => [
+      id, sessionMedals[id] ? t('medal.awarded', { date: shortDate(sessionMedals[id]) }) : null,
+    ]));
+    updateHistoryView({
+      medalAwards,
+      medalNotAwarded: t('medal.notAwarded'),
+      achievementStatus: t('medal.count', { n: Object.keys(sessionMedals).length }),
+    });
   }
   // Home status: today's challenge and the medal tally sit on the start screen instead of inside History.
   function showHomeStatus() {

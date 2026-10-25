@@ -7,7 +7,21 @@ interface HistoryRun {
   detail: string;
 }
 interface TrendPoint { x: number; y: number; title: string }
+interface HistoryModeRow {
+  mode: string;
+  personalBest: boolean;
+  ghost: boolean;
+  text: string;
+}
 interface HistoryView {
+  modeHistoryEmpty: boolean;
+  modeRuns: HistoryModeRow[];
+  dailyStatus: string;
+  dailyStartDisabled: boolean;
+  dailyBoard: string[];
+  medalAwards: Record<string, string | null>;
+  medalNotAwarded: string;
+  achievementStatus: string;
   careerSummary: string;
   historyEmpty: boolean;
   trendVisible: boolean;
@@ -17,6 +31,10 @@ interface HistoryView {
   historyRuns: HistoryRun[];
 }
 export const historyView = reactive<HistoryView>({
+  modeHistoryEmpty: true, modeRuns: [],
+  dailyStatus: 'No daily challenge is available yet.', dailyStartDisabled: true,
+  dailyBoard: ['No challenge runs recorded yet.'],
+  medalAwards: {}, medalNotAwarded: 'Not awarded', achievementStatus: '',
   careerSummary: '', historyEmpty: false, trendVisible: false,
   trendLabel: '', trendPolyPoints: '', trendCircles: [], historyRuns: [],
 });
