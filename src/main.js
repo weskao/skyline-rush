@@ -488,6 +488,12 @@ function centerSelectedTrack(smooth = false) {
   const button = document.querySelector(`[data-track="${race.trackId}"]`), row = button.parentElement;
   row.scrollBy({ left: button.getBoundingClientRect().left + button.offsetWidth / 2 - row.getBoundingClientRect().left - row.clientWidth / 2, behavior: smooth && !reducedMotion.matches ? 'smooth' : 'instant' });
 }
+// The first showTracks() calls showHomeStatus(), so initialize this controller first.
+// Its callbacks read live session data rather than capturing an old snapshot.
+const { showHistory, showHomeStatus } = createHistoryView({
+  getData: () => ({ sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world }),
+  timeString,
+});
 showTracks(); centerSelectedTrack();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
@@ -747,10 +753,6 @@ document.querySelectorAll('.track-preview').forEach(preview => previewObserver.o
 // Never rely on variables captured inside another module's factory.
 const historyScreen = $('#history-screen');
 let historyOpener = null;
-const { showHistory, showHomeStatus } = createHistoryView({
-  getData: () => ({ sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world }),
-  timeString,
-});
 function startDaily() {
   daily = dailyChallenge();
   selectedMode = 'classic';
