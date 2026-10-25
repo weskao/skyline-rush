@@ -232,6 +232,11 @@ only; it must never override another selected view. Keep the camera source of
 truth in `vfxSettings().view`, the view ordering in `SHOWCASE_VIEWS`, and
 the geometry-independent camera offsets in `showcaseCameraPose()`.
 The ready-screen camera dock and VFX menu must stay synchronized and localized.
+On World Tour roads, an in-frame projected car may still be blocked by foreground
+facades or mountains. Sample actual car body visibility against opaque scenery;
+when blocked, gently dolly/shift the camera in the local road frame, preserving
+the curated landmark target and keeping the live WebGL car fully visible. Keep
+occlusion tests outside the frame loop; never hide scenery or weaken QA.
 Use the local tangent frame for 3D roads, honor reduced motion, and test all
 `RACE_TRACKS` IDs plus an unknown future ID. AIRFLOW on puts the preview player
 at road altitude 0 with hover jets off on every existing or future track, even
