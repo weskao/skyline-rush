@@ -1,4 +1,5 @@
 import { PAINTS } from './appearance.js';
+import { updateGarageView } from './garage-view-state.js';
 import { t } from './i18n.js';
 // Same locked production source as Vite's @progression-access alias; also importable by node:test.
 import { availablePaints } from './access/production.js';
@@ -26,14 +27,16 @@ export function setupGarageUI({ getWorld, canOpen, clearControls, getEquippedPai
     const stars = getStars();
     const { state, canEquip, need } = garagePresentation(id, getEquippedPaint(), stars, PAINTS, availablePaints(stars));
     const name = t(`paint.${id}`);
-    $('#garage-status').textContent = t(`garage.status.${state}`, { name, stars: need, have: stars });
-    $('#garage-equip').disabled = !canEquip;
-    $('#garage-equip').textContent = t(`garage.btn.${state === 'owned' ? 'equip' : state}`, { name, stars: need });
+    updateGarageView({
+      status: t(`garage.status.${state}`, { name, stars: need, have: stars }),
+      equipDisabled: !canEquip,
+      equipLabel: t(`garage.btn.${state === 'owned' ? 'equip' : state}`, { name, stars: need }),
+    });
   }
   function previewPaint(id) {
     previewing = id;
     getWorld()?.previewAppearance(PAINTS[id]);
-    document.querySelectorAll('[data-paint]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.paint === id)));
+    updateGarageView({ selected: id });
     showGarage();
   }
   $('#garage-equip').addEventListener('click', () => { setEquippedPaint(previewing); previewPaint(getEquippedPaint()); });
