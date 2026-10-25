@@ -1,3 +1,44 @@
+## [0.23.0] - 2026-10-25
+
+### 🚀 Features
+
+- **dev:** Add phone server menu command
+
+### 🐛 Bug Fixes
+
+- **cup:** Validate completed stage snapshots before adding or scoring heats (GREEN)
+- **cup:** Validate state for completion and total-time views (GREEN)
+- Coordinate showroom camera and Start safe-area spacing
+- Auto-frame complete showroom vehicle at every track and viewport
+- **home:** Tie Start height to the camera dock budget so they never overlap
+- **showcase:** Keep whole car and landmark in frame on portrait and tall landmarks
+
+### 📚 Documentation
+
+- **todo:** Track non-Firebase feature work and pending verification gates
+- **todo:** Record upstream merge and further HUD test-first changes with verification pending
+- **todo:** Define Cup safety stop point before planned Vue TypeScript refactor
+- Require responsive spacing regressions for ready controls
+- **release:** Require rich telegram announcements
+- Require whole-vehicle viewport framing for every future track
+- Require whole-vehicle viewport framing for every future track
+- **readme:** Add home screen and gameplay videos
+- **release:** Review 0.23.0 notes
+- **release:** Review 0.23.0 notes
+
+### ⚡ Performance
+
+- **hud:** Cache per-frame element references and avoid repeated static writes
+- **hud:** Avoid redundant updates of stable race labels
+
+### 🧪 Testing
+
+- **hud:** Reproduce per-frame DOM lookup and redundant text writes (RED)
+- **hud:** Require zero redundant stable race status writes (RED candidate)
+- **cup:** RED for corrupted intermediate Cup standings and heat recovery
+- **cup:** RED for corrupt completion and aggregate time projections
+- Expose showroom camera and Start overlap across viewports
+- Assert full home-showcase car silhouette stays in frame across tracks and viewports
 ## [0.22.1] - 2026-10-25
 
 ### 🚀 Features
