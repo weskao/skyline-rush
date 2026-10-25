@@ -67,8 +67,9 @@
   window.worldTourPreviewProbe=(id, options=null, frames=60)=>{
     if(options) world.configureVFX({quality:'low',enabled:true,bloom:0,...options});
     const race=createRace(id);
-    // One second of frames: the preview FOV eases to 50°, as on the real home.
-    for(let i=0;i<60;i++)world.render(race,1/60,2+i/60,{});
+    // Default to one second of frames so the 50° preview FOV settles; focused
+    // viewpoint coverage may explicitly choose fewer frames once warmed up.
+    for(let i=0;i<frames;i++)world.render(race,1/60,2+i/60,{});
     return {id,actors:world.inspectShowcase(),landmarks:world.inspectLandmarks()};
   };
     window.worldTourReady = true;
