@@ -1,5 +1,5 @@
 import { nextTick } from 'vue';
-import { updateReleaseView } from './release-view-state.js';
+import { updateReleaseView } from './release-view-state.ts';
 import { HISTORY_KEY } from './history.js';
 import { getLocale, t, formatDate } from './i18n.js';
 import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.js';

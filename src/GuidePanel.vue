@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MobileGuide from './MobileGuide.vue';
-import { guideView } from './guide-view-state.js';
+import { guideView } from './guide-view-state.ts';
 </script>
 
 <template>

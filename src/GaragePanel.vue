@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PAINTS } from './appearance.js';
-import { garageView } from './garage-view-state.js';
+import { garageView } from './garage-view-state.ts';
 </script>
 
 <template>

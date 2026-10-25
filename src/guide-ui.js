@@ -1,5 +1,5 @@
 import { t } from './i18n.js';
-import { updateGuideView } from './guide-view-state.js';
+import { updateGuideView } from './guide-view-state.ts';
 
 export const guidePracticeLabelKey = completed => completed ? 'tutorial.retry' : 'tutorial.start';
 export const guideDeviceForPointer = touch => touch ? 'mobile' : 'desktop';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { releaseView } from './release-view-state.js';
+import { releaseView } from './release-view-state.ts';
 </script>
 <template>
   <dialog id="whats-new-screen" class="history-screen release-screen" aria-labelledby="release-title" aria-describedby="release-intro">

@@ -1,5 +1,5 @@
 import { PAINTS } from './appearance.js';
-import { updateGarageView } from './garage-view-state.js';
+import { updateGarageView } from './garage-view-state.ts';
 import { t } from './i18n.js';
 // Same locked production source as Vite's @progression-access alias; also importable by node:test.
 import { availablePaints } from './access/production.js';
