@@ -31,6 +31,22 @@ for(const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
     assert.equal(previewRival(id,0,race.rivals[0],1,true).thrusting,false);
   });
 }
+// Regression: AIRFLOW is a grounded aerodynamic showroom on every map,
+// including landmark-curated and future (uncurated) routes. The normal hero
+// remains airborne until the player explicitly enables AIRFLOW.
+test('AIRFLOW grounds the preview player on all ten routes and new routes',()=>{
+  const sample = createRace('coast').player;
+  for (const id of [...Object.keys(RACE_TRACKS), 'future-road']) {
+    const flying=previewPlayer(id,sample,3,false,false);
+    const grounded=previewPlayer(id,sample,3,false,true);
+    assert.ok(flying.altitude>1.4, `${id}: non-AIRFLOW keeps the airborne hero`);
+    assert.equal(flying.thrusting,true, `${id}: airborne hero uses jet effects`);
+    assert.equal(grounded.altitude,0, `${id}: AIRFLOW must put wheels on road`);
+    assert.equal(grounded.thrusting,false, `${id}: no hover jets in AIRFLOW`);
+    assert.equal(grounded.x,sample.x, `${id}: keep lateral lane position`);
+  }
+});
+
 for(const [id,kind] of [['taipei','office'],['tokyo','tower'],['alpine','mountain'],['coastal','lighthouse'],['cosmic','cosmic-gate']]) {
   test(id+' home showcase frames its signature landmark from open road',()=>{
     const info=HERO_PREVIEWS[id],landmark=WORLD_THEMES[id].landmarks.find(l=>l.kind===kind);

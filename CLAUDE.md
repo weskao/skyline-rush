@@ -222,3 +222,24 @@ and a CI timing flake cannot leave a tag unpublished.
 
 Commit and push to the current development branch. No PR, no merge into `main`, no deploy
 unless the user explicitly asks.
+
+## Home showroom camera contract
+
+All existing and future tracks share the same six ready-screen camera views: drive,
+front, rear, left, right and orbit. The selected camera must work without enabling
+AIRFLOW or visual effects. The curated home landmark shot is the *drive* default
+only; it must never override another selected view. Keep the camera source of
+truth in `vfxSettings().view`, the view ordering in `SHOWCASE_VIEWS`, and
+the geometry-independent camera offsets in `showcaseCameraPose()`.
+The ready-screen camera dock and VFX menu must stay synchronized and localized.
+On World Tour roads, an in-frame projected car may still be blocked by foreground
+facades or mountains. Sample actual car body visibility against opaque scenery;
+when blocked, gently dolly/shift the camera in the local road frame, preserving
+the curated landmark target and keeping the live WebGL car fully visible. Keep
+occlusion tests outside the frame loop; never hide scenery or weaken QA.
+Use the local tangent frame for 3D roads, honor reduced motion, and test all
+`RACE_TRACKS` IDs plus an unknown future ID. AIRFLOW on puts the preview player
+at road altitude 0 with hover jets off on every existing or future track, even
+when `HERO_PREVIEWS` supplies a landmark camera. AIRFLOW off keeps the original
+airborne hero; all six camera views must work in both states. Do not fork UI or
+vehicle pose by map ID.

@@ -20,14 +20,12 @@ export const previewDistance = id => HERO_PREVIEWS[id]?.distance ?? 340;
 export const isCuratedPreview = id => !!HERO_PREVIEWS[id];
 
 export function previewPlayer(id,car,idleTime=0,reducedMotion=false,groundedShowcase=false) {
-  if(!isCuratedPreview(id)) return {
-    ...car, altitude:groundedShowcase ? 0
-      : 1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
-    thrusting:!groundedShowcase,
-  };
+  // Curated World Tour views differ in landmark framing, never in AIRFLOW pose:
+  // every existing or future track rests on its own road when AIRFLOW is on.
   return { ...car,
-    altitude:1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
-    thrusting:!reducedMotion,
+    altitude:groundedShowcase ? 0
+      : 1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
+    thrusting:!groundedShowcase&&!reducedMotion,
   };
 }
 
@@ -46,4 +44,22 @@ export function previewRival(id,index,rival,idleTime=0,reducedMotion=false) {
     altitude:fly ? 4.5+(reducedMotion?0:Math.sin(idleTime*1.25+.6)*.22) : 0,
     thrusting:fly&&!reducedMotion,
   };
+}
+
+/** Shared home-camera poses: only landmark art direction varies by track. */
+export function showcaseCameraPose(id, view = 'drive', time = 0, portrait = false) {
+  const info = HERO_PREVIEWS[id];
+  const drive = {
+    cameraSide: portrait ? 7.8 : (info?.cameraSide ?? 8.3),
+    cameraBack: portrait ? 13.8 : (info?.cameraBack ?? 11.8),
+    cameraHeight: portrait ? 4.3 : (info?.cameraHeight ?? 3.5),
+    lookSide: portrait ? 1 : (info?.lookSide ?? -1.4),
+    lookAhead: info?.lookAhead ?? 3.5,
+    lookHeight: info?.lookHeight ?? 1.6,
+  };
+  if (view === 'drive') return drive;
+  const angle = view === 'orbit' ? time * .18 : {front:Math.PI,rear:0,left:-Math.PI/2,right:Math.PI/2}[view];
+  if (angle === undefined) return drive;
+  return { cameraSide:Math.sin(angle)*9, cameraBack:Math.cos(angle)*9,
+    cameraHeight:3.6, lookSide:0, lookAhead:0, lookHeight:2.4 };
 }

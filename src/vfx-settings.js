@@ -1,6 +1,7 @@
 // Visual controls only: none of these values are consumed by the race simulation.
 // Index 0 is the English label; the UI translates it through the `vfx.<key>` catalog entry (vfxLabelKey).
 export const vfxLabelKey = key => `vfx.${key}`;
+export const SHOWCASE_VIEWS = Object.freeze(['drive','front','rear','left','right','orbit']);
 export const VFX_RANGES = {
   airflowDensity: ['Airflow density', 0, 1, 0.05, 0.75],
   airflowSpeed: ['Airflow speed', 0.2, 3, 0.1, 1],
@@ -32,7 +33,7 @@ export function vfxSettings(values = {}) {
     preset: Object.hasOwn(VFX_PRESETS, values.preset) ? values.preset : 'cinematic',
     quality: ['low', 'medium', 'high'].includes(values.quality) ? values.quality : 'high',
     aeroMode: values.aeroMode === 'downforce' ? 'downforce' : 'drag',
-    view: ['drive', 'front', 'rear', 'left', 'right', 'orbit'].includes(values.view) ? values.view : 'drive',
+    view: SHOWCASE_VIEWS.includes(values.view) ? values.view : 'drive',
     comfortable: values.comfortable === true, haptics: values.haptics === true };
   for (const [key, [, min, max, step, fallback]] of Object.entries(VFX_RANGES)) {
     const value = typeof values[key] === 'number' && Number.isFinite(values[key]) ? values[key] : VFX_PRESETS[result.preset][key] ?? fallback;

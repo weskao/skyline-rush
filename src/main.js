@@ -15,7 +15,7 @@ import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.js';
 import { createSound } from './audio.js';
 import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.js';
-import { vfxSettings, VFX_PRESETS } from './vfx-settings.js';
+import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
 import { controlSettings, CONTROLS_KEY } from './control-settings.js';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.js';
@@ -210,6 +210,15 @@ function showVFX() {
     else control.value = visual[key];
     if (control.type === 'range') control.previousElementSibling.value = visual[key];
   }
+  const dock = $('#showcase-camera-dock');
+  const viewIndex = SHOWCASE_VIEWS.indexOf(visual.view);
+  $('#showcase-camera-name').textContent = t('vfx.view.' + visual.view);
+  dock.setAttribute('data-view',visual.view);
+  $('#showcase-camera-dots').replaceChildren(...SHOWCASE_VIEWS.map((view,i)=>{
+    const dot=document.createElement('i');
+    dot.classList.toggle('is-active',i===viewIndex);
+    return dot;
+  }));
   $('#airflow-toggle').setAttribute('aria-pressed', String(visual.airflow));
   $('#airflow-toggle').disabled = !visual.enabled;
   document.body.classList.toggle('airflow-active', visual.airflow && visual.enabled);
@@ -232,6 +241,13 @@ for (const control of vfxControls) control.addEventListener('input', () => {
   visual = vfxSettings({ ...visual, ...(key === 'preset' ? VFX_PRESETS[value] : {}), [key]: value });
   showVFX();
 });
+function stepShowcaseView(delta) {
+  visual = vfxSettings({...visual,view:SHOWCASE_VIEWS[
+    (SHOWCASE_VIEWS.indexOf(visual.view)+delta+SHOWCASE_VIEWS.length)%SHOWCASE_VIEWS.length]});
+  showVFX();
+}
+$('#showcase-camera-prev').addEventListener('click',()=>stepShowcaseView(-1));
+$('#showcase-camera-next').addEventListener('click',()=>stepShowcaseView(1));
 $('#airflow-toggle').addEventListener('click', toggleAirflow);
 $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVFX(); });
 showVFX();
@@ -451,6 +467,7 @@ function applyLocale() {
   for (const [element, text] of said) element.textContent = text();
   showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
   syncDailyFlightControl();
+  $('#showcase-camera-name').textContent = t('vfx.view.'+visual.view);
   refreshPerformanceNotice();
   renderReleaseNotes();
   if (tutorial) renderTutorial(true);

@@ -15,6 +15,15 @@ Branch: `feature/todo-nonfirebase-20261025` from `main` `f53bf0fc`. Evidence: [N
 Firebase and Gamepad are explicitly excluded. Do not retick historical requirements or claim that a pushed commit is a passed test.
 
 
+## CI regression: side-view showroom size measurement (2026-10-25)
+
+- [x] Trace feature CI run 40157117052: all 10 AIRFLOW/hovering World Tour checks fail on the left camera's near-zero `screenWidth`; unit, eight browser shards and cloud-save pass.
+- [x] RED: the unchanged `taipei: AIRFLOW showcase is not occluded` browser regression fails locally with width `2.476533666182568e-17` against the unchanged `> .035` size requirement.
+- [x] Fix the shared QA projection in `inspectShowcase`: project the actual body mesh vertices instead of two axle endpoints that overlap in a side view. This only runs when QA requests inspection; camera, scenery, physics and audio need no change.
+- [x] GREEN: the complete World Tour showcase browser file passes 37/37, including all five tracks, both AIRFLOW states and six angles with existing size/occlusion assertions unchanged. Real WebGL screenshots are preserved in `playwright-report/ci-showcase-width/green/`.
+- [x] Unit tests: 575 passed, 3 skipped; production build and production-lock assertion pass. The initial full gate stopped because another process owned port 5178; rerun `make verify` with a free `PLAYWRIGHT_PORT` without stopping that process.
+- [ ] Full `make verify` and exact-commit `main` CI `quality-gate`: receipts are saved in `playwright-report/ci-showcase-width/make-verify.log` and `ci-status.json` after completion. Physical-device/Safari acceptance remains separate.
+
 ## Remaining phone browser regressions (2026-10-25)
 
 - [x] RED: the unchanged implementation reproduced all three original failures. The new fixed-date title regressions also failed at 320px and 390px on 2026-10-25's `Aurora Pass · Double traffic` title; full text overflowed its box.
@@ -1317,3 +1326,32 @@ never conflate future modes with existing Control “steering mode” options.
 - [ ] **S3 — 免費額度監控與升級門檻**：發布後先觀測現有 Firestore Usage；若讀寫、存量或使用者數接近 Spark 限制，先降低重複寫入／資料量，未經同意不得啟用任何付費服務。 **【狀態三：未來條件式啟動；本次不實作】**
 
 **官方參考**：https://firebase.google.com/pricing 、https://firebase.google.com/docs/firestore/pricing 、https://firebase.google.com/docs/projects/billing/firebase-pricing-plans
+## Home showroom camera parity & discovery (2026-10-25)
+- [x] Identify camera precedence bug: curated maps bypass selected VFX view, while older maps require AIRFLOW.
+- [x] Create shared camera modes and reusable framing for every current and future track.
+- [x] Add homepage prev/next camera dock and synchronize it with VFX and zh-TW/en localization.
+- [x] Document reusable showroom camera rules in CLAUDE.md and .claude/rules/track-showcase.md.
+- [x] Commit unit and browser regression test cases on fix/home-showcase-camera-parity.
+- [ ] Run Node/Vite checks and confirm RED -> GREEN in CI (not verifiable from current tool runtime).
+- [ ] Verify real Chromium/Safari desktop and touch screenshots for all tracks; adjust overlapping elements if necessary.
+- [ ] Merge only after verified green CI and QA.
+
+## AIRFLOW showroom grounding parity (2026-10-25)
+- [x] Identify the root cause: curated `HERO_PREVIEWS` branch in `previewPlayer` ignored `groundedShowcase`, leaving World Tour cars airborne when AIRFLOW was active.
+- [x] Add regression unit cases for all current tracks and an unknown future track; normal flying showcase remains available with AIRFLOW off.
+- [x] Add live-WebGL checks for the five World Tour roads with AIRFLOW enabled, including grounded actor position, no hovering jets and six selectable camera views; expose test-only VFX options in the existing World Tour fixture.
+- [x] Unify preview player altitude and thrusting in one shared function, independent of the curated map list, without duplicating rendering logic.
+- [x] Update CLAUDE.md and .claude/rules/track-showcase.md for future track design consistency.
+- [ ] Verify tests RED → GREEN by executing Node unit tests and the World Tour WebGL suite at this exact HEAD (CI pending).
+- [ ] Confirm real home-screen AIRFLOW, all six camera views, full landscape/portrait screenshots and roadmap landmarks on actual browser/devices.
+- [ ] Confirm full GitHub quality-gate green on this exact branch HEAD before merging to main.
+
+## Home showroom vehicle occlusion / AIRFLOW layout (2026-10-25)
+- [x] Trace the coverage gap: existing showroom checks only asserted that the car's screen-space center/width were finite; opaque scenery between the camera and the real vehicle was not measured.
+- [x] Add real-WebGL five-body-point ray visibility assertions, for all five World Tour maps, all six camera views, AIRFLOW enabled and disabled. Threshold: at least 4/5 body points unobscured and within the viewport.
+- [x] Implement cached preview-only camera clearance. Prefer the reference angle; if blocked, try small dolly-back / local-road sideways and vertical offsets while retaining each track's landmark look target. No removal of scenery or change to in-race camera.
+- [x] Add desktop 1440×900 and mobile 390×844 home UI regression cases that select each of the five maps, activate AIRFLOW and cycle six camera views via real click/touch targets, capturing screenshots.
+- [x] Document camera visibility, visual fidelity, and frame-performance rules in CLAUDE.md and the scoped showroom rule.
+- [ ] Run and inspect latest branch HEAD Node/unit/build, all browser shards, World Tour and cloud-save GitHub CI with quality-gate green (still pending).
+- [ ] Review actual screenshots of Tokyo, Alpine, Taipei, Coastal and Cosmic with AIRFLOW on/off, verify car wheel/ground contact, body fully unobscured, landmark framing and nonblocking HUD across both orientations; real iOS/Android hardware acceptance pending.
+- [ ] Only after exact-HEAD CI success, sync any newer main and obtain CI success again before merging feature branch directly into main.

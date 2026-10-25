@@ -22,9 +22,11 @@ legibility, motion and camera scale.
 - Live Three.js world: player Roadster, three rivals, driveable road, landmarks, scenery. No
   flat illustration, thumbnail or empty sky.
 - Signature landmark: the showcase frames the map's main landmark (section below).
-- Composition: player hovers gently with visible jets; ≥1 rival flies with thrusters; other
-  rivals stay near the road. Same model, lighting, paint, wing and physics visuals as in-race;
-  never hide or shrink the player.
+- Composition: with AIRFLOW off, the player hovers gently with visible jets and at least
+  one rival flies; other rivals stay near the road. With AIRFLOW on, the player must rest
+  on its actual road surface (altitude 0, no hover jets) on ALL tracks, including curved,
+  elevated and future routes; other rivals may keep the normal showcase staging. Keep
+  the same model, lighting, paint, wing and physics visuals; never hide or shrink the player.
 - Camera: three-quarter rear chase, 50° FOV. Desktop baseline ≈ 8.3 m side, 11.8 m behind, eye
   5.1 m above road (~3.5 m above a player hovering at 1.6 m). Portrait gets responsive tuning,
   never arbitrary zoom-out or a cut-off car.
@@ -76,3 +78,43 @@ gate). Every new map ships the same way.
   default config ignores them).
 - **Visual proof before merge**: real-app home screenshots (not only the fixture) with each map
   selected, plus an in-race drive-through of the approach.
+
+## User-selectable showroom angles
+
+The landmark hero shot is the *default drive angle*, not an unconditional
+override. Apply the shared preview angle before any curated fallback in
+`src/world.js`. Each future track automatically receives drive/front/rear/
+left/right/orbit without adding UI branches. The camera dock is visible in the
+ready phase on desktop and touch, accessible and synchronized with the VFX
+select, without requiring AIRFLOW.
+
+## AIRFLOW ground contract (all current and future tracks)
+
+`previewPlayer(id, car, ..., groundedShowcase)` must never special-case the curated
+`HERO_PREVIEWS` track list when setting the hero's altitude or thrusting. AIRFLOW
+on means the player vehicle is attached to the current road (local frame/up axis on
+hills, elevated roads and loops); AIRFLOW off preserves the original hovering hero.
+Every ready-screen camera mode (drive/front/rear/left/right/orbit) works with AIRFLOW
+on and off, independently of VFX for camera selection. Preserve per-track landmark
+framing; do not copy and paste camera or vehicle rules for newly added tracks.
+Maintain full `RACE_TRACKS` plus unknown-future-ID unit coverage and real WebGL
+checks for all World Tour routes at each of the six camera angles.
+
+## Prevent car occlusion without hiding scenery (Tokyo, Alpine and future maps)
+
+- The camera and the hero must have an unobstructed line of sight; merely
+  projecting the car center into the viewport is not sufficient. Sample the
+  actual 3D body at multiple roof, nose and side points and raycast against
+  opaque World Tour scenery. Count points outside the camera frustum as hidden.
+- If the default eye is occluded, try a small dolly-back first, then a modest
+  side/height offset along the sampled local road axes. Only recalculate when
+  the track, view, quality, portrait state or AIRFLOW mode changes (or at
+  spaced orbit checkpoints); never raycast or rebuild geometry every frame.
+- Retain the landmark-directed look target, original course meshes, details,
+  buildings, tunnel scenery and hillside meshes. No transparent/hidden walls,
+  scenery wholesale deletion, force-click workaround or copied per-track UI.
+- On all five World Tour maps, test AIRFLOW off/on × six camera modes in real
+  WebGL, plus actual desktop and phone Home UI interaction and screenshots.
+  Require at least four of five sampled vehicle body points unobstructed and
+  in frame, and preserve all landmark framing/visibility acceptance checks.
+  Inspect the exact CI HEAD and physical-device imagery before shipping.
