@@ -233,4 +233,8 @@ truth in `vfxSettings().view`, the view ordering in `SHOWCASE_VIEWS`, and
 the geometry-independent camera offsets in `showcaseCameraPose()`.
 The ready-screen camera dock and VFX menu must stay synchronized and localized.
 Use the local tangent frame for 3D roads, honor reduced motion, and test all
-`RACE_TRACKS` IDs plus an unknown future ID. Do not fork UI by map ID.
+`RACE_TRACKS` IDs plus an unknown future ID. AIRFLOW on puts the preview player
+at road altitude 0 with hover jets off on every existing or future track, even
+when `HERO_PREVIEWS` supplies a landmark camera. AIRFLOW off keeps the original
+airborne hero; all six camera views must work in both states. Do not fork UI or
+vehicle pose by map ID.
