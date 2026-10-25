@@ -1,5 +1,20 @@
 # TODO — Gameplay depth design
 
+## Non-Firebase / non-Gamepad continuation (2026-10-25)
+
+Branch: `feature/todo-nonfirebase-20261025` from `main` `f53bf0fc`. Evidence: [Notion stage 20](https://app.notion.com/p/4041a2df84a781638fa0fc182d8e05fb) and [feature CI](https://github.com/weskao/skyline-rush/actions?query=branch%3Afeature%2Ftodo-nonfirebase-20261025).
+
+- [x] Audit the current main TODO and Notion stage history, keep existing completed features intact, and isolate this work on a new branch.
+- [x] Commit desktop/mobile HUD DOM regression test source *before* the code change (`928bab8`); browser RED observation remains unverified without a completed run.
+- [x] Commit an initial targeted fix: cache 16 repeated per-frame HUD element queries and skip 4 identical static text writes (`630b2ba`). This records code committed, **not** verified completion of Step 1 below.
+- [ ] Obtain observable RED on the pre-fix commit (test failure caused by unwanted HUD queries/writes), then a GREEN browser run on the fix commit, including desktop 1440×900 and touch 390×844.
+- [ ] Measure comparable before/after HUD CPU cost / frame p50,p95 with a running browser, include real values rather than assumed speedup.
+- [ ] Run `make verify`, `npm run test:layout`, and check the exact HEAD `quality-gate`; fix failures before ticking Step 1 as complete.
+- [ ] Continue the remaining non-Firebase / non-Gamepad tasks in this TODO after closing the verification gates. Preserve real-device acceptance as manual pending.
+
+Firebase and Gamepad are explicitly excluded. Do not retick historical requirements or claim that a pushed commit is a passed test.
+
+
 ## Remaining phone browser regressions (2026-10-25)
 
 - [x] RED: the unchanged implementation reproduced all three original failures. The new fixed-date title regressions also failed at 320px and 390px on 2026-10-25's `Aurora Pass · Double traffic` title; full text overflowed its box.
