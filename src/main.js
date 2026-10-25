@@ -40,7 +40,7 @@ import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLo
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
-import { setupTrackSwipeUI } from './track-swipe-ui.js';
+import { setupTrackSwipeUI } from './track-swipe-ui.ts';
 import { refreshIfStale } from './update-check.js';
 import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.js';

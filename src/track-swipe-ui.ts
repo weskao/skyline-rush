@@ -1,26 +1,58 @@
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.js';
 import { trackName, getLocale, t } from './i18n.js';
 
+interface SwipeStart {
+  button: number;
+  phase: string;
+  tutorial: boolean;
+  editing: boolean;
+  busy: boolean;
+  dialogOpen: boolean;
+  pointerType: string;
+  clientX: number;
+  width: number;
+}
+interface SwipeRace { phase: string; trackId: string }
+interface SwipeWorld { render(race: object, interpolation: number, time: number): void }
+interface SwipeOptions {
+  getRace(): SwipeRace;
+  getWorld(): SwipeWorld | null | undefined;
+  selectedRace(trackId: string): object;
+  calmMotion(): boolean;
+  motionOptions(speed: string): KeyframeAnimationOptions;
+  isTutorialActive(): boolean;
+  isEditingLayout(): boolean;
+  touchMatches(): boolean;
+}
+type SwipeSample = [number, number];
+interface DragState { id: number; x: number; y: number; axis: 'x' | 'y' | null; samples: SwipeSample[] }
+interface WheelState { dx: number; spent: boolean; stamp: number; timer?: ReturnType<typeof setTimeout> }
+
 /** Keep swipe initiation rules testable; edge gestures belong to the OS on touch screens. */
-export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dialogOpen, pointerType, clientX, width }) {
+export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dialogOpen, pointerType, clientX, width }: SwipeStart): boolean {
   return button === 0 && phase === 'ready' && !tutorial && !editing && !busy && !dialogOpen &&
     (pointerType === 'mouse' || (clientX >= SWIPE_EDGE_PX && clientX <= width - SWIPE_EDGE_PX));
 }
 
-export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches }) {
-  const $ = selector => document.querySelector(selector);
+export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches }: SwipeOptions) {
+  const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
-  const worldCanvas = $('#world');
+  const worldCanvas = $<HTMLCanvasElement>('#world');
   const swipeChip = $('#track-swipe');
-  let swipe = null, wheelSwipe = null, swipeTarget = null, swipeBusy = false, swipeChipTimer = 0, swipeHintSeen = false;
-  const swipeTracks = () => [...document.querySelectorAll('[data-track]:not(:disabled)')];
-  const swipeNeighbour = step => { const tracks = swipeTracks(); return tracks[tracks.findIndex(button => button.dataset.track === getRace().trackId) + step]; };
-  function showSwipeChip(state, id, note = '') {
+  let swipe: DragState | null = null;
+  let wheelSwipe: WheelState | null = null;
+  let swipeTarget: string | null = null;
+  let swipeBusy = false;
+  let swipeChipTimer: ReturnType<typeof setTimeout> | undefined;
+  let swipeHintSeen = false;
+  const swipeTracks = (): HTMLButtonElement[] => Array.from(document.querySelectorAll<HTMLButtonElement>('[data-track]:not(:disabled)'));
+  const swipeNeighbour = (step: number): HTMLButtonElement | undefined => { const tracks = swipeTracks(); return tracks[tracks.findIndex(button => button.dataset.track === getRace().trackId) + step]; };
+  function showSwipeChip(state: string, id: string, note = ''): void {
     clearTimeout(swipeChipTimer);
     swipeChip.dataset.state = state;
     $('#track-swipe-name').textContent = trackName(id, getLocale()).toUpperCase();
     $('#track-swipe-note').textContent = note;
-    swipeChip.querySelector('.swipe-dots').replaceChildren(...swipeTracks().map(button => {
+    swipeChip.querySelector('.swipe-dots')!.replaceChildren(...swipeTracks().map(button => {
       const dot = document.createElement('i');
       dot.classList.toggle('is-current', button.dataset.track === id);
       return dot;
@@ -38,12 +70,15 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   swipeScenes.id = 'track-swipe-scenes';
   swipeScenes.setAttribute('aria-hidden', 'true');
   worldCanvas.after(swipeScenes);
-  let swipeSceneStep = 0, swipeSnapback = null;
+  let swipeSceneStep = 0;
+  let swipeSnapback: Animation | null = null;
   function captureSwipeFrame() {
     const canvas = document.createElement('canvas');
     canvas.width = worldCanvas.width;
     canvas.height = worldCanvas.height;
-    canvas.getContext('2d').drawImage(worldCanvas, 0, 0);
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Swipe snapshot context unavailable');
+    context.drawImage(worldCanvas, 0, 0);
     return canvas;
   }
   function clearSwipeScenes() {
@@ -55,9 +90,10 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     worldCanvas.style.opacity = '';
     swipeBusy = false;
   }
-  function prepareSwipeScenes(step) {
+  function prepareSwipeScenes(step: number): boolean {
     const button = swipeNeighbour(step);
-    if (!button || !getWorld() || calmMotion()) return false;
+    const world = getWorld();
+    if (!button || !world || calmMotion()) return false;
     swipeSnapback = null;
     swipeScenes.getAnimations().forEach(animation => animation.cancel());
     if (step === swipeSceneStep && swipeScenes.childElementCount === 2) return true;
@@ -65,9 +101,9 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
       const time = performance.now() / 1000;
       // A non-preserved WebGL drawing buffer may be empty after compositing;
       // explicitly render both frames immediately before copying their pixels.
-      getWorld().render(getRace(), 0, time);
+      world.render(getRace(), 0, time);
       const current = captureSwipeFrame();
-      getWorld().render(selectedRace(button.dataset.track), 0, time);
+      world.render(selectedRace(button.dataset.track ?? ''), 0, time);
       const neighbor = captureSwipeFrame();
       swipeScenes.replaceChildren(...(step > 0 ? [current, neighbor] : [neighbor, current]));
       swipeSceneStep = step;
@@ -79,10 +115,10 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
       console.warn('Preview snapshot unavailable:', error);
       return false;
     } finally {
-      getWorld().render(getRace(), 0, performance.now() / 1000);
+      world.render(getRace(), 0, performance.now() / 1000);
     }
   }
-  function positionSwipeScenes(offset) {
+  function positionSwipeScenes(offset: number): void {
     swipeScenes.style.transform = `translateX(calc(${swipeSceneStep > 0 ? 0 : -100}vw + ${offset.toFixed(1)}px))`;
   }
   // On cancellation, the joined pages snap back without showing any underlying background.
@@ -101,7 +137,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     animation.finished.catch(() => {}).then(() => { if (swipeSnapback === animation) clearSwipeScenes(); });
   }
   // Slide the outgoing and incoming track as adjacent full-screen pages, never as faded empty canvas.
-  async function commitSwipe(button, step) {
+  async function commitSwipe(button: HTMLButtonElement, step: number): Promise<void> {
     swipe = null; swipeTarget = null; swipeBusy = true;
     const prepared = prepareSwipeScenes(step);
     if (prepared && !calmMotion()) {
@@ -121,7 +157,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     clearSwipeScenes();
   }
   // The two complete scenes stay touching at the center seam throughout the drag.
-  function dragSwipe(dx) {
+  function dragSwipe(dx: number): void {
     swipeBusy = false;
     const step = dx < 0 ? 1 : -1;
     const neighbour = swipeNeighbour(step);
@@ -142,7 +178,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     worldCanvas.setPointerCapture(event.pointerId);
   });
   worldCanvas.addEventListener('pointermove', event => {
-    if (event.pointerId !== swipe?.id) return;
+    if (!swipe || event.pointerId !== swipe.id) return;
     const dx = event.clientX - swipe.x;
     swipe.axis ??= swipeAxis(dx, event.clientY - swipe.y);
     if (swipe.axis !== 'x') return;
@@ -162,17 +198,17 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     wheelSwipe ??= { dx: 0, spent: swipeBusy };
     wheelSwipe.stamp = event.timeStamp;
     // No input for a while: spring an unfinished drag back. Only the timeStamp gap above ends the gesture itself.
-    wheelSwipe.timer = setTimeout(() => { if (!wheelSwipe.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
+    wheelSwipe.timer = setTimeout(() => { if (wheelSwipe && !wheelSwipe.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
     if (wheelSwipe.spent) return;
     wheelSwipe.dx -= event.deltaX * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerWidth : 1); // lines / pages to px
     const step = swipeStep(wheelSwipe.dx, 0, innerWidth);
     const button = step && swipeNeighbour(step);
     if (button) { wheelSwipe.spent = true; commitSwipe(button, step); } else dragSwipe(wheelSwipe.dx);
   }, { passive: false });
-  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) worldCanvas.addEventListener(type, event => {
-    if (event.pointerId !== swipe?.id) return;
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) worldCanvas.addEventListener(type, event => {
+    if (!swipe || event.pointerId !== swipe.id) return;
     const { axis, x, samples } = swipe;
-    const dx = samples.at(-1)[1] - x; // pointercancel carries no position
+    const dx = samples.at(-1)![1] - x; // pointercancel carries no position
     const step = type === 'pointerup' && axis === 'x' ? swipeStep(dx, releaseVelocity(samples, event.timeStamp), innerWidth) : 0;
     const button = step && swipeNeighbour(step);
     if (button) commitSwipe(button, step); else cancelSwipe();
