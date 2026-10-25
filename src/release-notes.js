@@ -7,6 +7,59 @@ const { version } = packageMeta;
 // stops a release whose version has no entry.
 export const RELEASE_NOTES = Object.freeze([
   {
+    version: '0.22.1', date: '2026-10-25', image: null,
+    highlights: [
+      {
+        id: 'showroom-views', kind: 'improvement', image: null,
+        title: { en: 'See your car from every angle', 'zh-TW': '每個角度都看得到愛車' },
+        description: {
+          en: 'The home screen preview now keeps your car fully in view on every track, in all six camera angles, with AIRFLOW on or off.',
+          'zh-TW': '首頁預覽在每條賽道、六種視角下，開或關 AIRFLOW 都能完整看到你的車。'
+        }
+      },
+      {
+        id: 'cloud-profile', kind: 'new', image: null,
+        title: { en: 'Your Google profile and manual sync', 'zh-TW': 'Google 個人資料與手動同步' },
+        description: {
+          en: 'Signed in, you now see your Google name in the cloud panel and can sync your progress whenever you like.',
+          'zh-TW': '登入後，雲端面板會顯示你的 Google 名稱，也能隨時手動同步進度。'
+        }
+      },
+      {
+        id: 'progress-import', kind: 'new', image: null,
+        title: { en: 'Restore your progress from a file', 'zh-TW': '用檔案還原你的進度' },
+        description: {
+          en: 'Import a progress file you exported earlier. The game checks it and asks you to confirm before anything changes.',
+          'zh-TW': '可匯入之前匯出的進度檔，遊戲會先檢查內容，並在你確認後才套用。'
+        }
+      },
+      {
+        id: 'permanent-bests', kind: 'improvement', image: null,
+        title: { en: 'Your best times stay with you', 'zh-TW': '最佳成績一直陪著你' },
+        description: {
+          en: 'Personal bests for each challenge mode and Stunt now stay safe on your account, even after older history rolls off.',
+          'zh-TW': '各挑戰模式與特技的個人最佳會存在你的帳號，舊紀錄被清除後依然保留。'
+        }
+      },
+      {
+        id: 'sign-out-clarity', kind: 'improvement', image: null,
+        title: { en: 'Clearer sign-out and delete', 'zh-TW': '登出與刪除說明更清楚' },
+        description: {
+          en: 'Signing out or deleting your game data does not remove your Google account, and the screen now says so.',
+          'zh-TW': '登出或刪除遊戲資料都不會刪除你的 Google 帳號，畫面上也會說明。'
+        }
+      },
+      {
+        id: 'swipe-hint', kind: 'fix', image: null,
+        title: { en: 'Smoother track swiping', 'zh-TW': '滑動換賽道更順' },
+        description: {
+          en: 'Swiping between tracks no longer flashes the old track, and the AIRFLOW tip appears once each time you open the game.',
+          'zh-TW': '滑動換賽道時不再閃現前一條賽道，AIRFLOW 提示每次開啟遊戲只出現一次。'
+        }
+      }
+    ]
+  },
+  {
     version: '0.22.0', date: '2026-10-25', image: null,
     highlights: [
       {
