@@ -65,7 +65,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
       const time = performance.now() / 1000;
       // A non-preserved WebGL drawing buffer may be empty after compositing;
       // explicitly render both frames immediately before copying their pixels.
-      getWorld().render(race, 0, time);
+      getWorld().render(getRace(), 0, time);
       const current = captureSwipeFrame();
       getWorld().render(selectedRace(button.dataset.track), 0, time);
       const neighbor = captureSwipeFrame();
@@ -79,7 +79,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
       console.warn('Preview snapshot unavailable:', error);
       return false;
     } finally {
-      getWorld().render(race, 0, performance.now() / 1000);
+      getWorld().render(getRace(), 0, performance.now() / 1000);
     }
   }
   function positionSwipeScenes(offset) {
