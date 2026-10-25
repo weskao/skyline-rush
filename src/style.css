@@ -1478,10 +1478,12 @@ body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
 /* Ready-screen showroom control: separate from VFX settings and race camera. */
 /* The camera dock and the AIRFLOW Start button share one bottom/height budget.
    Never anchor them independently: changes to safe areas or CTA size must preserve this gap. */
-.airflow-active[data-phase="ready"] { --showcase-start-bottom: max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)); --showcase-start-height: 55px; }
-@media (max-width: 760px) { .airflow-active[data-phase="ready"] { --showcase-start-height: 49px; } }
-@media (max-height: 500px) { .airflow-active[data-phase="ready"] { --showcase-start-height: 44px; } }
-.airflow-active[data-phase="ready"] #start-button { bottom: var(--showcase-start-bottom); }
+.airflow-active[data-phase="ready"] { --showcase-start-bottom: max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)); --showcase-start-height: 60px; }
+@media (max-width: 760px) { .airflow-active[data-phase="ready"] { --showcase-start-height: 58px; } }
+@media (max-height: 500px) { .airflow-active[data-phase="ready"] { --showcase-start-height: 46px; } }
+/* Start takes its height from the same variable the dock reserves, so a later `.intro .primary-button`
+   height rule can never make the two disagree (the dock ended 2.5px too low when they did). */
+.airflow-active[data-phase="ready"] #start-button { bottom: var(--showcase-start-bottom); height: var(--showcase-start-height); }
 .showcase-camera-dock { position:fixed; z-index:4; bottom:max(140px,env(safe-area-inset-bottom,0px)); right:max(30px,env(safe-area-inset-right,0px));
   width:190px; padding:11px 12px; display:grid; justify-items:center; gap:8px;
   background:linear-gradient(135deg,#10283de8,#071623d9); border:1px solid #83e1fa6b;
