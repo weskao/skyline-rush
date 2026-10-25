@@ -11,18 +11,26 @@ export const RELEASE_NOTES = Object.freeze([
     highlights: [
       {
         id: 'whole-car-preview', kind: 'fix', image: null,
-        title: { en: 'Your whole car stays in the picture', 'zh-TW': '整台車都留在畫面裡' },
+        title: { en: 'Your whole car stays in view', 'zh-TW': '整台車都在畫面裡' },
         description: {
-          en: 'On the home screen, the car preview now fits completely on every track and screen shape, including Alpine Rail Pass, wide monitors and phones held upright.',
-          'zh-TW': '首頁的車輛預覽現在在每條賽道、每種螢幕比例下都能完整入鏡，包括山岳鐵道、超寬螢幕和直立的手機。'
+          en: 'On the home screen, the car preview now fits in the picture on every track and screen size.',
+          'zh-TW': '首頁的車輛預覽現在在每條賽道、每種螢幕大小下，都能完整顯示。'
         }
       },
       {
         id: 'camera-start-spacing', kind: 'fix', image: null,
-        title: { en: 'Camera buttons and Start have room to breathe', 'zh-TW': '鏡頭按鈕與開始鍵不再互相擠壓' },
+        title: { en: 'Camera buttons and Start have more room', 'zh-TW': '鏡頭按鈕與開始鍵更有空間' },
         description: {
-          en: 'On the home screen, the camera buttons and the Start button no longer crowd each other, on computers or phones in either direction, so they are easier to tap.',
-          'zh-TW': '首頁的鏡頭按鈕和開始鍵現在不會擠在一起，不論用電腦或直式、橫式手機都更容易點到。'
+          en: 'On the home screen, the camera buttons and the Start button now sit apart instead of crowding each other.',
+          'zh-TW': '首頁的鏡頭按鈕和開始鍵現在會保持距離，不再擠在一起。'
+        }
+      },
+      {
+        id: 'cup-results-checked', kind: 'fix', image: null,
+        title: { en: 'Cup results are checked more carefully', 'zh-TW': '盃賽成績檢查更完善' },
+        description: {
+          en: 'Cup results are checked more carefully, so incomplete Cup data no longer shows broken points or times.',
+          'zh-TW': '盃賽成績檢查更完善，不完整的盃賽資料不會再顯示異常的積分或時間。'
         }
       }
     ]
