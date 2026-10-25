@@ -20,14 +20,12 @@ export const previewDistance = id => HERO_PREVIEWS[id]?.distance ?? 340;
 export const isCuratedPreview = id => !!HERO_PREVIEWS[id];
 
 export function previewPlayer(id,car,idleTime=0,reducedMotion=false,groundedShowcase=false) {
-  if(!isCuratedPreview(id)) return {
-    ...car, altitude:groundedShowcase ? 0
-      : 1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
-    thrusting:!groundedShowcase,
-  };
+  // Curated World Tour views differ in landmark framing, never in AIRFLOW pose:
+  // every existing or future track rests on its own road when AIRFLOW is on.
   return { ...car,
-    altitude:1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
-    thrusting:!reducedMotion,
+    altitude:groundedShowcase ? 0
+      : 1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
+    thrusting:!groundedShowcase&&!reducedMotion,
   };
 }
 
