@@ -114,10 +114,15 @@ One frozen entry per **published** version, never generated from commits:
    - **Automatic copy check** (`copyProblems` in `scripts/check-release-notes.mjs`): rejects developer
      terms in en and zh-TW (refactor, shader, backend, database, CI, 重構, 後端, 後台, 資料庫, 架構,
      程式…), links, emails, secret prefixes, file and code names, commit ids, and text over the
-     length limits (en 48/160, zh-TW 20/70 characters for title/description).
-   - **Fresh-eyes review**: a sub-agent that did not write the notes reads only the entry and what
-     shipped (its `CHANGELOG.md` section, or the commits since the last tag before `/release`
-     generates it) and judges player value, needless detail, behind-the-scenes work,
+     length limits (en 48/160, zh-TW 20/70 characters for title/description). It also catches test and
+     team-process words (workflow, branch, contract, legacy, fixtures, acceptance, RED/GREEN, P0,
+     測試, 分支, 規格, 待辦…), branch names and version numbers. `tests/release-notes.test.js` keeps a
+     list of real developer-record lines that must fail and everyday player lines that must pass.
+   - **Player-facing sources only**: `node scripts/check-release-notes.mjs --changes` lists the
+     feat / fix / perf commits since the last tag outside tooling scopes (dev, hooks, release, CI,
+     build, tests, docs…); notes are drafted and reviewed against that list only.
+   - **Fresh-eyes review**: a sub-agent that did not write the notes reads only the entry and the
+     `--changes` list (plus the `CHANGELOG.md` section once written) and judges player value, needless detail, behind-the-scenes work,
      sensitive content, shipped-only and en/zh-TW quality, answering OK / Rewrite / Remove.
    - **Approval**: after the user approves, `node scripts/check-release-notes.mjs --approve <version>`
      stores a fingerprint of the copy in `scripts/release-notes-reviews.json`.
