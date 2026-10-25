@@ -1475,12 +1475,12 @@ body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
   .daily-card-icon { display: none; }
 }
 /* Ready-screen showroom control: separate from VFX settings and race camera. */
-.showcase-camera-dock { position:fixed; z-index:4; top:calc(var(--safe-top, 0px) + 173px); right:max(30px,env(safe-area-inset-right,0px));
+.showcase-camera-dock { position:fixed; z-index:4; bottom:max(110px,env(safe-area-inset-bottom,0px)); right:max(30px,env(safe-area-inset-right,0px));
   width:190px; padding:11px 12px; display:grid; justify-items:center; gap:8px;
   background:linear-gradient(135deg,#10283de8,#071623d9); border:1px solid #83e1fa6b;
   border-radius:12px; color:#e4f8ff; backdrop-filter:blur(12px); box-shadow:0 12px 40px #0005; }
 body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
-.showcase-camera-heading { font-size:9px; font-weight:750; letter-spacing:1.6px; color:#9ad6e9; }
+.showcase-camera-heading { font-size:10px; font-weight:750; letter-spacing:1.6px; color:#9ad6e9; }
 .showcase-camera-actions { display:flex; width:100%; justify-content:space-between; align-items:center; gap:5px; }
 .showcase-camera-actions button { width:40px; height:40px; flex-shrink:0; border:1px solid #8ddcf466; border-radius:9px;
   background:#1c3d51c9; color:#e0faff; font-size:25px; line-height:1; }
