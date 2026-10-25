@@ -23,6 +23,9 @@ import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { hazardX } from './hazards.js';
 
+/** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
+/** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
+
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
 const box = new THREE.BoxGeometry(1, 1, 1);

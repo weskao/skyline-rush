@@ -14,7 +14,8 @@
     "test:cloud": "npx -y firebase-tools@15.34.1 emulators:exec --project skyline-rush-weskao --only auth,firestore 'playwright test -c playwright.cloud.config.js && node --test tests/firestore-rules.test.js'",
     "pretest:browser": "npm run build",
     "test:browser": "playwright test",
-    "test:layout": "npm run build && playwright test tests/race-modes-browser.spec.js tests/home-shortcuts-browser.spec.js && playwright test tests/i18n-browser.spec.js tests/responsive-browser.spec.js -g \"intro bottom edge|start layout\""
+    "test:layout": "npm run build && playwright test tests/race-modes-browser.spec.js tests/home-shortcuts-browser.spec.js && playwright test tests/i18n-browser.spec.js tests/responsive-browser.spec.js -g \"intro bottom edge|start layout\"",
+    "typecheck": "tsc --noEmit --project jsconfig.json"
   },
   "dependencies": {
     "firebase": "^13.1.0",
@@ -25,7 +26,8 @@
     "@firebase/rules-unit-testing": "^6.0.0",
     "@playwright/test": "^1.56.0",
     "@vitejs/plugin-vue": "^6.0.10",
-    "vite": "^7.1.0"
+    "vite": "^7.1.0",
+    "typescript": "5.9.3"
   },
   "overrides": {
     "@grpc/grpc-js": "^1.14.6"

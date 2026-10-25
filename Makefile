@@ -61,7 +61,8 @@ run: node_modules ## `make run`: unit tests, production build and Chrome browser
 # The complete local merge-readiness gate: default browser tests already build the locked
 # production bundle; the authored World Tour fixture uses its own Playwright config.
 # Manual real-game/WebGL evidence and exact-commit CI still need separate review.
-verify: node_modules ## `make verify`: units, production build, browser and long-run World Tour suites
+verify: node_modules ## `make verify`: type checks, units, production build, browser and World Tour suites
+	$(NPM) run typecheck
 	$(NPM) test
 	$(NPM) run test:browser
 	npx playwright test --config=playwright.world-tour.config.js

@@ -10,8 +10,12 @@ import { raceCompletion } from './race-objectives.js';
 import { createRaceSessionContract } from './race-session.js';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
+/** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
+/** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
+
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
+/** @type {Record<string, TrackConfig>} */
 export const RACE_TRACKS = {
   coast: { // fixedRings: the original gate grid
     name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, fixedRings: true,

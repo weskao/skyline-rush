@@ -39,6 +39,10 @@ import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAn
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.js';
 import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.js';
 
+/** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
+/** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
+/** @typedef {import('./game-types.js').RivalSnapshot} RivalSnapshot */
+
 const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
