@@ -1,5 +1,12 @@
 # TODO — Gameplay depth design
 
+## Home version footer alignment (2026-10-25)
+
+- [x] RED: the real Chrome regression observed a 2.5px center difference in zh-TW at 320px. Put the version inside the shared footer grid with centered alignment; retain the 44px What's New button and tablet access. No audio change is needed for static alignment.
+- [x] GREEN: en/zh-TW at 320px/390px portrait, 844px landscape and 1440px desktop align within 1px and the version opens What's New through real clicks. The iOS safe-area regression passes. Real WebGL screenshots are in `playwright-report/footer-alignment/green/`.
+- [ ] Finish `make verify` and `npm run test:layout`; receipts are in `playwright-report/footer-alignment/`. The first layout run hit a transient preview HTTP failure while another build rewrote the shared `dist/`; rerun sequentially.
+- [ ] Exact-commit GitHub CI `quality-gate` and physical-device/Safari acceptance remain separate gates.
+
 ## CI regression: side-view showroom size measurement (2026-10-25)
 
 - [x] Trace feature CI run 40157117052: all 10 AIRFLOW/hovering World Tour checks fail on the left camera's near-zero `screenWidth`; unit, eight browser shards and cloud-save pass.
