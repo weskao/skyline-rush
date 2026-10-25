@@ -77,3 +77,13 @@ test('incomplete or corrupted Cup stage data never becomes NaN standings', () =>
   duplicated.results.push(structuredClone(duplicated.results[0]));
   assert.throws(() => cupStandings(duplicated), /Invalid Cup standings/);
 });
+
+test('Cup completion and total time reject corrupted heat snapshots', () => {
+  const cup = addCupResult(createCup(tracks, 'coast'), finish('coast', 40, [41, 42, 43]));
+  assert.equal(cupComplete(cup), false);
+  assert.equal(cupTotalTime(cup), 40);
+  const broken = structuredClone(cup);
+  broken.results[0].times.ORBIT = Infinity;
+  assert.throws(() => cupComplete(broken), /Invalid Cup standings/);
+  assert.throws(() => cupTotalTime(broken), /Invalid Cup standings/);
+});
