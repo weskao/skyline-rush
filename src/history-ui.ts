@@ -125,7 +125,7 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
     });
     updateHistoryView({ historyRuns });
     const today = dailyChallenge();
-    const board = dailyBoard(sessionDaily, today.id).slice(0, 5);
+    const board: Array<Pick<SavedDailyRace, 'time' | 'position' | 'score'>> = dailyBoard(sessionDaily, today.id).slice(0, 5);
     updateHistoryView({
       dailyStatus: t('daily.status', { track: trackName(today.track, getLocale()), modifier: t('modifier.' + today.modifier) }),
       dailyStartDisabled: !world,
