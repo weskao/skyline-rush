@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MOBILE_GUIDE_COPY } from './mobile-guide-copy.js';
+import { MOBILE_GUIDE_COPY } from './mobile-guide-copy.ts';
 
 type Topic = 'slide' | 'buttons' | 'auto' | 'fly' | 'boost' | 'nitro' | 'settings';
 const topics: Topic[] = ['slide', 'buttons', 'auto', 'fly', 'boost', 'nitro', 'settings'];

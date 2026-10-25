@@ -1,4 +1,5 @@
-export const MOBILE_GUIDE_COPY = {
+// UI-only, immutable bilingual reference copy; both locale catalogs have the same keys.
+export const MOBILE_GUIDE_COPY: Record<'en' | 'zh-TW', Record<string, string>> = {
   en: {
     'guide.mobile.intro': 'Touch controls at a glance. These diagrams are a reference; start a race to drive.',
     'guide.mobile.slide.title': 'Slide · steer and brake',

@@ -1,7 +1,7 @@
 // UI shell + main.js strings. Keys must exist in both locales (tests/i18n.test.js enforces parity).
 // English values must stay identical to the App.vue markup (browser specs select by these names).
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
-import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.js';
+import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.ts';
 export const UI = Object.freeze({
   en: {
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
