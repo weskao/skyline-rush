@@ -579,14 +579,19 @@ export function createWorld(canvas) {
       clearanceShift.set(0,0,0);
       const baseline=showroomClearShare(desiredCamera,lookTarget);
       if(baseline<.8) {
-        const right=new THREE.Vector3(...trackFrame(trackId,distance).right);
-        // Prefer raising the eye or moving a few metres toward the road centre,
-        // never hide roadside scenery or replace the curated landmark target.
-        const candidates=[[0,2.5],[0,5],[-4,2.5],[4,2.5],
-          [-4,5],[4,5],[0,8],[-7,6],[7,6]];
+        const frame=trackFrame(trackId,distance);
+        const right=new THREE.Vector3(...frame.right);
+        const forward=new THREE.Vector3(...frame.forward);
+        // Try a small dolly-back first: for a high landmark aim (Tokyo/Alpine),
+        // a tall camera can actually push the car BELOW the screen. Alternative
+        // lateral/height moves handle viaducts, facades and mountain shoulders.
+        // The per-track landmark target is never changed or removed.
+        const candidates=[[0,0,3],[0,0,5],[-4,0,3],[4,0,3],
+          [0,2.5,4],[-4,3,5],[4,3,5],[0,5,6],[-7,6,5],[7,6,5]];
         let best=baseline;
-        for(const [side,up] of candidates) {
-          const shift=right.clone().multiplyScalar(side).add(new THREE.Vector3(0,up,0));
+        for(const [side,up,back] of candidates) {
+          const shift=right.clone().multiplyScalar(side)
+            .addScaledVector(forward,-back).add(new THREE.Vector3(0,up,0));
           const value=showroomClearShare(desiredCamera.clone().add(shift),lookTarget);
           if(value>best) { best=value; clearanceShift.copy(shift); }
           if(value===1)break;
