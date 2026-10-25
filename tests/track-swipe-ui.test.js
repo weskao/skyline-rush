@@ -15,3 +15,10 @@ test('track swipe cannot capture inputs during game play, modal and layout editi
     assert.equal(canBeginTrackSwipe({ ...base, ...state }), false);
   }
 });
+
+test('swipe preview rendering always reads the live race getter instead of a stale or undeclared race variable', async () => {
+  const { readFileSync } = await import('node:fs');
+  const code = readFileSync(new URL('../src/track-swipe-ui.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(code, /getWorld\(\)\.render\(race\s*,/, 'a stale undeclared race breaks track swipe render snapshots');
+  assert.match(code, /getWorld\(\)\.render\(getRace\(\)/, 'snapshots must use live selected race');
+});
