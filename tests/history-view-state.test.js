@@ -15,3 +15,19 @@ test('History panel owns view-model data and renders saved values as text, never
   assert.match(template, /:points="historyView\.trendPolyPoints"/);
   assert.doesNotMatch(template, /v-html="[^"]*historyView/, 'stored values must stay escaped by Vue interpolation');
 });
+
+test('History Vue also owns challenge mode records, daily board and medals without raw HTML', () => {
+  const { readFileSync } = requireHistoryTestHelpers();
+  const template = readFileSync(new URL('../src/HistoryPanel.vue', import.meta.url), 'utf8');
+  assert.match(template, /v-for="[^"]*historyView\.modeRuns"/);
+  assert.match(template, /v-for="[^"]*historyView\.dailyBoard"/);
+  assert.match(template, /historyView\.medalAwards\[id\]/);
+  const renderer = readFileSync(new URL('../src/history-ui.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(renderer, /\$\('#mode-history-runs'\)\.replaceChildren/);
+  assert.doesNotMatch(renderer, /\$\('#daily-board'\)\.replaceChildren/);
+  assert.doesNotMatch(renderer, /document\.querySelectorAll\('\[data-medal\]'\)/);
+});
+
+function requireHistoryTestHelpers() {
+  return { readFileSync };
+}
