@@ -4,6 +4,7 @@ import { setupGarageUI } from './garage-ui.js';
 import { createHistoryView } from './history-ui.js';
 import { setupGuideUI } from './guide-ui.js';
 import { setupAudioUI } from './audio-ui.js';
+import { setupControlPanels } from './controls-panels-ui.js';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.js';
@@ -891,23 +892,12 @@ function toggleAssist() {
   sound.cue('ui');
 }
 
-function toggleSettings(open = ui['settings-panel'].hidden) {
-  ui['settings-panel'].hidden = !open;
-  if (open) hidePerformanceNotice();
-  ui['settings-button'].setAttribute('aria-expanded', String(open));
-  trackDropdown($('.settings'), open, () => toggleSettings(false));
-}
-
-// Touch layout is tuned between races only, so the panel never opens mid-race.
-function toggleControls(open = ui['controls-panel'].hidden) {
-  open &&= race.phase === 'ready' || race.phase === 'paused';
-  if (!open) rebinding = null;
-  ui['controls-panel'].hidden = !open;
-  if (open) hidePerformanceNotice();
-  ui['controls-button'].setAttribute('aria-expanded', String(open));
-  trackDropdown($('.controls-menu'), open, () => toggleControls(false));
-}
-
+const { toggleSettings, toggleControls } = setupControlPanels({
+  ui,
+  getRacePhase: () => race.phase,
+  clearRebinding: () => { rebinding = null; },
+  hidePerformanceNotice,
+});
 function applyControls(persist = true) {
   inputPrefs = { ...controlPrefs, mode: tutorial && controlPrefs.mode === 'tilt' && !tiltGranted ? 'slide' : controlPrefs.mode, editing: editingLayout };
   const touch = ui['touch-controls'];
