@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canOpenControlsPanel } from '../src/controls-panels-ui.js';
+import { canOpenControlsPanel } from '../src/controls-panels-ui.ts';
 
 test('control settings are available only before or during a paused race', () => {
   assert.equal(canOpenControlsPanel('ready'), true);

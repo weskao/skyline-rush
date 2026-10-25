@@ -1,18 +1,29 @@
 import { panelsView, updatePanelsView } from './control-panels-view-state.ts';
-export const canOpenControlsPanel = phase => phase === 'ready' || phase === 'paused';
+
+export const canOpenControlsPanel = (phase: string): boolean => phase === 'ready' || phase === 'paused';
+
+interface ControlPanelDependencies {
+  ui: Record<string, HTMLElement>;
+  getRacePhase: () => string;
+  clearRebinding: () => void;
+  hidePerformanceNotice: () => void;
+  trackDropdown: (region: Element, isOpen: boolean, close: () => void) => void;
+}
 
 // Audio settings and control layout are event driven, never updated per frame.
-export function setupControlPanels({ ui, getRacePhase, clearRebinding, hidePerformanceNotice, trackDropdown }) {
-  const $ = selector => document.querySelector(selector);
-  function toggleSettings(open = !panelsView.settingsOpen) {
+export function setupControlPanels({
+  ui, getRacePhase, clearRebinding, hidePerformanceNotice, trackDropdown,
+}: ControlPanelDependencies) {
+  const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
+  function toggleSettings(open: boolean = !panelsView.settingsOpen): void {
     updatePanelsView({ settingsOpen: !!open });
     if (open) hidePerformanceNotice();
     ui['settings-button'].setAttribute('aria-expanded', String(open));
     trackDropdown($('.settings'), open, () => toggleSettings(false));
   }
-  
+
   // Touch layout is tuned between races only, so the panel never opens mid-race.
-  function toggleControls(open = !panelsView.controlsOpen) {
+  function toggleControls(open: boolean = !panelsView.controlsOpen): void {
     open &&= canOpenControlsPanel(getRacePhase());
     if (!open) clearRebinding();
     updatePanelsView({ controlsOpen: !!open });
@@ -20,7 +31,5 @@ export function setupControlPanels({ ui, getRacePhase, clearRebinding, hidePerfo
     ui['controls-button'].setAttribute('aria-expanded', String(open));
     trackDropdown($('.controls-menu'), open, () => toggleControls(false));
   }
-  
-  
   return { toggleSettings, toggleControls };
 }

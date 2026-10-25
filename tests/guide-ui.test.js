@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { guidePracticeLabelKey, guideDeviceForPointer } from '../src/guide-ui.js';
+import { guidePracticeLabelKey, guideDeviceForPointer } from '../src/guide-ui.ts';
 
 test('guide practice action reflects completed tutorial progress', () => {
   assert.equal(guidePracticeLabelKey(false), 'tutorial.start');
