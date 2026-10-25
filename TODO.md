@@ -1272,3 +1272,13 @@ never conflate future modes with existing Control “steering mode” options.
 - [ ] Run Node/Vite checks and confirm RED -> GREEN in CI (not verifiable from current tool runtime).
 - [ ] Verify real Chromium/Safari desktop and touch screenshots for all tracks; adjust overlapping elements if necessary.
 - [ ] Merge only after verified green CI and QA.
+
+## AIRFLOW showroom grounding parity (2026-10-25)
+- [x] Identify the root cause: curated `HERO_PREVIEWS` branch in `previewPlayer` ignored `groundedShowcase`, leaving World Tour cars airborne when AIRFLOW was active.
+- [x] Add regression unit cases for all current tracks and an unknown future track; normal flying showcase remains available with AIRFLOW off.
+- [x] Add live-WebGL checks for the five World Tour roads with AIRFLOW enabled, including grounded actor position, no hovering jets and six selectable camera views; expose test-only VFX options in the existing World Tour fixture.
+- [x] Unify preview player altitude and thrusting in one shared function, independent of the curated map list, without duplicating rendering logic.
+- [x] Update CLAUDE.md and .claude/rules/track-showcase.md for future track design consistency.
+- [ ] Verify tests RED → GREEN by executing Node unit tests and the World Tour WebGL suite at this exact HEAD (CI pending).
+- [ ] Confirm real home-screen AIRFLOW, all six camera views, full landscape/portrait screenshots and roadmap landmarks on actual browser/devices.
+- [ ] Confirm full GitHub quality-gate green on this exact branch HEAD before merging to main.
