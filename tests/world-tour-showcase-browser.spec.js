@@ -74,13 +74,37 @@ for (const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
     expect(result.flying.jetsVisible).toBe(true);
     expect(result.flying.worldY-result.grounded.worldY,'AIRFLOW must lower the car to the road surface').toBeGreaterThan(.8);
     expect(result.grounded.jetsVisible).toBe(false);
+    expect(result.grounded.bodyClearShare,`${id}: unobstructed grounded showroom vehicle`).toBeGreaterThanOrEqual(.75);
     for(const [view,actor] of Object.entries(result.angles)) {
+      expect(actor.bodyClearShare,`${id}/${view}: vehicle body must not be blocked or offscreen`).toBeGreaterThanOrEqual(.75);
       expect(actor.visible,`${id}/${view}: hero still visible`).toBe(true);
       expect(actor.jetsVisible,`${id}/${view}: no flying jets in AIRFLOW`).toBe(false);
       expect(actor.screenWidth,`${id}/${view}: valid projected car`).toBeGreaterThan(0);
       expect(Number.isFinite(actor.x)&&Number.isFinite(actor.y),`${id}/${view}: valid camera projection`).toBe(true);
     }
   });
+}
+
+// Follow the actual image visibility for both presentation modes: a car can
+// have a positive projected width while scenery hides most of its body.
+for (const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
+  for (const airflow of [false,true]) {
+    test(`${id}: ${airflow?'AIRFLOW':'hovering'} showcase is not occluded across six camera angles`,async({page})=>{
+      await page.goto('/tests/fixtures/world-tour-mid-race.html');
+      await page.waitForFunction(()=>window.worldTourReady===true);
+      const actors=await page.evaluate(({id,airflow})=>{
+        const out={};
+        for (const view of ['drive','front','rear','left','right','orbit']) {
+          out[view]=window.worldTourPreviewProbe(id,{airflow,view},18).actors[0];
+        }
+        return out;
+      },{id,airflow});
+      for(const [view,actor] of Object.entries(actors)) {
+        expect(actor.bodyClearShare,`${id}/${view}/AIRFLOW=${airflow}: avoid scenery + viewport clipping`).toBeGreaterThanOrEqual(.75);
+        expect(actor.screenWidth,`${id}/${view}: full car must have usable size`).toBeGreaterThan(.035);
+      }
+    });
+  }
 }
 
 // In-race approach: the chase camera keeps the signature landmark in view and
