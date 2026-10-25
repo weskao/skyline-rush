@@ -7,7 +7,7 @@ import { RACE_TRACKS } from './game.js';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.js';
 import { icons, ICON_ATTRS } from './icons.js';
 import GaragePanel from './GaragePanel.vue';
-import MobileGuide from './MobileGuide.vue';
+import GuidePanel from './GuidePanel.vue';
 import SignInButton from './SignInButton.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
@@ -45,30 +45,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <button type="button" class="primary-button" id="release-continue" data-i18n="release.continue">Continue</button>
     </footer>
   </dialog>
-  <dialog id="guide-screen" class="history-screen guide-screen" aria-labelledby="guide-title" aria-describedby="guide-intro">
-    <header class="guide-header">
-      <h2 id="guide-title" data-i18n="guide.title">Start your engines!</h2>
-      <button id="guide-close" class="controls-reset" autofocus data-i18n="guide.close">Got it</button>
-    </header>
-    <p id="guide-intro" data-i18n="guide.intro">A quick control guide. Open it anytime from Practice on the home screen or Controls → How to play.</p>
-    <button id="guide-practice" class="controls-reset tutorial-start" data-i18n="tutorial.start">Start interactive practice</button>
-    <div class="guide-devices" role="group" aria-label="Control guide" data-i18n-aria-label="guide.devices">
-      <button class="controls-reset" data-guide-device="desktop" aria-pressed="true" aria-controls="guide-desktop-panel" data-i18n="guide.desktop">Keyboard</button>
-      <button class="controls-reset" data-guide-device="mobile" aria-pressed="false" aria-controls="guide-mobile-panel" data-i18n="guide.mobile">Touch</button>
-    </div>
-    <section id="guide-desktop-panel" aria-label="Keyboard controls" data-i18n-aria-label="guide.desktop">
-      <p data-i18n="guide.keyboardHint">Your current keys are shown below. Change them in Controls.</p>
-      <dl class="guide-keys">
-        <div v-for="action in ['throttle', 'brake', 'left', 'right', 'fly', 'boost', 'nitro']">
-          <dt><strong :data-i18n="`keymap.${action}`">{{ action }}</strong><span :data-keys="action"></span></dt>
-          <dd :data-i18n="`guide.${action}`"></dd>
-        </div>
-      </dl>
-      <p class="guide-shortcuts"><kbd>Esc / P</kbd> <span data-i18n="guide.pause">Pause / resume</span> · <kbd>C</kbd> <span data-i18n="guide.camera">Camera</span> · <kbd>F2</kbd> <span data-i18n="guide.auto">Auto accelerate</span></p>
-    </section>
-    <section id="guide-mobile-panel" hidden><MobileGuide /></section>
-    <p class="guide-note" data-i18n="guide.note">Illustrations only — close this guide to try the controls in a race.</p>
-  </dialog>
+  <GuidePanel />
   <aside id="tutorial-coach" class="tutorial-coach" aria-labelledby="tutorial-title" hidden>
     <header class="tutorial-heading"><strong id="tutorial-title"></strong><div class="tutorial-actions"><button id="tutorial-pause" class="controls-reset" data-i18n="tutorial.pause">Pause</button><button id="tutorial-exit" class="controls-reset" data-i18n="tutorial.exit">Exit</button></div></header>
     <progress id="tutorial-progress" max="8" value="0" aria-label="Practice progress" data-i18n-aria-label="tutorial.progress"></progress>

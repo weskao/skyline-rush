@@ -1,4 +1,5 @@
 import { t } from './i18n.js';
+import { updateGuideView } from './guide-view-state.js';
 
 export const guidePracticeLabelKey = completed => completed ? 'tutorial.retry' : 'tutorial.start';
 export const guideDeviceForPointer = touch => touch ? 'mobile' : 'desktop';
@@ -14,18 +15,11 @@ export function setupGuideUI({ beforeOpen, touchMatches, renderKeyMap, isTutoria
     if (event.code === 'Escape') { event.preventDefault(); closeGuide(); }
   });
   let guideOpener;
-  function selectGuideDevice(device) {
-    for (const button of document.querySelectorAll('[data-guide-device]')) {
-      const selected = button.dataset.guideDevice === device;
-      button.setAttribute('aria-pressed', String(selected));
-      $(`#guide-${button.dataset.guideDevice}-panel`).hidden = !selected;
-    }
-  }
+  function selectGuideDevice(device) { updateGuideView({ selectedDevice: device }); }
   function openGuide(opener) {
     try {
       const key = guidePracticeLabelKey(localStorage.getItem('skyline-rush-tutorial-completed') === '1');
-      $('#guide-practice').dataset.i18n = key;
-      $('#guide-practice').textContent = t(key);
+      updateGuideView({ practiceKey: key, practiceText: t(key) });
     } catch { /* Keep the default invitation without storage. */ }
     guideOpener = opener;
     beforeOpen();
