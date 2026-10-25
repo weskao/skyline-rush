@@ -39,7 +39,7 @@ import { createRouteMap } from './route-map.js';
 import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.js';
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.js';
-import { trackDropdown } from './dropdown.js';
+import { trackDropdown } from './dropdown.ts';
 import { setupTrackSwipeUI } from './track-swipe-ui.ts';
 import { refreshIfStale } from './update-check.ts';
 import { setupReleaseNotesUI } from './release-notes-ui.ts';

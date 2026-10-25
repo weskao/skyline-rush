@@ -1,5 +1,5 @@
 // Draws a native <select> as a page listbox (no OS popup); the hidden select keeps value and input/change events for existing callers.
-import { trackDropdown } from './dropdown.js';
+import { trackDropdown } from './dropdown.ts';
 
 let count = 0;
 const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
