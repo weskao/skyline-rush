@@ -56,6 +56,33 @@ for(const [id,kind] of [['taipei','office'],['tokyo','tower'],['alpine','mountai
   }
 }
 
+// Each World Tour road uses a curved/elevated local tangent. Probe the actual
+// WebGL vehicle, not just the shared camera helper, when AIRFLOW is enabled.
+for (const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
+  test(`${id}: AIRFLOW grounds the hero and keeps all six preview camera angles usable`,async({page})=>{
+    await page.goto('/tests/fixtures/world-tour-mid-race.html');
+    await page.waitForFunction(()=>window.worldTourReady===true);
+    const result=await page.evaluate(id=>{
+      const flying=window.worldTourPreviewProbe(id,{airflow:false,view:'drive'}).actors[0];
+      const grounded=window.worldTourPreviewProbe(id,{airflow:true,view:'drive'},24).actors[0];
+      const angles={};
+      for(const view of ['drive','front','rear','left','right','orbit']) {
+        angles[view]=window.worldTourPreviewProbe(id,{airflow:true,view},18).actors[0];
+      }
+      return {flying,grounded,angles};
+    },id);
+    expect(result.flying.jetsVisible).toBe(true);
+    expect(result.flying.worldY-result.grounded.worldY,'AIRFLOW must lower the car to the road surface').toBeGreaterThan(.8);
+    expect(result.grounded.jetsVisible).toBe(false);
+    for(const [view,actor] of Object.entries(result.angles)) {
+      expect(actor.visible,`${id}/${view}: hero still visible`).toBe(true);
+      expect(actor.jetsVisible,`${id}/${view}: no flying jets in AIRFLOW`).toBe(false);
+      expect(actor.screenWidth,`${id}/${view}: valid projected car`).toBeGreaterThan(0);
+      expect(Number.isFinite(actor.x)&&Number.isFinite(actor.y),`${id}/${view}: valid camera projection`).toBe(true);
+    }
+  });
+}
+
 // In-race approach: the chase camera keeps the signature landmark in view and
 // clear of roadside props on its kerb (the plaza), not just on the home screen.
 for(const [id,kind,stops] of [['taipei','office',[1250,1400,1550]],['tokyo','tower',[2980,3080,3180]],
