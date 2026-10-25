@@ -2,15 +2,18 @@
 import { trackDropdown } from './dropdown.ts';
 
 let count = 0;
-const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
-
-const refreshers = [];
+const refreshers: Array<() => void> = [];
 // Re-sync every select's option text and accessible name after a locale switch.
 export const refreshCustomSelects = () => refreshers.forEach(refresh => refresh());
 
-export function customSelect(select) {
+export function customSelect(select: HTMLSelectElement): () => void {
+  // The native descriptor is available only in browsers. Avoid touching DOM
+  // globals at import time so SSR/build tools and Node tests can import this UI module.
+  const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  if (!nativeValue?.get || !nativeValue?.set) throw new Error('Unsupported HTMLSelectElement.value descriptor');
+  const getNativeValue = nativeValue.get, setNativeValue = nativeValue.set;
   const id = `select-${++count}`;
-  const accessibleName = () => select.getAttribute('aria-label') ?? select.closest('label')?.firstChild.textContent.trim();
+  const accessibleName = (): string => select.getAttribute('aria-label') ?? select.closest('label')?.firstChild?.textContent?.trim() ?? '';
   const name = accessibleName();
   const box = document.createElement('span');
   box.className = 'custom-select';
@@ -39,20 +42,20 @@ export function customSelect(select) {
     if (select.selectedOptions[0]?.lang) button.lang = select.selectedOptions[0].lang; else button.removeAttribute('lang');
     options.forEach((item, i) => item.setAttribute('aria-selected', String(i === select.selectedIndex)));
   };
-  const highlight = i => {
+  const highlight = (i: number): void => {
     active = Math.max(0, Math.min(options.length - 1, i));
     options.forEach(item => item.classList.toggle('is-active', item === options[active]));
     button.setAttribute('aria-activedescendant', options[active].id);
     options[active].scrollIntoView({ block: 'nearest' });
   };
-  const toggle = open => {
+  const toggle = (open: boolean): void => {
     list.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
     trackDropdown(box, open, () => toggle(false));
     if (open) highlight(select.selectedIndex);
     else button.removeAttribute('aria-activedescendant');
   };
-  const commit = i => {
+  const commit = (i: number): void => {
     toggle(false);
     if (i === select.selectedIndex) return;
     select.selectedIndex = i;
@@ -60,13 +63,14 @@ export function customSelect(select) {
     for (const type of ['input', 'change']) select.dispatchEvent(new Event(type, { bubbles: true }));
   };
   // Programmatic `select.value = …` (saved settings, reopened History) must redraw the label too.
-  Object.defineProperty(select, 'value', { get: () => nativeValue.get.call(select), set: value => { nativeValue.set.call(select, value); sync(); } });
+  Object.defineProperty(select, 'value', { get: () => getNativeValue.call(select), set: (value: string) => { setNativeValue.call(select, value); sync(); } });
 
   // Enter and Space click the button: open when closed, pick the highlighted option when open.
   button.addEventListener('click', () => (list.hidden ? toggle(true) : commit(active)));
   button.addEventListener('blur', () => toggle(false));
   button.addEventListener('keydown', event => {
-    const move = { ArrowDown: active + 1, ArrowUp: active - 1, Home: 0, End: options.length - 1 }[event.key];
+    const destinations: Record<string, number> = { ArrowDown: active + 1, ArrowUp: active - 1, Home: 0, End: options.length - 1 };
+    const move = destinations[event.key];
     if (move !== undefined) { if (list.hidden) toggle(true); else highlight(move); }
     else if (event.key === 'Escape' && !list.hidden) toggle(false);
     else return;
@@ -78,7 +82,8 @@ export function customSelect(select) {
   list.addEventListener('pointerdown', event => event.preventDefault());
   list.addEventListener('click', event => {
     event.preventDefault(); // cancels the wrapping <label>'s activation
-    const i = options.indexOf(event.target.closest('[role="option"]'));
+    const clicked = event.target instanceof Element ? event.target.closest<HTMLLIElement>('[role="option"]') : null;
+    const i = clicked ? options.indexOf(clicked) : -1;
     if (i >= 0) commit(i);
   });
   sync();

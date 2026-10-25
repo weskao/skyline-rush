@@ -38,7 +38,7 @@ import { frameStats, PERF_WINDOW } from './perf.js';
 import { createRouteMap } from './route-map.js';
 import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.js';
 import { availableTracks, availablePaints } from '@progression-access';
-import { customSelect, refreshCustomSelects } from './custom-select.js';
+import { customSelect, refreshCustomSelects } from './custom-select.ts';
 import { trackDropdown } from './dropdown.ts';
 import { setupTrackSwipeUI } from './track-swipe-ui.ts';
 import { refreshIfStale } from './update-check.ts';
