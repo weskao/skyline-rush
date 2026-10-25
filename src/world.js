@@ -1154,11 +1154,17 @@ export function createWorld(canvas) {
       camera.updateMatrixWorld(true);
       return [player,...rivals].map((mesh,i)=>{
         const projected=mesh.getWorldPosition(new THREE.Vector3()).project(camera);
-        const left=mesh.localToWorld(new THREE.Vector3(-1.2,0,0)).project(camera);
-        const right=mesh.localToWorld(new THREE.Vector3(1.2,0,0)).project(camera);
+        // The axle span collapses edge-on; measure the actual body silhouette.
+        const body=mesh.userData.body,vertices=body.geometry.attributes.position;
+        const point=new THREE.Vector3();
+        let minX=Infinity,maxX=-Infinity;
+        for(let j=0;j<vertices.count;j++) {
+          point.fromBufferAttribute(vertices,j).applyMatrix4(body.matrixWorld).project(camera);
+          minX=Math.min(minX,point.x);maxX=Math.max(maxX,point.x);
+        }
         return {name:i===0?'YOU':'RIVAL '+i,visible:mesh.visible,
           x:projected.x,y:projected.y,z:projected.z,
-          screenWidth:Math.abs(left.x-right.x),jetsVisible:mesh.userData.jets.visible,
+          screenWidth:maxX-minX,jetsVisible:mesh.userData.jets.visible,
           worldY:mesh.position.y,
           ...(i===0?{bodyClearShare:showroomClearShare(camera.position,smoothLook,camera)}:{})};
       });

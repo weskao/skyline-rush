@@ -1,5 +1,14 @@
 # TODO — Gameplay depth design
 
+## CI regression: side-view showroom size measurement (2026-10-25)
+
+- [x] Trace feature CI run 40157117052: all 10 AIRFLOW/hovering World Tour checks fail on the left camera's near-zero `screenWidth`; unit, eight browser shards and cloud-save pass.
+- [x] RED: the unchanged `taipei: AIRFLOW showcase is not occluded` browser regression fails locally with width `2.476533666182568e-17` against the unchanged `> .035` size requirement.
+- [x] Fix the shared QA projection in `inspectShowcase`: project the actual body mesh vertices instead of two axle endpoints that overlap in a side view. This only runs when QA requests inspection; camera, scenery, physics and audio need no change.
+- [x] GREEN: the complete World Tour showcase browser file passes 37/37, including all five tracks, both AIRFLOW states and six angles with existing size/occlusion assertions unchanged. Real WebGL screenshots are preserved in `playwright-report/ci-showcase-width/green/`.
+- [x] Unit tests: 575 passed, 3 skipped; production build and production-lock assertion pass. The initial full gate stopped because another process owned port 5178; rerun `make verify` with a free `PLAYWRIGHT_PORT` without stopping that process.
+- [ ] Full `make verify` and exact-commit `main` CI `quality-gate`: receipts are saved in `playwright-report/ci-showcase-width/make-verify.log` and `ci-status.json` after completion. Physical-device/Safari acceptance remains separate.
+
 ## Remaining phone browser regressions (2026-10-25)
 
 - [x] RED: the unchanged implementation reproduced all three original failures. The new fixed-date title regressions also failed at 320px and 390px on 2026-10-25's `Aurora Pass · Double traffic` title; full text overflowed its box.
