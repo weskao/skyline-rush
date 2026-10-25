@@ -8,6 +8,7 @@ import { VFX_RANGES, vfxLabelKey } from './vfx-settings.js';
 import { icons, ICON_ATTRS } from './icons.js';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
+import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
 import SignInButton from './SignInButton.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
@@ -26,25 +27,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 </script>
 
 <template>
-  <dialog id="whats-new-screen" class="history-screen release-screen" aria-labelledby="release-title" aria-describedby="release-intro">
-    <header class="release-header">
-      <div>
-        <small data-i18n="release.eyebrow">SKYLINE RUSH / RELEASE NOTES</small>
-        <h2 id="release-title" data-i18n="release.title">What's new</h2>
-        <p id="release-intro" class="release-intro" data-i18n="release.intro">See what's new for your next race.</p>
-      </div>
-      <button id="release-close" type="button" class="release-close" aria-label="Close what's new" data-i18n-aria-label="release.close">×</button>
-    </header>
-    <div id="release-versions" class="release-versions" role="tablist" aria-label="Versions" data-i18n-aria-label="release.versions"></div>
-    <section id="release-panel" class="release-panel" role="tabpanel" tabindex="0">
-      <img id="release-hero" class="release-hero" alt="" hidden>
-      <div class="release-meta"><span id="release-version"></span><span id="release-date"></span></div>
-      <div id="release-items" class="release-entries"></div>
-    </section>
-    <footer class="release-footer">
-      <button type="button" class="primary-button" id="release-continue" data-i18n="release.continue">Continue</button>
-    </footer>
-  </dialog>
+  <ReleaseNotesPanel />
   <GuidePanel />
   <aside id="tutorial-coach" class="tutorial-coach" aria-labelledby="tutorial-title" hidden>
     <header class="tutorial-heading"><strong id="tutorial-title"></strong><div class="tutorial-actions"><button id="tutorial-pause" class="controls-reset" data-i18n="tutorial.pause">Pause</button><button id="tutorial-exit" class="controls-reset" data-i18n="tutorial.exit">Exit</button></div></header>

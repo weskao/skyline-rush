@@ -1,3 +1,5 @@
+import { nextTick } from 'vue';
+import { updateReleaseView } from './release-view-state.js';
 import { HISTORY_KEY } from './history.js';
 import { getLocale, t, formatDate } from './i18n.js';
 import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.js';
@@ -34,75 +36,46 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   function renderReleaseNotes() {
     if (!CURRENT_RELEASE) return;
     const locale = getLocale();
-    const tabs = RECENT_RELEASES.map((release, index) => {
-      const tab = document.createElement('button');
-      const selected = index === releaseIndex;
-      Object.assign(tab, { type: 'button', id: 'release-tab-' + index, className: 'release-tab', tabIndex: selected ? 0 : -1 });
-      tab.dataset.version = release.version;
-      tab.setAttribute('role', 'tab');
-      tab.setAttribute('aria-controls', 'release-panel');
-      tab.setAttribute('aria-selected', String(selected));
-      const name = document.createElement('span');
-      name.className = 'release-tab-version';
-      name.textContent = 'v' + release.version;
-      const note = document.createElement('span');
-      note.className = index ? 'release-tab-note' : 'release-tab-note release-tab-latest';
-      note.textContent = index ? releaseDay(release.date, { month: 'short', day: 'numeric' }) : t('release.latest');
-      tab.append(name, note);
-      if (releaseUnread.has(release.version)) {
-        const unread = document.createElement('span');
-        unread.className = 'release-tab-unread';
-        unread.textContent = t('release.unread');
-        tab.append(unread);
-      }
-      return tab;
-    });
-    $('#release-versions').replaceChildren(...tabs);
-    releasePanel.setAttribute('aria-labelledby', 'release-tab-' + releaseIndex);
+    const tabs = RECENT_RELEASES.map((release, index) => ({
+      id: 'release-tab-' + index,
+      version: release.version,
+      selected: index === releaseIndex,
+      latest: index === 0,
+      note: index ? releaseDay(release.date, { month: 'short', day: 'numeric' }) : t('release.latest'),
+      unread: releaseUnread.has(release.version),
+      unreadLabel: t('release.unread'),
+    }));
     const release = RECENT_RELEASES[releaseIndex];
-    $('#release-version').textContent = 'v' + release.version;
-    $('#release-date').textContent = releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' });
-    const hero = $('#release-hero');
-    const heroImage = releaseImage(release.image, locale);
-    hero.hidden = !heroImage;
-    if (heroImage) hero.src = import.meta.env.BASE_URL + heroImage;
-    else hero.removeAttribute('src');
-    const entries = release.highlights.map(item => {
-      const article = document.createElement('article');
-      article.className = 'release-entry';
-      article.dataset.kind = item.kind;
-      const image = releaseImage(item.image, locale);
-      if (image) {
-        const thumb = document.createElement('img');
-        thumb.src = import.meta.env.BASE_URL + image;
-        thumb.alt = '';
-        thumb.loading = 'lazy';
-        thumb.addEventListener('error', () => thumb.remove(), { once: true });
-        article.append(thumb);
-      }
-      const copy = document.createElement('div');
-      const kind = document.createElement('span');
-      kind.className = 'release-kind';
-      kind.textContent = t('release.kind.' + item.kind);
-      const title = document.createElement('strong');
-      title.textContent = releaseText(item.title, locale);
-      const description = document.createElement('p');
-      description.textContent = releaseText(item.description, locale);
-      copy.append(kind, title, description);
-      article.append(copy);
-      return article;
+    const hero = releaseImage(release.image, locale);
+    updateReleaseView({
+      tabs,
+      panelLabel: 'release-tab-' + releaseIndex,
+      version: 'v' + release.version,
+      date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
+      heroSrc: hero ? import.meta.env.BASE_URL + hero : '',
+      entries: release.highlights.map(item => {
+        const image = releaseImage(item.image, locale);
+        return {
+          kind: item.kind,
+          kindLabel: t('release.kind.' + item.kind),
+          title: releaseText(item.title, locale),
+          description: releaseText(item.description, locale),
+          image: image ? import.meta.env.BASE_URL + image : '',
+        };
+      }),
     });
-    $('#release-items').replaceChildren(...entries);
     releaseOpen.classList.toggle('has-update', !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()));
   }
   function selectRelease(index) {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
     renderReleaseNotes();
-    const tab = $('#release-tab-' + releaseIndex);
-    tab.focus({ preventScroll: true });
-    tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
-    releasePanel.scrollTop = 0;
-    if (!reducedMotion.matches) releasePanel.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+    nextTick(() => {
+      const tab = $('#release-tab-' + releaseIndex);
+      tab?.focus({ preventScroll: true });
+      tab?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+      releasePanel.scrollTop = 0;
+      if (!reducedMotion.matches) releasePanel.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+    });
   }
   function openReleaseNotes(opener = null) {
     if (!CURRENT_RELEASE || !canOpen() || releaseDialog.open || document.querySelector('dialog[open]')) return false;
@@ -153,7 +126,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     afterClose();
   });
   // A missing bundled image still leaves the entire description readable.
-  $('#release-hero').addEventListener('error', ({ target }) => { target.hidden = true; });
+  // The Vue image handler clears its source when the asset fails.
   // A higher-priority modal may have been open during the first ready-state check.
   document.addEventListener('close', () => queueMicrotask(maybeShowReleaseNotes), true);
   releaseOpen.hidden = !CURRENT_RELEASE;
