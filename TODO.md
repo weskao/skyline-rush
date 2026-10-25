@@ -7,6 +7,8 @@ Branch: `feature/todo-nonfirebase-20261025` from `main` `f53bf0fc`. Evidence: [N
 - [x] Audit the current main TODO and Notion stage history, keep existing completed features intact, and isolate this work on a new branch.
 - [x] Commit desktop/mobile HUD DOM regression test source *before* the code change (`928bab8`); browser RED observation remains unverified without a completed run.
 - [x] Commit an initial targeted fix: cache 16 repeated per-frame HUD element queries and skip 4 identical static text writes (`630b2ba`). This records code committed, **not** verified completion of Step 1 below.
+- [x] Merge latest `main` (`94c44a3`) into this branch with a two-parent commit `5807225`; verify `behind 0`, preserving both recent World Tour fixes and branch HUD changes.
+- [x] Commit follow-up browser tests for redundant racing status/label writes (`d34a9ab`) before its minimal optimization (`e5b0299`): `race-status`, `speed-caption`, and `countdown-label` only update when their text changes. TDD RED is **not observed**; test-only workflow was interrupted by newer pushes, so Step 1 remains open.
 - [ ] Obtain observable RED on the pre-fix commit (test failure caused by unwanted HUD queries/writes), then a GREEN browser run on the fix commit, including desktop 1440×900 and touch 390×844.
 - [ ] Measure comparable before/after HUD CPU cost / frame p50,p95 with a running browser, include real values rather than assumed speedup.
 - [ ] Run `make verify`, `npm run test:layout`, and check the exact HEAD `quality-gate`; fix failures before ticking Step 1 as complete.
