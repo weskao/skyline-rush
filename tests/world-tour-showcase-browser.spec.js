@@ -152,3 +152,34 @@ test('World Tour selection keeps the actual 3D showroom animated, not a static c
     await page.screenshot({path:info.outputPath(`world-tour-${id}-homepage-showcase.png`)});
   }
 });
+
+
+// Regression: the showroom needs the *whole* car, not just its center and
+// a few roof points, inside the desktop viewport (including the wheels).
+for (const id of ['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic']) {
+  for (const viewport of [{width:1777,height:863},{width:1440,height:900},{width:390,height:844}]) {
+    test(`${id}: full showcase car stays framed at ${viewport.width}x${viewport.height}`,async({page})=>{
+      await page.setViewportSize(viewport);
+      await page.goto('/tests/fixtures/world-tour-mid-race.html');
+      await page.waitForFunction(()=>window.worldTourReady===true);
+      const result=await page.evaluate(id=>{
+        const frames={};
+        for(const airflow of [false,true]) {
+          const probe=window.worldTourPreviewProbe(id,{airflow,view:'drive'},90);
+          frames[airflow?'grounded':'hovering']=probe.actors[0].carBounds;
+        }
+        return frames;
+      },id);
+      for(const [mode,bounds] of Object.entries(result)) {
+        expect(bounds,`${id}/${mode}: projected full car bounds are measured`).toBeTruthy();
+        for(const side of ['minX','maxX','minY','maxY']) {
+          expect(Number.isFinite(bounds[side]),`${id}/${mode}/${side}`).toBe(true);
+        }
+        expect(bounds.minX,`${id}/${mode}: left edge`).toBeGreaterThan(-.94);
+        expect(bounds.maxX,`${id}/${mode}: right edge`).toBeLessThan(.94);
+        expect(bounds.minY,`${id}/${mode}: bottom edge`).toBeGreaterThan(-.90);
+        expect(bounds.maxY,`${id}/${mode}: top edge`).toBeLessThan(.90);
+      }
+    });
+  }
+}

@@ -17,6 +17,18 @@ In Classic Race, Skyline Rush is a short, replayable arcade sprint in the browse
 
 A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
+**Home screen** — pick a track and a camera angle, then start the race.
+
+<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/home_screen.mp4" controls muted playsinline width="100%">
+  <a href="artifacts/home_screen.mp4">Watch the home screen video</a>
+</video>
+
+**Racing** — a full run on one of the tracks.
+
+<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/Play.mp4" controls muted playsinline width="100%">
+  <a href="artifacts/Play.mp4">Watch the gameplay video</a>
+</video>
+
 ![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)
 
 ![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261024a)
@@ -69,6 +81,8 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the font are bundled locally; gameplay makes no external requests. No backend or account is needed.
 
 `make` and `make dev-unlocked` also start local Firebase Auth/Firestore emulators (needs Java 21+), so the cloud-save Google sign-in works with fake test accounts and never touches real saves. Cloud-save operations and Spark quota checks for the project owner are in `docs/cloud-save.md`.
+
+`make phone` opens a terminal menu that starts, checks or stops a dev server your phone can open (over Tailscale or the same Wi-Fi) and prints the phone URL once it answers. The menu lists this checkout, other worktrees and recent branches, or takes a typed branch name; `make phone <name>` goes straight to that branch (or `feature/<name>`), creating its worktree under `.claude/worktrees/` when needed. It always serves the normal locked build: the all-unlocked server (`make dev-unlocked`, `make dev-feature`) stays desktop-only. It needs the personal `phone-dev` Claude Code skill (`/phone-dev` asks the same menu) and runs without the emulators, so cloud-save sign-in on the phone uses the real project.
 
 ## Controls
 

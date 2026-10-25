@@ -118,3 +118,19 @@ checks for all World Tour routes at each of the six camera angles.
   Require at least four of five sampled vehicle body points unobstructed and
   in frame, and preserve all landmark framing/visibility acceptance checks.
   Inspect the exact CI HEAD and physical-device imagery before shipping.
+
+
+## Full vehicle silhouette must remain inside the viewport
+
+The existing five sampled roof/corner sight points and 75–80% visibility
+threshold are *occlusion* checks, not whole-car framing guarantees. Both
+checks are required: raycast actual opaque scenery to preserve visibility,
+**and** project the complete vehicle including tires, bumpers and aero pieces
+to detect edge clipping. Use the live camera's real aspect ratio (not merely
+desktop-vs-portrait) and a small screen-edge safety margin. In particular,
+Alpine's high summit-directed look target must not send the vehicle beneath
+the bottom of the screen. Reframe shared camera poses minimally (look
+adjustment before dolly) while preserving the intended landmark composition,
+model scale and scenery. Never hide walls, crop geometry, or add per-map UI.
+Keep regression tests for 1440×900, 1777×863 and 390×844 with AIRFLOW on
+and off; validate real screenshots for all camera modes on World Tour.
