@@ -1,5 +1,20 @@
 # TODO — Gameplay depth design
 
+## Development pause checkpoint — before Vue + TypeScript refactor (2026-10-25)
+
+**Stop point:** complete the focused MODE-06 / 9G Championship Cup *data-integrity hardening* and hand off the remaining roadmap to a future Vue 3 + TypeScript architecture refactor. This is not the completion of the entire Cup UX or all TODOs. Do not start further modes, JavaScript-to-TypeScript migration, Vue-panel extraction, or a broad UI rewrite on this branch.
+
+- [x] Merge `main` `f36c3ce` into `feature/todo-nonfirebase-20261025` via two-parent merge `df46d69`; preserve latest upstream work, HUD optimization and browser regressions.
+- [x] Confirm prior HUD regression CI `40162448892` on `acbe5c2`: unit, 8 browser shards, cloud-save, World Tour and quality-gate passed. This does **not** provide a measured before/after HUD p50/p95 or historical RED.
+- [x] Cup RED #1: add malformed saved/in-progress heat regression in `558d46f` and observe the expected unit failure in Actions `40175029652` (`Missing expected exception`).
+- [x] Cup GREEN #1: validate completed heat snapshots before advancing or calculating standings in `51b52b6`; Actions `40175210037` unit: 576 passed, 0 failed, 3 skipped.
+- [x] Cup RED #2: cover `cupComplete` / `cupTotalTime` in `afe1c88`; observed expected unit failure in Actions `40175367171`.
+- [x] Cup implementation #2: extend the same standings validation to the completion and total-time readers in `754af46` without changing gameplay, UI, audio or stored formats. Unit job succeeded on Actions `40175527138`.
+- [ ] Confirm all required jobs, including 8 browser shards, cloud-save, World Tour and `quality-gate`, succeed for the final feature HEAD. Code CI: https://github.com/weskao/skyline-rush/actions/runs/40175527138 ; a documentation commit starts a new exact-HEAD CI.
+- [ ] Existing open items stay open: Cup saved mid-session recovery / quit-resume UX, real physical-device evidence, comparative HUD p50/p95, remaining MODE/UX/ENV/ITEM work, and all Firebase/Gamepad work.
+- [ ] **Future separate project phase:** plan and implement the Vue + TypeScript centered refactor with component boundaries, typed simulation adapters, migration tests and feature parity. Do not convert the current large plain-JS codebase piecemeal merely to close this old `checkJs` TODO.
+
+**Handoff:** stop after this bounded Cup data-integrity checkpoint. Do not merge into `main`, deploy or start unrelated features without a new explicit instruction. Notion progress: https://app.notion.com/p/4041a2df84a781638fa0fc182d8e05fb.
 ## Non-Firebase / non-Gamepad continuation (2026-10-25)
 
 Branch: `feature/todo-nonfirebase-20261025` from `main` `f53bf0fc`. Evidence: [Notion stage 20](https://app.notion.com/p/4041a2df84a781638fa0fc182d8e05fb) and [feature CI](https://github.com/weskao/skyline-rush/actions?query=branch%3Afeature%2Ftodo-nonfirebase-20261025).
