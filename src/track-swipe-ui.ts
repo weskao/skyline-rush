@@ -195,15 +195,18 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     if (swipe || getRace().phase !== 'ready' || isTutorialActive() || isEditingLayout() || document.querySelector('dialog[open]')) return;
     event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
     clearTimeout(wheelSwipe?.timer);
-    wheelSwipe ??= { dx: 0, spent: swipeBusy };
-    wheelSwipe.stamp = event.timeStamp;
-    // No input for a while: spring an unfinished drag back. Only the timeStamp gap above ends the gesture itself.
-    wheelSwipe.timer = setTimeout(() => { if (wheelSwipe && !wheelSwipe.spent && !swipe) cancelSwipe(); }, WHEEL_END_MS);
-    if (wheelSwipe.spent) return;
-    wheelSwipe.dx -= event.deltaX * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerWidth : 1); // lines / pages to px
-    const step = swipeStep(wheelSwipe.dx, 0, innerWidth);
+    const gesture = wheelSwipe ?? { dx: 0, spent: swipeBusy, stamp: event.timeStamp };
+    wheelSwipe = gesture;
+    gesture.stamp = event.timeStamp;
+    // A stale timer must never cancel a newer gesture.
+    gesture.timer = setTimeout(() => {
+      if (wheelSwipe === gesture && !gesture.spent && !swipe) cancelSwipe();
+    }, WHEEL_END_MS);
+    if (gesture.spent) return;
+    gesture.dx -= event.deltaX * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerWidth : 1); // lines / pages to px
+    const step = swipeStep(gesture.dx, 0, innerWidth);
     const button = step && swipeNeighbour(step);
-    if (button) { wheelSwipe.spent = true; commitSwipe(button, step); } else dragSwipe(wheelSwipe.dx);
+    if (button) { gesture.spent = true; void commitSwipe(button, step); } else dragSwipe(gesture.dx);
   }, { passive: false });
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) worldCanvas.addEventListener(type, event => {
     if (!swipe || event.pointerId !== swipe.id) return;
