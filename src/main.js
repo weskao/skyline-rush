@@ -897,6 +897,7 @@ const { toggleSettings, toggleControls } = setupControlPanels({
   getRacePhase: () => race.phase,
   clearRebinding: () => { rebinding = null; },
   hidePerformanceNotice,
+  trackDropdown,
 });
 function applyControls(persist = true) {
   inputPrefs = { ...controlPrefs, mode: tutorial && controlPrefs.mode === 'tilt' && !tiltGranted ? 'slide' : controlPrefs.mode, editing: editingLayout };

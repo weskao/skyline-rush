@@ -1,9 +1,7 @@
-import { trackDropdown } from './dropdown.js';
-
 export const canOpenControlsPanel = phase => phase === 'ready' || phase === 'paused';
 
 // Audio settings and control layout are event driven, never updated per frame.
-export function setupControlPanels({ ui, getRacePhase, clearRebinding, hidePerformanceNotice }) {
+export function setupControlPanels({ ui, getRacePhase, clearRebinding, hidePerformanceNotice, trackDropdown }) {
   const $ = selector => document.querySelector(selector);
   function toggleSettings(open = ui['settings-panel'].hidden) {
     ui['settings-panel'].hidden = !open;
