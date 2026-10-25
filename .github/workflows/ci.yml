@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - 'feature/**'
+      - 'refactor/**'
       - fix/home-showcase-camera-parity
       - '!feature/mode00-objective-contract'
     tags: ['v*']
