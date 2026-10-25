@@ -1163,6 +1163,45 @@ approved for implementation. Preserve the earlier completed work and
 never conflate future modes with existing Control “steering mode” options.
 
 ## Firebase 資料完整性、Google 帳號與 Cloud Save UI：實作清單（2026-10-25）
+
+### 工作分流：三種 TODO 狀態（2026-10-25）
+
+**適用範圍：** 下方既有 P0／P1 36 項（目前 23 項標示完成、13 項尚未完成），以及 P2 2 項和候選 S1–S3。**狀態分類不等於完成**：只有執行相應 TDD／CI 或正式驗收且留有證據，才可將原項目由 `- [ ]` 改為 `- [x]`。已完成 23 項保留原勾選狀態；不要因重新分類改成未完成，也不要將已存在的功能重做一遍。
+
+#### 狀態一：現在必須完成（Spark 免費方案可執行）
+
+**P0 優先：** `A5` 不同 Google UID 切換及離線／待同步資料保護、`B5` 永久 Stunt score／maxCombo／airTime／medal 跨裝置的模擬器回歸、`D1` Firestore Rules 欄位／型別／範圍／權限負向測試，以及 `H1` 的本地 TDD 與 CI 部分。遵守先 RED、後 GREEN、再重構的流程，測試有失敗須先修復；不可因已有程式碼或單次測試通過就提前勾選。
+
+**P1 接續：** `A1`、`A3`、`D4`、`D5`、`E1`、`E2`、`E6`、`E7`、`E8`。先針對**現有實作**補上或修復名稱／頭像 fallback、備份驗證、六種同步狀態、操作回饋、繁中／英文與 ARIA、桌面和手機直／橫向測試；僅在實際缺功能或測試紅燈時修改程式碼。不得引入付費 Firebase 服務。
+
+- [ ] **H1-Local** — 完整重跑 `npm test`、`npm run build`、Firestore Emulator Rules 與 Cloud Save 瀏覽器測試、全部相關 Playwright／CI 分片，記錄**同一個最新提交 SHA** 的綠燈證據；若有失敗保留 `[ ]` 並修正，特別覆核 A5／B5／D1。
+- [ ] **H1-Regressions** — 用模擬器驗證 A→B→A 帳號切換（含離線 pending）、Stunt 永久成績新裝置還原、不同 UID 的禁止讀寫、資料刪除防復活，並保留測試輸出／原因分析。
+- **執行準則：** 適合在本機／CI 測試的項目不得因欠缺實機或正式站權限而無限延後；反之本機綠燈不能取代實際上線的授權或資料使用驗收。
+
+#### 狀態二：正式環境具備條件後驗收（不代表現在缺少功能）
+
+僅在**正式網站已部署相應程式碼與 Firestore Rules、可使用授權的真實測試 Google 帳號／裝置**時逐項驗收；未具備條件時保持 `[ ]`，寫下阻礙與可重現步驟。避免為了讓核取方塊變成 `[x]`，重寫已通過模擬器的功能。
+
+- [ ] **H1-Prod-Auth** — 使用正式站測試 Google popup 登入／登出、名稱與 Email 寫入、頭像有／無時顯示；須先有合法測試帳號與可用的正式站。
+- [ ] **H1-Prod-Rules** — 已部署與 repo 相符的 Firestore Rules 後，以授權測試帳號實測 `accounts/{uid}`、`saves/{uid}`、`modeBests/{uid}` 的讀寫、跨 UID 拒絕與刪除；未部署不得宣稱已正式驗收。
+- [ ] **H1-Prod-Devices** — 有可測裝置時，完成桌面 Chrome、iPhone Safari、手機直橫向／跨裝置同帳號還原與登出後資料隔離；需要真人與真機的檢查不得以 Playwright 模擬結果取代。
+- [ ] **H1-Spark-Usage** — 正式站確認 Firestore／Authentication 使用量維持 Spark 限制，不進行方案升級、綁定帳務或開通付費產品。
+- **H1 原始總項目**：本地驗證與上述適用的正式環境驗收**全部**取得證據後才可勾選 `H1 (P0)`；如果只有本地測試成功，應保留本段實機／正式驗收待辦，不重複開發。
+
+#### 狀態三：未來符合需求才實作（本次延後）
+
+| 原項目 | 真正的啟動條件 | 現在的處理 |
+|---|---|---|
+| `G1 (P2)` 公開玩家 Profile | 正式決定推出自訂暱稱、公開個人頁及隱私設計 | 保留 `[ ]`，沿用 Auth 名稱與 Email |
+| `G2 (P2)` 排行榜／raceResults | 正式推出多人競技排名、需要可信的成績驗證／反作弊 | 保留 `[ ]`，現有私人存檔已足夠 |
+| `S1` Cloud Functions／可信後端 | 有不能用本地或 Spark Rules 解決的可信運算需求，且已經評估可行方案 | 保留 `[ ]`；禁止自行升級 Blaze |
+| `S2` PITR／TTL／託管備份還原 | 手動 JSON 備份已不符合可恢復性、保留年限或營運要求 | 保留 `[ ]`；禁止自行啟用收費功能 |
+| `S3` 額度監測／容量擴充 | Firestore 使用量接近 Spark 免費限制或使用者量明顯增加 | 先觀察 Usage 並優化讀寫；不自行升級 |
+
+**費用底線：** 此專案本次只允許 Firebase **Spark** 內可執行的功能。任何需要 Blaze、付款資訊、Cloud Functions、PITR／託管備份等方案變更的事項，都不得在本次自動實作；必須等未來有明確需求且使用者**另行明確同意**後再重新評估。
+
+---
+
 **範圍：原先 P0／P1 35 項 + 新增 Google 名稱／Email 入 Firestore 1 項，共 36 項。** 原先 2 項 P2 保留未勾選、不在此次實作。僅項目經對應 TDD／回歸證據驗證通過後才改為 `[x]`。不可因存在程式碼、模擬器通過而把尚未驗收的正式站事項宣稱完成。
 
 **Spark-only／成本限制：** 使用現有 Firebase Authentication Google 登入和**既有免費 Firestore 資料庫**的文件讀寫，禁止啟用 Blaze、設定帳務、建立第二個資料庫、Cloud Functions、Firestore TTL、PITR、代管備份／還原等付費方案功能。Spark 有 1 GiB 儲存、每天 50,000 reads／20,000 writes／20,000 deletes 等限制，實際以官方方案與 Usage 頁為準。不得每影格同步；登入 profile 同值應跳過寫入。若功能需要付費：僅將其維持 `[ ]`，註明原因、免費替代方案與「經使用者明確同意升級／實測足夠配額才開始」條件，絕不自動升級。
@@ -1171,11 +1210,11 @@ never conflate future modes with existing Control “steering mode” options.
 
 ### A. Google 登入與帳號管理
 
-- [ ] **A1 (P1)** Cloud Save 顯示 Google displayName，沒有名稱時顯示合理替代值。
+- [ ] **A1 (P1)** Cloud Save 顯示 Google displayName，沒有名稱時顯示合理替代值。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
 - [x] **A2 (P1)** Cloud Save 顯示並辨識目前 Google Email。
-- [ ] **A3 (P1)** 顯示 Google photoURL 頭像，讀取失敗有替代圖示。
+- [ ] **A3 (P1)** 顯示 Google photoURL 頭像，讀取失敗有替代圖示。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
 - [x] **A4 (P1)** 登入、登出及 Auth 初始化時明確顯示使用者身分狀態。
-- [ ] **A5 (P0)** 安全切換 Google 帳號，避免不同 UID 的資料混用或遺失未同步進度。
+- [ ] **A5 (P0)** 安全切換 Google 帳號，避免不同 UID 的資料混用或遺失未同步進度。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
 - [x] **A6 (P0)** Firebase Auth／UID 管理身分，禁止遊戲資料儲存 Google 密碼、OAuth Token 與無關個資。
 - [x] **A7 (P1)** 【新增需求】於免費 Spark 既有 Firestore 儲存 accounts/{uid}：Google displayName 與 email；登入／變更時更新，Rules 限本人存取，空值不覆蓋有效資料，刪除流程同步清理。
 
@@ -1185,7 +1224,7 @@ never conflate future modes with existing Control “steering mode” options.
 - [x] **B2 (P0)** modeHistory 雲端保留 rulesVersion、distance、stageCount、itemsUsed、hazardPasses、hazardHits 等完整合法資料。
 - [x] **B3 (P0)** 統一 mode rules 的本機與雲端長度上限和驗證契約（現有 4096／2000 不一致）。
 - [x] **B4 (P0)** 永久 modeBests 跨裝置同步，避免最近 50 場輪替後永久紀錄消失。
-- [ ] **B5 (P0)** 永久 stuntBests（score、maxCombo、airTime、medal）跨裝置同步。
+- [ ] **B5 (P0)** 永久 stuntBests（score、maxCombo、airTime、medal）跨裝置同步。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
 - [x] **B6 (P0)** 最近 50 場 history 與永久 best 分離；合併去重，不讓最佳成績倒退。
 - [x] **B7 (P1)** 版本升級、無損遷移與向下相容；需要時保留 updatedAt，拒絕未知未來版本覆寫。
 
@@ -1200,22 +1239,22 @@ never conflate future modes with existing Control “steering mode” options.
 
 ### D. Rules、備份、刪除與安全
 
-- [ ] **D1 (P0)** Firestore Rules 驗證欄位、型別、範圍、合法賽道／模式、列表及字串長度。
+- [ ] **D1 (P0)** Firestore Rules 驗證欄位、型別、範圍、合法賽道／模式、列表及字串長度。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
 - [x] **D2 (P0)** saves／accounts／永久最佳成績僅由對應登入 UID 私有讀寫，禁止列舉其他玩家。
 - [x] **D3 (P0)** 刪除進度後避免舊本機副本／排隊同步使資料復活，帳號基本資訊的刪除範圍明確。
-- [ ] **D4 (P1)** 匯出及匯入 JSON：大小／版本／內容驗證與可理解的失敗提示。
-- [ ] **D5 (P1)** 清楚區分登出、刪除遊戲資料、未來可能的刪除 Firebase Auth 帳號。
+- [ ] **D4 (P1)** 匯出及匯入 JSON：大小／版本／內容驗證與可理解的失敗提示。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
+- [ ] **D5 (P1)** 清楚區分登出、刪除遊戲資料、未來可能的刪除 Firebase Auth 帳號。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
 
 ### E. Cloud Save UI／UX
 
-- [ ] **E1 (P1)** Cloud Save 保持遊戲視覺風格，顯示 Google 名稱、Email、頭像。
-- [ ] **E2 (P1)** 明確提供未登入／同步中／已同步／等待網路／雲端失敗／本機寫入失敗六種狀態。
+- [ ] **E1 (P1)** Cloud Save 保持遊戲視覺風格，顯示 Google 名稱、Email、頭像。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
+- [ ] **E2 (P1)** 明確提供未登入／同步中／已同步／等待網路／雲端失敗／本機寫入失敗六種狀態。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
 - [x] **E3 (P1)** 最後同步時間只顯示實際 Firestore 成功結果。
 - [x] **E4 (P1)** 新增手動「立即同步」，避免重複寫入及切換帳號期間觸發。
 - [x] **E5 (P0)** 帳號切換確認 UI；清楚警告未同步資料並禁止破壞性切換。
-- [ ] **E6 (P1)** 登出／刪除／匯入／匯出提供明確 UX、成功與失敗回饋。
-- [ ] **E7 (P1)** 所有文案繁中／英文及無障礙 ARIA、鍵盤操作、焦點與狀態公告。
-- [ ] **E8 (P1)** 支援 Desktop／Mobile 直橫向，不遮擋比賽，沿用現有設計。
+- [ ] **E6 (P1)** 登出／刪除／匯入／匯出提供明確 UX、成功與失敗回饋。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
+- [ ] **E7 (P1)** 所有文案繁中／英文及無障礙 ARIA、鍵盤操作、焦點與狀態公告。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
+- [ ] **E8 (P1)** 支援 Desktop／Mobile 直橫向，不遮擋比賽，沿用現有設計。 **【狀態一：現在必須完成；先補測試／修正，不重做已存在功能】**
 
 ### F. 裝置設定及本機進度
 
@@ -1224,13 +1263,13 @@ never conflate future modes with existing Control “steering mode” options.
 
 ### H. TDD／CI／正式環境驗收
 
-- [ ] **H1 (P0)** 每功能 Red→Green→Refactor，npm test／test:cloud／build／瀏覽器、Rules、安全、真實帳號 Chrome／Safari／跨裝置；正式站與用量驗收未完成前不得勾選。
+- [ ] **H1 (P0)** 每功能 Red→Green→Refactor，npm test／test:cloud／build／瀏覽器、Rules、安全、真實帳號 Chrome／Safari／跨裝置；正式站與用量驗收未完成前不得勾選。 **【狀態一：本機 TDD／CI；狀態二：正式站／實機待驗收；兩段皆完成才能勾選】**
 
 ### G. P2 延後實作／啟動條件（本次不得勾選或實作）
 
-- [ ] **G1 (P2)** 玩家自訂暱稱與公開個人資料 profiles/{uid}。**延後原因與條件：**現在使用 Firebase Auth 的 Google 名稱／Email 即可；只有正式推出玩家自訂名稱、公開個人頁、可見的公開頭像與隱私授權需求時才設計獨立 Profile 與 Rules。
+- [ ] **G1 (P2)** 玩家自訂暱稱與公開個人資料 profiles/{uid}。**延後原因與條件：**現在使用 Firebase Auth 的 Google 名稱／Email 即可；只有正式推出玩家自訂名稱、公開個人頁、可見的公開頭像與隱私授權需求時才設計獨立 Profile 與 Rules。 **【狀態三：未來條件式啟動；本次不實作】**
 
-- [ ] **G2 (P2)** 公開排行榜／比賽結果 leaderboards、raceResults。**延後原因與條件：**目前私人賽事成績可透過 saves 還原，瀏覽器提交的分數不能直接作競技可信依據；只有推出對外排名／競賽或防作弊驗證時再評估可信任後端與費用。Spark 不提供 Cloud Functions，若方案要求 Blaze 或其他付費服務，必須由使用者明確同意才做。
+- [ ] **G2 (P2)** 公開排行榜／比賽結果 leaderboards、raceResults。**延後原因與條件：**目前私人賽事成績可透過 saves 還原，瀏覽器提交的分數不能直接作競技可信依據；只有推出對外排名／競賽或防作弊驗證時再評估可信任後端與費用。Spark 不提供 Cloud Functions，若方案要求 Blaze 或其他付費服務，必須由使用者明確同意才做。 **【狀態三：未來條件式啟動；本次不實作】**
 
 ### Firebase 模擬器與 CI 通過驗證（2026-10-25）
 
@@ -1258,9 +1297,9 @@ never conflate future modes with existing Control “steering mode” options.
 
 ### Spark 免費額度相關候選項目（只有符合條件才實作）
 
-- [ ] **S1 — 後端驗證／Cloud Functions**：Spark 無法使用 Cloud Functions。本次以 Firestore Rules 及本地驗證保護私人資料；若要防作弊或伺服端競技排行，需先有實際需求與**使用者明確同意 Blaze 或其他可用免費替代方案**才重新評估。
-- [ ] **S2 — 託管備份／PITR／TTL 刪除／Firestore 還原**：Firestore 免費額度不含這些功能。本次改用玩家手動 JSON 匯出／經驗證匯入；只有資料量、RPO／RTO 要求使本機匯出不夠且**經使用者明確同意付費**，才納入實作。
-- [ ] **S3 — 免費額度監控與升級門檻**：發布後先觀測現有 Firestore Usage；若讀寫、存量或使用者數接近 Spark 限制，先降低重複寫入／資料量，未經同意不得啟用任何付費服務。
+- [ ] **S1 — 後端驗證／Cloud Functions**：Spark 無法使用 Cloud Functions。本次以 Firestore Rules 及本地驗證保護私人資料；若要防作弊或伺服端競技排行，需先有實際需求與**使用者明確同意 Blaze 或其他可用免費替代方案**才重新評估。 **【狀態三：未來條件式啟動；本次不實作】**
+- [ ] **S2 — 託管備份／PITR／TTL 刪除／Firestore 還原**：Firestore 免費額度不含這些功能。本次改用玩家手動 JSON 匯出／經驗證匯入；只有資料量、RPO／RTO 要求使本機匯出不夠且**經使用者明確同意付費**，才納入實作。 **【狀態三：未來條件式啟動；本次不實作】**
+- [ ] **S3 — 免費額度監控與升級門檻**：發布後先觀測現有 Firestore Usage；若讀寫、存量或使用者數接近 Spark 限制，先降低重複寫入／資料量，未經同意不得啟用任何付費服務。 **【狀態三：未來條件式啟動；本次不實作】**
 
 **官方參考**：https://firebase.google.com/pricing 、https://firebase.google.com/docs/firestore/pricing 、https://firebase.google.com/docs/projects/billing/firebase-pricing-plans
 ## Home showroom camera parity & discovery (2026-10-25)
