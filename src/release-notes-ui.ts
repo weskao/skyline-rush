@@ -5,8 +5,9 @@ import { getLocale, t, formatDate } from './i18n.js';
 import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.js';
 
 // Pure keyboard navigation, independently testable without a DOM.
-export function releaseTabIndex(index, count, key) {
-  const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[key];
+export function releaseTabIndex(index: number, count: number, key: string): number | null {
+  const steps: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+  const step = steps[key];
   if (step) return (index + step + count) % count;
   if (key === 'Home') return 0;
   if (key === 'End') return count - 1;
@@ -15,23 +16,30 @@ export function releaseTabIndex(index, count, key) {
 
 // The DOM controller owns only the event-driven release dialog.
 // Gameplay, control state and notice restoration stay owned by main.js.
-export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClose, reducedMotion }) {
-  const $ = selector => document.querySelector(selector);
-  const releaseDialog = $('#whats-new-screen');
-  const releaseOpen = $('#whats-new-open');
+interface ReleaseNotesUIOptions {
+  canOpen: () => boolean;
+  canAutoOpen: () => boolean;
+  beforeOpen: () => void;
+  afterClose: () => void;
+  reducedMotion: MediaQueryList;
+}
+export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClose, reducedMotion }: ReleaseNotesUIOptions) {
+  const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
+  const releaseDialog = document.querySelector<HTMLDialogElement>('#whats-new-screen')!;
+  const releaseOpen = document.querySelector<HTMLButtonElement>('#whats-new-open')!;
   const releasePanel = $('#release-panel');
   const RECENT_RELEASES = recentReleases();
   let releaseIndex = 0;
-  let releaseOpener = null;
+  let releaseOpener: HTMLElement | null = null;
   let releaseShownHere = false;
-  let releaseUnread = new Set();
-  const releaseStorage = () => { try { return localStorage; } catch { return null; } };
+  let releaseUnread = new Set<string>();
+  const releaseStorage = (): Storage | null => { try { return localStorage; } catch { return null; } };
   // Someone who finished the guide or saved a race played before the notes were recorded.
   const returningPlayer = () => {
     try { return localStorage.getItem('skyline-rush-guide-seen') !== null || localStorage.getItem(HISTORY_KEY) !== null; }
     catch { return false; }
   };
-  const releaseDay = (date, options) => formatDate(new Date(date + 'T00:00:00'), options);
+  const releaseDay = (date: string, options: Intl.DateTimeFormatOptions): string => formatDate(new Date(date + 'T00:00:00'), options);
   
   function renderReleaseNotes() {
     if (!CURRENT_RELEASE) return;
@@ -66,7 +74,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     });
     releaseOpen.classList.toggle('has-update', !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()));
   }
-  function selectRelease(index) {
+  function selectRelease(index: number): void {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
     renderReleaseNotes();
     nextTick(() => {
@@ -77,7 +85,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
       if (!reducedMotion.matches) releasePanel.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.16, 1, .3, 1)' });
     });
   }
-  function openReleaseNotes(opener = null) {
+  function openReleaseNotes(opener: HTMLElement | null = null): boolean {
     if (!CURRENT_RELEASE || !canOpen() || releaseDialog.open || document.querySelector('dialog[open]')) return false;
     releaseOpener = opener;
     beforeOpen();
@@ -109,10 +117,10 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   $('#release-close').addEventListener('click', closeReleaseNotes);
   $('#release-continue').addEventListener('click', closeReleaseNotes);
   $('#release-versions').addEventListener('click', ({ target }) => {
-    const tab = target.closest('[role="tab"]');
+    const tab = (target as HTMLElement | null)?.closest<HTMLElement>('[role="tab"]');
     if (tab) selectRelease(Number(tab.id.slice('release-tab-'.length)));
   });
-  $('#release-versions').addEventListener('keydown', event => {
+  $('#release-versions').addEventListener('keydown', (event: KeyboardEvent) => {
     const target = releaseTabIndex(releaseIndex, RECENT_RELEASES.length, event.key);
     if (target === null) return;
     event.preventDefault();

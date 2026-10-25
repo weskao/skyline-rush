@@ -42,7 +42,7 @@ import { customSelect, refreshCustomSelects } from './custom-select.js';
 import { trackDropdown } from './dropdown.js';
 import { setupTrackSwipeUI } from './track-swipe-ui.js';
 import { refreshIfStale } from './update-check.js';
-import { setupReleaseNotesUI } from './release-notes-ui.js';
+import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.js';
 import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.js';
 

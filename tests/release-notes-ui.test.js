@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { releaseTabIndex } from '../src/release-notes-ui.js';
+import { releaseTabIndex } from '../src/release-notes-ui.ts';
 
 test('release notes keyboard tabs wrap and keep home/end behavior', () => {
   assert.equal(releaseTabIndex(0, 5, 'ArrowLeft'), 4);
