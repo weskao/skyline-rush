@@ -1,0 +1,109 @@
+import { formatDate, t, trackName, getLocale } from './i18n.js';
+import { loadModeBest, loadModeGhost, careerStats, dailyBoard, MEDALS } from './history.js';
+import { dailyChallenge } from './game.js';
+
+/** Pure chart projection, preserving the original coordinates exactly. */
+export function historyTrendPoints(recent) {
+  if (!recent.length) return [];
+  const low = Math.min(...recent.map(run => run.time));
+  const high = Math.max(...recent.map(run => run.time));
+  return recent.map((run, i) => [recent.length === 1 ? 250 : 10 + i / (recent.length - 1) * 480,
+    high === low ? 40 : 70 - (run.time - low) / (high - low) * 60]);
+}
+
+// Live selectors are read at render time (cloud sync can replace progress).
+export function createHistoryView({ getData, timeString }) {
+  const $ = selector => document.querySelector(selector);
+  // Saved dates are untrusted, and Intl throws on an invalid date.
+  function shortDate(value) {
+    const date = new Date(value);
+    return Number.isFinite(date.getTime()) ? formatDate(date, { month: 'short', day: 'numeric' }) : t('history.noDate');
+  }
+  const historyScreen = $('#history-screen');
+  let historyOpener;
+  function showHistory() {
+    const { sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world } = getData();
+    const trackId = $('#history-track').value;
+    const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
+    const modeFilter = $('#mode-history-filter').value;
+    const modeRows = sessionModeHistory.filter(run => run.track === trackId);
+    const modes = modeRows.filter(run => modeFilter === 'all' || run.mode === modeFilter).slice(-10).reverse();
+    $('#mode-history-empty').hidden = modes.length > 0;
+    // Saved config fields are untrusted: parse with a guard, and render labels with textContent only.
+    $('#mode-history-runs').replaceChildren(...modes.map(run => {
+      const item = document.createElement('p');
+      let config = null;
+      try {
+        const candidate = JSON.parse(run.rules);
+        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
+            candidate.mode === run.mode) config = candidate;
+      } catch { /* Legacy signatures may be opaque strings; still display their record. */ }
+      const best = config ? loadModeBest(trackId, config) : null;
+      const personalBest = best !== null && (run.mode === 'stunt' ? run.score === best : run.time === best);
+      const ghost = run.mode === 'time' && !!config && !!loadModeGhost(trackId, config);
+      item.dataset.mode = run.mode;
+      item.dataset.personalBest = String(personalBest);
+      item.dataset.ghost = String(ghost);
+      const details = run.mode === 'stunt'
+        ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
+          run.medal ? t('mode.medal.' + run.medal) : '',
+          t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) })]
+        : [t('mode.' + run.mode), timeString(run.time)];
+      item.textContent = [
+        ...details, personalBest ? t('mode.historyPersonalBest') : null,
+        ghost ? t('mode.historyGhost') : null, shortDate(run.date),
+      ].filter(Boolean).join(' · ');
+      return item;
+    }));
+    const stats = careerStats(sessionHistory);
+    const count = (key, n) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
+    $('#career-summary').textContent = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
+    const best = Math.min(sessionBests[trackId] ?? Infinity, ...runs.map(run => run.time));
+    const recent = runs.slice(-10);
+    $('#history-empty').hidden = runs.length > 0;
+    $('.history-trend').hidden = recent.length === 0;
+    $('#history-trend-label').textContent = count('history.trend', recent.length);
+    const points = historyTrendPoints(recent);
+    $('#history-chart').innerHTML = `<polyline points="${points.map(point => point.join(',')).join(' ')}"/>${points.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="3"><title>${timeString(recent[i].time)}</title></circle>`).join('')}`;
+    // Storage is untrusted: put saved fields into textContent, never HTML.
+    $('#history-runs').replaceChildren(...runs.toReversed().map(run => {
+      const row = document.createElement('details'); row.className = 'history-run';
+      const summary = document.createElement('summary');
+      for (const text of [shortDate(run.date), timeString(run.time), t('history.position', { n: Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—' })]) {
+        const field = document.createElement('span'); field.textContent = text; summary.append(field);
+      }
+      if (run.time === best) { const badge = document.createElement('b'); badge.className = 'history-best'; badge.textContent = t('history.best'); summary.append(badge); }
+      const detail = document.createElement('p');
+      const number = value => Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
+      detail.textContent = t('history.detail', { score: number(run.score), contacts: number(run.collisions), near: number(run.nearMisses), rings: number(run.rings), perfect: number(run.perfectLines), nitro: number(run.nitroUses) });
+      row.append(summary, detail); return row;
+    }));
+    const today = dailyChallenge();
+    $('#daily-status').textContent = t('daily.status', { track: trackName(today.track, getLocale()), modifier: t(`modifier.${today.modifier}`) });
+    $('#daily-start').disabled = !world;
+    const board = dailyBoard(sessionDaily, today.id).slice(0, 5);
+    const line = text => { const row = document.createElement('p'); row.textContent = text; return row; };
+    $('#daily-board').replaceChildren(...board.length ? board.map((run, i) => line(t('daily.line', { rank: i + 1, time: timeString(run.time), position: run.position, score: Math.round(run.score) }))) : [line(t('daily.empty'))]);
+    for (const item of document.querySelectorAll('[data-medal]')) {
+      const awarded = sessionMedals[item.dataset.medal];
+      item.classList.toggle('is-awarded', !!awarded);
+      item.querySelector('small').textContent = awarded ? t('medal.awarded', { date: shortDate(awarded) }) : t('medal.notAwarded');
+    }
+    $('#achievement-status').textContent = t('medal.count', { n: Object.keys(sessionMedals).length });
+  }
+  // Home status: today's challenge and the medal tally sit on the start screen instead of inside History.
+  function showHomeStatus() {
+    const { sessionDaily, sessionMedals, world } = getData();
+    const today = dailyChallenge();
+    const best = dailyBoard(sessionDaily, today.id)[0];
+    $('#daily-card-route').textContent = `${trackName(today.track, getLocale())} · ${t(`modifier.${today.modifier}`)}`;
+    $('#daily-card-best').textContent = best ? t('daily.best', { time: timeString(best.time), position: best.position }) : t('daily.fresh');
+    $('#daily-card-start').disabled = !world;
+    const medals = Object.keys(sessionMedals).length;
+    $('#medal-count').textContent = `${medals}/${MEDALS.length}`;
+    $('#medal-chip').setAttribute('aria-label', t('medal.count', { n: medals }));
+    $('#medal-chip').classList.toggle('has-medals', medals > 0);
+  }
+  
+  return { showHistory, showHomeStatus };
+}
