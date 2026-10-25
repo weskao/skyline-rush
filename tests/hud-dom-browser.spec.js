@@ -15,7 +15,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         return query.call(this, selector);
       };
       const text = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
-      const steady = new Set(['race-length', 'aero-flow', 'aero-floor', 'aero-jet']);
+      const steady = new Set(['race-length', 'aero-flow', 'aero-floor', 'aero-jet', 'race-status', 'speed-caption', 'countdown-label']);
       Object.defineProperty(Node.prototype, 'textContent', {
         configurable: true,
         get: text.get,
