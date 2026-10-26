@@ -19,15 +19,11 @@ A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound
 
 **Home screen** — pick a track and a camera angle, then start the race.
 
-<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/home_screen.mp4" controls muted playsinline width="100%">
-  <a href="artifacts/home_screen.mp4">Watch the home screen video</a>
-</video>
+[![Home screen video: picking a track and camera angle](artifacts/home_screen-poster.jpeg)](artifacts/home_screen.mp4)
 
 **Racing** — a full run on one of the tracks.
 
-<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/Play.mp4" controls muted playsinline width="100%">
-  <a href="artifacts/Play.mp4">Watch the gameplay video</a>
-</video>
+[![Gameplay video: a full race](artifacts/play-poster.jpeg)](artifacts/Play.mp4)
 
 ![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)
 
