@@ -2,6 +2,7 @@ import { formatDate, t, trackName, getLocale } from './i18n.ts';
 import { loadModeBest, loadModeGhost, careerStats, dailyBoard, MEDALS } from './history.js';
 import { dailyChallenge } from './game.js';
 import { updateHistoryView } from './history-view-state.ts';
+import { updateHomeStatusView } from './home-status-view-state.ts';
 
 interface SavedRace {
   track: string;
@@ -63,7 +64,6 @@ export function historyTrendPoints(recent: TrendRace[]): Array<[number, number]>
 
 // Live selectors are read at render time (cloud sync can replace progress).
 export function createHistoryView({ getData, timeString }: HistoryDependencies) {
-  const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   // Saved dates are untrusted, and Intl throws on an invalid date.
   function shortDate(value?: string): string {
     const date = new Date(value ?? '');
@@ -148,13 +148,15 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
     const { sessionDaily, sessionMedals, world } = getData();
     const today = dailyChallenge();
     const best = dailyBoard(sessionDaily, today.id)[0];
-    $('#daily-card-route').textContent = `${trackName(today.track, getLocale())} · ${t(`modifier.${today.modifier}`)}`;
-    $('#daily-card-best').textContent = best ? t('daily.best', { time: timeString(best.time), position: best.position }) : t('daily.fresh');
-    document.querySelector<HTMLButtonElement>('#daily-card-start')!.disabled = !world;
     const medals = Object.keys(sessionMedals).length;
-    $('#medal-count').textContent = `${medals}/${MEDALS.length}`;
-    $('#medal-chip').setAttribute('aria-label', t('medal.count', { n: medals }));
-    $('#medal-chip').classList.toggle('has-medals', medals > 0);
+    updateHomeStatusView({
+      dailyRoute: `${trackName(today.track, getLocale())} · ${t(`modifier.${today.modifier}`)}`,
+      dailyBest: best ? t('daily.best', { time: timeString(best.time), position: best.position }) : t('daily.fresh'),
+      dailyStartDisabled: !world,
+      medalCount: `${medals}/${MEDALS.length}`,
+      medalLabel: t('medal.count', { n: medals }),
+      hasMedals: medals > 0,
+    });
   }
   
   return { showHistory, showHomeStatus };
