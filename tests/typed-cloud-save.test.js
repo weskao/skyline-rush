@@ -7,7 +7,7 @@ test('Firebase login and sync service has one typed implementation without dupli
   assert.equal(existsSync(new URL('../src/cloud-save.js', import.meta.url)), false);
 });
 test('Firebase service retains account-switch guard and transaction-first cloud progress', () => {
-  const current = readFileSync(new URL('../src/cloud-save.js', import.meta.url), 'utf8');
+  const current = readFileSync(new URL('../src/cloud-save.ts', import.meta.url), 'utf8');
   assert.match(current, /auth\.currentUser\?\.uid !== expectedUid/);
   assert.match(current, /runTransaction\(db, async transaction/);
   assert.match(current, /transaction\.get\(save\)/);

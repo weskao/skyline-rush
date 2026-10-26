@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import type { User } from 'firebase/auth';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, connectAuthEmulator } from 'firebase/auth';
 import { doc, getFirestore, runTransaction, writeBatch, getDoc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { mergeProgress, mergeModeBests, readLocalModeBests, saveLocalModeBests } from './cloud-progress.js';
@@ -10,6 +11,10 @@ const app = initializeApp({
   projectId: 'skyline-rush-weskao',
   appId: '1:255985591416:web:0859def3ac0da57f2b798d',
 });
+type Progress = ReturnType<typeof mergeProgress>;
+type PermanentBests = ReturnType<typeof mergeModeBests>;
+const mergeDeviceProgress = mergeProgress as unknown as (local: object, cloud: unknown) => Progress;
+const mergeDeviceBests = mergeModeBests as unknown as (local: object, cloud: unknown) => PermanentBests;
 const auth = getAuth(app);
 const db = getFirestore(app);
 if (import.meta.env.DEV && location.hostname === '127.0.0.1'
@@ -18,10 +23,10 @@ if (import.meta.env.DEV && location.hostname === '127.0.0.1'
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
 }
 
-export const watchCloudUser = (onUser, onError) => onAuthStateChanged(auth, onUser, onError);
+export const watchCloudUser = (onUser: (user: User | null) => void, onError?: (error: Error) => void) => onAuthStateChanged(auth, onUser, onError);
 export const signInToCloud = () => signInWithPopup(auth, new GoogleAuthProvider());
 export const signOutOfCloud = () => signOut(auth);
-export const deleteCloudProgress = expectedUid => {
+export const deleteCloudProgress = (expectedUid: string) => {
   if (auth.currentUser?.uid !== expectedUid) throw new Error('Cloud account changed');
   const batch = writeBatch(db);
   for (const collection of ['saves', 'modeBests', 'accounts'])
@@ -29,7 +34,7 @@ export const deleteCloudProgress = expectedUid => {
   return batch.commit();
 };
 
-export async function syncCloudProgress(localProgress) {
+export async function syncCloudProgress(localProgress: () => object) {
   const user = auth.currentUser;
   if (!user) return null;
   const save = doc(db, 'saves', user.uid);
@@ -39,9 +44,9 @@ export async function syncCloudProgress(localProgress) {
     const snapshot = await transaction.get(save);
     const bestSnapshot = await transaction.get(bestDocument);
     const cloud = snapshot.data();
-    const progress = mergeProgress(localProgress(), cloud);
-    const permanent = mergeModeBests(readLocalModeBests(), bestSnapshot.data());
-    if (!cloud || cloud.version !== 2 || JSON.stringify(mergeProgress({}, cloud)) !== JSON.stringify(progress))
+    const progress = mergeDeviceProgress(localProgress(), cloud);
+    const permanent = mergeDeviceBests(readLocalModeBests(), bestSnapshot.data());
+    if (!cloud || cloud.version !== 2 || JSON.stringify(mergeDeviceProgress({}, cloud)) !== JSON.stringify(progress))
       transaction.set(save, progress);
     if ((bestSnapshot.exists() || Object.keys(permanent.bests).length || Object.keys(permanent.stunts).length)
       && JSON.stringify(bestSnapshot.data() ?? null) !== JSON.stringify(permanent))
@@ -59,7 +64,7 @@ export async function getSignedInAccountDetails() {
 }
 
 // Cache only explicitly requested Google profile fields in the Spark Firestore database.
-export async function syncGoogleAccountDetails(expectedUid) {
+export async function syncGoogleAccountDetails(expectedUid: string) {
   const user = auth.currentUser;
   if (!user || user.uid !== expectedUid) return false;
   const fields = googleAccountFields(user);
