@@ -1,4 +1,4 @@
-<!-- source-sha256: 5ec6245f0bfffb46e2fc5b902d85d92826637350245f11e641a2323457ee0f31 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: df640e029645b1f5b93d670cac3e5ac9871236476d417102af5a86fe12d5e2cb generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -20,15 +20,15 @@
 
 **主畫面** — 選擇賽道和鏡頭角度，然後開始比賽。
 
-[![主畫面影片：選擇賽道與鏡頭角度](artifacts/home_screen-poster.jpeg)](artifacts/home_screen.mp4)
+[![主畫面影片：選擇賽道與鏡頭角度](artifacts/home_screen-poster.jpeg)](https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623)
 
-https://github.com/weskao/skyline-rush/blob/main/artifacts/home_screen.mp4
+https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
 
 **比賽** — 在其中一條賽道上跑完一整場。
 
-[![遊戲影片：跑完一整場比賽](artifacts/play-poster.jpeg)](artifacts/Play.mp4)
+[![遊戲影片：跑完一整場比賽](artifacts/play-poster.jpeg)](https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101)
 
-https://github.com/weskao/skyline-rush/blob/main/artifacts/Play.mp4
+https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
 ![遊戲示範：倒數、飛越車流並降落在海岸公路](artifacts/readme-demo.gif)
 
