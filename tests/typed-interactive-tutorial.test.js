@@ -5,7 +5,7 @@ import { prepareTutorialInput, createInteractiveTutorial } from '../src/interact
 
 test('interactive tutorial uses one typed state controller without a duplicate legacy file', () => {
   assert.equal(existsSync(new URL('../src/interactive-tutorial.ts', import.meta.url)), true);
-  assert.equal(existsSync(new URL('../src/interactive-tutorial.ts', import.meta.url)), false);
+  assert.equal(existsSync(new URL('../src/interactive-tutorial.js', import.meta.url)), false);
 });
 test('guided input only supplies safe auto-throttle and never invents steering', () => {
   const input = { steer: 0, brake: false, throttle: false, laneAssist: true };
