@@ -7,7 +7,7 @@ import { createElimination, stepElimination } from './elimination.js';
 import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { raceCompletion } from './race-objectives.ts';
-import { createRaceSessionContract } from './race-session.js';
+import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
 
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */

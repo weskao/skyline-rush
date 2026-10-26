@@ -4,14 +4,19 @@ import { RACE_STREAMS, streamSeed } from './rng.js';
 
 // Contract-only themes: they do not recolor the live WebGL scene. Presentation
 // may opt in separately without changing physics or mode record eligibility.
-export const VISUAL_PRESETS = Object.freeze(['track', 'day', 'dusk', 'night', 'rain', 'fog']);
+export const VISUAL_PRESETS = Object.freeze(['track', 'day', 'dusk', 'night', 'rain', 'fog'] as const);
+export type VisualPreset = (typeof VISUAL_PRESETS)[number];
 
 /**
  * Versioned, JSON-serializable identity for one race session.
  * Keep the existing race.config shape untouched: old bests/ghosts key records by
  * JSON.stringify(config), so replacing it with presentation data would break saves.
  */
-export function createRaceSessionContract(trackId, seed, settings = {}, presentation = {}) {
+export function createRaceSessionContract(
+  trackId: string, seed: number,
+  settings: Record<string, unknown> = {},
+  presentation: Record<string, unknown> = {},
+) {
   if (typeof trackId !== 'string' || !/^[a-z][a-z-]{1,24}$/.test(trackId))
     throw new RangeError('Invalid race trackId');
   if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff)
@@ -21,14 +26,14 @@ export function createRaceSessionContract(trackId, seed, settings = {}, presenta
   if (presentation.ghostEnabled !== undefined && typeof presentation.ghostEnabled !== 'boolean')
     throw new RangeError('Invalid ghostEnabled flag');
   const visualPreset = presentation.visualPreset ?? 'track';
-  if (!VISUAL_PRESETS.includes(visualPreset)) throw new RangeError('Invalid visualPreset');
+  if (!VISUAL_PRESETS.includes(visualPreset as VisualPreset)) throw new RangeError('Invalid visualPreset');
 
   // Existing createRace() passes the already-normalized v1 object. New callers
   // supplying raw settings must pass strict mode/field/type validation.
   const config = normalizeRaceConfig(settings);
   const canonical = settings?.rulesVersion === 1 &&
     Object.keys(settings).length === Object.keys(config).length &&
-    Object.keys(config).every(key => JSON.stringify(settings[key]) === JSON.stringify(config[key]));
+    Object.entries(config).every(([key, value]) => JSON.stringify(settings[key]) === JSON.stringify(value));
   if (!canonical) validateRaceRequest(settings);
   const simulation = Object.freeze({
     rulesVersion: config.rulesVersion,
@@ -41,14 +46,14 @@ export function createRaceSessionContract(trackId, seed, settings = {}, presenta
     ...(config.duration ? { durationSeconds: config.duration } : {}),
   });
   return Object.freeze({
-    contractVersion: 1,
+    contractVersion: 1 as const,
     trackId,
     seed,
     mode: config.mode,
     simulation,
     presentation: Object.freeze({
-      ghostEnabled: presentation.ghostEnabled ?? true,
-      visualPreset,
+      ghostEnabled: (presentation.ghostEnabled ?? true) as boolean,
+      visualPreset: visualPreset as VisualPreset,
     }),
     objective: createRaceObjective(config),
     rulesSignature: rulesSignature(config),
@@ -58,3 +63,5 @@ export function createRaceSessionContract(trackId, seed, settings = {}, presenta
     )), // authored traffic/checkpoints remain unchanged until procedural rules opt in
   });
 }
+
+export type RaceSessionContract = ReturnType<typeof createRaceSessionContract>;
