@@ -291,13 +291,13 @@ export const CURRENT_RELEASE = recentReleases()[0] ?? null;
 
 // Shows when the player last saw an older version; with no record only a returning player is told.
 // Blocked storage cannot remember the visit, so it stays silent rather than reopening on every load.
-export function shouldAnnounce(release: Pick<ReleaseEntry, 'version' | 'highlights'> | null, storage?: ReleaseStore, returningPlayer = false): boolean {
+export function shouldAnnounce(release: Pick<ReleaseEntry, 'version' | 'highlights'> | null, storage?: ReleaseStore | null, returningPlayer = false): boolean {
   if (!release?.highlights?.length) return false;
   let seen;
   try { seen = storage?.getItem(NOTES_SEEN_KEY); } catch { return false; }
   return seen == null ? returningPlayer : compareVersions(release.version, seen) > 0;
 }
-export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore): void {
+export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): void {
   if (!release) return;
   try { storage?.setItem(NOTES_SEEN_KEY, release.version); } catch { /* remembered in memory by the app */ }
 }
