@@ -1,5 +1,5 @@
 import './style.css';
-import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.js';
+import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
 import { setupGarageUI } from './garage-ui.ts';
 import { createHistoryView } from './history-ui.ts';
 import { setupGuideUI } from './guide-ui.ts';

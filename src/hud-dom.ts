@@ -1,17 +1,9 @@
 // The hot HUD runs every animation frame. Avoid redundant DOM setters without
 // introducing Vue reactivity or changing the rendered value.
-/**
- * @param {{ textContent: string | null }} node
- * @param {string} value
- */
-export function setTextIfChanged(node, value) {
+export function setTextIfChanged(node: Pick<Node, 'textContent'>, value: string): void {
   if (node.textContent !== value) node.textContent = value;
 }
 
-/**
- * @param {{ hidden: boolean }} node
- * @param {boolean} hidden
- */
-export function setHiddenIfChanged(node, hidden) {
+export function setHiddenIfChanged(node: Pick<HTMLElement, 'hidden'>, hidden: boolean): void {
   if (node.hidden !== hidden) node.hidden = hidden;
 }
