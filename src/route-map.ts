@@ -33,7 +33,7 @@ const routeLabel = (trackId: string, locale: string = getLocale()): string => t(
 export function createRouteMap(trackId: string, { live = false }: { live?: boolean } = {}) {
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
-  for (const [kind, d] of [['start', 0], ['finish', raceTracks[trackId].length]]) {
+  for (const [kind, d] of [['start', 0], ['finish', raceTracks[trackId].length]] as const) {
     const p = routeMarker(trackId, d);
     element.append(svg('circle', { cx: p.x, cy: p.y, r: 2, class: `route-${kind}` }));
   }
