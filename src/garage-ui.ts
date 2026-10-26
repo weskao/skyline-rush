@@ -1,4 +1,4 @@
-import { PAINTS } from './appearance.js';
+import { PAINTS } from './appearance.ts';
 import { updateGarageView } from './garage-view-state.ts';
 import { t } from './i18n.js';
 // Keep progression checks locked to the same implementation used in production.

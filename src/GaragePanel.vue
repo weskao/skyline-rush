@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PAINTS } from './appearance.js';
+import { PAINTS } from './appearance.ts';
 import { garageView } from './garage-view-state.ts';
 </script>
 

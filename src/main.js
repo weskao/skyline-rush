@@ -33,7 +33,7 @@ import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, 
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
 import { createCallouts } from './callouts.js';
 import { createPresentation } from './presentation.js';
-import { PAINTS } from './appearance.js';
+import { PAINTS } from './appearance.ts';
 import { frameStats, PERF_WINDOW } from './perf.js';
 import { createRouteMap } from './route-map.js';
 import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.js';
