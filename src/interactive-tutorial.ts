@@ -14,7 +14,13 @@ export function prepareTutorialInput(input: TutorialInput, step: TutorialStep | 
 }
 
 export function createInteractiveTutorial() {
-  const race = createRace('coast', { mode: 'free', traffic: 'off', items: false, collision: 'relaxed' });
+  // The legacy JS engine infers its optional config as null; use a typed adapter
+  // until createRace itself is converted, without changing the runtime call.
+  const tutorialRace = createRace as unknown as (
+    trackId: string,
+    config: { mode: 'free'; traffic: 'off'; items: false; collision: 'relaxed' }
+  ) => ReturnType<typeof createRace>;
+  const race = tutorialRace('coast', { mode: 'free', traffic: 'off', items: false, collision: 'relaxed' });
   race.rings = [];
   race.rivals = [];
   race.traffic = [];
