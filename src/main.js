@@ -15,7 +15,7 @@ import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.js';
 import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.js';
-import { loadRecentCustom, saveRecentCustom } from './recent-custom.js';
+import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
 import { stuntMedal } from './stunt-attack.js';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
 import { createWorld } from './world.js';
