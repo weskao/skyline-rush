@@ -19,15 +19,11 @@ A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound
 
 **Home screen** — pick a track and a camera angle, then start the race.
 
-<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/home_screen.mp4" controls muted playsinline width="100%">
-  <a href="artifacts/home_screen.mp4">Watch the home screen video</a>
-</video>
+https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
 
 **Racing** — a full run on one of the tracks.
 
-<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/Play.mp4" controls muted playsinline width="100%">
-  <a href="artifacts/Play.mp4">Watch the gameplay video</a>
-</video>
+https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
 ![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)
 
@@ -38,6 +34,24 @@ A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound
 ![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261024a)
 
 ![Race results with a new personal best](artifacts/race-results.jpeg?v=20261024a)
+
+### Mobile screenshots and demo
+
+Play in portrait or landscape with touch controls. The clip follows a Coast run from the start screen through countdown, FLY lift-off and landing; AUTO keeps the accelerator held.
+
+**Portrait — ready to race**
+
+![Mobile portrait start screen with track selection and touch-friendly race buttons](artifacts/mobile-home.jpeg)
+
+**Landscape — flying with touch controls**
+
+![Mobile landscape flight with FLY held and the touch controls visible](artifacts/mobile-landscape-flight.jpeg)
+
+**Touch gameplay demo** · [Watch the MP4](artifacts/mobile-demo.mp4)
+
+![Mobile touch gameplay: Coast countdown, FLY lift-off and landing](artifacts/mobile-demo.gif)
+
+Captured from the running game in Chrome mobile emulation at 390×844 (portrait) and 844×390 (landscape), using a fresh demo profile. These captures do not measure physical-phone performance.
 
 ## Game modes and replayability (development branch)
 

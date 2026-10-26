@@ -1,4 +1,4 @@
-<!-- source-sha256: 080cdd0b39b24c2ebd783eb1196f6438ee19e353816347b8cf1372a684e3e854 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 5a9f2fc9c1a604415a523ab4e158d0fb70c25a87199df6aed99848cf6329ff40 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -20,15 +20,11 @@
 
 **主畫面** — 選擇賽道和鏡頭角度，然後開始比賽。
 
-<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/home_screen.mp4" controls muted playsinline width="100%">
-  <a href="artifacts/home_screen.mp4">觀看主畫面影片</a>
-</video>
+https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
 
 **比賽** — 在其中一條賽道上跑完一整場。
 
-<video src="https://github.com/weskao/skyline-rush/raw/main/artifacts/Play.mp4" controls muted playsinline width="100%">
-  <a href="artifacts/Play.mp4">觀看遊戲影片</a>
-</video>
+https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
 ![遊戲示範：倒數、飛越車流並降落在海岸公路](artifacts/readme-demo.gif)
 
@@ -39,6 +35,24 @@
 ![爬升時的手機直向版面](artifacts/mobile-flight.zh-TW.jpeg?v=20261024a)
 
 ![創下個人最佳成績的比賽結果](artifacts/race-results.zh-TW.jpeg?v=20261024a)
+
+### 手機截圖與示範
+
+直向、橫向皆可使用觸控操作。影片從 Coast 的開始畫面出發，依序展示倒數、按住 FLY 起飛與降落；AUTO 會持續踩住油門。
+
+**直向 — 準備開賽**
+
+![手機直向開始畫面，含賽道選擇與觸控開賽按鈕](artifacts/mobile-home.zh-TW.jpeg)
+
+**橫向 — 觸控飛行**
+
+![手機橫向飛行畫面，按住 FLY 並顯示觸控操作區](artifacts/mobile-landscape-flight.zh-TW.jpeg)
+
+**觸控遊玩示範** · [觀看 MP4](artifacts/mobile-demo.mp4)
+
+![手機觸控遊玩：Coast 倒數、按住 FLY 起飛與降落](artifacts/mobile-demo.gif)
+
+以全新示範設定檔，在 Chrome 手機模擬環境中擷取實際遊戲畫面：直向 390×844、橫向 844×390。這些擷取畫面不代表實體手機的效能測試結果。
 
 ## 遊戲模式與重玩價值（開發分支）
 
