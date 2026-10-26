@@ -3,19 +3,23 @@ import * as THREE from 'three';
 // GPU-instancing equal-geometry + equal-material meshes preserves every
 // triangle, normal and authored material. Every static 120 m chunk is batched
 // once; during driving only the chunk parent transforms move.
-export function batchStaticChunk(chunk, minimumInstances = 3) {
+export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
   chunk.updateMatrixWorld(true);
   const inverse = new THREE.Matrix4().copy(chunk.matrixWorld).invert();
-  const groups=new Map();
-  chunk.traverse(mesh=>{
-    if(!mesh.isMesh || mesh.isInstancedMesh || mesh.userData.ownGeometry ||
+  const groups = new Map<string, Array<THREE.Mesh<THREE.BufferGeometry, THREE.Material>>>();
+  chunk.traverse(object => {
+    // Three.js Mesh flags are runtime sentinels (and Object3D does not declare them).
+    if (!('isMesh' in object) || object.isMesh !== true ||
+        ('isInstancedMesh' in object && object.isInstancedMesh === true)) return;
+    const mesh = object as THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+    if(mesh.userData.ownGeometry ||
        !mesh.geometry || !mesh.material || Array.isArray(mesh.material))return;
     const key=mesh.geometry.uuid+'|'+mesh.material.uuid;
     if(!groups.has(key))groups.set(key,[]);
     groups.get(key).push(mesh);
   });
   let sourceMeshes=0,drawBatches=0;
-  const transforms=[];
+  const transforms: THREE.Matrix4[]=[];
   for(const meshes of groups.values()){
     if(meshes.length<minimumInstances)continue;
     const instances=new THREE.InstancedMesh(meshes[0].geometry,meshes[0].material,meshes.length);
@@ -26,7 +30,7 @@ export function batchStaticChunk(chunk, minimumInstances = 3) {
       instances.setMatrixAt(i,matrix);
       transforms.push(matrix);
       const ancestor=meshes[i].parent;
-      if(ancestor?.isGroup)ancestor.userData.batched=true;
+      if(ancestor && 'isGroup' in ancestor && ancestor.isGroup === true) ancestor.userData.batched=true;
     }
     instances.instanceMatrix.needsUpdate=true;
     instances.computeBoundingSphere();

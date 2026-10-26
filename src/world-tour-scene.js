@@ -5,7 +5,7 @@ import { roadRibbon } from './geometry.ts';
 import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
-import { batchStaticChunk } from './world-tour-batching.js';
+import { batchStaticChunk } from './world-tour-batching.ts';
 
 // One scenery system for five distinct destinations. Locations are authored as
 // race-distance + roadside offsets; meshes follow the *real* 3D driving path.
