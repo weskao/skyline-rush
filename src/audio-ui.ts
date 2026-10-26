@@ -1,4 +1,4 @@
-import { icon } from './icons.js';
+import { icon } from './icons.ts';
 import { t } from './i18n.js';
 import { AUDIO_KEYS } from './audio-settings.ts';
 
