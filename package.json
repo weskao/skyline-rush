@@ -16,9 +16,9 @@
     "test:browser": "playwright test",
     "test:layout": "npm run build && playwright test tests/race-modes-browser.spec.js tests/home-shortcuts-browser.spec.js && playwright test tests/i18n-browser.spec.js tests/responsive-browser.spec.js -g \"intro bottom edge|start layout\"",
     "typecheck": "npm run typecheck:ts && npm run typecheck:vue && npm run typecheck:js",
-    "typecheck:ts": "tsc --noEmit --project tsconfig.json",
+    "typecheck:ts": "npm install --no-save --package-lock=false --ignore-scripts @types/three@0.180.0 && tsc --noEmit --project tsconfig.json",
     "typecheck:js": "tsc --noEmit --project jsconfig.json",
-    "typecheck:vue": "npm install --no-save --package-lock=false --ignore-scripts vue-tsc@3.3.13 typescript@5.9.3 && vue-tsc --noEmit --project tsconfig.json"
+    "typecheck:vue": "npm install --no-save --package-lock=false --ignore-scripts vue-tsc@3.3.13 typescript@5.9.3 @types/three@0.180.0 && vue-tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "firebase": "^13.1.0",
