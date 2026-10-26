@@ -100,7 +100,8 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
 - [x] Step 2b (optional): decide on ESLint + TypeScript/Vue rules with a measured maintenance
   benefit; do not block feature parity merely to add tooling.
   - Decision: do not add ESLint now. Strict tsc + vue-tsc and existing Node/Playwright regressions already protect this migration; revisit only on demonstrated lint-only defects.
-- [ ] UI parity acceptance before further broad rewrites: first-visitor start (desktop/mobile), main DOM/CSS structural contract, modal controls, screenshot comparisons on affected devices, exact-HEAD browser and cloud/World Tour gates. User-reported visual differences remain open until observed in a real browser and fixed.\n- [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
+- [ ] UI parity acceptance before further broad rewrites: first-visitor start (desktop/mobile), main DOM/CSS structural contract, modal controls, screenshot comparisons on affected devices, exact-HEAD browser and cloud/World Tour gates. User-reported visual differences remain open until observed in a real browser and fixed.\n  - [x] Visual SVG icons and track-section sign contracts moved to strict TypeScript; removed duplicate JS, no SVG/path/label edits; focused exact-HEAD CI 40282591936 (unit 636 pass / 0 fail / 3 skipped, Cloud Save and gate passed). Full visual parity still reserved for Step 5.
+- [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
   `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
   Main bootstrap/frame loop remains only as a documented performance exception.
 - [ ] Step 4: move event-driven dialogs and panels to Vue 3 TypeScript one at a time
