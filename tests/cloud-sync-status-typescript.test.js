@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 test('cloud sync metadata has one strict TypeScript implementation and its legacy public exports remain stable', async () => {
   const module = new URL('../src/cloud-sync-status.ts', import.meta.url);
   assert.ok(existsSync(module), 'cloud sync state must move to strict TypeScript');
-  const old = readFileSync(new URL('../src/cloud-progress.js', import.meta.url), 'utf8');
+  const old = readFileSync(new URL('../src/cloud-progress.ts', import.meta.url), 'utf8');
   assert.match(old, /export\s*\{\s*readCloudSyncStatus,\s*writeCloudSyncStatus\s*\}\s*from\s*['"]\.\/cloud-sync-status\.ts['"]/);
   assert.doesNotMatch(old, /const cloudSyncKey|const EMPTY_SYNC/, 'no duplicated legacy implementation');
   const { readCloudSyncStatus, writeCloudSyncStatus } = await import(module);

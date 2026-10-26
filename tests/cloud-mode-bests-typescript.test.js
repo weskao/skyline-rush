@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 test('permanent rule-scoped mode and stunt best merge uses a single TypeScript implementation', async () => {
   assert.equal(existsSync(new URL('../src/cloud-mode-bests.ts', import.meta.url)), true,
     'permanent cloud score normalization belongs in strict TypeScript');
-  const old = readFileSync(new URL('../src/cloud-progress.js', import.meta.url), 'utf8');
+  const old = readFileSync(new URL('../src/cloud-progress.ts', import.meta.url), 'utf8');
   assert.match(old, /export\s*\{\s*mergeModeBests\s*\}\s*from\s*['"]\.\/cloud-mode-bests\.ts['"]/);
   assert.doesNotMatch(old, /export function mergeModeBests\(/);
   const { mergeModeBests } = await import('../src/cloud-mode-bests.ts');
