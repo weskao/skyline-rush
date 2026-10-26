@@ -25,7 +25,7 @@ export function createCheckpointRush(track: CheckpointTrack | null | undefined, 
     o && [o.from, o.to, o.left, o.right, o.bottom, o.top].every(Number.isFinite) &&
     o.from < o.to && o.left < o.right && o.bottom < o.top))
     throw new RangeError('Invalid checkpoint obstacle bounds');
-  const gates = [];
+  const gates: CheckpointGate[] = [];
   for (let distance = 330; distance < track.length - 180; distance += 450) {
     if (track.sections.some(section => EXCLUDED.has(section.type) &&
       distance >= section.from - 70 && distance <= section.to + 70)) continue;
