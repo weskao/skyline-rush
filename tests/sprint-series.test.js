@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createSprintSeries, addSprintStage, sprintTotal } from '../src/sprint-series.js';
+import { createSprintSeries, addSprintStage, sprintTotal } from '../src/sprint-series.ts';
 import { normalizeRaceConfig, rulesSignature } from '../src/race-config.js';
 
 test('supported sprint heat counts 1, 2, 3 and 5', () => {

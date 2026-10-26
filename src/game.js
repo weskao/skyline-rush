@@ -1,7 +1,7 @@
 import { seededRng, RACE_STREAMS } from './rng.js';
 import { createHazards, hazardX } from './hazards.js';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
-import { createPracticeStats, samplePractice } from './practice-stats.js';
+import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
 import { createElimination, stepElimination } from './elimination.js';
 import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
