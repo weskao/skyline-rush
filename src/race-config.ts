@@ -70,7 +70,7 @@ const assertOption: (test: unknown, key: string) => asserts test = (test, key) =
 export function validateRaceRequest(value: unknown = {}, { availableTracks }: { availableTracks?: readonly string[] } = {}) {
   if (!isRecord(value)) throw new TypeError('Race settings must be an object');
   const mode = value.mode ?? 'classic';
-  if (!MODES.includes(mode)) throw new RangeError('Unknown race mode: ' + String(mode));
+  if (!isOneOf(mode, MODES)) throw new RangeError('Unknown race mode: ' + String(mode));
   const allowed = new Set(['mode', 'rulesVersion', ...REQUEST_KEYS[mode]]);
   for (const key of Object.keys(value)) {
     assertOption(allowed.has(key), key + ' not supported in ' + mode);
