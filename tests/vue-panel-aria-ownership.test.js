@@ -11,7 +11,7 @@ test('Vue owns audio and controls menu aria-expanded together with hidden state'
   ];
   for (const [component, prefix, state] of cases) {
     const template = source(component);
-    assert.match(template, new RegExp(`id="${prefix}-button"[^>]*:aria-expanded="String\\(panelsView\\.${state}\\)"`));
+    assert.match(template, new RegExp(`id="${prefix}-button"[^>]*:aria-expanded="panelsView\\.${state}"`));
     assert.match(template, new RegExp(`:hidden="!panelsView\\.${state}"`));
   }
 });
