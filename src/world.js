@@ -14,7 +14,7 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
-import { skyPosition, skyFrame } from './sky-track.js';
+import { skyPosition, skyFrame } from './sky-track.ts';
 import { orientCarOnRoad } from './vehicle-pose.ts';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';

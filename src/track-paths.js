@@ -1,5 +1,5 @@
 import { RACE_TRACKS } from './game.js';
-import { skyFrame, skyPoint } from './sky-track.js';
+import { skyFrame, skyPoint } from './sky-track.ts';
 
 // A single distance -> main-road mapping drives previews, minimaps and world geometry.
 // The original flat routes retain their exact world-space centreline.

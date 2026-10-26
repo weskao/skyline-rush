@@ -1,3 +1,7 @@
+// Road-aligned Sky Spiral geometry uses fixed-length tuples to prevent missing axes.
+export type Vec3 = [number, number, number];
+export interface SkyPoint { x: number; y: number; z: number }
+
 // Three-dimensional Sky Spiral road centreline, shared by gameplay and rendering.
 // Distances are measured along the race, not in projected world-space Z.
 export const SKY_SPIRAL = Object.freeze({ start: 1100, end: 2200, radius: 165, rise: 82 });
@@ -7,11 +11,11 @@ export const SKY_JUMPS = Object.freeze([
   { rampFrom: 4550, rampTo: 4630, gapFrom: 4630, gapTo: 4700 },
 ]);
 const TAU = 2 * Math.PI;
-const clamp01 = x => Math.max(0, Math.min(1, x));
-const smooth = t => t * t * (3 - 2 * t);
-const between = (x, a, b) => clamp01((x - a) / (b - a));
+const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
+const smooth = (t: number): number => t * t * (3 - 2 * t);
+const between = (x: number, a: number, b: number): number => clamp01((x - a) / (b - a));
 
-function elevation(distance) {
+function elevation(distance: number): number {
   if (distance <= 500) return 0;
   if (distance < 1100) {
     const t = between(distance, 500, 1100);
@@ -29,7 +33,7 @@ function elevation(distance) {
   return 20;
 }
 
-function launchProfile(distance) {
+function launchProfile(distance: number): number {
   let offset = 0;
   for (const jump of SKY_JUMPS) {
     if (distance < jump.rampFrom || distance > jump.gapTo + 180) continue;
@@ -40,7 +44,7 @@ function launchProfile(distance) {
   return offset;
 }
 
-export function skyPoint(distance) {
+export function skyPoint(distance: number): SkyPoint {
   const s = Number.isFinite(distance) ? distance : 0;
   const { start, end, radius } = SKY_SPIRAL;
   const y = elevation(s) + launchProfile(s);
@@ -52,29 +56,29 @@ export function skyPoint(distance) {
   return { x: 0, y, z: -start - (s - end) };
 }
 
-const unit = vector => {
+const unit = (vector: Vec3): Vec3 => {
   const length = Math.hypot(...vector) || 1;
-  return vector.map(x => x / length);
+  return vector.map(x => x / length) as Vec3;
 };
-const cross = (a, b) => [
+const cross = (a: Vec3, b: Vec3): Vec3 => [
   a[1] * b[2] - a[2] * b[1],
   a[2] * b[0] - a[0] * b[2],
   a[0] * b[1] - a[1] * b[0],
 ];
 
-export function skyFrame(distance) {
+export function skyFrame(distance: number) {
   const before = skyPoint(distance - 0.25), after = skyPoint(distance + 0.25);
   const forward = unit([after.x - before.x, after.y - before.y, after.z - before.z]);
   const horizontalRight = unit([-forward[2], 0, forward[0]]);
   const normal = unit(cross(horizontalRight, forward));
   const spiralBlend = smooth(between(distance, 1100, 1200)) * (1 - smooth(between(distance, 2100, 2200)));
   const bank = 0.11 * spiralBlend;
-  const right = horizontalRight.map((v, i) => v * Math.cos(bank) + normal[i] * Math.sin(bank));
-  const up = normal.map((v, i) => v * Math.cos(bank) - horizontalRight[i] * Math.sin(bank));
+  const right = horizontalRight.map((v, i) => v * Math.cos(bank) + normal[i] * Math.sin(bank)) as Vec3;
+  const up = normal.map((v, i) => v * Math.cos(bank) - horizontalRight[i] * Math.sin(bank)) as Vec3;
   return { point: skyPoint(distance), forward, right, up, bank };
 }
 
-export function skyPosition(distance, lateral = 0, altitude = 0, originDistance = 0) {
+export function skyPosition(distance: number, lateral = 0, altitude = 0, originDistance = 0): Vec3 {
   const { point, right, up } = skyFrame(distance);
   const origin = skyPoint(originDistance);
   return [
@@ -84,6 +88,6 @@ export function skyPosition(distance, lateral = 0, altitude = 0, originDistance 
   ];
 }
 
-export function skyGapAt(distance) {
+export function skyGapAt(distance: number): boolean {
   return SKY_JUMPS.some(jump => distance >= jump.gapFrom && distance < jump.gapTo);
 }

@@ -8,7 +8,7 @@ import { bankItem, activateItem, tickItemCooldown } from './active-items.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { raceCompletion } from './race-objectives.ts';
 import { createRaceSessionContract } from './race-session.ts';
-import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
+import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
 
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
