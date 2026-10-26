@@ -4,9 +4,9 @@ import { existsSync, readFileSync } from 'node:fs';
 
 test('cloud progress merging and schema validation have one strictly typed owner', async () => {
   assert.equal(existsSync(new URL('../src/cloud-progress-merge.ts', import.meta.url)), true);
-  const legacy = readFileSync(new URL('../src/cloud-progress.js', import.meta.url), 'utf8');
+  const legacy = readFileSync(new URL('../src/cloud-progress.ts', import.meta.url), 'utf8');
   assert.match(legacy, /export\s*\{[^}]*mergeProgress[^}]*\}\s*from\s*['"]\.\/cloud-progress-merge\.ts['"]/);
-  assert.doesNotMatch(legacy, /export function mergeProgress\(|function raceRun\(|function modeRun\(|function dailyRun\(/);
+  assert.doesNotMatch(legacy, /export function mergeProgress\(|function raceRun\(|function modeRun\(|function dailyRun\(/);\n  assert.equal(existsSync(new URL('../src/cloud-progress.js', import.meta.url)), false);
   const { mergeProgress, mergeUnlocks, cloudFailureStatus } = await import('../src/cloud-progress-merge.ts');
   assert.deepEqual(mergeUnlocks(['neon', 'neon'], ['unknown', 'future-road']), ['coast', 'neon']);
   assert.equal(cloudFailureStatus({code:'unavailable'}, false), 'cloud.localFailed');

@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import type { User } from 'firebase/auth';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, connectAuthEmulator } from 'firebase/auth';
 import { doc, getFirestore, runTransaction, writeBatch, getDoc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
-import { mergeProgress, mergeModeBests, readLocalModeBests, saveLocalModeBests } from './cloud-progress.js';
+import { mergeProgress, mergeModeBests, readLocalModeBests, saveLocalModeBests } from './cloud-progress.ts';
 import { googleAccountFields } from './cloud-account.ts';
 
 const app = initializeApp({
