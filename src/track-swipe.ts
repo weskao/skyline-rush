@@ -31,7 +31,7 @@ export function addSwipeSample(samples: SwipeSample[], time: number, x: number):
 export function releaseVelocity(samples: SwipeSample[], now: number): number {
   const recent = samples.filter(([time]) => time >= now - VELOCITY_WINDOW_MS);
   if (recent.length < 2) return 0;
-  const [[t0, x0], [t1, x1]] = [recent[0], recent.at(-1)];
+  const [[t0, x0], [t1, x1]] = [recent[0], recent[recent.length - 1]!];
   return t1 > t0 ? (x1 - x0) / (t1 - t0) : 0;
 }
 
