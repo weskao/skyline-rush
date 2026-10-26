@@ -1,13 +1,15 @@
-import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
-import { validGhost } from './ghost.ts';
+import { RACE_TRACKS } from './game.js';
 import { stuntMedal } from './stunt-attack.ts';
 import { readStored as read, writeStored as write } from './history-storage.ts';
 export { validStars, starTotal, dailyBoard, careerStats } from './history-stats.ts';
+export { loadGhost, saveGhost, loadModeGhost, saveModeGhost } from './history-ghost.ts';
+export { DAILY_KEY, validDaily, loadDaily, recordDaily } from './history-daily.ts';
 export { BEST_KEY, LEGACY_BEST_KEY, loadBests, recordBest, MEDALS, MEDALS_KEY, medalsFor, loadMedals, recordMedals, STARS_KEY, loadStars, recordStars, loadPaint, savePaint } from './history-achievements.ts';
 
 export const HISTORY_KEY = 'skyline-rush-history';
 export const UNLOCKED_KEY = 'skyline-rush-unlocked';
-export const HISTORY_LIMIT = 50;
+import { HISTORY_LIMIT } from './history-policy.ts';
+export { HISTORY_LIMIT } from './history-policy.ts';
 
 const valid = time => Number.isFinite(time) && time > 0;
 
@@ -177,57 +179,3 @@ export function recordModeRace(race, storage, now = new Date()) {
   return { best, record };
 }
 
-// One best-run ghost per track: { trackId: { time, samples } }.
-const GHOSTS_KEY = 'skyline-rush-ghosts';
-const GHOST_STORAGE_LIMIT = 512 * 1024; // characters per key; keeps replay data well below common localStorage quotas
-function boundedGhosts(previous, key, ghost) {
-  try {
-    const entries = { ...previous };
-    delete entries[key];
-    entries[key] = ghost;
-    while (JSON.stringify(entries).length > GHOST_STORAGE_LIMIT && Object.keys(entries).length > 1)
-      delete entries[Object.keys(entries)[0]];
-    return JSON.stringify(entries).length <= GHOST_STORAGE_LIMIT ? entries : null;
-  } catch { return null; }
-}
-const loadGhosts = storage => { const saved = read(GHOSTS_KEY, storage); return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}; };
-export const loadGhost = (trackId, storage) => { const ghost = loadGhosts(storage)[trackId]; return validGhost(ghost, trackId) ? ghost : null; };
-export const saveGhost = (trackId, ghost, storage) => {
-  const entries = boundedGhosts(loadGhosts(storage), trackId, ghost);
-  if (entries) write(GHOSTS_KEY, entries, storage);
-};
-
-
-// Time Attack ghosts are keyed by full rule signature, not by Classic best.
-const MODE_GHOST_KEY = 'skyline-rush-mode-ghosts-v1';
-const modeGhostId = (trackId, config) => trackId + ':' + JSON.stringify(config);
-export function loadModeGhost(trackId, config, storage) {
-  const ghosts = read(MODE_GHOST_KEY, storage);
-  const item = ghosts && typeof ghosts === 'object' && !Array.isArray(ghosts) ? ghosts[modeGhostId(trackId, config)] : null;
-  return validGhost(item, trackId) ? item : null;
-}
-export function saveModeGhost(trackId, config, ghost, storage) {
-  if (!validGhost(ghost, trackId)) return false;
-  const previous = read(MODE_GHOST_KEY, storage);
-  const entries = previous && typeof previous === 'object' && !Array.isArray(previous) ? previous : {};
-  const bounded = boundedGhosts(entries, modeGhostId(trackId, config), ghost);
-  if (!bounded) return false;
-  write(MODE_GHOST_KEY, bounded, storage);
-  return true;
-}
-
-// Daily challenge runs live on their own board, never in history, bests, unlocks or ghosts.
-export const DAILY_KEY = 'skyline-rush-daily';
-export const validDaily = run => run && typeof run === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(run.id) && Object.hasOwn(RACE_TRACKS, run.track) &&
-  DAILY_MODIFIERS.includes(run.modifier) && valid(run.time) && Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 &&
-  Number.isFinite(run.score) && run.score >= 0 && typeof run.date === 'string';
-export function loadDaily(storage) {
-  const runs = read(DAILY_KEY, storage);
-  return Array.isArray(runs) ? runs.filter(validDaily) : [];
-}
-export function recordDaily(challenge, race, storage, now = new Date()) {
-  const { position, time, score } = race.result;
-  const run = { id: challenge.id, track: challenge.track, modifier: challenge.modifier, time, position, score, date: now.toISOString() };
-  write(DAILY_KEY, [...loadDaily(storage), run].slice(-HISTORY_LIMIT), storage);
-  return run;
-}
