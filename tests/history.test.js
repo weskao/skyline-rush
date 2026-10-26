@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, HISTORY_LIMIT, loadHistory, recordRace, loadBests, recordBest, careerStats } from '../src/history.js';
+import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, HISTORY_LIMIT, loadHistory, recordRace, loadBests, recordBest, careerStats } from '../src/history.ts';
 
 const memoryStorage = (initial = {}) => {
   const data = { ...initial };
@@ -124,7 +124,7 @@ test('a throwing localStorage getter never throws out of the module', () => {
 });
 
 test('top-three finishes permanently unlock the next track, even after history rolls over', async () => {
-  const { loadUnlocks } = await import('../src/history.js');
+  const { loadUnlocks } = await import('../src/history.ts');
   assert.equal(typeof loadUnlocks, 'function');
   const storage = memoryStorage();
   assert.deepEqual(loadUnlocks(storage), ['coast']);
@@ -141,7 +141,7 @@ test('top-three finishes permanently unlock the next track, even after history r
 });
 
 test('unlock migration accepts only valid track finishes and ignores malformed progress', async () => {
-  const { loadUnlocks } = await import('../src/history.js');
+  const { loadUnlocks } = await import('../src/history.ts');
   assert.equal(typeof loadUnlocks, 'function');
   const storage = memoryStorage({
     'skyline-rush-unlocked': '["bad", null]',
@@ -151,7 +151,7 @@ test('unlock migration accepts only valid track finishes and ignores malformed p
 });
 
 test('the oldest qualifying legacy finish is migrated before the next save evicts it', async () => {
-  const { loadUnlocks } = await import('../src/history.js');
+  const { loadUnlocks } = await import('../src/history.ts');
   const history = Array.from({ length: 50 }, (_, i) => ({ track: i === 0 ? 'neon' : 'coast', position: i === 0 ? 2 : 4, time: 70 }));
   const storage = memoryStorage({ [HISTORY_KEY]: JSON.stringify(history) });
   recordRace(finishedRace({ position: 4 }), storage);
@@ -159,7 +159,7 @@ test('the oldest qualifying legacy finish is migrated before the next save evict
 });
 
 test('medal rules: win, zero contacts, five PERFECT LINEs and a three-charge NITRO chain', async () => {
-  const { medalsFor, MEDALS } = await import('../src/history.js');
+  const { medalsFor, MEDALS } = await import('../src/history.ts');
   assert.deepEqual(MEDALS, ['first-win', 'clean-run', 'perfect-five', 'nitro-chain']);
   assert.deepEqual(medalsFor({ position: 1, collisions: 0, perfectLines: 5, nitroChain: 3 }), MEDALS);
   assert.deepEqual(medalsFor({ position: 2, collisions: 1, perfectLines: 4, nitroChain: 2, nitroUses: 3 }), []);
@@ -168,7 +168,7 @@ test('medal rules: win, zero contacts, five PERFECT LINEs and a three-charge NIT
 });
 
 test('medals are saved once with the first award date and only new ones are reported', async () => {
-  const { recordMedals, loadMedals } = await import('../src/history.js');
+  const { recordMedals, loadMedals } = await import('../src/history.ts');
   const storage = memoryStorage();
   const first = new Date('2026-10-01T10:00:00Z');
   assert.deepEqual(recordMedals({ position: 1, collisions: 2 }, storage, first), ['first-win']);
@@ -177,7 +177,7 @@ test('medals are saved once with the first award date and only new ones are repo
 });
 
 test('saved medals are validated and storage failures never throw', async () => {
-  const { recordMedals, loadMedals } = await import('../src/history.js');
+  const { recordMedals, loadMedals } = await import('../src/history.ts');
   const storage = memoryStorage({ 'skyline-rush-medals': JSON.stringify({ 'first-win': 'not a date', 'clean-run': '2026-10-02T10:00:00.000Z', hacked: '2026-10-02T10:00:00.000Z' }) });
   assert.deepEqual(loadMedals(storage), { 'clean-run': '2026-10-02T10:00:00.000Z' });
   assert.deepEqual(loadMedals(memoryStorage({ 'skyline-rush-medals': '[1,2]' })), {});
@@ -196,7 +196,7 @@ test('paints unlock at 0 / 3 / 6 / 10 / 16 / 24 total stars and stay visual only
 });
 
 test('best stars are kept per track and summed; invalid saved stars are ignored', async () => {
-  const { recordStars, loadStars, starTotal } = await import('../src/history.js');
+  const { recordStars, loadStars, starTotal } = await import('../src/history.ts');
   const storage = memoryStorage({ 'skyline-rush-stars': JSON.stringify({ coast: 2, neon: 7, nowhere: 3, canyon: 1.5 }) });
   assert.deepEqual(loadStars(storage), { coast: 2 });
   recordStars('coast', 1, storage);
@@ -209,7 +209,7 @@ test('best stars are kept per track and summed; invalid saved stars are ignored'
 });
 
 test('the equipped paint is saved and falls back to pearl unless it is owned', async () => {
-  const { loadPaint, savePaint } = await import('../src/history.js');
+  const { loadPaint, savePaint } = await import('../src/history.ts');
   const storage = memoryStorage();
   assert.equal(loadPaint(['pearl', 'coral'], storage), 'pearl');
   savePaint('coral', storage);

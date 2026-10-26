@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 test('ghost persistence and Daily history are single-owner strict TypeScript services', async () => {
   assert.ok(existsSync(new URL('../src/history-ghost.ts', import.meta.url)));
   assert.ok(existsSync(new URL('../src/history-daily.ts', import.meta.url)));
-  const old = readFileSync(new URL('../src/history.js', import.meta.url), 'utf8');
+  const old = readFileSync(new URL('../src/history.ts', import.meta.url), 'utf8');
   assert.match(old, /export\s*\{[^}]*loadGhost[^}]*saveModeGhost[^}]*\}\s*from\s*['"]\.\/history-ghost\.ts['"]/);
   assert.match(old, /export\s*\{[^}]*loadDaily[^}]*recordDaily[^}]*\}\s*from\s*['"]\.\/history-daily\.ts['"]/);
   assert.doesNotMatch(old, /function boundedGhosts\(|export function loadModeGhost\(|export function recordDaily\(/);

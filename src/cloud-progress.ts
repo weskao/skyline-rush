@@ -1,7 +1,7 @@
 import { mergeProgress } from './cloud-progress-merge.ts';
 import { mergeModeBests } from './cloud-mode-bests.ts';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
-  MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
+  MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.ts';
 
 export { mergeUnlocks, claimCloudOwner, cloudFailureStatus, mergeProgress } from './cloud-progress-merge.ts';
 export { mergeModeBests } from './cloud-mode-bests.ts';

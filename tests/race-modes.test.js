@@ -78,7 +78,7 @@ test('time attack has no rivals and still completes a normal sprint', () => {
   assert.equal(race.result.position, 1);
 });
 
-import { recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.js';
+import { recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.ts';
 
 test('practice history stays separate from campaign history and unlocks', () => {
   const map = new Map();
@@ -104,7 +104,7 @@ test('invalid and incomplete practice data cannot be saved', () => {
   assert.throws(() => recordModeRace(classic), /finished practice/);
 });
 
-import { loadModeGhost, saveModeGhost } from '../src/history.js';
+import { loadModeGhost, saveModeGhost } from '../src/history.ts';
 
 test('Time Attack ghosts never overwrite Classic ghosts', () => {
   const data = {};

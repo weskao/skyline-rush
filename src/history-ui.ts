@@ -1,5 +1,5 @@
 import { formatDate, t, trackName, getLocale } from './i18n.ts';
-import { loadModeBest, loadModeGhost, careerStats, dailyBoard, MEDALS } from './history.js';
+import { loadModeBest, loadModeGhost, careerStats, dailyBoard, MEDALS } from './history.ts';
 import { dailyChallenge } from './game.js';
 import { updateHistoryView } from './history-view-state.ts';
 import { updateHomeStatusView } from './home-status-view-state.ts';

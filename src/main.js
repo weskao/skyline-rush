@@ -29,7 +29,7 @@ import { controlSettings, CONTROLS_KEY } from './control-settings.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.ts';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
-  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.js';
+  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.ts';
 import { recordGhost, validGhost, ghostAt } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createPresentation } from './presentation.ts';
@@ -1286,7 +1286,7 @@ function phaseUI() {
       stunt.airTime += race.styleAttack.airTime;
       stunt.maxCombo = Math.max(stunt.maxCombo, race.styleAttack.maxCombo);
     }
-    const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !sessionMedals[id]); // history.js swallows storage failures
+    const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !sessionMedals[id]); // history.ts swallows storage failures
     sessionMedals = { ...sessionMedals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
     const trackId = race.trackId ?? 'coast';
     let best, record;

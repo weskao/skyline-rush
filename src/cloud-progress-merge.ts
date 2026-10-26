@@ -1,5 +1,5 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
-import { MEDALS, HISTORY_LIMIT } from './history.js';
+import { MEDALS, HISTORY_LIMIT } from './history.ts';
 import { MODE_NAMES } from './cloud-mode-bests.ts';
 import { validStars } from './history-stats.ts';
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { careerStats } from '../src/history.js';
+import { careerStats } from '../src/history.ts';
 import { DAILY_MODIFIERS } from '../src/game.js';
 import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, mergeModeBests, readLocalModeBests, saveLocalModeBests, parseProgressExport } from '../src/cloud-progress.ts';
 

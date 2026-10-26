@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace } from '../src/game.js';
 import { hazardX } from '../src/hazards.ts';
-import { recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.js';
+import { recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.ts';
 
 function crossHazard(near) {
   const race=createRace('coast',{mode:'gauntlet'});

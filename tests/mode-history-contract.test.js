@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace } from '../src/game.js';
-import { MODE_HISTORY_KEY, recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.js';
+import { MODE_HISTORY_KEY, recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.ts';
 import { rulesSignature } from '../src/race-config.ts';
 
 function storage(initial = {}) {

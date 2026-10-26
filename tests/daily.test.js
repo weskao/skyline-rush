@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, dailyChallenge, DAILY_MODIFIERS, RACE_TRACKS, RING_RADIUS } from '../src/game.js';
-import { recordDaily, loadDaily, dailyBoard } from '../src/history.js';
+import { recordDaily, loadDaily, dailyBoard } from '../src/history.ts';
 import { createControls } from '../src/input.ts';
 
 const memoryStorage = (initial = {}) => {

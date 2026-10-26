@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createElimination,stepElimination} from '../src/elimination.ts';
 import {createRace,stepRace} from '../src/game.js';
-import {recordModeRace,loadModeHistory,loadHistory,loadUnlocks} from '../src/history.js';
+import {recordModeRace,loadModeHistory,loadHistory,loadUnlocks} from '../src/history.ts';
 const make=(player,rivals,elapsed)=>({elapsed,player:{distance:player},rivals:rivals.map(([name,distance])=>({name,distance,speed:60}))});
 test('trailing AI is eliminated exactly once at each ten-second checkpoint',()=>{
  const state=createElimination(),race=make(100,[['NOVA',80],['ORBIT',60],['APEX',40]],9.9);

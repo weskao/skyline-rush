@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 test('Classic achievements, medals, stars and paint have one typed storage implementation', async () => {
   const path = new URL('../src/history-achievements.ts', import.meta.url);
   assert.equal(existsSync(path), true);
-  const old = readFileSync(new URL('../src/history.js', import.meta.url), 'utf8');
+  const old = readFileSync(new URL('../src/history.ts', import.meta.url), 'utf8');
   assert.match(old, /export\s*\{[^}]*loadBests[^}]*recordStars[^}]*\}\s*from\s*['"]\.\/history-achievements\.ts['"]/);
   assert.doesNotMatch(old, /export function loadBests\(|export function recordBest\(|export const medalsFor\s*=|export function loadStars\(/);
   const { loadBests, recordBest, medalsFor, recordMedals, loadMedals, recordStars, loadStars, savePaint, loadPaint } = await import(path);
