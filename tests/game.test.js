@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, GAP_WARN_DISTANCE, gapChargeWarning, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
-import { hazardX } from '../src/hazards.js';
+import { hazardX } from '../src/hazards.ts';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);

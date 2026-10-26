@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS, LANES } from '../src/game.js';
-import { createHazards, hazardX } from '../src/hazards.js';
+import { createHazards, hazardX } from '../src/hazards.ts';
 
 const avoided = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
 

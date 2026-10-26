@@ -21,7 +21,7 @@ import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCamera
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
-import { hazardX } from './hazards.js';
+import { hazardX } from './hazards.ts';
 
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */

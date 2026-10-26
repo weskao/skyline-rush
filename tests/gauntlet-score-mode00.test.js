@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace } from '../src/game.js';
-import { hazardX } from '../src/hazards.js';
+import { hazardX } from '../src/hazards.ts';
 import { recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.js';
 
 function crossHazard(near) {

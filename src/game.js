@@ -1,5 +1,5 @@
 import { seededRng, RACE_STREAMS } from './rng.ts';
-import { createHazards, hazardX } from './hazards.js';
+import { createHazards, hazardX } from './hazards.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
