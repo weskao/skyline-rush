@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { setTextIfChanged, setHiddenIfChanged } from '../src/hud-dom.js';
+import { setTextIfChanged, setHiddenIfChanged } from '../src/hud-dom.ts';
 
 // A DOM-like setter is enough to prove that high-frequency HUD updates do not
 // reassign properties when their displayed value is already current.
