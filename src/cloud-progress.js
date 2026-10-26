@@ -1,101 +1,10 @@
-import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
-import { mergeModeBests, MODE_NAMES as modeNames } from './cloud-mode-bests.ts';
+import { mergeProgress } from './cloud-progress-merge.ts';
+import { mergeModeBests } from './cloud-mode-bests.ts';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
-  HISTORY_LIMIT, MEDALS, MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
+  MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
 
-export function mergeUnlocks(local, remote) {
-  const unlocked = new Set(['coast', ...(Array.isArray(local) ? local : []), ...(Array.isArray(remote) ? remote : [])]);
-  return Object.keys(RACE_TRACKS).filter(id => unlocked.has(id));
-}
-
-export const claimCloudOwner = (owner, uid) => !owner || owner === uid ? uid : null;
-
-export function cloudFailureStatus(error, deviceSaved) {
-  if (!deviceSaved) return 'cloud.localFailed';
-  if (error?.code === 'resource-exhausted') return 'cloud.quota';
-  return ['unavailable', 'deadline-exceeded', 'network-request-failed'].includes(error?.code) ? 'cloud.pending' : 'cloud.failed';
-}
-
-const validTime = value => Number.isFinite(value) && value > 0;
-const nonnegative = value => Number.isFinite(value) && value >= 0 ? value : 0;
-const date = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
-const track = id => Object.hasOwn(RACE_TRACKS, id);
-const raceFields = ['collisions', 'nearMisses', 'rings', 'perfectLines', 'nitroUses', 'longestCombo', 'score', 'fuelOuts', 'gapFalls', 'distance'];
-
-function raceRun(run) {
-  const when = date(run?.date);
-  if (!when || !track(run.track) || !validTime(run.time) || !Number.isInteger(run.position) || run.position < 0 || run.position > 4) return null;
-  return { date: when, track: run.track, position: run.position, time: run.time,
-    ...Object.fromEntries(raceFields.map(field => [field, nonnegative(run[field])])) };
-}
-
-function modeRun(run) {
-  const when = date(run?.date);
-  if (!when || !track(run.track) || !modeNames.includes(run.mode) || !validTime(run.time) ||
-      typeof run.rules !== 'string' || !run.rules.length || run.rules.length > 4096) return null;
-  const nonnegativeInt = value => Number.isSafeInteger(value) && value >= 0 && value <= 1000000;
-  const telemetry = {};
-  for (const key of ['rulesVersion', 'stageCount', 'itemsUsed', 'hazardPasses', 'hazardHits']) {
-    if (nonnegativeInt(run[key])) telemetry[key] = run[key];
-  }
-  if (Number.isFinite(run.distance) && run.distance >= 0 && run.distance <= 100000) telemetry.distance = run.distance;
-  if (run.lapCount === null) telemetry.lapCount = null;
-  else if (nonnegativeInt(run.lapCount)) telemetry.lapCount = run.lapCount;
-  if (run.modeId === run.mode) telemetry.modeId = run.mode;
-  if (run.trackId === run.track) telemetry.trackId = run.track;
-  if (run.rulesSignature === run.rules) telemetry.rulesSignature = run.rules;
-  return { date: when, mode: run.mode, track: run.track, rules: run.rules, time: run.time,
-    position: Number.isInteger(run.position) ? run.position : 0, score: nonnegative(run.score),
-    ...telemetry,
-    ...(run.mode === 'stunt' ? { maxCombo: nonnegative(run.maxCombo), airTime: nonnegative(run.airTime),
-      medal: typeof run.medal === 'string' ? run.medal.slice(0, 32) : '' } : {}) };
-}
-
-function dailyRun(run) {
-  const when = date(run?.date);
-  if (!when || !/^\d{4}-\d{2}-\d{2}$/.test(run.id) || !track(run.track) || !DAILY_MODIFIERS.includes(run.modifier) ||
-      !validTime(run.time) || !Number.isInteger(run.position) || run.position < 1 || run.position > 4) return null;
-  return { id: run.id, track: run.track, modifier: run.modifier, time: run.time,
-    position: run.position, score: nonnegative(run.score), date: when };
-}
-
-// Identity deliberately excludes mutable score/telemetry; the same attempt must not double-count on two devices.
-const classicRunId = run => JSON.stringify([run.date, run.track, run.position, run.time]);
-const modeRunId = run => JSON.stringify([run.date, run.mode, run.track, run.rules, run.time]);
-const dailyRunId = run => JSON.stringify([run.id, run.date, run.track, run.modifier, run.position, run.time]);
-function mergeRuns(local, cloud, normalize, identity) {
-  const unique = new Map();
-  for (const raw of [...(Array.isArray(local) ? local : []), ...(Array.isArray(cloud) ? cloud : [])]) {
-    const run = normalize(raw);
-    if (run) unique.set(identity(run), run);
-  }
-  return [...unique.values()].sort((a, b) => a.date.localeCompare(b.date) || JSON.stringify(a).localeCompare(JSON.stringify(b))).slice(-HISTORY_LIMIT);
-}
-
-export function mergeProgress(local = {}, cloud = null) {
-  if (cloud && ![1, 2].includes(cloud.version)) throw new Error('Unsupported cloud save');
-  const stars = {}, bests = {}, medals = {};
-  for (const id of Object.keys(RACE_TRACKS)) {
-    const validStar = n => Number.isInteger(n) && n >= 1 && n <= 3;
-    const star = Math.max(validStar(local.stars?.[id]) ? local.stars[id] : 0, validStar(cloud?.stars?.[id]) ? cloud.stars[id] : 0);
-    if (star) stars[id] = star;
-    const best = Math.min(validTime(local.bests?.[id]) ? local.bests[id] : Infinity,
-      validTime(cloud?.bests?.[id]) ? cloud.bests[id] : Infinity);
-    if (Number.isFinite(best)) bests[id] = best;
-  }
-  for (const id of MEDALS) {
-    const earliest = [date(local.medals?.[id]), date(cloud?.medals?.[id])].filter(Boolean).sort()[0];
-    if (earliest) medals[id] = earliest;
-  }
-  return {
-    version: 2,
-    unlocked: mergeUnlocks(local.unlocked, cloud?.unlocked), stars, bests, medals,
-    history: mergeRuns(local.history, cloud?.history, raceRun, classicRunId),
-    modeHistory: mergeRuns(local.modeHistory, cloud?.modeHistory, modeRun, modeRunId),
-    daily: mergeRuns(local.daily, cloud?.daily, dailyRun, dailyRunId),
-  };
-}
-
+// The cloud schema/merge algorithm has one strict typed implementation.
+export { mergeUnlocks, claimCloudOwner, cloudFailureStatus, mergeProgress } from './cloud-progress-merge.ts';
 
 // Stable public export; one typed implementation owns best-score normalization.
 export { mergeModeBests } from './cloud-mode-bests.ts';

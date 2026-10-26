@@ -8,7 +8,7 @@ test('cloud progress merging and schema validation have one strictly typed owner
   assert.match(legacy, /export\s*\{[^}]*mergeProgress[^}]*\}\s*from\s*['"]\.\/cloud-progress-merge\.ts['"]/);
   assert.doesNotMatch(legacy, /export function mergeProgress\(|function raceRun\(|function modeRun\(|function dailyRun\(/);
   const { mergeProgress, mergeUnlocks, cloudFailureStatus } = await import('../src/cloud-progress-merge.ts');
-  assert.deepEqual(mergeUnlocks(['neon', 'neon'], ['unknown', 'coastal']), ['coast', 'neon']);
+  assert.deepEqual(mergeUnlocks(['neon', 'neon'], ['unknown', 'future-road']), ['coast', 'neon']);
   assert.equal(cloudFailureStatus({code:'unavailable'}, false), 'cloud.localFailed');
   const date = '2026-10-24T00:00:00Z';
   const classic = { date, track: 'coast', position: 1, time: 60, rings: 2 };
