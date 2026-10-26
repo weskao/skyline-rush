@@ -19,8 +19,6 @@ A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound
 
 **Home screen** — pick a track and a camera angle, then start the race.
 
-[![Home screen video: picking a track and camera angle](artifacts/home_screen-poster.jpeg)](https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623)
-
 https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
 
 **Racing** — a full run on one of the tracks.

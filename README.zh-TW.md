@@ -1,4 +1,4 @@
-<!-- source-sha256: 8f0d272480b8cad8c3ff002433abace887cf103ff278e86169b09f4d4d93ec87 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 5a9f2fc9c1a604415a523ab4e158d0fb70c25a87199df6aed99848cf6329ff40 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -19,8 +19,6 @@
 一場經典衝刺約一分鐘；多階段挑戰則需要更久。音效由瀏覽器即時合成，進度儲存在本機儲存空間，因此不需要帳號，也沒有後端。
 
 **主畫面** — 選擇賽道和鏡頭角度，然後開始比賽。
-
-[![主畫面影片：選擇賽道與鏡頭角度](artifacts/home_screen-poster.jpeg)](https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623)
 
 https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
 
