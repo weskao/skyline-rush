@@ -1,12 +1,23 @@
 import * as THREE from 'three';
 import { MAX_SPEED } from './game.js';
 
+interface RearLightRace {
+  phase: string;
+  player: {
+    braking: boolean;
+    boosting: boolean;
+    nitroTime: number;
+    miniBoost: number;
+    speed: number;
+  };
+}
+
 export function createRearLight() {
   const group = new THREE.Group();
   group.name = 'Continuous rear LED';
   group.position.set(0, 0.95, 2.38);
   // Keep the bar level while its depth follows the rear fascia's shallow curve.
-  function strip(height) {
+  function strip(height: number) {
     const geometry = new THREE.PlaneGeometry(2.08, height, 32, 1);
     const vertices = geometry.attributes.position;
     for (let i = 0; i < vertices.count; i++) vertices.setZ(i, -0.024 * (vertices.getX(i) / 1.04) ** 2);
@@ -41,11 +52,11 @@ export function createRearLight() {
   flow.name = 'Rear LED flow';
   flow.visible = false;
   lights.add(core, glow, flow);
-  let age = 0, time = 0, previousPhase;
+  let age = 0, time = 0, previousPhase: string | undefined;
   return {
     group,
     reset() { age = time = 0; previousPhase = undefined; },
-    update(race, dt, calm) {
+    update(race: RearLightRace, dt: number, calm: boolean) {
       if (race.phase === 'countdown' && previousPhase === 'ready') age = 0;
       previousPhase = race.phase;
       if (race.phase !== 'paused' && race.phase !== 'finished') { age += dt; time += dt; }
