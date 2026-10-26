@@ -1,6 +1,6 @@
 // Bundled in normal development and production builds only.
 // All progression checks remain exactly as they were before the local test option.
-import { loadUnlocks } from '../history.js';
+import { loadUnlocks } from '../history.ts';
 import { ownedPaints } from '../appearance.ts';
 
 export const availableTracks = () => loadUnlocks();
