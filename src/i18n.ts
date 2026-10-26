@@ -24,7 +24,7 @@ export function saveLocale(locale: string, storage?: LocaleStorage): void {
 
 export const CATALOGS = Object.freeze(Object.fromEntries(
   SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...GAME[l] })]),
-)) as Readonly<Record<Locale, Record<string, string>>>;
+)) as unknown as Readonly<Record<Locale, Record<string, string>>>;
 
 // Any Chinese tag (zh, zh-CN, zh-Hans, zh-HK, zh-Hant...) maps to the one Chinese catalog we ship.
 // First supported language in the system's preference order wins: any zh* -> zh-TW, en* -> en, unknown tags are skipped, none -> en.
