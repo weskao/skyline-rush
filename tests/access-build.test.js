@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import productionConfig from '../vite.config.js';
 import unlockedConfig from '../vite.unlocked.config.js';
-import { availableTracks as devTracks, availablePaints as devPaints } from '../src/access/dev-unlocked.js';
-import { availableTracks as prodTracks, availablePaints as prodPaints } from '../src/access/production.js';
+import { availableTracks as devTracks, availablePaints as devPaints } from '../src/access/dev-unlocked.ts';
+import { availableTracks as prodTracks, availablePaints as prodPaints } from '../src/access/production.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { PAINTS } from '../src/appearance.ts';
 
@@ -24,10 +24,10 @@ test('local-only build exposes every track and paint without writing storage', (
 });
 
 test('normal Vite config resolves the production access module, unlocked config only serves', () => {
-  assert.match(productionConfig.resolve.alias['@progression-access'], /access\/production\.js$/);
+  assert.match(productionConfig.resolve.alias['@progression-access'], /access\/production\.ts$/);
   assert.throws(() => unlockedConfig({ command: 'build', mode: 'production' }), /development-server only/);
   const cfg = unlockedConfig({ command: 'serve', mode: 'development' });
-  assert.match(cfg.resolve.alias['@progression-access'], /access\/dev-unlocked\.js$/);
+  assert.match(cfg.resolve.alias['@progression-access'], /access\/dev-unlocked\.ts$/);
 });
 
 test('distribution entry never directly imports the development unlock module', () => {
