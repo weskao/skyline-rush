@@ -4,7 +4,7 @@ paths:
   - "src/App.vue"
   - "src/style.css"
   - "src/input.js"
-  - "src/custom-select.js"
+  - "src/custom-select.ts"
   - "tests/result-actions-browser.spec.js"
   - "tests/tokyo-finish-controls-browser.spec.js"
   - "tests/*browser.spec.js"

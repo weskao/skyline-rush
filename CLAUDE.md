@@ -1,6 +1,6 @@
 # Skyline Rush — Claude Code project instructions
 
-Browser 3D arcade racer: Vue 3 + Vite + Three.js, native JS modules. Node >= 22.12.
+Browser 3D arcade racer: Vue 3 + TypeScript (strict) + Vite + Three.js. Node >= 22.12.
 Simulation `src/game.js`; rendering `src/world.js`, `src/effects.js`, `src/aero-vfx.js`;
 UI `src/App.vue`, `src/main.js`, `src/style.css`.
 
@@ -10,15 +10,26 @@ browser support. Prefer small changes with deterministic unit tests + browser re
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
 `unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability` · `ui-phase-interactions` · `ui-architecture` · `release-notes`.
 
-## UI architecture: Vue panels, plain-JS game core
+## Architecture default: Vue 3 + TypeScript (strict); deliberate plain-JS engine exceptions
 
-Simulation and rendering (`game.js`, `world.js`, effects, scenes) stay plain JS and never import
-Vue. New event-driven UI — dialogs, panels, menus, settings — is a Vue component, not more
-imperative DOM code in `src/main.js`; existing panels move to Vue one per commit. The in-race HUD
-stays out of Vue reactivity: cache element refs once, write only changed values, no DOM queries
-in the frame loop. `src/main.js` does not grow — a new feature gets its own module. Type safety
-comes from JSDoc on exported functions and shared shapes, not `.ts` rewrites. Migration steps are
-tracked in `TODO.md`; rules in `.claude/rules/ui-architecture.md`.
+**Every new UI component must use `<script setup lang="ts">`. New UI controllers, app services,
+shared state, and business rules default to typed `.ts` modules.** Existing UI/business `.js`
+is migration debt; convert in small TDD-verified slices rather than growing it. TypeScript
+interfaces and typed boundaries are defined in `src/game-types.ts`. Do not treat JSDoc
+`checkJs` or a narrow `jsconfig.json` as completed TypeScript migration.
+
+The performance-sensitive Three.js renderer, physics, simulation, shader/effect code and
+frame-loop HUD may **remain `.js`** when profiling or native-engine APIs justify it.
+They must not import Vue or couple the game loop to reactive state. Cross the boundary via
+typed adapters and stable snapshots. New exceptions must be justified in code review and
+documented in `TODO.md`; they are **exceptions, not the default**. Existing `src/main.js`
+must shrink toward bootstrap and the frame loop; event-driven panels move into Vue SFCs.
+
+Use `tsconfig.json` for the TypeScript application, `jsconfig.json` only for explicitly
+listed legacy JavaScript islands, and `npm run typecheck` during `make verify`. Migration
+must preserve desktop/mobile input, locales, audio, cloud save, accessibility, and
+finish/pause clickability. Follow RED → GREEN → browser regressions for each slice.
+See `.claude/rules/ui-architecture.md` and `TODO.md`.
 
 ## Mandatory regression-first workflow (every feature and bug fix)
 
