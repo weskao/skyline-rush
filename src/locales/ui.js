@@ -2,6 +2,7 @@
 // English values must stay identical to the App.vue markup (browser specs select by these names).
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
 import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.js';
+import { COLLECTIBLES_GUIDE_COPY } from '../collectibles-guide-copy.js';
 export const UI = Object.freeze({
   en: {
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
@@ -54,6 +55,7 @@ export const UI = Object.freeze({
     "tutorial.tilt.left": "Tilt your device left",
     "tutorial.tilt.right": "Tilt your device right",
     ...MOBILE_GUIDE_COPY.en,
+    ...COLLECTIBLES_GUIDE_COPY.en,
     "guide.open": "How to play",
     "guide.title": "Start your engines!",
     "guide.close": "Got it",
@@ -664,6 +666,7 @@ export const UI = Object.freeze({
     "tutorial.tilt.left": "將裝置向左傾斜",
     "tutorial.tilt.right": "將裝置向右傾斜",
     ...MOBILE_GUIDE_COPY['zh-TW'],
+    ...COLLECTIBLES_GUIDE_COPY['zh-TW'],
     "guide.open": "操作教學",
     "guide.title": "發動引擎，全速衝刺！",
     "guide.close": "知道了",

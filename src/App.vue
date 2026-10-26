@@ -8,6 +8,7 @@ import { VFX_RANGES, vfxLabelKey } from './vfx-settings.js';
 import { icons, ICON_ATTRS } from './icons.js';
 import { PAINTS } from './appearance.js';
 import MobileGuide from './MobileGuide.vue';
+import CollectiblesGuide from './CollectiblesGuide.vue';
 import SignInButton from './SignInButton.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
@@ -55,6 +56,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <div class="guide-devices" role="group" aria-label="Control guide" data-i18n-aria-label="guide.devices">
       <button class="controls-reset" data-guide-device="desktop" aria-pressed="true" aria-controls="guide-desktop-panel" data-i18n="guide.desktop">Keyboard</button>
       <button class="controls-reset" data-guide-device="mobile" aria-pressed="false" aria-controls="guide-mobile-panel" data-i18n="guide.mobile">Touch</button>
+      <button class="controls-reset" data-guide-device="items" aria-pressed="false" aria-controls="guide-items-panel" data-i18n="guide.items">Rings & Supplies</button>
     </div>
     <section id="guide-desktop-panel" aria-label="Keyboard controls" data-i18n-aria-label="guide.desktop">
       <p data-i18n="guide.keyboardHint">Your current keys are shown below. Change them in Controls.</p>
@@ -67,6 +69,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <p class="guide-shortcuts"><kbd>Esc / P</kbd> <span data-i18n="guide.pause">Pause / resume</span> · <kbd>C</kbd> <span data-i18n="guide.camera">Camera</span> · <kbd>F2</kbd> <span data-i18n="guide.auto">Auto accelerate</span></p>
     </section>
     <section id="guide-mobile-panel" hidden><MobileGuide /></section>
+    <section id="guide-items-panel" hidden><CollectiblesGuide /></section>
     <p class="guide-note" data-i18n="guide.note">Illustrations only — close this guide to try the controls in a race.</p>
   </dialog>
   <aside id="tutorial-coach" class="tutorial-coach" aria-labelledby="tutorial-title" hidden>
