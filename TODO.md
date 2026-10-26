@@ -105,6 +105,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
 - [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
   `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
   Main bootstrap/frame loop remains only as a documented performance exception.
+  - [x] Per-account Cloud Sync status extracted from `cloud-progress.js` into strict `cloud-sync-status.ts`, keeping the existing public exports, stored key, pending/last-success semantics and blocked-storage protection. TDD RED #40340442536 → GREEN #40340769114 (typecheck, unit, Cloud Save, focused quality-gate). Full Browser/World Tour parity is Step 5.
   - [x] Input keyboard/touch/tilt controller migrated from `input.js` to strict `input.ts`; existing input tests plus new lifecycle regression, no duplicated JS. Canonical `game-types.ts` replaces unused JSDoc `game-types.js`. TDD RED runs 40334317350 / 40335751478 → exact-HEAD GREEN 40335983183 (TypeScript/Vue, 668 unit passes, 0 fails, 3 skips, Cloud Save and focused gate).
   - [x] Release note catalog and production/development progression access aliases migrated to typed modules with prior RED/GREEN evidence; no changes to player-facing copy or unlock rules. Focused CI 40333765235 and 40332262015 verified.
 
@@ -125,6 +126,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
   (release notes, history, garage, audio/settings, guide/tutorial, etc.);
   remove duplicate imperative DOM ownership. Run desktop/mobile, accessibility,
   localization, Firebase/cloud-save, finish/pause and World Tour regressions.
+  - [x] Audio settings Vue reactive presentation owns mute icon, Music/SFX switches, slider values, percentage labels and accessible value text. `audio-ui.ts` retains playback/localStorage only, no imperative HTML/ARIA writes. TDD RED #40341239974 → GREEN #40341674534 (TypeScript/Vue, 671 passed / 0 failed / 3 skipped, Cloud Save and focused quality-gate). Full Browser/audio parity remains Step 5.
   - [x] Settings and Controls disclosure buttons now derive aria-expanded from the same Vue reactive state as panel visibility, removing duplicate imperative writes; RED run 40288061638, GREEN run 40288441175 (typecheck, unit, Cloud Save, focused gate). Final screenshot parity deferred.
   - [x] Home-screen Daily Challenge and medal status now use a single typed Vue reactive view (`src/home-status-view-state.ts`), with no competing imperative writes in `history-ui.ts`; original `#daily-card-*` and `#medal-*` selectors, i18n and action buttons preserved. Observed RED in unit job of Actions 40337519982, then GREEN Actions 40337884060 (TypeScript/Vue checks, 669 passed / 0 failed / 3 skipped, Cloud Save and focused quality gate). Full browser/visual parity remains Step 5.
 - [ ] Step 5: final architecture and feature-parity audit: all new UI/business code
