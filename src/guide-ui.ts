@@ -1,4 +1,4 @@
-import { t } from './i18n.js';
+import { t } from './i18n.ts';
 import { updateGuideView } from './guide-view-state.ts';
 
 type GuideDevice = 'desktop' | 'mobile';

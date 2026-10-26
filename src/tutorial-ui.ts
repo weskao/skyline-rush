@@ -1,6 +1,6 @@
 import { nextTick } from 'vue';
 import { updateCoachView } from './tutorial-coach-state.ts';
-import { t } from './i18n.js';
+import { t } from './i18n.ts';
 import { TUTORIAL_STEPS } from './interactive-tutorial.js';
 
 interface TutorialSnapshot {

@@ -1,5 +1,5 @@
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.ts';
-import { trackName, getLocale, t } from './i18n.js';
+import { trackName, getLocale, t } from './i18n.ts';
 
 interface SwipeStart {
   button: number;

@@ -1,5 +1,5 @@
 import { icon } from './icons.ts';
-import { t } from './i18n.js';
+import { t } from './i18n.ts';
 import { AUDIO_KEYS } from './audio-settings.ts';
 
 type Channel = 'music' | 'sfx';
