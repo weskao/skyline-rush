@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { saveRecentCustom, loadRecentCustom } from '../src/recent-custom.js';
+import { saveRecentCustom, loadRecentCustom } from '../src/recent-custom.ts';
 const memory = () => { const data = new Map(); return { getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v) }; };
 const config = (traffic='normal') => ({mode:'custom',rivals:2,traffic,difficulty:'normal',items:true});
 test('stores the three most recent distinct custom setups, newest first',()=>{
@@ -22,4 +22,14 @@ test('corrupt or blocked localStorage never blocks game setup',()=>{
  assert.deepEqual(loadRecentCustom(broken),[]);
  const corrupt={getItem(){return 'not-json'},setItem(){}};
  assert.deepEqual(loadRecentCustom(corrupt),[]);
+});
+
+test('loading recent races tolerates unavailable storage and filters malformed entries', () => {
+  const storage = { getItem() { return JSON.stringify([
+    { trackId: 'coast', config: { mode: 'custom' } },
+    { trackId: '../invalid', config: { mode: 'custom' } },
+    { trackId: 'coast', config: { mode: 'classic' } },
+  ]); }, setItem() {} };
+  assert.deepEqual(loadRecentCustom(storage).map(entry => entry.trackId), ['coast']);
+  assert.deepEqual(loadRecentCustom({getItem() { return null; },setItem() {}}), []);
 });
