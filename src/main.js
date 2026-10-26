@@ -14,9 +14,9 @@ import { createRace as createBareRace, startRace, stepRace, useHeldItem, racePos
 import { createControls } from './input.js';
 import { RULE_PRESETS } from './race-config.js';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.ts';
-import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.js';
+import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.ts';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
-import { stuntMedal } from './stunt-attack.js';
+import { stuntMedal } from './stunt-attack.ts';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.ts';
 import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';

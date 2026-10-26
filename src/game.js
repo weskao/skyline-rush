@@ -1,9 +1,9 @@
 import { seededRng, RACE_STREAMS } from './rng.js';
 import { createHazards, hazardX } from './hazards.js';
-import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
+import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
-import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
-import { createElimination, stepElimination } from './elimination.js';
+import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
+import { createElimination, stepElimination } from './elimination.ts';
 import { bankItem, activateItem, tickItemCooldown } from './active-items.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { raceCompletion } from './race-objectives.ts';

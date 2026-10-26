@@ -1,8 +1,21 @@
+export interface CheckpointSection { from: number; to: number; type: string }
+export interface CheckpointTrack { length: number; sections: CheckpointSection[] }
+export interface CheckpointObstacle { from: number; to: number; left: number; right: number; bottom: number; top: number }
+export interface CheckpointGate { distance: number; x: number; altitude: number; passed: boolean; missed: boolean }
+export interface CheckpointRushState {
+  gates: CheckpointGate[];
+  timeLeft: number;
+  passed: number;
+  missed: number;
+  perfect: number;
+  expired: boolean;
+}
+export interface CheckpointCar { distance: number; x: number; altitude: number }
 // Pure, bounded checkpoint rules. The renderer only visualizes these authored gates.
 const EXCLUDED = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
 const LANES = [-2.5, 2.5, 7.5, -7.5];
 
-export function createCheckpointRush(track, obstacles = []) {
+export function createCheckpointRush(track: CheckpointTrack | null | undefined, obstacles: CheckpointObstacle[] = []): CheckpointRushState {
   if (!track || !Number.isFinite(track.length) || track.length < 800 || track.length > 100000 ||
       !Array.isArray(track.sections) || track.sections.length > 200 ||
       !track.sections.every(section => Number.isFinite(section.from) && Number.isFinite(section.to) &&
@@ -31,7 +44,7 @@ export function createCheckpointRush(track, obstacles = []) {
   return { gates, timeLeft: 28, passed: 0, missed: 0, perfect: 0, expired: false };
 }
 
-export function checkpointDirection(car, gate) {
+export function checkpointDirection(car: Pick<CheckpointCar, 'x' | 'altitude'> | null | undefined, gate: CheckpointGate | null | undefined): 'left' | 'right' | 'up' | 'down' | 'center' {
   if (!car || !gate) return 'center';
   if (gate.x < car.x - 1) return 'left';
   if (gate.x > car.x + 1) return 'right';
@@ -40,10 +53,10 @@ export function checkpointDirection(car, gate) {
   return 'center';
 }
 
-export function stepCheckpointRush(state, previousDistance, car, dt) {
-  if (state.expired || !Number.isFinite(dt) || dt <= 0 || dt > 0.1 ||
-      !Number.isFinite(previousDistance) || !Number.isFinite(car?.distance) ||
-      !Number.isFinite(car?.x) || !Number.isFinite(car?.altitude)) return 0;
+export function stepCheckpointRush(state: CheckpointRushState, previousDistance: number, car: CheckpointCar | null | undefined, dt: number): number {
+  if (state.expired || !car || !Number.isFinite(dt) || dt <= 0 || dt > 0.1 ||
+      !Number.isFinite(previousDistance) || !Number.isFinite(car.distance) ||
+      !Number.isFinite(car.x) || !Number.isFinite(car.altitude)) return 0;
   if (!Number.isFinite(state.timeLeft) || state.timeLeft <= 0) {
     state.timeLeft = 0;
     state.expired = true;

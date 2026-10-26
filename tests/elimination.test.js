@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createElimination,stepElimination} from '../src/elimination.js';
+import {createElimination,stepElimination} from '../src/elimination.ts';
 import {createRace,stepRace} from '../src/game.js';
 import {recordModeRace,loadModeHistory,loadHistory,loadUnlocks} from '../src/history.js';
 const make=(player,rivals,elapsed)=>({elapsed,player:{distance:player},rivals:rivals.map(([name,distance])=>({name,distance,speed:60}))});

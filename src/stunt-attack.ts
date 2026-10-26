@@ -1,10 +1,25 @@
+export interface StuntAttackState {
+  combo: number; maxCombo: number; bonus: number; airTime: number; lastEvent: number;
+  nearMisses: number; rings: number; collisions: number; falls: number;
+  lastDrift: number; lastTrick: number;
+}
+export interface StuntCar {
+  speed: number;
+  altitude: number;
+  nearMisses?: number;
+  rings?: number;
+  collisions?: number;
+  falls?: number;
+  driftPayout?: { time: number } | null;
+  trickPayout?: { time: number; hard?: boolean } | null;
+}
 // A small, frame-rate-neutral score overlay on the existing stunt physics.
-export const createStuntAttack = () => ({
+export const createStuntAttack = (): StuntAttackState => ({
   combo: 0, maxCombo: 0, bonus: 0, airTime: 0, lastEvent: 0,
   nearMisses: 0, rings: 0, collisions: 0, falls: 0, lastDrift: -1, lastTrick: -1,
 });
 
-export function scoreStuntAttack(state, car, earned, dt, elapsed) {
+export function scoreStuntAttack(state: StuntAttackState, car: StuntCar | null | undefined, earned: number, dt: number, elapsed: number): number {
   if (!Number.isFinite(dt) || dt <= 0 || dt > 0.1 || !Number.isFinite(elapsed) || !car) return 0;
   if (car.speed >= 18 && car.altitude > 0.25) state.airTime += dt;
   const crash = (car.collisions || 0) > state.collisions || (car.falls || 0) > state.falls;
@@ -35,7 +50,7 @@ export function scoreStuntAttack(state, car, earned, dt, elapsed) {
 }
 
 /** Local Stunt medals scale with the selected driving duration; never Career medals. */
-export function stuntMedal(score, duration = 120) {
+export function stuntMedal(score: number, duration: number = 120): 'gold' | 'silver' | 'bronze' | null {
   if (!Number.isFinite(score) || score < 0 || ![120, 180, 300].includes(duration)) return null;
   const normalized = score * 120 / duration;
   return normalized >= 8000 ? 'gold' : normalized >= 4000 ? 'silver' : normalized >= 1500 ? 'bronze' : null;

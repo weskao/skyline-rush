@@ -1,6 +1,6 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { validGhost } from './ghost.js';
-import { stuntMedal } from './stunt-attack.js';
+import { stuntMedal } from './stunt-attack.ts';
 
 export const HISTORY_KEY = 'skyline-rush-history';
 export const BEST_KEY = 'skyline-rush-best-tracks';

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { stepCheckpointRush } from '../src/checkpoint-rush.js';
+import { stepCheckpointRush } from '../src/checkpoint-rush.ts';
 
 const challenge = seconds => ({
   gates: [{ distance: 100, x: 2.5, altitude: 0, passed: false, missed: false }],

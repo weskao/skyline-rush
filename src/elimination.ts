@@ -1,6 +1,17 @@
+export interface EliminationState {
+  nextAt: number;
+  eliminated: string[];
+  outcome: 'won' | 'lost' | null;
+}
+interface EliminationRacer { name: string; distance: number }
+interface EliminationRace {
+  elapsed: number;
+  player: { distance: number };
+  rivals: EliminationRacer[];
+}
 // Four-racer Last Driver Standing: one deterministic knockout every ten seconds.
-export const createElimination = () => ({ nextAt: 10, eliminated: [], outcome: null });
-export function stepElimination(state, race) {
+export const createElimination = (): EliminationState => ({ nextAt: 10, eliminated: [], outcome: null });
+export function stepElimination(state: EliminationState, race: EliminationRace): { eliminated: string; outcome: EliminationState['outcome'] } | null {
   if (state.outcome || race.elapsed < state.nextAt) return null;
   const racers = [{ name:'YOU', distance:race.player.distance }, ...race.rivals];
   if (racers.length <= 1) return null;

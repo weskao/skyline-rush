@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { createElimination, stepElimination } from '../src/elimination.js';
-import { createCheckpointRush, stepCheckpointRush, checkpointDirection } from '../src/checkpoint-rush.js';
-import { createStuntAttack, scoreStuntAttack, stuntMedal } from '../src/stunt-attack.js';
+import { createElimination, stepElimination } from '../src/elimination.ts';
+import { createCheckpointRush, stepCheckpointRush, checkpointDirection } from '../src/checkpoint-rush.ts';
+import { createStuntAttack, scoreStuntAttack, stuntMedal } from '../src/stunt-attack.ts';
 
 // Preserve observable game rules while eliminating duplicate JS copies.
 test('race-mode services migrate to one canonical strict TypeScript implementation', () => {
