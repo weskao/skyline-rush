@@ -1,5 +1,5 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
-import { validGhost } from './ghost.js';
+import { validGhost } from './ghost.ts';
 import { stuntMedal } from './stunt-attack.ts';
 
 export const HISTORY_KEY = 'skyline-rush-history';

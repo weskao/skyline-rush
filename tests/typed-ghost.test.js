@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { recordGhost, ghostAt, validGhost } from '../src/ghost.js';
+import { recordGhost, ghostAt, validGhost } from '../src/ghost.ts';
 
 test('ghost recording and playback use one strict TypeScript source', () => {
   assert.equal(existsSync(new URL('../src/ghost.ts', import.meta.url)), true);
