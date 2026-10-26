@@ -16,7 +16,7 @@ export function warmupShaders(
 ): number {
   const touched: Array<[Object3D, boolean, boolean]> = [];
   scene.traverse(object => {
-    if (object.isLight || (object.visible && !object.frustumCulled)) return;
+    if (('isLight' in object && object.isLight === true) || (object.visible && !object.frustumCulled)) return;
     touched.push([object, object.visible, object.frustumCulled]);
     object.visible = true; object.frustumCulled = false;
   });
