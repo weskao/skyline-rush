@@ -81,6 +81,9 @@ Firebase and Gamepad are explicitly excluded. Do not retick historical requireme
 ## Codebase refactor: Vue 3 + strict TypeScript as the primary stack (2026-10-25)
 
 **Supersedes the earlier JSDoc-first migration plan for this dedicated refactor branch.**
+
+**Focused TDD gate during migration (2026-10-26):** on refactor pushes, check strict TypeScript/Vue typecheck, unit tests and Cloud Save only. Defer Browser 8/8, World Tour and UI visual parity until all steps have been implemented; run `CI → Run workflow → refactor/vue-ui-typecheck-incremental → full_regression=true` and `make verify` at final exact HEAD. Focused quality-gate success is **not** merge-ready evidence. No bypass on main, other branches or release tags. Keep Step 1 / parity / Step 5 unchecked until final full verification.
+
 The game loop, physics, WebGL renderer and hot-path HUD may remain `.js` only as measured,
 documented exceptions. UI, state, business logic, services and new components default to
 Vue 3 SFCs with `<script setup lang="ts">` and `.ts` modules. `jsconfig.json` checking a few

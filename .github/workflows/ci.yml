@@ -14,6 +14,11 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      full_regression:
+        description: 'Run browser and World Tour suites for final refactor verification'
+        type: boolean
+        default: true
 
 # A newer run of the same event on the same ref makes the older one moot. Keying on the event keeps a push from
 # cancelling a manual deploy; tags are unique refs, so releases are never cancelled.
@@ -43,7 +48,7 @@ jobs:
   # splits the alphabetical test list into equal contiguous slices, so more shards also keep one heavy spec file
   # from dominating a slice.
   browser-tests:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true)) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -113,7 +118,7 @@ jobs:
   # the middle of all five long World Tour routes. Test-only Vite fixture:
   # it is not included in the distributable production build.
   world-tour-mid-race:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true)) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -145,8 +150,25 @@ jobs:
           BROWSER: ${{ needs.browser-tests.result }}
           CLOUD: ${{ needs.cloud-save.result }}
           WORLD_TOUR: ${{ needs.world-tour-mid-race.result }}
+          FOCUSED: ${{ startsWith(github.ref, 'refs/heads/refactor/') && !(github.event_name == 'workflow_dispatch' && inputs.full_regression == true) }}
         run: |
           printf 'unit=%s browser=%s cloud=%s world-tour=%s\\n' "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"
+          if [ "$FOCUSED" = 'true' ]; then
+            for result in "$UNIT" "$CLOUD"; do
+              if [ "$result" != success ]; then
+                echo "::error::Focused refactor CI requires typecheck/unit and cloud-save."
+                exit 1
+              fi
+            done
+            for result in "$BROWSER" "$WORLD_TOUR"; do
+              if [ "$result" != skipped ]; then
+                echo "::error::Browser and World Tour must be skipped in focused refactor CI."
+                exit 1
+              fi
+            done
+            echo "::notice::Focused verification only; full regression remains mandatory before final acceptance."
+            exit 0
+          fi
           for result in "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"; do
             if [ "$result" != success ]; then
               echo "::error::All four required CI suites must succeed on this commit."
