@@ -1,5 +1,5 @@
 // mulberry32 PRNG; each named stream gets its own state so generators never shift each other.
-function mulberry32(seed) {
+function mulberry32(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
     state = (state + 0x6D2B79F5) >>> 0;
@@ -11,10 +11,10 @@ function mulberry32(seed) {
 }
 
 // FNV-1a hash of the stream name, mixed into the seed.
-const hash = text => [...text].reduce((h, char) => Math.imul(h ^ char.charCodeAt(0), 16777619), 2166136261) >>> 0;
+const hash = (text: string): number => [...text].reduce((h, char) => Math.imul(h ^ char.charCodeAt(0), 16777619), 2166136261) >>> 0;
 
-export const streamSeed = (seed, streamName) => (seed ^ hash(streamName)) >>> 0;
-export const seededRng = (seed, streamName) => mulberry32(streamSeed(seed, streamName));
+export const streamSeed = (seed: number, streamName: string): number => (seed ^ hash(streamName)) >>> 0;
+export const seededRng = (seed: number, streamName: string): (() => number) => mulberry32(streamSeed(seed, streamName));
 
 // Stable stream names: never silently rename them or old generated courses change.
 // Adding or consuming a separate stream cannot change pickups and rings.

@@ -1,6 +1,6 @@
 import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from './race-config.ts';
 import { createRaceObjective } from './race-objectives.ts';
-import { RACE_STREAMS, streamSeed } from './rng.js';
+import { RACE_STREAMS, streamSeed } from './rng.ts';
 
 // Contract-only themes: they do not recolor the live WebGL scene. Presentation
 // may opt in separately without changing physics or mode record eligibility.

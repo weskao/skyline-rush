@@ -1,4 +1,4 @@
-import { seededRng, RACE_STREAMS } from './rng.js';
+import { seededRng, RACE_STREAMS } from './rng.ts';
 const HAZARD_SECTION_TYPES = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
 
 // Obstacles move across a single lane at most; the other lanes always stay open.

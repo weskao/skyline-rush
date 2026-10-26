@@ -34,7 +34,7 @@ import { recordGhost, validGhost, ghostAt } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
-import { frameStats, PERF_WINDOW } from './perf.js';
+import { frameStats, PERF_WINDOW } from './perf.ts';
 import { createRouteMap } from './route-map.ts';
 import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.ts';
 import { availableTracks, availablePaints } from '@progression-access';

@@ -1,4 +1,4 @@
-import { seededRng, RACE_STREAMS } from './rng.js';
+import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards, hazardX } from './hazards.js';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
