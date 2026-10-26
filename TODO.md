@@ -93,6 +93,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
   `.claude/rules/ui-architecture.md` (replaces the former JSDoc-only guidance).
 - [ ] Step 1: profile baseline/optimized HUD frame cost (p50/p95 on desktop/mobile),
   confirm no redundant DOM writes and full regression suite before marking complete.
+  - [x] Hot-path HUD DOM setter idempotence is covered by tests/hud-dom.test.js (unit pass on focused CI 40290017276); p50/p95 real-device measurements and complete visual/regression suite remain open.
 - [x] Step 2: strict `tsconfig.json`, shared TypeScript race/player/track interfaces,
   `<script setup lang="ts">` on Vue components and typed props; `npm run typecheck`
   must check TypeScript (and Vue SFCs), while explicitly separating legacy `checkJs` coverage.
@@ -100,19 +101,21 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
 - [x] Step 2b (optional): decide on ESLint + TypeScript/Vue rules with a measured maintenance
   benefit; do not block feature parity merely to add tooling.
   - Decision: do not add ESLint now. Strict tsc + vue-tsc and existing Node/Playwright regressions already protect this migration; revisit only on demonstrated lint-only defects.
-- [ ] UI parity acceptance before further broad rewrites: first-visitor start (desktop/mobile), main DOM/CSS structural contract, modal controls, screenshot comparisons on affected devices, exact-HEAD browser and cloud/World Tour gates. User-reported visual differences remain open until observed in a real browser and fixed.\n  - [x] Locale service migrated from i18n.js to strict i18n.ts, preserving UI/GAME catalogs, saved locale precedence, accessibility text and onLocaleChange; no parallel legacy copy. Focused CI 40284587634: TypeScript/Vue + unit 640 passed, 0 failed, 3 skipped; Cloud Save + quality-gate green. Browser/iOS manual parity deferred to final audit.
+- [ ] UI parity acceptance before further broad rewrites: first-visitor start (desktop/mobile), main DOM/CSS structural contract, modal controls, screenshot comparisons on affected devices, exact-HEAD browser and cloud/World Tour gates. User-reported visual differences remain open until observed in a real browser and fixed.
+- [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
+  `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
+  Main bootstrap/frame loop remains only as a documented performance exception.
+  - [x] Locale service migrated from i18n.js to strict i18n.ts, preserving UI/GAME catalogs, saved locale precedence, accessibility text and onLocaleChange; no parallel legacy copy. Focused CI 40284587634: TypeScript/Vue + unit 640 passed, 0 failed, 3 skipped; Cloud Save + quality-gate green. Browser/iOS manual parity deferred to final audit.
   - [x] Touch slide-pad state machine migrated to strict TypeScript, keeping its steering/brake math and removing duplicate JS; focused CI 40283660649 (typecheck; unit 638 pass, 0 fail, 3 skipped; Cloud Save; quality-gate).
   - [x] Minimap SVG route samples / live markers converted to strict TypeScript; duplicate JS removed, focused CI 40283144937 (typecheck, 637 pass / 0 fail / 3 skipped, Cloud Save, quality-gate). Browser visual check deferred.
   - [x] Visual SVG icons and track-section sign contracts moved to strict TypeScript; removed duplicate JS, no SVG/path/label edits; focused exact-HEAD CI 40282591936 (unit 636 pass / 0 fail / 3 skipped, Cloud Save and gate passed). Full visual parity still reserved for Step 5.
   - [x] Practice metrics and Sprint Series moved to typed services, without parallel JS copies; RED 40288752236 and GREEN 40288971774 (typecheck, unit, Cloud Save, focused gate).
-- [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
-  `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
-  Main bootstrap/frame loop remains only as a documented performance exception.
-  - [x] Settings and Controls disclosure buttons now derive aria-expanded from the same Vue reactive state as panel visibility, removing duplicate imperative writes; RED run 40288061638, GREEN run 40288441175 (typecheck, unit, Cloud Save, focused gate). Final screenshot parity deferred.
+  - [x] Championship Cup standings and result validation migrated to strict TypeScript; RED 40289793617 and focused GREEN 40290017276 (typecheck, unit, Cloud Save, quality gate). Full browser gameplay validation deferred.
 - [ ] Step 4: move event-driven dialogs and panels to Vue 3 TypeScript one at a time
   (release notes, history, garage, audio/settings, guide/tutorial, etc.);
   remove duplicate imperative DOM ownership. Run desktop/mobile, accessibility,
   localization, Firebase/cloud-save, finish/pause and World Tour regressions.
+  - [x] Settings and Controls disclosure buttons now derive aria-expanded from the same Vue reactive state as panel visibility, removing duplicate imperative writes; RED run 40288061638, GREEN run 40288441175 (typecheck, unit, Cloud Save, focused gate). Final screenshot parity deferred.
 - [ ] Step 5: final architecture and feature-parity audit: all new UI/business code
   uses TypeScript, `tsconfig` coverage is reported, remaining plain-JS exceptions
   are documented, and exact-HEAD `make verify`, layout and CI quality-gate pass.
