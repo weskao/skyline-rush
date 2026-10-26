@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { icons, ICON_ATTRS } from './icons.js';
+import { icons, ICON_ATTRS } from './icons.ts';
 import { panelsView } from './control-panels-view-state.ts';
 </script>
 <template>

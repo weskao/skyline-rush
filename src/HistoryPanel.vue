@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RACE_TRACKS } from './game.js';
-import { icons, ICON_ATTRS } from './icons.js';
+import { icons, ICON_ATTRS } from './icons.ts';
 import SignInButton from './SignInButton.vue';
 import { historyView } from './history-view-state.ts';
 

@@ -1,4 +1,4 @@
-import type { GarageView } from './ui-state-contracts.js';
+import type { GarageView } from './ui-state-contracts.ts';
 import { reactive } from 'vue';
 
 // Event-driven presentation only; live race and WebGL state never enter Vue.

@@ -1,4 +1,4 @@
-import type { ReleaseView } from './ui-state-contracts.js';
+import type { ReleaseView } from './ui-state-contracts.ts';
 import { reactive } from 'vue';
 export const releaseView = reactive<ReleaseView>({
   tabs: [], entries: [], panelLabel: 'release-tab-0', version: '', date: '', heroSrc: '',

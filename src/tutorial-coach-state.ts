@@ -1,4 +1,4 @@
-import type { TutorialCoachView } from './ui-state-contracts.js';
+import type { TutorialCoachView } from './ui-state-contracts.ts';
 import { reactive } from 'vue';
 
 // Only changes between tutorial steps are reactive. The progress.value stays

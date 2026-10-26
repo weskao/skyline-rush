@@ -1,4 +1,4 @@
-import type { ControlPanelsView } from './ui-state-contracts.js';
+import type { ControlPanelsView } from './ui-state-contracts.ts';
 import { reactive } from 'vue';
 
 // The two menus are Vue-owned; game and input state remain in main.js.
