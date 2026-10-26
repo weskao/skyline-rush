@@ -6,8 +6,9 @@ const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta
 function job(name) {
   const start = workflow.indexOf(`  ${name}:\n`);
   assert.notEqual(start, -1, `CI job ${name} must exist`);
-  const end = workflow.indexOf('\n  ', start + 3);
-  return workflow.slice(start, end === -1 ? undefined : end);
+  const tail = workflow.slice(start + 3);
+  const nextJob = tail.search(/\n  [a-z][a-z-]*:\n/);
+  return workflow.slice(start, nextJob === -1 ? undefined : start + 3 + nextJob);
 }
 
 test('refactor push uses focused checks, manual dispatch preserves full suite', () => {
