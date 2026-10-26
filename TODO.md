@@ -90,12 +90,14 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
   `.claude/rules/ui-architecture.md` (replaces the former JSDoc-only guidance).
 - [ ] Step 1: profile baseline/optimized HUD frame cost (p50/p95 on desktop/mobile),
   confirm no redundant DOM writes and full regression suite before marking complete.
-- [ ] Step 2: strict `tsconfig.json`, shared TypeScript race/player/track interfaces,
+- [x] Step 2: strict `tsconfig.json`, shared TypeScript race/player/track interfaces,
   `<script setup lang="ts">` on Vue components and typed props; `npm run typecheck`
   must check TypeScript (and Vue SFCs), while explicitly separating legacy `checkJs` coverage.
-- [ ] Step 2b (optional): decide on ESLint + TypeScript/Vue rules with a measured maintenance
+  - Verified strict TypeScript, semantic Vue SFC checking and isolated legacy JS checking in CI run 40223963528 (6074422); TypeScript-first contracts and typed component props are present.
+- [x] Step 2b (optional): decide on ESLint + TypeScript/Vue rules with a measured maintenance
   benefit; do not block feature parity merely to add tooling.
-- [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
+  - Decision: do not add ESLint now. Strict tsc + vue-tsc and existing Node/Playwright regressions already protect this migration; revisit only on demonstrated lint-only defects.
+- [ ] UI parity acceptance before further broad rewrites: first-visitor start (desktop/mobile), main DOM/CSS structural contract, modal controls, screenshot comparisons on affected devices, exact-HEAD browser and cloud/World Tour gates. User-reported visual differences remain open until observed in a real browser and fixed.\n- [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
   `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
   Main bootstrap/frame loop remains only as a documented performance exception.
 - [ ] Step 4: move event-driven dialogs and panels to Vue 3 TypeScript one at a time

@@ -1,0 +1,1411 @@
+{
+  "reference": "main",
+  "cssBlob": "0449076154698c1255d5a3d2dde404d518b10bc1",
+  "elements": [
+    {
+      "id": "whats-new-screen",
+      "tag": "dialog",
+      "classes": [
+        "history-screen",
+        "release-screen"
+      ]
+    },
+    {
+      "id": "release-title",
+      "tag": "h2",
+      "classes": []
+    },
+    {
+      "id": "release-intro",
+      "tag": "p",
+      "classes": [
+        "release-intro"
+      ]
+    },
+    {
+      "id": "release-close",
+      "tag": "button",
+      "classes": [
+        "release-close"
+      ]
+    },
+    {
+      "id": "release-versions",
+      "tag": "div",
+      "classes": [
+        "release-versions"
+      ]
+    },
+    {
+      "id": "release-panel",
+      "tag": "section",
+      "classes": [
+        "release-panel"
+      ]
+    },
+    {
+      "id": "release-hero",
+      "tag": "img",
+      "classes": [
+        "release-hero"
+      ]
+    },
+    {
+      "id": "release-version",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "release-date",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "release-items",
+      "tag": "div",
+      "classes": [
+        "release-entries"
+      ]
+    },
+    {
+      "id": "release-continue",
+      "tag": "button",
+      "classes": [
+        "primary-button"
+      ]
+    },
+    {
+      "id": "guide-screen",
+      "tag": "dialog",
+      "classes": [
+        "history-screen",
+        "guide-screen"
+      ]
+    },
+    {
+      "id": "guide-title",
+      "tag": "h2",
+      "classes": []
+    },
+    {
+      "id": "guide-close",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "guide-intro",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "guide-practice",
+      "tag": "button",
+      "classes": [
+        "controls-reset",
+        "tutorial-start"
+      ]
+    },
+    {
+      "id": "guide-desktop-panel",
+      "tag": "section",
+      "classes": []
+    },
+    {
+      "id": "guide-mobile-panel",
+      "tag": "section",
+      "classes": []
+    },
+    {
+      "id": "tutorial-coach",
+      "tag": "aside",
+      "classes": [
+        "tutorial-coach"
+      ]
+    },
+    {
+      "id": "tutorial-title",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "tutorial-pause",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "tutorial-exit",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "tutorial-progress",
+      "tag": "progress",
+      "classes": []
+    },
+    {
+      "id": "tutorial-instruction",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "tutorial-input",
+      "tag": "div",
+      "classes": []
+    },
+    {
+      "id": "tutorial-assist",
+      "tag": "small",
+      "classes": []
+    },
+    {
+      "id": "tutorial-complete-actions",
+      "tag": "div",
+      "classes": [
+        "tutorial-actions"
+      ]
+    },
+    {
+      "id": "tutorial-retry",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "tutorial-done",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "world",
+      "tag": "canvas",
+      "classes": []
+    },
+    {
+      "id": "climb-rate",
+      "tag": "span",
+      "classes": [
+        "director-climb"
+      ]
+    },
+    {
+      "id": "height-indicator",
+      "tag": "b",
+      "classes": []
+    },
+    {
+      "id": "assist-button",
+      "tag": "button",
+      "classes": [
+        "icon-button",
+        "assist-button"
+      ]
+    },
+    {
+      "id": "settings-button",
+      "tag": "button",
+      "classes": [
+        "icon-button"
+      ]
+    },
+    {
+      "id": "settings-panel",
+      "tag": "div",
+      "classes": [
+        "settings-panel"
+      ]
+    },
+    {
+      "id": "mute-all",
+      "tag": "button",
+      "classes": [
+        "mute-all"
+      ]
+    },
+    {
+      "id": "controls-button",
+      "tag": "button",
+      "classes": [
+        "controls-button"
+      ]
+    },
+    {
+      "id": "controls-panel",
+      "tag": "div",
+      "classes": [
+        "controls-panel"
+      ]
+    },
+    {
+      "id": "guide-open",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "tutorial-open",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "tilt-status",
+      "tag": "p",
+      "classes": [
+        "controls-note"
+      ]
+    },
+    {
+      "id": "tilt-enable",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "ghost-enabled",
+      "tag": "input",
+      "classes": []
+    },
+    {
+      "id": "ghost-status",
+      "tag": "p",
+      "classes": [
+        "controls-note"
+      ]
+    },
+    {
+      "id": "controls-opacity",
+      "tag": "input",
+      "classes": []
+    },
+    {
+      "id": "controls-sensitivity",
+      "tag": "input",
+      "classes": []
+    },
+    {
+      "id": "keymap-status",
+      "tag": "p",
+      "classes": [
+        "controls-note"
+      ]
+    },
+    {
+      "id": "keymap-reset",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "layout-edit",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "layout-reset",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "controls-reset",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "camera-button",
+      "tag": "button",
+      "classes": [
+        "icon-button"
+      ]
+    },
+    {
+      "id": "restart-button",
+      "tag": "button",
+      "classes": [
+        "icon-button"
+      ]
+    },
+    {
+      "id": "pause-button",
+      "tag": "button",
+      "classes": [
+        "icon-button"
+      ]
+    },
+    {
+      "id": "locale-select",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "airflow-toggle",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "vfx-panel",
+      "tag": "details",
+      "classes": []
+    },
+    {
+      "id": "vfx-reset",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "showcase-camera-dock",
+      "tag": "nav",
+      "classes": [
+        "showcase-camera-dock"
+      ]
+    },
+    {
+      "id": "showcase-camera-prev",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "showcase-camera-name",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "showcase-camera-next",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "showcase-camera-dots",
+      "tag": "span",
+      "classes": [
+        "showcase-camera-dots"
+      ]
+    },
+    {
+      "id": "track-swipe",
+      "tag": "div",
+      "classes": [
+        "track-swipe"
+      ]
+    },
+    {
+      "id": "track-swipe-name",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "track-swipe-note",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "airflow-hud",
+      "tag": "section",
+      "classes": [
+        "airflow-hud"
+      ]
+    },
+    {
+      "id": "aero-mode",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "aero-flow",
+      "tag": "b",
+      "classes": []
+    },
+    {
+      "id": "aero-floor",
+      "tag": "b",
+      "classes": []
+    },
+    {
+      "id": "aero-jet",
+      "tag": "b",
+      "classes": []
+    },
+    {
+      "id": "performance-notice",
+      "tag": "section",
+      "classes": [
+        "performance-notice"
+      ]
+    },
+    {
+      "id": "performance-notice-title",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "performance-notice-text",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "performance-notice-dismiss",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "intro",
+      "tag": "section",
+      "classes": [
+        "intro"
+      ]
+    },
+    {
+      "id": "track-length",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "cloud-open",
+      "tag": "button",
+      "classes": [
+        "medal-chip",
+        "cloud-chip"
+      ]
+    },
+    {
+      "id": "medal-chip",
+      "tag": "button",
+      "classes": [
+        "medal-chip"
+      ]
+    },
+    {
+      "id": "medal-count",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "intro-title",
+      "tag": "h1",
+      "classes": []
+    },
+    {
+      "id": "track-note",
+      "tag": "p",
+      "classes": [
+        "track-note"
+      ]
+    },
+    {
+      "id": "start-button",
+      "tag": "button",
+      "classes": [
+        "primary-button"
+      ]
+    },
+    {
+      "id": "practice-button",
+      "tag": "button",
+      "classes": [
+        "text-button",
+        "practice-button"
+      ]
+    },
+    {
+      "id": "garage-button",
+      "tag": "button",
+      "classes": [
+        "text-button",
+        "garage-button"
+      ]
+    },
+    {
+      "id": "daily-card",
+      "tag": "section",
+      "classes": [
+        "daily-card"
+      ]
+    },
+    {
+      "id": "daily-card-title",
+      "tag": "h2",
+      "classes": []
+    },
+    {
+      "id": "daily-card-route",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "daily-card-best",
+      "tag": "small",
+      "classes": []
+    },
+    {
+      "id": "daily-card-start",
+      "tag": "button",
+      "classes": [
+        "daily-card-start"
+      ]
+    },
+    {
+      "id": "race-mode-picker",
+      "tag": "div",
+      "classes": [
+        "race-mode-picker"
+      ]
+    },
+    {
+      "id": "mode-description",
+      "tag": "small",
+      "classes": []
+    },
+    {
+      "id": "recent-custom",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "recent-custom-runs",
+      "tag": "div",
+      "classes": [
+        "recent-custom-runs"
+      ]
+    },
+    {
+      "id": "stunt-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "stunt-duration",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "cup-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "cup-length",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "time-trial-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "clean-trial",
+      "tag": "input",
+      "classes": []
+    },
+    {
+      "id": "gauntlet-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "hazard-tier",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "race-mode-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "sprint-stages-setting",
+      "tag": "label",
+      "classes": []
+    },
+    {
+      "id": "race-info",
+      "tag": "section",
+      "classes": [
+        "race-info"
+      ]
+    },
+    {
+      "id": "position",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "position-change",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "timer",
+      "tag": "span",
+      "classes": [
+        "time"
+      ]
+    },
+    {
+      "id": "style-score",
+      "tag": "span",
+      "classes": [
+        "style-score"
+      ]
+    },
+    {
+      "id": "race-status",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "distance",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "race-length",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "progress-fill",
+      "tag": "i",
+      "classes": []
+    },
+    {
+      "id": "ghost-split",
+      "tag": "div",
+      "classes": [
+        "ghost-split"
+      ]
+    },
+    {
+      "id": "sprint-stage",
+      "tag": "output",
+      "classes": [
+        "sprint-stage"
+      ]
+    },
+    {
+      "id": "practice-hud",
+      "tag": "output",
+      "classes": [
+        "practice-hud"
+      ]
+    },
+    {
+      "id": "stunt-hud",
+      "tag": "output",
+      "classes": [
+        "stunt-hud"
+      ]
+    },
+    {
+      "id": "item-slot",
+      "tag": "div",
+      "classes": [
+        "item-slot"
+      ]
+    },
+    {
+      "id": "item-status",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "activate-item",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "elimination-hud",
+      "tag": "output",
+      "classes": [
+        "elimination-hud"
+      ]
+    },
+    {
+      "id": "checkpoint-hud",
+      "tag": "output",
+      "classes": [
+        "checkpoint-hud"
+      ]
+    },
+    {
+      "id": "hazard-warning",
+      "tag": "output",
+      "classes": [
+        "hazard-warning"
+      ]
+    },
+    {
+      "id": "clean-trial-hud",
+      "tag": "output",
+      "classes": [
+        "clean-trial-hud"
+      ]
+    },
+    {
+      "id": "leaderboard",
+      "tag": "div",
+      "classes": [
+        "leaderboard"
+      ]
+    },
+    {
+      "id": "race-route-map",
+      "tag": "div",
+      "classes": [
+        "race-route-map"
+      ]
+    },
+    {
+      "id": "countdown",
+      "tag": "div",
+      "classes": [
+        "countdown"
+      ]
+    },
+    {
+      "id": "countdown-number",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "countdown-label",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "event-callout",
+      "tag": "div",
+      "classes": [
+        "event-callout"
+      ]
+    },
+    {
+      "id": "maneuver-report",
+      "tag": "div",
+      "classes": []
+    },
+    {
+      "id": "skill-report",
+      "tag": "div",
+      "classes": []
+    },
+    {
+      "id": "action-report",
+      "tag": "div",
+      "classes": []
+    },
+    {
+      "id": "driving-message",
+      "tag": "div",
+      "classes": [
+        "driving-message"
+      ]
+    },
+    {
+      "id": "impact-report",
+      "tag": "div",
+      "classes": [
+        "impact-report"
+      ]
+    },
+    {
+      "id": "impact-title",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "impact-loss",
+      "tag": "b",
+      "classes": []
+    },
+    {
+      "id": "race-overlay",
+      "tag": "section",
+      "classes": [
+        "race-overlay"
+      ]
+    },
+    {
+      "id": "overlay-title",
+      "tag": "h2",
+      "classes": []
+    },
+    {
+      "id": "overlay-copy",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "new-best",
+      "tag": "span",
+      "classes": [
+        "new-best"
+      ]
+    },
+    {
+      "id": "result-stats",
+      "tag": "div",
+      "classes": [
+        "result-stats"
+      ]
+    },
+    {
+      "id": "result-style",
+      "tag": "div",
+      "classes": [
+        "result-style"
+      ]
+    },
+    {
+      "id": "photo-open",
+      "tag": "button",
+      "classes": [
+        "text-button"
+      ]
+    },
+    {
+      "id": "resume-button",
+      "tag": "button",
+      "classes": [
+        "primary-button"
+      ]
+    },
+    {
+      "id": "next-stage",
+      "tag": "button",
+      "classes": [
+        "primary-button",
+        "next-button"
+      ]
+    },
+    {
+      "id": "next-button",
+      "tag": "button",
+      "classes": [
+        "primary-button",
+        "next-button"
+      ]
+    },
+    {
+      "id": "next-track",
+      "tag": "b",
+      "classes": []
+    },
+    {
+      "id": "again-button",
+      "tag": "button",
+      "classes": [
+        "text-button"
+      ]
+    },
+    {
+      "id": "result-links",
+      "tag": "div",
+      "classes": [
+        "result-links"
+      ]
+    },
+    {
+      "id": "choose-track",
+      "tag": "button",
+      "classes": [
+        "text-button"
+      ]
+    },
+    {
+      "id": "error-message",
+      "tag": "div",
+      "classes": [
+        "error-message"
+      ]
+    },
+    {
+      "id": "photo-screen",
+      "tag": "dialog",
+      "classes": [
+        "photo-screen"
+      ]
+    },
+    {
+      "id": "photo-title",
+      "tag": "h2",
+      "classes": []
+    },
+    {
+      "id": "photo-orbit",
+      "tag": "input",
+      "classes": []
+    },
+    {
+      "id": "photo-fov",
+      "tag": "input",
+      "classes": []
+    },
+    {
+      "id": "photo-sky",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "photo-status",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "photo-save",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "photo-close",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "race-wipe",
+      "tag": "div",
+      "classes": [
+        "race-wipe"
+      ]
+    },
+    {
+      "id": "history-screen",
+      "tag": "dialog",
+      "classes": [
+        "history-screen"
+      ]
+    },
+    {
+      "id": "history-title",
+      "tag": "h2",
+      "classes": []
+    },
+    {
+      "id": "history-close",
+      "tag": "button",
+      "classes": [
+        "controls-button"
+      ]
+    },
+    {
+      "id": "career-summary",
+      "tag": "p",
+      "classes": [
+        "career-summary"
+      ]
+    },
+    {
+      "id": "cloud-title",
+      "tag": "h3",
+      "classes": []
+    },
+    {
+      "id": "cloud-logout",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "cloud-logout-note",
+      "tag": "p",
+      "classes": [
+        "cloud-logout-note"
+      ]
+    },
+    {
+      "id": "cloud-switch",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "cloud-sync-now",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "cloud-export",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "cloud-import",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "cloud-import-file",
+      "tag": "input",
+      "classes": []
+    },
+    {
+      "id": "cloud-delete",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "cloud-avatar",
+      "tag": "img",
+      "classes": [
+        "cloud-avatar"
+      ]
+    },
+    {
+      "id": "cloud-avatar-fallback",
+      "tag": "span",
+      "classes": [
+        "cloud-avatar-fallback"
+      ]
+    },
+    {
+      "id": "cloud-name",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "cloud-identity",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "cloud-status",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "cloud-last-sync",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "history-track",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "history-trend-label",
+      "tag": "figcaption",
+      "classes": []
+    },
+    {
+      "id": "history-chart",
+      "tag": "svg",
+      "classes": []
+    },
+    {
+      "id": "history-empty",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "history-runs",
+      "tag": "div",
+      "classes": [
+        "history-runs"
+      ]
+    },
+    {
+      "id": "mode-history",
+      "tag": "section",
+      "classes": [
+        "history-extra"
+      ]
+    },
+    {
+      "id": "mode-history-title",
+      "tag": "h3",
+      "classes": []
+    },
+    {
+      "id": "mode-history-notice",
+      "tag": "p",
+      "classes": [
+        "mode-history-disclaimer"
+      ]
+    },
+    {
+      "id": "mode-history-filter",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "mode-history-empty",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "mode-history-runs",
+      "tag": "div",
+      "classes": [
+        "mode-history-runs"
+      ]
+    },
+    {
+      "id": "daily-challenge",
+      "tag": "section",
+      "classes": [
+        "history-extra"
+      ]
+    },
+    {
+      "id": "daily-title",
+      "tag": "h3",
+      "classes": []
+    },
+    {
+      "id": "daily-status",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "daily-start",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "daily-board",
+      "tag": "div",
+      "classes": []
+    },
+    {
+      "id": "achievements-title",
+      "tag": "h3",
+      "classes": []
+    },
+    {
+      "id": "achievement-status",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "achievement-list",
+      "tag": "ul",
+      "classes": [
+        "achievement-list"
+      ]
+    },
+    {
+      "id": "garage-screen",
+      "tag": "dialog",
+      "classes": [
+        "history-screen",
+        "garage-screen"
+      ]
+    },
+    {
+      "id": "garage-title",
+      "tag": "h2",
+      "classes": []
+    },
+    {
+      "id": "garage-close",
+      "tag": "button",
+      "classes": [
+        "controls-button"
+      ]
+    },
+    {
+      "id": "garage-preview",
+      "tag": "div",
+      "classes": [
+        "garage-preview"
+      ]
+    },
+    {
+      "id": "garage-status",
+      "tag": "p",
+      "classes": [
+        "collection-note"
+      ]
+    },
+    {
+      "id": "garage-equip",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "leave-screen",
+      "tag": "dialog",
+      "classes": [
+        "history-screen",
+        "leave-screen"
+      ]
+    },
+    {
+      "id": "leave-title",
+      "tag": "h2",
+      "classes": []
+    },
+    {
+      "id": "leave-copy",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "leave-keep",
+      "tag": "button",
+      "classes": [
+        "primary-button"
+      ]
+    },
+    {
+      "id": "leave-end",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "leave-home",
+      "tag": "a",
+      "classes": [
+        "text-button"
+      ]
+    },
+    {
+      "id": "speed",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "speed-needle",
+      "tag": "path",
+      "classes": []
+    },
+    {
+      "id": "speed-caption",
+      "tag": "span",
+      "classes": [
+        "speed-caption"
+      ]
+    },
+    {
+      "id": "mode-icon",
+      "tag": "div",
+      "classes": [
+        "mode-icon"
+      ]
+    },
+    {
+      "id": "flight-mode",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "flight-budget",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "flight-state",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "flight-instruction",
+      "tag": "span",
+      "classes": [
+        "mode-key"
+      ]
+    },
+    {
+      "id": "altitude",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "fuel-value",
+      "tag": "b",
+      "classes": []
+    },
+    {
+      "id": "fuel-meter",
+      "tag": "div",
+      "classes": [
+        "fuel-track"
+      ]
+    },
+    {
+      "id": "fuel-fill",
+      "tag": "i",
+      "classes": []
+    },
+    {
+      "id": "fuel-caption",
+      "tag": "span",
+      "classes": [
+        "fuel-caption"
+      ]
+    },
+    {
+      "id": "touch-controls",
+      "tag": "div",
+      "classes": [
+        "touch-controls"
+      ]
+    },
+    {
+      "id": "layout-toolbar",
+      "tag": "div",
+      "classes": [
+        "layout-toolbar"
+      ]
+    },
+    {
+      "id": "layout-done",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "whats-new-open",
+      "tag": "button",
+      "classes": [
+        "build-version"
+      ]
+    }
+  ]
+}
