@@ -126,6 +126,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
   remove duplicate imperative DOM ownership. Run desktop/mobile, accessibility,
   localization, Firebase/cloud-save, finish/pause and World Tour regressions.
   - [x] Settings and Controls disclosure buttons now derive aria-expanded from the same Vue reactive state as panel visibility, removing duplicate imperative writes; RED run 40288061638, GREEN run 40288441175 (typecheck, unit, Cloud Save, focused gate). Final screenshot parity deferred.
+  - [x] Home-screen Daily Challenge and medal status now use a single typed Vue reactive view (`src/home-status-view-state.ts`), with no competing imperative writes in `history-ui.ts`; original `#daily-card-*` and `#medal-*` selectors, i18n and action buttons preserved. Observed RED in unit job of Actions 40337519982, then GREEN Actions 40337884060 (TypeScript/Vue checks, 669 passed / 0 failed / 3 skipped, Cloud Save and focused quality gate). Full browser/visual parity remains Step 5.
 - [ ] Step 5: final architecture and feature-parity audit: all new UI/business code
   uses TypeScript, `tsconfig` coverage is reported, remaining plain-JS exceptions
   are documented, and exact-HEAD `make verify`, layout and CI quality-gate pass.
