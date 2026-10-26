@@ -1,5 +1,16 @@
 # TODO — Gameplay depth design
 
+## BUG: Tutorial trigger flow needs redesign — to be discussed (2026-10-26)
+
+- [ ] **Symptom (as reported):** the tutorial only appears when the player selects the **first track** *and* has never completed or skipped the tutorial before. On any other track, or after a prior run/skip, it never shows up, so the entry point is hard to discover and depends on which track happens to be selected.
+- [ ] **Current behavior (from code, unverified at runtime):** `start()` in `src/main.js` (~L1238) sends the player into the practice only when `!guideSeen`, setting `raceAfterTutorial = true`; `closeGuide()` and completion (`skyline-rush-tutorial-completed`, ~L2210) mark it as seen. Check how `guideSeen` interacts with track selection before assuming a cause.
+- [ ] **Open questions to settle before any change:**
+  - Should the tutorial be offered on first Start regardless of track, or be an explicit, always-visible entry (home button / Controls / first-run prompt)?
+  - Should "skipped" and "completed" be tracked separately, and may a skipped tutorial be offered again later?
+  - Which modes count (Free Drive, Daily, Cup, Time Attack, locked-track edge cases), and what happens when storage is unavailable (currently once per page)?
+  - How should it interact with cloud save / a fresh device (currently local storage only)?
+- [ ] After the flow is agreed: follow the regression-first workflow (RED → GREEN), cover desktop and mobile in en + zh-TW, and keep the tutorial isolated from records, unlocks, Ghost and Daily. Decide whether any new prompt needs an audio cue (UI/UX audio assessment).
+
 ## Mobile README media (2026-10-26)
 
 - [x] Capture the real Coast game with a fresh demo profile in Chrome touch emulation: portrait 390×844 and landscape 844×390, English and Traditional Chinese. All four runs lift off using touch FLY and land after release; no page or console errors, no horizontal overflow.
