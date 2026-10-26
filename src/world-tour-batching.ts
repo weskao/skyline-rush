@@ -15,8 +15,9 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
     if(mesh.userData.ownGeometry ||
        !mesh.geometry || !mesh.material || Array.isArray(mesh.material))return;
     const key=mesh.geometry.uuid+'|'+mesh.material.uuid;
-    if(!groups.has(key))groups.set(key,[]);
-    groups.get(key).push(mesh);
+    const existing = groups.get(key);
+    if (existing) existing.push(mesh);
+    else groups.set(key, [mesh]);
   });
   let sourceMeshes=0,drawBatches=0;
   const transforms: THREE.Matrix4[]=[];
