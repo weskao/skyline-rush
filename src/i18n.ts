@@ -1,6 +1,6 @@
 import { RACE_TRACKS } from './game.js';
-import { UI } from './locales/ui.js';
-import { GAME } from './locales/game.js';
+import { UI } from './locales/ui.ts';
+import { GAME } from './locales/game.ts';
 export const SUPPORTED_LOCALES = Object.freeze(['en', 'zh-TW'] as const);
 export type Locale = typeof SUPPORTED_LOCALES[number];
 interface LocaleStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }

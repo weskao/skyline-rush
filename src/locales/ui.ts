@@ -1221,4 +1221,4 @@ export const UI = Object.freeze({
     'error.webgl': '無法啟動 WebGL 2。請在瀏覽器中啟用硬體加速，然後重新載入即可開始比賽。',
     'error.contextLost': 'WebGL 圖形連線已中斷。請重新載入此頁面以開始新的比賽。',
   },
-});
+}) satisfies Readonly<Record<'en' | 'zh-TW', Record<string, string>>>;

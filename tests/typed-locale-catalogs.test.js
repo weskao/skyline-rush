@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { UI } from '../src/locales/ui.js';
-import { GAME } from '../src/locales/game.js';
+import { UI } from '../src/locales/ui.ts';
+import { GAME } from '../src/locales/game.ts';
 
 test('both Vue locale catalogs use canonical TypeScript without keeping duplicate JavaScript sources', () => {
   for (const name of ['ui','game']) {

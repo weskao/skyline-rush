@@ -113,4 +113,4 @@ export const GAME = Object.freeze({
     'sign.finish': 'SKYLINE  /  終點',
     'route.aria': '{name}完整主要路線',
   },
-});
+}) satisfies Readonly<Record<'en' | 'zh-TW', Record<string, string>>>;

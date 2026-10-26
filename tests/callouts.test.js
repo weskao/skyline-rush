@@ -4,7 +4,7 @@ import { createRace, startRace, stepRace } from '../src/game.js';
 import { createCallouts } from '../src/callouts.ts';
 import { setLocale } from '../src/i18n.ts';
 import { VFX_RANGES, vfxLabelKey } from '../src/vfx-settings.ts';
-import { GAME } from '../src/locales/game.js';
+import { GAME } from '../src/locales/game.ts';
 
 function running() {
   const race = createRace();
