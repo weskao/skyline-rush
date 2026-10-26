@@ -16,7 +16,7 @@ type HeldAction = DriveAction;
 import { DEFAULT_KEY_MAP, ACTION_KEYS as actionKeys } from './key-map.ts';
 
 // code -> action lookup, rebuilt only when the key map object changes.
-const lookupFor = (map: KeyMap): Record<string, DriveAction> => Object.fromEntries(Object.entries(map).flatMap(([action, codes]) => codes.map(code => [code, action])));
+const lookupFor = (map: KeyMap): Record<string, DriveAction> => Object.fromEntries(Object.entries(map).flatMap(([action, codes]) => codes.map(code => [code, action]))) as Record<string, DriveAction>;
 
 export function createControls(target: ControlTarget = window, onAction: (action: string) => void = () => {}, { getSettings: defaultSettings = () => ({}), getKeyMap = () => DEFAULT_KEY_MAP, onTilt = () => {} }: ControlOptions = {}) {
   let mapped: KeyMap | null = null;
@@ -50,7 +50,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
       event.preventDefault();
       keys.add(event.code);
     } else if (actionKeys[event.code as keyof typeof actionKeys] && !event.repeat) {
-      if (event.code === 'Enter' && event.target?.closest?.('button')) return;
+      if (event.code === 'Enter' && (event.target as Element | null)?.closest?.('button')) return;
       event.preventDefault();
       if (['pause', 'restart', 'start'].includes(actionKeys[event.code as keyof typeof actionKeys])) clear();
       onAction(actionKeys[event.code as keyof typeof actionKeys]);
@@ -104,7 +104,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
         if (control === 'fly' && flyMode === 'toggle') { flyLatched = !flyLatched; pointers.set(event.pointerId, []); }
         else pointers.set(event.pointerId, [control]);
         // Synthetic accessibility/test events do not own a native pointer to capture.
-        if (button.hasPointerCapture && event.isTrusted) button.setPointerCapture(event.pointerId);
+        if (typeof button.hasPointerCapture === 'function' && event.isTrusted) button.setPointerCapture(event.pointerId);
       });
       listen<PointerEvent>(button, 'pointermove', event => {
         if (!pointers.has(event.pointerId) || event.pointerType !== 'touch' || defaultSettings()?.editing) return;
@@ -132,7 +132,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
       }
     },
     bindSlidePad(element: HTMLElement, { getSettings = defaultSettings }: { getSettings?: () => ControlSettings } = {}) {
-      const slide = { pointerId: null, pad: createSlidePad() };
+      const slide: SlideBinding = { pointerId: null, pad: createSlidePad() };
       slides.push(slide);
       const syncLock = () => slide.pad.setFullLock(getSettings()?.fullLock ?? 60);
       listen<PointerEvent>(element, 'pointerdown', event => {
@@ -141,7 +141,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
         syncLock();
         slide.pad.down(event.clientX, event.clientY);
         // Synthetic accessibility/test events do not own a native pointer to capture.
-        if (element.hasPointerCapture && event.isTrusted) element.setPointerCapture(event.pointerId);
+        if (typeof element.hasPointerCapture === 'function' && event.isTrusted) element.setPointerCapture(event.pointerId);
       });
       listen<PointerEvent>(element, 'pointermove', event => {
         if (event.pointerId !== slide.pointerId) return;
