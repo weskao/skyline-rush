@@ -1,18 +1,14 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { validGhost } from './ghost.ts';
 import { stuntMedal } from './stunt-attack.ts';
-import { validStars } from './history-stats.ts';
+import { readStored as read, writeStored as write } from './history-storage.ts';
 export { validStars, starTotal, dailyBoard, careerStats } from './history-stats.ts';
+export { BEST_KEY, LEGACY_BEST_KEY, loadBests, recordBest, MEDALS, MEDALS_KEY, medalsFor, loadMedals, recordMedals, STARS_KEY, loadStars, recordStars, loadPaint, savePaint } from './history-achievements.ts';
 
 export const HISTORY_KEY = 'skyline-rush-history';
-export const BEST_KEY = 'skyline-rush-best-tracks';
-export const LEGACY_BEST_KEY = 'skyline-rush-best'; // single pre-tracks best; read-only here, still written by main.js for coast
 export const UNLOCKED_KEY = 'skyline-rush-unlocked';
 export const HISTORY_LIMIT = 50;
 
-// Storage is resolved inside each try: a blocked-storage localStorage getter throws SecurityError.
-const read = (key, storage) => { try { return JSON.parse((storage ?? globalThis.localStorage).getItem(key)); } catch { return null; } };
-const write = (key, value, storage) => { try { (storage ?? globalThis.localStorage).setItem(key, JSON.stringify(value)); } catch { /* History is a nicety; racing never depends on it. */ } };
 const valid = time => Number.isFinite(time) && time > 0;
 
 export function loadUnlocks(storage, history = loadHistory(storage)) {
@@ -180,71 +176,6 @@ export function recordModeRace(race, storage, now = new Date()) {
   write(MODE_BESTS_KEY, retained, storage);
   return { best, record };
 }
-
-// Per-track bests; folds the legacy single best into coast (min, so re-running never overwrites a better time).
-export function loadBests(storage) {
-  const stored = read(BEST_KEY, storage);
-  const bests = {};
-  if (stored && typeof stored === 'object' && !Array.isArray(stored)) for (const track in stored) if (valid(stored[track])) bests[track] = stored[track];
-  let legacy = null;
-  try { legacy = Number((storage ?? globalThis.localStorage).getItem(LEGACY_BEST_KEY)); } catch { /* No legacy value to migrate. */ }
-  if (valid(legacy) && !(bests.coast <= legacy)) {
-    bests.coast = legacy;
-    write(BEST_KEY, bests, storage);
-  }
-  return bests;
-}
-
-export function recordBest(trackId, time, storage) {
-  const bests = loadBests(storage);
-  const record = valid(time) && !(bests[trackId] <= time);
-  if (record) write(BEST_KEY, { ...bests, [trackId]: time }, storage);
-  return { best: record ? time : bests[trackId], record };
-}
-
-export const MEDALS = ['first-win', 'clean-run', 'perfect-five', 'nitro-chain'];
-export const MEDALS_KEY = 'skyline-rush-medals';
-const MEDAL_RULES = {
-  'first-win': result => result.position === 1,
-  'clean-run': result => result.collisions === 0,
-  'perfect-five': result => result.perfectLines >= 5,
-  'nitro-chain': result => result.nitroChain >= 3, // three charges in one burst, not three separate activations
-};
-export const medalsFor = result => result ? MEDALS.filter(id => MEDAL_RULES[id](result)) : [];
-
-// { medalId: ISO date first awarded }; unknown ids and bad dates are dropped.
-export function loadMedals(storage) {
-  const saved = read(MEDALS_KEY, storage);
-  const medals = {};
-  if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
-    for (const id of MEDALS) if (typeof saved[id] === 'string' && Number.isFinite(Date.parse(saved[id]))) medals[id] = saved[id];
-  }
-  return medals;
-}
-
-export function recordMedals(result, storage, now = new Date()) {
-  const medals = loadMedals(storage);
-  const awarded = medalsFor(result).filter(id => !medals[id]);
-  if (awarded.length) write(MEDALS_KEY, { ...medals, ...Object.fromEntries(awarded.map(id => [id, now.toISOString()])) }, storage);
-  return awarded;
-}
-
-// Best style stars per track (1-3); their sum unlocks paints.
-export const STARS_KEY = 'skyline-rush-stars';
-export function loadStars(storage) {
-  const saved = read(STARS_KEY, storage);
-  const stars = {};
-  if (saved && typeof saved === 'object' && !Array.isArray(saved)) for (const id in RACE_TRACKS) if (validStars(saved[id])) stars[id] = saved[id];
-  return stars;
-}
-export function recordStars(trackId, stars, storage) {
-  const saved = loadStars(storage);
-  if (RACE_TRACKS[trackId] && validStars(stars) && !(saved[trackId] >= stars)) write(STARS_KEY, { ...saved, [trackId]: stars }, storage);
-}
-
-const PAINT_KEY = 'skyline-rush-paint';
-export const loadPaint = (owned, storage) => { const id = read(PAINT_KEY, storage); return owned.includes(id) ? id : 'pearl'; };
-export const savePaint = (id, storage) => write(PAINT_KEY, id, storage);
 
 // One best-run ghost per track: { trackId: { time, samples } }.
 const GHOSTS_KEY = 'skyline-rush-ghosts';
