@@ -1,3 +1,20 @@
+export type LocalizedText = string | { en: string; 'zh-TW'?: string };
+export type LocalizedImage = string | { en: string; 'zh-TW'?: string } | null;
+export interface ReleaseHighlight {
+  id: string;
+  kind: string;
+  image?: LocalizedImage;
+  title: LocalizedText;
+  description: LocalizedText;
+}
+export interface ReleaseEntry {
+  version: string;
+  date: string;
+  image?: LocalizedImage;
+  highlights: ReleaseHighlight[];
+}
+interface ReleaseStore { getItem(key: string): string | null; setItem(key: string, value: string): void }
+
 import packageMeta from '../package.json' with { type: 'json' };
 const { version } = packageMeta;
 
@@ -5,7 +22,7 @@ const { version } = packageMeta;
 // Every published version keeps its entry (and any image under public/) here for good; the
 // dialog only shows the newest RECENT_RELEASE_LIMIT of them. scripts/check-release-notes.mjs
 // stops a release whose version has no entry.
-export const RELEASE_NOTES = Object.freeze([
+export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
     version: '0.23.0', date: '2026-10-25', image: null,
     highlights: [
@@ -259,35 +276,35 @@ export const RELEASE_NOTES = Object.freeze([
 export const NOTES_SEEN_KEY = 'skyline-rush-whats-new-seen-v1';
 export const RECENT_RELEASE_LIMIT = 5;
 
-const versionParts = value => (/^v?(\d+)\.(\d+)\.(\d+)$/.exec(String(value ?? '')) ?? [0, -1, -1, -1]).slice(1).map(Number);
+const versionParts = (value: unknown): number[] => (/^v?(\d+)\.(\d+)\.(\d+)$/.exec(String(value ?? '')) ?? [0, -1, -1, -1]).slice(1).map(Number);
 // Numeric "major.minor.patch" order; anything unreadable sorts below every real version.
-export function compareVersions(a, b) {
+export function compareVersions(a: unknown, b: unknown): number {
   const [x, y] = [versionParts(a), versionParts(b)];
-  return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+  return (x[0]! - y[0]!) || (x[1]! - y[1]!) || (x[2]! - y[2]!);
 }
 // Newest first, never a version newer than the running build (notes are written before the release).
-export const recentReleases = (current = version, notes = RELEASE_NOTES, limit = RECENT_RELEASE_LIMIT) =>
+export const recentReleases = (current: string = version, notes: readonly ReleaseEntry[] = RELEASE_NOTES, limit: number = RECENT_RELEASE_LIMIT): ReleaseEntry[] =>
   notes.filter(release => compareVersions(release.version, current) <= 0)
     .sort((a, b) => compareVersions(b.version, a.version)).slice(0, limit);
-export const releaseForVersion = (v = version) => RELEASE_NOTES.find(release => release.version === v) ?? null;
+export const releaseForVersion = (v: string = version): ReleaseEntry | null => RELEASE_NOTES.find(release => release.version === v) ?? null;
 export const CURRENT_RELEASE = recentReleases()[0] ?? null;
 
 // Shows when the player last saw an older version; with no record only a returning player is told.
 // Blocked storage cannot remember the visit, so it stays silent rather than reopening on every load.
-export function shouldAnnounce(release, storage, returningPlayer = false) {
+export function shouldAnnounce(release: Pick<ReleaseEntry, 'version' | 'highlights'> | null, storage?: ReleaseStore, returningPlayer = false): boolean {
   if (!release?.highlights?.length) return false;
   let seen;
   try { seen = storage?.getItem(NOTES_SEEN_KEY); } catch { return false; }
   return seen == null ? returningPlayer : compareVersions(release.version, seen) > 0;
 }
-export function markAnnouncementSeen(release, storage) {
+export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore): void {
   if (!release) return;
   try { storage?.setItem(NOTES_SEEN_KEY, release.version); } catch { /* remembered in memory by the app */ }
 }
-export const releaseText = (value, locale) =>
-  typeof value === 'string' ? value : (value?.[locale] ?? value?.en ?? '');
+export const releaseText = (value: LocalizedText | LocalizedImage | null | undefined, locale: string): string =>
+  typeof value === 'string' ? value : (value?.[locale as 'en' | 'zh-TW'] ?? value?.en ?? '');
 
-export function releaseImage(value, locale) {
+export function releaseImage(value: LocalizedImage | undefined, locale: string): string | null {
   const path = releaseText(value, locale);
   return typeof path === 'string' && /^(?!\/)(?!.*\.\.)[a-zA-Z0-9][a-zA-Z0-9/_.-]*\.(?:png|jpe?g|webp|avif)$/.test(path) ? path : null;
 }

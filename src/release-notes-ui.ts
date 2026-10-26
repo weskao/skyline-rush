@@ -2,7 +2,7 @@ import { nextTick } from 'vue';
 import { updateReleaseView } from './release-view-state.ts';
 import { HISTORY_KEY } from './history.js';
 import { getLocale, t, formatDate } from './i18n.ts';
-import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.js';
+import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.ts';
 
 // Pure keyboard navigation, independently testable without a DOM.
 export function releaseTabIndex(index: number, count: number, key: string): number | null {
