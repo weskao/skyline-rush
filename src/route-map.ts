@@ -1,5 +1,5 @@
 import { RACE_TRACKS } from './game.js';
-import { trackOverview } from './track-paths.js';
+import { trackOverview } from './track-paths.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 
 const raceTracks = RACE_TRACKS as Record<string, { length: number }>;

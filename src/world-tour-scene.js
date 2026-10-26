@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RACE_TRACKS, ROAD_LIMIT } from './game.js';
-import { trackPoint, trackFrame } from './track-paths.js';
+import { trackPoint, trackFrame } from './track-paths.ts';
 import { roadRibbon } from './geometry.ts';
 import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';

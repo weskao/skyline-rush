@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RACE_TRACKS } from './game.js';
-import { trackPoint, trackFrame } from './track-paths.js';
+import { trackPoint, trackFrame } from './track-paths.ts';
 
 // Absolute distance anchors: reusing a chunk never restarts an animation or
 // causes the same roadside block to jump back to the camera.
