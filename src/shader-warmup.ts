@@ -5,8 +5,16 @@
 // per-module "warmup" flags: a material only has to be attached to some object in the scene when this runs.
 // Hidden lights stay hidden: three.js bakes the visible-light count into every lit shader's cache key, so unhiding
 // them would build the wrong variants (and toggling a light's visibility mid-race recompiles every lit material).
-export function warmupShaders(renderer, scene, camera, target) {
-  const touched = [];
+import type { Camera, Object3D, Scene, WebGLRenderer, WebGLRenderTarget } from 'three';
+
+// Shader pipeline warmup must restore every object after the pre-render.
+export function warmupShaders(
+  renderer: Pick<WebGLRenderer, 'setRenderTarget' | 'render'>,
+  scene: Scene,
+  camera: Camera,
+  target: WebGLRenderTarget | null,
+): number {
+  const touched: Array<[Object3D, boolean, boolean]> = [];
   scene.traverse(object => {
     if (object.isLight || (object.visible && !object.frustumCulled)) return;
     touched.push([object, object.visible, object.frustumCulled]);

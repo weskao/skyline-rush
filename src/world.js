@@ -10,7 +10,7 @@ import { canopy, carShell, roadRibbon } from './geometry.ts';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.ts';
-import { warmupShaders } from './shader-warmup.js';
+import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.js';
 import { createSkyScene } from './sky-scene.js';
