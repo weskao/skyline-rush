@@ -25,8 +25,6 @@ https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
 
 **Racing** — a full run on one of the tracks.
 
-[![Gameplay video: a full race](artifacts/play-poster.jpeg)](https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101)
-
 https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
 ![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)

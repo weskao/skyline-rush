@@ -1,4 +1,4 @@
-<!-- source-sha256: df640e029645b1f5b93d670cac3e5ac9871236476d417102af5a86fe12d5e2cb generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 8f0d272480b8cad8c3ff002433abace887cf103ff278e86169b09f4d4d93ec87 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -25,8 +25,6 @@
 https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
 
 **比賽** — 在其中一條賽道上跑完一整場。
-
-[![遊戲影片：跑完一整場比賽](artifacts/play-poster.jpeg)](https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101)
 
 https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
