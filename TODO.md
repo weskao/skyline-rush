@@ -110,6 +110,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
   - [x] Minimap SVG route samples / live markers converted to strict TypeScript; duplicate JS removed, focused CI 40283144937 (typecheck, 637 pass / 0 fail / 3 skipped, Cloud Save, quality-gate). Browser visual check deferred.
   - [x] Visual SVG icons and track-section sign contracts moved to strict TypeScript; removed duplicate JS, no SVG/path/label edits; focused exact-HEAD CI 40282591936 (unit 636 pass / 0 fail / 3 skipped, Cloud Save and gate passed). Full visual parity still reserved for Step 5.
   - [x] Practice metrics and Sprint Series moved to typed services, without parallel JS copies; RED 40288752236 and GREEN 40288971774 (typecheck, unit, Cloud Save, focused gate).
+  - [x] Elimination, Checkpoint Rush and Stunt Attack rules migrated to strict TS (no duplicate JS); RED 40312341781 → GREEN 40312783413, typecheck, unit 652 passed / 0 failed / 3 skipped, Cloud Save and focused quality-gate success. Browser gameplay parity deferred to Step 5.
   - [x] Championship Cup standings and result validation migrated to strict TypeScript; RED 40289793617 and focused GREEN 40290017276 (typecheck, unit, Cloud Save, quality gate). Full browser gameplay validation deferred.
 - [ ] Step 4: move event-driven dialogs and panels to Vue 3 TypeScript one at a time
   (release notes, history, garage, audio/settings, guide/tutorial, etc.);
