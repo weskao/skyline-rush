@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_KEY_MAP, KEYMAP_KEY, rebind, resetKeyMap, validateKeyMap, loadKeyMap, saveKeyMap } from '../src/key-map.js';
+import { DEFAULT_KEY_MAP, KEYMAP_KEY, rebind, resetKeyMap, validateKeyMap, loadKeyMap, saveKeyMap } from '../src/key-map.ts';
 
 const memoryStorage = (initial = {}) => {
   const data = { ...initial };
