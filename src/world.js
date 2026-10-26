@@ -9,7 +9,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { canopy, carShell, roadRibbon } from './geometry.js';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
-import { vfxSettings } from './vfx-settings.js';
+import { vfxSettings } from './vfx-settings.ts';
 import { warmupShaders } from './shader-warmup.js';
 import { t, getLocale, onLocaleChange } from './i18n.js';
 import { createRearLight } from './rear-light.js';

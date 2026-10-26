@@ -4,7 +4,7 @@
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.
 import { version } from '../package.json';
 import { RACE_TRACKS } from './game.js';
-import { VFX_RANGES, vfxLabelKey } from './vfx-settings.js';
+import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
 import { icons, ICON_ATTRS } from './icons.js';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';

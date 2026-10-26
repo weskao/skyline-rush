@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace } from '../src/game.js';
 import { createCallouts } from '../src/callouts.js';
 import { setLocale } from '../src/i18n.js';
-import { VFX_RANGES, vfxLabelKey } from '../src/vfx-settings.js';
+import { VFX_RANGES, vfxLabelKey } from '../src/vfx-settings.ts';
 import { GAME } from '../src/locales/game.js';
 
 function running() {

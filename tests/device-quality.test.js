@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { selectDeviceQuality,initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY } from '../src/device-quality.js';
+import { selectDeviceQuality,initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY } from '../src/device-quality.ts';
 import { UI } from '../src/locales/ui.js';
 test('unknown or powerful devices keep high fidelity',()=>{
  assert.equal(selectDeviceQuality({}), 'high');

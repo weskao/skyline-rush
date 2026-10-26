@@ -1,4 +1,5 @@
-import { vfxSettings } from './vfx-settings.js';
+import { vfxSettings } from './vfx-settings.ts';
+import type { VfxSettings, VfxQuality } from './vfx-settings.ts';
 
 export const DEVICE_NOTICE_KEY = 'skyline-rush-performance-notice-v1';
 export const QUALITY_STORAGE_KEY = 'skyline-rush-vfx';
@@ -21,19 +22,27 @@ export const DEVICE_MESSAGES = Object.freeze({
  * benchmark on the UI thread, or infer GPU speed from touchscreen alone.
  * Unavailable capability hints default to High instead of lowering fidelity.
  */
-export function selectDeviceQuality({ cores, memoryGiB, width, height, pixelRatio = 1 } = {}) {
+export interface DeviceHints {
+  cores?: number; memoryGiB?: number; width?: number; height?: number; pixelRatio?: number;
+}
+export interface InitialDeviceVisuals {
+  settings: VfxSettings; downgraded: boolean; automatic: boolean;
+}
+export function selectDeviceQuality({ cores, memoryGiB, width, height, pixelRatio = 1 }: DeviceHints = {}): VfxQuality {
   const pixelLoad = Math.max(0,Number(width)||0)*Math.max(0,Number(height)||0)
     * Math.min(Math.max(Number(pixelRatio)||1,1),2)**2;
-  const weakCPU=Number.isFinite(cores)&&cores<=2;
-  const weakMemory=Number.isFinite(memoryGiB)&&memoryGiB<=2;
-  const moderateCPU=Number.isFinite(cores)&&cores<=4;
-  const moderateMemory=Number.isFinite(memoryGiB)&&memoryGiB<=4;
+  const weakCPU = typeof cores === 'number' && Number.isFinite(cores) && cores<=2;
+  const weakMemory = typeof memoryGiB === 'number' && Number.isFinite(memoryGiB) && memoryGiB<=2;
+  const moderateCPU = typeof cores === 'number' && Number.isFinite(cores) && cores<=4;
+  const moderateMemory = typeof memoryGiB === 'number' && Number.isFinite(memoryGiB) && memoryGiB<=4;
   if(weakCPU||weakMemory)return 'low';
   if((moderateCPU||moderateMemory)&&pixelLoad>=1100000)return 'medium';
   if(pixelLoad>=3500000&&(moderateCPU||moderateMemory))return 'medium';
   return 'high';
 }
-export function initialDeviceVisuals({storedSettings,device}={}) {
+export function initialDeviceVisuals(
+  {storedSettings,device}: {storedSettings?: unknown; device?: DeviceHints} = {}
+): InitialDeviceVisuals {
   if(storedSettings && typeof storedSettings==='object' && !Array.isArray(storedSettings))
     return {settings:vfxSettings(storedSettings),downgraded:false,automatic:false};
   const quality=selectDeviceQuality(device);
@@ -45,7 +54,8 @@ export function initialDeviceVisuals({storedSettings,device}={}) {
       motionBlur:quality==='low'?0:.12});
   return {settings,downgraded:quality!=='high',automatic:true};
 }
-export function noticeMessage(locale,quality){
-  const messages=DEVICE_MESSAGES[locale]??DEVICE_MESSAGES.en;
-  return {title:messages.title,body:messages.message.replace('{quality}',messages.level[quality]??quality),dismiss:messages.dismiss};
+export function noticeMessage(locale: string,quality: string): {title: string; body: string; dismiss: string} {
+  const messages = locale === 'zh-TW' ? DEVICE_MESSAGES['zh-TW'] : DEVICE_MESSAGES.en;
+  const level = messages.level as Record<string, string>;
+  return {title:messages.title,body:messages.message.replace('{quality}',level[quality]??quality),dismiss:messages.dismiss};
 }
