@@ -35,6 +35,24 @@ A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound
 
 ![Race results with a new personal best](artifacts/race-results.jpeg?v=20261024a)
 
+### Mobile screenshots and demo
+
+Play in portrait or landscape with touch controls. The clip follows a Coast run from the start screen through countdown, FLY lift-off and landing; AUTO keeps the accelerator held.
+
+**Portrait — ready to race**
+
+![Mobile portrait start screen with track selection and touch-friendly race buttons](artifacts/mobile-home.jpeg)
+
+**Landscape — flying with touch controls**
+
+![Mobile landscape flight with FLY held and the touch controls visible](artifacts/mobile-landscape-flight.jpeg)
+
+**Touch gameplay demo** · [Watch the MP4](artifacts/mobile-demo.mp4)
+
+![Mobile touch gameplay: Coast countdown, FLY lift-off and landing](artifacts/mobile-demo.gif)
+
+Captured from the running game in Chrome mobile emulation at 390×844 (portrait) and 844×390 (landscape), using a fresh demo profile. These captures do not measure physical-phone performance.
+
 ## Game modes and replayability (development branch)
 
 > **Work in progress · 22 October 2026.** These mode additions are on [`feature/race-modes-p0`](https://github.com/weskao/skyline-rush/tree/feature/race-modes-p0), not necessarily on the [deployed GitHub Pages build](https://weskao.github.io/skyline-rush/). The existing screenshots above show earlier gameplay; current mode captures are linked below. The [roadmap](TODO.md) includes additional unfinished features.
