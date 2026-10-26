@@ -3,7 +3,6 @@ import { panelsView, updatePanelsView } from './control-panels-view-state.ts';
 export const canOpenControlsPanel = (phase: string): boolean => phase === 'ready' || phase === 'paused';
 
 interface ControlPanelDependencies {
-  ui: Record<string, HTMLElement>;
   getRacePhase: () => string;
   clearRebinding: () => void;
   hidePerformanceNotice: () => void;
@@ -12,13 +11,12 @@ interface ControlPanelDependencies {
 
 // Audio settings and control layout are event driven, never updated per frame.
 export function setupControlPanels({
-  ui, getRacePhase, clearRebinding, hidePerformanceNotice, trackDropdown,
+  getRacePhase, clearRebinding, hidePerformanceNotice, trackDropdown,
 }: ControlPanelDependencies) {
   const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   function toggleSettings(open: boolean = !panelsView.settingsOpen): void {
     updatePanelsView({ settingsOpen: !!open });
     if (open) hidePerformanceNotice();
-    ui['settings-button'].setAttribute('aria-expanded', String(open));
     trackDropdown($('.settings'), open, () => toggleSettings(false));
   }
 
@@ -28,7 +26,6 @@ export function setupControlPanels({
     if (!open) clearRebinding();
     updatePanelsView({ controlsOpen: !!open });
     if (open) hidePerformanceNotice();
-    ui['controls-button'].setAttribute('aria-expanded', String(open));
     trackDropdown($('.controls-menu'), open, () => toggleControls(false));
   }
   return { toggleSettings, toggleControls };

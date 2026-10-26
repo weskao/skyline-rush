@@ -902,7 +902,6 @@ function toggleAssist() {
 }
 
 const { toggleSettings, toggleControls } = setupControlPanels({
-  ui,
   getRacePhase: () => race.phase,
   clearRebinding: () => { rebinding = null; },
   hidePerformanceNotice,

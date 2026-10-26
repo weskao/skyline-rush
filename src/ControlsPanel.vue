@@ -11,7 +11,7 @@ const CONTROL_CHOICES = {
 </script>
 <template>
       <div class="controls-menu">
-        <button class="controls-button" id="controls-button" aria-expanded="false" aria-controls="controls-panel" title="Driving controls" data-i18n-title="controls.title" data-i18n="controls.button">Controls</button>
+        <button class="controls-button" id="controls-button" :aria-expanded="String(panelsView.controlsOpen)" aria-controls="controls-panel" title="Driving controls" data-i18n-title="controls.title" data-i18n="controls.button">Controls</button>
         <div class="controls-panel" id="controls-panel" role="group" aria-label="Driving controls" data-i18n-aria-label="controls.title" :hidden="!panelsView.controlsOpen">
           <button class="controls-reset" id="guide-open" data-i18n="guide.open">How to play</button>
           <button class="controls-reset" id="tutorial-open" data-i18n="tutorial.start">Start interactive practice</button>
