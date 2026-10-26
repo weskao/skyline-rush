@@ -13,6 +13,7 @@ on:
       - '!feature/mode00-objective-contract'
     tags: ['v*']
   pull_request:
+  # Workflow dispatch remains available; an explicit [full-regression] push also enables the full gate.
   workflow_dispatch:
     inputs:
       full_regression:
@@ -48,7 +49,7 @@ jobs:
   # splits the alphabetical test list into equal contiguous slices, so more shards also keep one heavy spec file
   # from dominating a slice.
   browser-tests:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true)) }}"
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -63,6 +64,10 @@ jobs:
       - run: npm ci
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
       - run: npm run test:browser -- --shard=${{ matrix.shard }}/8
+      # Final refactor verification also runs the responsive layout command exactly once.
+      - name: Verify responsive layout on final refactor run
+        if: "${{ matrix.shard == 1 && startsWith(github.ref, 'refs/heads/refactor/') }}"
+        run: npm run test:layout
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -118,7 +123,7 @@ jobs:
   # the middle of all five long World Tour routes. Test-only Vite fixture:
   # it is not included in the distributable production build.
   world-tour-mid-race:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true)) }}"
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -150,7 +155,7 @@ jobs:
           BROWSER: ${{ needs.browser-tests.result }}
           CLOUD: ${{ needs.cloud-save.result }}
           WORLD_TOUR: ${{ needs.world-tour-mid-race.result }}
-          FOCUSED: ${{ startsWith(github.ref, 'refs/heads/refactor/') && !(github.event_name == 'workflow_dispatch' && inputs.full_regression == true) }}
+          FOCUSED: ${{ startsWith(github.ref, 'refs/heads/refactor/') && !((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}
         run: |
           printf 'unit=%s browser=%s cloud=%s world-tour=%s\\n' "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"
           if [ "$FOCUSED" = 'true' ]; then
