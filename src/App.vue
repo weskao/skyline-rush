@@ -13,6 +13,7 @@ import TutorialCoach from './TutorialCoach.vue';
 import SettingsPanel from './SettingsPanel.vue';
 import ControlsPanel from './ControlsPanel.vue';
 import HistoryPanel from './HistoryPanel.vue';
+import { homeStatusView } from './home-status-view-state.ts';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
 
@@ -91,7 +92,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <button type="button" id="performance-notice-dismiss">Got it</button>
     </section>
     <section class="intro" id="intro" aria-labelledby="intro-title">
-      <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">0/4</span></button></div>
+      <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just</span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
       <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
@@ -108,10 +109,10 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <span class="daily-card-icon" aria-hidden="true"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg></span>
         <div class="daily-card-copy">
           <h2 id="daily-card-title" data-i18n="daily.title">Daily challenge</h2>
-          <strong id="daily-card-route"></strong>
-          <small id="daily-card-best"></small>
+          <strong id="daily-card-route">{{ homeStatusView.dailyRoute }}</strong>
+          <small id="daily-card-best">{{ homeStatusView.dailyBest }}</small>
         </div>
-        <button class="daily-card-start" id="daily-card-start" aria-describedby="daily-card-route"><span data-i18n="daily.play">Play</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <button class="daily-card-start" id="daily-card-start" :disabled="homeStatusView.dailyStartDisabled" aria-describedby="daily-card-route"><span data-i18n="daily.play">Play</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
       </section>
       <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
         <div class="race-mode-heading"><span data-i18n="mode.heading">GAME MODE</span><small id="mode-description"></small></div>
