@@ -1,8 +1,8 @@
 import { BufferAttribute, BufferGeometry, DynamicDrawUsage, Float32BufferAttribute } from 'three';
 
-export function carShell(sections) {
-  const vertices = [];
-  const faces = [];
+export function carShell(sections: readonly (readonly [number, number, number, number])[]): BufferGeometry {
+  const vertices: number[] = [];
+  const faces: number[] = [];
   sections.forEach(([z, width, bottom, top]) => vertices.push(-width, bottom, z, width, bottom, z, width, top, z, -width, top, z));
   for (let i = 0; i < sections.length - 1; i++) {
     for (let j = 0; j < 4; j++) {
@@ -20,7 +20,7 @@ export function carShell(sections) {
 }
 
 // Canopy frustum: base quad sits inside the body shell (no bottom face), top quad is the roof.
-export function canopy(baseWidth, frontZ, frontY, rearZ, rearY, topWidth, topFrontZ, topRearZ, topY) {
+export function canopy(baseWidth: number, frontZ: number, frontY: number, rearZ: number, rearY: number, topWidth: number, topFrontZ: number, topRearZ: number, topY: number): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute([
     -baseWidth, frontY, frontZ, baseWidth, frontY, frontZ, baseWidth, rearY, rearZ, -baseWidth, rearY, rearZ,
@@ -33,7 +33,7 @@ export function canopy(baseWidth, frontZ, frontY, rearZ, rearY, topWidth, topFro
 
 // Every road strip starts here: lit materials need a normal per vertex, or the shader yields NaN and bloom blackens
 // the frame. Two vertices (left, right) per row; callers rewrite position/normal/index arrays and flag needsUpdate.
-export function roadRibbon(rows) {
+export function roadRibbon(rows: number): BufferGeometry {
   const geometry = new BufferGeometry();
   const normals = new Float32Array((rows + 1) * 6);
   for (let i = 1; i < normals.length; i += 3) normals[i] = 1;

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Vector3 } from 'three';
-import { canopy, carShell } from '../src/geometry.js';
+import { canopy, carShell } from '../src/geometry.ts';
 
 function assertOutward(geometry, center) {
   const vertices = geometry.attributes.position;
@@ -25,7 +25,7 @@ test('the glass canopy faces outward for every car style proportion', () => {
 });
 
 test('a road ribbon is born lit-safe: unit normals on every vertex and upward-facing quads', async () => {
-  const { roadRibbon } = await import('../src/geometry.js');
+  const { roadRibbon } = await import('../src/geometry.ts');
   const rows = 4, geometry = roadRibbon(rows);
   const { position, normal } = geometry.attributes;
   assert.equal(position.count, (rows + 1) * 2);
