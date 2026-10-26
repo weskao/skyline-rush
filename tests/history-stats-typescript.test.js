@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 test('career metrics, daily board and stars share one typed implementation without shadow JS exports', async () => {
   assert.equal(existsSync(new URL('../src/history-stats.ts', import.meta.url)), true);
-  const source = readFileSync(new URL('../src/history.js', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/history.ts', import.meta.url), 'utf8');
   assert.match(source, /export\s*\{\s*validStars,\s*starTotal,\s*dailyBoard,\s*careerStats\s*\}\s*from\s*['"]\.\/history-stats\.ts['"]/);
   assert.doesNotMatch(source, /export function careerStats\(|export const dailyBoard\s*=|export const starTotal\s*=/);
   const { careerStats, dailyBoard, starTotal, validStars } = await import('../src/history-stats.ts');
