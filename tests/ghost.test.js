@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace } from '../src/game.js';
 import { recordGhost, validGhost, ghostAt } from '../src/ghost.js';
 import { loadGhost, saveGhost, loadModeGhost, saveModeGhost } from '../src/history.js';
-import { controlSettings } from '../src/control-settings.js';
+import { controlSettings } from '../src/control-settings.ts';
 
 const memoryStorage = (initial = {}) => {
   const data = { ...initial };

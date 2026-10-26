@@ -25,7 +25,7 @@ import { createSound } from './audio.js';
 import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS } from './vfx-settings.js';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.js';
-import { controlSettings, CONTROLS_KEY } from './control-settings.js';
+import { controlSettings, CONTROLS_KEY } from './control-settings.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.js';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.js';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
