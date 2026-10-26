@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { flipRgbaRows, photoFov } from './photo-export.js';
+import { flipRgbaRows, photoFov } from './photo-export.ts';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
