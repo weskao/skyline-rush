@@ -4,7 +4,7 @@ import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
 import { createElimination, stepElimination } from './elimination.js';
-import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
+import { bankItem, activateItem, tickItemCooldown } from './active-items.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
 import { raceCompletion } from './race-objectives.ts';
 import { createRaceSessionContract } from './race-session.ts';

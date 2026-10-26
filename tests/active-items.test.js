@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bankItem, activateItem, tickItemCooldown } from '../src/active-items.js';
+import { bankItem, activateItem, tickItemCooldown } from '../src/active-items.ts';
 import { createRace, startRace, useHeldItem } from '../src/game.js';
 const car = () => ({ effects:{shield:0,magnet:0,ghost:0,freeze:0}, heldItem:null, itemCooldown:0 });
 test('one held item can be banked; second pickup never overwrites', () => {
