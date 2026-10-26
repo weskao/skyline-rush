@@ -2,7 +2,7 @@ import { PAINTS } from './appearance.ts';
 import { updateGarageView } from './garage-view-state.ts';
 import { t } from './i18n.ts';
 // Keep progression checks locked to the same implementation used in production.
-import { availablePaints } from './access/production.js';
+import { availablePaints } from './access/production.ts';
 
 type Paint = (typeof PAINTS)[keyof typeof PAINTS];
 type PaintCatalog = Record<string, { stars: number }>;
