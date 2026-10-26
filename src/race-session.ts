@@ -1,4 +1,4 @@
-import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from './race-config.js';
+import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from './race-config.ts';
 import { createRaceObjective } from './race-objectives.ts';
 import { RACE_STREAMS, streamSeed } from './rng.js';
 

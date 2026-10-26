@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace } from '../src/game.js';
-import { normalizeRaceConfig, rulesSignature } from '../src/race-config.js';
+import { normalizeRaceConfig, rulesSignature } from '../src/race-config.ts';
 
 test('Custom and Free Drive may opt into deterministic road obstacles', () => {
   for (const mode of ['custom','free']) {

@@ -5,7 +5,7 @@ import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
 import { createElimination, stepElimination } from './elimination.ts';
 import { bankItem, activateItem, tickItemCooldown } from './active-items.ts';
-import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
+import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { raceCompletion } from './race-objectives.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';

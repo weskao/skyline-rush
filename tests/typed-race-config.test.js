@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { normalizeRaceConfig, validateRaceRequest, rulesSignature, trafficMultiplier } from '../src/race-config.js';
+import { normalizeRaceConfig, validateRaceRequest, rulesSignature, trafficMultiplier } from '../src/race-config.ts';
 
 test('custom race rules have one strict TypeScript implementation without a duplicate JS runtime', () => {
   assert.equal(existsSync(new URL('../src/race-config.ts', import.meta.url)), true);
-  assert.equal(existsSync(new URL('../src/race-config.js', import.meta.url)), false);
+  assert.equal(existsSync(new URL('../src/race-config.ts', import.meta.url)), false);
 });
 
 test('typed rules preserve classic/default equivalence and deny unexpected player options', () => {

@@ -1,4 +1,4 @@
-import { normalizeRaceConfig } from './race-config.js';
+import { normalizeRaceConfig } from './race-config.ts';
 
 // Recent Custom sessions are local convenience shortcuts, not Career progress.
 // Storage is an injectable boundary for tests and privacy-restricted browsers.

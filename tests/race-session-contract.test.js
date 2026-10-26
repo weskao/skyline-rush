@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from '../src/race-config.js';
+import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from '../src/race-config.ts';
 import { createRaceSessionContract } from '../src/race-session.ts';
 import { createRace, RACE_TRACKS } from '../src/game.js';
 import { RACE_STREAMS, seededRng } from '../src/rng.js';

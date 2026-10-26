@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSprintSeries, addSprintStage, sprintTotal } from '../src/sprint-series.ts';
-import { normalizeRaceConfig, rulesSignature } from '../src/race-config.js';
+import { normalizeRaceConfig, rulesSignature } from '../src/race-config.ts';
 
 test('supported sprint heat counts 1, 2, 3 and 5', () => {
   for (const count of [1,2,3,5]) assert.deepEqual(createSprintSeries(count),{count, results:[]});

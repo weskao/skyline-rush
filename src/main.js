@@ -12,7 +12,7 @@ import App from './App.vue';
 import { icon } from './icons.ts';
 import { createRace as createBareRace, startRace, stepRace, useHeldItem, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.js';
-import { RULE_PRESETS } from './race-config.js';
+import { RULE_PRESETS } from './race-config.ts';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.ts';
 import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.ts';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
