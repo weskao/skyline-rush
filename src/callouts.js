@@ -1,4 +1,4 @@
-import { t } from './i18n.js';
+import { t } from './i18n.ts';
 
 // A callout field is a catalog key or [key, params]; it resolves in the active locale once, when the event is queued.
 const text = field => Array.isArray(field) ? t(field[0], field[1]) : t(field);

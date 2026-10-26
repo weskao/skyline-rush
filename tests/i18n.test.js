@@ -5,7 +5,7 @@ import {
   SUPPORTED_LOCALES, TRACK_NAMES, trackName, loadLocale, saveLocale,
   CATALOGS, interpolate, detectLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, t,
   formatNumber, applyDocumentLocale, applyI18n,
-} from '../src/i18n.js';
+} from '../src/i18n.ts';
 import { UI } from '../src/locales/ui.js';
 import { GAME } from '../src/locales/game.js';
 import { RACE_TRACKS } from '../src/game.js';

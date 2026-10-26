@@ -1,6 +1,6 @@
 import { RACE_TRACKS } from './game.js';
 import { trackOverview } from './track-paths.js';
-import { t, trackName, getLocale } from './i18n.js';
+import { t, trackName, getLocale } from './i18n.ts';
 
 const raceTracks = RACE_TRACKS as Record<string, { length: number }>;
 const NS = 'http://www.w3.org/2000/svg';

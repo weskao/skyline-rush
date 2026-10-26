@@ -36,7 +36,7 @@ import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
 import { frameStats, PERF_WINDOW } from './perf.js';
 import { createRouteMap } from './route-map.ts';
-import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.js';
+import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.ts';
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.ts';
 import { trackDropdown } from './dropdown.ts';

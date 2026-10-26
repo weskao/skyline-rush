@@ -1,6 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
-import { CATALOGS } from '../src/i18n.js';
+import { CATALOGS } from '../src/i18n.ts';
 import { ciTimeout } from './helpers/ci.js';
 
 test('home version stays vertically centered beside the footer tagline in both languages', async ({ page }) => {
