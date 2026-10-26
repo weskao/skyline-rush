@@ -1,4 +1,5 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
+import { mergeModeBests, MODE_NAMES as modeNames } from './cloud-mode-bests.ts';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
   HISTORY_LIMIT, MEDALS, MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.js';
 
@@ -20,7 +21,6 @@ const nonnegative = value => Number.isFinite(value) && value >= 0 ? value : 0;
 const date = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 const track = id => Object.hasOwn(RACE_TRACKS, id);
 const raceFields = ['collisions', 'nearMisses', 'rings', 'perfectLines', 'nitroUses', 'longestCombo', 'score', 'fuelOuts', 'gapFalls', 'distance'];
-const modeNames = ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'];
 
 function raceRun(run) {
   const when = date(run?.date);
@@ -97,52 +97,8 @@ export function mergeProgress(local = {}, cloud = null) {
 }
 
 
-const BESTS_LIMIT = 200;
-const validModeKey = key => {
-  if (typeof key !== 'string' || key.length > 4200) return null;
-  try {
-    const parsed = JSON.parse(key);
-    return Array.isArray(parsed) && parsed.length === 2 && track(parsed[0]) &&
-      parsed[1] && typeof parsed[1] === 'object' && !Array.isArray(parsed[1]) &&
-      modeNames.includes(parsed[1].mode) ? parsed[1].mode : null;
-  } catch { return null; }
-};
-
-// Permanent per-ruleset records, independent of the rolling 50-run history.
-export function mergeModeBests(local = {}, remote = null) {
-  if (remote && remote.version !== 1) throw new Error('Unsupported mode bests');
-  const bests = {}, stunts = {};
-  for (const data of [remote?.bests, local?.bests]) {
-    if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
-    for (const [key, value] of Object.entries(data)) {
-      const mode = validModeKey(key);
-      if (!mode || !Number.isFinite(value) || value < 0 || (mode !== 'stunt' && value === 0)) continue;
-      bests[key] = bests[key] === undefined ? value
-        : mode === 'stunt' ? Math.max(bests[key], value) : Math.min(bests[key], value);
-    }
-  }
-  for (const data of [remote?.stunts, local?.stunts]) {
-    if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
-    for (const [key, value] of Object.entries(data)) {
-      if (validModeKey(key) !== 'stunt' || !value || !Number.isFinite(value.score) || value.score < 0) continue;
-      const old = stunts[key];
-      const peak = n => Number.isFinite(n) && n >= 0 ? n : 0;
-      stunts[key] = {
-        score: Math.max(value.score, old?.score ?? 0),
-        maxCombo: Math.max(peak(value.maxCombo), old?.maxCombo ?? 0),
-        airTime: Math.max(peak(value.airTime), old?.airTime ?? 0),
-        medal: value.score >= (old?.score ?? -1) ? (typeof value.medal === 'string' ? value.medal.slice(0, 32) : '')
-          : old.medal,
-      };
-      bests[key] = Math.max(bests[key] ?? 0, stunts[key].score);
-    }
-  }
-  return {
-    version: 1,
-    bests: Object.fromEntries(Object.entries(bests).slice(-BESTS_LIMIT)),
-    stunts: Object.fromEntries(Object.entries(stunts).slice(-BESTS_LIMIT)),
-  };
-}
+// Stable public export; one typed implementation owns best-score normalization.
+export { mergeModeBests } from './cloud-mode-bests.ts';
 
 export function readLocalModeBests(storage) {
   const target = storage ?? globalThis.localStorage;
