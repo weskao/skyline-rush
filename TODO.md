@@ -105,6 +105,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
 - [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
   `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
   Main bootstrap/frame loop remains only as a documented performance exception.
+  - [x] Player-facing release notes and bilingual version announcements migrated as a single typed module; RED run 40331770864 → GREEN 40332262015 (strict typecheck, unit tests, Cloud Save, focused gate). All existing release records and localized copy preserved; full visual parity remains Step 5.
   - [x] Locale service migrated from i18n.js to strict i18n.ts, preserving UI/GAME catalogs, saved locale precedence, accessibility text and onLocaleChange; no parallel legacy copy. Focused CI 40284587634: TypeScript/Vue + unit 640 passed, 0 failed, 3 skipped; Cloud Save + quality-gate green. Browser/iOS manual parity deferred to final audit.
   - [x] Touch slide-pad state machine migrated to strict TypeScript, keeping its steering/brake math and removing duplicate JS; focused CI 40283660649 (typecheck; unit 638 pass, 0 fail, 3 skipped; Cloud Save; quality-gate).
   - [x] Minimap SVG route samples / live markers converted to strict TypeScript; duplicate JS removed, focused CI 40283144937 (typecheck, 637 pass / 0 fail / 3 skipped, Cloud Save, quality-gate). Browser visual check deferred.
