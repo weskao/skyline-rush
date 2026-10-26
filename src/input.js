@@ -1,4 +1,4 @@
-import { createSlidePad } from './slide-pad.js';
+import { createSlidePad } from './slide-pad.ts';
 import { DEFAULT_KEY_MAP, ACTION_KEYS as actionKeys } from './key-map.ts';
 
 // code -> action lookup, rebuilt only when the key map object changes.

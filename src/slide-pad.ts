@@ -1,7 +1,7 @@
 // Pure slide-pad state machine: touch-down point is the steering center, no DOM.
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
-export function createSlidePad({ fullLock = 60, deadZone = 6, brakeDown = 40 } = {}) {
+export function createSlidePad({ fullLock = 60, deadZone = 6, brakeDown = 40 }: { fullLock?: number; deadZone?: number; brakeDown?: number } = {}) {
   let lock = fullLock;
   let active = false;
   let origin = { x: 0, y: 0 };
@@ -14,15 +14,15 @@ export function createSlidePad({ fullLock = 60, deadZone = 6, brakeDown = 40 } =
   };
 
   return {
-    down(x, y) { active = true; origin = { x, y }; thumb = { x, y }; },
-    move(x, y) {
+    down(x: number, y: number) { active = true; origin = { x, y }; thumb = { x, y }; },
+    move(x: number, y: number) {
       if (!active) return;
       thumb = { x, y };
       follow();
     },
     up() { active = false; origin = { x: 0, y: 0 }; thumb = { x: 0, y: 0 }; },
     reset() { this.up(); },
-    setFullLock(px) {
+    setFullLock(px: number) {
       if (!(px > 0) || !Number.isFinite(px)) return;
       lock = px;
       if (active) follow();
