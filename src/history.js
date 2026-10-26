@@ -1,6 +1,8 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { validGhost } from './ghost.ts';
 import { stuntMedal } from './stunt-attack.ts';
+import { validStars } from './history-stats.ts';
+export { validStars, starTotal, dailyBoard, careerStats } from './history-stats.ts';
 
 export const HISTORY_KEY = 'skyline-rush-history';
 export const BEST_KEY = 'skyline-rush-best-tracks';
@@ -229,7 +231,6 @@ export function recordMedals(result, storage, now = new Date()) {
 
 // Best style stars per track (1-3); their sum unlocks paints.
 export const STARS_KEY = 'skyline-rush-stars';
-export const validStars = stars => Number.isInteger(stars) && stars >= 1 && stars <= 3;
 export function loadStars(storage) {
   const saved = read(STARS_KEY, storage);
   const stars = {};
@@ -240,7 +241,6 @@ export function recordStars(trackId, stars, storage) {
   const saved = loadStars(storage);
   if (RACE_TRACKS[trackId] && validStars(stars) && !(saved[trackId] >= stars)) write(STARS_KEY, { ...saved, [trackId]: stars }, storage);
 }
-export const starTotal = stars => Object.values(stars).reduce((sum, value) => sum + value, 0);
 
 const PAINT_KEY = 'skyline-rush-paint';
 export const loadPaint = (owned, storage) => { const id = read(PAINT_KEY, storage); return owned.includes(id) ? id : 'pearl'; };
@@ -299,17 +299,4 @@ export function recordDaily(challenge, race, storage, now = new Date()) {
   const run = { id: challenge.id, track: challenge.track, modifier: challenge.modifier, time, position, score, date: now.toISOString() };
   write(DAILY_KEY, [...loadDaily(storage), run].slice(-HISTORY_LIMIT), storage);
   return run;
-}
-export const dailyBoard = (runs, id) => runs.filter(run => run.id === id).sort((a, b) => a.time - b.time);
-
-export function careerStats(history) {
-  const stats = { races: 0, wins: 0, totalDistance: 0, longestCombo: 0, mostRings: 0 };
-  for (const run of Array.isArray(history) ? history : []) {
-    stats.races++;
-    if (run.position === 1) stats.wins++;
-    stats.totalDistance += run.distance || 0;
-    stats.longestCombo = Math.max(stats.longestCombo, run.longestCombo || 0);
-    stats.mostRings = Math.max(stats.mostRings, run.rings || 0);
-  }
-  return stats;
 }
