@@ -8,7 +8,7 @@ test('typed keyboard controller retains clean lifecycle without duplicate JS imp
   const actions = [];
   const controls = createControls(target, action => actions.push(action));
   const key = (type, code) => Object.assign(new Event(type, { cancelable: true }), {
-    code, repeat: false, target: null,
+    code, repeat: false,
   });
   target.dispatchEvent(key('keydown', 'KeyW'));
   assert.equal(controls.read().throttle, true);
