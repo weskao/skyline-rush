@@ -20,7 +20,7 @@ import { stuntMedal } from './stunt-attack.js';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
 import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
-import { photoFilename } from './photo-export.js';
+import { photoFilename } from './photo-export.ts';
 import { createSound } from './audio.js';
 import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS } from './vfx-settings.js';
