@@ -19,7 +19,7 @@ interface FeedbackSnapshot {
 
 
 // A callout field is a catalog key or [key, params]; it resolves in the active locale once, when the event is queued.
-const text = (field: CalloutText): string => Array.isArray(field) ? t(field[0], field[1]) : t(field);
+const text = (field: CalloutText): string => typeof field === 'string' ? t(field) : t(field[0], field[1]);
 
 export function createCallouts() {
   let previousRace: CalloutRace | undefined;
@@ -62,7 +62,7 @@ export function createCallouts() {
       if (next.shortcut && !previous.shortcut) enqueue('shortcut', 'callout.shortcut', 'callout.shortcut.detail');
       if (next.trick && next.trick !== previous.trick) enqueue('trick', 'callout.roll', 'callout.roll.detail');
       const trickPaid = next.trickPayout && next.trickPayout !== previous.trickPayout;
-      if (trickPaid) {
+      if (trickPaid && next.trickPayout) {
         if (next.trickPayout.hard) enqueue('trick-payout', 'callout.hard', 'callout.hard.detail');
         else if (next.trickPayout.nitro > 0) enqueue('trick-payout', ['callout.trick', { n: next.trickPayout.nitro }], fuel > 0 ? ['callout.trick.fuel', { n: fuel }] : 'callout.trick.detail');
       }
