@@ -1,4 +1,4 @@
-import { icon } from './icons.ts';
+import { updateAudioView, type AudioChannelView } from './audio-view-state.ts';
 import { t } from './i18n.ts';
 import { AUDIO_KEYS } from './audio-settings.ts';
 
@@ -25,27 +25,24 @@ export function audioChannelPresentation(enabled: boolean, volume: number) {
   return { level: enabled ? Math.round(volume * 100) : 0, percent, enabled };
 }
 
-export function setupAudioUI({ audio, volume, sound, audioSwitches, ui }: AudioDependencies) {
-  const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
-  function showChannel(button: HTMLButtonElement, on: boolean, level: number): void {
-    const slider = button.nextElementSibling as HTMLInputElement;
-    const { level: displayedLevel, percent } = audioChannelPresentation(on, level);
-    button.setAttribute('aria-checked', String(on));
-    if (button.firstElementChild) button.firstElementChild.outerHTML = icon(on ? 'sound' : 'mute');
-    if (button.lastChild) button.lastChild.textContent = on ? percent : t('audio.off');
-    slider.value = String(displayedLevel);
-    slider.setAttribute('aria-valuetext', on ? percent : t('audio.muted'));
-    slider.style.setProperty('--fill', slider.value + '%');
-  }
+export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
   function showAudio(): void {
-    for (const button of audioSwitches) {
-      const kind = button.dataset.audio;
-      if (kind === 'music' || kind === 'sfx') showChannel(button, audio[kind], volume[kind]);
+    const channels = {} as Record<Channel, AudioChannelView>;
+    for (const kind of ['music', 'sfx'] as const) {
+      const { level, percent, enabled } = audioChannelPresentation(audio[kind], volume[kind]);
+      channels[kind] = {
+        enabled, level, percent,
+        displayText: enabled ? percent : t('audio.off'),
+        valueText: enabled ? percent : t('audio.muted'),
+      };
     }
     const on = audio.music || audio.sfx;
-    ui['settings-button'].innerHTML = icon(on ? 'sound' : 'mute');
-    const firstChild = $('#mute-all').firstChild;
-    if (firstChild) firstChild.textContent = t(on ? 'audio.muteAll' : 'audio.unmuteAll');
+    updateAudioView({
+      music: channels.music,
+      sfx: channels.sfx,
+      settingsIcon: on ? 'sound' : 'mute',
+      muteAllText: t(on ? 'audio.muteAll' : 'audio.unmuteAll'),
+    });
   }
   function setAudio(kind: Channel, on: boolean, level: number = volume[kind]): void {
     volume[kind] = level;
