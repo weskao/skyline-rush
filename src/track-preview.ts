@@ -2,7 +2,19 @@
 // like the original Skyline Rush launch screen. Other rivals ground the shot.
 // Keep the 50° FOV / three-quarter chase camera at the ORIGINAL home-screen
 // distance and scale; cameraHeight is the offset ABOVE the hovering car. Use each 3D road's own tangent to avoid looking off-track.
-export const HERO_PREVIEWS = Object.freeze({
+export interface CameraPose {
+  cameraSide: number;
+  cameraBack: number;
+  cameraHeight: number;
+  lookSide: number;
+  lookAhead: number;
+  lookHeight: number;
+}
+export interface HeroPreview extends CameraPose {
+  distance: number;
+  landmark: string;
+}
+export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freeze({
   // Signature-landmark shots: the same chase camera pitched up (lookHeight)
   // to frame the landmark ahead, right of the home UI panel.
   taipei: { distance: 1250, landmark: 'office', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
@@ -16,10 +28,12 @@ export const HERO_PREVIEWS = Object.freeze({
   cosmic: { distance: 3700, landmark: 'cosmic-gate', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
 });
-export const previewDistance = id => HERO_PREVIEWS[id]?.distance ?? 340;
-export const isCuratedPreview = id => !!HERO_PREVIEWS[id];
+export const previewDistance = (id: string): number => HERO_PREVIEWS[id]?.distance ?? 340;
+export const isCuratedPreview = (id: string): boolean => !!HERO_PREVIEWS[id];
 
-export function previewPlayer(id,car,idleTime=0,reducedMotion=false,groundedShowcase=false) {
+export function previewPlayer<T extends object>(
+  id: string, car: T, idleTime = 0, reducedMotion = false, groundedShowcase = false,
+) {
   // Curated World Tour views differ in landmark framing, never in AIRFLOW pose:
   // every existing or future track rests on its own road when AIRFLOW is on.
   return { ...car,
@@ -29,7 +43,9 @@ export function previewPlayer(id,car,idleTime=0,reducedMotion=false,groundedShow
   };
 }
 
-export function previewRival(id,index,rival,idleTime=0,reducedMotion=false) {
+export function previewRival<T extends object>(
+  id: string, index: number, rival: T, idleTime = 0, reducedMotion = false,
+) {
   const info=HERO_PREVIEWS[id];
   if(!info) return {...rival,
     distance:340+35+index*28,altitude:index===0?5:0,
@@ -47,7 +63,7 @@ export function previewRival(id,index,rival,idleTime=0,reducedMotion=false) {
 }
 
 /** Shared home-camera poses: only landmark art direction varies by track. */
-export function showcaseCameraPose(id, view = 'drive', time = 0, portrait = false) {
+export function showcaseCameraPose(id: string, view = 'drive', time = 0, portrait = false): CameraPose {
   const info = HERO_PREVIEWS[id];
   const drive = {
     cameraSide: portrait ? 7.8 : (info?.cameraSide ?? 8.3),
@@ -58,7 +74,7 @@ export function showcaseCameraPose(id, view = 'drive', time = 0, portrait = fals
     lookHeight: info?.lookHeight ?? 1.6,
   };
   if (view === 'drive') return drive;
-  const angle = view === 'orbit' ? time * .18 : {front:Math.PI,rear:0,left:-Math.PI/2,right:Math.PI/2}[view];
+  const angle = view === 'orbit' ? time * .18 : ({front:Math.PI,rear:0,left:-Math.PI/2,right:Math.PI/2} as Partial<Record<string, number>>)[view];
   if (angle === undefined) return drive;
   return { cameraSide:Math.sin(angle)*9, cameraBack:Math.cos(angle)*9,
     cameraHeight:3.6, lookSide:0, lookAhead:0, lookHeight:2.4 };

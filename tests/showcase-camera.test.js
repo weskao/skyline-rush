@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as camera from '../src/track-preview.js';
+import * as camera from '../src/track-preview.ts';
 import * as settings from '../src/vfx-settings.ts';
 import { RACE_TRACKS } from '../src/game.js';
 

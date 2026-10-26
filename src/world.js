@@ -17,7 +17,7 @@ import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.js';
 import { orientCarOnRoad } from './vehicle-pose.ts';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
-import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.js';
+import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
