@@ -1,9 +1,22 @@
+import type { RaceSnapshot } from './game-types.ts';
+
 // Presentation time is independent of the fixed-step race clock and saved result.
+type PresentedRace = Pick<RaceSnapshot, 'phase'> & { player: Pick<RaceSnapshot['player'], 'speed'> };
+interface PresentationState {
+  results: boolean;
+  finishDistance: number;
+  finishProgress: number;
+  count: number;
+  goPush: number;
+}
 export function createPresentation() {
-  let previousRace, previousPhase, finish = 0, go = 1;
-  const state = { results: false, finishDistance: 0, finishProgress: 0, count: 0, goPush: 0 };
+  let previousRace: PresentedRace | undefined;
+  let previousPhase: string | null | undefined;
+  let finish = 0;
+  let go = 1;
+  const state: PresentationState = { results: false, finishDistance: 0, finishProgress: 0, count: 0, goPush: 0 };
   return {
-    update(race, dt, calm = false) {
+    update(race: PresentedRace, dt: number, calm = false): PresentationState {
       if (race !== previousRace) { previousRace = race; previousPhase = null; finish = 0; go = 1; }
       if (previousPhase === 'countdown' && race.phase === 'racing') go = 0;
       if (race.phase === 'racing') go = Math.min(1, go + dt / 0.6);

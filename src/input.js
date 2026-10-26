@@ -1,5 +1,5 @@
 import { createSlidePad } from './slide-pad.js';
-import { DEFAULT_KEY_MAP, ACTION_KEYS as actionKeys } from './key-map.js';
+import { DEFAULT_KEY_MAP, ACTION_KEYS as actionKeys } from './key-map.ts';
 
 // code -> action lookup, rebuilt only when the key map object changes.
 const lookupFor = map => Object.fromEntries(Object.entries(map).flatMap(([action, codes]) => codes.map(code => [code, action])));
