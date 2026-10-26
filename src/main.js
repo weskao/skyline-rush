@@ -17,7 +17,7 @@ import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series
 import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.js';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
 import { stuntMedal } from './stunt-attack.js';
-import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.js';
+import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.ts';
 import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.ts';

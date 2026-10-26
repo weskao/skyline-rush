@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createCup,addCupResult,cupStandings,cupComplete,cupTotalTime} from '../src/championship-cup.js';
+import {createCup,addCupResult,cupStandings,cupComplete,cupTotalTime} from '../src/championship-cup.ts';
 const tracks=['coast','neon','canyon','aurora'];
 const finish = (trackId, playerTime, aiTimes) => ({
   trackId, phase:'finished', length:5000, elapsed:playerTime, result:{time:playerTime,position:aiTimes.filter(t=>t<playerTime).length+1},
