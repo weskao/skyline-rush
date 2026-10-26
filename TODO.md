@@ -107,6 +107,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
 - [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
   `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
   Main bootstrap/frame loop remains only as a documented performance exception.
+  - [x] Settings and Controls disclosure buttons now derive aria-expanded from the same Vue reactive state as panel visibility, removing duplicate imperative writes; RED run 40288061638, GREEN run 40288441175 (typecheck, unit, Cloud Save, focused gate). Final screenshot parity deferred.
 - [ ] Step 4: move event-driven dialogs and panels to Vue 3 TypeScript one at a time
   (release notes, history, garage, audio/settings, guide/tutorial, etc.);
   remove duplicate imperative DOM ownership. Run desktop/mobile, accessibility,
