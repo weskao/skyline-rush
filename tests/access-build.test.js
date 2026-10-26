@@ -6,7 +6,7 @@ import unlockedConfig from '../vite.unlocked.config.js';
 import { availableTracks as devTracks, availablePaints as devPaints } from '../src/access/dev-unlocked.js';
 import { availableTracks as prodTracks, availablePaints as prodPaints } from '../src/access/production.js';
 import { RACE_TRACKS } from '../src/game.js';
-import { PAINTS } from '../src/appearance.js';
+import { PAINTS } from '../src/appearance.ts';
 
 test('local-only build exposes every track and paint without writing storage', () => {
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
