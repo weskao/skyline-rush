@@ -5,7 +5,7 @@
 import { version } from '../package.json';
 import { RACE_TRACKS } from './game.js';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
-import { icons, ICON_ATTRS } from './icons.js';
+import { icons, ICON_ATTRS } from './icons.ts';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';

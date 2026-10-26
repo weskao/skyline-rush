@@ -1,3 +1,5 @@
+import type { SVGAttributes } from 'vue';
+
 export const icons = {
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
   sound: '<path d="m11 5-6 4H2v6h3l6 4V5Z"/><path d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
@@ -18,7 +20,7 @@ export const icons = {
   star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>',
 };
 // Shared by App.vue (v-bind) and icon() (innerHTML updates in main.js).
-/** @type {import('vue').SVGAttributes} */
-export const ICON_ATTRS = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' };
+
+export const ICON_ATTRS: SVGAttributes = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' };
 const attrs = Object.entries(ICON_ATTRS).map(([name, value]) => `${name}="${value}"`).join(' ');
-export const icon = name => `<svg ${attrs}>${icons[name]}</svg>`;
+export const icon = (name: keyof typeof icons): string => `<svg ${attrs}>${icons[name]}</svg>`;
