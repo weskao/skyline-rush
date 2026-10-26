@@ -4,4 +4,4 @@ import { loadUnlocks } from '../history.js';
 import { ownedPaints } from '../appearance.ts';
 
 export const availableTracks = () => loadUnlocks();
-export const availablePaints = totalStars => ownedPaints(totalStars);
+export const availablePaints = (totalStars: number): string[] => ownedPaints(totalStars);
