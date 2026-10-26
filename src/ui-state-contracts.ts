@@ -26,6 +26,8 @@ export interface ReleaseEntry {
   image: string;
 }
 export interface ReleaseView {
+  openHidden: boolean;
+  openHasUpdate: boolean;
   tabs: ReleaseTab[];
   entries: ReleaseEntry[];
   panelLabel: string;
