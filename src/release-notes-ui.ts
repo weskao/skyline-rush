@@ -72,7 +72,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
         };
       }),
     });
-    releaseOpen.classList.toggle('has-update', !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()));
+    updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()) });
   }
   function selectRelease(index: number): void {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
@@ -129,7 +129,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   releaseDialog.addEventListener('cancel', event => { event.preventDefault(); closeReleaseNotes(); });
   releaseDialog.addEventListener('keydown', event => event.stopPropagation());
   releaseDialog.addEventListener('close', () => {
-    releaseOpen.classList.remove('has-update');
+    updateReleaseView({ openHasUpdate: false });
     (releaseOpener ?? releaseOpen).focus({ preventScroll: true });
     afterClose();
   });
@@ -137,7 +137,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   // The Vue image handler clears its source when the asset fails.
   // A higher-priority modal may have been open during the first ready-state check.
   document.addEventListener('close', () => queueMicrotask(maybeShowReleaseNotes), true);
-  releaseOpen.hidden = !CURRENT_RELEASE;
+  updateReleaseView({ openHidden: !CURRENT_RELEASE });
 
   return { renderReleaseNotes, maybeShowReleaseNotes };
 }
