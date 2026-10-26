@@ -104,6 +104,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
   - [x] Touch slide-pad state machine migrated to strict TypeScript, keeping its steering/brake math and removing duplicate JS; focused CI 40283660649 (typecheck; unit 638 pass, 0 fail, 3 skipped; Cloud Save; quality-gate).
   - [x] Minimap SVG route samples / live markers converted to strict TypeScript; duplicate JS removed, focused CI 40283144937 (typecheck, 637 pass / 0 fail / 3 skipped, Cloud Save, quality-gate). Browser visual check deferred.
   - [x] Visual SVG icons and track-section sign contracts moved to strict TypeScript; removed duplicate JS, no SVG/path/label edits; focused exact-HEAD CI 40282591936 (unit 636 pass / 0 fail / 3 skipped, Cloud Save and gate passed). Full visual parity still reserved for Step 5.
+  - [x] Practice metrics and Sprint Series moved to typed services, without parallel JS copies; RED 40288752236 and GREEN 40288971774 (typecheck, unit, Cloud Save, focused gate).
 - [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
   `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
   Main bootstrap/frame loop remains only as a documented performance exception.
