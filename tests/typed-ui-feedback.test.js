@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRace } from '../src/game.js';
-import { createModeAudioState, modeAudioCues, musicForMode } from '../src/mode-audio.js';
-import { createCallouts } from '../src/callouts.js';
+import { createModeAudioState, modeAudioCues, musicForMode } from '../src/mode-audio.ts';
+import { createCallouts } from '../src/callouts.ts';
 
 test('audio and callout business services share typed canonical implementations without duplicate JS', () => {
   for (const name of ['mode-audio', 'callouts']) {

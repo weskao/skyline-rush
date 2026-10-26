@@ -1,12 +1,32 @@
+interface HazardCue { id?: string | number; distance: number; passed: boolean; hit: boolean }
+export interface ModeAudioRace {
+  phase: string;
+  mode: string;
+  trackId: string;
+  checkpoint?: { passed: number; missed: number; timeLeft: number } | null;
+  hazards?: HazardCue[] | null;
+  styleAttack?: { combo: number } | null;
+  player?: { distance: number; trickPayout?: { hard?: boolean } | null } | null;
+  result?: { success?: boolean } | null;
+}
+export interface ModeAudioState {
+  race: ModeAudioRace | null;
+  phase: string | null;
+  passed: number; missed: number; warning: boolean;
+  hazardsPassed: number; hazardsHit: number;
+  warned: Set<string | number>;
+  combo: number;
+  trickPayout?: { hard?: boolean } | null;
+}
 // Pure mode-specific sound events: one-shot transitions, no Web Audio dependencies.
-const COURSE_MUSIC = {spiral:'spiral',neon:'neon',canyon:'canyon',aurora:'aurora',taipei:'taipei',tokyo:'tokyo',alpine:'alpine',coastal:'coastal',cosmic:'cosmic'};
-const MODE_MUSIC = {checkpoint:'checkpoint',stunt:'stunt',gauntlet:'gauntlet',cup:'cup',free:'cruise',elimination:'gauntlet'};
-export const musicForMode = race => ['ready','finished'].includes(race.phase) ? 'intro' : MODE_MUSIC[race.mode] || COURSE_MUSIC[race.trackId] || 'race';
+const COURSE_MUSIC: Record<string, string> = {spiral:'spiral',neon:'neon',canyon:'canyon',aurora:'aurora',taipei:'taipei',tokyo:'tokyo',alpine:'alpine',coastal:'coastal',cosmic:'cosmic'};
+const MODE_MUSIC: Record<string, string> = {checkpoint:'checkpoint',stunt:'stunt',gauntlet:'gauntlet',cup:'cup',free:'cruise',elimination:'gauntlet'};
+export const musicForMode = (race: ModeAudioRace): string => ['ready','finished'].includes(race.phase) ? 'intro' : MODE_MUSIC[race.mode] || COURSE_MUSIC[race.trackId] || 'race';
 
-export const createModeAudioState = () => ({ race:null, phase:null, passed:0, missed:0, warning:false,
+export const createModeAudioState = (): ModeAudioState => ({ race:null, phase:null, passed:0, missed:0, warning:false,
   hazardsPassed:0, hazardsHit:0, warned:new Set(), combo:0, trickPayout:null });
 
-export function modeAudioCues(race, state) {
+export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): string[] {
   if (race !== state.race) {
     state.race=race; state.phase=race.phase;
     state.passed=race.checkpoint?.passed || 0;
@@ -19,7 +39,7 @@ export function modeAudioCues(race, state) {
     state.trickPayout=race.player?.trickPayout;
     return [];
   }
-  const cues=[];
+  const cues: string[]=[];
   if (race.phase==='finished' && state.phase!=='finished') {
     if (race.result?.success===false) cues.push('mode-failed');
     else if(race.mode==='cup') cues.push('cup-stage');
@@ -35,7 +55,7 @@ export function modeAudioCues(race, state) {
     state.trickPayout=race.player?.trickPayout;
     return cues;
   }
-  const add = cue => {if (cues.length < 2) cues.push(cue);};
+  const add = (cue: string): void => {if (cues.length < 2) cues.push(cue);};
   if (race.mode==='checkpoint' && race.checkpoint) {
     const cp=race.checkpoint;
     if (cp.passed > state.passed) add('gate-clear');

@@ -1,4 +1,4 @@
-import { createModeAudioState, modeAudioCues, musicForMode } from './mode-audio.js';
+import { createModeAudioState, modeAudioCues, musicForMode } from './mode-audio.ts';
 
 // 32-bar loops (intro ≈ 64 s, race ≈ 55 s, Sky Spiral ≈ 60 s, each World Tour course 56–70 s).
 // Each chord is [bass root, three pad/arp tones]; lead is eight eighth-notes per chord bar (0 = rest).

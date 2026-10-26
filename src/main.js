@@ -31,7 +31,7 @@ import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.ts';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.js';
 import { recordGhost, validGhost, ghostAt } from './ghost.js';
-import { createCallouts } from './callouts.js';
+import { createCallouts } from './callouts.ts';
 import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
 import { frameStats, PERF_WINDOW } from './perf.js';
