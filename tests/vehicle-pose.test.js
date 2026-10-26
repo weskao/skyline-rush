@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Object3D, Vector3 } from 'three';
 import { RACE_TRACKS } from '../src/game.js';
 import { trackFrame } from '../src/track-paths.js';
-import { orientCarOnRoad } from '../src/vehicle-pose.js';
+import { orientCarOnRoad } from '../src/vehicle-pose.ts';
 
 const dot = (a, b) => new Vector3(...a).dot(b);
 const localUp = new Vector3(0, 1, 0);

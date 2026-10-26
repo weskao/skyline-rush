@@ -13,7 +13,15 @@ const lean = new Quaternion();
 const pitch = new Quaternion();
 const yaw = new Quaternion();
 
-export function orientCarOnRoad(mesh, frame, bank = 0, pitchAngle = 0, driftYaw = 0) {
+export interface RoadPoseFrame {
+  right: number[];
+  up: number[];
+  forward: number[];
+}
+
+export function orientCarOnRoad<T extends { quaternion: Quaternion }>(
+  mesh: T, frame: RoadPoseFrame, bank = 0, pitchAngle = 0, driftYaw = 0,
+): T {
   basis.makeBasis(right.fromArray(frame.right), up.fromArray(frame.up), back.fromArray(frame.forward).negate());
   mesh.quaternion.setFromRotationMatrix(basis);
   if (driftYaw) mesh.quaternion.multiply(yaw.setFromAxisAngle(yawAxis, driftYaw));
