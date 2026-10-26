@@ -34,8 +34,8 @@ export const historyView = reactive<HistoryView>({
   modeHistoryEmpty: true, modeRuns: [],
   dailyStatus: 'No daily challenge is available yet.', dailyStartDisabled: true,
   dailyBoard: ['No challenge runs recorded yet.'],
-  medalAwards: {}, medalNotAwarded: 'Not awarded', achievementStatus: '',
-  careerSummary: '', historyEmpty: false, trendVisible: false,
+  medalAwards: {}, medalNotAwarded: 'Not awarded', achievementStatus: 'Your awarded medals will appear here when available.',
+  careerSummary: '', historyEmpty: true, trendVisible: false,
   trendLabel: '', trendPolyPoints: '', trendCircles: [], historyRuns: [],
 });
 export function updateHistoryView(changes: Partial<HistoryView>): void {

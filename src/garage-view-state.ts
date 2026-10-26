@@ -4,9 +4,9 @@ import { reactive } from 'vue';
 // Event-driven presentation only; live race and WebGL state never enter Vue.
 export const garageView = reactive<GarageView>({
   selected: 'pearl',
-  status: '',
+  status: 'Pearl · standard finish.',
   equipDisabled: true,
-  equipLabel: '',
+  equipLabel: 'Standard finish equipped',
 });
 
 export function updateGarageView(fields: Partial<GarageView>) {
