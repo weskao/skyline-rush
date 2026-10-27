@@ -2,7 +2,7 @@ import './style.css';
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
 import { setupGarageUI } from './garage-ui.ts';
 import { createHistoryView } from './history-ui.ts';
-import { updateCloudView, updateCloudProfile } from './cloud-view-state.ts';
+import { setupCloudUI } from './cloud-ui.ts';
 import { setupGuideUI } from './guide-ui.ts';
 import { setupAudioUI } from './audio-ui.ts';
 import { setupControlPanels } from './controls-panels-ui.ts';
@@ -45,7 +45,7 @@ import { setupTrackSwipeUI } from './track-swipe-ui.ts';
 import { refreshIfStale } from './update-check.ts';
 import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
-import { claimCloudOwner, readLocalProgress, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.ts';
+import { readLocalProgress } from './cloud-progress.ts';
 
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
@@ -344,8 +344,7 @@ function applyLocale() {
   for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale);
   if ($('#history-screen').open) showHistory();
   for (const [element, text] of said) element.textContent = text();
-  showCloudSession(); // Vue-owned account name/identity are localized on each language switch.
-  announceCloud(cloudStatusKey);
+  cloud.relabel(); // Vue-owned account name/identity are localized on each language switch.
   showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
   syncDailyFlightControl();
   $('#showcase-camera-name').textContent = t('vfx.view.'+visual.view);
@@ -500,199 +499,16 @@ const { showHistory, showHomeStatus } = createHistoryView({
 showTracks(); centerSelectedTrack();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
-let cloudUser = null;
-const CLOUD_STATE = Object.freeze({
-  'cloud.local': 'signed-out',
-  'cloud.signedOut': 'signed-out',
-  'cloud.syncing': 'syncing',
-  'cloud.saved': 'synced',
-  'cloud.savedAt': 'synced',
-  'cloud.pending': 'offline',
-  'cloud.pendingAt': 'offline',
-  'cloud.quota': 'error',
-  'cloud.failed': 'error',
-  'cloud.localFailed': 'local-error',
-  'cloud.otherAccount': 'other-account',
-  'cloud.deletePending': 'deleting',
-  'cloud.imported': 'imported',
-  'cloud.importFailed': 'error',
-});
-let cloudStatusKey = 'cloud.local';
-function announceCloud(key) {
-  cloudStatusKey = key;
-  const state = CLOUD_STATE[key] ?? 'error';
-  updateCloudView({ statusText: t(key), statusState: state, statusBusy: state === 'syncing' });
-}
-
-const CLOUD_OWNER_KEY = 'skyline-rush-cloud-owner';
-let cloudOwner = null;
-try { cloudOwner = localStorage.getItem(CLOUD_OWNER_KEY); } catch { /* Gracefully degrade in blocked storage. */ }
-let cloudPending = false;
-let cloudDeleting = false;
-let cloudSync = Promise.resolve();
-let profileSync = Promise.resolve();
-let lastCloudSync = null;
-const cloudSyncKey = uid => `skyline-rush-cloud-synced-${uid}`;
-const cloudDeletingKey = uid => `skyline-rush-cloud-deleting:${uid}`;
-const isCloudDeleting = uid => {
-  try { return localStorage.getItem(cloudDeletingKey(uid)) === '1'; } catch { return false; }
-};
-function showCloudSession() {
-  const user = cloudUser;
-  const url = user?.photoURL;
-  updateCloudProfile({
-    name: user?.displayName?.trim() || t('cloud.player'),
-    identity: user ? t('cloud.signedInAs', { email: user.email || user.uid }) : t('cloud.signedOut'),
-    avatarUrl: typeof url === 'string' && /^https:\/\//.test(url) ? url : '',
-  });
-  updateCloudView({
-    syncDisabled: !user || cloudDeleting || cloudOwner !== user.uid,
-    lastSyncText: lastCloudSync
-      ? t('cloud.lastSync', { time: new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short' }).format(lastCloudSync) })
-      : t('cloud.neverSynced'),
-  });
-}
 const currentProgress = () => ({
   ...readLocalProgress(), unlocked: [...unlockedTracks], stars: sessionStars,
   bests: { ...loadBests(), ...sessionBests }, medals: sessionMedals, history: sessionHistory,
   modeHistory: sessionModeHistory, daily: sessionDaily,
 });
-function saveCloudProgress() {
-  if (!cloudUser || cloudDeleting) return Promise.resolve();
-  const uid = cloudUser.uid;
-  if (isCloudDeleting(uid)) {
-    announceCloud('cloud.deletePending');
-    return Promise.resolve();
-  }
-  if (cloudOwner !== uid) {
-    announceCloud('cloud.otherAccount');
-    return Promise.resolve();
-  }
-  cloudPending = true;
-  writeCloudSyncStatus(uid, { pending: true });
-  const deviceSaved = saveLocalProgress(currentProgress());
-  if (!navigator.onLine) {
-    announceCloud(cloudFailureStatus({ code: 'unavailable' }, deviceSaved));
-    return Promise.resolve();
-  }
-  announceCloud('cloud.syncing');
-  updateCloudView({ syncDisabled: true });
-  cloudSync = cloudSync.catch(() => {}).then(() => !cloudDeleting && cloudUser?.uid === uid && syncCloudProgress(currentProgress)).then(merged => {
-    if (!merged || cloudUser?.uid !== uid) return;
-    if (!saveLocalProgress(merged)) throw new Error('Could not restore cloud progress locally');
-    for (const id of merged.unlocked) unlockedTracks.add(id);
-    Object.assign(sessionStars, merged.stars);
-    Object.assign(sessionBests, merged.bests);
-    sessionHistory = merged.history;
-    sessionModeHistory = merged.modeHistory;
-    sessionMedals = merged.medals;
-    sessionDaily = merged.daily;
-    cloudPending = false;
-    lastCloudSync = new Date();
-    writeCloudSyncStatus(uid, { pending: false, lastSuccess: lastCloudSync.toISOString() });
-    try { localStorage.setItem(cloudSyncKey(uid), lastCloudSync.toISOString()); } catch { /* Legacy timestamp is optional. */ }
-    showCloudSession();
-    showTracks();
-    if ($('#history-screen').open) showHistory();
-    showGarage();
-    announceCloud('cloud.saved');
-  }).catch(error => {
-    if (cloudUser?.uid === uid && !cloudDeleting)
-      announceCloud(cloudFailureStatus(error, deviceSaved));
-  }).finally(() => {
-    if (cloudUser?.uid === uid && cloudOwner === uid && !cloudDeleting)
-      updateCloudView({ syncDisabled: false });
-  });
-  return cloudSync;
-}
-watchCloudUser(user => {
-  cloudUser = user;
-  const status = user ? readCloudSyncStatus(user.uid) : { pending: false, lastSuccess: null };
-  cloudPending = status.pending;
-  lastCloudSync = status.lastSuccess ? new Date(status.lastSuccess) : null;
-  if (!lastCloudSync) try {
-    const legacy = user && localStorage.getItem(cloudSyncKey(user.uid));
-    if (legacy && Number.isFinite(Date.parse(legacy))) lastCloudSync = new Date(legacy);
-  } catch { /* No legacy sync time. */ }
-  showCloudSession();
-  updateCloudView({
-    loginHidden: !!user, logoutHidden: !user, logoutNoteHidden: !user,
-    deleteHidden: !user || (cloudOwner !== null && cloudOwner !== user.uid),
-    switchHidden: true,
-  });
-  announceCloud(user ? 'cloud.syncing' : 'cloud.local');
-  if (user) {
-    const owner = claimCloudOwner(cloudOwner, user.uid);
-    if (!owner) {
-      updateCloudView({ switchHidden: false, deleteHidden: true });
-      announceCloud('cloud.otherAccount');
-      return;
-    }
-    cloudOwner = owner;
-    try { localStorage.setItem(CLOUD_OWNER_KEY, owner); } catch { /* Owner stays in memory. */ }
-    if (isCloudDeleting(user.uid)) {
-      announceCloud('cloud.deletePending');
-      return;
-    }
-    showCloudSession();
-    saveCloudProgress();
-    profileSync = syncGoogleAccountDetails(user.uid).catch(error => console.warn('Cloud account details unavailable:', error));
-  }
-}, () => announceCloud('cloud.failed'));
-window.addEventListener('online', () => { if (cloudPending) saveCloudProgress(); });
-$('#cloud-sync-now').addEventListener('click', () => { if (cloudUser && cloudOwner === cloudUser.uid) saveCloudProgress(); });
-$('#cloud-login').addEventListener('click', async () => {
-  updateCloudView({ loginDisabled: true });
-  try { await signInToCloud(); }
-  catch (error) { console.error('Cloud sign-in failed:', error); announceCloud('cloud.failed'); }
-  finally { updateCloudView({ loginDisabled: false }); }
-});
-$('#cloud-logout').addEventListener('click', () => {
-  signOutOfCloud().catch(() => announceCloud('cloud.failed'));
-});
-$('#cloud-switch').addEventListener('click', async () => {
-  if (!cloudUser || cloudOwner === cloudUser.uid || !confirm(t('cloud.switchConfirm'))) return;
-  const uid = cloudUser.uid;
-  await cloudSync.catch(() => {});
-  if (cloudUser?.uid !== uid || cloudOwner === uid || !switchCloudAccount(cloudOwner, uid)) {
-    announceCloud('cloud.failed');
-    return;
-  }
-  cloudOwner = uid;
-  location.reload();
-});
-$('#cloud-export').addEventListener('click', () => {
-  const contents = { ...currentProgress(), permanent: readLocalModeBests() };
-  const blob = new Blob([JSON.stringify(contents, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'skyline-rush-progress.json';
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-});
-$('#cloud-import').addEventListener('click', () => $('#cloud-import-file').click());
-$('#cloud-import-file').addEventListener('change', async ({ target }) => {
-  const file = target.files?.[0];
-  target.value = '';
-  if (!file) return;
-  if (cloudDeleting || (cloudUser && cloudOwner !== cloudUser.uid)) {
-    announceCloud('cloud.otherAccount');
-    return;
-  }
-  if (!confirm(t('cloud.importConfirm'))) return;
-  try {
-    if (file.size > 1024 * 1024) throw new Error('Backup file is too large');
-    const imported = parseProgressExport(await file.text());
-    const previousProgress = currentProgress();
-    const previousPermanent = readLocalModeBests();
-    const merged = mergeProgress(previousProgress, imported.progress);
-    const permanent = mergeModeBests(previousPermanent, imported.permanent);
-    if (!saveLocalProgress(merged)) throw new Error('Could not import into device storage');
-    if (!saveLocalModeBests(permanent)) {
-      saveLocalProgress(previousProgress);
-      throw new Error('Could not import permanent results');
-    }
+// Cloud Save lives in cloud-ui.ts; this boundary owns the session copies it merges into.
+const cloud = setupCloudUI({
+  services: { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails },
+  getProgress: currentProgress,
+  applyProgress: merged => {
     for (const id of merged.unlocked) unlockedTracks.add(id);
     Object.assign(sessionStars, merged.stars);
     Object.assign(sessionBests, merged.bests);
@@ -703,40 +519,7 @@ $('#cloud-import-file').addEventListener('change', async ({ target }) => {
     showTracks();
     if ($('#history-screen').open) showHistory();
     showGarage();
-    announceCloud('cloud.imported');
-    if (cloudUser) saveCloudProgress();
-  } catch (error) {
-    console.warn('Cloud import failed:', error);
-    announceCloud('cloud.importFailed');
-  }
-});
-$('#cloud-delete').addEventListener('click', async () => {
-  if (!cloudUser || !confirm(t('cloud.deleteConfirm'))) return;
-  const uid = cloudUser.uid;
-  updateCloudView({ deleteDisabled: true });
-  cloudDeleting = true;
-  try {
-    // Set the guard before deletion, so a failed local cleanup can never re-upload deleted data.
-    localStorage.setItem(cloudDeletingKey(uid), '1');
-    await cloudSync.catch(() => {});
-    await profileSync.catch(() => {});
-    if (cloudUser?.uid !== uid) return;
-    await deleteCloudProgress(uid);
-    if (!clearLocalProgress()) throw new Error('Could not clear local progress');
-    localStorage.removeItem('skyline-rush-cloud-account:' + uid);
-    localStorage.removeItem('skyline-rush-cloud-sync:' + uid);
-    localStorage.removeItem(CLOUD_OWNER_KEY);
-    localStorage.removeItem(cloudSyncKey(uid));
-    localStorage.removeItem(cloudDeletingKey(uid));
-    await signOutOfCloud();
-    location.reload();
-  } catch (error) {
-    console.error('Cloud deletion failed:', error);
-    announceCloud('cloud.deletePending');
-  } finally {
-    cloudDeleting = false;
-    updateCloudView({ deleteDisabled: false });
-  }
+  },
 });
 
 const previewObserver = new IntersectionObserver(entries => {
@@ -1340,7 +1123,7 @@ function phaseUI() {
       const ghost = { time: race.elapsed, samples: trace };
       if (record && traceRace === race && validGhost(ghost, trackId)) { saveGhost(trackId, ghost); ghosts[trackId] = ghost; }
     }
-    saveCloudProgress();
+    cloud.saveCloudProgress();
     showTracks();
     ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;
