@@ -17,6 +17,8 @@ import { RULE_PRESETS } from './race-config.ts';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.ts';
 import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.ts';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
+import { createRaceGhosts } from './race-ghosts.ts';
+import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
 import { stuntMedal } from './stunt-attack.ts';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.ts';
 import { createWorld } from './world.js';
@@ -29,9 +31,9 @@ import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KE
 import { controlSettings, CONTROLS_KEY } from './control-settings.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.ts';
-import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
-  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.ts';
-import { recordGhost, validGhost, ghostAt } from './ghost.ts';
+import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
+  loadPaint, savePaint, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.ts';
+import { ghostAt } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
@@ -127,16 +129,7 @@ const unlockedTracks = new Set(availableTracks());
 let sessionMedals = loadMedals();
 const sessionStars = loadStars();
 let equippedPaint = loadPaint(availablePaints(starTotal(sessionStars)));
-const ghosts = {}; // per-track best-run ghost, loaded and validated on first use
-const ghostFor = trackId => trackId in ghosts ? ghosts[trackId] : ghosts[trackId] = loadGhost(trackId);
-const modeGhosts = new Map();
-const modeGhostKey = race => race.trackId + ':' + JSON.stringify(race.config);
-const modeGhostFor = race => {
-  const key = modeGhostKey(race);
-  if (!modeGhosts.has(key)) modeGhosts.set(key, loadModeGhost(race.trackId, race.config));
-  return modeGhosts.get(key);
-};
-let trace = [], traceRace = null;
+const raceGhosts = createRaceGhosts();
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
@@ -145,12 +138,17 @@ const cupCount = () => Number($('#cup-length').value);
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 let cup = null; // Three unlocked point-to-point heats, with rival points carried between heats.
 let stunt = null; // Timed score run composed of explicit point-to-point heats, never fake laps.
-const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules,
+const selectedRace = trackId => {
+  const visuals = racePresentationFor(selectedMode, trackId);
+  const selected = selectedMode === 'classic' ? createRace(trackId) : createRace(trackId, { mode: selectedMode, ...raceRules,
   ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
     ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
   ...(selectedMode === 'gauntlet' ? { hazardTier: $('#hazard-tier').value } : {}),
   ...(selectedMode === 'time' && $('#clean-trial').checked ? {clean:true} : {}),
-  ...(selectedMode === 'stunt' ? {duration:Number($('#stunt-duration').value)} : {}) });
+  ...(selectedMode === 'stunt' ? {duration:Number($('#stunt-duration').value)} : {}) }, visuals);
+  updateRaceSetup(selected);
+  return selected;
+};
 let previousFuel = 100;
 let previousNitro = 0;
 const presentation = createPresentation();
@@ -418,10 +416,10 @@ function showTracks() {
   showGhost();
 }
 function showGhost() {
-  const ghost = race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null;
+  const ghost = raceGhosts.forRace(race);
   const track = trackName(race.trackId, getLocale());
   $('#ghost-enabled').checked = controlPrefs.ghost;
-  $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'custom' || race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
+  $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
 }
 $('#ghost-enabled').addEventListener('change', ({ target }) => { controlPrefs = controlSettings({ ...controlPrefs, ghost: target.checked }); applyControls(); });
 for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
@@ -464,6 +462,7 @@ $('#hazard-tier').addEventListener('change', changeRaceSelection);
 $('#clean-trial').addEventListener('change', changeRaceSelection);
 $('#cup-length').addEventListener('change', changeRaceSelection);
 $('#stunt-duration').addEventListener('change', changeRaceSelection);
+$('#race-visual-preset').addEventListener('change', changeRaceSelection);
 $('#recent-custom-runs').addEventListener('click', ({target}) => {
   const index = Number(target.closest('button[data-recent]')?.dataset.recent);
   const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
@@ -858,7 +857,7 @@ function restart(trackId = race.trackId) {
     const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
-  race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config));
+  race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config), race.session.presentation);
   if (stunt && race.mode === 'stunt') race.stuntLimit = Math.max(.01, stunt.duration - stunt.elapsed);
   previousFuel = 100; previousNitro = 0;
   goUntil = 0;
@@ -1304,13 +1303,6 @@ function phaseUI() {
         score: sprintSeries.results.reduce((score, stage) => score + stage.score, 0) } } : race;
       ({ best, record } = recordModeRace(modeRace));
       sessionModeHistory = loadModeHistory();
-      if (race.mode === 'time' && record) {
-        const candidate = { time: race.elapsed, samples: trace };
-        if (traceRace === race && validGhost(candidate, trackId)) {
-          saveModeGhost(trackId, race.config, candidate);
-          modeGhosts.set(modeGhostKey(race), candidate);
-        }
-      }
     } else if (race.modifier) {
       const run = recordDaily(daily, race);
       sessionDaily = [...sessionDaily, run].slice(-50);
@@ -1337,9 +1329,8 @@ function phaseUI() {
       if (record && trackId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
       recordStars(trackId, race.result.stars);
       sessionStars[trackId] = Math.max(sessionStars[trackId] ?? 0, race.result.stars);
-      const ghost = { time: race.elapsed, samples: trace };
-      if (record && traceRace === race && validGhost(ghost, trackId)) { saveGhost(trackId, ghost); ghosts[trackId] = ghost; }
     }
+    raceGhosts.save(race, record === true);
     saveCloudProgress();
     showTracks();
     ui['resume-button'].hidden = true;
@@ -1556,7 +1547,7 @@ function updateUI(now, input) {
   setHudText(ui.distance, (car.distance / 1000).toFixed(2));
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
   setHudText(hudNodes['race-length'], (race.length / 1000).toFixed(2));
-  const timeGhost = race.mode === 'time' && controlPrefs.ghost ? modeGhostFor(race) : null;
+  const timeGhost = race.mode === 'time' && controlPrefs.ghost ? raceGhosts.forRace(race) : null;
   const split = hudNodes['ghost-split'];
   setHudHidden(split, !timeGhost || race.phase !== 'racing');
   if (!split.hidden) {
@@ -1754,7 +1745,6 @@ try {
       if (autoThrottle && !input.brake) input.throttle = true;
       input.laneAssist = autoThrottle;
     }
-    if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     while (accumulator >= 1 / 60) {
       stepRace(race, input, 1 / 60);
       if (tutorial) {
@@ -1764,7 +1754,7 @@ try {
           try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
         }
       }
-      if (!race.modifier && (race.mode === 'classic' || race.mode === 'time')) recordGhost(trace, race);
+      if (!tutorial) raceGhosts.capture(race);
       accumulator -= 1 / 60;
     }
     const calm = calmMotion();
@@ -1772,7 +1762,7 @@ try {
     if (calm && !wasCalm) stopPresentationMotion();
     wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
-    const ghost = controlPrefs.ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null : null;
+    const ghost = controlPrefs.ghost && race.session.presentation.ghostEnabled && race.phase !== 'ready' ? raceGhosts.forRace(race) : null;
     world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
     sound.update(race);
     hudElapsed += dt;

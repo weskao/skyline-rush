@@ -1,0 +1,38 @@
+import type { Color } from 'three';
+import type { VisualPreset } from './race-session.ts';
+
+interface Targets {
+  scene: { background: Color; fog: { color: Color; density: number } };
+  sky: Record<'top' | 'horizon' | 'cloudTint', { value: Color }> & Record<'cloudOpacity' | 'warmth', { value: number }>;
+  renderer: { toneMappingExposure: number };
+}
+const STYLES = {
+  day: { background: '#94b7c9', fog: '#a3bdc8', density: .001, exposure: 1.12, top: '#458bab', horizon: '#d9e8e9', cloudTint: '#82989a', cloudOpacity: .45, warmth: .2 },
+  dusk: { background: '#ec9478', fog: '#bb7f89', density: .001, exposure: 1.15, top: '#27284a', horizon: '#ec9478', cloudTint: '#7e667d', cloudOpacity: .45, warmth: .7 },
+  night: { background: '#1b2e5a', fog: '#304b73', density: .0016, exposure: .72, top: '#050b25', horizon: '#304b73', cloudTint: '#394354', cloudOpacity: .2, warmth: 0 },
+  rain: { background: '#536879', fog: '#697d8a', density: .0024, exposure: .93, top: '#253b50', horizon: '#697d8a', cloudTint: '#536879', cloudOpacity: 1, warmth: 0 },
+  fog: { background: '#8297a4', fog: '#8297a4', density: .004, exposure: 1.02, top: '#647e8c', horizon: '#8297a4', cloudTint: '#8297a4', cloudOpacity: .7, warmth: 0 },
+} as const;
+
+export function createRaceVisuals({ scene, sky, renderer }: Targets) {
+  let preset: VisualPreset = 'track';
+  let defaults: {
+    background: Color; fog: Color; density: number; exposure: number;
+    top: Color; horizon: Color; cloudTint: Color; cloudOpacity: number; warmth: number;
+  } | null = null;
+  function apply(next: VisualPreset): void {
+    if (next === preset) return;
+    defaults ??= {
+      background: scene.background.clone(), fog: scene.fog.color.clone(), density: scene.fog.density,
+      exposure: renderer.toneMappingExposure, top: sky.top.value.clone(), horizon: sky.horizon.value.clone(),
+      cloudTint: sky.cloudTint.value.clone(), cloudOpacity: sky.cloudOpacity.value, warmth: sky.warmth.value,
+    };
+    const style = next === 'track' ? defaults : STYLES[next];
+    scene.background.set(style.background); scene.fog.color.set(style.fog);
+    scene.fog.density = style.density; renderer.toneMappingExposure = style.exposure;
+    sky.top.value.set(style.top); sky.horizon.value.set(style.horizon); sky.cloudTint.value.set(style.cloudTint);
+    sky.cloudOpacity.value = style.cloudOpacity; sky.warmth.value = style.warmth;
+    preset = next;
+  }
+  return { apply, reset: () => { apply('track'); defaults = null; } };
+}

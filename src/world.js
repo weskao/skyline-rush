@@ -13,6 +13,7 @@ import { vfxSettings } from './vfx-settings.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
+import { createRaceVisuals } from './race-visuals.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.ts';
 import { orientCarOnRoad } from './vehicle-pose.ts';
@@ -722,6 +723,7 @@ export function createWorld(canvas) {
   let trackId;
   let carBank = 0;
   let photoView = null, photoDefaults = null, photoCapture = null;
+  const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
   let sizeKey = '', warmupPending = true;
   function resize() {
@@ -853,6 +855,7 @@ export function createWorld(canvas) {
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
       if (lastRace !== race) { effects.reset(); aero.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; }
       if (trackId !== race.trackId) {
+        raceVisuals.reset();
         trackId = race.trackId;
         const palette = TRACK_PALETTES[trackId];
         gauntletBarriers.material.color.set(trackId === 'cosmic' || trackId === 'spiral' ? '#ed87fa' : trackId === 'aurora' || trackId === 'alpine' ? '#ffcf81' : '#ff946f');
@@ -884,6 +887,8 @@ export function createWorld(canvas) {
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
         warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
+      const visualPreset = race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
+      raceVisuals.apply(visualPreset);
       const distance = preview ? previewDistance(trackId) : car.distance;
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
       // A readable driving corridor takes precedence over cinematic glare.
@@ -916,10 +921,12 @@ export function createWorld(canvas) {
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
       const touch = matchMedia('(pointer: coarse)').matches;
-      weather.visible = !reducedMotion && visual.enabled && (trackId === 'neon' || trackId === 'aurora');
+      const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
+      weather.visible = !reducedMotion && visual.enabled && (raining || (visualPreset === 'track' && trackId === 'aurora'));
+      weather.material.size = raining ? .12 : .24;
       weatherGeometry.setDrawRange(0, touch || visual.quality === 'low' ? 60 : 180);
       if (weather.visible) {
-        for (let i = 0; i < 180; i++) weatherPositions[i * 3 + 1] = (i * 17 + time * (trackId === 'neon' ? -18 : -3)) % 32;
+        for (let i = 0; i < 180; i++) weatherPositions[i * 3 + 1] = (i * 17 + time * (raining ? -18 : -3)) % 32;
         weatherGeometry.attributes.position.needsUpdate = true;
         weather.position.set(car.x, car.altitude + 25, 15);
       }

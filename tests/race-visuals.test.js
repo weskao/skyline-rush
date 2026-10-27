@@ -1,0 +1,48 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { Color, FogExp2, Scene, ShaderMaterial } from 'three';
+import { createRaceVisuals } from '../src/race-visuals.ts';
+
+function fixture() {
+  const scene = new Scene();
+  scene.background = new Color('#94758a');
+  scene.fog = new FogExp2('#94758a', .0013);
+  const sky = new ShaderMaterial({ uniforms: {
+    top: { value: new Color('#101e43') }, horizon: { value: new Color('#d98785') },
+    cloudTint: { value: new Color('#4d3d60') }, cloudOpacity: { value: 1 }, warmth: { value: 1 },
+  } });
+  const renderer = { toneMappingExposure: 1.12 };
+  return { scene, sky: sky.uniforms, renderer };
+}
+
+test('race presets recolor real scene values and restore the authored track exactly', () => {
+  const target = fixture();
+  const visuals = createRaceVisuals(target);
+  visuals.apply('night');
+  assert.equal(target.scene.background.getHexString(), '1b2e5a');
+  assert.equal(target.scene.fog.density, .0016);
+  assert.equal(target.renderer.toneMappingExposure, .72);
+  assert.equal(target.sky.top.value.getHexString(), '050b25');
+  visuals.apply('track');
+  assert.equal(target.scene.background.getHexString(), '94758a');
+  assert.equal(target.scene.fog.density, .0013);
+  assert.equal(target.renderer.toneMappingExposure, 1.12);
+  assert.equal(target.sky.top.value.getHexString(), '101e43');
+  assert.equal(target.sky.horizon.value.getHexString(), 'd98785');
+});
+
+test('a new track resets visual baselines and unchanged frame updates do no color writes', () => {
+  const target = fixture();
+  const visuals = createRaceVisuals(target);
+  visuals.apply('fog');
+  let writes = 0;
+  const set = target.scene.background.set.bind(target.scene.background);
+  target.scene.background.set = (...args) => { writes++; return set(...args); };
+  visuals.apply('fog');
+  assert.equal(writes, 0);
+  visuals.reset();
+  target.scene.background.set('#18223f');
+  visuals.apply('day');
+  visuals.apply('track');
+  assert.equal(target.scene.background.getHexString(), '18223f');
+});

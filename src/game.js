@@ -237,14 +237,14 @@ export function dailyChallenge(date = new Date()) {
   return { id, track, modifier: modifiers[Math.floor(random() * modifiers.length)] };
 }
 
-export function createRace(trackId = 'coast', modifier = null) {
+export function createRace(trackId = 'coast', modifier = null, presentation = {}) {
   const track = RACE_TRACKS[trackId];
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   const options = modifier !== null && typeof modifier === 'object' && !Array.isArray(modifier) ? modifier : null;
   const dailyModifier = options ? null : modifier;
   if (dailyModifier !== null && !DAILY_MODIFIERS.includes(dailyModifier)) throw new Error(`Unknown modifier: ${dailyModifier}`);
   const config = normalizeRaceConfig(options ?? {});
-  const session = createRaceSessionContract(trackId, track.seed, config);
+  const session = createRaceSessionContract(trackId, track.seed, config, presentation);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
   const rings = createRings(track);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
