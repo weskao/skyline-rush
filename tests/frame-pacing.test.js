@@ -123,3 +123,26 @@ test('30fps rendering keeps 60Hz simulated positions/fuel/elapsed time identical
   assert.deepEqual(slow.state, fast.state);
   assert.ok(slow.paints < fast.paints);
 });
+
+test('real game engine preserves flight, speed, collision and race clock under different render caps', async () => {
+  const { createRace, startRace, stepRace } = await import('../src/game.js');
+  const raceUnder = cap => {
+    const race = createRace();
+    startRace(race);
+    race.traffic = [];
+    const pacer = createFramePacer(cap);
+    let drawn = 0;
+    for (let frame = 0; frame < 780; frame++) {
+      const input = { throttle: true, steer: frame < 250 ? 0.3 : 0, fly: frame >= 340 && frame < 480, nitro: frame >= 500 && frame < 550 };
+      stepRace(race, input, 1 / 60);
+      if (pacer.tick(frame * 1000 / 60, { racing: race.phase === 'racing' })) {
+        drawn++;
+        pacer.completeRender(2);
+      }
+    }
+    return { race, drawn };
+  };
+  const capped = raceUnder('30'), uncapped = raceUnder('60');
+  assert.deepEqual(capped.race, uncapped.race);
+  assert.ok(capped.drawn < uncapped.drawn);
+});
