@@ -1,5 +1,31 @@
 # Verification — 2026-10-18
 
+## Vue refactor final physical-device performance gate (2026-10-27)
+
+**Pending, not measured.** This process collects the Step 1 evidence without substituting the GitHub Linux software-WebGL runner or iOS simulator for hardware.
+
+1. Use the **same actual machine** (desktop Chrome; iPhone Safari; mid-range Android Chrome), stable power/thermal mode and browser versions. Load an unchanged published or locally served build of the comparison baseline and the refactor branch in the same browser, keeping resolution/orientation, VFX preset, Coast Classic track, game settings and player controls identical. Record the exact baseline and refactor commit SHAs. A whole-branch difference cannot be attributed solely to HUD optimization.
+2. Append `?perf` to each build URL, start a Coast race, allow the scene to stabilize and then sample the 20-second rolling window three times per build and device. Do not count menu/idle frame rates as in-race FPS. Use the same gameplay maneuver for both versions and avoid browser tab switches.
+3. Capture p50, p95 and fps from the HUD readout; also record device model, OS/browser, viewport, graphics preset, power/temperature conditions, track, test SHA and capture timestamp. Record startup/touch, sound, pause/finish and screenshot-visible issues separately. Compare paired p95/p50 values as *version-to-version observations*, not causal GPU-performance proof.
+4. Record an actual screenshot/recording on iPhone Safari and Android Chrome. Verify intro, tutorial/controls, History/Cloud Save modal, Garage, visual map, touch targets and race finish; note Safari WebGL/context-loss and sustained warmth. Manual design review should compare equivalent screens with `main`.
+
+| Device / browser | Baseline SHA | Refactor SHA | Baseline 3× p50 / p95 / FPS | Refactor 3× p50 / p95 / FPS | Screens / thermal / input result |
+| --- | --- | --- | --- | --- | --- |
+| Desktop Chrome, actual GPU | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| iPhone Safari, physical phone | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| Android Chrome, physical phone | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+
+For a separate source checkout with working dependencies and browsers:
+```sh
+npm ci
+npm run typecheck
+make verify
+npm run test:layout
+```
+
+A command must actually finish successfully before its checklist entry can be checked. The current assistant container cannot clone GitHub (DNS resolution failure), so no local `make verify` result exists.
+
+
 ## `?perf` frame-time readout for the real-phone check — 2026-10-20
 
 Scope: a measuring tool for the open §A real-phone gate, not the measurement itself.
