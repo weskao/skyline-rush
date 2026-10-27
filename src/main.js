@@ -598,7 +598,7 @@ document.querySelector('.brand').addEventListener('click', event => {
 $('#leave-keep').addEventListener('click', () => { leaveScreen.close(); if (race.phase === 'paused') pause(); });
 $('#leave-end').addEventListener('click', () => { leaveScreen.close(); chooseTrack(); });
 
-const { showAudio, setAudio, toggleSound, unlockAudio } = setupAudioUI({
+const { showAudio, setAudio, toggleSound, unlockAudio, previewChannel } = setupAudioUI({
   audio, volume, sound, audioSwitches, ui,
 });
 
@@ -978,7 +978,7 @@ audioSwitches.forEach(button => {
   slider.addEventListener('input', () => {
     const level = slider.value / 100;
     if (kind === 'music') sound.setMusic(level > 0, level); else sound.setEnabled(level > 0, level);
-    showChannel(button, level > 0, level || volume[kind]);
+    previewChannel(kind, level > 0, level || volume[kind]);
   });
   slider.addEventListener('change', () => {
     const next = setVolume(volume[kind], slider.value / 100);

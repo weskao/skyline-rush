@@ -41,6 +41,9 @@ responsibility), not by line count alone.
 ## Doing the split
 
 - Move-only first: no behavior change in the same commit (`ui-architecture.md`).
+- A move that leaves a caller behind fails only at runtime in plain JS (an audio slider threw on
+  every drag after `showChannel` moved out). `tests/legacy-js-names.test.js` compiles
+  `src/**/*.js` and fails on any unresolved identifier; keep it green, never filter it.
 - RED → GREEN: a test imports the new module (and asserts the old file no longer holds the moved
   code) and fails before the move; the existing suite stays green after it.
 - Patterns are tools, not goals: no factory, interface or base class without a second real

@@ -25,21 +25,17 @@ export function audioChannelPresentation(enabled: boolean, volume: number) {
   return { level: enabled ? Math.round(volume * 100) : 0, percent, enabled };
 }
 
+function channelView(on: boolean, volume: number): AudioChannelView {
+  const { level, percent, enabled } = audioChannelPresentation(on, volume);
+  return { enabled, level, percent, displayText: enabled ? percent : t('audio.off'), valueText: enabled ? percent : t('audio.muted') };
+}
+
 export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
   function showAudio(): void {
-    const channels = {} as Record<Channel, AudioChannelView>;
-    for (const kind of ['music', 'sfx'] as const) {
-      const { level, percent, enabled } = audioChannelPresentation(audio[kind], volume[kind]);
-      channels[kind] = {
-        enabled, level, percent,
-        displayText: enabled ? percent : t('audio.off'),
-        valueText: enabled ? percent : t('audio.muted'),
-      };
-    }
     const on = audio.music || audio.sfx;
     updateAudioView({
-      music: channels.music,
-      sfx: channels.sfx,
+      music: channelView(audio.music, volume.music),
+      sfx: channelView(audio.sfx, volume.sfx),
       settingsIcon: on ? 'sound' : 'mute',
       muteAllText: t(on ? 'audio.muteAll' : 'audio.unmuteAll'),
     });
@@ -66,6 +62,10 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
       setAudio('sfx', audio.sfx);
     }
   }
+  /** Show a level being dragged without saving it; the release saves it through setAudio. */
+  function previewChannel(kind: Channel, on: boolean, level: number): void {
+    updateAudioView({ [kind]: channelView(on, level) });
+  }
   showAudio();
-  return { showAudio, setAudio, toggleSound, unlockAudio };
+  return { showAudio, setAudio, toggleSound, unlockAudio, previewChannel };
 }
