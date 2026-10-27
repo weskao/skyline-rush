@@ -15,6 +15,7 @@ import SettingsPanel from './SettingsPanel.vue';
 import ControlsPanel from './ControlsPanel.vue';
 import HistoryPanel from './HistoryPanel.vue';
 import { homeStatusView } from './home-status-view-state.ts';
+import CupRecovery from './CupRecovery.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
 
@@ -142,6 +143,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         </details>
         <details class="race-mode-rules" id="cup-rules" hidden>
           <summary data-i18n="mode.cupSettings">Championship format</summary>
+          <CupRecovery />
           <label><span data-i18n="mode.cupLength">Number of unique tracks</span>
             <select id="cup-length" aria-label="Cup stages" data-i18n-aria-label="mode.cupLength">
               <option value="3" selected>3</option><option value="5">5</option>

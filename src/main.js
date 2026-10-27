@@ -19,6 +19,8 @@ import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.ts'
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
 import { stuntMedal } from './stunt-attack.ts';
 import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.ts';
+import { retryCupHeat } from './cup-progress.ts';
+import { setupCupRecovery, renderCupResult } from './cup-recovery-ui.ts';
 import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.ts';
@@ -151,6 +153,14 @@ const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId)
   ...(selectedMode === 'gauntlet' ? { hazardTier: $('#hazard-tier').value } : {}),
   ...(selectedMode === 'time' && $('#clean-trial').checked ? {clean:true} : {}),
   ...(selectedMode === 'stunt' ? {duration:Number($('#stunt-duration').value)} : {}) });
+const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
+  canResume: () => !!world && race.phase === 'ready' && !contextLost && !document.querySelector('dialog[open]'),
+  resume: saved => {
+    selectedMode = 'cup'; cup = saved; daily = null; sprintSeries = null; stunt = null;
+    race = createRace(cup.tracks[cup.results.length], {mode:'cup',cupTracks:cup.tracks});
+    controls.clear(); showTracks(); leaveIntro(); startRace(race); focusRace(); sound.cue('ui');
+  },
+});
 let previousFuel = 100;
 let previousNitro = 0;
 const presentation = createPresentation();
@@ -359,6 +369,7 @@ function applyLocale() {
 onLocaleChange(applyLocale);
 $('#locale-select').addEventListener('change', ({ target }) => { saveLocale(target.value); setLocale(target.value); });
 function showTracks() {
+  cupRecovery.refresh();
   showHomeStatus();
   const track = RACE_TRACKS[race.trackId];
   document.body.dataset.raceMode = race.mode;
@@ -834,7 +845,7 @@ function start() {
   if (!hasSeenGuide()) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
   if (editingLayout) editLayout(false);
   controls.clear();
-  cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
+  cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? cupRecovery.start(race.trackId,cupCount()) : null;
   stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, trackId:race.trackId } : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
@@ -852,6 +863,7 @@ function restart(trackId = race.trackId) {
   if (editingLayout) editLayout(false);
   controls.clear();
   const wipe = $('#race-wipe');
+  if (cup) { cup = retryCupHeat(cup, trackId); cupRecovery.remember(cup); }
   wipe.getAnimations().forEach(animation => animation.cancel());
   wipe.hidden = calmMotion();
   if (!wipe.hidden) {
@@ -1141,7 +1153,7 @@ ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
 ui['again-button'].addEventListener('click', () => {
   if (sprintSeries) sprintSeries = createSprintSeries(sprintSeries.count);
-  if (cup) { cup = createCup([...unlockedTracks], cup.tracks[0], cup.tracks.length); restart(cup.tracks[0]); }
+  if (cup) { cup = cupRecovery.start(cup.tracks[0], cup.tracks.length); restart(cup.tracks[0]); }
   else if (stunt) {
     stunt = { ...stunt, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0 };
     restart(stunt.trackId);
@@ -1274,7 +1286,7 @@ function phaseUI() {
   } else if (phase === 'finished') {
     controls.clear();
     if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
-    if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
+    if (cup && race.mode === 'cup') { cup = addCupResult(cup, race); cupRecovery.remember(cup); }
     if (stunt && race.mode === 'stunt') {
       stunt.elapsed += race.result.time;
       stunt.score += race.result.score;
@@ -1385,16 +1397,7 @@ function phaseText() {
     return;
   }
   if (finishedCup) {
-    const standings = cupStandings(finishedCup);
-    const complete = cupComplete(finishedCup);
-    const you = standings.find(entry => entry.name === 'YOU');
-    ui['overlay-title'].textContent = t(complete ? standings[0].name === 'YOU' ? 'mode.cupWon' : 'mode.cupComplete' : 'mode.cupStage', {
-      n: finishedCup.results.length, total: finishedCup.tracks.length,
-    });
-    ui['overlay-copy'].textContent = standings.map(({name,points},i) =>
-      `${i+1}. ${name} · ${points} ${t('mode.cupPts')}`).join('  ·  ');
-    $('#next-stage').textContent = complete ? '' : t('mode.cupNext', { track: trackName(finishedCup.tracks[finishedCup.results.length],getLocale()) });
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.cupPts')}</span><strong>${you.points}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(cupTotalTime(finishedCup))}</strong></div>`;
+    renderCupResult(finishedCup, ui, timeString);
     resultCounts = [];
     return;
   }

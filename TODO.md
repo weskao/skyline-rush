@@ -1,5 +1,22 @@
 # TODO — Gameplay depth design
 
+## Staged roadmap continuation (2026-10-27)
+
+The owner authorized TDD implementation of the remaining non-Firebase/non-Gamepad roadmap in independently mergeable feature branches. Unrelated features start from `origin/main`, not the dirty audio/keymap refactor checkout. This is implementation authorization, not merge/PR/release/deploy authorization.
+
+### Stage: Cup session recovery — `feature/cup-session-recovery`
+
+- [x] Observe real Chrome RED for a valid completed-heat checkpoint with no recovery entry; preserve `artifacts/cup-recovery/browser-red.log`.
+- [x] Round-trip versioned Cup checkpoints with the shared standings validation; reject corrupt/oversized/complete/locked saves and tolerate denied storage. Observe functional round-trip/retry RED, then 12/12 focused Cup unit tests GREEN.
+- [x] Add Vue-owned bilingual Resume/Discard controls; preserve standings, restart only the unfinished heat, roll back a retried completed heat, and clear recovery after final completion. Desktop and touch-phone tests finish real simulated heats, retry, advance, quit, resume and verify one final mode record with no Career stars.
+- [x] Independent review found access restoration did not refresh the recovery entry. Observe Classic-unlock RED → GREEN and update the existing event-driven `showTracks` path, without frame-loop polling.
+- [x] Observe desktop intro overflow RED (164 px), then fit the fixed height by collapsing the promotional logo/slogan only while saved Cup settings are expanded. Recovery buttons retain 44 px targets. A second review found the selector also matched a hidden Cup panel; observe Classic-switch RED before restricting it to the visible panel.
+- [x] Pre-main-integration `make verify` completed: strict TS/Vue/legacy checks, 697 unit passed / 3 emulator-dependent skipped, production build, 456 browser passed and 72 World Tour passed. Receipt: `artifacts/cup-recovery/make-verify-final.log`. The initial interrupted run is superseded by this complete run.
+- [ ] Merge latest main into this branch, adapt Cup integration to its extracted modules, then repeat final `make verify`, layout, whole-branch review and current feature-HEAD GitHub `quality-gate`. The pre-merge result does not verify the merged source.
+- [ ] Physical-device Cup recovery/standings/touch acceptance; Chrome touch emulation is separate evidence. No original track physics, shaders or per-frame audio were changed. Existing confirmation SFX is reused.
+
+Other independently tracked branches: `feature/custom-race-presentation` (Custom ruleset Ghost and cosmetic presets/setup summary) and `feature/practice-item-rules` (explicit item rules, real activation/cooldown and related new pads/items). Remaining genuine circuit laps, richer themed hazards, challenge medals, Endless Highway and Event Lab remain open. Existing Photo Studio, held Shield/Magnet/Ghost/Freeze and recent Custom setup storage are reused rather than reimplemented. Tutorial entry-flow decisions are being discussed separately.
+
 ## Future feature request: configurable and adaptive FPS (2026-10-27)
 
 **Status:** Requirements recorded for later discussion. No design or implementation has been approved.
