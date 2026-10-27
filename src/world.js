@@ -256,6 +256,7 @@ export function createWorld(canvas) {
   // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
   let renderPixelRatio=Math.min(devicePixelRatio,1.5);
+  let adaptiveScale = 1;
   renderer.setPixelRatio(renderPixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -794,6 +795,17 @@ export function createWorld(canvas) {
       player.userData.body.material.color.set(paint.paint);
       player.userData.lightColor.fromArray(paint.light);
     },
+    setRenderScale(scale) {
+      adaptiveScale = Number.isFinite(scale) ? Math.max(0.75, Math.min(1, scale)) : 1;
+      const maxRatio = visual.quality === 'low' ? 1 : visual.quality === 'medium' ? 1.25 : 1.5;
+      const nextRatio = Math.min(devicePixelRatio, maxRatio) * adaptiveScale;
+      if (Math.abs(nextRatio - renderPixelRatio) > .001) {
+        renderPixelRatio = nextRatio;
+        renderer.setPixelRatio(nextRatio);
+        composer.setPixelRatio(nextRatio);
+        resize();
+      }
+    },
     configureVFX(options) {
       const updated=vfxSettings(options);
       visual=updated;
@@ -801,7 +813,7 @@ export function createWorld(canvas) {
       // only on devices whose initial quality or manual user choice calls for
       // it; high quality stays at the original 1.5x DPR cap.
       const maxRatio=visual.quality==='low'?1:visual.quality==='medium'?1.25:1.5;
-      const nextRatio=Math.min(devicePixelRatio,maxRatio);
+      const nextRatio=Math.min(devicePixelRatio,maxRatio)*adaptiveScale;
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
       if(Math.abs(nextRatio-renderPixelRatio)>.001){
