@@ -11,6 +11,7 @@
 - [x] Extract the existing unbounded classic-road centreline as a single typed source for Three.js, collision-space projection and route overview, preserving the exact sine curve and record/Ghost compatibility. CI pending.
 - [x] Adjust road material finish (Neon rain-slick, Canyon dusty, Aurora frosted, Sky Spiral diffuse) without altering mesh geometry, collision, physics or Coast's Phase 2 palette. New contract tests committed; CI pending.
 - [ ] Preserve road shape, 60 Hz collision geometry, mode layouts, record/Ghost compatibility and Phase 3 renderer settings.
+- [x] Add browser capture/regression cases for Coast, Neon, Canyon, Aurora and Sky Spiral at desktop, mobile portrait and landscape, exercising preview, live minimap, saved 30 FPS and stable SVG identity; actual screenshots and CI pass remain pending.
 - [ ] Obtain real-WebGL screenshots of all five tracks in showroom and during play at desktop, mobile portrait/landscape, English and zh-TW; inspect camera occlusion, accessibility and layout.
 - [ ] Capture baseline/feature p50/p95 FPS, draw calls, triangles, memory when available; Android/iPhone thermal checks remain unverified unless genuine physical device results exist.
 - [ ] Run complete TypeScript typecheck, unit, build, all 8 browser shards, World Tour, Cloud Save and exact-HEAD quality-gate before declaring merge-ready.
