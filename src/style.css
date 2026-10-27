@@ -524,6 +524,7 @@ body:is([data-phase="countdown"], [data-phase="racing"]) .vfx-settings > label:h
 /* The FPS explanation is direct <small> content (unlike .vfx-note); avoid 8.33px CJK glyphs. */
 .vfx-settings > small { display: block; font-size: 11px; line-height: 1.55; color: #a8bbc8; }
 .vfx-settings label { min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; }
+.vfx-settings .custom-select { flex-shrink: 0; } /* the label wraps instead; a shrunk box let the fixed 155px button spill past the panel at 320px */
 .vfx-settings .custom-select > button { width: 155px; min-height: 34px; color: #dcf4ff; background-color: #193442; border: 1px solid #5c8796; border-radius: 4px; padding: 4px 30px 4px 8px; background-position: right 8px center; }
 .vfx-tuning > summary { display: flex; justify-content: space-between; list-style: none; padding: 16px 0; cursor: pointer; border-top: 1px solid #87c5da30; }
 .vfx-tuning > summary::-webkit-details-marker { display: none; }
@@ -683,7 +684,8 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 /* 44px taps on every touch screen, landscape included. The tool row and camera arrows keep their drawn
    size (fixed top-bar / dock budget) and grow an invisible hit area instead, as .medal-chip does. */
 @media (pointer: coarse) {
-  .overlay-content .text-button, .mute-all { min-height: 44px; }
+  .overlay-content .text-button, .mute-all, .custom-select [role="option"], #vfx-reset { min-height: 44px; }
+  .audio-channel input[type="range"] { min-height: 44px; } /* beats the later generic 24px range rule */
   .aero-tools > button, .aero-tools > details > summary, .aero-tools > .custom-select > button, #showcase-camera-prev, #showcase-camera-next { position: relative; }
   .aero-tools > .custom-select > button { overflow: visible; } /* the select's ellipsis clip would cut the hit area; "English"/"繁體中文" never overflow */
   /* -8px from the padding box: the 30px phone row (1px border) reaches 44px exactly */
