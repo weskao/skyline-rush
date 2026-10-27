@@ -1,17 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TRACKS, sprintFactor, createSound } from '../src/audio.js';
+import { createSound } from '../src/audio.js';
 import { createRace } from '../src/game.js';
-
-test('both music tracks are complete loops of about one minute', () => {
-  for (const [name, track] of Object.entries(TRACKS)) {
-    const seconds = 32 * 16 * 15 / track.bpm;
-    assert.ok(seconds >= 50 && seconds <= 70, `${name} loops in ${seconds}s`);
-    assert.equal(track.chords.length, 8, name);
-    assert.ok(track.chords.every(chord => chord.length === 4), name);
-    assert.equal(track.lead.length, 64, name);
-  }
-});
 
 const midiHz = note => 440 * 2 ** ((note - 69) / 12);
 
@@ -108,15 +98,6 @@ for (const [trackId, pad] of Object.entries(COURSE_PADS)) {
     assert.equal(heard.some(hz => Math.abs(hz - midiHz(55)) < 0.05), false, `${trackId} leaves the shared race song silent`);
   });
 }
-
-test('sprintFactor leaves the tempo alone until the last 500 m, then ramps to 1.15 at the finish', () => {
-  assert.equal(sprintFactor(0, 5000), 1);
-  assert.equal(sprintFactor(4500, 5000), 1);
-  assert.ok(Math.abs(sprintFactor(4750, 5000) - 1.075) < 1e-9);
-  assert.ok(Math.abs(sprintFactor(5000, 5000) - 1.15) < 1e-9);
-  assert.ok(Math.abs(sprintFactor(9999, 5000) - 1.15) < 1e-9);
-  assert.ok(sprintFactor(3600, 4000) > 1);
-});
 
 function audioScene(t) {
   const { nodes, sound } = installAudio(t);
@@ -215,17 +196,6 @@ test('louder channel gains preserve slider curves, phase balance and mute', t =>
   sound.setEnabled(false); sound.setMusic(false); sound.update(race);
   assert.equal(effects.gain.value, 0);
   assert.equal(music.gain.value, 0);
-});
-
-test('each new arcade mode has a playable 50–70 second synthesized music loop', () => {
-  for (const [name, firstPad] of Object.entries({checkpoint:60,stunt:62,gauntlet:52,cup:64,cruise:67})) {
-    const track = TRACKS[name];
-    assert.ok(track, `${name} must define an original theme`);
-    assert.ok(track.bpm >= 110 && track.bpm <= 150, name);
-    assert.equal(track.lead.length, 64);
-    assert.equal(track.chords.length, 8);
-    assert.equal(track.chords[0][1], firstPad, `${name} has a distinct opening pad`);
-  }
 });
 
 test('Checkpoint Rush plays its own soundtrack instead of the general racing pad', t => {

@@ -8,7 +8,7 @@ Preserve: existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
-`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability` · `ui-phase-interactions` · `ui-architecture` · `release-notes`.
+`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability` · `ui-phase-interactions` · `ui-architecture` · `release-notes` · `module-size`.
 
 ## Architecture default: Vue 3 + TypeScript (strict); deliberate plain-JS engine exceptions
 
@@ -30,6 +30,15 @@ listed legacy JavaScript islands, and `npm run typecheck` during `make verify`. 
 must preserve desktop/mobile input, locales, audio, cloud save, accessibility, and
 finish/pause clickability. Follow RED → GREEN → browser regressions for each slice.
 See `.claude/rules/ui-architecture.md` and `TODO.md`.
+
+## Small modules split by responsibility
+
+No source module grows past **400 lines**; split it by responsibility before adding more
+(single responsibility first, dependency inversion for UI controllers). Separate pure decisions
+from side effects, data tables from code, business rules from UI, and give each screen area its
+own `setupXxxUI(deps)` TypeScript controller instead of adding to `src/main.js`. Functions stay
+under ~60 lines. Legacy oversized files have ratcheting ceilings that may only go down.
+`tests/module-size.test.js` enforces it; seams and steps are in `.claude/rules/module-size.md`.
 
 ## Mandatory regression-first workflow (every feature and bug fix)
 
@@ -153,8 +162,9 @@ of the UI/UX design review rather than an optional afterthought.
   with the UI change in the same feature scope**, including appropriate tests.
   If audio would be distracting, redundant, inaccessible, or irrelevant (such as
   purely decorative changes), do not add it merely for consistency.
-- Reuse the existing Web Audio system in `src/audio.js` and one-shot event logic
-  in `src/mode-audio.js` where applicable. Keep sounds cohesive with the game's
+- Reuse the existing Web Audio system in `src/audio.js` (synthesis and mix), race event
+  detection in `src/race-audio-events.ts`, songs in `src/music-tracks.ts` and one-shot mode
+  events in `src/mode-audio.ts` where applicable. Keep sounds cohesive with the game's
   arcade-racing identity; avoid unnecessary assets, dependencies, and duplicate mixers.
 - Respect separate music/SFX enablement and volume settings, mute, browser
   user-gesture/autoplay restrictions, reduced-sensory-load preferences, and
@@ -163,7 +173,8 @@ of the UI/UX design review rather than an optional afterthought.
   pause/restart, and unwanted playback when audio is disabled or the page is hidden (iOS keeps
   a `'playback'` audio session running in the background; `sound.setHidden` suspends it).
 - For relevant changes, verify the UI **and** its audio behavior with deterministic
-  event tests (`tests/audio.test.js` / `tests/mode-audio.test.js`), and browser
+  event tests (`tests/audio.test.js` / `tests/race-audio-events.test.js` /
+  `tests/mode-audio.test.js`), and browser
   regression tests when the controls or interaction flow change. State briefly in
   the implementation summary whether audio was added or intentionally unnecessary.
 

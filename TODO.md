@@ -22,6 +22,21 @@ Branch: `feature/phase2-coast-visual-quality`. Scope: Coast art pass only; no Ph
 - [ ] **Phase 2 — Coast visual-quality benchmark:** Establish a cohesive realistic-environment/arcade-effects art direction for Coast, including vehicle, road, scenery, lighting and action readability; verify desktop/mobile visuals and performance in a separate feature branch.
 - [ ] **Phase 3 — FPS and adaptive performance:** Add user-selectable target FPS and measured device-aware auto settings, preserving simulation correctness, thermal comfort, graphics quality controls and saved preferences. Implement and validate separately.
 
+## Module split: `main.js` and `audio.js` by responsibility (2026-10-27, `refactor/split-main-audio`)
+
+**Status:** implemented as TDD slices (each new test failed against the previous tree first); local gates and full CI green; physical device check pending.
+
+- [x] `audio.js` 403 → 243 lines: songs in `music-tracks.ts`, race→cue detection in `race-audio-events.ts` (pure, no per-frame allocation).
+- [x] `main.js` 1,881 → 688 lines: cloud save, key map, touch controls, VFX/motion/notice, session progress and ghosts, race settlement, result screens, HUD, race selection, History dialog, photo mode, pressed buttons and `?perf` strip each moved to their own TypeScript module (map in `docs/refactor-architecture-audit.md`).
+- [x] Remaining `main.js` (bootstrap, controller wiring, race lifecycle, phase orchestrator, frame loop) is the documented exception, held by a ratcheting ceiling.
+- [x] Prevention: `tests/module-size.test.js` (400-line limit, ceilings only go down), `tests/legacy-js-names.test.js` (syntax and unresolved names in `src/**/*.js`), `.claude/rules/module-size.md`, `CLAUDE.md` section.
+- [x] Bug found on the way: dragging an audio slider threw `showChannel is not defined` on every step and froze its label; fixed in `8dc75b1` with a browser RED → GREEN test.
+- [x] Local evidence at `8c4ac0f`: `make verify` exit 0 (typecheck; 748 unit pass, 0 fail, 3 skipped; browser 450/450; World Tour 72/72); Firebase emulator suite 15/15 + rules 3/3 after the cloud and progress slices; `npm run test:layout` 30 + 42 after race selection.
+- [x] HUD perf A/B (`make perf BASE=130a7e0`, 6× CPU throttle, 3 × 20 s): p50 16.7 / p95 16.7 ms / 59.9 fps vs baseline p50 16.7 / p95 16.8 ms / 60 fps. Vsync-capped; no sub-frame comparison.
+- [x] Independent read-only review of every slice against `bc2838c` found no behavior divergence.
+- [x] Full GitHub CI on `423b445` (workflow_dispatch `full_regression=true`, run 40518765394): unit, cloud-save, browser shards 1–8, world-tour-mid-race and quality-gate all success. The push run 40517690494 used the focused refactor gate.
+- [ ] Physical iPhone Safari / Android Chrome pass (touch pad, tilt, audio slider drag, results/pause clickability).
+
 ## Future feature request: configurable and adaptive FPS (2026-10-27)
 
 **Status:** Requirements recorded for later discussion. No design or implementation has been approved.
