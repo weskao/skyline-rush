@@ -568,6 +568,7 @@ try {
     world.setRenderScale(1);
   });
   let lastScale = 1;
+  let renderElapsed = 0;
   function frame(now) {
     const rawDelta = (now - previousTime) / 1000;
     previousTime = now;
@@ -599,14 +600,17 @@ try {
     if (calm && !wasCalm) vfx.stopMotionIfCalm();
     wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
+    renderElapsed += dt;
     const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null : null;
-    if (pacer.tick(now, { racing: race.phase === 'racing', hidden: document.hidden })) {
+    const shouldRender = pacer.tick(now, { racing: race.phase === 'racing', hidden: document.hidden });
+    if (shouldRender) {
       if (lastScale !== pacer.renderScale) {
         lastScale = pacer.renderScale;
         world.setRenderScale(lastScale);
       }
       const renderStarted = performance.now();
-      world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
+      world.render(race, Math.min(renderElapsed, 0.05), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
+      renderElapsed = 0;
       pacer.completeRender(performance.now() - renderStarted);
     }
     sound.update(race);
@@ -616,7 +620,7 @@ try {
       if (tutorial) renderTutorial();
       hudElapsed = 0;
     }
-    perfOverlay?.record(now, rawDelta, race.phase === 'racing');
+    perfOverlay?.record(now, rawDelta, race.phase === 'racing', shouldRender);
     animationId = requestAnimationFrame(frame);
   }
   animationId = requestAnimationFrame(frame);
