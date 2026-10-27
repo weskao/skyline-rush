@@ -73,6 +73,7 @@ test('thrusters require speed, lift the car, spend fuel and land on release', ()
 
 test('exhausted fuel forces landing even if lift stays held, then regenerates on the ground', () => {
   const race = racing();
+  race.rings = []; race.pickups = []; // isolate exhaustion from in-course refills
   advance(race, 3, { throttle: true });
   advance(race, 9, { throttle: true, fly: true });
   assert.equal(race.player.altitude, 0);
@@ -1462,14 +1463,14 @@ test('the car is in the shortcut only inside the corridor volume, never on the r
   assert.equal(createRace().player.inShortcut, false);
 });
 
-test('flight inside the corridor burns no fuel; the same flight over the other edge lane burns 19/s', () => {
+test('flight inside the corridor burns no fuel; the same flight over the other edge lane burns 15/s', () => {
   const { race, corridor } = inCorridor();
   hold(race, 2, { fly: true }, corridor.altitude);
   assert.equal(race.player.thrusting, true);
   assert.equal(race.player.fuel, 100);
   const { race: outside } = inCorridor('coast', { x: -corridor.x });
   hold(outside, 2, { fly: true }, corridor.altitude);
-  assert.ok(Math.abs(outside.player.fuel - 62) < 0.5);
+  assert.ok(Math.abs(outside.player.fuel - 70) < 0.5);
 });
 
 test('the corridor adds SHORTCUT_CAP_BONUS to the speed cap only while inside', () => {
