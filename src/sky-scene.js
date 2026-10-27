@@ -137,6 +137,8 @@ export function createSkyScene(scene) {
     fogBanks.add(cloud);
   }
   group.visible = false;
+  let lastRoadStart = null;
+  const roadInstances = [borders, rails, beacons, laneLines];
 
   return {
     update(distance, quality = 'high') {
@@ -149,11 +151,16 @@ export function createSkyScene(scene) {
       skyline.visible = quality !== 'low';
       fogBanks.visible = quality === 'high';
       const start = Math.max(0, Math.floor((distance - 140) / STEP) * STEP);
+      // Transform the static world-space road into camera-relative coordinates.
+      // Geometry and matrices change only when a 10m stream sector changes.
+      road.position.set(-origin.x, -origin.y, -origin.z);
+      for (const mesh of roadInstances) mesh.position.copy(road.position);
+      if (start !== lastRoadStart) {
       for (let i = 0; i <= ROWS; i++) {
         const s = Math.min(5600, start + i * STEP);
         const frame = skyFrame(s);
         for (let side = 0; side < 2; side++) {
-          const [x, y, z] = skyPosition(s, side ? WIDTH : -WIDTH, 0, distance);
+          const [x, y, z] = skyPosition(s, side ? WIDTH : -WIDTH, 0, 0);
           const offset = (i * 2 + side) * 3;
           positions.set([x, y, z], offset);
           normals.set(frame.up, offset);
@@ -164,16 +171,18 @@ export function createSkyScene(scene) {
         indices.set(gap ? [a, a, a, a, a, a] : [a, a + 1, a + 2, a + 1, a + 3, a + 2], k);
         const mid = s + STEP * 0.5;
         for (let side = 0; side < 2; side++) {
-          pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17, 0.16, 0.12, STEP, distance);
-          pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60, 0.38, 1.1, STEP, distance);
-          pose(beacons, i * 2 + side, mid, side ? 12.75 : -12.75, 1.12, 0.08, 0.09, STEP, distance);
+          pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17, 0.16, 0.12, STEP, 0);
+          pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60, 0.38, 1.1, STEP, 0);
+          pose(beacons, i * 2 + side, mid, side ? 12.75 : -12.75, 1.12, 0.08, 0.09, STEP, 0);
         }
         for (let lane = 0; lane < 3; lane++) {
-          pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025, 0.14, 0.03, 4.0, distance);
+          pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025, 0.14, 0.03, 4.0, 0);
         }
       }
       for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.index]) attribute.needsUpdate = true;
-      for (const mesh of [borders, rails, beacons, laneLines]) mesh.instanceMatrix.needsUpdate = true;
+      for (const mesh of roadInstances) mesh.instanceMatrix.needsUpdate = true;
+      lastRoadStart = start;
+      }
     },
     hide() { group.visible = false; },
     dispose() {
