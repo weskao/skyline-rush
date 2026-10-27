@@ -1,5 +1,11 @@
 # TODO — Gameplay depth design
 
+## Upcoming gameplay and presentation phases (2026-10-27)
+
+- [ ] **Phase 1 — Flight and arcade gameplay feel:** Balance ground/air time, extend practical FLY use, strengthen DRIFT → NITRO → FLY → landing flow and responsive player feedback. Protect existing modes, records, controls and accessibility; develop with TDD on a standalone feature branch.
+- [ ] **Phase 2 — Coast visual-quality benchmark:** Establish a cohesive realistic-environment/arcade-effects art direction for Coast, including vehicle, road, scenery, lighting and action readability; verify desktop/mobile visuals and performance in a separate feature branch.
+- [ ] **Phase 3 — FPS and adaptive performance:** Add user-selectable target FPS and measured device-aware auto settings, preserving simulation correctness, thermal comfort, graphics quality controls and saved preferences. Implement and validate separately.
+
 ## Future feature request: configurable and adaptive FPS (2026-10-27)
 
 **Status:** Requirements recorded for later discussion. No design or implementation has been approved.
