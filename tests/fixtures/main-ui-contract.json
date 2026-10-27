@@ -1,6 +1,6 @@
 {
-  "reference": "main 53d4a0a: reviewed camera, intro, FPS, touch targets, tutorial spacing and cached minimap styles",
-  "cssBlob": "9756221a8a0e750c2fb7c2b5951acdbd02d7783d",
+  "reference": "main 53d4a0a: reviewed camera, intro, FPS, touch targets, tutorial spacing and cached minimap styles; Endless hides finite minimap/progress only",
+  "cssBlob": "76b5839a753b05397132835a0f303d1d52504441",
   "elements": [
     {
       "id": "whats-new-screen",
