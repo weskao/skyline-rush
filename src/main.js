@@ -1,5 +1,4 @@
 import './style.css';
-import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
 import { setupGarageUI } from './garage-ui.ts';
 import { createHistoryView } from './history-ui.ts';
 import { setupCloudUI } from './cloud-ui.ts';
@@ -11,11 +10,11 @@ import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.ts';
-import { createRace as createBareRace, startRace, stepRace, useHeldItem, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
+import { createRace as createBareRace, startRace, stepRace, useHeldItem, dailyChallenge, RACE_TRACKS } from './game.js';
 import { createControls } from './input.ts';
 import { RULE_PRESETS } from './race-config.ts';
 import { createSprintSeries } from './sprint-series.ts';
-import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.ts';
+import { createCheckpointRush } from './checkpoint-rush.ts';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
 import { createCup, cupComplete } from './championship-cup.ts';
 import { createWorld } from './world.js';
@@ -31,12 +30,11 @@ import { setupKeyMapUI, keyLabel } from './keymap-ui.ts';
 import { setupTouchControlsUI } from './touch-controls-ui.ts';
 import { starTotal, loadPaint, savePaint } from './history.ts';
 import { recordGhost, ghostAt } from './ghost.ts';
-import { createCallouts } from './callouts.ts';
 import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
 import { frameStats, PERF_WINDOW } from './perf.ts';
 import { createRouteMap } from './route-map.ts';
-import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, interpolate, formatDate, CATALOGS } from './i18n.ts';
+import { trackName, saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, formatDate } from './i18n.ts';
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.ts';
 import { trackDropdown } from './dropdown.ts';
@@ -47,6 +45,7 @@ import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, delet
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
 import { settleRace } from './race-results.ts';
 import { resultView, setupResultScreen } from './result-screen.ts';
+import { createRaceHud } from './race-hud.ts';
 import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 
@@ -62,20 +61,12 @@ applyI18n(); applyDocumentLocale(); // before customSelect, so the drawn selects
 for (const select of document.querySelectorAll('select')) customSelect(select);
 
 const $ =selector => document.querySelector(selector);
-// HUD text is read every tick: a plain catalog lookup (key parity is unit-tested), swapped on a language switch.
-let L = CATALOGS[getLocale()];
 // Event messages (tilt, key map, errors) remember how to re-render, so a language switch translates the live text.
 const said = new Map();
 function say(element, text) { said.set(element, text); element.textContent = text(); }
 const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'progress-fill', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'settings-panel', 'camera-button', 'controls-button', 'controls-panel', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
 ui['assist-button'] = $('#assist-button');
 ui['skill-report'] = $('#skill-report');
-const countdownNumber = $('#countdown-number');
-const countdownLabel = $('#countdown-label');
-const speedTicks = [...document.querySelectorAll('.speed-ticks i')];
-ui.leaderboard.innerHTML = Array.from({ length: 4 }, () => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
-const leaderboardRows = [...ui.leaderboard.children];
-const touchButtons = [...document.querySelectorAll('[data-control]')];
 // Touch driving prevents default pointer behavior, so :active alone cannot show a press.
 const pressedButtons = new Map();
 document.addEventListener('pointerdown', event => {
@@ -102,15 +93,9 @@ const createRace = (...args) => {
 };
 let race = createRace();
 let tutorial = null, tutorialReturn = null, raceAfterTutorial = false;
-const racerRows = new Map(['YOU', ...race.rivals.map(rival => rival.name)].map((name, i) => [name, leaderboardRows[i]]));
-let leaderboardOrder = '';
-const speedNeedle = $('#speed-needle');
-const positionChange = $('#position-change');
-let previousPosition = null, positionUntil = 0;
 let world;
 let contextLost = false; // iOS drops WebGL on lock/app switch and may never restore it
 let previousPhase;
-let previousFlight;
 let goUntil = 0;
 let { audio, volume } = readAudio();
 // AUTO starts on for every device; only a player's own toggle is remembered.
@@ -137,12 +122,9 @@ const selectedRace = trackId => selectedMode === 'classic' ? createRace(trackId)
   ...(selectedMode === 'gauntlet' ? { hazardTier: $('#hazard-tier').value } : {}),
   ...(selectedMode === 'time' && $('#clean-trial').checked ? {clean:true} : {}),
   ...(selectedMode === 'stunt' ? {duration:Number($('#stunt-duration').value)} : {}) });
-let previousFuel = 100;
-let previousNitro = 0;
 const presentation = createPresentation();
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
-let nitroRefillUntil = 0;
 try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults to on when storage is blocked. */ }
 const sound = createSound();
 const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
@@ -168,29 +150,31 @@ const touchUI = setupTouchControlsUI({
 const vfx = setupVfxUI({ getWorld: () => world, onAirflowShown: () => showSwipeHint(), onPanelOpen: () => notice.hide(), reducedMotion });
 const calmMotion = vfx.calm;
 const { motionOptions, enter } = createMotion(calmMotion);
-const boostStatus = document.createElement('span');
-boostStatus.id = 'boost-status';
-boostStatus.className = 'boost-status';
-document.querySelector('.fuel-stat').append(boostStatus);
-let previousBoost = false;
-const callouts = createCallouts();
-const eventCallout = $('#event-callout');
-const calloutReports = [$('#maneuver-report'), ui['skill-report'], $('#action-report')];
-let shownCallout = null;
-let feedbackCar, lastImpact, lastDriftPayout, lastTrickPayout, lastNitroTime = 0;
+const hud = createRaceHud({
+  ui,
+  getRace: () => race,
+  getSprintSeries: () => sprintSeries,
+  getCup: () => cup,
+  getStunt: () => stunt,
+  isTutorialActive: () => !!tutorial,
+  getControlPrefs: () => touchUI.prefs(),
+  flyKeyLabel: () => keyLabel(keymap.getKeyMap().fly[0]),
+  getVisual: () => vfx.settings(),
+  timeTrialGhost: race => ghosts.mode(race),
+  isAutoThrottle: () => autoThrottle,
+  getGoUntil: () => goUntil,
+  setFly: on => controls.setFly(on),
+  updatePadHint: (phase, elapsed) => touchUI.updatePadHint(phase, elapsed),
+  motionOptions,
+  touchPreference,
+  reducedMotion,
+});
 function leaveIntro() {
   if (calmMotion()) return;
   ui.intro.inert = true;
   const animation = ui.intro.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-36px)' }], motionOptions('base'));
   animation.finished.catch(() => {}).then(() => { ui.intro.inert = false; ui.intro.hidden = race.phase !== 'ready'; });
 }
-const nitroHud = document.createElement('div');
-nitroHud.className = 'nitro-hud';
-nitroHud.innerHTML = `<span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
-document.querySelector('.fuel-stat').append(nitroHud);
-const nitroSegments = [...nitroHud.querySelectorAll('.nitro-segment')];
-const nitroStatus = $('#nitro-status');
-const nitroMeter = $('#nitro-meter');
 
 const renderResult = setupResultScreen();
 
@@ -230,7 +214,6 @@ function refreshTrackLabels() {
 // One-off re-render on a language switch (never per frame); world.js repaints its road signs via its own onLocaleChange.
 function applyLocale() {
   const locale = getLocale();
-  L = CATALOGS[locale];
   applyI18n(); applyDocumentLocale();
   showTracks(); // refreshes the track buttons and History options before the drawn selects re-read them
   refreshCustomSelects();
@@ -243,9 +226,7 @@ function applyLocale() {
   notice.refresh();
   renderReleaseNotes();
   if (tutorial) renderTutorial(true);
-  nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
-  if (positionChange.dataset.direction) positionChange.setAttribute('aria-label', t(positionChange.dataset.direction === 'gained' ? 'hud.gained' : 'hud.lost'));
-  previousFlight = undefined; // the next HUD tick rewrites the change-gated labels
+  hud.relabel();
 }
 onLocaleChange(applyLocale);
 $('#locale-select').addEventListener('change', ({ target }) => { saveLocale(target.value); setLocale(target.value); });
@@ -419,7 +400,7 @@ function startDaily() {
   daily = dailyChallenge();
   selectedMode = 'classic';
   historyScreen.close();
-  controls.clear(); race = createRace(daily.track, daily.modifier); goUntil = 0; previousFuel = 100; previousNitro = 0;
+  controls.clear(); race = createRace(daily.track, daily.modifier); goUntil = 0; hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
   start();
 }
@@ -452,7 +433,7 @@ historyScreen.addEventListener('keydown', event => event.stopPropagation());
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
   controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
-  previousFuel = 100; previousNitro = 0;
+  hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
   centerSelectedTrack();
@@ -524,7 +505,7 @@ function restart(trackId = race.trackId) {
   }
   race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config));
   if (stunt && race.mode === 'stunt') race.stuntLimit = Math.max(.01, stunt.duration - stunt.elapsed);
-  previousFuel = 100; previousNitro = 0;
+  hud.resetMemory();
   goUntil = 0;
   startRace(race);
   sound.update(race);
@@ -743,9 +724,7 @@ function phaseText() {
   resultCounts = renderResult(resultView(race, lastResult));
 }
 
-const hudNodes = Object.fromEntries(["clean-trial-hud","hazard-warning","elimination-hud","checkpoint-hud","sprint-stage","item-slot","item-status","activate-item","stunt-hud","practice-hud","race-length","ghost-split","style-score","aero-flow","aero-floor","aero-jet"].map(id => [id, document.getElementById(id)]));
 function updateUI(now, input) {
-  const visual = vfx.settings();
   if (raceRouteMap?.trackId !== race.trackId) ensureRouteMaps();
   raceRouteMap.updateDrivers([{ id: 'YOU', distance: race.player.distance, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance }))]);
   if (previousPhase !== race.phase) {
@@ -766,272 +745,7 @@ function updateUI(now, input) {
       element.textContent = format(value * (1 - (1 - progress) ** 3));
     });
   }
-  const cleanTrialHud = hudNodes['clean-trial-hud'];
-  setHudHidden(cleanTrialHud, race.mode !== 'time' || !race.config.clean || race.phase === 'ready');
-  if (!cleanTrialHud.hidden) {
-    setHudText(cleanTrialHud, t(race.player.collisions ? 'mode.cleanBroken' : 'mode.cleanActive'));
-    cleanTrialHud.dataset.broken = String(race.player.collisions > 0);
-  }
-  const hazardWarning = hudNodes['hazard-warning'];
-  const hazardAhead = race.hazards.length ? race.hazards.find(h => !h.passed && !h.hit && h.distance > race.player.distance) : null;
-  const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
-  setHudHidden(hazardWarning, !hazardAhead || hazardDistance > 170 || race.phase !== 'racing');
-  if (!hazardWarning.hidden) setHudText(hazardWarning, t('mode.hazardWarning', { n: hazardDistance }));
-  const eliminationHud=hudNodes['elimination-hud'];
-  setHudHidden(eliminationHud, !race.elimination || race.phase === 'ready');
-  if (race.elimination) {
-    setHudText(eliminationHud, t('mode.eliminationHud',{
-      active:race.rivals.length+1,
-      seconds:Math.max(0,Math.ceil(race.elimination.nextAt-race.elapsed)),
-    }));
-    eliminationHud.dataset.urgent=String(race.elimination.nextAt-race.elapsed <= 3);
-  }
-  const checkpointHud = hudNodes['checkpoint-hud'];
-  setHudHidden(checkpointHud, !race.checkpoint || race.phase === 'ready');
-  if (race.checkpoint) {
-    const next = race.checkpoint.gates.find(g => !g.passed && !g.missed);
-    setHudText(checkpointHud, t('mode.checkpointHud', {
-      n: race.checkpoint.passed, total: race.checkpoint.gates.length,
-      seconds: race.checkpoint.timeLeft.toFixed(1),
-      distance: next ? Math.max(0,Math.ceil(next.distance - race.player.distance)) : 0,
-      direction: next ? t('mode.direction.' + checkpointDirection(race.player, next)) : '—',
-      perfect: race.checkpoint.perfect,
-    }));
-    checkpointHud.dataset.urgent = String(race.checkpoint.timeLeft < 10);
-  }
-  const counter = hudNodes['sprint-stage'];
-  setHudHidden(counter, !sprintSeries && !cup);
-  if (cup) setHudText(counter, t('mode.cupHeat', { n: Math.min(cup.tracks.length, cup.results.length + (race.phase === 'finished' ? 0 : 1)), total: cup.tracks.length }));
-  if (sprintSeries) setHudText(counter, t('mode.stageCounter', {
-    n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
-    total: sprintSeries.count,
-  }));
-  const slot = hudNodes['item-slot'], carItem = race.player.heldItem;
-  setHudHidden(slot, !race.config.activeItems || race.phase === 'ready');
-  if (!slot.hidden) {
-    setHudText(hudNodes['item-status'], carItem ? t('mode.itemReady',{item:t('mode.item.'+carItem)}) : t('mode.itemEmpty'));
-    hudNodes['activate-item'].disabled = !carItem || race.phase !== 'racing' || race.player.itemCooldown > 0;
-  }
-  const stuntHud = hudNodes['stunt-hud'];
-  setHudHidden(stuntHud, !stunt || race.phase === 'ready');
-  if (stunt) {
-    const active = race.phase === 'finished' ? 0 : race.elapsed;
-    setHudText(stuntHud, t('mode.stuntHud', {
-      time:Math.ceil(Math.max(0, stunt.duration - stunt.elapsed - active)),
-      score:Math.round(stunt.score + (race.phase === 'finished' ? 0 : race.player.score)),
-      combo:race.styleAttack?.combo ?? 0, heat:stunt.heats + (race.phase === 'finished' ? 0 : 1),
-    }));
-  }
-  const practiceHud = hudNodes['practice-hud'];
-  setHudHidden(practiceHud, !race.practice || !!tutorial);
-  if (race.practice) setHudText(practiceHud, t('mode.practiceTelemetry', {
-    km: (race.practice.travelled / 1000).toFixed(2),
-    max: Math.round(race.practice.maxSpeed * 3.6),
-    air: race.practice.airTime.toFixed(1),
-    near: race.practice.nearMisses,
-    combo: race.player.combo,
-    tricks: race.practice.tricks,
-  }));
-  const car = race.player;
-  const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
-  const calm = visual.comfortable || reducedMotion.matches;
-  const flying = car.altitude > 0.25;
-  setHudText(ui.speed, String(Math.round(car.speed * 3.6)));
-  speedNeedle.style.transform = `rotate(${-70 + Math.min(1, car.speed / (MAX_SPEED + 30)) * 140}deg)`;
-  const position = racePosition(race);
-  if (previousPosition !== position) {
-    ui.position.textContent = race.rivals.length ? String(position).padStart(2, '0') : '—';
-    if (race.rivals.length && previousPosition !== null && race.phase === 'racing') {
-      const gained = position < previousPosition;
-      positionChange.textContent = gained ? '↑' : '↓';
-      positionChange.dataset.direction = ui.position.dataset.direction = gained ? 'gained' : 'lost';
-      positionChange.setAttribute('aria-label', L[gained ? 'hud.gained' : 'hud.lost']);
-      positionUntil = now + 1.2;
-      ui.position.getAnimations().forEach(animation => animation.cancel());
-      positionChange.getAnimations().forEach(animation => animation.cancel());
-      if (!calm) {
-        ui.position.animate([{ opacity: .4, transform: `rotateX(${gained ? '-' : ''}65deg)` }, { opacity: 1, transform: 'rotateX(0)' }], motionOptions('base'));
-        positionChange.animate([{ opacity: .35 }, { opacity: 1 }], motionOptions('slow'));
-      }
-    }
-    previousPosition = position;
-  }
-  setHudHidden(positionChange, race.phase !== 'racing' || now >= positionUntil);
-  if (positionChange.hidden) delete ui.position.dataset.direction;
-  if (calm || race.phase !== 'racing') for (const element of [ui.position, positionChange]) element.getAnimations().forEach(animation => animation.cancel());
-  setHudText(ui.timer, timeString(race.elapsed));
-  setHudText(ui.distance, (car.distance / 1000).toFixed(2));
-  ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
-  setHudText(hudNodes['race-length'], (race.length / 1000).toFixed(2));
-  const timeGhost = race.mode === 'time' && touchUI.prefs().ghost ? ghosts.mode(race) : null;
-  const split = hudNodes['ghost-split'];
-  setHudHidden(split, !timeGhost || race.phase !== 'racing');
-  if (!split.hidden) {
-    const delta = car.distance - ghostAt(timeGhost, race.elapsed).distance;
-    setHudText(split, t(delta >= 0 ? 'mode.ahead' : 'mode.behind', { n: Math.abs(Math.round(delta)) }));
-    split.dataset.ahead = String(delta >= 0);
-  }
-  setHudText(ui['fuel-value'], String(Math.round(car.fuel)));
-  ui['fuel-fill'].style.transform = `scaleX(${car.fuel / 100})`;
-  ui['fuel-meter'].setAttribute('aria-valuenow', String(Math.round(car.fuel)));
-  ui['fuel-meter'].setAttribute('aria-valuetext', `${car.fuel < 20 ? L['hud.lowCharge'] : ''}${Math.round(car.fuel)}%`);
-  ui['fuel-meter'].dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
-  previousFuel = car.fuel;
-  setHudText(hudNodes['style-score'], race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style'], { n: Math.floor(car.score) }));
-  setHudText(ui.altitude, car.altitude.toFixed(1));
-  const tap = touchPreference.matches && touchUI.prefs().flyMode === 'toggle';
-  // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
-  if (touchUI.prefs().flyMode === 'toggle' && input.fly && (car.exhausted || car.fuel <= 0)) controls.setFly(false);
-  const flyKey = touchPreference.matches ? '' : keyLabel(keymap.getKeyMap().fly[0]).toUpperCase();
-  const hold = touchPreference.matches ? L[tap ? 'hud.tapFly' : 'hud.holdFly'] : interpolate(L['hud.holdKey'], { key: flyKey });
-  const release = touchPreference.matches ? L['hud.releaseFly'] : interpolate(L['hud.releaseKey'], { key: flyKey });
-  const touchdown = car.landing && race.elapsed - car.landing.time < 1.1;
-  const depleted = car.exhausted || car.fuel <= 0;
-  const state = L[car.thrusting ? car.verticalSpeed > 0.2 ? 'hud.ascending' : 'hud.cruise' : car.altitude > 0.25 ? 'hud.descending' : touchdown ? 'hud.touchdown' : depleted ? 'hud.recharging' : car.speed >= 18 ? 'hud.readyToFly' : 'hud.buildSpeed'];
-  const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
-  const airDash = car.thrusting && car.boosting;
-  setHudText(ui['flight-state'], race.modifier === 'no-flight' ? L['daily.flightDisabled.state'] : car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro'] : airDash ? L['hud.airDash'] : nitroActive ? L['hud.nitroActive'] : car.trick && !car.trick.done ? L['hud.trick'] : car.inShortcut ? L['callout.shortcut']
-    : car.drift ? interpolate(L['callout.drift'], { tier: L[car.drift.time >= 3 ? 'callout.drift.tier.3' : car.drift.time >= 2 ? 'callout.drift.tier.2' : car.drift.time >= 1 ? 'callout.drift.tier.1' : 'hud.driftBuilding'] }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost'] : state);
-  nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
-  nitroMeter.classList.toggle('is-max', car.nitro >= 3);
-  nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
-  if (car.nitro > previousNitro && race.phase === 'racing') nitroRefillUntil = now + .6;
-  nitroMeter.dataset.refilling = String(race.phase === 'racing' && now < nitroRefillUntil);
-  setHudText(nitroStatus, nitroActive ? L['hud.nitroActive'] : car.nitro >= 3 ? L['hud.nitroMax'] : interpolate(L['hud.nitroCount'], { n: car.nitro.toFixed(2) }));
-  for (const [index, segment] of nitroSegments.entries()) {
-    const fill = Math.min(1, Math.max(0, car.nitro - index));
-    segment.firstElementChild.style.transform = `scaleX(${fill})`;
-    segment.classList.toggle('is-full', fill === 1);
-    if (fill === 1 && previousNitro < index + 1 && race.phase === 'racing' && !visual.comfortable && !reducedMotion.matches) {
-      segment.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 450 });
-    }
-  }
-  previousNitro = car.nitro;
-  const callout = callouts.update(race, impactAge <= 1.1);
-  if (!callout || calm) eventCallout.getAnimations().forEach(animation => animation.cancel());
-  setHudHidden(eventCallout, !callout);
-  if (callout !== shownCallout) {
-    for (const report of calloutReports) report.hidden = true;
-    if (callout) {
-      const report = calloutReports[callout.kind === 'perfect' ? 0 : callout.kind === 'near' ? 1 : 2];
-      const detail = document.createElement('span');
-      detail.textContent = callout.detail;
-      report.replaceChildren(document.createTextNode(callout.title), detail);
-      report.hidden = false;
-      eventCallout.dataset.kind = callout.kind;
-      eventCallout.getAnimations().forEach(animation => animation.cancel());
-      if (!visual.comfortable && !reducedMotion.matches) eventCallout.animate([
-        { opacity: 0, transform: 'scale(.88)', offset: 0 },
-        { opacity: 1, transform: 'scale(1)', offset: .2 },
-        { opacity: 1, transform: 'scale(1)', offset: .85 },
-        { opacity: 0, transform: 'scale(1)', offset: 1 },
-      ], { ...motionOptions('slow'), duration: motionOptions('slow').duration * 2.5 });
-    }
-    shownCallout = callout;
-  }
-  document.body.classList.toggle('nitro-active', nitroActive);
-  // Inside a shortcut only BOOST drains (3/s); plain flight there is free.
-  setHudText(ui['flight-budget'], race.modifier === 'no-flight' ? '—' : car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`);
-  setHudText(ui['flight-instruction'], race.modifier === 'no-flight' ? L['daily.flightDisabled.reason'] : car.thrusting ? interpolate(L['hud.steerAir'], { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend'] }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand'] : interpolate(L['hud.climbAgain'], { hold })
-    : car.exhausted ? interpolate(L['hud.rechargeRoad'], { action: tap ? L['hud.tapLand'] : release }) : car.speed < 18 ? interpolate(L['hud.reachLift'], { hold }) : depleted ? L['hud.charging'] : interpolate(L[tap ? 'hud.lift' : 'hud.liftLand'], { hold }));
-  setHudText(ui['fuel-caption'], race.modifier === 'no-flight' ? L['daily.flightDisabled.fuel'] : car.exhausted ? interpolate(L['hud.toRecharge'], { action: tap ? L['hud.land'] : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge']);
-  setHudText(ui['climb-rate'], `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`);
-  ui['height-indicator'].style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
-  document.body.classList.toggle('low-charge', car.fuel < 20);
-  document.body.classList.toggle('boosting', (car.boosting || nitroActive || (car.miniBoost > 0 && car.boostTunnelEvent)) && race.phase === 'racing');
-  const tunnelBoost = car.miniBoost > 0 && car.boostTunnelEvent &&
-    race.elapsed - car.boostTunnelEvent.time < 3.6;
-  const boost = (car.boosting || nitroActive || tunnelBoost) && race.phase === 'racing';
-  setHudText(boostStatus, L[tunnelBoost ? 'hud.hyperdrive' : boost ? 'hud.thrustActive' : car.fuel === 0 ? 'hud.chargeEmpty' : car.fuel < 100 && !flying ? 'hud.recharging' : 'hud.boostReady']);
-  boostStatus.dataset.state = boost ? 'active' : car.fuel === 0 ? 'empty' : 'ready';
-  if (boost && !previousBoost && visual.enabled && !calm) {
-    boostStatus.animate([{ opacity: 0.4, transform: 'translateX(-5px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180 });
-  }
-  if (feedbackCar === car && race.phase === 'racing' && touchPreference.matches && visual.haptics && !calm) {
-    const hit = car.impact && car.impact !== lastImpact;
-    const burst = car.nitroTime > lastNitroTime || (boost && !previousBoost);
-    const driftPaid = car.driftPayout && car.driftPayout !== lastDriftPayout;
-    const trickPaid = car.trickPayout?.nitro > 0 && car.trickPayout !== lastTrickPayout;
-    if (hit || burst || driftPaid || trickPaid) {
-      try { navigator.vibrate?.(hit ? [18, 30, 18] : trickPaid ? [12, 20, 12] : burst ? 25 : 15); } catch { /* Unsupported haptics never interrupt a race. */ }
-    }
-  }
-  feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime;
-  lastDriftPayout = car.driftPayout;
-  lastTrickPayout = car.trickPayout;
-  previousBoost = boost;
-  setHudText(hudNodes['aero-flow'], L[boost ? 'hud.highVelocity' : 'hud.streamlines']);
-  setHudText(hudNodes['aero-floor'], L[flying ? 'hud.downwash' : visual.aeroMode === 'downforce' ? 'hud.suction' : 'hud.lowDrag']);
-  setHudText(hudNodes['aero-jet'], L[boost ? 'hud.thrustActive' : race.phase === 'ready' ? 'hud.demo' : 'hud.standby']);
-  document.body.style.setProperty('--flight-bank', `${-car.steering * 5}deg`);
-  document.body.style.setProperty('--streak-opacity', visual.enabled && !calm && race.phase === 'racing' ? String(boost ? visual.speedLines : 0) : '0');
-  setHudHidden(ui['impact-report'], race.phase !== 'racing' || impactAge > 1.1);
-  if (!ui['impact-report'].hidden) {
-    setHudText(ui['impact-title'], L[car.impact.kind === 'barrier' ? 'hud.barrier' : 'hud.vehicle']);
-    setHudText(ui['impact-loss'], String(Math.round(car.impact.speedLost * 3.6)));
-  }
-  touchButtons.forEach(button => {
-    const control = button.dataset.control;
-    const active = control === 'left' ? input.steer < 0 : control === 'right' ? input.steer > 0 : !!input[control];
-    button.classList.toggle('is-held', active);
-    button.setAttribute('aria-pressed', String(active));
-    // Daily no-flight and toggle mode vary the label; written only when it changes (applyI18n resets it to 'hint.fly').
-    if (control === 'fly') {
-      const label = L[race.modifier === 'no-flight' ? 'daily.flightDisabled.aria' : tap ? active ? 'hud.tapToLand' : 'hud.tapToFly' : 'hint.fly'];
-      if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
-    }
-  });
-  touchUI.updatePadHint(race.phase, race.elapsed);
-  setHudText(ui['speed-caption'], L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : autoThrottle ? 'hud.autoOverride' : 'hud.tagline']);
-  document.body.classList.toggle('airborne', flying);
-  document.body.classList.toggle('collision', impactAge < 0.45 && race.phase === 'racing');
-  if (previousFlight !== flying) {
-    setHudText(ui['flight-mode'], L[flying ? 'hud.flightMode' : 'hud.roadMode']);
-    ui['mode-icon'].innerHTML = icon(flying ? 'fly' : 'road');
-    previousFlight = flying;
-  }
-  const countdown = race.phase === 'countdown';
-  setHudHidden(ui.countdown, !(countdown || (race.phase === 'racing' && now < goUntil)));
-  const step = countdown ? String(Math.ceil(race.countdown)) : 'GO'; // the step stays a CSS hook; only the shown text is translated
-  const countdownText = countdown ? step : L['hud.go'];
-  if (countdownNumber.textContent !== countdownText) {
-    countdownNumber.textContent = countdownText;
-    ui.countdown.dataset.step = step;
-    if (!calm) countdownNumber.animate([{ opacity: 0.4, transform: `scale(${countdown ? 1.3 : 0.65})` }, { opacity: 1, transform: 'scale(1)' }], motionOptions(countdown ? 'base' : 'slow'));
-  }
-  setHudText(countdownLabel, L[countdown ? autoThrottle ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline']);
-  const length = race.length;
-  let status = L[`phase.${race.phase}`];
-  if (race.mode === 'free' && car.distance >= length) status = L['mode.endOfRoad'];
-  else if (race.phase === 'racing' && race.mode === 'classic' && car.distance >= length - 500) {
-    const { ahead, behind } = sprintGaps(race);
-    status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
-  }
-  setHudText(ui['race-status'], status);
-  const gapWarning = race.phase === 'racing' ? gapChargeWarning(race) : null;
-  setHudText(ui['driving-message'], race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff'] : car.exhausted && input.fly ? L['hud.releaseRecharge']
-    : gapWarning ? interpolate(L['hud.gapCharge'], { n: Math.ceil(gapWarning.need) }) : '');
-  if (gapWarning) ui['driving-message'].dataset.tone = 'warning'; else delete ui['driving-message'].dataset.tone;
-  const racers = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
-  const order = racers.map(racer => racer.name).join(',');
-  if (calm || race.phase !== 'racing') leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
-  if (order !== leaderboardOrder) {
-    // FLIP reads geometry only on a rank change, with all reads batched before writes.
-    const before = !calm && race.phase === 'racing' && leaderboardOrder ? new Map(leaderboardRows.map(row => [row, row.getBoundingClientRect().top])) : null;
-    leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
-    ui.leaderboard.replaceChildren(...racers.map(racer => racerRows.get(racer.name)));
-    const moves = before ? leaderboardRows.map(row => [row, before.get(row) - row.getBoundingClientRect().top]) : [];
-    for (const [row, delta] of moves) if (delta) row.animate([{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }], motionOptions('base'));
-    leaderboardOrder = order;
-  }
-  racers.forEach((racer, i) => {
-    const row = racerRows.get(racer.name);
-    row.classList.toggle('is-player', !!racer.player);
-    setHudText(row.children[0], String(i + 1));
-    setHudText(row.children[2], racer.player ? L['hud.you'] : racer.name); // 'YOU' stays the row key
-    setHudText(row.children[3], racer.player ? L['hud.you'] : `${racer.distance >= car.distance ? '+' : '−'}${Math.abs(racer.distance - car.distance).toFixed(0)} m`);
-  });
-  speedTicks.forEach((tick, i) => tick.classList.toggle('active', i / 24 < car.speed / 102));
+  hud.update(now, input);
 }
 
 try {
@@ -1104,7 +818,7 @@ try {
   $('#error-message').hidden = false;
   say($('#error-message'), () => t('error.webgl'));
   console.error('3D renderer initialization failed:', error);
-  // No render loop to write the HUD: one text pass now and one per language switch (after applyLocale swaps L).
+  // No render loop to write the HUD: one text pass now and one per language switch (after applyLocale relabels the HUD).
   const hudPass = () => updateUI(performance.now() / 1000, controls.read());
   hudPass(); onLocaleChange(hudPass);
 }
@@ -1122,7 +836,7 @@ $('#world').addEventListener('webglcontextrestored', () => {
 });
 function beginTutorial() {
   if (!world || contextLost || (!tutorial && !['ready', 'paused'].includes(race.phase))) return;
-  if (!tutorial) tutorialReturn = { race, pausedPhase, goUntil, previousFuel, previousNitro };
+  if (!tutorial) tutorialReturn = { race, pausedPhase, goUntil, hud: hud.memory() };
   closeGuide(); // marks this player as having seen the guide, even for first-start practice
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear(); clearButtonPresses(); toggleControls(false); toggleSettings(false);
@@ -1131,7 +845,7 @@ function beginTutorial() {
   applyI18n($('#tutorial-coach'));
   tutorial = createInteractiveTutorial(); race = tutorial.race;
   touchUI.applyControls(false);
-  goUntil = 0; previousFuel = 100; previousNitro = 0; previousFlight = undefined;
+  goUntil = 0; hud.resetMemory(); hud.forgetFlightMode();
   document.body.dataset.tutorial = 'active';
   updateCoachView({ visible: true });
   notice.hide();
@@ -1141,14 +855,14 @@ function beginTutorial() {
 }
 function endTutorial() {
   if (!tutorial) return;
-  ({ race, pausedPhase, goUntil, previousFuel, previousNitro } = tutorialReturn);
+  ({ race, pausedPhase, goUntil } = tutorialReturn); hud.restoreMemory(tutorialReturn.hud);
   tutorial = null; tutorialReturn = null; resetTutorialView();
   controls.clear(); clearButtonPresses();
   delete document.body.dataset.tutorial;
   touchUI.applyControls(false);
   updateCoachView({ visible: false });
   for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
-  previousFlight = undefined;
+  hud.forgetFlightMode();
   showTracks(); phaseUI(); previousPhase = race.phase; showAssist();
   (race.phase === 'paused' ? ui['resume-button'] : ui['start-button']).focus({ preventScroll: true });
   if (raceAfterTutorial) { raceAfterTutorial = false; start(); }

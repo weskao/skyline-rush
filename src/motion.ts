@@ -6,7 +6,7 @@ export const durationMs = (time: string): number => {
 
 export function createMotion(calm: () => boolean) {
   const tokens = getComputedStyle(document.documentElement);
-  const motionOptions = (duration: string): KeyframeAnimationOptions => ({
+  const motionOptions = (duration: string): { duration: number; easing: string } => ({
     duration: durationMs(tokens.getPropertyValue(`--dur-${duration}`)),
     easing: tokens.getPropertyValue('--ease-out').trim(),
   });
