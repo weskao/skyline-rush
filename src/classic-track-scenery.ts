@@ -9,15 +9,16 @@ const TOTAL = DENSITY.high, STEP = 60;
 type Mesh = THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 interface Kit {
   group: THREE.Group;
-  meshes: [Mesh, Mesh];
+  meshes: [Mesh, Mesh, Mesh];
   slots: number[];
   initialized: boolean;
   previousQuality: VfxQuality | null;
+  previousFirst: number | null;
 }
-const THEMES: Record<Theme, { body: string; trim: string }> = {
-  neon: { body: '#33475b', trim: '#6aa6c6' },
-  canyon: { body: '#956b53', trim: '#c19d77' },
-  aurora: { body: '#42665e', trim: '#bbcbd0' },
+const THEMES: Record<Theme, { body: string; trim: string; accent: string }> = {
+  neon: { body: '#33475b', trim: '#6aa6c6', accent: '#80e9ff' },
+  canyon: { body: '#956b53', trim: '#c19d77', accent: '#e9b887' },
+  aurora: { body: '#42665e', trim: '#bbcbd0', accent: '#e1f0f1' },
 };
 
 export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (distance: number) => number) {
@@ -41,36 +42,51 @@ export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (dista
       : id === 'canyon' ? new THREE.DodecahedronGeometry(1, 0) : new THREE.ConeGeometry(1, 1, 7);
     const trimGeometry = id === 'aurora' ? new THREE.CylinderGeometry(.18, .23, 1, 5)
       : new THREE.BoxGeometry(1, 1, 1);
+    const accentGeometry = id === 'aurora' ? new THREE.ConeGeometry(1, 1, 7)
+      : new THREE.BoxGeometry(1, 1, 1);
     const color = THEMES[id];
     const material = (hex: string) => new THREE.MeshStandardMaterial({
       color: hex, roughness: id === 'neon' ? .78 : .94, metalness: id === 'neon' ? .06 : 0,
     });
+    // Third instanced layer provides recognizable skyline signs, rock strata or snow tips
+    // without per-prop draw calls, transparent surfaces or particles.
+    const accent = material(color.accent);
+    if (id === 'neon') {
+      accent.emissive.set('#4eb3dc');
+      accent.emissiveIntensity = .4;
+    }
     const meshes = [new THREE.InstancedMesh(bodyGeometry, material(color.body), TOTAL),
-      new THREE.InstancedMesh(trimGeometry, material(color.trim), TOTAL)] as [Mesh, Mesh];
+      new THREE.InstancedMesh(trimGeometry, material(color.trim), TOTAL),
+      new THREE.InstancedMesh(accentGeometry, accent, TOTAL)] as [Mesh, Mesh, Mesh];
     for (const mesh of meshes) {
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.frustumCulled = false;
       group.add(mesh);
     }
-    kits[id] = { group, meshes, slots: Array(TOTAL).fill(NaN), initialized: false, previousQuality: null };
+    kits[id] = { group, meshes, slots: Array(TOTAL).fill(NaN), initialized: false, previousQuality: null, previousFirst: null };
   }
   const place = (id: Theme, index: number, distance: number): void => {
     const side = index % 2 ? 1 : -1;
     const x = roadCenter(distance) + side * (49 + (index * 11 % 33));
     const z = -distance;
-    const [body, trim] = kits[id].meshes;
+    const [body, trim, accent] = kits[id].meshes;
     if (id === 'neon') {
       const height = 28 + index % 7 * 7;
-      compose(body, index, x, height / 2, z, 14 + index % 3 * 3, height, 14);
-      compose(trim, index, x, height + .8, z, 15 + index % 3 * 3, 1.6, 15);
+      const width = 14 + index % 3 * 3;
+      compose(body, index, x, height / 2, z, width, height, 14);
+      compose(trim, index, x, height + .8, z, width + 1, 1.6, 15);
+      // A thin illuminated fascia faces the driveable corridor.
+      compose(accent, index, x - side * (width / 2 + .3), height * .63, z, .35, height * .48, 5);
     } else if (id === 'canyon') {
       const height = 21 + index % 5 * 6;
       compose(body, index, x, height * .44, z, 14 + index % 3 * 4, height, 19);
       compose(trim, index, x, height * .86, z, 18 + index % 3 * 3, 2.3, 21);
+      compose(accent, index, x - side * 1.2, height * .68, z, 14 + index % 3 * 3, 1.7, 17);
     } else {
       const height = 18 + index % 5 * 3.2;
       compose(body, index, x, height / 2 + 2, z, height * .31, height, height * .31);
       compose(trim, index, x, 2.4, z, 2.1, 7, 2.1);
+      compose(accent, index, x, 2 + height * .84, z, height * .20, height * .30, height * .20);
     }
   };
   return {
@@ -80,16 +96,22 @@ export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (dista
       if (!CLASSIC_SCENIC_TRACKS.some(id => id === trackId) || !Number.isFinite(distance)) return;
       const id = trackId as Theme, kit = kits[id];
       const first = (Math.floor(distance / STEP) - 2) * STEP;
-      let moved = !kit.initialized;
-      for (let i = 0; i < TOTAL; i++) {
-        let d = kit.initialized ? kit.slots[i] : first + i * STEP;
-        while (d < first) d += TOTAL * STEP;
+      const active = DENSITY[quality];
+      // The ring capacity must match the VISIBLE tier. Cycling all 24 slots
+      // while drawing only 8 leaves low-tier players staring at empty gaps.
+      const rebuild = !kit.initialized || kit.previousQuality !== quality
+        || (kit.previousFirst !== null && first < kit.previousFirst);
+      let moved = rebuild;
+      for (let i = 0; i < active; i++) {
+        let d = rebuild ? first + i * STEP : kit.slots[i];
+        if (d < first) d += Math.ceil((first - d) / (active * STEP)) * active * STEP;
         if (d !== kit.slots[i]) { kit.slots[i] = d; place(id, i, d); moved = true; }
       }
       kit.initialized = true;
+      kit.previousFirst = first;
       for (const mesh of kit.meshes) {
-        mesh.count = DENSITY[quality];
-        if (moved || kit.previousQuality !== quality) mesh.instanceMatrix.needsUpdate = true;
+        mesh.count = active;
+        if (moved) mesh.instanceMatrix.needsUpdate = true;
       }
       kit.previousQuality = quality;
       kit.group.position.set(-roadCenter(distance), 0, distance);
