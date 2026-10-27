@@ -31,6 +31,7 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
     await expect(overview.locator('.route-start')).toHaveCount(1);
     await expect(overview.locator('.route-finish')).toHaveCount(1);
     await expect(overview.locator('.route-spiral-upper')).toHaveCount(track === 'spiral' ? 1 : 0);
+    await expect(overview.locator('.route-spiral-direction')).toHaveCount(track === 'spiral' ? 1 : 0);
     await expect(page.locator('#target-fps')).toHaveValue('30');
     await page.screenshot({path:info.outputPath(`phase4-${track}-showcase-${viewport.width}x${viewport.height}.png`),animations:'disabled'});
     await page.locator('#start-button').click();
@@ -39,6 +40,7 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
     await expect(live).toHaveCount(1);
     await expect(live.locator('[data-racer]')).toHaveCount(4);
     await expect(live.locator('.route-spiral-upper')).toHaveCount(track === 'spiral' ? 1 : 0);
+    await expect(live.locator('.route-spiral-direction')).toHaveCount(track === 'spiral' ? 1 : 0);
     const before = await live.evaluate(el => {
       window.__phase4MapNode = el;
       return el.querySelectorAll('*').length;
