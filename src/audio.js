@@ -91,6 +91,7 @@ export function createSound() {
     else if (name === 'combo-up') { tone(660, 880, .13); tone(880, 1320, .19, .11); }
     else if (name === 'combo-break') { tone(480, 230, .2, 0, .028); }
     else if (name === 'clean-landing') { tone(880, 1320, .25); tone(1175, 1760, .29, .08); }
+    else if (name === 'chain-land') { tone(95, 42, .2, 0, .04); tone(784, 1568, .22, .03, .028); tone(1175, 2349, .26, .1, .022); }
     else if (name === 'cup-stage') [523, 659, 784].forEach((hz,i) => tone(hz, hz * 1.04, .22, i * .13, .025));
     else if (name === 'stunt-finish') [659, 784, 988].forEach((hz,i) => tone(hz, hz * 1.05, .26, i * .12, .025));
     else if (name === 'mode-failed') { tone(400, 260, .25); tone(320, 205, .28, .15); }

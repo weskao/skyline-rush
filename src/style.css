@@ -1615,6 +1615,9 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 }
 @media (max-height: 420px) { .release-hero { display: none; } .release-intro { display: none; } .release-versions { margin-top: 4px; } }
 @media (prefers-reduced-motion: reduce) { .release-screen, .release-entry, .release-tab { animation: none !important; transition: none !important; } }
+/* A release clip shows whole, never cropped like the hero banner; a portrait phone clip stays short enough to leave the notes in view. */
+.release-video { width: min(100%, 480px); max-height: none; aspect-ratio: 16 / 10; margin-inline: auto; object-fit: contain; background: #06101c; }
+.release-video[data-variant="mobile"] { width: auto; height: min(46vh, 380px); aspect-ratio: 390 / 844; }
 
 /* Cloud identity sits alongside the existing History controls on narrow phones. */
 .cloud-player { display: flex; align-items: center; gap: 12px; min-width: 0; margin: 10px 0; }
