@@ -18,6 +18,8 @@ The owner authorized TDD implementation of the remaining non-Firebase/non-Gamepa
 
 Other independently tracked branches: `feature/custom-race-presentation` (Custom ruleset Ghost and cosmetic presets/setup summary) and `feature/practice-item-rules` (explicit item rules, real activation/cooldown and related new pads/items). Remaining genuine circuit laps, richer themed hazards, challenge medals, Endless Highway and Event Lab remain open. Existing Photo Studio, held Shield/Magnet/Ghost/Freeze and recent Custom setup storage are reused rather than reimplemented. Tutorial entry-flow decisions are being discussed separately.
 
+- [x] Merged-main broad regression observed (2026-10-28): full browser run reached 487 passed / 2 skipped; the only three failures were inherited Phase 4 polyline-count assumptions. Integrate `6809503`, whose focused main-path/minimap suite passes 7/7. The complete resulting `make verify` and exact-HEAD CI remain pending, not implied by this receipt.
+
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
 **Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.
