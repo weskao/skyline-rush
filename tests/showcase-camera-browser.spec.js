@@ -39,11 +39,21 @@ test('home camera cycles independently of AIRFLOW and follows language changes',
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed','false');
 });
 
-for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:844,height:390}]) {
+for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:320,height:568},{width:760,height:501},{width:768,height:1024},{width:844,height:390}]) {
   test(`home camera dock stays interactive at ${viewport.width}x${viewport.height}`,async({page})=>{
     await page.setViewportSize(viewport);
     await page.goto('/');
     await expect(page.locator('#showcase-camera-next')).toBeVisible();
+    for (const locale of ['en', 'zh-TW']) {
+      await page.locator('#locale-select').selectOption(locale, { force: true });
+      const camera = await page.locator('#showcase-camera-dock').boundingBox();
+      for (const selector of ['#start-button', '#practice-button', '.history-button', '#garage-button', '#daily-card-start']) {
+        const control = await page.locator(selector).boundingBox();
+        const overlaps = camera.x < control.x + control.width && control.x < camera.x + camera.width &&
+          camera.y < control.y + control.height && control.y < camera.y + camera.height;
+        expect(overlaps, `${locale}: camera covers ${selector}`).toBe(false);
+      }
+    }
     await page.locator('#showcase-camera-next').click();
     await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view','front');
   });
