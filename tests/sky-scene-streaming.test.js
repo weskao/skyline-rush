@@ -7,8 +7,8 @@ import { skyPosition } from '../src/sky-track.ts';
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 0.002, `${actual} ≈ ${expected}`);
 
 test('Sky Spiral streams road geometry only when its 10m sector changes', () => {
-  const kit = createSkyScene(new THREE.Scene());
-  const root = kitScene(kit);
+  const scene = new THREE.Scene(), kit = createSkyScene(scene);
+  const root = scene.getObjectByName('Sky Spiral 3D course');
   kit.update(1700, 'medium');
   const road = root.children.find(mesh => mesh.geometry?.attributes?.position && mesh.material?.isMeshStandardMaterial);
   const stripes = root.children.find(mesh => mesh.isInstancedMesh);
@@ -44,7 +44,3 @@ test('Sky Spiral road keeps the same camera-relative geometry after large telepo
   kit.dispose();
 });
 
-function kitScene(kit) {
-  // Scene is available from the parent of the renderer's authored road root.
-  return kit.root;
-}
