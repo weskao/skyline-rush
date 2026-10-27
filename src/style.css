@@ -521,6 +521,8 @@ body:is([data-phase="countdown"], [data-phase="racing"]) .vfx-settings > label:h
 .vfx-heading > span { color: #91d9ee; font-size: 8px; letter-spacing: 2px; }
 .vfx-heading strong { font: 700 30px 'Barlow Condensed', sans-serif; }
 .vfx-heading small, .vfx-note { font-size: 10px; line-height: 1.6; color: #a8bbc8; }
+/* The FPS explanation is direct <small> content (unlike .vfx-note); avoid 8.33px CJK glyphs. */
+.vfx-settings > small { display: block; font-size: 11px; line-height: 1.55; color: #a8bbc8; }
 .vfx-settings label { min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; }
 .vfx-settings .custom-select > button { width: 155px; min-height: 34px; color: #dcf4ff; background-color: #193442; border: 1px solid #5c8796; border-radius: 4px; padding: 4px 30px 4px 8px; background-position: right 8px center; }
 .vfx-tuning > summary { display: flex; justify-content: space-between; list-style: none; padding: 16px 0; cursor: pointer; border-top: 1px solid #87c5da30; }
