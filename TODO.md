@@ -40,16 +40,18 @@ Branch: `feature/phase2-coast-visual-quality`. Scope: Coast art pass only; no Ph
 - [ ] Inspect actual Before screenshots taken from unchanged main and After screenshots from the running Coast WebGL renderer across 1440×900 / 390×844 / 320×740 / 844×390; verify cockpit and showroom camera modes, reduced motion and both locales.
 - [ ] Report numerical before/after `?perf` p50/p95/FPS, draw calls, and triangles for identical conditions. CI SwiftShader is software-rendered, not physical device evidence.
 - [ ] Validate manual Android Chrome / iPhone Safari and thermals when real devices are available.
-- [ ] Run complete browser, responsive layout, World Tour, Cloud Save, build, typecheck, and exact-HEAD GitHub Actions `quality-gate`.
-- [ ] Synchronize latest main and merge without PR only after all required gates are verified.
+- [x] Complete CI for the final Phase 2 integration commit `d0c889f`: [run 40543815702](https://github.com/weskao/skyline-rush/actions/runs/40543815702) reports unit/typecheck, all 8 browser shards, Coast visual-evidence, World Tour, Cloud Save and `quality-gate` successful.
+- [x] Integrate Phase 2 into `main` without PR; integrated history includes Phase 2 commit `d0c889f` and the successful full Phase 2 CI noted above.
 
 **Audio assessment:** Purely cosmetic Coast changes use existing Web Audio feedback; no new cues warranted.
 
-## Upcoming gameplay and presentation phases (2026-10-27)
+## Delivered gameplay and presentation phases (2026-10-27)
 
-- [ ] **Phase 1 — Flight and arcade gameplay feel:** Balance ground/air time, extend practical FLY use, strengthen DRIFT → NITRO → FLY → landing flow and responsive player feedback. Protect existing modes, records, controls and accessibility; develop with TDD on a standalone feature branch.
-- [ ] **Phase 2 — Coast visual-quality benchmark:** Establish a cohesive realistic-environment/arcade-effects art direction for Coast, including vehicle, road, scenery, lighting and action readability; verify desktop/mobile visuals and performance in a separate feature branch.
-- [ ] **Phase 3 — FPS and adaptive performance:** Add user-selectable target FPS and measured device-aware auto settings, preserving simulation correctness, thermal comfort, graphics quality controls and saved preferences. Implement and validate separately.
+**Checklist meaning:** The three milestones below mark feature delivery and integration into `main`, not proof that every physical-device or before/after performance acceptance step is complete. Keep such evidence gates unchecked in their phase ledgers below.
+
+- [x] **Phase 1 — Flight and arcade gameplay feel:** Extend FLY, improve DRIFT → NITRO → FLY → clean-landing chain and localized feedback while retaining physics, records and mode rules. Implemented in `feature/phase1-flight-combo-gamefeel`, merged into `main` as `3788ca3`. Full [CI #40506587701](https://github.com/weskao/skyline-rush/actions/runs/40506587701) passed, including unit, 8 browser shards, Cloud Save, World Tour and quality-gate.
+- [x] **Phase 2 — Coast visual-quality benchmark:** Deliver Coast scene/material/lighting improvements with tier-bounded scenery and render-work diagnostics, preserving gameplay. Merged into `main`; complete [CI #40543815702](https://github.com/weskao/skyline-rush/actions/runs/40543815702) passed, including Coast visual-evidence job, 8 browser shards and quality-gate. Manual screenshot review, same-device performance comparison and physical-device thermals remain separate unchecked acceptance items.
+- [x] **Phase 3 — FPS and adaptive performance:** Deliver Auto / 30 / 60 FPS UI, persisted settings, adaptive render scale, and fixed 60 Hz gameplay. Merged into `main` via `b0d839b`. The feature branch's [CI #40543440614](https://github.com/weskao/skyline-rush/actions/runs/40543440614) did **not** pass the full quality-gate; CI and physical-device acceptance remain unchecked below.
 
 ## Module split: `main.js` and `audio.js` by responsibility (2026-10-27, `refactor/split-main-audio`)
 
@@ -82,12 +84,13 @@ Branch: `feature/phase2-coast-visual-quality`. Scope: Coast art pass only; no Ph
 
 **Scope:** Auto uses sustained measured CPU-side render submission time; browser/driver GPU queues and device temperature require real-world verification. A 120 FPS option is deliberately unavailable until those checks justify it. `?perf` reports actual presented frame intervals, not merely the rate of rAF callbacks. Manual FPS never silently changes itself.
 
-## Future feature request: configurable and adaptive FPS (2026-10-27)
+## FPS feature request — delivered in Phase 3 (2026-10-27)
 
-**Status:** Requirements recorded for later discussion. No design or implementation has been approved.
+**Status:** The approved Auto / 30 / 60 FPS scope is implemented and merged. This denotes functionality delivered, **not** an all-green Phase 3 CI or verified device-temperature improvement.
 
-- [ ] **Manual FPS selection:** Add an option for players to adjust the target frame rate, including 30 FPS, 60 FPS, and potentially other choices. The final set of options remains undecided.
-- [ ] **Automatic device-performance adaptation:** The initial automatic device-performance adjustment should also adapt the FPS setting. The detailed behavior and interaction with manual selection remain undecided.
+- [x] **Manual FPS selection:** User-selectable 30 FPS and 60 FPS; stored independently of visual Quality, with stable 60 Hz gameplay physics. The 120 FPS option is deliberately not available until separately validated.
+- [x] **Automatic device-performance adaptation:** Auto adjusts render pacing/scale using sustained render-submission measurements; it respects a user's explicit manual FPS choice.
+- [ ] **Future device acceptance:** Independently verify 120 Hz support, input latency, before/after FPS/p50/p95 and thermals on physical Android/iPhone devices before adding further FPS options or making temperature claims.
 
 ## Player feedback: gameplay excitement and visual quality (2026-10-27)
 
