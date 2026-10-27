@@ -101,5 +101,25 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [844, 390]])
       await page.locator('#settings-button').click();
       expect((await page.locator('#mute-all').boundingBox()).height).toBeGreaterThanOrEqual(44);
     });
+
+    test('top-bar panels keep 44px taps and their selects inside the panel', async ({ page }) => {
+      await page.goto('/');
+      const touch = width < 1001;
+      const tall = async locator => { for (const el of await locator.all()) expect((await el.boundingBox()).height, await el.getAttribute('aria-label') ?? await el.textContent()).toBeGreaterThanOrEqual(44); };
+      await page.locator('#settings-button').click();
+      if (touch) await tall(page.locator('#settings-panel input[type="range"]'));
+      await page.keyboard.press('Escape');
+      await page.locator('.aero-tools > .custom-select > button').click();
+      if (touch) await tall(page.locator('.aero-tools > .custom-select [role="option"]'));
+      await page.keyboard.press('Escape');
+      await page.locator('#vfx-panel > summary').click();
+      // A fixed-width select must never spill past the panel's padding (320px wrapped "Showcase camera").
+      const spill = await page.locator('.vfx-settings').evaluate(panel => {
+        const edge = panel.getBoundingClientRect().right - parseFloat(getComputedStyle(panel).paddingRight);
+        return [...panel.querySelectorAll(':scope > label > .custom-select > button')].filter(b => b.offsetParent).map(b => Math.round(b.getBoundingClientRect().right - edge)).filter(px => px > 1);
+      });
+      expect(spill).toEqual([]);
+      if (touch) { await page.locator('#vfx-reset').scrollIntoViewIfNeeded(); await tall(page.locator('#vfx-reset')); }
+    });
   });
 }
