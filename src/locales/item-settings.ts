@@ -1,5 +1,11 @@
 export const ITEM_SETTINGS_COPY = {
   en: {
+    'mode.item.emp': 'EMP',
+    'mode.bonusGates': 'Bonus gates · temporary boosts and double style score',
+    'mode.bonus.speed-pad': 'SPEED', 'mode.bonus.air-pad': 'AIR +25', 'mode.bonus.recovery-pad': 'RECOVERY',
+    'mode.bonus.score-pad': 'STYLE ×2', 'mode.bonus.emp': 'EMP',
+    'mode.bonusAhead': 'NEXT · {item} · {n} M', 'mode.bonusCollected': 'COLLECTED · {item}',
+    'mode.bonusActive': '{item} · {sec}s',
     'mode.itemRules': 'Item rules',
     'mode.itemRules.off': 'Off · no rings or supplies',
     'mode.itemRules.classic': 'Classic · automatic ring rewards',
@@ -9,6 +15,12 @@ export const ITEM_SETTINGS_COPY = {
     'mode.itemActive': 'ACTIVE · {item} · {sec}s',
   },
   'zh-TW': {
+    'mode.item.emp': '電磁脈衝',
+    'mode.bonusGates': '獎勵圓環・短暫增益與特技雙倍分數',
+    'mode.bonus.speed-pad': '加速', 'mode.bonus.air-pad': '補氣 +25', 'mode.bonus.recovery-pad': '碰撞恢復',
+    'mode.bonus.score-pad': '特技 ×2', 'mode.bonus.emp': '電磁脈衝',
+    'mode.bonusAhead': '前方・{item}・{n} 公尺', 'mode.bonusCollected': '已取得・{item}',
+    'mode.bonusActive': '{item}・{sec} 秒',
     'mode.itemRules': '道具規則',
     'mode.itemRules.off': '關閉・不出現圓環與補給',
     'mode.itemRules.classic': '經典・圓環獎勵立即生效',

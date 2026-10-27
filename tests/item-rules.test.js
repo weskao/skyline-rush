@@ -20,7 +20,8 @@ test('explicit item rules distinguish Off, Classic, Active and All on every trac
     assert.deepEqual(active.rings.map(ring => ring.distance), classic.rings.filter(ring => ring.type === 'mystery').map(ring => ring.distance));
     const all = createRace(trackId, { mode, itemRules: 'all' });
     assert.equal(all.config.activeItems, true);
-    assert.deepEqual(all.rings, classic.rings);
+    assert.deepEqual(all.rings.map(({ distance, x, altitude, radius }) => [distance, x, altitude, radius]),
+      classic.rings.map(({ distance, x, altitude, radius }) => [distance, x, altitude, radius]));
     assert.deepEqual(all.pickups, classic.pickups);
   }
 });

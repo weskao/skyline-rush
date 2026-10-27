@@ -30,7 +30,7 @@ interface RaceSelectOptions {
   cueUi(): void;
   reducedMotion: MediaQueryList;
 }
-type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages';
+type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates';
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
@@ -40,7 +40,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const trackButtons = (): HTMLButtonElement[] => [...document.querySelectorAll<HTMLButtonElement>('[data-track]')];
   const ruleInputs = (): HTMLInputElement[] => [...document.querySelectorAll<HTMLInputElement>('[data-race-rule]')];
   let selectedMode = 'classic';
-  const raceRules: Record<RuleKey, unknown> = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1 };
+  const raceRules: Record<RuleKey, unknown> = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false };
   const cupCount = (): number => Number($<HTMLSelectElement>('#cup-length').value);
   const selectedRace = (trackId: string): Race => selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
@@ -83,6 +83,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     $('#time-trial-rules').hidden = selectedMode !== 'time';
     $('#cup-rules').hidden = selectedMode !== 'cup';
     $('#stunt-rules').hidden = selectedMode !== 'stunt';
+    $('#bonus-gates-rule').hidden = !['stunt', 'checkpoint'].includes(selectedMode);
     const recent = selectedMode === 'custom' ? loadRecentCustom().filter(entry => unlockedTracks.has(entry.trackId)) : [];
     $('#recent-custom').hidden = recent.length === 0;
     $('#recent-custom-runs').replaceChildren(...recent.map((entry, index) => {

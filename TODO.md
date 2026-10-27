@@ -12,6 +12,13 @@ Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation a
 - [x] Main integration (2026-10-28): preserve latest main `7cbdbe5`, including Phase 1–4 and the split bootstrap; move this branch's selection/reset changes into `race-select-ui.ts` and item HUD updates into the typed mode-panel callback. Preserve all new size ceilings: `game.js` remains 827 lines and `main.js` shrinks to 687. Fresh strict TS/Vue/JS checks, 17 focused Node checks and five real desktop/touch item browser cases pass. The historical 10/27 measurements above remain historical receipts, not proof for the merged source.
 - [ ] Merged full unit gate currently reports 788 pass / 2 fail / 3 emulator skips: inherited `browser-timeouts.test.js` rejects Phase 4's unscaled 240000ms timeout, and `perf-overlay.test.js` expects frame text from the first record despite the new presented-frame initializer. These untouched-main failures were reported to the parent; the merged branch is not yet full-gate green.
 
+## Related item expansion (2026-10-28)
+
+- [x] RED → GREEN for bounded speed/air/recovery gates at unchanged authored positions on all ten tracks; collision mitigation consumes once and preserves official collision counts. EMP affects opponents within 30 m for 1.5 s and safely converts to Magnet in solo use.
+- [x] Opt-in Stunt/Checkpoint five-second ×2 score gates, bounded nonstacking durations, independent rules signatures, paused timers and equal payouts at 30/60/120 physics steps. Classic defaults and old saved signatures remain unchanged.
+- [x] RED → GREEN for missing gate materials and HUD warnings. Reuse five existing warmed material variants and seven-mesh pool; cache HUD nodes, announce gate identity/distance and pickup once, show EMP silhouette/cooldown, and retain separate music/SFX settings. Relevant Node checks: 31 passed; browser item and bonus flows: 7 passed on desktop/touch, with English/zh-TW switching and real Q/tap activation. Screenshots inspected in `artifacts/item-rules/`.
+- [ ] Full merged `make verify`, latest-main regression repair and exact-HEAD GitHub `quality-gate`; physical iOS/Android and audio/perception acceptance remain separate. Broader ITEM-12 visual effects remain open.
+
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
 **Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.

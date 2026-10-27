@@ -26,6 +26,7 @@ export function normalizeRaceConfig(value: unknown = {}) {
     items,
     ...(activeItems ? { activeItems: true } : {}),
     ...(itemRules ? { itemRules } : {}),
+    ...(['stunt', 'checkpoint'].includes(mode) && value.bonusGates === true ? { bonusGates: true } : {}),
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
     ...(practice && isOneOf(value.hazards, ['standard', 'extreme']) ? { hazards: value.hazards } : {}),
@@ -56,9 +57,9 @@ const REQUEST_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze(
   free: ['traffic', 'items', 'activeItems', 'itemRules', 'collision', 'hazards'],
   time: ['clean'],
   gauntlet: ['hazardTier'],
-  checkpoint: [],
+  checkpoint: ['bonusGates'],
   cup: ['cupTracks'],
-  stunt: ['duration'],
+  stunt: ['duration', 'bonusGates'],
   elimination: [],
 });
 const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -85,7 +86,7 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
     assertOption(typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3, 'rivals');
   if (Object.hasOwn(value, 'traffic')) assertOption(typeof value.traffic === 'string' && Object.hasOwn(TRAFFIC, value.traffic), 'traffic');
   if (Object.hasOwn(value, 'difficulty')) assertOption(isOneOf(value.difficulty, DIFFICULTIES), 'difficulty');
-  for (const key of ['items', 'activeItems', 'clean'])
+  for (const key of ['items', 'activeItems', 'clean', 'bonusGates'])
     if (Object.hasOwn(value, key)) assertOption(typeof value[key] === 'boolean', key);
   if (Object.hasOwn(value, 'itemRules')) {
     assertOption(isOneOf(value.itemRules, ITEM_RULES), 'itemRules');
