@@ -16,7 +16,7 @@ Scope: `refactor/vue-ui-typecheck-incremental` (2026-10-27). This document disti
 | `src/main.js` | Bootstrap and requestAnimationFrame simulation/render/UI orchestration; core frame path |
 | `src/game.js` | Physics, movement and race frame simulation |
 | `src/world.js` | High-frequency Three.js renderer and camera |
-| `src/audio.js` | Web Audio synthesis and frame-sensitive playback engine |
+| `src/audio.js` | Web Audio synthesis, mix and music scheduling; song data lives in `music-tracks.ts`, race→cue detection in `race-audio-events.ts` |
 | `src/aero-vfx.js` | WebGL aerodynamic visual effects |
 | `src/effects.js` | Transient WebGL particle and lighting effects |
 | `src/sky-scene.js` | Sky Spiral WebGL scene construction and rendering |
