@@ -18,7 +18,6 @@ import { saveRecentCustom } from './recent-custom.ts';
 import { createCup, cupComplete } from './championship-cup.ts';
 import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
-import { photoFilename } from './photo-export.ts';
 import { createSound } from './audio.js';
 import { readAudio } from './audio-settings.ts';
 import { setupVfxUI } from './vfx-ui.ts';
@@ -31,7 +30,10 @@ import { starTotal, loadPaint, savePaint } from './history.ts';
 import { recordGhost, ghostAt } from './ghost.ts';
 import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
-import { frameStats, PERF_WINDOW } from './perf.ts';
+import { createPerfOverlay } from './perf-overlay.ts';
+import { trackPressedButtons } from './pressed-buttons.ts';
+import { setupHistoryDialog } from './history-dialog-ui.ts';
+import { setupPhotoUI } from './photo-ui.ts';
 import { saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, formatDate } from './i18n.ts';
 import { availableTracks, availablePaints } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.ts';
@@ -66,20 +68,7 @@ function say(element, text) { said.set(element, text); element.textContent = tex
 const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'progress-fill', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'settings-panel', 'camera-button', 'controls-button', 'controls-panel', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
 ui['assist-button'] = $('#assist-button');
 ui['skill-report'] = $('#skill-report');
-// Touch driving prevents default pointer behavior, so :active alone cannot show a press.
-const pressedButtons = new Map();
-document.addEventListener('pointerdown', event => {
-  const button = event.target.closest('button:not(:disabled)');
-  if (button) { pressedButtons.set(event.pointerId, button); button.classList.add('is-pressed'); }
-}, { capture: true });
-for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) document.addEventListener(type, event => {
-  pressedButtons.get(event.pointerId)?.classList.remove('is-pressed');
-  pressedButtons.delete(event.pointerId);
-}, { capture: true });
-function clearButtonPresses() {
-  for (const button of pressedButtons.values()) button.classList.remove('is-pressed');
-  pressedButtons.clear();
-}
+const clearButtonPresses = trackPressedButtons();
 const touchPreference = matchMedia('(pointer: coarse)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 // World Tour scenery that reaches into the road is solid in the simulation too.
@@ -185,7 +174,7 @@ function applyLocale() {
   showTracks(); // refreshes the track buttons and History options before the drawn selects re-read them
   refreshCustomSelects();
   raceSelect.relabelRouteMaps(locale);
-  if ($('#history-screen').open) showHistory();
+  if (historyDialog.isOpen()) showHistory();
   for (const [element, text] of said) element.textContent = text();
   cloud.relabel(); // Vue-owned account name/identity are localized on each language switch.
   vfx.relabel(); showAudio(); showAssist(); showGarage(); phaseText();
@@ -233,7 +222,7 @@ const cloud = setupCloudUI({
   applyProgress: merged => {
     adoptProgress(progress, merged);
     showTracks();
-    if ($('#history-screen').open) showHistory();
+    if (historyDialog.isOpen()) showHistory();
     showGarage();
   },
 });
@@ -243,36 +232,22 @@ const previewObserver = new IntersectionObserver(entries => {
 }, { root: $('.track-select') });
 document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
 
-// History data rendering lives in history-ui.ts; dialog ownership/focus stays
-// at this bootstrap boundary until the dialog lifecycle migrates to TypeScript.
-// Never rely on variables captured inside another module's factory.
-const historyScreen = $('#history-screen');
-let historyOpener = null;
 function startDaily() {
   daily = dailyChallenge();
   raceSelect.selectClassic();
-  historyScreen.close();
+  historyDialog.close();
   controls.clear(); race = createRace(daily.track, daily.modifier); goUntil = 0; hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
   start();
 }
 for (const id of ['daily-start', 'daily-card-start']) $(`#${id}`).addEventListener('click', startDaily);
-for (const button of document.querySelectorAll('[data-open-history]')) button.addEventListener('click', () => {
-  controls.clear(); historyOpener = button; $('#history-track').value = race.trackId;
-  showHistory(); historyScreen.showModal();
-  if (button.dataset.openHistory === 'medals') $('#achievements-title').scrollIntoView({ block: 'start' });
-  if (button.dataset.openHistory === 'cloud') ($('#cloud-login').hidden ? $('#cloud-logout') : $('#cloud-login')).focus();
+const historyDialog = setupHistoryDialog({
+  getTrackId: () => race.trackId,
+  showHistory: () => showHistory(),
+  clearControls: () => controls.clear(),
+  calm: calmMotion,
+  motionOptions,
 });
-$('#history-track').addEventListener('change', showHistory);
-$('#mode-history-filter').addEventListener('change', showHistory);
-function closeHistory() {
-  if (calmMotion()) { historyScreen.close(); return; }
-  const animation = historyScreen.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(36px)' }], motionOptions('fast'));
-  animation.finished.catch(() => {}).then(() => historyScreen.close());
-}
-$('#history-close').addEventListener('click', closeHistory);
-historyScreen.addEventListener('cancel', event => { event.preventDefault(); closeHistory(); });
-historyScreen.addEventListener('close', () => historyOpener?.focus({ preventScroll: true }));
 const { showGarage } = setupGarageUI({
   getWorld: () => world,
   canOpen: () => race.phase === 'ready',
@@ -281,7 +256,6 @@ const { showGarage } = setupGarageUI({
   setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
   getStars: () => starTotal(progress.stars),
 });
-historyScreen.addEventListener('keydown', event => event.stopPropagation());
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
   controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
@@ -445,35 +419,7 @@ $('#next-stage').addEventListener('click', () => {
 $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
-const photoDialog = $('#photo-screen');
-const updatePhotoView = () => world?.setPhotoView({
-  angle:Number($('#photo-orbit').value), fov:Number($('#photo-fov').value),
-  sky:$('#photo-sky').value,
-});
-$('#photo-open').addEventListener('click', () => {
-  if (race.mode !== 'free' || race.phase !== 'paused' || !world) return;
-  updatePhotoView();
-  photoDialog.showModal();
-  $('#photo-status').textContent=t('photo.status');
-  sound.cue('ui');
-});
-for (const id of ['photo-orbit','photo-fov','photo-sky']) $('#'+id).addEventListener('input', updatePhotoView);
-$('#photo-close').addEventListener('click',()=>photoDialog.close());
-photoDialog.addEventListener('close',()=>{ world?.setPhotoView(null); sound.cue('ui'); });
-$('#photo-save').addEventListener('click', async () => {
-  const button=$('#photo-save'); button.disabled=true;
-  try {
-    const blob=await world.capturePhoto();
-    const url=URL.createObjectURL(blob);
-    const download=document.createElement('a');
-    download.href=url; download.download=photoFilename(race.trackId);
-    download.click();
-    setTimeout(()=>URL.revokeObjectURL(url),5000);
-    $('#photo-status').textContent=t('photo.ready');
-    sound.cue('photo');
-  } catch { $('#photo-status').textContent=t('photo.error'); }
-  finally { button.disabled=false; }
-});
+setupPhotoUI({ getRace: () => race, getWorld: () => world, cue: name => sound.cue(name) });
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
 ui['camera-button'].addEventListener('click', changeCamera);
 ui['assist-button'].addEventListener('click', toggleAssist);
@@ -609,9 +555,7 @@ try {
   let accumulator = 0;
   let hudElapsed = 0;
   let wasCalm = calmMotion();
-  const perfOverlay = new URLSearchParams(location.search).has('perf') && document.body.appendChild(Object.assign(document.createElement('output'), { id: 'perf-overlay', className: 'perf-overlay' }));
-  const perfFrames = [];
-  let perfShownAt = 0;
+  const perfOverlay = createPerfOverlay(location.search);
   function frame(now) {
     const rawDelta = (now - previousTime) / 1000;
     previousTime = now;
@@ -652,15 +596,7 @@ try {
       if (tutorial) renderTutorial();
       hudElapsed = 0;
     }
-    if (perfOverlay && race.phase === 'racing' && rawDelta <= 0.25) {
-      perfFrames.push({ at: now, ms: rawDelta * 1000 });
-      while (now - perfFrames[0].at > PERF_WINDOW * 1000) perfFrames.shift();
-      if (now - perfShownAt >= 500) {
-        perfShownAt = now;
-        const stats = frameStats(perfFrames.map(frame => frame.ms));
-        perfOverlay.textContent = `FRAME p50 ${stats.p50.toFixed(1)} ms · p95 ${stats.p95.toFixed(1)} ms · ${stats.fps} fps · ${Math.round((now - perfFrames[0].at) / 1000)} s`;
-      }
-    }
+    perfOverlay?.record(now, rawDelta, race.phase === 'racing');
     animationId = requestAnimationFrame(frame);
   }
   animationId = requestAnimationFrame(frame);
