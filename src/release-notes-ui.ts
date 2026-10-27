@@ -2,7 +2,7 @@ import { nextTick } from 'vue';
 import { updateReleaseView } from './release-view-state.ts';
 import { HISTORY_KEY } from './history.ts';
 import { getLocale, t, formatDate } from './i18n.ts';
-import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage } from './release-notes.ts';
+import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo } from './release-notes.ts';
 
 // Pure keyboard navigation, independently testable without a DOM.
 export function releaseTabIndex(index: number, count: number, key: string): number | null {
@@ -28,6 +28,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   const releaseDialog = document.querySelector<HTMLDialogElement>('#whats-new-screen')!;
   const releaseOpen = document.querySelector<HTMLButtonElement>('#whats-new-open')!;
   const releasePanel = $('#release-panel');
+  const portrait = matchMedia('(orientation: portrait)');
   const RECENT_RELEASES = recentReleases();
   let releaseIndex = 0;
   let releaseOpener: HTMLElement | null = null;
@@ -55,12 +56,17 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     }));
     const release = RECENT_RELEASES[releaseIndex];
     const hero = releaseImage(release.image, locale);
+    const clip = releaseHeroVideo(release.video, locale, portrait.matches);
     updateReleaseView({
       tabs,
       panelLabel: 'release-tab-' + releaseIndex,
       version: 'v' + release.version,
       date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
       heroSrc: hero ? import.meta.env.BASE_URL + hero : '',
+      heroVideo: clip && {
+        src: import.meta.env.BASE_URL + clip.src, poster: import.meta.env.BASE_URL + clip.poster,
+        variant: clip.variant, controls: reducedMotion.matches,
+      },
       entries: release.highlights.map(item => {
         const image = releaseImage(item.image, locale);
         return {
@@ -73,6 +79,14 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
       }),
     });
     updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()) });
+    nextTick(syncReleaseVideo);
+  }
+  // The clip only plays while the notes are open; reduced motion keeps its still and controls.
+  function syncReleaseVideo() {
+    const video = document.querySelector<HTMLVideoElement>('#release-video');
+    if (!video) return;
+    if (releaseDialog.open && !reducedMotion.matches) video.play().catch(() => { /* autoplay refused: the poster stays */ });
+    else video.pause();
   }
   function selectRelease(index: number): void {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
@@ -128,7 +142,9 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   });
   releaseDialog.addEventListener('cancel', event => { event.preventDefault(); closeReleaseNotes(); });
   releaseDialog.addEventListener('keydown', event => event.stopPropagation());
+  portrait.addEventListener('change', () => { if (releaseDialog.open) renderReleaseNotes(); }); // a turned phone gets the matching clip
   releaseDialog.addEventListener('close', () => {
+    syncReleaseVideo();
     updateReleaseView({ openHasUpdate: false });
     (releaseOpener ?? releaseOpen).focus({ preventScroll: true });
     afterClose();

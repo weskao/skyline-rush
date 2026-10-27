@@ -75,6 +75,27 @@ test('Phase 1: ordinary flight, hard landing and very short flight do not award 
   assert.notEqual(hard.player.landing.chain, true);
 });
 
+test('Phase 1: BOOST alone during powered flight earns the chain without spending NITRO', () => {
+  const race = preparedRace(), car = race.player;
+  advance(race, 0.85, { fly: true, boost: true });
+  assert.ok(car.altitude > 0);
+  land(race);
+  assert.equal(car.landing.chain, true);
+  assert.ok(car.miniBoost > 1.1 && car.miniBoost <= 1.2);
+});
+
+test('Phase 1: 0.4 s of boosted powered flight is enough; 0.3 s is not', () => {
+  const enough = preparedRace();
+  advance(enough, 0.5, { fly: true, boost: true });
+  land(enough);
+  assert.equal(enough.player.landing.chain, true);
+
+  const tooShort = preparedRace();
+  advance(tooShort, 0.3, { fly: true, boost: true });
+  land(tooShort);
+  assert.notEqual(tooShort.player.landing.chain, true);
+});
+
 test('Phase 1: no-flight daily modifier remains unable to earn an aerial chain', () => {
   const race = preparedRace();
   race.modifier = 'no-flight';
