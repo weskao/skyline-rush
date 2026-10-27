@@ -328,20 +328,7 @@ export function useHeldItem(race) {
   return activateItem(race.player, race.rivals.length > 0);
 }
 
-export function racePosition(race) {
-  return race.result?.position ?? 1 + race.rivals.filter(rival => rival.distance > race.player.distance).length;
-}
-
-export function sprintGaps(race) {
-  let ahead = null, behind = null;
-  for (const rival of race.rivals) {
-    if (rival.finishTime != null) continue;
-    const gap = rival.distance - race.player.distance;
-    if (gap > 0 && (ahead === null || gap < ahead)) ahead = gap;
-    if (gap < 0 && (behind === null || -gap < behind)) behind = -gap;
-  }
-  return { ahead, behind };
-}
+export { racePosition, sprintGaps } from './race-standings.ts';
 
 // Index of the first scenery part (sorted by `from`, each under 20 m deep) that can still reach distance d.
 function firstProp(props, d) {
