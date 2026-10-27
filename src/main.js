@@ -1788,6 +1788,9 @@ try {
         perfShownAt = now;
         const stats = frameStats(perfFrames.map(frame => frame.ms));
         perfOverlay.textContent = `FRAME p50 ${stats.p50.toFixed(1)} ms · p95 ${stats.p95.toFixed(1)} ms · ${stats.fps} fps · ${Math.round((now - perfFrames[0].at) / 1000)} s`;
+        const load=world.inspectRenderLoad();
+        perfOverlay.dataset.drawCalls=String(load.drawCalls);
+        perfOverlay.dataset.triangles=String(load.triangles);
       }
     }
     animationId = requestAnimationFrame(frame);

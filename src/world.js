@@ -13,6 +13,7 @@ import { vfxSettings } from './vfx-settings.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
+import { createCoastScenery, COAST_PALETTE } from './coast-visuals.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.ts';
 import { orientCarOnRoad } from './vehicle-pose.ts';
@@ -36,7 +37,7 @@ const scale = new THREE.Vector3();
 
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
 const TRACK_PALETTES = {
-  coast: { top: '#101e43', horizon: '#d98785', fog: '#94758a', rock: '#374762', road: '#142534', ground: '#0a233b', rail: '#40d9ed', sun: '#ffb88a', warmth: 1 },
+  coast: COAST_PALETTE,
   neon: { top: '#040a20', horizon: '#263057', fog: '#18223f', rock: '#182039', road: '#101c2e', ground: '#080e21', rail: '#ff52bf', sun: '#96b7ff', warmth: 0 },
   canyon: { top: '#458bab', horizon: '#f5c58c', fog: '#c99c79', rock: '#a15339', road: '#51453b', ground: '#a76e46', rail: '#ffc36f', sun: '#ffdfaa', warmth: .6 },
   aurora: { top: '#051b31', horizon: '#337064', fog: '#234d5b', rock: '#9cb9c7', road: '#293d50', ground: '#b3cad3', rail: '#78ffd1', sun: '#b9ddff', warmth: 0 },
@@ -517,6 +518,7 @@ export function createWorld(canvas) {
   scene.add(shadow);
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
+  const coastScenery = createCoastScenery(scene, roadCenter);
   // Only inspect World Tour geometry when a showroom angle changes. Existing
   // landmark-only sightline checks don't detect scenery covering the car itself.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
@@ -862,10 +864,10 @@ export function createWorld(canvas) {
         sky.material.uniforms.cloudOpacity.value = trackId==='cosmic'?0:trackId==='tokyo'?.14:trackId==='alpine'?.45:trackId==='coastal'?.32:trackId==='taipei'?.36:1;
         sky.material.uniforms.cloudTint.value.set(trackId==='alpine'?'#647575':trackId==='coastal'?'#82989a':trackId==='taipei'?'#77898b':trackId==='tokyo'?'#394354':'#4d3d60');
         sunlight.color.set(palette.sun);
-        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
+        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? 1.35 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
         sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
-        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:1.12;
-        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='neon'?1.1:1.7;
+        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?1.01:1.12;
+        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?1.24:trackId==='neon'?1.1:1.7;
         sun.visible = trackId === 'coast' || trackId === 'canyon';
         // Sky Spiral draws its own dome. The shared sky, sea and peaks would sit in front of it.
         sky.visible = sea.visible = mountains.visible = trackId !== 'spiral';
@@ -874,7 +876,8 @@ export function createWorld(canvas) {
         seaLines.visible = trackId === 'coast'; mountains.material.color.set(palette.rock);
         city.visible = trackId === 'coast' || trackId === 'neon';
         windows.material.color.set(trackId === 'neon' ? '#ff6dbc' : '#ffd394');
-        roadMaterial.color.set(palette.road); roadMaterial.roughness = trackId === 'neon' ? .16 : .5;
+        roadMaterial.color.set(palette.road); roadMaterial.roughness = trackId === 'neon' ? .16 : trackId === 'coast' ? .91 : .5;
+        roadMaterial.metalness = trackId === 'coast' ? .025 : .3;
         railLights.material.color.set(palette.rail);
         cliffs.visible = trackId === 'canyon' || trackId === 'aurora'; cliffs.material.color.set(palette.rock);
         tunnelRoofs.visible = tunnelWalls.visible = trackId === 'neon';
@@ -885,6 +888,8 @@ export function createWorld(canvas) {
         warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
       const distance = preview ? previewDistance(trackId) : car.distance;
+      if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality);}
+      else coastScenery.hide();
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
       // A readable driving corridor takes precedence over cinematic glare.
       // Dimming in the mountain bore is smoothed over the 38 m entrance.
@@ -1236,7 +1241,7 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = TOUR_IDS.has(trackId) ? .085 : .42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
+      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?.19:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
       composer.render(dt);
@@ -1257,6 +1262,7 @@ export function createWorld(canvas) {
         } catch (error) { request.reject(error); }
       }
     },
+    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
       // Read-only projection for browser QA: verify the player and all three
@@ -1327,7 +1333,7 @@ export function createWorld(canvas) {
     },
     dispose() {
       stopLocaleSigns();
-      skyScene.dispose(); worldTourScene.dispose();
+      skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose();
       effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();
