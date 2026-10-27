@@ -32,6 +32,49 @@ test('Neon, Canyon and Aurora use bounded reusable instancing outside the drivea
   for (const id of CLASSIC_SCENIC_TRACKS) assert.ok(!scene.children.includes(kit.groups[id]));
 });
 
+test('low and medium quality fill contiguous near-road sectors after tier or track changes', () => {
+  const kit = createClassicTrackScenery(new THREE.Scene(), center);
+  const step = 60, distance = 1800, first = (Math.floor(distance / step) - 2) * step;
+  for (const id of CLASSIC_SCENIC_TRACKS) {
+    for (const [tier, count] of [['high', 24], ['low', 8], ['medium', 16], ['high', 24]]) {
+      kit.update(id, distance, tier);
+      for (const mesh of kit.groups[id].children) {
+        const matrix = new THREE.Matrix4(), point = new THREE.Vector3();
+        const sectors = [];
+        for (let i = 0; i < mesh.count; i++) {
+          mesh.getMatrixAt(i, matrix); point.setFromMatrixPosition(matrix);
+          sectors.push(Math.round(-point.z));
+        }
+        sectors.sort((a, b) => a - b);
+        assert.deepEqual(sectors, Array.from({length: count}, (_, i) => first + i * step),
+          `${id} ${tier}: no distant gaps or stale instance sectors`);
+      }
+    }
+  }
+  kit.dispose();
+});
+
+test('retiered streaming advances one recycled visible sector without per-frame allocations', () => {
+  const kit = createClassicTrackScenery(new THREE.Scene(), center);
+  kit.update('neon', 1840, 'low');
+  const mesh = kit.groups.neon.children[0], before = new THREE.Matrix4(), after = new THREE.Matrix4();
+  const previous = Array.from({length: mesh.count}, (_, i) => {
+    mesh.getMatrixAt(i, before); return [...before.elements];
+  });
+  kit.update('neon', 1840.5, 'low');
+  for (let i = 0; i < mesh.count; i++) {
+    mesh.getMatrixAt(i, after); assert.deepEqual([...after.elements], previous[i]);
+  }
+  kit.update('neon', 1860.5, 'low');
+  let changed = 0;
+  for (let i = 0; i < mesh.count; i++) {
+    mesh.getMatrixAt(i, after);
+    if (after.elements.some((v,j) => v !== previous[i][j])) changed++;
+  }
+  assert.equal(changed, 1, 'only one ring-buffer slot moves at the sector boundary');
+  kit.dispose();
+});
+
 test('Quality caps and streaming geometry are deterministic without per-frame churn', () => {
   const scene = new THREE.Scene(), kit = createClassicTrackScenery(scene, center);
   kit.update('neon', 359.9, 'high');
