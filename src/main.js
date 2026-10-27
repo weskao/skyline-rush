@@ -26,9 +26,9 @@ import { createSound } from './audio.js';
 import { readAudio } from './audio-settings.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS } from './vfx-settings.ts';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.ts';
-import { controlSettings, CONTROLS_KEY } from './control-settings.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { setupKeyMapUI, keyLabel } from './keymap-ui.ts';
+import { setupTouchControlsUI } from './touch-controls-ui.ts';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.ts';
 import { recordGhost, validGhost, ghostAt } from './ghost.ts';
@@ -50,8 +50,6 @@ import { readLocalProgress } from './cloud-progress.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
 /** @typedef {import('./game-types.js').RivalSnapshot} RivalSnapshot */
-
-const TOUCH_SCALE = { S: 0.85, M: 1, L: 1.15 };
 
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
 createApp(App).mount('#app');
@@ -168,15 +166,26 @@ const deviceSelection=initialDeviceVisuals({
     width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},
 });
 let visual=deviceSelection.settings;
-// In-memory source of truth: input.js reads it on every pointermove, so storage is only touched on load/change.
-let controlPrefs = controlSettings();
-let editingLayout = false;
 const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
-try { controlPrefs = controlSettings(JSON.parse(localStorage.getItem(CONTROLS_KEY))); } catch { /* Defaults work without storage. */ }
-let inputPrefs = controlPrefs;
-let tiltRequest = 0, tiltGranted = false, tiltSeen = false, tiltTimeout;
-const getControlSettings = () => inputPrefs;
-const controlInputs = [...document.querySelectorAll('[data-controls]')];
+// Its action callback only runs on input, so the handlers declared further down are ready by then.
+const controls = createControls(window, action => {
+  if (document.querySelector('dialog[open]')) { controls.clear(); return; }
+  if (action === 'pause') toggleSettings(false);
+  if (action === 'pause') $('#vfx-panel').open = false;
+  if (action === 'pause') toggleControls(false);
+  ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
+}, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
+// Touch layout, slide pad, tilt and the Controls form live in touch-controls-ui.ts; showTracks() reads its ghost preference.
+const touchUI = setupTouchControlsUI({
+  controls,
+  getRacePhase: () => race.phase,
+  isTutorialActive: () => !!tutorial,
+  say,
+  cueUi: () => sound.cue('ui'),
+  closeControlsPanel: () => toggleControls(false),
+  refreshPhase: () => phaseUI(),
+  reducedMotion,
+});
 const vfxControls = [...document.querySelectorAll('[data-vfx]')];
 const airflowHud = $('#airflow-hud');
 const boostStatus = document.createElement('span');
@@ -417,10 +426,10 @@ function showTracks() {
 function showGhost() {
   const ghost = race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null;
   const track = trackName(race.trackId, getLocale());
-  $('#ghost-enabled').checked = controlPrefs.ghost;
+  $('#ghost-enabled').checked = touchUI.prefs().ghost;
   $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'custom' || race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
 }
-$('#ghost-enabled').addEventListener('change', ({ target }) => { controlPrefs = controlSettings({ ...controlPrefs, ghost: target.checked }); applyControls(); });
+$('#ghost-enabled').addEventListener('change', ({ target }) => touchUI.setGhost(target.checked));
 for (const button of document.querySelectorAll('[data-track]')) button.addEventListener('click', () => {
   if (race.phase !== 'ready') return;
   controls.clear();
@@ -581,7 +590,7 @@ const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   calmMotion,
   motionOptions,
   isTutorialActive: () => !!tutorial,
-  isEditingLayout: () => editingLayout,
+  isEditingLayout: () => touchUI.isEditing(),
   touchMatches: () => touchPreference.matches,
 });
 // Brand click mid-race pauses and asks first; on the intro/results screens the link just goes home.
@@ -611,7 +620,7 @@ function start() {
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   // First Start presents the live practice; Skip / completion returns to this selected race.
   if (!hasSeenGuide()) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
-  if (editingLayout) editLayout(false);
+  if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
   stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, trackId:race.trackId } : null;
@@ -628,7 +637,7 @@ function restart(trackId = race.trackId) {
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !unlockedTracks.has(trackId))) return;
   if (contextLost) { location.reload(); return; }
-  if (editingLayout) editLayout(false);
+  if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   const wipe = $('#race-wipe');
   wipe.getAnimations().forEach(animation => animation.cancel());
@@ -648,7 +657,7 @@ function restart(trackId = race.trackId) {
 
 function pause() {
   if (tutorial?.complete) return;
-  if (editingLayout) editLayout(false);
+  if (touchUI.isEditing()) touchUI.editLayout(false);
   if (race.phase === 'paused') {
     race.phase = pausedPhase;
     controls.clear();
@@ -682,38 +691,6 @@ const { toggleSettings, toggleControls } = setupControlPanels({
   hidePerformanceNotice,
   trackDropdown,
 });
-function applyControls(persist = true) {
-  inputPrefs = { ...controlPrefs, mode: tutorial && controlPrefs.mode === 'tilt' && !tiltGranted ? 'slide' : controlPrefs.mode, editing: editingLayout };
-  const touch = ui['touch-controls'];
-  touch.dataset.steerMode = inputPrefs.mode;
-  touch.dataset.hand = controlPrefs.hand;
-  touch.dataset.size = controlPrefs.size;
-  touch.style.setProperty('--touch-scale', String(TOUCH_SCALE[controlPrefs.size]));
-  touch.style.setProperty('--touch-opacity', String(controlPrefs.opacity));
-  // The Controls panel's preview strip reads the same two values, so size and opacity changes show immediately.
-  ui['controls-panel'].style.setProperty('--touch-scale', touch.style.getPropertyValue('--touch-scale'));
-  ui['controls-panel'].style.setProperty('--touch-opacity', String(controlPrefs.opacity));
-  controls.setFlyMode(controlPrefs.flyMode);
-  $('#tilt-enable').hidden = controlPrefs.mode !== 'tilt';
-  if (controlPrefs.mode !== 'tilt') { controls.setTilt(false); tiltGranted = false; clearTimeout(tiltTimeout); }
-  for (const button of touchButtons) {
-    const point = tutorial ? undefined : controlPrefs.layout[button.dataset.control];
-    button.classList.toggle('is-positioned', !!point);
-    if (point) {
-      const halfWidth = button.offsetWidth / 2 || 32;
-      const halfHeight = button.offsetHeight / 2 || 35;
-      const x = (controlPrefs.hand === 'right' ? 1 - point.x : point.x) * innerWidth;
-      button.style.left = `clamp(calc(env(safe-area-inset-left, 0px) + ${halfWidth + 8}px), ${x}px, calc(100vw - env(safe-area-inset-right, 0px) - ${halfWidth + 8}px))`;
-      button.style.top = `clamp(calc(env(safe-area-inset-top, 0px) + ${halfHeight + 8}px), ${point.y * innerHeight}px, calc(100dvh - env(safe-area-inset-bottom, 0px) - ${halfHeight + 8}px))`;
-    } else { button.style.removeProperty('left'); button.style.removeProperty('top'); }
-  }
-  for (const input of controlInputs) {
-    const value = controlPrefs[input.dataset.controls];
-    if (input.type === 'radio') input.checked = input.value === String(value);
-    else { input.value = String(value); input.previousElementSibling.value = `${Math.round(value * 100)}%`; }
-  }
-  if (persist) try { localStorage.setItem(CONTROLS_KEY, JSON.stringify(controlPrefs)); } catch { /* Settings remain usable in memory. */ }
-}
 
 function changeCamera() {
   if (!world) return;
@@ -725,139 +702,13 @@ function changeCamera() {
 function triggerItem() {
   if (useHeldItem(race)) sound.cue('pickup');
 }
-const controls = createControls(window, action => {
-  if (document.querySelector('dialog[open]')) { controls.clear(); return; }
-  if (action === 'pause') toggleSettings(false);
-  if (action === 'pause') $('#vfx-panel').open = false;
-  if (action === 'pause') toggleControls(false);
-  ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
-}, { getSettings: getControlSettings, getKeyMap: () => keymap.getKeyMap(), onTilt: () => {
-  if (tiltSeen) return;
-  tiltSeen = true; clearTimeout(tiltTimeout);
-  say($('#tilt-status'), () => t('tilt.ready'));
-} });
-const pad = $('.touch-pad');
-controls.bindSlidePad(pad, { getSettings: getControlSettings });
 $('#activate-item').addEventListener('click', triggerItem);
-// input.js keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.js).
-const PAD_BRAKE_PX = 40;
-const PAD_HINT_SECONDS = 4;
-const padRing = $('.pad-ring');
-const padKnob = $('.pad-knob');
-let padTouch = null;
-let padHint = false;
-const clampPad = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-// Ring/knob sit at the pad's top-left in CSS; transform alone moves them (percentages centre each on its point).
-function placePad(el, x, y, opacity) {
-  el.style.transform = `translate(calc(${x}px - 50%), calc(${y}px - 50%))`;
-  el.style.opacity = opacity;
-  el.style.transition = reducedMotion.matches ? 'none' : 'opacity 0.6s ease';
-}
-function drawPad() {
-  const rect = pad.getBoundingClientRect();
-  const brake = !!padTouch && padTouch.y - padTouch.oy >= PAD_BRAKE_PX;
-  if (brake) ui['touch-controls'].dataset.padBrake = 'true'; else delete ui['touch-controls'].dataset.padBrake;
-  if (padTouch) {
-    const lock = controlPrefs.fullLock;
-    placePad(padRing, padTouch.ox - rect.left, padTouch.oy - rect.top, '0.35');
-    placePad(padKnob, clampPad(padTouch.x, padTouch.ox - lock, padTouch.ox + lock) - rect.left, clampPad(padTouch.y, padTouch.oy - lock, padTouch.oy + lock) - rect.top, '0.6');
-  } else {
-    placePad(padRing, rect.width / 2, rect.height / 2, padHint ? '0.25' : '0');
-    placePad(padKnob, rect.width / 2, rect.height / 2, padHint ? '0.45' : '0');
-  }
-}
-pad.addEventListener('pointerdown', event => { // the newest finger owns the pad, as in input.js
-  padTouch = { id: event.pointerId, ox: event.clientX, oy: event.clientY, x: event.clientX, y: event.clientY };
-  drawPad();
-});
-pad.addEventListener('pointermove', event => {
-  if (event.pointerId !== padTouch?.id) return;
-  padTouch.x = event.clientX; padTouch.y = event.clientY;
-  const dx = padTouch.x - padTouch.ox;
-  if (Math.abs(dx) > controlPrefs.fullLock) padTouch.ox = padTouch.x - Math.sign(dx) * controlPrefs.fullLock;
-  drawPad();
-});
-for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-  pad.addEventListener(type, event => {
-    if (event.pointerId !== padTouch?.id) return;
-    padTouch = null;
-    drawPad();
-  });
-}
-applyControls();
-if (controlPrefs.mode === 'tilt') say($('#tilt-status'), () => t('tilt.saved'));
 showAssist();
 ui['controls-button'].addEventListener('click', () => { toggleControls(); sound.cue('ui'); });
-ui['controls-panel'].addEventListener('input', ({ target }) => {
-  const key = target.dataset.controls;
-  if (!key) return;
-  tiltRequest++;
-  controls.clear();
-  if (key === 'mode' && target.value === 'tilt') { enableTilt(); return; }
-  controlPrefs = controlSettings({ ...controlPrefs, [key]: ['fullLock', 'opacity', 'sensitivity'].includes(key) ? Number(target.value) : target.value });
-  applyControls();
-});
-async function enableTilt() {
-  const request = ++tiltRequest;
-  const status = $('#tilt-status');
-  try {
-    if (!window.isSecureContext || !window.DeviceOrientationEvent) throw new Error('unavailable');
-    const permission = DeviceOrientationEvent.requestPermission;
-    const result = permission ? await permission.call(DeviceOrientationEvent) : 'granted';
-    if (request !== tiltRequest || !['ready', 'paused'].includes(race.phase)) return;
-    if (result !== 'granted') throw new Error('denied');
-    controls.clear(); tiltGranted = true; tiltSeen = false;
-    controlPrefs = { ...controlPrefs, mode: 'tilt' }; applyControls(); controls.setTilt(true);
-    say(status, () => t('tilt.waiting'));
-    clearTimeout(tiltTimeout);
-    tiltTimeout = setTimeout(() => {
-      if (!tiltSeen && tiltGranted) {
-        controlPrefs = { ...controlPrefs, mode: 'slide' }; applyControls();
-        say(status, () => t('tilt.none'));
-      }
-    }, 2500);
-  } catch (error) {
-    if (request !== tiltRequest) return;
-    controlPrefs = { ...controlPrefs, mode: 'slide' }; applyControls();
-    say(status, () => t(error.message === 'denied' ? 'tilt.denied' : 'tilt.unavailable'));
-  }
-}
-$('#tilt-enable').addEventListener('click', enableTilt);
-$('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); applyControls(); sound.cue('ui'); });
-function editLayout(editing) {
-  editingLayout = editing;
-  controls.clear(); padTouch = null; drawPad();
-  document.body.classList.toggle('layout-editing', editing);
-  $('#layout-toolbar').hidden = !editing;
-  toggleControls(false);
-  phaseUI();
-  applyControls();
-}
-$('#layout-edit').addEventListener('click', () => editLayout(true));
-$('#layout-done').addEventListener('click', () => editLayout(false));
-$('#layout-reset').addEventListener('click', () => { controlPrefs = { ...controlPrefs, layout: {} }; applyControls(); });
-for (const button of touchButtons) {
-  let drag = null;
-  button.addEventListener('pointerdown', event => {
-    if (!editingLayout) return;
-    event.preventDefault();
-    drag = { id: event.pointerId, dx: event.clientX - (button.getBoundingClientRect().left + button.offsetWidth / 2), dy: event.clientY - (button.getBoundingClientRect().top + button.offsetHeight / 2) };
-    button.setPointerCapture(event.pointerId);
-  });
-  button.addEventListener('pointermove', event => {
-    if (!editingLayout || event.pointerId !== drag?.id) return;
-    const x = Math.min(innerWidth - button.offsetWidth / 2 - 8, Math.max(button.offsetWidth / 2 + 8, event.clientX - drag.dx));
-    const y = Math.min(innerHeight - button.offsetHeight / 2 - 8, Math.max(button.offsetHeight / 2 + 8, event.clientY - drag.dy));
-    controlPrefs = { ...controlPrefs, layout: { ...controlPrefs.layout, [button.dataset.control]: { x: controlPrefs.hand === 'right' ? 1 - x / innerWidth : x / innerWidth, y: y / innerHeight } } };
-    applyControls(false);
-  });
-  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, event => { if (event.pointerId === drag?.id) { drag = null; applyControls(); } });
-}
-window.addEventListener('resize', applyControls);
 // Capture phase so Escape only closes the panel and never reaches input.js as a pause/resume.
 document.addEventListener('keydown', event => {
-  if (editingLayout && event.code === 'Escape') {
-    event.preventDefault(); event.stopImmediatePropagation(); editLayout(false); return;
+  if (touchUI.isEditing() && event.code === 'Escape') {
+    event.preventDefault(); event.stopImmediatePropagation(); touchUI.editLayout(false); return;
   }
   if (keymap.handleRebindKey(event)) return;
   if (event.code !== 'Escape' || ui['controls-panel'].hidden) return;
@@ -952,11 +803,12 @@ function phaseUI() {
   const overlay = phase === 'paused' || phase === 'finished';
   if (ready || overlay) clearButtonPresses();
   document.body.dataset.phase = phase;
-  if (!['racing', 'countdown'].includes(phase)) { padTouch = null; drawPad(); } // controls.clear() reset the real pad; drop the mirror with it
+  if (!['racing', 'countdown'].includes(phase)) touchUI.resetPad();
   if (!ready) cancelSwipe();
   ui.intro.hidden = !ready && !ui.intro.getAnimations().length;
   if (ready) { ui.intro.inert = false; ui.intro.getAnimations().forEach(animation => animation.cancel()); }
   ui['race-info'].hidden = ready;
+  const editingLayout = touchUI.isEditing();
   ui['race-overlay'].hidden = !overlay || editingLayout || phase === 'finished';
   ui['touch-controls'].hidden = !editingLayout && (ready || overlay);
   ui.intro.hidden ||= editingLayout;
@@ -1267,7 +1119,7 @@ function updateUI(now, input) {
   setHudText(ui.distance, (car.distance / 1000).toFixed(2));
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
   setHudText(hudNodes['race-length'], (race.length / 1000).toFixed(2));
-  const timeGhost = race.mode === 'time' && controlPrefs.ghost ? modeGhostFor(race) : null;
+  const timeGhost = race.mode === 'time' && touchUI.prefs().ghost ? modeGhostFor(race) : null;
   const split = hudNodes['ghost-split'];
   setHudHidden(split, !timeGhost || race.phase !== 'racing');
   if (!split.hidden) {
@@ -1283,9 +1135,9 @@ function updateUI(now, input) {
   previousFuel = car.fuel;
   setHudText(hudNodes['style-score'], race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style'], { n: Math.floor(car.score) }));
   setHudText(ui.altitude, car.altitude.toFixed(1));
-  const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
+  const tap = touchPreference.matches && touchUI.prefs().flyMode === 'toggle';
   // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
-  if (controlPrefs.flyMode === 'toggle' && input.fly && (car.exhausted || car.fuel <= 0)) controls.setFly(false);
+  if (touchUI.prefs().flyMode === 'toggle' && input.fly && (car.exhausted || car.fuel <= 0)) controls.setFly(false);
   const flyKey = touchPreference.matches ? '' : keyLabel(keymap.getKeyMap().fly[0]).toUpperCase();
   const hold = touchPreference.matches ? L[tap ? 'hud.tapFly' : 'hud.holdFly'] : interpolate(L['hud.holdKey'], { key: flyKey });
   const release = touchPreference.matches ? L['hud.releaseFly'] : interpolate(L['hud.releaseKey'], { key: flyKey });
@@ -1385,8 +1237,7 @@ function updateUI(now, input) {
       if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
     }
   });
-  const hint = !padTouch && race.phase === 'racing' && race.elapsed < PAD_HINT_SECONDS && controlPrefs.mode === 'slide';
-  if (hint !== padHint) { padHint = hint; drawPad(); }
+  touchUI.updatePadHint(race.phase, race.elapsed);
   setHudText(ui['speed-caption'], L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : autoThrottle ? 'hud.autoOverride' : 'hud.tagline']);
   document.body.classList.toggle('airborne', flying);
   document.body.classList.toggle('collision', impactAge < 0.45 && race.phase === 'racing');
@@ -1483,7 +1334,7 @@ try {
     if (calm && !wasCalm) stopPresentationMotion();
     wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
-    const ghost = controlPrefs.ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null : null;
+    const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null : null;
     world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
     sound.update(race);
     hudElapsed += dt;
@@ -1529,13 +1380,13 @@ function beginTutorial() {
   if (!world || contextLost || (!tutorial && !['ready', 'paused'].includes(race.phase))) return;
   if (!tutorial) tutorialReturn = { race, pausedPhase, goUntil, previousFuel, previousNitro };
   closeGuide(); // marks this player as having seen the guide, even for first-start practice
-  if (editingLayout) editLayout(false);
+  if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear(); clearButtonPresses(); toggleControls(false); toggleSettings(false);
   $('#tutorial-exit').dataset.i18n = raceAfterTutorial ? 'tutorial.skip' : 'tutorial.exit';
   $('#tutorial-done').dataset.i18n = raceAfterTutorial ? 'start.race' : 'tutorial.done';
   applyI18n($('#tutorial-coach'));
   tutorial = createInteractiveTutorial(); race = tutorial.race;
-  applyControls(false);
+  touchUI.applyControls(false);
   goUntil = 0; previousFuel = 100; previousNitro = 0; previousFlight = undefined;
   document.body.dataset.tutorial = 'active';
   updateCoachView({ visible: true });
@@ -1550,7 +1401,7 @@ function endTutorial() {
   tutorial = null; tutorialReturn = null; resetTutorialView();
   controls.clear(); clearButtonPresses();
   delete document.body.dataset.tutorial;
-  applyControls(false);
+  touchUI.applyControls(false);
   updateCoachView({ visible: false });
   for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
   previousFlight = undefined;
@@ -1562,8 +1413,8 @@ const { renderTutorial, resetTutorialView } = setupTutorialUI({
   getTutorial: () => tutorial,
   getRace: () => race,
   getTouchMatches: () => touchPreference.matches,
-  getInputPrefs: () => inputPrefs,
-  getControlPrefs: () => controlPrefs,
+  getInputPrefs: () => touchUI.inputPrefs(),
+  getControlPrefs: () => touchUI.prefs(),
   showKeyMap: () => keymap.showKeyMap(),
 });
 for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id}`).addEventListener('click', beginTutorial);
@@ -1572,7 +1423,7 @@ $('#tutorial-pause').addEventListener('click', () => { pause(); renderTutorial(t
 window.addEventListener('resize', () => { if (tutorial) renderTutorial(true); });
 const { closeGuide, hasSeenGuide } = setupGuideUI({
   beforeOpen: () => {
-    if (editingLayout) editLayout(false);
+    if (touchUI.isEditing()) touchUI.editLayout(false);
     controls.clear(); toggleControls(false); toggleSettings(false);
     hidePerformanceNotice();
   },
