@@ -876,6 +876,8 @@ export function createWorld(canvas) {
         seaLines.visible = trackId === 'coast'; mountains.material.color.set(palette.rock);
         city.visible = trackId === 'coast' || trackId === 'neon';
         windows.material.color.set(trackId === 'neon' ? '#ff6dbc' : '#ffd394');
+        buildingMat.roughness=trackId==='coast'?.84:.38;
+        buildingMat.metalness=trackId==='coast'?.055:.5;
         roadMaterial.color.set(palette.road); roadMaterial.roughness = trackId === 'neon' ? .16 : trackId === 'coast' ? .91 : .5;
         roadMaterial.metalness = trackId === 'coast' ? .025 : .3;
         railLights.material.color.set(palette.rail);

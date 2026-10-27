@@ -141,6 +141,26 @@ jobs:
           path: test-results/**/world-tour-*-mid-race.png
           if-no-files-found: ignore
 
+  # Preserve actual GPU-drawn Coast frames (not illustrative mockups) for visual review.
+  coast-visual-evidence:
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/heads/refactor/') }}"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright test tests/coast-visual-browser.spec.js
+      - name: Preserve actual Coast WebGL frame captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coast-webgl-before-after
+          path: test-results/**/coast-visual-*.png
+          if-no-files-found: warn
+
   # A single required status for every feature branch and normal main push.
   # A branch ruleset can require this job; no direct-push protection is implied
   # by the workflow file alone.

@@ -1,5 +1,21 @@
 # TODO — Gameplay depth design
 
+## Phase 2 Coast visual-quality implementation — evidence ledger (2026-10-27)
+
+Branch: `feature/phase2-coast-visual-quality`. Scope: Coast art pass only; no Phase 1/3 gameplay or FPS controls.
+
+- [x] Inspect latest main, TODO, CLAUDE.md, renderer/lighting/scene/VFX structure; create the Phase 2 branch from `3a5c25a`. Review and branch creation confirmed via GitHub.
+- [x] Commit a test-first Coast scene contract and real-WebGL browser capture specification (`9c5679`). Historical RED test execution is **not verified**; test-only CI was interrupted by a follow-on push.
+- [x] Commit Coast material/palette changes, typed pooled coastline scenery, tier-bounded instancing and QA render-load instrumentation (`bcff252`). These checkboxes indicate files committed, not runtime acceptance.
+- [ ] Verify deterministic RED `tests/coast-visuals.test.js` on a test-only commit and GREEN on the implementation, plus strict TS and unit tests.
+- [ ] Inspect actual Before screenshots taken from unchanged main and After screenshots from the running Coast WebGL renderer across 1440×900 / 390×844 / 320×740 / 844×390; verify cockpit and showroom camera modes, reduced motion and both locales.
+- [ ] Report numerical before/after `?perf` p50/p95/FPS, draw calls, and triangles for identical conditions. CI SwiftShader is software-rendered, not physical device evidence.
+- [ ] Validate manual Android Chrome / iPhone Safari and thermals when real devices are available.
+- [ ] Run complete browser, responsive layout, World Tour, Cloud Save, build, typecheck, and exact-HEAD GitHub Actions `quality-gate`.
+- [ ] Synchronize latest main and merge without PR only after all required gates are verified.
+
+**Audio assessment:** Purely cosmetic Coast changes use existing Web Audio feedback; no new cues warranted.
+
 ## Upcoming gameplay and presentation phases (2026-10-27)
 
 - [ ] **Phase 1 — Flight and arcade gameplay feel:** Balance ground/air time, extend practical FLY use, strengthen DRIFT → NITRO → FLY → landing flow and responsive player feedback. Protect existing modes, records, controls and accessibility; develop with TDD on a standalone feature branch.
