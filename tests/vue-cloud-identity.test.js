@@ -26,3 +26,15 @@ test('Vue exclusively owns cloud profile name, identity and avatar fallback', as
   assert.doesNotMatch(controller, /avatar\.src\s*=|avatar\.hidden\s*=|avatar\.removeAttribute\(['"]src['"]\)/,
     'avatar src and visibility are Vue-owned');
 });
+
+test('broken cloud avatar stays in fallback across the same account refresh, but retries a changed URL', async () => {
+  const { cloudView, updateCloudView, updateCloudProfile } = await import('../src/cloud-view-state.ts');
+  const profile = { name: 'Pilot', identity: 'Signed in', avatarUrl: 'https://example.test/missing.png' };
+  updateCloudProfile(profile);
+  updateCloudView({ avatarFailed: true });
+  updateCloudProfile({ ...profile, name: 'Updated Pilot' });
+  assert.equal(cloudView.avatarFailed, true, 'a sync or locale refresh must not flicker a broken avatar back');
+  assert.equal(cloudView.name, 'Updated Pilot');
+  updateCloudProfile({ ...profile, avatarUrl: 'https://example.test/new.png' });
+  assert.equal(cloudView.avatarFailed, false, 'changed photo URLs may be retried');
+});
