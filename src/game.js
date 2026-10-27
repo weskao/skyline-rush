@@ -6,6 +6,8 @@ import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
 import { createElimination, stepElimination } from './elimination.ts';
 import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './active-items.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
+import { createRings, RING_RADIUS, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
+export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
 import { raceCompletion } from './race-objectives.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
@@ -114,15 +116,6 @@ export const shortcutPylons = section => Array.from({ length: Math.ceil((section
 }));
 const PYLON_HALF_WIDTH = 1.2; // m
 
-export const RING_RADIUS = 4.8;
-export const RISK_RING_RADIUS = 2.4;
-export const RING_FUEL = 20; // charge ring
-export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
-export const RISK_SCORE = 500;
-export const PERFECT_LINE_NITRO = 1;
-export const RING_SPACING = 220;
-export const MYSTERY_EFFECTS = ['shield', 'magnet', 'ghost', 'freeze'];
-export const EFFECT_TIMES = { shield: 10, magnet: 5, ghost: 3, freeze: 2 }; // seconds; shield also ends on the first absorbed hit
 export const MAGNET_RANGE = 12; // m
 export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
@@ -179,38 +172,6 @@ function createPickups(track) {
     pickups.push({ distance: (s.from + s.to) / 2, x: s.x, altitude: s.altitude, tier: 'tank' });
   }
   return [...pickups.filter(pickup => !blocked(pickup)), overcharge].sort((a, b) => a.distance - b.distance);
-}
-
-// Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
-// other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
-function createRings(track) {
-  const random = seededRng(track.seed, RACE_STREAMS.rings);
-  const rings = [];
-  const inTunnel = distance => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
-  for (let distance = RING_SPACING; distance < track.length - 100;) {
-    const roll = random();
-    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? 'risk' : 'mystery';
-    let x = 2.5;
-    let altitude = 8;
-    if (!track.fixedRings) {
-      x = Math.round((random() * 2 - 1) * 70) / 10;
-      altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
-    }
-    if (inTunnel(distance)) { // the car cannot climb in a tunnel, so a 'risk' ring there would be free
-      altitude = 1.5;
-      if (type === 'risk') type = 'nitro';
-    }
-    rings.push({ distance, x, altitude, radius: type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS, type, group: 0 });
-    distance += track.fixedRings ? RING_SPACING : Math.round(200 + random() * 120);
-  }
-  for (let i = 0, group = 0; i < rings.length; group++) {
-    const left = rings.length - i;
-    let size = 3 + Math.floor(random() * 3);
-    if (left - size < 3) size = left <= 5 ? left : left - 3;
-    for (let j = i; j < i + size; j++) rings[j].group = group;
-    i += size;
-  }
-  return rings;
 }
 
 // The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
