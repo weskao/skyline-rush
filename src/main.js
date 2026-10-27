@@ -31,6 +31,7 @@ import { recordGhost, ghostAt } from './ghost.ts';
 import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
+import { createFramePacer, parseFpsPreference, FPS_STORAGE_KEY } from './frame-pacing.ts';
 import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
 import { setupPhotoUI } from './photo-ui.ts';
@@ -556,6 +557,17 @@ try {
   let hudElapsed = 0;
   let wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search);
+  let savedFps = null;
+  try { savedFps = localStorage.getItem(FPS_STORAGE_KEY); } catch { /* in-memory preference still works */ }
+  const pacer = createFramePacer(savedFps);
+  const fpsControl = document.querySelector('#target-fps');
+  fpsControl.value = pacer.preference;
+  fpsControl.addEventListener('input', () => {
+    pacer.setPreference(parseFpsPreference(fpsControl.value));
+    try { localStorage.setItem(FPS_STORAGE_KEY, pacer.preference); } catch { /* optional storage */ }
+    world.setRenderScale(1);
+  });
+  let lastScale = 1;
   function frame(now) {
     const rawDelta = (now - previousTime) / 1000;
     previousTime = now;
@@ -588,7 +600,15 @@ try {
     wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
     const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null : null;
-    world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
+    if (pacer.tick(now, { racing: race.phase === 'racing', hidden: document.hidden })) {
+      if (lastScale !== pacer.renderScale) {
+        lastScale = pacer.renderScale;
+        world.setRenderScale(lastScale);
+      }
+      const renderStarted = performance.now();
+      world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
+      pacer.completeRender(performance.now() - renderStarted);
+    }
     sound.update(race);
     hudElapsed += dt;
     if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
