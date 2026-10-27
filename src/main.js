@@ -14,11 +14,10 @@ import { icon } from './icons.ts';
 import { createRace as createBareRace, startRace, stepRace, useHeldItem, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.ts';
 import { RULE_PRESETS } from './race-config.ts';
-import { createSprintSeries, sprintTotal } from './sprint-series.ts';
+import { createSprintSeries } from './sprint-series.ts';
 import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.ts';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
-import { stuntMedal } from './stunt-attack.ts';
-import { createCup, cupStandings, cupComplete, cupTotalTime } from './championship-cup.ts';
+import { createCup, cupComplete } from './championship-cup.ts';
 import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.ts';
@@ -47,6 +46,8 @@ import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
 import { settleRace } from './race-results.ts';
+import { resultView, setupResultScreen } from './result-screen.ts';
+import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
@@ -191,7 +192,7 @@ const nitroSegments = [...nitroHud.querySelectorAll('.nitro-segment')];
 const nitroStatus = $('#nitro-status');
 const nitroMeter = $('#nitro-meter');
 
-const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
+const renderResult = setupResultScreen();
 
 const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
 
@@ -724,7 +725,7 @@ function phaseUI() {
     $('#new-best').hidden = !record;
     $('#result-style').hidden = race.mode !== 'classic';
     $('#result-links').hidden = false;
-    lastResult = { race, best, record, medals, series: sprintSeries, cup, stunt };
+    lastResult = { race, best, record, medals, series: sprintSeries, cup, stunt, next: settled.next };
   }
   phaseText();
 }
@@ -739,79 +740,7 @@ function phaseText() {
     ui['overlay-copy'].textContent = t('overlay.pausedCopy');
   }
   if (phase !== 'finished' || lastResult?.race !== race) return;
-  const { best, record, medals, series, cup: finishedCup, stunt: finishedStunt } = lastResult;
-  const { result } = race;
-  if (race.mode === 'elimination') {
-    ui['overlay-title'].textContent = t(result.success ? 'mode.eliminationWon' : 'mode.eliminationLost');
-    ui['overlay-copy'].textContent = t('mode.eliminationSummary',{n:race.elimination.eliminated.length});
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.eliminationPosition')}</span><strong>${result.position} / 4</strong></div>
-      <div><span>${t('mode.totalTime')}</span><strong>${timeString(result.time)}</strong></div>`;
-    resultCounts=[];return;
-  }
-  if (finishedStunt) {
-    const continuing = finishedStunt.elapsed < finishedStunt.duration && result.endReason === 'route';
-    const left = Math.max(0, finishedStunt.duration - finishedStunt.elapsed);
-    ui['overlay-title'].textContent = t(continuing ? 'mode.stuntHeatEnd' : 'mode.stuntComplete');
-    ui['overlay-copy'].textContent = t('mode.stuntSummary', {
-      heats:finishedStunt.heats, max:finishedStunt.maxCombo, air:finishedStunt.airTime.toFixed(1),
-    });
-    if (continuing) $('#next-stage').textContent = t('mode.stuntNext', {sec:Math.ceil(left)});
-    const medal = continuing ? null : stuntMedal(finishedStunt.score, finishedStunt.duration);
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.stuntPoints')}</span><strong>${Math.round(finishedStunt.score)}</strong></div><div><span>${t('mode.stuntTime')}</span><strong>${Math.floor(finishedStunt.elapsed)} / ${finishedStunt.duration} s</strong></div>${continuing?'':`<div><span>${t('mode.stuntBest')}</span><strong>${Math.round(best)}</strong></div><div><span>${t('mode.stuntMedal')}</span><strong>${medal ? t('mode.medal.' + medal) : t('mode.medal.none')}</strong></div>`}`;
-    resultCounts=[];
-    return;
-  }
-  if (finishedCup) {
-    const standings = cupStandings(finishedCup);
-    const complete = cupComplete(finishedCup);
-    const you = standings.find(entry => entry.name === 'YOU');
-    ui['overlay-title'].textContent = t(complete ? standings[0].name === 'YOU' ? 'mode.cupWon' : 'mode.cupComplete' : 'mode.cupStage', {
-      n: finishedCup.results.length, total: finishedCup.tracks.length,
-    });
-    ui['overlay-copy'].textContent = standings.map(({name,points},i) =>
-      `${i+1}. ${name} · ${points} ${t('mode.cupPts')}`).join('  ·  ');
-    $('#next-stage').textContent = complete ? '' : t('mode.cupNext', { track: trackName(finishedCup.tracks[finishedCup.results.length],getLocale()) });
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.cupPts')}</span><strong>${you.points}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(cupTotalTime(finishedCup))}</strong></div>`;
-    resultCounts = [];
-    return;
-  }
-  if (series && series.results.length < series.count) {
-    const index = series.results.length;
-    ui['overlay-title'].textContent = t('mode.stageComplete', { n: index, total: series.count });
-    ui['overlay-copy'].textContent = t('mode.stageContinue');
-    $('#next-stage').textContent = t('mode.nextStage', { n: index + 1, total: series.count });
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.stageTime')}</span><strong>${timeString(race.elapsed)}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(sprintTotal(series))}</strong></div>`;
-    resultCounts = [];
-    return;
-  }
-  if (race.mode === 'time' && !result.success) {
-    ui['overlay-title'].textContent = t('mode.cleanFailed');
-    ui['overlay-copy'].textContent = t('mode.cleanFailedCopy',{n:result.collisions});
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.collision')}</span><strong>${result.collisions}</strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(race.elapsed)}</strong></div>`;
-    resultCounts = [];
-    return;
-  }
-  if (race.mode === 'checkpoint' && !result.success) {
-    ui['overlay-title'].textContent = t('mode.checkpointFailed');
-    ui['overlay-copy'].textContent = t('mode.checkpointFailedCopy', { n: race.checkpoint.passed, total: race.checkpoint.gates.length });
-    ui['result-stats'].innerHTML = `<div><span>${t('mode.gates')}</span><strong>${race.checkpoint.passed} / ${race.checkpoint.gates.length} · ${t('mode.perfect')}: ${race.checkpoint.perfect}</strong></div><div><span>${t('mode.totalTime')}</span><strong>${timeString(race.elapsed)}</strong></div>`;
-    resultCounts = [];
-    return;
-  }
-  const displayedTime = series ? sprintTotal(series) : race.elapsed;
-  if (!$('#next-button').hidden) $('#next-track').textContent = trackName($('#next-button').dataset.next, getLocale());
-  ui['overlay-title'].textContent = series ? t('mode.seriesComplete') : race.mode !== 'classic' ? t('mode.resultTitle') : t(result.position === 1 ? 'overlay.winTitle' : 'overlay.finishTitle');
-  ui['overlay-copy'].textContent = t(record ? 'overlay.recordCopy' : 'overlay.againCopy') + t('overlay.summary', { near: result.nearMisses, contacts: result.collisions })
-    + (race.mode === 'gauntlet' ? ' ' + t('mode.hazardResult', { n: race.hazards.filter(h => h.passed).length, total: race.hazards.length }) : '')
-    + (medals.length ? t('overlay.medal', { list: medals.map(id => t(`medal.${id}`)).join(t('list.separator')) }) : '');
-  ui['result-stats'].innerHTML = `<div><span>${t('race.position')}</span><strong>${race.rivals.length ? result.position : t('mode.solo')}<small> / ${race.rivals.length + 1}</small></strong></div><div><span>${t('result.yourTime')}</span><strong>${timeString(displayedTime)}</strong></div><div><span>${t('result.best')}</span><strong>${timeString(best)}</strong></div>`;
-  $('#result-style').setAttribute('aria-label', t('result.starsAria', { n: result.stars }));
-  $('#result-style').innerHTML = `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${t('result.style', { score: result.score })}</strong><small>${t('result.styleHelp')}<br>${t('result.styleStars', { two: race.length * 0.25, three: race.length * 0.5 })}</small>`;
-  resultCounts = [
-    { element: ui['result-stats'].children[1].querySelector('strong'), value: displayedTime, format: timeString },
-    { element: ui['result-stats'].children[2].querySelector('strong'), value: best, format: timeString },
-    { element: $('#result-style > strong'), value: result.score, format: value => interpolate(L['result.style'], { score: Math.round(value) }) },
-  ];
+  resultCounts = renderResult(resultView(race, lastResult));
 }
 
 const hudNodes = Object.fromEntries(["clean-trial-hud","hazard-warning","elimination-hud","checkpoint-hud","sprint-stage","item-slot","item-status","activate-item","stunt-hud","practice-hud","race-length","ghost-split","style-score","aero-flow","aero-floor","aero-jet"].map(id => [id, document.getElementById(id)]));
