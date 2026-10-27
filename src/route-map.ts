@@ -8,6 +8,8 @@ const NS = 'http://www.w3.org/2000/svg';
 interface RoutePoint { distance: number; x: number; y: number }
 interface RouteDriver { id: string; distance: number }
 const cache = new Map<string, RoutePoint[]>();
+const lineCache = new Map<string, string>();
+const overpassCache = new Map<string, string>();
 const racers = ['YOU', 'NOVA', 'ORBIT', 'APEX'];
 const clamp = (x: number): number => Math.max(0, Math.min(1, Number.isFinite(x) ? x : 0));
 const svg = (tag: string, attrs: Record<string, string | number> = {}): SVGElement => {
@@ -19,18 +21,29 @@ export function routeSamples(trackId: string): RoutePoint[] {
   if (!cache.has(trackId)) cache.set(trackId, trackOverview(trackId, 128));
   return cache.get(trackId)!;
 }
+const pointText = (p: {x: number; y: number}): string => `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
 export function routePolyline(trackId: string): string {
-  return routeSamples(trackId).map(p => `${(p.x * 100).toFixed(2)},${(p.y * 100).toFixed(2)}`).join(' ');
+  let line = lineCache.get(trackId);
+  if (line === undefined) {
+    line = routeSamples(trackId).map(p => pointText({x: p.x * 100, y: p.y * 100})).join(' ');
+    lineCache.set(trackId, line);
+  }
+  return line;
 }
 // Mark only the elevated exit arc; all coordinates come from the cached centreline.
 // No additional route geometry or per-frame SVG elements are constructed.
 export function spiralUpperRoutePolyline(trackId: string): string {
   if (trackId !== 'spiral') return '';
-  const start = (SKY_SPIRAL.start + SKY_SPIRAL.end) / 2;
-  const samples = routeSamples(trackId).filter(p => p.distance > start && p.distance < SKY_SPIRAL.end);
-  const format = (p: RoutePoint) => `${(p.x * 100).toFixed(2)},${(p.y * 100).toFixed(2)}`;
-  const map = (distance: number) => format({ x: routeMarker(trackId, distance).x / 100, y: routeMarker(trackId, distance).y / 100 });
-  return [map(start), ...samples.map(format), map(SKY_SPIRAL.end)].join(' ');
+  let line = overpassCache.get(trackId);
+  if (line === undefined) {
+    const start = (SKY_SPIRAL.start + SKY_SPIRAL.end) / 2;
+    const samples = routeSamples(trackId).filter(p => p.distance > start && p.distance < SKY_SPIRAL.end);
+    line = [pointText(routeMarker(trackId, start)),
+      ...samples.map(p => pointText({x: p.x * 100, y: p.y * 100})),
+      pointText(routeMarker(trackId, SKY_SPIRAL.end))].join(' ');
+    overpassCache.set(trackId, line);
+  }
+  return line;
 }
 export function routeMarker(trackId: string, distance: number): RoutePoint {
   const samples = routeSamples(trackId);
@@ -40,12 +53,31 @@ export function routeMarker(trackId: string, distance: number): RoutePoint {
   const frac = value - index, a = samples[index], b = samples[index + 1];
   return { x: (a.x + (b.x - a.x) * frac) * 100, y: (a.y + (b.y - a.y) * frac) * 100 };
 }
+// Static chevron on the high half of the real helix. It is not another road
+// path or a per-frame DOM update, and its heading comes from routeMarker().
+export function spiralUpperDirectionChevron(trackId: string): string {
+  if (trackId !== 'spiral') return '';
+  const at = SKY_SPIRAL.start + (SKY_SPIRAL.end - SKY_SPIRAL.start) * .72;
+  const previous = routeMarker(trackId, at - 20), next = routeMarker(trackId, at + 20);
+  const point = routeMarker(trackId, at);
+  const dx = next.x - previous.x, dy = next.y - previous.y, length = Math.hypot(dx, dy) || 1;
+  const ux = dx / length, uy = dy / length;
+  return [
+    { x: point.x - ux * 1.6 - uy * 2.0, y: point.y - uy * 1.6 + ux * 2.0 },
+    { x: point.x + ux * 2.5, y: point.y + uy * 2.5 },
+    { x: point.x - ux * 1.6 + uy * 2.0, y: point.y - uy * 1.6 - ux * 2.0 },
+  ].map(pointText).join(' ');
+}
 const routeLabel = (trackId: string, locale: string = getLocale()): string => t('route.aria', { name: trackName(trackId, locale) }, locale);
 export function createRouteMap(trackId: string, { live = false }: { live?: boolean } = {}) {
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
   const upper = spiralUpperRoutePolyline(trackId);
-  if (upper) element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
+  if (upper) {
+    element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
+    element.append(svg('polyline', { points: spiralUpperDirectionChevron(trackId),
+      class: 'route-spiral-direction', fill: 'none', 'aria-hidden': 'true' }));
+  }
   for (const [kind, d] of [['start', 0], ['finish', raceTracks[trackId].length]] as const) {
     const p = routeMarker(trackId, d);
     element.append(svg('circle', { cx: p.x, cy: p.y, r: 2, class: `route-${kind}` }));
