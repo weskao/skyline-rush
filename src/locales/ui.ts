@@ -3,6 +3,7 @@
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
 import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.ts';
 import { COLLECTIBLES_GUIDE_COPY } from '../collectibles-guide-copy.ts';
+import { DISPLAY_SETTINGS_COPY } from './display-settings.ts';
 export const UI = Object.freeze({
   en: {
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
@@ -307,13 +308,7 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': 'Realistic',
     'vfx.preset.cinematic': 'Cinematic',
     'vfx.preset.extreme': 'Extreme · sci-fi',
-    'vfx.fps': 'Target FPS',
-    'vfx.fps.auto': 'Auto',
-    'vfx.fps.note': 'Auto adjusts render FPS and resolution only. Quality is selected separately.',
-    'vfx.quality': 'Quality',
-    'vfx.quality.low': 'Low',
-    'vfx.quality.medium': 'Medium',
-    'vfx.quality.high': 'High',
+    ...DISPLAY_SETTINGS_COPY.en,
     'vfx.aeroMode': 'Aerodynamics',
     'vfx.aeroMode.drag': 'Low drag',
     'vfx.aeroMode.downforce': 'High downforce',
@@ -920,13 +915,7 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': '寫實',
     'vfx.preset.cinematic': '電影感',
     'vfx.preset.extreme': '極致 · 科幻',
-    'vfx.fps': '目標 FPS',
-    'vfx.fps.auto': '自動',
-    'vfx.fps.note': '自動模式僅調整繪圖幀率與解析度；畫質可獨立選擇。',
-    'vfx.quality': '畫質',
-    'vfx.quality.low': '低',
-    'vfx.quality.medium': '中',
-    'vfx.quality.high': '高',
+    ...DISPLAY_SETTINGS_COPY['zh-TW'],
     'vfx.aeroMode': '空氣力學',
     'vfx.aeroMode.drag': '低風阻',
     'vfx.aeroMode.downforce': '高下壓力',

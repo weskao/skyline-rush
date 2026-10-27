@@ -10,6 +10,7 @@ import { canopy, carShell, roadRibbon } from './geometry.ts';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.ts';
+import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
@@ -796,24 +797,11 @@ export function createWorld(canvas) {
       player.userData.lightColor.fromArray(paint.light);
     },
     setRenderScale(scale) {
-      adaptiveScale = Number.isFinite(scale) ? Math.max(0.75, Math.min(1, scale)) : 1;
-      const maxRatio = visual.quality === 'low' ? 1 : visual.quality === 'medium' ? 1.25 : 1.5;
-      const nextRatio = Math.min(devicePixelRatio, maxRatio) * adaptiveScale;
-      if (Math.abs(nextRatio - renderPixelRatio) > .001) {
-        renderPixelRatio = nextRatio;
-        renderer.setPixelRatio(nextRatio);
-        composer.setPixelRatio(nextRatio);
-        resize();
-      }
+      adaptiveScale = scale; this.configureVFX(visual);
     },
     configureVFX(options) {
-      const updated=vfxSettings(options);
-      visual=updated;
-      // Preserve full scene and texture geometry. Lower the GPU pixel budget
-      // only on devices whose initial quality or manual user choice calls for
-      // it; high quality stays at the original 1.5x DPR cap.
-      const maxRatio=visual.quality==='low'?1:visual.quality==='medium'?1.25:1.5;
-      const nextRatio=Math.min(devicePixelRatio,maxRatio)*adaptiveScale;
+      visual=vfxSettings(options);
+      const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
       if(Math.abs(nextRatio-renderPixelRatio)>.001){

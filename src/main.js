@@ -31,7 +31,7 @@ import { recordGhost, ghostAt } from './ghost.ts';
 import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
-import { createFramePacer, parseFpsPreference, FPS_STORAGE_KEY } from './frame-pacing.ts';
+import { setupFpsUI } from './fps-ui.ts';
 import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
 import { setupPhotoUI } from './photo-ui.ts';
@@ -552,26 +552,11 @@ try {
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(vfx.settings());
   world.previewAppearance(PAINTS[equippedPaint]);
-  let previousTime = performance.now();
-  let accumulator = 0;
-  let hudElapsed = 0;
-  let wasCalm = calmMotion();
+  let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search);
-  let savedFps = null;
-  try { savedFps = localStorage.getItem(FPS_STORAGE_KEY); } catch { /* in-memory preference still works */ }
-  const pacer = createFramePacer(savedFps);
-  const fpsControl = document.querySelector('#target-fps');
-  fpsControl.value = pacer.preference;
-  fpsControl.addEventListener('input', () => {
-    pacer.setPreference(parseFpsPreference(fpsControl.value));
-    try { localStorage.setItem(FPS_STORAGE_KEY, pacer.preference); } catch { /* optional storage */ }
-    world.setRenderScale(1);
-  });
-  let lastScale = 1;
-  let renderElapsed = 0;
+  const fps = setupFpsUI(scale => world.setRenderScale(scale));
   function frame(now) {
-    const rawDelta = (now - previousTime) / 1000;
-    previousTime = now;
+    const rawDelta = (now - previousTime) / 1000; previousTime = now;
     const dt = Math.max(0, Math.min(rawDelta, 0.05));
     // The 0.05s clamp already keeps a tab-switch gap from becoming unseen racing (hiding also pauses);
     // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
@@ -597,27 +582,18 @@ try {
     }
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.
-    if (calm && !wasCalm) vfx.stopMotionIfCalm();
-    wasCalm = calm;
+    if (calm && !wasCalm) vfx.stopMotionIfCalm(); wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
-    renderElapsed += dt;
     const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null : null;
-    const shouldRender = pacer.tick(now, { racing: race.phase === 'racing', hidden: document.hidden });
+    const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
     if (shouldRender) {
-      if (lastScale !== pacer.renderScale) {
-        lastScale = pacer.renderScale;
-        world.setRenderScale(lastScale);
-      }
       const renderStarted = performance.now();
-      world.render(race, Math.min(renderElapsed, 0.05), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
-      renderElapsed = 0;
-      pacer.completeRender(performance.now() - renderStarted);
+      world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
+      fps.completeRender(performance.now() - renderStarted);
     }
     sound.update(race);
-    hudElapsed += dt;
-    if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
-      updateUI(now / 1000, input);
-      if (tutorial) renderTutorial();
+    hudElapsed += dt; if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
+      updateUI(now / 1000, input); if (tutorial) renderTutorial();
       hudElapsed = 0;
     }
     perfOverlay?.record(now, rawDelta, race.phase === 'racing', shouldRender);

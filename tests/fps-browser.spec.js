@@ -18,7 +18,7 @@ test('FPS choice translates to Traditional Chinese and survives the language swi
   await page.goto('/');
   await page.locator('#target-fps').selectOption('30');
   await page.locator('#locale-select').selectOption('zh-TW');
-  await expect(page.locator('[data-i18n="vfx.fps"]')).toHaveText('目標 FPS');
+  await expect(page.locator('[data-i18n="vfx.fps"]')).toHaveText('目標幀率');
   await expect(page.locator('#target-fps')).toHaveValue('30');
 });
 
