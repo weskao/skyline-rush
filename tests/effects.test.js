@@ -27,6 +27,29 @@ function flight(t, altitude = 4, speed = 40) {
   return { effects, race, attributes: points.geometry.attributes };
 }
 
+function boostSparksAfterLanding(t, chain) {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const race = createRace();
+  race.phase = 'racing';
+  effects.update(race, 0.016, 0, false, false);
+  race.player.landing = { speed: 6, time: race.elapsed, distance: race.player.distance, x: 0, chain };
+  effects.update(race, 0.016, 0, false, false);
+  effects.update(race, 0.03, 0, false, false);
+  const { alpha, color, position } = scene.children.find(object => object.isPoints).geometry.attributes;
+  assert.ok([...position.array].every(Number.isFinite), 'no NaN particle positions');
+  const blue = [0.15, 0.8, 2.5].map(Math.fround); // colour buffer is Float32
+  return [...alpha.array].filter((value, i) => value > 0 &&
+    blue.every((channel, c) => color.array[i * 3 + c] === channel)).length;
+}
+
+test('a chain landing bursts boost-blue sparks that an ordinary landing does not', t => {
+  assert.equal(boostSparksAfterLanding(t, false), 0);
+  assert.ok(boostSparksAfterLanding(t, true) > 0);
+});
+
 test('downwash descends and carries forward momentum after leaving a moving car', t => {
   const { effects, race, attributes } = flight(t);
   effects.update(race, 0.04, 0, false, false);
