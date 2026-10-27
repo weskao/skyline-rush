@@ -21,6 +21,22 @@
 - [x] Full GitHub CI on `423b445` (workflow_dispatch `full_regression=true`, run 40518765394): unit, cloud-save, browser shards 1–8, world-tour-mid-race and quality-gate all success. The push run 40517690494 used the focused refactor gate.
 - [ ] Physical iPhone Safari / Android Chrome pass (touch pad, tilt, audio slider drag, results/pause clickability).
 
+## Phase 3 — FPS and adaptive performance (feature/phase3-adaptive-fps)
+
+- [x] Merge current `main` into this feature branch, preserving main's Vue/TypeScript module extraction and RED tests; merge commit `b370169`.
+- [x] Implement an isolated TypeScript FPS pacer supporting Auto, 30 FPS and 60 FPS (120 FPS withheld until real device/refresh capability validation).
+- [x] Add local-only FPS preference storage with invalid-value fallback, bilingual VFX-panel controls, and independent Quality selection.
+- [x] Keep fixed 60 Hz simulation and ghost sampling outside the rendering limit, and accumulate VFX elapsed time across skipped renders.
+- [x] Limit adaptive rendering cost using the existing Three.js DPR/composer path without modifying saved graphics quality.
+- [x] Add deterministic unit tests for pacing/auto policy and engine-state parity, plus browser tests for save/restore, i18n and malformed preferences.
+- [ ] Confirm RED failure on the test-first commit from CI logs; record evidence explicitly before treating historical RED as verified.
+- [ ] Confirm TypeScript/JS typecheck, unit tests, production build, all browser shards, World Tour, Cloud Save and exact-HEAD CI success.
+- [ ] Capture paired baseline/feature frame p50/p95 and render-work timings in the same desktop/mobile environment. No before/after performance claims until measured.
+- [ ] Validate Android Chrome and iPhone Safari on real devices, including thermals, input latency, 120 Hz capability and long-session stability.
+- [ ] Re-sync latest main at completion, review changes and merge into main only after all required gates have passed.
+
+**Scope:** Auto uses sustained measured CPU-side render submission time; browser/driver GPU queues and device temperature require real-world verification. A 120 FPS option is deliberately unavailable until those checks justify it. `?perf` reports actual presented frame intervals, not merely the rate of rAF callbacks. Manual FPS never silently changes itself.
+
 ## Future feature request: configurable and adaptive FPS (2026-10-27)
 
 **Status:** Requirements recorded for later discussion. No design or implementation has been approved.
