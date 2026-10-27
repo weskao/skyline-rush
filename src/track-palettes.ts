@@ -15,8 +15,14 @@ export const TRACK_PALETTES = {
 export function applyTrackSurfaceStyle(trackId: string, road: MeshStandardMaterial,
   buildings: MeshStandardMaterial, roadColor: string): void {
   road.color.set(roadColor);
-  road.roughness = trackId === 'neon' ? .16 : trackId === 'coast' ? .91 : .5;
-  road.metalness = trackId === 'coast' ? .025 : .3;
-  buildings.roughness = trackId === 'coast' ? .84 : .38;
-  buildings.metalness = trackId === 'coast' ? .055 : .5;
+  // Neon remains rain-slick, while Canyon/Aurora stay physically matte.
+  // Retain Phase 2 Coast values and leave the five World Tour tiers unchanged.
+  road.roughness = trackId === 'neon' ? .4 : trackId === 'coast' ? .91
+    : trackId === 'canyon' ? .86 : trackId === 'aurora' ? .74 : .5;
+  road.metalness = trackId === 'neon' ? .08 : trackId === 'coast' ? .025
+    : trackId === 'canyon' ? .025 : trackId === 'aurora' ? .035 : .3;
+  buildings.roughness = trackId === 'coast' ? .84 : trackId === 'neon' ? .46
+    : trackId === 'canyon' ? .92 : trackId === 'aurora' ? .82 : .38;
+  buildings.metalness = trackId === 'coast' ? .055 : trackId === 'neon' ? .24
+    : trackId === 'canyon' ? .025 : trackId === 'aurora' ? .04 : .5;
 }

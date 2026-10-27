@@ -17,7 +17,7 @@ export function createSkyScene(scene) {
   const geometry = roadRibbon(ROWS);
   const [positions, normals, indices] = [geometry.attributes.position.array, geometry.attributes.normal.array, geometry.index.array];
   const road = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-    color: '#111827', metalness: 0.42, roughness: 0.35, side: THREE.DoubleSide,
+    color: '#202b42', metalness: 0.13, roughness: 0.70, side: THREE.DoubleSide,
   }));
   road.frustumCulled = false;
   group.add(road);
