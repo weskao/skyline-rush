@@ -21,7 +21,8 @@ test('Vue owns Cloud Save controls, status announcements and last-sync presentat
     ':data-cloud-state="cloudView.statusState"', ':aria-busy="cloudView.statusBusy"',
     '{{ cloudView.statusText }}', '{{ cloudView.lastSyncText }}'
   ]) assert.ok(component.includes(binding), 'missing Vue presentation binding ' + binding);
-  const controller = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  // The Cloud Save controller moved from main.js to cloud-ui.ts; the ownership contract covers both.
+  const controller = ['main.js', 'cloud-ui.ts'].map(file => readFileSync(new URL('../src/' + file, import.meta.url), 'utf8')).join('\n');
   for (const id of ['cloud-login', 'cloud-logout', 'cloud-logout-note', 'cloud-delete',
     'cloud-switch', 'cloud-sync-now', 'cloud-status', 'cloud-last-sync'])
     assert.doesNotMatch(controller, new RegExp(`\\$\\('#${id}'\\)\\.(?:disabled|hidden|textContent|setAttribute)\\s*(?:=|\\()`),

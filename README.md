@@ -263,12 +263,15 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `src/route-map.js`, `src/i18n.js`: SVG full-route and live racer maps; locale detection, the saved choice, `t()` and the English/繁體中文 track names; `src/locales/` holds the catalogs.
 - `scripts/capture-og-images.mjs`: captures the English and zh-TW cover images and the zh-TW README screenshots from the real app.
 - `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
-- `src/main.js`, `src/style.css`: mounts `App.vue`, then drives telemetry, pause/results, responsive controls and lifecycle on that DOM.
+- `src/main.js`, `src/style.css`: mounts `App.vue`, wires the screen controllers and runs the race lifecycle (start, pause, restart, results) and the frame loop.
+- `src/*-ui.ts`: one TypeScript controller per screen area (race selection, cloud save, touch controls, key map, VFX, audio, history dialog, photo mode).
+- `src/race-hud.ts`, `src/race-hud-modes.ts`: the in-race HUD, written imperatively each HUD tick.
+- `src/race-results.ts`, `src/result-screen.ts`, `src/session-progress.ts`: recording a finished race (bests, unlocks, medals, ghosts) and showing its result screen.
 - `vite.config.js`: Vite with `@vitejs/plugin-vue`.
 - `src/perf.js`: frame-time percentiles for the `?perf` device-check readout.
-- `src/audio.js`: synthesized sound effects and the looping intro/race music sequencer.
+- `src/audio.js`: synthesized sound effects and the looping music sequencer; songs live in `src/music-tracks.ts`, race-to-sound events in `src/race-audio-events.ts`.
 - `src/audio-settings.js`: reads saved music/sound on/off and volume from `localStorage`, and the mute-keeps-level rule for sliders.
-- `tests/`: unit and browser behavior tests.
+- `tests/`: unit and browser behavior tests. `tests/module-size.test.js` keeps every source module at or below 400 lines (older large files have ceilings that only go down).
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
 - `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `npm run test:layout` when pushed commits touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
 
