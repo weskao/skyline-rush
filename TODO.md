@@ -7,6 +7,13 @@
 - [x] Inspect latest main, CLAUDE.md, road/camera/route-map modules and their regression tests; create a new feature branch from latest main.
 - [ ] RED: deterministic track-theme scenery bounds, geometry/road clearance, shared-asset disposal, and cached minimap upper-ramp overlay tests.
 - [x] GREEN implementation committed: bounded InstancedMesh roadside detail for Neon, Canyon and Aurora, preserving Coast's Phase 2 benchmark and Sky Spiral's existing authored road. Await CI verification.
+- [x] Fix tier-based scenic streaming: Low (8), Medium (16), High (24) maintain contiguous near-road sectors after a quality change; ring-buffer updates only moved slots.
+- [x] Upgrade roadside visual identity with one additional batched, low-poly accent layer per track: Neon illuminated façades, Canyon sandstone strata, Aurora snowy treetops. Preserve three draw submissions per visible track and explicitly dispose owned meshes/materials.
+- [x] Cache static route-map polyline and Sky Spiral elevated arc; add a canonical-centreline direction chevron without per-frame SVG reconstruction.
+- [x] Reduce Sky Spiral road geometry and InstancedMesh uploads to 10 m sector boundaries. Camera-relative road translation continues every frame, with deterministic parity and teleport regression tests added.
+- [x] Resolve typed route sample vs. projected marker contracts in `route-map.ts` to protect strict TypeScript checks.
+- [x] Leave legacy Coast visuals, original road topology/collision/record IDs, and Phase 3 Auto/30/60 controls unchanged by this visual/streaming pass.
+- [ ] Verify above newly added contract tests and browser snapshots on the exact final feature SHA; test-first RED commits were recorded but cancelled Actions runs are not a verified RED result.
 - [x] GREEN implementation committed: Sky Spiral's elevated half-turn overlay uses the cached SVG centreline; markers remain on existing route. Await CI verification.
 - [x] Extract the existing unbounded classic-road centreline as a single typed source for Three.js, collision-space projection and route overview, preserving the exact sine curve and record/Ghost compatibility. CI pending.
 - [x] Adjust road material finish (Neon rain-slick, Canyon dusty, Aurora frosted, Sky Spiral diffuse) without altering mesh geometry, collision, physics or Coast's Phase 2 palette. New contract tests committed; CI pending.
