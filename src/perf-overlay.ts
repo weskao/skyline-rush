@@ -9,11 +9,20 @@ export function createPerfOverlay(search: string) {
   const overlay = document.body.appendChild(Object.assign(document.createElement('output'), { id: 'perf-overlay', className: 'perf-overlay' }));
   const frames: { at: number; ms: number }[] = [];
   let shownAt = 0;
+  let lastPresentedAt: number | null = null;
   return {
     /** Racing frames only; a long stall (tab switch) is not a frame time. */
-    record(now: number, rawDelta: number, racing: boolean): void {
-      if (!racing || rawDelta > 0.25) return;
-      frames.push({ at: now, ms: rawDelta * 1000 });
+    record(now: number, rawDelta: number, racing: boolean, rendered = true): void {
+      if (!racing || rawDelta > 0.25) {
+        lastPresentedAt = null;
+        return;
+      }
+      if (!rendered) return;
+      if (lastPresentedAt === null) { lastPresentedAt = now; return; }
+      const elapsed = now - lastPresentedAt;
+      lastPresentedAt = now;
+      if (elapsed <= 0 || elapsed > 250) return;
+      frames.push({ at: now, ms: elapsed });
       while (now - frames[0]!.at > PERF_WINDOW * 1000) frames.shift();
       if (now - shownAt < 500) return;
       shownAt = now;
