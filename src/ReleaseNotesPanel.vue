@@ -23,7 +23,11 @@ function hideBrokenThumbnail(index: number) {
       </button>
     </div>
     <section id="release-panel" class="release-panel" role="tabpanel" tabindex="0" :aria-labelledby="releaseView.panelLabel">
-      <img id="release-hero" class="release-hero" alt="" :src="releaseView.heroSrc || undefined" :hidden="!releaseView.heroSrc" @error="releaseView.heroSrc = ''">
+      <video v-if="releaseView.heroVideo" :key="releaseView.heroVideo.src" id="release-video" class="release-hero release-video"
+        :data-variant="releaseView.heroVideo.variant" :src="releaseView.heroVideo.src" :poster="releaseView.heroVideo.poster"
+        muted loop playsinline preload="none" disablepictureinpicture :controls="releaseView.heroVideo.controls"
+        :aria-hidden="releaseView.heroVideo.controls ? undefined : 'true'" @error="releaseView.heroVideo = null"></video>
+      <img id="release-hero" class="release-hero" alt="" :src="releaseView.heroSrc || undefined" :hidden="!releaseView.heroSrc || !!releaseView.heroVideo" @error="releaseView.heroSrc = ''">
       <div class="release-meta"><span id="release-version">{{ releaseView.version }}</span><span id="release-date">{{ releaseView.date }}</span></div>
       <div id="release-items" class="release-entries">
         <article v-for="(entry, index) in releaseView.entries" :key="index" class="release-entry" :data-kind="entry.kind">
