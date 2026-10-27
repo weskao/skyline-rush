@@ -1155,6 +1155,8 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .track-route-map { display:block; height: 65px; margin: 6px 0 9px; border-radius: 4px; background: rgb(4 14 29 / .48); }
 .track-route-map .route-overview { width:100%; height:100%; }
 .route-overview-line { fill:none; stroke: #76d9f4; stroke-width: 2.4; stroke-linejoin:round; stroke-linecap:round; }
+/* Upper half of Sky Spiral rises above its own projected helix; cached, noninteractive SVG. */
+.route-spiral-upper { stroke:#ffdc94; stroke-width:3; stroke-dasharray:3 2.3; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
 .race-route-map { position:fixed; top:292px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }

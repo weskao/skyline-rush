@@ -1,5 +1,6 @@
 import { RACE_TRACKS } from './game.js';
 import { trackOverview } from './track-paths.ts';
+import { SKY_SPIRAL } from './sky-track.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 
 const raceTracks = RACE_TRACKS as Record<string, { length: number }>;
@@ -21,6 +22,16 @@ export function routeSamples(trackId: string): RoutePoint[] {
 export function routePolyline(trackId: string): string {
   return routeSamples(trackId).map(p => `${(p.x * 100).toFixed(2)},${(p.y * 100).toFixed(2)}`).join(' ');
 }
+// Mark only the elevated exit arc; all coordinates come from the cached centreline.
+// No additional route geometry or per-frame SVG elements are constructed.
+export function spiralUpperRoutePolyline(trackId: string): string {
+  if (trackId !== 'spiral') return '';
+  const start = (SKY_SPIRAL.start + SKY_SPIRAL.end) / 2;
+  const samples = routeSamples(trackId).filter(p => p.distance > start && p.distance < SKY_SPIRAL.end);
+  const format = (p: RoutePoint) => `${(p.x * 100).toFixed(2)},${(p.y * 100).toFixed(2)}`;
+  const map = (distance: number) => format({ x: routeMarker(trackId, distance).x / 100, y: routeMarker(trackId, distance).y / 100 });
+  return [map(start), ...samples.map(format), map(SKY_SPIRAL.end)].join(' ');
+}
 export function routeMarker(trackId: string, distance: number): RoutePoint {
   const samples = routeSamples(trackId);
   const total = raceTracks[trackId].length;
@@ -33,6 +44,8 @@ const routeLabel = (trackId: string, locale: string = getLocale()): string => t(
 export function createRouteMap(trackId: string, { live = false }: { live?: boolean } = {}) {
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
+  const upper = spiralUpperRoutePolyline(trackId);
+  if (upper) element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
   for (const [kind, d] of [['start', 0], ['finish', raceTracks[trackId].length]] as const) {
     const p = routeMarker(trackId, d);
     element.append(svg('circle', { cx: p.x, cy: p.y, r: 2, class: `route-${kind}` }));

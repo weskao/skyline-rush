@@ -15,6 +15,7 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createCoastScenery } from './coast-visuals.ts';
+import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.ts';
@@ -25,7 +26,6 @@ import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { hazardX } from './hazards.ts';
-
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 
@@ -514,7 +514,7 @@ export function createWorld(canvas) {
   scene.add(shadow);
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
-  const coastScenery = createCoastScenery(scene, roadCenter);
+  const coastScenery = createCoastScenery(scene, roadCenter), classicScenery = createClassicTrackScenery(scene, roadCenter);
   // Only inspect World Tour geometry when a showroom angle changes. Existing
   // landmark-only sightline checks don't detect scenery covering the car itself.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
@@ -881,8 +881,8 @@ export function createWorld(canvas) {
         warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
       const distance = preview ? previewDistance(trackId) : car.distance;
-      if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality);}
-      else coastScenery.hide();
+      if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality);} else coastScenery.hide();
+      if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
       // A readable driving corridor takes precedence over cinematic glare.
       // Dimming in the mountain bore is smoothed over the 38 m entrance.
@@ -1327,7 +1327,7 @@ export function createWorld(canvas) {
     },
     dispose() {
       stopLocaleSigns();
-      skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose();
+      skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();

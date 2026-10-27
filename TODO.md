@@ -6,8 +6,8 @@
 
 - [x] Inspect latest main, CLAUDE.md, road/camera/route-map modules and their regression tests; create a new feature branch from latest main.
 - [ ] RED: deterministic track-theme scenery bounds, geometry/road clearance, shared-asset disposal, and cached minimap upper-ramp overlay tests.
-- [ ] GREEN: add bounded InstancedMesh roadside detail for Neon, Canyon and Aurora, preserving Coast's Phase 2 benchmark and Sky Spiral's existing authored road.
-- [ ] GREEN: expose Sky Spiral's elevated half-turn on the existing cached SVG minimap, with start/finish/vehicle markers still sourced from the same route.
+- [x] GREEN implementation committed: bounded InstancedMesh roadside detail for Neon, Canyon and Aurora, preserving Coast's Phase 2 benchmark and Sky Spiral's existing authored road. Await CI verification.
+- [x] GREEN implementation committed: Sky Spiral's elevated half-turn overlay uses the cached SVG centreline; markers remain on existing route. Await CI verification.
 - [ ] Preserve road shape, 60 Hz collision geometry, mode layouts, record/Ghost compatibility and Phase 3 renderer settings.
 - [ ] Obtain real-WebGL screenshots of all five tracks in showroom and during play at desktop, mobile portrait/landscape, English and zh-TW; inspect camera occlusion, accessibility and layout.
 - [ ] Capture baseline/feature p50/p95 FPS, draw calls, triangles, memory when available; Android/iPhone thermal checks remain unverified unless genuine physical device results exist.
