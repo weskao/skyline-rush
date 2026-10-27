@@ -12,7 +12,7 @@
 - [x] Local evidence at `8c4ac0f`: `make verify` exit 0 (typecheck; 748 unit pass, 0 fail, 3 skipped; browser 450/450; World Tour 72/72); Firebase emulator suite 15/15 + rules 3/3 after the cloud and progress slices; `npm run test:layout` 30 + 42 after race selection.
 - [x] HUD perf A/B (`make perf BASE=130a7e0`, 6× CPU throttle, 3 × 20 s): p50 16.7 / p95 16.7 ms / 59.9 fps vs baseline p50 16.7 / p95 16.8 ms / 60 fps. Vsync-capped; no sub-frame comparison.
 - [x] Independent read-only review of every slice against `bc2838c` found no behavior divergence.
-- [ ] Full GitHub CI `quality-gate` on the exact pushed HEAD.
+- [x] Full GitHub CI on `423b445` (workflow_dispatch `full_regression=true`, run 40518765394): unit, cloud-save, browser shards 1–8, world-tour-mid-race and quality-gate all success. The push run 40517690494 used the focused refactor gate.
 - [ ] Physical iPhone Safari / Android Chrome pass (touch pad, tilt, audio slider drag, results/pause clickability).
 
 ## Future feature request: configurable and adaptive FPS (2026-10-27)
