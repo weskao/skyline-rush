@@ -289,11 +289,11 @@ test('landing emits one touchdown event with the actual descent speed and resets
   assert.equal(createRace().player.landing, null);
 });
 
-test('air dash: holding fly and boost together drains fuel at 22 per second and keeps the boost speed cap', () => {
+test('air dash: holding fly and boost together drains fuel at 18 per second and keeps the boost speed cap', () => {
   const race = racing();
   race.player.speed = 80;
   advance(race, 1, { fly: true, boost: true });
-  assert.ok(Math.abs(race.player.fuel - 78) < 0.5);
+  assert.ok(Math.abs(race.player.fuel - 82) < 0.5);
   advance(race, 1, { fly: true, boost: true });
   const car = race.player;
   assert.equal(car.thrusting, true);
@@ -310,11 +310,11 @@ test('FLY + NITRO: nitro burns no fuel, so flight stays up for the whole burst a
   assert.equal(car.thrusting, true);
   assert.equal(car.exhausted, false);
   assert.ok(car.nitroTime > 0);
-  assert.ok(Math.abs(car.fuel - 62) < 0.5); // 19/s flight only
+  assert.ok(Math.abs(car.fuel - 70) < 0.5); // 15/s flight only
   assert.ok(car.speed > MAX_SPEED + 14 && car.speed <= MAX_SPEED + 30);
 });
 
-test('FLY + BOOST + NITRO keeps the 22/s AIR DASH drain and the MAX_SPEED + 30 cap', () => {
+test('FLY + BOOST + NITRO keeps the 18/s AIR DASH drain and the MAX_SPEED + 30 cap', () => {
   const race = racing();
   Object.assign(race, { pickups: [], rings: [] }); // pickups would add fuel along the way
   Object.assign(race.player, { speed: 80, nitro: 1 });
@@ -323,7 +323,7 @@ test('FLY + BOOST + NITRO keeps the 22/s AIR DASH drain and the MAX_SPEED + 30 c
   assert.equal(car.thrusting, true);
   assert.equal(car.boosting, true);
   assert.ok(car.nitroTime > 0);
-  assert.ok(Math.abs(car.fuel - 56) < 0.5);
+  assert.ok(Math.abs(car.fuel - 64) < 0.5);
   assert.ok(car.speed > MAX_SPEED + 14 && car.speed <= MAX_SPEED + 30);
 });
 
