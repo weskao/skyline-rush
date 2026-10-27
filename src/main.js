@@ -330,7 +330,7 @@ function restart(trackId = race.trackId) {
     const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
-  race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config));
+  race = race.eventCourse ? raceSelect.recreate(race, trackId) : createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config));
   if (stunt && race.mode === 'stunt') race.stuntLimit = Math.max(.01, stunt.duration - stunt.elapsed);
   hud.resetMemory();
   goUntil = 0;

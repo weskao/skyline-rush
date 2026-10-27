@@ -1,5 +1,15 @@
 # TODO — Gameplay depth design
 
+## Event Lab v1 continuation (2026-10-28, feature/event-lab-lite)
+
+- [x] Observe schema/import/history/runtime RED; implement immutable version-1 local course documents, lane/distance editing, two templates, bounded Undo/Redo/Reset and text import/export. Unknown fields, inaccessible tracks, unsafe road sections, overlaps, malformed/oversized input and blocked storage are handled at the shared validation boundary.
+- [x] Compile authored barriers, NITRO rings and supplies into actual simulation/render arrays; real collision/refill checks pass. Retry preserves the canonical course and seed while resetting mutable flags. Course records remain isolated from Custom/Career.
+- [x] Follow-up RED → GREEN for a too-dense imported ring layout: require 150 m ring spacing so all visible authored gates fit the existing seven-ring pool. Preserve 44px mobile controls and a scrolling dialog.
+- [x] Five core tests and four real Chrome desktop/touch × English/zh-TW editor-to-race/retry flows pass; strict Vue/TS check passes. Actual editor, barrier and result captures reviewed in `artifacts/event-lab/`.
+- [ ] Complete merged `make verify`, exact-commit GitHub quality-gate and physical-device checks. Original MODE-10 remains open for the separately listed ramp/cone/checkpoint editor capabilities; no community/backend functionality is claimed.
+
+
+
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
 **Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.

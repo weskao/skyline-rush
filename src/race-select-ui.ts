@@ -6,6 +6,7 @@ import { loadRecentCustom } from './recent-custom.ts';
 import { refreshCustomSelects } from './custom-select.ts';
 import { createRouteMap } from './route-map.ts';
 import { timeString } from './time-format.ts';
+import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
 
 // The simulation race comes from plain-JS game.js; this screen reads its selection fields only.
@@ -41,7 +42,10 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   let selectedMode = 'classic';
   const raceRules: Record<RuleKey, unknown> = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, collision: 'normal', hazards: 'off', stages: 1 };
   const cupCount = (): number => Number($<HTMLSelectElement>('#cup-length').value);
-  const selectedRace = (trackId: string): Race => selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
+  const eventLab = setupEventLabUI({ ...options, select: next => {
+    selectedMode = 'eventlab'; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
+  } });
+  const selectedRace = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
     ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value } : {}),
@@ -187,6 +191,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     buttons[(index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length]!.focus();
   });
   for (const button of document.querySelectorAll<HTMLElement>('button[data-race-mode]')) button.addEventListener('click', () => {
+    if (button.dataset.raceMode === 'eventlab') { eventLab.open(); return; }
     selectedMode = button.dataset.raceMode!;
     changeRaceSelection();
   });
@@ -214,6 +219,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   try { const last = sessionStorage.getItem(LAST_TRACK_KEY); if (last && unlockedTracks.has(last)) setRace(selectedRace(last)); } catch { /* Coast stays the default without storage. */ }
 
   return {
+    recreate: eventLab.recreate,
     selectedRace,
     selectedMode: (): string => selectedMode,
     /** The Daily Challenge always races the Classic rules. */
