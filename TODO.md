@@ -15,6 +15,7 @@
 - [ ] Obtain real-WebGL screenshots of all five tracks in showroom and during play at desktop, mobile portrait/landscape, English and zh-TW; inspect camera occlusion, accessibility and layout.
 - [ ] Capture baseline/feature p50/p95 FPS, draw calls, triangles, memory when available; Android/iPhone thermal checks remain unverified unless genuine physical device results exist.
 - [ ] Run complete TypeScript typecheck, unit, build, all 8 browser shards, World Tour, Cloud Save and exact-HEAD quality-gate before declaring merge-ready.
+- [x] Document shared Road/Minimap source, 60 Hz simulation, GPU budget, and saved-history/ghost versioning requirements in CLAUDE.md to prevent regression.
 - [ ] Evaluate road geometry proposals separately with track-path/collision parity and versioned saved times/Ghosts before changing any existing centreline or track length.
 
 ## Phase 2 Coast visual-quality implementation — evidence ledger (2026-10-27)

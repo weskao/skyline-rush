@@ -70,6 +70,31 @@ The tutorial is a safe practice environment, not an autopilot.
 - Follow RED → GREEN → REFACTOR for every tutorial/control change. Include regression tests for neutral input, opposite-direction steering, released steering, step-transition continuity and completing all lessons.
 - Test real keyboard and mobile touch input in the browser, including pause/resume and lesson transitions, before claiming the change verified. Run the project's required unit, build, browser and CI gates; report any test that could not be run.
 
+## Phase 4 — Classic road/minimap and visual compatibility
+
+For Coast, Neon Downtown, Canyon Skyway and Aurora Pass, the single unbounded
+centreline is `classicRoadCenter` in `src/track-paths.ts`. Three.js geometry
+must call that exact function, and route previews/markers must come from
+`trackOverview` / `routeMarker`. Sky Spiral uses `skyPoint`/`skyFrame`
+for 3D road positions, with only cached, decorative altitude annotations
+allowed on its 2D route map. Never duplicate route equations or rebuild SVG
+nodes per game frame.
+
+Keep Phase 2 Coast scenery/palette unchanged unless a separately measured
+regression justifies changes. All other track detail must be pooled/instanced,
+bounded by Low/Medium/High quality, outside the road clearance, and hidden
+when its track is not active. Never add Vue reactivity to the render loop.
+Keep Phase 3 Auto/30/60 FPS render pacing separate from fixed 60 Hz physics,
+track/Ghost samples and deterministic replay state.
+
+Any change to track length, centreline, shortcuts, gaps or checkpoint
+topology needs a documented version key and saved best-times/Ghost migration
+strategy **before** implementation. Otherwise preserve historical race data
+bit-for-bit. Test all five tracks and road/camera boundaries across desktop,
+phone portrait/landscape and both locales; check `?perf` p50/p95,
+draw calls and triangles using the same conditions. Software WebGL and
+simulators are not physical GPU or thermal benchmarks.
+
 ## Home-screen landmark showcase
 
 Selecting a map on the home screen must show that map's signature landmark in the live 3D
