@@ -30,8 +30,8 @@ import { setupPerformanceNotice } from './performance-notice-ui.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { setupKeyMapUI, keyLabel } from './keymap-ui.ts';
 import { setupTouchControlsUI } from './touch-controls-ui.ts';
-import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
-  loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.ts';
+import { recordRace, recordBest, recordModeRace, loadModeHistory, recordMedals, recordStars, starTotal,
+  loadPaint, savePaint, recordDaily, dailyBoard, LEGACY_BEST_KEY } from './history.ts';
 import { recordGhost, validGhost, ghostAt } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createPresentation } from './presentation.ts';
@@ -46,7 +46,8 @@ import { setupTrackSwipeUI } from './track-swipe-ui.ts';
 import { refreshIfStale } from './update-check.ts';
 import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
-import { readLocalProgress } from './cloud-progress.ts';
+import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
+import { createGhostStore } from './ghost-store.ts';
 
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
@@ -117,25 +118,11 @@ let autoThrottle = true;
 try { autoThrottle = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
 let animationId;
 let pausedPhase = 'racing';
-const sessionBests = loadBests();
-let sessionHistory = loadHistory();
-let sessionModeHistory = loadModeHistory();
-const unlockedTracks = new Set(availableTracks());
-// Session copies keep progression honest when storage is blocked.
-let sessionMedals = loadMedals();
-const sessionStars = loadStars();
-let equippedPaint = loadPaint(availablePaints(starTotal(sessionStars)));
-const ghosts = {}; // per-track best-run ghost, loaded and validated on first use
-const ghostFor = trackId => trackId in ghosts ? ghosts[trackId] : ghosts[trackId] = loadGhost(trackId);
-const modeGhosts = new Map();
-const modeGhostKey = race => race.trackId + ':' + JSON.stringify(race.config);
-const modeGhostFor = race => {
-  const key = modeGhostKey(race);
-  if (!modeGhosts.has(key)) modeGhosts.set(key, loadModeGhost(race.trackId, race.config));
-  return modeGhosts.get(key);
-};
+const progress = loadSessionProgress(availableTracks());
+const unlockedTracks = progress.unlocked; // one Set for the session; merges add to it in place
+let equippedPaint = loadPaint(availablePaints(starTotal(progress.stars)));
+const ghosts = createGhostStore();
 let trace = [], traceRace = null;
-let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
 const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, collision: 'normal', hazards: 'off', stages: 1 };
@@ -321,7 +308,7 @@ function showTracks() {
   showGhost();
 }
 function showGhost() {
-  const ghost = race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null;
+  const ghost = race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null;
   const track = trackName(race.trackId, getLocale());
   $('#ghost-enabled').checked = touchUI.prefs().ghost;
   $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'custom' || race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
@@ -397,29 +384,20 @@ function centerSelectedTrack(smooth = false) {
 // The first showTracks() calls showHomeStatus(), so initialize this controller first.
 // Its callbacks read live session data rather than capturing an old snapshot.
 const { showHistory, showHomeStatus } = createHistoryView({
-  getData: () => ({ sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world }),
+  getData: () => ({ sessionHistory: progress.history, sessionModeHistory: progress.modeHistory, sessionBests: progress.bests,
+    sessionDaily: progress.daily, sessionMedals: progress.medals, world }),
   timeString,
 });
 showTracks(); centerSelectedTrack();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
-const currentProgress = () => ({
-  ...readLocalProgress(), unlocked: [...unlockedTracks], stars: sessionStars,
-  bests: { ...loadBests(), ...sessionBests }, medals: sessionMedals, history: sessionHistory,
-  modeHistory: sessionModeHistory, daily: sessionDaily,
-});
+const currentProgress = () => progressSnapshot(progress);
 // Cloud Save lives in cloud-ui.ts; this boundary owns the session copies it merges into.
 const cloud = setupCloudUI({
   services: { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails },
   getProgress: currentProgress,
   applyProgress: merged => {
-    for (const id of merged.unlocked) unlockedTracks.add(id);
-    Object.assign(sessionStars, merged.stars);
-    Object.assign(sessionBests, merged.bests);
-    sessionHistory = merged.history;
-    sessionModeHistory = merged.modeHistory;
-    sessionMedals = merged.medals;
-    sessionDaily = merged.daily;
+    adoptProgress(progress, merged);
     showTracks();
     if ($('#history-screen').open) showHistory();
     showGarage();
@@ -467,7 +445,7 @@ const { showGarage } = setupGarageUI({
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
   setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
-  getStars: () => starTotal(sessionStars),
+  getStars: () => starTotal(progress.stars),
 });
 historyScreen.addEventListener('keydown', event => event.stopPropagation());
 function chooseTrack() {
@@ -742,8 +720,8 @@ function phaseUI() {
       stunt.airTime += race.styleAttack.airTime;
       stunt.maxCombo = Math.max(stunt.maxCombo, race.styleAttack.maxCombo);
     }
-    const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !sessionMedals[id]); // history.ts swallows storage failures
-    sessionMedals = { ...sessionMedals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
+    const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
+    progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
     const trackId = race.trackId ?? 'coast';
     let best, record;
     $('#next-button').hidden = true;
@@ -756,29 +734,28 @@ function phaseUI() {
       best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
     } else if (race.mode === 'stunt' && stunt) {
       ({best,record} = recordModeRace({ ...race, result:{...race.result, time:stunt.elapsed, score:Math.round(stunt.score), maxCombo:stunt.maxCombo, airTime:stunt.airTime} }));
-      sessionModeHistory = loadModeHistory();
+      progress.modeHistory = loadModeHistory();
     } else if (race.mode !== 'classic') {
       const total = cup ? cupTotalTime(cup) : sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
       const modeRace = cup ? { ...race, trackId: cup.tracks[0], result: { ...race.result, time: total,
         score: cupStandings(cup).find(entry => entry.name === 'YOU').points } } : sprintSeries ? { ...race, result: { ...race.result, time: total,
         score: sprintSeries.results.reduce((score, stage) => score + stage.score, 0) } } : race;
       ({ best, record } = recordModeRace(modeRace));
-      sessionModeHistory = loadModeHistory();
+      progress.modeHistory = loadModeHistory();
       if (race.mode === 'time' && record) {
         const candidate = { time: race.elapsed, samples: trace };
         if (traceRace === race && validGhost(candidate, trackId)) {
-          saveModeGhost(trackId, race.config, candidate);
-          modeGhosts.set(modeGhostKey(race), candidate);
+          ghosts.saveMode(race, candidate);
         }
       }
     } else if (race.modifier) {
       const run = recordDaily(daily, race);
-      sessionDaily = [...sessionDaily, run].slice(-50);
-      const board = dailyBoard(sessionDaily, daily.id);
+      progress.daily = [...progress.daily, run].slice(-50);
+      const board = dailyBoard(progress.daily, daily.id);
       best = board[0].time; record = board[0] === run;
     } else {
       const recordRun = recordRace(race);
-      sessionHistory = [...sessionHistory, recordRun].slice(-50);
+      progress.history = [...progress.history, recordRun].slice(-50);
       const tracks = Object.keys(RACE_TRACKS);
       const next = tracks[tracks.indexOf(race.trackId) + 1];
       // NEXT drives progression only: hidden once every track was already open before this run.
@@ -790,15 +767,15 @@ function phaseUI() {
       }
       const saved = recordBest(trackId, race.elapsed);
       // Session bests keep "personal best" honest when storage is blocked.
-      best = Math.min(saved.best, sessionBests[trackId] ?? Infinity);
-      record = saved.record && !(sessionBests[trackId] <= race.elapsed);
-      sessionBests[trackId] = best;
+      best = Math.min(saved.best, progress.bests[trackId] ?? Infinity);
+      record = saved.record && !(progress.bests[trackId] <= race.elapsed);
+      progress.bests[trackId] = best;
       // The pre-tracks key stays readable for coast (older builds, browser test).
       if (record && trackId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
       recordStars(trackId, race.result.stars);
-      sessionStars[trackId] = Math.max(sessionStars[trackId] ?? 0, race.result.stars);
+      progress.stars[trackId] = Math.max(progress.stars[trackId] ?? 0, race.result.stars);
       const ghost = { time: race.elapsed, samples: trace };
-      if (record && traceRace === race && validGhost(ghost, trackId)) { saveGhost(trackId, ghost); ghosts[trackId] = ghost; }
+      if (record && traceRace === race && validGhost(ghost, trackId)) ghosts.saveClassic(trackId, ghost);
     }
     cloud.saveCloudProgress();
     showTracks();
@@ -1017,7 +994,7 @@ function updateUI(now, input) {
   setHudText(ui.distance, (car.distance / 1000).toFixed(2));
   ui['progress-fill'].style.width = `${car.distance / race.length * 100}%`;
   setHudText(hudNodes['race-length'], (race.length / 1000).toFixed(2));
-  const timeGhost = race.mode === 'time' && touchUI.prefs().ghost ? modeGhostFor(race) : null;
+  const timeGhost = race.mode === 'time' && touchUI.prefs().ghost ? ghosts.mode(race) : null;
   const split = hudNodes['ghost-split'];
   setHudHidden(split, !timeGhost || race.phase !== 'racing');
   if (!split.hidden) {
@@ -1232,7 +1209,7 @@ try {
     if (calm && !wasCalm) vfx.stopMotionIfCalm();
     wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
-    const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null : null;
+    const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null : null;
     world.render(race, dt, race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
     sound.update(race);
     hudElapsed += dt;
