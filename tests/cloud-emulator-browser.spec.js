@@ -406,12 +406,15 @@ test('Cloud save profile provides an avatar fallback and accessible account iden
   await expect(page.locator('#cloud-identity')).toContainText('avatar@example.test');
   await expect(page.locator('#cloud-name')).not.toBeEmpty();
   await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
-  await page.evaluate(() => {
-    const img = document.querySelector('#cloud-avatar');
-    img.hidden = false;
-    document.querySelector('#cloud-avatar-fallback').hidden = true;
-    img.dispatchEvent(new Event('error'));
+  // Give the Vue view a real, loaded avatar rather than overriding Vue-owned
+  // hidden attributes, then exercise the browser's failed-image event.
+  await page.evaluate(async () => {
+    const { updateCloudView } = await import('/src/cloud-view-state.ts');
+    updateCloudView({ avatarUrl: document.querySelector('#cloud-login img').src, avatarFailed: false });
   });
+  await expect(page.locator('#cloud-avatar')).toBeVisible();
+  await expect(page.locator('#cloud-avatar-fallback')).toBeHidden();
+  await page.locator('#cloud-avatar').dispatchEvent('error');
   await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
   await expect(page.locator('#cloud-avatar')).toBeHidden();
 });
