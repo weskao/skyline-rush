@@ -17,6 +17,8 @@ export interface HeroPreview extends CameraPose {
 export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freeze({
   // Signature-landmark shots: the same chase camera pitched up (lookHeight)
   // to frame the landmark ahead, right of the home UI panel.
+  'harbor-circuit': { distance: 0, landmark: 'beacon', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
   taipei: { distance: 1250, landmark: 'office', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
   tokyo: { distance: 3075, landmark: 'tower', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,

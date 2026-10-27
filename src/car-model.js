@@ -188,7 +188,7 @@ export function makeCar(style, color = style.color) {
   return group;
 }
 
-function instances(geometry, mat, count, scene) {
+export function instances(geometry, mat, count, scene) {
   const mesh = new THREE.InstancedMesh(geometry, mat, count);
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   mesh.frustumCulled = false;

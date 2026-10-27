@@ -1304,6 +1304,9 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .track-route-map[data-theme="cosmic"],.race-route-map[data-theme="cosmic"]{
  --map-line:#9caac2;--map-bg:#1f2637;--map-edge:#495e78;--map-player:#eeebec;
 }
+.race-route-map[data-theme="harbor-circuit"] {
+ --map-line:#e3bb8d;--map-bg:#203d42;--map-edge:#86b5b0;--map-player:#fff1d6;
+}
 .track-route-map[data-theme],.race-route-map[data-theme] {
  background:var(--map-bg);border-color:var(--map-edge);box-shadow:none;
 }

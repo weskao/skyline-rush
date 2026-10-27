@@ -1,3 +1,4 @@
+import { updateSkyline } from './skyline-scenery.ts';
 import * as THREE from 'three';
 import { flipRgbaRows, photoFov } from './photo-export.ts';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -13,7 +14,9 @@ import { vfxSettings } from './vfx-settings.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
-import { material, block, CAR_STYLES, makeCar } from './car-model.js';
+import { createCircuitScene } from './circuit-scene.ts';
+import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
+import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
 import { createCoastScenery } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -38,6 +41,7 @@ const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
+const framedRoad = id => TOUR_IDS.has(id) || id === CIRCUIT_ID;
 
 function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   position.set(x, y, z);
@@ -389,7 +393,7 @@ export function createWorld(canvas) {
       framingLookY=0;
       const originalEye=desiredCamera.clone(), originalLook=lookTarget.clone();
       const frame=trackId==='spiral'?skyFrame(distance):
-        TOUR_IDS.has(trackId)?trackFrame(trackId,distance):null;
+        framedRoad(trackId)?trackFrame(trackId,distance):null;
       const backward=frame?new THREE.Vector3(...frame.forward).negate():
         new THREE.Vector3(0,0,1);
       // Try the smallest look adjustment first, then dolly out if a wide
@@ -516,7 +520,9 @@ export function createWorld(canvas) {
     }
     desiredCamera.add(clearanceShift);
   }
-  const effects = createEffects(scene, (s) => TOUR_IDS.has(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
+  const effectFrame = s => trackFrame(trackId, s);
+  const circuitScene = createCircuitScene(scene);
+  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : TOUR_IDS.has(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
   let visual = vfxSettings();
   const projectedNozzle = new THREE.Vector3();
@@ -548,13 +554,13 @@ export function createWorld(canvas) {
   new ResizeObserver(resize).observe(canvas);
 
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}) {
-    const relative = car.distance - distance;
+    const relative = physicalGap(trackId, distance, car.distance);
     // Tour and sky routes end at the finish and trackPoint clamps there, so cars
     // past it would pile up at the arch like parked cars; they leave the scene instead.
     const pastFinish = (trackId === 'spiral' || TOUR_IDS.has(trackId)) && car.distance > RACE_TRACKS[trackId].length;
     mesh.visible = isPlayer || (relative > -55 && relative < 900 && !pastFinish);
     if (!mesh.visible) return;
-    if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
+    if (trackId === 'spiral' || framedRoad(trackId)) {
       if (trackId === 'spiral') mesh.position.fromArray(skyPosition(car.distance, car.x, car.altitude || 0, distance));
       else {
         const p=trackPoint(trackId,car.distance),o=trackPoint(trackId,distance),f=trackFrame(trackId,car.distance);
@@ -692,7 +698,7 @@ export function createWorld(canvas) {
       const distance = preview ? previewDistance(trackId) : car.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
-      const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
+      const center = trackId === 'spiral' ? skyPosition(distance)[0] : framedRoad(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
       // A readable driving corridor takes precedence over cinematic glare.
       // Dimming in the mountain bore is smoothed over the 38 m entrance.
       const tour=TOUR_IDS.has(trackId);
@@ -730,8 +736,10 @@ export function createWorld(canvas) {
         weatherGeometry.attributes.position.needsUpdate = true;
         weather.position.set(car.x, car.altitude + 25, 15);
       }
-      if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
-        if (trackId === 'spiral') { skyScene.update(distance, visual.quality); worldTourScene.hide(); }
+      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide();
+      if (trackId === 'spiral' || framedRoad(trackId)) {
+        if (trackId === CIRCUIT_ID) { skyScene.hide(); worldTourScene.hide(); }
+        else if (trackId === 'spiral') { skyScene.update(distance, visual.quality); worldTourScene.hide(); }
         else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion); }
         road.visible = false;
         for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls, cliffs, surfaceMarks]) m.visible = false;
@@ -743,7 +751,7 @@ export function createWorld(canvas) {
         for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls]) m.visible = true;
         towers.forEach(t => { t.visible = true; });
       }
-      if (trackId !== 'spiral' && !TOUR_IDS.has(trackId)) for (let i = 0; i <= segments; i++) {
+      if (trackId !== 'spiral' && !framedRoad(trackId)) for (let i = 0; i <= segments; i++) {
         const d = Math.floor(distance / 12) * 12 + (i - 5) * 12;
         const x = roadCenter(d) - center;
         const z = -(d - distance);
@@ -773,7 +781,7 @@ export function createWorld(canvas) {
           put(railLights, i * 2 + side, x + sx * 12.1, 0.68, z - 6, 0.045, 0.04, 12.15, angle);
         }
       }
-      if (trackId !== 'spiral' && !TOUR_IDS.has(trackId)) roadGeometry.attributes.position.needsUpdate = true;
+      if (trackId !== 'spiral' && !framedRoad(trackId)) roadGeometry.attributes.position.needsUpdate = true;
       if (trackId === 'canyon') roadGeometry.index.needsUpdate = true;
       if (tunnelRoofs.visible) tunnelRoofs.instanceMatrix.needsUpdate = tunnelWalls.instanceMatrix.needsUpdate = true;
       if (surfaceMarks.visible) surfaceMarks.instanceMatrix.needsUpdate = true;
@@ -814,7 +822,7 @@ export function createWorld(canvas) {
         }
         cliffs.instanceMatrix.needsUpdate = true;
       }
-      if (trackId !== 'spiral' && !TOUR_IDS.has(trackId)) [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
+      if (trackId !== 'spiral' && !framedRoad(trackId)) [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
       towers.forEach((tower, i) => {
         const d = Math.floor(distance / 1100) * 1100 + (i + 1) * 1100 - 500;
         tower.position.set(roadCenter(d) - center, 0, -(d - distance));
@@ -835,20 +843,7 @@ export function createWorld(canvas) {
         put(lamps, i, x - side * 3.3, 12.8, z, 0.85, 0.06, 0.4);
       }
       poles.instanceMatrix.needsUpdate = lamps.instanceMatrix.needsUpdate = true;
-      city.position.set(-center * 0.6, 0, distance % 2200);
-      buildingData.forEach((b, i) => {
-        // Only re-upload a building's 19 transforms when it wraps behind the camera.
-        const wrap = b.d < distance % 2200 ? -2200 : 0;
-        if (b.wrap === wrap) return;
-        b.wrap = wrap;
-        const z = -b.d + wrap + 100;
-        const x = b.x;
-        put(buildings, i, x, b.h / 2 - 6, z, b.w, b.h, 16);
-        for (let j = 0; j < 18; j++) {
-          put(windows, i * 18 + j, x + (j % 3 - 1) * b.w * 0.28, 3 + Math.floor(j / 3) * (b.h - 10) / 6, z + 8.05, b.w * 0.1, 1.1, 0.05);
-        }
-        buildings.instanceMatrix.needsUpdate = windows.instanceMatrix.needsUpdate = true;
-      });
+      updateSkyline(city, buildings, windows, buildingData, put, distance, center);
 
       // Bounded InstancedMesh: one distinct marker per reachable barrier,
       // no scene allocations or three.js collision checks on the hot path.
@@ -858,7 +853,7 @@ export function createWorld(canvas) {
         if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
         const x = hazardX(hazard, race.elapsed);
         const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, 1.25, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, 1.25, distance)
+          : framedRoad(trackId) ? trackLocalPosition(trackId, hazard.distance, x, 1.25, distance)
             : [roadCenter(hazard.distance) - center + x, 1.25, distance - hazard.distance];
         put(gauntletBarriers, visibleHazards++, ...xyz, 3.1, 2.5, 1.3);
       }
@@ -870,7 +865,7 @@ export function createWorld(canvas) {
         if (gate.passed || gate.missed || gate.distance < distance - 16 || gate.distance > distance + 550) continue;
         if (visibleGateParts + 3 > checkpointGates.instanceMatrix.count) break;
         const locate = (x, y) => trackId === 'spiral' ? skyPosition(gate.distance, x, y, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, gate.distance, x, y, distance)
+          : framedRoad(trackId) ? trackLocalPosition(trackId, gate.distance, x, y, distance)
             : [roadCenter(gate.distance) - center + x, y, distance - gate.distance];
         put(checkpointGates, visibleGateParts++, ...locate(gate.x - 3.2, gate.altitude + 2.4), .32, 4.8, .44);
         put(checkpointGates, visibleGateParts++, ...locate(gate.x + 3.2, gate.altitude + 2.4), .32, 4.8, .44);
@@ -906,7 +901,7 @@ export function createWorld(canvas) {
       ghostCar.visible = !preview && !!ghost;
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
       if (ghostCar.visible) {
-        if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
+        if (trackId === 'spiral' || framedRoad(trackId)) {
           if(trackId==='spiral')ghostCar.position.fromArray(skyPosition(ghost.distance,ghost.x,ghost.altitude,distance));
           else {const p=trackPoint(trackId,ghost.distance),o=trackPoint(trackId,distance),f=trackFrame(trackId,ghost.distance);
             ghostCar.position.set(p.x-o.x+f.right[0]*ghost.x,p.y-o.y+f.up[1]*ghost.altitude,p.z-o.z+f.right[2]*ghost.x);}
@@ -921,16 +916,16 @@ export function createWorld(canvas) {
       shadow.position.z = player.position.z;
       shadow.scale.setScalar(1 + player.position.y * 0.04);
       shadow.material.opacity = 0.6 / (1 + player.position.y * 0.2);
-      if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
+      if (trackId === 'spiral' || framedRoad(trackId)) {
         if(trackId==='spiral')finish.position.fromArray(skyPosition(race.length,0,0,distance));
         else {const p=trackPoint(trackId,race.length),o=trackPoint(trackId,distance);finish.position.set(p.x-o.x,p.y-o.y,p.z-o.z);}
         const frame=trackId==='spiral'?skyFrame(race.length):trackFrame(trackId,race.length);
         finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
       } else { finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance)); finish.rotation.set(0,0,0); }
-      finish.visible = race.length - distance < 1400;
+      finish.visible = trackId === CIRCUIT_ID || race.length - distance < 1400;
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
-        TOUR_IDS.has(trackId) ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin) } : visual);
-      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
+        framedRoad(trackId) ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin), worldFrame: trackId === CIRCUIT_ID ? effectFrame : undefined } : visual);
+      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, trackId === CIRCUIT_ID ? -trackPoint(trackId,distance).z : distance, visual, reducedMotion);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
       if (photoView && race.phase === 'paused') {
@@ -943,7 +938,7 @@ export function createWorld(canvas) {
       } else if (preview && visual.view !== 'drive') {
         // The selected view wins over curated showcase framing on every map.
         const pose = showcaseCameraPose(trackId,visual.view,time,portrait);
-        const frame = TOUR_IDS.has(trackId) ? trackFrame(trackId,distance)
+        const frame = framedRoad(trackId) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
         if (frame) {
           const right = new THREE.Vector3(...frame.right);
@@ -985,20 +980,20 @@ export function createWorld(canvas) {
         desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
         lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
       } else if (cameraMode === 1) {
-        if (trackId === 'spiral' || TOUR_IDS.has(trackId)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
+        if (trackId === 'spiral' || framedRoad(trackId)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
         else desiredCamera.set(car.x, car.altitude + 1.7, -0.95);
-        if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
+        if (trackId === 'spiral' || framedRoad(trackId)) {
           const f=trackFrame(trackId,distance+65),p=f.point,o=trackPoint(trackId,distance);
           lookTarget.set(p.x-o.x+f.right[0]*car.x,p.y-o.y+car.altitude+1.5,p.z-o.z+f.right[2]*car.x);
         }
         else lookTarget.set(car.x + roadCenter(distance + 65) - center, car.altitude + 1.5, -65);
       } else {
-        if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
+        if (trackId === 'spiral' || framedRoad(trackId)) {
           const frame = trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance);
           const back = new THREE.Vector3(...frame.forward).multiplyScalar(- (portrait ? 14.5 : 12.5));
           desiredCamera.copy(player.position).add(back).add(new THREE.Vector3(0,5,0));
         } else desiredCamera.set(car.x * 0.74, car.altitude * 0.85 + (car.altitude > 2 ? 4.4 : 4.8), portrait ? 13.5 : 11.6);
-        if (trackId === 'spiral' || TOUR_IDS.has(trackId)) {
+        if (trackId === 'spiral' || framedRoad(trackId)) {
           const f=trackFrame(trackId,distance+34),p=f.point,o=trackPoint(trackId,distance);
           lookTarget.set(p.x-o.x+f.right[0]*car.x,p.y-o.y+car.altitude+1.5,p.z-o.z+f.right[2]*car.x);
         }
@@ -1136,7 +1131,7 @@ export function createWorld(canvas) {
     },
     dispose() {
       stopLocaleSigns();
-      skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
+      circuitScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();

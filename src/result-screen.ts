@@ -1,3 +1,4 @@
+import { loadCircuitLapBest } from './circuit-records.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { icon } from './icons.ts';
 import { timeString } from './time-format.ts';
@@ -115,8 +116,17 @@ function standardView(race: FinishedRace, { best, record, medals, series, next }
   };
 }
 
+function circuitView(race: FinishedRace, { best }: FinishedResult): ResultView {
+  const times = race.circuit.player.lapTimes;
+  return { title: t('circuit.complete'), copy: t('circuit.summary', { laps: race.config.laps }),
+    stats: row(t('result.yourTime'), timeString(race.result.time)) + row(t('result.best'), timeString(best)) +
+      row(t('circuit.best'), timeString(Math.min(loadCircuitLapBest(race.config) ?? Infinity, ...times.map((lap: { time: number }) => lap.time)))) +
+      times.map((lap: { time: number }, i: number) => row(t('circuit.lapRow', { lap: i + 1 }), timeString(lap.time))).join(''), counts: [] };
+}
+
 // First match wins: mode-specific outcomes before the generic podium screen.
 const VIEWS: [(race: FinishedRace, finished: FinishedResult) => unknown, (race: FinishedRace, finished: FinishedResult) => ResultView][] = [
+  [race => race.mode === 'circuit', circuitView],
   [race => race.mode === 'elimination', eliminationView],
   [(_race, { stunt }) => stunt, stuntView],
   [(_race, { cup }) => cup, cupView],

@@ -8,6 +8,7 @@ export const TRACK_PALETTES = {
   canyon: { top: '#458bab', horizon: '#f5c58c', fog: '#c99c79', rock: '#a15339', road: '#51453b', ground: '#a76e46', rail: '#ffc36f', sun: '#ffdfaa', warmth: .6 },
   aurora: { top: '#051b31', horizon: '#337064', fog: '#234d5b', rock: '#9cb9c7', road: '#293d50', ground: '#b3cad3', rail: '#78ffd1', sun: '#b9ddff', warmth: 0 },
   spiral: { top: '#050b25', horizon: '#55348c', fog: '#302657', rock: '#29345b', road: '#111827', ground: '#161d49', rail: '#00e5ff', sun: '#a855f7', warmth: 0 },
+  'harbor-circuit': { top: '#477d98', horizon: '#e6c6a1', fog: '#a4c0bd', rock: '#587b70', road: '#263941', ground: '#537d70', rail: '#eea966', sun: '#ffe3ba', warmth: .35 },
   ...WORLD_THEMES,
 };
 

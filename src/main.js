@@ -195,7 +195,7 @@ const raceSelect = setupRaceSelectUI({
   clearDaily: () => { daily = null; },
   createRace,
   unlockedTracks,
-  ghostFor: race => race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null,
+  ghostFor: race => race.mode === 'classic' ? ghosts.classic(race.trackId) : ['time', 'circuit'].includes(race.mode) ? ghosts.mode(race) : null,
   ghostEnabled: () => touchUI.prefs().ghost,
   showHomeStatus: () => showHomeStatus(),
   refreshPhase: () => phaseUI(),
@@ -262,7 +262,7 @@ function chooseTrack() {
   controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
-  document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
+  document.querySelector(`[data-track="${race.trackId}"], [data-race-mode="${race.mode}"]`).focus({ preventScroll: true });
   centerSelectedTrack();
 }
 $('#choose-track').addEventListener('click', chooseTrack);
@@ -300,7 +300,7 @@ function focusRace() {
 function start() {
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
-  if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
+  if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   // First Start presents the live practice; Skip / completion returns to this selected race.
   if (!hasSeenGuide()) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
@@ -319,7 +319,7 @@ function start() {
 
 function restart(trackId = race.trackId) {
   if (tutorial) { beginTutorial(); return; }
-  if (!world || (!daily && !unlockedTracks.has(trackId))) return;
+  if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
@@ -577,14 +577,14 @@ try {
           try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
         }
       }
-      if (!race.modifier && (race.mode === 'classic' || race.mode === 'time')) recordGhost(trace, race);
+      if (!race.modifier && ['classic', 'time', 'circuit'].includes(race.mode)) recordGhost(trace, race);
       accumulator -= 1 / 60;
     }
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.
     if (calm && !wasCalm) vfx.stopMotionIfCalm(); wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
-    const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null : null;
+    const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghosts.classic(race.trackId) : ['time', 'circuit'].includes(race.mode) ? ghosts.mode(race) : null : null;
     const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
     if (shouldRender) {
       const renderStarted = performance.now();

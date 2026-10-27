@@ -1,13 +1,14 @@
-import { RACE_TRACKS } from './game.js';
+import { isModeTrack } from './race-tracks.ts';
+import { circuitLaps } from './circuit-track.ts';
+import { validCircuitTimes, validCircuitRecord, circuitLapKey } from './circuit-records.ts';
 import { stuntMedal } from './stunt-attack.ts';
-import { HISTORY_LIMIT } from './history-policy.ts';
+import { HISTORY_LIMIT, MODE_BESTS_KEY, MODE_MAX_SECONDS } from './history-policy.ts';
 import { readStored as read, writeStored as write, type HistoryStorage } from './history-storage.ts';
 
 export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
 export const STUNT_BESTS_KEY = 'skyline-rush-stunt-bests-v1';
-export const MODE_BESTS_KEY = 'skyline-rush-mode-bests-v1';
-const MODE_TYPES: ReadonlySet<string> = new Set(['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination']);
-const MODE_MAX_SECONDS = 7 * 24 * 60 * 60;
+export { MODE_BESTS_KEY } from './history-policy.ts';
+const MODE_TYPES: ReadonlySet<string> = new Set(['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'circuit']);
 const MODE_MAX_RULES_LENGTH = 4096;
 const asRecord = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -28,7 +29,7 @@ export interface ModeConfig {
 }
 interface ModeRaceResult {
   time: number; success?: boolean; position?: number; score?: number;
-  distance?: number; itemUses?: number; maxCombo?: number; airTime?: number;
+  lapTimes?: import('./circuit-laps.ts').LapTime[]; distance?: number; itemUses?: number; maxCombo?: number; airTime?: number;
 }
 interface ModeRace {
   mode: string; trackId: string; config?: ModeConfig; result?: ModeRaceResult;
@@ -37,9 +38,10 @@ interface ModeRace {
 export const validModeHistoryRun = (raw: unknown): raw is ModeHistoryRun => {
   const run = asRecord(raw);
   return typeof run.mode === 'string' && MODE_TYPES.has(run.mode) &&
-    typeof run.track === 'string' && Object.hasOwn(RACE_TRACKS, run.track) &&
+    isModeTrack(run.track, run.mode) &&
     typeof run.rules === 'string' && run.rules.length > 0 && run.rules.length <= MODE_MAX_RULES_LENGTH &&
     valid(run.time) && run.time <= MODE_MAX_SECONDS &&
+    (run.mode !== 'circuit' || validCircuitRecord(run)) &&
     (run.score === undefined || (numberFinite(run.score) && run.score >= 0)) &&
     (run.position === undefined || (numberFinite(run.position) && Number.isInteger(run.position) &&
       run.position >= 0 && run.position <= 4));
@@ -83,7 +85,7 @@ const validModeBest = (value: unknown, mode: string): value is number =>
   numberFinite(value) && (mode === 'stunt' ? value >= 0 : value > 0 && value <= MODE_MAX_SECONDS);
 export function loadModeBest(trackId: string, config: ModeConfig | undefined, storage?: HistoryStorage): number | null {
   const mode = config?.mode;
-  if (!Object.hasOwn(RACE_TRACKS, trackId) || typeof mode !== 'string' || !MODE_TYPES.has(mode)) return null;
+  if (!isModeTrack(trackId, mode) || typeof mode !== 'string' || !MODE_TYPES.has(mode) || mode === 'circuit' && !circuitLaps(config)) return null;
   const signature = JSON.stringify(config);
   const values = loadModeHistory(storage)
     .filter(run => run.track === trackId && run.rules === signature)
@@ -100,9 +102,10 @@ export function loadModeBest(trackId: string, config: ModeConfig | undefined, st
 }
 export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = new Date()) {
   const result = race.result;
-  if (!MODE_TYPES.has(race.mode) || !Object.hasOwn(RACE_TRACKS, race.trackId) ||
+  if (!MODE_TYPES.has(race.mode) || !isModeTrack(race.trackId, race.mode) ||
       !result || !valid(result.time) || result.time > MODE_MAX_SECONDS ||
       result.success === false ||
+      race.mode === 'circuit' && !validCircuitTimes(race.config, result.time, result.lapTimes) ||
       (result.position !== undefined && (!Number.isInteger(result.position) ||
         result.position < 1 || result.position > 4)) ||
       (result.score !== undefined && (!numberFinite(result.score) || result.score < 0)) ||
@@ -131,7 +134,8 @@ export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = n
   write(MODE_HISTORY_KEY, [...previous, {
     date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
     modeId: race.mode, trackId: race.trackId, rulesVersion: race.config?.rulesVersion ?? 1,
-    rulesSignature: rules, distance, stageCount, lapCount: null,
+    rulesSignature: rules, distance, stageCount, lapCount: race.mode === 'circuit' ? circuitLaps(race.config) : null,
+    ...(race.mode === 'circuit' ? { lapTimes: result.lapTimes } : {}),
     itemsUsed: nonnegativeInt(result.itemUses),
     hazardPasses: hazards.filter(h => h.passed).length,
     hazardHits: hazards.filter(h => h.hit).length,
@@ -151,8 +155,11 @@ export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = n
   const id = modeBestId(race.trackId, race.config);
   const stored = asRecord(read(MODE_BESTS_KEY, storage));
   const entries = Object.entries(stored).filter(([, value]) => numberFinite(value) && value >= 0);
-  const retained: Record<string, unknown> = Object.fromEntries(entries.filter(([key]) => key !== id).slice(-199));
+  const lapId = race.mode === 'circuit' ? circuitLapKey(race.config) : null;
+  const retained: Record<string, unknown> = Object.fromEntries(entries.filter(([key]) => key !== id && key !== lapId).slice(lapId ? -198 : -199));
   retained[id] = best;
+  if (lapId) retained[lapId] = Math.min(validModeBest(stored[lapId], 'circuit') ? stored[lapId] : Infinity,
+    ...result.lapTimes!.map(lap => lap.time));
   write(MODE_BESTS_KEY, retained, storage);
   return { best, record };
 }

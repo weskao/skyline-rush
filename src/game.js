@@ -1,3 +1,7 @@
+import { createRings, RING_RADIUS, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
+export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
+import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
+import { physicalGap } from './circuit-track.ts';
 import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards, hazardX } from './hazards.ts';
@@ -14,7 +18,8 @@ import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
-import { RACE_TRACKS } from './race-tracks.ts';
+import { RACE_TRACKS, raceTrack } from './race-tracks.ts';
+import { CIRCUIT_ID } from './circuit-track.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
 export const MAX_SPEED = 88;
@@ -66,15 +71,6 @@ export const shortcutPylons = section => Array.from({ length: Math.ceil((section
 }));
 const PYLON_HALF_WIDTH = 1.2; // m
 
-export const RING_RADIUS = 4.8;
-export const RISK_RING_RADIUS = 2.4;
-export const RING_FUEL = 20; // charge ring
-export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
-export const RISK_SCORE = 500;
-export const PERFECT_LINE_NITRO = 1;
-export const RING_SPACING = 220;
-export const MYSTERY_EFFECTS = ['shield', 'magnet', 'ghost', 'freeze'];
-export const EFFECT_TIMES = { shield: 10, magnet: 5, ghost: 3, freeze: 2 }; // seconds; shield also ends on the first absorbed hit
 export const MAGNET_RANGE = 12; // m
 export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
@@ -133,38 +129,6 @@ function createPickups(track) {
   return [...pickups.filter(pickup => !blocked(pickup)), overcharge].sort((a, b) => a.distance - b.distance);
 }
 
-// Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
-// other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
-function createRings(track) {
-  const random = seededRng(track.seed, RACE_STREAMS.rings);
-  const rings = [];
-  const inTunnel = distance => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
-  for (let distance = RING_SPACING; distance < track.length - 100;) {
-    const roll = random();
-    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? 'risk' : 'mystery';
-    let x = 2.5;
-    let altitude = 8;
-    if (!track.fixedRings) {
-      x = Math.round((random() * 2 - 1) * 70) / 10;
-      altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
-    }
-    if (inTunnel(distance)) { // the car cannot climb in a tunnel, so a 'risk' ring there would be free
-      altitude = 1.5;
-      if (type === 'risk') type = 'nitro';
-    }
-    rings.push({ distance, x, altitude, radius: type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS, type, group: 0 });
-    distance += track.fixedRings ? RING_SPACING : Math.round(200 + random() * 120);
-  }
-  for (let i = 0, group = 0; i < rings.length; group++) {
-    const left = rings.length - i;
-    let size = 3 + Math.floor(random() * 3);
-    if (left - size < 3) size = left <= 5 ? left : left - 3;
-    for (let j = i; j < i + size; j++) rings[j].group = group;
-    i += size;
-  }
-  return rings;
-}
-
 // The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
 export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `${RACE_STREAMS.mysteryPrefix}${index}`)() * MYSTERY_EFFECTS.length)];
 
@@ -190,19 +154,21 @@ export function dailyChallenge(date = new Date()) {
 }
 
 export function createRace(trackId = 'coast', modifier = null) {
-  const track = RACE_TRACKS[trackId];
+  const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   const options = modifier !== null && typeof modifier === 'object' && !Array.isArray(modifier) ? modifier : null;
   const dailyModifier = options ? null : modifier;
   if (dailyModifier !== null && !DAILY_MODIFIERS.includes(dailyModifier)) throw new Error(`Unknown modifier: ${dailyModifier}`);
   const config = normalizeRaceConfig(options ?? {});
+  if ((trackId === CIRCUIT_ID) !== (config.mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
   const session = createRaceSessionContract(trackId, track.seed, config);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const rings = createRings(track);
+  const rings = config.mode === 'circuit' ? lapItems(createRings(track), config.laps, 'ring') : createRings(track);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
-    trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
-    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
+    trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: track.sections.map(section => ({ ...section })),
+    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? config.mode === 'circuit' ? lapItems(createPickups(track), config.laps, 'pickup') : createPickups(track) : [], rings,
+    circuit: config.mode === 'circuit' ? createCircuit(config.laps) : null,
     props: [], // solid World Tour scenery parts; main.js fills them from roadObstacles()
     hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) :
       config.hazards ? createHazards(track, LANES, config.hazards) : [],
@@ -346,7 +312,7 @@ export function stepRace(race, input, dt) {
   // SLIPSTREAM: judged on last frame's positions; the timer runs while a car is ahead in draft range.
   const slip = car.slipstream;
   const inDraft = other => {
-    const gap = other.distance - car.distance;
+    const gap = physicalGap(race.trackId, car.distance, other.distance);
     return gap >= SLIPSTREAM_MIN_GAP && gap <= SLIPSTREAM_MAX_GAP && Math.abs(other.x - car.x) < SLIPSTREAM_LATERAL &&
       Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
   };
@@ -512,7 +478,7 @@ export function stepRace(race, input, dt) {
     rival.distance += rival.pace * dt;
     avoidObstacles(race, rival, rival.pace, dt);
     aiImpacts(race, rival, before, rival.pace);
-    if (rival.distance >= race.length && rival.finishTime === null) {
+    if (!race.circuit && rival.distance >= race.length && rival.finishTime === null) {
       rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / rival.pace;
     }
   });
@@ -525,7 +491,7 @@ export function stepRace(race, input, dt) {
 
   if (car.cooldown === 0) {
     const obstacle = car.effects.ghost > 0 ? null : [...race.traffic, ...race.rivals].find(other =>
-      Math.abs(other.distance - car.distance) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
+      Math.abs(physicalGap(race.trackId, car.distance, other.distance)) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
       Math.abs((other.altitude || 0) - car.altitude) < 1.8,
     );
     const prop = car.effects.ghost > 0 ? null : hitProp(race.props, car, previousDistance);
@@ -588,7 +554,7 @@ export function stepRace(race, input, dt) {
   for (const ring of race.rings) { // sorted by distance
     if (ring.distance > car.distance) break;
     // shortcut: tests the car's end-of-step x/altitude, not the interpolated crossing (error < 0.7 m at dt 0.1), upgrade if risk rings feel unfair
-    if (fell || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
+    if (fell || ring.hit || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring));
   }
   // Every gauntlet barrier can be hit or cleared only once. The physics layer
@@ -643,10 +609,11 @@ export function stepRace(race, input, dt) {
       return;
     }
   }
+  stepCircuit(race, dt);
   const completion = raceCompletion(race);
   if (completion.done) {
-    const finishTime = completion.reason === 'timer' ? race.stuntLimit : completion.reason === 'expired' ? race.elapsed :
-      race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
+    const finishTime = race.circuit?.player.finishTime ?? (completion.reason === 'timer' ? race.stuntLimit : completion.reason === 'expired' ? race.elapsed :
+      race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance));
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
     car.distance = Math.min(car.distance, race.length); // An expired timer must not teleport the car to the finish.
     race.elapsed = finishTime;
@@ -657,6 +624,7 @@ export function stepRace(race, input, dt) {
       stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1,
       success: race.checkpoint ? !race.checkpoint.expired && race.checkpoint.passed === race.checkpoint.gates.length :
         !(race.mode === 'time' && race.config.clean && car.collisions > 0),
+      ...(race.circuit ? { lapTimes: race.circuit.player.lapTimes } : {}),
       ...(race.mode === 'stunt' ? { endReason: completion.reason } : {}) };
     race.phase = 'finished';
     car.thrusting = false;

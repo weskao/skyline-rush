@@ -1,5 +1,5 @@
 // A small, versioned contract for practice modes; Classic and Daily stay identical.
-export const MODES: readonly string[] = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination']);
+export const MODES: readonly string[] = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'circuit']);
 const TRAFFIC: Readonly<Record<string, number>> = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
 const DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
 
@@ -12,12 +12,12 @@ export function normalizeRaceConfig(value: unknown = {}) {
   // Only Custom has rivals. Free Drive can adjust traffic and pickups.
   const custom = mode === 'custom';
   const practice = custom || mode === 'free';
-  const rivals = custom && typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' || mode === 'elimination' ? 3 : 0;
+  const rivals = custom && typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' || mode === 'elimination' || mode === 'circuit' ? 3 : 0;
   return Object.freeze({
     rulesVersion: 1,
     mode,
     rivals,
-    traffic: practice && typeof value.traffic === 'string' && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet', 'checkpoint'].includes(mode) ? 'off' : 'normal',
+    traffic: practice && typeof value.traffic === 'string' && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet', 'checkpoint', 'circuit'].includes(mode) ? 'off' : 'normal',
     difficulty: custom && isOneOf(value.difficulty, DIFFICULTIES) ? value.difficulty : 'normal',
     items: practice && typeof value.items === 'boolean' ? value.items : true,
     ...(practice && value.items !== false && value.activeItems === true ? { activeItems: true } : {}),
@@ -27,6 +27,7 @@ export function normalizeRaceConfig(value: unknown = {}) {
     ...(custom && isOneOf(value.stages, [2, 3, 5]) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
+    ...(mode === 'circuit' ? { laps: isOneOf(value.laps, [1, 3, 5]) ? value.laps : 3, topologyVersion: 1 } : {}),
     ...(mode === 'stunt' ? { duration: isOneOf(value.duration, [120, 180, 300]) ? value.duration : 120 } : {}),
     ...(mode === 'cup' && Array.isArray(value.cupTracks) && [3,5].includes(value.cupTracks.length) &&
        value.cupTracks.every(id => typeof id === 'string') && new Set(value.cupTracks).size === value.cupTracks.length
@@ -55,6 +56,7 @@ const REQUEST_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze(
   cup: ['cupTracks'],
   stunt: ['duration'],
   elimination: [],
+  circuit: ['laps', 'topologyVersion'],
 });
 const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isOneOf = <T extends string | number>(value: unknown, values: readonly T[]): value is T => values.includes(value as T);
@@ -87,6 +89,8 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
   if (Object.hasOwn(value, 'hazards')) assertOption(isOneOf(value.hazards, ['standard', 'extreme']), 'hazards');
   if (Object.hasOwn(value, 'hazardTier')) assertOption(isOneOf(value.hazardTier, ['standard', 'extreme']), 'hazardTier');
   if (Object.hasOwn(value, 'stages')) assertOption(isOneOf(value.stages, [1, 2, 3, 5]), 'stages');
+  if (Object.hasOwn(value, 'laps')) assertOption(isOneOf(value.laps, [1, 3, 5]), 'laps');
+  if (Object.hasOwn(value, 'topologyVersion')) assertOption(value.topologyVersion === 1, 'topologyVersion');
   if (Object.hasOwn(value, 'duration')) assertOption(isOneOf(value.duration, [120, 180, 300]), 'duration');
   if (Object.hasOwn(value, 'cupTracks')) {
     const tracks = value.cupTracks;

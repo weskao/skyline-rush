@@ -1,9 +1,9 @@
-import { RACE_TRACKS } from './game.js';
+import { raceTrack } from './race-tracks.ts';
+import { CIRCUIT_ID, circuitDistance } from './circuit-track.ts';
 import { trackOverview } from './track-paths.ts';
 import { SKY_SPIRAL } from './sky-track.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 
-const raceTracks = RACE_TRACKS as Record<string, { length: number }>;
 const NS = 'http://www.w3.org/2000/svg';
 interface RoutePoint { x: number; y: number }
 interface RouteSample extends RoutePoint { distance: number }
@@ -48,8 +48,8 @@ export function spiralUpperRoutePolyline(trackId: string): string {
 }
 export function routeMarker(trackId: string, distance: number): RoutePoint {
   const samples = routeSamples(trackId);
-  const total = raceTracks[trackId].length;
-  const value = clamp(distance / total) * (samples.length - 1);
+  const total = raceTrack(trackId)!.length;
+  const value = clamp((trackId === CIRCUIT_ID ? circuitDistance(distance) : distance) / total) * (samples.length - 1);
   const index = Math.min(Math.floor(value), samples.length - 2);
   const frac = value - index, a = samples[index], b = samples[index + 1];
   return { x: (a.x + (b.x - a.x) * frac) * 100, y: (a.y + (b.y - a.y) * frac) * 100 };
@@ -79,7 +79,7 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
     element.append(svg('polyline', { points: spiralUpperDirectionChevron(trackId),
       class: 'route-spiral-direction', fill: 'none', 'aria-hidden': 'true' }));
   }
-  for (const [kind, d] of [['start', 0], ['finish', raceTracks[trackId].length]] as const) {
+  for (const [kind, d] of [['start', 0], ['finish', raceTrack(trackId)!.length]] as const) {
     const p = routeMarker(trackId, d);
     element.append(svg('circle', { cx: p.x, cy: p.y, r: 2, class: `route-${kind}` }));
   }

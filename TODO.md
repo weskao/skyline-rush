@@ -1,5 +1,15 @@
 # TODO — Gameplay depth design
 
+## Genuine circuit continuation (2026-10-28, feature/genuine-circuit-laps)
+
+- [x] Source/rules and topology-v1/history strategy in `docs/circuit-laps.md`; observed unknown-route RED before adding the separate `harbor-circuit` capability. Preserve the ordered ten-route Classic/Daily/Cup catalog.
+- [x] Genuine 2 km closed geometry with one periodic road/vehicle/camera/item/Ghost/map frame; unwrapped progress and seam-aware physical gaps, ordered 1/3/5-lap sectors, interpolated splits and per-lap collectible identities.
+- [x] Follow-up RED/GREEN for Circuit records/Ghost bounds, default History selection, nonfinite progress, lap audio, ring orientation and shared geometry disposal. Permanent personal lap bests use the existing numeric bests map and survive rolling-history eviction/cloud merges.
+- [x] Strict TS/Vue checks and targeted history/Ghost/cloud checks pass (73 focused checks before the final matrix). 1/3/5-lap tests pass at 30/60/120 Hz; all six desktop/phone portrait/landscape × English/zh-TW real-game flows pass, including visible landmark/minimap, stored lap best, seam capture, result, retry, quit and Classic restart. Captures and logs: `artifacts/circuit/`.
+- [ ] Integrate shared main regression fixes, run the complete resulting `make verify`, cloud emulator and exact-commit CI quality-gate; physical Safari/Android GPU, audio/perception and long-run checks remain pending. Historical broad Node run had only the two inherited timeout/perf tests failing; it is not a green final receipt.
+
+
+
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
 **Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.
