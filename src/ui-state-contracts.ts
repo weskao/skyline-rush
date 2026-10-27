@@ -5,7 +5,7 @@ export interface GarageView {
   equipLabel: string;
 }
 export interface GuideView {
-  selectedDevice: 'desktop' | 'mobile';
+  selectedDevice: 'desktop' | 'mobile' | 'items';
   practiceKey: string;
   practiceText: string;
 }

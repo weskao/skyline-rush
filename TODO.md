@@ -101,6 +101,9 @@ Firebase and Gamepad are explicitly excluded. Do not retick historical requireme
 
 **Supersedes the earlier JSDoc-first migration plan for this dedicated refactor branch.**
 
+- [ ] Final continuation (2026-10-27): integrate current `main` collectibles guide into the typed Vue guide; preserve keyboard/touch/items tab exclusivity, reopen reset, both locales and existing panels. Observe the missing-items-tab regression RED → GREEN, run local `make verify` / layout / cloud gates and exact-commit full CI, and review running-game captures. Physical-phone performance/audio/touch/thermal evidence remains a separate requirement.
+  - [x] Integrated `main`'s `bd71ac8` collectibles guide into `GuidePanel.vue`, preserving the extracted panels. Migrated its component/catalog to strict TypeScript. Chrome RED: clicking Items left its panel hidden; GREEN: 9 guide tests including tab exclusivity, reopen reset and en/zh-TW at 1440/390/320/844px. The 320px regression separately exposed 23px overflow from nonwrapping reward badges; wrapping fixes it. Strict TS/Vue and 17 focused type/i18n tests pass. Full verification remains pending below.
+
 **Focused TDD gate during migration (2026-10-26):** on refactor pushes, check strict TypeScript/Vue typecheck, unit tests and Cloud Save only. Defer Browser 8/8, World Tour and UI visual parity until all steps have been implemented; run `CI → Run workflow → refactor/vue-ui-typecheck-incremental → full_regression=true` and `make verify` at final exact HEAD. Focused quality-gate success is **not** merge-ready evidence. No bypass on main, other branches or release tags. Keep Step 1 / parity / Step 5 unchecked until final full verification.
 
 The game loop, physics, WebGL renderer and hot-path HUD may remain `.js` only as measured,

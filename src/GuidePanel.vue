@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import MobileGuide from './MobileGuide.vue';
+import CollectiblesGuide from './CollectiblesGuide.vue';
 import { guideView } from './guide-view-state.ts';
 </script>
 
@@ -14,6 +15,7 @@ import { guideView } from './guide-view-state.ts';
     <div class="guide-devices" role="group" aria-label="Control guide" data-i18n-aria-label="guide.devices">
       <button class="controls-reset" data-guide-device="desktop" :aria-pressed="guideView.selectedDevice === 'desktop'" aria-controls="guide-desktop-panel" data-i18n="guide.desktop">Keyboard</button>
       <button class="controls-reset" data-guide-device="mobile" :aria-pressed="guideView.selectedDevice === 'mobile'" aria-controls="guide-mobile-panel" data-i18n="guide.mobile">Touch</button>
+      <button class="controls-reset" data-guide-device="items" :aria-pressed="guideView.selectedDevice === 'items'" aria-controls="guide-items-panel" data-i18n="guide.items">Rings &amp; Supplies</button>
     </div>
     <section id="guide-desktop-panel" :hidden="guideView.selectedDevice !== 'desktop'" aria-label="Keyboard controls" data-i18n-aria-label="guide.desktop">
       <p data-i18n="guide.keyboardHint">Your current keys are shown below. Change them in Controls.</p>
@@ -26,6 +28,7 @@ import { guideView } from './guide-view-state.ts';
       <p class="guide-shortcuts"><kbd>Esc / P</kbd> <span data-i18n="guide.pause">Pause / resume</span> · <kbd>C</kbd> <span data-i18n="guide.camera">Camera</span> · <kbd>F2</kbd> <span data-i18n="guide.auto">Auto accelerate</span></p>
     </section>
     <section id="guide-mobile-panel" :hidden="guideView.selectedDevice !== 'mobile'"><MobileGuide /></section>
+    <section id="guide-items-panel" :hidden="guideView.selectedDevice !== 'items'"><CollectiblesGuide /></section>
     <p class="guide-note" data-i18n="guide.note">Illustrations only — close this guide to try the controls in a race.</p>
   </dialog>
 </template>

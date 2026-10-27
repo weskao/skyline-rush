@@ -14,8 +14,6 @@
     "skipLibCheck": true
   },
   "include": [
-    "src/game-types.js",
-    "src/hud-dom.js",
     "tests/type-fixtures/valid.js"
   ],
   "exclude": [

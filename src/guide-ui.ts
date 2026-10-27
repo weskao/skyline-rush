@@ -1,7 +1,8 @@
 import { t } from './i18n.ts';
 import { updateGuideView } from './guide-view-state.ts';
+import type { GuideView } from './ui-state-contracts.ts';
 
-type GuideDevice = 'desktop' | 'mobile';
+type GuideDevice = GuideView['selectedDevice'];
 export const guidePracticeLabelKey = (completed: boolean): 'tutorial.start' | 'tutorial.retry' =>
   completed ? 'tutorial.retry' : 'tutorial.start';
 export const guideDeviceForPointer = (touch: boolean): GuideDevice => touch ? 'mobile' : 'desktop';
@@ -43,7 +44,7 @@ export function setupGuideUI({
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-guide-device]')) {
     button.addEventListener('click', () => {
       const device = button.dataset.guideDevice;
-      if (device === 'desktop' || device === 'mobile') selectGuideDevice(device);
+      if (device === 'desktop' || device === 'mobile' || device === 'items') selectGuideDevice(device);
     });
   }
   $('#guide-open').addEventListener('click', () => openGuide($('#controls-button')));
