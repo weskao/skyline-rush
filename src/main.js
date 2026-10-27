@@ -2,7 +2,7 @@ import './style.css';
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
 import { setupGarageUI } from './garage-ui.ts';
 import { createHistoryView } from './history-ui.ts';
-import { updateCloudView } from './cloud-view-state.ts';
+import { updateCloudView, updateCloudProfile } from './cloud-view-state.ts';
 import { setupGuideUI } from './guide-ui.ts';
 import { setupAudioUI } from './audio-ui.ts';
 import { setupControlPanels } from './controls-panels-ui.ts';
@@ -540,11 +540,10 @@ const isCloudDeleting = uid => {
 function showCloudSession() {
   const user = cloudUser;
   const url = user?.photoURL;
-  updateCloudView({
+  updateCloudProfile({
     name: user?.displayName?.trim() || t('cloud.player'),
     identity: user ? t('cloud.signedInAs', { email: user.email || user.uid }) : t('cloud.signedOut'),
     avatarUrl: typeof url === 'string' && /^https:\/\//.test(url) ? url : '',
-    avatarFailed: false,
   });
   updateCloudView({
     syncDisabled: !user || cloudDeleting || cloudOwner !== user.uid,

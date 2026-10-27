@@ -42,3 +42,9 @@ export const cloudView = reactive<CloudView>({
 export function updateCloudView(changes: Partial<CloudView>): void {
   Object.assign(cloudView, changes);
 }
+
+/** Preserve a failed avatar until the account presents a genuinely new photo URL. */
+export function updateCloudProfile(profile: Pick<CloudView, 'name' | 'identity' | 'avatarUrl'>): void {
+  const avatarFailed = cloudView.avatarUrl === profile.avatarUrl && cloudView.avatarFailed;
+  Object.assign(cloudView, profile, { avatarFailed });
+}

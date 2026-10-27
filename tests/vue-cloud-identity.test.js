@@ -37,4 +37,7 @@ test('broken cloud avatar stays in fallback across the same account refresh, but
   assert.equal(cloudView.name, 'Updated Pilot');
   updateCloudProfile({ ...profile, avatarUrl: 'https://example.test/new.png' });
   assert.equal(cloudView.avatarFailed, false, 'changed photo URLs may be retried');
+  const controller = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.match(controller, /updateCloudProfile\(/, 'Auth and locale refresh use the guarded update');
+  assert.doesNotMatch(controller, /avatarFailed:\s*false/, 'refresh does not blindly restart failed images');
 });
