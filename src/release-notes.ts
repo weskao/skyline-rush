@@ -29,6 +29,61 @@ const { version } = packageMeta;
 // stops a release whose version has no entry.
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
+    version: '0.24.0', date: '2026-10-28', image: null,
+    video: {
+      desktop: {
+        src: { en: 'whats-new/0.24.0/air-road-chain.desktop.en.mp4', 'zh-TW': 'whats-new/0.24.0/air-road-chain.desktop.zh-TW.mp4' },
+        poster: { en: 'whats-new/0.24.0/air-road-chain.desktop.en.jpg', 'zh-TW': 'whats-new/0.24.0/air-road-chain.desktop.zh-TW.jpg' }
+      },
+      mobile: {
+        src: { en: 'whats-new/0.24.0/air-road-chain.mobile.en.mp4', 'zh-TW': 'whats-new/0.24.0/air-road-chain.mobile.zh-TW.mp4' },
+        poster: { en: 'whats-new/0.24.0/air-road-chain.mobile.en.jpg', 'zh-TW': 'whats-new/0.24.0/air-road-chain.mobile.zh-TW.jpg' }
+      }
+    },
+    highlights: [
+      {
+        id: 'air-road-chain', kind: 'new', image: null,
+        title: { en: 'AIR → ROAD CHAIN: land it for extra speed', 'zh-TW': '空地連擊：漂亮落地再加速' },
+        description: {
+          en: 'Fly with BOOST or NITRO, then land smoothly for an extra burst of speed, with blue sparks and its own sound. Flying also uses less charge.',
+          'zh-TW': '飛行時開 BOOST 或 NITRO，再平穩落地，就能多衝一段加速，還有藍色火花和專屬音效。飛行也更省電量。'
+        }
+      },
+      {
+        id: 'rings-supplies-guide', kind: 'new', image: null,
+        title: { en: 'A guide to rings and pickups', 'zh-TW': '光圈與補給圖鑑' },
+        description: {
+          en: 'How to play now has a Rings & Supplies tab that explains rings, road pickups and mystery items, so you know what each one does before you grab it.',
+          'zh-TW': '操作教學新增「光圈與補給」分頁，介紹各種光圈、路面補給和神秘道具，吃到之前就知道它們的效果。'
+        }
+      },
+      {
+        id: 'target-fps', kind: 'new', image: null,
+        title: { en: 'Pick your frame rate', 'zh-TW': '自選畫面幀率' },
+        description: {
+          en: 'Choose Auto, 30 or 60 FPS from the VFX menu. Auto adjusts itself when the screen gets busy, and the race itself plays the same at every setting.',
+          'zh-TW': '在「特效」選單可選自動、30 或 60 FPS。自動會在畫面繁忙時自行調整；不論選哪個，比賽本身的表現都一樣。'
+        }
+      },
+      {
+        id: 'first-five-scenery', kind: 'improvement', image: null,
+        title: { en: 'Richer scenery and a clearer Sky Spiral map', 'zh-TW': '賽道風景更豐富，天際螺旋地圖更清楚' },
+        description: {
+          en: 'Coast, Neon Downtown, Canyon Skyway and Aurora Pass get richer scenery and their own road surfaces, and the Sky Spiral map shows where the road climbs.',
+          'zh-TW': '海岸公路、霓虹都會、峽谷天橋和極光山道的風景更豐富，各有專屬路面；天際螺旋的地圖也會標出道路爬升處。'
+        }
+      },
+      {
+        id: 'touch-taps', kind: 'fix', image: null,
+        title: { en: 'Easier taps on phones', 'zh-TW': '手機更好點按' },
+        description: {
+          en: 'Small buttons on touch screens are easier to hit, tutorial tips no longer cover the buttons beside them, and volume sliders show the level as you drag.',
+          'zh-TW': '觸控螢幕上的小按鈕更容易點中，教學提示不再擋住旁邊的按鈕，音量滑桿拖曳時也會即時顯示大小。'
+        }
+      }
+    ]
+  },
+  {
     version: '0.23.0', date: '2026-10-25', image: null,
     highlights: [
       {
