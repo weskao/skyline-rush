@@ -44,7 +44,7 @@ dependency, third-party network call, game-rule change or backend.
   `RECENT_RELEASE_LIMIT` (5). The newest tab is labelled `Latest / 最新`, older tabs show their
   date. Click, ←/→ (wrapping), Home and End switch versions; the panel fades in (instant under
   reduced motion). On narrow screens the tab rail scrolls sideways with snap; each tab is ≥ 44 px.
-- **Panel** per release: optional hero image, version + localized date, and one card per
+- **Panel** per release: optional hero image or video clip, version + localized date, and one card per
   highlight with a kind badge (`New / 新功能`, `Improved / 改進`, `Fixed / 修正`, colour-coded).
 - Footer: only **「繼續遊戲 / Continue」**, sticky at the bottom of the scrolling dialog so it stays
   reachable on short landscape phones. No changelog link.
@@ -80,6 +80,18 @@ One frozen entry per **published** version, never generated from commits:
   `public/whats-new/<version>/` (e.g. `public/whats-new/0.22.0/new-track.en.webp`), reference them
   relative to `public/`, localize per language when they contain text, and never delete an old
   release's images. A missing image falls back to text.
+- **Video** (optional `video` on the entry): a short muted clip that replaces the hero image
+  while the dialog is open. Give both a `desktop` (landscape, 960×600) and a `mobile` (portrait,
+  390×844) clip, each `{ src, poster }` localized like images (`.mp4`/`.webm` + a still), all under
+  `public/whats-new/<version>/`. Landscape screens get `desktop`, portrait ones `mobile`. It loops
+  inline only while the notes are open and pauses on close. Under reduced motion it shows the
+  poster with controls instead of autoplaying. A clip that fails to load falls back to the hero
+  image or the text. Record the real game (no mockups), keep each clip ≈ 6 s and under 1 MB. When
+  you record a phone viewport with Playwright, crop the video: it pads a small viewport with grey
+  rather than scaling it. The release check refuses a clip or poster that is not bundled, and
+  editing the video voids the review.
+  Bundled now: `public/whats-new/0.24.0/air-road-chain.{desktop,mobile}.{en,zh-TW}.{mp4,jpg}`
+  (FLY + NITRO → clean landing → AIR → ROAD CHAIN), ready for the 0.24.0 entry.
 - Text is rendered with `textContent` only.
 
 ## 5. State and trigger contract

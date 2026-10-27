@@ -7,10 +7,15 @@ export interface ReleaseHighlight {
   title: LocalizedText;
   description: LocalizedText;
 }
+// A short muted clip and the still shown before it plays (and instead of it under reduced motion).
+export interface ReleaseClip { src: LocalizedImage; poster: LocalizedImage }
+// Landscape screens get the desktop recording, portrait phones the mobile one.
+export interface ReleaseVideo { desktop: ReleaseClip; mobile: ReleaseClip }
 export interface ReleaseEntry {
   version: string;
   date: string;
   image?: LocalizedImage;
+  video?: ReleaseVideo | null;
   highlights: ReleaseHighlight[];
 }
 interface ReleaseStore { getItem(key: string): string | null; setItem(key: string, value: string): void }
@@ -304,7 +309,18 @@ export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | nu
 export const releaseText = (value: LocalizedText | LocalizedImage | null | undefined, locale: string): string =>
   typeof value === 'string' ? value : (value?.[locale as 'en' | 'zh-TW'] ?? value?.en ?? '');
 
-export function releaseImage(value: LocalizedImage | undefined, locale: string): string | null {
+// Only relative paths to files bundled under public/: no remote URLs, no traversal.
+const bundledPath = (value: LocalizedImage | undefined, locale: string, extensions: string): string | null => {
   const path = releaseText(value, locale);
-  return typeof path === 'string' && /^(?!\/)(?!.*\.\.)[a-zA-Z0-9][a-zA-Z0-9/_.-]*\.(?:png|jpe?g|webp|avif)$/.test(path) ? path : null;
+  return typeof path === 'string' && new RegExp(`^(?!\\/)(?!.*\\.\\.)[a-zA-Z0-9][a-zA-Z0-9/_.-]*\\.(?:${extensions})$`).test(path) ? path : null;
+};
+export const releaseImage = (value: LocalizedImage | undefined, locale: string): string | null =>
+  bundledPath(value, locale, 'png|jpe?g|webp|avif');
+
+export function releaseHeroVideo(video: ReleaseVideo | null | undefined, locale: string, portrait: boolean):
+  { src: string; poster: string; variant: keyof ReleaseVideo } | null {
+  const variant = portrait ? 'mobile' : 'desktop';
+  const src = bundledPath(video?.[variant]?.src, locale, 'mp4|webm');
+  const poster = releaseImage(video?.[variant]?.poster, locale);
+  return src && poster ? { src, poster, variant } : null;
 }
