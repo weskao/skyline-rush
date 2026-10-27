@@ -33,6 +33,7 @@ These are not exemptions from regression tests or proof of faster execution. Any
 | --- | --- | --- |
 | Release notes | `ReleaseNotesPanel.vue`, `release-view-state.ts` | `release-notes-ui.ts` |
 | History / challenge records | `HistoryPanel.vue`, `history-view-state.ts` | `history-ui.ts` |
+| Cloud Save (in History) | `HistoryPanel.vue`, `cloud-view-state.ts` (account identity, avatar fallback, actions, status, last sync) | `main.js` Auth and Firestore lifecycle only |
 | Garage / paint | `GaragePanel.vue`, `garage-view-state.ts` | `garage-ui.ts` |
 | Settings and audio | `SettingsPanel.vue`, `audio-view-state.ts`, `control-panels-view-state.ts` | `audio-ui.ts`, `controls-panels-ui.ts` |
 | Controls | `ControlsPanel.vue`, `control-panels-view-state.ts` | `controls-panels-ui.ts` |
@@ -43,7 +44,8 @@ Handlers may still call native `dialog.showModal/close`, set focus, coordinate p
 ## Verification and acceptance criteria
 
 - **Already verified per-slice:** strict `npm run typecheck`, unit tests, Cloud Save and focused quality gate on exact commits. This is not full-browser parity.
-- **CI software-WebGL profiling:** `tests/perf-browser.spec.js` logs racing p50/p95/FPS for 1440×900 and 390×844; `tests/hud-dom-browser.spec.js` asserts steady-state no duplicate HUD reads/writes on both viewports.
+- **CI software-WebGL profiling:** #40391848831 (SHA `0213b0d`) observed p50/p95 199.9/216.7ms (1440×900) and 100.0/116.7ms (390×844 viewport), 3s samples on CPU-only CI; `tests/hud-dom-browser.spec.js` observed 0 redundant HUD lookup/text/visibility writes in both viewports. No baseline/hardware comparative result exists; these are not frame-time improvement claims.
+- **Focused Cloud Save Vue red/green:** account/avatar RED #40443850579 → GREEN #40444356946; Cloud Save status/action visibility RED #40444601683 → GREEN #40444880513. Unchanged simulation and Firestore account/data rules; browser review remains part of final acceptance.
 - **Final automated gate:** commit with `[full-regression]` on this refactor branch; verify `unit-tests`, `cloud-save`, all eight `browser-tests` shards (including layout), `world-tour-mid-race` and `quality-gate` on the **same HEAD**, with no failed/cancelled required job. Local `make verify` must be run where a checkout with network and browsers is available.
 - **Hardware gate not fulfilled by CI:** compare baseline versus optimized p50/p95 under the same thermal, browser, graphics and input conditions on actual desktop/mobile devices, plus iPhone Safari/Android Chrome visual, audio, touch and thermals; record device and browser versions, sample duration and frame distributions. No numeric improvement claim until comparative evidence exists.
 - **Release/deploy:** outside this refactor; no merge into `main` on an incomplete gate.

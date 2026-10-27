@@ -113,6 +113,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
 - [ ] Step 1: profile baseline/optimized HUD frame cost (p50/p95 on desktop/mobile),
   confirm no redundant DOM writes and full regression suite before marking complete.
   - [x] Hot-path HUD DOM setter idempotence is covered by tests/hud-dom.test.js (unit pass on focused CI 40290017276); p50/p95 real-device measurements and complete visual/regression suite remain open.
+  - [x] Full CI #40391848831, SHA `0213b0d`: HUD 900ms audit on desktop 1440 and phone 390 shows 0 redundant id lookups, unchanged text/visibility writes. CI software-WebGL `?perf` (3s sampling only): desktop 1440×900 p50=199.9ms, p95=216.7ms, 5.1fps; phone viewport 390×844 p50=100.0ms, p95=116.7ms, 9.4fps. These are CPU-only CI observations and **not** a before/after or real GPU hardware comparison.
   - [ ] Desktop/mobile p50/p95 baseline-versus-optimized physical-device captures remain outstanding. Browser `tests/perf-browser.spec.js` logs current optimized measurements in CI software WebGL without claiming a hardware comparison; do not mark Step 1 complete from emulation alone.
 - [x] Step 2: strict `tsconfig.json`, shared TypeScript race/player/track interfaces,
   `<script setup lang="ts">` on Vue components and typed props; `npm run typecheck`
@@ -122,9 +123,10 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
   benefit; do not block feature parity merely to add tooling.
   - Decision: do not add ESLint now. Strict tsc + vue-tsc and existing Node/Playwright regressions already protect this migration; revisit only on demonstrated lint-only defects.
 - [ ] UI parity acceptance before further broad rewrites: first-visitor start (desktop/mobile), main DOM/CSS structural contract, modal controls, screenshot comparisons on affected devices, exact-HEAD browser and cloud/World Tour gates. User-reported visual differences remain open until observed in a real browser and fixed.
-- [ ] Step 3: convert feature UI controllers, app services and state modules from `.js` to
+- [x] Step 3: convert feature UI controllers, app services and state modules from `.js` to
   `.ts`, with typed engine-facing adapters and move-only behavioral guarantees.
   Main bootstrap/frame loop remains only as a documented performance exception.
+  - [x] Inventory audited: TypeScript controllers/state/business and cloud services and Vue SFCs are under strict typecheck, with precisely 11 engine/render/audio/frame-loop JavaScript exceptions documented in `docs/refactor-architecture-audit.md`. Baseline full regression #40391848831 passed, and focused TS/Vue/Node/cloud/quality gate #40444880513 on `f4f953f` passed. New complete Browser/World Tour acceptance is checked separately in Step 5.
   - [x] Hot-path HUD `src/hud-dom.js` migrated to strict `src/hud-dom.ts`, without adding Vue frame reactivity or changing conditional DOM writes. GREEN focused CI #40387106570 (RED candidate #40387014293 was cancelled and must not be counted as observed RED). Final Browser/Layout/World Tour checks remain Step 5.
   - [x] Rear brake/Nitro/high-speed LED geometry and animation migrated from `src/rear-light.js` to strict `src/rear-light.ts` with no duplicate JS, preserving 3D shapes, boosts, calm/reduced-motion and pause behavior. Observed RED unit failure #40390895125 (missing typed module) → GREEN #40391254300 (690 unit pass, 0 fail, 3 skip; TypeScript/Vue, Cloud Save and focused gate success). Browser rear-light parity remains Step 5.
   - [x] Ten-track geometry and minimap projections migrated from `src/track-paths.js` to strict `src/track-paths.ts`, reusing typed Sky Spiral Vec3 and preserving all course profiles, boundary clamping, flat-map readability and helix map projection. Renderer, route-map.ts, World Tour and tests imports updated atomically. TDD RED #40384335633 → GREEN #40385034048 (689 unit passed, 0 failed, 3 skipped, strict TypeScript/Vue, Cloud Save, focused quality gate green). Full Browser/World Tour and real device parity remain Step 5.
@@ -162,6 +164,7 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
   (release notes, history, garage, audio/settings, guide/tutorial, etc.);
   remove duplicate imperative DOM ownership. Run desktop/mobile, accessibility,
   localization, Firebase/cloud-save, finish/pause and World Tour regressions.
+  - [x] History Cloud Save profile (Google display name, account identity, HTTPS avatar + broken-image fallback) and status/action buttons are Vue-owned `cloud-view-state.ts` / `HistoryPanel.vue`, not competing DOM setters in `main.js`. Observed RED #40443850579 → GREEN focused #40444356946 for avatar identity (cloud emulator repaired to send realistic Vue image failure), and observed RED #40444601683 → GREEN #40444880513 for status, ARIA announcements, login/logout/switch/delete visibility, disabled sync controls. Focused checks: TS/Vue, 692 units pass/0 fail/3 skipped, Cloud Save emulator, quality gate green. Full desktop/mobile Browser/World Tour still needs final HEAD acceptance.
   - [x] The What's New opener unread badge and visibility are now Vue-owned reactive state (`release-view-state.ts` / `App.vue`), with no imperative DOM writes from `release-notes-ui.ts`; keyboard focus/click orchestration remains intact. TDD RED run 40344072762 → GREEN run 40344545178 (strict TypeScript/Vue, 673 passed / 0 failed / 3 skipped, Cloud Save, focused quality gate). Full Browser/World Tour/Layout confirmation remains Step 5.
   - [x] Audio settings Vue reactive presentation owns mute icon, Music/SFX switches, slider values, percentage labels and accessible value text. `audio-ui.ts` retains playback/localStorage only, no imperative HTML/ARIA writes. TDD RED #40341239974 → GREEN #40341674534 (TypeScript/Vue, 671 passed / 0 failed / 3 skipped, Cloud Save and focused quality-gate). Full Browser/audio parity remains Step 5.
   - [x] Settings and Controls disclosure buttons now derive aria-expanded from the same Vue reactive state as panel visibility, removing duplicate imperative writes; RED run 40288061638, GREEN run 40288441175 (typecheck, unit, Cloud Save, focused gate). Final screenshot parity deferred.
@@ -169,6 +172,10 @@ legacy files is *not* completion of TypeScript migration. Never tick incomplete 
 - [ ] Step 5: final architecture and feature-parity audit: all new UI/business code
   uses TypeScript, `tsconfig` coverage is reported, remaining plain-JS exceptions
   are documented, and exact-HEAD `make verify`, layout and CI quality-gate pass.
+  - [x] Earlier complete regression #40391848831 (`0213b0d`) passed TypeScript/Vue, 8/8 Browser shards, responsive layout, 72 World Tour, Cloud emulator and quality gate. It predates current Step 4 Cloud Save Vue changes and is not an exact-HEAD receipt for the updated code.
+  - [ ] This `[full-regression]` documentation commit starts the **new code HEAD** Browser 8/8, responsive layout, Cloud Save emulator, World Tour and quality-gate run. Tick only after every required job on this HEAD succeeds.
+  - [ ] Local checkout `make verify` has not been executed; a green GitHub Actions run must not be represented as a local command execution.
+  - [ ] Baseline vs optimized p50/p95 on actual comparable desktop/mobile hardware, screenshots reviewed by a human, iPhone Safari/Android Chrome touch/audio/thermal acceptance are still unavailable and are not substituted by software WebGL or viewport emulation.
 - [ ] Not planned: a mandatory Big Bang `.ts` rewrite of WebGL rendering/physics
   or reactive per-frame HUD; performance correctness takes priority.
 
