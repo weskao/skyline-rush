@@ -20,7 +20,7 @@ import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.ts';
 import { orientCarOnRoad } from './vehicle-pose.ts';
-import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.ts';
+import { classicRoadCenter, trackPoint, trackFrame, trackLocalPosition } from './track-paths.ts';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
@@ -29,7 +29,7 @@ import { hazardX } from './hazards.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 
-const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
+const roadCenter = classicRoadCenter;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
 const box = new THREE.BoxGeometry(1, 1, 1);
 const matrix = new THREE.Matrix4();
