@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { RELEASE_NOTES, releaseText, releaseImage } from '../src/release-notes.ts';
+import { RELEASE_NOTES, releaseText, releaseImage, releaseHeroVideo } from '../src/release-notes.ts';
 
 const LOCALES = ['en', 'zh-TW'];
 const REVIEWS_FILE = new URL('./release-notes-reviews.json', import.meta.url);
@@ -54,9 +54,10 @@ export const playerFacingChanges = subjects => subjects.filter(subject => {
   return match && !TOOLING_SCOPES.has(match[2]);
 });
 
-// Fingerprint of everything players read, so an edit after review needs a new review.
+// Fingerprint of everything players read or watch, so an edit after review needs a new review.
+// `video` is left out when absent so entries reviewed before videos existed keep their fingerprint.
 export const reviewHash = release => crypto.createHash('sha256')
-  .update(JSON.stringify({ version: release.version, image: release.image, highlights: release.highlights })).digest('hex').slice(0, 16);
+  .update(JSON.stringify({ version: release.version, image: release.image, video: release.video ?? undefined, highlights: release.highlights })).digest('hex').slice(0, 16);
 
 const loadReviews = () => { try { return JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf8')); } catch { return {}; } };
 
@@ -86,6 +87,12 @@ export function checkReleaseNotes(raw, { notes = RELEASE_NOTES, reviews = loadRe
         const file = releaseImage(image, locale);
         if (!file || !fs.existsSync(new URL(`../public/${file}`, import.meta.url))) {
           problems.push(`${release.version}: ${locale} image ${JSON.stringify(image[locale] ?? image)} is not a file in public/`);
+        }
+      }
+      for (const variant of release.video ? ['desktop', 'mobile'] : []) {
+        const clip = releaseHeroVideo(release.video, locale, variant === 'mobile');
+        if (!clip || ![clip.src, clip.poster].every(file => fs.existsSync(new URL(`../public/${file}`, import.meta.url)))) {
+          problems.push(`${release.version}: ${locale} ${variant} video ${JSON.stringify(release.video[variant])} is not a file in public/ with a poster`);
         }
       }
     }
