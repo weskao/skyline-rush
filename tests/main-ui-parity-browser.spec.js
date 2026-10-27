@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/main-ui-contract.json', import.meta.url), 'utf8'));
 
-// Strict main bd71ac8 baseline plus the intentional cda325e camera layout correction.
+// Strict main bd71ac8 baseline plus the intentional cda325e camera layout and 034f0de phone intro scroll-edge corrections.
 // Keep all element and stylesheet checks; physical-device approval is a separate gate.
 test('Vue migration preserves the recorded element order, roles and CSS hooks', async ({ page }) => {
   await page.goto('/');
@@ -26,7 +26,7 @@ test('Vue migration preserves the recorded element order, roles and CSS hooks', 
   }
 });
 
-test('stylesheet matches the recorded migration baseline with camera layout correction', () => {
+test('stylesheet matches the recorded migration baseline with camera and intro-edge corrections', () => {
   const css = readFileSync(new URL('../src/style.css', import.meta.url));
   const header = Buffer.from('blob ' + css.byteLength + '\0');
   const gitSha = createHash('sha1').update(header).update(css).digest('hex');
