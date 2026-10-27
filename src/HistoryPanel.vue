@@ -3,6 +3,8 @@ import { RACE_TRACKS } from './game.js';
 import { icons, ICON_ATTRS } from './icons.ts';
 import SignInButton from './SignInButton.vue';
 import { historyView } from './history-view-state.ts';
+import { cloudView, updateCloudView } from './cloud-view-state.ts';
+function hideBrokenCloudAvatar() { updateCloudView({ avatarFailed: true }); }
 
 const GOOGLE_ICON = `${import.meta.env.BASE_URL}icons/google-sign-in.webp`;
 const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-run', 'Clean run', 'Finish without a collision'], ['perfect-five', 'Perfect flight', 'Five PERFECT LINEs in one race'], ['nitro-chain', 'Triple burst', 'Chain three NITRO charges']];
@@ -25,11 +27,11 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <input id="cloud-import-file" type="file" accept=".json,application/json" hidden />
       <button type="button" class="controls-reset" id="cloud-delete" data-i18n="cloud.delete" hidden>Delete race progress</button>
       <div class="cloud-player" aria-live="polite">
-        <img id="cloud-avatar" class="cloud-avatar" alt="" referrerpolicy="no-referrer" hidden />
-        <span id="cloud-avatar-fallback" class="cloud-avatar-fallback" aria-hidden="true">G</span>
+        <img id="cloud-avatar" class="cloud-avatar" alt="" referrerpolicy="no-referrer" :src="cloudView.avatarUrl || undefined" :hidden="!cloudView.avatarUrl || cloudView.avatarFailed" @error="hideBrokenCloudAvatar" />
+        <span id="cloud-avatar-fallback" class="cloud-avatar-fallback" aria-hidden="true" :hidden="!!cloudView.avatarUrl && !cloudView.avatarFailed">G</span>
         <div class="cloud-player-details">
-          <strong id="cloud-name" data-i18n="cloud.player">Player</strong>
-          <p id="cloud-identity">Not signed in</p>
+          <strong id="cloud-name">{{ cloudView.name }}</strong>
+          <p id="cloud-identity">{{ cloudView.identity }}</p>
         </div>
       </div>
       <p id="cloud-status" role="status" data-i18n="cloud.local">Cloud backup is off. Sign in to protect your race results.</p>

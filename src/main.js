@@ -2,6 +2,7 @@ import './style.css';
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
 import { setupGarageUI } from './garage-ui.ts';
 import { createHistoryView } from './history-ui.ts';
+import { updateCloudView } from './cloud-view-state.ts';
 import { setupGuideUI } from './guide-ui.ts';
 import { setupAudioUI } from './audio-ui.ts';
 import { setupControlPanels } from './controls-panels-ui.ts';
@@ -343,6 +344,7 @@ function applyLocale() {
   for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale);
   if ($('#history-screen').open) showHistory();
   for (const [element, text] of said) element.textContent = text();
+  showCloudSession(); // Vue-owned account name/identity are localized on each language switch.
   showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
   syncDailyFlightControl();
   $('#showcase-camera-name').textContent = t('vfx.view.'+visual.view);
@@ -535,21 +537,15 @@ const cloudDeletingKey = uid => `skyline-rush-cloud-deleting:${uid}`;
 const isCloudDeleting = uid => {
   try { return localStorage.getItem(cloudDeletingKey(uid)) === '1'; } catch { return false; }
 };
-$('#cloud-avatar').addEventListener('error', () => {
-  $('#cloud-avatar').hidden = true;
-  $('#cloud-avatar-fallback').hidden = false;
-});
 function showCloudSession() {
   const user = cloudUser;
-  const name = user?.displayName?.trim() || t('cloud.player');
-  $('#cloud-name').textContent = name;
-  say($('#cloud-identity'), () => user ? t('cloud.signedInAs', { email: user.email || user.uid }) : t('cloud.signedOut'));
-  const avatar = $('#cloud-avatar');
   const url = user?.photoURL;
-  avatar.hidden = !(typeof url === 'string' && /^https:\/\//.test(url));
-  $('#cloud-avatar-fallback').hidden = !avatar.hidden;
-  if (!avatar.hidden && avatar.src !== url) avatar.src = url;
-  if (avatar.hidden) avatar.removeAttribute('src');
+  updateCloudView({
+    name: user?.displayName?.trim() || t('cloud.player'),
+    identity: user ? t('cloud.signedInAs', { email: user.email || user.uid }) : t('cloud.signedOut'),
+    avatarUrl: typeof url === 'string' && /^https:\/\//.test(url) ? url : '',
+    avatarFailed: false,
+  });
   $('#cloud-sync-now').disabled = !user || cloudDeleting || cloudOwner !== user.uid;
   say($('#cloud-last-sync'), () => lastCloudSync
     ? t('cloud.lastSync', { time: new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short' }).format(lastCloudSync) })

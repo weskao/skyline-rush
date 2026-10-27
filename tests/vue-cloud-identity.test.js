@@ -8,13 +8,15 @@ test('Vue exclusively owns cloud profile name, identity and avatar fallback', as
   assert.equal(cloudView.name, 'Driver');
   assert.equal(cloudView.identity, 'Signed in as driver@example.com');
   assert.equal(cloudView.avatarUrl, 'https://example.com/avatar.png');
-  updateCloudView({ avatarUrl: '' });
-  assert.equal(cloudView.avatarUrl, '', 'failed images reveal the fallback');
+  updateCloudView({ avatarFailed: true });
+  assert.equal(cloudView.avatarFailed, true, 'failed images reveal the fallback');
+  updateCloudView({ avatarUrl: '', avatarFailed: false });
+  assert.equal(cloudView.avatarUrl, '');
 
   const template = readFileSync(new URL('../src/HistoryPanel.vue', import.meta.url), 'utf8');
   for (const token of ['{{ cloudView.name }}', '{{ cloudView.identity }}',
-    ':src="cloudView.avatarUrl || undefined"', ':hidden="!cloudView.avatarUrl"',
-    ':hidden="!!cloudView.avatarUrl"', '@error="hideBrokenCloudAvatar"'])
+    ':src="cloudView.avatarUrl || undefined"', ':hidden="!cloudView.avatarUrl || cloudView.avatarFailed"',
+    ':hidden="!!cloudView.avatarUrl && !cloudView.avatarFailed"', '@error="hideBrokenCloudAvatar"'])
     assert.ok(template.includes(token), 'Vue cloud profile binding missing: ' + token);
 
   const controller = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
