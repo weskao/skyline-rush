@@ -555,7 +555,7 @@ try {
   let accumulator = 0;
   let hudElapsed = 0;
   let wasCalm = calmMotion();
-  const perfOverlay = createPerfOverlay(location.search);
+  const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad());
   function frame(now) {
     const rawDelta = (now - previousTime) / 1000;
     previousTime = now;

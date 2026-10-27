@@ -13,14 +13,15 @@ import { vfxSettings } from './vfx-settings.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
-import { createCoastScenery, COAST_PALETTE } from './coast-visuals.ts';
+import { createCoastScenery } from './coast-visuals.ts';
+import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.ts';
 import { orientCarOnRoad } from './vehicle-pose.ts';
 import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.ts';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
-import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
+import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { hazardX } from './hazards.ts';
 
@@ -36,14 +37,6 @@ const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
-const TRACK_PALETTES = {
-  coast: COAST_PALETTE,
-  neon: { top: '#040a20', horizon: '#263057', fog: '#18223f', rock: '#182039', road: '#101c2e', ground: '#080e21', rail: '#ff52bf', sun: '#96b7ff', warmth: 0 },
-  canyon: { top: '#458bab', horizon: '#f5c58c', fog: '#c99c79', rock: '#a15339', road: '#51453b', ground: '#a76e46', rail: '#ffc36f', sun: '#ffdfaa', warmth: .6 },
-  aurora: { top: '#051b31', horizon: '#337064', fog: '#234d5b', rock: '#9cb9c7', road: '#293d50', ground: '#b3cad3', rail: '#78ffd1', sun: '#b9ddff', warmth: 0 },
-  spiral: { top: '#050b25', horizon: '#55348c', fog: '#302657', rock: '#29345b', road: '#111827', ground: '#161d49', rail: '#00e5ff', sun: '#a855f7', warmth: 0 },
-  ...WORLD_THEMES,
-};
 
 function material(color, metalness = 0, roughness = 0.7) {
   return new THREE.MeshStandardMaterial({ color, metalness, roughness });
@@ -256,6 +249,7 @@ function fitText(context, label, x, y, maxWidth, basePx, locale) {
 export function createWorld(canvas) {
   // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  renderer.info.autoReset=false; // Combine scene and composer submissions per frame for QA.
   let renderPixelRatio=Math.min(devicePixelRatio,1.5);
   renderer.setPixelRatio(renderPixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -876,10 +870,7 @@ export function createWorld(canvas) {
         seaLines.visible = trackId === 'coast'; mountains.material.color.set(palette.rock);
         city.visible = trackId === 'coast' || trackId === 'neon';
         windows.material.color.set(trackId === 'neon' ? '#ff6dbc' : '#ffd394');
-        buildingMat.roughness=trackId==='coast'?.84:.38;
-        buildingMat.metalness=trackId==='coast'?.055:.5;
-        roadMaterial.color.set(palette.road); roadMaterial.roughness = trackId === 'neon' ? .16 : trackId === 'coast' ? .91 : .5;
-        roadMaterial.metalness = trackId === 'coast' ? .025 : .3;
+        applyTrackSurfaceStyle(trackId,roadMaterial,buildingMat,palette.road);
         railLights.material.color.set(palette.rail);
         cliffs.visible = trackId === 'canyon' || trackId === 'aurora'; cliffs.material.color.set(palette.rock);
         tunnelRoofs.visible = tunnelWalls.visible = trackId === 'neon';
@@ -1246,6 +1237,7 @@ export function createWorld(canvas) {
       bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?.19:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
+      renderer.info.reset(); // Exclude warmup draws and previous frames.
       composer.render(dt);
       if (photoCapture) {
         const request = photoCapture;
