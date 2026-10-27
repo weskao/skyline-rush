@@ -215,6 +215,7 @@ npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full ra
 npm run test:layout     # Home-screen fit, top bar and touch targets (runs on pre-push)
 make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
+make help               # List every make command with its options
 ```
 
 Browser tests use an installed Google Chrome and allow SwiftShader for headless rendering. CPU-only CI uses a device scale factor of 0.25 to keep the 3D scene responsive while retaining the same CSS viewport sizes and gameplay assertions; local tests render at full resolution. Normal gameplay uses the browser's available GPU. The English README screenshots are written to `artifacts/` as JPEG (quality 70) only when the file is missing or with `UPDATE_ARTIFACTS=1 npm run test:browser`, since the live 3D scene differs every run; test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
@@ -224,6 +225,13 @@ npm run preview         # Serve the production build after npm run build
 ```
 
 For a phone check, serve the build on your network (`npx vite preview --host 0.0.0.0`) and open it with `?perf` (for example `http://<computer-ip>:4173/?perf`). A strip at the top then shows racing frame times over the last 20 s: median (p50), 95th percentile (p95), average fps and the sample length. Without `?perf` nothing is measured or shown.
+
+```sh
+make perf BASE=main         # A/B in Chrome at 412×915, CPU throttled 6× (RATE=20 for a low-end phone), 3 alternating rounds
+make perf-phone             # Like make phone: asks base version, Tailscale/Wi-Fi and Telegram; logs phone temperatures
+```
+
+`make perf` builds this checkout, and with `BASE=<git ref>` that ref too (in `.claude/worktrees/perf-<sha>`, reused next time), races Coast for 24 s per run and prints each run's strip plus the per-build median. `make perf-phone` asks the same way `make phone` does for whatever is not passed (`BASE=`, `VIA=tailscale|wifi|auto`, `TG=0`), prints and sends to Telegram one `?perf` URL per build, opens the first in Chrome on any Android phone on USB (`adb reverse`, so any network works), sends a URLs-expired notice on Ctrl+C, and logs every 10 s the phone's sensor temperatures and throttling level (`dumpsys thermalservice`) beside the Mac's thermal warning level, until Ctrl+C. Compare runs only at the same throttling level: a warm phone throttles and drops frames regardless of the build. iPhones report no temperature.
 
 ## Deploy
 

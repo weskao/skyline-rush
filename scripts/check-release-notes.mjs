@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { RELEASE_NOTES, releaseText, releaseImage } from '../src/release-notes.js';
+import { RELEASE_NOTES, releaseText, releaseImage } from '../src/release-notes.ts';
 
 const LOCALES = ['en', 'zh-TW'];
 const REVIEWS_FILE = new URL('./release-notes-reviews.json', import.meta.url);

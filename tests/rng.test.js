@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { seededRng } from '../src/rng.js';
+import { seededRng } from '../src/rng.ts';
 
 const draw = (rng, n = 5) => Array.from({ length: n }, rng);
 

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS } from '../src/game.js';
-import { trackPoint, trackFrame, trackOverview } from '../src/track-paths.js';
+import { trackPoint, trackFrame, trackOverview } from '../src/track-paths.ts';
 const close=(a,b,e=1e-7)=>assert.ok(Math.abs(a-b)<e,`${a} != ${b}`);
 
 test('legacy courses preserve their existing road centreline',()=>{

@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { seededRng, RACE_STREAMS, streamSeed } from '../src/rng.js';
+import { seededRng, RACE_STREAMS, streamSeed } from '../src/rng.ts';
 import { createRace, RACE_TRACKS } from '../src/game.js';
-import { createRaceSessionContract } from '../src/race-session.js';
-import { createHazards } from '../src/hazards.js';
-import { createCheckpointRush } from '../src/checkpoint-rush.js';
+import { createRaceSessionContract } from '../src/race-session.ts';
+import { createHazards } from '../src/hazards.ts';
+import { createCheckpointRush } from '../src/checkpoint-rush.ts';
 
 // RED: every gameplay subsystem has its own version-stable seed.
 test('MODE-00: traffic, checkpoints, obstacles and items have independent uint32 seeds', () => {

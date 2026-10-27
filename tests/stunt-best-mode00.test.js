@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace } from '../src/game.js';
-import { loadModeHistory, loadHistory, loadUnlocks, loadStuntBest, recordModeRace } from '../src/history.js';
+import { loadModeHistory, loadHistory, loadUnlocks, loadStuntBest, recordModeRace } from '../src/history.ts';
 
 const memory = () => {
   const data = new Map();

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace } from '../src/game.js';
-import { createInteractiveTutorial, prepareTutorialInput } from '../src/interactive-tutorial.js';
+import { createInteractiveTutorial, prepareTutorialInput } from '../src/interactive-tutorial.ts';
 
 const DT = 1 / 60;
 function tick(session, action = {}, dt = DT) {

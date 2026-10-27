@@ -1,5 +1,5 @@
-<script setup>
-import { COLLECTIBLES_GUIDE_COPY } from './collectibles-guide-copy.js';
+<script setup lang="ts">
+import { COLLECTIBLES_GUIDE_COPY } from './collectibles-guide-copy.ts';
 
 const rings = [
   { key: 'charge', color: 'cyan', icon: 'charge' },
@@ -238,7 +238,7 @@ const powers = [
   padding: 2px 7px;
   border-radius: 4px;
   letter-spacing: 0.03em;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .card-info p {

@@ -3,7 +3,7 @@ import { expect } from '@playwright/test';
 import { mkdirSync, appendFileSync, rmSync, writeFileSync } from 'node:fs';
 import { test } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
-import { CATALOGS } from '../src/i18n.js';
+import { CATALOGS } from '../src/i18n.ts';
 import { ciTimeout } from './helpers/ci.js';
 import { strayEnglish } from './helpers/i18n-english.js';
 

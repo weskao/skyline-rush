@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createCheckpointRush, stepCheckpointRush } from '../src/checkpoint-rush.js';
+import { createCheckpointRush, stepCheckpointRush } from '../src/checkpoint-rush.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { roadObstacles } from '../src/world-tour-scene.js';
 const track = { length: 4100, sections: [{ from: 600, to: 1100, type: 'tunnel' }, { from: 2300, to: 2360, type: 'gap' }] };

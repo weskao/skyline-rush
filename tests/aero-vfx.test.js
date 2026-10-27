@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Scene, Group, Mesh, BoxGeometry, Vector3 } from 'three';
 import { createRace } from '../src/game.js';
 import { createAeroVFX, dashSamples } from '../src/aero-vfx.js';
-import { vfxSettings } from '../src/vfx-settings.js';
+import { vfxSettings } from '../src/vfx-settings.ts';
 
 function fixture() {
   const scene = new Scene(), vehicle = new Group();

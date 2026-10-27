@@ -1,27 +1,30 @@
 import * as THREE from 'three';
-import { flipRgbaRows, photoFov } from './photo-export.js';
+import { flipRgbaRows, photoFov } from './photo-export.ts';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { canopy, carShell, roadRibbon } from './geometry.js';
+import { canopy, carShell, roadRibbon } from './geometry.ts';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
-import { vfxSettings } from './vfx-settings.js';
-import { warmupShaders } from './shader-warmup.js';
-import { t, getLocale, onLocaleChange } from './i18n.js';
-import { createRearLight } from './rear-light.js';
+import { vfxSettings } from './vfx-settings.ts';
+import { warmupShaders } from './shader-warmup.ts';
+import { t, getLocale, onLocaleChange } from './i18n.ts';
+import { createRearLight } from './rear-light.ts';
 import { createSkyScene } from './sky-scene.js';
-import { skyPosition, skyFrame } from './sky-track.js';
-import { orientCarOnRoad } from './vehicle-pose.js';
-import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.js';
-import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.js';
-import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.js';
+import { skyPosition, skyFrame } from './sky-track.ts';
+import { orientCarOnRoad } from './vehicle-pose.ts';
+import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.ts';
+import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
+import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
-import { hazardX } from './hazards.js';
+import { hazardX } from './hazards.ts';
+
+/** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
+/** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 
 const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);

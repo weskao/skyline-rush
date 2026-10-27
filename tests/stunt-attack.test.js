@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createStuntAttack, scoreStuntAttack } from '../src/stunt-attack.js';
+import { createStuntAttack, scoreStuntAttack } from '../src/stunt-attack.ts';
 const car = () => ({ speed: 65, altitude: 0, collisions: 0, falls: 0, nearMisses: 0, rings: 0 });
 test('new drift, near miss and ring events build bounded style multiplier', () => {
   const state = createStuntAttack(), c = car();

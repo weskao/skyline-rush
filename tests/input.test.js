@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createControls } from '../src/input.js';
-import { DEFAULT_KEY_MAP } from '../src/key-map.js';
+import { createControls } from '../src/input.ts';
+import { DEFAULT_KEY_MAP } from '../src/key-map.ts';
 
 function send(target, type, properties = {}) {
   const event = new Event(type, { cancelable: true });

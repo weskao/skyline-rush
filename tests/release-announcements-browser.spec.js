@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { test, expect } from './helpers/test.js';
-import { recentReleases } from '../src/release-notes.js';
+import { recentReleases } from '../src/release-notes.ts';
 
 const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const SEEN_KEY = 'skyline-rush-whats-new-seen-v1';

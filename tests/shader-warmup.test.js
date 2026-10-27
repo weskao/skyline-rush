@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Scene, Mesh, Group, BoxGeometry, MeshBasicMaterial, PointLight } from 'three';
-import { warmupShaders } from '../src/shader-warmup.js';
+import { warmupShaders } from '../src/shader-warmup.ts';
 
 test('warmup draws hidden and culled objects once into the given target, then restores them', () => {
   const scene = new Scene(), hidden = new Mesh(new BoxGeometry(), new MeshBasicMaterial()), parent = new Group();

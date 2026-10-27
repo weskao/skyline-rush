@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { RACE_TRACKS, ROAD_LIMIT } from './game.js';
-import { trackPoint, trackFrame } from './track-paths.js';
-import { roadRibbon } from './geometry.js';
+import { trackPoint, trackFrame } from './track-paths.ts';
+import { roadRibbon } from './geometry.ts';
 import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
-import { batchStaticChunk } from './world-tour-batching.js';
+import { batchStaticChunk } from './world-tour-batching.ts';
 
 // One scenery system for five distinct destinations. Locations are authored as
 // race-distance + roadside offsets; meshes follow the *real* 3D driving path.

@@ -5,9 +5,9 @@ import {
   SUPPORTED_LOCALES, TRACK_NAMES, trackName, loadLocale, saveLocale,
   CATALOGS, interpolate, detectLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, t,
   formatNumber, applyDocumentLocale, applyI18n,
-} from '../src/i18n.js';
-import { UI } from '../src/locales/ui.js';
-import { GAME } from '../src/locales/game.js';
+} from '../src/i18n.ts';
+import { UI } from '../src/locales/ui.ts';
+import { GAME } from '../src/locales/game.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { strayEnglish } from './helpers/i18n-english.js';
 

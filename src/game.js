@@ -1,17 +1,21 @@
-import { seededRng, RACE_STREAMS } from './rng.js';
-import { createHazards, hazardX } from './hazards.js';
-import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.js';
-import { createPracticeStats, samplePractice } from './practice-stats.js';
-import { createStuntAttack, scoreStuntAttack } from './stunt-attack.js';
-import { createElimination, stepElimination } from './elimination.js';
-import { bankItem, activateItem, tickItemCooldown } from './active-items.js';
-import { normalizeRaceConfig, trafficMultiplier } from './race-config.js';
-import { raceCompletion } from './race-objectives.js';
-import { createRaceSessionContract } from './race-session.js';
-import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.js';
+import { seededRng, RACE_STREAMS } from './rng.ts';
+import { createHazards, hazardX } from './hazards.ts';
+import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
+import { createPracticeStats, samplePractice } from './practice-stats.ts';
+import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
+import { createElimination, stepElimination } from './elimination.ts';
+import { bankItem, activateItem, tickItemCooldown } from './active-items.ts';
+import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
+import { raceCompletion } from './race-objectives.ts';
+import { createRaceSessionContract } from './race-session.ts';
+import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
+
+/** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
+/** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
+/** @type {Record<string, TrackConfig>} */
 export const RACE_TRACKS = {
   coast: { // fixedRings: the original gate grid
     name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, fixedRings: true,

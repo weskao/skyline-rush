@@ -1,0 +1,13 @@
+round 1 base before: AP 36.0 BAT 34.4 SKIN 36.3 Thermal Status: 1
+round 1 base after: AP 43.2 BAT 34.4 SKIN 37.6 Thermal Status: 1
+round 1 refactor before: AP 37.7 BAT 34.4 SKIN 37.0 Thermal Status: 1
+round 1 refactor after: AP 42.8 BAT 34.5 SKIN 37.7 Thermal Status: 1
+round 2 base before: AP 37.4 BAT 34.5 SKIN 37.1 Thermal Status: 1
+round 2 base after: AP 43.6 BAT 34.5 SKIN 37.9 Thermal Status: 1
+round 2 refactor before: AP 37.4 BAT 34.5 SKIN 37.1 Thermal Status: 1
+round 2 refactor after: AP 42.7 BAT 34.6 SKIN 37.8 Thermal Status: 1
+round 3 base before: AP 37.2 BAT 34.6 SKIN 37.0 Thermal Status: 1
+round 3 base after: AP 43.7 BAT 34.6 SKIN 37.9 Thermal Status: 1
+round 3 refactor before: AP 38.7 BAT 34.6 SKIN 37.6 Thermal Status: 1
+round 3 refactor after: AP 43.0 BAT 34.6 SKIN 37.9 Thermal Status: 1
+done

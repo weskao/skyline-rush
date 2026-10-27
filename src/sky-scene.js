@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { roadRibbon } from './geometry.js';
-import { skyFrame, skyPoint, skyPosition, skyGapAt, SKY_SPIRAL } from './sky-track.js';
+import { roadRibbon } from './geometry.ts';
+import { skyFrame, skyPoint, skyPosition, skyGapAt, SKY_SPIRAL } from './sky-track.ts';
 
 // A dedicated, bounded 3D road renderer. The existing four flat tracks keep
 // their original geometry and fast path untouched.

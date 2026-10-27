@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { frameStats, PERF_WINDOW } from '../src/perf.js';
+import { frameStats, PERF_WINDOW } from '../src/perf.ts';
 
 test('frame stats report nearest-rank p50 / p95 and the average frame rate', () => {
   const samples = [...Array(95).fill(16), ...Array(5).fill(40)];

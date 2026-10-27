@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createSlidePad } from '../src/slide-pad.js';
+import { createSlidePad } from '../src/slide-pad.ts';
 
 function pad(options) {
   const p = createSlidePad(options);

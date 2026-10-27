@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createModeAudioState, modeAudioCues, musicForMode } from '../src/mode-audio.js';
+import { createModeAudioState, modeAudioCues, musicForMode } from '../src/mode-audio.ts';
 
 const race = (mode, additions = {}) => ({ mode, phase:'racing', trackId:'coast', player:{distance:0}, ...additions });
 test('menu and track music retain the originals; new modes have distinct themes', () => {

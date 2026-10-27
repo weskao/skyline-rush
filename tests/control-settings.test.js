@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CONTROLS_KEY, controlSettings } from '../src/control-settings.js';
+import { CONTROLS_KEY, controlSettings } from '../src/control-settings.ts';
 
 const defaults = { mode: 'slide', hand: 'left', fullLock: 60, size: 'M', opacity: 0.9, flyMode: 'hold', sensitivity: 1, ghost: false, layout: {}, version: 1 };
 

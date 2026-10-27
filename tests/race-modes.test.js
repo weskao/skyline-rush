@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRaceConfig, MODES } from '../src/race-config.js';
+import { normalizeRaceConfig, MODES } from '../src/race-config.ts';
 import { createRace, startRace, stepRace, useHeldItem, RACE_TRACKS } from '../src/game.js';
 
 test('normalization keeps classic defaults and validates mode names', () => {
@@ -78,7 +78,7 @@ test('time attack has no rivals and still completes a normal sprint', () => {
   assert.equal(race.result.position, 1);
 });
 
-import { recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.js';
+import { recordModeRace, loadModeHistory, loadHistory, loadUnlocks } from '../src/history.ts';
 
 test('practice history stays separate from campaign history and unlocks', () => {
   const map = new Map();
@@ -104,7 +104,7 @@ test('invalid and incomplete practice data cannot be saved', () => {
   assert.throws(() => recordModeRace(classic), /finished practice/);
 });
 
-import { loadModeGhost, saveModeGhost } from '../src/history.js';
+import { loadModeGhost, saveModeGhost } from '../src/history.ts';
 
 test('Time Attack ghosts never overwrite Classic ghosts', () => {
   const data = {};
@@ -134,7 +134,7 @@ test('AI opponent count supports one or three opponents without changing Classic
   assert.equal(createRace('coast').rivals.length, 3);
 });
 
-import { RULE_PRESETS } from '../src/race-config.js';
+import { RULE_PRESETS } from '../src/race-config.ts';
 
 test('rule presets cover five distinct, valid race configurations', () => {
   assert.deepEqual(Object.keys(RULE_PRESETS), ['standard', 'traffic', 'noitems', 'air', 'precision']);

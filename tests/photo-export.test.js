@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { flipRgbaRows, photoFov, photoFilename } from '../src/photo-export.js';
+import { flipRgbaRows, photoFov, photoFilename } from '../src/photo-export.ts';
 test('readPixels origin is flipped to top-down canvas pixels',()=>{
   const bottomLeft=[1,2,3,255],bottomRight=[4,5,6,255],topLeft=[7,8,9,255],topRight=[10,11,12,255];
   const packed=new Uint8Array([...bottomLeft,...bottomRight,...topLeft,...topRight]);

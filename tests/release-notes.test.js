@@ -5,7 +5,7 @@ import packageMeta from '../package.json' with { type: 'json' };
 import {
   CURRENT_RELEASE, NOTES_SEEN_KEY, RELEASE_NOTES, RECENT_RELEASE_LIMIT, releaseForVersion, recentReleases,
   compareVersions, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage
-} from '../src/release-notes.js';
+} from '../src/release-notes.ts';
 import { checkReleaseNotes, copyProblems, reviewHash, playerFacingChanges } from '../scripts/check-release-notes.mjs';
 
 const storage = () => {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { swipeAxis, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from '../src/track-swipe.js';
+import { swipeAxis, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from '../src/track-swipe.ts';
 
 test('the drag locks to the axis it first moves along', () => {
   assert.equal(swipeAxis(3, 4), null);

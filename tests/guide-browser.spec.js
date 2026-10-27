@@ -101,12 +101,17 @@ test('opening guide from paused controls does not resume the race', async ({ pag
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
 });
 
-test('rings and supplies guide explains all ring types, road pickups and mystery items in en and zh-TW', async ({ page }) => {
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 740 }, { width: 844, height: 390 }]) {
+test(`rings and supplies guide explains all ring types, road pickups and mystery items in en and zh-TW at ${viewport.width}px`, async ({ page }) => {
+  await page.setViewportSize(viewport);
   await page.goto('/');
   await openGuide(page);
   await page.locator('[data-guide-device="items"]').click();
   const panel = page.locator('#guide-items-panel');
   await expect(panel).toBeVisible();
+  await expect(page.locator('[data-guide-device="items"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#guide-desktop-panel')).toBeHidden();
+  await expect(page.locator('#guide-mobile-panel')).toBeHidden();
 
   // Rings
   await expect(panel.locator('[data-i18n="guide.items.ring.charge.title"]')).toHaveText('Charge Ring (Cyan)');
@@ -127,12 +132,16 @@ test('rings and supplies guide explains all ring types, road pickups and mystery
   await expect(panel.locator('[data-i18n="guide.items.power.magnet.title"]')).toHaveText('Magnetic Field');
   await expect(panel.locator('[data-i18n="guide.items.power.ghost.title"]')).toHaveText('Ghost Phase');
   await expect(panel.locator('[data-i18n="guide.items.power.freeze.title"]')).toHaveText('Nitro Freeze');
+  expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth), 'English guide fits its panel').toBe(true);
 
   // Switch to zh-TW
   await page.locator('#guide-close').click();
   await selectLocale(page, 'zh-TW');
   await openGuide(page);
+  await expect(panel).toBeHidden();
+  await expect(page.locator('[data-guide-device="desktop"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('[data-guide-device="items"]').click();
+  await expect(page.locator('[data-guide-device="items"]')).toHaveAttribute('aria-pressed', 'true');
 
   await expect(panel.locator('[data-i18n="guide.items.ring.charge.title"]')).toHaveText('充能光環（青藍）');
   await expect(panel.locator('[data-i18n="guide.items.ring.nitro.title"]')).toHaveText('NITRO 光環（金黃）');
@@ -141,7 +150,9 @@ test('rings and supplies guide explains all ring types, road pickups and mystery
   await expect(panel.locator('[data-i18n="guide.items.power.magnet.title"]')).toHaveText('強力磁吸力場');
   await expect(panel.locator('[data-i18n="guide.items.power.ghost.title"]')).toHaveText('幽靈穿透狀態');
   await expect(panel.locator('[data-i18n="guide.items.power.freeze.title"]')).toHaveText('極速寒冰急凍');
+  expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth), 'Chinese guide fits its panel').toBe(true);
 
   await page.locator('#guide-close').click();
   await expect(page.locator('#guide-screen')).toBeHidden();
 });
+}

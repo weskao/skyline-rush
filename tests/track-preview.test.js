@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace,RACE_TRACKS } from '../src/game.js';
-import { previewDistance,previewRival,previewPlayer,HERO_PREVIEWS } from '../src/track-preview.js';
+import { previewDistance,previewRival,previewPlayer,HERO_PREVIEWS } from '../src/track-preview.ts';
 import { WORLD_THEMES } from '../src/world-tour-scene.js';
 
 for(const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
