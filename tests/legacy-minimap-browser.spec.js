@@ -12,7 +12,7 @@ test('all five original courses show their complete, curved route outline on the
   for(const id of ids){
     const card=page.locator(`[data-track="${id}"]`);
     const map=card.locator('.track-route-map');
-    const line=map.locator('svg polyline');
+    const line=map.locator('svg .route-overview-line');
     await expect(map).toBeVisible();
     await expect(line).toHaveAttribute('points',/^\d/);
     const geometry=await line.evaluate(el=>{
@@ -23,7 +23,8 @@ test('all five original courses show their complete, curved route outline on the
     expect(geometry.height,`${id} must show full main route`).toBeGreaterThan(23);
     expect(geometry.mapWidth,`${id} SVG must have a visible width`).toBeGreaterThan(35);
     expect(geometry.mapHeight,`${id} SVG must have a visible height`).toBeGreaterThan(22);
-    await expect(map.locator('polyline')).toHaveCount(1);
+    await expect(map.locator('.route-overview-line')).toHaveCount(1);
+    await expect(map.locator('polyline')).toHaveCount(id === 'spiral' ? 3 : 1);
   }
 });
 for(const id of ids)test(`${id}: race minimap has a visible main path and all four racer indicators`,async({page})=>{
@@ -35,9 +36,10 @@ for(const id of ids)test(`${id}: race minimap has a visible main path and all fo
   const map=page.locator('#race-route-map');
   await expect(map).toBeVisible();
   await expect(map).toHaveAttribute('data-theme',id);
-  await expect(map.locator('svg polyline')).toHaveCount(1);
+  await expect(map.locator('svg .route-overview-line')).toHaveCount(1);
+  await expect(map.locator('polyline')).toHaveCount(id === 'spiral' ? 3 : 1);
   await expect(map.locator('circle[data-racer]')).toHaveCount(4);
-  const shape=await map.locator('polyline').evaluate(el=>({w:el.getBBox().width,h:el.getBBox().height}));
+  const shape=await map.locator('.route-overview-line').evaluate(el=>({w:el.getBBox().width,h:el.getBBox().height}));
   expect(shape.w).toBeGreaterThan(48);
   expect(shape.h).toBeGreaterThan(23);
 });
