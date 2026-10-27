@@ -15,6 +15,8 @@ import SettingsPanel from './SettingsPanel.vue';
 import ControlsPanel from './ControlsPanel.vue';
 import HistoryPanel from './HistoryPanel.vue';
 import { homeStatusView } from './home-status-view-state.ts';
+import ItemRules from './ItemRules.vue';
+import ItemSlot from './ItemSlot.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
 
@@ -177,8 +179,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
             <label id="sprint-stages-setting"><span data-i18n="mode.stages">Sprint stages (not laps)</span><select data-race-rule="stages" aria-label="Sprint stages (not laps)" data-i18n-aria-label="mode.stages"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>
             <label><span data-i18n="mode.collision">Collision penalty</span><select data-race-rule="collision" aria-label="Collision penalty" data-i18n-aria-label="mode.collision"><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="relaxed" data-i18n="mode.relaxed">Relaxed</option></select></label>
             <label><span data-i18n="mode.practiceHazards">Road hazards</span><select data-race-rule="hazards" aria-label="Road hazards" data-i18n-aria-label="mode.practiceHazards"><option value="off" selected data-i18n="mode.off">Off</option><option value="standard" data-i18n="mode.standard">Standard</option><option value="extreme" data-i18n="mode.extreme">Extreme</option></select></label>
-            <label class="race-items"><input data-race-rule="items" type="checkbox" checked> <span data-i18n="mode.items">NITRO pickups</span></label>
-            <label class="race-items"><input data-race-rule="activeItems" type="checkbox"> <span data-i18n="mode.activeItems">Hold mystery power-ups</span></label>
+            <ItemRules />
           </div>
         </details>
       </div>
@@ -195,7 +196,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
       <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">04</strong><span>/ 04</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
-      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><div id="item-slot" class="item-slot" hidden><span id="item-status" role="status"></span><button type="button" id="activate-item" data-i18n="mode.itemActivate" disabled>USE · Q</button></div><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
+      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><ItemSlot /><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"></div>
     </section>
 

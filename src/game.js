@@ -246,7 +246,11 @@ export function createRace(trackId = 'coast', modifier = null) {
   const config = normalizeRaceConfig(options ?? {});
   const session = createRaceSessionContract(trackId, track.seed, config);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const rings = createRings(track);
+  let rings = createRings(track);
+  if (config.itemRules === 'off') rings = [];
+  else if (config.itemRules === 'active') rings = rings.flatMap((ring, index) =>
+    ring.type === 'mystery' ? [{ ...ring, mysteryIndex: index,
+      groupSize: rings.filter(other => other.group === ring.group).length }] : []);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
@@ -294,12 +298,12 @@ function collectRing(race, ring, index) {
     addNitro(car, 1);
     car.score += RISK_SCORE;
   } else if (ring.type === 'mystery') {
-    const effect = mysteryEffect(race.seed, index);
+    const effect = mysteryEffect(race.seed, ring.mysteryIndex ?? index);
     if (race.config.activeItems) bankItem(car, effect);
     else car.effects[effect] = EFFECT_TIMES[effect];
   }
   car.groupHits[ring.group] = (car.groupHits[ring.group] ?? 0) + 1;
-  if (car.groupHits[ring.group] === race.rings.filter(other => other.group === ring.group).length) {
+  if (car.groupHits[ring.group] === (ring.groupSize ?? race.rings.filter(other => other.group === ring.group).length)) {
     car.perfectLines++; // PERFECT LINE: every ring of the group cleared
     car.score += 500;
     addNitro(car, PERFECT_LINE_NITRO);

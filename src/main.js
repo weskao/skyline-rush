@@ -11,9 +11,10 @@ import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.ts';
-import { createRace as createBareRace, startRace, stepRace, useHeldItem, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
+import { createRace as createBareRace, startRace, stepRace, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.ts';
 import { RULE_PRESETS } from './race-config.ts';
+import { setupItemUI, itemRuleValue } from './item-ui.ts';
 import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.ts';
 import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.ts';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
@@ -140,7 +141,7 @@ let trace = [], traceRace = null;
 let sessionDaily = loadDaily();
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
 let selectedMode = 'classic';
-const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, collision: 'normal', hazards: 'off', stages: 1 };
+const raceRules = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1 };
 const cupCount = () => Number($('#cup-length').value);
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 let cup = null; // Three unlocked point-to-point heats, with rival points carried between heats.
@@ -382,7 +383,7 @@ function showTracks() {
   }));
   $('#race-mode-rules > summary').textContent = t(selectedMode === 'free' ? 'mode.freeOptions' : 'mode.rules');
   for (const button of document.querySelectorAll('[data-race-preset]'))
-    button.setAttribute('aria-pressed', String(Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => raceRules[key] === value)));
+    button.setAttribute('aria-pressed', String(!race.config.activeItems && Object.entries(RULE_PRESETS[button.dataset.racePreset]).every(([key, value]) => race.config[key] === value)));
 
   $('#mode-description').textContent = t('mode.description.' + selectedMode);
   $('.route-drivers').textContent = selectedMode === 'classic' ? t('intro.drivers') : t('mode.driverCount', { n: race.rivals.length + 1 });
@@ -453,10 +454,10 @@ for (const button of document.querySelectorAll('button[data-race-mode]')) button
   changeRaceSelection();
 });
 for (const button of document.querySelectorAll('[data-race-preset]')) button.addEventListener('click', () => {
-  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', hazards: 'off', stages: 1, activeItems: false });
+  Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset], { collision: 'normal', hazards: 'off', stages: 1, activeItems: false, itemRules: button.dataset.racePreset === 'noitems' ? 'off' : undefined });
   for (const input of document.querySelectorAll('[data-race-rule]'))
     if (input.type === 'checkbox') input.checked = raceRules[input.dataset.raceRule];
-    else input.value = String(raceRules[input.dataset.raceRule]);
+    else input.value = String(input.dataset.raceRule === 'itemRules' ? itemRuleValue(raceRules) : raceRules[input.dataset.raceRule]);
   refreshCustomSelects();
   changeRaceSelection();
 });
@@ -469,11 +470,11 @@ $('#recent-custom-runs').addEventListener('click', ({target}) => {
   const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
   if (!entry || race.phase !== 'ready') return;
   for (const key of Object.keys(raceRules)) if (Object.hasOwn(entry.config, key)) raceRules[key] = entry.config[key];
-  raceRules.hazards = entry.config.hazards ?? 'off';
+  raceRules.hazards = entry.config.hazards ?? 'off'; raceRules.itemRules = entry.config.itemRules; raceRules.activeItems = entry.config.activeItems ?? false;
   for (const input of document.querySelectorAll('[data-race-rule]')) {
     const value = raceRules[input.dataset.raceRule];
     if (input.type === 'checkbox') input.checked = value;
-    else input.value = String(value);
+    else input.value = String(input.dataset.raceRule === 'itemRules' ? itemRuleValue(raceRules) : value);
   }
   refreshCustomSelects();
   race = selectedRace(entry.trackId);
@@ -943,15 +944,13 @@ function changeCamera() {
   ui['camera-button'].setAttribute('aria-pressed', String(mode === 1));
 }
 
-function triggerItem() {
-  if (useHeldItem(race)) sound.cue('pickup');
-}
+const itemUI = setupItemUI({ getRace: () => race, cue: name => sound.cue(name) });
 const controls = createControls(window, action => {
   if (document.querySelector('dialog[open]')) { controls.clear(); return; }
   if (action === 'pause') toggleSettings(false);
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
-  ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
+  ({ start, restart, pause, item: itemUI.activate, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
 }, { getSettings: getControlSettings, getKeyMap: () => keyMap, onTilt: () => {
   if (tiltSeen) return;
   tiltSeen = true; clearTimeout(tiltTimeout);
@@ -959,7 +958,6 @@ const controls = createControls(window, action => {
 } });
 const pad = $('.touch-pad');
 controls.bindSlidePad(pad, { getSettings: getControlSettings });
-$('#activate-item').addEventListener('click', triggerItem);
 // input.js keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.js).
 const PAD_BRAKE_PX = 40;
 const PAD_HINT_SECONDS = 4;
@@ -1437,7 +1435,7 @@ function phaseText() {
   ];
 }
 
-const hudNodes = Object.fromEntries(["clean-trial-hud","hazard-warning","elimination-hud","checkpoint-hud","sprint-stage","item-slot","item-status","activate-item","stunt-hud","practice-hud","race-length","ghost-split","style-score","aero-flow","aero-floor","aero-jet"].map(id => [id, document.getElementById(id)]));
+const hudNodes = Object.fromEntries(["clean-trial-hud","hazard-warning","elimination-hud","checkpoint-hud","sprint-stage","stunt-hud","practice-hud","race-length","ghost-split","style-score","aero-flow","aero-floor","aero-jet"].map(id => [id, document.getElementById(id)]));
 function updateUI(now, input) {
   if (raceRouteMap?.trackId !== race.trackId) ensureRouteMaps();
   raceRouteMap.updateDrivers([{ id: 'YOU', distance: race.player.distance, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance }))]);
@@ -1499,12 +1497,7 @@ function updateUI(now, input) {
     n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
     total: sprintSeries.count,
   }));
-  const slot = hudNodes['item-slot'], carItem = race.player.heldItem;
-  setHudHidden(slot, !race.config.activeItems || race.phase === 'ready');
-  if (!slot.hidden) {
-    setHudText(hudNodes['item-status'], carItem ? t('mode.itemReady',{item:t('mode.item.'+carItem)}) : t('mode.itemEmpty'));
-    hudNodes['activate-item'].disabled = !carItem || race.phase !== 'racing' || race.player.itemCooldown > 0;
-  }
+  itemUI.update(race);
   const stuntHud = hudNodes['stunt-hud'];
   setHudHidden(stuntHud, !stunt || race.phase === 'ready');
   if (stunt) {

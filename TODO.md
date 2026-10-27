@@ -1,5 +1,15 @@
 # TODO — Gameplay depth design
 
+## Practice item rules and activation feedback (2026-10-27)
+
+Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation and the shared checkout's audio/keymap refactor; latest docs-only main `3a5c25a` integrated.
+
+- [x] ITEM-11 implementation: explicit Off / Classic / Active / All selection for Custom and Free Drive; legacy configs without `itemRules` retain their signatures and original supply-only `items: false` behavior. All ten tracks covered; strict conflicting requests rejected; recent setups retain new rules.
+- [x] Existing ITEM-01–05 feedback slice: actual mystery-ring pickup → held silhouette → Q/touch activation → bounded cooldown/active status, English/zh-TW, one-shot pickup/ready cues using the existing muted mixer. Main bootstrap shrinks seven lines; cached HUD writes remain idempotent. This does not complete every future ITEM-12 visual effect.
+- [x] Observed RED: Off still spawned supplies, unknown new rules collapsed recent setups, and Chrome lacked the rule selector. Follow-up RED caught a restored old setup retaining `activeItems: true` and filtered groups falsely awarding PERFECT LINE/NITRO; shared fixes preserve old-setup defaults and original ring index/group size.
+- [x] Focused proof: rule/config/mode tests 40 passed; final item/UI/activation tests 11 passed; complete Node suite 699 passed, 0 failed, 3 emulator-dependent skipped. Strict TS/Vue/JS checks and locked production build passed. Browser mode/HUD/parity suite 31/31 passed; final changed-rule desktop/touch/locale/recent-restore rerun 4/4 passed. Actual WebGL captures and logs: `artifacts/item-rules/`.
+- [ ] Parent-owned complete `make verify`, layout, exact-feature-HEAD GitHub CI and physical-device/audio/perception acceptance remain open. New pads/EMP/multiplier are the next related TDD slice; no broader ITEM or roadmap acceptance is implied here.
+
 ## Upcoming gameplay and presentation phases (2026-10-27)
 
 - [ ] **Phase 1 — Flight and arcade gameplay feel:** Balance ground/air time, extend practical FLY use, strengthen DRIFT → NITRO → FLY → landing flow and responsive player feedback. Protect existing modes, records, controls and accessibility; develop with TDD on a standalone feature branch.
