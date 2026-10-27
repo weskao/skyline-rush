@@ -13,7 +13,7 @@ Scope: `refactor/vue-ui-typecheck-incremental` (2026-10-27). This document disti
 
 | File | Why it stays JS in this phase |
 | --- | --- |
-| `src/main.js` | Bootstrap and requestAnimationFrame simulation/render/UI orchestration; core frame path |
+| `src/main.js` | Bootstrap, controller wiring, race lifecycle (start/restart/pause/next/again/tutorial), the phase orchestrator and the requestAnimationFrame loop. 688 lines with a ratcheting ceiling in `tests/module-size.test.js`; screen areas live in the TypeScript controllers listed under "Module split" |
 | `src/game.js` | Physics, movement and race frame simulation |
 | `src/world.js` | High-frequency Three.js renderer and camera |
 | `src/audio.js` | Web Audio synthesis, mix and music scheduling; song data lives in `music-tracks.ts`, race→cue detection in `race-audio-events.ts` |
@@ -26,6 +26,32 @@ Scope: `refactor/vue-ui-typecheck-incremental` (2026-10-27). This document disti
 | `src/world-tour-tunnels.js` | World Tour tunnel 3D geometry |
 
 These are not exemptions from regression tests or proof of faster execution. Any future conversion must show a measured maintenance benefit and preserve render behavior.
+
+## Module split (2026-10-27, `refactor/split-main-audio`)
+
+`src/main.js` went from 1,881 to 688 lines and `src/audio.js` from 403 to 243, one TDD slice per commit
+(each test failed against the previous tree first). Source modules are limited to 400 lines by
+`tests/module-size.test.js`; files that predate the limit have ceilings that only go down.
+
+| Responsibility | Module |
+| --- | --- |
+| Song data, race→cue detection, synthesis/mix | `music-tracks.ts`, `race-audio-events.ts`, `audio.js` |
+| Audio switches, sliders, Mute all, autoplay unlock | `audio-ui.ts` |
+| Cloud Save sign-in/sync/import/export/delete (Firebase injected) | `cloud-ui.ts` |
+| Session progress copies and ghost caches | `session-progress.ts`, `ghost-store.ts` |
+| Recording a finished race (bests, unlocks, medals, ghosts, series) | `race-results.ts` |
+| Result screens per mode | `result-screen.ts`, `time-format.ts` |
+| In-race HUD (per tick, imperative) | `race-hud.ts`, `race-hud-modes.ts` |
+| Home race selection, track picker, route maps | `race-select-ui.ts` |
+| Key rebinding and key legends | `keymap-ui.ts` |
+| Touch layout, slide pad, tilt, Controls form | `touch-controls-ui.ts` |
+| VFX settings, showcase camera, calm motion | `vfx-ui.ts`, `motion.ts` |
+| Reduced-quality notice | `performance-notice-ui.ts` |
+| History dialog, photo mode, pressed buttons, `?perf` strip | `history-dialog-ui.ts`, `photo-ui.ts`, `pressed-buttons.ts`, `perf-overlay.ts` |
+
+`tests/legacy-js-names.test.js` compiles `src/**/*.js` loosely and fails on syntax errors and unresolved
+identifiers: a move that leaves a caller behind used to fail only at runtime (it found the audio slider's
+removed `showChannel` call, fixed in `8dc75b1`).
 
 ## Vue ownership audit
 

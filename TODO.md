@@ -1,5 +1,20 @@
 # TODO — Gameplay depth design
 
+## Module split: `main.js` and `audio.js` by responsibility (2026-10-27, `refactor/split-main-audio`)
+
+**Status:** implemented as TDD slices (each new test failed against the previous tree first); local gates green; CI and device checks pending.
+
+- [x] `audio.js` 403 → 243 lines: songs in `music-tracks.ts`, race→cue detection in `race-audio-events.ts` (pure, no per-frame allocation).
+- [x] `main.js` 1,881 → 688 lines: cloud save, key map, touch controls, VFX/motion/notice, session progress and ghosts, race settlement, result screens, HUD, race selection, History dialog, photo mode, pressed buttons and `?perf` strip each moved to their own TypeScript module (map in `docs/refactor-architecture-audit.md`).
+- [x] Remaining `main.js` (bootstrap, controller wiring, race lifecycle, phase orchestrator, frame loop) is the documented exception, held by a ratcheting ceiling.
+- [x] Prevention: `tests/module-size.test.js` (400-line limit, ceilings only go down), `tests/legacy-js-names.test.js` (syntax and unresolved names in `src/**/*.js`), `.claude/rules/module-size.md`, `CLAUDE.md` section.
+- [x] Bug found on the way: dragging an audio slider threw `showChannel is not defined` on every step and froze its label; fixed in `8dc75b1` with a browser RED → GREEN test.
+- [x] Local evidence at `8c4ac0f`: `make verify` exit 0 (typecheck; 748 unit pass, 0 fail, 3 skipped; browser 450/450; World Tour 72/72); Firebase emulator suite 15/15 + rules 3/3 after the cloud and progress slices; `npm run test:layout` 30 + 42 after race selection.
+- [x] HUD perf A/B (`make perf BASE=130a7e0`, 6× CPU throttle, 3 × 20 s): p50 16.7 / p95 16.7 ms / 59.9 fps vs baseline p50 16.7 / p95 16.8 ms / 60 fps. Vsync-capped; no sub-frame comparison.
+- [x] Independent read-only review of every slice against `bc2838c` found no behavior divergence.
+- [ ] Full GitHub CI `quality-gate` on the exact pushed HEAD.
+- [ ] Physical iPhone Safari / Android Chrome pass (touch pad, tilt, audio slider drag, results/pause clickability).
+
 ## Future feature request: configurable and adaptive FPS (2026-10-27)
 
 **Status:** Requirements recorded for later discussion. No design or implementation has been approved.
