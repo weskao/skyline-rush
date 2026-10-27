@@ -9,19 +9,100 @@ Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation a
 - [x] Observed RED: Off still spawned supplies, unknown new rules collapsed recent setups, and Chrome lacked the rule selector. Follow-up RED caught a restored old setup retaining `activeItems: true` and filtered groups falsely awarding PERFECT LINE/NITRO; shared fixes preserve old-setup defaults and original ring index/group size.
 - [x] Focused proof: rule/config/mode tests 40 passed; final item/UI/activation tests 11 passed; complete Node suite 699 passed, 0 failed, 3 emulator-dependent skipped. Strict TS/Vue/JS checks and locked production build passed. Browser mode/HUD/parity suite 31/31 passed; final changed-rule desktop/touch/locale/recent-restore rerun 4/4 passed. Actual WebGL captures and logs: `artifacts/item-rules/`.
 - [ ] Parent-owned complete `make verify`, layout, exact-feature-HEAD GitHub CI and physical-device/audio/perception acceptance remain open. New pads/EMP/multiplier are the next related TDD slice; no broader ITEM or roadmap acceptance is implied here.
+- [x] Main integration (2026-10-28): preserve latest main `7cbdbe5`, including Phase 1–4 and the split bootstrap; move this branch's selection/reset changes into `race-select-ui.ts` and item HUD updates into the typed mode-panel callback. Preserve all new size ceilings: `game.js` remains 827 lines and `main.js` shrinks to 687. Fresh strict TS/Vue/JS checks, 17 focused Node checks and five real desktop/touch item browser cases pass. The historical 10/27 measurements above remain historical receipts, not proof for the merged source.
+- [ ] Merged full unit gate currently reports 788 pass / 2 fail / 3 emulator skips: inherited `browser-timeouts.test.js` rejects Phase 4's unscaled 240000ms timeout, and `perf-overlay.test.js` expects frame text from the first record despite the new presented-frame initializer. These untouched-main failures were reported to the parent; the merged branch is not yet full-gate green.
 
-## Upcoming gameplay and presentation phases (2026-10-27)
+## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
-- [ ] **Phase 1 — Flight and arcade gameplay feel:** Balance ground/air time, extend practical FLY use, strengthen DRIFT → NITRO → FLY → landing flow and responsive player feedback. Protect existing modes, records, controls and accessibility; develop with TDD on a standalone feature branch.
-- [ ] **Phase 2 — Coast visual-quality benchmark:** Establish a cohesive realistic-environment/arcade-effects art direction for Coast, including vehicle, road, scenery, lighting and action readability; verify desktop/mobile visuals and performance in a separate feature branch.
-- [ ] **Phase 3 — FPS and adaptive performance:** Add user-selectable target FPS and measured device-aware auto settings, preserving simulation correctness, thermal comfort, graphics quality controls and saved preferences. Implement and validate separately.
+**Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.
 
-## Future feature request: configurable and adaptive FPS (2026-10-27)
+- [x] Inspect latest main, CLAUDE.md, road/camera/route-map modules and their regression tests; create a new feature branch from latest main.
+- [ ] RED: deterministic track-theme scenery bounds, geometry/road clearance, shared-asset disposal, and cached minimap upper-ramp overlay tests.
+- [x] GREEN implementation committed: bounded InstancedMesh roadside detail for Neon, Canyon and Aurora, preserving Coast's Phase 2 benchmark and Sky Spiral's existing authored road. Await CI verification.
+- [x] Fix tier-based scenic streaming: Low (8), Medium (16), High (24) maintain contiguous near-road sectors after a quality change; ring-buffer updates only moved slots.
+- [x] Upgrade roadside visual identity with one additional batched, low-poly accent layer per track: Neon illuminated façades, Canyon sandstone strata, Aurora snowy treetops. Preserve three draw submissions per visible track and explicitly dispose owned meshes/materials.
+- [x] Cache static route-map polyline and Sky Spiral elevated arc; add a canonical-centreline direction chevron without per-frame SVG reconstruction.
+- [x] Reduce Sky Spiral road geometry and InstancedMesh uploads to 10 m sector boundaries. Camera-relative road translation continues every frame, with deterministic parity and teleport regression tests added.
+- [x] Resolve typed route sample vs. projected marker contracts in `route-map.ts` to protect strict TypeScript checks.
+- [x] Leave legacy Coast visuals, original road topology/collision/record IDs, and Phase 3 Auto/30/60 controls unchanged by this visual/streaming pass.
+- [ ] Verify above newly added contract tests and browser snapshots on the exact final feature SHA; test-first RED commits were recorded but cancelled Actions runs are not a verified RED result.
+- [x] GREEN implementation committed: Sky Spiral's elevated half-turn overlay uses the cached SVG centreline; markers remain on existing route. Await CI verification.
+- [x] Extract the existing unbounded classic-road centreline as a single typed source for Three.js, collision-space projection and route overview, preserving the exact sine curve and record/Ghost compatibility. CI pending.
+- [x] Adjust road material finish (Neon rain-slick, Canyon dusty, Aurora frosted, Sky Spiral diffuse) without altering mesh geometry, collision, physics or Coast's Phase 2 palette. New contract tests committed; CI pending.
+- [ ] Preserve road shape, 60 Hz collision geometry, mode layouts, record/Ghost compatibility and Phase 3 renderer settings.
+- [x] Add browser capture/regression cases for Coast, Neon, Canyon, Aurora and Sky Spiral at desktop, mobile portrait and landscape, exercising preview, live minimap, saved 30 FPS and stable SVG identity; actual screenshots and CI pass remain pending.
+- [ ] Obtain real-WebGL screenshots of all five tracks in showroom and during play at desktop, mobile portrait/landscape, English and zh-TW; inspect camera occlusion, accessibility and layout.
+- [ ] Capture baseline/feature p50/p95 FPS, draw calls, triangles, memory when available; Android/iPhone thermal checks remain unverified unless genuine physical device results exist.
+- [ ] Run complete TypeScript typecheck, unit, build, all 8 browser shards, World Tour, Cloud Save and exact-HEAD quality-gate before declaring merge-ready.
+- [x] Document shared Road/Minimap source, 60 Hz simulation, GPU budget, and saved-history/ghost versioning requirements in CLAUDE.md to prevent regression.
+- [ ] Evaluate road geometry proposals separately with track-path/collision parity and versioned saved times/Ghosts before changing any existing centreline or track length.
 
-**Status:** Requirements recorded for later discussion. No design or implementation has been approved.
+## Phase 2 Coast visual-quality implementation — evidence ledger (2026-10-27)
 
-- [ ] **Manual FPS selection:** Add an option for players to adjust the target frame rate, including 30 FPS, 60 FPS, and potentially other choices. The final set of options remains undecided.
-- [ ] **Automatic device-performance adaptation:** The initial automatic device-performance adjustment should also adapt the FPS setting. The detailed behavior and interaction with manual selection remain undecided.
+Branch: `feature/phase2-coast-visual-quality`. Scope: Coast art pass only; no Phase 1/3 gameplay or FPS controls.
+
+- [x] Inspect latest main, TODO, CLAUDE.md, renderer/lighting/scene/VFX structure; create the Phase 2 branch from `3a5c25a`. Review and branch creation confirmed via GitHub.
+- [x] Commit a test-first Coast scene contract and real-WebGL browser capture specification (`9c5679`). Historical RED test execution is **not verified**; test-only CI was interrupted by a follow-on push.
+- [x] Commit Coast material/palette changes, typed pooled coastline scenery, tier-bounded instancing and QA render-load instrumentation (`bcff252`). These checkboxes indicate files committed, not runtime acceptance.
+- [x] The new RED tests on `b93f31f` failed for the intended reasons on [CI 40532546923](https://github.com/weskao/skyline-rush/actions/runs/40532546923): palette module missing, perf load metadata absent and `world.js` past its new line ceiling.
+- [x] The corresponding GREEN `04edea5` [unit/typecheck job](https://github.com/weskao/skyline-rush/actions/runs/40533007218) reported success; full-browser/Coast capture/Cloud Save are separate gates.
+- [x] Merge refactored main `325fe9e` as `71a60cb`, then integrate later Phase 1 main `3788ca3` as `a55f7cb` without rewriting Phase 1. The GitHub comparison showed Behind 0 after the second merge.
+- [ ] Obtain `BEFORE` images from the exact integrated main SHA `3788ca3` and `AFTER` from feature WebGL. These are distinct from a pre-race vs in-race comparison. Coast captures are required in Phase 2's quality-gate, and screenshot artifacts must be saved before a later Playwright suite clears them.
+- [ ] Verify deterministic RED `tests/coast-visuals.test.js` on a test-only commit and GREEN on the implementation, plus strict TS and unit tests.
+- [ ] Inspect actual Before screenshots taken from unchanged main and After screenshots from the running Coast WebGL renderer across 1440×900 / 390×844 / 320×740 / 844×390; verify cockpit and showroom camera modes, reduced motion and both locales.
+- [ ] Report numerical before/after `?perf` p50/p95/FPS, draw calls, and triangles for identical conditions. CI SwiftShader is software-rendered, not physical device evidence.
+- [ ] Validate manual Android Chrome / iPhone Safari and thermals when real devices are available.
+- [x] Complete CI for the final Phase 2 integration commit `d0c889f`: [run 40543815702](https://github.com/weskao/skyline-rush/actions/runs/40543815702) reports unit/typecheck, all 8 browser shards, Coast visual-evidence, World Tour, Cloud Save and `quality-gate` successful.
+- [x] Integrate Phase 2 into `main` without PR; integrated history includes Phase 2 commit `d0c889f` and the successful full Phase 2 CI noted above.
+
+**Audio assessment:** Purely cosmetic Coast changes use existing Web Audio feedback; no new cues warranted.
+
+## Delivered gameplay and presentation phases (2026-10-27)
+
+**Checklist meaning:** The three milestones below mark feature delivery and integration into `main`, not proof that every physical-device or before/after performance acceptance step is complete. Keep such evidence gates unchecked in their phase ledgers below.
+
+- [x] **Phase 1 — Flight and arcade gameplay feel:** Extend FLY, improve DRIFT → NITRO → FLY → clean-landing chain and localized feedback while retaining physics, records and mode rules. Implemented in `feature/phase1-flight-combo-gamefeel`, merged into `main` as `3788ca3`. Full [CI #40506587701](https://github.com/weskao/skyline-rush/actions/runs/40506587701) passed, including unit, 8 browser shards, Cloud Save, World Tour and quality-gate.
+- [x] **Phase 2 — Coast visual-quality benchmark:** Deliver Coast scene/material/lighting improvements with tier-bounded scenery and render-work diagnostics, preserving gameplay. Merged into `main`; complete [CI #40543815702](https://github.com/weskao/skyline-rush/actions/runs/40543815702) passed, including Coast visual-evidence job, 8 browser shards and quality-gate. Manual screenshot review, same-device performance comparison and physical-device thermals remain separate unchecked acceptance items.
+- [x] **Phase 3 — FPS and adaptive performance:** Deliver Auto / 30 / 60 FPS UI, persisted settings, adaptive render scale, and fixed 60 Hz gameplay. Merged into `main` via `b0d839b`. The feature branch's [CI #40543440614](https://github.com/weskao/skyline-rush/actions/runs/40543440614) did **not** pass the full quality-gate; CI and physical-device acceptance remain unchecked below.
+
+## Module split: `main.js` and `audio.js` by responsibility (2026-10-27, `refactor/split-main-audio`)
+
+**Status:** implemented as TDD slices (each new test failed against the previous tree first); local gates and full CI green; physical device check pending.
+
+- [x] `audio.js` 403 → 243 lines: songs in `music-tracks.ts`, race→cue detection in `race-audio-events.ts` (pure, no per-frame allocation).
+- [x] `main.js` 1,881 → 688 lines: cloud save, key map, touch controls, VFX/motion/notice, session progress and ghosts, race settlement, result screens, HUD, race selection, History dialog, photo mode, pressed buttons and `?perf` strip each moved to their own TypeScript module (map in `docs/refactor-architecture-audit.md`).
+- [x] Remaining `main.js` (bootstrap, controller wiring, race lifecycle, phase orchestrator, frame loop) is the documented exception, held by a ratcheting ceiling.
+- [x] Prevention: `tests/module-size.test.js` (400-line limit, ceilings only go down), `tests/legacy-js-names.test.js` (syntax and unresolved names in `src/**/*.js`), `.claude/rules/module-size.md`, `CLAUDE.md` section.
+- [x] Bug found on the way: dragging an audio slider threw `showChannel is not defined` on every step and froze its label; fixed in `8dc75b1` with a browser RED → GREEN test.
+- [x] Local evidence at `8c4ac0f`: `make verify` exit 0 (typecheck; 748 unit pass, 0 fail, 3 skipped; browser 450/450; World Tour 72/72); Firebase emulator suite 15/15 + rules 3/3 after the cloud and progress slices; `npm run test:layout` 30 + 42 after race selection.
+- [x] HUD perf A/B (`make perf BASE=130a7e0`, 6× CPU throttle, 3 × 20 s): p50 16.7 / p95 16.7 ms / 59.9 fps vs baseline p50 16.7 / p95 16.8 ms / 60 fps. Vsync-capped; no sub-frame comparison.
+- [x] Independent read-only review of every slice against `bc2838c` found no behavior divergence.
+- [x] Full GitHub CI on `423b445` (workflow_dispatch `full_regression=true`, run 40518765394): unit, cloud-save, browser shards 1–8, world-tour-mid-race and quality-gate all success. The push run 40517690494 used the focused refactor gate.
+- [ ] Physical iPhone Safari / Android Chrome pass (touch pad, tilt, audio slider drag, results/pause clickability).
+
+## Phase 3 — FPS and adaptive performance (feature/phase3-adaptive-fps)
+
+- [x] Merge current `main` into this feature branch, preserving main's Vue/TypeScript module extraction and RED tests; merge commit `b370169`.
+- [x] Implement an isolated TypeScript FPS pacer supporting Auto, 30 FPS and 60 FPS (120 FPS withheld until real device/refresh capability validation).
+- [x] Add local-only FPS preference storage with invalid-value fallback, bilingual VFX-panel controls, and independent Quality selection.
+- [x] Keep fixed 60 Hz simulation and ghost sampling outside the rendering limit, and accumulate VFX elapsed time across skipped renders.
+- [x] Limit adaptive rendering cost using the existing Three.js DPR/composer path without modifying saved graphics quality.
+- [x] Add deterministic unit tests for pacing/auto policy and engine-state parity, plus browser tests for save/restore, i18n and malformed preferences.
+- [ ] Confirm RED failure on the test-first commit from CI logs; record evidence explicitly before treating historical RED as verified.
+- [ ] Confirm TypeScript/JS typecheck, unit tests, production build, all browser shards, World Tour, Cloud Save and exact-HEAD CI success.
+- [ ] Capture paired baseline/feature frame p50/p95 and render-work timings in the same desktop/mobile environment. No before/after performance claims until measured.
+- [ ] Validate Android Chrome and iPhone Safari on real devices, including thermals, input latency, 120 Hz capability and long-session stability.
+- [x] Merge into latest main at owner's request without waiting for final CI; remaining verification gates stay open.
+
+**Scope:** Auto uses sustained measured CPU-side render submission time; browser/driver GPU queues and device temperature require real-world verification. A 120 FPS option is deliberately unavailable until those checks justify it. `?perf` reports actual presented frame intervals, not merely the rate of rAF callbacks. Manual FPS never silently changes itself.
+
+## FPS feature request — delivered in Phase 3 (2026-10-27)
+
+**Status:** The approved Auto / 30 / 60 FPS scope is implemented and merged. This denotes functionality delivered, **not** an all-green Phase 3 CI or verified device-temperature improvement.
+
+- [x] **Manual FPS selection:** User-selectable 30 FPS and 60 FPS; stored independently of visual Quality, with stable 60 Hz gameplay physics. The 120 FPS option is deliberately not available until separately validated.
+- [x] **Automatic device-performance adaptation:** Auto adjusts render pacing/scale using sustained render-submission measurements; it respects a user's explicit manual FPS choice.
+- [ ] **Future device acceptance:** Independently verify 120 Hz support, input latency, before/after FPS/p50/p95 and thermals on physical Android/iPhone devices before adding further FPS options or making temperature claims.
 
 ## Player feedback: gameplay excitement and visual quality (2026-10-27)
 

@@ -55,6 +55,19 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#error-message')).toBeHidden();
   });
 
+  test('Race again is a full touch target on pause and results', async ({ gameplayPage: page }) => {
+    test.skip(!hasTouch, 'mouse layouts keep the compact link');
+    await page.locator('#start-button').click();
+    await expect(page.locator('#race-status')).toHaveText('RACING');
+    await page.locator('#pause-button').click();
+    await expect(page.locator('#again-button')).toBeVisible();
+    expect((await page.locator('#again-button').boundingBox()).height).toBeGreaterThanOrEqual(44);
+    await page.locator('#resume-button').click();
+    await page.evaluate(() => { const race = window.gameplay.race; race.elapsed = 80; Object.assign(race.player, { distance: race.length - 10, speed: 60 }); });
+    await expect(page.locator('#race-overlay')).toBeVisible();
+    expect((await page.locator('#again-button').boundingBox()).height).toBeGreaterThanOrEqual(44);
+  });
+
   test('a podium finish offers NEXT straight into the newly unlocked track', async ({ gameplayPage: page }) => {
     await finishRace(page);
     const next = page.locator('#next-button');

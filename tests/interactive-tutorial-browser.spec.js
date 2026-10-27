@@ -143,6 +143,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       await begin(page);
       await page.waitForTimeout(650);
       await step(page, 'throttle');
+      // The coach must not cover the global AIRFLOW/VFX tool row (it sat over it on phones).
+      for (const tool of await page.locator('.aero-tools > :visible').all())
+        expect(await tool.evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x + r.width / 2, r.bottom - 2)); })).toBe(true);
       const effectiveMode = mode === 'tilt' ? 'slide' : mode;
       await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode', effectiveMode);
       if(mode==='tilt') {

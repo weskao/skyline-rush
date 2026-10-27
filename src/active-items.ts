@@ -2,6 +2,13 @@
 const DURATIONS = { shield: 10, magnet: 5, ghost: 3, freeze: 2 };
 export type ActiveItem = keyof typeof DURATIONS;
 
+export function ringsForItemRule<T extends { type: string; group: number }>(rings: T[], rule?: string): T[] {
+  if (rule === 'off') return [];
+  if (rule !== 'active') return rings;
+  return rings.flatMap((ring, index) => ring.type === 'mystery' ? [{ ...ring, mysteryIndex: index,
+    groupSize: rings.filter(other => other.group === ring.group).length }] : []);
+}
+
 // The engine owns the mutable car; this typed adapter owns only item-related fields.
 export interface ActiveItemCar {
   heldItem: ActiveItem | null;

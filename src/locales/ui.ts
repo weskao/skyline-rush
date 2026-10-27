@@ -3,8 +3,11 @@
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
 import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.ts';
 import { COLLECTIBLES_GUIDE_COPY } from '../collectibles-guide-copy.ts';
+import { DISPLAY_SETTINGS_COPY } from './display-settings.ts';
+import { ITEM_SETTINGS_COPY } from './item-settings.ts';
 export const UI = Object.freeze({
   en: {
+    ...ITEM_SETTINGS_COPY.en,
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
     'release.title': "What's new",
     'release.intro': "See what's new for your next race.",
@@ -204,13 +207,6 @@ export const UI = Object.freeze({
     'mode.relaxed': 'Relaxed',
     'mode.traffic': 'Traffic',
     'mode.activeItems': 'Hold mystery power-ups',
-    'mode.itemRules': 'Item rules',
-    'mode.itemRules.off': 'Off · no rings or supplies',
-    'mode.itemRules.classic': 'Classic · automatic ring rewards',
-    'mode.itemRules.active': 'Active · hold mystery power-ups only',
-    'mode.itemRules.all': 'All · supplies, rings and held power-ups',
-    'mode.itemCooling': 'COOLDOWN · {item} · {sec}s',
-    'mode.itemActive': 'ACTIVE · {item} · {sec}s',
     'mode.itemActivate': 'USE · Q',
     'mode.itemEmpty': 'ITEM SLOT · EMPTY',
     'mode.itemReady': 'ITEM READY · {item}',
@@ -314,10 +310,7 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': 'Realistic',
     'vfx.preset.cinematic': 'Cinematic',
     'vfx.preset.extreme': 'Extreme · sci-fi',
-    'vfx.quality': 'Quality',
-    'vfx.quality.low': 'Low',
-    'vfx.quality.medium': 'Medium',
-    'vfx.quality.high': 'High',
+    ...DISPLAY_SETTINGS_COPY.en,
     'vfx.aeroMode': 'Aerodynamics',
     'vfx.aeroMode.drag': 'Low drag',
     'vfx.aeroMode.downforce': 'High downforce',
@@ -623,6 +616,7 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
+    ...ITEM_SETTINGS_COPY['zh-TW'],
     'release.eyebrow': 'SKYLINE RUSH / 版本新消息',
     'release.title': '新版本功能',
     'release.intro': '看看這次更新，為你的下一場比賽帶來哪些驚喜。',
@@ -822,13 +816,6 @@ export const UI = Object.freeze({
     'mode.relaxed': '寬鬆',
     'mode.traffic': '道路車流',
     'mode.activeItems': '拾取並保留神秘道具',
-    'mode.itemRules': '道具規則',
-    'mode.itemRules.off': '關閉・不出現圓環與補給',
-    'mode.itemRules.classic': '經典・圓環獎勵立即生效',
-    'mode.itemRules.active': '主動・僅保留神秘道具',
-    'mode.itemRules.all': '全部・補給、圓環與保留道具',
-    'mode.itemCooling': '冷卻中・{item}・{sec} 秒',
-    'mode.itemActive': '生效中・{item}・{sec} 秒',
     'mode.itemActivate': '使用 · Q',
     'mode.itemEmpty': '道具欄 · 空',
     'mode.itemReady': '道具就緒 · {item}',
@@ -931,10 +918,7 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': '寫實',
     'vfx.preset.cinematic': '電影感',
     'vfx.preset.extreme': '極致 · 科幻',
-    'vfx.quality': '畫質',
-    'vfx.quality.low': '低',
-    'vfx.quality.medium': '中',
-    'vfx.quality.high': '高',
+    ...DISPLAY_SETTINGS_COPY['zh-TW'],
     'vfx.aeroMode': '空氣力學',
     'vfx.aeroMode.drag': '低風阻',
     'vfx.aeroMode.downforce': '高下壓力',

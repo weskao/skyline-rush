@@ -28,7 +28,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: `npm run preview -- --port ${port} --strictPort`,
+    command: `npm run preview -- --port ${port} --strictPort${process.env.COAST_PREVIEW_DIR ? ` --outDir=${process.env.COAST_PREVIEW_DIR}` : ''}`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
   },

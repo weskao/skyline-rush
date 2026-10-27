@@ -3,15 +3,15 @@ import type { ActiveItemCar, ActiveItem } from './active-items.ts';
 import { t } from './i18n.ts';
 import { setHiddenIfChanged, setTextIfChanged } from './hud-dom.ts';
 
-interface ItemRace {
+export interface ItemRace {
   phase: string;
   config: { activeItems?: boolean };
   player: ActiveItemCar;
   rivals: unknown[];
 }
-interface ItemSettings { itemRules?: string; activeItems?: boolean }
+interface ItemSettings { itemRules?: unknown; activeItems?: unknown }
 const powers: ActiveItem[] = ['shield', 'magnet', 'ghost', 'freeze'];
-export const itemRuleValue = (rules: ItemSettings): string => rules.itemRules ?? (rules.activeItems ? 'all' : 'classic');
+export const itemRuleValue = (rules: ItemSettings): string => typeof rules.itemRules === 'string' ? rules.itemRules : rules.activeItems ? 'all' : 'classic';
 
 export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (name: string) => void }) {
   const slot = document.getElementById('item-slot')!;

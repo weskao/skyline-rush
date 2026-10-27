@@ -8,7 +8,7 @@ Preserve: existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
 Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
-`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability` · `ui-phase-interactions` · `ui-architecture` · `release-notes`.
+`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` · `touch-input` · `vehicle-road-stability` · `ui-phase-interactions` · `ui-architecture` · `release-notes` · `module-size`.
 
 ## Architecture default: Vue 3 + TypeScript (strict); deliberate plain-JS engine exceptions
 
@@ -30,6 +30,15 @@ listed legacy JavaScript islands, and `npm run typecheck` during `make verify`. 
 must preserve desktop/mobile input, locales, audio, cloud save, accessibility, and
 finish/pause clickability. Follow RED → GREEN → browser regressions for each slice.
 See `.claude/rules/ui-architecture.md` and `TODO.md`.
+
+## Small modules split by responsibility
+
+No source module grows past **400 lines**; split it by responsibility before adding more
+(single responsibility first, dependency inversion for UI controllers). Separate pure decisions
+from side effects, data tables from code, business rules from UI, and give each screen area its
+own `setupXxxUI(deps)` TypeScript controller instead of adding to `src/main.js`. Functions stay
+under ~60 lines. Legacy oversized files have ratcheting ceilings that may only go down.
+`tests/module-size.test.js` enforces it; seams and steps are in `.claude/rules/module-size.md`.
 
 ## Mandatory regression-first workflow (every feature and bug fix)
 
@@ -60,6 +69,31 @@ The tutorial is a safe practice environment, not an autopilot.
 - Keep tutorial-specific input overrides separate from normal-race assistance, and do not change ordinary race-control behavior to solve a tutorial-only bug.
 - Follow RED → GREEN → REFACTOR for every tutorial/control change. Include regression tests for neutral input, opposite-direction steering, released steering, step-transition continuity and completing all lessons.
 - Test real keyboard and mobile touch input in the browser, including pause/resume and lesson transitions, before claiming the change verified. Run the project's required unit, build, browser and CI gates; report any test that could not be run.
+
+## Phase 4 — Classic road/minimap and visual compatibility
+
+For Coast, Neon Downtown, Canyon Skyway and Aurora Pass, the single unbounded
+centreline is `classicRoadCenter` in `src/track-paths.ts`. Three.js geometry
+must call that exact function, and route previews/markers must come from
+`trackOverview` / `routeMarker`. Sky Spiral uses `skyPoint`/`skyFrame`
+for 3D road positions, with only cached, decorative altitude annotations
+allowed on its 2D route map. Never duplicate route equations or rebuild SVG
+nodes per game frame.
+
+Keep Phase 2 Coast scenery/palette unchanged unless a separately measured
+regression justifies changes. All other track detail must be pooled/instanced,
+bounded by Low/Medium/High quality, outside the road clearance, and hidden
+when its track is not active. Never add Vue reactivity to the render loop.
+Keep Phase 3 Auto/30/60 FPS render pacing separate from fixed 60 Hz physics,
+track/Ghost samples and deterministic replay state.
+
+Any change to track length, centreline, shortcuts, gaps or checkpoint
+topology needs a documented version key and saved best-times/Ghost migration
+strategy **before** implementation. Otherwise preserve historical race data
+bit-for-bit. Test all five tracks and road/camera boundaries across desktop,
+phone portrait/landscape and both locales; check `?perf` p50/p95,
+draw calls and triangles using the same conditions. Software WebGL and
+simulators are not physical GPU or thermal benchmarks.
 
 ## Home-screen landmark showcase
 
@@ -153,8 +187,9 @@ of the UI/UX design review rather than an optional afterthought.
   with the UI change in the same feature scope**, including appropriate tests.
   If audio would be distracting, redundant, inaccessible, or irrelevant (such as
   purely decorative changes), do not add it merely for consistency.
-- Reuse the existing Web Audio system in `src/audio.js` and one-shot event logic
-  in `src/mode-audio.js` where applicable. Keep sounds cohesive with the game's
+- Reuse the existing Web Audio system in `src/audio.js` (synthesis and mix), race event
+  detection in `src/race-audio-events.ts`, songs in `src/music-tracks.ts` and one-shot mode
+  events in `src/mode-audio.ts` where applicable. Keep sounds cohesive with the game's
   arcade-racing identity; avoid unnecessary assets, dependencies, and duplicate mixers.
 - Respect separate music/SFX enablement and volume settings, mute, browser
   user-gesture/autoplay restrictions, reduced-sensory-load preferences, and
@@ -163,7 +198,8 @@ of the UI/UX design review rather than an optional afterthought.
   pause/restart, and unwanted playback when audio is disabled or the page is hidden (iOS keeps
   a `'playback'` audio session running in the background; `sound.setHidden` suspends it).
 - For relevant changes, verify the UI **and** its audio behavior with deterministic
-  event tests (`tests/audio.test.js` / `tests/mode-audio.test.js`), and browser
+  event tests (`tests/audio.test.js` / `tests/race-audio-events.test.js` /
+  `tests/mode-audio.test.js`), and browser
   regression tests when the controls or interaction flow change. State briefly in
   the implementation summary whether audio was added or intentionally unnecessary.
 
