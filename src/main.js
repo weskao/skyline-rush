@@ -28,7 +28,7 @@ import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS } from './vfx-settings.ts';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.ts';
 import { controlSettings, CONTROLS_KEY } from './control-settings.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
-import { loadKeyMap, rebind, resetKeyMap, saveKeyMap } from './key-map.ts';
+import { setupKeyMapUI, keyLabel } from './keymap-ui.ts';
 import { recordRace, recordBest, recordModeRace, loadModeHistory, loadModeBest, loadModeGhost, saveModeGhost, loadHistory, loadBests, careerStats, recordMedals, loadMedals, recordStars, loadStars, starTotal,
   loadPaint, savePaint, loadGhost, saveGhost, recordDaily, loadDaily, dailyBoard, MEDALS, LEGACY_BEST_KEY } from './history.ts';
 import { recordGhost, validGhost, ghostAt } from './ghost.ts';
@@ -171,8 +171,7 @@ let visual=deviceSelection.settings;
 // In-memory source of truth: input.js reads it on every pointermove, so storage is only touched on load/change.
 let controlPrefs = controlSettings();
 let editingLayout = false;
-let rebinding = null;
-let keyMap = loadKeyMap();
+const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
 try { controlPrefs = controlSettings(JSON.parse(localStorage.getItem(CONTROLS_KEY))); } catch { /* Defaults work without storage. */ }
 let inputPrefs = controlPrefs;
 let tiltRequest = 0, tiltGranted = false, tiltSeen = false, tiltTimeout;
@@ -679,7 +678,7 @@ function toggleAssist() {
 
 const { toggleSettings, toggleControls } = setupControlPanels({
   getRacePhase: () => race.phase,
-  clearRebinding: () => { rebinding = null; },
+  clearRebinding: () => keymap.cancelRebinding(),
   hidePerformanceNotice,
   trackDropdown,
 });
@@ -732,7 +731,7 @@ const controls = createControls(window, action => {
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
   ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
-}, { getSettings: getControlSettings, getKeyMap: () => keyMap, onTilt: () => {
+}, { getSettings: getControlSettings, getKeyMap: () => keymap.getKeyMap(), onTilt: () => {
   if (tiltSeen) return;
   tiltSeen = true; clearTimeout(tiltTimeout);
   say($('#tilt-status'), () => t('tilt.ready'));
@@ -825,37 +824,6 @@ async function enableTilt() {
 }
 $('#tilt-enable').addEventListener('click', enableTilt);
 $('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); applyControls(); sound.cue('ui'); });
-const ARROWS = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
-const keyLabel = code => ARROWS[code] ?? code.replace(/^Key|^Digit/, '').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift');
-function showKeyMap() {
-  // Start-screen legend: one kbd group per key slot (W A S D, then ↑ ← ↓ →), "/" between groups; Left/Right Shift read as one Shift.
-  for (const keys of document.querySelectorAll('.intro-controls [data-keys], #guide-screen [data-keys], #tutorial-input[data-keys]')) {
-    const actions = keys.dataset.keys.split(' ');
-    const seen = new Set();
-    const groups = Array.from({ length: Math.max(...actions.map(action => keyMap[action].length)) }, (_, slot) => actions
-      .map(action => keyMap[action][slot]).filter(Boolean).map(code => keyLabel(code).replace(/^(Left|Right) Shift$/, 'Shift'))
-      .filter(label => !seen.has(label) && seen.add(label))).filter(group => group.length);
-    keys.replaceChildren(...groups.flatMap((group, i) => [...(i ? ['/'] : []), ...group.map(label => {
-      const key = document.createElement('kbd'); key.textContent = label; return key;
-    })]));
-  }
-  for (const button of document.querySelectorAll('[data-rebind]')) {
-    button.lastElementChild.textContent = keyMap[button.dataset.rebind].map(keyLabel).join(' / ');
-    button.setAttribute('aria-pressed', String(rebinding === button.dataset.rebind));
-  }
-}
-for (const button of document.querySelectorAll('[data-rebind]')) button.addEventListener('click', () => {
-  controls.clear();
-  rebinding = button.dataset.rebind;
-  const action = rebinding;
-  say($('#keymap-status'), () => t('keymap.press', { action: t(`keymap.${action}`) }));
-  showKeyMap();
-});
-$('#keymap-reset').addEventListener('click', () => {
-  controls.clear(); rebinding = null; keyMap = resetKeyMap(); saveKeyMap(keyMap); showKeyMap();
-  say($('#keymap-status'), () => t('keymap.restored'));
-});
-showKeyMap();
 function editLayout(editing) {
   editingLayout = editing;
   controls.clear(); padTouch = null; drawPad();
@@ -891,22 +859,7 @@ document.addEventListener('keydown', event => {
   if (editingLayout && event.code === 'Escape') {
     event.preventDefault(); event.stopImmediatePropagation(); editLayout(false); return;
   }
-  if (rebinding) {
-    event.preventDefault(); event.stopImmediatePropagation();
-    if (event.repeat) return;
-    if (event.code === 'Escape') { rebinding = null; showKeyMap(); say($('#keymap-status'), () => t('keymap.cancelled')); return; }
-    const action = rebinding;
-    const result = rebind(keyMap, action, event.code);
-    if (result.error) {
-      const key = keyLabel(event.code);
-      say($('#keymap-status'), () => result.error === 'reserved' ? t('keymap.reserved', { key }) : t('keymap.unavailable'));
-      return;
-    }
-    controls.clear(); keyMap = result.map; saveKeyMap(keyMap); rebinding = null; showKeyMap();
-    const key = keyLabel(event.code);
-    say($('#keymap-status'), () => result.swapped ? t('keymap.swapped', { action: t(`keymap.${action}`), other: t(`keymap.${result.swapped}`) }) : t('keymap.assigned', { action: t(`keymap.${action}`), key }));
-    return;
-  }
+  if (keymap.handleRebindKey(event)) return;
   if (event.code !== 'Escape' || ui['controls-panel'].hidden) return;
   event.preventDefault();
   event.stopPropagation();
@@ -1333,7 +1286,7 @@ function updateUI(now, input) {
   const tap = touchPreference.matches && controlPrefs.flyMode === 'toggle';
   // A toggle latch would keep the empty thruster held and block recharge (game.js only clears exhausted when fly is off).
   if (controlPrefs.flyMode === 'toggle' && input.fly && (car.exhausted || car.fuel <= 0)) controls.setFly(false);
-  const flyKey = touchPreference.matches ? '' : keyLabel(keyMap.fly[0]).toUpperCase();
+  const flyKey = touchPreference.matches ? '' : keyLabel(keymap.getKeyMap().fly[0]).toUpperCase();
   const hold = touchPreference.matches ? L[tap ? 'hud.tapFly' : 'hud.holdFly'] : interpolate(L['hud.holdKey'], { key: flyKey });
   const release = touchPreference.matches ? L['hud.releaseFly'] : interpolate(L['hud.releaseKey'], { key: flyKey });
   const touchdown = car.landing && race.elapsed - car.landing.time < 1.1;
@@ -1611,7 +1564,7 @@ const { renderTutorial, resetTutorialView } = setupTutorialUI({
   getTouchMatches: () => touchPreference.matches,
   getInputPrefs: () => inputPrefs,
   getControlPrefs: () => controlPrefs,
-  showKeyMap: () => showKeyMap(),
+  showKeyMap: () => keymap.showKeyMap(),
 });
 for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id}`).addEventListener('click', beginTutorial);
 for (const id of ['tutorial-exit', 'tutorial-done']) $(`#${id}`).addEventListener('click', endTutorial);
@@ -1624,7 +1577,7 @@ const { closeGuide, hasSeenGuide } = setupGuideUI({
     hidePerformanceNotice();
   },
   touchMatches: () => touchPreference.matches,
-  renderKeyMap: () => showKeyMap(),
+  renderKeyMap: () => keymap.showKeyMap(),
   isTutorialActive: () => !!tutorial,
   clearControls: () => controls.clear(),
 });
