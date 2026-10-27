@@ -1,3 +1,4 @@
+import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards, hazardX } from './hazards.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
@@ -13,57 +14,8 @@ import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
-// Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
-// `x` / `altitude` place a shortcut corridor.
-/** @type {Record<string, TrackConfig>} */
-export const RACE_TRACKS = {
-  coast: { // fixedRings: the original gate grid
-    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, fixedRings: true,
-    sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
-  },
-  neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002,
-    sections: [
-      { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
-      { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
-    ],
-  },
-  canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003,
-    sections: [
-      { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
-      { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
-      { from: 3000, to: 3070, type: 'gap' }, { from: 3300, to: 4100, type: 'crosswind', dir: -1 },
-      { from: 4400, to: 4470, type: 'gap' },
-    ],
-  },
-  aurora: {
-    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004,
-    sections: [
-      { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
-      { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
-      { from: 4920, to: 5380, type: 'shortcut', x: 7.5, altitude: 6 },
-    ],
-  },
-  spiral: {
-    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005,
-    sections: [
-      { from: 1100, to: 2200, type: 'spiral' },
-      { from: 2800, to: 2870, type: 'launch' },
-      { from: 2870, to: 2935, type: 'gap' },
-      { from: 3700, to: 3775, type: 'launch' },
-      { from: 3775, to: 3840, type: 'gap' },
-      { from: 4550, to: 4630, type: 'launch' },
-      { from: 4630, to: 4700, type: 'gap' },
-      { from: 4950, to: 5450, type: 'shortcut', x: -7.5, altitude: 6 },
-    ],
-  },
-  taipei: {"name":"Taipei Heritage","length":6200,"trafficDensity":1.1,"seed":6006,"sections":[{"from":850,"to":1200,"type":"tunnel"},{"from":1950,"to":2450,"type":"shortcut","x":-7.5,"altitude":6},{"from":3120,"to":3450,"type":"boost-tunnel"},{"from":4100,"to":4450,"type":"tunnel"}]},
-  tokyo: {"name":"Tokyo Afterdark","length":6800,"trafficDensity":1.4,"seed":7007,"sections":[{"from":850,"to":1350,"type":"tunnel"},{"from":2450,"to":2950,"type":"shortcut","x":7.5,"altitude":6},{"from":4150,"to":4650,"type":"tunnel"},{"from":5050,"to":5450,"type":"boost-tunnel"}]},
-  alpine: {"name":"Alpine Rail Pass","length":7600,"trafficDensity":0.8,"seed":8008,"sections":[{"from":900,"to":1420,"type":"uphill"},{"from":1600,"to":2200,"type":"tunnel"},{"from":3100,"to":3600,"type":"shortcut","x":-7.5,"altitude":6},{"from":3850,"to":4200,"type":"boost-tunnel"},{"from":4700,"to":5200,"type":"tunnel"},{"from":5900,"to":6400,"type":"uphill"}]},
-  coastal: {"name":"Coastal Horizon","length":5800,"trafficDensity":1,"seed":9009,"sections":[{"from":850,"to":1300,"type":"crosswind","dir":1},{"from":2100,"to":2600,"type":"shortcut","x":7.5,"altitude":6},{"from":2950,"to":3310,"type":"boost-tunnel"},{"from":3950,"to":4600,"type":"crosswind","dir":-1}]},
-  cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
-};
+import { RACE_TRACKS } from './race-tracks.ts';
+export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
 export const MAX_SPEED = 88;
 export const ROAD_LIMIT = 10.2;
@@ -329,110 +281,6 @@ export function useHeldItem(race) {
 }
 
 export { racePosition, sprintGaps } from './race-standings.ts';
-
-// Index of the first scenery part (sorted by `from`, each under 20 m deep) that can still reach distance d.
-function firstProp(props, d) {
-  let lo = 0, hi = props.length;
-  while (lo < hi) { const mid = (lo + hi) >> 1; if (props[mid].from < d - 20) lo = mid + 1; else hi = mid; }
-  return lo;
-}
-
-// Car body against scenery parts (sorted by distance); the swept range catches thin parts at high speed.
-function hitProp(props, car, previousDistance) {
-  const altitude = car.altitude || 0;
-  for (let i = firstProp(props, previousDistance - 2.2); i < props.length; i++) {
-    const p = props[i];
-    if (p.from > car.distance + 2.2) break;
-    if (p.to > previousDistance - 2.2 && p.right > car.x - 0.85 && p.left < car.x + 0.85 &&
-      p.top > altitude && p.bottom < altitude + 1.8) return p;
-  }
-  return null;
-}
-// A solid prop cannot be driven through: step out to its open-road side (it never reaches past ROAD_CLEARANCE).
-const clearOf = (prop, x) => prop.left > 0 ? Math.min(x, prop.left - 1.1) : Math.max(x, prop.right + 1.1);
-
-// Rivals and traffic steer around solid scenery, gauntlet barriers and slower cars ahead instead of driving
-// through them: they keep their own lane while it is clear, else take the nearest free line beside the obstacle.
-// Scenery parts stay under 20 m deep (largest: a scaled train, ~9 m), which bounds the look-back.
-const AI_LOOKAHEAD = 80, LANE_SHIFT = 6, AI_HALF_WIDTH = 0.85, AI_MARGIN = 1.4; // m ahead, m/s sideways, m, m
-const BARRIER_HALF_WIDTH = 1.55, BARRIER_HEIGHT = 2.5; // drawn gauntlet barrier: 3.1 x 2.5 m
-const TRAFFIC_ACCEL = 5; // m/s² a knocked traffic car regains toward its cruise speed
-const blockers = []; // reused every call: no per-frame allocation on this hot path
-function laneFree(x) {
-  if (Math.abs(x) > ROAD_LIMIT) return false;
-  for (let i = 0; i < blockers.length; i += 2) if (x + AI_HALF_WIDTH > blockers[i] && x - AI_HALF_WIDTH < blockers[i + 1]) return false;
-  return true;
-}
-// A car alongside, or one ahead this car closes on within ~3 s, blocks its own width.
-function carBlocker(d, altitude, pace, car, carPace) {
-  const gap = car.distance - d;
-  if (gap > -4.4 && gap < Math.min(AI_LOOKAHEAD, 4.4 + (pace - carPace) * 3) && Math.abs((car.altitude || 0) - altitude) < 1.8) {
-    blockers.push(car.x - AI_HALF_WIDTH, car.x + AI_HALF_WIDTH);
-  }
-}
-function avoidObstacles(race, other, pace, dt) {
-  const { props, hazards } = race, d = other.distance, altitude = other.altitude || 0;
-  blockers.length = 0;
-  for (const car of race.traffic) if (car !== other) carBlocker(d, altitude, pace, car, car.speed);
-  for (const car of race.rivals) if (car !== other) carBlocker(d, altitude, pace, car, car.pace ?? car.speed);
-  carBlocker(d, altitude, pace, race.player, race.player.speed);
-  for (let i = firstProp(props, d); i < props.length && props[i].from < d + AI_LOOKAHEAD; i++) {
-    const p = props[i];
-    if (p.to > d - 2.2 && p.top > altitude && p.bottom < altitude + 1.8) blockers.push(p.left, p.right);
-  }
-  if (altitude < BARRIER_HEIGHT) for (const h of hazards) {
-    if (h.distance > d + AI_LOOKAHEAD) break;
-    if (h.distance < d - 2.2) continue;
-    const reach = BARRIER_HALF_WIDTH + (h.moving ? 1.8 : 0); // a moving barrier blocks its whole sweep
-    blockers.push(h.x - reach, h.x + reach);
-  }
-  let target = other.homeX ?? other.x;
-  if (!laneFree(target)) {
-    target = other.x; // nowhere free: hold the line rather than swerve into something else
-    let best = Infinity;
-    for (let i = 0; i < blockers.length; i++) {
-      const x = i % 2 ? blockers[i] + AI_MARGIN : blockers[i] - AI_MARGIN;
-      if (Math.abs(x - other.x) < best && laneFree(x)) { best = Math.abs(x - other.x); target = x; }
-    }
-  }
-  other.x += clamp(target - other.x, -LANE_SHIFT * dt, LANE_SHIFT * dt);
-}
-
-// The one collision response every car shares (player, rivals, traffic): speed loss, a sideways knock, a short grace.
-function knock(race, car, side, intensity, retention) {
-  const retainedSpeed = race.config.collision === 'relaxed' ? Math.max(retention, 0.8) : retention;
-  const speedLost = car.speed * (1 - retainedSpeed);
-  car.speed *= retainedSpeed;
-  car.x = clamp(car.x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
-  car.cooldown = 1.5;
-  return speedLost;
-}
-
-// Rivals and traffic take the player's hits, with the same boxes, when avoidance cannot save them.
-const aiRetention = other => other.nitroTime > 0 ? 0.7 : 0.45;
-function aiImpacts(race, other, before, pace) {
-  if (other.cooldown > 0) return;
-  const prop = hitProp(race.props, other, before);
-  if (prop) {
-    knock(race, other, Math.sign(other.x - (prop.left + prop.right) / 2) || -1, clamp(pace / 100, 0.25, 1), aiRetention(other));
-    other.x = clearOf(prop, other.x);
-    return;
-  }
-  if ((other.altitude || 0) >= 2.4) return;
-  for (const hazard of race.hazards) {
-    if (hazard.distance > other.distance) break;
-    if (hazard.distance <= before) continue;
-    const obstacleX = hazardX(hazard, race.elapsed);
-    if (Math.abs(other.x - obstacleX) < 1.8) return void knock(race, other, Math.sign(other.x - obstacleX) || -1, 0.7, 0.6);
-  }
-}
-function bumpCars(race, a, b) {
-  if ((a.cooldown > 0 && b.cooldown > 0) || Math.abs(a.distance - b.distance) >= 4.4 || Math.abs(a.x - b.x) >= 1.7 ||
-    Math.abs((a.altitude || 0) - (b.altitude || 0)) >= 1.8) return;
-  const side = Math.sign(a.x - b.x) || -1, intensity = clamp(Math.abs(a.speed - b.speed) / 70, 0.25, 1);
-  if (!(a.cooldown > 0)) knock(race, a, side, intensity, aiRetention(a));
-  if (!(b.cooldown > 0)) knock(race, b, -side, intensity, aiRetention(b));
-}
 
 function contact(race, kind, obstacleX, intensity, retention) {
   const car = race.player;
