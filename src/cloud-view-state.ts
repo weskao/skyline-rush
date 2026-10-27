@@ -6,6 +6,18 @@ export interface CloudView {
   identity: string;
   avatarUrl: string;
   avatarFailed: boolean;
+  statusText: string;
+  statusState: string;
+  statusBusy: boolean;
+  lastSyncText: string;
+  loginHidden: boolean;
+  logoutHidden: boolean;
+  logoutNoteHidden: boolean;
+  deleteHidden: boolean;
+  switchHidden: boolean;
+  syncDisabled: boolean;
+  loginDisabled: boolean;
+  deleteDisabled: boolean;
 }
 
 export const cloudView = reactive<CloudView>({
@@ -13,6 +25,18 @@ export const cloudView = reactive<CloudView>({
   identity: 'Not signed in',
   avatarUrl: '',
   avatarFailed: false,
+  statusText: 'Cloud backup is off. Sign in to protect your race results.',
+  statusState: 'signed-out',
+  statusBusy: false,
+  lastSyncText: 'Never synced',
+  loginHidden: false,
+  logoutHidden: true,
+  logoutNoteHidden: true,
+  deleteHidden: true,
+  switchHidden: true,
+  syncDisabled: true,
+  loginDisabled: false,
+  deleteDisabled: false,
 });
 
 export function updateCloudView(changes: Partial<CloudView>): void {

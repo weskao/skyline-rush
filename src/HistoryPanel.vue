@@ -17,15 +17,15 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <section class="history-extra" aria-labelledby="cloud-title">
       <h3 id="cloud-title" data-i18n="cloud.title">Cloud save</h3>
       <p data-i18n="cloud.explain">Sign in to save race progress and restore it after clearing browser data. Existing progress on this device will be merged. Device settings and ghosts stay here.</p>
-      <SignInButton id="cloud-login" :icon="GOOGLE_ICON" label-key="cloud.login">Sign in with Google</SignInButton>
-      <button type="button" class="controls-reset" id="cloud-logout" data-i18n="cloud.logout" hidden>Sign out</button>
-      <p id="cloud-logout-note" class="cloud-logout-note" data-i18n="cloud.logoutNote" hidden>Signing out does not delete cloud results or your Google account.</p>
-      <button type="button" class="controls-reset" id="cloud-switch" data-i18n="cloud.switch" hidden>Use this account</button>
-      <button type="button" class="controls-reset" id="cloud-sync-now" data-i18n="cloud.syncNow" disabled>Sync now</button>
+      <SignInButton id="cloud-login" :icon="GOOGLE_ICON" label-key="cloud.login" :hidden="cloudView.loginHidden" :disabled="cloudView.loginDisabled">Sign in with Google</SignInButton>
+      <button type="button" class="controls-reset" id="cloud-logout" data-i18n="cloud.logout" :hidden="cloudView.logoutHidden">Sign out</button>
+      <p id="cloud-logout-note" class="cloud-logout-note" data-i18n="cloud.logoutNote" :hidden="cloudView.logoutNoteHidden">Signing out does not delete cloud results or your Google account.</p>
+      <button type="button" class="controls-reset" id="cloud-switch" data-i18n="cloud.switch" :hidden="cloudView.switchHidden">Use this account</button>
+      <button type="button" class="controls-reset" id="cloud-sync-now" data-i18n="cloud.syncNow" :disabled="cloudView.syncDisabled">Sync now</button>
       <button type="button" class="controls-reset" id="cloud-export" data-i18n="cloud.export">Export race progress</button>
       <button type="button" class="controls-reset" id="cloud-import" data-i18n="cloud.import">Import race progress</button>
       <input id="cloud-import-file" type="file" accept=".json,application/json" hidden />
-      <button type="button" class="controls-reset" id="cloud-delete" data-i18n="cloud.delete" hidden>Delete race progress</button>
+      <button type="button" class="controls-reset" id="cloud-delete" data-i18n="cloud.delete" :hidden="cloudView.deleteHidden" :disabled="cloudView.deleteDisabled">Delete race progress</button>
       <div class="cloud-player" aria-live="polite">
         <img id="cloud-avatar" class="cloud-avatar" alt="" referrerpolicy="no-referrer" :src="cloudView.avatarUrl || undefined" :hidden="!cloudView.avatarUrl || cloudView.avatarFailed" @error="hideBrokenCloudAvatar" />
         <span id="cloud-avatar-fallback" class="cloud-avatar-fallback" aria-hidden="true" :hidden="!!cloudView.avatarUrl && !cloudView.avatarFailed">G</span>
@@ -34,8 +34,8 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <p id="cloud-identity">{{ cloudView.identity }}</p>
         </div>
       </div>
-      <p id="cloud-status" role="status" data-i18n="cloud.local">Cloud backup is off. Sign in to protect your race results.</p>
-      <p id="cloud-last-sync">Never synced</p>
+      <p id="cloud-status" role="status" :data-cloud-state="cloudView.statusState" :aria-busy="cloudView.statusBusy">{{ cloudView.statusText }}</p>
+      <p id="cloud-last-sync">{{ cloudView.lastSyncText }}</p>
     </section>
     <label class="history-filter"><span data-i18n="history.track">Track</span> <select id="history-track" aria-label="History track" data-i18n-aria-label="history.trackAria"><option v-for="(track, id) in RACE_TRACKS" :value="id">{{ track.name }}</option></select></label>
     <figure class="history-trend" :hidden="!historyView.trendVisible"><figcaption id="history-trend-label">{{ historyView.trendLabel }}</figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"><polyline :points="historyView.trendPolyPoints"/><circle v-for="(point, i) in historyView.trendCircles" :key="i" :cx="point.x" :cy="point.y" r="3"><title>{{ point.title }}</title></circle></svg></figure>
