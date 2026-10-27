@@ -6,6 +6,7 @@ interface Targets {
   sky: Record<'top' | 'horizon' | 'cloudTint', { value: Color }> & Record<'cloudOpacity' | 'warmth', { value: number }>;
   renderer: { toneMappingExposure: number };
 }
+interface Atmosphere { background: Color | string; fog: Color | string; density: number; exposure: number }
 const STYLES = {
   day: { background: '#94b7c9', fog: '#a3bdc8', density: .001, exposure: 1.12, top: '#458bab', horizon: '#d9e8e9', cloudTint: '#82989a', cloudOpacity: .45, warmth: .2 },
   dusk: { background: '#ec9478', fog: '#bb7f89', density: .001, exposure: 1.15, top: '#27284a', horizon: '#ec9478', cloudTint: '#7e667d', cloudOpacity: .45, warmth: .7 },
@@ -16,23 +17,37 @@ const STYLES = {
 
 export function createRaceVisuals({ scene, sky, renderer }: Targets) {
   let preset: VisualPreset = 'track';
+  let photoDefaults: Atmosphere | null = null;
   let defaults: {
     background: Color; fog: Color; density: number; exposure: number;
     top: Color; horizon: Color; cloudTint: Color; cloudOpacity: number; warmth: number;
   } | null = null;
+  const captureAtmosphere = () => ({ background: scene.background.clone(), fog: scene.fog.color.clone(),
+    density: scene.fog.density, exposure: renderer.toneMappingExposure });
+  function setAtmosphere(style: Atmosphere): void {
+    scene.background.set(style.background); scene.fog.color.set(style.fog);
+    scene.fog.density = style.density; renderer.toneMappingExposure = style.exposure;
+  }
   function apply(next: VisualPreset): void {
     if (next === preset) return;
     defaults ??= {
-      background: scene.background.clone(), fog: scene.fog.color.clone(), density: scene.fog.density,
-      exposure: renderer.toneMappingExposure, top: sky.top.value.clone(), horizon: sky.horizon.value.clone(),
+      ...captureAtmosphere(), top: sky.top.value.clone(), horizon: sky.horizon.value.clone(),
       cloudTint: sky.cloudTint.value.clone(), cloudOpacity: sky.cloudOpacity.value, warmth: sky.warmth.value,
     };
     const style = next === 'track' ? defaults : STYLES[next];
-    scene.background.set(style.background); scene.fog.color.set(style.fog);
-    scene.fog.density = style.density; renderer.toneMappingExposure = style.exposure;
+    setAtmosphere(style);
     sky.top.value.set(style.top); sky.horizon.value.set(style.horizon); sky.cloudTint.value.set(style.cloudTint);
     sky.cloudOpacity.value = style.cloudOpacity; sky.warmth.value = style.warmth;
     preset = next;
   }
-  return { apply, reset: () => { apply('track'); defaults = null; } };
+  function photo(style: string | null): void {
+    if (style === null) {
+      if (photoDefaults) setAtmosphere(photoDefaults);
+      photoDefaults = null;
+      return;
+    }
+    photoDefaults ??= captureAtmosphere();
+    setAtmosphere(style === 'sunset' ? STYLES.dusk : style === 'night' || style === 'fog' ? STYLES[style] : photoDefaults);
+  }
+  return { apply, photo, reset: () => { photo(null); apply('track'); defaults = null; } };
 }

@@ -46,3 +46,15 @@ test('a new track resets visual baselines and unchanged frame updates do no colo
   visuals.apply('track');
   assert.equal(target.scene.background.getHexString(), '18223f');
 });
+
+test('Photo Studio temporarily overrides the atmosphere, then restores the current race preset', () => {
+  const target = fixture();
+  const visuals = createRaceVisuals(target);
+  visuals.apply('fog');
+  visuals.photo?.('night');
+  assert.equal(target.scene.fog.density, .0016);
+  visuals.photo?.(null);
+  assert.equal(target.scene.fog.density, .004);
+  visuals.apply('track');
+  assert.equal(target.scene.fog.density, .0013);
+});

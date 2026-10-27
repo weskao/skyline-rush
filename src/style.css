@@ -521,6 +521,8 @@ body:is([data-phase="countdown"], [data-phase="racing"]) .vfx-settings > label:h
 .vfx-heading > span { color: #91d9ee; font-size: 8px; letter-spacing: 2px; }
 .vfx-heading strong { font: 700 30px 'Barlow Condensed', sans-serif; }
 .vfx-heading small, .vfx-note { font-size: 10px; line-height: 1.6; color: #a8bbc8; }
+/* The FPS explanation is direct <small> content (unlike .vfx-note); avoid 8.33px CJK glyphs. */
+.vfx-settings > small { display: block; font-size: 11px; line-height: 1.55; color: #a8bbc8; }
 .vfx-settings label { min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; }
 .vfx-settings .custom-select > button { width: 155px; min-height: 34px; color: #dcf4ff; background-color: #193442; border: 1px solid #5c8796; border-radius: 4px; padding: 4px 30px 4px 8px; background-position: right 8px center; }
 .vfx-tuning > summary { display: flex; justify-content: space-between; list-style: none; padding: 16px 0; cursor: pointer; border-top: 1px solid #87c5da30; }
@@ -676,6 +678,17 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
   .touch-steer { gap: 10px; }
   .touch-controls button, .touch-controls .touch-fly, .touch-controls .touch-boost { width: calc(56px * var(--touch-scale, 1)); height: calc(60px * var(--touch-scale, 1)); font-size: 9px; }
   body:not([data-phase="ready"]) .telemetry { bottom: calc(180px + max(0px, env(safe-area-inset-bottom, 0px) - 18px)); }
+}
+
+/* 44px taps on every touch screen, landscape included. The tool row and camera arrows keep their drawn
+   size (fixed top-bar / dock budget) and grow an invisible hit area instead, as .medal-chip does. */
+@media (pointer: coarse) {
+  .overlay-content .text-button, .mute-all { min-height: 44px; }
+  .aero-tools > button, .aero-tools > details > summary, .aero-tools > .custom-select > button, #showcase-camera-prev, #showcase-camera-next { position: relative; }
+  .aero-tools > .custom-select > button { overflow: visible; } /* the select's ellipsis clip would cut the hit area; "English"/"繁體中文" never overflow */
+  /* -8px from the padding box: the 30px phone row (1px border) reaches 44px exactly */
+  :is(.aero-tools > button, .aero-tools > details > summary, .aero-tools > .custom-select > button)::before { content: ''; position: absolute; inset: -8px 0; }
+  :is(#showcase-camera-prev, #showcase-camera-next)::before { content: ''; position: absolute; inset: -3px; }
 }
 
 /* Touch control preferences (contract: comment in main.js). Sizes scale via --touch-scale in the declarations above; telemetry offsets reserve the Large (1.15x) height. */
@@ -869,6 +882,8 @@ body.layout-editing #touch-controls { display: grid; }
 .touch-pad.tutorial-target { outline-offset: -5px; background: rgb(150 227 255 / .08); }
 body[data-tutorial] :is(#race-route-map, #leaderboard, #practice-hud, #sprint-stage, #stunt-hud, #checkpoint-hud, #clean-trial-hud) { visibility: hidden; }
 body[data-tutorial] .tutorial-coach { pointer-events: auto; }
+/* Narrow portrait: the full-width card starts under the AIRFLOW/VFX row (top 70px + 30px), not over it. */
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-coach { top: calc(var(--safe-top) + 108px); } }
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { top: 70px; width: min(410px, calc(50vw - 24px)); padding: 8px; } .tutorial-copy { max-height: calc(55dvh - 154px); } .tutorial-copy small { display: none; } .tutorial-coach progress { margin: 4px 0; } .tutorial-copy p { margin: 2px 0 4px; font-size: 12px; } }
 @media (max-width: 540px) { .guide-keys > div { grid-template-columns: 1fr; gap: 6px; } }
 @media (max-width: 760px) { .guide-header { top: -20px; } }
@@ -1153,6 +1168,10 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .track-route-map { display:block; height: 65px; margin: 6px 0 9px; border-radius: 4px; background: rgb(4 14 29 / .48); }
 .track-route-map .route-overview { width:100%; height:100%; }
 .route-overview-line { fill:none; stroke: #76d9f4; stroke-width: 2.4; stroke-linejoin:round; stroke-linecap:round; }
+/* Upper half of Sky Spiral rises above its own projected helix; cached, noninteractive SVG. */
+.route-spiral-upper { stroke:#ffdc94; stroke-width:3; stroke-dasharray:3 2.3; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
+/* Raised-road direction cue is static and never catches touch/keyboard events. */
+.route-spiral-direction { stroke:#fff6d9; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
 .race-route-map { position:fixed; top:292px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
@@ -1344,6 +1363,11 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 }
 @media (max-width:370px) {
  .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); }
+}
+/* Touch: the picker scrolls inside the intro on phones, so its controls take full 44px rows. */
+@media (pointer: coarse) {
+ .race-mode-tabs button, .race-mode-rules summary, .race-presets button, .race-mode-rule-grid .custom-select > button, .race-mode-rule-grid label.race-items { min-height: 44px; }
+ .race-mode-rules summary { align-items: center; }
 }
 .mode-history-runs p { padding: 9px 0; border-bottom: 1px solid #405465; margin: 0; font-variant-numeric: tabular-nums; color: #e5edf4; }
 .mode-history-filter { flex-wrap: wrap; margin: 12px 0; }

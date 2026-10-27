@@ -99,12 +99,36 @@ test('rain stays centered on the rendered car on a banked 3D road', async ({ gam
   await choosePreset(page, 'Rain');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+  await expect(page.locator('#intro')).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.gameplay.race.elapsed)).toBeGreaterThan(1);
   const offset = await page.evaluate(() => {
     const { scene, player } = window.gameScene;
     const rain = scene.children.find(object => object.isPoints && object.geometry.attributes.position.count === 180);
-    return rain.position.clone().sub(player.position).toArray();
+    return { position: rain.position.clone().sub(player.position).toArray(), visible: rain.visible,
+      fog: scene.fog.density, particles: rain.geometry.drawRange.count };
   });
-  expect(offset[0]).toBeCloseTo(0, 3);
-  expect(offset[1]).toBeCloseTo(25, 3);
-  expect(offset[2]).toBeCloseTo(15, 3);
+  expect(offset.position[0]).toBeCloseTo(0, 3);
+  expect(offset.position[1]).toBeCloseTo(25, 3);
+  expect(offset.position[2]).toBeCloseTo(15, 3);
+  expect(offset.visible).toBe(true);
+  expect(offset.fog).toBe(.0024);
+  expect(offset.particles).toBeGreaterThan(0);
+  expect(offset.particles).toBeLessThanOrEqual(180);
+  await page.screenshot({ path: 'artifacts/custom-presentation/spiral-rain.png' });
+});
+
+test('canceling a real track swipe preserves the selected atmosphere and current race', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-race-mode="custom"]').click();
+  await page.locator('#race-mode-rules > summary').click();
+  await choosePreset(page, 'Night');
+  await page.mouse.move(1150, 600);
+  await page.mouse.down();
+  await page.mouse.move(1120, 600, { steps: 4 });
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(2);
+  await page.waitForTimeout(160); // A held short drag must cancel, rather than count as a flick.
+  await page.mouse.up();
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+  await expect(page.locator('[data-track="coast"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#race-visual-preset')).toHaveValue('night');
 });

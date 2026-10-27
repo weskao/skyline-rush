@@ -6,7 +6,7 @@ const tracks = RACE_TRACKS as Readonly<Record<string, { length: number }>>;
 
 // A single distance -> main-road mapping drives previews, minimaps and world geometry.
 // The original flat routes retain their exact world-space centreline.
-const oldRoadCenter = (distance: number): number => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
+export const classicRoadCenter = (distance: number): number => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 const flatCourses = new Set(['coast', 'neon', 'canyon', 'aurora']);
 const profiles: Record<string, (s: number) => Pick<SkyPoint, 'x' | 'y'>> = {
  taipei: s => ({ x: 205 * Math.sin(s/670) + 60 * Math.sin(s/185), y: 0 }),
@@ -29,7 +29,7 @@ export function trackPoint(trackId: string, distance: number): SkyPoint {
   if (trackId === 'spiral') return skyPoint(s);
   const profile = profiles[trackId];
   if (profile) return { ...profile(s), z: -s };
-  return { x: oldRoadCenter(s), y: 0, z: -s };
+  return { x: classicRoadCenter(s), y: 0, z: -s };
 }
 
 export function trackFrame(trackId: string, distance: number) {

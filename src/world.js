@@ -10,24 +10,27 @@ import { canopy, carShell, roadRibbon } from './geometry.ts';
 import { createEffects, LIFT_PORTS } from './effects.js';
 import { createAeroVFX, REAR_PORTS } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.ts';
+import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals } from './race-visuals.ts';
+import { createCoastScenery } from './coast-visuals.ts';
+import { createClassicTrackScenery } from './classic-track-scenery.ts';
+import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.ts';
 import { orientCarOnRoad } from './vehicle-pose.ts';
-import { trackPoint, trackFrame, trackLocalPosition } from './track-paths.ts';
+import { classicRoadCenter, trackPoint, trackFrame, trackLocalPosition } from './track-paths.ts';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
-import { WORLD_THEMES, createWorldTourScene } from './world-tour-scene.js';
+import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { hazardX } from './hazards.ts';
-
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 
-const roadCenter = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
+const roadCenter = classicRoadCenter;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
 const box = new THREE.BoxGeometry(1, 1, 1);
 const matrix = new THREE.Matrix4();
@@ -36,14 +39,6 @@ const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
-const TRACK_PALETTES = {
-  coast: { top: '#101e43', horizon: '#d98785', fog: '#94758a', rock: '#374762', road: '#142534', ground: '#0a233b', rail: '#40d9ed', sun: '#ffb88a', warmth: 1 },
-  neon: { top: '#040a20', horizon: '#263057', fog: '#18223f', rock: '#182039', road: '#101c2e', ground: '#080e21', rail: '#ff52bf', sun: '#96b7ff', warmth: 0 },
-  canyon: { top: '#458bab', horizon: '#f5c58c', fog: '#c99c79', rock: '#a15339', road: '#51453b', ground: '#a76e46', rail: '#ffc36f', sun: '#ffdfaa', warmth: .6 },
-  aurora: { top: '#051b31', horizon: '#337064', fog: '#234d5b', rock: '#9cb9c7', road: '#293d50', ground: '#b3cad3', rail: '#78ffd1', sun: '#b9ddff', warmth: 0 },
-  spiral: { top: '#050b25', horizon: '#55348c', fog: '#302657', rock: '#29345b', road: '#111827', ground: '#161d49', rail: '#00e5ff', sun: '#a855f7', warmth: 0 },
-  ...WORLD_THEMES,
-};
 
 function material(color, metalness = 0, roughness = 0.7) {
   return new THREE.MeshStandardMaterial({ color, metalness, roughness });
@@ -256,7 +251,9 @@ function fitText(context, label, x, y, maxWidth, basePx, locale) {
 export function createWorld(canvas) {
   // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  renderer.info.autoReset=false; // Combine scene and composer submissions per frame for QA.
   let renderPixelRatio=Math.min(devicePixelRatio,1.5);
+  let adaptiveScale = 1;
   renderer.setPixelRatio(renderPixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -518,6 +515,7 @@ export function createWorld(canvas) {
   scene.add(shadow);
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
+  const coastScenery = createCoastScenery(scene, roadCenter), classicScenery = createClassicTrackScenery(scene, roadCenter);
   // Only inspect World Tour geometry when a showroom angle changes. Existing
   // landmark-only sightline checks don't detect scenery covering the car itself.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
@@ -722,7 +720,7 @@ export function createWorld(canvas) {
   let lastRace = null;
   let trackId;
   let carBank = 0;
-  let photoView = null, photoDefaults = null, photoCapture = null;
+  let photoView = null, photoCapture = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
   let sizeKey = '', warmupPending = true;
@@ -796,14 +794,12 @@ export function createWorld(canvas) {
       player.userData.body.material.color.set(paint.paint);
       player.userData.lightColor.fromArray(paint.light);
     },
+    setRenderScale(scale) {
+      adaptiveScale = scale; this.configureVFX(visual);
+    },
     configureVFX(options) {
-      const updated=vfxSettings(options);
-      visual=updated;
-      // Preserve full scene and texture geometry. Lower the GPU pixel budget
-      // only on devices whose initial quality or manual user choice calls for
-      // it; high quality stays at the original 1.5x DPR cap.
-      const maxRatio=visual.quality==='low'?1:visual.quality==='medium'?1.25:1.5;
-      const nextRatio=Math.min(devicePixelRatio,maxRatio);
+      visual=vfxSettings(options);
+      const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
       if(Math.abs(nextRatio-renderPixelRatio)>.001){
@@ -815,34 +811,13 @@ export function createWorld(canvas) {
     },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
     setPhotoView(options) {
+      raceVisuals.photo(options ? options.sky : null);
       if (!options) {
         photoView = null;
-        if (photoDefaults) {
-          scene.background.copy(photoDefaults.background);
-          scene.fog.color.copy(photoDefaults.fogColor);
-          scene.fog.density = photoDefaults.fogDensity;
-          renderer.toneMappingExposure = photoDefaults.exposure;
-          photoDefaults = null;
-        }
         return;
       }
-      if (!photoDefaults) photoDefaults = {
-        background: scene.background.clone(), fogColor: scene.fog.color.clone(),
-        fogDensity: scene.fog.density, exposure: renderer.toneMappingExposure,
-      };
       const angle = Number.isFinite(options.angle) ? options.angle : 0;
       photoView = { angle: angle * Math.PI / 180, fov: photoFov(options.fov), sky: options.sky };
-      const styles = {
-        original: null,
-        sunset: ['#ec9478', '#bb7f89', .001, 1.15],
-        night: ['#1b2e5a', '#304b73', .0016, .72],
-        fog: ['#8297a4', '#8297a4', .004, 1.02],
-      };
-      const style = styles[options.sky] ?? null;
-      scene.background.set(style ? style[0] : photoDefaults.background);
-      scene.fog.color.set(style ? style[1] : photoDefaults.fogColor);
-      scene.fog.density = style ? style[2] : photoDefaults.fogDensity;
-      renderer.toneMappingExposure = style ? style[3] : photoDefaults.exposure;
     },
     capturePhoto() {
       if (photoCapture) return Promise.reject(new Error('Photo capture already in progress'));
@@ -865,10 +840,10 @@ export function createWorld(canvas) {
         sky.material.uniforms.cloudOpacity.value = trackId==='cosmic'?0:trackId==='tokyo'?.14:trackId==='alpine'?.45:trackId==='coastal'?.32:trackId==='taipei'?.36:1;
         sky.material.uniforms.cloudTint.value.set(trackId==='alpine'?'#647575':trackId==='coastal'?'#82989a':trackId==='taipei'?'#77898b':trackId==='tokyo'?'#394354':'#4d3d60');
         sunlight.color.set(palette.sun);
-        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
+        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? 1.35 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
         sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
-        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:1.12;
-        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='neon'?1.1:1.7;
+        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?1.01:1.12;
+        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?1.24:trackId==='neon'?1.1:1.7;
         sun.visible = trackId === 'coast' || trackId === 'canyon';
         // Sky Spiral draws its own dome. The shared sky, sea and peaks would sit in front of it.
         sky.visible = sea.visible = mountains.visible = trackId !== 'spiral';
@@ -877,7 +852,7 @@ export function createWorld(canvas) {
         seaLines.visible = trackId === 'coast'; mountains.material.color.set(palette.rock);
         city.visible = trackId === 'coast' || trackId === 'neon';
         windows.material.color.set(trackId === 'neon' ? '#ff6dbc' : '#ffd394');
-        roadMaterial.color.set(palette.road); roadMaterial.roughness = trackId === 'neon' ? .16 : .5;
+        applyTrackSurfaceStyle(trackId,roadMaterial,buildingMat,palette.road);
         railLights.material.color.set(palette.rail);
         cliffs.visible = trackId === 'canyon' || trackId === 'aurora'; cliffs.material.color.set(palette.rock);
         tunnelRoofs.visible = tunnelWalls.visible = trackId === 'neon';
@@ -890,6 +865,8 @@ export function createWorld(canvas) {
       const visualPreset = race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
       raceVisuals.apply(visualPreset);
       const distance = preview ? previewDistance(trackId) : car.distance;
+      if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality);} else coastScenery.hide();
+      if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
       // A readable driving corridor takes precedence over cinematic glare.
       // Dimming in the mountain bore is smoothed over the 38 m entrance.
@@ -1243,9 +1220,10 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = TOUR_IDS.has(trackId) ? .085 : .42 + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
+      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?.19:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
+      renderer.info.reset(); // Exclude warmup draws and previous frames.
       composer.render(dt);
       if (photoCapture) {
         const request = photoCapture;
@@ -1264,6 +1242,7 @@ export function createWorld(canvas) {
         } catch (error) { request.reject(error); }
       }
     },
+    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
       // Read-only projection for browser QA: verify the player and all three
@@ -1334,7 +1313,7 @@ export function createWorld(canvas) {
     },
     dispose() {
       stopLocaleSigns();
-      skyScene.dispose(); worldTourScene.dispose();
+      skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();

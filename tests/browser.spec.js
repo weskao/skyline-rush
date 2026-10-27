@@ -258,6 +258,25 @@ test('dragging a volume slider to zero mutes it and unmuting returns to the leve
   await expect(effects).toHaveValue('100');
 });
 
+test('a volume slider shows its level live while dragging, before release, without page errors', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await dismissMusicPrompt(page);
+  await page.getByRole('button', { name: 'Audio settings' }).click();
+  const music = volumeSlider(page, 'Music');
+  const box = await music.boundingBox();
+  const y = box.y + box.height / 2;
+  await page.mouse.move(box.x + box.width - 2, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5, y, { steps: 6 });
+  const label = audioSwitch(page, 'Music').locator('b');
+  await expect(label).not.toHaveText('100%');
+  await expect(music).toHaveAttribute('aria-valuetext', await label.textContent());
+  await page.mouse.up();
+  expect(errors).toEqual([]);
+});
+
 test('one quick button mutes everything and brings back each saved level', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);

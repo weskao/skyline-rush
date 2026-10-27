@@ -19,7 +19,8 @@ test('Vue exclusively owns cloud profile name, identity and avatar fallback', as
     ':hidden="!!cloudView.avatarUrl && !cloudView.avatarFailed"', '@error="hideBrokenCloudAvatar"'])
     assert.ok(template.includes(token), 'Vue cloud profile binding missing: ' + token);
 
-  const controller = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  // The Cloud Save controller moved from main.js to cloud-ui.ts; the ownership contract covers both.
+  const controller = ['main.js', 'cloud-ui.ts'].map(file => readFileSync(new URL('../src/' + file, import.meta.url), 'utf8')).join('\n');
   assert.match(controller, /updateCloudView\(/);
   assert.doesNotMatch(controller, /\$\('#cloud-(?:name|identity|avatar|avatar-fallback)'\)\.(?:textContent|hidden|addEventListener)/,
     'main.js must not compete with Vue for cloud profile presentation');
@@ -37,7 +38,8 @@ test('broken cloud avatar stays in fallback across the same account refresh, but
   assert.equal(cloudView.name, 'Updated Pilot');
   updateCloudProfile({ ...profile, avatarUrl: 'https://example.test/new.png' });
   assert.equal(cloudView.avatarFailed, false, 'changed photo URLs may be retried');
-  const controller = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  // The Cloud Save controller moved from main.js to cloud-ui.ts; the ownership contract covers both.
+  const controller = ['main.js', 'cloud-ui.ts'].map(file => readFileSync(new URL('../src/' + file, import.meta.url), 'utf8')).join('\n');
   assert.match(controller, /updateCloudProfile\(/, 'Auth and locale refresh use the guarded update');
   assert.doesNotMatch(controller, /avatarFailed:\s*false/, 'refresh does not blindly restart failed images');
 });
