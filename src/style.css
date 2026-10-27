@@ -869,6 +869,8 @@ body.layout-editing #touch-controls { display: grid; }
 .touch-pad.tutorial-target { outline-offset: -5px; background: rgb(150 227 255 / .08); }
 body[data-tutorial] :is(#race-route-map, #leaderboard, #practice-hud, #sprint-stage, #stunt-hud, #checkpoint-hud, #clean-trial-hud) { visibility: hidden; }
 body[data-tutorial] .tutorial-coach { pointer-events: auto; }
+/* Narrow portrait: the full-width card starts under the AIRFLOW/VFX row (top 70px + 30px), not over it. */
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-coach { top: calc(var(--safe-top) + 108px); } }
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { top: 70px; width: min(410px, calc(50vw - 24px)); padding: 8px; } .tutorial-copy { max-height: calc(55dvh - 154px); } .tutorial-copy small { display: none; } .tutorial-coach progress { margin: 4px 0; } .tutorial-copy p { margin: 2px 0 4px; font-size: 12px; } }
 @media (max-width: 540px) { .guide-keys > div { grid-template-columns: 1fr; gap: 6px; } }
 @media (max-width: 760px) { .guide-header { top: -20px; } }
