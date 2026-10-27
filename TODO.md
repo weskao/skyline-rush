@@ -1,5 +1,29 @@
 # TODO — Gameplay depth design
 
+## Future feature request: configurable and adaptive FPS (2026-10-27)
+
+**Status:** Requirements recorded for later discussion. No design or implementation has been approved.
+
+- [ ] **Manual FPS selection:** Add an option for players to adjust the target frame rate, including 30 FPS, 60 FPS, and potentially other choices. The final set of options remains undecided.
+- [ ] **Automatic device-performance adaptation:** The initial automatic device-performance adjustment should also adapt the FPS setting. The detailed behavior and interaction with manual selection remain undecided.
+
+## Player feedback: gameplay excitement and visual quality (2026-10-27)
+
+**Status:** The following are player-reported opinions and requests, not confirmed defects or approved implementation plans. Preserve them for evaluation without treating subjective comparisons as verified facts.
+
+- [ ] **Flight duration:** Players report that the available FLY duration is too short.
+- [ ] **Momentum and combos:** Players feel that the game is not exciting enough and does not offer enough opportunities for sustained acceleration, continuous rushing, or chaining varied moves and combos.
+- [ ] **Visual polish:** Players want more aesthetically appealing and refined graphics; the earlier tracks are especially perceived as rough or unfinished.
+- [ ] **Classic racing-game reference:** Consider studying or taking inspiration from classic racing games through [morluto/rea](https://github.com/morluto/rea), including gameplay and visual design. This is a reference suggestion only, not a decision to reproduce any game.
+- [ ] **Weak engagement:** One player felt they could barely motivate themselves to finish and implied the experience lacked appeal to someone who regularly plays games.
+- [ ] **Poor first impression and fun factor:** Players say the current visuals do not make them want to try the game and compare its entertainment value unfavorably with Mario Kart and KartRider.
+- [ ] **Perceived amateur quality:** Players liken the presentation to an old university student project and describe the artwork as overly simplistic or unpolished.
+- [ ] **Preference for realism:** Some players would prefer the visual realism associated with AAA racing games.
+
+**Decision gate (future work only):**
+- [ ] Review the feedback, propose possible improvements that fit Skyline Rush, and discuss the trade-offs and preferences through `AskUserQuestion` **before** deciding what to implement.
+- [ ] Keep implementation scope and acceptance criteria undecided until that discussion is complete. Do not treat recording these comments as approval to change gameplay, art direction, or rendering.
+
 ## BUG: Tutorial trigger flow needs redesign — to be discussed (2026-10-26)
 
 - [ ] **Symptom (as reported):** the tutorial only appears when the player selects the **first track** *and* has never completed or skipped the tutorial before. On any other track, or after a prior run/skip, it never shows up, so the entry point is hard to discover and depends on which track happens to be selected.
