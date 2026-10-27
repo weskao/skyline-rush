@@ -8,13 +8,14 @@ interface CalloutPlayer {
   rewardFuel: number; nearMiss: { combo: number; charge: number };
   drift?: { time: number } | null; trick?: unknown;
   trickPayout?: CalloutPayout | null;
+  landing?: { chain?: boolean } | null;
   inShortcut: boolean;
 }
 export interface CalloutRace { phase: string; elapsed: number; player: CalloutPlayer }
 interface FeedbackSnapshot {
   near: number; perfect: number; nitro: number; nitroTime: number; uses: number;
   rewardFuel: number; drift: number; trick: unknown; trickPayout?: CalloutPayout | null;
-  shortcut: boolean;
+  shortcut: boolean; landing?: { chain?: boolean } | null;
 }
 
 
@@ -42,7 +43,7 @@ export function createCallouts() {
         near: car.nearMisses, perfect: car.perfectLines, nitro: car.nitro,
         nitroTime: car.nitroTime, uses: car.nitroUses, rewardFuel: car.rewardFuel,
         drift: Math.min(3, Math.floor(car.drift?.time ?? 0)),
-        trick: car.trick, trickPayout: car.trickPayout, shortcut: car.inShortcut,
+        trick: car.trick, trickPayout: car.trickPayout, shortcut: car.inShortcut, landing: car.landing,
       };
       if (race !== previousRace || race.phase !== 'racing' || !previous) {
         pending.length = 0;
@@ -61,6 +62,7 @@ export function createCallouts() {
       if (next.drift > previous.drift) enqueue('drift', ['callout.drift', { tier: t(`callout.drift.tier.${next.drift}`) }], 'callout.drift.detail');
       if (next.shortcut && !previous.shortcut) enqueue('shortcut', 'callout.shortcut', 'callout.shortcut.detail');
       if (next.trick && next.trick !== previous.trick) enqueue('trick', 'callout.roll', 'callout.roll.detail');
+      if (next.landing?.chain && next.landing !== previous.landing) enqueue('flow', 'callout.flow', 'callout.flow.detail');
       const trickPaid = next.trickPayout && next.trickPayout !== previous.trickPayout;
       if (trickPaid && next.trickPayout) {
         if (next.trickPayout.hard) enqueue('trick-payout', 'callout.hard', 'callout.hard.detail');

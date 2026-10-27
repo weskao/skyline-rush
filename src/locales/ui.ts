@@ -3,8 +3,11 @@
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
 import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.ts';
 import { COLLECTIBLES_GUIDE_COPY } from '../collectibles-guide-copy.ts';
+import { DISPLAY_SETTINGS_COPY } from './display-settings.ts';
+import { CUP_RECOVERY_COPY } from './cup-recovery.ts';
 export const UI = Object.freeze({
   en: {
+    ...CUP_RECOVERY_COPY.en,
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
     'release.title': "What's new",
     'release.intro': "See what's new for your next race.",
@@ -116,9 +119,6 @@ export const UI = Object.freeze({
     'mode.cupStage': 'Cup heat {n} of {total} complete.',
     'mode.cupNext': 'Next course: {track} →',
     'mode.cupHeat': 'CUP HEAT {n} / {total}',
-    'mode.cupRecovery': 'Continue heat {n} / {total} · {track}. Completed heats are kept; this heat restarts from the beginning.',
-    'mode.cupResume': 'Resume Cup',
-    'mode.cupDiscard': 'Discard saved Cup',
     'mode.cupPts': 'POINTS',
     'mode.checkpoint': 'Checkpoint Rush',
     'mode.description.checkpoint': 'Hit glowing gates · extend the countdown',
@@ -310,10 +310,7 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': 'Realistic',
     'vfx.preset.cinematic': 'Cinematic',
     'vfx.preset.extreme': 'Extreme · sci-fi',
-    'vfx.quality': 'Quality',
-    'vfx.quality.low': 'Low',
-    'vfx.quality.medium': 'Medium',
-    'vfx.quality.high': 'High',
+    ...DISPLAY_SETTINGS_COPY.en,
     'vfx.aeroMode': 'Aerodynamics',
     'vfx.aeroMode.drag': 'Low drag',
     'vfx.aeroMode.downforce': 'High downforce',
@@ -619,6 +616,7 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
+    ...CUP_RECOVERY_COPY['zh-TW'],
     'release.eyebrow': 'SKYLINE RUSH / 版本新消息',
     'release.title': '新版本功能',
     'release.intro': '看看這次更新，為你的下一場比賽帶來哪些驚喜。',
@@ -730,9 +728,6 @@ export const UI = Object.freeze({
     'mode.cupStage': '第 {n} / {total} 站結束。',
     'mode.cupNext': '下一站：{track} →',
     'mode.cupHeat': '錦標賽第 {n} / {total} 站',
-    'mode.cupRecovery': '接續第 {n} / {total} 站・{track}。保留已完成的積分，本場從起點重新開始。',
-    'mode.cupResume': '繼續錦標賽',
-    'mode.cupDiscard': '清除錦標賽存檔',
     'mode.cupPts': '積分',
     'mode.checkpoint': '限時計時關卡',
     'mode.description.checkpoint': '穿過發光關卡 · 延長倒數時間',
@@ -923,10 +918,7 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': '寫實',
     'vfx.preset.cinematic': '電影感',
     'vfx.preset.extreme': '極致 · 科幻',
-    'vfx.quality': '畫質',
-    'vfx.quality.low': '低',
-    'vfx.quality.medium': '中',
-    'vfx.quality.high': '高',
+    ...DISPLAY_SETTINGS_COPY['zh-TW'],
     'vfx.aeroMode': '空氣力學',
     'vfx.aeroMode.drag': '低風阻',
     'vfx.aeroMode.downforce': '高下壓力',

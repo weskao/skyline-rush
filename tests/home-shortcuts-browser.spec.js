@@ -82,5 +82,24 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [844, 390]])
       }
       expect(await page.locator('#intro').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     });
+
+    // Compact rows may draw smaller than 44px but must still answer a 44px-tall tap (drawn box or hit area).
+    test('compact touch controls still take a 44px tap', async ({ page }) => {
+      test.skip(width >= 1001, 'mouse layout');
+      await page.goto('/');
+      await page.locator('[data-race-mode="custom"]').evaluate(el => el.click());
+      await page.locator('#race-mode-rules > summary').scrollIntoViewIfNeeded();
+      const groups = ['.aero-tools > button, .aero-tools > details > summary, .aero-tools > .custom-select > button',
+        '#showcase-camera-prev, #showcase-camera-next', '[data-race-mode]', '#race-mode-rules > summary'];
+      for (const selector of groups) for (const control of await page.locator(selector).all()) {
+        await control.scrollIntoViewIfNeeded();
+        expect(await control.evaluate(el => {
+          const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+          return [y - 21.5, y + 21.5].every(py => el.contains(document.elementFromPoint(x, py)));
+        }), `${selector} ${await control.textContent()}`).toBe(true);
+      }
+      await page.locator('#settings-button').click();
+      expect((await page.locator('#mute-all').boundingBox()).height).toBeGreaterThanOrEqual(44);
+    });
   });
 }

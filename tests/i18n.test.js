@@ -11,6 +11,11 @@ import { GAME } from '../src/locales/game.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { strayEnglish } from './helpers/i18n-english.js';
 
+test('FPS is an allowed technical acronym, while ordinary English still needs translation', () => {
+  assert.deepEqual(strayEnglish('30 FPS / 60 FPS'), []);
+  assert.deepEqual(strayEnglish('自動 FPS settings'), ['settings']);
+});
+
 test('all track IDs have English and Traditional Chinese labels', () => {
   for (const id of Object.keys(RACE_TRACKS)) {
     for (const locale of SUPPORTED_LOCALES) assert.ok(trackName(id, locale).length > 0);

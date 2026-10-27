@@ -141,11 +141,55 @@ jobs:
           path: test-results/**/world-tour-*-mid-race.png
           if-no-files-found: ignore
 
+  # Coast-only A/B screenshots use actual WebGL from the exact integrated
+  # main SHA and the current feature build. Never call the showcase shot a before-code screenshot.
+  coast-visual-evidence:
+    if: "${{ github.ref == 'refs/heads/feature/phase2-coast-visual-quality' }}"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Build main baseline from the exact integrated parent
+        env:
+          BASELINE_SHA: 3788ca36ce52ceb0a304555e5f1dcc564d8181ef
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASELINE_SHA"
+          git worktree add --detach "$RUNNER_TEMP/coast-reference" "$BASELINE_SHA"
+          (cd "$RUNNER_TEMP/coast-reference" && npm ci && npm run build)
+      - name: Capture unchanged main BEFORE
+        env:
+          COAST_BASELINE: '1'
+          COAST_PREVIEW_DIR: ${{ runner.temp }}/coast-reference/dist
+        run: npx playwright test tests/coast-visual-browser.spec.js
+      - name: Preserve genuine BEFORE screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coast-webgl-before-main-3788ca36
+          path: test-results/**/coast-visual-before-*.png
+          if-no-files-found: warn
+      - name: Capture Phase 2 AFTER
+        run: npx playwright test tests/coast-visual-browser.spec.js
+      - name: Preserve genuine AFTER screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coast-webgl-after
+          path: test-results/**/coast-visual-after-*.png
+          if-no-files-found: warn
+      # Playwright cleans test-results at the start of each suite: archive screenshots first.
+      - run: npm run test:layout
+
   # A single required status for every feature branch and normal main push.
   # A branch ruleset can require this job; no direct-push protection is implied
   # by the workflow file alone.
   quality-gate:
-    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race]
+    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, coast-visual-evidence]
     if: "${{ always() && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
@@ -155,6 +199,8 @@ jobs:
           BROWSER: ${{ needs.browser-tests.result }}
           CLOUD: ${{ needs.cloud-save.result }}
           WORLD_TOUR: ${{ needs.world-tour-mid-race.result }}
+          COAST: ${{ needs.coast-visual-evidence.result }}
+          PHASE2: ${{ github.ref == 'refs/heads/feature/phase2-coast-visual-quality' }}
           FOCUSED: ${{ startsWith(github.ref, 'refs/heads/refactor/') && !((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}
         run: |
           printf 'unit=%s browser=%s cloud=%s world-tour=%s\\n' "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"
@@ -173,6 +219,10 @@ jobs:
             done
             echo "::notice::Focused verification only; full regression remains mandatory before final acceptance."
             exit 0
+          fi
+          if [ "$PHASE2" = true ] && [ "$COAST" != success ]; then
+            echo "::error::Phase 2 requires exact-main Coast BEFORE/AFTER WebGL captures and layout checks."
+            exit 1
           fi
           for result in "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"; do
             if [ "$result" != success ]; then

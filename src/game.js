@@ -77,7 +77,7 @@ export const CAR_HEIGHT = 1.2;
 export const GAP_CLEARANCE = 1; // altitude needed to fly over a missing bridge section
 export const GAP_WARN_DISTANCE = 300; // m ahead of a broken bridge where too little charge to cross is flagged
 export const GAP_LIFT_RESERVE = 6; // charge to climb from the road to GAP_CLEARANCE (about 0.3 s of thrust)
-export const FLY_DRAIN = 19; // charge per second while thrusting
+export const FLY_DRAIN = 15; // Phase 1: more room to fly while preserving ground recharge
 export const GAP_SLOWDOWN = 0.4; // speed kept after falling into a gap
 export const GAP_RESPAWN = 5; // m past the gap where the car is put back
 export const CROSSWIND_SPEED = 4; // m/s sideways push
@@ -264,6 +264,7 @@ export function createRace(trackId = 'coast', modifier = null) {
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
+      poweredFlightTime: 0, flightNitro: false,
       section: null, inShortcut: false, falls: 0, fall: null,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
@@ -327,20 +328,7 @@ export function useHeldItem(race) {
   return activateItem(race.player, race.rivals.length > 0);
 }
 
-export function racePosition(race) {
-  return race.result?.position ?? 1 + race.rivals.filter(rival => rival.distance > race.player.distance).length;
-}
-
-export function sprintGaps(race) {
-  let ahead = null, behind = null;
-  for (const rival of race.rivals) {
-    if (rival.finishTime != null) continue;
-    const gap = rival.distance - race.player.distance;
-    if (gap > 0 && (ahead === null || gap < ahead)) ahead = gap;
-    if (gap < 0 && (behind === null || -gap < behind)) behind = -gap;
-  }
-  return { ahead, behind };
-}
+export { racePosition, sprintGaps } from './race-standings.ts';
 
 // Index of the first scenery part (sorted by `from`, each under 20 m deep) that can still reach distance d.
 function firstProp(props, d) {
@@ -578,6 +566,10 @@ export function stepRace(race, input, dt) {
   const fly = flyInput || car.flyBuffer > 0;
   if (!flyInput && car.fuel >= 15) car.exhausted = false; // glide regen and rewards can unlock it mid-air
   car.thrusting = fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
+  if (car.altitude > 0 && car.thrusting) {
+    car.poweredFlightTime += dt;
+    if (nitro) car.flightNitro = true;
+  }
   if (car.thrusting) {
     car.verticalSpeed = Math.min(7, car.verticalSpeed + 19 * dt);
     car.fuel = Math.max(0, car.fuel - (car.inShortcut ? 0 : FLY_DRAIN) * dt); // the corridor carries the car
@@ -588,7 +580,7 @@ export function stepRace(race, input, dt) {
   } else if (!flyInput && !boost) {
     car.fuel = Math.min(100, car.fuel + (car.section === 'uphill' ? 6.5 : 13) * dt);
   }
-  // AIR DASH: flight + boost together share a 22/s drain instead of 19 + 10.
+  // AIR DASH: combined drain is 18/s (15 FLY + 3 BOOST), rather than adding 10/s to FLY.
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
@@ -606,7 +598,13 @@ export function stepRace(race, input, dt) {
   }
   if (car.altitude > 0) car.drift = null; // taking off loses the drift build-up
   if (previousAltitude > 0 && car.altitude === 0) {
-    car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x };
+    // Reward an earned, controlled NITRO-to-flight-to-road transition once per landing.
+    const chain = car.poweredFlightTime >= 0.6 && car.flightNitro &&
+      Math.abs(car.verticalSpeed) < TRICK_HARD_LANDING && car.speed >= DRIFT_MIN_SPEED && race.modifier !== 'no-flight';
+    car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x, chain };
+    if (chain) car.miniBoost = Math.max(car.miniBoost, 1.2);
+    car.poweredFlightTime = 0;
+    car.flightNitro = false;
     if (car.trick?.done && car.section !== 'gap') { // touching down over a gap is a fall, not a landing
       const hard = car.landing.speed >= TRICK_HARD_LANDING;
       if (!hard) addNitro(car, TRICK_NITRO);
@@ -628,6 +626,8 @@ export function stepRace(race, input, dt) {
     car.combo = 0;
     car.drift = null;
     car.trick = null;
+    car.poweredFlightTime = 0;
+    car.flightNitro = false;
     car.falls++;
     car.fall = { from: section.from, distance: car.distance, time: race.elapsed };
   }
