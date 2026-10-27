@@ -1,6 +1,6 @@
 {
-  "reference": "main",
-  "cssBlob": "0449076154698c1255d5a3d2dde404d518b10bc1",
+  "reference": "main bd71ac8 plus intentional camera layout correction cda325e",
+  "cssBlob": "91881c6214666b49c3daddb5febd1b4e3323f09f",
   "elements": [
     {
       "id": "whats-new-screen",
@@ -371,35 +371,6 @@
       "classes": []
     },
     {
-      "id": "showcase-camera-dock",
-      "tag": "nav",
-      "classes": [
-        "showcase-camera-dock"
-      ]
-    },
-    {
-      "id": "showcase-camera-prev",
-      "tag": "button",
-      "classes": []
-    },
-    {
-      "id": "showcase-camera-name",
-      "tag": "span",
-      "classes": []
-    },
-    {
-      "id": "showcase-camera-next",
-      "tag": "button",
-      "classes": []
-    },
-    {
-      "id": "showcase-camera-dots",
-      "tag": "span",
-      "classes": [
-        "showcase-camera-dots"
-      ]
-    },
-    {
       "id": "track-swipe",
       "tag": "div",
       "classes": [
@@ -530,6 +501,35 @@
       "classes": [
         "text-button",
         "garage-button"
+      ]
+    },
+    {
+      "id": "showcase-camera-dock",
+      "tag": "nav",
+      "classes": [
+        "showcase-camera-dock"
+      ]
+    },
+    {
+      "id": "showcase-camera-prev",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "showcase-camera-name",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "showcase-camera-next",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "showcase-camera-dots",
+      "tag": "span",
+      "classes": [
+        "showcase-camera-dots"
       ]
     },
     {
