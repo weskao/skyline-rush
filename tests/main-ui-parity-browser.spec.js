@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/main-ui-contract.json', import.meta.url), 'utf8'));
 
-// Main 53d4a0a baseline: reviewed camera, intro, FPS, touch, tutorial and cached minimap styles.
+// Main 2cd52d4 baseline: reviewed camera, intro, FPS, touch, minimap and release-video styles.
 // Keep all element and stylesheet checks; physical-device approval is a separate gate.
 test('Vue migration preserves the recorded element order, roles and CSS hooks', async ({ page }) => {
   await page.goto('/');

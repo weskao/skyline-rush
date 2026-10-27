@@ -48,6 +48,23 @@ test('a pickup collected while muted is consumed and never cues after unmuting',
   assert.deepEqual(cues(events.update(race, true)), ['pickup']);
 });
 
+test('a chain landing adds one chain-land cue on top of the touchdown; plain or muted landings do not', () => {
+  const events = createRaceAudioEvents();
+  const race = racing();
+  events.update(race, true);
+  race.elapsed = 5;
+  race.player.landing = { time: 4.95, speed: 6 };
+  assert.deepEqual(cues(events.update(race, true)), []);
+  race.player.landing = { time: 4.97, speed: 6, chain: true };
+  const frame = events.update(race, true);
+  assert.deepEqual(cues(frame), ['chain-land']);
+  assert.equal(impulses(frame).length, 1, 'the touchdown thump still plays');
+  assert.deepEqual(cues(events.update(race, true)), [], 'no replay next frame');
+  race.player.landing = { time: 4.99, speed: 6, chain: true };
+  assert.deepEqual(cues(events.update(race, false)), []);
+  assert.deepEqual(cues(events.update(race, true)), [], 'muted chain is consumed');
+});
+
 test('fresh impacts and landings become impulses in order, sized like before', () => {
   const events = createRaceAudioEvents();
   const race = racing();
