@@ -13,6 +13,8 @@ Branch: `feature/custom-race-presentation`, checkpoint `29394e8`, integrates mai
 - [ ] Full acceptance remains separate: combined browser run is 30/31 (inherited stale stylesheet golden); whole `npm test` is 790 passed / 2 inherited failures / 3 skipped. Parent is repairing the existing browser-timeout and perf-overlay contracts independently. Rerun complete `make verify`, layout and exact-feature-HEAD CI after integration; keep physical-device visual/performance/thermal acceptance pending.
 - [ ] Broader UX-01: the existing home still physically places track cards before the mode picker. The compact hint/summary does not claim completion of a whole-home mode-first flow.
 
+- [x] Merged-main full browser receipt (2026-10-28): 486 passed / 2 skipped; only three inherited Phase 4 polyline assumptions failed. Integrate `6809503` (focused corrected suite 7/7) and rerun complete gates on the resulting source. This receipt does not claim a green full gate.
+
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
 **Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.
