@@ -63,3 +63,29 @@ test('Coast scenery tiles do not teleport all instances at a 60 m streaming boun
   }
   kit.dispose();
 });
+
+test('Endless Coast scenery remains near its floating origin and changes from absolute chunk seeds', () => {
+  const scene = new THREE.Scene(), kit = createCoastScenery(scene, center);
+  const matrix = new THREE.Matrix4();
+  const sample = distance => {
+    kit.update(distance, 'low', 1001);
+    scene.updateMatrixWorld(true);
+    return kit.group.children.map(mesh => {
+      const entries = [];
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, matrix);
+        assert.ok(Math.abs(matrix.elements[14]) < 3000, 'GPU translations must remain local at billion-metre progress');
+        entries.push([matrix.elements[0], matrix.elements[5], matrix.elements[10]]);
+      }
+      return entries;
+    });
+  };
+  const first = sample(1_000_000_000);
+  const positions = kit.group.children.map(mesh => { mesh.getMatrixAt(0, matrix); return matrix.elements.slice(); });
+  assert.deepEqual(sample(1_000_000_000), first);
+  assert.notDeepEqual(sample(1_000_005_000), first, 'a bounded pool must not repeat slot-derived scenery forever');
+  sample(1_000_000_000);
+  assert.deepEqual(kit.group.children.map(mesh => { mesh.getMatrixAt(0, matrix); return matrix.elements.slice(); }), positions);
+  assert.equal(scene.children.length, 1);
+  kit.dispose(); assert.equal(scene.children.length, 0);
+});

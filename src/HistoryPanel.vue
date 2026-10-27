@@ -53,6 +53,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
           <option value="checkpoint" data-i18n="mode.checkpoint">Checkpoint Rush</option>
           <option value="cup" data-i18n="mode.cup">Championship Cup</option>
           <option value="stunt" data-i18n="mode.stunt">Stunt Attack</option>
+          <option value="endless" data-i18n="mode.endless">Endless Highway</option>
           <option value="elimination" data-i18n="mode.elimination">Elimination</option>
         </select>
       </label>

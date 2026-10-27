@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
@@ -33,35 +34,42 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
   }
   const distances = new Float64Array(TOTAL);
   let initialized = false, previousTier:VfxQuality|null=null;
+  let origin = 0, previousDistance = 0, previousSeed: number | undefined;
   const transform = new THREE.Matrix4();
   const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-  function place(index:number,distance:number) {
+  function place(index:number,distance:number,seed?:number) {
+    const shape = seed === undefined ? index : Math.floor(seededRng(seed, 'endless-coast-v1:' + distance)() * 100000);
+    const localDistance = distance - origin;
     const side=index%2===0?-1:1;
-    const x=roadCenter(distance)+side*(42+(index*13%39));
+    const x=roadCenter(distance)+side*(42+(shape*13%39));
     // All scenery stays beyond the driving corridor and its existing railings.
-    p.set(x,-2.8,-distance);
-    s.set(7+(index%4)*2,6+(index%3)*1.6,9+(index%3)*2);
-    q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP,index*.71);
+    p.set(x,-2.8,-localDistance);
+    s.set(7+(shape%4)*2,6+(shape%3)*1.6,9+(shape%3)*2);
+    q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP,shape*.71);
     transform.compose(p,q,s);rock.setMatrixAt(index,transform);
-    p.set(x+side*11,6.2,-distance-8);
-    s.set(3.9+(index%3)*.55,10+(index%3)*1.5,3.9+(index%3)*.55);
+    p.set(x+side*11,6.2,-localDistance-8);
+    s.set(3.9+(shape%3)*.55,10+(shape%3)*1.5,3.9+(shape%3)*.55);
     transform.compose(p,q,s);tree.setMatrixAt(index,transform);
     p.y=1.3;s.set(.9,9,.9);
     transform.compose(p,q,s);trunks.setMatrixAt(index,transform);
   }
   return {
     group,
-    update(distance:number,quality:VfxQuality) {
+    update(distance:number,quality:VfxQuality,seed?:number) {
       if (!Number.isFinite(distance)) return;
       const count=DENSITY[quality];
+      const nextOrigin = seed === undefined ? 0 : Math.floor(distance / 500) * 500;
+      const rebuild = !initialized || seed !== previousSeed || seed !== undefined && (nextOrigin !== origin || distance < previousDistance || quality !== previousTier);
+      origin = nextOrigin;
       const first=(Math.floor(distance/STEP)-2)*STEP;
       let moved=false;
-      for(let i=0;i<TOTAL;i++) {
-        if(!initialized) distances[i]=first+i*STEP;
+      const capacity = seed === undefined ? TOTAL : count;
+      for(let i=0;i<capacity;i++) {
+        if(rebuild) distances[i]=first+i*STEP;
         // Recycle only expired slots. Mesh matrices stay stable across ordinary frames.
-        while(distances[i]<first)distances[i]+=TOTAL*STEP;
-        if(!initialized||distances[i]!== (group.userData['distance'+i] as number)) {
-          place(i,distances[i]);group.userData['distance'+i]=distances[i];moved=true;
+        if(distances[i]<first) distances[i]+=Math.ceil((first-distances[i])/(capacity*STEP))*capacity*STEP;
+        if(rebuild||distances[i]!== (group.userData['distance'+i] as number)) {
+          place(i,distances[i],seed);group.userData['distance'+i]=distances[i];moved=true;
         }
       }
       initialized=true;
@@ -70,7 +78,8 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
         if(moved||previousTier!==quality)mesh.instanceMatrix.needsUpdate=true;
       }
       previousTier=quality;
-      group.position.set(-roadCenter(distance),0,distance);
+      group.position.set(-roadCenter(distance),0,distance-origin);
+      previousDistance=distance;previousSeed=seed;
     },
     hide() {group.visible=false;},
     show() {group.visible=true;},

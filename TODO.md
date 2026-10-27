@@ -1,5 +1,15 @@
 # TODO — Gameplay depth design
 
+## Endless Highway continuation (2026-10-28, feature/endless-highway)
+
+- [x] Observe mode/streaming/settlement RED; implement Coast-only absolute-distance survival beyond authored finishes, five-contact settlement, capped difficulty and deterministic five-chunk traffic/pickup/ring pools. Classic/Daily/Cup routes and ordered catalogs remain unchanged.
+- [x] Rebase Coast scenery and skyline GPU transforms near the camera, preserve existing materials/pools, hide finite minimap/progress/finish arch and avoid Ghost trace accumulation. Tests cover 8 km, 2 million metres and billion-metre progress with fixed object/resource counts.
+- [x] Persist longest distance independently from Career, including a fifth real collision and rolling-history/cloud normalization/max-distance merges; reuse cruise music and one-shot milestones.
+- [x] Follow-up GREEN: 126 focused core/type/Classic-route checks and two real desktop/touch bilingual browser flows pass, including pause, actual WebGL loss/restore, flight input, result persistence, locale switch and restart. Actual full-resolution distant-road/result captures inspected in `artifacts/endless/`.
+- [ ] Merge current main/regression fixes, run complete `make verify` plus affected cloud emulator checks, then inspect exact-commit remote `quality-gate`. Physical iOS/Android GPU/thermal endurance remains separate.
+
+
+
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
 **Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.
