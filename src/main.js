@@ -24,8 +24,9 @@ import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.ts';
 import { createSound } from './audio.js';
 import { readAudio } from './audio-settings.ts';
-import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS } from './vfx-settings.ts';
-import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.ts';
+import { setupVfxUI } from './vfx-ui.ts';
+import { createMotion } from './motion.ts';
+import { setupPerformanceNotice } from './performance-notice-ui.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { setupKeyMapUI, keyLabel } from './keymap-ui.ts';
 import { setupTouchControlsUI } from './touch-controls-ui.ts';
@@ -156,16 +157,6 @@ let resultCounts = [];
 let nitroRefillUntil = 0;
 try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults to on when storage is blocked. */ }
 const sound = createSound();
-// Initial quality selection is performed once; manual/previous settings win.
-let storedVisuals=null;
-try { const raw=localStorage.getItem(QUALITY_STORAGE_KEY); if(raw)storedVisuals=JSON.parse(raw); }
-catch { /* Storage is optional; use device-aware in-memory defaults. */ }
-const deviceSelection=initialDeviceVisuals({
-  storedSettings:storedVisuals,
-  device:{cores:navigator.hardwareConcurrency,memoryGiB:navigator.deviceMemory,
-    width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},
-});
-let visual=deviceSelection.settings;
 const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
 // Its action callback only runs on input, so the handlers declared further down are ready by then.
 const controls = createControls(window, action => {
@@ -173,7 +164,7 @@ const controls = createControls(window, action => {
   if (action === 'pause') toggleSettings(false);
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
-  ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: toggleAirflow })[action]?.();
+  ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: vfx.toggleAirflow })[action]?.();
 }, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
 // Touch layout, slide pad, tilt and the Controls form live in touch-controls-ui.ts; showTracks() reads its ghost preference.
 const touchUI = setupTouchControlsUI({
@@ -186,8 +177,9 @@ const touchUI = setupTouchControlsUI({
   refreshPhase: () => phaseUI(),
   reducedMotion,
 });
-const vfxControls = [...document.querySelectorAll('[data-vfx]')];
-const airflowHud = $('#airflow-hud');
+const vfx = setupVfxUI({ getWorld: () => world, onAirflowShown: () => showSwipeHint(), onPanelOpen: () => notice.hide(), reducedMotion });
+const calmMotion = vfx.calm;
+const { motionOptions, enter } = createMotion(calmMotion);
 const boostStatus = document.createElement('span');
 boostStatus.id = 'boost-status';
 boostStatus.className = 'boost-status';
@@ -198,19 +190,6 @@ const eventCallout = $('#event-callout');
 const calloutReports = [$('#maneuver-report'), ui['skill-report'], $('#action-report')];
 let shownCallout = null;
 let feedbackCar, lastImpact, lastDriftPayout, lastTrickPayout, lastNitroTime = 0;
-const motionTokens = getComputedStyle(document.documentElement);
-const motionOptions = duration => {
-  const time = motionTokens.getPropertyValue(`--dur-${duration}`).trim();
-  return { duration: parseFloat(time) * (time.endsWith('ms') ? 1 : 1000), easing: motionTokens.getPropertyValue('--ease-out').trim() };
-};
-const calmMotion = () => visual.comfortable || reducedMotion.matches;
-function stopPresentationMotion() {
-  if (calmMotion()) document.getAnimations().forEach(animation => animation.cancel());
-}
-function enter(element, from, duration = 'base') {
-  element.getAnimations().forEach(animation => animation.cancel());
-  if (!calmMotion()) element.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], motionOptions(duration));
-}
 function leaveIntro() {
   if (calmMotion()) return;
   ui.intro.inert = true;
@@ -225,96 +204,15 @@ const nitroSegments = [...nitroHud.querySelectorAll('.nitro-segment')];
 const nitroStatus = $('#nitro-status');
 const nitroMeter = $('#nitro-meter');
 
-function showVFX() {
-  world?.configureVFX(visual);
-  for (const control of vfxControls) {
-    const key = control.dataset.vfx;
-    if (control.type === 'checkbox') control.checked = visual[key];
-    else control.value = visual[key];
-    if (control.type === 'range') control.previousElementSibling.value = visual[key];
-  }
-  const dock = $('#showcase-camera-dock');
-  const viewIndex = SHOWCASE_VIEWS.indexOf(visual.view);
-  $('#showcase-camera-name').textContent = t('vfx.view.' + visual.view);
-  dock.setAttribute('data-view',visual.view);
-  $('#showcase-camera-dots').replaceChildren(...SHOWCASE_VIEWS.map((view,i)=>{
-    const dot=document.createElement('i');
-    dot.classList.toggle('is-active',i===viewIndex);
-    return dot;
-  }));
-  $('#airflow-toggle').setAttribute('aria-pressed', String(visual.airflow));
-  $('#airflow-toggle').disabled = !visual.enabled;
-  document.body.classList.toggle('airflow-active', visual.airflow && visual.enabled);
-  document.body.classList.toggle('vfx-comfort', visual.comfortable);
-  stopPresentationMotion();
-  airflowHud.setAttribute('aria-hidden', String(!visual.airflow || !visual.enabled));
-  showAeroMode();
-  try { localStorage.setItem('skyline-rush-vfx', JSON.stringify(visual)); } catch { /* Settings remain usable in memory. */ }
-}
-function showAeroMode() { $('#aero-mode').textContent = t(visual.aeroMode === 'downforce' ? 'hud.highDownforce' : 'hud.lowDrag'); }
-function toggleAirflow() {
-  if (!visual.enabled) return;
-  visual.airflow = !visual.airflow;
-  showVFX();
-  if (visual.airflow) showSwipeHint(); // the showcase hides the track picker, so swiping is how to change track
-}
-for (const control of vfxControls) control.addEventListener('input', () => {
-  const key = control.dataset.vfx;
-  const value = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
-  visual = vfxSettings({ ...visual, ...(key === 'preset' ? VFX_PRESETS[value] : {}), [key]: value });
-  showVFX();
-});
-function stepShowcaseView(delta) {
-  visual = vfxSettings({...visual,view:SHOWCASE_VIEWS[
-    (SHOWCASE_VIEWS.indexOf(visual.view)+delta+SHOWCASE_VIEWS.length)%SHOWCASE_VIEWS.length]});
-  showVFX();
-}
-$('#showcase-camera-prev').addEventListener('click',()=>stepShowcaseView(-1));
-$('#showcase-camera-next').addEventListener('click',()=>stepShowcaseView(1));
-$('#airflow-toggle').addEventListener('click', toggleAirflow);
-$('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVFX(); });
-showVFX();
 const timeString = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 
-const performanceNotice=$('#performance-notice');
-const performanceNoticeText=$('#performance-notice-text');
-const performanceNoticeTitle=$('#performance-notice-title');
-const performanceNoticeDismiss=$('#performance-notice-dismiss');
-let performanceNoticeDismissed = false;
-let showedPerformanceNotice=false;
-function refreshPerformanceNotice(){
-  if(!showedPerformanceNotice)return;
-  const message=noticeMessage(getLocale(),deviceSelection.settings.quality);
-  performanceNoticeTitle.textContent=message.title;
-  performanceNoticeText.textContent=message.body;
-  performanceNoticeDismiss.textContent=message.dismiss;
-}
-function showOneTimePerformanceNotice(){
-  if(!deviceSelection.downgraded)return;
-  try {
-    if(localStorage.getItem(DEVICE_NOTICE_KEY)==='shown')return;
-    localStorage.setItem(DEVICE_NOTICE_KEY,'shown');
-  } catch { /* Still show once for this page when persistent storage is disabled. */ }
-  showedPerformanceNotice=true;
-  refreshPerformanceNotice();
-  performanceNotice.hidden=false;
-}
-const hidePerformanceNotice=()=>{ performanceNotice.hidden=true; };
-performanceNoticeDismiss.addEventListener('click', () => { performanceNoticeDismissed = true; hidePerformanceNotice(); });
-// The notice floats over the toolbar panels; opening one means the reader is already in the settings it points to.
-$('#vfx-panel').addEventListener('toggle', ({ target: panel }) => {
-  if (panel.open) hidePerformanceNotice();
-  trackDropdown(panel, panel.open, () => { panel.open = false; });
-});
-showOneTimePerformanceNotice();
+const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
 
 const { renderReleaseNotes, maybeShowReleaseNotes } = setupReleaseNotesUI({
   canOpen: () => race.phase === 'ready' && !tutorial,
   canAutoOpen: () => !!world && !document.hidden,
-  beforeOpen: () => { controls.clear(); toggleControls(false); toggleSettings(false); hidePerformanceNotice(); },
-  afterClose: () => {
-    if (showedPerformanceNotice && !performanceNoticeDismissed && race.phase === 'ready') performanceNotice.hidden = false;
-  },
+  beforeOpen: () => { controls.clear(); toggleControls(false); toggleSettings(false); notice.hide(); },
+  afterClose: () => notice.restore(race.phase === 'ready'),
   reducedMotion,
 });
 
@@ -352,10 +250,9 @@ function applyLocale() {
   if ($('#history-screen').open) showHistory();
   for (const [element, text] of said) element.textContent = text();
   cloud.relabel(); // Vue-owned account name/identity are localized on each language switch.
-  showAeroMode(); showAudio(); showAssist(); showGarage(); phaseText();
+  vfx.relabel(); showAudio(); showAssist(); showGarage(); phaseText();
   syncDailyFlightControl();
-  $('#showcase-camera-name').textContent = t('vfx.view.'+visual.view);
-  refreshPerformanceNotice();
+  notice.refresh();
   renderReleaseNotes();
   if (tutorial) renderTutorial(true);
   nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
@@ -688,7 +585,7 @@ function toggleAssist() {
 const { toggleSettings, toggleControls } = setupControlPanels({
   getRacePhase: () => race.phase,
   clearRebinding: () => keymap.cancelRebinding(),
-  hidePerformanceNotice,
+  hidePerformanceNotice: () => notice.hide(),
   trackDropdown,
 });
 
@@ -1002,13 +899,14 @@ function phaseText() {
 
 const hudNodes = Object.fromEntries(["clean-trial-hud","hazard-warning","elimination-hud","checkpoint-hud","sprint-stage","item-slot","item-status","activate-item","stunt-hud","practice-hud","race-length","ghost-split","style-score","aero-flow","aero-floor","aero-jet"].map(id => [id, document.getElementById(id)]));
 function updateUI(now, input) {
+  const visual = vfx.settings();
   if (raceRouteMap?.trackId !== race.trackId) ensureRouteMaps();
   raceRouteMap.updateDrivers([{ id: 'YOU', distance: race.player.distance, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance }))]);
   if (previousPhase !== race.phase) {
     if (previousPhase === 'countdown' && race.phase === 'racing') goUntil = now + 0.8;
     phaseUI();
     if (race.phase === 'countdown' && previousPhase !== 'paused') enter(ui.countdown, 'translateY(-24px)');
-    if (race.phase === 'countdown') hidePerformanceNotice(); // never over the race view
+    if (race.phase === 'countdown') notice.hide(); // never over the race view
     previousPhase = race.phase;
   }
   if (race.phase === 'finished' && presentationState.results) {
@@ -1294,7 +1192,7 @@ try {
   world = createWorld($('#world'));
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
-  world.configureVFX(visual);
+  world.configureVFX(vfx.settings());
   world.previewAppearance(PAINTS[equippedPaint]);
   let previousTime = performance.now();
   let accumulator = 0;
@@ -1331,7 +1229,7 @@ try {
     }
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.
-    if (calm && !wasCalm) stopPresentationMotion();
+    if (calm && !wasCalm) vfx.stopMotionIfCalm();
     wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
     const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghostFor(race.trackId) : race.mode === 'time' ? modeGhostFor(race) : null : null;
@@ -1390,7 +1288,7 @@ function beginTutorial() {
   goUntil = 0; previousFuel = 100; previousNitro = 0; previousFlight = undefined;
   document.body.dataset.tutorial = 'active';
   updateCoachView({ visible: true });
-  hidePerformanceNotice();
+  notice.hide();
   if (!ui.intro.hidden) leaveIntro();
   showTracks(); phaseUI(); previousPhase = race.phase;
   renderTutorial(true); focusRace();
@@ -1425,7 +1323,7 @@ const { closeGuide, hasSeenGuide } = setupGuideUI({
   beforeOpen: () => {
     if (touchUI.isEditing()) touchUI.editLayout(false);
     controls.clear(); toggleControls(false); toggleSettings(false);
-    hidePerformanceNotice();
+    notice.hide();
   },
   touchMatches: () => touchPreference.matches,
   renderKeyMap: () => keymap.showKeyMap(),
