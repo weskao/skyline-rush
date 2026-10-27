@@ -22,7 +22,8 @@ test('ten full-route previews and bilingual names are available without exposing
   await seed(page);
   await page.goto('/');
   await expect(page.locator('.track-route-map svg')).toHaveCount(ids.length);
-  await expect(page.locator('.track-route-map polyline')).toHaveCount(ids.length);
+  await expect(page.locator('.track-route-map .route-overview-line')).toHaveCount(ids.length);
+  await expect(page.locator('.track-route-map polyline')).toHaveCount(ids.length + 2); // Sky Spiral's approved altitude arc and direction chevron.
   for (const id of ids) await expect(page.locator(`.preview-${id}`), `${id} preview has its own sky`).not.toHaveCSS('background-image', 'none');
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
