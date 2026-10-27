@@ -226,7 +226,7 @@ export function createRace(trackId = 'coast', modifier = null) {
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
-      poweredFlightTime: 0, flightNitro: false,
+      poweredFlightTime: 0, flightBoosted: false,
       section: null, inShortcut: false, falls: 0, fall: null,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
@@ -533,7 +533,7 @@ export function stepRace(race, input, dt) {
   car.thrusting = fly && car.speed >= 18 && car.fuel > 0 && !car.exhausted;
   if (car.altitude > 0 && car.thrusting) {
     car.poweredFlightTime += dt;
-    if (nitro) car.flightNitro = true;
+    if (nitro || boost) car.flightBoosted = true;
   }
   if (car.thrusting) {
     car.verticalSpeed = Math.min(7, car.verticalSpeed + 19 * dt);
@@ -563,13 +563,13 @@ export function stepRace(race, input, dt) {
   }
   if (car.altitude > 0) car.drift = null; // taking off loses the drift build-up
   if (previousAltitude > 0 && car.altitude === 0) {
-    // Reward an earned, controlled NITRO-to-flight-to-road transition once per landing.
-    const chain = car.poweredFlightTime >= 0.6 && car.flightNitro &&
+    // Reward an earned, controlled NITRO/BOOST-to-flight-to-road transition once per landing.
+    const chain = car.poweredFlightTime >= 0.4 && car.flightBoosted &&
       Math.abs(car.verticalSpeed) < TRICK_HARD_LANDING && car.speed >= DRIFT_MIN_SPEED && race.modifier !== 'no-flight';
     car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x, chain };
     if (chain) car.miniBoost = Math.max(car.miniBoost, 1.2);
     car.poweredFlightTime = 0;
-    car.flightNitro = false;
+    car.flightBoosted = false;
     if (car.trick?.done && car.section !== 'gap') { // touching down over a gap is a fall, not a landing
       const hard = car.landing.speed >= TRICK_HARD_LANDING;
       if (!hard) addNitro(car, TRICK_NITRO);
@@ -592,7 +592,7 @@ export function stepRace(race, input, dt) {
     car.drift = null;
     car.trick = null;
     car.poweredFlightTime = 0;
-    car.flightNitro = false;
+    car.flightBoosted = false;
     car.falls++;
     car.fall = { from: section.from, distance: car.distance, time: race.elapsed };
   }

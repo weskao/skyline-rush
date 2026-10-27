@@ -114,7 +114,7 @@ export function createEffects(scene, roadCenter) {
     for (let i = 0; i < count; i++) {
       const angle = i * 2.39996;
       const spread = 2 + Math.random() * (landing ? 5 : 11);
-      emit(x, landing ? 0.12 : event.altitude + 0.65, event.distance,
+      emit(x, landing ? 0.12 : (event.altitude ?? 0) + 0.65, event.distance,
         Math.cos(angle) * spread, landing ? 0.4 + Math.random() * 1.5 : 2 + Math.random() * 6,
         carSpeed * (landing ? 0.3 : 0.8) + Math.sin(angle) * spread,
         landing ? 0.6 : 0.08 + Math.random() * 0.18,
@@ -187,6 +187,7 @@ export function createEffects(scene, roadCenter) {
       if (car.landing !== lastLanding) {
         lastLanding = car.landing;
         if (lastLanding && active) burst(lastLanding, 65, mist, car.speed, true);
+        if (lastLanding?.chain && active) burst(lastLanding, reducedMotion ? 6 : lowQuality ? 12 : 40, blue, car.speed);
       }
       for (let source = 0; source <= race.rivals.length; source++) {
         const driver = source === 0 ? car : race.rivals[source - 1];

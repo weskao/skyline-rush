@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import packageMeta from '../package.json' with { type: 'json' };
 import {
   CURRENT_RELEASE, NOTES_SEEN_KEY, RELEASE_NOTES, RECENT_RELEASE_LIMIT, releaseForVersion, recentReleases,
-  compareVersions, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage
+  compareVersions, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo
 } from '../src/release-notes.ts';
 import { checkReleaseNotes, copyProblems, reviewHash, playerFacingChanges } from '../scripts/check-release-notes.mjs';
 
@@ -161,6 +161,43 @@ test('a release is refused until its notes are reviewed, and again if they chang
 test('the gate also refuses notes that fail the player copy check', () => {
   const bad = entry('Refactored the backend.', '重構後端。');
   assert.match(checkReleaseNotes('9.9.9', { notes: [bad], reviews: { '9.9.9': reviewHash(bad) } }).join('\n'), /developer term/);
+});
+
+const clipVideo = (desktopSrc = { en: 'whats-new/t/d.en.mp4', 'zh-TW': 'whats-new/t/d.zh-TW.mp4' }, desktopPoster = { en: 'whats-new/t/d.en.jpg', 'zh-TW': 'whats-new/t/d.zh-TW.jpg' }) => ({
+  desktop: { src: desktopSrc, poster: desktopPoster },
+  mobile: { src: 'whats-new/t/m.mp4', poster: 'whats-new/t/m.jpg' },
+});
+
+test('a release video plays the clip for the screen shape and language, with a bundled poster', () => {
+  assert.deepEqual(releaseHeroVideo(clipVideo(), 'zh-TW', false), { src: 'whats-new/t/d.zh-TW.mp4', poster: 'whats-new/t/d.zh-TW.jpg', variant: 'desktop' });
+  assert.equal(releaseHeroVideo(clipVideo(), 'fr', false)?.src, 'whats-new/t/d.en.mp4', 'other languages fall back to English');
+  assert.deepEqual(releaseHeroVideo(clipVideo(), 'en', true), { src: 'whats-new/t/m.mp4', poster: 'whats-new/t/m.jpg', variant: 'mobile' });
+  assert.equal(releaseHeroVideo(null, 'en', false), null);
+  assert.equal(releaseHeroVideo(undefined, 'en', true), null);
+  assert.equal(releaseHeroVideo(clipVideo(undefined, null), 'en', false), null, 'a clip without a poster is not shown');
+  for (const src of ['https://example.com/x.mp4', '../x.mp4', 'a/../x.mp4', 'whats-new/t/d.png', '/whats-new/t/d.mp4']) {
+    assert.equal(releaseHeroVideo(clipVideo(src), 'en', false), null, src);
+  }
+  assert.equal(releaseHeroVideo(clipVideo('whats-new/t/d.webm'), 'en', false)?.src, 'whats-new/t/d.webm');
+});
+
+test('the gate refuses a release video or poster that is not bundled', () => {
+  const release = { ...entry('Fly longer.', '飛得更久。'), video: clipVideo() };
+  assert.match(checkReleaseNotes('9.9.9', { notes: [release], reviews: { '9.9.9': reviewHash(release) } }).join('\n'), /desktop video .* is not a file in public\//);
+  const shipped = RELEASE_NOTES.find(r => r.video);
+  if (shipped) assert.deepEqual(checkReleaseNotes(shipped.version, { reviews: { [shipped.version]: reviewHash(shipped) } }), []);
+});
+
+test('changing a release video voids its review, while entries without one keep their fingerprint', () => {
+  const release = entry('Fly longer.', '飛得更久。');
+  assert.equal(reviewHash({ ...release, video: undefined }), reviewHash(release));
+  assert.notEqual(reviewHash({ ...release, video: clipVideo() }), reviewHash(release));
+  assert.notEqual(reviewHash({ ...release, video: clipVideo('whats-new/t/other.mp4') }), reviewHash({ ...release, video: clipVideo() }));
+  const reviews = JSON.parse(fs.readFileSync(new URL('../scripts/release-notes-reviews.json', import.meta.url), 'utf8'));
+  for (const [version, hash] of Object.entries(reviews)) {
+    const reviewed = releaseForVersion(version);
+    if (reviewed) assert.equal(reviewHash(reviewed), hash, `${version} review still matches`);
+  }
 });
 
 test('the release script checks the notes before it pulls, commits or tags anything', () => {
