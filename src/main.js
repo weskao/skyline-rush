@@ -23,7 +23,7 @@ import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.ts';
 import { createSound } from './audio.js';
-import { AUDIO_KEYS, readAudio, setVolume } from './audio-settings.ts';
+import { readAudio } from './audio-settings.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS } from './vfx-settings.ts';
 import { initialDeviceVisuals,noticeMessage,DEVICE_NOTICE_KEY,QUALITY_STORAGE_KEY } from './device-quality.ts';
 import { controlSettings, CONTROLS_KEY } from './control-settings.ts';
@@ -112,7 +112,6 @@ let previousPhase;
 let previousFlight;
 let goUntil = 0;
 let { audio, volume } = readAudio();
-const audioSwitches = [...document.querySelectorAll('[data-audio]')];
 // AUTO starts on for every device; only a player's own toggle is remembered.
 const AUTO_KEY = 'skyline-rush-auto';
 let autoThrottle = true;
@@ -598,9 +597,7 @@ document.querySelector('.brand').addEventListener('click', event => {
 $('#leave-keep').addEventListener('click', () => { leaveScreen.close(); if (race.phase === 'paused') pause(); });
 $('#leave-end').addEventListener('click', () => { leaveScreen.close(); chooseTrack(); });
 
-const { showAudio, setAudio, toggleSound, unlockAudio, previewChannel } = setupAudioUI({
-  audio, volume, sound, audioSwitches, ui,
-});
+const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
 // Driving keys are ignored while a form control has focus, so hand the keyboard back to the race.
 function focusRace() {
@@ -916,9 +913,6 @@ document.addEventListener('keydown', event => {
   toggleControls(false);
   ui['controls-button'].focus({ preventScroll: true });
 }, { capture: true });
-// Every event that grants user activation (a tap, drag, click or key) starts audio, so blocked autoplay never waits on a prompt.
-for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(type, unlockAudio, { capture: true });
-unlockAudio(); // plays at once where the browser allows autoplay
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
 ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
@@ -968,25 +962,6 @@ $('#photo-save').addEventListener('click', async () => {
   finally { button.disabled=false; }
 });
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
-audioSwitches.forEach(button => {
-  const kind = button.dataset.audio, slider = button.nextElementSibling;
-  button.addEventListener('click', () => {
-    setAudio(kind, !audio[kind]);
-    sound.cue('ui');
-  });
-  // Heard live while dragging but saved on release, so a drag through zero still unmutes to the level before it.
-  slider.addEventListener('input', () => {
-    const level = slider.value / 100;
-    if (kind === 'music') sound.setMusic(level > 0, level); else sound.setEnabled(level > 0, level);
-    previewChannel(kind, level > 0, level || volume[kind]);
-  });
-  slider.addEventListener('change', () => {
-    const next = setVolume(volume[kind], slider.value / 100);
-    setAudio(kind, next.on, next.volume);
-    if (kind === 'sfx') sound.cue('ui');
-  });
-});
-$('#mute-all').addEventListener('click', toggleSound);
 ui['camera-button'].addEventListener('click', changeCamera);
 ui['assist-button'].addEventListener('click', toggleAssist);
 document.querySelector('.toolbar').addEventListener('click', event => {
