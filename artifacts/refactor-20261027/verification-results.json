@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-27",
+  "productionSource": "cda325ebe4d44c9526b0f9709049e33ca9e7661c",
+  "testSource": "d1a91f4d279b415525d956c3707ac5dd2b39fc44",
+  "overall": {
+    "complete": 3,
+    "total": 5,
+    "percent": 60
+  },
+  "commands": [
+    {
+      "command": "make verify",
+      "exitCode": 0,
+      "typecheck": "passed",
+      "unit": {
+        "passed": 693,
+        "failed": 0,
+        "skipped": 3
+      },
+      "build": "passed; production access locked",
+      "browser": {
+        "passed": 447,
+        "failed": 0
+      },
+      "worldTour": {
+        "passed": 72,
+        "failed": 0
+      },
+      "output": "make-verify.log"
+    },
+    {
+      "command": "npm run test:layout",
+      "exitCode": 0,
+      "groups": [
+        29,
+        42
+      ],
+      "failed": 0,
+      "output": "layout.log"
+    },
+    {
+      "command": "npm run test:cloud",
+      "java": "25",
+      "exitCode": 0,
+      "browser": 15,
+      "firestoreRules": 3,
+      "failed": 0,
+      "skipped": 0,
+      "output": "cloud.log"
+    }
+  ],
+  "diagnosticRun": {
+    "browserPassed": 445,
+    "browserFailed": 2,
+    "reason": "old DOM/CSS golden after intentional camera correction",
+    "focusedRetestPassed": 2,
+    "fullFinalBrowserPassed": 447
+  },
+  "visualConfigurations": 8,
+  "pairedDesktopSamples": 6,
+  "pending": [
+    "Exact final-commit full remote CI",
+    "Physical iPhone Safari / Android Chrome performance, touch, audio, sustained thermals and human visual approval"
+  ]
+}

@@ -1,0 +1,88 @@
+
+> skyline-rush@0.23.0 test:cloud
+> npx -y firebase-tools@15.34.1 emulators:exec --project skyline-rush-weskao --only auth,firestore 'playwright test -c playwright.cloud.config.js && node --test tests/firestore-rules.test.js'
+
+i  emulators: Starting emulators: auth, firestore
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator was started in standard edition.
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: playwright test -c playwright.cloud.config.js && node --test tests/firestore-rules.test.js
+[WebServer] (node:93447) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 15 tests using 1 worker
+
+(node:93490) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/cloud-emulator-browser.spec.js:26:1 › Google sign-in stores unlocked maps and restores them after site data is cleared (4.2s)
+  ✓   2 tests/cloud-emulator-browser.spec.js:49:1 › switching Google accounts isolates local maps and retains the first player’s cloud save (3.1s)
+  ✓   3 tests/cloud-emulator-browser.spec.js:82:1 › export includes maps, then delete clears cloud and local progress without later reupload (2.6s)
+  ✓   4 tests/cloud-emulator-browser.spec.js:119:1 › offline map progress stays pending then syncs when the browser comes online (2.5s)
+  ✓   5 tests/cloud-emulator-browser.spec.js:153:1 › blocked device storage is not described as a saved offline copy (1.3s)
+  ✓   6 tests/cloud-emulator-browser.spec.js:173:1 › two devices merge different results and repeated sign-in does not duplicate races (5.4s)
+  ✓   7 tests/cloud-emulator-browser.spec.js:232:1 › Cloud save shows Google identity, avatar fallback and manual sync controls (1.3s)
+  ✓   8 tests/cloud-emulator-browser.spec.js:246:1 › cloud account data is stored in a private Firestore document after Google sign-in (1.2s)
+  ✓   9 tests/cloud-emulator-browser.spec.js:258:1 › permanent rule-scoped Mode best restores to a second browser independent of 50-run history (2.2s)
+  ✓  10 tests/cloud-emulator-browser.spec.js:282:1 › permanent Stunt score, combo and air time restore to a clean device (2.9s)
+  ✓  11 tests/cloud-emulator-browser.spec.js:310:1 › cloud save JSON import merges restored records and rejects malformed files (359ms)
+  ✓  12 tests/cloud-emulator-browser.spec.js:332:1 › an unsynced permanent record survives A to B to A account switching (3.8s)
+  ✓  13 tests/cloud-emulator-browser.spec.js:365:1 › cloud dialog explains sign-out separately from deleting Google identity (1.2s)
+  ✓  14 tests/cloud-emulator-browser.spec.js:383:1 › Cloud save announces typed sync states, with a recoverable offline state (1.9s)
+  ✓  15 tests/cloud-emulator-browser.spec.js:400:1 › Cloud save profile provides an avatar fallback and accessible account identity (1.3s)
+
+  15 passed (37.2s)
+[2026-10-27T08:17:06.453Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8cf error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L76, false for 'update' @ L76
+[2026-10-27T08:17:06.457Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8cb error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L76, false for 'update' @ L76
+[2026-10-27T08:17:06.463Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L76, false for 'update' @ L76
+[2026-10-27T08:17:06.468Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d1 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L76, false for 'update' @ L76
+[2026-10-27T08:17:06.473Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d2 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L76, false for 'update' @ L76
+[2026-10-27T08:17:06.479Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d3 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L76, false for 'update' @ L76
+[2026-10-27T08:17:06.485Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d4 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L76, false for 'update' @ L76
+[2026-10-27T08:17:06.489Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d5 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L76, false for 'update' @ L76
+[2026-10-27T08:17:06.494Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d6 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L75
+[2026-10-27T08:17:06.498Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d7 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L75
+✔ cloud saves are private and accept only valid map progress (243.107834ms)
+[2026-10-27T08:17:06.589Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8dd error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L49, false for 'update' @ L49
+[2026-10-27T08:17:06.591Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8d9 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L49, false for 'update' @ L49
+[2026-10-27T08:17:06.595Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8de error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L49, false for 'update' @ L49
+[2026-10-27T08:17:06.599Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8df error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L49, false for 'update' @ L49
+[2026-10-27T08:17:06.601Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8e0 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L48
+✔ Google account documents are private, limited to name/email, and cannot be listed (98.216375ms)
+[2026-10-27T08:17:06.667Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8e5 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L64, false for 'update' @ L64
+[2026-10-27T08:17:06.669Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8e2 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L64, false for 'update' @ L64
+[2026-10-27T08:17:06.673Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8e6 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'create' @ L64, false for 'update' @ L64
+[2026-10-27T08:17:06.675Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x155ad8e7 error. Code: 7 Message: 7 PERMISSION_DENIED:
+false for 'delete' @ L63
+✔ permanent mode records are private and bounded on Spark Firestore (73.317042ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 570.484042
+✔  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator

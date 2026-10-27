@@ -37,9 +37,19 @@ These are not exemptions from regression tests or proof of faster execution. Any
 | Garage / paint | `GaragePanel.vue`, `garage-view-state.ts` | `garage-ui.ts` |
 | Settings and audio | `SettingsPanel.vue`, `audio-view-state.ts`, `control-panels-view-state.ts` | `audio-ui.ts`, `controls-panels-ui.ts` |
 | Controls | `ControlsPanel.vue`, `control-panels-view-state.ts` | `controls-panels-ui.ts` |
-| Guide and practice | `GuidePanel.vue`, `TutorialCoach.vue`, guide/tutorial view state | `guide-ui.ts`, `tutorial-ui.ts` |
+| Guide and practice | `GuidePanel.vue`, `CollectiblesGuide.vue`, `TutorialCoach.vue`, guide/tutorial view state | `guide-ui.ts`, `tutorial-ui.ts`, `collectibles-guide-copy.ts` |
 
 Handlers may still call native `dialog.showModal/close`, set focus, coordinate persisted state, or move the live WebGL canvas into the Garage preview. Those effects are not duplicated Vue-rendered state mutations. The racing HUD intentionally stays imperative.
+
+Controls ownership is deliberately narrower than a complete controller extraction: Vue owns panel disclosure; `main.js` still coordinates control-form values, tilt permission/preview, key rebinding and persistence. Those unbound form fields do not have competing Vue writers. This is an explicit remaining bootstrap boundary, not a claim that all event handlers left `main.js`.
+
+## Current-main integration (2026-10-27)
+
+- `771274d` integrates `main` at `bd71ac8`, preserving the upstream collectibles guide in the extracted Vue panel, with its full bilingual catalog unchanged. The component and catalog use strict TypeScript. A real Chrome regression failed because Items was excluded from the guide selection guard; the shared view contract and guard now include it.
+- The same guide test independently exposed 23px of overflow at 320px. Reward badges now wrap instead of forcing a horizontal overflow. Nine guide browser cases pass across 1440/390/320/844px and both locales, including tab exclusivity and resetting the selected tab on reopen.
+- `cda325e` fixes an additional screenshot-discovered normal-home overlap: the fixed camera dock covered Start/Practice on portrait phones. The single existing dock participates in compact intro flow; desktop and AIRFLOW keep their fixed placement. Twenty-five camera cases pass across normal/AIRFLOW layouts, six viewport sizes and World Tour routes. Existing audio behavior is preserved; these static reference/layout changes need no additional sound cues.
+- `d1a91f4` records that intentional camera correction in the strict migration golden. The first broad run passed 445 cases and failed only the old DOM-order/CSS snapshots. The five camera entries move without changing any of the 228 element/tag/class records; the full stylesheet hash and every assertion remain. Independent review confirmed that the stylesheet diff contains only the camera visibility/flow rules. Both focused parity cases pass. This updates the recorded baseline, not physical-device or human visual approval.
+- Independent source integration review found no issues in `771274d`. Local full-suite and final visual/hardware acceptance remain distinct; see `TODO.md` and `docs/verification.md` for current receipts.
 
 ## Verification and acceptance criteria
 
