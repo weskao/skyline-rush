@@ -1617,3 +1617,11 @@ never conflate future modes with existing Control “steering mode” options.
 - [ ] Run and inspect latest branch HEAD Node/unit/build, all browser shards, World Tour and cloud-save GitHub CI with quality-gate green (still pending).
 - [ ] Review actual screenshots of Tokyo, Alpine, Taipei, Coastal and Cosmic with AIRFLOW on/off, verify car wheel/ground contact, body fully unobscured, landmark framing and nonblocking HUD across both orientations; real iOS/Android hardware acceptance pending.
 - [ ] Only after exact-HEAD CI success, sync any newer main and obtain CI success again before merging feature branch directly into main.
+
+
+## Roadmap continuation: inherited regression gates (2026-10-28)
+
+- [x] Reproduce inherited main failures before changing expectations: unscaled Phase 4 timeout, first-frame perf sampling, reviewed CSS baseline drift and stale paused-overlay result checks. Evidence: `artifacts/regression-gates/unit-red.log`, `browser-red.log`, `latest-main-css-red.log`.
+- [x] Preserve assertions while repairing their assumptions: use CI timeout helper, prime the presented-frame clock, review accepted main CSS changes without changing recorded DOM, and await finished phase before measuring/clicking Race Again. Focused unit and full unit suites pass (784 passed, 3 skipped); affected browser suite passes (41 passed, 1 desktop-only skip).
+- [x] Integrate main `53d4a0a` including its 44px touch targets and narrow VFX selector overflow fix; review the exact CSS delta before updating the golden hash.
+- [ ] Run complete `make verify` on the resulting branch and inspect exact-commit GitHub `quality-gate`; retain real hardware gates separately.

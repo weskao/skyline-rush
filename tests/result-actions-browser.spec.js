@@ -63,9 +63,14 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#again-button')).toBeVisible();
     expect((await page.locator('#again-button').boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.locator('#resume-button').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await page.evaluate(() => { const race = window.gameplay.race; race.elapsed = 80; Object.assign(race.player, { distance: race.length - 10, speed: 60 }); });
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
     await expect(page.locator('#race-overlay')).toBeVisible();
+    await expect(page.locator('#again-button')).toBeVisible();
     expect((await page.locator('#again-button').boundingBox()).height).toBeGreaterThanOrEqual(44);
+    await page.locator('#again-button').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
   });
 
   test('a podium finish offers NEXT straight into the newly unlocked track', async ({ gameplayPage: page }) => {

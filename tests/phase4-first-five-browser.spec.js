@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 const TRACKS = ['coast', 'neon', 'canyon', 'aurora', 'spiral'];
 const VIEWPORTS = [
@@ -11,7 +12,7 @@ const VIEWPORTS = [
 // switching render targets. Software WebGL in CI is not physical-device profiling.
 for (const track of TRACKS) for (const viewport of VIEWPORTS) {
   test(`Phase 4 ${track} map, preview and race ${viewport.width}x${viewport.height}`, async ({ page }, info) => {
-    test.setTimeout(240000);
+    test.setTimeout(ciTimeout(240000));
     await page.setViewportSize(viewport);
     await page.addInitScript(ids => {
       localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids));
