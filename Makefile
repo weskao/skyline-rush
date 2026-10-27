@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: dev dev-unlocked dev-feature test-unlocked phone run verify deploy stop-old-dev
+.PHONY: help dev dev-unlocked dev-feature test-unlocked phone perf perf-phone run verify deploy stop-old-dev
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -40,6 +40,18 @@ phone: node_modules ## `make phone [name]`: menu to start, check or stop a dev s
 	@test -f "$(PHONE_DEV)" || { echo "make phone needs the phone-dev skill at $(PHONE_DEV)"; exit 1; }
 	@python3 "$(PHONE_DEV)" --interactive $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME))
 
+# Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
+# baseline built in .claude/worktrees/perf-<sha>. Desktop throttles Chrome's CPU; phone mode asks like `make phone`
+# (version, Tailscale/Wi-Fi, Telegram) for anything not passed and logs Android temperatures.
+PERF_ARGS = $(if $(BASE),--base $(BASE)) $(if $(RATE),--rate $(RATE)) $(if $(ROUNDS),--rounds $(ROUNDS)) $(if $(RACE_SECONDS),--seconds $(RACE_SECONDS)) $(if $(VIA),--via $(VIA)) $(if $(TG),--tg $(TG))
+perf: node_modules ## `make perf [BASE=main] [RATE=6] [ROUNDS=3]`: p50/p95/fps of a race in CPU-throttled Chrome
+	$(NPM) run build
+	node scripts/perf.mjs desktop $(PERF_ARGS)
+
+perf-phone: node_modules ## `make perf-phone [BASE=main] [VIA=tailscale|wifi|auto] [TG=0]`: like `make phone` for ?perf builds, plus phone temperatures
+	$(NPM) run build
+	node scripts/perf.mjs phone $(PERF_ARGS)
+
 # Fetches origin/feature/<name> into .claude/worktrees/<name> without checking it out here.
 # The branch name is an extra goal; an empty rule stops make from requiring a file by that name.
 dev-feature: ## `make dev-feature <name>`: that feature branch, all-unlocked, https://127.0.0.1:5443
@@ -66,6 +78,10 @@ verify: node_modules ## `make verify`: type checks, units, production build, bro
 	$(NPM) test
 	$(NPM) run test:browser
 	npx playwright test --config=playwright.world-tour.config.js
+
+# Lists every target that carries a `## description`.
+help: ## `make help`: list these commands
+	@awk -F':.*## ' '/^[a-z-]+:.*## /{printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Requires an authenticated GitHub CLI; CI checks the pushed main branch before publishing.
 deploy: ## `make deploy`: trigger CI checks and GitHub Pages deployment of remote main

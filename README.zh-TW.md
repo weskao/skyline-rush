@@ -1,4 +1,4 @@
-<!-- source-sha256: 5a9f2fc9c1a604415a523ab4e158d0fb70c25a87199df6aed99848cf6329ff40 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: c78c40eda55f38f0dad8cc528a6379a4007b859eeb12eaf60f5a976ab676f413 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -216,6 +216,7 @@ npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full ra
 npm run test:layout     # Home-screen fit, top bar and touch targets (runs on pre-push)
 make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
+make help               # List every make command with its options
 ```
 
 瀏覽器測試使用已安裝的 Google Chrome，並允許在無頭模式下以 SwiftShader 算圖。僅使用 CPU 的 CI 採用 0.25 的裝置像素比，讓 3D 場景維持流暢，同時保留相同的 CSS 視窗尺寸與遊戲玩法斷言；本機測試則以完整解析度算圖。一般遊玩使用瀏覽器可用的 GPU。英文 README 的截圖只有在檔案不存在，或執行 `UPDATE_ARTIFACTS=1 npm run test:browser` 時，才會以 JPEG（品質 70）寫入 `artifacts/`，因為即時 3D 場景每次執行都不一樣；測試的追蹤檔與結果會被忽略。完整的衝刺測試在快速的機器上大約需要一分鐘，軟體算圖拖慢模擬時則更久。
@@ -225,6 +226,13 @@ npm run preview         # Serve the production build after npm run build
 ```
 
 若要在手機上檢查，請在你的網路上提供建置結果（`npx vite preview --host 0.0.0.0`），並加上 `?perf` 開啟（例如 `http://<computer-ip>:4173/?perf`）。頁面頂端會出現一條列，顯示最近 20 秒內的比賽影格時間：中位數（p50）、第 95 百分位數（p95）、平均 fps 與取樣長度。沒有 `?perf` 時，不會進行任何量測，也不會顯示任何內容。
+
+```sh
+make perf BASE=main         # A/B in Chrome at 412×915, CPU throttled 6× (RATE=20 for a low-end phone), 3 alternating rounds
+make perf-phone             # Like make phone: asks base version, Tailscale/Wi-Fi and Telegram; logs phone temperatures
+```
+
+`make perf` 會建置這個 checkout，若指定 `BASE=<git ref>` 也會建置該 ref（位於 `.claude/worktrees/perf-<sha>`，下次重複使用），每次在 Coast 比賽 24 秒，並印出每次的頂端列與各建置的中位數。`make perf-phone` 會像 `make phone` 一樣詢問沒指定的項目（`BASE=`、`VIA=tailscale|wifi|auto`、`TG=0`），為每個建置印出並用 Telegram 傳送一個 `?perf` 網址，在以 USB 連接的 Android 手機上用 Chrome 開啟第一個（透過 `adb reverse`，不限網路），按 Ctrl+C 時傳送網址已失效通知，並每 10 秒記錄手機的感測器溫度與降頻等級（`dumpsys thermalservice`），以及 Mac 的熱警告等級，直到按下 Ctrl+C。只比較相同降頻等級下的結果：手機發燙時，不論哪個建置都會降頻掉幀。iPhone 不會回報溫度。
 
 ## 部署
 
