@@ -14,11 +14,11 @@ import { icon } from './icons.ts';
 import { createRace as createBareRace, startRace, stepRace, useHeldItem, racePosition, sprintGaps, dailyChallenge, gapChargeWarning, RACE_TRACKS, MAX_SPEED } from './game.js';
 import { createControls } from './input.ts';
 import { RULE_PRESETS } from './race-config.ts';
-import { createSprintSeries, addSprintStage, sprintTotal } from './sprint-series.ts';
+import { createSprintSeries, sprintTotal } from './sprint-series.ts';
 import { createCheckpointRush, checkpointDirection } from './checkpoint-rush.ts';
 import { loadRecentCustom, saveRecentCustom } from './recent-custom.ts';
 import { stuntMedal } from './stunt-attack.ts';
-import { createCup, addCupResult, cupStandings, cupComplete, cupTotalTime } from './championship-cup.ts';
+import { createCup, cupStandings, cupComplete, cupTotalTime } from './championship-cup.ts';
 import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { photoFilename } from './photo-export.ts';
@@ -30,9 +30,8 @@ import { setupPerformanceNotice } from './performance-notice-ui.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { setupKeyMapUI, keyLabel } from './keymap-ui.ts';
 import { setupTouchControlsUI } from './touch-controls-ui.ts';
-import { recordRace, recordBest, recordModeRace, loadModeHistory, recordMedals, recordStars, starTotal,
-  loadPaint, savePaint, recordDaily, dailyBoard, LEGACY_BEST_KEY } from './history.ts';
-import { recordGhost, validGhost, ghostAt } from './ghost.ts';
+import { starTotal, loadPaint, savePaint } from './history.ts';
+import { recordGhost, ghostAt } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
@@ -47,6 +46,7 @@ import { refreshIfStale } from './update-check.ts';
 import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
+import { settleRace } from './race-results.ts';
 import { createGhostStore } from './ghost-store.ts';
 
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
@@ -711,72 +711,12 @@ function phaseUI() {
     $('#result-links').hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
-    if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
-    if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
-    if (stunt && race.mode === 'stunt') {
-      stunt.elapsed += race.result.time;
-      stunt.score += race.result.score;
-      stunt.heats++;
-      stunt.airTime += race.styleAttack.airTime;
-      stunt.maxCombo = Math.max(stunt.maxCombo, race.styleAttack.maxCombo);
-    }
-    const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
-    progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
-    const trackId = race.trackId ?? 'coast';
-    let best, record;
-    $('#next-button').hidden = true;
-    const intermediateStage = (sprintSeries && sprintSeries.results.length < sprintSeries.count) || (cup && !cupComplete(cup)) ||
-      (stunt && race.result.endReason === 'route' && stunt.elapsed < stunt.duration);
-    $('#next-stage').hidden = !intermediateStage;
-    if (intermediateStage) {
-      best = 0; record = false; // A partial series never writes a misleading individual best.
-    } else if (race.result.success === false && race.mode !== 'classic') {
-      best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
-    } else if (race.mode === 'stunt' && stunt) {
-      ({best,record} = recordModeRace({ ...race, result:{...race.result, time:stunt.elapsed, score:Math.round(stunt.score), maxCombo:stunt.maxCombo, airTime:stunt.airTime} }));
-      progress.modeHistory = loadModeHistory();
-    } else if (race.mode !== 'classic') {
-      const total = cup ? cupTotalTime(cup) : sprintSeries ? sprintTotal(sprintSeries) : race.result.time;
-      const modeRace = cup ? { ...race, trackId: cup.tracks[0], result: { ...race.result, time: total,
-        score: cupStandings(cup).find(entry => entry.name === 'YOU').points } } : sprintSeries ? { ...race, result: { ...race.result, time: total,
-        score: sprintSeries.results.reduce((score, stage) => score + stage.score, 0) } } : race;
-      ({ best, record } = recordModeRace(modeRace));
-      progress.modeHistory = loadModeHistory();
-      if (race.mode === 'time' && record) {
-        const candidate = { time: race.elapsed, samples: trace };
-        if (traceRace === race && validGhost(candidate, trackId)) {
-          ghosts.saveMode(race, candidate);
-        }
-      }
-    } else if (race.modifier) {
-      const run = recordDaily(daily, race);
-      progress.daily = [...progress.daily, run].slice(-50);
-      const board = dailyBoard(progress.daily, daily.id);
-      best = board[0].time; record = board[0] === run;
-    } else {
-      const recordRun = recordRace(race);
-      progress.history = [...progress.history, recordRun].slice(-50);
-      const tracks = Object.keys(RACE_TRACKS);
-      const next = tracks[tracks.indexOf(race.trackId) + 1];
-      // NEXT drives progression only: hidden once every track was already open before this run.
-      const campaignDone = tracks.every(id => unlockedTracks.has(id));
-      if (next && race.result.position <= 3 && !unlockedTracks.has(next)) unlockedTracks.add(next);
-      if (next && !campaignDone && unlockedTracks.has(next)) {
-        $('#next-button').hidden = false;
-        $('#next-button').dataset.next = next;
-      }
-      const saved = recordBest(trackId, race.elapsed);
-      // Session bests keep "personal best" honest when storage is blocked.
-      best = Math.min(saved.best, progress.bests[trackId] ?? Infinity);
-      record = saved.record && !(progress.bests[trackId] <= race.elapsed);
-      progress.bests[trackId] = best;
-      // The pre-tracks key stays readable for coast (older builds, browser test).
-      if (record && trackId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
-      recordStars(trackId, race.result.stars);
-      progress.stars[trackId] = Math.max(progress.stars[trackId] ?? 0, race.result.stars);
-      const ghost = { time: race.elapsed, samples: trace };
-      if (record && traceRace === race && validGhost(ghost, trackId)) ghosts.saveClassic(trackId, ghost);
-    }
+    const settled = settleRace(race, { series: { sprintSeries, cup, stunt }, progress, ghosts, daily, trace: traceRace === race ? trace : null });
+    ({ sprintSeries, cup } = settled.series);
+    const { best, record, medals } = settled;
+    $('#next-button').hidden = !settled.next;
+    if (settled.next) $('#next-button').dataset.next = settled.next;
+    $('#next-stage').hidden = !settled.intermediateStage;
     cloud.saveCloudProgress();
     showTracks();
     ui['resume-button'].hidden = true;

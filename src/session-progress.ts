@@ -1,6 +1,7 @@
-import { loadBests, loadHistory, loadModeHistory, loadMedals, loadStars, loadDaily } from './history.ts';
+import { loadBests, loadHistory, loadModeHistory, loadMedals, loadStars, loadDaily, validDaily } from './history.ts';
 import { readLocalProgress } from './cloud-progress.ts';
 import type { MergedProgress } from './cloud-progress-merge.ts';
+import type { DailyRun } from './history-daily.ts';
 
 type Stored<T> = T | MergedProgress['history'][number];
 /**
@@ -14,7 +15,7 @@ export interface SessionProgress {
   medals: Record<string, string>;
   history: Stored<ReturnType<typeof loadHistory>[number]>[];
   modeHistory: Stored<ReturnType<typeof loadModeHistory>[number]>[];
-  daily: Stored<ReturnType<typeof loadDaily>[number]>[];
+  daily: DailyRun[];
 }
 
 export function loadSessionProgress(unlocked: Iterable<string>): SessionProgress {
@@ -30,7 +31,8 @@ export function adoptProgress(progress: SessionProgress, merged: MergedProgress)
   progress.history = merged.history;
   progress.modeHistory = merged.modeHistory;
   progress.medals = merged.medals;
-  progress.daily = merged.daily;
+  // Already validated by the merge; the guard narrows the type.
+  progress.daily = merged.daily.filter((run): run is typeof run & DailyRun => validDaily(run));
 }
 
 /** What a cloud save or backup export writes: stored progress overlaid with this session's copies. */
