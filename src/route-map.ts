@@ -5,7 +5,7 @@ import { t, trackName, getLocale } from './i18n.ts';
 
 const raceTracks = RACE_TRACKS as Record<string, { length: number }>;
 const NS = 'http://www.w3.org/2000/svg';
-interface RoutePoint { x: number; y: number }
+interface RoutePoint { distance: number; x: number; y: number }
 interface RouteDriver { id: string; distance: number }
 const cache = new Map<string, RoutePoint[]>();
 const racers = ['YOU', 'NOVA', 'ORBIT', 'APEX'];
