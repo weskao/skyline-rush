@@ -5,9 +5,10 @@ import { t, trackName, getLocale } from './i18n.ts';
 
 const raceTracks = RACE_TRACKS as Record<string, { length: number }>;
 const NS = 'http://www.w3.org/2000/svg';
-interface RoutePoint { distance: number; x: number; y: number }
+interface RoutePoint { x: number; y: number }
+interface RouteSample extends RoutePoint { distance: number }
 interface RouteDriver { id: string; distance: number }
-const cache = new Map<string, RoutePoint[]>();
+const cache = new Map<string, RouteSample[]>();
 const lineCache = new Map<string, string>();
 const overpassCache = new Map<string, string>();
 const racers = ['YOU', 'NOVA', 'ORBIT', 'APEX'];
@@ -17,7 +18,7 @@ const svg = (tag: string, attrs: Record<string, string | number> = {}): SVGEleme
   for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
   return node;
 };
-export function routeSamples(trackId: string): RoutePoint[] {
+export function routeSamples(trackId: string): RouteSample[] {
   if (!cache.has(trackId)) cache.set(trackId, trackOverview(trackId, 128));
   return cache.get(trackId)!;
 }
