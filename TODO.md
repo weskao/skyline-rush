@@ -3,7 +3,7 @@
 ## Main integration follow-up (2026-10-28)
 
 - [x] Integrate captured main `0197547d01a7bd4618bee7a969fdbc67e2caf1ac` (including `ebd30e5` / `d71fc65`) into this independent branch, resolve conflicts and preserve both main and feature behavior. Main now separates release data and includes upcoming notes; all 36 focused renderer/camera/haptic/release tests pass. Shared AIRFLOW locale repair `3e7f7d6` is included. This is the fixed baseline for the final verification batch.
-- [ ] Complete fresh local `make verify` after the captured main integration and shared locale repair; earlier SHA receipts below remain historical.
+- [x] Complete fresh local `make verify` on code `bf7ed70` after captured main `0197547` and shared locale repair: strict TS/Vue/JS checks, 805 Node passed / 3 emulator skips, locked build, 497 browser passed / 2 conditional skips, 94 World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main-0197547.log`. Fresh original-resolution real-game flows also pass; reviewed captures: `artifacts/event-lab/reviewed-main-0197547/`. Earlier SHA receipts below remain historical.
 - [ ] Inspect the recorded feature-code SHA GitHub required jobs and `quality-gate`; the final documentation HEAD is checked separately. Real-device and remaining manual gates stay open.
 
 ## Event Lab v1 continuation (2026-10-28, feature/event-lab-lite)
