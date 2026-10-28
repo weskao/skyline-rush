@@ -15,7 +15,7 @@ The owner authorized TDD implementation of the remaining non-Firebase/non-Gamepa
 - [x] Pre-main-integration `make verify` completed: strict TS/Vue/legacy checks, 697 unit passed / 3 emulator-dependent skipped, production build, 456 browser passed and 72 World Tour passed. Receipt: `artifacts/cup-recovery/make-verify-final.log`. The initial interrupted run is superseded by this complete run.
 - [x] Integrate fetched main `7cbdbe5` (2026-10-28), retaining its flight/combo, Coast scenery, FPS pacing and module split. Resolve both TODO/main conflicts; restore Cup mode through `race-select-ui.ts`, checkpoint the result from `settleRace`, and reuse `result-screen.ts`. Move unchanged leave/focus navigation to a typed controller so `main.js` shrinks from 688 to 685 lines. New Cup copy uses a small locale subcatalog; no size ceiling was raised. Fresh strict typecheck and 39 focused unit tests passed; independent review reran 42 focused tests with no remaining Important findings.
 - [x] Complete merged local `make verify` on code HEAD `25771ef`: strict TS/Vue/legacy checks, 798 Node passed / 3 emulator-dependent skipped, locked build, 494 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/cup-recovery/make-verify-main72466c3-post-delete.log`. The initial setup lock and superseded interrupted runs are not green receipts. Original-resolution recovery/heat flows also pass.
-- [ ] Confirm latest-feature-HEAD GitHub quality-gate; required pre-push layout hooks remain enabled.
+- [x] Verify exact code commit `02acf84`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40633492551 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
 - [ ] Physical-device Cup recovery/standings/touch acceptance; Chrome touch emulation is separate evidence. No original track physics, shaders or per-frame audio were changed. Existing confirmation SFX is reused.
 
 Other independently tracked branches: `feature/custom-race-presentation` (Custom ruleset Ghost and cosmetic presets/setup summary) and `feature/practice-item-rules` (explicit item rules, real activation/cooldown and related new pads/items). Remaining genuine circuit laps, richer themed hazards, challenge medals, Endless Highway and Event Lab remain open. Existing Photo Studio, held Shield/Magnet/Ghost/Freeze and recent Custom setup storage are reused rather than reimplemented. Tutorial entry-flow decisions are being discussed separately.
@@ -1042,7 +1042,7 @@ acceptance remains under the shared stage-wide QA, not claimed here.
   an explicit continue/retry flow, and optional saved in-progress cup recovery.
 - [x] Distinguish cup medals/bests from individual Classic times; a cup does
   not grant unearned unlocks for stages skipped or completed in practice mode.
-- [ ] **Acceptance:** ties, quit/resume, mid-cup restart, 0-rival rejection and
+- [x] **Acceptance:** ties, quit/resume, mid-cup restart, 0-rival rejection and
   incomplete data produce deterministic, understandable results.
 
 ### 9H. Obstacle Gauntlet (P1)
