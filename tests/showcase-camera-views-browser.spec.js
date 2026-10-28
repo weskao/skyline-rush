@@ -26,11 +26,12 @@ function expectBelowCardBand(result, label) {
   expect.soft((1 - result.carBounds.maxY) / 2, `${label} car top, as a share of the screen height`).toBeGreaterThanOrEqual(PORTRAIT_CAR_TOP);
 }
 
-for (const viewport of VIEWPORTS) {
-  for (const airflow of [false, true]) {
-    test(`fixed views face the car from their own side at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
-      await openProbe(page, viewport);
-      for (const id of TRACKS) {
+// One test per map: all maps in one test outran the 180 s CI timeout on software WebGL.
+for (const id of TRACKS) {
+  for (const viewport of VIEWPORTS) {
+    for (const airflow of [false, true]) {
+      test(`${id}: fixed views face the car from their own side at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
+        await openProbe(page, viewport);
         for (const [view, expected] of Object.entries(FIXED)) {
           const result = await page.evaluate(([id, view, airflow]) => window.showcaseCameraProbe(id, view, { airflow }), [id, view, airflow]);
           const label = `${id}/${view}`;
@@ -41,8 +42,8 @@ for (const viewport of VIEWPORTS) {
           if (airflow) expect.soft(Math.abs(result.x), `${label} car centred with the home panel hidden`).toBeLessThan(0.15);
           else if (viewport.width > viewport.height) expect.soft(result.carBounds.minX, `${label} car clear of the home panel`).toBeGreaterThan(0.04);
         }
-      }
-    });
+      });
+    }
   }
 }
 
@@ -50,36 +51,36 @@ test('every map is covered', () => {
   expect(TRACKS.length, TRACKS.join(',')).toBeGreaterThanOrEqual(10);
 });
 
-for (const viewport of VIEWPORTS) {
-  for (const airflow of [false, true]) {
-    test(`drive view frames the whole car at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
-      await openProbe(page, viewport);
-      for (const id of TRACKS) {
+for (const id of TRACKS) {
+  for (const viewport of VIEWPORTS) {
+    for (const airflow of [false, true]) {
+      test(`${id}: drive view frames the whole car at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
+        await openProbe(page, viewport);
         const result = await page.evaluate(([id, airflow]) => window.showcaseCameraProbe(id, 'drive', { airflow }), [id, airflow]);
         expectWholeCar(result, `${id}/drive`);
         // Drive is the curated three-quarter chase shot: the camera stays behind the car.
         expect.soft(Math.abs(result.bearing), `${id}/drive bearing ${result.bearing.toFixed(1)}°`).toBeLessThan(90);
-      }
-    });
+      });
+    }
   }
 }
 
-test('AIRFLOW race camera keeps the chosen angle in the road frame on curved and elevated roads', async ({ page }) => {
-  await openProbe(page, VIEWPORTS[0]);
-  for (const id of TRACKS) {
+for (const id of TRACKS) {
+  test(`${id}: AIRFLOW race camera keeps the chosen angle in the road frame`, async ({ page }) => {
+    await openProbe(page, VIEWPORTS[0]);
     for (const [view, expected] of Object.entries(FIXED)) {
       const { bearing } = await page.evaluate(([id, view]) => window.showcaseCameraProbe(id, view, { airflow: true, racing: true, seconds: 0 }), [id, view]);
       expect.soft(gap(bearing, expected), `${id}/${view} race bearing ${bearing.toFixed(1)}°`).toBeLessThan(10);
     }
-  }
-});
+  });
+}
 
 const spread = values => Math.max(...values) - Math.min(...values);
-for (const viewport of VIEWPORTS) {
-  for (const airflow of [false, true]) {
-    test(`orbit circles the car smoothly a full 360° at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
-      await openProbe(page, viewport);
-      for (const id of TRACKS) {
+for (const id of TRACKS) {
+  for (const viewport of VIEWPORTS) {
+    for (const airflow of [false, true]) {
+      test(`${id}: orbit circles the car smoothly a full 360° at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
+        await openProbe(page, viewport);
         const { samples: all } = await page.evaluate(([id, airflow]) => window.showcaseCameraProbe(id, 'orbit', { airflow, seconds: 41.5, every: 0.25 }), [id, airflow]);
         const samples = all.slice(6); // skip the glide in from the previous view
         // Unwrap the sampled bearings: a real orbit turns one way at a steady rate, never lurches.
@@ -99,17 +100,17 @@ for (const viewport of VIEWPORTS) {
           expectWholeCar(s, `${id} orbit sample ${i} (${s.bearing.toFixed(0)}°)`);
           if (airflow && viewport.width < viewport.height) expectBelowCardBand(s, `${id} orbit sample ${i}`);
         });
-      }
-    });
+      });
+    }
   }
 }
 
 // Low detail (above) draws the fewest roadside props; High draws them all, the hardest case for a clear view of the car.
-for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
-  test(`every view keeps the whole car in frame and unblocked at High detail at ${viewport.width}x${viewport.height}`, async ({ page }) => {
-    await openProbe(page, viewport);
-    for (const id of TRACKS) {
-      for (const airflow of [false, true]) {
+for (const id of TRACKS) {
+  for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
+    for (const airflow of [false, true]) {
+      test(`${id}: every view keeps the whole car in frame and unblocked at High detail at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
+        await openProbe(page, viewport);
         for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
           const orbit = view === 'orbit';
           const result = await page.evaluate(([id, view, airflow, orbit]) => window.showcaseCameraProbe(id, view,
@@ -117,7 +118,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
           for (const [i, s] of (orbit ? result.samples.slice(3) : [result]).entries())
             expectWholeCar(s, `${id}/${view}${orbit ? ` sample ${i}` : ''} AIRFLOW ${airflow ? 'on' : 'off'}`);
         }
-      }
+      });
     }
-  });
+  }
 }
