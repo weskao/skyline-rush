@@ -1,6 +1,11 @@
 # TODO — Gameplay depth design
 
-## Main integration follow-up (2026-10-28)
+## Main 0.25.0 integration (2026-10-28)
+
+- [x] Merge latest requested main `01526118767b99a85b0a9b7570bdd87a27ac304e` into this independent branch. Preserve all feature source: the `src` tree is identical to the pre-merge parent. Integrate 0.25.0 metadata, per-map camera cases and six CI World Tour shards; retain the validated worktree port override. All 36 focused size/camera/haptic/release checks pass.
+- [ ] Broader implementation/acceptance and exact-HEAD CI are separate from this merge check.
+
+## Historical main integration through 0197547 (2026-10-28)
 
 - [x] Integrate captured main `0197547d01a7bd4618bee7a969fdbc67e2caf1ac` (including `ebd30e5` / `d71fc65`) into this independent branch, resolve conflicts and preserve both main and feature behavior. Main now separates release data and includes upcoming notes; all 36 focused renderer/camera/haptic/release tests pass. Shared AIRFLOW locale repair `3e7f7d6` is included. This is the fixed baseline for the final verification batch.
 - [ ] Broader feature implementation, full acceptance and exact-HEAD CI remain separate from this main-merge check.
