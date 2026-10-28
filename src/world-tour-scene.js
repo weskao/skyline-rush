@@ -204,8 +204,7 @@ export function createWorldTourScene(scene){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
-        // Unique authored models are keyed to absolute track distance; no
-        // periodic wrap/modulus position reuse, no roadside teleporting.
+        // Props use absolute distances, never looping positions near the camera.
         chunk.add(prop);
       }
       const earth=kit.terrain(id,index,level==='low');
