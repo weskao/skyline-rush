@@ -2,6 +2,10 @@
 
 ## Genuine circuit continuation (2026-10-28, feature/genuine-circuit-laps)
 
+- [x] Real screenshot review exposed horizontal overflow in Circuit 5-lap phone metrics. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
+- [ ] Repeat complete `make verify` and latest-HEAD CI after this CSS fix; the pre-fix full-gate receipt below remains historical evidence.
+
+
 - [x] Source/rules and topology-v1/history strategy in `docs/circuit-laps.md`; observed unknown-route RED before adding the separate `harbor-circuit` capability. Preserve the ordered ten-route Classic/Daily/Cup catalog.
 - [x] Genuine 2 km closed geometry with one periodic road/vehicle/camera/item/Ghost/map frame; unwrapped progress and seam-aware physical gaps, ordered 1/3/5-lap sectors, interpolated splits and per-lap collectible identities.
 - [x] Follow-up RED/GREEN for Circuit records/Ghost bounds, default History selection, nonfinite progress, lap audio, ring orientation and shared geometry disposal. Permanent personal lap bests use the existing numeric bests map and survive rolling-history eviction/cloud merges.
@@ -9,13 +13,13 @@
 - [x] History discoverability RED → GREEN: Circuit Ghosts loaded but only Time Trial rows showed the Ghost badge. The shared view now includes valid Circuit Ghosts; 53 relevant Node checks, all 815 Node checks (3 emulator skips), and English desktop / zh-TW touch History menu flows pass. Cloud emulator checks pass: 15 browser + 3 Rules tests.
 - [x] Integrate fetched main `72466c3`; preserve both feature and main behavior. Original LAP-02/03/04 implementation boxes below are checked against the focused geometry, timing, sector and browser evidence. The broad seam/device acceptance remains open.
 - [x] Complete merged local `make verify` on code HEAD `c98a326`: strict TS/Vue/legacy checks, 817 Node passed / 3 emulator-dependent skipped, locked production build, 495 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-main72466c3-final.log`. The earlier interrupted run is superseded. Cloud emulator proof is recorded above.
-- [ ] Latest-feature-HEAD GitHub quality-gate and remaining manual acceptance: all showroom angles/AIRFLOW, rendered Ghost seam inspection, physical Safari/Android GPU, audio/perception and long-run checks. Push authorization is pending.
+- [ ] Latest-feature-HEAD GitHub quality-gate and remaining manual acceptance: all showroom angles/AIRFLOW, rendered Ghost seam inspection, physical Safari/Android GPU, audio/perception and long-run checks. Same-name feature pushes passed the renewed automatic review; latest-HEAD CI remains pending.
 
 ## Shared continuation regression gates (2026-10-28)
 
 - [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
 - [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
-- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. Remote pushes await the user's explicit authorization following automatic review rejection; no main merge, PR or deployment is authorized.
+- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. The initial batch push was rejected; automatic review later accepted same-name feature pushes after verifying the PUBLIC origin, mandated workflow step 6 and the owner's main-first condition. Current-HEAD CI remains separate; main merge, PR and deployment still require explicit authorization.
 
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 

@@ -14,20 +14,21 @@ for (const [name, viewport, hasTouch, locale] of [
   test.use({ viewport, hasTouch });
   test('real loop, valid sectors, result and retry preserve laps and Classic access', async ({ gameplayPage: page }) => {
     test.setTimeout(ciTimeout(90000));
+    const lapCount = name === 'desktop' ? 3 : name === 'phone-en' ? 5 : 1;
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await expect(page.locator('#history-track')).toHaveValue('coast');
     await selectLocale(page, locale);
-    await page.evaluate(async () => {
+    await page.evaluate(async lapCount => {
       const { normalizeRaceConfig } = await import('/src/race-config.ts');
-      const config = normalizeRaceConfig({ mode: 'circuit', laps: 1 });
+      const config = normalizeRaceConfig({ mode: 'circuit', laps: lapCount });
       localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [JSON.stringify(['harbor-circuit', config, 'lap'])]: 20 }));
-    });
+    }, lapCount);
     await page.locator('[data-race-mode="circuit"]').click();
     await expect(page.locator('#start-button')).toBeEnabled();
     await page.locator('#circuit-rules > summary').click();
     const laps = page.locator('#circuit-laps + .custom-select');
     await laps.getByRole('combobox').click();
-    await laps.getByRole('option', { name: '1', exact: true }).click();
+    await laps.getByRole('option', { name: String(lapCount), exact: true }).click();
     // Let the home camera finish its transition before checking landmark framing.
     await page.waitForTimeout(1000);
     expect.soft(await page.locator('#race-route-map .route-overview-line').evaluate(line => getComputedStyle(line).stroke)).not.toBe('none');
@@ -44,22 +45,30 @@ for (const [name, viewport, hasTouch, locale] of [
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(100); await page.keyboard.up('ArrowLeft');
-    await expect(page.locator('#circuit-hud')).toContainText(locale === 'en' ? 'LAP 1 / 1' : '第 1 / 1 圈');
+    await expect(page.locator('#circuit-hud')).toContainText(locale === 'en' ? `LAP 1 / ${lapCount}` : `第 1 / ${lapCount} 圈`);
     await expect(page.locator('#circuit-hud')).toContainText('00:20.00');
-    await page.evaluate(async () => {
+    await page.evaluate(async lapCount => {
       const { stepRace } = await import('/src/game.js');
       const race = window.gameplay.race;
-      while (race.phase === 'racing' && race.player.distance < 1940) stepRace(race, { throttle: true }, .05);
-    });
-    await expect.poll(async () => Number(await page.locator('#distance').textContent())).toBeGreaterThan(1.9);
+      while (race.phase === 'racing' && race.player.distance < lapCount * 2000 - 60) stepRace(race, { throttle: true }, .05);
+    }, lapCount);
+    await expect.poll(async () => Number(await page.locator('#distance').textContent())).toBeGreaterThan(lapCount * 2 - .1);
     await page.keyboard.press('Escape');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
     await page.locator('#world').screenshot({ path: `artifacts/circuit/${name}-seam.png` });
     await page.keyboard.press('Escape');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
     await expect(page.locator('#overlay-title')).toHaveText(locale === 'en' ? 'Circuit complete' : '環道賽完成');
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1')).at(-1).lapCount)).toBe(1);
-    await page.screenshot({ path: `artifacts/circuit/${name}-result.png` });
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1')).at(-1).lapCount)).toBe(lapCount);
+    await expect(page.locator('#race-overlay')).toBeVisible();
+    expect(await page.locator('#result-stats').evaluate(element => {
+      const bounds = element.getBoundingClientRect();
+      return [...element.children].every(child => {
+        const rect = child.getBoundingClientRect();
+        return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1;
+      });
+    }), 'every lap metric must fit inside the results panel').toBe(true);
+    await page.screenshot({ path: `artifacts/circuit/${name}-result.png`, animations: 'disabled' });
     await page.locator('#again-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
     expect(await page.evaluate(() => window.gameplay.race.circuit.player.completed)).toBe(0);
