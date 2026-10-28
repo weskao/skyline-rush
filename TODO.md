@@ -3,7 +3,7 @@
 ## Main integration follow-up (2026-10-28)
 
 - [x] Integrate captured main `0197547d01a7bd4618bee7a969fdbc67e2caf1ac` (including `ebd30e5` / `d71fc65`) into this independent branch, resolve conflicts and preserve both main and feature behavior. Main now separates release data and includes upcoming notes; all 36 focused renderer/camera/haptic/release tests pass. Shared AIRFLOW locale repair `3e7f7d6` is included. This is the fixed baseline for the final verification batch.
-- [ ] Complete fresh local `make verify` after the captured main integration and shared locale repair; earlier SHA receipts below remain historical.
+- [x] Complete local `make verify` on code `354ada5` with main `0197547`: strict types, 809 Node passed / 3 emulator skips, locked build, 499 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main-0197547.log`. This is a historical receipt if a newer main is integrated.
 - [ ] Inspect the recorded feature-code SHA GitHub required jobs and `quality-gate`; the final documentation HEAD is checked separately. Real-device and remaining manual gates stay open.
 
 ## Custom race Ghost and cosmetic presentation continuation (2026-10-28)
