@@ -57,7 +57,7 @@ Captured from the running game in Chrome mobile emulation at 390×844 (portrait)
 
 > **Work in progress · 22 October 2026.** These mode additions are on [`feature/race-modes-p0`](https://github.com/weskao/skyline-rush/tree/feature/race-modes-p0), not necessarily on the [deployed GitHub Pages build](https://weskao.github.io/skyline-rush/). The existing screenshots above show earlier gameplay; current mode captures are linked below. The [roadmap](TODO.md) includes additional unfinished features.
 
-Select a **track you have unlocked**, choose **GAME MODE** below the track cards, expand its rules when needed, then press **Start race** (or Enter). Racing still uses the same Three.js road, flying, FLY / BOOST / NITRO and responsive touch controls. Seven modes are available in the development branch:
+Select a **track you have unlocked**, choose **GAME MODE** below the track cards, expand its rules when needed, then press **Start race** (or Enter). Racing still uses the same Three.js road, flying, FLY / BOOST / NITRO and responsive touch controls. The development branch includes the following modes:
 
 | Mode | What changes | Win condition / progression |
 | --- | --- | --- |
@@ -68,6 +68,10 @@ Select a **track you have unlocked**, choose **GAME MODE** below the track cards
 | **Obstacle Run** | Seeded roadside barriers; **Standard** or **Extreme** density. Some obstacles sweep sideways; warning HUD previews approaching danger. | Dodge hazards, earn style points for clean passes and use the ordinary route's finish. Obstacle placement and collision share deterministic logic; Classic is unchanged. |
 | **Checkpoint Rush** | Race through glowing 3D gate arches. Start with **28 seconds**; each clean gate grants **+10 seconds** (capped at 60) and **250 style points**. | Reach every gate and the finish before the clock expires. Missed gates and timeouts do **not** save a valid best. The HUD shows gates cleared, time remaining and distance to the next target. |
 | **Championship Cup** | Pick a **3- or 5-track** Cup made only of already unlocked routes; race NOVA, ORBIT and APEX on each stage. | Placements award **10 / 7 / 5 / 3 points**; cumulative standings and total time decide the champion, with ties broken by time. Cup results are separate from Career unlocks. |
+
+### Circuit Race
+
+**Circuit Race** adds Harbor Circuit, a separate, always-accessible 2 km closed loop with **1 / 3 / 5 laps**. Cross every sector in order to earn a lap; backward crossings, teleports and recovery cannot grant laps. HUD and results show splits, last lap, personal best lap and total time. Lap bests survive rolling History eviction; total times and Ghosts stay specific to the lap configuration. The ten original point-to-point courses keep their geography and Career progression.
 
 ### Race setup, results and accessibility
 
