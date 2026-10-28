@@ -158,6 +158,7 @@ export function createAeroVFX(scene, vehicle) {
   }
   return {
     reset,
+    group: local, // effects riding on the vehicle; not part of its silhouette
     update(race, dt, center, distance, options, reducedMotion) {
       settings = options; centerX = center; originDistance = distance;
       dt = clamp(Number.isFinite(dt) ? dt : 0, 0, 0.1);
