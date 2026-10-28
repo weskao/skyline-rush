@@ -34,8 +34,8 @@ test('tunnel segments keep one 24 m absolute rhythm across streamed chunk bounda
      for(const child of group.children.filter(c=>c.name.startsWith('tunnel:'+id+':'))){
       // The kit places every shell at a centreline point from its source section.
       // A section's 24m rhythm must not reset at each 120m streaming boundary.
-      const d=child.userData.trackDistance;
-      assert.ok(Number.isFinite(d),id+' needs testable absolute shell positions');
+      const d=-child.position.z;
+      assert.ok(Number.isFinite(d),id+' needs finite world positions');
       actual.push(d);
      }
     }
