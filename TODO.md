@@ -1,5 +1,10 @@
 # TODO — Gameplay depth design
 
+## Main integration follow-up (2026-10-28)
+
+- [x] Merge main `d71fc6592ad0cfd160a5306e333ea8e73afe757b` into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests).
+- [ ] Repeat the complete local gate and inspect exact resulting feature-HEAD GitHub `quality-gate` after this integration; earlier SHA receipts below remain historical. Real-device and remaining manual gates stay open.
+
 ## Practice item rules and activation feedback (2026-10-27)
 
 Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation and the shared checkout's audio/keymap refactor; latest docs-only main `3a5c25a` integrated.
