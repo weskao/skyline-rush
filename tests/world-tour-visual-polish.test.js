@@ -66,3 +66,21 @@ test('alpine cliff geometry joins exactly at 120 metre chunk edges',()=>{
   }
   kit.dispose();
 });
+
+test('medium World Tour scenery streams fewer chunks than high and more than low',()=>{
+  const scene=new THREE.Scene(),renderer=createWorldTourScene(scene);
+  const root=scene.getObjectByName('World Tour authored scenery');
+  const layer=root.getObjectByName('Distance-anchored continuous scenery');
+  try {
+    for(const id of ids){
+      const sections=RACE_TRACKS[id].sections;
+      const count=quality=>{
+        renderer.update(id,1575,quality,sections,1,true);
+        return layer.children.filter(node=>node.name.startsWith('world-tour-'+id+'-chunk-')).length;
+      };
+      const high=count('high'),medium=count('medium'),low=count('low');
+      assert.ok(low<medium&&medium<high,
+        id+' expected low < medium < high streaming budgets, got '+[low,medium,high].join('/'));
+    }
+  } finally {renderer.dispose();}
+});
