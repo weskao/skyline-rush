@@ -1,6 +1,6 @@
 {
-  "reference": "main 2cd52d4: reviewed camera, intro, FPS, touch, minimap and release-video styles",
-  "cssBlob": "d5700b1bd479f7929e1db575c69d6244c0859f7d",
+  "reference": "main d71fc65 plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient",
+  "cssBlob": "2e3023263a8f8d9828cf8f002dc1d11118a02470",
   "elements": [
     {
       "id": "whats-new-screen",
