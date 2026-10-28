@@ -84,3 +84,30 @@ test('medium World Tour scenery streams fewer chunks than high and more than low
     }
   } finally {renderer.dispose();}
 });
+
+test('World Tour asphalt uses restrained destination-specific PBR under every quality tier',()=>{
+  const expected={
+    taipei: { roughness:.93,metalness:.02 },
+    tokyo: { roughness:.86,metalness:.045 },
+    alpine: { roughness:.97,metalness:.01 },
+    coastal: { roughness:.90,metalness:.018 },
+    cosmic: { roughness:.88,metalness:.055 },
+  };
+  const scene=new THREE.Scene(),visual=createWorldTourScene(scene);
+  const road=scene.getObjectByName('World Tour authored scenery').children
+    .find(node=>node.isMesh&&node.geometry?.index);
+  assert.ok(road);
+  try {
+    for(const [id,material] of Object.entries(expected)){
+      for(const quality of ['low','medium','high']){
+        visual.update(id,1500,quality,RACE_TRACKS[id].sections,1,true);
+        assert.equal(road.material.roughness,material.roughness,`${id}/${quality} roughness`);
+        assert.equal(road.material.metalness,material.metalness,`${id}/${quality} metalness`);
+        assert.ok(road.material.roughness>=.85&&road.material.metalness<=.06,
+          id+' preserves readable non-mirror asphalt');
+      }
+    }
+    assert.ok(expected.tokyo.roughness<expected.alpine.roughness,
+      'Tokyo rain-damp satin must be subtler than a mirror while Alpine stays matte');
+  } finally { visual.dispose(); }
+});
