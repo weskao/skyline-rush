@@ -1,6 +1,6 @@
 {
-  "reference": "main 53d4a0a: reviewed camera, intro, FPS, touch targets, tutorial spacing and cached minimap styles",
-  "cssBlob": "9756221a8a0e750c2fb7c2b5951acdbd02d7783d",
+  "reference": "main 2cd52d4: reviewed camera, intro, FPS, touch, minimap and release-video styles",
+  "cssBlob": "d5700b1bd479f7929e1db575c69d6244c0859f7d",
   "elements": [
     {
       "id": "whats-new-screen",
