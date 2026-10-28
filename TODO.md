@@ -3,14 +3,15 @@
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
-- [ ] Run the complete local gate on this resulting integration; retain earlier 0152611 gate logs as historical evidence.
+- [x] Complete resulting-main `make verify` on code `5d080fe` (verified 2026-10-29): strict TS/Vue/JS checks, 816 Node passed / 3 emulator-scoped skips, locked production build, 500 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/item-rules/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
+- [x] Preserve 4 original-resolution 0.25.0 real-game images in `artifacts/item-rules/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `5d080fe` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
 - [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
 
 ## Main 0.25.0 integration (2026-10-28)
 
 - [x] Merge latest requested main `01526118767b99a85b0a9b7570bdd87a27ac304e` into this independent branch. Preserve all feature source: the `src` tree is identical to the pre-merge parent. Integrate 0.25.0 metadata, per-map camera cases and six CI World Tour shards; retain the validated worktree port override. All 36 focused size/camera/haptic/release checks pass.
-- [ ] Run the complete resulting 0.25.0 local gate and fresh real-game evidence; earlier complete 0197547 gates remain historical receipts.
-- [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No workaround or main/PR/tag/deployment action is authorized.
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `5d080fe` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
+- [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
 
 ## Historical main integration through 0197547 (2026-10-28)
 
@@ -47,7 +48,7 @@ Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation a
 - [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
 - [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
 - [x] Shared result layout RED → GREEN on the affected caller branches: five-lap Circuit and billion-metre Endless phone results overflowed their panels. Commit `3826f3a` adds only `flex-wrap` to the existing shared stats container, preserving spacing/font sizes; actual cell-bounds assertions pass in 8 Circuit and 2 Endless original-resolution flows. Caller branches are repeating the complete gate after integration.
-- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. The initial batch push was rejected; automatic review later accepted same-name feature pushes after verifying the PUBLIC origin, mandated workflow step 6 and the owner's main-first condition. Current-HEAD CI remains separate; main merge, PR and deployment still require explicit authorization.
+- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. The initial batch push was rejected; automatic review later accepted same-name feature pushes after verifying the PUBLIC origin, mandated workflow step 6 and the owner's main-first condition. Current-HEAD CI remains separate; feature-to-main merge, PR and deployment still require explicit authorization.
 
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
