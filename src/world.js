@@ -544,7 +544,7 @@ export function createWorld(canvas) {
     showcaseProbe.updateProjectionMatrix();
     showcaseProbe.updateMatrixWorld(true);
     player.updateMatrixWorld(true);
-    carBox.setFromObject(player,true);
+    carBox.makeEmpty(); for(const part of player.children) if(part!==aero.group) carBox.expandByObject(part,true); // model only: airflow VFX spans metres
     let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
     for(const x of [carBox.min.x,carBox.max.x])
       for(const y of [carBox.min.y,carBox.max.y])
@@ -572,8 +572,9 @@ export function createWorld(canvas) {
   }
 
   function frameShowcaseCar(distance,time) {
-    const key=[trackId,visual.view,visual.airflow,visual.quality,
-      camera.aspect.toFixed(3),visual.view==='orbit'?Math.floor(time/1.5):0].join(':');
+    // Hover wheels fold out over ~0.5 s and widen the car: reframe as they move, not once from the first frame.
+    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),
+      Math.round(player.userData.wheels[0].rotation.z*4),visual.view==='orbit'?Math.floor(time/1.5):0].join(':');
     if(key!==framingKey) {
       framingKey=key;
       framingEye.set(0,0,0);
@@ -581,8 +582,9 @@ export function createWorld(canvas) {
       const originalEye=desiredCamera.clone(), originalLook=lookTarget.clone();
       const frame=trackId==='spiral'?skyFrame(distance):
         TOUR_IDS.has(trackId)?trackFrame(trackId,distance):null;
-      const backward=frame?new THREE.Vector3(...frame.forward).negate():
-        new THREE.Vector3(0,0,1);
+      // Dolly straight away from the car for the chosen angle; only drive follows the road's chase axis.
+      const backward=visual.view!=='drive'?originalEye.clone().sub(player.position).setY(0).normalize():
+        frame?new THREE.Vector3(...frame.forward).negate():new THREE.Vector3(0,0,1);
       // Try the smallest look adjustment first, then dolly out if a wide
       // vehicle cannot fit. No per-track offsets or expensive per-frame probes.
       // A portrait phone (aspect ~0.46) needs far more dolly than a desktop; when
@@ -689,6 +691,8 @@ export function createWorld(canvas) {
         const frame=trackFrame(trackId,distance);
         const right=new THREE.Vector3(...frame.right);
         const forward=new THREE.Vector3(...frame.forward);
+        // Offsets follow the chosen angle: "back" means away from the car, not along the road.
+        if(visual.view!=='drive') right.crossVectors(forward.copy(player.position).sub(desiredCamera).setY(0).normalize(),camera.up);
         // Try a small dolly-back first: for a high landmark aim (Tokyo/Alpine),
         // a tall camera can actually push the car BELOW the screen. Alternative
         // lateral/height moves handle viaducts, facades and mountain shoulders.
@@ -1131,9 +1135,9 @@ export function createWorld(canvas) {
       } else if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
-      } else if (preview && visual.view !== 'drive') {
-        // The selected view wins over curated showcase framing on every map.
-        const pose = showcaseCameraPose(trackId,visual.view,time,portrait);
+      } else if ((preview || visual.enabled && visual.airflow) && visual.view !== 'drive') {
+        // The selected view wins over curated showcase framing on every map, and drives the AIRFLOW race camera.
+        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||!preview); // no home panel to clear in a race
         const frame = TOUR_IDS.has(trackId) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
         if (frame) {
@@ -1148,8 +1152,7 @@ export function createWorld(canvas) {
         } else {
           desiredCamera.set(player.position.x+pose.cameraSide,
             player.position.y+pose.cameraHeight,player.position.z+pose.cameraBack);
-          lookTarget.copy(player.position);
-          lookTarget.y+=pose.lookHeight-1.6;
+          lookTarget.copy(player.position).add(new THREE.Vector3(pose.lookSide,pose.lookHeight-1.6,-pose.lookAhead));
         }
       } else if (preview && HERO_PREVIEWS[trackId]) {
         // Same shot scale and 3/4 chase angle as the original five course
@@ -1168,10 +1171,6 @@ export function createWorld(canvas) {
           .addScaledVector(right,portrait?1:info.lookSide)
           .addScaledVector(forward,info.lookAhead)
           .add(new THREE.Vector3(0,info.lookHeight-1.6,0));
-      } else if (!preview && visual.enabled && visual.airflow && visual.view !== 'drive') {
-        const angle = visual.view === 'orbit' ? time * 0.18 : { front: Math.PI, rear: 0, left: -Math.PI / 2, right: Math.PI / 2 }[visual.view];
-        desiredCamera.set(player.position.x + Math.sin(angle) * 9, player.position.y + 3.6, Math.cos(angle) * 9);
-        lookTarget.copy(player.position); lookTarget.y += 0.8;
       } else if (preview) {
         desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
         lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
