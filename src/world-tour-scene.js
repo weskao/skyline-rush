@@ -269,17 +269,16 @@ export function createWorldTourScene(scene){
   });
 
   const dummy=new THREE.Object3D(),basis=new THREE.Matrix4(),world=new THREE.Vector3();
-  let active=null, heroMaterials=[],cachedOrigin=null,cachedQuality=null;
-  const local=(id,s,x=0,y=0,origin=0)=>{
-    const center=trackPoint(id,clamped(id,s)),home=trackPoint(id,clamped(id,origin)),f=trackFrame(id,clamped(id,s));
-    return [center.x-home.x+f.right[0]*x+f.up[0]*y,
-      center.y-home.y+f.right[1]*x+f.up[1]*y,
-      center.z-home.z+f.right[2]*x+f.up[2]*y];
+  let active=null, heroMaterials=[],cachedOrigin=null,cachedQuality=null,homeId=null,homeOrigin=null,homePoint=null;
+  // One home sample per rebuild origin; callers pass the frame they already hold (its point is the centreline at s).
+  const local=(id,s,x=0,y=0,origin=0,f=trackFrame(id,clamped(id,s)),c=f.point)=>{
+    if(homeId!==id||homeOrigin!==origin){homeId=id;homeOrigin=origin;homePoint=trackPoint(id,clamped(id,origin));}
+    return [c.x-homePoint.x+f.right[0]*x+f.up[0]*y,c.y-homePoint.y+f.right[1]*x+f.up[1]*y,c.z-homePoint.z+f.right[2]*x+f.up[2]*y];
   };
   const pose=(target,id,s,x,y,origin)=>{
     const f=trackFrame(id,clamped(id,s));
     basis.makeBasis(vec(f.right),vec(f.up),vec(f.forward).negate());
-    target.position.fromArray(local(id,s,x,y,origin));
+    target.position.fromArray(local(id,s,x,y,origin,f));
     target.quaternion.setFromRotationMatrix(basis);
   };
   const instance=(mesh,index,id,s,x,y,size,origin)=>{
@@ -343,7 +342,7 @@ export function createWorldTourScene(scene){
         const s=clamped(id,start+i*STEP),f=trackFrame(id,s);
         for(let side=0;side<2;side++){
           const index=(i*2+side)*3;
-          positions.set(local(id,s,side?HALF:-HALF,0,origin),index);
+          positions.set(local(id,s,side?HALF:-HALF,0,origin,f),index);
           normals.set(f.up,index);
         }
         if(i===ROWS)continue;

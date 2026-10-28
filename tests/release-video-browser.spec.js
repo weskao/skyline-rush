@@ -30,7 +30,7 @@ test.describe('desktop', () => {
     const errors = await openNotes(page, gameplayURL);
     const video = page.locator('#release-video');
     await expect(video).toHaveAttribute('data-variant', 'desktop');
-    await expect(video).toHaveAttribute('src', new RegExp(`${CLIPS}\\.desktop\\.en\\.mp4$`));
+    await expect(video).toHaveAttribute('data-source', new RegExp(`${CLIPS}\\.desktop\\.en\\.mp4$`));
     await expect(video).toHaveAttribute('poster', /desktop\.en\.jpg$/);
     expect(await video.evaluate(element => element.muted && element.loop && element.playsInline)).toBe(true);
     await expect.poll(() => playing(video)).toBe(true);
@@ -39,7 +39,7 @@ test.describe('desktop', () => {
     expect(box.height).toBeLessThanOrEqual(302);
     expect(Math.abs(box.width / box.height - 1.6)).toBeLessThan(0.02); // the whole 16:10 clip, uncropped
     await page.locator('#locale-select').selectOption('zh-TW', { force: true });
-    await expect(page.locator('#release-video')).toHaveAttribute('src', /desktop\.zh-TW\.mp4$/);
+    await expect(page.locator('#release-video')).toHaveAttribute('data-source', /desktop\.zh-TW\.mp4$/);
     await expect.poll(() => playing(page.locator('#release-video'))).toBe(true);
     await page.screenshot({ path: test.info().outputPath('release-video-desktop-zh-TW.png') });
     const clip = await page.locator('#release-video').elementHandle();
@@ -49,14 +49,36 @@ test.describe('desktop', () => {
     expect(errors).toEqual([]);
   });
 
+  test('the clip is downloaded once: reopening the notes, switching versions and reloading reuse it', async ({ page, gameplayURL }) => {
+    const downloads = [];
+    page.on('request', request => { if (request.url().endsWith(`${CLIPS}.desktop.en.mp4`)) downloads.push(request.url()); });
+    await openNotes(page, gameplayURL);
+    await expect.poll(() => playing(page.locator('#release-video'))).toBe(true);
+    await expect(page.locator('#release-video')).toHaveAttribute('src', /^blob:/);
+    await page.locator('#release-continue').click();
+    await page.locator('#whats-new-open').click();
+    await page.getByRole('tab').nth(1).click();
+    await page.getByRole('tab').first().click();
+    await expect.poll(() => playing(page.locator('#release-video'))).toBe(true);
+    expect(downloads).toHaveLength(1);
+    await page.reload();
+    if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+    await page.locator('#whats-new-open').click();
+    await expect.poll(() => playing(page.locator('#release-video'))).toBe(true);
+    expect(downloads).toHaveLength(1); // a later visit plays it from Cache Storage
+  });
+
   test('reduced motion shows the still with controls and never autoplays', async ({ page, gameplayURL }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    // A cached clip decodes its first frame (currentTime 1/30 s), so autoplay is judged by play events, not the clock.
+    await page.addInitScript(() => { window.releaseClipPlays = 0; document.addEventListener('play', () => window.releaseClipPlays++, true); });
     await openNotes(page, gameplayURL);
     const video = page.locator('#release-video');
     await expect(video).toHaveAttribute('poster', /desktop\.en\.jpg$/);
     await expect(video).toHaveAttribute('controls', '');
     await page.waitForTimeout(500);
-    expect(await video.evaluate(element => element.paused && element.currentTime === 0)).toBe(true);
+    await expect(video).toHaveAttribute('src', /^blob:/);
+    expect(await video.evaluate(element => element.paused && window.releaseClipPlays === 0)).toBe(true);
   });
 
   test('a clip that fails to load leaves the notes readable', async ({ page, gameplayURL }) => {
@@ -78,7 +100,7 @@ test.describe('phone portrait', () => {
     const errors = await openNotes(page, gameplayURL);
     const video = page.locator('#release-video');
     await expect(video).toHaveAttribute('data-variant', 'mobile');
-    await expect(video).toHaveAttribute('src', /mobile\.en\.mp4$/);
+    await expect(video).toHaveAttribute('data-source', /mobile\.en\.mp4$/);
     await expect.poll(() => playing(video)).toBe(true);
     const box = await video.boundingBox();
     expect(box.height).toBeLessThanOrEqual(844 * 0.46 + 1);
