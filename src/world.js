@@ -15,7 +15,7 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { updateSkyline } from './skyline-scenery.ts';
-import { createCoastScenery } from './coast-visuals.ts';
+import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
@@ -531,13 +531,15 @@ export function createWorld(canvas) {
   const sightTarget = new THREE.Vector3();
   const sightDirection = new THREE.Vector3();
   const projectedSight = new THREE.Vector3();
-  let clearanceKey = '', clearanceShift = new THREE.Vector3();
+  let clearanceKey = '', clearancePlan = [0,0,0];
+  // Orbit is fitted once for its whole circle: eight eye/look positions swung around the car.
+  const orbitTurns = [0,1,2,3,4,5,6,7].map(i=>i*Math.PI/4), spin = (v,a) => v.clone().sub(player.position).applyAxisAngle(camera.up,a).add(player.position);
   // Frame the entire vehicle, including wheels and aero parts; the five
   // sightline points alone cannot detect a cropped bumper or wheel.
   const carBox = new THREE.Box3();
   const carCorner = new THREE.Vector3();
-  let framingKey = '', framingEye = new THREE.Vector3(), framingLookY = 0;
-  function projectedCarBounds(eye, look) {
+  let framingKey = '', framingBack = 0, framingLookY = 0; const framingAxis = new THREE.Vector3();
+  function projectedCarBounds(eye, look, measure = true) {
     showcaseProbe.fov=50;
     showcaseProbe.aspect=camera.aspect;
     showcaseProbe.position.copy(eye);
@@ -545,7 +547,7 @@ export function createWorld(canvas) {
     showcaseProbe.updateProjectionMatrix();
     showcaseProbe.updateMatrixWorld(true);
     player.updateMatrixWorld(true);
-    carBox.setFromObject(player,true);
+    if(measure) { carBox.makeEmpty(); for(const part of player.children) if(part!==aero.group) carBox.expandByObject(part,true); } // model only: airflow VFX spans metres
     let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
     for(const x of [carBox.min.x,carBox.max.x])
       for(const y of [carBox.min.y,carBox.max.y])
@@ -572,24 +574,27 @@ export function createWorld(canvas) {
     return apexBox.setFromObject(best);
   }
 
-  function frameShowcaseCar(distance,time) {
-    const key=[trackId,visual.view,visual.airflow,visual.quality,
-      camera.aspect.toFixed(3),visual.view==='orbit'?Math.floor(time/1.5):0].join(':');
+  function frameShowcaseCar(distance) {
+    // Hover wheels fold out over ~0.5 s and widen the car: reframe as they move, not once from the first frame.
+    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),
+      Math.round(player.userData.wheels[0].rotation.z*4)].join(':');
+    // Dolly straight away from the car for the chosen angle (re-aimed each frame as orbit turns); only drive follows the road's chase axis.
+    if(visual.view!=='drive') framingAxis.copy(desiredCamera).sub(player.position).setY(0).normalize();
     if(key!==framingKey) {
       framingKey=key;
-      framingEye.set(0,0,0);
+      framingBack=0;
       framingLookY=0;
       const originalEye=desiredCamera.clone(), originalLook=lookTarget.clone();
       const frame=trackId==='spiral'?skyFrame(distance):
         TOUR_IDS.has(trackId)?trackFrame(trackId,distance):null;
-      const backward=frame?new THREE.Vector3(...frame.forward).negate():
-        new THREE.Vector3(0,0,1);
+      if(visual.view==='drive') framingAxis.set(...(frame?frame.forward:[0,0,-1])).negate();
       // Try the smallest look adjustment first, then dolly out if a wide
       // vehicle cannot fit. No per-track offsets or expensive per-frame probes.
       // A portrait phone (aspect ~0.46) needs far more dolly than a desktop; when
       // nothing fits, keep the least-cropped candidate instead of the unframed shot.
-      let found=false, bestScore=Infinity, bestLookY=0;
-      const bestEye=new THREE.Vector3();
+      let found=false, bestScore=Infinity, bestLookY=0, bestBack=0;
+      const turns=visual.view==='orbit'?orbitTurns:[0];
+      projectedCarBounds(originalEye,originalLook); // measure the car once; candidates only re-project it
       // The drive shot also owns the signature landmark: tilting down to catch the wheels
       // must not push its top out of frame, so that top is a fit constraint too.
       const landmark=visual.view==='drive'&&TOUR_IDS.has(trackId)?landmarkBounds(originalLook):null;
@@ -597,13 +602,13 @@ export function createWorld(canvas) {
       const clearLeft=camera.aspect>1;
       // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
       search: for(const back of [0,1,2,3,4,5,6,7,8,9,10,12,14,16,20,26,32,40]) {
-        const eye=originalEye.clone().addScaledVector(backward,back);
+        const eye=originalEye.clone().addScaledVector(framingAxis,back);
         for(const down of [0,.25,.5,.75,1,1.5,2,3,4,5,6,8,10,12]) {
           const look=originalLook.clone();look.y-=down;
-          const b=projectedCarBounds(eye,look);
           // Fit inside the edge limits with a small margin: the hovering car bobs after this
           // one-off search, so a zero-margin fit crops it again a moment later.
-          const carMiss=Math.max(-.92-b.minX,b.maxX-.92,-.88-b.minY,b.maxY-.88);
+          const carMiss=Math.max(...turns.map(a=>{ const b=projectedCarBounds(spin(eye,a),spin(look,a),false);
+            return Math.max(-.92-b.minX,b.maxX-.92,-.88-b.minY,b.maxY-.88); }));
           let miss=carMiss;
           if(landmark) {
             carCorner.set((landmark.min.x+landmark.max.x)/2,landmark.max.y,(landmark.min.z+landmark.max.z)/2)
@@ -621,20 +626,20 @@ export function createWorld(canvas) {
           const score=carMiss<0?miss-1e3:carMiss;
           if(score<bestScore) {
             bestScore=score;
-            bestEye.copy(eye).sub(originalEye);
+            bestBack=back;
             bestLookY=-down;
           }
           if(miss<0) {
-            framingEye.copy(eye).sub(originalEye);
+            framingBack=back;
             framingLookY=-down;
             found=true;
             break search;
           }
         }
       }
-      if(!found) { framingEye.copy(bestEye); framingLookY=bestLookY; }
+      if(!found) { framingBack=bestBack; framingLookY=bestLookY; }
     }
-    desiredCamera.add(framingEye);
+    desiredCamera.addScaledVector(framingAxis,framingBack);
     lookTarget.y+=framingLookY;
   }
 
@@ -676,37 +681,36 @@ export function createWorld(canvas) {
     return clear/carSightPoints.length;
   }
 
-  function avoidShowcaseObstruction(distance, time) {
+  function avoidShowcaseObstruction(distance) {
     if(!showcaseOccluders?.visible)return;
-    // For orbit, retest only when the rotating eye has moved appreciably;
-    // all other views and stationary previews need one decision per mode.
-    const key=[trackId,visual.view,visual.airflow,visual.quality,
-      camera.aspect<.8,visual.view==='orbit'?Math.floor(time/1.5):0].join(':');
+    const frame=trackFrame(trackId,distance);
+    const right=new THREE.Vector3(...frame.right);
+    const forward=new THREE.Vector3(...frame.forward);
+    // Offsets follow the chosen angle: "back" means away from the car, not along the road.
+    if(visual.view!=='drive') right.crossVectors(forward.copy(player.position).sub(desiredCamera).setY(0).normalize(),camera.up);
+    const offset=([side,up,back])=>right.clone().multiplyScalar(side).addScaledVector(forward,-back).add(new THREE.Vector3(0,up,0));
+    // One decision per mode; orbit judges each move around its whole circle and re-aims it as it turns.
+    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect<.8].join(':');
     if(key!==clearanceKey) {
       clearanceKey=key;
-      clearanceShift.set(0,0,0);
-      const baseline=showroomClearShare(desiredCamera,lookTarget);
-      if(baseline<.8) {
-        const frame=trackFrame(trackId,distance);
-        const right=new THREE.Vector3(...frame.right);
-        const forward=new THREE.Vector3(...frame.forward);
-        // Try a small dolly-back first: for a high landmark aim (Tokyo/Alpine),
-        // a tall camera can actually push the car BELOW the screen. Alternative
-        // lateral/height moves handle viaducts, facades and mountain shoulders.
-        // The per-track landmark target is never changed or removed.
-        const candidates=[[0,0,3],[0,0,5],[-4,0,3],[4,0,3],
-          [0,2.5,4],[-4,3,5],[4,3,5],[0,5,6],[-7,6,5],[7,6,5]];
-        let best=baseline;
-        for(const [side,up,back] of candidates) {
-          const shift=right.clone().multiplyScalar(side)
-            .addScaledVector(forward,-back).add(new THREE.Vector3(0,up,0));
-          const value=showroomClearShare(desiredCamera.clone().add(shift),lookTarget);
-          if(value>best) { best=value; clearanceShift.copy(shift); }
-          if(value===1)break;
-        }
+      clearancePlan=[0,0,0];
+      const turns=visual.view==='orbit'?orbitTurns:[0];
+      const share=eye=>Math.min(...turns.map(a=>showroomClearShare(spin(eye,a),spin(lookTarget,a))));
+      let best=share(desiredCamera);
+      // Try a small dolly-back first: for a high landmark aim (Tokyo/Alpine),
+      // a tall camera can actually push the car BELOW the screen. Alternative
+      // lateral/height moves handle viaducts, facades and mountain shoulders;
+      // orbit never sidesteps, so it keeps circling the car itself.
+      // The per-track landmark target is never changed or removed.
+      if(best<.8) for(const plan of [[0,0,3],[0,0,5],[-4,0,3],[4,0,3],
+        [0,2.5,4],[-4,3,5],[4,3,5],[0,5,6],[-7,6,5],[7,6,5]]) {
+        if(plan[0]&&turns.length>1)continue;
+        const value=share(desiredCamera.clone().add(offset(plan)));
+        if(value>best) { best=value; clearancePlan=plan; }
+        if(value===1)break;
       }
     }
-    desiredCamera.add(clearanceShift);
+    desiredCamera.add(offset(clearancePlan));
   }
   const effects = createEffects(scene, (s) => TOUR_IDS.has(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
@@ -861,10 +865,10 @@ export function createWorld(canvas) {
         sky.material.uniforms.cloudOpacity.value = trackId==='cosmic'?0:trackId==='tokyo'?.14:trackId==='alpine'?.45:trackId==='coastal'?.32:trackId==='taipei'?.36:1;
         sky.material.uniforms.cloudTint.value.set(trackId==='alpine'?'#647575':trackId==='coastal'?'#82989a':trackId==='taipei'?'#77898b':trackId==='tokyo'?'#394354':'#4d3d60');
         sunlight.color.set(palette.sun);
-        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? 1.35 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
+        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? COAST_LIGHTING.sun : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
         sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
-        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?1.01:1.12;
-        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?1.24:trackId==='neon'?1.1:1.7;
+        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?COAST_LIGHTING.exposure:1.12;
+        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?COAST_LIGHTING.ambient:trackId==='neon'?1.1:1.7;
         sun.visible = trackId === 'coast' || trackId === 'canyon';
         // Sky Spiral draws its own dome. The shared sky, sea and peaks would sit in front of it.
         sky.visible = sea.visible = mountains.visible = trackId !== 'spiral';
@@ -1121,9 +1125,9 @@ export function createWorld(canvas) {
       } else if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
-      } else if (preview && visual.view !== 'drive') {
-        // The selected view wins over curated showcase framing on every map.
-        const pose = showcaseCameraPose(trackId,visual.view,time,portrait);
+      } else if ((preview || visual.enabled && visual.airflow) && visual.view !== 'drive') {
+        // The selected view wins over curated showcase framing on every map, and drives the AIRFLOW race camera.
+        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||!preview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
         const frame = TOUR_IDS.has(trackId) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
         if (frame) {
@@ -1138,8 +1142,7 @@ export function createWorld(canvas) {
         } else {
           desiredCamera.set(player.position.x+pose.cameraSide,
             player.position.y+pose.cameraHeight,player.position.z+pose.cameraBack);
-          lookTarget.copy(player.position);
-          lookTarget.y+=pose.lookHeight-1.6;
+          lookTarget.copy(player.position).add(new THREE.Vector3(pose.lookSide,pose.lookHeight-1.6,-pose.lookAhead));
         }
       } else if (preview && HERO_PREVIEWS[trackId]) {
         // Same shot scale and 3/4 chase angle as the original five course
@@ -1158,10 +1161,6 @@ export function createWorld(canvas) {
           .addScaledVector(right,portrait?1:info.lookSide)
           .addScaledVector(forward,info.lookAhead)
           .add(new THREE.Vector3(0,info.lookHeight-1.6,0));
-      } else if (!preview && visual.enabled && visual.airflow && visual.view !== 'drive') {
-        const angle = visual.view === 'orbit' ? time * 0.18 : { front: Math.PI, rear: 0, left: -Math.PI / 2, right: Math.PI / 2 }[visual.view];
-        desiredCamera.set(player.position.x + Math.sin(angle) * 9, player.position.y + 3.6, Math.cos(angle) * 9);
-        lookTarget.copy(player.position); lookTarget.y += 0.8;
       } else if (preview) {
         desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
         lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
@@ -1200,8 +1199,8 @@ export function createWorld(canvas) {
       if(preview) {
         // Preserve scenery clearance, then fit the complete car within the
         // actual viewport, regardless of track and selected camera angle.
-        if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance,time);
-        frameShowcaseCar(distance,time);
+        if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
+        frameShowcaseCar(distance);
       }
       const smoothing = 1 - Math.exp(-dt * 7);
       if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
@@ -1224,7 +1223,7 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?.19:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
+      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?COAST_LIGHTING.bloom:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
       renderer.info.reset(); // Exclude warmup draws and previous frames.

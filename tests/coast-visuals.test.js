@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { COAST_PALETTE, createCoastScenery } from '../src/coast-visuals.ts';
+import { COAST_PALETTE, COAST_LIGHTING, createCoastScenery } from '../src/coast-visuals.ts';
 
 const center = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
 
@@ -88,4 +88,12 @@ test('Endless Coast scenery remains near its floating origin and changes from ab
   assert.deepEqual(kit.group.children.map(mesh => { mesh.getMatrixAt(0, matrix); return matrix.elements.slice(); }), positions);
   assert.equal(scene.children.length, 1);
   kit.dispose(); assert.equal(scene.children.length, 0);
+});
+
+test('Coast keeps readable light and glow: not dimmer than the Phase 2 floor, not the old blown-out look', () => {
+  assert.ok(COAST_LIGHTING.sun >= 1.7 && COAST_LIGHTING.sun <= 2.3, 'sun between Phase 2 dimming and the original 2.3');
+  assert.ok(COAST_LIGHTING.ambient >= 1.4 && COAST_LIGHTING.ambient <= 1.7);
+  assert.ok(COAST_LIGHTING.exposure >= 1.05 && COAST_LIGHTING.exposure <= 1.12);
+  assert.ok(COAST_LIGHTING.bloom >= .28 && COAST_LIGHTING.bloom <= .42, 'in-race glow survives');
+  assert.ok(COAST_PALETTE.warmth >= .45 && COAST_PALETTE.warmth < .6, 'warm sunset returns without the old oversaturation');
 });

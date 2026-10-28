@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
+import { PORTRAIT_CAR_TOP } from './showcase-car-zone.js';
 
 test('ready screen offers a discoverable camera dock across all tracks',async({page})=>{
   await page.goto('/');
@@ -114,5 +115,32 @@ for (const [width, height] of [[320, 568], [390, 844], [760, 501], [768, 1024], 
     await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'front');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+  });
+}
+
+// Portrait phones: the showcase car fills the middle of the screen edge to edge, so the AIRFLOW
+// telemetry card must sit in the sky band above it (the car side of the line is in showcase-camera-views-browser.spec.js).
+for (const [width, height, top] of [[320, 568, 0], [390, 844, 0], [390, 844, 59], [430, 932, 59]]) {
+  test(`AIRFLOW telemetry card stays above the showcase car at ${width}x${height}, top inset ${top}`, async ({ page, context }) => {
+    await page.setViewportSize({ width, height });
+    if (top) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { top, bottom: 34, left: 0, right: 0 } });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    await page.locator('#airflow-toggle').click();
+    await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
+    const overlaps = (a, b) => !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
+    for (const locale of ['en', 'zh-TW']) {
+      await page.locator('#locale-select').selectOption(locale, { force: true });
+      await expect(page.locator('#airflow-hud')).toHaveCSS('opacity', '1');
+      const card = await page.locator('#airflow-hud').boundingBox();
+      const label = `${width}x${height} inset ${top} ${locale}`;
+      expect(card.y + card.height, `${label}: card reaches down onto the car`).toBeLessThanOrEqual(height * PORTRAIT_CAR_TOP);
+      expect(card.x, `${label}: card off-screen`).toBeGreaterThanOrEqual(0);
+      expect(card.x + card.width, `${label}: card clipped`).toBeLessThanOrEqual(width);
+      for (const control of await page.locator('.aero-tools > *, .topbar button').all()) {
+        if (!await control.isVisible()) continue;
+        expect(overlaps(card, await control.boundingBox()), `${label}: card covers a top control`).toBe(false);
+      }
+    }
   });
 }
