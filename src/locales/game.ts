@@ -58,6 +58,7 @@ export const GAME = Object.freeze({
     'sign.boost-tunnel': 'HYPERDRIVE / SPEED + NITRO',
     'sign.finish': 'SKYLINE  /  FINISH',
     'route.aria': 'Full {name} main route',
+    'route.grade': 'Climbs and descents marked',
   },
   'zh-TW': {
     'callout.perfect': '完美走線',
@@ -116,5 +117,6 @@ export const GAME = Object.freeze({
     'sign.boost-tunnel': '超載隧道 / 加速 + NITRO',
     'sign.finish': 'SKYLINE  /  終點',
     'route.aria': '{name}完整主要路線',
+    'route.grade': '標示上坡與下坡',
   },
 }) satisfies Readonly<Record<'en' | 'zh-TW', Record<string, string>>>;

@@ -1,5 +1,5 @@
 import { RACE_TRACKS } from './game.js';
-import { trackOverview } from './track-paths.ts';
+import { trackOverview, trackPoint } from './track-paths.ts';
 import { SKY_SPIRAL } from './sky-track.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 
@@ -12,6 +12,8 @@ const cache = new Map<string, RouteSample[]>();
 const lineCache = new Map<string, string>();
 const overpassCache = new Map<string, string>();
 const racers = ['YOU', 'NOVA', 'ORBIT', 'APEX'];
+interface GradeCue extends RoutePoint { distance: number; direction: 'up' | 'down' }
+const gradeCache = new Map<string, GradeCue[]>();
 const clamp = (x: number): number => Math.max(0, Math.min(1, Number.isFinite(x) ? x : 0));
 const svg = (tag: string, attrs: Record<string, string | number> = {}): SVGElement => {
   const node = document.createElementNS(NS, tag);
@@ -69,7 +71,30 @@ export function spiralUpperDirectionChevron(trackId: string): string {
     { x: point.x - ux * 1.6 + uy * 2.0, y: point.y - uy * 1.6 - ux * 2.0 },
   ].map(pointText).join(' ');
 }
-const routeLabel = (trackId: string, locale: string = getLocale()): string => t('route.aria', { name: trackName(trackId, locale) }, locale);
+// The mini-map's two static grade hints use the actual 3D centreline and the
+// same cached map coordinates as racer markers. No independent route model.
+export function routeElevationCues(trackId: string): readonly GradeCue[] {
+  if (trackId !== 'alpine' && trackId !== 'cosmic') return [];
+  if (!gradeCache.has(trackId)) {
+    let climb = { distance: 0, delta: 1.2 };
+    let descent = { distance: 0, delta: -1.2 };
+    for (const sample of routeSamples(trackId).slice(1, -1)) {
+      const delta = trackPoint(trackId, sample.distance + 50).y - trackPoint(trackId, sample.distance - 50).y;
+      if (delta > climb.delta) climb = { distance: sample.distance, delta };
+      if (delta < descent.delta) descent = { distance: sample.distance, delta };
+    }
+    const cues: GradeCue[] = [climb, descent].filter(c => c.distance > 0).map(c => ({
+      ...routeMarker(trackId, c.distance), distance: c.distance,
+      direction: c.delta > 0 ? 'up' : 'down',
+    }));
+    gradeCache.set(trackId, cues);
+  }
+  return gradeCache.get(trackId)!;
+}
+const routeLabel = (trackId: string, locale: string = getLocale()): string => {
+  const label = t('route.aria', { name: trackName(trackId, locale) }, locale);
+  return routeElevationCues(trackId).length ? `${label} · ${t('route.grade', undefined, locale)}` : label;
+};
 export function createRouteMap(trackId: string, { live = false }: { live?: boolean } = {}) {
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
@@ -78,6 +103,16 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
     element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
     element.append(svg('polyline', { points: spiralUpperDirectionChevron(trackId),
       class: 'route-spiral-direction', fill: 'none', 'aria-hidden': 'true' }));
+  }
+  for (const cue of routeElevationCues(trackId)) {
+    const { x, y } = cue;
+    const top = cue.direction === 'up';
+    const tip = (y + (top ? -3 : 3)).toFixed(2);
+    const base = (y + (top ? 2 : -2)).toFixed(2);
+    element.append(svg('path', {
+      d: `M${(x - 2.5).toFixed(2)},${base} L${x.toFixed(2)},${tip} L${(x + 2.5).toFixed(2)},${base} Z`,
+      class: 'route-elevation-cue', 'data-direction': cue.direction, 'aria-hidden': 'true',
+    }));
   }
   for (const [kind, d] of [['start', 0], ['finish', raceTracks[trackId].length]] as const) {
     const p = routeMarker(trackId, d);

@@ -191,10 +191,7 @@ export function createWorldTourScene(scene){
     if(sceneryTrack!==id||sceneryDetail!==level){
       clearChunks();sceneryTrack=id;sceneryDetail=level;
     }
-    // Preserve full authored detail on Medium while bounding how far it
-    // streams. High retains the longer horizon; Low also thins non-solid props.
-    const behind=level==='high'?3:2;
-    const ahead=level==='high'?10:level==='medium'?9:7;
+    const [behind,ahead]=level==='high'?[3,10]:level==='medium'?[2,9]:[2,7];
     const start=Math.max(0,centerChunk-behind);
     const end=Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+ahead);
     for(const [index,node] of chunks){
