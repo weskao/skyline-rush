@@ -34,6 +34,8 @@ export interface ReleaseView {
   version: string;
   date: string;
   heroSrc: string;
+  // Takes the hero's place while it loads and plays; null falls back to heroSrc.
+  heroVideo: { src: string; poster: string; variant: 'desktop' | 'mobile'; controls: boolean } | null;
 }
 export interface TutorialCoachView {
   visible: boolean;

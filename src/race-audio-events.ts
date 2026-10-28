@@ -5,7 +5,7 @@ interface AudioCar {
   boosting?: boolean; nitroTime: number; miniBoost: number; fuel: number;
   thrusting?: boolean;
   impact?: { time: number; intensity: number; kind?: string } | null;
-  landing?: { time: number; speed: number } | null;
+  landing?: { time: number; speed: number; chain?: boolean } | null;
   nearMiss?: unknown; trick?: unknown;
 }
 export interface AudioRace extends ModeAudioRace {
@@ -64,8 +64,10 @@ export function createRaceAudioEvents() {
         if (active) {
           if (car.impact && car.impact !== lastImpact && race.elapsed - car.impact.time < 0.2)
             sounds.push({ intensity: car.impact.intensity, landing: false, barrier: car.impact.kind === 'barrier' });
-          if (car.landing && car.landing !== lastLanding && race.elapsed - car.landing.time < 0.2)
+          if (car.landing && car.landing !== lastLanding && race.elapsed - car.landing.time < 0.2) {
             sounds.push({ intensity: Math.min(1, car.landing.speed / 14), landing: true, barrier: false });
+            if (car.landing.chain) sounds.push('chain-land');
+          }
           if (car.nearMiss && car.nearMiss !== lastNearMiss) sounds.push('near');
           if (car.trick && car.trick !== lastTrick) sounds.push('whoosh');
           if (car.thrusting && !wasThrusting) sounds.push('lift');
