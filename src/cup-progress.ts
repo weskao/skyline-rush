@@ -2,11 +2,11 @@ import { cupComplete, type CupState } from './championship-cup.ts';
 import type { HistoryStorage } from './history-storage.ts';
 import { writeStored } from './history-storage.ts';
 
-const KEY = 'skyline-rush-cup-progress-v1';
+export const CUP_PROGRESS_KEY = 'skyline-rush-cup-progress-v1';
 
 export function loadCupProgress(unlocked: readonly string[], storage?: HistoryStorage): CupState | null {
   try {
-    const raw = (storage ?? globalThis.localStorage).getItem(KEY);
+    const raw = (storage ?? globalThis.localStorage).getItem(CUP_PROGRESS_KEY);
     if (!raw || raw.length > 16_384) return null;
     const data: unknown = JSON.parse(raw);
     if (!data || typeof data !== 'object' || !('version' in data) || data.version !== 1 || !('cup' in data)) return null;
@@ -22,7 +22,7 @@ export function loadCupProgress(unlocked: readonly string[], storage?: HistorySt
 }
 
 export function saveCupProgress(cup: CupState | null, storage?: HistoryStorage): void {
-  writeStored(KEY, cup && !cupComplete(cup) ? { version: 1, cup } : null, storage);
+  writeStored(CUP_PROGRESS_KEY, cup && !cupComplete(cup) ? { version: 1, cup } : null, storage);
 }
 
 export function retryCupHeat(cup: CupState, trackId: string): CupState {

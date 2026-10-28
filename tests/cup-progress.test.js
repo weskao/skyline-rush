@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCup, addCupResult } from '../src/championship-cup.ts';
 import { loadCupProgress, saveCupProgress, retryCupHeat } from '../src/cup-progress.ts';
+import { clearLocalProgress } from '../src/cloud-progress.ts';
 
 const tracks = ['coast', 'neon', 'canyon'];
 const key = 'skyline-rush-cup-progress-v1';
@@ -11,7 +12,7 @@ const finish = trackId => ({ trackId, phase: 'finished', elapsed: 40, length: 50
 const partial = () => addCupResult(createCup(tracks, 'coast'), finish('coast'));
 function memory(raw = null) {
   const values = new Map(raw === null ? [] : [[key, raw]]);
-  return { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+  return { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
 }
 
 test('Cup checkpoints round-trip finished heats without mutating live standings', () => {
@@ -53,4 +54,17 @@ test('completed or discarded Cups cannot be offered again; storage denial never 
   const blocked = { getItem() { throw Error('denied'); }, setItem() { throw Error('quota'); } };
   assert.equal(loadCupProgress(tracks, blocked), null);
   assert.doesNotThrow(() => saveCupProgress(partial(), blocked));
+});
+
+test('clearing game progress removes Cup recovery without erasing device preferences', () => {
+  const store = memory();
+  saveCupProgress(partial(), store);
+  store.setItem('skyline-rush-controls', 'saved controls');
+  store.setItem('skyline-rush-music', 'off');
+  assert.equal(clearLocalProgress(store), true);
+  assert.equal(loadCupProgress(tracks, store), null, 'deleted Cup standings must never reappear after tracks unlock again');
+  assert.equal(store.getItem('skyline-rush-controls'), 'saved controls');
+  assert.equal(store.getItem('skyline-rush-music'), 'off');
+  const blocked = { ...store, removeItem(key) { if (key === 'skyline-rush-cup-progress-v1') throw Error('denied'); } };
+  assert.equal(clearLocalProgress(blocked), false, 'a failed recovery deletion must keep the existing deletion guard active');
 });
