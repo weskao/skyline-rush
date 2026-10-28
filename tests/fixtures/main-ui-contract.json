@@ -1,6 +1,6 @@
 {
-  "reference": "main 72466c3 plus reviewed result metric wrapping",
-  "cssBlob": "400923cac8f76e1458bbe08bcedb28bad9b10a40",
+  "reference": "main d71fc65 plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient",
+  "cssBlob": "2e3023263a8f8d9828cf8f002dc1d11118a02470",
   "elements": [
     {
       "id": "whats-new-screen",
