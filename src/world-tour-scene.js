@@ -293,7 +293,7 @@ export function createWorldTourScene(scene){
     cachedOrigin=null;cachedQuality=null; // theme switch must invalidate world geometry
     const theme=WORLD_THEMES[id];
     roadMat.color.set(ROAD_CHARACTER[id].pavement);
-    roadMat.roughness=.94;roadMat.metalness=.025;
+    roadMat.roughness=ROAD_CHARACTER[id].roughness;roadMat.metalness=ROAD_CHARACTER[id].metalness;
     glowMat.color.set(ROAD_CHARACTER[id].edge);
     stripeMat.color.set(ROAD_CHARACTER[id].lane);
     shoulderMat.color.set(ROAD_CHARACTER[id].shoulder);

@@ -46,11 +46,11 @@ export function terrainHeight(trackId,distance,side,lateral) {
 }
 
 export const ROAD_CHARACTER = Object.freeze({
-  taipei: { markings:'urban', shoulder:'#777e7a', lane:'#c6c3b3', edge:'#969c95', pavement:'#373e41' },
-  tokyo: { markings:'expressway', shoulder:'#49566c', lane:'#a5abb6', edge:'#727e96', pavement:'#202b3b' },
-  alpine: { markings:'mountain', shoulder:'#5e655a', lane:'#bdb99d', edge:'#e1d8a9', pavement:'#414640' },
-  coastal: { markings:'coastal', shoulder:'#a3977a', lane:'#bdb0a0', edge:'#bdd1c8', pavement:'#454b49' },
-  cosmic: { markings:'orbital', shoulder:'#35415f', lane:'#5b738d', edge:'#68889b', pavement:'#22293c' },
+  taipei: { markings:'urban', shoulder:'#777e7a', lane:'#c6c3b3', edge:'#969c95', pavement:'#373e41', roughness:0.93, metalness:0.02 },
+  tokyo: { markings:'expressway', shoulder:'#49566c', lane:'#a5abb6', edge:'#727e96', pavement:'#202b3b', roughness:0.86, metalness:0.045 },
+  alpine: { markings:'mountain', shoulder:'#5e655a', lane:'#bdb99d', edge:'#e1d8a9', pavement:'#414640', roughness:0.97, metalness:0.01 },
+  coastal: { markings:'coastal', shoulder:'#a3977a', lane:'#bdb0a0', edge:'#bdd1c8', pavement:'#454b49', roughness:0.9, metalness:0.018 },
+  cosmic: { markings:'orbital', shoulder:'#35415f', lane:'#5b738d', edge:'#68889b', pavement:'#22293c', roughness:0.88, metalness:0.055 },
 });
 const hash = (a, b = 0, c = 0) => {
   let n = (Math.imul(a + 1, 73856093) ^ Math.imul(b + 11, 19349663) ^ Math.imul(c + 7, 83492791)) >>> 0;
