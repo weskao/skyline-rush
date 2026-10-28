@@ -89,7 +89,15 @@ for (const [label, viewport, locale, touch] of [
       await page.keyboard.up('ArrowRight');
       await expect(page.locator('#overlay-title')).toHaveText(locale === 'en' ? 'SURVIVAL RUN COMPLETE' : '生存挑戰完成');
       await expect(page.locator('#result-stats')).toContainText('1000000.');
-      await page.screenshot({ path: `artifacts/endless/${label}-results.png` });
+      await expect(page.locator('#race-overlay')).toBeVisible();
+      expect(await page.locator('#result-stats').evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        return [...element.children].every(child => {
+          const rect = child.getBoundingClientRect();
+          return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1;
+        });
+      }), 'long-distance values must fit inside the results panel').toBe(true);
+      await page.screenshot({ path: `artifacts/endless/${label}-results.png`, animations: 'disabled' });
       const saved = await page.evaluate(() => ({ mode: JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1')),
         career: localStorage.getItem('skyline-rush-history'), ghosts: localStorage.getItem('skyline-rush-ghosts') }));
       expect(saved.mode).toHaveLength(1); expect(saved.mode[0].distance).toBeGreaterThan(1_000_000_000);

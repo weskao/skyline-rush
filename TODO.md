@@ -2,19 +2,23 @@
 
 ## Endless Highway continuation (2026-10-28, feature/endless-highway)
 
+- [x] Real screenshot review exposed horizontal overflow in billion-metre phone results. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
+- [ ] Repeat complete `make verify` and latest-HEAD CI after this CSS fix; the pre-fix full-gate receipt below remains historical evidence.
+
+
 - [x] Observe mode/streaming/settlement RED; implement Coast-only absolute-distance survival beyond authored finishes, five-contact settlement, capped difficulty and deterministic five-chunk traffic/pickup/ring pools. Classic/Daily/Cup routes and ordered catalogs remain unchanged.
 - [x] Rebase Coast scenery and skyline GPU transforms near the camera, preserve existing materials/pools, hide finite minimap/progress/finish arch and avoid Ghost trace accumulation. Tests cover 8 km, 2 million metres and billion-metre progress with fixed object/resource counts.
 - [x] Persist longest distance independently from Career, including a fifth real collision and rolling-history/cloud normalization/max-distance merges; reuse cruise music and one-shot milestones.
 - [x] Follow-up GREEN: 126 focused core/type/Classic-route checks and two real desktop/touch bilingual browser flows pass, including pause, actual WebGL loss/restore, flight input, result persistence, locale switch and restart. Actual full-resolution distant-road/result captures inspected in `artifacts/endless/`.
 - [x] Moving-traffic continuity RED → GREEN: a 20-minute deterministic driving regression reproduced nearby traffic disappearing when its birth chunk expired. Recycle by current distance and preserve the 40-car cap; all six Endless checks and the full Node suite pass (799 passed, 0 failed, 3 skipped). Logs: `artifacts/endless/traffic-continuity-{red,green,unit}.log`.
 - [x] Complete merged local `make verify` on code HEAD `12150b7`: strict TS/Vue/legacy checks, 801 Node passed / 3 emulator-dependent skipped, locked production build, 489 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main72466c3-final.log`. Cloud emulator checks also pass: 15 browser + 3 Rules tests (`cloud-main72466c3.log`).
-- [ ] Latest-feature-HEAD GitHub quality-gate, actual background-tab acceptance and physical iOS/Android GPU/thermal endurance. Push authorization is pending.
+- [ ] Latest-feature-HEAD GitHub quality-gate, actual background-tab acceptance and physical iOS/Android GPU/thermal endurance. Same-name feature pushes passed the renewed automatic review; latest-HEAD CI remains pending.
 
 ## Shared continuation regression gates (2026-10-28)
 
 - [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
 - [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
-- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. Remote pushes await the user's explicit authorization following automatic review rejection; no main merge, PR or deployment is authorized.
+- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. The initial batch push was rejected; automatic review later accepted same-name feature pushes after verifying the PUBLIC origin, mandated workflow step 6 and the owner's main-first condition. Current-HEAD CI remains separate; main merge, PR and deployment still require explicit authorization.
 
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
