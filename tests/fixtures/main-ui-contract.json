@@ -1,6 +1,6 @@
 {
-  "reference": "main 2cd52d4 plus reviewed Endless-only finite HUD hiding; reviewed bounded result metric wrapping",
-  "cssBlob": "c24da6b72fb239b6256a9ab40c5729a07e4c6358",
+  "reference": "main d71fc65 plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient",
+  "cssBlob": "12c17626ef6f98cad89f0f25a035eb39fa91f7f4",
   "elements": [
     {
       "id": "whats-new-screen",
