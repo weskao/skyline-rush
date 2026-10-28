@@ -36,6 +36,20 @@ test('front/rear and left/right views differ and orbit rotates while drive stays
   }
 });
 
+test('landscape angles aim left of the car so it sits right of the home panel; portrait stays centred', () => {
+  for (const id of [...Object.keys(RACE_TRACKS), 'future-track']) {
+    for (const [view, time] of [['front', 0], ['rear', 0], ['left', 0], ['right', 0], ['orbit', 3], ['orbit', 19]]) {
+      const pose = camera.showcaseCameraPose(id, view, time, false);
+      // The camera's own left, in (side, back) road coordinates, seen from its bearing around the car.
+      const angle = Math.atan2(pose.cameraSide, pose.cameraBack);
+      const towardLeft = pose.lookSide * -Math.cos(angle) + -pose.lookAhead * Math.sin(angle);
+      assert.ok(towardLeft > 3.5, `${id}/${view}@${time}: look ${towardLeft.toFixed(2)} m left`);
+      const portrait = camera.showcaseCameraPose(id, view, time, true);
+      assert.equal(Math.hypot(portrait.lookSide, portrait.lookAhead), 0, `${id}/${view} portrait`);
+    }
+  }
+});
+
 test('portrait and landscape preview distances stay appropriate for the home showcase', () => {
   for (const id of Object.keys(RACE_TRACKS)) {
     const landscape = camera.showcaseCameraPose(id, 'drive', 0, false);
