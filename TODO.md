@@ -2,10 +2,13 @@
 
 ## Main integration follow-up (2026-10-28)
 
-- [x] Merge main `f9c2cb1a81ef75d6eb60ebf4f3f731bfaefd3471` (including `d71fc65`) into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests). The follow-up main commits change only CSS-test metadata/comments; runtime source is identical, and all DOM/style assertions are retained.
+- [x] Merge main `ebd30e526f54aba08a46c9c7c3f2fcdc784b710f` (same file tree as `f9c2cb1`, including `d71fc65`) into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests). The follow-up main commits change only CSS-test metadata/comments; runtime source is identical, and all DOM/style assertions are retained.
 - [ ] Broader feature implementation, full acceptance and exact-HEAD CI remain separate from this main-merge check.
 
 ## Shared continuation regression gates (2026-10-28)
+
+- [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.
+- [ ] Complete caller-branch full gates and exact-HEAD CI after this shared repair. Earlier Custom f9 full-gate success and Cup/Items failures remain historical; the Cup run interrupted during a merge is not a passing receipt.
 
 - [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
 - [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
