@@ -8,9 +8,9 @@ Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation a
 - [x] Existing ITEM-01–05 feedback slice: actual mystery-ring pickup → held silhouette → Q/touch activation → bounded cooldown/active status, English/zh-TW, one-shot pickup/ready cues using the existing muted mixer. Main bootstrap shrinks seven lines; cached HUD writes remain idempotent. This does not complete every future ITEM-12 visual effect.
 - [x] Observed RED: Off still spawned supplies, unknown new rules collapsed recent setups, and Chrome lacked the rule selector. Follow-up RED caught a restored old setup retaining `activeItems: true` and filtered groups falsely awarding PERFECT LINE/NITRO; shared fixes preserve old-setup defaults and original ring index/group size.
 - [x] Focused proof: rule/config/mode tests 40 passed; final item/UI/activation tests 11 passed; complete Node suite 699 passed, 0 failed, 3 emulator-dependent skipped. Strict TS/Vue/JS checks and locked production build passed. Browser mode/HUD/parity suite 31/31 passed; final changed-rule desktop/touch/locale/recent-restore rerun 4/4 passed. Actual WebGL captures and logs: `artifacts/item-rules/`.
-- [ ] Parent-owned complete `make verify`, layout, exact-feature-HEAD GitHub CI and physical-device/audio/perception acceptance remain open. New pads/EMP/multiplier are the next related TDD slice; no broader ITEM or roadmap acceptance is implied here.
+- [ ] Parent-owned complete `make verify`, layout, exact-feature-HEAD GitHub CI and physical-device/audio/perception acceptance remain open. Pads/EMP/multiplier are implemented in the related slice below; broader ITEM-03/12 visual work remains open.
 - [x] Main integration (2026-10-28): preserve latest main `7cbdbe5`, including Phase 1–4 and the split bootstrap; move this branch's selection/reset changes into `race-select-ui.ts` and item HUD updates into the typed mode-panel callback. Preserve all new size ceilings: `game.js` remains 827 lines and `main.js` shrinks to 687. Fresh strict TS/Vue/JS checks, 17 focused Node checks and five real desktop/touch item browser cases pass. The historical 10/27 measurements above remain historical receipts, not proof for the merged source.
-- [ ] Merged full unit gate currently reports 788 pass / 2 fail / 3 emulator skips: inherited `browser-timeouts.test.js` rejects Phase 4's unscaled 240000ms timeout, and `perf-overlay.test.js` expects frame text from the first record despite the new presented-frame initializer. These untouched-main failures were reported to the parent; the merged branch is not yet full-gate green.
+- [x] Resolve the two inherited unit-gate failures through the shared main regression repair (Phase 4 timeout scaling and perf-overlay initialization); after merging main `2cd52d4`, the complete Node suite passes 804 / 0 failed / 3 emulator-dependent skipped. Main `72466c3` is now integrated; complete resulting `make verify` and latest-HEAD CI remain separate pending gates.
 
 ## Related item expansion (2026-10-28)
 
@@ -1294,17 +1294,17 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 12A. Turn current ring effects into optional active items (P1)
 
-- [ ] **ITEM-01 — Single item slot:** pick up and hold one active item;
+- [x] **ITEM-01 — Single item slot:** pick up and hold one active item;
   show icon, ready/held state, cooldown and an accessible Activate
   action on keyboard and touch. Keep NITRO and FLY/BOOST as separate
   systems; do not overload existing controls without remapping.
-- [ ] **ITEM-02 — Shield:** reuse existing “absorb one collision” effect
+- [x] **ITEM-02 — Shield:** reuse existing “absorb one collision” effect
   as a held/triggerable item, with a clear hit/expiration state.
 - [ ] **ITEM-03 — Magnet:** reuse current timed pickup attraction,
   with an optional active duration and visible radius indicator.
-- [ ] **ITEM-04 — Ghost:** reuse short traffic phasing with explicit
+- [x] **ITEM-04 — Ghost:** reuse short traffic phasing with explicit
   cooldown; it must not let players pass invalid lap checkpoints.
-- [ ] **ITEM-05 — Freeze:** reuse temporary rival slowdown only in modes
+- [x] **ITEM-05 — Freeze:** reuse temporary rival slowdown only in modes
   with AI; provide a harmless conversion/fallback in solo events.
 - [ ] **Acceptance:** no unintended double-stacks or unbounded
   durations, correct activation order and no change to existing
@@ -1312,21 +1312,21 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 12B. Additional pickups and interactive pads (P1/P2)
 
-- [ ] **ITEM-06 — Precision speed strips / Energy Gates:** reward
+- [x] **ITEM-06 — Precision speed strips / Energy Gates:** reward
   accurately crossing a boost pad or flight gate; apply capped,
   readable acceleration or thruster recharge.
-- [ ] **ITEM-07 — Air recharge pads:** restore a bounded share of
+- [x] **ITEM-07 — Air recharge pads:** restore a bounded share of
   FLY energy mid-flight, making aerial precision lines worthwhile.
-- [ ] **ITEM-08 — Repair / recovery pad:** temporarily mitigate
+- [x] **ITEM-08 — Repair / recovery pad:** temporarily mitigate
   one obstacle's speed loss or restore a limited resource without
   erasing official collision counts.
-- [ ] **ITEM-09 — Score multiplier token:** temporary style-combo
+- [x] **ITEM-09 — Score multiplier token:** temporary style-combo
   bonus in Stunt/Checkpoint modes; cap multipliers and prevent
   overlapping infinite reward loops.
-- [ ] **ITEM-10 — EMP Pulse (P2):** short-range rival disruption
+- [x] **ITEM-10 — EMP Pulse (P2):** short-range rival disruption
   exclusive to suitable competitive rule sets; clear fair warning
   and no effect on player control accessibility.
-- [ ] **ITEM-11 — Mode item rules:** Off / Classic Mystery Rings /
+- [x] **ITEM-11 — Mode item rules:** Off / Classic Mystery Rings /
   Active Items / All Items. Resolve item positions from seeded
   streams and never place important rewards inside impossible gaps.
 - [x] **New-mode procedural audio (2026-10-22):** original Web Audio music loops
