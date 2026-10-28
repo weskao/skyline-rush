@@ -1,5 +1,10 @@
 # TODO — Gameplay depth design
 
+## Main integration follow-up (2026-10-28)
+
+- [x] Merge main `d71fc6592ad0cfd160a5306e333ea8e73afe757b` into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests).
+- [ ] Repeat the complete local gate and inspect exact resulting feature-HEAD GitHub `quality-gate` after this integration; earlier SHA receipts below remain historical. Real-device and remaining manual gates stay open.
+
 ## Genuine circuit continuation (2026-10-28, feature/genuine-circuit-laps)
 
 - [x] Real screenshot review exposed horizontal overflow in Circuit 5-lap phone metrics. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.

@@ -20,7 +20,7 @@
     return originalRender.apply(this, args);
   };
   const world = createWorld(document.getElementById('world'));
-  const TOUR = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
+  const TOUR = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic', 'harbor-circuit']);
   const roadFrame = (id, distance) => id === 'spiral' ? skyFrame(distance)
     : TOUR.has(id) ? trackFrame(id, distance) : { forward: [0, 0, -1], right: [1, 0, 0] };
   // Camera bearing around the player in its road frame: rear 0°, right 90°, front ±180°, left -90°.
@@ -38,7 +38,7 @@
   // `racing` parks the player at the preview point mid-race, where AIRFLOW views drive the race camera.
   window.showcaseCameraProbe = (id, view, { airflow = false, seconds = 2, every = 0, start = 2, racing = false, quality = 'low' } = {}) => {
     world.configureVFX({ quality, enabled: true, bloom: 0, airflow, view });
-    const race = createRace(id);
+    const race = createRace(id, id === 'harbor-circuit' ? { mode: 'circuit', laps: 3 } : null);
     if (racing) Object.assign(race, { phase: 'racing', elapsed: start }).player.distance = previewDistance(id);
     const samples = [];
     const frames = Math.round(seconds * 30);
