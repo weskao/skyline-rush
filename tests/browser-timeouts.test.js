@@ -41,6 +41,30 @@ test('browser preview port rejects shell text', () => {
   assert.match(result.stderr, /Invalid Playwright port/);
 });
 
+test('World Tour uses the worktree port for both its fixture server and browser', () => {
+  for (const port of ['5198', undefined]) {
+    const env = { ...process.env };
+    if (port) env.PLAYWRIGHT_PORT = port; else delete env.PLAYWRIGHT_PORT;
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e',
+      "import config from './playwright.world-tour.config.js'; console.log(JSON.stringify(config));"],
+      { cwd: new URL('..', import.meta.url), env, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    const config = JSON.parse(result.stdout), url = 'http://127.0.0.1:' + (port ?? '5183');
+    assert.equal(config.use.baseURL, url);
+    assert.equal(config.webServer.url, url + '/tests/fixtures/world-tour-mid-race.html');
+    assert.ok(config.webServer.command.includes('--port ' + (port ?? '5183') + ' --strictPort'));
+  }
+});
+
+test('World Tour rejects invalid worktree ports before creating a server command', () => {
+  for (const port of ['5198; exit 0', '0', '65536']) {
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', "import './playwright.world-tour.config.js';"],
+      { cwd: new URL('..', import.meta.url), env: { ...process.env, PLAYWRIGHT_PORT: port }, encoding: 'utf8' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Invalid Playwright port/);
+  }
+});
+
 test('the pre-push layout gate runs on a free port, not the default one a stray server may hold', async () => {
   const hook = readFileSync(new URL('../.githooks/pre-push', import.meta.url), 'utf8');
   const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)$/m);
