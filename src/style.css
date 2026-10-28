@@ -592,6 +592,11 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 @media (max-width: 760px) and (min-height: 501px) { .airflow-hud { top: 330px; margin-top: var(--safe-top); } }
 /* Below ~840px the channel rows would reach the bottom gauges; the headline and mode stay (as on short landscape screens). */
 @media (max-width: 760px) and (min-height: 501px) and (max-height: 839px) { .aero-channels { display: none; } }
+/* Ready screen: the centred AIRFLOW car spans the phone edge to edge, so telemetry becomes a strip in the sky above it. */
+@media (max-width: 760px) and (min-height: 501px) {
+  .airflow-active[data-phase="ready"] .airflow-hud { top: 108px; right: max(16px, var(--safe-right)); width: auto; }
+  .airflow-active[data-phase="ready"] .aero-channels { grid-template-columns: repeat(3, 1fr); column-gap: 12px; }
+}
 /* Touch tablets lift the leaderboard to the top bar; the AIRFLOW bar sits beside it instead of on it. */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
   body:not([data-phase="ready"]) .aero-tools { right: max(180px, calc(140px + env(safe-area-inset-right, 0px))); }
