@@ -35,9 +35,24 @@ test('FPS choice translates to Traditional Chinese and survives the language swi
 });
 
 test('invalid saved FPS preference falls back to Auto without breaking Start', async ({page}) => {
-  await page.addInitScript(() => localStorage.setItem('skyline-rush-target-fps-v1', '120'));
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-target-fps-v1', '144'));
   await page.goto('/');
   await expect(page.locator('#target-fps')).toHaveValue('auto');
   await page.locator('#start-button').click();
   await expect(page.locator('#countdown')).toBeVisible();
+});
+
+test('90/120 FPS are selectable, persisted and localized independently of Quality', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#vfx-panel > summary').click();
+  await chooseFps(page, '90');
+  await page.reload();
+  await expect(page.locator('#target-fps')).toHaveValue('90');
+  await page.locator('#vfx-panel > summary').click();
+  await chooseFps(page, '120');
+  await selectLocale(page, 'zh-TW');
+  await expect(page.locator('[data-i18n="vfx.fps.note"]')).toContainText('90／120 FPS');
+  await page.reload();
+  await expect(page.locator('#target-fps')).toHaveValue('120');
+  await expect(page.locator('[data-vfx="quality"]')).toHaveValue(/^(low|medium|high)$/);
 });
