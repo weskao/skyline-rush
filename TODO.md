@@ -1,5 +1,10 @@
 # TODO — Gameplay depth design
 
+## Main integration follow-up (2026-10-28)
+
+- [x] Merge main `d71fc6592ad0cfd160a5306e333ea8e73afe757b` into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests).
+- [ ] Repeat the complete local gate and inspect exact resulting feature-HEAD GitHub `quality-gate` after this integration; earlier SHA receipts below remain historical. Real-device and remaining manual gates stay open.
+
 ## Event Lab v1 continuation (2026-10-28, feature/event-lab-lite)
 
 - [x] Observe schema/import/history/runtime RED; implement immutable version-1 local course documents, lane/distance editing, two templates, bounded Undo/Redo/Reset and text import/export. Unknown fields, inaccessible tracks, unsafe road sections, overlaps, malformed/oversized input and blocked storage are handled at the shared validation boundary.
