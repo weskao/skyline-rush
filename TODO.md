@@ -1,5 +1,11 @@
 # TODO — Gameplay depth design
 
+## Main camera-probe integration (2026-10-28)
+
+- [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
+- [ ] Run the complete local gate on this resulting integration. The prior 0152611 run was intentionally interrupted as superseded; it is not a passing receipt.
+- [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
+
 ## Main 0.25.0 integration (2026-10-28)
 
 - [x] Merge latest requested main `01526118767b99a85b0a9b7570bdd87a27ac304e` into this independent branch. Preserve all feature source: the `src` tree is identical to the pre-merge parent. Integrate 0.25.0 metadata, per-map camera cases and six CI World Tour shards; retain the validated worktree port override. All 36 focused size/camera/haptic/release checks pass.
