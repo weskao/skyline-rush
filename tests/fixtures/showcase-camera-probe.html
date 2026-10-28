@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Showcase camera probe</title>
+<style>html,body{margin:0;background:#081428}canvas{display:block;width:100vw;height:100vh}</style></head>
+<body>
+<canvas id="world" aria-label="Showcase camera regression"></canvas>
+<script type="module">
+  import * as THREE from 'three';
+  import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+  import { createWorld } from '../../src/world.js';
+  import { createRace } from '../../src/game.js';
+  import { trackFrame } from '../../src/track-paths.ts';
+  import { skyFrame } from '../../src/sky-track.ts';
+  import { previewDistance } from '../../src/track-preview.ts';
+  // The composer's RenderPass owns the live camera (WebGLRenderer.render is an own property, not patchable).
+  let liveCamera = null;
+  const originalRender = RenderPass.prototype.render;
+  RenderPass.prototype.render = function (...args) {
+    liveCamera = this.camera;
+    return originalRender.apply(this, args);
+  };
+  const world = createWorld(document.getElementById('world'));
+  const TOUR = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
+  const roadFrame = (id, distance) => id === 'spiral' ? skyFrame(distance)
+    : TOUR.has(id) ? trackFrame(id, distance) : { forward: [0, 0, -1], right: [1, 0, 0] };
+  // Camera bearing around the player in its road frame: rear 0°, right 90°, front ±180°, left -90°.
+  function bearing(id) {
+    const [player] = world.inspectShowcase();
+    liveCamera.updateMatrixWorld(true);
+    const car = new THREE.Vector3(player.x, player.y, player.z).unproject(liveCamera);
+    const offset = liveCamera.position.clone().sub(car);
+    const frame = roadFrame(id, previewDistance(id));
+    const side = offset.dot(new THREE.Vector3(...frame.right));
+    const back = -offset.dot(new THREE.Vector3(...frame.forward));
+    return { bearing: Math.atan2(side, back) * 180 / Math.PI, range: Math.hypot(side, back), carBounds: player.carBounds };
+  }
+  // Renders `seconds` of ready-screen frames and samples the bearing every `every` seconds.
+  // `racing` parks the player at the preview point mid-race, where AIRFLOW views drive the race camera.
+  window.showcaseCameraProbe = (id, view, { airflow = false, seconds = 2, every = 0, start = 2, racing = false } = {}) => {
+    world.configureVFX({ quality: 'low', enabled: true, bloom: 0, airflow, view });
+    const race = createRace(id);
+    if (racing) Object.assign(race, { phase: 'racing', elapsed: start }).player.distance = previewDistance(id);
+    const samples = [];
+    const frames = Math.round(seconds * 30);
+    for (let i = 0; i <= frames; i++) {
+      world.render(race, 1 / 30, start + i / 30, {});
+      if (every && i % Math.round(every * 30) === 0) samples.push(bearing(id).bearing);
+    }
+    return { ...bearing(id), samples };
+  };
+  window.showcaseCameraReady = true;
+</script>
+</body></html>
