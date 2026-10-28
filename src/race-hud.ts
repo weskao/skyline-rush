@@ -8,6 +8,7 @@ import { createCallouts } from './callouts.ts';
 import type { ControlPreferences } from './control-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
+import { createHaptics } from './haptics.ts';
 
 // The in-race HUD, written every HUD tick (~13 Hz) from the frame loop. It stays imperative:
 // elements are looked up once, text/hidden are written only when they change, no Vue reactivity.
@@ -57,6 +58,7 @@ export function createRaceHud(options: HudOptions) {
   boostStatus.className = 'boost-status';
   $('.fuel-stat').append(boostStatus);
   const callouts = createCallouts();
+  const haptic = createHaptics();
   const eventCallout = $('#event-callout');
   const calloutReports = [$('#maneuver-report'), ui['skill-report']!, $('#action-report')];
   const nitroHud = document.createElement('div');
@@ -183,7 +185,7 @@ export function createRaceHud(options: HudOptions) {
       const driftPaid = car.driftPayout && car.driftPayout !== lastDriftPayout;
       const trickPaid = car.trickPayout?.nitro > 0 && car.trickPayout !== lastTrickPayout;
       if (hit || burst || driftPaid || trickPaid) {
-        try { navigator.vibrate?.(hit ? [18, 30, 18] : trickPaid ? [12, 20, 12] : burst ? 25 : 15); } catch { /* Unsupported haptics never interrupt a race. */ }
+        haptic(hit ? [18, 30, 18] : trickPaid ? [12, 20, 12] : burst ? 25 : 15);
       }
     }
     feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime;
