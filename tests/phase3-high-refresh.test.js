@@ -25,7 +25,8 @@ test('90 and 120 are valid persisted manual preferences; unsupported values stil
 test('manual 90 and 120 pace correctly on a 120 Hz browser without changing simulation callbacks', () => {
   for (const desired of [90, 120]) {
     const pacer = createFramePacer(String(desired));
-    const { rendered } = simulate(pacer, 120, 4);
+    const warmup = simulate(pacer, 120, 1); // Measure rAF cadence before enabling high rates.
+    const { rendered } = simulate(pacer, 120, 4, 2, warmup.endAt);
     assert.equal(pacer.preference, String(desired));
     assert.equal(pacer.targetFps, desired);
     assert.ok(Math.abs(rendered - desired * 4) <= 4,
