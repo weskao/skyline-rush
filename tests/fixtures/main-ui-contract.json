@@ -1,5 +1,5 @@
 {
-  "reference": "main f9c2cb1 (same d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient",
+  "reference": "main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient",
   "cssBlob": "12c17626ef6f98cad89f0f25a035eb39fa91f7f4",
   "elements": [
     {
