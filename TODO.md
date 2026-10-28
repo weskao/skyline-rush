@@ -3,14 +3,17 @@
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
-- [ ] Run the complete local gate on this resulting integration; retain earlier 0152611 gate logs as historical evidence.
+- [x] Complete resulting-main `make verify` on code `362a380` (verified 2026-10-29): strict TS/Vue/JS checks, 827 Node passed / 3 emulator-scoped skips, locked production build, 501 browser passed / 2 inapplicable desktop touch-case skips, 326 dedicated World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-main-31ac7b1-recheck.log`.
+- [x] Preserve 20 original-resolution real-game images in `artifacts/circuit/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` equals this verified main31 integration; the images retain their original baseline label. Chrome emulation remains separate from physical Safari/Android acceptance.
+- [x] Local Auth/Firestore compatibility on code `362a380`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/circuit/cloud-main-31ac7b1.log`; no production cloud writes.
+- [x] After one high-host-load tilt failure, preserve the original first-run log/error context, observe 3/3 unchanged diagnostic repeats, then complete the entire recheck above with zero failures. No source, assertion or timeout changes. Add genuine unpaused desktop/phone first-seam crossings in `artifacts/circuit/seam-live-main-31ac7b1/`: visible HUD synced before capture, actual W-key input, lap count 0→1, four PNGs and two VP9 recordings (8.44s / 7.88s) validated. Original paused seam captures do not establish unobscured road geometry.
 - [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
 
 ## Main 0.25.0 integration (2026-10-28)
 
 - [x] Merge latest requested main `01526118767b99a85b0a9b7570bdd87a27ac304e` into this independent branch. Preserve all feature source: the `src` tree is identical to the pre-merge parent. Integrate 0.25.0 metadata, per-map camera cases and six CI World Tour shards; retain the validated worktree port override. All 36 focused size/camera/haptic/release checks pass.
-- [ ] Run the complete resulting 0.25.0 local gate and fresh real-game evidence; earlier complete 0197547 gates remain historical receipts.
-- [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No workaround or main/PR/tag/deployment action is authorized.
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `362a380` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
+- [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
 
 ## Historical main integration through 0197547 (2026-10-28)
 
@@ -39,12 +42,12 @@
 ## Shared continuation regression gates (2026-10-28)
 
 - [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.
-- [ ] Complete caller-branch full gates and exact-HEAD CI after this shared repair. Earlier Custom f9 full-gate success and Cup/Items failures remain historical; the Cup run interrupted during a merge is not a passing receipt.
+- [x] Complete all six caller full local gates after the shared repair and main `31ac7b1`: Cup, Custom, Items, Event Lab, Endless and Circuit exit 0 (verified 2026-10-29). Each owning branch records its code SHA, full log and reviewed images above; Circuit uses the separate recheck log. Superseded/interrupted runs remain historical receipts.
 
 - [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
 - [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
 - [x] Shared result layout RED → GREEN on the affected caller branches: five-lap Circuit and billion-metre Endless phone results overflowed their panels. Commit `3826f3a` adds only `flex-wrap` to the existing shared stats container, preserving spacing/font sizes; actual cell-bounds assertions pass in 8 Circuit and 2 Endless original-resolution flows. Caller branches are repeating the complete gate after integration.
-- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. The initial batch push was rejected; automatic review later accepted same-name feature pushes after verifying the PUBLIC origin, mandated workflow step 6 and the owner's main-first condition. Current-HEAD CI remains separate; main merge, PR and deployment still require explicit authorization.
+- [ ] Complete each independent feature's exact-HEAD GitHub CI after public-push authorization; all six full local gates now pass. Earlier published code/CI receipts remain historical. The newer automatic review rejected public code disclosure for missing explicit authorization, and the six-feature approval question is still pending; do not retry or bypass. Feature-to-main merge, main push, PR, tag and deployment require explicit authorization.
 
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
