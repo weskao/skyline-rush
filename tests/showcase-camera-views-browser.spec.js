@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { PORTRAIT_CAR_TOP } from './showcase-car-zone.js';
 
 // Real WebGL camera placement for the six ready-screen views: the dock label alone
 // (showcase-camera-browser.spec.js) cannot catch a camera that ends up somewhere else.
@@ -16,6 +17,10 @@ function expectWholeCar(result, label) {
   const { minX, maxX, minY, maxY } = result.carBounds;
   expect.soft(Math.max(-minX, maxX, -minY, maxY), `${label} car inside the frame`).toBeLessThan(1);
 }
+// The top band of a portrait phone is left to the AIRFLOW telemetry card (showcase-camera-browser.spec.js).
+function expectBelowCardBand(result, label) {
+  expect.soft((1 - result.carBounds.maxY) / 2, `${label} car top, as a share of the screen height`).toBeGreaterThanOrEqual(PORTRAIT_CAR_TOP);
+}
 
 for (const viewport of VIEWPORTS) {
   for (const airflow of [false, true]) {
@@ -27,6 +32,7 @@ for (const viewport of VIEWPORTS) {
           const label = `${id}/${view}`;
           expect.soft(gap(result.bearing, expected), `${label} bearing ${result.bearing.toFixed(1)}°`).toBeLessThan(25);
           expectWholeCar(result, label);
+          if (airflow && viewport.width < viewport.height) expectBelowCardBand(result, label);
           // Landscape home panel covers the left half (NDC x < .04), as in the drive shot; AIRFLOW hides it, so the car centres.
           if (airflow) expect.soft(Math.abs(result.x), `${label} car centred with the home panel hidden`).toBeLessThan(0.15);
           else if (viewport.width > viewport.height) expect.soft(result.carBounds.minX, `${label} car clear of the home panel`).toBeGreaterThan(0.04);
@@ -67,6 +73,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         expect.soft(spread(xs), `${id} car screen x drifts ${spread(xs).toFixed(2)}`).toBeLessThan(0.12);
         // AIRFLOW hides the home panel, so nothing pushes the car off the middle of the frame.
         if (airflow) expect.soft(Math.abs(xs.reduce((a, b) => a + b, 0) / xs.length), `${id} car off centre`).toBeLessThan(0.15);
+        if (airflow && viewport.width < viewport.height) samples.forEach((s, i) => expectBelowCardBand(s, `${id} orbit sample ${i}`));
       }
     });
   }
