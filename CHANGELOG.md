@@ -1,3 +1,37 @@
+## [0.25.0] - 2026-10-28
+
+### 🚀 Features
+
+- **hud:** Add ios 18 switch-tick haptics
+
+### 🐛 Bug Fixes
+
+- **coast:** Restore warmer in-race lighting
+- **whats-new:** Keep gradient bar above scrolled media
+- **showcase:** Aim every camera view from its own side
+- **showcase:** Orbit on a steady circle centred on the car
+- **ui:** Keep phone AIRFLOW telemetry above the showcase car
+
+### 🚜 Refactor
+
+- **release-notes:** Move entries into release-notes-data
+
+### 📚 Documentation
+
+- **release:** Review 0.25.0 notes
+
+### 🧪 Testing
+
+- **showcase:** Probe real WebGL bearing for camera views
+- **showcase:** Keep camera probe out of preview suite
+- **showcase:** Orbit keeps a steady radius, rate and car spot
+- **showcase:** Cover every map's six views, framing and occlusion
+- **ui:** Re-record stylesheet baseline after airflow and whats-new css
+- **showcase:** Run each map's camera checks as its own test
+
+### ⚙️ Miscellaneous Tasks
+
+- Shard world-tour-mid-race across six runners
 ## [0.24.0] - 2026-10-28
 
 ### 🚀 Features
