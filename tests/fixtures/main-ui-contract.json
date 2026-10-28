@@ -1,6 +1,6 @@
 {
-  "reference": "main 2cd52d4: reviewed camera, intro, FPS, touch, minimap and release-video styles; separate Harbor Circuit map palette; reviewed bounded result metric wrapping",
-  "cssBlob": "1564f75e5ef3086cd6d5b512d2470632e568048e",
+  "reference": "main d71fc65 plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient",
+  "cssBlob": "c4cf3bb7ed73bd86f65a71c935aa6995ccf82ff2",
   "elements": [
     {
       "id": "whats-new-screen",
