@@ -112,6 +112,7 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
     element.append(svg('path', {
       d: `M${(x - 2.5).toFixed(2)},${base} L${x.toFixed(2)},${tip} L${(x + 2.5).toFixed(2)},${base} Z`,
       class: 'route-elevation-cue', 'data-direction': cue.direction, 'aria-hidden': 'true',
+      style: 'fill:var(--map-player, #ffe9b4);stroke:#0b1a2c;stroke-width:.8;vector-effect:non-scaling-stroke;pointer-events:none',
     }));
   }
   for (const [kind, d] of [['start', 0], ['finish', raceTracks[trackId].length]] as const) {
