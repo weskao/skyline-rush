@@ -2,8 +2,9 @@
 
 ## Main integration follow-up (2026-10-28)
 
-- [x] Merge main `ebd30e526f54aba08a46c9c7c3f2fcdc784b710f` (same file tree as `f9c2cb1`, including `d71fc65`) into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests). The follow-up main commits change only CSS-test metadata/comments; runtime source is identical, and all DOM/style assertions are retained.
-- [ ] Repeat the complete local gate and inspect exact resulting feature-HEAD GitHub `quality-gate` after this integration; earlier SHA receipts below remain historical. Real-device and remaining manual gates stay open.
+- [x] Integrate captured main `0197547d01a7bd4618bee7a969fdbc67e2caf1ac` (including `ebd30e5` / `d71fc65`) into this independent branch, resolve conflicts and preserve both main and feature behavior. Main now separates release data and includes upcoming notes; all 36 focused renderer/camera/haptic/release tests pass. Shared AIRFLOW locale repair `3e7f7d6` is included. This is the fixed baseline for the final verification batch.
+- [ ] Complete fresh local `make verify` after the captured main integration and shared locale repair; earlier SHA receipts below remain historical.
+- [ ] Inspect the recorded feature-code SHA GitHub required jobs and `quality-gate`; the final documentation HEAD is checked separately. Real-device and remaining manual gates stay open.
 
 ## Practice item rules and activation feedback (2026-10-27)
 
