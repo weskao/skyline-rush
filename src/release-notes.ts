@@ -29,6 +29,43 @@ const { version } = packageMeta;
 // stops a release whose version has no entry.
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
+    version: '0.25.0', date: '2026-10-28', image: null,
+    highlights: [
+      {
+        id: 'iphone-haptics', kind: 'new', image: null,
+        title: { en: 'Feel the race on iPhone', 'zh-TW': 'iPhone 也能感受震動回饋' },
+        description: {
+          en: 'On iPhones with iOS 18 or newer, bumps, boosts and trick payouts now give a small tap you can feel. Older iPhones stay silent, and Android keeps its usual buzz.',
+          'zh-TW': 'iOS 18 以上的 iPhone，撞擊、加速和特技獎勵現在都會輕輕震動。較舊的 iPhone 不會震動，Android 維持原樣。'
+        }
+      },
+      {
+        id: 'showcase-camera-views', kind: 'fix', image: null,
+        title: { en: 'Home camera views show the right side', 'zh-TW': '首頁視角現在看對方向了' },
+        description: {
+          en: 'On the home screen, Front, Rear, Left and Right now show your car from the side they name, and Orbit circles it steadily.',
+          'zh-TW': '首頁的前、後、左、右視角現在會從對應的那一側看你的車，環繞視角也會穩穩地繞著車子轉。'
+        }
+      },
+      {
+        id: 'coast-lighting', kind: 'improvement', image: null,
+        title: { en: 'Warmer lighting on Coast', 'zh-TW': '海岸公路光線更溫暖' },
+        description: {
+          en: 'Racing on Coast has its warmer lighting back.',
+          'zh-TW': '在海岸公路比賽時，畫面的光線又恢復溫暖的色調了。'
+        }
+      },
+      {
+        id: 'phone-airflow-readout', kind: 'fix', image: null,
+        title: { en: 'AIRFLOW readouts stay clear of your car', 'zh-TW': '手機上的氣流數據不再擋車' },
+        description: {
+          en: 'With AIRFLOW on, the readouts on phones now sit above your car on the home screen instead of covering it.',
+          'zh-TW': '開啟氣流後，手機首頁的即時數據會移到車子上方，不再擋住車子。'
+        }
+      }
+    ]
+  },
+  {
     version: '0.24.0', date: '2026-10-28', image: null,
     video: {
       desktop: {
