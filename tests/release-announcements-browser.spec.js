@@ -199,3 +199,19 @@ for (const [width, height] of [[1440,900],[390,844],[320,740],[844,390]]) {
     });
   });
 }
+
+test('scrolled notes slide under the dialog top edge, never over its gradient bar', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 480 });
+  await page.goto('/');
+  await page.locator('#whats-new-open').click();
+  const dialog = page.locator('#whats-new-screen');
+  await expect(dialog).toBeVisible();
+  const scrolled = await dialog.evaluate(el => { el.scrollTop = 120; return el.scrollTop; });
+  expect(scrolled).toBeGreaterThan(0);
+  // The 3px bar is the dialog's own ::before: a hit test on it must return the dialog, not scrolled media or cards.
+  const hit = await dialog.evaluate(el => {
+    const r = el.getBoundingClientRect();
+    return document.elementFromPoint(r.left + r.width / 2, r.top + el.clientTop + 1.5) === el;
+  });
+  expect(hit).toBe(true);
+});

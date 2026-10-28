@@ -1551,14 +1551,15 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
   --rp: 24px;
   width: min(600px, calc(100% - 24px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   padding: var(--rp) var(--rp) 0; border: 1px solid rgb(150 227 255 / .22); border-radius: 18px; overflow-y: auto;
-  /* The hairline and glows paint on the dialog box itself, so they stay put while the notes scroll. */
+  /* The glows paint on the dialog box itself, so they stay put while the notes scroll. */
   background:
-    linear-gradient(90deg, var(--accent), var(--blue)) top / 100% 3px no-repeat,
     radial-gradient(110% 55% at 100% 0%, rgb(255 137 102 / .16), transparent 62%),
     radial-gradient(90% 45% at 0% 0%, rgb(150 227 255 / .12), transparent 58%),
     linear-gradient(180deg, #13263a, #0c1a29);
   box-shadow: 0 30px 90px rgb(0 6 16 / .6), inset 0 1px 0 rgb(255 255 255 / .04);
 }
+/* The hairline is a sticky overlay (zero layout height; top offsets from inside the dialog padding) so scrolled media and cards slide under it, never over it. */
+.release-screen::before { content: ''; position: sticky; top: calc(-1 * var(--rp)); z-index: 3; display: block; height: 3px; margin: calc(-1 * var(--rp)) calc(-1 * var(--rp)) calc(var(--rp) - 3px); background: linear-gradient(90deg, var(--accent), var(--blue)); }
 .release-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .release-header small { display: inline-flex; align-items: center; gap: 8px; color: #a2ddf1; font-size: 10px; letter-spacing: .2em; }
 .release-header small::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
