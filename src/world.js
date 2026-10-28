@@ -14,7 +14,7 @@ import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
-import { createCoastScenery } from './coast-visuals.ts';
+import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
@@ -858,10 +858,10 @@ export function createWorld(canvas) {
         sky.material.uniforms.cloudOpacity.value = trackId==='cosmic'?0:trackId==='tokyo'?.14:trackId==='alpine'?.45:trackId==='coastal'?.32:trackId==='taipei'?.36:1;
         sky.material.uniforms.cloudTint.value.set(trackId==='alpine'?'#647575':trackId==='coastal'?'#82989a':trackId==='taipei'?'#77898b':trackId==='tokyo'?'#394354':'#4d3d60');
         sunlight.color.set(palette.sun);
-        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? 1.35 : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
+        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? COAST_LIGHTING.sun : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
         sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
-        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?1.01:1.12;
-        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?1.24:trackId==='neon'?1.1:1.7;
+        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?COAST_LIGHTING.exposure:1.12;
+        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?COAST_LIGHTING.ambient:trackId==='neon'?1.1:1.7;
         sun.visible = trackId === 'coast' || trackId === 'canyon';
         // Sky Spiral draws its own dome. The shared sky, sea and peaks would sit in front of it.
         sky.visible = sea.visible = mountains.visible = trackId !== 'spiral';
@@ -1234,7 +1234,7 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?.19:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
+      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?COAST_LIGHTING.bloom:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
       renderer.info.reset(); // Exclude warmup draws and previous frames.
