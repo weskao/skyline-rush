@@ -1,5 +1,5 @@
 {
-  "reference": "main f9c2cb1 (same d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient",
+  "reference": "main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient",
   "cssBlob": "c4cf3bb7ed73bd86f65a71c935aa6995ccf82ff2",
   "elements": [
     {
