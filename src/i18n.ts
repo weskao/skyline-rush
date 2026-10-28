@@ -73,10 +73,17 @@ export function t(key: string, params?: Record<string, unknown>, locale: string 
   return text === undefined ? key : interpolate(text, params);
 }
 
+// Building a formatter costs ~70x using one. Keyed by locale and options, so a locale switch builds new ones;
+// the code uses a handful of option sets, which keeps the map small.
+const formatters = new Map<string, unknown>();
+function formatter<T>(key: string, build: () => T): T {
+  if (!formatters.has(key)) formatters.set(key, build());
+  return formatters.get(key) as T;
+}
 export const formatDate = (date: Date | number, options?: Intl.DateTimeFormatOptions, locale: string = current): string =>
-  new Intl.DateTimeFormat(locale, options).format(date);
+  formatter(`date ${locale} ${JSON.stringify(options)}`, () => new Intl.DateTimeFormat(locale, options)).format(date);
 export const formatNumber = (n: number, options?: Intl.NumberFormatOptions, locale: string = current): string =>
-  new Intl.NumberFormat(locale, options).format(n);
+  formatter(`number ${locale} ${JSON.stringify(options)}`, () => new Intl.NumberFormat(locale, options)).format(n);
 
 export function applyDocumentLocale(doc: Document | undefined = globalThis.document, locale: string = current): void {
   if (!doc) return;
