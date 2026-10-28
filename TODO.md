@@ -1030,7 +1030,7 @@ acceptance remains under the shared stage-wide QA, not claimed here.
 
 - [x] **MODE-06 — Championship:** select a curated 3–5-track cup consisting of
   **unlocked** stages; award stage ranking points and a clear final champion.
-- [ ] Preserve stage standings across transitions with fair AI participation,
+- [x] Preserve stage standings across transitions with fair AI participation,
   an explicit continue/retry flow, and optional saved in-progress cup recovery.
 - [x] Distinguish cup medals/bests from individual Classic times; a cup does
   not grant unearned unlocks for stages skipped or completed in practice mode.
