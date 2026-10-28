@@ -7,7 +7,8 @@
 - [x] Follow-up RED → GREEN for a too-dense imported ring layout: require 150 m ring spacing so all visible authored gates fit the existing seven-ring pool. Preserve 44px mobile controls and a scrolling dialog.
 - [x] Five core tests and four real Chrome desktop/touch × English/zh-TW editor-to-race/retry flows pass; strict Vue/TS check passes. Actual editor, barrier and result captures reviewed in `artifacts/event-lab/`.
 - [x] Complete merged local `make verify` on code HEAD `068027c`: strict TS/Vue/legacy checks, 798 Node passed / 3 emulator-dependent skipped, locked build, 491 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main72466c3-final.log`. Local cloud emulator: 15 browser + 3 Rules passed. Original-resolution flows pass; result capture waits for the final stored best and visible panel.
-- [ ] Latest-HEAD GitHub quality-gate and physical-device checks. Original MODE-10 remains open for ramp/cone/checkpoint editor capabilities; no community/backend functionality is claimed.
+- [x] Verify exact code commit `68701b7`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40634074855 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
+- [ ] Physical-device acceptance. Original MODE-10 remains open for ramp/cone/checkpoint editing; no community/backend functionality is claimed.
 
 ## Shared continuation regression gates (2026-10-28)
 
