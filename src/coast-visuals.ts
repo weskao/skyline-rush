@@ -3,10 +3,13 @@ import type { VfxQuality } from './vfx-settings.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
 export const COAST_PALETTE = Object.freeze({
-  top:'#214967', horizon:'#c1a18b', fog:'#829cac',
+  top:'#1c3f63', horizon:'#d09a8a', fog:'#8a9bac',
   rock:'#516878', road:'#303b43', ground:'#173e53',
-  rail:'#a3ccd0', sun:'#ffe0b5', warmth:0.35,
+  rail:'#a3ccd0', sun:'#ffe0b5', warmth:0.5,
 });
+
+// In-race lighting; between the Phase 2 dimming and the original 2.3 / 1.7 / 1.12 / .42.
+export const COAST_LIGHTING = Object.freeze({ sun:1.8, ambient:1.45, exposure:1.07, bloom:.3 });
 
 const DENSITY: Record<VfxQuality, number> = {low:12,medium:20,high:32};
 const STEP = 60, TOTAL = DENSITY.high;
