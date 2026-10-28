@@ -7,6 +7,8 @@
 <script type="module">
   import * as THREE from 'three';
   import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+  import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+  import { shouldDrawShowcaseFrame } from './showcase-probe-draw.js';
   import { createWorld } from '../../src/world.js';
   import { createRace } from '../../src/game.js';
   import { trackFrame } from '../../src/track-paths.ts';
@@ -14,6 +16,13 @@
   import { previewDistance } from '../../src/track-preview.ts';
   // The composer's RenderPass owns the live camera (WebGLRenderer.render is an own property, not patchable).
   let liveCamera = null;
+  // This fixture checks camera geometry, not animation frame rate. Advance every
+  // simulation tick, but avoid hundreds of redundant software-WebGL paints on CI.
+  let drawFrame = true;
+  const originalComposeRender = EffectComposer.prototype.render;
+  EffectComposer.prototype.render = function (...args) {
+    if (drawFrame) return originalComposeRender.apply(this, args);
+  };
   const originalRender = RenderPass.prototype.render;
   RenderPass.prototype.render = function (...args) {
     liveCamera = this.camera;
@@ -42,9 +51,15 @@
     if (racing) Object.assign(race, { phase: 'racing', elapsed: start }).player.distance = previewDistance(id);
     const samples = [];
     const frames = Math.round(seconds * 30);
-    for (let i = 0; i <= frames; i++) {
-      world.render(race, 1 / 30, start + i / 30, {});
-      if (every && i % Math.round(every * 30) === 0) samples.push(bearing(id));
+    const stride = every ? Math.max(1, Math.round(every * 30)) : 0;
+    try {
+      for (let i = 0; i <= frames; i++) {
+        drawFrame = shouldDrawShowcaseFrame(i, frames, stride);
+        world.render(race, 1 / 30, start + i / 30, {});
+        if (stride && i % stride === 0) samples.push(bearing(id));
+      }
+    } finally {
+      drawFrame = true;
     }
     return { ...bearing(id), samples };
   };

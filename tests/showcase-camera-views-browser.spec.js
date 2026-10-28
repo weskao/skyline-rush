@@ -8,7 +8,9 @@ import { RACE_TRACKS } from '../src/game.js';
 const TRACKS = [...Object.keys(RACE_TRACKS), 'harbor-circuit'];
 const FIXED = { rear: 0, right: 90, front: 180, left: -90 };
 const VIEWPORTS = [{ width: 1440, height: 900 }, { width: 1777, height: 863 }, { width: 390, height: 844 }];
-const gap = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+// A full orbit renders ~1,250 frames; CPU-only WebGL on CI needs several minutes for it, so those tests outrun the 180 s default.
+const HEAVY_TIMEOUT = 900_000;
+const gap = (a, b) =>Math.abs(((a - b + 540) % 360) - 180);
 
 async function openProbe(page, viewport) {
   await page.setViewportSize(viewport);
@@ -80,6 +82,7 @@ for (const id of TRACKS) {
   for (const viewport of VIEWPORTS) {
     for (const airflow of [false, true]) {
       test(`${id}: orbit circles the car smoothly a full 360° at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
+        test.setTimeout(HEAVY_TIMEOUT);
         await openProbe(page, viewport);
         const { samples: all } = await page.evaluate(([id, airflow]) => window.showcaseCameraProbe(id, 'orbit', { airflow, seconds: 41.5, every: 0.25 }), [id, airflow]);
         const samples = all.slice(6); // skip the glide in from the previous view
@@ -110,6 +113,7 @@ for (const id of TRACKS) {
   for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     for (const airflow of [false, true]) {
       test(`${id}: every view keeps the whole car in frame and unblocked at High detail at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
+        test.setTimeout(HEAVY_TIMEOUT);
         await openProbe(page, viewport);
         for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
           const orbit = view === 'orbit';
