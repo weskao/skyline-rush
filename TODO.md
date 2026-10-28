@@ -3,10 +3,11 @@
 ## Genuine circuit continuation (2026-10-28, feature/genuine-circuit-laps)
 
 - [x] Real screenshot review exposed horizontal overflow in Circuit 5-lap phone metrics. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
-- [ ] Repeat complete `make verify` and latest-HEAD CI after this CSS fix; the pre-fix full-gate receipt below remains historical evidence.
+- [x] Repeat complete local `make verify` after the CSS fix on `9cee557`: strict TS/Vue/JS checks, 817 Node passed / 3 emulator skips, locked build, 495 browser passed / 2 skips and 72 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-result-wrap.log`. Pre-fix full-gate receipts below remain historical.
+- [ ] Verify exact post-wrap feature-HEAD GitHub quality-gate; no earlier HEAD CI is substituted.
 
 
-- [x] Source/rules and topology-v1/history strategy in `docs/circuit-laps.md`; observed unknown-route RED before adding the separate `harbor-circuit` capability. Preserve the ordered ten-route Classic/Daily/Cup catalog.
+- [x] Source/rules and topology-v1/history strategy in `docs/circuit-laps.md`; functional unknown-route RED is retained against baseline main for the separate `harbor-circuit` capability. The initial pre-implementation log was not preserved; follow-up RED/GREEN logs are retained. Preserve the ordered ten-route Classic/Daily/Cup catalog.
 - [x] Genuine 2 km closed geometry with one periodic road/vehicle/camera/item/Ghost/map frame; unwrapped progress and seam-aware physical gaps, ordered 1/3/5-lap sectors, interpolated splits and per-lap collectible identities.
 - [x] Follow-up RED/GREEN for Circuit records/Ghost bounds, default History selection, nonfinite progress, lap audio, ring orientation and shared geometry disposal. Permanent personal lap bests use the existing numeric bests map and survive rolling-history eviction/cloud merges.
 - [x] Strict TS/Vue checks and targeted history/Ghost/cloud checks pass (73 focused checks before the final matrix). 1/3/5-lap tests pass at 30/60/120 Hz; all six desktop/phone portrait/landscape × English/zh-TW real-game flows pass, including visible landmark/minimap, stored lap best, seam capture, result, retry, quit and Classic restart. Captures and logs: `artifacts/circuit/`.
