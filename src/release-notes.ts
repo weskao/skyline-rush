@@ -54,7 +54,13 @@ export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | nu
   if (!release) return;
   try { storage?.setItem(NOTES_SEEN_KEY, release.version); } catch { /* remembered in memory by the app */ }
 }
-export const releaseText = (value: LocalizedText | LocalizedImage | null | undefined, locale: string): string =>
+// Display order inside a release: NEW first, then improvements, then fixes; unknown kinds last.
+const KIND_ORDER: readonly string[] = ['new', 'improvement', 'fix'];
+const kindRank = (kind: string): number => { const rank = KIND_ORDER.indexOf(kind); return rank < 0 ? KIND_ORDER.length : rank; };
+// A stable sorted copy, so the written order holds within a kind and the shipped data stays untouched.
+export const highlightsByKind = <T extends Pick<ReleaseHighlight, 'kind'>>(highlights: readonly T[]): T[] =>
+  [...highlights].sort((a, b) => kindRank(a.kind) - kindRank(b.kind));
+export const releaseText =(value: LocalizedText | LocalizedImage | null | undefined, locale: string): string =>
   typeof value === 'string' ? value : (value?.[locale as 'en' | 'zh-TW'] ?? value?.en ?? '');
 
 // Only relative paths to files bundled under public/: no remote URLs, no traversal.
