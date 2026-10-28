@@ -186,13 +186,17 @@ export function createWorldTourScene(scene){
   }
   function clearChunks(){for(const node of chunks.values())releaseChunk(node);chunks.clear();}
   function streamScenery(id,distance,quality,sections){
-    const level=quality==='low'?'low':'high';
+    const level=quality==='low'?'low':quality==='medium'?'medium':'high';
     const centerChunk=Math.floor(Math.max(0,distance)/SCENERY_CHUNK_METRES);
     if(sceneryTrack!==id||sceneryDetail!==level){
       clearChunks();sceneryTrack=id;sceneryDetail=level;
     }
-    const start=Math.max(0,centerChunk-(level==='low'?2:3));
-    const end=Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+(level==='low'?7:10));
+    // Preserve full authored detail on Medium while bounding how far it
+    // streams. High retains the longer horizon; Low also thins non-solid props.
+    const behind=level==='high'?3:2;
+    const ahead=level==='high'?10:level==='medium'?9:7;
+    const start=Math.max(0,centerChunk-behind);
+    const end=Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+ahead);
     for(const [index,node] of chunks){
       if(index<start||index>end){releaseChunk(node);chunks.delete(index);}
     }
