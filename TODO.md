@@ -8,7 +8,11 @@
 - [x] Five core tests and four real Chrome desktop/touch × English/zh-TW editor-to-race/retry flows pass; strict Vue/TS check passes. Actual editor, barrier and result captures reviewed in `artifacts/event-lab/`.
 - [ ] Complete merged `make verify`, exact-commit GitHub quality-gate and physical-device checks. Original MODE-10 remains open for the separately listed ramp/cone/checkpoint editor capabilities; no community/backend functionality is claimed.
 
+## Shared continuation regression gates (2026-10-28)
 
+- [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
+- [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
+- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. Remote pushes await the user's explicit authorization following automatic review rejection; no main merge, PR or deployment is authorized.
 
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
