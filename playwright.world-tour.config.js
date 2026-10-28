@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
  testDir:'./tests',testMatch:['**/world-tour-mid-race-browser.spec.js','**/world-tour-showcase-browser.spec.js','**/showcase-camera-views-browser.spec.js'],
- fullyParallel:false,workers:1,
+ fullyParallel:true,workers:1, // one worker, but CI --shard splits by test instead of by file
  timeout:process.env.CI?180000:90000,
  expect:{timeout:20000},
  reporter:'list',
