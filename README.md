@@ -57,7 +57,7 @@ Captured from the running game in Chrome mobile emulation at 390×844 (portrait)
 
 > **Work in progress · 22 October 2026.** These mode additions are on [`feature/race-modes-p0`](https://github.com/weskao/skyline-rush/tree/feature/race-modes-p0), not necessarily on the [deployed GitHub Pages build](https://weskao.github.io/skyline-rush/). The existing screenshots above show earlier gameplay; current mode captures are linked below. The [roadmap](TODO.md) includes additional unfinished features.
 
-Select a **track you have unlocked**, choose **GAME MODE** below the track cards, expand its rules when needed, then press **Start race** (or Enter). Racing still uses the same Three.js road, flying, FLY / BOOST / NITRO and responsive touch controls. Seven modes are available in the development branch:
+Select a **track you have unlocked**, choose **GAME MODE** below the track cards, expand its rules when needed, then press **Start race** (or Enter). Racing still uses the same Three.js road, flying, FLY / BOOST / NITRO and responsive touch controls. The development branch includes the following modes:
 
 | Mode | What changes | Win condition / progression |
 | --- | --- | --- |
@@ -68,6 +68,10 @@ Select a **track you have unlocked**, choose **GAME MODE** below the track cards
 | **Obstacle Run** | Seeded roadside barriers; **Standard** or **Extreme** density. Some obstacles sweep sideways; warning HUD previews approaching danger. | Dodge hazards, earn style points for clean passes and use the ordinary route's finish. Obstacle placement and collision share deterministic logic; Classic is unchanged. |
 | **Checkpoint Rush** | Race through glowing 3D gate arches. Start with **28 seconds**; each clean gate grants **+10 seconds** (capped at 60) and **250 style points**. | Reach every gate and the finish before the clock expires. Missed gates and timeouts do **not** save a valid best. The HUD shows gates cleared, time remaining and distance to the next target. |
 | **Championship Cup** | Pick a **3- or 5-track** Cup made only of already unlocked routes; race NOVA, ORBIT and APEX on each stage. | Placements award **10 / 7 / 5 / 3 points**; cumulative standings and total time decide the champion, with ties broken by time. Cup results are separate from Career unlocks. |
+
+### Endless Highway
+
+**Endless Highway** extends Coast beyond the authored finish as a distance-survival event. Traffic difficulty rises to a fixed cap; five collisions end a completed attempt. The personal record tracks longest absolute distance, separately from Career and Ghosts. Pause and WebGL recovery preserve the run. This first version supports Coast only; its nearby scenery and encounters use bounded pools.
 
 ### Race setup, results and accessibility
 

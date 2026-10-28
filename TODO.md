@@ -7,7 +7,8 @@
 - [x] Persist longest distance independently from Career, including a fifth real collision and rolling-history/cloud normalization/max-distance merges; reuse cruise music and one-shot milestones.
 - [x] Follow-up GREEN: 126 focused core/type/Classic-route checks and two real desktop/touch bilingual browser flows pass, including pause, actual WebGL loss/restore, flight input, result persistence, locale switch and restart. Actual full-resolution distant-road/result captures inspected in `artifacts/endless/`.
 - [x] Moving-traffic continuity RED → GREEN: a 20-minute deterministic driving regression reproduced nearby traffic disappearing when its birth chunk expired. Recycle by current distance and preserve the 40-car cap; all six Endless checks and the full Node suite pass (799 passed, 0 failed, 3 skipped). Logs: `artifacts/endless/traffic-continuity-{red,green,unit}.log`.
-- [ ] Merge current main/regression fixes, run complete `make verify` plus affected cloud emulator checks, then inspect exact-commit remote `quality-gate`. Physical iOS/Android GPU/thermal endurance remains separate.
+- [x] Complete merged local `make verify` on code HEAD `12150b7`: strict TS/Vue/legacy checks, 801 Node passed / 3 emulator-dependent skipped, locked production build, 489 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main72466c3-final.log`. Cloud emulator checks also pass: 15 browser + 3 Rules tests (`cloud-main72466c3.log`).
+- [ ] Latest-feature-HEAD GitHub quality-gate, actual background-tab acceptance and physical iOS/Android GPU/thermal endurance. Push authorization is pending.
 
 ## Shared continuation regression gates (2026-10-28)
 
@@ -1095,12 +1096,12 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] **MODE-09 — Endless Highway:** deterministic extension/streaming **beyond**
   the fixed 4–8 km authored tracks; progressively increase challenge and record
   longest distance/survival score.
-- [ ] Build extendable road geometry, scene chunks, encounter seeds, objective
+- [x] Build extendable road geometry, scene chunks, encounter seeds, objective
   markers, camera/traffic recycling and safe recovery. Respect absolute distance
   to avoid repeated scenery, teleporting objects or floating-point problems.
 - [ ] Keep memory/GPU resources bounded after lengthy play; verify pause, resume,
   context loss and browser tab backgrounding.
-- [ ] **Acceptance:** play can continue past the former end without hitting
+- [x] **Acceptance:** play can continue past the former end without hitting
   clamped `trackPoint()`, missing geometry, a fake lap or an unintended finish.
 
 ### 9K. Event Lab Lite / course creator (P2)
