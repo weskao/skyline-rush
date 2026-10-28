@@ -20,6 +20,12 @@ Other independently tracked branches: `feature/custom-race-presentation` (Custom
 
 - [x] Merged-main broad regression observed (2026-10-28): full browser run reached 487 passed / 2 skipped; the only three failures were inherited Phase 4 polyline-count assumptions. Integrate `6809503`, whose focused main-path/minimap suite passes 7/7. The complete resulting `make verify` and exact-HEAD CI remain pending, not implied by this receipt.
 
+## Shared continuation regression gates (2026-10-28)
+
+- [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
+- [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
+- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. Remote pushes await the user's explicit authorization following automatic review rejection; no main merge, PR or deployment is authorized.
+
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
 **Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.
