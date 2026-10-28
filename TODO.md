@@ -2,7 +2,7 @@
 
 ## Main integration follow-up (2026-10-28)
 
-- [x] Merge main `d71fc6592ad0cfd160a5306e333ea8e73afe757b` into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests).
+- [x] Merge main `f9c2cb1a81ef75d6eb60ebf4f3f731bfaefd3471` (including `d71fc65`) into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests). The follow-up main commits change only CSS-test metadata/comments; runtime source is identical, and all DOM/style assertions are retained.
 - [ ] Broader feature implementation, full acceptance and exact-HEAD CI remain separate from this main-merge check.
 
 ## Shared continuation regression gates (2026-10-28)
