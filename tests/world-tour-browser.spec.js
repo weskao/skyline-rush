@@ -101,7 +101,7 @@ test('Alpine and Cosmic minimaps expose cached climb and descent cues from the m
    // Cached vectors remain static; only moving racer positions are updated.
    const original=await live.evaluate(el=>(window.__worldTourAltMap=el,el.querySelectorAll('*').length));
    await page.waitForTimeout(400);
-   expect(await live.evaluate(el=>el===window.__worldTourAltMap&&el.querySelectorAll('*').length===original)).toBe(true);
+   expect(await live.evaluate((el, expected)=>el===window.__worldTourAltMap&&el.querySelectorAll('*').length===expected,original)).toBe(true);
    // Restart to restore the map selector without leaving ghost DOM behind.
    await page.goto('/');
  }
