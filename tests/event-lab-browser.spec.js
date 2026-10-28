@@ -53,7 +53,12 @@ for (const [name, viewport, hasTouch] of [
       Object.assign(race.player, { distance: race.length - 3, speed: 60 });
     });
     await expect(page.locator('#race-overlay')).toBeVisible();
-    await page.screenshot({ path: `artifacts/event-lab/${name}-${locale}-result.png` });
+    const bestText = await page.evaluate(async () => {
+      const { timeString } = await import('/src/time-format.ts');
+      return timeString(window.gameplay.race.result.time);
+    });
+    await expect(page.locator('#result-stats > div').nth(2).locator('strong')).toHaveText(bestText);
+    await page.screenshot({ path: `artifacts/event-lab/${name}-${locale}-result.png`, animations: 'disabled' });
     await page.locator('#again-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
     expect(await page.evaluate(() => window.gameplay.race.config.course)).toBe(identity);

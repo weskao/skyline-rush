@@ -1,4 +1,4 @@
-<!-- source-sha256: 851d40728471732a94a2d1d96d4df7617b05aea755475e353416ea4a01737976 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 1bf94d3d0dd5fab2bbd728116a8114202c316a4f03abd963964e5d6eb70362b4 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
 > **開發中 · 2026 年 10 月 22 日。** 這些模式的新增內容位於 [`feature/race-modes-p0`](https://github.com/weskao/skyline-rush/tree/feature/race-modes-p0),不一定已經包含在[已部署的 GitHub Pages 版本](https://weskao.github.io/skyline-rush/)中。上方現有截圖呈現的是較早期的遊戲畫面;目前各模式的截圖連結在下方。[路線圖](TODO.md)中還有其他尚未完成的功能。
 
-選擇一條**已解鎖的賽道**,在賽道卡片下方選擇 **GAME MODE**,需要時展開其規則,然後按下 **Start race**(或按 Enter)。比賽仍然使用相同的 Three.js 道路、飛行、FLY / BOOST / NITRO 以及響應式觸控操作。開發分支中共有七種模式:
+選擇一條**已解鎖的賽道**,在賽道卡片下方選擇 **GAME MODE**,需要時展開其規則,然後按下 **Start race**(或按 Enter)。比賽仍然使用相同的 Three.js 道路、飛行、FLY / BOOST / NITRO 以及響應式觸控操作。開發分支提供下列模式:
 
 | Mode | What changes | Win condition / progression |
 | --- | --- | --- |
@@ -69,6 +69,10 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 | **Obstacle Run** | 以種子產生的路邊障礙;密度分為 **Standard** 或 **Extreme**。部分障礙會橫向移動;警告 HUD 會預告即將到來的危險。 | 閃避障礙,乾淨通過可獲得造型分數,並使用一般路線的終點。障礙物的擺放與碰撞共用確定性邏輯;Classic 維持不變。 |
 | **Checkpoint Rush** | 穿越發光的 3D 閘門拱門。起始時間為 **28 秒**;每通過一個閘門且無碰撞,可獲得 **+10 秒**(上限 60 秒)與 **250 造型分**。 | 須在時間用完前通過每一個閘門並抵達終點。錯過閘門或超時,**不會**儲存有效的最佳成績。HUD 會顯示已通過的閘門數、剩餘時間與到下一個目標的距離。 |
 | **Championship Cup** | 選擇由已解鎖路線組成的 **3 條或 5 條賽道** Cup;在每個賽段與 NOVA、ORBIT 和 APEX 競速。 | 名次分別獲得 **10 / 7 / 5 / 3 分**;由累計積分與總時間決定冠軍,同分時以時間決勝。Cup 成績與生涯解鎖各自獨立。 |
+
+### Event Lab Lite 第一版
+
+**Event Lab Lite** 可在已解鎖路線上編輯本機賽道樣板中的障礙、NITRO 環與補給。可調整車道與距離,復原/重做/重設編輯,並以文字匯入或匯出經驗證的賽道。開始後會將賽道轉為實際比賽物件;重試會保留賽道與種子。賽道成績與 Career、Custom 紀錄分開。交通錐、自訂坡道、檢查點編輯及社群分享尚未包含在第一版。
 
 ### 賽前設定、結果與無障礙功能
 
