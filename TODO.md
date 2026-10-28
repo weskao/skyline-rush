@@ -6,6 +6,7 @@
 - [x] Rebase Coast scenery and skyline GPU transforms near the camera, preserve existing materials/pools, hide finite minimap/progress/finish arch and avoid Ghost trace accumulation. Tests cover 8 km, 2 million metres and billion-metre progress with fixed object/resource counts.
 - [x] Persist longest distance independently from Career, including a fifth real collision and rolling-history/cloud normalization/max-distance merges; reuse cruise music and one-shot milestones.
 - [x] Follow-up GREEN: 126 focused core/type/Classic-route checks and two real desktop/touch bilingual browser flows pass, including pause, actual WebGL loss/restore, flight input, result persistence, locale switch and restart. Actual full-resolution distant-road/result captures inspected in `artifacts/endless/`.
+- [x] Moving-traffic continuity RED → GREEN: a 20-minute deterministic driving regression reproduced nearby traffic disappearing when its birth chunk expired. Recycle by current distance and preserve the 40-car cap; all six Endless checks and the full Node suite pass (799 passed, 0 failed, 3 skipped). Logs: `artifacts/endless/traffic-continuity-{red,green,unit}.log`.
 - [ ] Merge current main/regression fixes, run complete `make verify` plus affected cloud emulator checks, then inspect exact-commit remote `quality-gate`. Physical iOS/Android GPU/thermal endurance remains separate.
 
 

@@ -28,8 +28,9 @@ function addChunk(race: EndlessRace, chunk: number): void {
   const count = endlessTrafficCount(start);
   for (let i = 0; i < count; i++) {
     const x = lane(), speed = 23 + Math.floor(random() * 5) * 3;
-    race.traffic.push({ chunk, x, homeX: x, distance: start + 60 + i * 420 / count,
-      speed, cruise: speed, altitude: 0, cooldown: 0, color: Math.floor(random() * 5) });
+    const car = { chunk, x, homeX: x, distance: start + 60 + i * 420 / count,
+      speed, cruise: speed, altitude: 0, cooldown: 0, color: Math.floor(random() * 5) };
+    if (race.traffic.length < 40) race.traffic.push(car);
   }
   for (let i = 0; i < 4; i++) race.pickups.push({ chunk, distance: start + 90 + i * 110,
     x: lane(), altitude: random() < .8 ? 0 : 5, tier: random() < .7 ? 'can' : 'tank' });
@@ -47,7 +48,11 @@ export function streamEndless(race: EndlessRace): void {
   const chunk = Math.floor(race.player.distance / ENDLESS_CHUNK), old = race.endless.chunk;
   if (chunk === old) return;
   const first = Math.max(0, chunk - 1), last = chunk + 3;
-  retainWindow(race.traffic, first, last); retainWindow(race.pickups, first, last); retainWindow(race.rings, first, last);
+  // Moving traffic can outlive its spawn chunk while still visible ahead of the player.
+  let retained = 0;
+  for (const car of race.traffic) if (car.distance >= race.player.distance - 60 && car.distance < (last + 1) * ENDLESS_CHUNK) race.traffic[retained++] = car;
+  race.traffic.length = retained;
+  retainWindow(race.pickups, first, last); retainWindow(race.rings, first, last);
   for (let next = first; next <= last; next++) {
     if (next >= Math.max(0, old - 1) && next <= old + 3) continue;
     addChunk(race, next);

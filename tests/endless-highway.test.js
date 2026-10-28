@@ -8,6 +8,7 @@ import { mergeProgress } from '../src/cloud-progress-merge.ts';
 import { settleRace } from '../src/race-results.ts';
 import { loadSessionProgress } from '../src/session-progress.ts';
 import { createGhostStore } from '../src/ghost-store.ts';
+import { streamEndless } from '../src/endless-highway.ts';
 
 function endless() {
   assert.ok(MODES.includes('endless'), 'Distance Survival must be an explicit selectable mode');
@@ -77,6 +78,18 @@ test('encounter arrays and group bookkeeping stay bounded across long sessions a
   const classic = createRace('coast');
   assert.equal(classic.endless, undefined);
   assert.equal(classic.traffic.length, 36);
+});
+
+test('streaming preserves nearby moving traffic after its spawn chunk expires', () => {
+  const race = endless();
+  for (let second = 0; second < 1200; second++) {
+    race.player.distance += 50;
+    for (const car of race.traffic) car.distance += car.speed;
+    const visible = race.traffic.filter(car => car.distance >= race.player.distance - 60 && car.distance <= race.player.distance + 1400);
+    streamEndless(race);
+    for (const car of visible) assert.ok(race.traffic.includes(car), 'a visible traffic car must not disappear at a chunk boundary');
+    assert.ok(race.traffic.length <= 40, 'keeping moving cars must preserve the fixed traffic budget');
+  }
 });
 
 test('the fifth real collision settles final absolute distance without campaign or Ghost writes', () => {
