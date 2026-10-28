@@ -379,7 +379,7 @@ export function createWorldTourScene(scene){
         hero.rotateY(-entry.side*Math.PI*.5+(entry.yaw||0));
         hero.scale.setScalar(entry.scale||1);
       }
-      if(water.visible)water.position.set(0,-33,-450);
+      if(water.visible)water.position.set(0,-33-home.y,-450); // Fixed sea level in world coordinates.
       }
       // Visibility updates are cheap and still run for every frame.
       for(const hero of heroGroup.children){
