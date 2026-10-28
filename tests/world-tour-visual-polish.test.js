@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { RACE_TRACKS } from '../src/game.js';
 import { createWorldTourScene,WORLD_THEMES } from '../src/world-tour-scene.js';
 import { createSceneryKit,SCENERY_KINDS } from '../src/world-tour-scenery.js';
+import { trackPoint } from '../src/track-paths.ts';
 
 const ids=['taipei','tokyo','alpine','coastal','cosmic'];
 test('five worlds show no central emissive asphalt or shared placeholder scenery',()=>{
@@ -110,4 +111,28 @@ test('World Tour asphalt uses restrained destination-specific PBR under every qu
     assert.ok(expected.tokyo.roughness<expected.alpine.roughness,
       'Tokyo rain-damp satin must be subtler than a mirror while Alpine stays matte');
   } finally { visual.dispose(); }
+});
+
+test('Coastal water plane stays on a fixed sea level when the graded road moves',()=>{
+  const scene=new THREE.Scene(),visual=createWorldTourScene(scene);
+  const root=scene.getObjectByName('World Tour authored scenery');
+  const water=root.children.find(child=>child.isMesh&&child.geometry.type==='PlaneGeometry');
+  assert.ok(water,'authored coastal sea mesh');
+  try {
+    for(const quality of ['low','medium','high']){
+      for(const distance of [0,600,1300,2400,4700]){
+        visual.update('coastal',distance,quality,RACE_TRACKS.coastal.sections,2,true);
+        scene.updateMatrixWorld(true);
+        assert.equal(water.visible,true);
+        // The camera-rebased scene follows the vehicle; a fixed world sea
+        // must change camera-relative height by the *negative* road climb.
+        const relativeY=water.getWorldPosition(new THREE.Vector3()).y;
+        const roadAltitude=trackPoint('coastal',distance).y;
+        assert.ok(Math.abs(relativeY+roadAltitude+33)<.002,
+          `coastal/${quality}@${distance}: sea moves with road (relativeY=${relativeY})`);
+      }
+    }
+    visual.update('tokyo',900,'high',RACE_TRACKS.tokyo.sections,2,true);
+    assert.equal(water.visible,false,'Tokyo must not inherit Coast water');
+  } finally {visual.dispose();}
 });
