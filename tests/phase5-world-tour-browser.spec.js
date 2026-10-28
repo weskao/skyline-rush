@@ -35,7 +35,7 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
     await expect(choice.locator('.route-overview-line')).toHaveCount(1);
     await expect(choice.locator('.route-start')).toHaveCount(1);
     await expect(choice.locator('.route-finish')).toHaveCount(1);
-    await page.screenshot({ path: info.outputPath(`phase5-${id}-showcase-${viewport.width}x${viewport.height}.png`), animations: 'disabled' });
+    await page.screenshot({ path: info.outputPath(`world-tour-phase5-${id}-showcase-${viewport.width}x${viewport.height}.png`), animations: 'disabled' });
 
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
@@ -58,7 +58,20 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
     expect(metrics.calls).toBeGreaterThanOrEqual(0);
     expect(metrics.triangles).toBeGreaterThanOrEqual(0);
     console.log(`Phase5 software WebGL ${id} ${viewport.width}x${viewport.height}: ${metrics.line}; drawCalls=${metrics.calls}; triangles=${metrics.triangles} (not same-device before/after)`);
-    await page.screenshot({ path: info.outputPath(`phase5-${id}-race-${viewport.width}x${viewport.height}.png`), animations: 'disabled' });
+    // The passive minimap must never cover an active touch control.
+    const overlapped = await page.evaluate(() => {
+      const map = document.querySelector('#race-route-map')?.getBoundingClientRect();
+      if (!map) return ['missing route'];
+      return [...document.querySelectorAll('#touch-controls [data-control]')]
+        .filter(button => {
+          const r = button.getBoundingClientRect();
+          return r.width > 0 && r.height > 0
+            && getComputedStyle(button).visibility !== 'hidden'
+            && r.left < map.right && r.right > map.left && r.top < map.bottom && r.bottom > map.top;
+        }).map(button => button.getAttribute('data-control'));
+    });
+    expect(overlapped, `${id}: minimap must not overlap playable touch buttons`).toEqual([]);
+    await page.screenshot({ path: info.outputPath(`world-tour-phase5-${id}-race-${viewport.width}x${viewport.height}.png`), animations: 'disabled' });
     expect(errors).toEqual([]);
   });
 }
@@ -74,10 +87,13 @@ for (const quality of ['low', 'medium', 'high']) {
     }, [ALL, quality]);
     const errors = [];
     page.on('pageerror', err => errors.push(err.message));
+    test.setTimeout(ciTimeout(240000));
     await page.goto('/');
-    await page.locator('[data-track="alpine"]').click();
-    await expect(page.locator('#world')).toBeVisible();
-    await page.screenshot({ path: info.outputPath(`phase5-alpine-${quality}-reduced-motion.png`) });
+    for (const id of TOURS) {
+      await page.locator(`[data-track="${id}"]`).click();
+      await expect(page.locator('#world')).toBeVisible();
+      await page.screenshot({ path: info.outputPath(`world-tour-phase5-${id}-${quality}-reduced-motion.png`) });
+    }
     expect(errors).toEqual([]);
   });
 }
