@@ -1,3 +1,23 @@
+
+## Phase 5 — World Tour visual, road geometry & minimap polish (2026-10-29)
+
+**Branch:** `feature/phase5-world-tour-polish`, created from `main` `7b1785e6`. **Scope:** Tokyo → Alpine → Taipei → Coastal → Cosmic, then ten-track regression and exact-HEAD CI. Plan: `docs/superpowers/plans/2026-10-29-phase5-world-tour-polish.md`.
+
+- [x] Audit project architecture, track/renderer/minimap rules, current World Tour assets and regression suites; create feature branch and plan. **Code-only audit**; real WebGL baseline and profiling below remain pending.
+- [ ] Capture real running-game WebGL baseline for all five World Tour tracks at 1440×900, 390×844, 320×740, 844×390; inspect actual occlusion/road contact and record baseline FPS, frame-time p50/p95, draw calls, triangles, memory where available.
+- [ ] **Tokyo Afterdark:** reproduce and verify absolute-distance tunnel shell rhythm across 120m streamed chunks, then confirm no road/vehicle/camera occlusion and review lighting/viaduct/high-speed gameplay. Regression test added in `tests/world-tour-tunnels.test.js`; shared implementation changed in `src/world-tour-tunnels.js`. **RED/GREEN not yet observed in executed test output.**
+- [ ] **Alpine Rail Pass:** verify the same tunnel-seam regression across both rock bores, terrain/rail alignment, clearance and car pose using real WebGL and regression tests.
+- [ ] **Taipei Heritage:** verify city street/landmark composition, bends, street density, camera and minimap.
+- [ ] **Coastal Horizon:** verify water/coastal layers, bridge boundaries, high-speed visual depth and minimap.
+- [ ] **Cosmic Orbit:** verify orbital road boundaries, vehicle banking/flight/landing, landmark clarity and altitude legibility; add a cached minimap cue only if actual review proves needed.
+- [ ] Validate road ribbon vs `trackPoint`/`trackFrame`, vehicle contact, collision and AI/traffic, 30/60/Auto, Ghost/history/cloud compatibility and ten-track regressions. No road centreline, length or saved schema changes without prior route version/migration design.
+- [ ] Verify English/zh-TW, reduced motion, Low/Medium/High settings, mobile portrait/landscape, HUD/map non-overlap and accessibility; preserve static SVG/route sample caching.
+- [ ] Observe test-first RED → GREEN using a focused runnable test; run `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, dedicated World Tour Playwright, Cloud Save; inspect full GitHub Actions quality-gate for the final HEAD SHA.
+- [ ] Capture real WebGL before/after screenshots and comparable frame-time, FPS, draw-call and triangle measurements for all five tracks; do not use generated art or claim physical-device thermals without physical-device evidence.
+- [ ] Integrate latest `main`, resolve conflicts, rerun checks, review exact HEAD, and report merge-ready only after all required gates pass. **No PR or merge without explicit approval.**
+
+**Audio assessment:** Tunnel-shell alignment is purely geometric/visual; retain current effects and audio, and do not add redundant sound cues.
+
 # TODO — Gameplay depth design
 
 ## Feature request: 90 / 120 FPS render option (2026-10-29)
