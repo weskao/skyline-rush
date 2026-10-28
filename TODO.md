@@ -10,7 +10,11 @@
 - [x] Integrate fetched main `72466c3`; preserve both feature and main behavior. Original LAP-02/03/04 implementation boxes below are checked against the focused geometry, timing, sector and browser evidence. The broad seam/device acceptance remains open.
 - [ ] Integrate shared main regression fixes, run the complete resulting `make verify`, cloud emulator and exact-commit CI quality-gate; physical Safari/Android GPU, audio/perception and long-run checks remain pending. Historical broad Node run had only the two inherited timeout/perf tests failing; it is not a green final receipt.
 
+## Shared continuation regression gates (2026-10-28)
 
+- [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
+- [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
+- [ ] Complete each independent feature's resulting full local gate and exact-HEAD CI. Superseded/interrupted runs remain historical receipts. Remote pushes await the user's explicit authorization following automatic review rejection; no main merge, PR or deployment is authorized.
 
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
