@@ -1088,7 +1088,7 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 
 ### 9J. Endless Highway / Distance Survival (P2)
 
-- [ ] **MODE-09 — Endless Highway:** deterministic extension/streaming **beyond**
+- [x] **MODE-09 — Endless Highway:** deterministic extension/streaming **beyond**
   the fixed 4–8 km authored tracks; progressively increase challenge and record
   longest distance/survival score.
 - [ ] Build extendable road geometry, scene chunks, encounter seeds, objective
