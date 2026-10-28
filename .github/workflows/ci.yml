@@ -64,9 +64,9 @@ jobs:
       - run: npm ci
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
       - run: npm run test:browser -- --shard=${{ matrix.shard }}/8
-      # Final refactor verification also runs the responsive layout command exactly once.
-      - name: Verify responsive layout on final refactor run
-        if: "${{ matrix.shard == 1 && startsWith(github.ref, 'refs/heads/refactor/') }}"
+      # Phase 5 and final refactors run responsive layout once, with the browser quality gate.
+      - name: Verify responsive layout for final refactor or World Tour polish
+        if: "${{ matrix.shard == 1 && (startsWith(github.ref, 'refs/heads/refactor/') || github.ref == 'refs/heads/feature/phase5-world-tour-polish') }}"
         run: npm run test:layout
       - if: failure()
         uses: actions/upload-artifact@v4
