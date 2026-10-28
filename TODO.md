@@ -1,5 +1,10 @@
 # TODO — Gameplay depth design
 
+## Main integration follow-up (2026-10-28)
+
+- [x] Merge main `d71fc6592ad0cfd160a5306e333ea8e73afe757b` into this independent branch and resolve conflicts without dropping new main camera/AIRFLOW, lighting or haptic behavior. Preserve feature-specific behavior, reviewed CSS contracts and lower renderer size ceilings. The focused renderer/camera/haptics checks pass (12 tests).
+- [ ] Broader feature implementation, full acceptance and exact-HEAD CI remain separate from this main-merge check.
+
 ## Shared continuation regression gates (2026-10-28)
 
 - [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
