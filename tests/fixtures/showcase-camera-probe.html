@@ -32,12 +32,12 @@
     const frame = roadFrame(id, previewDistance(id));
     const side = offset.dot(new THREE.Vector3(...frame.right));
     const back = -offset.dot(new THREE.Vector3(...frame.forward));
-    return { bearing: Math.atan2(side, back) * 180 / Math.PI, range: Math.hypot(side, back), x: player.x, carBounds: player.carBounds };
+    return { bearing: Math.atan2(side, back) * 180 / Math.PI, range: Math.hypot(side, back), x: player.x, clear: player.bodyClearShare, carBounds: player.carBounds };
   }
   // Renders `seconds` of ready-screen frames and samples the bearing every `every` seconds.
   // `racing` parks the player at the preview point mid-race, where AIRFLOW views drive the race camera.
-  window.showcaseCameraProbe = (id, view, { airflow = false, seconds = 2, every = 0, start = 2, racing = false } = {}) => {
-    world.configureVFX({ quality: 'low', enabled: true, bloom: 0, airflow, view });
+  window.showcaseCameraProbe = (id, view, { airflow = false, seconds = 2, every = 0, start = 2, racing = false, quality = 'low' } = {}) => {
+    world.configureVFX({ quality, enabled: true, bloom: 0, airflow, view });
     const race = createRace(id);
     if (racing) Object.assign(race, { phase: 'racing', elapsed: start }).player.distance = previewDistance(id);
     const samples = [];
