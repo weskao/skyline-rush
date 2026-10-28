@@ -27,8 +27,9 @@ for (const viewport of VIEWPORTS) {
           const label = `${id}/${view}`;
           expect.soft(gap(result.bearing, expected), `${label} bearing ${result.bearing.toFixed(1)}°`).toBeLessThan(25);
           expectWholeCar(result, label);
-          // Landscape home panel covers the left half (NDC x < .04), as in the drive shot.
-          if (viewport.width > viewport.height) expect.soft(result.carBounds.minX, `${label} car clear of the home panel`).toBeGreaterThan(0.04);
+          // Landscape home panel covers the left half (NDC x < .04), as in the drive shot; AIRFLOW hides it, so the car centres.
+          if (airflow) expect.soft(Math.abs(result.x), `${label} car centred with the home panel hidden`).toBeLessThan(0.15);
+          else if (viewport.width > viewport.height) expect.soft(result.carBounds.minX, `${label} car clear of the home panel`).toBeGreaterThan(0.04);
         }
       }
     });
@@ -45,19 +46,28 @@ test('AIRFLOW race camera keeps the chosen angle in the road frame on curved and
   }
 });
 
+const spread = values => Math.max(...values) - Math.min(...values);
 for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
-  test(`orbit circles the car a full 360° at ${viewport.width}x${viewport.height}`, async ({ page }) => {
-    await openProbe(page, viewport);
-    for (const id of TRACKS) {
-      const { samples } = await page.evaluate(id => window.showcaseCameraProbe(id, 'orbit', { seconds: 40, every: 0.5 }), id);
-      // Unwrap the sampled bearings: a real orbit turns steadily one way, never jumps back.
-      let turned = 0;
-      for (let i = 1; i < samples.length; i++) {
-        const step = ((samples[i] - samples[i - 1] + 540) % 360) - 180;
-        expect.soft(Math.abs(step), `${id} orbit jump at sample ${i}: ${samples[i - 1].toFixed(0)}° → ${samples[i].toFixed(0)}°`).toBeLessThan(20);
-        turned += step;
+  for (const airflow of [false, true]) {
+    test(`orbit circles the car smoothly a full 360° at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
+      await openProbe(page, viewport);
+      for (const id of TRACKS) {
+        const { samples: all } = await page.evaluate(([id, airflow]) => window.showcaseCameraProbe(id, 'orbit', { airflow, seconds: 41.5, every: 0.25 }), [id, airflow]);
+        const samples = all.slice(6); // skip the glide in from the previous view
+        // Unwrap the sampled bearings: a real orbit turns one way at a steady rate, never lurches.
+        const steps = samples.slice(1).map((s, i) => ((s.bearing - samples[i].bearing + 540) % 360) - 180);
+        const turned = steps.reduce((a, b) => a + b, 0);
+        expect.soft(Math.abs(turned), `${id} orbit turned ${turned.toFixed(0)}°`).toBeGreaterThanOrEqual(360);
+        const mean = turned / steps.length;
+        const worst = steps.reduce((w, s) => Math.max(w, Math.abs(s - mean)), 0);
+        expect.soft(worst, `${id} orbit rate wobbles by ${worst.toFixed(2)}° per step around ${mean.toFixed(2)}°`).toBeLessThan(Math.abs(mean) * 0.25);
+        // Centred on the car: the camera keeps one radius and the car keeps its place on screen.
+        const ranges = samples.map(s => s.range), xs = samples.map(s => s.x);
+        expect.soft(spread(ranges), `${id} orbit radius ${Math.min(...ranges).toFixed(1)}–${Math.max(...ranges).toFixed(1)} m`).toBeLessThan(1);
+        expect.soft(spread(xs), `${id} car screen x drifts ${spread(xs).toFixed(2)}`).toBeLessThan(0.12);
+        // AIRFLOW hides the home panel, so nothing pushes the car off the middle of the frame.
+        if (airflow) expect.soft(Math.abs(xs.reduce((a, b) => a + b, 0) / xs.length), `${id} car off centre`).toBeLessThan(0.15);
       }
-      expect.soft(Math.abs(turned), `${id} orbit turned ${turned.toFixed(0)}°`).toBeGreaterThanOrEqual(360);
-    }
-  });
+    });
+  }
 }
