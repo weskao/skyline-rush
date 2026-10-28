@@ -85,7 +85,7 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
       } catch { /* Opaque legacy rules still display as text. */ }
       const best = config ? loadModeBest(trackId, config) : null;
       const personalBest = best !== null && (run.mode === 'stunt' ? run.score === best : run.time === best);
-      const ghost = run.mode === 'time' && !!config && !!loadModeGhost(trackId, config);
+      const ghost = ['time', 'circuit'].includes(run.mode) && !!config && !!loadModeGhost(trackId, config);
       const details = run.mode === 'stunt'
         ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
           run.medal ? t('mode.medal.' + run.medal) : '',

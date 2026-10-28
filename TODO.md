@@ -6,6 +6,8 @@
 - [x] Genuine 2 km closed geometry with one periodic road/vehicle/camera/item/Ghost/map frame; unwrapped progress and seam-aware physical gaps, ordered 1/3/5-lap sectors, interpolated splits and per-lap collectible identities.
 - [x] Follow-up RED/GREEN for Circuit records/Ghost bounds, default History selection, nonfinite progress, lap audio, ring orientation and shared geometry disposal. Permanent personal lap bests use the existing numeric bests map and survive rolling-history eviction/cloud merges.
 - [x] Strict TS/Vue checks and targeted history/Ghost/cloud checks pass (73 focused checks before the final matrix). 1/3/5-lap tests pass at 30/60/120 Hz; all six desktop/phone portrait/landscape × English/zh-TW real-game flows pass, including visible landmark/minimap, stored lap best, seam capture, result, retry, quit and Classic restart. Captures and logs: `artifacts/circuit/`.
+- [x] History discoverability RED → GREEN: Circuit Ghosts loaded but only Time Trial rows showed the Ghost badge. The shared view now includes valid Circuit Ghosts; 53 relevant Node checks, all 815 Node checks (3 emulator skips), and English desktop / zh-TW touch History menu flows pass. Cloud emulator checks pass: 15 browser + 3 Rules tests.
+- [x] Integrate fetched main `72466c3`; preserve both feature and main behavior. Original LAP-02/03/04 implementation boxes below are checked against the focused geometry, timing, sector and browser evidence. The broad seam/device acceptance remains open.
 - [ ] Integrate shared main regression fixes, run the complete resulting `make verify`, cloud emulator and exact-commit CI quality-gate; physical Safari/Android GPU, audio/perception and long-run checks remain pending. Historical broad Node run had only the two inherited timeout/perf tests failing; it is not a green final receipt.
 
 
@@ -1142,13 +1144,13 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] **LAP-01 — Separate session types:** support multi-stage/repeated
   **point-to-point** sprints first (P0/P1), and label them “Stage 1/3”,
   not “Lap 1/3”. The original 10 tracks must keep their authored geography.
-- [ ] **LAP-02 — Genuine closed circuits:** author at least one actual loop
+- [x] **LAP-02 — Genuine closed circuits:** author at least one actual loop
   whose start/finish world position, tangent, road banking and width connect
   continuously; do **not** fake it with instant distance wrap.
-- [ ] **LAP-03 — Configurable 1 / 3 / 5 laps** only on circuits with a valid
+- [x] **LAP-03 — Configurable 1 / 3 / 5 laps** only on circuits with a valid
   topology; lap timer, personal best lap, total race time, split sectors,
   lap HUD, AI lap standings and finish sequence.
-- [ ] **LAP-04 — Anti-shortcut checkpoints:** ordered sector validation
+- [x] **LAP-04 — Anti-shortcut checkpoints:** ordered sector validation
   prevents crossing the finish backwards, flying over the finish repeatedly,
   teleports or respawns from granting false laps.
 - [ ] **Acceptance:** completion requires the configured number of valid

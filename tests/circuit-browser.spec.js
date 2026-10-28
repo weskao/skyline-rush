@@ -75,3 +75,28 @@ for (const [name, viewport, hasTouch, locale] of [
     expect(errors).toEqual([]);
   });
 });
+
+for (const [width, locale] of [[1440, 'en'], [390, 'zh-TW']]) test.describe(`Circuit Ghost History ${locale}`, () => {
+  test.use({ viewport: { width, height: width === 390 ? 844 : 900 }, hasTouch: width === 390 });
+  test('saved Circuit Ghost is discoverable through the real History controls', async ({ gameplayPage: page }) => {
+    await page.evaluate(async () => {
+      const { normalizeRaceConfig } = await import('/src/race-config.ts');
+      const { recordModeRace, saveModeGhost } = await import('/src/history.ts');
+      const config = normalizeRaceConfig({ mode: 'circuit', laps: 1 });
+      recordModeRace({ mode: 'circuit', trackId: 'harbor-circuit', config,
+        result: { time: 20, success: true, position: 1, lapTimes: [{ time: 20, splits: [5, 10, 15, 20] }] } });
+      if (!saveModeGhost('harbor-circuit', config, { time: 20, samples: Array.from({ length: 201 }, (_, i) => [i * 10, -2.5, 0]) })) throw new Error('Invalid capture Ghost');
+    });
+    await page.reload();
+    await page.waitForTimeout(750);
+    if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+    await selectLocale(page, locale);
+    await page.locator('.history-button').click();
+    const track = page.locator('#history-track + .custom-select');
+    await track.getByRole('combobox').click();
+    await track.getByRole('option', { name: locale === 'en' ? 'Harbor Circuit' : '港灣環道', exact: true }).click();
+    await expect(page.locator('#mode-history-runs [data-mode="circuit"][data-ghost="true"]')).toHaveCount(1);
+    await expect(page.locator('#mode-history-runs')).toContainText(locale === 'en' ? 'GHOST READY' : '幽靈可用');
+    await page.screenshot({ path: `artifacts/circuit/history-ghost-${locale}.png` });
+  });
+});
