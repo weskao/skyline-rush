@@ -8,6 +8,8 @@
 
 ## Genuine circuit continuation (2026-10-28, feature/genuine-circuit-laps)
 
+- [x] Main camera integration exposed Harbor beacon clipping in both portrait locales (projected x 1.1326, limit 0.95). Preserve the unchanged browser RED and ready captures; move only the visual beacon from 240m to 150m along the route, retaining lateral clearance, scale, camera and track geometry. All 8 existing Circuit device/lap/Ghost flows pass; full resulting gate remains separate. Logs: `make-verify-main-0197547.log` (RED), `landmark-green.log` (focused GREEN).
+
 - [x] Real screenshot review exposed horizontal overflow in Circuit 5-lap phone metrics. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
 - [x] Repeat complete local `make verify` after the CSS fix on `9cee557`: strict TS/Vue/JS checks, 817 Node passed / 3 emulator skips, locked build, 495 browser passed / 2 skips and 72 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-result-wrap.log`. Pre-fix full-gate receipts below remain historical.
 - [ ] Verify exact post-wrap feature-HEAD GitHub quality-gate; no earlier HEAD CI is substituted.

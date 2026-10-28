@@ -5,7 +5,8 @@ export const CIRCUIT_ID = 'harbor-circuit';
 export const CIRCUIT_LENGTH = 2000;
 export const CIRCUIT_RADIUS = CIRCUIT_LENGTH / (2 * Math.PI);
 export const CIRCUIT_HALF_WIDTH = 12;
-export const CIRCUIT_BEACON = Object.freeze({ at: 240, offset: 120, scale: 2.5 });
+// Keep the landmark in the shared portrait chase shot, well outside the road.
+export const CIRCUIT_BEACON = Object.freeze({ at: 150, offset: 120, scale: 2.5 });
 export const CIRCUIT_TRACK: TrackConfig & { topology: 'circuit'; topologyVersion: 1 } = {
   name: 'Harbor Circuit', length: CIRCUIT_LENGTH, trafficDensity: 0, seed: 11011,
   sections: [], topology: 'circuit', topologyVersion: 1,
