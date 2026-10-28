@@ -1,6 +1,12 @@
 # TODO — Gameplay depth design
 
-## Main integration follow-up (2026-10-28)
+## Main 0.25.0 integration (2026-10-28)
+
+- [x] Merge latest requested main `01526118767b99a85b0a9b7570bdd87a27ac304e` into this independent branch. Preserve all feature source: the `src` tree is identical to the pre-merge parent. Integrate 0.25.0 metadata, per-map camera cases and six CI World Tour shards; retain the validated worktree port override. All 36 focused size/camera/haptic/release checks pass.
+- [ ] Run the complete resulting 0.25.0 local gate and fresh real-game evidence; earlier complete 0197547 gates remain historical receipts.
+- [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No workaround or main/PR/tag/deployment action is authorized.
+
+## Historical main integration through 0197547 (2026-10-28)
 
 - [x] Integrate captured main `0197547d01a7bd4618bee7a969fdbc67e2caf1ac` (including `ebd30e5` / `d71fc65`) into this independent branch, resolve conflicts and preserve both main and feature behavior. Main now separates release data and includes upcoming notes; all 36 focused renderer/camera/haptic/release tests pass. Shared AIRFLOW locale repair `3e7f7d6` is included. This is the fixed baseline for the final verification batch.
 - [x] Complete local `make verify` on code `354ada5` with main `0197547`: strict types, 809 Node passed / 3 emulator skips, locked build, 499 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main-0197547.log`. This is a historical receipt if a newer main is integrated.
