@@ -1,5 +1,6 @@
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { hazardX } from './hazards.ts';
+import { stepPlayerHazards } from './hazard-race.ts';
 import { raceHazards } from './track-themes.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
@@ -743,26 +744,7 @@ export function stepRace(race, input, dt) {
     if (fell || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring));
   }
-  // Every gauntlet barrier can be hit or cleared only once. The physics layer
-  // decides impacts; the renderer only draws the same authored hazards.
-  for (const hazard of race.hazards) {
-    if (hazard.distance > car.distance) break;
-    if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
-    const obstacleX = hazardX(hazard, race.elapsed);
-    const collision = Math.abs(car.x - obstacleX) < (hazard.halfWidth ?? BARRIER_HALF_WIDTH) + 0.25 && car.altitude < (hazard.height ?? 2.4);
-    if (collision && car.cooldown === 0) {
-      contact(race, 'barrier', obstacleX, 0.7, 0.6);
-      hazard.hit = true;
-    } else {
-      hazard.passed = true;
-      if (!collision) {
-        // Risk/reward: a close, clean ground pass pays more than a distant lane change.
-        const near = car.altitude < 2.4 && Math.abs(car.x - obstacleX) < 4;
-        car.score += near ? 300 : 150;
-        if (near) car.nearMisses++;
-      }
-    }
-  }
+  stepPlayerHazards(race, car, previousDistance, contact);
   const travelled = Math.min(car.distance, race.length) - previousDistance;
   if (car.collisions + car.falls !== previousContacts) car.cleanDistance = 0;
   else {
