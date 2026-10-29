@@ -206,7 +206,6 @@ export function createWorldTourScene(scene){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
-        // Props use absolute distances, never looping positions near the camera.
         chunk.add(prop);
       }
       const earth=kit.terrain(id,index,level==='low');
@@ -220,9 +219,7 @@ export function createWorldTourScene(scene){
     }
     if(changed)pooled=poolStaticChunks(sceneryLayer,chunks.values(),pooled);
   }
-  // Hidden sample of everything a track can stream in later — every prop kind batched (instanced) and plain, the
-  // terrain ribbon, every tunnel shell variant and entrance — so the first-frame shader warmup (world.js) builds
-  // their pipelines on track change; a chunk compiling a new shader mid-race stalls WebKit and flashes black.
+  // Warm every streamed shader/variant before a new chunk appears mid-race.
   function shaderRack(id){
     const sample=new THREE.Group();sample.name='shader rack '+id;sample.visible=false;
     for(const kind of SCENERY_KINDS[id])for(let i=0;i<3;i++)sample.add(kit.build(id,kind));
