@@ -87,7 +87,7 @@ test.describe('new-mode controls have accessible names', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
   test('item rules, circuit laps, Event Lab buttons and USE are named', async ({ gameplayPage: page }) => {
     // Event Lab authors on the sprint routes, so open it from the home screen before Circuit swaps the route.
-    await page.locator('[data-race-mode="eventlab"]').click();
+    await page.locator('button[data-race-mode="eventlab"]').click();
     const dialog = page.locator('#event-lab-dialog');
     await expect(dialog).toBeVisible();
     await dialog.locator('.lab-share > summary').click(); // Export/Import sit in a closed share section

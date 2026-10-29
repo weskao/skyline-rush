@@ -12,7 +12,7 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await selectLocale(page, locale);
-    await page.locator('[data-race-mode="eventlab"]').click();
+    await page.locator('button[data-race-mode="eventlab"]').click();
     const dialog = page.locator('#event-lab-dialog');
     await expect(dialog).toBeVisible();
     await page.locator('.lab-share > summary').click();
@@ -74,7 +74,7 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await selectLocale(page, locale);
-    await page.locator('[data-race-mode="eventlab"]').click();
+    await page.locator('button[data-race-mode="eventlab"]').click();
     await page.locator('#lab-template-checkpoints').click();
     const map = page.locator('.lab-map'), box = await map.boundingBox();
     const press = position => hasTouch ? map.tap({ position }) : map.click({ position });

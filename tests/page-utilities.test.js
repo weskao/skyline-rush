@@ -31,4 +31,7 @@ test('a body-level :has() rule styles a class or id, never "everything but": tha
   const photo = readFileSync(new URL('../src/photo-ui.ts', import.meta.url), 'utf8');
   assert.match(photo, /classList\.add\('photo-studio'\)/);
   assert.match(photo, /classList\.remove\('photo-studio'\)/);
+  // The page comes back in the same frame the dialog hides, as :has([open]) did: not a task later on 'close'.
+  assert.match(photo, /'cancel', leaveStudio/);
+  assert.match(photo, /leaveStudio\(\); photoDialog\.close\(\)/);
 });

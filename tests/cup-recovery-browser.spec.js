@@ -24,7 +24,7 @@ for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['pho
       }
     }, { key, checkpoint, tracks });
     await page.goto('/');
-    await page.locator('[data-race-mode="cup"]').click();
+    await page.locator('button[data-race-mode="cup"]').click();
     await page.locator('#cup-rules > summary').click();
     await expect(page.locator('#cup-resume')).toBeVisible();
     await expect(page.locator('#cup-recovery-summary')).toContainText('2 / 3');
@@ -37,13 +37,13 @@ for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['pho
     await expect(page.locator('#sprint-stage')).toHaveText('CUP HEAT 2 / 3');
     await expect(page.locator('[data-track="neon"]')).toHaveAttribute('aria-pressed', 'true');
     await page.reload();
-    await page.locator('[data-race-mode="cup"]').click();
+    await page.locator('button[data-race-mode="cup"]').click();
     await page.locator('#cup-rules > summary').click();
     await expect(page.locator('#cup-resume')).toBeVisible();
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), key)).toEqual(checkpoint);
     expect(await page.evaluate(() => localStorage.getItem('skyline-rush-stars'))).toBeNull();
     if (name === 'desktop') {
-      await page.locator('[data-race-mode="classic"]').click();
+      await page.locator('button[data-race-mode="classic"]').click();
       await expect(page.locator('.intro-wordmark')).toBeVisible();
       await expect(page.locator('#intro-title')).toBeVisible();
     }
@@ -61,7 +61,7 @@ test('saved Cup controls translate live and discard survives reload', async ({ p
     }
   }, { key, checkpoint, tracks });
   await page.goto('/');
-  await page.locator('[data-race-mode="cup"]').click();
+  await page.locator('button[data-race-mode="cup"]').click();
   await page.locator('#cup-rules > summary').click();
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('#cup-resume')).toHaveText('繼續錦標賽');
@@ -70,7 +70,7 @@ test('saved Cup controls translate live and discard survives reload', async ({ p
   await page.locator('#cup-discard').click();
   await expect(page.locator('#cup-recovery')).toHaveCount(0);
   await page.reload();
-  await page.locator('[data-race-mode="cup"]').click();
+  await page.locator('button[data-race-mode="cup"]').click();
   await page.locator('#cup-rules > summary').click();
   await expect(page.locator('#cup-recovery')).toHaveCount(0);
 });
@@ -78,7 +78,7 @@ test('saved Cup controls translate live and discard survives reload', async ({ p
 test('a saved Cup cannot unlock courses or enable the locked Cup start button', async ({ page }) => {
   await page.addInitScript(({ key, checkpoint }) => localStorage.setItem(key, JSON.stringify(checkpoint)), { key, checkpoint });
   await page.goto('/');
-  await page.locator('[data-race-mode="cup"]').click();
+  await page.locator('button[data-race-mode="cup"]').click();
   await page.locator('#cup-rules > summary').click();
   await expect(page.locator('#cup-recovery')).toHaveCount(0);
   await expect(page.locator('#start-button')).toBeDisabled();
