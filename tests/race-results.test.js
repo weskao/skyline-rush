@@ -167,6 +167,14 @@ function drivenCircuitLap() {
   return race;
 }
 
+// A winning finish each mode can settle: Endless ends on its fifth collision with no stars, and Circuit
+// records validate real lap times, so it settles a lap actually driven on its own route.
+function finishedRaceFor(mode) {
+  if (mode === 'circuit') return drivenCircuitLap();
+  const result = mode === 'endless' ? { distance: 12000, stars: 0, collisions: 5, endReason: 'collisions' } : {};
+  return classic({ position: 1, time: 50, stars: 3, nearMisses: 40, ...result }, { mode, config: { mode } });
+}
+
 test('no non-Classic finish touches Classic unlocks, stars, medals, bests, history or the Daily board', () => {
   const classicState = progress => {
     const { unlocked, modeHistory, ...rest } = progress, { modeHistory: stored, ...saved } = loadSessionProgress([]);
@@ -177,10 +185,7 @@ test('no non-Classic finish touches Classic unlocks, stars, medals, bests, histo
     globalThis.localStorage = { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) };
     const progress = loadSessionProgress(['coast']);
     const before = classicState(progress);
-    // Endless settles a distance on its own path (fifth collision, no stars); it must still leave Classic alone.
-    const result = mode === 'endless' ? { distance: 12000, stars: 0, collisions: 5, endReason: 'collisions' } : {};
-    // Circuit records validate real lap times, so it settles a lap actually driven on its own route.
-    settle(mode === 'circuit' ? drivenCircuitLap() : classic({ position: 1, time: 50, stars: 3, nearMisses: 40, ...result }, { mode, config: { mode } }), { progress });
+    settle(finishedRaceFor(mode), { progress });
     assert.equal(classicState(progress), before, `${mode} finish left Classic progress unchanged`);
     assert.equal(progress.modeHistory.length, 1, `${mode} finish is recorded in its own mode history`);
   }
@@ -207,4 +212,21 @@ test('an Event Lab finish never touches Classic progress and its records stay on
   const cloud = modes(mergeModeBests(readLocalModeBests()).bests);
   assert.ok(cloud.includes('custom'), 'other modes still reach the cloud payload');
   assert.ok(!cloud.includes('eventlab'), 'Event Lab bests never reach cloud mode bests');
+});
+
+test('10C: every re-render of a finished race (pause, restart, exit, mode switch, dialog close) writes and awards once, per mode', () => {
+  for (const mode of ['classic', ...MODE_NAMES]) {
+    const writes = new Map(), store = new Map();
+    globalThis.localStorage = { getItem: key => store.get(key) ?? null, removeItem: key => store.delete(key),
+      setItem: (key, value) => { writes.set(key, (writes.get(key) ?? 0) + 1); store.set(key, value); } };
+    const race = finishedRaceFor(mode);
+    const { context, settlement } = settle(race, { progress: loadSessionProgress(['coast']) });
+    const once = JSON.stringify([...writes]), awarded = JSON.stringify({ ...context.progress, unlocked: [...context.progress.unlocked] });
+    assert.ok(writes.size > 0, `${mode} finish wrote its result`);
+    for (const event of ['pause', 'restart', 'exit', 'mode switch', 'dialog close']) {
+      assert.equal(settleRace(race, context), settlement, `${mode} ${event} reuses the first settlement`);
+      assert.equal(JSON.stringify([...writes]), once, `${mode} ${event} writes nothing more`);
+      assert.equal(JSON.stringify({ ...context.progress, unlocked: [...context.progress.unlocked] }), awarded, `${mode} ${event} awards nothing more`);
+    }
+  }
 });
