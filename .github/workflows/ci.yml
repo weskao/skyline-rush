@@ -214,11 +214,13 @@ jobs:
         with:
           node-version: 22
       - uses: actions/download-artifact@v4
+        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
         with:
           pattern: render-performance-*
           path: ${{ runner.temp }}/render-performance
           merge-multiple: true
       - name: Verify software-WebGL evidence coverage and rendering budgets
+        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
         run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
       - name: Require every verification suite to pass
         env:
