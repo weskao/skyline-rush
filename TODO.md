@@ -76,6 +76,11 @@ Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates c
 - [x] All six owning caller branches pass complete post-merge make verify on their user-published code: Cup, Custom, Items, Event Lab, Endless and Circuit. Receipts identify exact SHAs in each owning TODO. This helper has no separate standalone local full-gate receipt.
 - [x] User-published helper code `4117dcc` passes all 17 required GitHub checks including quality-gate: https://github.com/weskao/skyline-rush/actions/runs/40818547878 . Later TODO-only commits need their own latest-HEAD CI before merge.
 
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `9b5202f` on `feature/cup-session-recovery`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `9b5202f` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818546745). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `9b5202f` exits 0: strict TS/Vue/JS, Node 822 / Browser 502 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/cup-recovery/make-verify-main-ca1c777-user-merge.log`.
+
 Historical receipts below retain their original date and verification scope.
 
 ## Main camera-probe integration (2026-10-28)
@@ -84,15 +89,48 @@ Historical receipts below retain their original date and verification scope.
 - [x] Merge-specific validation passes all 39 focused size/haptic/camera/release/draw-helper checks. Shared application fixes are covered by all six completed caller full gates; no standalone full-gate receipt is claimed here.
 - [ ] Exact-HEAD CI for this helper/placeholder remains unverified. The pending publication request covers only the six implemented feature branches; no push from this helper/placeholder is authorized.
 
+- [x] Complete resulting-main `make verify` on code `f88d43a` (verified 2026-10-29): strict TS/Vue/JS checks, 808 Node passed / 3 emulator-scoped skips, locked production build, 500 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/cup-recovery/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
+- [x] Preserve 5 original-resolution 0.25.0 real-game images in `artifacts/cup-recovery/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `f88d43a` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
+- [x] Local Auth/Firestore emulator compatibility on code `f88d43a`: 15 browser and 3 Rules tests pass, exit 0. Receipt: `artifacts/cup-recovery/cloud-main-31ac7b1.log`; no production cloud writes.
+- [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
+
 ## Main 0.25.0 integration (2026-10-28)
 
 - [x] Merge latest requested main `01526118767b99a85b0a9b7570bdd87a27ac304e` into this independent branch. Preserve all feature source: the `src` tree is identical to the pre-merge parent. Integrate 0.25.0 metadata, per-map camera cases and six CI World Tour shards; retain the validated worktree port override. All 36 focused size/camera/haptic/release checks pass.
 - [ ] Broader implementation/acceptance and exact-HEAD CI are separate from this merge check.
 
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `f88d43a` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
+- [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
+
 ## Historical main integration through 0197547 (2026-10-28)
 
 - [x] Integrate captured main `0197547d01a7bd4618bee7a969fdbc67e2caf1ac` (including `ebd30e5` / `d71fc65`) into this independent branch, resolve conflicts and preserve both main and feature behavior. Main now separates release data and includes upcoming notes; all 36 focused renderer/camera/haptic/release tests pass. Shared AIRFLOW locale repair `3e7f7d6` is included. This is the fixed baseline for the final verification batch.
 - [ ] Broader feature implementation, full acceptance and exact-HEAD CI remain separate from this main-merge check.
+
+- [x] Complete local `make verify` on code `ef2fa05` with main `0197547`: strict types, 805 Node passed / 3 emulator skips, locked build, 500 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/cup-recovery/make-verify-main-0197547.log`. This is a historical receipt if a newer main is integrated.
+- [ ] Inspect the recorded feature-code SHA GitHub required jobs and `quality-gate`; the final documentation HEAD is checked separately. Real-device and remaining manual gates stay open.
+
+## Staged roadmap continuation (2026-10-27)
+
+The owner authorized TDD implementation of the remaining non-Firebase/non-Gamepad roadmap in independently mergeable feature branches. Unrelated features start from `origin/main`, not the dirty audio/keymap refactor checkout. This is implementation authorization, not merge/PR/release/deploy authorization.
+
+### Stage: Cup session recovery — `feature/cup-session-recovery`
+
+- [x] Observe real Chrome RED for a valid completed-heat checkpoint with no recovery entry; preserve `artifacts/cup-recovery/browser-red.log`.
+- [x] Round-trip versioned Cup checkpoints with the shared standings validation; reject corrupt/oversized/complete/locked saves and tolerate denied storage. Observe functional round-trip/retry RED, then 12/12 focused Cup unit tests GREEN.
+- [x] Add Vue-owned bilingual Resume/Discard controls; preserve standings, restart only the unfinished heat, roll back a retried completed heat, and clear recovery after final completion. Desktop and touch-phone tests finish real simulated heats, retry, advance, quit, resume and verify one final mode record with no Career stars.
+- [x] Independent review found access restoration did not refresh the recovery entry. Observe Classic-unlock RED → GREEN and update the existing event-driven `showTracks` path, without frame-loop polling.
+- [x] Deletion lifecycle RED → GREEN: clearing game progress left the new Cup checkpoint behind. The shared cleanup now removes its exported key, preserves device controls/audio, and reports a failed removal so the deletion guard remains active. Focused Cup/cloud checks: 35 passed; full Node: 798 passed, 0 failed, 3 emulator skips. Extended the existing emulator deletion browser test; fresh emulator verification passes 15 browser + 3 Rules tests (`artifacts/cup-recovery/deletion-cloud.log`).
+- [x] Observe desktop intro overflow RED (164 px), then fit the fixed height by collapsing the promotional logo/slogan only while saved Cup settings are expanded. Recovery buttons retain 44 px targets. A second review found the selector also matched a hidden Cup panel; observe Classic-switch RED before restricting it to the visible panel.
+- [x] Pre-main-integration `make verify` completed: strict TS/Vue/legacy checks, 697 unit passed / 3 emulator-dependent skipped, production build, 456 browser passed and 72 World Tour passed. Receipt: `artifacts/cup-recovery/make-verify-final.log`. The initial interrupted run is superseded by this complete run.
+- [x] Integrate fetched main `7cbdbe5` (2026-10-28), retaining its flight/combo, Coast scenery, FPS pacing and module split. Resolve both TODO/main conflicts; restore Cup mode through `race-select-ui.ts`, checkpoint the result from `settleRace`, and reuse `result-screen.ts`. Move unchanged leave/focus navigation to a typed controller so `main.js` shrinks from 688 to 685 lines. New Cup copy uses a small locale subcatalog; no size ceiling was raised. Fresh strict typecheck and 39 focused unit tests passed; independent review reran 42 focused tests with no remaining Important findings.
+- [x] Complete merged local `make verify` on code HEAD `25771ef`: strict TS/Vue/legacy checks, 798 Node passed / 3 emulator-dependent skipped, locked build, 494 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/cup-recovery/make-verify-main72466c3-post-delete.log`. The initial setup lock and superseded interrupted runs are not green receipts. Original-resolution recovery/heat flows also pass.
+- [x] Verify exact code commit `02acf84`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40633492551 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
+- [ ] Physical-device Cup recovery/standings/touch acceptance; Chrome touch emulation is separate evidence. No original track physics, shaders or per-frame audio were changed. Existing confirmation SFX is reused.
+
+Other independently tracked branches: `feature/custom-race-presentation` (Custom ruleset Ghost and cosmetic presets/setup summary) and `feature/practice-item-rules` (explicit item rules, real activation/cooldown and related new pads/items). Remaining genuine circuit laps, richer themed hazards, challenge medals, Endless Highway and Event Lab remain open. Existing Photo Studio, held Shield/Magnet/Ghost/Freeze and recent Custom setup storage are reused rather than reimplemented. Tutorial entry-flow decisions are being discussed separately.
+
+- [x] Merged-main broad regression observed (2026-10-28): full browser run reached 487 passed / 2 skipped; the only three failures were inherited Phase 4 polyline-count assumptions. Integrate `6809503`, whose focused main-path/minimap suite passes 7/7. The complete resulting `make verify` and exact-HEAD CI remain pending, not implied by this receipt.
 
 ## Shared continuation regression gates (2026-10-28)
 

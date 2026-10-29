@@ -1,5 +1,6 @@
 import { mergeProgress } from './cloud-progress-merge.ts';
 import { mergeModeBests } from './cloud-mode-bests.ts';
+import { CUP_PROGRESS_KEY } from './cup-progress.ts';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
   MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.ts';
 
@@ -128,7 +129,7 @@ export function clearLocalProgress(storage?: ProgressStorage): boolean {
   try {
     const target = storage ?? globalThis.localStorage;
     for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY,
-      DAILY_KEY, LEGACY_BEST_KEY, MODE_BESTS_KEY, STUNT_BESTS_KEY]) target.removeItem!(key);
+      DAILY_KEY, LEGACY_BEST_KEY, MODE_BESTS_KEY, STUNT_BESTS_KEY, CUP_PROGRESS_KEY]) target.removeItem!(key);
     return true;
   } catch { return false; }
 }

@@ -104,6 +104,9 @@ test('export includes maps, then delete clears cloud and local progress without 
     catch { return true; }
   })).toBe(true);
 
+  await page.evaluate(() => localStorage.setItem('skyline-rush-cup-progress-v1', JSON.stringify({
+    version: 1, cup: { tracks: ['coast', 'neon', 'canyon'], results: [] },
+  })));
   page.once('dialog', dialog => dialog.accept());
   const reloaded = page.waitForEvent('load');
   await page.locator('#cloud-delete').click();
@@ -111,6 +114,7 @@ test('export includes maps, then delete clears cloud and local progress without 
   await page.locator('#cloud-open').click();
   await expect(page.locator('#cloud-login')).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('skyline-rush-cup-progress-v1'))).toBeNull();
   await mockGoogleSignIn(page, { existing: true, email: 'delete@example.test' });
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toEqual(['coast']);

@@ -1,7 +1,7 @@
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
 import { RULE_PRESETS } from './race-config.ts';
-import { createCup } from './championship-cup.ts';
+import { createCup, type CupState } from './championship-cup.ts';
 import { loadRecentCustom } from './recent-custom.ts';
 import { refreshCustomSelects } from './custom-select.ts';
 import { createRouteMap } from './route-map.ts';
@@ -218,6 +218,12 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     selectedMode: (): string => selectedMode,
     /** The Daily Challenge always races the Classic rules. */
     selectClassic(): void { selectedMode = 'classic'; },
+    restoreCup(cup: CupState): void {
+      selectedMode = 'cup';
+      $<HTMLSelectElement>('#cup-length').value = String(cup.tracks.length);
+      setRace(options.createRace(cup.tracks[cup.results.length], { mode: 'cup', cupTracks: cup.tracks }));
+      showTracks();
+    },
     cupCount,
     showTracks,
     centerSelectedTrack,

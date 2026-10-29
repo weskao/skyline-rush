@@ -4,8 +4,10 @@
 import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.ts';
 import { COLLECTIBLES_GUIDE_COPY } from '../collectibles-guide-copy.ts';
 import { DISPLAY_SETTINGS_COPY } from './display-settings.ts';
+import { CUP_RECOVERY_COPY } from './cup-recovery.ts';
 export const UI = Object.freeze({
   en: {
+    ...CUP_RECOVERY_COPY.en,
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
     'release.title': "What's new",
     'release.intro': "See what's new for your next race.",
@@ -614,6 +616,7 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
+    ...CUP_RECOVERY_COPY['zh-TW'],
     'release.eyebrow': 'SKYLINE RUSH / 版本新消息',
     'release.title': '新版本功能',
     'release.intro': '看看這次更新，為你的下一場比賽帶來哪些驚喜。',
