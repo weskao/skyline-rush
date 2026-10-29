@@ -3,6 +3,7 @@ import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
 import { RULE_PRESETS } from './race-config.ts';
+import { DEFAULT_RULES, modeEligibility, modeRulesSummary, ruleConflicts } from './mode-setup.ts';
 import { itemRuleValue } from './item-ui.ts';
 import { createCup, type CupState } from './championship-cup.ts';
 import { loadRecentCustom } from './recent-custom.ts';
@@ -35,8 +36,9 @@ interface RaceSelectOptions {
   cueUi(): void;
   reducedMotion: MediaQueryList;
 }
-type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines';
+type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
+const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only, like the track; Event Lab needs its course, so it is not restored
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
 export function setupRaceSelectUI(options: RaceSelectOptions) {
@@ -45,7 +47,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const trackButtons = (): HTMLButtonElement[] => [...document.querySelectorAll<HTMLButtonElement>('[data-track]')];
   const ruleInputs = (): HTMLInputElement[] => [...document.querySelectorAll<HTMLInputElement>('[data-race-rule]')];
   let selectedMode = 'classic';
-  const raceRules: Record<RuleKey, unknown> = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false, riskLines: 'on' };
+  const raceRules: Record<RuleKey, unknown> = { ...DEFAULT_RULES };
   const cupCount = (): number => Number($<HTMLSelectElement>('#cup-length').value);
   const eventLab = setupEventLabUI({ ...options, select: next => {
     selectedMode = 'eventlab'; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
@@ -109,6 +111,18 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const button of document.querySelectorAll<HTMLElement>('[data-race-preset]'))
       button.setAttribute('aria-pressed', String(!getRace().config.activeItems && Object.entries(RULE_PRESETS[button.dataset.racePreset as keyof typeof RULE_PRESETS]).every(([key, value]) => getRace().config[key] === value)));
     $('#mode-description').textContent = t('mode.description.' + selectedMode);
+    renderSetupRow();
+  }
+  // 10A rules row: what this race will use, what it saves, and why a setting cannot apply here.
+  function renderSetupRow(): void {
+    const race = getRace(), daily = !!options.getDaily();
+    $('#mode-rules-summary').textContent = modeRulesSummary(race.config, t);
+    $('#mode-eligibility').textContent = t('mode.eligibility.' + modeEligibility(selectedMode, { daily }));
+    const conflicts = ruleConflicts(selectedMode, raceRules, { unlocked: unlockedTracks.size, cupCount: cupCount() });
+    $('#mode-conflicts').textContent = conflicts.map(c => t(c.reason, c.params)).join(' · ');
+    const difficulty = $<HTMLSelectElement>('[data-race-rule="difficulty"]');
+    difficulty.disabled = conflicts.some(c => c.rule === 'difficulty');
+    refreshCustomSelects();
   }
   function renderTrackButtons(race: Race): void {
     // Solo sessions show elapsed time rather than a false "01 / 04" ranking.
@@ -215,6 +229,14 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     changeRaceSelection();
   });
   for (const id of ['hazard-tier', 'gauntlet-layout', 'clean-trial', 'cup-length', 'stunt-duration', 'race-visual-preset', 'circuit-laps']) $(`#${id}`).addEventListener('change', changeRaceSelection);
+  $('#rules-restore').addEventListener('click', () => {
+    Object.assign(raceRules, DEFAULT_RULES);
+    $<HTMLSelectElement>('#hazard-tier').value = 'standard'; $<HTMLInputElement>('#clean-trial').checked = false;
+    $<HTMLSelectElement>('#stunt-duration').value = '120'; $<HTMLSelectElement>('#cup-length').value = '3';
+    $<HTMLSelectElement>('#gauntlet-layout').value = 'classic';
+    showRuleInputs();
+    changeRaceSelection();
+  });
   $('#recent-custom-runs').addEventListener('click', ({ target }) => {
     const index = Number((target as Element).closest<HTMLElement>('button[data-recent]')?.dataset.recent);
     const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
@@ -230,8 +252,12 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     raceRules[input.dataset.raceRule as RuleKey] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule!) ? Number(input.value) : input.value;
     changeRaceSelection();
   });
-  // Back to home reloads the page; the tab remembers the last raced track so the intro reopens on it.
-  try { const last = sessionStorage.getItem(LAST_TRACK_KEY); if (last && unlockedTracks.has(last)) setRace(selectedRace(last)); } catch { /* Coast stays the default without storage. */ }
+  // Back to home reloads the page; the tab remembers the last raced mode and track so the intro reopens on them.
+  try {
+    const mode = sessionStorage.getItem(LAST_MODE_KEY), last = sessionStorage.getItem(LAST_TRACK_KEY);
+    if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
+    setRace(selectedRace(last && unlockedTracks.has(last) ? last : getRace().trackId));
+  } catch { /* Classic on Coast stays the default without storage. */ }
 
   return {
     recreate: eventLab.recreate,
@@ -253,7 +279,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     raceRouteMap: (): RouteMap => { if (raceRouteMap?.trackId !== getRace().trackId) ensureRouteMaps(); return raceRouteMap!; },
     relabelRouteMaps(locale: string): void { for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale); },
     rememberTrack(trackId: string): void {
-      try { sessionStorage.setItem(LAST_TRACK_KEY, trackId); } catch { /* The intro falls back to Coast after a reload. */ }
+      try { sessionStorage.setItem(LAST_TRACK_KEY, trackId); sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
     },
   };
 }
