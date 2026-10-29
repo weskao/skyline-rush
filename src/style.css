@@ -1358,6 +1358,7 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-rules-head { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 #race-rules-step { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; white-space: nowrap; }
 .race-rules-text { flex: 1; display: grid; margin: 0; font-size: 10px; line-height: 1.35; color: #d1e3ed; }
+.race-rules-text small { font-size: 10px; } /* <small> would shrink CJK text below the readable minimum */
 #mode-eligibility, .mode-conflicts { color: #aee7fa; }
 .mode-conflicts { display: block; font-size: 10px; line-height: 1.4; color: #ffd39c; padding-bottom: 6px; }
 .mode-conflicts:empty { display: none; }
@@ -1418,11 +1419,11 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
  .intro .race-mode-picker:not(.race-rules-row) { padding: 6px 10px; }
  .race-mode-tabs { grid-template-columns: repeat(6,minmax(min-content,1fr)); }
  /* ...and the key hints pay for the rules row: one tight row (user-approved, 2026-10-29). */
- .intro-controls { flex-wrap: nowrap; gap: 14px; margin-top: 4px; }
+ .intro-controls { flex-wrap: nowrap; gap: 8px; margin-top: 4px; }
  .flight-tip .tip-full { display: none; }
  .flight-tip .tip-short { display: inline; }
  .race-mode-heading { margin-bottom: 2px; }
- .intro-controls > div { gap: 6px; white-space: nowrap; }
+ .intro-controls > div { gap: 4px; white-space: nowrap; }
 }
 
 /* The series counter sits in the race info without expanding the top HUD. */
