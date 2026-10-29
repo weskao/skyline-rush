@@ -179,3 +179,32 @@ test('returning home by reload (the brand link) keeps the mode the player raced,
   await expect(page.locator('button[data-race-mode="stunt"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
 });
+
+// The rules row sits above Start, so its dropdowns open over the Start row and the Daily card: every option must
+// be the topmost element where the player clicks it (a blurred panel is its own stacking context).
+for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['landscape', { width: 844, height: 390 }], ['phone', { width: 390, height: 844 }]]) {
+  test(`every rules-row dropdown option is clickable above Start (${name})`, async ({ page }) => {
+    test.setTimeout(ciTimeout(60000));
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await closeMusicPrompt(page);
+    let checked = 0;
+    for (const mode of ['circuit', 'custom', 'time', 'gauntlet']) {
+      await page.locator(`[data-race-mode="${mode}"]`).click();
+      for (const summary of await page.locator('#race-rules-row details:not([open]) > summary').filter({ visible: true }).all()) await summary.click();
+      for (const combobox of await page.locator('#race-rules-row .custom-select [role="combobox"]').filter({ visible: true }).all()) {
+        await combobox.scrollIntoViewIfNeeded();
+        await combobox.click();
+        const covered = await page.evaluate(() => [...document.querySelectorAll('#race-rules-row .custom-select [role="listbox"]:not([hidden]) [role="option"]')].flatMap(option => {
+          option.scrollIntoView({ block: 'nearest' });
+          const r = option.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return option.contains(hit) ? [] : [`${option.textContent} under ${hit?.id || hit?.className || hit?.tagName}`];
+        }));
+        expect(covered, `${mode}: ${await combobox.getAttribute('aria-labelledby') ?? 'dropdown'}`).toEqual([]);
+        checked++;
+        await page.keyboard.press('Escape');
+      }
+    }
+    expect(checked, 'rules dropdowns checked').toBeGreaterThan(3);
+  });
+}
