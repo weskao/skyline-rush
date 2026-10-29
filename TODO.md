@@ -1274,10 +1274,11 @@ cue is warranted for these pure simulation contracts.
 
 ### 9C. Custom Race (P0)
 
-- [ ] **MODE-02 — Custom Race:** choose an unlocked track, 0–3 rivals, AI
+- [x] **MODE-02 — Custom Race:** choose an unlocked track, 0–3 rivals, AI
   **Easy / Normal / Hard**, traffic **Off / Light / Normal / Heavy**, power-ups
   **On / Off**, collisions **Normal / Relaxed**, Ghost visibility and weather/time
   **visual preset**. Preserve original defaults in Classic mode.
+  - Evidence: `feature/custom-race-presentation` full `make verify` green on 808e5a0 (Node 848, browser 525/2 skip, World Tour 303); CI pending.
 - [x] AI difficulty adjusts clearly named parameters (target speed, mistake rate
   or rubber-band bounds) without breaking current rival personalities `NOVA`,
   `ORBIT` and `APEX`. Support 0, 1, 2 and 3 rivals correctly.
@@ -1507,9 +1508,10 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] **LAP-04 — Anti-shortcut checkpoints:** ordered sector validation
   prevents crossing the finish backwards, flying over the finish repeatedly,
   teleports or respawns from granting false laps.
-- [ ] **Acceptance:** completion requires the configured number of valid
+- [x] **Acceptance:** completion requires the configured number of valid
   laps; player/AI cameras, positions, world props, mini-route map, Ghost,
   checkpoints and collision physics remain continuous across every seam.
+  - Gate: `feature/genuine-circuit-laps` full `make verify` green on 0f81af7 (Node 869, browser 527/2 skip, World Tour 326); CI pending.
   - Evidence (2026-10-29, `tests/circuit-seam-acceptance.test.js` with existing `tests/circuit.test.js`):
     across all three seams of a 3-lap race (2000/4000/6000 m, 0.05 m steps) the Harbor beacon (scene
     origin), rivals ahead/behind, chase camera position and heading, Ghost (unwrapped samples, drawn 4 m
