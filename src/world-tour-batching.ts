@@ -55,19 +55,28 @@ export function poolStaticChunks(
   layer: THREE.Group,
   chunks: Iterable<THREE.Group>,
   previous: THREE.Group | null = null,
+  maxChunkSpan = Number.POSITIVE_INFINITY,
 ): THREE.Group {
   releaseStaticPool(previous);
   layer.updateWorldMatrix(true, false);
   const inverse = layer.matrixWorld.clone().invert();
   const groups = new Map<string, THREE.Mesh[]>();
+  let chunkOrdinal = 0;
   for (const chunk of chunks) {
+    const chunkIndex = Number.isInteger(chunk.userData.chunkIndex)
+      ? chunk.userData.chunkIndex as number : chunkOrdinal;
+    chunkOrdinal++;
+    // Keep cross-chunk pools spatially bounded: a single far-reaching
+    // InstancedMesh defeats per-chunk frustum culling on narrow viewports.
+    const bucket = Number.isFinite(maxChunkSpan) && maxChunkSpan > 0
+      ? Math.floor(chunkIndex / maxChunkSpan) : 0;
     chunk.updateWorldMatrix(true, true);
     chunk.traverse(object => {
       if (!('isMesh' in object) || object.isMesh !== true ||
           !object.visible || object.userData.ownGeometry) return;
       const mesh = object as THREE.Mesh;
       if (!mesh.geometry || !mesh.material || Array.isArray(mesh.material)) return;
-      const key = mesh.geometry.uuid + '|' + mesh.material.uuid;
+      const key = bucket + '|' + mesh.geometry.uuid + '|' + mesh.material.uuid;
       const list = groups.get(key);
       if (list) list.push(mesh);
       else groups.set(key, [mesh]);

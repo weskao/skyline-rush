@@ -201,7 +201,7 @@ export function createWorldTourScene(scene){
     for(let index=start;index<=end;index++){
       if(chunks.has(index))continue;
       changed=true;
-      const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
+      const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;chunk.userData.chunkIndex=index;
       for(const item of detailPlan(id,index,level)){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
@@ -217,7 +217,7 @@ export function createWorldTourScene(scene){
       chunk.userData.batchStats=stats;
       sceneryLayer.add(chunk);chunks.set(index,chunk);
     }
-    if(changed)pooled=poolStaticChunks(sceneryLayer,chunks.values(),pooled);
+    if(changed)pooled=poolStaticChunks(sceneryLayer,chunks.values(),pooled,2);
   }
   // Warm every streamed shader/variant before a new chunk appears mid-race.
   function shaderRack(id){
