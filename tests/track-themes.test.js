@@ -155,3 +155,14 @@ test('rivals change lane ahead of a themed hazard instead of driving through it'
     assert.equal(rival.cooldown, 0, `${hazard.id}: rival was knocked`);
   }
 });
+
+test('Neon roadworks barriers slide on their own cycle, slower than the neon gates', () => {
+  const neon = themedHazards('neon'), gate = neon.find(h => h.id === 'neon-gate-1').placement.movementPattern;
+  const works = neon.filter(h => h.id.startsWith('neon-works'));
+  assert.equal(works.length, 3);
+  for (const h of works) {
+    const move = h.placement.movementPattern;
+    assert.equal(move.kind, 'sweep', `${h.id} is animated`);
+    assert.ok(move.period > gate.period, `${h.id} reads apart from the gate timing`);
+  }
+});
