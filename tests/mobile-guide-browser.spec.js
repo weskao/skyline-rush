@@ -1,5 +1,5 @@
 import { test, expect } from './helpers/test.js';
-import { CATALOGS } from '../src/i18n.js';
+import { CATALOGS } from '../src/i18n.ts';
 
 test.use({ guideSeen: false, hasTouch: true, isMobile: true });
 

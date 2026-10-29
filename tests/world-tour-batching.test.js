@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { batchStaticChunk } from '../src/world-tour-batching.js';
+import { batchStaticChunk } from '../src/world-tour-batching.ts';
 
 test('identical static meshes are instanced without moving any original vertex or removing detail',()=>{
  const group=new THREE.Group(),stem=new THREE.BoxGeometry(1,1,1);

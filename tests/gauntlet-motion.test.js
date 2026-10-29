@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createHazards,hazardX} from '../src/hazards.js';
+import {createHazards,hazardX} from '../src/hazards.ts';
 const track={seed:1001,length:5000,sections:[{from:1650,to:1710,type:'gap'}]};
 const lanes=[-7.5,-2.5,2.5,7.5];
 test('standard and extreme obstacles are seeded and never block the whole road',()=>{

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace } from '../src/game.js';
-import { createInteractiveTutorial } from '../src/interactive-tutorial.js';
+import { createInteractiveTutorial, prepareTutorialInput } from '../src/interactive-tutorial.ts';
 
 const DT = 1 / 60;
 function tick(session, action = {}, dt = DT) {
@@ -125,4 +125,42 @@ test('malformed steering cannot count residual steering momentum as an action', 
   for (let i = 0; i < 10; i++) tick(session, { steer: -1 });
   tick(session, { steer: '-1' });
   assert.equal(session.progress, 0);
+});
+
+test('the steering lesson preserves the car position and steering when advancing', () => {
+  const session = createInteractiveTutorial();
+  perform(session, { throttle: true });
+  let before = null;
+  for (let frame = 0; frame < 120 && session.step === 'left'; frame++) {
+    tick(session, { steer: -1 });
+    if (session.step === 'left') before = { x: session.race.player.x, steering: session.race.player.steering };
+  }
+  assert.equal(session.step, 'right');
+  assert.ok(before && before.x < -0.3, 'real left steering moves the player');
+  assert.ok(Math.abs(session.race.player.x - before.x) < 0.25, 'step changes must not teleport the car sideways');
+  assert.ok(session.race.player.steering < -0.5, 'step changes must not discard held steering momentum');
+});
+
+test('neutral tutorial controls do not pull left and wrong-step steering still obeys the player', () => {
+  const session = createInteractiveTutorial();
+  const car = session.race.player;
+  const startX = car.x;
+  const advance = (action = {}) => {
+    const input = { ...action, laneAssist: true };
+    prepareTutorialInput(input, session.step);
+    assert.equal(input.laneAssist, false, 'practice must not add unrequested steering');
+    stepRace(session.race, input, DT);
+    session.update(input, DT);
+  };
+  for (let frame = 0; frame < 180; frame++) advance({ throttle: true });
+  assert.equal(session.step, 'left');
+  assert.ok(Math.abs(car.x - startX) < 0.001, 'no steering should retain the same lateral position');
+
+  for (let frame = 0; frame < 18; frame++) advance({ steer: 1 });
+  assert.equal(session.step, 'left', 'steering opposite the lesson must not skip it');
+  assert.ok(car.x > startX + 0.3, 'players can turn right even during the left tutorial step');
+  for (let frame = 0; frame < 50; frame++) advance();
+  const settledX = car.x;
+  for (let frame = 0; frame < 100; frame++) advance();
+  assert.ok(Math.abs(car.x - settledX) < 0.001, 'once steering settles, the car must not auto-center');
 });

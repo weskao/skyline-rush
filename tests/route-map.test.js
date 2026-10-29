@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS } from '../src/game.js';
-import { routePolyline, routeMarker, routeSamples } from '../src/route-map.js';
+import { routePolyline, routeMarker, routeSamples } from '../src/route-map.ts';
 
 test('the public route preview is only a single sampled main centreline', () => {
   for (const id of Object.keys(RACE_TRACKS)) {

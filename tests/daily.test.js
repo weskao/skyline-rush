@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, dailyChallenge, DAILY_MODIFIERS, RACE_TRACKS, RING_RADIUS } from '../src/game.js';
-import { recordDaily, loadDaily, dailyBoard } from '../src/history.js';
+import { recordDaily, loadDaily, dailyBoard } from '../src/history.ts';
+import { createControls } from '../src/input.ts';
 
 const memoryStorage = (initial = {}) => {
   const data = { ...initial };
@@ -63,4 +64,39 @@ test('the daily board keeps 50 runs, drops malformed saved runs and survives blo
   assert.equal(loadDaily(storage).length, 50);
   assert.deepEqual(recordDaily(today, { result: { position: 1, time: 60, score: 1 } }, throwingStorage, day(0)).time, 60);
   assert.deepEqual(loadDaily(throwingStorage), []);
+});
+
+test('no-flight input clears a latched touch FLY and rejects disabled keyboard or pointer input', () => {
+  const target = new EventTarget();
+  const flyButton = new EventTarget();
+  flyButton.disabled = false;
+  const controls = createControls(target, () => {}, { getSettings: () => ({ mode: 'buttons' }) });
+  controls.bindButton(flyButton, 'fly');
+  controls.setFlyMode('toggle');
+  const press = (element, type, values = {}) => {
+    const event = new Event(type, { cancelable: true });
+    Object.assign(event, values);
+    element.dispatchEvent(event);
+  };
+  try {
+    press(flyButton, 'pointerdown', { pointerId: 1, pointerType: 'touch' });
+    assert.equal(controls.read().fly, true, 'touch toggle starts engaged');
+    controls.setFlyEnabled(false);
+    flyButton.disabled = true;
+    assert.equal(controls.read().fly, false, 'the previous toggle was cleared');
+    press(flyButton, 'pointerdown', { pointerId: 2, pointerType: 'touch' });
+    press(target, 'keydown', { code: 'Space' });
+    assert.equal(controls.read().fly, false, 'neither keyboard nor disabled touch can fly');
+    press(target, 'keyup', { code: 'Space' });
+    controls.setFlyEnabled(true);
+    flyButton.disabled = false;
+    assert.equal(controls.read().fly, false, 'FLY remains off when the restriction ends');
+    press(target, 'keydown', { code: 'Space' });
+    assert.equal(controls.read().fly, true, 'regular flight keyboard control is restored');
+    press(target, 'keyup', { code: 'Space' });
+    press(flyButton, 'pointerdown', { pointerId: 3, pointerType: 'touch' });
+    assert.equal(controls.read().fly, true, 'touch toggle still works in normal races');
+  } finally {
+    controls.destroy();
+  }
 });

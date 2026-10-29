@@ -1,0 +1,106 @@
+[
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "locale": "en",
+    "input": "mouse clicks",
+    "guideGeometry": {
+      "client": 694,
+      "scroll": 694
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "locale": "zh-TW",
+    "input": "mouse clicks",
+    "guideGeometry": {
+      "client": 694,
+      "scroll": 694
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "locale": "en",
+    "input": "Playwright touch taps",
+    "guideGeometry": {
+      "client": 310,
+      "scroll": 310
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "locale": "zh-TW",
+    "input": "Playwright touch taps",
+    "guideGeometry": {
+      "client": 310,
+      "scroll": 310
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 320,
+      "height": 740
+    },
+    "locale": "en",
+    "input": "Playwright touch taps",
+    "guideGeometry": {
+      "client": 240,
+      "scroll": 240
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 320,
+      "height": 740
+    },
+    "locale": "zh-TW",
+    "input": "Playwright touch taps",
+    "guideGeometry": {
+      "client": 240,
+      "scroll": 240
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "locale": "en",
+    "input": "Playwright touch taps",
+    "guideGeometry": {
+      "client": 694,
+      "scroll": 694
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "locale": "zh-TW",
+    "input": "Playwright touch taps",
+    "guideGeometry": {
+      "client": 694,
+      "scroll": 694
+    },
+    "errors": []
+  }
+]

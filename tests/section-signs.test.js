@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS } from '../src/game.js';
-import { SECTION_SIGN_LABELS, sectionSignKey } from '../src/section-signs.js';
+import { SECTION_SIGN_LABELS, sectionSignKey } from '../src/section-signs.ts';
 
 test('every gameplay section type, including World Tour speed tunnels, has a renderable sign',()=>{
  const sectionTypes=new Set(Object.values(RACE_TRACKS).flatMap(track=>track.sections.map(s=>s.type)));

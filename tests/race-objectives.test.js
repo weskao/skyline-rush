@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace } from '../src/game.js';
-import { createRaceObjective, raceCompletion } from '../src/race-objectives.js';
+import { createRaceObjective, raceCompletion } from '../src/race-objectives.ts';
 
 // MODE-00 RED: a mode's win condition must not be inferred from route length alone.
 test('every shipped mode has an explicit serializable objective', () => {

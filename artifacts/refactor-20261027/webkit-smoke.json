@@ -1,0 +1,4 @@
+[
+  {"engine":"27.2","version":"baseline","racing":true,"gl":{"supported":true,"renderer":"Apple GPU"},"errors":[]},
+  {"engine":"27.2","version":"refactor","racing":true,"gl":{"supported":true,"renderer":"Apple GPU"},"errors":[]}
+]

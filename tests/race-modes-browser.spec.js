@@ -221,6 +221,18 @@ test('1920x1080 intro fits without clipping and VFX remains reachable after musi
   await expect(page.locator('#vfx-panel')).toHaveAttribute('open','');
   await page.screenshot({ path:'test-results/race-mode-layout-desktop.png' });
 });
+test('402x714 phone intro fades at its scroll edge and its last row scrolls clear of the fade', async ({ page }) => {
+  // iPhone 17 Pro Safari's visible viewport: the intro scrolls, so a hard clip made Garage look cut by the footer
+  await page.setViewportSize({ width: 402, height: 714 });
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  const intro = page.locator('#intro');
+  const fade = await intro.evaluate(el => { const cs = getComputedStyle(el); return cs.getPropertyValue('mask-image') || cs.getPropertyValue('-webkit-mask-image'); });
+  expect(fade).toContain('linear-gradient');
+  await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  const gap = await intro.evaluate(el => el.getBoundingClientRect().bottom - el.querySelector('#race-mode-picker').getBoundingClientRect().bottom);
+  expect(gap).toBeGreaterThanOrEqual(24);
+});
 
 test('completed Custom setup appears as a recent preset without touching unlocks', async ({ page }) => {
   await page.goto('/');

@@ -1,5 +1,5 @@
-<script setup>
-defineProps(['icon', 'labelKey']);
+<script setup lang="ts">
+defineProps<{ icon: string; labelKey: string }>();
 </script>
 
 <template>

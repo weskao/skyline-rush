@@ -90,3 +90,17 @@ test('checkboxes, sliders and disclosures are drawn by the page, not the OS', as
   await comfort.check();
   await expect(comfort).toBeChecked();
 });
+
+test('mid-race VFX panel never shows a setting row without its control', async ({ page }) => {
+  // The racing rule hides the toolbar language picker; it must not leave the panel's dropdown labels orphaned.
+  await open(page);
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+  await openVFX(page);
+  const orphans = await page.locator('#vfx-panel .vfx-settings > label').evaluateAll(rows => rows
+    .filter(row => row.getBoundingClientRect().height > 0)
+    .filter(row => ![...row.querySelectorAll('input, .custom-select > button')].some(control => control.getBoundingClientRect().width > 0))
+    .map(row => row.textContent.trim()));
+  expect(orphans).toEqual([]);
+  await expect(page.locator('#locale-select + .custom-select, .aero-tools > .custom-select').first()).toBeHidden();
+});

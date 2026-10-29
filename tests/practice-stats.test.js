@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createPracticeStats, samplePractice } from '../src/practice-stats.js';
+import { createPracticeStats, samplePractice } from '../src/practice-stats.ts';
 
 test('tracks travelled meters, peak speed and moving airborne time', () => {
   const stats = createPracticeStats();

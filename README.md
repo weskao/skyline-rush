@@ -17,6 +17,14 @@ In Classic Race, Skyline Rush is a short, replayable arcade sprint in the browse
 
 A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
+**Home screen** — pick a track and a camera angle, then start the race.
+
+https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
+
+**Racing** — a full run on one of the tracks.
+
+https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
+
 ![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)
 
 ![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261024a)
@@ -26,6 +34,24 @@ A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound
 ![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261024a)
 
 ![Race results with a new personal best](artifacts/race-results.jpeg?v=20261024a)
+
+### Mobile screenshots and demo
+
+Play in portrait or landscape with touch controls. The clip follows a Coast run from the start screen through countdown, FLY lift-off and landing; AUTO keeps the accelerator held.
+
+**Portrait — ready to race**
+
+![Mobile portrait start screen with track selection and touch-friendly race buttons](artifacts/mobile-home.jpeg)
+
+**Landscape — flying with touch controls**
+
+![Mobile landscape flight with FLY held and the touch controls visible](artifacts/mobile-landscape-flight.jpeg)
+
+**Touch gameplay demo** · [Watch the MP4](artifacts/mobile-demo.mp4)
+
+![Mobile touch gameplay: Coast countdown, FLY lift-off and landing](artifacts/mobile-demo.gif)
+
+Captured from the running game in Chrome mobile emulation at 390×844 (portrait) and 844×390 (landscape), using a fresh demo profile. These captures do not measure physical-phone performance.
 
 ## Game modes and replayability (development branch)
 
@@ -70,6 +96,8 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 
 `make` and `make dev-unlocked` also start local Firebase Auth/Firestore emulators (needs Java 21+), so the cloud-save Google sign-in works with fake test accounts and never touches real saves. Cloud-save operations and Spark quota checks for the project owner are in `docs/cloud-save.md`.
 
+`make phone` opens a terminal menu that starts, checks or stops a dev server your phone can open (over Tailscale or the same Wi-Fi) and prints the phone URL once it answers. The menu lists this checkout, other worktrees and recent branches, or takes a typed branch name; `make phone <name>` goes straight to that branch (or `feature/<name>`), creating its worktree under `.claude/worktrees/` when needed. It always serves the normal locked build: the all-unlocked server (`make dev-unlocked`, `make dev-feature`) stays desktop-only. It needs the personal `phone-dev` Claude Code skill (`/phone-dev` asks the same menu) and runs without the emulators, so cloud-save sign-in on the phone uses the real project.
+
 ## Controls
 
 | Action | Keyboard |
@@ -89,8 +117,9 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 | Mute / unmute all audio | M |
 | Auto accelerator on / off | F2 / AUTO button |
 | AIRFLOW showcase on / off | V / AIRFLOW button |
+| Change track on the home screen | Swipe or drag the 3D preview left / right, or two-finger swipe on a trackpad |
 
-Mobile layouts provide steering, accelerator, brake, boost, flight and NITRO buttons. Touch controls support simultaneous holds. AUTO holds the accelerator so you can concentrate on steering and flying; braking always overrides it. It starts on for every device; once you toggle it, your choice is remembered in this browser (`skyline-rush-auto`). Leaving the tab pauses the race and clears held input. Clicking the SKYLINE RUSH logo mid-race pauses and asks first: **Keep racing**, **End race** (back to track select, run not saved) or **Back to home** (reloads); either way the start screen reopens on the track just raced, scrolled to the centre of the track row (the first and last tracks sit at its ends). Esc leaves the race paused. Camera and sound shortcuts preserve held driving controls. On touch, sliding a thumb down on the steering pad brakes and sliding down and sideways drifts; in Buttons mode the brake sits under the steering buttons so brake + steer drifts there too.
+Mobile layouts provide steering, accelerator, brake, boost, flight and NITRO buttons. Touch controls support simultaneous holds. AUTO holds the accelerator so you can concentrate on steering and flying; braking always overrides it. It starts on for every device; once you toggle it, your choice is remembered in this browser (`skyline-rush-auto`). Leaving the tab pauses the race and clears held input. Clicking the SKYLINE RUSH logo mid-race pauses and asks first: **Keep racing**, **End race** (back to track select, run not saved) or **Back to home** (reloads); either way the start screen reopens on the track just raced, scrolled to the centre of the track row (the first and last tracks sit at its ends). Esc leaves the race paused. Camera and sound shortcuts preserve held driving controls. On touch, sliding a thumb down on the steering pad brakes and sliding down and sideways drifts; in Buttons mode a slimmer brake sits above the steering buttons, off the row the thumb rests on, so it is only pressed on purpose; sliding the thumb from ← or → up into the brake keeps steering and brakes, so one thumb drifts, and sliding back down releases the brake. Touch buttons stay clear of the screen corners for an easier thumb reach, and tablets lift and enlarge them.
 
 Open **Controls** before a race or while paused to adjust keyboard steering sensitivity or remap a driving action. Select an action, then press a key; conflicting bindings swap, fixed shortcuts stay reserved, and Escape cancels capture. Reset keyboard restores the defaults. Bindings take effect immediately and are saved under `localStorage['skyline-rush-keymap']`.
 
@@ -98,19 +127,19 @@ The same panel controls touch steering mode, handedness, slide sensitivity, size
 
 All audio is synthesized with Web Audio; no audio downloads are needed. Background music has two looping synthwave tracks: an intro theme (~64 s) on the start and results screens, and a faster race theme (~55 s) from the countdown on. Each builds up over its loop and ducks while paused. Sound effects cover menu confirmation, three countdown ticks and GO, motor/wind, lift and boost, braking, vehicle/guardrail contact, landing, low-charge warning, close-pass reward and a finish melody. Muting effects stops pending cues, and pausing fades driving sounds. Low-charge warnings rearm only after recharging above 30%.
 
-The speaker icon opens audio settings with a Music row and a Sound effects row, each a mute switch plus a volume slider (shown open in the start-screen screenshot above). **Mute all** (or M) silences both at once. Muting keeps each channel's level, so unmuting returns to it; dragging a slider to zero mutes that channel the same way. Both default to on at 100%, and each on/off choice and volume is remembered in a cookie (`skyline-rush-music`, `skyline-rush-sound`, plus `-volume` variants holding the percentage) for a year. On short screens the panel scrolls. The intro music starts as soon as the page loads where the browser allows autoplay. Where it doesn't (most browsers on a first visit), the first tap, click or key press starts it. A Music-off saved before v0.20 (the old "Play background music?" prompt's **Not now** included) reads as on once, since saves now carry `skyline-rush-audio-v=2`. On iPhone and iPad the game asks for media playback, so the silent switch doesn't mute it; this also pauses other apps' audio while the game plays.
+The speaker icon opens audio settings with a Music row and a Sound effects row, each a mute switch plus a volume slider (shown open in the start-screen screenshot above). **Mute all** (or M) silences both at once. Muting keeps each channel's level, so unmuting returns to it; dragging a slider to zero mutes that channel the same way. Both default to on at 100%, and each on/off choice and volume is remembered in `localStorage` (`skyline-rush-music`, `skyline-rush-sound` holding `on`/`off`, plus `-volume` variants holding the percentage); with nothing stored both channels are on and get stored as `on`. On short screens the panel scrolls. The intro music starts as soon as the page loads where the browser allows autoplay. Where it doesn't (Chrome and most other browsers on a first visit), the first tap, click or key press starts it. On iPhone and iPad the game asks for media playback, so the silent switch doesn't mute it; this also pauses other apps' audio while the game plays.
 
 The flight panel shows ascent, cruise, descent and touchdown, remaining thrust seconds and the next control to use. Cyan rings mark the aerial corridor and are gameplay: see Rings below. Mobile also has a hold-to-boost button. Orange contact reports show the impact type and speed lost; guardrails now rebound and slow a grounded car. Flying above them clears the rails.
 
 The scene includes bloom lighting, sunset water, suspension bridges, thruster vapor, collision sparks and touchdown ripples. Camera motion and nonessential speed streaks respect your system's reduced-motion preference. Sound effects give separate thrust, contact and landing feedback.
 
-**VFX** (top right) picks a Realistic, Cinematic or Extreme look, Low / Medium / High quality (Low turns bloom off and draws less scenery), Comfort mode (no flashes, shake, afterimages or blur) and optional haptics; **Fine tuning** exposes each effect as a slider and **Reset visual settings** restores the defaults. **AIRFLOW** (or V) switches the scene to an aerodynamics showcase: streamlines over the body, a telemetry panel, Low drag or High downforce, and a driving, front, rear, side or orbiting camera. The start panel steps aside for the showcase, leaving only the orange **START RACE** button, docked at the bottom centre below the car.
+**VFX** (top right) picks a Realistic, Cinematic or Extreme look, Low / Medium / High quality (Low turns bloom off and draws less scenery), Comfort mode (no flashes, shake, afterimages or blur) and optional haptics; **Fine tuning** exposes each effect as a slider and **Reset visual settings** restores the defaults. **AIRFLOW** (or V) switches the scene to an aerodynamics showcase: streamlines over the body, a telemetry panel, Low drag or High downforce, and a driving, front, rear, side or orbiting camera. The start panel steps aside for the showcase, leaving only the orange **START RACE** button, docked at the bottom centre below the car; swipe the scene left or right to change track. The first time AIRFLOW is switched on, an animated fingertip shows that gesture.
 
 Three amber start lights turn cyan at GO. The player car is a low wedge roadster with a smoked fastback canopy, a full-width red tail bar, four rear thruster ports, a bronze pop-up wing that rises for boost, braking and flight, spinning five-spoke wheels and steering front wheels. Each rival has its own silhouette and light signature: NOVA is a long-tail with twin fins and split magenta lights, ORBIT a rounded GT with a bubble canopy and round cyan lamps, APEX a track car with a splitter, roof scoop, tall endplate wing and amber C-lights. Traffic uses an upright commuter shape. Steering eases in quickly and releasing boost slows the car progressively instead of instantly cutting speed. All driving and toolbar buttons have at least 44px touch targets, including at 320px width.
 
 For an extra charge reward, overtake traffic closely on the ground above 126 km/h. Clean passes within five seconds chain up to ×5 and refill 8–16% charge (capped at 100%). Collisions break the chain; airborne, distant and recovering passes earn no reward. The HUD announces each pass and the final 500 metres; results show total close passes and contacts.
 
-Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Finish the sprint (4–8 km depending on the track) ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
+Flight charge lasts about five seconds at full thrust. At zero charge the car descends automatically; release the flight control and drive on the ground to recharge. The same charge powers boost. A contact slows the car; flying high enough avoids traffic. Rivals and traffic obey the same collision rules: they steer around slower cars and the player, hit props, barriers and hazards like you do, and a ram slows and shoves both cars (traffic then speeds back up to cruise). Finish the sprint (4–8 km depending on the track) ahead of NOVA, ORBIT and APEX. Personal best time is stored in this browser when storage is available.
 
 ### Handling
 
@@ -153,7 +182,7 @@ Sky Spiral adds a true 3D ascending helical road above a cyberpunk skyline. Driv
 
 ### Tracks and style
 
-Start on Coast. Finish top three to unlock Neon Downtown, then Canyon Skyway, Aurora Pass, Sky Spiral, Taipei Heritage, Tokyo Afterdark, Alpine Rail Pass, Coastal Horizon and Cosmic Orbit. Choose a track before starting; keyboard users can move between track buttons with Left/Right and choose with Enter. Restart keeps the selected track; **Choose track** on the results screen returns to the menu. While tracks remain locked, a podium finish shows a pulsing **Next** button on the results screen that starts the newly unlocked track straight away; it disappears once every track was already open and on daily challenges. If the browser drops the WebGL connection (common on iPhone after locking or switching apps), the game clears the warning when graphics return; otherwise **Start** or **Race again** reloads the page. Each track has its own sky, palette and procedural scenery: rainy neon streets and low tunnels, red desert cliffs and bridge gaps/crosswinds, or snowy mountains with aurora and ice. Warning signs mark special sections. Aurora's uphill sections recharge ground fuel at half the normal rate.
+Start on Coast. Finish top three to unlock Neon Downtown, then Canyon Skyway, Aurora Pass, Sky Spiral, Taipei Heritage, Tokyo Afterdark, Alpine Rail Pass, Coastal Horizon and Cosmic Orbit. Choose a track before starting, or swipe the 3D preview left or right (drag it with a mouse, or swipe two fingers sideways on a trackpad) to page to the neighbouring track like a carousel: it follows the finger, a short flick is enough, the first and last tracks rubber-band, and a chip names the track with page dots; keyboard users can move between track buttons with Left/Right and choose with Enter. Restart keeps the selected track; **Choose track** on the results screen returns to the menu. While tracks remain locked, a podium finish shows a pulsing **Next** button on the results screen that starts the newly unlocked track straight away; it disappears once every track was already open and on daily challenges. If the browser drops the WebGL connection (common on iPhone after locking or switching apps), the game clears the warning when graphics return; otherwise **Start** or **Race again** reloads the page. Each track has its own sky, palette and procedural scenery: rainy neon streets and low tunnels, red desert cliffs and bridge gaps/crosswinds, or snowy mountains with aurora and ice. Warning signs mark special sections. Aurora's uphill sections recharge ground fuel at half the normal rate.
 
 ### World Tour tracks, route maps and track names
 
@@ -186,6 +215,7 @@ npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full ra
 npm run test:layout     # Home-screen fit, top bar and touch targets (runs on pre-push)
 make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
+make help               # List every make command with its options
 ```
 
 Browser tests use an installed Google Chrome and allow SwiftShader for headless rendering. CPU-only CI uses a device scale factor of 0.25 to keep the 3D scene responsive while retaining the same CSS viewport sizes and gameplay assertions; local tests render at full resolution. Normal gameplay uses the browser's available GPU. The English README screenshots are written to `artifacts/` as JPEG (quality 70) only when the file is missing or with `UPDATE_ARTIFACTS=1 npm run test:browser`, since the live 3D scene differs every run; test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
@@ -195,6 +225,13 @@ npm run preview         # Serve the production build after npm run build
 ```
 
 For a phone check, serve the build on your network (`npx vite preview --host 0.0.0.0`) and open it with `?perf` (for example `http://<computer-ip>:4173/?perf`). A strip at the top then shows racing frame times over the last 20 s: median (p50), 95th percentile (p95), average fps and the sample length. Without `?perf` nothing is measured or shown.
+
+```sh
+make perf BASE=main         # A/B in Chrome at 412×915, CPU throttled 6× (RATE=20 for a low-end phone), 3 alternating rounds
+make perf-phone             # Like make phone: asks base version, Tailscale/Wi-Fi and Telegram; logs phone temperatures
+```
+
+`make perf` builds this checkout, and with `BASE=<git ref>` that ref too (in `.claude/worktrees/perf-<sha>`, reused next time), races Coast for 24 s per run and prints each run's strip plus the per-build median. `make perf-phone` asks the same way `make phone` does for whatever is not passed (`BASE=`, `VIA=tailscale|wifi|auto`, `TG=0`), prints and sends to Telegram one `?perf` URL per build, opens the first in Chrome on any Android phone on USB (`adb reverse`, so any network works), sends a URLs-expired notice on Ctrl+C, and logs every 10 s the phone's sensor temperatures and throttling level (`dumpsys thermalservice`) beside the Mac's thermal warning level, until Ctrl+C. Compare runs only at the same throttling level: a warm phone throttles and drops frames regardless of the build. iPhones report no temperature.
 
 ## Deploy
 
@@ -226,12 +263,15 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `src/route-map.js`, `src/i18n.js`: SVG full-route and live racer maps; locale detection, the saved choice, `t()` and the English/繁體中文 track names; `src/locales/` holds the catalogs.
 - `scripts/capture-og-images.mjs`: captures the English and zh-TW cover images and the zh-TW README screenshots from the real app.
 - `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
-- `src/main.js`, `src/style.css`: mounts `App.vue`, then drives telemetry, pause/results, responsive controls and lifecycle on that DOM.
+- `src/main.js`, `src/style.css`: mounts `App.vue`, wires the screen controllers and runs the race lifecycle (start, pause, restart, results) and the frame loop.
+- `src/*-ui.ts`: one TypeScript controller per screen area (race selection, cloud save, touch controls, key map, VFX, audio, history dialog, photo mode).
+- `src/race-hud.ts`, `src/race-hud-modes.ts`: the in-race HUD, written imperatively each HUD tick.
+- `src/race-results.ts`, `src/result-screen.ts`, `src/session-progress.ts`: recording a finished race (bests, unlocks, medals, ghosts) and showing its result screen.
 - `vite.config.js`: Vite with `@vitejs/plugin-vue`.
 - `src/perf.js`: frame-time percentiles for the `?perf` device-check readout.
-- `src/audio.js`: synthesized sound effects and the looping intro/race music sequencer.
-- `src/audio-settings.js`: reads saved music/sound on/off and volume cookies, and the mute-keeps-level rule for sliders.
-- `tests/`: unit and browser behavior tests.
+- `src/audio.js`: synthesized sound effects and the looping music sequencer; songs live in `src/music-tracks.ts`, race-to-sound events in `src/race-audio-events.ts`.
+- `src/audio-settings.js`: reads saved music/sound on/off and volume from `localStorage`, and the mute-keeps-level rule for sliders.
+- `tests/`: unit and browser behavior tests. `tests/module-size.test.js` keeps every source module at or below 400 lines (older large files have ceilings that only go down).
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
 - `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `npm run test:layout` when pushed commits touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
 

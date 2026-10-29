@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createPresentation } from '../src/presentation.js';
+import { createPresentation } from '../src/presentation.ts';
 
 test('finish coasts for 0.6 seconds, then reveals results without advancing the official race', () => {
   const race = { phase: 'racing', elapsed: 62, player: { speed: 80, distance: 5000 }, result: null };

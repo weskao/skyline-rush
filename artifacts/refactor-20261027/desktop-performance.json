@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-10-27T07:05:35.394Z",
+  "browser": "156.0.8078.48",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "dpr": 1,
+  "quality": "high",
+  "preset": "cinematic",
+  "track": "coast",
+  "mode": "classic",
+  "input": "default AUTO, neutral steering",
+  "method": "Each fresh race: 2s warmup, 22s collection, read existing 20s rolling perf overlay; three alternating pairs; one Chrome instance, no other browser tests running.",
+  "limitations": "Desktop Mac GPU only. Version comparison, not isolated HUD causal proof. Thermal/power state not instrumented; headless Chrome, no physical-phone or audible-speaker approval.",
+  "samples": [
+    {
+      "version": "baseline",
+      "sha": "bd71ac88ca8ab9af92e464dbc74a71ebb4ff89af",
+      "run": 1,
+      "p50": 16.7,
+      "p95": 16.7,
+      "fps": 60,
+      "seconds": 20,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "errors": []
+    },
+    {
+      "version": "refactor",
+      "sha": "cda325ebe4d44c9526b0f9709049e33ca9e7661c",
+      "run": 1,
+      "p50": 16.7,
+      "p95": 16.7,
+      "fps": 60,
+      "seconds": 20,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "errors": []
+    },
+    {
+      "version": "baseline",
+      "sha": "bd71ac88ca8ab9af92e464dbc74a71ebb4ff89af",
+      "run": 2,
+      "p50": 16.7,
+      "p95": 16.8,
+      "fps": 60,
+      "seconds": 20,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "errors": []
+    },
+    {
+      "version": "refactor",
+      "sha": "cda325ebe4d44c9526b0f9709049e33ca9e7661c",
+      "run": 2,
+      "p50": 16.7,
+      "p95": 16.7,
+      "fps": 60,
+      "seconds": 20,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "errors": []
+    },
+    {
+      "version": "baseline",
+      "sha": "bd71ac88ca8ab9af92e464dbc74a71ebb4ff89af",
+      "run": 3,
+      "p50": 16.7,
+      "p95": 16.7,
+      "fps": 60,
+      "seconds": 20,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "errors": []
+    },
+    {
+      "version": "refactor",
+      "sha": "cda325ebe4d44c9526b0f9709049e33ca9e7661c",
+      "run": 3,
+      "p50": 16.7,
+      "p95": 16.7,
+      "fps": 60,
+      "seconds": 20,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "errors": []
+    }
+  ]
+}

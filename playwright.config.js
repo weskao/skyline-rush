@@ -9,7 +9,7 @@ export default defineConfig({
   testDir: './tests',
   testMatch: '**/*browser.spec.js',
   // These load tests/fixtures/*.html, which only the dev server serves (preview falls back to the app); see playwright.world-tour.config.js.
-  testIgnore: ['**/world-tour-mid-race-browser.spec.js', '**/world-tour-showcase-browser.spec.js', '**/cloud-emulator-browser.spec.js'],
+  testIgnore: ['**/world-tour-mid-race-browser.spec.js', '**/world-tour-showcase-browser.spec.js', '**/showcase-camera-views-browser.spec.js', '**/cloud-emulator-browser.spec.js'],
   // Lets CI --shard split by test instead of by file (browser.spec.js alone is most of the suite).
   fullyParallel: true,
   workers: 1,
@@ -28,7 +28,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: `npm run preview -- --port ${port} --strictPort`,
+    command: `npm run preview -- --port ${port} --strictPort${process.env.COAST_PREVIEW_DIR ? ` --outDir=${process.env.COAST_PREVIEW_DIR}` : ''}`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
   },

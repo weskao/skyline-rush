@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace } from '../src/game.js';
 import { recordModeRace, loadModeBest, loadModeHistory, MODE_BESTS_KEY, MODE_HISTORY_KEY,
-  loadHistory, loadUnlocks } from '../src/history.js';
+  loadHistory, loadUnlocks } from '../src/history.ts';
 
 const memory = seed => {
   const values = new Map(Object.entries(seed ?? {}));

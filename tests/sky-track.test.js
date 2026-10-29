@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { skyPoint, skyFrame, skyPosition, skyGapAt, SKY_JUMPS } from '../src/sky-track.js';
+import { skyPoint, skyFrame, skyPosition, skyGapAt, SKY_JUMPS } from '../src/sky-track.ts';
 import { RACE_TRACKS, createRace, startRace, stepRace } from '../src/game.js';
 
 const close = (a, b, tolerance = 0.5) => assert.ok(Math.abs(a - b) < tolerance, `${a} should be near ${b}`);

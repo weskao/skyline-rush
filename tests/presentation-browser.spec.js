@@ -30,12 +30,15 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#start-button').click();
     await expect(page.locator('#countdown')).toBeVisible();
     if (hasTouch && viewport.width <= 400) {
-      // fe54c24's right-thumb block is 2x2, [NITRO][GAS] over [BOOST][FLY], in the corner below the centred car.
+      // fe54c24's right-thumb block is 2x2, [NITRO][GAS] over [BOOST][FLY], at the lower right below the centred car,
+      // held --thumb-edge (24px) off the edge: the thumb pivots on the side edge, so the very corner is the hardest reach.
       const [nitro, gas, boost] = await Promise.all(['nitro', 'throttle', 'boost'].map(action => page.locator(`[data-control="${action}"]`).boundingBox()));
       expect(nitro.x, 'NITRO stays in the right thumb half, clear of the centred car').toBeGreaterThanOrEqual(viewport.width / 2);
       expect(Math.abs(nitro.x - boost.x), 'NITRO sits above BOOST').toBeLessThanOrEqual(1);
       expect(Math.abs(nitro.y - gas.y), 'NITRO sits beside GAS').toBeLessThanOrEqual(1);
-      expect(viewport.width - (gas.x + gas.width), 'the block hugs the right edge').toBeLessThanOrEqual(16);
+      const edge = viewport.width - (gas.x + gas.width);
+      expect(edge, 'the block sits off the corner').toBeGreaterThanOrEqual(23.5);
+      expect(edge, 'the block stays at the right edge').toBeLessThanOrEqual(24.5);
     }
     await page.waitForTimeout(300);
     const overlaps = await page.evaluate(() => {
