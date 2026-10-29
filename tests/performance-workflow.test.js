@@ -31,8 +31,8 @@ test('focused refactor CI skips artifact download and performance gate when Brow
     '- name: Verify software-WebGL evidence coverage and rendering budgets']){
     const index=quality.indexOf(marker);
     assert.ok(index>=0,'missing gate: '+marker);
-    const preceding=quality.slice(0,index).trimEnd().split('\n').slice(-2).join('\n');
-    assert.match(preceding,/if:.*refactor.*full.regression/,
+    const stepLines=quality.slice(index).split('\n').slice(0,3).join('\n');
+    assert.match(stepLines,/if:.*refactor.*full.regression/,
       'performance gate must only run for full Browser CI, not focused refactor CI');
   }
 });
