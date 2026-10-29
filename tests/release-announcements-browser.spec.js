@@ -81,6 +81,21 @@ test('players switch between the latest releases by click and keyboard', async (
   await expect(tabs.first()).toHaveAttribute('aria-selected', 'true'); // reopening starts at the newest
 });
 
+test('every release lists its NEW highlights first, then improvements, then fixes', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#whats-new-open').click();
+  const dialog = page.locator('#whats-new-screen');
+  const rank = kind => ({ new: 0, improvement: 1, fix: 2 })[kind] ?? 3;
+  const tabs = dialog.getByRole('tab');
+  for (let index = 0; index < await tabs.count(); index++) {
+    await tabs.nth(index).click();
+    await expect(tabs.nth(index)).toHaveAttribute('aria-selected', 'true');
+    const ranks = (await dialog.locator('.release-entry').evaluateAll(entries => entries.map(entry => entry.dataset.kind))).map(rank);
+    expect(ranks.length).toBeGreaterThan(0);
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+  }
+});
+
 test('release notes support optional localized hero images without leaking racing shortcuts', async ({ page }) => {
   await page.goto('/');
   await page.locator('#whats-new-open').click();

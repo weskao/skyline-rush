@@ -62,6 +62,24 @@ export function historyTrendPoints(recent: TrendRace[]): Array<[number, number]>
     high === low ? 40 : 70 - (run.time - low) / (high - low) * 60]);
 }
 
+// Runs repeat a few rulesets and each lookup parses storage (ghosts run to 512 KB): one lookup per ruleset per render.
+function modeRecordLookup(trackId: string) {
+  const saved = new Map<string, { best: number | null; ghost: boolean }>();
+  return (run: SavedModeRace) => {
+    const key = run.mode + '\n' + run.rules;
+    if (saved.has(key)) return saved.get(key)!;
+    let config = null;
+    try {
+      const candidate = JSON.parse(run.rules);
+      if (candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
+          candidate.mode === run.mode) config = candidate;
+    } catch { /* Opaque legacy rules still display as text. */ }
+    const found = { best: config ? loadModeBest(trackId, config) : null, ghost: ['time', 'circuit'].includes(run.mode) && !!config && !!loadModeGhost(trackId, config) };
+    saved.set(key, found);
+    return found;
+  };
+}
+
 // Live selectors are read at render time (cloud sync can replace progress).
 export function createHistoryView({ getData, timeString }: HistoryDependencies) {
   // Saved dates are untrusted, and Intl throws on an invalid date.
@@ -76,16 +94,10 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
     const modeFilter = document.querySelector<HTMLSelectElement>('#mode-history-filter')!.value;
     const modes = sessionModeHistory.filter(run => run.track === trackId)
       .filter(run => modeFilter === 'all' || run.mode === modeFilter).slice(-10).reverse();
+    const savedFor = modeRecordLookup(trackId);
     const modeRuns = modes.map(run => {
-      let config = null;
-      try {
-        const candidate = JSON.parse(run.rules);
-        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
-            candidate.mode === run.mode) config = candidate;
-      } catch { /* Opaque legacy rules still display as text. */ }
-      const best = config ? loadModeBest(trackId, config) : null;
+      const { best, ghost } = savedFor(run);
       const personalBest = best !== null && (run.mode === 'stunt' ? run.score === best : run.time === best);
-      const ghost = ['time', 'circuit'].includes(run.mode) && !!config && !!loadModeGhost(trackId, config);
       const details = run.mode === 'stunt'
         ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
           run.medal ? t('mode.medal.' + run.medal) : '',

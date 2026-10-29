@@ -155,6 +155,31 @@ becomes a screen-sized black rectangle through the bloom blur: clamp uv-derived 
 high-pass guard. Rules and guard tests are in `.claude/rules/performance-review.md` ("Shaders
 compile at first draw", "One NaN pixel is a black frame").
 
+## Repeated work: dedupe first, cache second, prove it with a count
+
+- **Do less before caching.** Most waste here is the same value computed twice in one pass, not
+  across passes: the World Tour road rebuild sampled the centreline ~69 times per row because
+  `local()` re-derived a point `trackFrame()` already held (`frame.point`) and the same origin
+  every call. Pass the value you hold; reach for a cache only when that is not enough.
+- **Every cache states its invalidation in a one-line comment**, and its key carries everything
+  the result depends on: track id + origin, locale + options (`formatDate`/`formatNumber` in
+  `src/i18n.ts`), stored string for storage parses. Per-render caches (`modeRecordLookup` in
+  `src/history-ui.ts`) are the default for UI reading `localStorage`; never return a cached
+  object to callers that may mutate it.
+- **Nothing is built per frame or per row**: `matchMedia`, `querySelector`, `Intl.*` formatters,
+  `JSON.parse` of a storage blob (mode ghosts run to 512 KB). Create once at setup, read
+  `.matches`/reuse the formatter; `tests/world-frame-queries.test.js` guards `src/world.js`.
+- **Test with deterministic counters, report with timings.** RED → GREEN on a call count (trig
+  calls per rebuild, `getItem` per render, formatter constructions), never on wall-clock time,
+  which flakes on CI. Report the before/after timing from a bench alongside it. A module-level
+  cache outlives a test, so give the test inputs no other test uses, or count only what it owns.
+- **Cached media must still play when the cache is unavailable.** Cache Storage is missing on
+  plain-http LAN dev servers and can throw; fall back to the network URL and never let a failed
+  download be cached (`src/release-media-cache.ts`). A blob `src` decodes its first frame, so
+  judge "never autoplayed" by `play` events, not `currentTime === 0`.
+- **A legacy file over its `LEGACY_CEILINGS` entry is compacted, never given more room**; when it
+  shrinks, lower its ceiling in the same commit.
+
 ## Commands
 
 | Command | Purpose |
@@ -228,11 +253,17 @@ sub-agent review and your approval record the copy's fingerprint. `scripts/relea
 `scripts/check-release-notes.mjs <version>` and refuses a release whose entry is incomplete, fails the
 copy check, was never reviewed or changed after review; never bypass it.
 
+Inside a release the dialog lists highlights NEW → improvement → fix (unknown kinds last, written
+order kept within a kind) via `highlightsByKind` in `src/release-notes.ts`; write the data in any
+order and never re-sort it by hand.
+
 ## Verification
 
 - Gameplay / progression / build-config change → `npm test` + `npm run build`.
 - Rendering / navigation / controls / unlock visibility change → also `npm run test:browser`,
-  desktop and mobile.
+  desktop and mobile. Running a spec directly with `npx playwright test <spec>` serves the built
+  `dist/`: run `npm run build` first, or the run checks the old code (a stale build once showed
+  last release's notes as "Latest").
 - Road, car pose, collision or steering change → follow `vehicle-road-stability.md`: TDD
   RED→GREEN, all-track coverage, frame-rate and road-clearance checks, plus real WebGL
   capture where clipping or jitter was reported. Record unrun checks as pending.

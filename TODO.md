@@ -49,6 +49,15 @@
 - [x] Shared result layout RED → GREEN on the affected caller branches: five-lap Circuit and billion-metre Endless phone results overflowed their panels. Commit `3826f3a` adds only `flex-wrap` to the existing shared stats container, preserving spacing/font sizes; actual cell-bounds assertions pass in 8 Circuit and 2 Endless original-resolution flows. Caller branches are repeating the complete gate after integration.
 - [ ] Complete each independent feature's exact-HEAD GitHub CI after public-push authorization; all six full local gates now pass. Earlier published code/CI receipts remain historical. The newer automatic review rejected public code disclosure for missing explicit authorization, and the six-feature approval question is still pending; do not retry or bypass. Feature-to-main merge, main push, PR, tag and deployment require explicit authorization.
 
+## Feature request: 90 / 120 FPS render option (2026-10-29)
+Status: not supported. `src/frame-pacing.ts` caps rendering at 60 FPS (`FpsPreference = 'auto' | '30' | '60'`); 90/120 Hz displays still paint at most 60 times a second. Physics stays fixed at 60 Hz.
+- [ ] Measure first: `?perf` p50/p95 frame cost, draw calls and triangles per track at 60 FPS on a 120 Hz phone, to see whether 90/120 is affordable.
+- [ ] RED tests in the frame-pacing unit tests: `'90'`/`'120'` parse, targets map correctly, Auto steps 120 → 60 → 30 under load and recovers.
+- [ ] Extend `FpsPreference`, the target mapping and Auto step-down/recovery in `src/frame-pacing.ts`; keep the render-only pacer separate from the fixed 60 Hz physics, track/Ghost samples and deterministic replay.
+- [ ] Offer 90/120 in the FPS settings UI only when the display refresh rate supports it; localize en + zh-TW; migrate the saved `skyline-rush-target-fps-v1` value safely.
+- [ ] Check GPU, battery and thermal impact on physical iOS/Android devices (software WebGL is not a benchmark); interpolate or keep car pose smooth between 60 Hz physics steps.
+- [ ] Add a What's New entry in `src/release-notes.js` (en + zh-TW) when it ships.
+
 ## Phase 4 — First five tracks: visuals, road geometry, minimap (feature/phase4-first-five-track-polish)
 
 **Contract:** Phase 1 flight/combo and records, Phase 2 Coast and perf load counters, and Phase 3 Auto/30/60 pacing stay intact. Start from integrated main `b0d839b`. Avoid changing physics/topology or route length without a versioned history/Ghost migration.

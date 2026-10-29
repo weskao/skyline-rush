@@ -1,8 +1,9 @@
 import { nextTick } from 'vue';
-import { updateReleaseView } from './release-view-state.ts';
+import { releaseView, updateReleaseView } from './release-view-state.ts';
 import { HISTORY_KEY } from './history.ts';
-import { getLocale, t, formatDate } from './i18n.ts';
-import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo } from './release-notes.ts';
+import { getLocale, t, formatDate, SUPPORTED_LOCALES } from './i18n.ts';
+import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind } from './release-notes.ts';
+import { createReleaseMediaCache } from './release-media-cache.ts';
 
 // Pure keyboard navigation, independently testable without a DOM.
 export function releaseTabIndex(index: number, count: number, key: string): number | null {
@@ -41,7 +42,28 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     catch { return false; }
   };
   const releaseDay = (date: string, options: Intl.DateTimeFormatOptions): string => formatDate(new Date(date + 'T00:00:00'), options);
-  
+  // Absolute, so the address matches what Cache Storage records for it.
+  const bundled = (path: string): string => new URL(import.meta.env.BASE_URL + path, location.href).href;
+  const clipSources = new Set(RECENT_RELEASES.flatMap(release => SUPPORTED_LOCALES.flatMap(locale =>
+    [false, true].map(portrait => releaseHeroVideo(release.video, locale, portrait)?.src)))
+    .filter((src): src is string => !!src).map(bundled));
+  const mediaCache = createReleaseMediaCache(clipSources, {
+    caches: globalThis.caches, fetch: url => fetch(url), createObjectURL: blob => URL.createObjectURL(blob),
+  });
+  // Downloads only while the notes are open; the poster shows until the clip is ready,
+  // and a reader who moved on meanwhile keeps their view.
+  function loadVisibleClip() {
+    const shown = releaseView.heroVideo;
+    if (!shown || shown.src || !releaseDialog.open) return;
+    const { source } = shown;
+    mediaCache.load(source).then(src => {
+      const view = releaseView.heroVideo;
+      if (view?.source !== source) return;
+      view.src = src;
+      nextTick(syncReleaseVideo);
+    });
+  }
+
   function renderReleaseNotes() {
     if (!CURRENT_RELEASE) return;
     const locale = getLocale();
@@ -57,6 +79,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     const release = RECENT_RELEASES[releaseIndex];
     const hero = releaseImage(release.image, locale);
     const clip = releaseHeroVideo(release.video, locale, portrait.matches);
+    const source = clip ? bundled(clip.src) : '';
     updateReleaseView({
       tabs,
       panelLabel: 'release-tab-' + releaseIndex,
@@ -64,10 +87,10 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
       date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
       heroSrc: hero ? import.meta.env.BASE_URL + hero : '',
       heroVideo: clip && {
-        src: import.meta.env.BASE_URL + clip.src, poster: import.meta.env.BASE_URL + clip.poster,
+        src: mediaCache.peek(source) ?? '', source, poster: import.meta.env.BASE_URL + clip.poster,
         variant: clip.variant, controls: reducedMotion.matches,
       },
-      entries: release.highlights.map(item => {
+      entries: highlightsByKind(release.highlights).map(item => {
         const image = releaseImage(item.image, locale);
         return {
           kind: item.kind,
@@ -80,6 +103,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     });
     updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()) });
     nextTick(syncReleaseVideo);
+    loadVisibleClip();
   }
   // The clip only plays while the notes are open; reduced motion keeps its still and controls.
   function syncReleaseVideo() {
@@ -112,6 +136,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     releaseIndex = 0;
     renderReleaseNotes();
     releaseDialog.showModal();
+    loadVisibleClip();
     $('#release-close').focus({ preventScroll: true });
     return true;
   }

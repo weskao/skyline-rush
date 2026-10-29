@@ -87,3 +87,30 @@ test('the ghost preference defaults off and only accepts booleans', () => {
   assert.equal(controlSettings({ version: 1, ghost: true }).ghost, true);
   assert.equal(controlSettings({ version: 1, ghost: 'no' }).ghost, false);
 });
+
+test('the history list parses the stored ghosts and bests once per ruleset, however many runs it lists', async () => {
+  const { ghost } = recordedRun();
+  const config = { mode: 'time' }, rules = JSON.stringify(config);
+  const modeHistory = Array.from({ length: 10 }, (_, i) => ({ track: 'coast', mode: 'time', rules, time: 50 + i, date: '2026-01-02T00:00:00Z' }));
+  const storage = memoryStorage({ 'skyline-rush-mode-history-v1': JSON.stringify(modeHistory) });
+  saveModeGhost('coast', config, ghost, storage);
+  const reads = {};
+  const counting = { setItem: storage.setItem, getItem: key => { reads[key] = (reads[key] ?? 0) + 1; return storage.getItem(key); } };
+  const { createHistoryView } = await import('../src/history-ui.ts');
+  const { historyView } = await import('../src/history-view-state.ts');
+  const restore = ['localStorage', 'document'].map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)]);
+  Object.defineProperty(globalThis, 'localStorage', { value: counting, configurable: true });
+  Object.defineProperty(globalThis, 'document', { value: { querySelector: s => ({ value: s === '#history-track' ? 'coast' : 'all' }) }, configurable: true });
+  try {
+    createHistoryView({
+      getData: () => ({ sessionHistory: [], sessionModeHistory: modeHistory, sessionBests: {}, sessionDaily: [], sessionMedals: {}, world: null }),
+      timeString: String,
+    }).showHistory();
+    assert.deepEqual(historyView.modeRuns.map(row => row.ghost), Array(10).fill(true));
+    assert.deepEqual(historyView.modeRuns.map(row => row.personalBest), [...Array(9).fill(false), true]);
+    assert.equal(reads['skyline-rush-mode-ghosts-v1'], 1, 'the ghost blob (up to 512 KB) is parsed once, not once per row');
+    assert.equal(reads['skyline-rush-mode-history-v1'], 1);
+  } finally {
+    for (const [name, descriptor] of restore) descriptor ? Object.defineProperty(globalThis, name, descriptor) : delete globalThis[name];
+  }
+});
