@@ -2,6 +2,7 @@ import { t, getLocale } from './i18n.ts';
 import { updateCloudView, updateCloudProfile } from './cloud-view-state.ts';
 import { claimCloudOwner, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus,
   writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.ts';
+import { loadChallengeMedals, mergeChallengeMedals, type ChallengeMedalState } from './history-challenge-medals.ts';
 import type { MergedProgress } from './cloud-progress-merge.ts';
 
 export interface CloudUser {
@@ -25,7 +26,8 @@ interface CloudOptions {
   /** The session's current progress, which may be newer than storage when storage is blocked. */
   getProgress(): Progress;
   /** Adopt merged progress into the session and refresh the screens that show it. */
-  applyProgress(merged: MergedProgress): void;
+  getLocalChallengeMedals?(): ChallengeMedalState;
+  applyProgress(merged: MergedProgress, localChallengeMedals?: ChallengeMedalState): void;
 }
 
 const CLOUD_STATE: Readonly<Record<string, string>> = Object.freeze({
@@ -54,7 +56,7 @@ const isCloudDeleting = (uid: string): boolean => {
   try { return localStorage.getItem(cloudDeletingKey(uid)) === '1'; } catch { return false; }
 };
 
-export function setupCloudUI({ services, getProgress, applyProgress }: CloudOptions) {
+export function setupCloudUI({ services, getProgress, applyProgress, getLocalChallengeMedals = loadChallengeMedals }: CloudOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   let cloudUser: CloudUser | null = null;
   let cloudStatusKey = 'cloud.local';
@@ -183,7 +185,7 @@ export function setupCloudUI({ services, getProgress, applyProgress }: CloudOpti
     location.reload();
   });
   $('#cloud-export').addEventListener('click', () => {
-    const contents = { ...getProgress(), permanent: readLocalModeBests() };
+    const contents = { ...getProgress(), permanent: readLocalModeBests(), localChallengeMedals: getLocalChallengeMedals() };
     const blob = new Blob([JSON.stringify(contents, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -208,14 +210,16 @@ export function setupCloudUI({ services, getProgress, applyProgress }: CloudOpti
       const imported = parseProgressExport(await file.text());
       const previousProgress = getProgress();
       const previousPermanent = readLocalModeBests();
+      const previousMedals = getLocalChallengeMedals();
+      const localChallengeMedals = mergeChallengeMedals(previousMedals, imported.localChallengeMedals);
       const merged = mergeProgress(previousProgress, imported.progress);
       const permanent = mergeModeBests(previousPermanent, imported.permanent);
-      if (!saveLocalProgress(merged)) throw new Error('Could not import into device storage');
+      if (!saveLocalProgress({ ...merged, localChallengeMedals })) throw new Error('Could not import into device storage');
       if (!saveLocalModeBests(permanent)) {
-        saveLocalProgress(previousProgress);
+        saveLocalProgress({ ...previousProgress, localChallengeMedals: previousMedals });
         throw new Error('Could not import permanent results');
       }
-      applyProgress(merged);
+      applyProgress(merged, localChallengeMedals);
       announceCloud('cloud.imported');
       if (cloudUser) saveCloudProgress();
     } catch (error) {

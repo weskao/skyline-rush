@@ -209,7 +209,7 @@ $('#ghost-enabled').addEventListener('change', ({ target }) => touchUI.setGhost(
 // Its callbacks read live session data rather than capturing an old snapshot.
 const { showHistory, showHomeStatus } = createHistoryView({
   getData: () => ({ sessionHistory: progress.history, sessionModeHistory: progress.modeHistory, sessionBests: progress.bests,
-    sessionDaily: progress.daily, sessionMedals: progress.medals, world }),
+    sessionDaily: progress.daily, sessionMedals: progress.medals, sessionChallengeMedals: progress.challengeMedals, world }),
   timeString,
 });
 showTracks(); centerSelectedTrack();
@@ -219,9 +219,9 @@ const currentProgress = () => progressSnapshot(progress);
 // Cloud Save lives in cloud-ui.ts; this boundary owns the session copies it merges into.
 const cloud = setupCloudUI({
   services: { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails },
-  getProgress: currentProgress,
-  applyProgress: merged => {
-    adoptProgress(progress, merged);
+  getProgress: currentProgress, getLocalChallengeMedals: () => progress.challengeMedals,
+  applyProgress: (merged, localChallengeMedals) => {
+    adoptProgress(progress, merged, localChallengeMedals);
     showTracks();
     if (historyDialog.isOpen()) showHistory();
     showGarage();
@@ -307,7 +307,7 @@ function start() {
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
-  stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, trackId:race.trackId } : null;
+  stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, longestFlight:0, maxAerialCombo:0, trackId:race.trackId } : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
   raceSelect.rememberTrack(race.trackId);
@@ -408,7 +408,7 @@ ui['again-button'].addEventListener('click', () => {
   if (sprintSeries) sprintSeries = createSprintSeries(sprintSeries.count);
   if (cup) { cup = createCup([...unlockedTracks], cup.tracks[0], cup.tracks.length); restart(cup.tracks[0]); }
   else if (stunt) {
-    stunt = { ...stunt, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0 };
+    stunt = { ...stunt, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, longestFlight:0, maxAerialCombo:0 };
     restart(stunt.trackId);
   } else restart();
 });
@@ -505,7 +505,7 @@ function phaseUI() {
     $('#new-best').hidden = !record;
     $('#result-style').hidden = race.mode !== 'classic';
     $('#result-links').hidden = false;
-    lastResult = { race, best, record, medals, series: sprintSeries, cup, stunt, next: settled.next };
+    lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, series: sprintSeries, cup, stunt, next: settled.next };
   }
   phaseText();
 }

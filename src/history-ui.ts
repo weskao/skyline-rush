@@ -1,5 +1,6 @@
 import { formatDate, t, trackName, getLocale } from './i18n.ts';
 import { loadModeBest, loadModeGhost, careerStats, dailyBoard, MEDALS } from './history.ts';
+import { CHALLENGE_MEDALS, loadChallengeMedals, type ChallengeMedalState } from './history-challenge-medals.ts';
 import { dailyChallenge } from './game.js';
 import { updateHistoryView } from './history-view-state.ts';
 import { updateHomeStatusView } from './home-status-view-state.ts';
@@ -44,6 +45,7 @@ interface HistoryData {
   sessionBests: Record<string, number>;
   sessionDaily: SavedDailyRace[];
   sessionMedals: Record<string, string>;
+  sessionChallengeMedals?: ChallengeMedalState;
   world: unknown | null | undefined;
 }
 interface HistoryDependencies {
@@ -71,6 +73,13 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
   }
   function showHistory() {
     const { sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world } = getData();
+    const personal = getData().sessionChallengeMedals ?? loadChallengeMedals();
+    updateHistoryView({
+      challengeMedalCount: t('challengeMedal.count', { n: Object.keys(personal.awards).length }),
+      challengeMedalPeaks: t('challengeMedal.peaks', { air: personal.longestFlight.toFixed(1), combo: personal.maxAerialCombo }),
+      challengeMedals: CHALLENGE_MEDALS.map(id => ({ id, name: t(`challengeMedal.${id}`), detail: t(`challengeMedal.${id}.detail`),
+        awarded: !!personal.awards[id], status: personal.awards[id] ? t('medal.awarded', { date: shortDate(personal.awards[id]) }) : t('medal.notAwarded') })),
+    });
     const trackId = document.querySelector<HTMLSelectElement>('#history-track')!.value;
     const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
     const modeFilter = document.querySelector<HTMLSelectElement>('#mode-history-filter')!.value;

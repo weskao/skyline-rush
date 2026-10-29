@@ -2,6 +2,7 @@
 import { RACE_TRACKS } from './game.js';
 import { icons, ICON_ATTRS } from './icons.ts';
 import SignInButton from './SignInButton.vue';
+import ChallengeMedals from './ChallengeMedals.vue';
 import { historyView } from './history-view-state.ts';
 import { cloudView, updateCloudView } from './cloud-view-state.ts';
 function hideBrokenCloudAvatar() { updateCloudView({ avatarFailed: true }); }
@@ -59,6 +60,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <p id="mode-history-empty" data-i18n="mode.historyEmpty" :hidden="!historyView.modeHistoryEmpty">Complete a Custom Race or Time Attack to save a personal record.</p>
       <div id="mode-history-runs" class="mode-history-runs"><p v-for="(run, i) in historyView.modeRuns" :key="i" :data-mode="run.mode" :data-personal-best="String(run.personalBest)" :data-ghost="String(run.ghost)">{{ run.text }}</p></div>
     </section>
+    <ChallengeMedals />
     <section id="daily-challenge" class="history-extra" aria-labelledby="daily-title">
       <h3 id="daily-title" data-i18n="daily.title">Daily challenge</h3>
       <p id="daily-status">{{ historyView.dailyStatus }}</p>

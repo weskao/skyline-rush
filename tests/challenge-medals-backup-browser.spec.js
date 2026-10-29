@@ -24,5 +24,8 @@ test('local backup import restores personal medals and keeps old backups compati
     await page.locator('#cloud-import-file').setInputFiles({ name: 'progress.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(contents)) });
     await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'imported');
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key) || 'null'), key)).toEqual(medals);
+    await expect(page.locator('#challenge-medal-count')).toContainText('1 / 5');
+    await expect(page.locator('[data-challenge-medal="time-clean"]')).toHaveClass(/is-awarded/);
+    await expect(page.locator('#achievement-status')).toContainText('0');
   }
 });

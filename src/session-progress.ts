@@ -26,7 +26,8 @@ export function loadSessionProgress(unlocked: Iterable<string>): SessionProgress
 }
 
 /** bests and stars keep their identity because other screens hold them. */
-export function adoptProgress(progress: SessionProgress, merged: MergedProgress): void {
+export function adoptProgress(progress: SessionProgress, merged: MergedProgress, localChallengeMedals?: ChallengeMedalState): void {
+  if (localChallengeMedals) progress.challengeMedals = localChallengeMedals;
   for (const id of merged.unlocked) progress.unlocked.add(id);
   Object.assign(progress.stars, merged.stars);
   Object.assign(progress.bests, merged.bests);
