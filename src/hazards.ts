@@ -2,7 +2,9 @@ import { seededRng, RACE_STREAMS } from './rng.ts';
 import type { TrackSection } from './game-types.ts';
 
 export interface HazardTrack { length: number; seed: number; sections: readonly TrackSection[] }
-export interface Hazard { distance: number; x: number; altitude: number; hit: boolean; passed: boolean; moving: boolean; phase: number; speed: number }
+export interface Hazard { distance: number; x: number; altitude: number; hit: boolean; passed: boolean; moving: boolean; phase: number; speed: number;
+  /** Catalog footprint for authored kinds; generated gauntlet barriers omit it and use the barrier size. */
+  halfWidth?: number; height?: number }
 const HAZARD_SECTION_TYPES = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
 
 // Obstacles move across a single lane at most; the other lanes always stay open.

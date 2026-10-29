@@ -80,3 +80,28 @@ test('collision preview reports why a placement fails without changing the draft
   assert.equal(lab.previewPlacement(draft, { kind: 'pickup', distance: 600, lane: 0 }, access, props), 'blocked');
   assert.equal(draft.objects.length, 1);
 });
+
+test('cones use the catalog footprint for placement, contact and rendering size', async () => {
+  const { OBJECT_CATALOG } = await import('../src/object-catalog.ts');
+  const document = lab.validateCourse(course([{ kind: 'cone', distance: 300, lane: 2 }]), access);
+  const race = lab.compileCourse(base(), document, access);
+  const cone = OBJECT_CATALOG.cone.hitbox;
+  assert.deepEqual([race.hazards[0].halfWidth, race.hazards[0].height], [cone.halfWidth, cone.height]);
+  startRace(race); race.phase = 'racing';
+  const drive = (x, altitude = 0) => {
+    const h = race.hazards[0]; Object.assign(h, { hit: false, passed: false });
+    Object.assign(race.player, { distance: 297, x, altitude, speed: 60, cooldown: 0, collisions: 0 });
+    stepRace(race, { throttle: true }, .1);
+    return race.player.collisions;
+  };
+  assert.equal(drive(2.5 + 1.0), 0, 'a 0.7 m cone must not knock a car 1 m to its side');
+  assert.equal(drive(2.5, 1.2), 0, 'a car 1.2 m up clears a 0.8 m cone');
+  assert.equal(drive(2.5), 1, 'driving straight into a cone still collides');
+  const barrier = lab.compileCourse(base(), lab.validateCourse(course([{ kind: 'barrier', distance: 300, lane: 2 }]), access), access);
+  assert.equal(barrier.hazards[0].halfWidth, OBJECT_CATALOG.barrier.hitbox.halfWidth);
+});
+
+test('a cone still closes its lane for reachability', () => {
+  const props = [{ from: 290, to: 310, left: -10, right: -1, bottom: 0, top: 4 }];
+  assert.throws(() => lab.validateCourse(course([{ kind: 'cone', distance: 300, lane: 2 }]), access, props), error => error.code === 'reachable');
+});

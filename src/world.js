@@ -1051,11 +1051,11 @@ export function createWorld(canvas) {
       if (!preview && race.hazards.length) for (const hazard of race.hazards) {
         if (hazard.distance < distance - 16 || hazard.distance > distance + 550) continue;
         if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
-        const x = hazardX(hazard, race.elapsed);
-        const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, 1.25, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, 1.25, distance)
-            : [roadCenter(hazard.distance) - center + x, 1.25, distance - hazard.distance];
-        put(gauntletBarriers, visibleHazards++, ...xyz, 3.1, 2.5, 1.3);
+        const x = hazardX(hazard, race.elapsed), y = (hazard.height ?? 2.5) / 2; // authored cones draw at catalog size
+        const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, y, distance)
+          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, y, distance)
+            : [roadCenter(hazard.distance) - center + x, y, distance - hazard.distance];
+        put(gauntletBarriers, visibleHazards++, ...xyz, (hazard.halfWidth ?? 1.55) * 2, y * 2, 1.3);
       }
       gauntletBarriers.count = visibleHazards;
       if (visibleHazards) gauntletBarriers.instanceMatrix.needsUpdate = true;

@@ -3,15 +3,18 @@ import { seededRng } from './rng.ts';
 import type { Hazard } from './hazards.ts';
 import type { TrackConfig } from './game-types.ts';
 import { createRaceSessionContract } from './race-session.ts';
+import { OBJECT_CATALOG } from './object-catalog.ts';
 
 export const COURSE_BYTES = 16384;
 export const COURSE_OBJECTS = 24;
 export const COURSE_LANES = Object.freeze([-7.5, -2.5, 2.5, 7.5]);
-export type CourseKind = 'barrier' | 'ring' | 'pickup' | 'checkpoint';
-// shortcut: local footprint table, swap for src/object-catalog.ts (ENV-01) once it lands on main.
-const FOOTPRINT: Record<CourseKind, { half: number; bottom: number; top: number }> = {
-  barrier: { half: 1.55, bottom: 0, top: 2.5 }, ring: { half: RING_RADIUS, bottom: 5 - RING_RADIUS, top: 5 + RING_RADIUS },
-  pickup: { half: 1, bottom: 0, top: 2.5 }, checkpoint: { half: 3.2, bottom: 0, top: 4.8 } };
+export type CourseKind = 'barrier' | 'cone' | 'ring' | 'pickup' | 'checkpoint';
+const KINDS: readonly CourseKind[] = ['barrier', 'cone', 'ring', 'pickup', 'checkpoint'];
+// Drawn footprints come from the ENV-01 catalog; rings float centred 5 m up, everything else stands on the road.
+const FOOTPRINT = Object.fromEntries(KINDS.map(kind => {
+  const { hitbox, anchor, effect } = OBJECT_CATALOG[kind], bottom = anchor === 'center' ? 5 - hitbox.height / 2 : 0;
+  return [kind, { half: hitbox.halfWidth, bottom, top: bottom + hitbox.height, blocks: effect === 'block' }];
+})) as Record<CourseKind, { half: number; bottom: number; top: number; blocks: boolean }>;
 // The checkpoint renderer pools 48 parts at 3 parts per gate.
 const COURSE_CHECKPOINTS = 16;
 export interface CourseObject { readonly kind: CourseKind; readonly distance: number; readonly lane: number }
@@ -53,11 +56,11 @@ export function validateCourse(value: unknown, unlocked: ReadonlySet<string>, ob
     requireCourse(typeof raw.distance === 'number' && Number.isInteger(raw.distance) && raw.distance % 10 === 0 &&
       raw.distance >= 200 && raw.distance <= track.length - 200, 'bounds');
     requireCourse(!track.sections.some(s => EXCLUDED.has(s.type) && raw.distance as number >= s.from - 80 && (raw.distance as number) <= s.to + 80), 'section');
-    const x = COURSE_LANES[raw.lane], { half, bottom, top } = FOOTPRINT[raw.kind as CourseKind];
+    const x = COURSE_LANES[raw.lane], { half, bottom, top, blocks } = FOOTPRINT[raw.kind as CourseKind];
     requireCourse(!obstacles.some(o => (raw.distance as number) >= o.from - 8 && (raw.distance as number) <= o.to + 8 &&
       x + half >= o.left - 1 && x - half <= o.right + 1 && bottom <= o.top && top >= o.bottom), 'blocked');
-    // A barrier plus nearby ground props must leave two adjacent lanes a car can drive through.
-    requireCourse(raw.kind !== 'barrier' || COURSE_LANES.some((_, i) => i < 3 && [i, i + 1].every(lane => lane !== raw.lane &&
+    // A solid object plus nearby ground props must leave two adjacent lanes a car can drive through.
+    requireCourse(!blocks || COURSE_LANES.some((_, i) => i < 3 && [i, i + 1].every(lane => lane !== raw.lane &&
       !obstacles.some(o => (raw.distance as number) >= o.from - 20 && (raw.distance as number) <= o.to + 20 && o.bottom < 2.5 &&
         COURSE_LANES[lane] + 1.2 >= o.left && COURSE_LANES[lane] - 1.2 <= o.right))), 'reachable');
     return Object.freeze({ kind: raw.kind as CourseKind, distance: raw.distance, lane: raw.lane });
@@ -139,8 +142,9 @@ export function compileCourse<T extends RuntimeCourseRace>(race: T, raw: CourseD
   const course = JSON.stringify(document);
   const config = Object.freeze({ ...race.config, mode: 'eventlab', course, ...(document.modifier === 'relaxed' ? { collision: 'relaxed' } : {}) });
   const baseSession = createRaceSessionContract(document.trackId, document.seed, race.config);
-  const hazards: Hazard[] = document.objects.filter(o => o.kind === 'barrier').map(o => ({ distance: o.distance,
-    x: COURSE_LANES[o.lane], altitude: 0, moving: false, phase: 0, speed: 0, hit: false, passed: false }));
+  const hazards: Hazard[] = document.objects.filter(o => FOOTPRINT[o.kind].blocks).map(o => ({ distance: o.distance,
+    x: COURSE_LANES[o.lane], altitude: 0, moving: false, phase: 0, speed: 0, hit: false, passed: false,
+    halfWidth: OBJECT_CATALOG[o.kind].hitbox.halfWidth, height: OBJECT_CATALOG[o.kind].hitbox.height }));
   const gates = document.objects.filter(o => o.kind === 'checkpoint').map(o => ({ distance: o.distance, x: COURSE_LANES[o.lane], altitude: 0, passed: false, missed: false }));
   return Object.assign(race, { mode: 'eventlab', config, eventCourse: document, seed: document.seed,
     session: Object.freeze({ ...baseSession, mode: 'eventlab', rulesSignature: JSON.stringify(config) }),

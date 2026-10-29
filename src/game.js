@@ -383,7 +383,7 @@ function avoidObstacles(race, other, pace, dt) {
   if (altitude < BARRIER_HEIGHT) for (const h of hazards) {
     if (h.distance > d + AI_LOOKAHEAD) break;
     if (h.distance < d - 2.2) continue;
-    const reach = BARRIER_HALF_WIDTH + (h.moving ? 1.8 : 0); // a moving barrier blocks its whole sweep
+    const reach = (h.halfWidth ?? BARRIER_HALF_WIDTH) + (h.moving ? 1.8 : 0); // a moving barrier blocks its whole sweep
     blockers.push(h.x - reach, h.x + reach);
   }
   let target = other.homeX ?? other.x;
@@ -423,7 +423,7 @@ function aiImpacts(race, other, before, pace) {
     if (hazard.distance > other.distance) break;
     if (hazard.distance <= before) continue;
     const obstacleX = hazardX(hazard, race.elapsed);
-    if (Math.abs(other.x - obstacleX) < 1.8) return void knock(race, other, Math.sign(other.x - obstacleX) || -1, 0.7, 0.6);
+    if (Math.abs(other.x - obstacleX) < (hazard.halfWidth ?? BARRIER_HALF_WIDTH) + .25 && (other.altitude || 0) < (hazard.height ?? BARRIER_HEIGHT) - .1) return void knock(race, other, Math.sign(other.x - obstacleX) || -1, 0.7, 0.6);
   }
 }
 function bumpCars(race, a, b) {
@@ -749,7 +749,7 @@ export function stepRace(race, input, dt) {
     if (hazard.distance > car.distance) break;
     if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
     const obstacleX = hazardX(hazard, race.elapsed);
-    const collision = Math.abs(car.x - obstacleX) < 1.8 && car.altitude < 2.4;
+    const collision = Math.abs(car.x - obstacleX) < (hazard.halfWidth ?? BARRIER_HALF_WIDTH) + .25 && car.altitude < (hazard.height ?? BARRIER_HEIGHT) - .1;
     if (collision && car.cooldown === 0) {
       contact(race, 'barrier', obstacleX, 0.7, 0.6);
       hazard.hit = true;

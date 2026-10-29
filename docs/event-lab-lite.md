@@ -18,11 +18,14 @@ TODO.md. Parent schedules full make verify and exact-commit CI.
 
 Timed checkpoints compile into the shared Checkpoint Rush runtime (at most 16, the
 pooled gate budget). Every barrier must leave two adjacent lanes open beside existing
-road props (`reachable`). Per-kind footprints live in one table that moves to the
-ENV-01 catalog (`src/object-catalog.ts`) when it lands.
+road props (`reachable`). Footprints come from the ENV-01 catalog
+(`src/object-catalog.ts`); every `block` kind (barrier, cone) compiles to a hazard
+carrying its catalog half-width and height, which player, rival and traffic contact
+and the pooled barrier renderer all read. Cones reuse the barrier pool at their own
+size, so they add no material or draw call.
 
-Deferred: placeable ramps (need shared launch physics) and cones (need per-kind
-runtime hitboxes from ENV-02), remote assets and scripting.
+Deferred: placeable ramps (need a catalog `ramp` type and shared launch physics),
+remote assets and scripting.
 
 Out of scope for offline v1: community sharing and multiplayer uploads. They need a
 separate backend, moderation, storage and security design. Courses travel only as
