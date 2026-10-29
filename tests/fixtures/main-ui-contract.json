@@ -1,6 +1,6 @@
 {
-  "reference": "main bd71ac8 plus intentional camera layout correction cda325e",
-  "cssBlob": "3249dbc77e5f19f516d8470457a0640c82e1975b",
+  "reference": "main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient",
+  "cssBlob": "12c17626ef6f98cad89f0f25a035eb39fa91f7f4",
   "elements": [
     {
       "id": "whats-new-screen",

@@ -128,6 +128,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
           <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
           <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
+          <button type="button" data-race-mode="endless" aria-pressed="false" data-i18n="mode.endless">Endless Highway</button>
           <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
         </div>
         <details class="race-mode-rules" id="recent-custom" hidden>

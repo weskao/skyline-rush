@@ -1,6 +1,6 @@
 export interface ObjectiveConfig { mode?: string; duration?: number }
 export type RaceObjective =
-  | Readonly<{ type: 'placement' | 'stage-points' | 'finish-time' | 'checkpoint-timer' | 'no-auto-finish' | 'survival' }>
+  | Readonly<{ type: 'placement' | 'stage-points' | 'finish-time' | 'checkpoint-timer' | 'no-auto-finish' | 'survival' | 'distance-survival' }>
   | Readonly<{ type: 'timed-score'; durationSeconds: number; routeEndAllowed: true }>;
 export interface ObjectiveRace {
   objective?: RaceObjective;
@@ -31,6 +31,8 @@ export function createRaceObjective(config: ObjectiveConfig = {}): RaceObjective
       return Object.freeze({ type: 'checkpoint-timer' as const });
     case 'free':
       return Object.freeze({ type: 'no-auto-finish' as const });
+    case 'endless':
+      return Object.freeze({ type: 'distance-survival' as const });
     case 'elimination':
       return Object.freeze({ type: 'survival' as const });
     case 'stunt':
@@ -53,6 +55,7 @@ export function raceCompletion(race: ObjectiveRace): RaceCompletion {
   switch (objective.type) {
     case 'no-auto-finish':
     case 'survival':
+    case 'distance-survival':
       return { done: false, reason: null };
     case 'checkpoint-timer':
       if (race.checkpoint?.expired) return { done: true, reason: 'expired' };

@@ -166,7 +166,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 .text-button { background: transparent; border: 0; color: #c7d0d7; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 12px; margin: 23px auto 0; padding: 8px; }
 .text-button svg { width: 16px; height: 16px; }
 .text-button:hover { color: var(--accent); }
-.result-stats { display: flex; justify-content: center; gap: 40px; margin: 30px 0 34px; }
+.result-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; margin: 30px 0 34px; }
 .result-stats > div { display: flex; flex-direction: column; gap: 8px; }
 .result-stats span { font-size: 8px; letter-spacing: 1.6px; color: #bac6cf; }
 .result-stats strong { font: 700 32px 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
@@ -1631,3 +1631,6 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .cloud-player-details strong { display: block; font-size: 15px; color: #f3f9ff; }
 .cloud-player-details p { margin: 3px 0 0; font-size: 13px; color: #c5d7e2; }
 #cloud-sync-now:not(:disabled) { border-color: #66c6d5; }
+
+body[data-race-mode="endless"] #race-route-map,
+body[data-race-mode="endless"] .progress-track { display: none; }

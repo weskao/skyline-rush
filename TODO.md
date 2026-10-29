@@ -56,6 +56,59 @@ Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates c
 - [ ] Recheck the latest documentation HEAD CI on the eight earlier branches. Older feature-code CI is green; these newer runs are still incomplete at handoff.
 - [ ] Physical Safari/Android, long-drive/all-quality thermal validation and independent review remain open. Merge into main, PR, tag and deployment still require explicit authorization.
 
+## Current main integration and verification (2026-10-29)
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `733d848` on `feature/endless-highway`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `733d848` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547563). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `733d848` exits 0: strict TS/Vue/JS, Node 825 / Browser 497 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/endless/make-verify-main-ca1c777-user-merge.log`.
+
+Historical receipts below retain their original date and verification scope.
+
+## Main camera-probe integration (2026-10-28)
+
+- [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
+- [x] Complete resulting-main `make verify` on code `6883d0a` (verified 2026-10-29): strict TS/Vue/JS checks, 811 Node passed / 3 emulator-scoped skips, locked production build, 495 browser passed / 2 inapplicable desktop touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main-31ac7b1.log`.
+- [x] Preserve 8 original-resolution real-game images in `artifacts/endless/reviewed-main-31ac7b1/`; desktop and phone representatives were visually inspected. Fresh main31 original-resolution flows pass (2 cases). Chrome emulation remains separate from physical Safari/Android acceptance.
+- [x] Local Auth/Firestore compatibility on code `6883d0a`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/endless/cloud-main-31ac7b1.log`; no production cloud writes.
+- [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
+
+## Main 0.25.0 integration (2026-10-28)
+
+- [x] Merge latest requested main `01526118767b99a85b0a9b7570bdd87a27ac304e` into this independent branch. Preserve all feature source: the `src` tree is identical to the pre-merge parent. Integrate 0.25.0 metadata, per-map camera cases and six CI World Tour shards; retain the validated worktree port override. All 36 focused size/camera/haptic/release checks pass.
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `6883d0a` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
+- [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
+
+## Historical main integration through 0197547 (2026-10-28)
+
+- [x] Integrate captured main `0197547d01a7bd4618bee7a969fdbc67e2caf1ac` (including `ebd30e5` / `d71fc65`) into this independent branch, resolve conflicts and preserve both main and feature behavior. Main now separates release data and includes upcoming notes; all 36 focused renderer/camera/haptic/release tests pass. Shared AIRFLOW locale repair `3e7f7d6` is included. This is the fixed baseline for the final verification batch.
+- [x] Complete fresh local `make verify` on code `1515586` after captured main `0197547` and shared locale repair: strict TS/Vue/JS checks, 808 Node passed / 3 emulator skips, locked build, 495 browser passed / 2 conditional skips, 94 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main-0197547.log`. Fresh original-resolution real-game flows also pass; reviewed captures: `artifacts/endless/reviewed-main-0197547/`. Earlier SHA receipts below remain historical.
+- [ ] Inspect the recorded feature-code SHA GitHub required jobs and `quality-gate`; the final documentation HEAD is checked separately. Real-device and remaining manual gates stay open.
+
+## Endless Highway continuation (2026-10-28, feature/endless-highway)
+
+- [x] Real screenshot review exposed horizontal overflow in billion-metre phone results. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
+- [x] Repeat complete local `make verify` after the CSS fix on `c0cd624`: strict TS/Vue/JS checks, 801 Node passed / 3 emulator skips, locked build, 489 browser passed / 2 skips and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-result-wrap.log`. Pre-fix full-gate receipts below remain historical.
+- [ ] Verify exact post-wrap feature-HEAD GitHub quality-gate; no earlier HEAD CI is substituted.
+
+
+- [x] Observe mode/streaming/settlement RED; implement Coast-only absolute-distance survival beyond authored finishes, five-contact settlement, capped difficulty and deterministic five-chunk traffic/pickup/ring pools. Classic/Daily/Cup routes and ordered catalogs remain unchanged.
+- [x] Rebase Coast scenery and skyline GPU transforms near the camera, preserve existing materials/pools, hide finite minimap/progress/finish arch and avoid Ghost trace accumulation. Tests cover 8 km, 2 million metres and billion-metre progress with fixed object/resource counts.
+- [x] Persist longest distance independently from Career, including a fifth real collision and rolling-history/cloud normalization/max-distance merges; reuse cruise music and one-shot milestones.
+- [x] Follow-up GREEN: 126 focused core/type/Classic-route checks and two real desktop/touch bilingual browser flows pass, including pause, actual WebGL loss/restore, flight input, result persistence, locale switch and restart. Actual full-resolution distant-road/result captures inspected in `artifacts/endless/`.
+- [x] Moving-traffic continuity RED → GREEN: a 20-minute deterministic driving regression reproduced nearby traffic disappearing when its birth chunk expired. Recycle by current distance and preserve the 40-car cap; all six Endless checks and the full Node suite pass (799 passed, 0 failed, 3 skipped). Logs: `artifacts/endless/traffic-continuity-{red,green,unit}.log`.
+- [x] Complete merged local `make verify` on code HEAD `12150b7`: strict TS/Vue/legacy checks, 801 Node passed / 3 emulator-dependent skipped, locked production build, 489 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main72466c3-final.log`. Cloud emulator checks also pass: 15 browser + 3 Rules tests (`cloud-main72466c3.log`).
+- [ ] Latest-feature-HEAD GitHub quality-gate, actual background-tab acceptance and physical iOS/Android GPU/thermal endurance. Same-name feature pushes passed the renewed automatic review; latest-HEAD CI remains pending.
+
+## Shared continuation regression gates (2026-10-28)
+
+- [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.
+- [x] Complete all six caller full local gates after the shared repair and main `31ac7b1`: Cup, Custom, Items, Event Lab, Endless and Circuit exit 0 (verified 2026-10-29). Each owning branch records its code SHA, full log and reviewed images above; Circuit uses the separate recheck log. Superseded/interrupted runs remain historical receipts.
+
+- [x] Integrate main `72466c3`, preserving release-video behavior and both main-route/forbidden-route assertions plus exact Spiral decoration counts. Earlier shared repair `c9db4a9` passed all required GitHub jobs and `quality-gate`: https://github.com/weskao/skyline-rush/actions/runs/40576521837 . This does not certify later feature HEADs.
+- [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
+- [x] Shared result layout RED → GREEN on the affected caller branches: five-lap Circuit and billion-metre Endless phone results overflowed their panels. Commit `3826f3a` adds only `flex-wrap` to the existing shared stats container, preserving spacing/font sizes; actual cell-bounds assertions pass in 8 Circuit and 2 Endless original-resolution flows. Caller branches are repeating the complete gate after integration.
+- [ ] Complete each independent feature's exact-HEAD GitHub CI after public-push authorization; all six full local gates now pass. Earlier published code/CI receipts remain historical. The newer automatic review rejected public code disclosure for missing explicit authorization, and the six-feature approval question is still pending; do not retry or bypass. Feature-to-main merge, main push, PR, tag and deployment require explicit authorization.
+
 ## Feature request: 90 / 120 FPS render option (2026-10-29)
 Status: not supported. `src/frame-pacing.ts` caps rendering at 60 FPS (`FpsPreference = 'auto' | '30' | '60'`); 90/120 Hz displays still paint at most 60 times a second. Physics stays fixed at 60 Hz.
 - [ ] Measure first: `?perf` p50/p95 frame cost, draw calls and triangles per track at 60 FPS on a 120 Hz phone, to see whether 90/120 is affordable.
@@ -1669,3 +1722,14 @@ never conflate future modes with existing Control “steering mode” options.
 - [ ] Run and inspect latest branch HEAD Node/unit/build, all browser shards, World Tour and cloud-save GitHub CI with quality-gate green (still pending).
 - [ ] Review actual screenshots of Tokyo, Alpine, Taipei, Coastal and Cosmic with AIRFLOW on/off, verify car wheel/ground contact, body fully unobscured, landmark framing and nonblocking HUD across both orientations; real iOS/Android hardware acceptance pending.
 - [ ] Only after exact-HEAD CI success, sync any newer main and obtain CI success again before merging feature branch directly into main.
+
+
+## Roadmap continuation: inherited regression gates (2026-10-28)
+
+- [x] Reproduce inherited main failures before changing expectations: unscaled Phase 4 timeout, first-frame perf sampling, reviewed CSS baseline drift and stale paused-overlay result checks. Evidence: `artifacts/regression-gates/unit-red.log`, `browser-red.log`, `latest-main-css-red.log`.
+- [x] Preserve assertions while repairing their assumptions: use CI timeout helper, prime the presented-frame clock, review accepted main CSS changes without changing recorded DOM, and await finished phase before measuring/clicking Race Again. Focused unit and full unit suites pass (784 passed, 3 skipped); affected browser suite passes (41 passed, 1 desktop-only skip).
+- [x] Integrate main `53d4a0a` including its 44px touch targets and narrow VFX selector overflow fix; review the exact CSS delta before updating the golden hash.
+- [x] Exact-commit CI exposed three stale minimap assumptions after Phase 4 added two decorative Spiral polylines. Preserve a single main centreline per map, exact permitted total counts, curve bounds and four racer markers; target the existing main-path CSS hook instead of every polyline. Remote RED: `40565776298`, shards 3/4/7; local focused retest recorded separately.
+- [ ] Run complete `make verify` on the resulting branch and inspect exact-commit GitHub `quality-gate`; retain real hardware gates separately.
+
+- [x] Integrate current main `2cd52d4` (BOOST/chain landing, spark/audio cue, localized release clips). Resolve only overlapping test assumptions; preserve the new gameplay and media. Shared FPS test now checks the 1000/1016/1032 ms sequence and zero early counter reads. Reviewed main's three release-video CSS rules before synchronizing the style contract. Fresh full Node: 791 passed / 3 skipped; affected minimap/parity/release-video browser suite: 13 passed.

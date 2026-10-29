@@ -70,6 +70,12 @@ export function createRaceHud(options: HudOptions) {
   const nitroMeter = $('#nitro-meter');
   // HUD text is read every tick: a plain catalog lookup (key parity is unit-tested), swapped on a language switch.
   let L: Record<string, string> = CATALOGS[getLocale() as keyof typeof CATALOGS];
+  let flowKey = 'hud.streamlines', floorKey = 'hud.lowDrag', jetKey = 'hud.demo';
+  function relabelAirflow(): void {
+    setHudText(hudNodes['aero-flow']!, L[flowKey]!);
+    setHudText(hudNodes['aero-floor']!, L[floorKey]!);
+    setHudText(hudNodes['aero-jet']!, L[jetKey]!);
+  }
   let leaderboardOrder = '';
   let previousPosition: number | null = null, positionUntil = 0;
   let previousFlight: boolean | undefined;
@@ -106,8 +112,8 @@ export function createRaceHud(options: HudOptions) {
   function updateProgress(race: HudRace, car: HudRace): void {
     setHudText(ui.timer!, timeString(race.elapsed));
     setHudText(ui.distance!, (car.distance / 1000).toFixed(2));
-    ui['progress-fill']!.style.width = `${car.distance / race.length * 100}%`;
-    setHudText(hudNodes['race-length']!, (race.length / 1000).toFixed(2));
+    ui['progress-fill']!.style.width = `${race.endless ? 0 : car.distance / race.length * 100}%`;
+    setHudText(hudNodes['race-length']!, race.endless ? '∞' : (race.length / 1000).toFixed(2));
     const timeGhost = race.mode === 'time' && getControlPrefs().ghost ? options.timeTrialGhost(race) : null;
     const split = hudNodes['ghost-split']!;
     setHudHidden(split, !timeGhost || race.phase !== 'racing');
@@ -192,9 +198,10 @@ export function createRaceHud(options: HudOptions) {
     lastDriftPayout = car.driftPayout;
     lastTrickPayout = car.trickPayout;
     previousBoost = boost;
-    setHudText(hudNodes['aero-flow']!, L[boost ? 'hud.highVelocity' : 'hud.streamlines']!);
-    setHudText(hudNodes['aero-floor']!, L[flying ? 'hud.downwash' : visual.aeroMode === 'downforce' ? 'hud.suction' : 'hud.lowDrag']!);
-    setHudText(hudNodes['aero-jet']!, L[boost ? 'hud.thrustActive' : race.phase === 'ready' ? 'hud.demo' : 'hud.standby']!);
+    flowKey = boost ? 'hud.highVelocity' : 'hud.streamlines';
+    floorKey = flying ? 'hud.downwash' : visual.aeroMode === 'downforce' ? 'hud.suction' : 'hud.lowDrag';
+    jetKey = boost ? 'hud.thrustActive' : race.phase === 'ready' ? 'hud.demo' : 'hud.standby';
+    relabelAirflow();
     document.body.style.setProperty('--flight-bank', `${-car.steering * 5}deg`);
     document.body.style.setProperty('--streak-opacity', visual.enabled && !calm && race.phase === 'racing' ? String(boost ? visual.speedLines : 0) : '0');
   }
@@ -226,7 +233,8 @@ export function createRaceHud(options: HudOptions) {
   function updateStatus(race: HudRace, car: HudRace, input: HudInput, impactAge: number): void {
     const length = race.length;
     let status = L[`phase.${race.phase}`]!;
-    if (race.mode === 'free' && car.distance >= length) status = L['mode.endOfRoad']!;
+    if (race.endless) status = t('mode.endlessHud', { lives: Math.max(0, 5 - car.collisions), next: Math.floor(car.distance / 1000) + 1 });
+    else if (race.mode === 'free' && car.distance >= length) status = L['mode.endOfRoad']!;
     else if (race.phase === 'racing' && race.mode === 'classic' && car.distance >= length - 500) {
       const { ahead, behind } = sprintGaps(race);
       status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
@@ -323,9 +331,10 @@ export function createRaceHud(options: HudOptions) {
     restoreMemory(memory: HudMemory): void { ({ previousFuel, previousNitro } = memory); },
     /** The flight/road label is change-gated; the next tick rewrites it. */
     forgetFlightMode(): void { previousFlight = undefined; },
-    /** Language switch: swap the HUD catalog and relabel what the next tick will not rewrite. */
+    /** Language switch: keep static labels and cached live values in the same locale. */
     relabel(): void {
       L = CATALOGS[getLocale() as keyof typeof CATALOGS];
+      relabelAirflow();
       nitroMeter.setAttribute('aria-label', t('hud.nitroAria'));
       if (positionChange.dataset.direction) positionChange.setAttribute('aria-label', t(positionChange.dataset.direction === 'gained' ? 'hud.gained' : 'hud.lost'));
       previousFlight = undefined; // the next HUD tick rewrites the change-gated labels

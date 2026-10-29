@@ -25,6 +25,7 @@ test('ten full-route previews and bilingual names are available without exposing
   await expect(page.locator('.track-route-map polyline.route-overview-line')).toHaveCount(ids.length);
   // Sky Spiral's upper-loop and heading overlays are decoration; any other line would expose a shortcut.
   await expect(page.locator('.track-route-map polyline:not(.route-overview-line):not(.route-spiral-upper):not(.route-spiral-direction)')).toHaveCount(0);
+  await expect(page.locator('.track-route-map polyline')).toHaveCount(ids.length + 2);
   for (const id of ids) await expect(page.locator(`.preview-${id}`), `${id} preview has its own sky`).not.toHaveCSS('background-image', 'none');
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
