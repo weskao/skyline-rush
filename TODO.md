@@ -1,9 +1,17 @@
 # TODO — Gameplay depth design
 
+## Expanded personal challenge medals — REPLAY-01 (2026-10-29)
+
+- [x] Review the original requirement and existing scoring, settlement, History, storage/account/backup boundaries. Continue on independent `feature/challenge-medals`, leaving the six locally verified feature branches intact. Plan: `docs/superpowers/plans/2026-10-29-challenge-medals.md`.
+- [x] Observe real assertion RED through the existing Stunt scoring API: four original cases pass, four new cases fail for missing continuous-flight/aerial-chain telemetry. No missing-module or syntax error. Log: `artifacts/challenge-medals/stunt-metrics-red.log`.
+- [ ] Implement and verify bounded aerial telemetry, five separate personal medals, safe local/session persistence and local backup/account isolation; no new cloud schema.
+- [ ] Verify bilingual Vue History/result presentation with real desktop/touch actions and unchanged four Career medals.
+- [ ] Complete resulting full local gate, existing emulator compatibility, real-game evidence and Stunt-path performance before marking REPLAY-01 complete. Exact-HEAD CI remains separately pending public-source authorization.
+
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
-- [x] Merge-specific validation passes all 39 focused size/haptic/camera/release/draw-helper checks. Expanded challenge medals remain unimplemented; no feature-acceptance or standalone full-gate receipt is claimed here.
+- [x] Merge-specific validation passes all 39 focused size/haptic/camera/release/draw-helper checks. At the recorded base `fdeed8a`, expanded medals were unimplemented; the new phase ledger above tracks current implementation. No standalone full-gate receipt is claimed for that earlier placeholder.
 - [ ] Exact-HEAD CI for this helper/placeholder remains unverified. The pending publication request covers only the six implemented feature branches; no push from this helper/placeholder is authorized.
 
 ## Main 0.25.0 integration (2026-10-28)
