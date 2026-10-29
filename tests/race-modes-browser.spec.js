@@ -83,7 +83,10 @@ test('mobile game mode picker remains operable on phone portrait', async ({ page
   await closeMusicPrompt(page);
   await page.locator('button[data-race-mode="gauntlet"]').click();
   await expect(page.locator('button[data-race-mode="gauntlet"]')).toHaveAttribute('aria-pressed', 'true');
+  // 10A mode-first order (user-approved): on a phone Start follows the track and rules rows, one scroll away.
+  await page.locator('#start-button').scrollIntoViewIfNeeded();
   await expect(page.locator('#start-button')).toBeInViewport();
+  await expect(page.locator('#start-button')).toBeEnabled();
   await page.screenshot({ path: 'test-results/race-mode-mobile-menu.png' });
   expect(errors).toEqual([]);
 });
@@ -230,7 +233,7 @@ test('402x714 phone intro fades at its scroll edge and its last row scrolls clea
   const fade = await intro.evaluate(el => { const cs = getComputedStyle(el); return cs.getPropertyValue('mask-image') || cs.getPropertyValue('-webkit-mask-image'); });
   expect(fade).toContain('linear-gradient');
   await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
-  const gap = await intro.evaluate(el => el.getBoundingClientRect().bottom - el.querySelector('#race-mode-picker').getBoundingClientRect().bottom);
+  const gap = await intro.evaluate(el => el.getBoundingClientRect().bottom - el.querySelector('#race-rules-row').getBoundingClientRect().bottom); // the setup's last row since the 10A mode-first order
   expect(gap).toBeGreaterThanOrEqual(24);
 });
 

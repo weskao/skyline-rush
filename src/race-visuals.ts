@@ -40,7 +40,7 @@ export function createRaceVisuals({ scene, sky, renderer }: Targets) {
     top: Color; horizon: Color; cloudTint: Color; cloudOpacity: number; warmth: number; aurora: number;
   } | null = null;
   const captureAtmosphere = () => ({ background: scene.background.clone(), fog: scene.fog.color.clone(),
-    density: scene.fog.density, exposure: renderer.toneMappingExposure });
+    density: fogBase ?? scene.fog.density, exposure: renderer.toneMappingExposure }); // the clear haze: a live blizzard is re-applied on top
   function setAtmosphere(style: Atmosphere): void {
     scene.background.set(style.background); scene.fog.color.set(style.fog);
     scene.fog.density = style.density; renderer.toneMappingExposure = style.exposure;

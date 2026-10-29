@@ -73,7 +73,7 @@ test('ENV-05 cars without an altitude field are on the ground', async () => {
 test('ENV-05 the renderer draws hazards exactly where the simulation resolves them', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
   const render = readFileSync(new URL('../src/hazard-render.ts', import.meta.url), 'utf8');
-  assert.match(render, /hazardPose\(hazard, race\.elapsed\)/);
+  assert.match(render, /hazardPose\(hazard, race\.elapsed, pose\)/, 'the simulation pose at race time, into the reused render pose');
   assert.match(render, /if \(!active\) continue;/, 'a switched-off barrier is not drawn as solid');
   assert.doesNotMatch(world + render, /hazardX\(/);
 });
@@ -98,4 +98,17 @@ test('ENV-04 a branch marker pays the risky line once, the safe line nothing, an
   take(marker(3), centre);
   assert.equal(centre.score, 0, 'the centre line commits to neither side');
   assert.equal(risky.nearMisses, 0, 'not a near miss: no near-miss callout or combo');
+});
+
+test('ENV-05 a gust shoves a car toward the engine road edge, never snapping it inward', async () => {
+  const { nudge } = await import('../src/hazard-race.ts');
+  const { ROAD_LIMIT } = await import('../src/game.js');
+  for (const [seed, x] of [[5, 9.8], [4, -9.8]]) { // odd seeds shove +x, even seeds -x
+    const car = player(x);
+    nudge(car, 'push', entry('gust', undefined, { seed }));
+    assert.equal(car.x, Math.sign(x) * ROAD_LIMIT, `pushed outward from ${x} and stopped at the rail`);
+  }
+  const car = player(9.8);
+  nudge(car, 'push', entry('gust', undefined, { seed: 4 }));
+  assert.equal(car.x, 8.3, 'an inward gust still moves the full shove');
 });

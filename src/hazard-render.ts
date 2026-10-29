@@ -58,6 +58,7 @@ export function createHazardRenderer(scene: THREE.Scene, box: THREE.BufferGeomet
   barriers.count = gusts.count = surfaces.count = markers.count = 0;
   const pools = { block: barriers, push: gusts, slow: surfaces, marker: markers };
   const used = { block: 0, push: 0, slow: 0, marker: 0 };
+  const pose = { x: 0, altitude: 0, active: true }; // rewritten per hazard by hazardPose: no object per hazard per frame
   return {
     setTrack(trackId: string) {
       (barriers.material as THREE.MeshBasicMaterial).color.set(trackId === 'cosmic' || trackId === 'spiral' ? '#ed87fa' : trackId === 'aurora' || trackId === 'alpine' ? '#ffcf81' : '#ff946f');
@@ -71,7 +72,7 @@ export function createHazardRenderer(scene: THREE.Scene, box: THREE.BufferGeomet
         if (hazard.distance > distance + AHEAD) break;
         const pool = poolOf(hazard);
         if (!pool || used[pool] >= HAZARD_POOLS[pool]) continue; // other triggers (checkpoints) are never drawn
-        const { x, altitude, active } = hazardPose(hazard, race.elapsed); if (!active) continue; // drawn exactly when solid
+        const { x, altitude, active } = hazardPose(hazard, race.elapsed, pose); if (!active) continue; // drawn exactly when solid
         const h = hazard.height ?? 2.5, w = hazard.halfWidth ? hazard.halfWidth * 2 : 3.1, l = hazard.halfLength ? hazard.halfLength * 2 : 1.3;
         if (pool === 'block') { const xyz = place(trackId, hazard.distance, x, altitude + h / 2, distance, center); put(barriers, used.block++, xyz[0], xyz[1], xyz[2], w, h, l); }
         else if (pool === 'slow') { const xyz = place(trackId, hazard.distance, x, altitude + 0.03, distance, center); put(surfaces, used.slow++, xyz[0], xyz[1], xyz[2], w, 0.06, l); }

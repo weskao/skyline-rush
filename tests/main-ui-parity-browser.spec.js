@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/main-ui-contract.json', import.meta.url), 'utf8'));
 
-// Strict main bd71ac8 baseline plus the intentional cda325e camera layout, 034f0de phone intro scroll-edge, mid-race VFX row, What's New video clip and gradient bar, phone AIRFLOW telemetry strip and Photo Studio responsive panel corrections. Shared result wrapping and feature-specific additions are recorded in the fixture.
+// Strict main bd71ac8 baseline plus the intentional cda325e camera layout, 034f0de phone intro scroll-edge, mid-race VFX row, What's New video clip and gradient bar, phone AIRFLOW telemetry strip and Photo Studio responsive panel corrections, and the user-approved 10A mode-first order (mode → track → rules row → Start). Shared result wrapping and feature-specific additions are recorded in the fixture.
 // Keep all element and stylesheet checks; physical-device approval is a separate gate.
 test('Vue migration preserves the recorded element order, roles and CSS hooks', async ({ page }) => {
   await page.goto('/');

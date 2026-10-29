@@ -904,7 +904,7 @@ export function createWorld(canvas) {
       } else { finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance)); finish.rotation.set(0,0,0); }
       finish.visible = trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
-        framedRoad(trackId) ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin), worldFrame: trackId === CIRCUIT_ID ? effectFrame : undefined } : visual);
+        framedRoad(trackId) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin), worldFrame: trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, trackId === CIRCUIT_ID ? -trackPoint(trackId,distance).z : distance, visual, reducedMotion);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;

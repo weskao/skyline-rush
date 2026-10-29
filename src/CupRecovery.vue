@@ -19,6 +19,8 @@ import { t } from './i18n.ts';
 @media (min-width: 1001px) and (min-height: 900px) {
   /* Expanded Cup settings use the intro slogan's space within the fixed height budget. */
   :global(.intro:has(#cup-rules[open]:not([hidden]) .cup-recovery) .intro-wordmark),
-  :global(.intro:has(#cup-rules[open]:not([hidden]) .cup-recovery) h1) { display: none; }
+  :global(.intro:has(#cup-rules[open]:not([hidden]) .cup-recovery) h1),
+  /* 10A's rules row also lives in the intro, so the key hints (text only) step aside too. */
+  :global(.intro:has(#cup-rules[open]:not([hidden]) .cup-recovery) .intro-controls) { display: none; }
 }
 </style>

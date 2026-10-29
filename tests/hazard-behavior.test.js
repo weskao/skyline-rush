@@ -65,3 +65,14 @@ test('ENV-04 corrupt timestamps fail safe to the start of the cycle', () => {
   const p = place('gate', { kind: 'sweep', amplitude: 1.8, period: 4, phase: 0 });
   for (const t of [NaN, Infinity, -Infinity]) assert.deepEqual(hazardFrame(p, t), hazardFrame(p, 0));
 });
+
+test('ENV-06 hazardFrameInto writes the same frame in place, for every movement kind', async () => {
+  const { hazardFrameInto } = await import('../src/hazard-behavior.ts');
+  const out = { active: false, lateralOffset: 9, altitude: 9, angle: 9 };
+  for (const p of [place('cone'), place('gate', { kind: 'sweep', amplitude: 1.8, period: 4, phase: 0 }),
+    place('energy-barrier', { kind: 'pulse', period: 4, phase: 0 }), place('ring', { kind: 'rotate', period: 4, phase: 0 }, { altitude: 5 }),
+    place('debris', { kind: 'fall', period: 5, phase: 0 }, { altitude: 12 })]) for (const t of [0, 0.5, 1, 2.5, 3, NaN]) {
+    assert.equal(hazardFrameInto(p, t, out), out, 'no new frame object');
+    assert.deepEqual({ ...out }, hazardFrame(p, t), `${p.type} at ${t}`);
+  }
+});
