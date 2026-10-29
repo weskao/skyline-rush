@@ -164,12 +164,15 @@ const drive = (trackId, mode, steps) => {
 };
 
 test('9A: every mode replays bit-for-bit from the same track, rules and input sequence', () => {
-  for (const trackId of Object.keys(RACE_TRACKS)) for (const mode of MODES)
+  for (const trackId of Object.keys(RACE_TRACKS)) for (const mode of MODES) {
+    if (mode === 'endless' && trackId !== 'coast') continue; // Coast only: see the Endless contract below
     assert.equal(snapshot(drive(trackId, mode, 600)), snapshot(drive(trackId, mode, 600)), `${trackId} ${mode}`);
+  }
 });
 
 test('9A: every finishing mode settles a finite result at the end of all ten courses; Free Drive stops at the road end', () => {
   for (const trackId of Object.keys(RACE_TRACKS)) for (const mode of MODES) {
+    if (mode === 'endless') continue; // open road: it has no road end to finish at (contract below)
     const race = drive(trackId, mode, 240);
     race.rivals.forEach(rival => { rival.distance = 100; });
     Object.assign(race.player, { distance: race.length - 1, speed: 80 });
@@ -182,4 +185,20 @@ test('9A: every finishing mode settles a finite result at the end of all ten cou
       assert.ok(Number.isFinite(race.result.time) && race.result.time > 0, `${trackId} ${mode} time`);
     }
   }
+});
+
+test('9A: Endless runs on Coast only, rolls past every authored finish and ends on its own collision rule', () => {
+  for (const trackId of Object.keys(RACE_TRACKS)) if (trackId !== 'coast')
+    assert.throws(() => createRace(trackId, { mode: 'endless' }), /Coast only/, trackId);
+  const race = drive('coast', 'endless', 240);
+  Object.assign(race.player, { distance: RACE_TRACKS.coast.length - 1, speed: 80, collisions: 0 });
+  race.player.effects.ghost = 10; // drive through traffic so only the road end is being tested
+  for (let i = 0; i < 120; i++) stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.phase, 'racing');
+  assert.ok(race.player.distance > RACE_TRACKS.coast.length, 'no finish line at the authored road end');
+  race.player.effects.ghost = 0;
+  Object.assign(race.player, { collisions: 4, cooldown: 0, x: 10.1, speed: 80, steering: 1 });
+  stepRace(race, { throttle: true, steer: 1 }, .1);
+  assert.deepEqual([race.phase, race.result.endReason, race.result.collisions], ['finished', 'collisions', 5]);
+  assert.ok(Number.isFinite(race.result.distance) && race.result.distance > RACE_TRACKS.coast.length);
 });
