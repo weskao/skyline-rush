@@ -82,7 +82,7 @@ for (const [name, viewport, hasTouch] of [
     scene.updateMatrixWorld(true);
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(player.getWorldQuaternion(new THREE.Quaternion())).normalize();
     const surfaces = [];
-    scene.traverse(o => { if (o.isMesh && !o.isInstancedMesh && o.visible && !o.isSprite) surfaces.push(o); });
+    scene.traverseVisible(o => { if (o.isMesh && !o.isInstancedMesh && !o.isSprite) surfaces.push(o); }); // only what is drawn: a mesh inside a hidden group (another track) keeps visible=true and raycasts anyway
     const own = new Set(); player.traverse(o => own.add(o));
     const ray = new THREE.Raycaster(), point = new THREE.Vector3();
     return { airborne, gaps: player.userData.wheels.map(wheel => {
