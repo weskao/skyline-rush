@@ -97,7 +97,10 @@ export function createTunnelKit(sceneryKit) {
       if(to<=from)continue;
       const phase=filtered.indexOf(section);
       const variant=id==='alpine'?['stone','concrete','rock'][phase%3]:id;
-      for(let d=from+12,i=0;d<to;d+=24,i++){
+      // Use the section's absolute 24 m rhythm. Re-starting at each
+      // streamed 120 m chunk created discontinuities at chunk boundaries.
+      for(let d=section.from+12;d<section.to;d+=24){
+        if(d<start||d>=end)continue;
         const piece=segment(id,variant,Math.floor(d/24));
         sceneryKit.place(piece,id,d,0,0);
         root.add(piece);

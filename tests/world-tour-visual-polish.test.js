@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { RACE_TRACKS } from '../src/game.js';
-import { createWorldTourScene,WORLD_THEMES } from '../src/world-tour-scene.js';
+import { createWorldTourScene,WORLD_THEMES,detailPlan } from '../src/world-tour-scene.js';
 import { createSceneryKit,SCENERY_KINDS } from '../src/world-tour-scenery.js';
+import { trackPoint } from '../src/track-paths.ts';
 
 const ids=['taipei','tokyo','alpine','coastal','cosmic'];
 test('five worlds show no central emissive asphalt or shared placeholder scenery',()=>{
@@ -65,4 +66,87 @@ test('alpine cliff geometry joins exactly at 120 metre chunk edges',()=>{
     }
   }
   kit.dispose();
+});
+
+test('medium World Tour scenery streams fewer chunks than high and more than low',()=>{
+  const scene=new THREE.Scene(),renderer=createWorldTourScene(scene);
+  const root=scene.getObjectByName('World Tour authored scenery');
+  const layer=root.getObjectByName('Distance-anchored continuous scenery');
+  try {
+    for(const id of ids){
+      const sections=RACE_TRACKS[id].sections;
+      const count=quality=>{
+        renderer.update(id,1575,quality,sections,1,true);
+        return layer.children.filter(node=>node.name.startsWith('world-tour-'+id+'-chunk-')).length;
+      };
+      const high=count('high'),medium=count('medium'),low=count('low');
+      assert.ok(low<medium&&medium<high,
+        id+' expected low < medium < high streaming budgets, got '+[low,medium,high].join('/'));
+    }
+  } finally {renderer.dispose();}
+});
+
+test('World Tour asphalt uses restrained destination-specific PBR under every quality tier',()=>{
+  const expected={
+    taipei: { roughness:.93,metalness:.02 },
+    tokyo: { roughness:.86,metalness:.045 },
+    alpine: { roughness:.97,metalness:.01 },
+    coastal: { roughness:.90,metalness:.018 },
+    cosmic: { roughness:.88,metalness:.055 },
+  };
+  const scene=new THREE.Scene(),visual=createWorldTourScene(scene);
+  const road=scene.getObjectByName('World Tour authored scenery').children
+    .find(node=>node.isMesh&&node.geometry?.index);
+  assert.ok(road);
+  try {
+    for(const [id,material] of Object.entries(expected)){
+      for(const quality of ['low','medium','high']){
+        visual.update(id,1500,quality,RACE_TRACKS[id].sections,1,true);
+        assert.equal(road.material.roughness,material.roughness,`${id}/${quality} roughness`);
+        assert.equal(road.material.metalness,material.metalness,`${id}/${quality} metalness`);
+        assert.ok(road.material.roughness>=.85&&road.material.metalness<=.06,
+          id+' preserves readable non-mirror asphalt');
+      }
+    }
+    assert.ok(expected.tokyo.roughness<expected.alpine.roughness,
+      'Tokyo rain-damp satin must be subtler than a mirror while Alpine stays matte');
+  } finally { visual.dispose(); }
+});
+
+test('Coastal water plane stays on a fixed sea level when the graded road moves',()=>{
+  const scene=new THREE.Scene(),visual=createWorldTourScene(scene);
+  const root=scene.getObjectByName('World Tour authored scenery');
+  const water=root.children.find(child=>child.isMesh&&child.geometry.type==='PlaneGeometry');
+  assert.ok(water,'authored coastal sea mesh');
+  try {
+    for(const quality of ['low','medium','high']){
+      for(const distance of [0,600,1300,2400,4700]){
+        visual.update('coastal',distance,quality,RACE_TRACKS.coastal.sections,2,true);
+        scene.updateMatrixWorld(true);
+        assert.equal(water.visible,true);
+        // The camera-rebased scene follows the vehicle; a fixed world sea
+        // must change camera-relative height by the *negative* road climb.
+        const relativeY=water.getWorldPosition(new THREE.Vector3()).y;
+        const roadAltitude=trackPoint('coastal',distance).y;
+        assert.ok(Math.abs(relativeY+roadAltitude+33)<.002,
+          `coastal/${quality}@${distance}: sea moves with road (relativeY=${relativeY})`);
+      }
+    }
+    visual.update('tokyo',900,'high',RACE_TRACKS.tokyo.sections,2,true);
+    assert.equal(water.visible,false,'Tokyo must not inherit Coast water');
+  } finally {visual.dispose();}
+});
+
+test('Medium World Tour detail has its own draw-call budget without removing road obstacles',()=>{
+  for(const id of ids)for(const chunk of [3,8,13]){
+    const high=detailPlan(id,chunk),medium=detailPlan(id,chunk,'medium'),low=detailPlan(id,chunk,true);
+    const keys=items=>new Set(items.map(item=>item.distance+'|'+item.side+'|'+item.kind));
+    const full=keys(high),mid=keys(medium),small=keys(low);
+    assert.ok(low.length<medium.length&&medium.length<high.length,
+      id+' chunk '+chunk+' must stream low < medium < high roadside models');
+    assert.ok([...small].every(k=>mid.has(k)),id+' low-detail obstacles must remain in Medium');
+    assert.ok([...mid].every(k=>full.has(k)),id+' Medium must be a subset of the full authored scenery');
+    assert.ok(medium.every(item=>item.slot<3||low.some(i=>i.distance===item.distance&&i.side===item.side)),
+      id+' never removes any collision-important prop kept by Low');
+  }
 });

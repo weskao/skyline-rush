@@ -328,8 +328,7 @@ export function createWorld(canvas) {
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene, roadCenter), classicScenery = createClassicTrackScenery(scene, roadCenter);
-  // Only inspect World Tour geometry when a showroom angle changes. Existing
-  // landmark-only sightline checks don't detect scenery covering the car itself.
+  // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
   const showcaseProbe = new THREE.PerspectiveCamera(50,1,.1,3000);
@@ -344,10 +343,9 @@ export function createWorld(canvas) {
   const sightDirection = new THREE.Vector3();
   const projectedSight = new THREE.Vector3();
   let clearanceKey = '', clearancePlan = [0,0,0];
-  // Orbit is fitted once for its whole circle: eight eye/look positions swung around the car.
+  // Orbit reuses eight fitted poses.
   const orbitTurns = [0,1,2,3,4,5,6,7].map(i=>i*Math.PI/4), spin = (v,a) => v.clone().sub(player.position).applyAxisAngle(camera.up,a).add(player.position);
-  // Frame the entire vehicle, including wheels and aero parts; the five
-  // sightline points alone cannot detect a cropped bumper or wheel.
+  // Frame the full vehicle silhouette, including wheels.
   const carBox = new THREE.Box3();
   const carCorner = new THREE.Vector3();
   let framingKey = '', framingBack = 0, framingLookY = 0; const framingAxis = new THREE.Vector3();
@@ -534,9 +532,8 @@ export function createWorld(canvas) {
   const lookTarget = new THREE.Vector3();
   const smoothLook = new THREE.Vector3(0, 2, -25);
   let cameraMode = 0;
-  let initialized = false;
-  let lastRace = null;
-  let trackId;
+  let initialized = false, lastRace = null, trackId;
+  let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
   let carBank = 0;
   let photoView = null, photoDefaults = null, photoCapture = null;
 
@@ -703,8 +700,7 @@ export function createWorld(canvas) {
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : framedRoad(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
-      // A readable driving corridor takes precedence over cinematic glare.
-      // Dimming in the mountain bore is smoothed over the 38 m entrance.
+      // Smooth mountain bore lighting over 38 m for road readability.
       const tour=TOUR_IDS.has(trackId);
       const bore=tour&&trackId==='alpine'?race.sections.find(s=>
         (s.type==='tunnel'||s.type==='boost-tunnel')&&distance>=s.from&&distance<=s.to):null;
@@ -755,10 +751,15 @@ export function createWorld(canvas) {
         for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls]) m.visible = true;
         towers.forEach(t => { t.visible = true; });
       }
-      if (trackId !== 'spiral' && !framedRoad(trackId)) for (let i = 0; i <= segments; i++) {
-        const d = Math.floor(distance / 12) * 12 + (i - 5) * 12;
-        const x = roadCenter(d) - center;
-        const z = -(d - distance);
+      const classicRoad=trackId!=='spiral'&&!framedRoad(trackId),tile=Math.floor(distance/12)*12;
+      const refreshClassicRoad=classicRoad&&(tile!==classicTile||trackId!==classicTrack||race.sections!==classicSections||visual.quality!==classicQuality||touch!==classicTouch);
+      if(refreshClassicRoad){classicTile=tile;classicTrack=trackId;classicSections=race.sections;classicQuality=visual.quality;classicTouch=touch;}
+      // Cache invalidates on tile, track, section, quality or input changes; only origin moves per frame.
+      if(classicRoad)for(const mesh of [road,laneLines,curbs,edgeLines,railLights,tunnelRoofs,tunnelWalls,shortcutDeck,surfaceMarks])mesh.position.set(-center,0,distance);
+      if (refreshClassicRoad) for (let i = 0; i <= segments; i++) {
+        const d = tile + (i - 5) * 12;
+        const x = roadCenter(d);
+        const z = -d;
         roadVertices.set([x - 12, 0, z, x + 12, 0, z], i * 6);
         if (i === segments) continue;
         const section = race.sections.find(section => d + 6 >= section.from && d + 6 < section.to);
@@ -785,11 +786,11 @@ export function createWorld(canvas) {
           put(railLights, i * 2 + side, x + sx * 12.1, 0.68, z - 6, 0.045, 0.04, 12.15, angle);
         }
       }
-      if (trackId !== 'spiral' && !framedRoad(trackId)) roadGeometry.attributes.position.needsUpdate = true;
-      if (trackId === 'canyon') roadGeometry.index.needsUpdate = true;
-      if (tunnelRoofs.visible) tunnelRoofs.instanceMatrix.needsUpdate = tunnelWalls.instanceMatrix.needsUpdate = true;
-      if (surfaceMarks.visible) surfaceMarks.instanceMatrix.needsUpdate = true;
-      shortcutDeck.instanceMatrix.needsUpdate = true;
+      if (refreshClassicRoad) roadGeometry.attributes.position.needsUpdate = true;
+      if (refreshClassicRoad && trackId === 'canyon') roadGeometry.index.needsUpdate = true;
+      if (refreshClassicRoad && tunnelRoofs.visible) tunnelRoofs.instanceMatrix.needsUpdate = tunnelWalls.instanceMatrix.needsUpdate = true;
+      if (refreshClassicRoad && surfaceMarks.visible) surfaceMarks.instanceMatrix.needsUpdate = true;
+      if (refreshClassicRoad) shortcutDeck.instanceMatrix.needsUpdate = true;
       const pylons = race.sections.filter(section => section.type === 'shortcut').flatMap(shortcutPylons);
       for (let i = 0; i < shortcutPylonMeshes.count; i++) {
         const pylon = pylons[i], relative = pylon?.distance - distance;
@@ -813,8 +814,7 @@ export function createWorld(canvas) {
           group.position.set(roadCenter(section.from - 65) - center - 17, 0, -relative);
           group.quaternion.identity();
         }
-        // Always assign a valid material: missing boost-tunnel was a fatal
-        // WebGLRenderer error as the sign entered view halfway through a race.
+        // Every section sign needs a valid material, including boost tunnels.
         panel.material = signs[sectionSignKey(section.type)];
       });
       if (cliffs.visible) {
@@ -826,7 +826,7 @@ export function createWorld(canvas) {
         }
         cliffs.instanceMatrix.needsUpdate = true;
       }
-      if (trackId !== 'spiral' && !framedRoad(trackId)) [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
+      if (refreshClassicRoad) [laneLines, curbs, edgeLines, railLights].forEach(mesh => { mesh.instanceMatrix.needsUpdate = true; });
       towers.forEach((tower, i) => {
         const d = Math.floor(distance / 1100) * 1100 + (i + 1) * 1100 - 500;
         tower.position.set(roadCenter(d) - center, 0, -(d - distance));
