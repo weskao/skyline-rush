@@ -1,0 +1,58 @@
+compdef:153: _comps: assignment to invalid subscript range
+✔ low-gravity sectors are opt-in: without themes every track keeps its own sections (30.441666ms)
+✖ Cosmic themes add two low-gravity sectors on open road, signed in both languages (1.169667ms)
+✖ a gliding car falls slower inside a low-gravity sector and normally outside it, at any frame rate (0.329333ms)
+✖ each sector is threaded by a rising sequence of aerial gates that pay the risk-hoop score once (0.287208ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 277.290875
+
+✖ failing tests:
+
+test at tests/cosmic-low-gravity.test.js:22:1
+✖ Cosmic themes add two low-gravity sectors on open road, signed in both languages (1.169667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 2
+  
+      at TestContext.<anonymous> (file:///Users/wes_flutter/Documents/Workspace/skyline-rush/.claude/worktrees/cosmic-29/tests/cosmic-low-gravity.test.js:24:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/cosmic-low-gravity.test.js:34:1
+✖ a gliding car falls slower inside a low-gravity sector and normally outside it, at any frame rate (0.329333ms)
+  TypeError: Cannot read properties of undefined (reading 'from')
+      at TestContext.<anonymous> (file:///Users/wes_flutter/Documents/Workspace/skyline-rush/.claude/worktrees/cosmic-29/tests/cosmic-low-gravity.test.js:43:101)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+
+test at tests/cosmic-low-gravity.test.js:51:1
+✖ each sector is threaded by a rising sequence of aerial gates that pay the risk-hoop score once (0.287208ms)
+  TypeError: Cannot read properties of undefined (reading 'distance')
+      at TestContext.<anonymous> (file:///Users/wes_flutter/Documents/Workspace/skyline-rush/.claude/worktrees/cosmic-29/tests/cosmic-low-gravity.test.js:61:47)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)

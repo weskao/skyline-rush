@@ -1,5 +1,5 @@
 // 11B themed hazard data for the World Tour roads (Taipei, Tokyo, Alpine, Coastal, Cosmic).
-import { place, closure, sweep, pulse, fall } from './themed-placement.ts';
+import { place, closure, sweep, pulse, fall, hoop } from './themed-placement.ts';
 
 export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown[]>> = {
   // Taipei Heritage: festival barricades and cone-lined boulevard closures, low enough to keep
@@ -57,5 +57,18 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
     place('cosmic', 'cosmic-barrier-3', 'energy-barrier', 4700, 4.6, sweep(3, 1)),
     place('cosmic', 'cosmic-fragment-4', 'debris', 5900, -7.5),
     place('cosmic', 'cosmic-barrier-4', 'energy-barrier', 7100, -4.6, sweep(4.5, 4)),
+    // Aerial gate sequences: three spinning hoops climbing through each low-gravity sector.
+    place('cosmic', 'cosmic-gate-1', 'ring', 3800, -2.5, hoop(5, 5)),
+    place('cosmic', 'cosmic-gate-2', 'ring', 3920, 2.5, hoop(7, 5, Math.PI)),
+    place('cosmic', 'cosmic-gate-3', 'ring', 4040, -2.5, hoop(9, 5)),
+    place('cosmic', 'cosmic-gate-4', 'ring', 7350, 2.5, hoop(5, 5)),
+    place('cosmic', 'cosmic-gate-5', 'ring', 7470, -2.5, hoop(7, 5, Math.PI)),
+    place('cosmic', 'cosmic-gate-6', 'ring', 7590, 2.5, hoop(9, 5)),
   ],
+};
+
+// Themed road sections a race adds to the track's own when themes are on: Cosmic's low-gravity sectors
+// sit on open road, clear of the solar winds, the shortcut and the hyperdrive tunnel.
+export const WORLD_TOUR_THEMED_SECTIONS: Readonly<Record<string, readonly { from: number; to: number; type: string }[]>> = {
+  cosmic: [{ from: 3700, to: 4150, type: 'low-gravity' }, { from: 7250, to: 7700, type: 'low-gravity' }],
 };

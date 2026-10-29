@@ -17,8 +17,8 @@ const THEMES = {
   alpine: { types: ['debris', 'cone'], closure: true, maxHeight: 1.4, moving: 'fall' },
   // Lighthouse-side bridge works, sea-wall repairs and wave-spray gusts on the open stretches.
   coastal: { types: ['barrier', 'cone', 'gust'], closure: true, maxHeight: 8 },
-  // Floating asteroid fragments and sweeping energy barriers.
-  cosmic: { types: ['debris', 'energy-barrier'], closure: false, maxHeight: 3, moving: 'sweep' },
+  // Floating asteroid fragments, sweeping energy barriers and aerial gate hoops (collected, never solid).
+  cosmic: { types: ['debris', 'energy-barrier', 'ring'], closure: false, maxHeight: 3, moving: 'sweep' },
 };
 
 for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its own themed hazards`, () => {
@@ -28,8 +28,8 @@ for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its 
   for (const type of theme.types) assert.ok(placements.some(p => p.type === type), `${trackId} shows ${type}`);
   if (theme.closure) assert.ok(placements.filter(p => p.type === 'cone').length >= 5, `${trackId} has a cone closure`);
   if (theme.moving) assert.ok(placements.some(p => p.movementPattern.kind === theme.moving), `${trackId} has ${theme.moving} hazards`);
-  // Measured at rest: falling debris ends on the road.
-  assert.ok(placements.every(p => (p.movementPattern.kind === 'fall' ? 0 : p.altitude) + p.hitbox.height <= theme.maxHeight), `${trackId} stays low`);
+  // Measured at rest: falling debris ends on the road. Hoops hang overhead on purpose.
+  assert.ok(placements.filter(p => p.type !== 'ring').every(p => (p.movementPattern.kind === 'fall' ? 0 : p.altitude) + p.hitbox.height <= theme.maxHeight), `${trackId} stays low`);
   // A crosswind pushes the car off its line, so no hazard sits inside one (±35 m); a gust there would stack two shoves.
   const winds = RACE_TRACKS[trackId].sections.filter(s => s.type === 'crosswind');
   for (const p of placements) assert.ok(!winds.some(s => p.distance >= s.from - 35 && p.distance <= s.to + 35), `${p.id} clear of crosswind`);
