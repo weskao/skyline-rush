@@ -319,3 +319,28 @@ test('ITEM-12: reduced motion holds the item beam and magnet pulses steady inste
   const moving = pulses(false);
   assert.ok(moving.beam > 1 && moving.magnet > 1, 'the full-motion pulse still plays');
 });
+
+test('11B: a Sky Spiral hoop sits on the helix road frame and swivels ±0.6 rad on race time, held still by reduced motion', async t => {
+  const { trackLocalPosition, trackFrame } = await import('../src/track-paths.ts');
+  const { scene, race, update } = raceScene(t);
+  const spiral = createRace('spiral', { mode: 'custom', rivals: 0, traffic: 'off', themes: true });
+  const hoop = spiral.rings.find(r => r.spin && r.distance > 1100 && r.distance < 2200);
+  race.rings = [hoop]; race.player.distance = hoop.distance - 50;
+  const options = { worldPoint: (s, x, y, o) => trackLocalPosition('spiral', s, x, y, o), worldFrame: s => trackFrame('spiral', s) };
+  const frame = trackFrame('spiral', hoop.distance), up = new Vector3(...frame.up), forward = new Vector3(...frame.forward);
+  const pose = (elapsed, reduced = false) => {
+    race.elapsed = elapsed; update(0.016, options, reduced);
+    const mesh = scene.getObjectByName('Race rings').children.find(m => m.visible);
+    const facing = new Vector3(0, 0, -1).applyQuaternion(mesh.quaternion);
+    return { mesh, swivel: Math.atan2(facing.clone().cross(forward).dot(up), facing.dot(forward)), tilt: new Vector3(0, 1, 0).applyQuaternion(mesh.quaternion).dot(up) };
+  };
+  const a = pose(0.3), expected = new Vector3(...trackLocalPosition('spiral', hoop.distance, hoop.x, hoop.altitude, race.player.distance));
+  assert.ok(a.mesh.position.distanceTo(expected) < 1e-6, `drawn ${a.mesh.position.toArray()} vs road ${expected.toArray()}`);
+  assert.ok(a.tilt > 0.999999, 'the swivel turns about the road up axis, never tipping the hoop');
+  for (const elapsed of [0.3, 1.1, 2.6]) {
+    const { swivel } = pose(elapsed);
+    assert.ok(Math.abs(Math.abs(swivel) - Math.abs(0.6 * Math.sin(hoop.spin * elapsed + hoop.spinPhase))) < 1e-6, `swivel @${elapsed}s = ${swivel}`);
+  }
+  assert.ok(Math.abs(pose(1.1).swivel - pose(2.6).swivel) > 0.05, 'it moves with race time');
+  assert.ok(Math.abs(pose(1.1, true).swivel) < 1e-9, 'reduced motion holds the hoop square to the road');
+});
