@@ -1266,6 +1266,14 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [ ] **Acceptance:** completion requires the configured number of valid
   laps; player/AI cameras, positions, world props, mini-route map, Ghost,
   checkpoints and collision physics remain continuous across every seam.
+  - Evidence (2026-10-29, `tests/circuit-seam-acceptance.test.js` with existing `tests/circuit.test.js`):
+    across all three seams of a 3-lap race (2000/4000/6000 m, 0.05 m steps) the Harbor beacon (scene
+    origin), rivals ahead/behind, chase camera position and heading, Ghost (unwrapped samples, drawn 4 m
+    ahead) and mini-route marker move by < 0.2 m per step, and the marker never freezes. Every rival
+    finishes only after exactly 1/3/5 valid laps. Already covered: player completes exactly 1/3/5 laps at
+    30/60/120 Hz, teleport/backwards/recovery/hover cannot grant laps, per-lap item identities, and
+    collisions across the seam. Tests passed on existing code; mutation RED: unwrapped route marker,
+    non-periodic scene origin, and rivals finishing a lap early each fail. Pending: full gate + exact-HEAD CI.
 
 ### 10C. Result/history isolation and safeguards (P0)
 
