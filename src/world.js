@@ -25,7 +25,7 @@ import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCamera
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
-import { hazardPose } from './hazard-race.ts';
+import { createHazardRenderer } from './hazard-render.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 
@@ -398,8 +398,8 @@ export function createWorld(canvas) {
   // Shortcut floor sits at the corridor's lower edge, so the car visibly flies the band above it.
   const shortcutDeck = instances(box, new THREE.MeshBasicMaterial({ transparent: true, opacity: .28, depthWrite: false }), segments, scene);
   const shortcutPylonMeshes = instances(box, material('#d9dcda', .4, .5), 8, scene);
-  const gauntletBarriers = instances(box, new THREE.MeshBasicMaterial({ color: '#ff946f' }), 24, scene);
-  gauntletBarriers.name = 'gauntlet-barriers'; gauntletBarriers.count = 0;
+  const hazardMeshes = createHazardRenderer(scene, box, instances, put, (id, s, x, y, origin, center) => id === 'spiral' ? skyPosition(s, x, y, origin)
+    : TOUR_IDS.has(id) ? trackLocalPosition(id, s, x, y, origin) : [roadCenter(s) - center + x, y, origin - s]);
   // Neon uprights + beam for each timed checkpoint; pooled like the gauntlet barriers.
   const checkpointGates = instances(box, new THREE.MeshBasicMaterial({ color: '#54f3dd' }), 48, scene);
   checkpointGates.name = 'checkpoint-gates'; checkpointGates.count = 0;
@@ -853,7 +853,7 @@ export function createWorld(canvas) {
       if (trackId !== race.trackId) {
         trackId = race.trackId;
         const palette = TRACK_PALETTES[trackId];
-        gauntletBarriers.material.color.set(trackId === 'cosmic' || trackId === 'spiral' ? '#ed87fa' : trackId === 'aurora' || trackId === 'alpine' ? '#ffcf81' : '#ff946f');
+        hazardMeshes.setTrack(trackId);
         scene.background.set(palette.fog); scene.fog.color.set(palette.fog);
         sky.material.uniforms.top.value.set(palette.top); sky.material.uniforms.horizon.value.set(palette.horizon);
         sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' ? 1 : 0;
@@ -1046,20 +1046,7 @@ export function createWorld(canvas) {
         buildings.instanceMatrix.needsUpdate = windows.instanceMatrix.needsUpdate = true;
       });
 
-      // Bounded InstancedMesh: one distinct marker per reachable barrier,
-      // no scene allocations or three.js collision checks on the hot path.
-      let visibleHazards = 0;
-      if (!preview && race.hazards.length) for (const hazard of race.hazards) {
-        if (hazard.distance < distance - 16 || hazard.distance > distance + 550) continue;
-        if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
-        const { x, altitude, active } = hazardPose(hazard, race.elapsed); if (!active) continue; // drawn exactly when solid
-        const h = hazard.height ?? 2.5, y = altitude + h / 2, xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, y, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, y, distance)
-            : [roadCenter(hazard.distance) - center + x, y, distance - hazard.distance];
-        put(gauntletBarriers, visibleHazards++, ...xyz, hazard.halfWidth ? hazard.halfWidth * 2 : 3.1, h, hazard.halfLength ? hazard.halfLength * 2 : 1.3);
-      }
-      gauntletBarriers.count = visibleHazards;
-      if (visibleHazards) gauntletBarriers.instanceMatrix.needsUpdate = true;
+      hazardMeshes.update(race, trackId, distance, center, preview);
 
       let visibleGateParts = 0;
       if (!preview && race.checkpoint) for (const gate of race.checkpoint.gates) {

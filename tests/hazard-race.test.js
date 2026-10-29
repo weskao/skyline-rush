@@ -72,7 +72,8 @@ test('ENV-05 cars without an altitude field are on the ground', async () => {
 
 test('ENV-05 the renderer draws hazards exactly where the simulation resolves them', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  assert.match(world, /hazardPose\(hazard, race\.elapsed\)/);
-  assert.match(world, /if \(!active\) continue;/, 'a switched-off barrier is not drawn as solid');
-  assert.doesNotMatch(world, /hazardX\(/);
+  const render = readFileSync(new URL('../src/hazard-render.ts', import.meta.url), 'utf8');
+  assert.match(render, /hazardPose\(hazard, race\.elapsed\)/);
+  assert.match(render, /if \(!active\) continue;/, 'a switched-off barrier is not drawn as solid');
+  assert.doesNotMatch(world + render, /hazardX\(/);
 });
