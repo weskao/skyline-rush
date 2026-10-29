@@ -5,7 +5,8 @@ import { settleRace } from '../src/race-results.ts';
 import { loadSessionProgress } from '../src/session-progress.ts';
 import { createGhostStore } from '../src/ghost-store.ts';
 import { createSprintSeries } from '../src/sprint-series.ts';
-import { RACE_TRACKS } from '../src/game.js';
+import { RACE_TRACKS, createRace, stepRace } from '../src/game.js';
+import { CIRCUIT_ID } from '../src/circuit-track.ts';
 import { loadHistory } from '../src/history-classic.ts';
 import { MODE_NAMES } from '../src/cloud-mode-bests.ts';
 
@@ -119,6 +120,14 @@ test('a repeated stunt settle never counts the same heat twice', () => {
   assert.deepEqual([stunt.heats, stunt.elapsed, stunt.score], [1, 20, 300]);
 });
 
+function drivenCircuitLap() {
+  const race = createRace(CIRCUIT_ID, { mode: 'circuit', laps: 1 });
+  race.phase = 'racing'; race.pickups = []; race.rings = []; race.player.x = 2.5;
+  while (race.phase === 'racing' && race.elapsed < 120) stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.phase, 'finished');
+  return race;
+}
+
 test('no non-Classic finish touches Classic unlocks, stars, medals, bests, history or the Daily board', () => {
   const classicState = progress => {
     const { unlocked, modeHistory, ...rest } = progress, { modeHistory: stored, ...saved } = loadSessionProgress([]);
@@ -131,7 +140,8 @@ test('no non-Classic finish touches Classic unlocks, stars, medals, bests, histo
     const before = classicState(progress);
     // Endless settles a distance on its own path (fifth collision, no stars); it must still leave Classic alone.
     const result = mode === 'endless' ? { distance: 12000, stars: 0, collisions: 5, endReason: 'collisions' } : {};
-    settle(classic({ position: 1, time: 50, stars: 3, nearMisses: 40, ...result }, { mode, config: { mode } }), { progress });
+    // Circuit records validate real lap times, so it settles a lap actually driven on its own route.
+    settle(mode === 'circuit' ? drivenCircuitLap() : classic({ position: 1, time: 50, stars: 3, nearMisses: 40, ...result }, { mode, config: { mode } }), { progress });
     assert.equal(classicState(progress), before, `${mode} finish left Classic progress unchanged`);
     assert.equal(progress.modeHistory.length, 1, `${mode} finish is recorded in its own mode history`);
   }
