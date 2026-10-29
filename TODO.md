@@ -58,6 +58,7 @@ Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates c
 
 ## Current main integration and verification (2026-10-29)
 
+- [x] Integrate `origin/main@bc5299b` (51 upstream commits): no conflicts; `src/world.js` landed one line over its ratchet ceiling (both sides removed the same blank line, main added classic-road cache state), so `4d9f5f7` folds the `trackId`/`carBank` declarations instead of raising the ceiling. Complete make verify on `4d9f5f7` exits 0: strict TS/Vue/JS, Node 844 / Browser 526 / World Tour 303; 3 emulator skips and 2 desktop touch skips. Log: `artifacts/main-bc5299b-make-verify.log`. Later `0a08d02` merge is TODO-only; CI pending.
 - [x] User-integrated `main@ca1c777` is an ancestor of `9b5202f` on `feature/cup-session-recovery`; tracked tree was clean and no unresolved merge conflicts were found.
 - [x] Exact published code `9b5202f` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818546745). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
 - [x] Complete make verify on merged code `9b5202f` exits 0: strict TS/Vue/JS, Node 822 / Browser 502 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/cup-recovery/make-verify-main-ca1c777-user-merge.log`.
