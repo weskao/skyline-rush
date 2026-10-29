@@ -1,10 +1,5 @@
 // 11B themed hazard data for the World Tour roads (Taipei, Tokyo, Alpine, Coastal, Cosmic).
-import { place, closure } from './themed-placement.ts';
-
-type Placement = ReturnType<typeof place>;
-// Motion comes from ENV-04's hazardFrame: a pulse is solid for half its cycle, a sweep slides 1.8 m from a base between two lanes, so it closes each of them in turn.
-const timed = (p: Placement, period: number, phase: number) => ({ ...p, movementPattern: { kind: 'pulse', period, phase } });
-const swept = (p: Placement, period: number, phase: number) => ({ ...p, movementPattern: { kind: 'sweep', amplitude: 1.8, period, phase } });
+import { place, closure, sweep, pulse, fall } from './themed-placement.ts';
 
 export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown[]>> = {
   // Taipei Heritage: festival barricades and cone-lined boulevard closures, low enough to keep
@@ -20,30 +15,34 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
   ],
   // Tokyo Afterdark: timed traffic-control gates, neon construction equipment and a lane of roadworks.
   tokyo: [
-    timed(place('tokyo', 'tokyo-signal-gate-1', 'gate', 600, -2.5), 4, 0),
+    place('tokyo', 'tokyo-signal-gate-1', 'gate', 600, -2.5, pulse(4, 0)),
     place('tokyo', 'tokyo-works-1', 'barrier', 1600, 7.5),
-    timed(place('tokyo', 'tokyo-signal-gate-2', 'gate', 2200, 2.5), 4, 1.6),
+    place('tokyo', 'tokyo-signal-gate-2', 'gate', 2200, 2.5, pulse(4, 1.6)),
     place('tokyo', 'tokyo-works-2', 'barrier', 3300, -7.5),
-    timed(place('tokyo', 'tokyo-signal-gate-3', 'gate', 3800, -2.5), 4, 3.2),
+    place('tokyo', 'tokyo-signal-gate-3', 'gate', 3800, -2.5, pulse(4, 3.2)),
     ...closure('tokyo', 'tokyo-roadworks', 4760, 7.5),
-    timed(place('tokyo', 'tokyo-signal-gate-4', 'gate', 6200, 2.5), 4, 4.7),
+    place('tokyo', 'tokyo-signal-gate-4', 'gate', 6200, 2.5, pulse(4, 4.7)),
   ],
-  // Alpine Rail Pass: snow drifts and avalanche debris on the open mountain road.
+  // Alpine Rail Pass: snow drifts and warned avalanche debris dropping onto the open mountain road.
+  // No rail crossing: a closed crossing would shut all four lanes.
   alpine: [
     place('alpine', 'alpine-avalanche-1', 'debris', 620, 2.5),
-    place('alpine', 'alpine-avalanche-2', 'debris', 2600, -2.5),
+    place('alpine', 'alpine-avalanche-2', 'debris', 2600, -2.5, fall(10, 8, 0)),
     ...closure('alpine', 'alpine-drift-east', 2850, 7.5),
     place('alpine', 'alpine-avalanche-3', 'debris', 4400, -7.5),
-    place('alpine', 'alpine-avalanche-4', 'debris', 5500, 2.5),
-    place('alpine', 'alpine-avalanche-5', 'debris', 6700, -2.5),
+    place('alpine', 'alpine-avalanche-4', 'debris', 5500, 2.5, fall(10, 8, Math.PI)),
+    place('alpine', 'alpine-avalanche-5', 'debris', 6700, -2.5, fall(10, 8, 1.5)),
     place('alpine', 'alpine-avalanche-6', 'debris', 7200, 7.5),
   ],
-  // Coastal Horizon: lighthouse-side bridge works and sea-wall repairs, shoulder line kept open.
+  // Coastal Horizon: wave-spray gusts on the open stretches (never stacked on a crosswind),
+  // lighthouse-side bridge works and sea-wall repairs, with the shoulder line kept open.
   coastal: [
     place('coastal', 'coastal-bridge-works-1', 'barrier', 560, 7.5),
+    place('coastal', 'coastal-spray-1', 'gust', 1700, 0, { seed: 1, warningLeadSeconds: 2 }),
     ...closure('coastal', 'coastal-bridge-lane', 1500, 2.5),
     place('coastal', 'coastal-bridge-works-2', 'barrier', 1850, -7.5),
     place('coastal', 'coastal-bridge-works-3', 'barrier', 3600, 2.5),
+    place('coastal', 'coastal-spray-2', 'gust', 5100, 0, { seed: 2, warningLeadSeconds: 2 }),
     ...closure('coastal', 'coastal-seawall', 4680, -7.5),
     place('coastal', 'coastal-bridge-works-4', 'barrier', 4900, -2.5),
     place('coastal', 'coastal-bridge-works-5', 'barrier', 5300, 7.5),
@@ -51,12 +50,12 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
   // Cosmic Orbit: floating asteroid fragments and sweeping energy barriers between the solar winds.
   cosmic: [
     place('cosmic', 'cosmic-fragment-1', 'debris', 700, -2.5),
-    swept(place('cosmic', 'cosmic-barrier-1', 'energy-barrier', 1100, 4.6), 3.5, 0),
+    place('cosmic', 'cosmic-barrier-1', 'energy-barrier', 1100, 4.6, sweep(3.5, 0)),
     place('cosmic', 'cosmic-fragment-2', 'debris', 2400, 7.5),
-    swept(place('cosmic', 'cosmic-barrier-2', 'energy-barrier', 2700, -4.6), 4, 2),
+    place('cosmic', 'cosmic-barrier-2', 'energy-barrier', 2700, -4.6, sweep(4, 2)),
     place('cosmic', 'cosmic-fragment-3', 'debris', 4200, 2.5),
-    swept(place('cosmic', 'cosmic-barrier-3', 'energy-barrier', 4700, 4.6), 3, 1),
+    place('cosmic', 'cosmic-barrier-3', 'energy-barrier', 4700, 4.6, sweep(3, 1)),
     place('cosmic', 'cosmic-fragment-4', 'debris', 5900, -7.5),
-    swept(place('cosmic', 'cosmic-barrier-4', 'energy-barrier', 7100, -4.6), 4.5, 4),
+    place('cosmic', 'cosmic-barrier-4', 'energy-barrier', 7100, -4.6, sweep(4.5, 4)),
   ],
 };

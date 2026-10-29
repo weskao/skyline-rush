@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LANES, RACE_TRACKS } from '../src/game.js';
-import { THEMED_TRACKS, themedPlacements } from '../src/track-themes.ts';
+import { THEMED_TRACKS, themedPlacements, themedHazards } from '../src/track-themes.ts';
+import { hazardReach } from '../src/hazard-race.ts';
 import { roadObstacles } from '../src/world-tour-scene.js';
 
 // 11B World Tour themes: each road's hazards read as its own place, and together with the
@@ -12,10 +13,10 @@ const THEMES = {
   taipei: { types: ['barrier', 'cone'], closure: true, maxHeight: 2.5 },
   // Timed traffic-control gates, neon construction equipment and a lane of roadworks.
   tokyo: { types: ['gate', 'barrier', 'cone'], closure: true, maxHeight: 3, moving: 'pulse' },
-  // Snow drifts and avalanche debris on open mountain road; rail crossings wait for ENV-05.
-  alpine: { types: ['debris', 'cone'], closure: true, maxHeight: 1.4 },
-  // Lighthouse-side bridge works and sea-wall repairs; crosswinds wait for ENV-05.
-  coastal: { types: ['barrier', 'cone'], closure: true, maxHeight: 2.5 },
+  // Snow drifts and falling avalanche debris. No rail crossing: it would close all four lanes.
+  alpine: { types: ['debris', 'cone'], closure: true, maxHeight: 1.4, moving: 'fall' },
+  // Lighthouse-side bridge works, sea-wall repairs and wave-spray gusts on the open stretches.
+  coastal: { types: ['barrier', 'cone', 'gust'], closure: true, maxHeight: 8 },
   // Floating asteroid fragments and sweeping energy barriers.
   cosmic: { types: ['debris', 'energy-barrier'], closure: false, maxHeight: 3, moving: 'sweep' },
 };
@@ -27,19 +28,22 @@ for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its 
   for (const type of theme.types) assert.ok(placements.some(p => p.type === type), `${trackId} shows ${type}`);
   if (theme.closure) assert.ok(placements.filter(p => p.type === 'cone').length >= 5, `${trackId} has a cone closure`);
   if (theme.moving) assert.ok(placements.some(p => p.movementPattern.kind === theme.moving), `${trackId} has ${theme.moving} hazards`);
-  assert.ok(placements.every(p => p.altitude + p.hitbox.height <= theme.maxHeight), `${trackId} stays low`);
-  // A crosswind pushes the car off its line, so no hazard sits inside one (±35 m).
+  // Measured at rest: falling debris ends on the road.
+  assert.ok(placements.every(p => (p.movementPattern.kind === 'fall' ? 0 : p.altitude) + p.hitbox.height <= theme.maxHeight), `${trackId} stays low`);
+  // A crosswind pushes the car off its line, so no hazard sits inside one (±35 m); a gust there would stack two shoves.
   const winds = RACE_TRACKS[trackId].sections.filter(s => s.type === 'crosswind');
   for (const p of placements) assert.ok(!winds.some(s => p.distance >= s.from - 35 && p.distance <= s.to + 35), `${p.id} clear of crosswind`);
 });
 
 for (const trackId of Object.keys(THEMES)) test(`${trackId} hazards plus roadside props keep two lanes open`, () => {
-  const placements = themedPlacements(trackId), props = roadObstacles(trackId);
+  const hazards = themedHazards(trackId), props = roadObstacles(trackId);
   for (let d = 0; d < RACE_TRACKS[trackId].length; d += 2) {
     const blocked = new Set();
-    for (const p of placements) {
-      if (Math.abs(p.distance - d) > p.hitbox.halfLength + 2.2) continue;
-      for (const lane of LANES) if (Math.abs(lane - p.lateralOffset) < p.hitbox.halfWidth + CAR_HALF_WIDTH) blocked.add(lane);
+    // Only blocking hazards close a lane (a gust pushes, it does not block); a sweep covers its whole reach.
+    for (const h of hazards) {
+      const reach = hazardReach(h);
+      if (!reach || Math.abs(h.distance - d) > h.halfLength + 2.2) continue;
+      for (const lane of LANES) if (Math.abs(lane - h.x) < reach + CAR_HALF_WIDTH) blocked.add(lane);
     }
     for (const o of props) {
       if (d < o.from - 2.2 || d > o.to + 2.2 || o.bottom > 1.2) continue;
