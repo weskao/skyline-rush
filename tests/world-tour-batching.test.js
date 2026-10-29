@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { batchStaticChunk } from '../src/world-tour-batching.ts';
 import * as batching from '../src/world-tour-batching.ts';
+import { createWorldTourScene } from '../src/world-tour-scene.js';
+import { RACE_TRACKS } from '../src/game.js';
 
 test('identical static meshes are instanced without moving any original vertex or removing detail',()=>{
  const group=new THREE.Group(),stem=new THREE.BoxGeometry(1,1,1);
@@ -84,8 +86,6 @@ test('static meshes shared across streamed chunks collapse to one draw without c
 });
 
 test('real World Tour medium chunks reuse shared GPU material batches across boundaries',()=>{
- const {createWorldTourScene}=await import('../src/world-tour-scene.js');
- const {RACE_TRACKS}=await import('../src/game.js');
  const scene=new THREE.Scene(),renderer=createWorldTourScene(scene);
  try {
    for(const id of ['tokyo','alpine','taipei','coastal','cosmic']){
