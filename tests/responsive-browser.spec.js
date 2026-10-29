@@ -141,19 +141,26 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
 }
 
 // zh-TW runs the tight viewports only: its CJK font stack widens HUD text (the place-change arrow once did), the roomy ones add no signal.
-const ZH_TW_HUD_SIZES = ['844x390', '874x339', '390x844', '320x568'];
-for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch] of [[844, 390, true], [874, 339, true],
-  [1440, 900, false], [1024, 768, true], [390, 844, true], [360, 780, true], [320, 568, true]]) {
+const ZH_TW_HUD_SIZES = ['844x390', '874x339', '390x844', '375x667', '320x568'];
+// Device insets: iPhone landscape keeps a home-indicator inset below the page, a notch or Android 15's bars a top one.
+const NOTCH = { top: 47, bottom: 34, left: 0, right: 0 };
+const ANDROID_15_BUTTONS = { top: 48, bottom: 48, left: 0, right: 0 };
+const LANDSCAPE_ISLAND = { left: 62, right: 62, top: 0, bottom: 21 };
+for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch, insets] of [[844, 390, true, { left: 47, right: 47, top: 0, bottom: 21 }],
+  [874, 339, true, LANDSCAPE_ISLAND], [1440, 900, false], [1024, 768, true], [820, 1180, true], [390, 844, true, NOTCH], [412, 892, true, ANDROID_15_BUTTONS],
+  [375, 667, true], [360, 780, true], [320, 568, true]]) {
   if (locale === 'zh-TW' && !ZH_TW_HUD_SIZES.includes(`${width}x${height}`)) continue;
   test.describe(`race HUD ${width}x${height}${locale === 'zh-TW' ? ' zh-TW' : ''}`, () => {
     test.use({ viewport: { width, height }, hasTouch, isMobile: hasTouch, locale });
 
+    // AIRFLOW on: its telemetry panel once covered the speed readout on phones (375x667 Android report).
     test('racing HUD blocks stay apart', async ({ page, context }) => {
-      // iPhone landscape keeps a home-indicator inset below the page; it lifts every bottom-anchored block.
-      if (height < 380) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, top: 0, bottom: 21 } });
+      if (insets) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets });
       await page.goto('/');
       await page.waitForTimeout(700);
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+      await page.keyboard.press('v');
+      await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
       await expect(page.locator('#race-status')).toHaveText(CATALOGS[locale === 'zh-TW' ? 'zh-TW' : 'en']['phase.racing']);
@@ -161,7 +168,7 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch] of
       // The live map only steps aside on short screens with no free HUD slot.
       await expect(page.locator('.race-route-map')).toBeVisible();
       const blocks = ['.position-stat', '.leaderboard', '.race-route-map', '.race-progress', '.mode-indicator', '.speedometer',
-        '.flight-telemetry', '.aero-tools', '#controls-button', '#pause-button',
+        '.flight-telemetry', '.aero-tools', '.airflow-hud', '.brand', '#controls-button', '#pause-button',
         // .touch-pad is left out: it is the invisible slide zone the pointer-transparent HUD sits on.
         ...['fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
       // One synchronous evaluate with the place-change arrow forced on: it widens POSITION for a moment,
@@ -172,7 +179,7 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch] of
         Object.assign(arrow, { hidden: false, textContent: '\u2193' });
         const rects = selectors.flatMap(selector => {
           const el = document.querySelector(selector);
-          if (!el || !el.checkVisibility()) return [];
+          if (!el || !el.checkVisibility({ opacityProperty: true })) return [];
           const { x, y, width, height } = el.getBoundingClientRect();
           return [[selector, { x, y, width, height }]];
         });
@@ -182,7 +189,11 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch] of
       const apart = (a, b) => a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
       const overlaps = boxes.flatMap(([name, box], i) => boxes.slice(i + 1).filter(([, other]) => !apart(box, other)).map(([other]) => `${name} × ${other}`));
       expect(overlaps).toEqual([]);
-      for (const [name, box] of boxes) expect(box.y + box.height, `${name} below the screen`).toBeLessThanOrEqual(height);
+      for (const [name, box] of boxes) {
+        expect(box.y + box.height, `${name} below the screen`).toBeLessThanOrEqual(height);
+        expect(box.x, `${name} off the left edge`).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width, `${name} off the right edge`).toBeLessThanOrEqual(width);
+      }
     });
   });
 }

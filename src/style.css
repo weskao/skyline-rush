@@ -437,6 +437,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 @media (pointer: coarse) and (min-width: 761px) and (max-height: 500px) {
   .leaderboard { position: fixed; left: 150px; top: 82px; width: clamp(96px, calc(50vw - 284px), 130px); padding: 4px 6px; }
   .racer { gap: 5px; }
+  /* POSITION ended flush on the speed readout, so a home-indicator inset (it lifts the gauges) made them overlap */
+  .time, .style-score { margin-top: 5px; }
 }
 /* Landscape Safari with its toolbar showing leaves ~340px: lift the race info and drop secondary lines so blocks stay apart. */
 @media (pointer: coarse) and (min-width: 761px) and (max-height: 380px) {
@@ -597,10 +599,14 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
   .airflow-active[data-phase="ready"] .airflow-hud { top: 108px; right: max(16px, var(--safe-right)); width: auto; }
   .airflow-active[data-phase="ready"] .aero-channels { grid-template-columns: repeat(3, 1fr); column-gap: 12px; }
 }
-/* Touch tablets lift the leaderboard to the top bar; the AIRFLOW bar sits beside it instead of on it. */
+/* Touch tablets lift the leaderboard to the top bar; the AIRFLOW bar sits under it, above the 292px live map
+   (beside it, it covered the centred progress bar on an 820px-wide iPad). */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
-  body:not([data-phase="ready"]) .aero-tools { right: max(180px, calc(140px + env(safe-area-inset-right, 0px))); }
+  body:not([data-phase="ready"]) .aero-tools { top: 204px; }
 }
+/* Phones and short landscape have no free slot for the telemetry panel mid-race: it covered the speed and race info.
+   It stays on the ready showcase; while racing the pressed AIRFLOW button and the streamlines show it is on. */
+@media (max-width: 760px), (max-height: 500px) { body:not([data-phase="ready"]) .airflow-hud { display: none; } }
 @media (max-height: 500px) {
   .aero-tools { top: 64px; right: max(16px, env(safe-area-inset-right, 0px)); }
   .airflow-hud { top: 150px; width: 160px; padding: 10px; }
@@ -732,10 +738,9 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .controls-range output { color: #a3e8fb; font-variant-numeric: tabular-nums; }
 .controls-range input { grid-column: 1 / -1; width: 100%; height: 44px; margin: 0; }
 .controls-reset { min-height: 44px; margin: 4px 6px 6px; border: 1px solid #779ca8; border-radius: 8px; background: transparent; font-size: 12px; }
-@media (max-width: 370px) {
-  .controls-button { padding: 0 4px; font-size: 8px; letter-spacing: .6px; }
-  body:not([data-phase="ready"]) .brand { display: none; }
-}
+/* Below ~400px the full-width CONTROLS label pushed PAUSE off the right edge mid-race (375px Android report). */
+@media (max-width: 400px) { .controls-button { padding: 0 4px; font-size: 8px; letter-spacing: .6px; } }
+@media (max-width: 370px) { body:not([data-phase="ready"]) .brand { display: none; } }
 
 /* Control customization inherits the existing instrument panel. */
 .keymap-field { display: grid; grid-template-columns: 1fr; }
@@ -1147,6 +1152,7 @@ body[data-phase="ready"] .telemetry { display: none; }
 .topbar,
 .aero-tools,
 .race-info,
+.race-route-map, /* fixed, so it would not follow .race-info down and the notch pushed the progress bar under it */
 .event-callout,
 body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .intro { margin-top: calc(-6px + var(--safe-top)); }
