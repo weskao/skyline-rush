@@ -1,5 +1,13 @@
 # TODO — Gameplay depth design
 
+## Current main integration and verification (2026-10-29)
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `4117dcc` on `feature/regression-gate-repair`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] All six owning caller branches pass complete post-merge make verify on their user-published code: Cup, Custom, Items, Event Lab, Endless and Circuit. Receipts identify exact SHAs in each owning TODO. This helper has no separate standalone local full-gate receipt.
+- [x] User-published helper code `4117dcc` passes all 17 required GitHub checks including quality-gate: https://github.com/weskao/skyline-rush/actions/runs/40818547878 . Later TODO-only commits need their own latest-HEAD CI before merge.
+
+Historical receipts below retain their original date and verification scope.
+
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
