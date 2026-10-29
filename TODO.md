@@ -1,5 +1,13 @@
 # TODO — Gameplay depth design
 
+## Current main integration and verification (2026-10-29)
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `87421b9` on `feature/genuine-circuit-laps`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `87421b9` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818546894). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `87421b9` exits 0: strict TS/Vue/JS, Node 841 / Browser 503 / World Tour 326; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/circuit/make-verify-main-ca1c777-user-merge.log`.
+
+Historical receipts below retain their original date and verification scope.
+
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
