@@ -8,6 +8,7 @@ export const SECTION_SIGN_LABELS = Object.freeze({
  launch: 'LAUNCH RAMP / BOOST',
  spiral: '360 HELIX / CLIMB',
  'boost-tunnel': 'HYPERDRIVE / SPEED + NITRO',
+ 'low-gravity': 'LOW GRAVITY / FLOAT',
 });
 // Unknown future sections use a real material, never undefined: an undefined
 // Three.js Mesh material throws from WebGLRenderer and stops requestAnimationFrame.

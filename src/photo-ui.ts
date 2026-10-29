@@ -25,12 +25,13 @@ export function setupPhotoUI({ getRace, getWorld, cue }: PhotoOptions): void {
     if (race.mode !== 'free' || race.phase !== 'paused' || !getWorld()) return;
     updatePhotoView();
     photoDialog.showModal();
+    document.body.classList.add('photo-studio');
     status.textContent = t('photo.status');
     cue('ui');
   });
   for (const id of ['photo-orbit', 'photo-fov', 'photo-sky']) $('#' + id).addEventListener('input', updatePhotoView);
   $('#photo-close').addEventListener('click', () => photoDialog.close());
-  photoDialog.addEventListener('close', () => { getWorld()?.setPhotoView(null); cue('ui'); });
+  photoDialog.addEventListener('close', () => { document.body.classList.remove('photo-studio'); getWorld()?.setPhotoView(null); cue('ui'); });
   $<HTMLButtonElement>('#photo-save').addEventListener('click', async ({ currentTarget }) => {
     const button = currentTarget as HTMLButtonElement; button.disabled = true;
     try {

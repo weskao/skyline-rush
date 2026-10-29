@@ -3,11 +3,12 @@
 import { validateHazardPlacement, type HazardPlacement } from './hazard-schema.ts';
 import type { GameplayType } from './object-catalog.ts';
 import { CLASSIC_THEMED_PLACEMENTS } from './track-themes-classic.ts';
-import { WORLD_TOUR_THEMED_PLACEMENTS } from './track-themes-world-tour.ts';
+import { WORLD_TOUR_THEMED_PLACEMENTS, WORLD_TOUR_THEMED_SECTIONS } from './track-themes-world-tour.ts';
 import { createHazards, type HazardTrack } from './hazards.ts';
 import { RISK_RING_RADIUS } from './ring-layout.ts';
 import type { RiskRules } from './risk-lines.ts';
 import type { LaunchRamp } from './launch-ramps.ts';
+import type { TrackSection } from './game-types.ts';
 
 // Launch ramps go to race.ramps (the one launch rule) and hoops to race.rings (risk-ring scoring), never race.hazards.
 const ROUTED: ReadonlySet<GameplayType> = new Set(['ramp', 'ring']);
@@ -41,8 +42,8 @@ export function themedHazards(trackId: string): ThemedHazard[] {
 }
 
 export interface ThemedHoop { distance: number; x: number; altitude: number; radius: number; type: 'risk'; group: 0; spin: number; spinPhase: number }
-/** A theme's ramps and hoops for a race, or null when themes are off; hoops follow the risk-lines switch. */
-export function themedExtras(trackId: string, config: { themes?: boolean }, risk: RiskRules): { ramps: LaunchRamp[]; hoops: ThemedHoop[] } | null {
+/** A theme's ramps, hoops and road sections for a race, or null when themes are off; hoops follow the risk-lines switch. */
+export function themedExtras(trackId: string, config: { themes?: boolean }, risk: RiskRules): { ramps: LaunchRamp[]; hoops: ThemedHoop[]; sections: TrackSection[] } | null {
   if (!config.themes) return null;
   const placements = themedPlacements(trackId);
   return {
@@ -52,6 +53,7 @@ export function themedExtras(trackId: string, config: { themes?: boolean }, risk
       radius: RISK_RING_RADIUS, type: 'risk' as const, group: 0 as const,
       spin: p.movementPattern.kind === 'rotate' ? 2 * Math.PI / p.movementPattern.period : 0,
       spinPhase: 'phase' in p.movementPattern ? p.movementPattern.phase : 0 })) : [],
+    sections: (WORLD_TOUR_THEMED_SECTIONS[trackId] ?? []).map(section => ({ ...section })),
   };
 }
 

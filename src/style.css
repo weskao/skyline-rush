@@ -734,7 +734,7 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .controls-reset { min-height: 44px; margin: 4px 6px 6px; border: 1px solid #779ca8; border-radius: 8px; background: transparent; font-size: 12px; }
 @media (max-width: 370px) {
   .controls-button { padding: 0 4px; font-size: 8px; letter-spacing: .6px; }
-  body:not([data-phase="ready"]) .brand { display: none; }
+  body:not([data-phase="ready"]):not([data-phase="paused"]) .brand { display: none; } /* paused: the brand is the way out of the race */
 }
 
 /* Control customization inherits the existing instrument panel. */
@@ -1355,7 +1355,7 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .setup-step { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .intro-copy + .race-mode-picker { margin-top: 0; }
 .flight-tip .tip-short { display: none; }
-.race-mode-picker.race-rules-row { display: block; margin-top: 0; padding: 0 10px; }
+.race-mode-picker.race-rules-row { position: relative; z-index: 1; display: block; margin-top: 0; padding: 0 10px; } /* its blur is a stacking context: lift it so open dropdowns cover the Start row below */
 .race-rules-head { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 #race-rules-step { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; white-space: nowrap; }
 .race-rules-text { flex: 1; display: grid; margin: 0; font-size: 10px; line-height: 1.35; color: #d1e3ed; }
@@ -1509,9 +1509,10 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 @media (max-height: 500px) and (min-width: 761px) { .photo-screen { width: 300px; } }
 
 .photo-screen[open] { z-index: 120; }
-/* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state. */
-body:has(#photo-screen[open]) #app > :not(#world):not(#photo-screen),
-body:has(#photo-screen[open]) #perf-overlay { display: none; }
+/* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state.
+   A body class, not body:has(): a :has() here made every in-race style recalc restyle the whole page. */
+body.photo-studio #app > :not(#world):not(#photo-screen),
+body.photo-studio #perf-overlay { display: none; }
 #photo-open[hidden] { display: none !important; }
 
 /* Home discoverability: medal tally on the route line, today's challenge as a card above the mode picker.

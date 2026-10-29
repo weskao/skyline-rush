@@ -180,3 +180,40 @@ test('Neon roadworks barriers slide on their own cycle, slower than the neon gat
     assert.ok(move.period > gate.period, `${h.id} reads apart from the gate timing`);
   }
 });
+
+test('Neon coned lane closure and diversion: solid cone rows on opposite outer lanes, two lanes always open', async () => {
+  const { hazardTouch } = await import('../src/hazard-race.ts');
+  const neon = themedHazards('neon');
+  for (const [name, lane] of [['neon-lane-closure', LANES[0]], ['neon-diversion', LANES[3]]]) {
+    const cones = neon.filter(h => h.id.startsWith(`${name}-`));
+    assert.ok(cones.length >= 4, `${name}: a row of cones, not a single marker`);
+    assert.ok(cones.every(h => h.type === 'cone' && h.x === lane && h.placement.movementPattern.kind === 'static'), `${name}: static cones on lane ${lane}`);
+    assert.ok(cones.at(-1).distance - cones[0].distance >= 50, `${name}: closes a stretch of lane`);
+    for (const cone of cones) {
+      assert.equal(hazardTouch(cone, { distance: cone.distance, x: lane, altitude: 0, speed: 50 }, 0).effect, 'block', `${cone.id} is solid`);
+      const blocked = LANES.filter(x => neon.some(h => Math.abs(h.distance - cone.distance) <= 20 && hazardReach(h) > 0 &&
+        Math.abs(x - h.x) < hazardReach(h) + CAR_HALF_WIDTH));
+      assert.ok(LANES.length - blocked.length >= 2, `${cone.id}: two lanes stay open (blocked ${blocked})`);
+    }
+  }
+});
+
+test('Sky Spiral platform barriers pulse in opposite phase and its swing gates mirror each other', async () => {
+  const { hazardFrame } = await import('../src/hazard-behavior.ts');
+  const { hazardTouch } = await import('../src/hazard-race.ts');
+  const spiral = Object.fromEntries(themedHazards('spiral').map(h => [h.id, h]));
+  const [b1, b3, g1, g2] = ['spiral-barrier-1', 'spiral-barrier-3', 'spiral-gate-1', 'spiral-gate-2'].map(id => spiral[id]);
+  const states = new Set();
+  for (let t = 0.05; t < 12; t += 0.1) {
+    const on1 = hazardFrame(b1.placement, t).active, on3 = hazardFrame(b3.placement, t).active;
+    assert.notEqual(on1, on3, `t=${t.toFixed(2)}: one platform barrier is solid while the other is open`);
+    states.add(on1);
+    const solid = hazardTouch(b1, { distance: b1.distance, x: b1.x, altitude: 0, speed: 50 }, t).effect === 'block';
+    assert.equal(solid, on1, `t=${t.toFixed(2)}: barrier-1 blocks exactly while it is lit`);
+    const swing1 = hazardFrame(g1.placement, t).lateralOffset - g1.x, swing2 = hazardFrame(g2.placement, t).lateralOffset - g2.x;
+    assert.ok(Math.abs(swing1 + swing2) < 1e-9, `t=${t.toFixed(2)}: the gates swing in opposite phase`);
+  }
+  assert.deepEqual([...states].sort(), [false, true], 'the barriers actually pulse');
+  const reach = [...Array(50).keys()].map(i => hazardFrame(g1.placement, i / 10).lateralOffset);
+  assert.ok(Math.max(...reach) - Math.min(...reach) > 3, 'the gates actually swing between lanes');
+});
