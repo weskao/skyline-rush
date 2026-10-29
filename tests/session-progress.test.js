@@ -55,3 +55,13 @@ test('ghosts load once per track or ruleset and a saved ghost is stored and repl
   assert.equal(ghosts.mode(race), ghost);
   delete globalThis.localStorage;
 });
+
+test('only explicit local restore replaces session personal medals; cloud merge preserves them', () => {
+  const progress = loadSessionProgress(['coast']);
+  const merged = { version: 2, unlocked: ['coast'], stars: {}, bests: {}, medals: {}, history: [], modeHistory: [], daily: [] };
+  const personal = { version: 1, awards: { 'time-clean': '2026-10-29T01:00:00.000Z' }, longestFlight: 0, maxAerialCombo: 0 };
+  adoptProgress(progress, merged, personal);
+  assert.deepEqual(progress.challengeMedals, personal);
+  adoptProgress(progress, merged);
+  assert.deepEqual(progress.challengeMedals, personal);
+});

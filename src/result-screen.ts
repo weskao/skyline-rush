@@ -5,6 +5,7 @@ import { timeString } from './time-format.ts';
 import { stuntMedal } from './stunt-attack.ts';
 import { sprintTotal, type SprintSeries } from './sprint-series.ts';
 import { cupStandings, cupComplete, cupTotalTime, type CupState } from './championship-cup.ts';
+import type { ChallengeMedalId } from './history-challenge-medals.ts';
 import type { StuntRun } from './race-results.ts';
 
 // The simulation race comes from plain-JS game.js; only its finished result fields are read here.
@@ -12,6 +13,7 @@ import type { StuntRun } from './race-results.ts';
 type FinishedRace = any;
 export interface FinishedResult {
   best: number; record: boolean; medals: string[];
+  challengeMedals?: readonly ChallengeMedalId[];
   series: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null;
   /** Track the NEXT button offers, if any. */
   next: string | null;
@@ -142,7 +144,11 @@ const VIEWS: [(race: FinishedRace, finished: FinishedResult) => unknown, (race: 
   [race => race.mode === 'checkpoint' && !race.result.success, checkpointFailedView],
 ];
 export function resultView(race: FinishedRace, finished: FinishedResult): ResultView {
-  return (VIEWS.find(([applies]) => applies(race, finished))?.[1] ?? standardView)(race, finished);
+  const view = (VIEWS.find(([applies]) => applies(race, finished))?.[1] ?? standardView)(race, finished);
+  if (finished.challengeMedals?.length) view.copy += t('challengeMedal.new', {
+    list: finished.challengeMedals.map(id => t(`challengeMedal.${id}`)).join(t('list.separator')),
+  });
+  return view;
 }
 
 export interface ResultCount { element: HTMLElement; value: number; format(value: number): string }

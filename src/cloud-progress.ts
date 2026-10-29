@@ -1,6 +1,8 @@
 import { mergeProgress } from './cloud-progress-merge.ts';
 import { mergeModeBests } from './cloud-mode-bests.ts';
 import { CUP_PROGRESS_KEY } from './cup-progress.ts';
+import { CHALLENGE_MEDALS_KEY, loadChallengeMedals, parseChallengeMedals, canWriteChallengeMedals,
+  type ChallengeMedalState } from './history-challenge-medals.ts';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
   MODE_BESTS_KEY, STUNT_BESTS_KEY, loadUnlocks, loadStars, loadBests, loadMedals, loadHistory, loadModeHistory, loadDaily } from './history.ts';
 
@@ -23,6 +25,7 @@ interface ProgressValues {
   history: unknown;
   modeHistory: unknown;
   daily: unknown;
+  localChallengeMedals?: ChallengeMedalState;
 }
 const asRecord = (v: unknown): Record<string, unknown> =>
   v !== null && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {};
@@ -64,7 +67,9 @@ export function parseProgressExport(text: unknown) {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw) ||
       (record.version !== 1 && record.version !== 2))
     throw new Error('Unsupported backup version');
-  return { progress: mergeProgress({}, record), permanent: mergeModeBests(record.permanent ?? {}) };
+  const local = Object.hasOwn(record, 'localChallengeMedals')
+    ? { localChallengeMedals: parseChallengeMedals(record.localChallengeMedals) } : {};
+  return { progress: mergeProgress({}, record), permanent: mergeModeBests(record.permanent ?? {}), ...local };
 }
 
 export function readLocalProgress(storage?: ProgressStorage) {
@@ -78,6 +83,12 @@ export function saveLocalProgress(progress: ProgressValues, storage?: ProgressSt
     [MEDALS_KEY, progress.medals], [HISTORY_KEY, progress.history],
     [MODE_HISTORY_KEY, progress.modeHistory], [DAILY_KEY, progress.daily],
   ];
+  if (progress.localChallengeMedals !== undefined) {
+    try {
+      if (!canWriteChallengeMedals(storage)) return false;
+      fields.push([CHALLENGE_MEDALS_KEY, parseChallengeMedals(progress.localChallengeMedals)]);
+    } catch { return false; }
+  }
   try {
     const target = storage ?? globalThis.localStorage;
     const previous = fields.map(([key]) => [key, target.getItem(key)] as const);
@@ -102,13 +113,16 @@ export function switchCloudAccount(previousUid: unknown, nextUid: unknown,
   if (typeof nextUid !== 'string' || !nextUid || (previousUid && typeof previousUid !== 'string')) return false;
   if (previousUid === nextUid) return true;
   try {
-    const current = { ...readLocalProgress(storage), permanent: readLocalModeBests(storage) };
+    if (!canWriteChallengeMedals(storage)) return false;
+    const current = { ...readLocalProgress(storage), permanent: readLocalModeBests(storage),
+      localChallengeMedals: loadChallengeMedals(storage) };
     const stored = storage.getItem(accountKey(nextUid));
     const rawNext: unknown = stored ? JSON.parse(stored) : null;
     const next = rawNext ? mergeProgress({}, rawNext) : mergeProgress({});
     const permanent = mergeModeBests(asRecord(rawNext).permanent);
+    const localChallengeMedals = parseChallengeMedals(asRecord(rawNext).localChallengeMedals);
     if (previousUid) storage.setItem(accountKey(previousUid as string), JSON.stringify(current));
-    if (!saveLocalProgress(next, storage) || !saveLocalModeBests(permanent, storage)) {
+    if (!saveLocalProgress({ ...next, localChallengeMedals }, storage) || !saveLocalModeBests(permanent, storage)) {
       saveLocalProgress(current, storage);
       saveLocalModeBests(current.permanent, storage);
       return false;
@@ -129,7 +143,7 @@ export function clearLocalProgress(storage?: ProgressStorage): boolean {
   try {
     const target = storage ?? globalThis.localStorage;
     for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY,
-      DAILY_KEY, LEGACY_BEST_KEY, MODE_BESTS_KEY, STUNT_BESTS_KEY, CUP_PROGRESS_KEY]) target.removeItem!(key);
+      DAILY_KEY, LEGACY_BEST_KEY, MODE_BESTS_KEY, STUNT_BESTS_KEY, CUP_PROGRESS_KEY, CHALLENGE_MEDALS_KEY]) target.removeItem!(key);
     return true;
   } catch { return false; }
 }

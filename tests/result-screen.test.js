@@ -52,3 +52,14 @@ test('a stunt heat with time left offers the next heat; the final heat shows the
   assert.equal(last.title, t('mode.stuntComplete'));
   assert.match(last.stats, new RegExp(t('mode.stuntMedal')));
 });
+
+test('new personal awards are announced in both languages separately from Career', () => {
+  for (const [locale, label] of [['en', 'Clean time trial'], ['zh-TW', '零碰撞計時']]) {
+    setLocale(locale);
+    const view = resultView(race({ mode: 'time' }), finished({ challengeMedals: ['time-clean'] }));
+    assert.ok(view.copy.includes(label), view.copy);
+    const repeat = resultView(race({ mode: 'time' }), finished({ challengeMedals: [] }));
+    assert.ok(!repeat.copy.includes(label));
+  }
+  setLocale('en');
+});
