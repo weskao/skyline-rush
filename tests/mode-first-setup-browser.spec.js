@@ -86,3 +86,80 @@ test('keyboard alone can pick a mode, a track, restore rules and start', async (
   await page.keyboard.press('Enter');
   await expect(page.locator('#intro')).toBeHidden({ timeout: ciTimeout(8000) });
 });
+
+test('unsupported combinations are explained in the rules row, in English and zh-TW', async ({ page }) => {
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="circuit"]').click();
+  await expect(page.locator('#mode-conflicts')).toContainText('Laps run only on Harbor Circuit');
+  await page.locator('button[data-race-mode="elimination"]').click();
+  await expect(page.locator('#mode-conflicts')).toContainText('Elimination always races 3 AI opponents');
+  await page.locator('#locale-select').selectOption('zh-TW', { force: true });
+  await expect(page.locator('#mode-conflicts')).toContainText('淘汰賽固定與 3 名 AI 對手競速');
+  await page.locator('button[data-race-mode="circuit"]').click();
+  await expect(page.locator('#mode-conflicts')).toContainText('圈數只適用於港灣環道');
+  await page.locator('button[data-race-mode="classic"]').click();
+  await expect(page.locator('#mode-conflicts')).toBeHidden();
+});
+
+// WCAG relative luminance contrast of an element's text against the panel behind it (alpha composited over the dark scene).
+const contrast = (page, selector) => page.locator(selector).evaluate(el => {
+  const rgb = s => (s.match(/[\d.]+/g) || []).map(Number);
+  const lum = ([r, g, b]) => [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+    .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+  let node = el, bg = null;
+  while (node && !bg) { const c = rgb(getComputedStyle(node).backgroundColor); if (c.length === 4 ? c[3] > 0 : c.length === 3) bg = c; node = node.parentElement; }
+  const [r, g, b, a = 1] = bg ?? [0, 0, 0, 0];
+  const behind = [0, 9, 22]; // darkest scene tone under the translucent panel
+  const panel = [r, g, b].map((v, i) => v * a + behind[i] * (1 - a));
+  const [l1, l2] = [lum(rgb(getComputedStyle(el).color)), lum(panel)].sort((x, y) => y - x);
+  return (l1 + 0.05) / (l2 + 0.05);
+});
+
+test('setup controls show a visible keyboard focus ring and readable contrast', async ({ page }) => {
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="time"]').click();
+  for (const selector of ['#race-rules-step', '#mode-rules-summary', '#mode-eligibility']) expect(await contrast(page, selector), selector).toBeGreaterThanOrEqual(4.5);
+  await page.locator('button[data-race-mode="elimination"]').click();
+  expect(await contrast(page, '#mode-conflicts'), '#mode-conflicts').toBeGreaterThanOrEqual(4.5);
+  for (const [from, to] of [['button[data-race-mode="classic"]', 'button[data-race-mode="custom"]'], ['#rules-restore', null]]) {
+    await page.locator(from).focus();
+    if (to) await page.keyboard.press('Tab');
+    const ring = await page.evaluate(() => { const cs = getComputedStyle(document.activeElement); return { outline: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0, shadow: cs.boxShadow !== 'none', visible: document.activeElement.matches(':focus-visible') }; });
+    if (to) expect(ring.visible, `${to} reached by keyboard`).toBe(true);
+    expect(ring.outline || ring.shadow, `${to ?? from} focus ring`).toBe(true);
+  }
+});
+
+for (const [name, viewport, safe] of [['phone notch', { width: 390, height: 844 }, { top: 59, right: 0, bottom: 34, left: 0 }],
+  ['landscape notch', { width: 844, height: 390 }, { top: 0, right: 47, bottom: 21, left: 47 }]]) {
+  test.describe(name, () => {
+  test.use({ viewport, hasTouch: true });
+  test(`${name}: mode tabs, rules row and Start stay inside the safe area and work by touch`, async ({ page }) => {
+    await page.goto('/');
+    await closeMusicPrompt(page);
+    await page.evaluate(values => { for (const [side, value] of Object.entries(values)) document.documentElement.style.setProperty(`--safe-${side}`, `${value}px`); }, safe);
+    for (const selector of ['button[data-race-mode="classic"]', '#rules-restore', '#start-button']) {
+      await page.locator(selector).scrollIntoViewIfNeeded();
+      const box = await page.locator(selector).boundingBox();
+      expect(box.x, `${selector} left`).toBeGreaterThanOrEqual(safe.left);
+      expect(box.x + box.width, `${selector} right`).toBeLessThanOrEqual(viewport.width - safe.right);
+    }
+    await page.locator('button[data-race-mode="stunt"]').tap();
+    await expect(page.locator('button[data-race-mode="stunt"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
+  });
+  });
+}
+
+test('reduced motion: the setup flow works with no running intro animation', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="custom"]').click();
+  await page.locator('#rules-restore').click();
+  await expect(page.locator('#mode-rules-summary')).toContainText('3 AI');
+  const running = await page.locator('#race-rules-row').evaluate(el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length);
+  expect(running).toBe(0);
+});
