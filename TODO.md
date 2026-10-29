@@ -43,6 +43,19 @@
 
 # TODO — Gameplay depth design
 
+## Handoff checkpoint (2026-10-29)
+
+Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates completed work on the independent feature branches listed there; it does **not** mean those branches have been merged into main.
+
+- [x] Preserve seven completed feature branches with complete local gates after main `ca1c777` and 119/119 required checks on the recorded published feature-code commits.
+- [x] Verify REPLAY-02 recent Custom setups, result retry and independent editable copies using real desktop/phone browser controls; mark the original item below complete.
+- [x] Implement Photo Studio HUD isolation and responsive controls on `feature/photo-studio-hud-isolation`; observe both REDs, pass 25 focused cases plus actual touch/control/PNG validation, and preserve original-resolution evidence.
+- [x] Stop local work at the user's request and write the English handoff with branch names, worktree paths, exact commits, CI snapshots and restart commands. Original roadmap: 56/120 complete (46.67%), 64 remain.
+- [ ] Photo Studio full make verify and exact-source CI: the final local run was intentionally stopped after 31 browser cases; PHOTO-01 remains unchecked below.
+- [ ] Final handoff check found `origin/main@bc5299b` 51 commits ahead of local `main@ca1c777`; none of the nine feature branches contains it. Preserve handoff documents, integrate upstream when work resumes and repeat gates on the resulting source. Earlier receipts certify only their recorded baseline.
+- [ ] Recheck the latest documentation HEAD CI on the eight earlier branches. Older feature-code CI is green; these newer runs are still incomplete at handoff.
+- [ ] Physical Safari/Android, long-drive/all-quality thermal validation and independent review remain open. Merge into main, PR, tag and deployment still require explicit authorization.
+
 ## Current main integration and verification (2026-10-29)
 
 - [x] User-integrated `main@ca1c777` is an ancestor of `4117dcc` on `feature/regression-gate-repair`; tracked tree was clean and no unresolved merge conflicts were found.
@@ -1098,11 +1111,11 @@ acceptance remains under the shared stage-wide QA, not claimed here.
 
 - [x] **MODE-06 — Championship:** select a curated 3–5-track cup consisting of
   **unlocked** stages; award stage ranking points and a clear final champion.
-- [ ] Preserve stage standings across transitions with fair AI participation,
+- [x] Preserve stage standings across transitions with fair AI participation,
   an explicit continue/retry flow, and optional saved in-progress cup recovery.
 - [x] Distinguish cup medals/bests from individual Classic times; a cup does
   not grant unearned unlocks for stages skipped or completed in practice mode.
-- [ ] **Acceptance:** ties, quit/resume, mid-cup restart, 0-rival rejection and
+- [x] **Acceptance:** ties, quit/resume, mid-cup restart, 0-rival rejection and
   incomplete data produce deterministic, understandable results.
 
 ### 9H. Obstacle Gauntlet (P1)
@@ -1165,15 +1178,15 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 
 ### 9J. Endless Highway / Distance Survival (P2)
 
-- [ ] **MODE-09 — Endless Highway:** deterministic extension/streaming **beyond**
+- [x] **MODE-09 — Endless Highway:** deterministic extension/streaming **beyond**
   the fixed 4–8 km authored tracks; progressively increase challenge and record
   longest distance/survival score.
-- [ ] Build extendable road geometry, scene chunks, encounter seeds, objective
+- [x] Build extendable road geometry, scene chunks, encounter seeds, objective
   markers, camera/traffic recycling and safe recovery. Respect absolute distance
   to avoid repeated scenery, teleporting objects or floating-point problems.
 - [ ] Keep memory/GPU resources bounded after lengthy play; verify pause, resume,
   context loss and browser tab backgrounding.
-- [ ] **Acceptance:** play can continue past the former end without hitting
+- [x] **Acceptance:** play can continue past the former end without hitting
   clamped `trackPoint()`, missing geometry, a fake lap or an unintended finish.
 
 ### 9K. Event Lab Lite / course creator (P2)
@@ -1220,13 +1233,13 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] **LAP-01 — Separate session types:** support multi-stage/repeated
   **point-to-point** sprints first (P0/P1), and label them “Stage 1/3”,
   not “Lap 1/3”. The original 10 tracks must keep their authored geography.
-- [ ] **LAP-02 — Genuine closed circuits:** author at least one actual loop
+- [x] **LAP-02 — Genuine closed circuits:** author at least one actual loop
   whose start/finish world position, tangent, road banking and width connect
   continuously; do **not** fake it with instant distance wrap.
-- [ ] **LAP-03 — Configurable 1 / 3 / 5 laps** only on circuits with a valid
+- [x] **LAP-03 — Configurable 1 / 3 / 5 laps** only on circuits with a valid
   topology; lap timer, personal best lap, total race time, split sectors,
   lap HUD, AI lap standings and finish sequence.
-- [ ] **LAP-04 — Anti-shortcut checkpoints:** ordered sector validation
+- [x] **LAP-04 — Anti-shortcut checkpoints:** ordered sector validation
   prevents crossing the finish backwards, flying over the finish repeatedly,
   teleports or respawns from granting false laps.
 - [ ] **Acceptance:** completion requires the configured number of valid
@@ -1363,17 +1376,17 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 12A. Turn current ring effects into optional active items (P1)
 
-- [ ] **ITEM-01 — Single item slot:** pick up and hold one active item;
+- [x] **ITEM-01 — Single item slot:** pick up and hold one active item;
   show icon, ready/held state, cooldown and an accessible Activate
   action on keyboard and touch. Keep NITRO and FLY/BOOST as separate
   systems; do not overload existing controls without remapping.
-- [ ] **ITEM-02 — Shield:** reuse existing “absorb one collision” effect
+- [x] **ITEM-02 — Shield:** reuse existing “absorb one collision” effect
   as a held/triggerable item, with a clear hit/expiration state.
 - [ ] **ITEM-03 — Magnet:** reuse current timed pickup attraction,
   with an optional active duration and visible radius indicator.
-- [ ] **ITEM-04 — Ghost:** reuse short traffic phasing with explicit
+- [x] **ITEM-04 — Ghost:** reuse short traffic phasing with explicit
   cooldown; it must not let players pass invalid lap checkpoints.
-- [ ] **ITEM-05 — Freeze:** reuse temporary rival slowdown only in modes
+- [x] **ITEM-05 — Freeze:** reuse temporary rival slowdown only in modes
   with AI; provide a harmless conversion/fallback in solo events.
 - [ ] **Acceptance:** no unintended double-stacks or unbounded
   durations, correct activation order and no change to existing
@@ -1381,21 +1394,21 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 12B. Additional pickups and interactive pads (P1/P2)
 
-- [ ] **ITEM-06 — Precision speed strips / Energy Gates:** reward
+- [x] **ITEM-06 — Precision speed strips / Energy Gates:** reward
   accurately crossing a boost pad or flight gate; apply capped,
   readable acceleration or thruster recharge.
-- [ ] **ITEM-07 — Air recharge pads:** restore a bounded share of
+- [x] **ITEM-07 — Air recharge pads:** restore a bounded share of
   FLY energy mid-flight, making aerial precision lines worthwhile.
-- [ ] **ITEM-08 — Repair / recovery pad:** temporarily mitigate
+- [x] **ITEM-08 — Repair / recovery pad:** temporarily mitigate
   one obstacle's speed loss or restore a limited resource without
   erasing official collision counts.
-- [ ] **ITEM-09 — Score multiplier token:** temporary style-combo
+- [x] **ITEM-09 — Score multiplier token:** temporary style-combo
   bonus in Stunt/Checkpoint modes; cap multipliers and prevent
   overlapping infinite reward loops.
-- [ ] **ITEM-10 — EMP Pulse (P2):** short-range rival disruption
+- [x] **ITEM-10 — EMP Pulse (P2):** short-range rival disruption
   exclusive to suitable competitive rule sets; clear fair warning
   and no effect on player control accessibility.
-- [ ] **ITEM-11 — Mode item rules:** Off / Classic Mystery Rings /
+- [x] **ITEM-11 — Mode item rules:** Off / Classic Mystery Rings /
   Active Items / All Items. Resolve item positions from seeded
   streams and never place important rewards inside impossible gaps.
 - [x] **New-mode procedural audio (2026-10-22):** original Web Audio music loops
@@ -1417,11 +1430,11 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   orbit the camera, hide HUD, adjust compatible time/weather presets
   and export a browser-generated screenshot where supported;
   do not claim cloud storage or full replay video without a backend.
-- [ ] **REPLAY-01 — Expanded challenge medals:** clean checkpoint
+- [x] **REPLAY-01 — Expanded challenge medals:** clean checkpoint
   chain, longest flight, zero-collision time trial, best aerial
   combination and themed gauntlet completion; keep separate from
   existing four Career medals.
-- [ ] **REPLAY-02 — Personalized challenge presets:** remember a
+- [x] **REPLAY-02 — Personalized challenge presets:** remember a
   few recent custom-rule setups and allow duplicate/retry from the
   results screen without modifying the base track.
 - [ ] **REPLAY-03 — Risk/reward course lines:** alternate ground and
