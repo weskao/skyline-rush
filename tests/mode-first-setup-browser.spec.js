@@ -163,3 +163,19 @@ test('reduced motion: the setup flow works with no running intro animation', asy
   const running = await page.locator('#race-rules-row').evaluate(el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length);
   expect(running).toBe(0);
 });
+
+test('returning home by reload (the brand link) keeps the mode the player raced, like the track', async ({ page }) => {
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.evaluate(() => localStorage.setItem('skyline-rush-guide-seen', '1')); // skip the first-Start practice
+  await page.reload();
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="stunt"]').click();
+  await page.locator('[data-track="coast"]').click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#intro')).toBeHidden({ timeout: ciTimeout(8000) });
+  await page.goto('/'); // what the brand link does
+  await closeMusicPrompt(page);
+  await expect(page.locator('button[data-race-mode="stunt"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
+});

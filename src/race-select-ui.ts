@@ -38,6 +38,7 @@ interface RaceSelectOptions {
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
+const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only, like the track; Event Lab needs its course, so it is not restored
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
 export function setupRaceSelectUI(options: RaceSelectOptions) {
@@ -251,8 +252,12 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     raceRules[input.dataset.raceRule as RuleKey] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule!) ? Number(input.value) : input.value;
     changeRaceSelection();
   });
-  // Back to home reloads the page; the tab remembers the last raced track so the intro reopens on it.
-  try { const last = sessionStorage.getItem(LAST_TRACK_KEY); if (last && unlockedTracks.has(last)) setRace(selectedRace(last)); } catch { /* Coast stays the default without storage. */ }
+  // Back to home reloads the page; the tab remembers the last raced mode and track so the intro reopens on them.
+  try {
+    const mode = sessionStorage.getItem(LAST_MODE_KEY), last = sessionStorage.getItem(LAST_TRACK_KEY);
+    if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
+    setRace(selectedRace(last && unlockedTracks.has(last) ? last : getRace().trackId));
+  } catch { /* Classic on Coast stays the default without storage. */ }
 
   return {
     recreate: eventLab.recreate,
@@ -274,7 +279,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     raceRouteMap: (): RouteMap => { if (raceRouteMap?.trackId !== getRace().trackId) ensureRouteMaps(); return raceRouteMap!; },
     relabelRouteMaps(locale: string): void { for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale); },
     rememberTrack(trackId: string): void {
-      try { sessionStorage.setItem(LAST_TRACK_KEY, trackId); } catch { /* The intro falls back to Coast after a reload. */ }
+      try { sessionStorage.setItem(LAST_TRACK_KEY, trackId); sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
     },
   };
 }
