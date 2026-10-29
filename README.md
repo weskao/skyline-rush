@@ -73,6 +73,10 @@ Select a **track you have unlocked**, choose **GAME MODE** below the track cards
 
 Custom Race can replay the fastest compatible Ghost for each sprint heat. Custom and Free Drive offer Track / Day / Dusk / Night / Rain / Fog presentation presets and a live rule summary. These cosmetic choices do not change record eligibility or ruleset identity. Retry retains the selected appearance; changing track or returning to Classic restores the track appearance. Photo Studio restores the active race appearance when closed.
 
+### Optional items and bonus gates
+
+Custom and Free Drive offer **Off / Classic Mystery Rings / Active Items / All Items**. Held items use one slot: press **Q** or tap **USE** to activate, then wait for cooldown. NITRO and FLY/BOOST keep their own controls. All Items adds bounded speed, air-charge and one-hit recovery gates; EMP briefly slows nearby rivals and converts to Magnet in solo play. Recovery preserves official collision counts. Stunt Attack and Checkpoint Rush can separately opt into temporary, nonstacking ×2 score gates. Classic defaults stay unchanged.
+
 ### Race setup, results and accessibility
 
 - Mode and track selection remain accessible by keyboard and touch; contextual panels only show options relevant to the selected mode. Unavailable Cups explain the number of tracks still required.

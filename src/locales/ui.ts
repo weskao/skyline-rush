@@ -5,8 +5,10 @@ import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.ts';
 import { COLLECTIBLES_GUIDE_COPY } from '../collectibles-guide-copy.ts';
 import { DISPLAY_SETTINGS_COPY } from './display-settings.ts';
 import { RACE_PRESENTATION_COPY } from './race-presentation.ts';
+import { ITEM_SETTINGS_COPY } from './item-settings.ts';
 export const UI = Object.freeze({
   en: {
+    ...ITEM_SETTINGS_COPY.en,
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
     'release.title': "What's new",
     'release.intro': "See what's new for your next race.",
@@ -56,8 +58,7 @@ export const UI = Object.freeze({
     "tutorial.slide.brake": "Pull down on the highlighted pad and hold",
     "tutorial.tilt.left": "Tilt your device left",
     "tutorial.tilt.right": "Tilt your device right",
-    ...MOBILE_GUIDE_COPY.en,
-    ...COLLECTIBLES_GUIDE_COPY.en,
+    ...MOBILE_GUIDE_COPY.en, ...COLLECTIBLES_GUIDE_COPY.en,
     "guide.open": "How to play",
     "guide.title": "Start your engines!",
     "guide.close": "Got it",
@@ -309,8 +310,7 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': 'Realistic',
     'vfx.preset.cinematic': 'Cinematic',
     'vfx.preset.extreme': 'Extreme · sci-fi',
-    ...DISPLAY_SETTINGS_COPY.en,
-    ...RACE_PRESENTATION_COPY.en,
+    ...DISPLAY_SETTINGS_COPY.en, ...RACE_PRESENTATION_COPY.en,
     'vfx.aeroMode': 'Aerodynamics',
     'vfx.aeroMode.drag': 'Low drag',
     'vfx.aeroMode.downforce': 'High downforce',
@@ -616,6 +616,7 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
+    ...ITEM_SETTINGS_COPY['zh-TW'],
     'release.eyebrow': 'SKYLINE RUSH / 版本新消息',
     'release.title': '新版本功能',
     'release.intro': '看看這次更新，為你的下一場比賽帶來哪些驚喜。',
@@ -665,8 +666,7 @@ export const UI = Object.freeze({
     "tutorial.slide.brake": "在高亮滑動區向下拉，並維持片刻",
     "tutorial.tilt.left": "將裝置向左傾斜",
     "tutorial.tilt.right": "將裝置向右傾斜",
-    ...MOBILE_GUIDE_COPY['zh-TW'],
-    ...COLLECTIBLES_GUIDE_COPY['zh-TW'],
+    ...MOBILE_GUIDE_COPY['zh-TW'], ...COLLECTIBLES_GUIDE_COPY['zh-TW'],
     "guide.open": "操作教學",
     "guide.title": "發動引擎，全速衝刺！",
     "guide.close": "知道了",
@@ -917,8 +917,7 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': '寫實',
     'vfx.preset.cinematic': '電影感',
     'vfx.preset.extreme': '極致 · 科幻',
-    ...DISPLAY_SETTINGS_COPY['zh-TW'],
-    ...RACE_PRESENTATION_COPY['zh-TW'],
+    ...DISPLAY_SETTINGS_COPY['zh-TW'], ...RACE_PRESENTATION_COPY['zh-TW'],
     'vfx.aeroMode': '空氣力學',
     'vfx.aeroMode.drag': '低風阻',
     'vfx.aeroMode.downforce': '高下壓力',

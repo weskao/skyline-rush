@@ -269,7 +269,7 @@ test('Custom active power-ups show a safe accessible item slot',async({page})=>{
   await page.goto('/');await closeMusicPrompt(page);
   await page.locator('button[data-race-mode="custom"]').click();
   await page.locator('#race-mode-rules > summary').click();
-  await page.locator('[data-race-rule="activeItems"]').check();
+  await page.locator('[data-race-rule="itemRules"]').evaluate(select => { select.value = 'all'; select.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('#start-button').click();
   await expect(page.locator('#item-slot')).toBeVisible();
   await expect(page.locator('#item-status')).toContainText('EMPTY');

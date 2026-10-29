@@ -10,10 +10,10 @@ const MAX_LINES = 400;
 const LEGACY_CEILINGS = {
   'src/main.js': 688,
   'src/world.js': 1331,
-  'src/game.js': 827,
+  'src/game.js': 793,
   'src/world-tour-scene.js': 453,
   'src/CollectiblesGuide.vue': 477,
-  'src/locales/ui.ts': 1225, // translation catalog: data, not logic
+  'src/locales/ui.ts': 1224, // translation catalog: data, not logic
 };
 const SLACK = 25;
 
