@@ -101,6 +101,18 @@ test('11B Aurora: a blizzard thickens the haze and clearing it restores the exac
   assert.equal(target.scene.fog.density, .0016, 'blizzard composes with the chosen sky');
 });
 
+test('11B Aurora: a photo taken inside a blizzard restores the clear haze, never a doubled one', () => {
+  const target = fixture();
+  const visuals = createRaceVisuals(target);
+  visuals.blizzard(1);
+  const blizzardHaze = target.scene.fog.density;
+  visuals.photo('night'); visuals.blizzard(1); // world.js keeps feeding the level while paused
+  visuals.photo(null); visuals.blizzard(1);
+  assert.equal(target.scene.fog.density, blizzardHaze, 'the haze is applied once over the track fog');
+  visuals.blizzard(0);
+  assert.equal(target.scene.fog.density, .0013, 'leaving the stretch clears it completely');
+});
+
 test('weak hardware draws a third of the weather particles; hazard silhouettes never thin out', () => {
   assert.equal(weatherDrops('high', false), 180);
   assert.equal(weatherDrops('medium', false), 180);
