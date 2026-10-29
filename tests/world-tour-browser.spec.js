@@ -83,3 +83,29 @@ test('capture genuine world-tour scenes and race HUD', async ({ page }, testInfo
   await page.waitForTimeout(250);
   await shot('taipei-mobile');
 });
+
+test('Alpine and Cosmic minimaps expose cached climb and descent cues from the main road',async({page})=>{
+ await seed(page);await page.goto('/');
+ for(const id of ['alpine','cosmic']){
+   const button=page.locator(`[data-track="${id}"]`);
+   const overview=button.locator('svg.route-overview');
+   await expect(overview.locator('.route-elevation-cue[data-direction="up"]')).toHaveCount(1);
+   await expect(overview.locator('.route-elevation-cue[data-direction="down"]')).toHaveCount(1);
+   await expect(overview.locator('.route-overview-line')).toHaveCount(1);
+   await button.click();
+   await page.locator('#start-button').click();
+   const live=page.locator('#race-route-map svg.route-overview');
+   await expect(live.locator('.route-elevation-cue')).toHaveCount(2);
+   await expect(live.locator('[data-racer]')).toHaveCount(4);
+   await expect(live).toHaveAttribute('aria-label', /.+/);
+   // Cached vectors remain static; only moving racer positions are updated.
+   const original=await live.evaluate(el=>(window.__worldTourAltMap=el,el.querySelectorAll('*').length));
+   await page.waitForTimeout(400);
+   expect(await live.evaluate((el, expected)=>el===window.__worldTourAltMap&&el.querySelectorAll('*').length===expected,original)).toBe(true);
+   // Restart to restore the map selector without leaving ghost DOM behind.
+   await page.goto('/');
+ }
+ for(const id of ['taipei','tokyo','coastal']){
+   await expect(page.locator(`[data-track="${id}"] .route-elevation-cue`)).toHaveCount(0);
+ }
+});
