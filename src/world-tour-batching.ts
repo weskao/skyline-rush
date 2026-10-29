@@ -1,5 +1,27 @@
 import * as THREE from 'three';
 
+// Static opaque meshes only: transparency and explicit render order depend on
+// independent depth sorting. The batch must also preserve shadow/layer flags.
+function canBatch(mesh: THREE.Mesh): boolean {
+  const material = mesh.material;
+  return !!mesh.geometry && !!material && !Array.isArray(material) &&
+    !material.transparent && material.depthWrite &&
+    mesh.renderOrder === 0 && !mesh.userData.ownGeometry &&
+    !mesh.userData.dynamic && mesh.userData.static !== false &&
+    !(mesh instanceof THREE.SkinnedMesh) &&
+    !(mesh instanceof THREE.InstancedMesh && !!mesh.instanceColor) &&
+    !(mesh.morphTargetInfluences?.length);
+}
+const appearanceKey = (mesh: THREE.Mesh): string =>
+  [mesh.geometry.uuid, (mesh.material as THREE.Material).uuid,
+    mesh.castShadow, mesh.receiveShadow, mesh.layers.mask, mesh.frustumCulled].join('|');
+function preserveRenderState(batch: THREE.InstancedMesh, source: THREE.Mesh): void {
+  batch.castShadow = source.castShadow;
+  batch.receiveShadow = source.receiveShadow;
+  batch.layers.mask = source.layers.mask;
+  batch.frustumCulled = source.frustumCulled;
+}
+
 // GPU-instancing equal-geometry + equal-material meshes preserves every
 // triangle, normal and authored material. Every static 120 m chunk is batched
 // once; during driving only the chunk parent transforms move.
@@ -12,9 +34,8 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
     if (!('isMesh' in object) || object.isMesh !== true ||
         ('isInstancedMesh' in object && object.isInstancedMesh === true)) return;
     const mesh = object as THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
-    if(mesh.userData.ownGeometry ||
-       !mesh.geometry || !mesh.material || Array.isArray(mesh.material))return;
-    const key=mesh.geometry.uuid+'|'+mesh.material.uuid;
+    if(!canBatch(mesh))return;
+    const key=appearanceKey(mesh);
     const existing = groups.get(key);
     if (existing) existing.push(mesh);
     else groups.set(key, [mesh]);
@@ -25,6 +46,7 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
     if(meshes.length<minimumInstances)continue;
     const instances=new THREE.InstancedMesh(meshes[0].geometry,meshes[0].material,meshes.length);
     instances.name='scenery instance batch';
+    preserveRenderState(instances,meshes[0]);
     instances.userData.batchCount=meshes.length;
     for(let i=0;i<meshes.length;i++){
       const matrix=new THREE.Matrix4().multiplyMatrices(inverse,meshes[i].matrixWorld);
@@ -75,8 +97,8 @@ export function poolStaticChunks(
       if (!('isMesh' in object) || object.isMesh !== true ||
           !object.visible || object.userData.ownGeometry) return;
       const mesh = object as THREE.Mesh;
-      if (!mesh.geometry || !mesh.material || Array.isArray(mesh.material)) return;
-      const key = bucket + '|' + mesh.geometry.uuid + '|' + mesh.material.uuid;
+      if (!canBatch(mesh)) return;
+      const key = bucket + '|' + appearanceKey(mesh);
       const list = groups.get(key);
       if (list) list.push(mesh);
       else groups.set(key, [mesh]);
@@ -95,6 +117,7 @@ export function poolStaticChunks(
     const first = meshes[0];
     const batch = new THREE.InstancedMesh(first.geometry, first.material, total);
     batch.name = 'scenery shared GPU batch';
+    preserveRenderState(batch,first);
     let at = 0;
     for (const mesh of meshes) {
       const local = inverse.clone().multiply(mesh.matrixWorld);
