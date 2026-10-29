@@ -19,7 +19,8 @@ const SCENARIOS = [
 const median = values => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 
 test.skip(!process.env.PERF_MODES, 'run with `make perf-modes`');
-test.use({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+test.use(process.env.VIEWPORT === 'desktop' ? { viewport: { width: 1440, height: 900 } }
+  : { viewport: { width: 412, height: 915 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
 test('new content frame time, draw calls and triangles against Classic', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout((SECONDS + 40) * 1000 * SCENARIOS.length * ROUNDS);
@@ -78,7 +79,7 @@ test('new content frame time, draw calls and triangles against Classic', async (
   console.table(summary);
   const sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim();
   fs.mkdirSync('artifacts/perf-modes', { recursive: true });
-  fs.writeFileSync(`artifacts/perf-modes/${sha}-rate${RATE}.json`, JSON.stringify({ sha, rate: RATE, rounds: ROUNDS, seconds: SECONDS, server: 'vite dev', summary, runs, errors }, null, 2));
+  fs.writeFileSync(`artifacts/perf-modes/${sha}-rate${RATE}-${process.env.VIEWPORT ?? 'phone'}.json`, JSON.stringify({ sha, viewport: process.env.VIEWPORT ?? 'phone', rate: RATE, rounds: ROUNDS, seconds: SECONDS, server: 'vite dev', summary, runs, errors }, null, 2));
   expect(errors).toEqual([]);
   for (const run of runs) expect(run.p95, `${run.scenario} round ${run.round} produced a reading`).toBeGreaterThan(0);
 });
