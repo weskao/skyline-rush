@@ -7,7 +7,13 @@ import { createRaceSessionContract } from './race-session.ts';
 export const COURSE_BYTES = 16384;
 export const COURSE_OBJECTS = 24;
 export const COURSE_LANES = Object.freeze([-7.5, -2.5, 2.5, 7.5]);
-export type CourseKind = 'barrier' | 'ring' | 'pickup';
+export type CourseKind = 'barrier' | 'ring' | 'pickup' | 'checkpoint';
+// shortcut: local footprint table, swap for src/object-catalog.ts (ENV-01) once it lands on main.
+const FOOTPRINT: Record<CourseKind, { half: number; bottom: number; top: number }> = {
+  barrier: { half: 1.55, bottom: 0, top: 2.5 }, ring: { half: RING_RADIUS, bottom: 5 - RING_RADIUS, top: 5 + RING_RADIUS },
+  pickup: { half: 1, bottom: 0, top: 2.5 }, checkpoint: { half: 3.2, bottom: 0, top: 4.8 } };
+// The checkpoint renderer pools 48 parts at 3 parts per gate.
+const COURSE_CHECKPOINTS = 16;
 export interface CourseObject { readonly kind: CourseKind; readonly distance: number; readonly lane: number }
 export interface CourseDocument {
   readonly version: 1; readonly label: string; readonly trackId: string; readonly seed: number;
@@ -41,20 +47,24 @@ export function validateCourse(value: unknown, unlocked: ReadonlySet<string>, ob
   const track = tracks[value.trackId];
   const objects = value.objects.map(raw => {
     requireCourse(record(raw) && keys(raw, ['kind', 'distance', 'lane']), 'format');
-    requireCourse(raw.kind === 'barrier' || raw.kind === 'ring' || raw.kind === 'pickup', 'kind');
+    requireCourse(typeof raw.kind === 'string' && Object.hasOwn(FOOTPRINT, raw.kind), 'kind');
     requireCourse(typeof raw.lane === 'number' && Number.isInteger(raw.lane) && raw.lane >= 0 && raw.lane <= 3, 'bounds');
     requireCourse(raw.kind !== 'ring' || [1, 2].includes(raw.lane), 'bounds');
     requireCourse(typeof raw.distance === 'number' && Number.isInteger(raw.distance) && raw.distance % 10 === 0 &&
       raw.distance >= 200 && raw.distance <= track.length - 200, 'bounds');
     requireCourse(!track.sections.some(s => EXCLUDED.has(s.type) && raw.distance as number >= s.from - 80 && (raw.distance as number) <= s.to + 80), 'section');
-    const x = COURSE_LANES[raw.lane], half = raw.kind === 'ring' ? RING_RADIUS : raw.kind === 'barrier' ? 1.55 : 1;
-    const bottom = raw.kind === 'ring' ? 5 - RING_RADIUS : 0, top = raw.kind === 'ring' ? 5 + RING_RADIUS : 2.5;
+    const x = COURSE_LANES[raw.lane], { half, bottom, top } = FOOTPRINT[raw.kind as CourseKind];
     requireCourse(!obstacles.some(o => (raw.distance as number) >= o.from - 8 && (raw.distance as number) <= o.to + 8 &&
       x + half >= o.left - 1 && x - half <= o.right + 1 && bottom <= o.top && top >= o.bottom), 'blocked');
-    return Object.freeze({ kind: raw.kind, distance: raw.distance, lane: raw.lane });
+    // A barrier plus nearby ground props must leave two adjacent lanes a car can drive through.
+    requireCourse(raw.kind !== 'barrier' || COURSE_LANES.some((_, i) => i < 3 && [i, i + 1].every(lane => lane !== raw.lane &&
+      !obstacles.some(o => (raw.distance as number) >= o.from - 20 && (raw.distance as number) <= o.to + 20 && o.bottom < 2.5 &&
+        COURSE_LANES[lane] + 1.2 >= o.left && COURSE_LANES[lane] - 1.2 <= o.right))), 'reachable');
+    return Object.freeze({ kind: raw.kind as CourseKind, distance: raw.distance, lane: raw.lane });
   }).sort((a, b) => a.distance - b.distance);
   // At most one barrier per 40 m leaves three lanes open. Rings need 150 m so all fit the 7-ring pool.
   for (let i = 1; i < objects.length; i++) requireCourse(objects[i].distance - objects[i - 1].distance >= 40, 'spacing');
+  requireCourse(objects.filter(o => o.kind === 'checkpoint').length <= COURSE_CHECKPOINTS, 'count');
   const rings = objects.filter(o => o.kind === 'ring');
   for (let i = 1; i < rings.length; i++) requireCourse(rings[i].distance - rings[i - 1].distance >= 150, 'spacing');
   return Object.freeze({ version: 1, label: value.label.trim(), trackId: value.trackId, seed: value.seed,
@@ -69,17 +79,20 @@ export function importCourse(json: string, unlocked: ReadonlySet<string>, obstac
 }
 export const exportCourse = (document: CourseDocument): string => JSON.stringify(document, null, 2);
 
-export function createCourse(trackId: string, template: 'slalom' | 'collect', seed: number, unlocked: ReadonlySet<string>, obstacles: readonly CourseObstacle[] = []): CourseDocument {
+export type CourseTemplate = 'slalom' | 'collect' | 'checkpoints';
+const TEMPLATE_KINDS: Record<CourseTemplate, readonly CourseKind[]> = {
+  slalom: ['barrier', 'pickup'], collect: ['pickup', 'ring'], checkpoints: ['checkpoint', 'pickup'] };
+export function createCourse(trackId: string, template: CourseTemplate, seed: number, unlocked: ReadonlySet<string>, obstacles: readonly CourseObstacle[] = []): CourseDocument {
   requireCourse(typeof trackId === 'string' && Object.hasOwn(tracks, trackId), 'track');
   const random = seededRng(seed, 'event-lab-template-v1');
   const objects: CourseObject[] = [];
   for (let distance = 300; distance < tracks[trackId].length - 200 && objects.length < 12; distance += 160) {
-    const kind: CourseKind = template === 'slalom' ? objects.length % 2 ? 'pickup' : 'barrier' : objects.length % 2 ? 'ring' : 'pickup';
+    const kind = TEMPLATE_KINDS[template][objects.length % 2];
     const lane = kind === 'ring' ? 1 + Math.floor(random() * 2) : Math.floor(random() * 4);
     try {
       validateCourse({ version: 1, label: 'My course', trackId, seed, modifier: 'standard', objects: [{ kind, distance, lane }] }, unlocked, obstacles);
       objects.push({ kind, distance, lane });
-    } catch (error) { if (!(error instanceof CourseError) || !['section', 'blocked'].includes(error.code)) throw error; }
+    } catch (error) { if (!(error instanceof CourseError) || !['section', 'blocked', 'reachable'].includes(error.code)) throw error; }
   }
   return validateCourse({ version: 1, label: 'My course', trackId, seed, modifier: 'standard', objects }, unlocked, obstacles);
 }
@@ -115,9 +128,11 @@ export function compileCourse<T extends RuntimeCourseRace>(race: T, raw: CourseD
   const baseSession = createRaceSessionContract(document.trackId, document.seed, race.config);
   const hazards: Hazard[] = document.objects.filter(o => o.kind === 'barrier').map(o => ({ distance: o.distance,
     x: COURSE_LANES[o.lane], altitude: 0, moving: false, phase: 0, speed: 0, hit: false, passed: false }));
+  const gates = document.objects.filter(o => o.kind === 'checkpoint').map(o => ({ distance: o.distance, x: COURSE_LANES[o.lane], altitude: 0, passed: false, missed: false }));
   return Object.assign(race, { mode: 'eventlab', config, eventCourse: document, seed: document.seed,
     session: Object.freeze({ ...baseSession, mode: 'eventlab', rulesSignature: JSON.stringify(config) }),
     hazards, pickups: document.objects.filter(o => o.kind === 'pickup').map(o => ({ distance: o.distance, x: COURSE_LANES[o.lane], altitude: 0, tier: 'can', taken: false })),
+    checkpoint: gates.length ? { gates, timeLeft: 28, passed: 0, missed: 0, perfect: 0, expired: false } : null,
     rings: document.objects.filter(o => o.kind === 'ring').map((o, i) => ({ distance: o.distance, x: COURSE_LANES[o.lane], altitude: 5, radius: RING_RADIUS, type: 'nitro', group: i, collected: false })),
   });
 }

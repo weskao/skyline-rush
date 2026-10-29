@@ -3,7 +3,7 @@ import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch } from 'v
 import { getLocale, onLocaleChange, t, trackName } from './i18n.ts';
 import { eventLabView, useEventCourse } from './event-lab-ui.ts';
 import { COURSE_BYTES, COURSE_OBJECTS, CourseError, createCourse, createCourseHistory, exportCourse, importCourse,
-  saveCourse, validateCourse, type CourseDocument, type CourseKind } from './event-lab.ts';
+  saveCourse, validateCourse, type CourseDocument, type CourseKind, type CourseTemplate } from './event-lab.ts';
 import { RACE_TRACKS } from './game.js';
 
 const dialog = useTemplateRef<HTMLDialogElement>('dialog');
@@ -41,7 +41,7 @@ watch(() => eventLabView.open, open => {
     dialog.value?.showModal();
   });
 });
-function template(name: 'slalom' | 'collect'): void {
+function template(name: CourseTemplate): void {
   attempt(() => commit(createCourse(eventLabView.trackId, name, draft.value!.seed, unlocked(), eventLabView.obstacles)));
 }
 function field(key: 'label' | 'seed' | 'modifier', event: Event): void {
@@ -62,7 +62,7 @@ function importDraft(): void { attempt(() => commit(importCourse(json.value, unl
 function close(): void { eventLabView.open = false; }
 const errorText = computed(() => error.value ? text('error.' + error.value) : '');
 const maxDistance = computed(() => (RACE_TRACKS as Record<string, { length: number }>)[eventLabView.trackId].length - 200);
-const symbols = { barrier: '▰', ring: '◎', pickup: '◆' };
+const symbols: Record<CourseKind, string> = { barrier: '▰', ring: '◎', pickup: '◆', checkpoint: '⛩' };
 </script>
 
 <template>
@@ -70,7 +70,7 @@ const symbols = { barrier: '▰', ring: '◎', pickup: '◆' };
     <header class="lab-header"><div><small>SKYLINE / EVENT LAB</small><h2 id="lab-title">{{ text('title') }}</h2></div><button id="lab-close" type="button" @click="close">{{ text('close') }}</button></header>
     <template v-if="draft">
       <p class="lab-note">{{ trackName(draft.trackId, locale) }} · {{ text('intro') }}</p>
-      <div class="lab-toolbar"><button type="button" @click="template('slalom')">{{ text('slalom') }}</button><button type="button" @click="template('collect')">{{ text('collect') }}</button>
+      <div class="lab-toolbar"><button type="button" @click="template('slalom')">{{ text('slalom') }}</button><button type="button" @click="template('collect')">{{ text('collect') }}</button><button id="lab-template-checkpoints" type="button" @click="template('checkpoints')">{{ text('checkpoints') }}</button>
         <button id="lab-undo" type="button" :disabled="!canUndo" @click="store(history!.undo())">{{ text('undo') }}</button>
         <button id="lab-redo" type="button" :disabled="!canRedo" @click="store(history!.redo())">{{ text('redo') }}</button>
         <button id="lab-reset" type="button" @click="store(history!.reset(resetDocument!))">{{ text('reset') }}</button></div>
@@ -95,7 +95,7 @@ const symbols = { barrier: '▰', ring: '◎', pickup: '◆' };
           </li>
         </ol>
       </div>
-      <fieldset class="lab-fields"><legend>{{ text('add') }}</legend><label>{{ text('object') }}<select id="lab-kind" v-model="kind"><option v-for="entry in (['barrier', 'ring', 'pickup'] as const)" :key="entry" :value="entry">{{ text(entry) }}</option></select></label>
+      <fieldset class="lab-fields"><legend>{{ text('add') }}</legend><label>{{ text('object') }}<select id="lab-kind" v-model="kind"><option v-for="entry in (['barrier', 'ring', 'pickup', 'checkpoint'] as const)" :key="entry" :value="entry">{{ text(entry) }}</option></select></label>
         <label>{{ text('distance') }}<input id="lab-distance" v-model.number="distance" type="number" min="200" :max="maxDistance" step="10"></label>
         <label>{{ text('lane') }}<input id="lab-lane" v-model.number="lane" type="number" min="0" max="3" step="1"></label><button id="lab-add" type="button" @click="add">{{ text('add') }}</button></fieldset>
       <details class="lab-share"><summary>{{ text('share') }}</summary>
