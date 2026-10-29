@@ -1437,8 +1437,13 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
  .intro .intro-primary { position: sticky; bottom: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-block: 10px 4px; /* 320px: Practice wraps under Start */
    background: linear-gradient(rgb(5 18 31 / 0), rgb(5 18 31 / .92) 10px); }
  .intro .intro-actions > .text-button { display: inline-flex; margin: 8px 16px 0 0; }
+ .intro:has(.race-mode-picker) { scroll-padding-bottom: 72px; } /* controls scrolled or tabbed to land above the pinned row */
+ .intro .race-rules-row:has([aria-expanded="true"]) { z-index: 2; } /* an open dropdown covers the pinned row */
 }
-@media (max-width: 760px) { .intro .intro-primary { bottom: 28px; } } /* clear of the phone panel's bottom fade */
+/* Narrow panels lift the pinned row 28px clear of the bottom fade (60px above the scrollport edge with its padding), so the
+   scroll margin is the row plus 60px: one line in landscape (568x320 keeps a 52px view), two lines at 320px wide. */
+@media (max-width: 760px) { .intro .intro-primary { bottom: 28px; } .intro:has(.race-mode-picker) { scroll-padding-bottom: 120px; } }
+@media (max-width: 760px) and (min-height: 501px) { .intro:has(.race-mode-picker) { scroll-padding-bottom: 190px; } }
 
 /* The series counter sits in the race info without expanding the top HUD. */
 .sprint-stage { display: inline-block; margin-top: 5px; color: #c9f4ff; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
