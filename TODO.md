@@ -1,5 +1,13 @@
 # TODO — Gameplay depth design
 
+## Current main integration and verification (2026-10-29)
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `8b34df1` on `feature/event-lab-lite`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `8b34df1` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547459). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `8b34df1` exits 0: strict TS/Vue/JS, Node 822 / Browser 499 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/event-lab/make-verify-main-ca1c777-user-merge.log`.
+
+Historical receipts below retain their original date and verification scope.
+
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
