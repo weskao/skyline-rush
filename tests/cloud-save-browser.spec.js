@@ -18,3 +18,19 @@ test('History exposes cloud recovery and sign-in on a narrow phone', async ({ pa
   await page.locator('#intro [data-open-history=""]').click();
   await expect(dialog.locator('#cloud-login')).toHaveAccessibleName('使用 Google 登入');
 });
+
+test('Cloud save buttons share one height and centre line on a desktop row', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/');
+  await page.locator('#intro [data-open-history=""]').click();
+  const dialog = page.locator('#history-screen');
+  const boxes = await dialog.locator('#cloud-title ~ button:visible').evaluateAll(els => els.map(el => el.getBoundingClientRect().toJSON()));
+  expect(boxes.length).toBeGreaterThan(1);
+  for (const box of boxes) {
+    expect(box.height).toBeCloseTo(boxes[0].height, 1);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+  const sameRow = boxes.filter(box => box.top < boxes[0].bottom && box.bottom > boxes[0].top);
+  expect(sameRow.length).toBeGreaterThan(1);
+  for (const box of sameRow) expect(box.top + box.height / 2).toBeCloseTo(boxes[0].top + boxes[0].height / 2, 1);
+});

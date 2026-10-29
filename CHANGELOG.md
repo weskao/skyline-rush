@@ -1,3 +1,877 @@
+## [0.25.0] - 2026-10-28
+
+### 🚀 Features
+
+- **hud:** Add ios 18 switch-tick haptics
+
+### 🐛 Bug Fixes
+
+- **coast:** Restore warmer in-race lighting
+- **whats-new:** Keep gradient bar above scrolled media
+- **showcase:** Aim every camera view from its own side
+- **showcase:** Orbit on a steady circle centred on the car
+- **ui:** Keep phone AIRFLOW telemetry above the showcase car
+
+### 🚜 Refactor
+
+- **release-notes:** Move entries into release-notes-data
+
+### 📚 Documentation
+
+- **release:** Review 0.25.0 notes
+
+### 🧪 Testing
+
+- **showcase:** Probe real WebGL bearing for camera views
+- **showcase:** Keep camera probe out of preview suite
+- **showcase:** Orbit keeps a steady radius, rate and car spot
+- **showcase:** Cover every map's six views, framing and occlusion
+- **ui:** Re-record stylesheet baseline after airflow and whats-new css
+- **showcase:** Run each map's camera checks as its own test
+
+### ⚙️ Miscellaneous Tasks
+
+- Shard world-tour-mid-race across six runners
+## [0.24.0] - 2026-10-28
+
+### 🚀 Features
+
+- **types:** Enable checked JS contracts and compiler-backed TDD
+- **vue:** Migrate garage presentation and paint selection to reactive Vue panel
+- **vue:** Migrate guide device tabs and practice CTA to reactive Vue component
+- **vue:** Render What's New tabs and highlights with Vue state
+- **vue:** Move tutorial coach step presentation to Vue, keep frame progress direct
+- **vue:** Migrate audio and control menu visibility to Vue-owned panels
+- **types:** Make Vue 3 + strict TypeScript primary and replace JSDoc-first guidance
+- **types:** Add strongly typed Vue application state implementations
+- **vue:** Render race history and trend chart using strictly typed Vue state
+- **vue:** Complete typed History mode, daily challenge and medal rendering
+- **guide:** Add collectibles guide
+- **tooling:** Add make perf, make perf-phone and make help
+- **coast:** Stream grounded shoreline detail and tune art palette
+- **coast:** Adapt visuals to main refactor, preserve render load and repair screenshot gate
+- Extend controlled flight and reward clean NITRO air-to-road chains
+- Announce clean landing flow through existing localized callouts
+- Localize air-to-road chain feedback in English and Traditional Chinese
+- **phase3:** Add typed render-only frame pacing and sustained Auto load control
+- **phase3:** Pace Three.js drawing without skipping simulation
+- **phase3:** Add accessible FPS selector to VFX panel
+- **phase3:** Localize FPS controls in English and Traditional Chinese
+- **phase3:** Scale existing Three.js render targets without changing quality presets
+- **phase4:** Bounded themed skyline scenery and cached Sky Spiral elevation minimap
+- **phase4:** Theme-specific matte road surfaces for first five tracks
+- **phase4:** Tier-correct streamed scenery with neon signs, canyon strata and aurora snowcaps
+- **phase4:** Cache all minimap outlines and mark Sky Spiral elevated heading
+- **release-notes:** Play a short clip in what's new
+- **flight:** Let boost earn the air-to-road chain
+- **fx:** Spark burst and cue on chain landings
+
+### 🐛 Bug Fixes
+
+- **types:** Document HUD DOM node contracts for strict checkJs
+- **garage:** Resolve locked progression module in browser and Node tests
+- **types:** Inject browser-only dropdown helper to keep Node unit tests isolated
+- **types:** Remove duplicate JS state and enforce pinned vue-tsc semantic check
+- **types:** Pin TypeScript 5.9 for vue-tsc, avoid incompatible transient TS package
+- **swipe:** Render live selected race instead of unbound race snapshot
+- **types:** Install vue-tsc next to locked TS 5.9 to prevent TS 7 peer resolution
+- **types:** Satisfy Vue SFC semantic checks with typed SVG and Booleanish bindings
+- **types:** Keep history newest-first ordering within ES2022 lib
+- **types:** Type daily challenge board rows to resolve strict callbacks
+- **types:** Narrow swipe gesture state and guard against stale timers
+- **bootstrap:** Restore History modal references after TypeScript extraction
+- **test:** Scale History bootstrap regression timeouts for CI runners
+- **ui:** Initialize History controller before first home render
+- **types:** Narrow last swipe sample after minimum length guard
+- **build:** Point WebGL photo capture to typed export utility
+- **tests:** Keep production unlock regression on typed paint catalog
+- **ui:** Align Vue Garage and History fallback state with main
+- **test:** Locate next top-level CI job instead of nested steps
+- **ui:** Use typed icon module from audio controls
+- **types:** Preserve numeric route marker distances with readonly tuple inference
+- **types:** Treat dynamically built locale catalogs as validated locale-keyed data
+- **refactor:** Update all typed UI controllers to canonical i18n.ts
+- **types:** Bind native Vue aria-expanded as Booleanish state
+- **vue:** Correct eight stale relative imports to typed source paths
+- **types:** Explicitly type checkpoint gate collection to prevent recursive inference
+- **types:** Narrow readonly localization tuples and optional trick payouts
+- **types:** Validate untrusted race request mode before indexing allowed options
+- **test:** Verify removed JS duplicate, not the canonical TS source
+- **types:** Define engine-facing free-drive config adapter for typed tutorial
+- **tutorial:** Use canonical TS controller in Vue UI and verify JS removal
+- **types:** Accept blocked local storage as nullable release preference store
+- **garage:** Update typed production progression import
+- **types:** Narrow input target and pointer types without changing controls
+- **test:** Preserve read-only Event.target in synthetic keyboard regression
+- **typecheck:** Pin official Three.js declarations for typed geometry in CI
+- **refactor:** Resolve final release/history imports after TS migration
+- **refactor:** Repair nested production access import and recursively test source paths
+- **types:** Narrow Three.js light sentinel without changing warmup behavior
+- **types:** Safely append instance meshes to typed batching groups
+- **cloud:** GREEN keep failed avatar fallback stable across same URL refresh
+- **ui:** Reserve space for home camera controls
+- **ui:** Fade the phone intro's scroll edge above the footer
+- **ui:** Hide mid-race VFX rows whose dropdown is unavailable
+- **audio:** Show slider level live while dragging
+- **ci:** Preserve Coast after captures before layout suite; log RED and merge evidence
+- **phase3:** Accumulate elapsed VFX time across skipped draws; sample actual presents
+- **phase3:** Show actual presented frame pacing in ?perf rather than rAF callback rate
+- **phase3:** Recover i18n and module-size CI with typed FPS display modules
+- **phase3:** Exercise visible FPS controls and preserve accessible technical terms
+- **ui:** Keep tutorial coach clear of the tool row
+- **ui:** Give compact touch controls a 44px tap
+- **phase4:** Type cached route samples with canonical distance for elevated overlay
+- **phase4:** Distinguish sampled distance-bearing routes from projected SVG markers
+- **ui:** 44px taps in top-bar panels on touch
+
+### 💼 Other
+
+- Integrate main docs and media into Vue refactor branch
+- Integrate current main into Coast visual benchmark branch
+- Sync latest Phase 1 changes from main into Coast branch
+- Integrate Phase 3 adaptive FPS with Phase 2 Coast visuals and profiling
+- Sync latest main touch targets with Phase 4 map and scenery
+
+### 🚜 Refactor
+
+- **release:** Extract event-driven release notes controller from main
+- **garage:** Extract dialog controller and testable presentation state
+- **history:** Isolate history and daily-card rendering from game bootstrap
+- **guide:** Extract onboarding modal controller from bootstrap
+- **swipe:** Isolate preview pointer and trackpad lifecycle
+- **audio:** Move audio controls and persistent settings into event controller
+- **settings:** Extract audio and controls dropdown state management
+- **tutorial:** Extract coach hint rendering into testable UI module
+- **types:** Wire garage, guide, and release controllers to typed state
+- **types:** Use typed tutorial and controls state across UI
+- **vue:** Extract typed History panel preserving all cloud-save controls
+- **types:** Move Guide and Controls event controllers to strict TypeScript
+- **types:** Migrate Garage and Audio event controllers to strict TypeScript
+- **types:** Move tutorial step renderer into strict TypeScript
+- **types:** Migrate release notes dialog lifecycle and keyboard navigation to TypeScript
+- **types:** Enforce History and daily UI data boundaries with TypeScript
+- **types:** Migrate track swipe lifecycle to strict TypeScript and preserve gestures
+- **types:** Move audio settings and new-build check to typed services
+- **ui:** Move shared dropdown dismissal to typed, Node-safe TypeScript
+- **ui:** Migrate accessible custom select controller to strict TypeScript
+- **ui:** Migrate bilingual mobile guide catalog to native TypeScript
+- **ui:** Migrate photo export and track swipe math to strict TypeScript
+- **controls:** Validate persisted preferences with strict TypeScript
+- **garage:** Type paint catalog while keeping styles and unlocks unchanged
+- **services:** Type cloud profile and recent-race persistence without duplicate normalization
+- **controls:** Type key binding and presentation state, share key-map copy logic
+- Migrate VFX and device-quality settings to strict TypeScript
+- Type race objective contracts without changing completion behavior
+- Type versioned race session contract and preserve seeded streams
+- **ui:** Type shared SVG icons and section sign contract without visual changes
+- **ui:** Type minimap path and SVG updates with unchanged DOM rendering
+- **input:** Type slide pad gesture state without changing steering math
+- **i18n:** Type locale and translation state without changing catalogs or DOM behavior
+- **vue:** Let Vue own panel aria-expanded from reactive state
+- **stats:** Type practice telemetry and multi-stage sprint contracts
+- **cup:** Type championship standings and preserve validated scoring
+- **green:** Type active-item service and remove duplicate JS
+- **modes:** Migrate elimination, checkpoint and stunt state machines to strict TypeScript
+- **feedback:** Migrate race audio cues and UI callouts to typed event state
+- **rules:** Type validated race config contracts and preserve legacy defaults
+- **tutorial:** Type eight-step input controller while preserving real steering
+- **ghost:** Type replay recording, storage validation and interpolation
+- **i18n:** Type complete en/zh-TW catalogs without rewriting player-facing text
+- **cloud:** Type Firebase account and transaction boundaries without changing Firestore behavior
+- **release:** Type versioned announcements and retain existing localized content
+- **access:** Type production and dev progression aliases without changing unlock behavior
+- **input:** Type keyboard, pointer, slide and device tilt controller
+- **types:** Remove duplicate legacy JSDoc game contract shadow
+- **vue:** Add typed reactive start-screen status
+- **vue:** Render daily card and medal badge through shared reactive state
+- **vue:** Remove imperative start-screen status DOM ownership
+- **types:** Isolate cloud sync status in strict TypeScript
+- **cloud:** Delegate sync metadata to typed service without changing public API
+- **vue:** Add single typed audio presentation state
+- **audio:** Publish typed reactive presentation instead of rewriting Vue DOM
+- **vue:** Bind audio controls and accessible values to Vue state
+- **vue:** Centralize release opener unread and visibility state
+- **vue:** Centralize release opener unread and visibility state
+- **vue:** Centralize release opener unread and visibility state
+- **vue:** Centralize release opener unread and visibility state
+- **types:** Migrate seeded streams and frame stats to TypeScript
+- **history:** Type career, daily-board and star projections without changing storage
+- **cloud:** Migrate permanent rule-scoped best score merge to strict TypeScript
+- **types:** Migrate deterministic Gauntlet hazards to strict TypeScript
+- **types:** Migrate shared car and road geometry builders to TypeScript
+- **types:** Migrate stable road-relative vehicle orientation to strict TypeScript
+- **types:** Migrate AIRFLOW showcase and camera presets to strict TypeScript
+- **cloud:** Type versioned cross-device progress merge and race deduplication
+- **types:** Migrate account-isolated cloud local persistence to strict TypeScript
+- **history:** Move Classic bests, medals, stars and paint to typed storage
+- **history:** Migrate Ghost and Daily local persistence to strict TypeScript
+- **types:** Complete typed History service and remove legacy JavaScript
+- **types:** Migrate WebKit shader warmup to strict TypeScript
+- **types:** Move Sky Spiral deterministic geometry and gap handling to strict TypeScript
+- **types:** Preserve World Tour GPU scenery instancing with typed Mesh contracts
+- **types:** Move ten-track centerlines and HUD minimap projection to strict TypeScript
+- **hud:** GREEN migrate idempotent DOM setters to strict TypeScript
+- **render:** GREEN type rear LED frame state without changing animation
+- **cloud:** GREEN transfer profile avatar and identity DOM ownership to Vue
+- **cloud:** GREEN move Cloud Save buttons and status into Vue view
+- **guide:** Integrate typed collectibles guide
+- **audio:** Split music data and cue detection
+- **ui:** Move cloud save controller out of main.js
+- **audio:** Wire audio controls inside audio-ui
+- **ui:** Move key rebinding into keymap-ui
+- **ui:** Move touch controls into touch-controls-ui
+- **ui:** Move vfx, motion and quality notice out
+- **ui:** Own session progress and ghosts in modules
+- **results:** Move race settlement out of phaseUI
+- **results:** Move result screens into result-screen
+- **hud:** Move the in-race HUD into race-hud
+- **ui:** Move race selection into race-select-ui
+- **ui:** Move dialogs and page utilities out of main.js
+- **game:** Extract typed race standings to restore module-size gate
+- **phase4:** Unify classic road renderer with canonical path mapping
+
+### 📚 Documentation
+
+- **todo:** Mark typed locale service verified under focused TDD gate
+- **todo:** Group verified Vue and TypeScript slices under correct steps
+- **todo:** Record verified typed release notes migration
+- **todo:** Mark verified input, release, access and single-source type migrations
+- **todo:** Check off verified Vue-owned home status migration
+- **todo:** Check off verified Cloud Sync types and Vue-owned audio panel
+- **todo:** Check verified Vue release opener and run final parity [full-regression]
+- **architecture:** Set strict typescript as ui default
+- **readme:** Add clickable video posters
+- **readme:** Add mobile screenshots and demo
+- **readme:** Add direct links to demo videos
+- **readme:** Embed demo videos as inline players
+- Remove stale gameplay poster
+- Remove embedded home-screen poster
+- **todo:** Add tutorial trigger flow bug
+- **todo:** Mark strict TypeScript RNG and performance migration verified
+- **todo:** Check off typed career and daily statistics module
+- **todo:** Record verified typed cloud best merge and test merged branch [full-regression]
+- **todo:** Mark verified typed hazards service complete
+- **todo:** Mark typed shared geometry verified and run full regression [full-regression]
+- **todo:** Mark typed road-relative vehicle pose migration green
+- **todo:** Check Vue refactor showcase TS module; full parity run [full-regression]
+- **todo:** Mark verified typed cloud storage and classic achievements
+- **todo:** Check off typed Ghost and Daily persistence
+- **todo:** Complete typed shader warmup and run exact HEAD parity [full-regression]
+- **todo:** Mark typed Sky Spiral path migration and focused TDD gate verified
+- **todo:** Mark verified World Tour TypeScript GPU batching
+- **todo:** Record typed ten-track road model and verify latest branch [full-regression]
+- **refactor:** Account for verified Vue ownership and audit gates [full-regression]
+- **refactor:** Close verified Vue UI ownership and record remaining physical gates [full-regression]
+- **refactor:** Record verified local acceptance
+- **refactor:** Record iOS simulator, WebKit and Android device evidence
+- **refactor:** Record physical Android A/B and close Steps 1 and 5
+- **refactor:** Record physical iPhone and audio check
+- Record adaptive FPS request and player feedback for future discussion
+- Outline gameplay, Coast art and adaptive FPS phases
+- Record the main/audio module split
+- Record full CI pass for the module split
+- Plan Phase 1 flight and combo TDD checkpoints
+- **phase3:** Track implementation, unverified CI and physical-device acceptance separately
+- **phase4:** Prevent route, minimap and FPS regressions across future track edits
+- **phase4:** Check completed visual/streaming improvements; keep pending evidence honest
+- **todo:** Verify Phase 1-3 delivery, mark completed milestones and retain evidence gates
+- **release:** Review 0.24.0 notes
+
+### ⚡ Performance
+
+- **hud:** Cache DOM updates and avoid unchanged visibility/text setters
+- **hud:** Skip steady flight/score/leaderboard text updates
+- **phase4:** Stream Sky Spiral road buffers by sector, translate geometry per frame
+
+### 🧪 Testing
+
+- **refactor:** Define HUD idempotence regressions before implementation
+- **types:** Add compiler-backed RED checks for shared game contracts
+- **refactor:** RED release-notes keyboard behavior before extraction
+- **refactor:** RED garage presentation contracts before extraction
+- **refactor:** RED history trend data projection before UI extraction
+- **refactor:** RED guide choice and completed-practice labels
+- **refactor:** RED track swipe pointer-capture safety contract
+- **refactor:** RED audio slider and mute presentation contracts
+- **refactor:** RED settings panel phase gate
+- **vue:** RED reactive garage presentation ownership
+- **vue:** RED guide device tabs and practice CTA state
+- **vue:** RED release notes reactive tabs and highlight projection
+- **refactor:** RED tutorial input hints across touch control modes
+- **vue:** RED tutorial coach step and visibility state
+- **vue:** RED dropdown reactive open and close state
+- **types:** RED Vue 3 TypeScript-first migration contracts
+- **types:** RED native TypeScript UI state and Vue template semantic checking
+- **types:** Exercise native typed Vue state in Node regressions
+- **swipe:** RED regression for undeclared preview race snapshot
+- **vue:** RED History panel extraction preserves cloud-save and accessibility selectors
+- **types:** RED Guide and Controls typed controller migration
+- **history:** RED typed Vue history projections for untrusted saved progress
+- **history:** RED Vue ownership for mode records, daily board and medals
+- **types:** RED Garage and Audio native TypeScript migration
+- **types:** RED typed Tutorial coach step renderer
+- **types:** RED release-note event controller migration
+- **types:** RED typed History and challenge controller boundary
+- **types:** RED typed swipe controller and single source of truth
+- **types:** Keep History ownership regression pointed at migrated TS renderer
+- **types:** RED typed audio preferences and update service ownership
+- **bootstrap:** Protect History extraction from unbound modal refs (RED)
+- **bootstrap:** Prevent release announcement modal from masking Start regression
+- **ui:** RED typed dropdown outside-click behavior without browser globals
+- **ui:** RED typed custom select import with no browser globals
+- **ui:** RED bilingual mobile guide TypeScript catalog migration
+- **ui:** RED migration contract for typed photo and swipe utilities
+- **controls:** RED persisted control state parity before TypeScript migration
+- **garage:** RED typed paint catalog must preserve unlocks and appearance
+- **start:** Protect first-visit game start on desktop and mobile
+- **ui:** Lock main DOM/CSS parity and record verified TypeScript groundwork
+- **ui:** RED main-branch Garage and History initial presentation parity
+- **refactor:** RED TypeScript contracts for cloud profile and recent races
+- **refactor:** RED existing presentation and keymap behavior against typed modules
+- **ci:** RED focused refactor verification with explicit full final gate
+- **refactor:** RED VFX presets and device-quality TypeScript migration parity
+- Require typed race objectives and unchanged completion contracts (RED)
+- Require strict typed session contract with stable seed identity (RED)
+- **refactor:** RED visual icon and track sign contracts before strict TypeScript migration
+- **ui:** RED typed minimap contract; record verified icon and sign migration
+- **controls:** RED typed slide-pad contract; record verified minimap migration
+- **locale:** RED typed locale parity; mark verified slide-pad migration
+- **ui:** RED Vue-owned aria-expanded follows shared panel state
+- **refactor:** RED typed practice/sprint contracts; record Vue panel ownership verification
+- **refactor:** RED source import path audit; record typed practice and sprint acceptance
+- **cup:** RED typed championship progression and immutable standings
+- **red:** Require typed active-item service without legacy duplicate
+- **modes:** RED strict TS migration contracts for elimination, checkpoint and stunt
+- **feedback:** RED typed callouts/audio contracts and record verified mode migration
+- **rules:** RED strict typed race-config boundary and record verified feedback services
+- **tutorial:** RED typed tutorial controller and record verified race-config migration
+- **ghost:** RED typed ghost playback contract and record verified tutorial migration
+- **locale:** RED canonical typed catalogs and record verified Ghost migration
+- **cloud:** RED typed Firebase boundary and record verified localized catalogs
+- **release:** RED typed versioned announcements preserve localization and release order
+- **access:** RED typed progression-alias contract for production and local dev
+- **input:** RED typed event-driven keyboard lifecycle contract
+- **types:** RED reject duplicate JSDoc shadow of canonical TypeScript game contracts
+- **red:** Require Vue ownership for start-screen daily and medal status
+- **red:** Require typed cloud-sync metadata service without legacy duplication
+- **red:** Audio settings panel must own switch and volume presentation in Vue
+- **red:** Allow explicit exact-commit full regression on refactor push
+- **red:** Release opener has one Vue-owned unread and visibility state
+- **red:** Require one strict TypeScript source for seeded streams and performance stats
+- **red:** Require single strict TS career/daily/stars projection service
+- **red:** Require typed permanent rule-scoped score merge without JS duplication
+- **red:** Require strict typed hazards service with stable deterministic output
+- **red:** Require typed shared road and vehicle geometry factory
+- **red:** Require strictly typed road-relative vehicle pose without shadow JS
+- **red:** Require single typed showroom cameras and AIRFLOW previews
+- **red:** Require typed cloud progress schema and run-merging ownership
+- **red:** Require typed account-isolated local cloud persistence
+- **refactor:** Point cloud migration contracts at TypeScript source and repair syntax
+- **red:** Require typed history achievements and paint persistence
+- **red:** Require typed Ghost and Daily history with existing storage contracts
+- **red:** Require strict TypeScript entry for Classic and Mode history
+- **red:** Require typed shader warmup preserving hidden-light state
+- **red:** Require typed Sky Spiral world path and unchanged frame geometry
+- **red:** Require typed GPU instancing while preserving exact scenery transforms
+- **red:** Require typed ten-track road and map projections without legacy duplication
+- **refactor:** RED require typed HUD DOM utility
+- **refactor:** RED type-safe rear-light animation parity
+- **refactor:** Capture desktop/mobile frame percentiles and audit TS/Vue ownership [full-regression]
+- **refactor:** RED cloud profile presentation must be Vue-owned
+- **cloud:** Exercise Vue-driven avatar fallback on image error
+- **refactor:** RED require Vue-owned Cloud Save status and button presentation
+- **cloud:** RED preserve avatar fallback across profile refresh
+- **ui:** Record corrected camera layout baseline
+- **ui:** Record the phone intro scroll-edge stylesheet baseline
+- **coast:** Define visual benchmark and real-WebGL RED evidence
+- **ci:** Retain real Coast WebGL captures and track unverified gates
+- **arch:** Ratchet source modules to 400 lines
+- **arch:** Fail legacy js guard on syntax errors
+- **coast:** RED coverage for typed palette extraction and perf load samples
+- **red:** Define Phase 1 flight endurance and clean landing chain behavior
+- Align existing FLY and AIR DASH regression values with Phase 1
+- Isolate exhaustion from pickups and update shortcut flight fuel contract
+- **coast:** Capture same-sha main BEFORE and Phase 2 AFTER, require visual gate
+- **red:** Preserve rank and live-gap readers during game module split
+- **phase3:** Add RED coverage for frame pacing, Auto adaptation and simulation isolation
+- **phase3:** Exercise saved FPS choices, locale parity and invalid migration in browser
+- **phase3:** Prove full game simulation state identical at 30 and 60 rendered FPS
+- **phase4:** RED contracts for first-five scenery and elevated spiral minimap
+- **phase4:** RED assert road/minimap share one classic centreline
+- **phase4:** RED contracts for readable asphalt and Sky Spiral surface
+- **phase4:** Cover first-five showcases, live minimaps and 30 FPS across viewports
+- **phase4:** RED contiguous scenery LOD coverage and low-cost streaming regressions
+- **phase4:** RED spiral overpass direction chevron follows canonical route
+- **phase4:** Assert cached overpass direction on home and in-race maps
+- **phase4:** RED Sky Spiral road mesh upload reuse and camera-relative parity
+- **phase4:** Reference the actual Sky Spiral scene graph in RED coverage
+- **perf:** Expect present-to-present timing in the ?perf overlay
+- **phase4:** Scale the first-five browser timeout by the CI factor
+- **ui:** Pin main UI contract to the current stylesheet
+- **minimap:** Count the main route line and still forbid extra routes
+
+### ⚙️ Miscellaneous Tasks
+
+- **types:** Gate unit workflow on strict TS and Vue SFC semantic checks
+- **refactor:** Focus intermediate typecheck/unit/cloud, reserve full final regression
+- **refactor:** Run exact-HEAD Browser World Tour and layout [full-regression]
+- **artifacts:** Add compressed demo videos
+- **whats-new:** Add 0.24.0 air road chain clips
+- **whats-new:** Re-record 0.24.0 chain clips with BOOST and spark burst
+## [0.23.0] - 2026-10-25
+
+### 🚀 Features
+
+- **dev:** Add phone server menu command
+
+### 🐛 Bug Fixes
+
+- **cup:** Validate completed stage snapshots before adding or scoring heats (GREEN)
+- **cup:** Validate state for completion and total-time views (GREEN)
+- Coordinate showroom camera and Start safe-area spacing
+- Auto-frame complete showroom vehicle at every track and viewport
+- **home:** Tie Start height to the camera dock budget so they never overlap
+- **showcase:** Keep whole car and landmark in frame on portrait and tall landmarks
+
+### 📚 Documentation
+
+- **todo:** Track non-Firebase feature work and pending verification gates
+- **todo:** Record upstream merge and further HUD test-first changes with verification pending
+- **todo:** Define Cup safety stop point before planned Vue TypeScript refactor
+- Require responsive spacing regressions for ready controls
+- **release:** Require rich telegram announcements
+- Require whole-vehicle viewport framing for every future track
+- Require whole-vehicle viewport framing for every future track
+- **readme:** Add home screen and gameplay videos
+- **release:** Review 0.23.0 notes
+- **release:** Review 0.23.0 notes
+
+### ⚡ Performance
+
+- **hud:** Cache per-frame element references and avoid repeated static writes
+- **hud:** Avoid redundant updates of stable race labels
+
+### 🧪 Testing
+
+- **hud:** Reproduce per-frame DOM lookup and redundant text writes (RED)
+- **hud:** Require zero redundant stable race status writes (RED candidate)
+- **cup:** RED for corrupted intermediate Cup standings and heat recovery
+- **cup:** RED for corrupt completion and aggregate time projections
+- Expose showroom camera and Start overlap across viewports
+- Assert full home-showcase car silhouette stays in frame across tracks and viewports
+## [0.22.1] - 2026-10-25
+
+### 🚀 Features
+
+- **cloud:** Minimize persisted Google identity to name and email
+- **cloud:** Restrict account name/email documents to owning UID
+- **cloud:** Sync private Google name and email on account sign-in
+- **cloud:** Persist private Google account details and delete with save
+- **cloud:** Preserve permanent mode and Stunt bests independently of rolling history
+- **cloud:** Apply UID-only rules for permanent mode/stunt results
+- **cloud:** Transactionally merge permanent modes and atomically delete all private cloud docs
+- **ui:** Show Google player profile and manual cloud sync action
+- **i18n:** Localize cloud profile, manual sync and safe account switch copy
+- **cloud-ui:** Safe per-UID switch, durable sync state, Google identity and guarded atomic delete
+- **i18n:** Describe protected deletion retry in English and Traditional Chinese
+- **cloud:** Validate versioned backup imports and keep additional mode metadata
+- **ui:** Expose validated progress import alongside export
+- **cloud:** Restore validated JSON progress and permanent bests with user confirmation
+- **i18n:** Localize safe JSON import flow and failure guidance
+- **cloud:** Validate nested Star, best-time and medal values in Spark Rules
+- **ui:** Explain that signing out keeps Google identity and saved results
+- **ui:** Reveal cloud sign-out explanation only for signed-in players
+- **i18n:** Clarify sign-out and progress deletion do not remove Google accounts
+- **ui:** Announce explicit cloud sync state with ARIA busy and offline recovery
+- **release:** Gate notes on player copy and review
+- **release:** Filter developer-only notes harder
+
+### 🐛 Bug Fixes
+
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **showcase:** Unify preview angles and surface camera dock
+- **ui:** Resolve phone browser regressions
+- **showcase:** Keep camera controls clear of quality notice and readable in zh-TW
+- **cloud:** Restore valid Firestore rules with private account schema
+- **cloud:** Retain mode telemetry and 4096-character rule signatures
+- **cloud:** Preserve per-account permanent records and clear them on deletion
+- **i18n:** Separate Traditional Chinese cloud deletion message key
+- **cloud:** Roll back partial browser progress writes when localStorage fails
+- **i18n:** Repair comma in Traditional Chinese cloud switch translation
+- **i18n:** Remove disallowed English technical terms from Chinese import error
+- **cloud:** Use the initialized Firestore instance for private account lookup
+- **cloud:** Repair duplicated Firestore Rules structure and validate private progress fields
+- **whats-new:** Pin unread tag to the tab corner
+- **home:** Hold incoming frame through swipe completion and show Airflow hint once per reload
+- **showcase:** Ground all track preview cars while AIRFLOW is enabled
+- **showcase:** Adapt curated camera eye to clear roadside occlusion without losing landmarks
+- **showcase:** Count opaque multi-material structures in camera obstruction probe
+- **showcase:** Preserve full Tokyo Alpine vehicle with dolly-back before raising camera
+- **qa:** Measure projected showroom body width
+- **home:** Preserve swipe snapshots across interruption
+- **home:** Center version in the footer grid
+
+### 💼 Other
+
+- **release:** Run the gate tests at the tagged version
+- Sync main into Whats New announcement feature branch
+- Main into feature/home-seamless-track-carousel
+- Main into feature/home-seamless-track-carousel
+- Home seamless track carousel flicker fix and per-load Airflow hint
+
+### 📚 Documentation
+
+- **showcase:** Track validation gates in TODO
+- Plan Spark-compatible Firebase integrity tasks with 36 P0/P1 checks
+- Record partial TDD implementation and unverifed Spark launch gates
+- **cloud:** Document Spark-only private account, permanent best and backup flows
+- **todo:** Mark verified pure-data tasks and record CI evidence without claiming cloud acceptance
+- **todo:** Check evidenced P0/P1 tasks after green unit, emulator and rules CI
+- **release:** Describe the unread corner tag
+- **release:** Add notes review and release commands
+- **release:** Draft and review from player changes
+- **showcase:** Specify AIRFLOW-grounded hero across all tracks
+- **showcase:** Require ground pose with AIRFLOW for new tracks
+- **todo:** Track AIRFLOW grounded parity and verification gates
+- **showcase:** Require occlusion-free landmark and AIRFLOW camera views
+- **claude:** Enforce real car visibility in every World Tour preview
+- **todo:** Track showroom obstruction fix and QA gates
+- **todo:** Classify Firebase tasks into Spark-now, production acceptance and future triggers
+- **release:** Review 0.22.1 notes
+- **todo:** Track home footer alignment gates
+
+### 🎨 Styling
+
+- **ui:** Add responsive Google cloud identity row and sync button
+
+### 🧪 Testing
+
+- **showcase:** Add failing shared camera regression tests
+- **showcase:** Cover all tracks and responsive camera dock
+- **release:** Pin the localized image check to 0.21.0
+- **release:** Handle optional announcement images
+- **showcase:** Reproduce performance-notice blocking camera dock
+- **cloud:** Specify minimal private Google account fields before implementation
+- **cloud:** Specify private Firestore Google account document rules
+- **cloud:** Preserve mode telemetry and full-length rules on device sync
+- **cloud:** Specify permanent mode/stunt bests restore and merge before implementation
+- **cloud:** Require owner-only bounded permanent-best Firestore documents
+- **cloud:** Guard permanent modes across account switch and deletion
+- **cloud:** Specify profile UI, manual sync and private account persistence
+- **cloud:** Verify permanent Time Attack best survives fresh-browser login
+- **cloud:** A failed local multi-key save must roll back partial changes
+- **cloud:** Validate versioned JSON backup import and cap file size
+- **cloud:** Avoid duplicate Firebase SDK instances in profile emulator assertion
+- **cloud:** Verify Stunt records and JSON import across Firebase emulator browsers
+- **cloud:** Preserve offline per-account bests while switching Google identities
+- **cloud:** Reject malformed nested stars, times and medal dates in Firestore Rules
+- **ui:** Distinguish signing out, deleting game data and deleting Google identity
+- **ui:** Dismiss native confirmation before awaiting click completion
+- **ui:** Require accessible cloud sync states and avatar fallback
+- **cloud:** Reopen save dialog after account-switch navigation
+- **home:** Reproduce stale track flash at animation handoff and restore swipe hint on reload
+- **home:** Run per-load Airflow hint regression in real touch viewport
+- **home:** Update existing phone reload acceptance for per-load swipe hint
+- **home:** Verify no outgoing-frame flash on trackpad scroll handoff
+- **home:** Watch actual incoming track during carousel handoff
+- **showcase:** Require grounded AIRFLOW on curated and future tracks
+- **showcase:** Let WebGL QA probe airflow and camera views
+- **showcase:** Verify grounded airflow and six camera angles in real WebGL
+- **showcase:** Enforce unoccluded car body in Tokyo Alpine and all World Tour views
+- **showcase:** Exercise unobstructed AIRFLOW camera UI on every World Tour map
+- **showcase:** Honor WebGL probe frame count for six-angle checks
+
+### ⚙️ Miscellaneous Tasks
+
+- Temporarily validate showcase branch before merging
+- Run full automated checks on Firebase integrity feature branch
+- **git:** Ignore node_modules symlinks in worktrees
+## [0.22.0] - 2026-10-24
+
+### 🚀 Features
+
+- **mode00:** GREEN — stable per-system seeds and bounded route inputs
+- **stunt:** GREEN — preserve rule-scoped best score, combo and air time across history trimming
+- **checkpoint:** GREEN — keep rendered gates clear of real roadside obstacles
+- **history:** GREEN — persist versioned mode identity and bounded item/hazard telemetry
+- **gauntlet:** GREEN — reward bounded one-time clean near-miss passes
+- **history:** GREEN — preserve per-mode personal bests beyond fifty-run history rotation
+- **history-ui:** GREEN — filter mode records with personal bests and eligible Ghosts
+- **cloud:** GREEN isolate local race progress by Google account
+- **cloud:** Reload account-specific progress before authenticating new player
+- **cloud:** GREEN persist per-account pending state and last Firestore success
+- **cloud:** Show last successful sync and offline pending state in History
+- **cloud:** GREEN deduplicate synced Classic/mode/daily attempts by stable identity
+- **touch:** Keep thumb controls off the screen corners
+- **home:** Swipe the 3d preview to change track
+- **audio:** Persist audio prefs in local storage
+- **release:** Add curated bilingual release data and seen-version contract
+- **release:** Display dismissible local release notes without interrupting races
+- **release:** Add responsive native What's New dialog and home entry
+- **i18n:** Translate release notes UI to English and Traditional Chinese
+- **whats-new:** Browse the latest five releases
+- **whats-new:** Mark every release missed since last visit
+- **input:** Slide a steering thumb into brake to drift
+
+### 🐛 Bug Fixes
+
+- Compose steering and pitch in the local road frame
+- Preserve road pitch and bank when rendering cars on curved tracks
+- Prevent repeat impacts while continuously steering into a road edge
+- **mode00:** Clarify bounded gauntlet input validation errors
+- **elimination:** GREEN — derive player knockout rank from contenders left
+- **gauntlet:** GREEN — skip raised shortcut hazards and guard nonfinite motion time
+- **history:** GREEN — bound untrusted mode history and reject impossible records
+- **ci:** Scale WebGL black-frame timeout and require all browser shards before main merge
+- **i18n:** Localize cloud Ghost copy; whitelist Google as untranslated brand
+- **i18n:** Localize pending, account switch and last successful cloud sync
+- **i18n:** Add missing commas in cloud sync locale keys (CI RED parse error)
+- **cloud:** Retain unranked mode histories restored from Firestore
+- **i18n:** GREEN localize mode history filters, notice and PB/Ghost badges
+- **cup:** GREEN reject unknown tracks and malformed rival scorecards
+- Keep language and VFX controls clickable above finished-race overlay
+- Preserve real braking instead of restarting drifts against a contacted rail
+- **ui:** Keep topbar dropdowns above the VFX tool row
+- **ui:** Lower ios footer into home-indicator inset
+- Keep one trackpad gesture alive through slow WebGL wheel-event pauses
+- **home:** Time trackpad gestures on the wheel events' own timestamps
+- **ci:** Make trackpad swipe regression deterministic
+- **ui:** Stop sticky touch hover on icon buttons
+- **ui:** Stop sticky touch hover on controls button
+- **tutorial:** Preserve steering across lessons and disable automatic lane centering
+- **tutorial:** Use free steering input in frame loop
+- **home:** Slide adjacent full-viewport track scenes without dimmed gaps
+- **home:** Capture fresh opaque WebGL frames and preserve pointer capture during swipe
+- **input:** Suppress and clear FLY when daily rule disables flight
+- **daily:** Synchronize locked FLY and HUD with challenge rule
+- **daily:** Synchronize locked FLY and HUD with challenge rule
+- **daily:** Synchronize locked FLY and HUD with challenge rule
+- **daily:** Synchronize locked FLY and HUD with challenge rule
+- **ui:** Add accessible locked-flight icon
+- **release:** Use Node-compatible JSON import for unit tests
+- **release:** Localize the version entry accessible label
+- **release:** Guard blocked storage without stopping the game
+- **release:** Keep home announcement entry above phone safe area
+- Harden release-note image paths
+- **ui:** Block system selection menus on long press
+- **daily:** Keep the no-flight FLY label through the frame loop
+
+### 💼 Other
+
+- Main into feature/mode00-objective-contract
+- Bring Firebase cloud save main into MODE-00 branch
+- Sync release v0.20.1 from main into MODE-00
+- Bring latest main audio lifecycle fix into MODE-00
+- Integrate latest main v0.21.0 into MODE-00
+- Ship MODE-00 objective contract to main
+- Add make verify for full local regression gate including World Tour
+- Bring main into feature/sky-spiral-cornering-stability
+- Bring origin/main tutorial steering fixes into local main
+- Seamless 3D home track previews and latest main fixes
+- Daily no-flight controls and HUD accessibility (preserve track swipe changes)
+- **release:** Refuse a release without its notes
+
+### 🚜 Refactor
+
+- **release:** Drop dialog language toggle
+
+### 📚 Documentation
+
+- Track cross-course stability fixes and unverified acceptance gates
+- Add scoped road-frame, wheel-clearance and rail-contact regression rules
+- Make all-track physics and renderer stability non-regression rules explicit
+- **mode00:** Mark deterministic streams and safety bounds complete after GREEN CI
+- **stunt:** Check off ruleset-scoped lifetime bests after GREEN unit/build
+- **mode00:** Clarify completed seeds versus outstanding stage acceptance
+- **checkpoint:** Mark real-route gate safety complete after unit and WebGL GREEN CI
+- **modes:** Check off verified Checkpoint and Elimination criteria after WebGL GREEN
+- **history:** Mark stable rule-versioned mode result contract complete after GREEN CI
+- **gauntlet:** Check off clean/near-miss scoring and isolated mode records after GREEN CI
+- **gauntlet:** Verify seeded passable paths and collision acceptance after GREEN CI
+- **history:** Validate safe migrated mode records and check off 10C persistence
+- **history:** Describe filtered challenge PBs and Ghosts in EN/zh-TW
+- **todo:** Record merged main and cloud TDD progress pending full verification
+- **todo:** Mark verified 10C mode History and PB/Ghost acceptance
+- Require real clickability regression checks after collisions and race finish
+- Make post-finish UI clickability an explicit project invariant
+- Record Tokyo post-finish fix, merged main and verified unit CI status
+- Define regression-first TDD, all-track validation and merge readiness gates
+- Require six-step regression-first workflow and exact-commit merge gate
+- Apply regression-first verification gates to Codex and other agents
+- Track enforceable regression-first workflow and outstanding acceptance gates
+- **readme:** Describe shared AI collision rules
+- Track trackpad-wheel RED evidence, fix and exact-commit CI acceptance
+- **todo:** Record trackpad root cause, regression gates and main ruleset
+- **todo:** Record the CI wheel-delta scaling failure
+- **todo:** Mark the final-head quality gate green
+- **todo:** Defer daily rewards and note flight UX verification
+- **todo:** Outline TDD release announcement checklist
+- Require player-friendly bilingual release announcements
+- Bring announcement UI specification to implementation branch
+- **release:** Require plain player-first copy and explain safe rollout
+- **todo:** Check verified release content and player-friendly writing rule
+- **todo:** Split verification items and tick verified TDD, screenshot and automated-test checks
+- **todo:** Tick bilingual and maintainability check
+- **todo:** Note notes follow the site language
+- **release:** Document what's new workflow
+- **release:** Document unread release marks
+- **input:** Describe sliding an arrow into brake to drift
+- **claude:** Add ui architecture conventions
+- **release:** Add what's new notes for 0.22.0
+- Enforce player-controlled steering throughout tutorial
+
+### 🎨 Styling
+
+- **home:** Render adjacent swipe pages at full viewport width
+- **release:** Fit player announcement on desktop and touch viewports
+
+### 🧪 Testing
+
+- Cover continuous road-aligned vehicle pose on curved tracks (RED)
+- Reproduce repeated rail collisions on every track (RED)
+- **mode00:** RED — require independent subsystem seeds and bounded layouts
+- **stunt:** RED — rule-scoped peak score, combo, air time survive history trimming
+- **checkpoint:** RED — require route-safe gates avoiding real obstacle footprints
+- **checkpoint:** Regress real-world scenery clearance on all ten routes
+- **elimination:** RED — rank eliminated player by active contenders, not fixed fourth
+- **modes:** Verify live checkpoint HUD metrics and Elimination WebGL in CI
+- **elimination:** Verify early knockout and challenge wins never mutate Career
+- **history:** RED — require versioned mode identity and bounded mode result metrics
+- **gauntlet:** RED — distinct near-miss reward and challenge-only hazard records
+- **gauntlet:** RED — keep all ten routes passable and reject nonfinite hazard positions
+- **history:** RED — reject malformed mode history and invalid new-mode records
+- **history:** RED — require durable rule-scoped personal bests for every challenge mode
+- **history-ui:** RED — mode filter, persistent PB, Ghost and personal-only History
+- **history-ui:** Verify mobile-portrait History filter layout and capture real screenshot
+- **i18n:** Ensure Ghost uses a real regex word boundary
+- **browser:** Make 5km sprint near-miss end-to-end deterministic via dev-only gameplay fixture
+- **cloud:** RED verify account-specific local progress isolation
+- **cloud:** RED pending and last successful sync remain account-scoped
+- **cloud:** RED stable race and challenge IDs prevent duplicate career totals
+- **cloud:** Use authoritative Daily Challenge modifier catalog
+- **i18n:** RED require App.vue and mode History translations in both locales
+- **cup:** RED reject malformed tracks and duplicated or nonfinite Cup standings
+- Reproduce Tokyo finish click interception after repeated collisions (RED)
+- Reproduce drift restarting against the same rail (RED)
+- Reproduce trackpad momentum double-switch on slow CI event cadence (RED)
+- **swipe:** Drive trackpad tests with CDP wheel events on a fixed clock
+- **tutorial:** Reproduce sideways teleport on lesson transition
+- **tutorial:** Require neutral steering and unrestricted practice input
+- **tutorial:** Account for natural steering ramp on release
+- **swipe:** Pin trackpad wheel deltas and stamps in-page
+- **home:** Specify edge-to-edge 3D preview carousel without dark gaps
+- **home:** Make full-page drag assertion deterministic and check opaque adjacent views
+- **home:** Assert snapshots cover transparent live canvas and restore opacity after swipe
+- **home:** Distinguish held short drag from intentional quick flick
+- **home:** Observe transient swipe chip without CPU-runner timing flake
+- **daily:** Specify no-flight input disabling and restoration
+- **browser:** Cover daily modifier FLY HUD touch and locale states
+- **release:** Define announcement state and bilingual browser expectations (RED)
+- **release:** Switch language within modal and verify ready state
+- **release:** Capture real desktop and mobile release dialog screenshots
+- **browser:** Cover one-thumb drift into brake on touch
+
+### ⚙️ Miscellaneous Tasks
+
+- **mode00:** Run focused TDD, unit and build on feature pushes
+- **mode00:** Verify Checkpoint Rush WebGL flow and capture real gameplay
+- **mode00:** Include Gauntlet browser smoke and save real mode screenshots
+- Run full test matrix on the road-stability feature branch
+- Enforce one quality-gate across suites and protect feature-branch deployments
+- **make:** Stop an earlier dev run before starting
+- **test:** Temporarily run full GitHub checks on carousel feature branch
+- **release:** Run unit/build/layout and bilingual browser checks on feature branch
+- **release:** Upload actual bilingual announcement UI screenshots
+- **release:** Cancel outdated runs on feature branch pushes
+- **release:** Verify new announcement browser tests before longer layout suite
+## [0.21.0] - 2026-10-24
+
+### 🚀 Features
+
+- **dev:** Run dev servers on firebase emulators
+- **game:** Give ai cars the player's collision physics
+
+### 🐛 Bug Fixes
+
+- **hooks:** Run the layout gate on a free port
+- **ui:** Align cloud save buttons
+
+### 📚 Documentation
+
+- Clarify feature branch workflow
+- Document shared collision physics for all cars
+- **readme:** Link cloud-save operations guide
+## [0.20.2] - 2026-10-24
+
+### 🐛 Bug Fixes
+
+- **audio:** Suspend audio while the page is hidden
+## [0.20.1] - 2026-10-24
+
+### 🚀 Features
+
+- **cloud:** Add reusable sign-in and home entry
+- **cloud:** Complete account save recovery flows
+
+### 🐛 Bug Fixes
+
+- **input:** Free touch controls stuck by ios edge swipe
+- **cloud:** Preserve and validate synced progress
+- **input:** Free touch controls stuck by ios edge swipe
+- **cloud:** Report local save failures accurately
+
+### 💼 Other
+
+- Integrate Firebase cloud save into main
+
+### 🧪 Testing
+
+- **browser:** Scale bloom guard timeout in CI
+- **cloud:** Cover sign-in restore with firebase emulators
+- **browser:** Isolate preview server ports
+## [0.20.0] - 2026-10-23
+
+### 🚀 Features
+
+- **controls:** Start auto on for every device
+- **save:** Sync race progress to a Google account
+- **ui:** Preview touch buttons in controls panel
+- **ghost:** Default best-run ghost to off
+- **ui:** Show touch preview under the opacity slider
+
+### 🐛 Bug Fixes
+
+- **ui:** Keep scene aspect after device rotation
+- **ui:** Move airflow start clear of the car
+- **render:** Keep NaN texels out of the bloom blur
+- **scripts:** Seed guide-seen in readme capture
+- **i18n:** Keep cloud-save copy free of stray English
+- **i18n:** Name zh-TW controls by their on-screen labels
+
+### 📚 Documentation
+
+- **readme:** Recapture screenshots and add demo gif
+
+### ⚡ Performance
+
+- **render:** Compile every shader before racing
+
+### 🧪 Testing
+
+- **browser:** Scale black-frame countdown wait by CI factor
+- **browser:** Drive the 5 km sprint with AUTO off
+
+### ⚙️ Miscellaneous Tasks
+
+- **git:** Ignore firebase emulator logs
+- **codex:** Add firebase mcp server config
 ## [0.19.1] - 2026-10-23
 
 ### 🐛 Bug Fixes

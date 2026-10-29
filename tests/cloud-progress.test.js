@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus } from '../src/cloud-progress.js';
+import { careerStats } from '../src/history.ts';
+import { DAILY_MODIFIERS } from '../src/game.js';
+import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, mergeModeBests, readLocalModeBests, saveLocalModeBests, parseProgressExport } from '../src/cloud-progress.ts';
 
 test('cloud failure status reports whether a durable device copy exists', () => {
   assert.equal(cloudFailureStatus({ code: 'unavailable' }, false), 'cloud.localFailed');
@@ -125,4 +127,188 @@ test('an empty browser store recovers all account progress fields', () => {
   const restored = readLocalProgress(storage);
   for (const field of ['unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
     assert.deepEqual(restored[field], remote[field], field);
+});
+
+test('switching Google accounts snapshots A and restores B without leaking progress or changing device settings', () => {
+  const data = new Map([['skyline-rush-vfx', '{"quality":"low"}']]);
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  saveLocalProgress(mergeProgress({ unlocked: ['coast', 'neon'], stars: { neon: 3 }, bests: { neon: 66 } }), storage);
+  data.set('skyline-rush-cloud-owner', 'player-A');
+  const b = mergeProgress({ unlocked: ['coast', 'canyon'], stars: { canyon: 2 }, bests: { canyon: 77 } });
+  data.set('skyline-rush-cloud-account:player-B', JSON.stringify(b));
+  assert.equal(switchCloudAccount('player-A', 'player-B', storage), true);
+  assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'canyon']);
+  assert.deepEqual(readLocalProgress(storage).stars, { canyon: 2 });
+  assert.equal(data.get('skyline-rush-cloud-owner'), 'player-B');
+  assert.equal(data.get('skyline-rush-vfx'), '{"quality":"low"}');
+  assert.equal(switchCloudAccount('player-B', 'player-A', storage), true);
+  assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'neon']);
+  assert.deepEqual(readLocalProgress(storage).stars, { neon: 3 });
+});
+
+test('a new Google account starts with clean progress rather than inheriting previous account unlocks', () => {
+  const data = new Map();
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  saveLocalProgress(mergeProgress({ unlocked: ['coast', 'neon'], stars: { neon: 3 } }), storage);
+  data.set('skyline-rush-cloud-owner', 'player-A');
+  assert.equal(switchCloudAccount('player-A', 'fresh-player', storage), true);
+  assert.deepEqual(readLocalProgress(storage).unlocked, ['coast']);
+  assert.deepEqual(readLocalProgress(storage).stars, {});
+  assert.deepEqual(readLocalProgress(storage).history, []);
+});
+
+test('an unavailable storage or invalid account ID must fail closed rather than reassign progress', () => {
+  const data = new Map([['skyline-rush-cloud-owner', 'player-A']]);
+  const storage = { getItem: key => data.get(key) ?? null, setItem: () => { throw new Error('Storage unavailable'); } };
+  assert.equal(switchCloudAccount('player-A', 'player-B', storage), false);
+  assert.equal(data.get('skyline-rush-cloud-owner'), 'player-A');
+  assert.equal(switchCloudAccount('player-A', '', storage), false);
+});
+
+test('cloud pending state is saved per Google account without pretending a failed sync succeeded', () => {
+  const data = new Map();
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  const empty = { pending: false, lastSuccess: null };
+  assert.deepEqual(readCloudSyncStatus('A', storage), empty);
+  assert.equal(writeCloudSyncStatus('A', { pending: true }, storage), true);
+  assert.deepEqual(readCloudSyncStatus('A', storage), { pending: true, lastSuccess: null });
+  assert.deepEqual(readCloudSyncStatus('B', storage), empty);
+  assert.equal(writeCloudSyncStatus('A', { pending: false, lastSuccess: '2026-10-24T00:00:00.000Z' }, storage), true);
+  assert.equal(writeCloudSyncStatus('A', { pending: true }, storage), true);
+  assert.deepEqual(readCloudSyncStatus('A', storage), {
+    pending: true, lastSuccess: '2026-10-24T00:00:00.000Z',
+  });
+  assert.deepEqual(readCloudSyncStatus('B', storage), empty);
+});
+
+test('invalid or unavailable cloud sync metadata never corrupts progress', () => {
+  const data = new Map([['skyline-rush-cloud-sync:A', '{"pending":false,"lastSuccess":"invalid"}']]);
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  assert.deepEqual(readCloudSyncStatus('A', storage), { pending: false, lastSuccess: null });
+  assert.equal(writeCloudSyncStatus('A', { pending: false, lastSuccess: 'invalid' }, storage), false);
+  assert.deepEqual(readCloudSyncStatus('', storage), { pending: false, lastSuccess: null });
+  assert.equal(writeCloudSyncStatus('', { pending: true }, storage), false);
+  const blocked = { getItem: () => { throw Error('denied'); }, setItem: () => { throw Error('denied'); } };
+  assert.deepEqual(readCloudSyncStatus('A', blocked), { pending: false, lastSuccess: null });
+  assert.equal(writeCloudSyncStatus('A', { pending: true }, blocked), false);
+});
+
+test('the same Classic race is deduplicated by stable run identity even if cloud telemetry differs', () => {
+  const record = { date: '2026-10-24T00:00:00.000Z', track: 'coast', position: 1, time: 61, score: 200, nearMisses: 1 };
+  const progress = mergeProgress({ history: [record] }, { version: 2, history: [{ ...record, nearMisses: 2 }] });
+  assert.equal(progress.history.length, 1);
+  assert.equal(careerStats(progress.history).races, 1);
+  assert.equal(careerStats(progress.history).wins, 1);
+  assert.deepEqual(mergeProgress(progress, { version: 2, history: [record] }).history.length, 1);
+});
+
+test('identical mode and daily attempts deduplicate without mixing rule signatures or challenge IDs', () => {
+  const stamp = '2026-10-24T00:00:00.000Z';
+  const mode = { date: stamp, track: 'coast', mode: 'stunt', rules: JSON.stringify({ mode: 'stunt' }), time: 45, score: 10, maxCombo: 3 };
+  const daily = { id: '2026-10-24', track: 'coast', modifier: DAILY_MODIFIERS[0], position: 1, time: 60, score: 50, date: stamp };
+  const merged = mergeProgress({ modeHistory: [mode], daily: [daily] }, { version: 2,
+    modeHistory: [{ ...mode, score: 20 }, { ...mode, rules: JSON.stringify({ mode: 'stunt', activeItems: true }) }],
+    daily: [{ ...daily, score: 55 }, { ...daily, id: '2026-10-23' }],
+  });
+  assert.equal(merged.modeHistory.length, 2);
+  assert.equal(merged.daily.length, 2);
+});
+
+test('cloud mode history preserves v1 additive telemetry and accepts local 4096-character rules', () => {
+  const run = {
+    date: '2026-10-24T00:00:00.000Z', mode: 'checkpoint', track: 'coast',
+    rules: 'x'.repeat(4096), time: 65, position: 1, score: 420,
+    modeId: 'checkpoint', trackId: 'coast', rulesVersion: 2,
+    rulesSignature: 'x'.repeat(4096), distance: 5000, stageCount: 3,
+    lapCount: null, itemsUsed: 2, hazardPasses: 3, hazardHits: 1,
+  };
+  const merged = mergeProgress({ modeHistory: [run] });
+  assert.equal(merged.modeHistory.length, 1);
+  for (const key of ['rulesVersion', 'distance', 'stageCount', 'lapCount', 'itemsUsed', 'hazardPasses', 'hazardHits'])
+    assert.deepEqual(merged.modeHistory[0][key], run[key], key);
+  assert.equal(merged.modeHistory[0].rules, run.rules);
+  assert.deepEqual(mergeProgress({}, merged).modeHistory, merged.modeHistory);
+});
+
+test('permanent mode records keep the fastest non-stunt result after 50 recent runs expire', () => {
+  const key = JSON.stringify(['coast', { mode: 'time', duration: 180 }]);
+  const a = mergeModeBests({ bests: { [key]: 61 } }, { version: 1, bests: { [key]: 67 } });
+  assert.equal(a.bests[key], 61);
+  assert.equal(mergeModeBests(a, { version: 1, bests: { [key]: 59 } }).bests[key], 59);
+});
+
+test('permanent Stunt scores and combo peaks merge without downgrading earlier achievements', () => {
+  const key = JSON.stringify(['tokyo', { mode: 'stunt', duration: 90 }]);
+  const local = { bests: { [key]: 9500 }, stunts: { [key]: { score: 9500, maxCombo: 12, airTime: 18, medal: 'gold' } } };
+  const cloud = { version: 1, bests: { [key]: 9000 }, stunts: { [key]: { score: 9000, maxCombo: 15, airTime: 10, medal: 'silver' } } };
+  const merged = mergeModeBests(local, cloud);
+  assert.equal(merged.bests[key], 9500);
+  assert.deepEqual(merged.stunts[key], { score: 9500, maxCombo: 15, airTime: 18, medal: 'gold' });
+  assert.deepEqual(mergeModeBests(merged, merged), merged);
+});
+
+test('permanent bests are local and can be restored without changing device preferences', () => {
+  const key = JSON.stringify(['coast', { mode: 'time' }]);
+  const data = new Map([['skyline-rush-vfx', 'high']]);
+  const storage = { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v) };
+  const snapshot = mergeModeBests({ bests: { [key]: 62.3 } });
+  assert.equal(saveLocalModeBests(snapshot, storage), true);
+  assert.deepEqual(mergeModeBests(readLocalModeBests(storage)), snapshot);
+  assert.equal(data.get('skyline-rush-vfx'), 'high');
+});
+
+test('permanent bests reject malformed keys and unsupported remote schemas', () => {
+  const accepted = JSON.stringify(['coast', { mode: 'time' }]);
+  const merged = mergeModeBests({ bests: { arbitrary: 1, [accepted]: 60 } });
+  assert.deepEqual(merged.bests, { [accepted]: 60 });
+  assert.throws(() => mergeModeBests({}, { version: 999, bests: {} }), /Unsupported/);
+});
+
+test('switching accounts preserves each UID permanent records and does not leak local rule bests', () => {
+  const data = new Map();
+  const storage = { getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v), removeItem: k => data.delete(k) };
+  const rule = JSON.stringify(['coast', { mode: 'time' }]);
+  saveLocalModeBests(mergeModeBests({ bests: { [rule]: 41 } }), storage);
+  assert.equal(switchCloudAccount('first', 'second', storage), true);
+  assert.deepEqual(readLocalModeBests(storage).bests, {});
+  assert.equal(switchCloudAccount('second', 'first', storage), true);
+  assert.equal(readLocalModeBests(storage).bests[rule], 41);
+});
+
+test('clearing a cloud account removes permanent bests but keeps device settings', () => {
+  const data = new Map([['skyline-rush-vfx', 'high']]);
+  const storage = { getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v), removeItem: k => data.delete(k) };
+  saveLocalModeBests(mergeModeBests({ bests: { [JSON.stringify(['coast',{mode:'time'}])]: 50 } }), storage);
+  assert.equal(clearLocalProgress(storage), true);
+  assert.deepEqual(readLocalModeBests(storage), { bests: {}, stunts: {} });
+  assert.equal(data.get('skyline-rush-vfx'), 'high');
+});
+
+test('a partial device write rolls back all changed progress fields', () => {
+  const data = new Map([['skyline-rush-unlocked','["coast","neon"]'],['skyline-rush-stars','{"coast":2}']]);
+  const initial = [...data.entries()];
+  let writes = 0;
+  const storage = {
+    getItem: k => data.get(k) ?? null,
+    setItem: (k,v) => { if (++writes === 2) throw new Error('quota'); data.set(k,v); },
+    removeItem: k => data.delete(k),
+  };
+  const next = mergeProgress({ unlocked: ['coast','tokyo'], stars: { coast: 3 } });
+  assert.equal(saveLocalProgress(next,storage),false);
+  assert.deepEqual([...data.entries()],initial);
+});
+
+test('importing exported progress validates data and never accepts unbounded or future formats', () => {
+  const key = JSON.stringify(['coast', { mode: 'time' }]);
+  const raw = JSON.stringify({
+    version: 2, unlocked: ['coast', 'neon'], stars: { neon: 2 }, bests: {}, medals: {},
+    history: [], modeHistory: [], daily: [],
+    permanent: { version: 1, bests: { [key]: 61 }, stunts: {} },
+  });
+  const imported = parseProgressExport(raw);
+  assert.deepEqual(imported.progress.unlocked, ['coast', 'neon']);
+  assert.equal(imported.permanent.bests[key], 61);
+  assert.throws(() => parseProgressExport('{"version":999}'), /Unsupported|Invalid/);
+  assert.throws(() => parseProgressExport('not-json'), /Invalid/);
+  assert.throws(() => parseProgressExport('x'.repeat(1100000)), /large/);
 });

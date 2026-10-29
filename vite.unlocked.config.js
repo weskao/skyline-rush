@@ -11,7 +11,7 @@ export default defineConfig(({ command }) => {
   return mergeConfig(productionConfig, {
     resolve: {
       alias: {
-        '@progression-access': fileURLToPath(new URL('./src/access/dev-unlocked.js', import.meta.url)),
+        '@progression-access': fileURLToPath(new URL('./src/access/dev-unlocked.ts', import.meta.url)),
       },
     },
     server: { host: '127.0.0.1' },

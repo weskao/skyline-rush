@@ -1,0 +1,44 @@
+name: What's New Feature Checks
+
+on:
+  push:
+    branches: [feature/whats-new-release-announcements]
+  workflow_dispatch:
+
+concurrency:
+  group: whats-new-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: RED-GREEN unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: What's New desktop and mobile browser checks
+        run: npx playwright test tests/release-announcements-browser.spec.js --reporter=line
+      - name: Responsive homepage regression
+        run: npm run test:layout
+      - name: Upload actual What's New screen captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: whats-new-real-screenshots
+          path: test-results/**/whats-new-*.png
+          if-no-files-found: ignore
+      - name: Upload browser failure details
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: whats-new-test-failures
+          path: test-results
+          if-no-files-found: ignore

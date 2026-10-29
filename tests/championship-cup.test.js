@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createCup,addCupResult,cupStandings,cupComplete,cupTotalTime} from '../src/championship-cup.js';
+import {createCup,addCupResult,cupStandings,cupComplete,cupTotalTime} from '../src/championship-cup.ts';
 const tracks=['coast','neon','canyon','aurora'];
 const finish = (trackId, playerTime, aiTimes) => ({
   trackId, phase:'finished', length:5000, elapsed:playerTime, result:{time:playerTime,position:aiTimes.filter(t=>t<playerTime).length+1},
@@ -39,4 +39,51 @@ test('five-track Cup accepts five unlocked tracks without repeat',()=>{
  const unlocked=['coast','neon','canyon','aurora','spiral'];
  assert.deepEqual(createCup(unlocked,'aurora',5).tracks,['aurora','spiral','coast','neon','canyon']);
  assert.throws(()=>createCup(['coast','neon','canyon'],'coast',5));
+});
+
+// A malformed Cup can otherwise award duplicate AI points or NaN standings.
+test('Cup rejects unknown tracks, duplicate drivers and nonfinite AI projections', () => {
+  assert.throws(() => createCup(['coast', 'neon', 'not-a-track'], 'coast'), /unlocked courses/);
+  const cup = createCup(tracks, 'coast');
+  const duplicate = finish('coast', 40, [41, 42, 43]);
+  duplicate.rivals[1].name = 'NOVA';
+  assert.throws(() => addCupResult(cup, duplicate), /Invalid completed Cup heat/);
+  const malformed = finish('coast', 40, [41, 42, 43]);
+  malformed.rivals[0].finishTime = null;
+  malformed.rivals[0].distance = NaN;
+  assert.throws(() => addCupResult(cup, malformed), /Invalid completed Cup heat/);
+});
+
+test('incomplete or corrupted Cup stage data never becomes NaN standings', () => {
+  const empty = createCup(tracks, 'coast');
+  assert.equal(cupStandings(empty)[0].points, 0); // an unstarted Cup is valid
+  const good = addCupResult(empty, finish('coast', 40, [41, 42, 43]));
+  assert.equal(cupStandings(good)[0].points, 10); // partial completed stages are valid
+
+  const brokenOrder = structuredClone(good);
+  brokenOrder.results[0].order = ['YOU', 'NOVA', 'ORBIT'];
+  assert.throws(() => cupStandings(brokenOrder), /Invalid Cup standings/);
+  assert.throws(() => addCupResult(brokenOrder, finish('neon', 39, [40, 41, 42])), /Invalid Cup standings/);
+
+  const brokenTime = structuredClone(good);
+  brokenTime.results[0].times.APEX = NaN;
+  assert.throws(() => cupStandings(brokenTime), /Invalid Cup standings/);
+
+  const foreignTrack = structuredClone(good);
+  foreignTrack.results[0].track = 'not-a-track';
+  assert.throws(() => cupStandings(foreignTrack), /Invalid Cup standings/);
+
+  const duplicated = structuredClone(good);
+  duplicated.results.push(structuredClone(duplicated.results[0]));
+  assert.throws(() => cupStandings(duplicated), /Invalid Cup standings/);
+});
+
+test('Cup completion and total time reject corrupted heat snapshots', () => {
+  const cup = addCupResult(createCup(tracks, 'coast'), finish('coast', 40, [41, 42, 43]));
+  assert.equal(cupComplete(cup), false);
+  assert.equal(cupTotalTime(cup), 40);
+  const broken = structuredClone(cup);
+  broken.results[0].times.ORBIT = Infinity;
+  assert.throws(() => cupComplete(broken), /Invalid Cup standings/);
+  assert.throws(() => cupTotalTime(broken), /Invalid Cup standings/);
 });

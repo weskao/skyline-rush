@@ -6,5 +6,5 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
   plugins: [vue({ template: { compilerOptions: { whitespace: 'preserve' } } })],
   // The normal server and every production build resolve to the locked access implementation.
-  resolve: { alias: { '@progression-access': fileURLToPath(new URL('./src/access/production.js', import.meta.url)) } },
+  resolve: { alias: { '@progression-access': fileURLToPath(new URL('./src/access/production.ts', import.meta.url)) } },
 });

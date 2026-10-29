@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS, createRace } from '../src/game.js';
-import { trackPoint, trackFrame, trackOverview } from '../src/track-paths.js';
+import { trackPoint, trackFrame, trackOverview } from '../src/track-paths.ts';
 const ids=['taipei','tokyo','alpine','coastal','cosmic'];
 test('five new world-tour routes are deterministic and all 5–8 km',()=>{
  assert.deepEqual(ids.map(id=>RACE_TRACKS[id].length),[6200,6800,7600,5800,8000]);

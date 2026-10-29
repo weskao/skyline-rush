@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, GAP_WARN_DISTANCE, gapChargeWarning, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
-import { hazardX } from '../src/hazards.js';
+import { hazardX } from '../src/hazards.ts';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -73,6 +73,7 @@ test('thrusters require speed, lift the car, spend fuel and land on release', ()
 
 test('exhausted fuel forces landing even if lift stays held, then regenerates on the ground', () => {
   const race = racing();
+  race.rings = []; race.pickups = []; // isolate exhaustion from in-course refills
   advance(race, 3, { throttle: true });
   advance(race, 9, { throttle: true, fly: true });
   assert.equal(race.player.altitude, 0);
@@ -289,11 +290,11 @@ test('landing emits one touchdown event with the actual descent speed and resets
   assert.equal(createRace().player.landing, null);
 });
 
-test('air dash: holding fly and boost together drains fuel at 22 per second and keeps the boost speed cap', () => {
+test('air dash: holding fly and boost together drains fuel at 18 per second and keeps the boost speed cap', () => {
   const race = racing();
   race.player.speed = 80;
   advance(race, 1, { fly: true, boost: true });
-  assert.ok(Math.abs(race.player.fuel - 78) < 0.5);
+  assert.ok(Math.abs(race.player.fuel - 82) < 0.5);
   advance(race, 1, { fly: true, boost: true });
   const car = race.player;
   assert.equal(car.thrusting, true);
@@ -310,11 +311,11 @@ test('FLY + NITRO: nitro burns no fuel, so flight stays up for the whole burst a
   assert.equal(car.thrusting, true);
   assert.equal(car.exhausted, false);
   assert.ok(car.nitroTime > 0);
-  assert.ok(Math.abs(car.fuel - 62) < 0.5); // 19/s flight only
+  assert.ok(Math.abs(car.fuel - 70) < 0.5); // 15/s flight only
   assert.ok(car.speed > MAX_SPEED + 14 && car.speed <= MAX_SPEED + 30);
 });
 
-test('FLY + BOOST + NITRO keeps the 22/s AIR DASH drain and the MAX_SPEED + 30 cap', () => {
+test('FLY + BOOST + NITRO keeps the 18/s AIR DASH drain and the MAX_SPEED + 30 cap', () => {
   const race = racing();
   Object.assign(race, { pickups: [], rings: [] }); // pickups would add fuel along the way
   Object.assign(race.player, { speed: 80, nitro: 1 });
@@ -323,7 +324,7 @@ test('FLY + BOOST + NITRO keeps the 22/s AIR DASH drain and the MAX_SPEED + 30 c
   assert.equal(car.thrusting, true);
   assert.equal(car.boosting, true);
   assert.ok(car.nitroTime > 0);
-  assert.ok(Math.abs(car.fuel - 56) < 0.5);
+  assert.ok(Math.abs(car.fuel - 64) < 0.5);
   assert.ok(car.speed > MAX_SPEED + 14 && car.speed <= MAX_SPEED + 30);
 });
 
@@ -1462,14 +1463,14 @@ test('the car is in the shortcut only inside the corridor volume, never on the r
   assert.equal(createRace().player.inShortcut, false);
 });
 
-test('flight inside the corridor burns no fuel; the same flight over the other edge lane burns 19/s', () => {
+test('flight inside the corridor burns no fuel; the same flight over the other edge lane burns 15/s', () => {
   const { race, corridor } = inCorridor();
   hold(race, 2, { fly: true }, corridor.altitude);
   assert.equal(race.player.thrusting, true);
   assert.equal(race.player.fuel, 100);
   const { race: outside } = inCorridor('coast', { x: -corridor.x });
   hold(outside, 2, { fly: true }, corridor.altitude);
-  assert.ok(Math.abs(outside.player.fuel - 62) < 0.5);
+  assert.ok(Math.abs(outside.player.fuel - 70) < 0.5);
 });
 
 test('the corridor adds SHORTCUT_CAP_BONUS to the speed cap only while inside', () => {
@@ -1671,4 +1672,99 @@ test('in custom races with obstacles, rivals and traffic steer around the barrie
   assert.ok(rival.distance > barrier.distance + 20 && traffic.distance > barrier.distance + 20, 'both drove past the barrier');
   assert.equal(rivalHits, 0, 'the rival never drives through a barrier');
   assert.equal(trafficHits, 0, 'traffic never drives through a barrier');
+});
+
+const car = (x, distance, speed) => ({ x, homeX: x, distance, speed, cruise: speed, altitude: 0, cooldown: 0 });
+const overlap = (a, b) => Math.abs(a.distance - b.distance) < 4.4 && Math.abs(a.x - b.x) < 1.7 && Math.abs((a.altitude || 0) - (b.altitude || 0)) < 1.8;
+
+test('faster traffic overtakes a slower car ahead by changing lane instead of driving through it, then returns', () => {
+  const race = racing();
+  race.rivals = [];
+  const slow = car(2.5, 400, 20), fast = car(2.5, 340, 35);
+  race.traffic = [slow, fast];
+  let overlaps = 0;
+  for (let i = 0; i < 60 * 12; i++) {
+    Object.assign(race.player, { distance: Math.min(slow.distance, fast.distance) - 30, x: -7.5, speed: 0 });
+    stepRace(race, {}, 1 / 60);
+    if (overlap(slow, fast)) overlaps++;
+  }
+  assert.ok(fast.distance > slow.distance + 40, 'the faster car got past');
+  assert.equal(overlaps, 0, 'it never drove through the slower car');
+  assert.equal(fast.speed, 35, 'a clean overtake costs no speed');
+  assert.equal(fast.x, 2.5, 'it returns to its lane');
+  assert.equal(slow.x, 2.5);
+});
+
+test('cars that cannot avoid each other take the player\'s knock: speed loss, a sideways shove, a grace period, then recovery', () => {
+  const race = racing();
+  race.rivals = [];
+  const rear = car(2.5, 400, 30), front = car(2.6, 402, 20);
+  race.traffic = [rear, front];
+  Object.assign(race.player, { distance: 300, x: -7.5, speed: 0 });
+  stepRace(race, {}, 1 / 60);
+  assert.ok(Math.abs(rear.speed - 30 * 0.45) < 1e-9 && Math.abs(front.speed - 20 * 0.45) < 1e-9, 'both keep 45 % of their speed, as the player does');
+  assert.ok(rear.x < 2.5 - 0.5 && front.x > 2.6 + 0.5, 'shoved apart sideways');
+  assert.equal(rear.cooldown, 1.5);
+  assert.equal(front.cooldown, 1.5);
+  for (let i = 0; i < 60 * 8; i++) {
+    Object.assign(race.player, { distance: Math.min(rear.distance, front.distance) - 30, speed: 0 });
+    stepRace(race, {}, 1 / 60);
+    assert.ok(!overlap(rear, front) || rear.cooldown > 0, 'no second pass-through once the grace ends');
+  }
+  assert.equal(rear.speed, 30, 'back up to cruise speed');
+  assert.equal(front.speed, 20);
+});
+
+test('ramming a traffic car knocks it too: it loses speed, is shoved away from the player, then regains cruise', () => {
+  const race = racing();
+  race.rivals = [];
+  const other = car(2.5, race.player.distance + 3, 30);
+  race.traffic = [other];
+  Object.assign(race.player, { x: 2, speed: 60, cooldown: 0 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.collisions, 1);
+  assert.equal(race.player.impact.kind, 'vehicle');
+  assert.ok(other.speed < 30 * 0.5, 'the traffic car loses speed');
+  assert.ok(other.x > 2.5 && race.player.x < 2, 'pushed apart');
+  for (let i = 0; i < 60 * 5; i++) {
+    Object.assign(race.player, { x: -7.5, speed: 0 });
+    stepRace(race, {}, 1 / 60);
+  }
+  assert.equal(other.speed, 30);
+});
+
+test('a rival steers around a stopped player instead of driving through the car', () => {
+  const race = racing();
+  const rival = race.rivals.find(r => r.x === 7.5);
+  race.rivals = [rival];
+  Object.assign(rival, { distance: race.player.distance - 120, speed: 70 });
+  Object.assign(race.player, { x: 7.5, speed: 0, cooldown: 0 });
+  let overlaps = 0;
+  for (let i = 0; i < 60 * 5; i++) {
+    race.player.speed = 0;
+    stepRace(race, {}, 1 / 60);
+    if (overlap(rival, race.player)) overlaps++;
+  }
+  assert.ok(rival.distance > race.player.distance + 50, 'the rival got past');
+  assert.equal(overlaps, 0);
+  assert.equal(race.player.collisions, 0);
+});
+
+test('a rival with no room to avoid a Tokyo train crashes into it like the player: speed loss, pushed to the open road', async () => {
+  const { roadObstacles } = await import('../src/world-tour-scene.js');
+  const props = roadObstacles('tokyo');
+  const train = props.find(p => p.kind === 'train' && p.bottom < 1 && p.top > 3 && p.left > 0 && p.left < 7.5 && p.from > 400);
+  const race = createRace('tokyo');
+  race.props = props;
+  startRace(race);
+  advance(race, 3.1);
+  race.traffic = [];
+  const rival = race.rivals[0];
+  race.rivals = [rival];
+  Object.assign(rival, { x: train.left + 1, homeX: train.left + 1, distance: train.from - 3, speed: 70, cooldown: 0 });
+  Object.assign(race.player, { distance: train.from - 40, x: -7.5, speed: 0 });
+  stepRace(race, {}, 1 / 60);
+  assert.ok(rival.speed < 70 * 0.5, 'the crash costs speed');
+  assert.ok(rival.x <= train.left - 1.1, 'pushed out to the open road');
+  assert.equal(rival.cooldown, 1.5);
 });

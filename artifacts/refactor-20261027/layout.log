@@ -1,0 +1,115 @@
+
+> skyline-rush@0.23.0 test:layout
+> npm run build && playwright test tests/race-modes-browser.spec.js tests/home-shortcuts-browser.spec.js && playwright test tests/i18n-browser.spec.js tests/responsive-browser.spec.js -g "intro bottom edge|start layout"
+
+
+> skyline-rush@0.23.0 build
+> vite build && node scripts/assert-production-locked.mjs
+
+vite v7.3.7 building client environment for production...
+transforming...
+Module "src/release-notes.ts" tried to import "package.json" with "type": "json" attributes, but it was already imported elsewhere with no attributes. Please ensure that import attributes for the same module are always consistent.
+✓ 160 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     2.28 kB │ gzip:   0.92 kB
+dist/assets/index-i8zrFyJi.css    116.33 kB │ gzip:  24.88 kB
+dist/assets/index-Xp0LgMs7.js   1,596.65 kB │ gzip: 483.95 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.96s
+Production bundle checked: no development-only unlock module found.
+[WebServer] (node:75201) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 29 tests using 1 worker
+
+(node:75213) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/home-shortcuts-browser.spec.js:10:1 › home Practice opens the guide on the practice call to action, which starts the lesson (1.5s)
+  ✓   2 tests/home-shortcuts-browser.spec.js:24:1 › the daily card names today's route and starts that challenge from the home screen (1.1s)
+  ✓   3 tests/home-shortcuts-browser.spec.js:42:1 › the medal chip shows the tally and opens History at the medals (1.0s)
+  ✓   4 tests/home-shortcuts-browser.spec.js:59:5 › 1440x900 › home entries are reachable, sized for touch and never cover Start (1.2s)
+  ✓   5 tests/home-shortcuts-browser.spec.js:59:5 › 390x844 › home entries are reachable, sized for touch and never cover Start (891ms)
+  ✓   6 tests/home-shortcuts-browser.spec.js:59:5 › 320x568 › home entries are reachable, sized for touch and never cover Start (876ms)
+  ✓   7 tests/home-shortcuts-browser.spec.js:59:5 › 844x390 › home entries are reachable, sized for touch and never cover Start (881ms)
+  ✓   8 tests/race-modes-browser.spec.js:9:1 › solo Time Attack shows real 3D preview, starts, and hides unused opponents (1.6s)
+  ✓   9 tests/race-modes-browser.spec.js:24:1 › custom 0-opponent race still starts; Classic remains selectable (1.6s)
+  ✓  10 tests/race-modes-browser.spec.js:42:1 › Free Drive starts immediately without a countdown and keeps its return path (1.6s)
+  ✓  11 tests/race-modes-browser.spec.js:55:1 › Obstacle Run uses the original world renderer with visible race state (1.6s)
+  ✓  12 tests/race-modes-browser.spec.js:68:1 › solo HUD never displays a misleading four-player race rank (1.4s)
+  ✓  13 tests/race-modes-browser.spec.js:78:1 › mobile game mode picker remains operable on phone portrait (1.4s)
+  ✓  14 tests/race-modes-browser.spec.js:92:1 › Custom Race sprint stage selector displays the first of three heats (819ms)
+  ✓  15 tests/race-modes-browser.spec.js:107:1 › Checkpoint Rush displays the real 3D course and dynamic gate HUD (934ms)
+  ✓  16 tests/race-modes-browser.spec.js:120:1 › Extreme Obstacle Run updates its intensity setting and warning system (910ms)
+  ✓  17 tests/race-modes-browser.spec.js:136:1 › Clean Time Trial shows accessible rule toggle and clean driving HUD (1.0s)
+  ✓  18 tests/race-modes-browser.spec.js:152:1 › Championship Cup honestly requires three previously unlocked tracks (722ms)
+  ✓  19 tests/race-modes-browser.spec.js:160:1 › Cup length cannot bypass locked tracks with Enter (730ms)
+  ✓  20 tests/race-modes-browser.spec.js:172:1 › Free Drive shows live, zeroed practice telemetry without showing rival rank (1.5s)
+  ✓  21 tests/race-modes-browser.spec.js:187:1 › Stunt Attack offers a timed score challenge with live arcade feedback (1.4s)
+  ✓  22 tests/race-modes-browser.spec.js:205:1 › Stunt Attack displays its score HUD in a real desktop WebGL screenshot (1.7s)
+  ✓  23 tests/race-modes-browser.spec.js:214:1 › 1920x1080 intro fits without clipping and VFX remains reachable after music consent (1.9s)
+  ✓  24 tests/race-modes-browser.spec.js:225:1 › completed Custom setup appears as a recent preset without touching unlocks (2.7s)
+  ✓  25 tests/race-modes-browser.spec.js:242:1 › Checkpoint Rush shows directional guidance and perfect gate counter (1.6s)
+  ✓  26 tests/race-modes-browser.spec.js:255:1 › Custom active power-ups show a safe accessible item slot (1.7s)
+  ✓  27 tests/race-modes-browser.spec.js:269:1 › Elimination mode shows a live knockout countdown in actual WebGL (1.6s)
+  ✓  28 tests/race-modes-browser.spec.js:281:1 › Custom hazards toggle off, then render with safe physics and warning UI (1.7s)
+  ✓  29 tests/race-modes-browser.spec.js:300:1 › paused Free Drive supports orbit, lighting and local PNG export (2.2s)
+
+  29 passed (41.7s)
+[WebServer] (node:81492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 42 tests using 1 worker
+
+(node:81495) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/i18n-browser.spec.js:479:5 › intro bottom edge en 1440x900 › no text line is cut by the scroller edge, and the last line is reachable (884ms)
+  ✓   2 tests/i18n-browser.spec.js:479:5 › intro bottom edge en 1600x900 › no text line is cut by the scroller edge, and the last line is reachable (723ms)
+  ✓   3 tests/i18n-browser.spec.js:479:5 › intro bottom edge en 1280x900 › no text line is cut by the scroller edge, and the last line is reachable (682ms)
+  ✓   4 tests/i18n-browser.spec.js:479:5 › intro bottom edge en 1920x1080 › no text line is cut by the scroller edge, and the last line is reachable (791ms)
+  ✓   5 tests/i18n-browser.spec.js:479:5 › intro bottom edge en 1440x800 › no text line is cut by the scroller edge, and the last line is reachable (683ms)
+  ✓   6 tests/i18n-browser.spec.js:479:5 › intro bottom edge en 1366x768 › no text line is cut by the scroller edge, and the last line is reachable (661ms)
+  ✓   7 tests/i18n-browser.spec.js:479:5 › intro bottom edge en 1280x720 › no text line is cut by the scroller edge, and the last line is reachable (652ms)
+  ✓   8 tests/i18n-browser.spec.js:479:5 › intro bottom edge zh-TW 1440x900 › no text line is cut by the scroller edge, and the last line is reachable (696ms)
+  ✓   9 tests/i18n-browser.spec.js:479:5 › intro bottom edge zh-TW 1600x900 › no text line is cut by the scroller edge, and the last line is reachable (729ms)
+  ✓  10 tests/i18n-browser.spec.js:479:5 › intro bottom edge zh-TW 1280x900 › no text line is cut by the scroller edge, and the last line is reachable (679ms)
+  ✓  11 tests/i18n-browser.spec.js:479:5 › intro bottom edge zh-TW 1920x1080 › no text line is cut by the scroller edge, and the last line is reachable (814ms)
+  ✓  12 tests/i18n-browser.spec.js:479:5 › intro bottom edge zh-TW 1440x800 › no text line is cut by the scroller edge, and the last line is reachable (707ms)
+  ✓  13 tests/i18n-browser.spec.js:479:5 › intro bottom edge zh-TW 1366x768 › no text line is cut by the scroller edge, and the last line is reachable (662ms)
+  ✓  14 tests/i18n-browser.spec.js:479:5 › intro bottom edge zh-TW 1280x720 › no text line is cut by the scroller edge, and the last line is reachable (664ms)
+(node:81939) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  15 tests/responsive-browser.spec.js:37:5 › start layout 320x568 › intro content stays clear of the HUD and actions remain reachable (5.6s)
+  ✓  16 tests/responsive-browser.spec.js:78:5 › start layout 320x568 › airflow showcase keeps Start clear of the car and the panels (634ms)
+  ✓  17 tests/responsive-browser.spec.js:37:5 › start layout 390x844 › intro content stays clear of the HUD and actions remain reachable (5.5s)
+  ✓  18 tests/responsive-browser.spec.js:78:5 › start layout 390x844 › airflow showcase keeps Start clear of the car and the panels (643ms)
+  ✓  19 tests/responsive-browser.spec.js:37:5 › start layout 568x320 › intro content stays clear of the HUD and actions remain reachable (5.4s)
+  ✓  20 tests/responsive-browser.spec.js:78:5 › start layout 568x320 › airflow showcase keeps Start clear of the car and the panels (566ms)
+  ✓  21 tests/responsive-browser.spec.js:37:5 › start layout 844x390 › intro content stays clear of the HUD and actions remain reachable (5.5s)
+  ✓  22 tests/responsive-browser.spec.js:78:5 › start layout 844x390 › airflow showcase keeps Start clear of the car and the panels (588ms)
+  ✓  23 tests/responsive-browser.spec.js:37:5 › start layout 768x1024 › intro content stays clear of the HUD and actions remain reachable (5.5s)
+  ✓  24 tests/responsive-browser.spec.js:78:5 › start layout 768x1024 › airflow showcase keeps Start clear of the car and the panels (678ms)
+  ✓  25 tests/responsive-browser.spec.js:37:5 › start layout 768x600 › intro content stays clear of the HUD and actions remain reachable (5.4s)
+  ✓  26 tests/responsive-browser.spec.js:78:5 › start layout 768x600 › airflow showcase keeps Start clear of the car and the panels (623ms)
+  ✓  27 tests/responsive-browser.spec.js:37:5 › start layout 761x501 › intro content stays clear of the HUD and actions remain reachable (4.5s)
+  ✓  28 tests/responsive-browser.spec.js:78:5 › start layout 761x501 › airflow showcase keeps Start clear of the car and the panels (586ms)
+  ✓  29 tests/responsive-browser.spec.js:37:5 › start layout 760x501 › intro content stays clear of the HUD and actions remain reachable (5.4s)
+  ✓  30 tests/responsive-browser.spec.js:78:5 › start layout 760x501 › airflow showcase keeps Start clear of the car and the panels (611ms)
+  ✓  31 tests/responsive-browser.spec.js:37:5 › start layout 1024x768 › intro content stays clear of the HUD and actions remain reachable (5.5s)
+  ✓  32 tests/responsive-browser.spec.js:78:5 › start layout 1024x768 › airflow showcase keeps Start clear of the car and the panels (4.0s)
+  ✓  33 tests/responsive-browser.spec.js:37:5 › start layout 900x600 › intro content stays clear of the HUD and actions remain reachable (4.5s)
+  ✓  34 tests/responsive-browser.spec.js:78:5 › start layout 900x600 › airflow showcase keeps Start clear of the car and the panels (4.0s)
+  ✓  35 tests/responsive-browser.spec.js:37:5 › start layout 1280x720 › intro content stays clear of the HUD and actions remain reachable (4.5s)
+  ✓  36 tests/responsive-browser.spec.js:78:5 › start layout 1280x720 › airflow showcase keeps Start clear of the car and the panels (4.0s)
+  ✓  37 tests/responsive-browser.spec.js:37:5 › start layout 1440x900 › intro content stays clear of the HUD and actions remain reachable (4.6s)
+  ✓  38 tests/responsive-browser.spec.js:78:5 › start layout 1440x900 › airflow showcase keeps Start clear of the car and the panels (4.1s)
+  ✓  39 tests/responsive-browser.spec.js:37:5 › start layout 1804x504 › intro content stays clear of the HUD and actions remain reachable (4.4s)
+  ✓  40 tests/responsive-browser.spec.js:78:5 › start layout 1804x504 › airflow showcase keeps Start clear of the car and the panels (4.0s)
+  ✓  41 tests/responsive-browser.spec.js:37:5 › start layout 2560x1440 › intro content stays clear of the HUD and actions remain reachable (4.7s)
+  ✓  42 tests/responsive-browser.spec.js:78:5 › start layout 2560x1440 › airflow showcase keeps Start clear of the car and the panels (4.2s)
+
+  42 passed (1.9m)

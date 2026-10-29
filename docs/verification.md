@@ -1,5 +1,49 @@
 # Verification — 2026-10-18
 
+## Vue refactor final physical-device performance gate (2026-10-27)
+
+**Physical phones pending; actual desktop GPU comparison collected below.** This process collects the Step 1 evidence without substituting the GitHub Linux software-WebGL runner or iOS simulator for hardware.
+
+1. Use the **same actual machine** (desktop Chrome; iPhone Safari; mid-range Android Chrome), stable power/thermal mode and browser versions. Load an unchanged published or locally served build of the comparison baseline and the refactor branch in the same browser, keeping resolution/orientation, VFX preset, Coast Classic track, game settings and player controls identical. Record the exact baseline and refactor commit SHAs. A whole-branch difference cannot be attributed solely to HUD optimization.
+2. Append `?perf` to each build URL, start a Coast race, allow the scene to stabilize and then sample the 20-second rolling window three times per build and device. Do not count menu/idle frame rates as in-race FPS. Use the same gameplay maneuver for both versions and avoid browser tab switches.
+3. Capture p50, p95 and fps from the HUD readout; also record device model, OS/browser, viewport, graphics preset, power/temperature conditions, track, test SHA and capture timestamp. Record startup/touch, sound, pause/finish and screenshot-visible issues separately. Compare paired p95/p50 values as *version-to-version observations*, not causal GPU-performance proof.
+4. Record an actual screenshot/recording on iPhone Safari and Android Chrome. Verify intro, tutorial/controls, History/Cloud Save modal, Garage, visual map, touch targets and race finish; note Safari WebGL/context-loss and sustained warmth. Manual design review should compare equivalent screens with `main`.
+
+| Device / browser | Baseline SHA | Refactor SHA | Baseline 3× p50 / p95 / FPS | Refactor 3× p50 / p95 / FPS | Screens / thermal / input result |
+| --- | --- | --- | --- | --- | --- |
+| Desktop Chrome 156.0.8078.48, macOS 27.0, Apple M4 Pro / ANGLE Metal | `bd71ac8` | `cda325e` | p50 16.7/16.7/16.7ms; p95 16.7/16.8/16.7ms; 60/60/60 FPS | p50 16.7/16.7/16.7ms; p95 16.7/16.7/16.7ms; 60/60/60 FPS | Three alternating 20s pairs, 1440×900 DPR 1, High/Cinematic, Coast Classic, default AUTO/neutral steering; no page errors. Headless Chrome uses the actual GPU. Sustained thermal/audio perception not measured. |
+| Desktop Chrome 156, Apple M4 Pro GPU, **CPU throttled 6× / 20×**, 412×915 DPR 2 mobile emulation, production builds | `bd71ac8` | `a926b24` | 6×: p50 16.7/16.7/16.7ms; p95 33.3/16.8/33.3ms; 53.8/58.1/56.8 FPS. 20×: p50 83.3 ×3; p95 116.7/116.7/133.3ms; 12.3/12.2/11.5 FPS | 6×: p50 16.7 ×3; p95 16.8 ×3; 58.5/57.9/58.1 FPS. 20×: p50 83.3/83.2/83.3; p95 116.6/100.1/116.7ms; 12.4/12.8/12.3 FPS | Alternating fresh contexts, Coast Classic AUTO, 24 s racing per sample, What's New dismissed, tutorial pre-seen, audio off. Throttling approximates a slow phone CPU; it is not phone GPU evidence. Refactor equal or better in every pair. |
+| iPhone Safari, physical iPhone 16 Pro, iOS 26.3, production builds served by `make perf-phone` | `bd71ac8` | `54eca2f` (source = `a926b24`) | owner-observed, numbers not recorded | owner-observed, numbers not recorded | Run by the owner by hand (mobile-mcp needs a signed agent on a physical iPhone): both builds showed the same frame rate on the `?perf` strip; Start, Pause/Resume, finish and Next worked; no UI problems. Owner also confirmed the game audio sounds right. No per-run p50/p95 recorded and iPhones expose no temperature, so this is a parity observation, not a measured A/B. |
+| Android Chrome 155, Samsung Galaxy A52 5G (SM-A5260), Android 14, power saving on, 60 Hz panel, production builds | `bd71ac8` | `a926b24` | p50 33.3/33.3/33.3ms; p95 83.0/83.1/83.0ms; 24.2/24.1/24.2 FPS | p50 33.3/33.3/33.3ms; p95 83.0/83.0/83.0ms; 24.4/24.4/24.5 FPS | Alternating 28 s Coast races (AUTO, default 電影感/高/低風阻/駕駛視角, tutorial skipped once per origin), 20 s cool-down between runs. Thermal status 1 (light) throughout, SKIN 36.3–37.9 °C, AP 36.0–43.7 °C (`artifacts/refactor-20261027/android-a52-prod-ab-thermal.txt`, strips `android-a52-prod-ab-strips.jpg`). Refactor equal or better in every pair. Touch Start/Skip/VFX/Pause/Resume and finish verified; Chrome's AAudio media stream was `started`, unmuted, during the race (audibility not judged: phone on silent). An earlier dev-server reading (refactor 24 vs baseline 32 FPS) came from Vite dev builds on a phone already at thermal status 2 and is superseded. Repeat with `make perf-phone BASE=main`. |
+
+For a separate source checkout with working dependencies and browsers:
+```sh
+npm ci
+npm run typecheck
+make verify
+npm run test:layout
+```
+
+A command must actually finish successfully before its checklist entry can be checked. The earlier remote environment could not clone GitHub (DNS resolution failure). The current local macOS checkout can execute the gates; completed receipts are recorded below rather than inferred from CI.
+
+### Desktop and visual evidence, 2026-10-27
+
+- Source comparison: unchanged `main` at `bd71ac8` versus refactor source `cda325e`. Each fresh race had two seconds of warmup plus 22 seconds of collection before reading the existing 20-second rolling `?perf` overlay. Samples alternated baseline/refactor; only one Chrome instance ran and no other browser tests ran during the comparison. This is version-to-version frame cadence, not isolated HUD CPU/GPU attribution or proof of speedup. Power/temperature was not instrumented; macOS reported no recorded thermal/performance warning.
+- Raw samples, exact SHAs, browser version and renderer: `artifacts/refactor-20261027/desktop-performance.json`; six corresponding `desktop-*.jpg` game captures. Every sample reports the Apple M4 Pro Metal renderer, never software WebGL.
+- Four viewport sizes (1440×900, 390×844, 320×740, 844×390) × English/Traditional Chinese: real mouse clicks on desktop, Chrome-emulated touch taps on phone sizes, guide tab exclusivity/close/reopen and locale controls, no page errors and no horizontal guide overflow. Results: `artifacts/refactor-20261027/visual-checks.json`; `home-*.jpg`, `guide-*.jpg`, `guide-badges-*.jpg`. These are automated interactions and assistant-inspected screenshots, not physical-phone or human design approval.
+- Screenshot discovery led to two additional RED → GREEN repairs: 23px nonwrapping reward-badge overflow at 320px, and the normal-home fixed camera dock covering Start at 390px. `guide-320-before.png` and `camera-overlap-before.png` preserve pre-fix captures. The camera now reserves layout space on compact screens; the intro remains scrollable on small/short screens. Existing audio behavior remains; static guide/layout changes do not need new sounds.
+- Physical-device availability checked in this session: no connected Android device/emulator and no physical iPhone/iPad entry. Phone GPU performance, native Safari, tactile input, audible output, sustained thermals and human visual approval remain open. Step 1 and Step 5 therefore remain unchecked even after automated gates pass.
+
+### Local executable gates, 2026-10-27
+
+- Final production source is `cda325e`; the strict golden correction is `d1a91f4`. No simulation/renderer rewrite or new dependency was needed.
+- `make verify`: **exit 0**. Strict TypeScript/Vue/legacy-boundary checks passed; Node **693 passed / 0 failed / 3 emulator-dependent skipped**; production build and locked-bundle assertion passed; Chrome Browser **447/447 passed**; World Tour **72/72 passed**. Complete output (machine paths normalized): `artifacts/refactor-20261027/make-verify.log`.
+- Earlier broad diagnostic run: **445 passed / 2 failed**, both strict DOM/CSS golden checks after the intentional camera correction. Independent review and a focused **2/2 GREEN** preceded the final full rerun above. All 228 element/tag/class records, full stylesheet hashing and every parity assertion remain.
+- `npm run test:layout`: **exit 0**, **29+42 passed**. Output: `artifacts/refactor-20261027/layout.log`.
+- `npm run test:cloud` with the installed Java 25: **exit 0**, **15 emulator Browser + 3 Firestore Rules passed / 0 skipped**. These are the three rule cases skipped without emulators in the normal unit command. Synthetic accounts and local Auth/Firestore emulators were used; no production cloud save was tested or modified. Output: `artifacts/refactor-20261027/cloud.log`.
+- Full remote CI for the continuation is still pending publication/approval; the earlier `4876c90` run #40451947889 has been verified successful but does not cover the new source.
+
+
 ## `?perf` frame-time readout for the real-phone check — 2026-10-20
 
 Scope: a measuring tool for the open §A real-phone gate, not the measurement itself.

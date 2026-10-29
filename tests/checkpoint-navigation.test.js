@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createCheckpointRush,stepCheckpointRush,checkpointDirection} from '../src/checkpoint-rush.js';
+import {createCheckpointRush,stepCheckpointRush,checkpointDirection} from '../src/checkpoint-rush.ts';
 const track={length:4100,sections:[]};
 test('direction indicator uses road-relative lanes, then altitude',()=>{
  assert.equal(checkpointDirection({x:0,altitude:0},{x:-5,altitude:0}),'left');

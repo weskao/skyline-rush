@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { staleBuild, reloadOnce } from '../src/update-check.js';
+import { staleBuild, reloadOnce } from '../src/update-check.ts';
 
 const page = src => `<!doctype html><html><body><div id="app"></div><script type="module" crossorigin src="${src}"></script></body></html>`;
 

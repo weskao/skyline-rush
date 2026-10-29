@@ -1,7 +1,29 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
-import { CATALOGS } from '../src/i18n.js';
+import { CATALOGS } from '../src/i18n.ts';
 import { ciTimeout } from './helpers/ci.js';
+
+test('home version stays vertically centered beside the footer tagline in both languages', async ({ page }) => {
+  for (const [width, height] of [[320, 740], [390, 844], [844, 390], [1440, 900]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    for (const locale of ['en', 'zh-TW']) {
+      await page.locator('#locale-select').selectOption(locale, { force: true });
+      const [tagline, version] = await Promise.all([
+        page.locator('[data-i18n="footer.tagline"]').boundingBox(),
+        page.locator('#whats-new-open').boundingBox(),
+      ]);
+      await page.screenshot({ path: test.info().outputPath(`footer-${width}-${locale}.png`), animations: 'disabled' });
+      expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2), `${width}px ${locale} footer alignment`).toBeLessThanOrEqual(1);
+      expect(tagline.x + tagline.width).toBeLessThanOrEqual(version.x);
+      expect(version.height).toBeGreaterThanOrEqual(44);
+      await page.locator('#whats-new-open').click();
+      await expect(page.locator('#whats-new-screen')).toBeVisible();
+      await page.locator('#release-close').click();
+    }
+  }
+});
 
 for (const [width, height, hasTouch] of [
   [320, 568, true], [390, 844, true], [568, 320, true], [844, 390, true],
@@ -75,6 +97,27 @@ for (const [width, height, hasTouch] of [
         expect(start.x, 'Start covers the showcased car').toBeGreaterThanOrEqual(width * 0.68);
         await page.locator('#start-button').click();
         await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
+      }
+    });
+  });
+}
+
+for (const width of [320, 390]) {
+  test.describe(`daily challenge title ${width}px`, () => {
+    test.use({ viewport: { width, height: 844 }, hasTouch: true, isMobile: true, timezoneId: 'UTC' });
+
+    test('the full title fits in both languages on a long-title day', async ({ page }) => {
+      await page.clock.install({ time: new Date('2026-10-25T12:00:00Z') });
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const title = page.locator('#daily-card-route');
+      await expect(title).toHaveText('Aurora Pass · Double traffic');
+      for (const locale of ['en', 'zh-TW']) {
+        await page.locator('#locale-select').selectOption(locale, { force: true });
+        await expect(title).toBeVisible();
+        expect(await title.evaluate(el => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight)).toBe(true);
+        expect((await page.locator('#daily-card-start').boundingBox()).height).toBeGreaterThanOrEqual(44);
+        await page.screenshot({ path: test.info().outputPath(`daily-title-${width}-${locale}.png`), animations: 'disabled' });
       }
     });
   });
@@ -155,7 +198,7 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
       test.setTimeout(ciTimeout(90000));
       if (height < 380) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, top: 0, bottom: 21 } });
       // Music off up front: its prompt opens 600ms after load and would sit over START.
-      await page.addInitScript(() => { document.cookie = 'skyline-rush-music=off; path=/'; });
+      await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
       await page.goto('/');
       const others = ['.position-stat', '.leaderboard', '.race-progress', '.mode-indicator', '.speedometer', '.flight-telemetry', '.aero-tools',
         '#controls-button', '#pause-button', ...['left', 'right', 'brake', 'fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
@@ -186,6 +229,8 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
         }
         const m = result.map;
         if (m.x < 0 || m.y < 0 || m.x + m.width > width + 0.5 || m.y + m.height > height + 0.5) hits.push(`${tag}: map off screen`);
+        // Portrait Buttons mode: [<][>] take the bottom row, so the map shares the BRAKE row; any higher and it covers the player's car.
+        if (result.brake && height > width && m.y < result.brake.y - 0.5) hits.push(`${tag}: map rises ${Math.round(result.brake.y - m.y)}px above the BRAKE row onto the car`);
         for (const [name, b] of result.others) {
           const apart = m.x + m.width <= b.x + 0.5 || b.x + b.width <= m.x + 0.5 || m.y + m.height <= b.y + 0.5 || b.y + b.height <= m.y + 0.5;
           if (!apart) hits.push(`${tag}: map × ${name} ${Math.round(Math.min(m.x + m.width - b.x, b.x + b.width - m.x))}px`);
@@ -243,6 +288,31 @@ test.describe('device safe areas', () => {
       const start = await page.locator('#start-button').boundingBox();
       expect(start.y, `${name} start`).toBeGreaterThanOrEqual(insets.top - 1);
       expect(start.y + start.height, `${name} start`).toBeLessThanOrEqual(height - insets.bottom + 1);
+      await cdp.detach();
+    }
+  });
+
+  // Chromium never matches the iOS-only @supports block, so the test applies its real rules by hand.
+  test('iOS footer and version sit in the home-indicator inset, clear of the bar', async ({ page, context }) => {
+    for (const [name, bottom, width, height] of [['notch iphone', 34, 390, 844], ['dynamic island', 34, 402, 874], ['ipad portrait', 20, 820, 1180]]) {
+      await page.setViewportSize({ width, height });
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 47, bottom, left: 0, right: 0 } });
+      await page.goto('./');
+      await page.evaluate(() => document.fonts.ready);
+      const iosRules = await page.evaluate(() => [...document.styleSheets].flatMap(sheet => [...sheet.cssRules])
+        .filter(rule => rule instanceof CSSSupportsRule && rule.conditionText.includes('-webkit-touch-callout'))
+        .flatMap(rule => [...rule.cssRules].map(inner => inner.cssText)).join('\n'));
+      expect(iosRules, 'iOS @supports block').toContain('.bottomline');
+      await page.addStyleTag({ content: iosRules });
+      // iOS draws the home indicator 8-13px above the bottom edge.
+      for (const selector of ['.bottomline', '.build-version']) {
+        if (!await page.locator(selector).isVisible()) continue; // touch tablets hide the footer
+        const box = await page.locator(selector).boundingBox();
+        const gap = height - (box.y + box.height);
+        expect(gap, `${name} ${selector}`).toBeGreaterThanOrEqual(16);
+        if (bottom > 21) expect(gap, `${name} ${selector}`).toBeLessThan(bottom);
+      }
       await cdp.detach();
     }
   });

@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { CATALOGS } from '../src/i18n.ts';
 
 test.use({ guideSeen: false, hasTouch: true, isMobile: true });
 
@@ -30,7 +31,9 @@ for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }
         await page.locator('#guide-open').click();
         await expect(page.locator('#guide-screen')).toBeVisible();
         await expect(guide).toBeVisible();
-        for (const name of ['Slide', 'Buttons', 'AUTO', 'FLY', 'BOOST', 'NITRO', 'Controls']) {
+        // The guide names each control by the label that locale's UI shows.
+        const labels = CATALOGS[locale === 'zh-TW' ? 'zh-TW' : 'en'];
+        for (const name of [labels['controls.mode.slide'], labels['controls.mode.buttons'], labels['assist.label'], 'FLY', 'BOOST', 'NITRO', labels['controls.button']]) {
           await expect(guide).toContainText(name);
         }
         await expect(guide).toContainText(locale === 'zh-TW' ? '下拉煞車' : 'drag down to brake');
