@@ -233,8 +233,10 @@ test('10C: every re-render of a finished race (pause, restart, exit, mode switch
   }
 });
 
-test('a Custom, Time Attack or Cup finish leaves Garage paints and achievements as they were', () => {
+test('a Custom, Time Attack or Cup finish leaves Garage paints, achievements and the Daily board as they were', () => {
   // Paints unlock from the summed best stars; achievements are the Classic medals. Both stored and in-session.
+  const daily = { id: 'daily-test-001', track: 'coast', modifier: 'gold-rings' };
+  const board = progress => ({ stored: localStorage.getItem('skyline-rush-daily'), session: JSON.stringify(progress.daily) });
   const career = progress => {
     const sum = stars => Object.values(stars).reduce((a, b) => a + b, 0);
     return { paints: availablePaints(sum(loadStars())), sessionPaints: availablePaints(sum(progress.stars)),
@@ -242,15 +244,19 @@ test('a Custom, Time Attack or Cup finish leaves Garage paints and achievements 
   };
   const control = loadSessionProgress(['coast']), start = career(control);
   settle(classic({ position: 1, time: 50, stars: 3, nearMisses: 40 }), { progress: control });
-  const earned = career(control);
+  const earned = career(control), boardBefore = board(control);
+  settle(classic({ position: 1, time: 52 }, { modifier: daily.modifier }), { progress: control, daily });
+  assert.equal(control.daily.at(-1).id, daily.id, 'a Classic Daily finish records to the session board');
+  assert.notEqual(board(control).stored, boardBefore.stored, 'and to the stored board');
   assert.ok(earned.paints.length > start.paints.length && earned.medals.length > start.medals.length,
     'the same winning finish in Classic unlocks a paint and medals, so the check below can see a change');
   for (const mode of ['custom', 'time', 'cup']) {
     const store = new Map();
     globalThis.localStorage = { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) };
-    const progress = loadSessionProgress(['coast']), before = career(progress);
-    settle(finishedRaceFor(mode), { progress });
+    const progress = loadSessionProgress(['coast']), before = career(progress), dailyBefore = board(progress);
+    settle({ ...finishedRaceFor(mode), modifier: daily.modifier }, { progress, daily });
     assert.deepEqual(career(progress), before, `${mode} finish leaves Garage paints and achievements unchanged`);
+    assert.deepEqual(board(progress), dailyBefore, `${mode} finish with a Daily modifier leaves the Daily board unchanged`);
     assert.deepEqual(progress.stars, {}, `${mode} finish earns no Classic stars`);
   }
 });
