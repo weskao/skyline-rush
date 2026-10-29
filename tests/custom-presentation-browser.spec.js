@@ -21,6 +21,16 @@ test('Custom offers cosmetic presets without changing official controls or layou
   await expect(page.locator('#race-setup-summary')).toContainText('0 AI');
 });
 
+test('Custom lists snowfall and aurora skies only on tracks that suit them', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-race-mode="custom"]').click();
+  await page.locator('#race-mode-rules > summary').click();
+  const options = page.locator('#race-visual-preset option');
+  await expect(options).toHaveText(['Track atmosphere', 'Daylight', 'Dusk', 'Night', 'Rain', 'Fog']);
+  await choosePreset(page, 'Fog');
+  await expect(page.locator('#race-presentation-summary')).toContainText('Fog');
+});
+
 for (const [name, viewport, hasTouch] of [
   ['desktop', { width: 1440, height: 900 }, false],
   ['phone', { width: 390, height: 844 }, true],

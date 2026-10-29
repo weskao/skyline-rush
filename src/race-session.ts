@@ -4,8 +4,15 @@ import { RACE_STREAMS, streamSeed } from './rng.ts';
 
 // Contract-only themes: they do not recolor the live WebGL scene. Presentation
 // may opt in separately without changing physics or mode record eligibility.
-export const VISUAL_PRESETS = Object.freeze(['track', 'day', 'dusk', 'night', 'rain', 'fog'] as const);
+export const VISUAL_PRESETS = Object.freeze(['track', 'day', 'dusk', 'night', 'rain', 'fog', 'snow', 'aurora'] as const);
 export type VisualPreset = (typeof VISUAL_PRESETS)[number];
+// Snowfall and aurora skies only where the landscape suits them; unknown tracks get the base six.
+const STYLED_PRESETS: Partial<Record<VisualPreset, readonly string[]>> = {
+  snow: ['aurora', 'alpine', 'canyon'], aurora: ['aurora', 'alpine', 'coastal', 'spiral'],
+};
+export function presetsForTrack(trackId: string): VisualPreset[] {
+  return VISUAL_PRESETS.filter(preset => STYLED_PRESETS[preset]?.includes(trackId) ?? true);
+}
 
 /**
  * Versioned, JSON-serializable identity for one race session.
@@ -26,7 +33,7 @@ export function createRaceSessionContract(
   if (presentation.ghostEnabled !== undefined && typeof presentation.ghostEnabled !== 'boolean')
     throw new RangeError('Invalid ghostEnabled flag');
   const visualPreset = presentation.visualPreset ?? 'track';
-  if (!VISUAL_PRESETS.includes(visualPreset as VisualPreset)) throw new RangeError('Invalid visualPreset');
+  if (!presetsForTrack(trackId).includes(visualPreset as VisualPreset)) throw new RangeError('Invalid visualPreset');
 
   // Existing createRace() passes the already-normalized v1 object. New callers
   // supplying raw settings must pass strict mode/field/type validation.

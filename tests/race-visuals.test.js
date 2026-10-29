@@ -9,7 +9,7 @@ function fixture() {
   scene.fog = new FogExp2('#94758a', .0013);
   const sky = new ShaderMaterial({ uniforms: {
     top: { value: new Color('#101e43') }, horizon: { value: new Color('#d98785') },
-    cloudTint: { value: new Color('#4d3d60') }, cloudOpacity: { value: 1 }, warmth: { value: 1 },
+    cloudTint: { value: new Color('#4d3d60') }, cloudOpacity: { value: 1 }, warmth: { value: 1 }, aurora: { value: 0 },
   } });
   const renderer = { toneMappingExposure: 1.12 };
   return { scene, sky: sky.uniforms, renderer };
@@ -57,4 +57,18 @@ test('Photo Studio temporarily overrides the atmosphere, then restores the curre
   assert.equal(target.scene.fog.density, .004);
   visuals.apply('track');
   assert.equal(target.scene.fog.density, .0013);
+});
+
+test('snowfall and aurora presets recolor the sky and restore the track, aurora band included', () => {
+  const target = fixture();
+  const visuals = createRaceVisuals(target);
+  visuals.apply('aurora');
+  assert.equal(target.sky.aurora.value, 1);
+  assert.ok(target.renderer.toneMappingExposure < 1, 'aurora is a night sky');
+  visuals.apply('snow');
+  assert.equal(target.sky.aurora.value, 0);
+  assert.ok(target.scene.fog.density > .0013, 'snow thickens the haze');
+  visuals.apply('track');
+  assert.equal(target.sky.aurora.value, 0);
+  assert.equal(target.scene.background.getHexString(), '94758a');
 });
