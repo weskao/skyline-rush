@@ -1,4 +1,5 @@
 import { test } from './helpers/gameplay-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -44,7 +45,7 @@ test('new content frame time, draw calls and triangles against Classic', async (
     if (s.layout) await choose('#gauntlet-rules', '#gauntlet-layout', s.layout, 'layout');
     await page.locator('[data-track="coast"]').click();
     await page.locator('#start-button').click();
-    await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: 30000 });
+    await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: ciTimeout(30000) });
     const setup = await page.evaluate(async ({ themes, teleport }) => {
       const race = window.gameplay.race;
       if (themes) {
