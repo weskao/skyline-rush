@@ -46,3 +46,10 @@ test('ENV-02 compiles a placement into the world box the collision code uses', (
   assert.deepEqual(hazardBox(validateHazardPlacement({ ...valid(), type: 'ring', altitude: 5 })),
     { from: 1199.5, to: 1200.5, left: -7.3, right: 2.3, bottom: 0.2, top: 9.8 });
 });
+
+test('ENV-02 ramps sit still on the road so every launch is predictable', () => {
+  const ramp = { ...valid(), type: 'ramp', triggerWindow: { from: 1100, to: 1210 } };
+  assert.equal(validateHazardPlacement(ramp).hitbox.halfLength, 6);
+  assert.throws(() => validateHazardPlacement({ ...ramp, altitude: 2 }), RangeError);
+  assert.throws(() => validateHazardPlacement({ ...ramp, movementPattern: { kind: 'sweep', amplitude: 1, period: 3, phase: 0 } }), RangeError);
+});

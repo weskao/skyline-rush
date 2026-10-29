@@ -3,7 +3,7 @@
 // entries carry a hitbox, so scenery can never become solid by accident.
 
 export const GAMEPLAY_TYPES = ['barrier', 'cone', 'gate', 'ring', 'pickup', 'checkpoint', 'energy-barrier',
-  'debris', 'gust', 'terrain', 'rail-crossing', 'branch-marker'] as const;
+  'debris', 'gust', 'terrain', 'rail-crossing', 'branch-marker', 'ramp'] as const;
 export const SCENERY_TYPES = ['building', 'crowd', 'parked-train', 'sign', 'lamp', 'spaceship'] as const;
 
 export type GameplayType = typeof GAMEPLAY_TYPES[number];
@@ -12,8 +12,8 @@ export type ObjectType = GameplayType | SceneryType;
 
 /** Drawn footprint in metres, for placement and overlap checks; contact reach stays in the simulation. */
 export interface Hitbox { readonly halfWidth: number; readonly halfLength: number; readonly height: number }
-/** block = knock on contact, collect = consumed reward, trigger = pass detection, push/slow = steering/speed effect. */
-export type GameplayEffect = 'block' | 'collect' | 'trigger' | 'push' | 'slow';
+/** block = knock on contact, collect = consumed reward, trigger = pass detection, push/slow = steering/speed effect, launch = vertical impulse. */
+export type GameplayEffect = 'block' | 'collect' | 'trigger' | 'push' | 'slow' | 'launch';
 /** ground: altitude is the base and height grows up; center: altitude is the middle (rings, as game.js measures them). */
 export type HitboxAnchor = 'ground' | 'center';
 export interface GameplayEntry { readonly role: 'gameplay'; readonly effect: GameplayEffect; readonly hitbox: Hitbox; readonly anchor: HitboxAnchor }
@@ -37,6 +37,7 @@ export const OBJECT_CATALOG: Readonly<Record<GameplayType, GameplayEntry> & Reco
   terrain: gameplay('slow', 2.5, 10, 0.3),
   'rail-crossing': gameplay('block', 10, 2, 4), // whole-road event: only closed during its warned trigger window
   'branch-marker': gameplay('trigger', 10, 0.5, 6),
+  ramp: gameplay('launch', 1.8, 6, 1.2),
   building: scenery, crowd: scenery, 'parked-train': scenery, sign: scenery, lamp: scenery, spaceship: scenery,
 });
 

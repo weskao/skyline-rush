@@ -28,6 +28,8 @@ test('ENV-01 hitboxes are the drawn footprints; contact reach stays in the simul
   assert.deepEqual(OBJECT_CATALOG.pickup.hitbox, { halfWidth: 1, halfLength: 1, height: 2.5 });
   assert.deepEqual(OBJECT_CATALOG.checkpoint.hitbox, { halfWidth: 3.2, halfLength: 0.5, height: 4.8 });
   for (const type of GAMEPLAY_TYPES) if (type !== 'ring') assert.equal(OBJECT_CATALOG[type].anchor, 'ground', type);
+  // A 3.6 m x 12 m wedge with a 1.2 m lip; the launch impulse itself stays in the simulation.
+  assert.deepEqual(OBJECT_CATALOG.ramp, { role: 'gameplay', effect: 'launch', hitbox: { halfWidth: 1.8, halfLength: 6, height: 1.2 }, anchor: 'ground' });
   // Gauntlet barriers never take more than one lane (5 m) so two lanes stay open.
   for (const type of GAMEPLAY_TYPES) if (OBJECT_CATALOG[type].effect === 'block' && type !== 'rail-crossing') {
     assert.ok(OBJECT_CATALOG[type].hitbox.halfWidth * 2 <= 5, `${type} fits one lane`);
