@@ -58,8 +58,10 @@ for (const [name, viewport, hasTouch, locale] of [
           const m = mesh.matrix.clone(), position = camera.position.clone(), quaternion = camera.quaternion.clone(), scale = camera.scale.clone();
           mesh.getMatrixAt(0, m); m.decompose(position, quaternion, scale);
           const ndc = position.clone().project(camera), pose = hazardPose(target, race.elapsed);
+          // The game frame runs before the pin each rAF, so it draws up to one clamped 0.05 s step (src/main.js) past the pin.
+          const stepAltitude = hazardPose(target, race.elapsed + 0.05).altitude;
           return { count: mesh.count, x: position.x, y: position.y, sy: scale.y, yaw: 2 * Math.atan2(quaternion.y, quaternion.w),
-            inFrame: ndc.z < 1 && Math.abs(ndc.x) <= 1 && Math.abs(ndc.y) <= 1, poseAltitude: pose.altitude, height: target.height };
+            inFrame: ndc.z < 1 && Math.abs(ndc.x) <= 1 && Math.abs(ndc.y) <= 1, poseAltitude: pose.altitude, stepAltitude, height: target.height };
         }, { meshName: c.mesh });
         const expectDrawn = !(c.track === 'tokyo' && time === 3);
         await expect.poll(async () => (await read()).count, { message: `${name} ${c.id} t=${time}` }).toBe(expectDrawn ? 1 : 0);
@@ -74,7 +76,10 @@ for (const [name, viewport, hasTouch, locale] of [
       if (c.id === 'canyon-rock-1') {
         expect(first.poseAltitude).toBeGreaterThan(0.5);
         expect(first.poseAltitude).toBeLessThan(9.5);
-        expect(Math.abs(first.y - (first.poseAltitude + first.height / 2))).toBeLessThan(0.15);
+        // Drawn at the pose of the frame that rendered it: within one physics step of the pinned time on slow CI frames too.
+        const [low, high] = [first.poseAltitude, first.stepAltitude].sort((x, y) => x - y).map(alt => alt + first.height / 2);
+        expect(first.y).toBeGreaterThan(low - 0.02);
+        expect(first.y).toBeLessThan(high + 0.02);
       }
       if (c.id === 'neon-gate-1') expect(Math.abs(Math.abs(first.x - second.x) - 3.6)).toBeLessThan(0.1);
       // Just reload: forcing phase 'finished' without the race.result every real finish sets crashed the result screen.

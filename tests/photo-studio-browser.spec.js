@@ -39,7 +39,8 @@ const layouts = [
 
 for (const [name, viewport, hasTouch, locale, trackIds, insets] of layouts) {
   test.describe(`Photo Studio ${name}`, () => {
-    test.use({ viewport, hasTouch, locale, deviceScaleFactor: 1 });
+    // Config DPR: CI renders 0.25x, since DPR 1 on CPU WebGL left 1440x900 frames so slow ?perf never logged one.
+    test.use({ viewport, hasTouch, locale });
     for (const trackId of trackIds) {
       test(`${trackId}: clean preview restores paused UI and driving`, async ({ gameplayPage: page, gameplayURL }) => {
         const errors = [];
