@@ -1,4 +1,5 @@
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
+import { trackProgressBottom } from './hud-progress-offset.ts';
 import { t, interpolate, getLocale, CATALOGS } from './i18n.ts';
 import { icon } from './icons.ts';
 import { timeString } from './time-format.ts';
@@ -44,6 +45,7 @@ export function createRaceHud(options: HudOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const hudNodes = Object.fromEntries(HUD_NODE_IDS.map(id => [id, document.getElementById(id)!])) as Record<string, HTMLElement>;
   const modePanels = createModePanels(options);
+  trackProgressBottom($('.race-progress'));
   const countdownNumber = $('#countdown-number');
   const countdownLabel = $('#countdown-label');
   const speedTicks = [...document.querySelectorAll<HTMLElement>('.speed-ticks i')];
