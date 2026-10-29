@@ -1294,6 +1294,15 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 - [ ] **Coast:** scattered cargo, gust warnings and temporary shoulder
   closures; combine clean high-speed overtakes with coastal visibility.
+  - Progress (feature/track-themes, 2026-10-29): opt-in `themes: true` (Custom, Free Drive, Gauntlet only;
+    absent by default so Classic/Daily/Time/other records and rules signatures are unchanged — user decision).
+    Shared runtime `src/track-themes.ts` (validated ENV-02 placements → `race.hazards` entries carrying
+    `placement`), data in `src/track-themes-classic.ts`. Coast: four cargo spills and two six-cone shoulder
+    closures; per-hazard hit reach/height for player, AI avoidance and AI impacts (Gauntlet defaults unchanged).
+    `tests/track-themes.test.js`: opt-in boundary, ≤2 of 4 lanes blocked anywhere, off special sections,
+    hit knocks / clean pass pays, rivals change lane first. RED: module missing; mutation RED: fixed 1.8 m reach
+    and no AI reach both fail. Pending: gust warnings (push effect, ENV-05 by 6a), desktop + mobile visual check,
+    full gate. Audio: reuses the existing barrier impact/near-miss cues; no new sound needed.
 - [ ] **Neon Downtown:** animated construction barriers, temporary lane
   closures, traffic diversions and readable neon gate timing.
 - [ ] **Canyon Skyway:** warned falling rocks, cliff-side debris,
