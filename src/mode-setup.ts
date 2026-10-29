@@ -19,6 +19,9 @@ const GHOST_MODES = new Set(['classic', 'custom', 'time']);
 export function ruleConflicts(mode: string, rules: { rivals?: unknown }, { unlocked, cupCount }: { unlocked: number; cupCount: number }): RuleConflict[] {
   const conflicts: RuleConflict[] = [];
   if (mode === 'custom' && rules.rivals === 0) conflicts.push({ rule: 'difficulty', reason: 'mode.conflict.noRivals' });
+  // Fixed by the mode itself: laps need a closed circuit, Elimination needs rivals to knock out.
+  if (mode === 'circuit') conflicts.push({ rule: 'track', reason: 'mode.conflict.lapsCircuitOnly' });
+  if (mode === 'elimination') conflicts.push({ rule: 'rivals', reason: 'mode.conflict.eliminationRivals' });
   if (!GHOST_MODES.has(mode)) conflicts.push({ rule: 'ghost', reason: 'mode.ghostUnavailable' });
   if (mode === 'cup' && unlocked < cupCount) conflicts.push({ rule: 'start', reason: 'mode.cupLocked', params: { n: cupCount } });
   return conflicts;
