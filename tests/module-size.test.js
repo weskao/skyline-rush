@@ -11,7 +11,7 @@ const LEGACY_CEILINGS = {
   'src/main.js': 688,
   'src/world.js': 1336,
   'src/game.js': 778,
-  'src/world-tour-scene.js': 454,
+  'src/world-tour-scene.js': 453,
   'src/CollectiblesGuide.vue': 477,
   'src/locales/ui.ts': 1222, // translation catalog: data, not logic
 };
