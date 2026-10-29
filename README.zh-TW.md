@@ -1,4 +1,4 @@
-<!-- source-sha256: 92f7568744768c4b70bf6b84e48235ec506df213804c379e8bd2c0c017f370ae generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 7569df047f56406b1eed64656639f092f1e6e5e6a48ce1623aec339e75cce854 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -262,6 +262,7 @@ npm run preview         # Serve the production build after npm run build
 
 ```sh
 make perf BASE=main         # A/B in Chrome at 412×915, CPU throttled 6× (RATE=20 for a low-end phone), 3 alternating rounds
+make perf BASE=main VIEWPORT=desktop  # The same A/B at 1440×900 desktop size
 make perf-phone             # Like make phone: asks base version, Tailscale/Wi-Fi and Telegram; logs phone temperatures
 ```
 

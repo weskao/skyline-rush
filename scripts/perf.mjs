@@ -1,6 +1,6 @@
 // Frame-time checks of production builds, read from the in-game `?perf` strip (see README "Verify").
-//   node scripts/perf.mjs desktop [--base <ref>] [--rate 6] [--rounds 3] [--seconds 24]
-//     Races each build in Chrome at 412x915 with the CPU throttled `rate` times, alternating builds per round.
+//   node scripts/perf.mjs desktop [--base <ref>] [--rate 6] [--rounds 3] [--seconds 24] [--viewport phone|desktop]
+//     Races each build in Chrome at 412x915 (or 1440x900 with --viewport desktop) with the CPU throttled `rate` times, alternating builds per round.
 //   node scripts/perf.mjs phone [--base <ref>] [--via auto|tailscale|wifi] [--tg 1|0]
 //     Like `make phone`: serves each build over Tailscale and/or Wi-Fi, sends the URLs to Telegram,
 //     opens the first on a USB Android phone and logs temperatures until Ctrl+C. A terminal asks what is not given.
@@ -14,7 +14,7 @@ import { preview } from 'vite';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const [mode, ...rest] = process.argv.slice(2);
-const opts = { rate: '6', rounds: '3', seconds: '24' };
+const opts = { rate: '6', rounds: '3', seconds: '24', viewport: 'phone' };
 for (let i = 0; i < rest.length; i += 2) opts[rest[i].replace(/^--/, '')] = rest[i + 1];
 if (!['desktop', 'phone'].includes(mode)) {
   console.error('Usage: node scripts/perf.mjs desktop|phone [--base <git ref>] [--rate 6] [--rounds 3] [--seconds 24]');
@@ -132,7 +132,8 @@ if (mode === 'phone') {
   const browser = await chromium.launch({ channel: 'chrome' });
   const runs = [];
   for (let round = 1; round <= +opts.rounds; round++) for (const build of builds) {
-    const context = await browser.newContext({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    const context = await browser.newContext(opts.viewport === 'desktop' ? { viewport: { width: 1440, height: 900 } }
+      : { viewport: { width: 412, height: 915 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     await context.addInitScript(() => {
       for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     });
