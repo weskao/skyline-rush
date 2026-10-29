@@ -25,7 +25,7 @@ import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCamera
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
-import { hazardX } from './hazards.ts';
+import { hazardPose } from './hazard-race.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 
@@ -1052,10 +1052,10 @@ export function createWorld(canvas) {
       if (!preview && race.hazards.length) for (const hazard of race.hazards) {
         if (hazard.distance < distance - 16 || hazard.distance > distance + 550) continue;
         if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
-        const x = hazardX(hazard, race.elapsed);
-        const h = hazard.height ?? 2.5, xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, h / 2, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, h / 2, distance)
-            : [roadCenter(hazard.distance) - center + x, h / 2, distance - hazard.distance];
+        const { x, altitude, active } = hazardPose(hazard, race.elapsed); if (!active) continue; // drawn exactly when solid
+        const h = hazard.height ?? 2.5, y = altitude + h / 2, xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, y, distance)
+          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, y, distance)
+            : [roadCenter(hazard.distance) - center + x, y, distance - hazard.distance];
         put(gauntletBarriers, visibleHazards++, ...xyz, hazard.halfWidth ? hazard.halfWidth * 2 : 3.1, h, hazard.halfLength ? hazard.halfLength * 2 : 1.3);
       }
       gauntletBarriers.count = visibleHazards;
