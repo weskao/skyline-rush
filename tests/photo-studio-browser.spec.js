@@ -10,14 +10,34 @@ const backgroundUI = [
   '.speed-streaks', '.flight-director', '.altitude-ladder', '#airflow-hud',
   '#event-callout', '#impact-report', '#perf-overlay',
 ];
+async function projectedCar(page) {
+  return page.evaluate(() => {
+    const { player, camera } = window.gameScene;
+    player.updateMatrixWorld(true);
+    const points = [];
+    player.traverseVisible(mesh => {
+      if (!mesh.isMesh) return;
+      mesh.geometry.computeBoundingBox();
+      const { min, max } = mesh.geometry.boundingBox;
+      for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) for (const z of [min.z, max.z]) {
+        const point = player.position.clone().set(x, y, z).applyMatrix4(mesh.matrixWorld).project(camera);
+        points.push({ x: (point.x + 1) * innerWidth / 2, y: (1 - point.y) * innerHeight / 2 });
+      }
+    });
+    return { left: Math.min(...points.map(p => p.x)), right: Math.max(...points.map(p => p.x)), top: Math.min(...points.map(p => p.y)), bottom: Math.max(...points.map(p => p.y)) };
+  });
+}
+
 const layouts = [
   ['desktop', { width: 1440, height: 900 }, false, 'en-US', tracks],
   ['phone', { width: 390, height: 844 }, true, 'zh-TW', tracks],
   ['small-phone', { width: 320, height: 740 }, true, 'zh-TW', ['coast']],
   ['landscape', { width: 844, height: 390 }, true, 'en-US', ['coast']],
+  ['safe-phone', { width: 390, height: 844 }, true, 'zh-TW', ['coast'], { top: 59, right: 0, bottom: 34, left: 0 }],
+  ['safe-landscape', { width: 844, height: 390 }, true, 'en-US', ['coast'], { top: 0, right: 47, bottom: 21, left: 47 }],
 ];
 
-for (const [name, viewport, hasTouch, locale, trackIds] of layouts) {
+for (const [name, viewport, hasTouch, locale, trackIds, insets] of layouts) {
   test.describe(`Photo Studio ${name}`, () => {
     test.use({ viewport, hasTouch, locale, deviceScaleFactor: 1 });
     for (const trackId of trackIds) {
@@ -30,6 +50,9 @@ for (const [name, viewport, hasTouch, locale, trackIds] of layouts) {
         }, tracks);
         await page.addLocatorHandler(page.locator('#music-prompt'), () => page.locator('#music-no').click());
         await page.goto(`${gameplayURL}?perf`);
+        if (insets) await page.evaluate(values => {
+          for (const [side, value] of Object.entries(values)) document.documentElement.style.setProperty(`--safe-${side}`, `${value}px`);
+        }, insets);
         await page.locator(`[data-track="${trackId}"]`).click();
         await page.locator('[data-race-mode="free"]').click();
         await page.locator('#start-button').click();
@@ -50,6 +73,15 @@ for (const [name, viewport, hasTouch, locale, trackIds] of layouts) {
         await expect(page.locator('#world')).toBeVisible();
         await page.screenshot({ path: `test-results/race-mode-photo-${name}-${trackId}.png` });
         for (const selector of backgroundUI) await expect(page.locator(selector), `${selector} must not overlay the photo`).toBeHidden();
+        const car = await projectedCar(page), panel = await page.locator('#photo-screen').boundingBox();
+        if (insets) {
+          expect(panel.x).toBeGreaterThanOrEqual(insets.left);
+          expect(panel.y).toBeGreaterThanOrEqual(insets.top);
+          expect(panel.x + panel.width).toBeLessThanOrEqual(viewport.width - insets.right);
+          expect(panel.y + panel.height).toBeLessThanOrEqual(viewport.height - insets.bottom);
+        }
+        const obscuresCar = panel.x < car.right && panel.x + panel.width > car.left && panel.y < car.bottom && panel.y + panel.height > car.top;
+        expect(obscuresCar, `Photo controls must not cover the default car at ${viewport.width}x${viewport.height}: ${JSON.stringify({ car, panel })}`).toBe(false);
         expect(await page.evaluate(() => ({
           elapsed: window.gameplay.race.elapsed,
           distance: window.gameplay.race.player.distance,

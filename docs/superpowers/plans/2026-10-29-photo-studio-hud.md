@@ -42,7 +42,13 @@ Files: src/style.css only, unless a real lifecycle regression requires its exist
 - [x] Pass focused browser regression and existing orbit/lighting/PNG tests; preserve after images and inspect representative full-resolution views.
 - [x] Verify repeat open, existing camera/lighting/export, real Back/Escape and continued driving without console errors; 23/23 focused browser cases pass. Preserve 22 original-resolution after images; six representatives inspected.
 
-### Task 3: Final quality gate
+### Task 3: Responsive visual regression discovered in review
+
+- [x] Actual 320x740 screenshot shows the controls obscuring the car. Extend the existing owner test to project each visible car mesh (wheels/body/wings) and detect panel overlap; observe the real overlap assertion RED. Add 59px top-notch / 47px landscape inset cases and observe unsafe y12 versus y59 RED.
+- [ ] Use compact two-column orbit/FOV fields on narrow viewports, a 300px short-landscape panel and the existing shared safe-area variables. Preserve camera, car, font sizes and every control. Correct the UA dialog max-width only so the intended responsive width is honored.
+- [ ] Pass all 24 layout/track cases plus existing PNG test; inspect actual narrow/notch/landscape images before rerunning the complete gate. Preserve interrupted 007b858 full-gate log separately.
+
+### Task 4: Final quality gate
 
 - [ ] Complete make verify and preserve actual exit status and complete failure scan.
 - [ ] Publish the feature branch and inspect exact-commit unit, Cloud, eight browser shards, six World Tour shards and quality-gate.
