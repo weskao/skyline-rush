@@ -1,6 +1,6 @@
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { stepPlayerHazards, hazardReach, hazardTouch, nudge } from './hazard-race.ts';
-import { raceHazards } from './track-themes.ts';
+import { raceHazards } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
@@ -247,13 +247,13 @@ export function createRace(trackId = 'coast', modifier = null) {
   const config = normalizeRaceConfig(options ?? {});
   const session = createRaceSessionContract(trackId, track.seed, config);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const rings = createRings(track);
+  const course = mixedCourse(trackId, track, LANES, config), rings = withHoops(createRings(track), course);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
     props: [], // solid World Tour scenery parts; main.js fills them from roadObstacles()
-    hazards: raceHazards(trackId, track, LANES, config),
+    hazards: raceHazards(trackId, track, LANES, config, course),
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     practice: config.mode === 'free' ? createPracticeStats() : null,
     styleAttack: config.mode === 'stunt' ? createStuntAttack() : null,

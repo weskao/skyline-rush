@@ -73,3 +73,37 @@ test('the original Gauntlet layout is untouched', () => {
   assert.ok(before.every(h => !('placement' in h) && !('type' in h)));
   assert.deepEqual(createHazards(RACE_TRACKS.coast, LANES), before);
 });
+
+test('layout:mixed is a Gauntlet-only opt-in that keeps every existing signature', async () => {
+  const { normalizeRaceConfig, rulesSignature } = await import('../src/race-config.ts');
+  assert.equal(normalizeRaceConfig({ mode: 'gauntlet', layout: 'mixed' }).layout, 'mixed');
+  for (const mode of ['classic', 'custom', 'free', 'time', 'checkpoint']) assert.equal(normalizeRaceConfig({ mode, layout: 'mixed' }).layout, undefined, mode);
+  assert.equal(rulesSignature({ mode: 'gauntlet' }), rulesSignature({ mode: 'gauntlet', layout: 'classic' }));
+  assert.notEqual(rulesSignature({ mode: 'gauntlet' }), rulesSignature({ mode: 'gauntlet', layout: 'mixed' }));
+});
+
+test('a mixed Gauntlet race uses the course; the default Gauntlet race is byte-identical', async () => {
+  const { createRace, startRace, stepRace } = await import('../src/game.js');
+  const plain = createRace('coast', { mode: 'gauntlet' });
+  assert.deepEqual(plain.hazards, createHazards(RACE_TRACKS.coast, LANES));
+  assert.deepEqual(plain.rings, createRace('coast').rings);
+  const race = createRace('coast', { mode: 'gauntlet', layout: 'mixed' });
+  const expected = build('coast');
+  assert.deepEqual(race.hazards.map(h => h.id), expected.hazards.map(h => h.id));
+  for (const hoop of expected.hoops) assert.ok(race.rings.some(r => r.distance === hoop.distance && r.type === 'risk' && r.altitude === hoop.altitude));
+  const ordered = race.rings.map(r => r.distance);
+  assert.deepEqual(ordered, [...ordered].sort((a, b) => a - b));
+
+  startRace(race); race.phase = 'racing'; race.countdown = 0;
+  const barricade = race.hazards.find(h => h.type === 'barrier' && race.rings.some(r => r.distance === h.distance));
+  Object.assign(race.player, { distance: barricade.distance - 2, x: barricade.x, altitude: 0, speed: 60, cooldown: 0, collisions: 0 });
+  stepRace(race, { throttle: true }, .1);
+  assert.equal(race.player.collisions, 1, 'driving into a barricade still collides');
+  const fresh = createRace('coast', { mode: 'gauntlet', layout: 'mixed' });
+  startRace(fresh); fresh.phase = 'racing'; fresh.countdown = 0;
+  const hoop = fresh.rings.find(r => r.distance === barricade.distance);
+  Object.assign(fresh.player, { distance: hoop.distance - 2, x: hoop.x, altitude: hoop.altitude, speed: 60, cooldown: 0, collisions: 0, score: 0 });
+  stepRace(fresh, { throttle: true, fly: true }, .1);
+  assert.equal(fresh.player.collisions, 0, 'the risky line over the barricade is clear');
+  assert.ok(hoop.hit && fresh.player.score > 0, 'the hoop pays out');
+});

@@ -51,3 +51,16 @@ export function createGauntletCourse(trackId: string, track: HazardTrack, lanes:
   }
   return { hazards, hoops };
 }
+
+type GauntletCourse = ReturnType<typeof createGauntletCourse>;
+/** The mixed course for a race, or null for every other mode/layout; built once per race. */
+export const mixedCourse = (trackId: string, track: HazardTrack, lanes: readonly number[],
+  config: { mode: string; layout?: string; hazardTier?: Tier }): GauntletCourse | null =>
+  config.mode === 'gauntlet' && config.layout === 'mixed' ? createGauntletCourse(trackId, track, lanes, config.hazardTier) : null;
+
+/** Hoops replace any ring within 30 m so the risky line reads as one target. */
+export function withHoops<T extends { distance: number }>(rings: T[], course: GauntletCourse | null): (T | CourseHoop)[] {
+  if (!course) return rings;
+  return [...rings.filter(r => course.hoops.every(h => Math.abs(h.distance - r.distance) > 30)), ...course.hoops]
+    .sort((a, b) => a.distance - b.distance);
+}

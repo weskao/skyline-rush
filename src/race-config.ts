@@ -28,6 +28,8 @@ export function normalizeRaceConfig(value: unknown = {}) {
     ...((practice || mode === 'gauntlet') && value.themes === true ? { themes: true } : {}),
     ...(custom && isOneOf(value.stages, [2, 3, 5]) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
+    // MODE-07: only the mixed course is stored, so the original Gauntlet signature is unchanged.
+    ...(mode === 'gauntlet' && value.layout === 'mixed' ? { layout: 'mixed' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
     ...(mode === 'stunt' ? { duration: isOneOf(value.duration, [120, 180, 300]) ? value.duration : 120 } : {}),
     ...(mode === 'cup' && Array.isArray(value.cupTracks) && [3,5].includes(value.cupTracks.length) &&
@@ -52,7 +54,7 @@ const REQUEST_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze(
   custom: ['rivals', 'traffic', 'difficulty', 'items', 'activeItems', 'collision', 'hazards', 'stages', 'themes'],
   free: ['traffic', 'items', 'activeItems', 'collision', 'hazards', 'themes'],
   time: ['clean'],
-  gauntlet: ['hazardTier', 'themes'],
+  gauntlet: ['hazardTier', 'themes', 'layout'],
   checkpoint: [],
   cup: ['cupTracks'],
   stunt: ['duration'],
@@ -87,6 +89,7 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
   if (value.activeItems === true && value.items === false) assertOption(false, 'activeItems with items disabled');
   if (Object.hasOwn(value, 'collision')) assertOption(isOneOf(value.collision, ['normal', 'relaxed']), 'collision');
   if (Object.hasOwn(value, 'hazards')) assertOption(isOneOf(value.hazards, ['standard', 'extreme']), 'hazards');
+  if (Object.hasOwn(value, 'layout')) assertOption(isOneOf(value.layout, ['classic', 'mixed']), 'layout');
   if (Object.hasOwn(value, 'hazardTier')) assertOption(isOneOf(value.hazardTier, ['standard', 'extreme']), 'hazardTier');
   if (Object.hasOwn(value, 'stages')) assertOption(isOneOf(value.stages, [1, 2, 3, 5]), 'stages');
   if (Object.hasOwn(value, 'duration')) assertOption(isOneOf(value.duration, [120, 180, 300]), 'duration');
