@@ -1507,6 +1507,7 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .item-slot button:disabled{opacity:.45;cursor:default;}
 .item-slot button:focus-visible{outline:2px solid #9cddff;outline-offset:2px;}
 @media(max-width:760px){.item-slot{flex-wrap:wrap;max-width:220px}.item-slot button{min-height:40px}}
+@media(max-width:400px){.item-slot{max-width:none}} /* one row: a wrapped USE grew the progress card and pushed the route map into the telemetry */
 
 .elimination-hud{display:inline-block;max-width:100%;margin-top:7px;padding:5px 9px;border:1px solid #ffce8777;border-radius:5px;background:#482a31dd;color:#ffe7b2;font-size:11px;font-weight:800;letter-spacing:.06em;text-shadow:0 0 9px #fb914966;}
 .elimination-hud[hidden]{display:none!important;}

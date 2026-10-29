@@ -59,6 +59,8 @@ for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [
       if (mode === 'custom') {
         await page.evaluate(() => { window.gameplay.race.player.heldItem = 'shield'; });
         await expect(page.locator('#item-slot')).toBeVisible();
+        // Measure the held-item row, not the empty slot: the longer status once wrapped USE onto a second row at 320 px.
+        await expect(page.locator('#item-status')).toHaveText('ITEM READY · SHIELD');
       }
       const shown = { custom: '#item-slot', circuit: '#circuit-hud', checkpoint: '#checkpoint-hud', stunt: '#stunt-hud', elimination: '#elimination-hud' }[mode];
       if (shown) await expect(page.locator(shown)).toBeVisible();
