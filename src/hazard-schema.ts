@@ -64,10 +64,10 @@ export function validateHazardPlacement(input: unknown): HazardPlacement {
   if (!inRange(lateralOffset, -HAZARD_LIMITS.maxLateral, HAZARD_LIMITS.maxLateral)) fail('lateralOffset');
   if (!inRange(altitude, 0, HAZARD_LIMITS.maxAltitude)) fail('altitude');
   const hitbox = readHitbox(raw.hitbox, OBJECT_CATALOG[type].hitbox);
-  const window = triggerWindow as Record<string, unknown>;
-  if (!window || typeof window !== 'object' || !inRange(window.from, 0, HAZARD_LIMITS.maxDistance) ||
-    !inRange(window.to, 0, HAZARD_LIMITS.maxDistance) || window.to - window.from > HAZARD_LIMITS.maxWindow ||
-    window.from > distance - hitbox.halfLength || window.to < distance + hitbox.halfLength) fail('triggerWindow');
+  const trigger = triggerWindow as Record<string, unknown>;
+  if (!trigger || typeof trigger !== 'object' || !inRange(trigger.from, 0, HAZARD_LIMITS.maxDistance) ||
+    !inRange(trigger.to, 0, HAZARD_LIMITS.maxDistance) || trigger.to - trigger.from > HAZARD_LIMITS.maxWindow ||
+    trigger.from > distance - hitbox.halfLength || trigger.to < distance + hitbox.halfLength) fail('triggerWindow');
   if (!inRange(warningLeadSeconds, HAZARD_LIMITS.minWarning, HAZARD_LIMITS.maxWarning)) fail('warningLeadSeconds');
   if (difficulty !== 'standard' && difficulty !== 'extreme') fail('difficulty');
   if (!Number.isInteger(seed) || !inRange(seed, 0, 0xffffffff)) fail('seed');
@@ -75,7 +75,7 @@ export function validateHazardPlacement(input: unknown): HazardPlacement {
   // A launch only stays predictable from a fixed wedge on the road surface.
   if (OBJECT_CATALOG[type].effect === 'launch' && (altitude !== 0 || movementPattern.kind !== 'static')) fail('launch placement');
   return Object.freeze({ id, trackId, type, distance, lateralOffset, altitude, hitbox,
-    triggerWindow: Object.freeze({ from: window.from as number, to: window.to as number }),
+    triggerWindow: Object.freeze({ from: trigger.from as number, to: trigger.to as number }),
     warningLeadSeconds, movementPattern, difficulty, seed: seed as number });
 }
 
