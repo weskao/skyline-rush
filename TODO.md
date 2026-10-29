@@ -1305,12 +1305,16 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
     full gate. Audio: reuses the existing barrier impact/near-miss cues; no new sound needed.
 - [ ] **Neon Downtown:** animated construction barriers, temporary lane
   closures, traffic diversions and readable neon gate timing.
+  - Progress (feature/track-themes): roadwork barriers, a coned-off lane, a diversion and two neon gates between the tunnels (`src/track-themes-classic.ts`), covered by `tests/track-themes.test.js`. Pending: gate timing/animation (ENV-05 `hazardFrame`), visual check, full gate.
 - [ ] **Canyon Skyway:** warned falling rocks, cliff-side debris,
   precision launch ramps and risk/reward routes over broken bridges.
+  - Progress (feature/track-themes): six rockfall/cliff-debris spills, some inside the crosswind stretches, all clear of the bridge gaps. Pending: falling motion and warnings (ENV-05 `fall`), launch ramps (ENV-05 `launch`), visual check, full gate.
 - [ ] **Aurora Pass:** snowbanks, localized low-grip ice bends,
   timed blizzard visibility and safer alternative lines.
+  - Progress (feature/track-themes): six snowbanks on alternating lanes so a safer line always stays open. Pending: low-grip ice patches (ENV-05 `slow`), blizzard visibility, visual check, full gate.
 - [ ] **Sky Spiral:** rotating light hoops, synchronized aerial gates,
   changing platform barriers and airborne precision scoring.
+  - Progress (feature/track-themes): three energy platform barriers and three gates, including two on the helix, away from launch gaps. Pending: rotating hoops, gate sync and barrier switching (ENV-05 `rotate`/`sweep`/`pulse`), visual check, full gate.
 - [ ] **Taipei Heritage:** festival street furniture, temporary
   boulevard closures and scenic props, while preserving landmark
   visibility and the existing curated ready-screen showcase.
