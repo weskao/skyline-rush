@@ -34,8 +34,14 @@ test('new content frame time, draw calls and triangles against Classic', async (
     for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     await page.locator(`button[data-race-mode="${s.mode}"]`).click(); // <body> mirrors the selected mode in the same attribute
-    if (s.hazards) await page.locator('[data-race-rule="hazards"]').selectOption(s.hazards);
-    if (s.layout) await page.locator('#gauntlet-layout').selectOption(s.layout);
+    // Native selects sit behind the custom dropdowns: set and announce them as obstacle-gauntlet-browser.spec.js does.
+    const choose = async (panel, select, value, key) => {
+      await page.locator(`${panel} > summary`).click();
+      await page.locator(select).evaluate((node, v) => { node.value = v; node.dispatchEvent(new Event('change', { bubbles: true })); }, value);
+      await expect.poll(() => page.evaluate(k => window.gameplay.race.config[k], key)).toBe(value);
+    };
+    if (s.hazards) await choose('#race-mode-rules', '[data-race-rule="hazards"]', s.hazards, 'hazards');
+    if (s.layout) await choose('#gauntlet-rules', '#gauntlet-layout', s.layout, 'layout');
     await page.locator('[data-track="coast"]').click();
     await page.locator('#start-button').click();
     await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: 30000 });
