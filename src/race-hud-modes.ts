@@ -3,7 +3,7 @@ import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } fr
 import { t } from './i18n.ts';
 import type { ItemRace } from './item-ui.ts';
 import { checkpointDirection } from './checkpoint-rush.ts';
-import { hazardWarningDistance } from './hazard-safety.ts';
+import { hazardWarningDistance, hazardWarningKey } from './hazard-safety.ts';
 import type { SprintSeries } from './sprint-series.ts';
 import type { CupState } from './championship-cup.ts';
 import type { StuntRun } from './stunt-attack.ts';
@@ -34,7 +34,7 @@ export function createModePanels(options: ModePanelOptions) {
     const hazardAhead = race.hazards.length ? race.hazards.find((h: HudRace) => !h.passed && !h.hit && h.distance > race.player.distance) : null;
     const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
     setHudHidden(hazardWarning, !hazardAhead || hazardDistance > hazardWarningDistance(hazardAhead) || race.phase !== 'racing');
-    if (!hazardWarning.hidden) setHudText(hazardWarning, t('mode.hazardWarning', { n: hazardDistance }));
+    if (!hazardWarning.hidden) setHudText(hazardWarning, t(hazardWarningKey(hazardAhead), { n: hazardDistance }));
     const eliminationHud = hudNodes['elimination-hud']!;
     setHudHidden(eliminationHud, !race.elimination || race.phase === 'ready');
     if (race.elimination) {

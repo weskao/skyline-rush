@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateHazardPlacement } from '../src/hazard-schema.ts';
-import { courseSafetyIssues, hazardWarningDistance, MAX_APPROACH_SPEED } from '../src/hazard-safety.ts';
+import { courseSafetyIssues, hazardWarningDistance, hazardWarningKey, MAX_APPROACH_SPEED } from '../src/hazard-safety.ts';
+import { FEATURE_COPY } from '../src/locales/feature-copy.ts';
+import { UI } from '../src/locales/ui.ts';
 import { CAR_PROBE } from '../src/hazard-behavior.ts';
 import { THEMED_TRACKS, themedPlacements } from '../src/track-themes.ts';
 import { MAX_SPEED } from '../src/game.js';
@@ -65,4 +67,17 @@ test('ENV-05 legacy entries resolve exactly as before, never through hazardFrame
     assert.equal(hazardPose(h, t).x, x);
     assert.equal(hazardTouch(h, car, t).effect, Math.abs(car.x - x) < 1.8 && car.altitude < 2.4 ? 'block' : null);
   }
+});
+
+test('the HUD warning names what is ahead: barrier, moving barrier, crosswind, low grip or ramp', () => {
+  const key = (type, move = { kind: 'static' }) => hazardWarningKey({ placement: at('w', 900, 2.5, type, { movementPattern: move }) });
+  assert.equal(hazardWarningKey({ distance: 900 }), 'mode.hazardWarning', 'generated Gauntlet barriers keep their warning');
+  assert.equal(key('barrier'), 'mode.hazardBlock');
+  assert.equal(key('gate', { kind: 'sweep', amplitude: 1.8, period: 4, phase: 0 }), 'mode.hazardWarning');
+  assert.equal(key('gust'), 'mode.hazardWind');
+  assert.equal(key('terrain'), 'mode.hazardGrip');
+  assert.equal(key('ramp'), 'mode.hazardRamp');
+  assert.equal(key('checkpoint'), 'mode.hazardAhead');
+  for (const locale of ['en', 'zh-TW']) for (const k of ['mode.hazardBlock', 'mode.hazardWind', 'mode.hazardGrip', 'mode.hazardRamp', 'mode.hazardAhead'])
+    assert.match({ ...UI[locale], ...FEATURE_COPY[locale] }[k] ?? '', /\{n\}/, `${locale} ${k}`);
 });
