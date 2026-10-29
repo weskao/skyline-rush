@@ -5,7 +5,7 @@ import { roadRibbon } from './geometry.ts';
 import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
-import { batchStaticChunk } from './world-tour-batching.ts';
+import { batchStaticChunk, poolStaticChunks, releaseStaticPool } from './world-tour-batching.ts';
 
 // One scenery system for five distinct destinations. Locations are authored as
 // race-distance + roadside offsets; meshes follow the *real* 3D driving path.
@@ -115,10 +115,10 @@ function solidParts(id,item){
   }
   return parts;
 }
-// Low detail drops half the props, but never one that is solid in the road.
-export function detailPlan(id,chunk,low=false){
-  const items=landmarkSafePlan(id,chunk);
-  return low?items.filter(item=>item.slot<2||solidParts(id,item).length):items;
+// LOD drops decorative props, never obstacles that are solid in the road.
+export function detailPlan(id,chunk,quality=false){
+  const items=landmarkSafePlan(id,chunk),slots=quality===true||quality==='low'?2:quality==='medium'?3:4;
+  return slots===4?items:items.filter(item=>item.slot<slots||solidParts(id,item).length);
 }
 // Every solid part on a World Tour road, sorted by distance; static per track, so cached for good.
 const obstacleCache=new Map();
@@ -174,7 +174,7 @@ export function createWorldTourScene(scene){
   const heroGroup=new THREE.Group();group.add(heroGroup);
   const sceneryLayer=new THREE.Group();sceneryLayer.name='Distance-anchored continuous scenery';group.add(sceneryLayer);
   const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map();
-  let sceneryTrack=null,sceneryDetail=null,rack=null;
+  let sceneryTrack=null,sceneryDetail=null,rack=null,pooled=null;
   function releaseChunk(node){
     node.traverse(object=>{
       if(object.userData?.ownGeometry)object.geometry.dispose();
@@ -184,27 +184,28 @@ export function createWorldTourScene(scene){
     });
     node.removeFromParent();
   }
-  function clearChunks(){for(const node of chunks.values())releaseChunk(node);chunks.clear();}
+  function clearChunks(){releaseStaticPool(pooled);pooled=null;for(const node of chunks.values())releaseChunk(node);chunks.clear();}
   function streamScenery(id,distance,quality,sections){
-    const level=quality==='low'?'low':'high';
+    let changed=false;
+    const level=quality==='low'?'low':quality==='medium'?'medium':'high';
     const centerChunk=Math.floor(Math.max(0,distance)/SCENERY_CHUNK_METRES);
     if(sceneryTrack!==id||sceneryDetail!==level){
       clearChunks();sceneryTrack=id;sceneryDetail=level;
     }
-    const start=Math.max(0,centerChunk-(level==='low'?2:3));
-    const end=Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+(level==='low'?7:10));
+    const [behind,ahead]=level==='high'?[3,10]:level==='medium'?[2,9]:[2,7];
+    const start=Math.max(0,centerChunk-behind);
+    const end=Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+ahead);
     for(const [index,node] of chunks){
-      if(index<start||index>end){releaseChunk(node);chunks.delete(index);}
+      if(index<start||index>end){releaseChunk(node);chunks.delete(index);changed=true;}
     }
     for(let index=start;index<=end;index++){
       if(chunks.has(index))continue;
-      const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
-      for(const item of detailPlan(id,index,level==='low')){
+      changed=true;
+      const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;chunk.userData.chunkIndex=index;
+      for(const item of detailPlan(id,index,level)){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
-        // Unique authored models are keyed to absolute track distance; no
-        // periodic wrap/modulus position reuse, no roadside teleporting.
         chunk.add(prop);
       }
       const earth=kit.terrain(id,index,level==='low');
@@ -216,10 +217,9 @@ export function createWorldTourScene(scene){
       chunk.userData.batchStats=stats;
       sceneryLayer.add(chunk);chunks.set(index,chunk);
     }
+    if(changed)pooled=poolStaticChunks(sceneryLayer,chunks.values(),pooled,2);
   }
-  // Hidden sample of everything a track can stream in later — every prop kind batched (instanced) and plain, the
-  // terrain ribbon, every tunnel shell variant and entrance — so the first-frame shader warmup (world.js) builds
-  // their pipelines on track change; a chunk compiling a new shader mid-race stalls WebKit and flashes black.
+  // Warm every streamed shader/variant before a new chunk appears mid-race.
   function shaderRack(id){
     const sample=new THREE.Group();sample.name='shader rack '+id;sample.visible=false;
     for(const kind of SCENERY_KINDS[id])for(let i=0;i<3;i++)sample.add(kit.build(id,kind));
@@ -293,7 +293,7 @@ export function createWorldTourScene(scene){
     cachedOrigin=null;cachedQuality=null; // theme switch must invalidate world geometry
     const theme=WORLD_THEMES[id];
     roadMat.color.set(ROAD_CHARACTER[id].pavement);
-    roadMat.roughness=.94;roadMat.metalness=.025;
+    roadMat.roughness=ROAD_CHARACTER[id].roughness;roadMat.metalness=ROAD_CHARACTER[id].metalness;
     glowMat.color.set(ROAD_CHARACTER[id].edge);
     stripeMat.color.set(ROAD_CHARACTER[id].lane);
     shoulderMat.color.set(ROAD_CHARACTER[id].shoulder);
@@ -379,7 +379,7 @@ export function createWorldTourScene(scene){
         hero.rotateY(-entry.side*Math.PI*.5+(entry.yaw||0));
         hero.scale.setScalar(entry.scale||1);
       }
-      if(water.visible)water.position.set(0,-33,-450);
+      if(water.visible)water.position.set(0,-33-home.y,-450); // Fixed sea level in world coordinates.
       }
       // Visibility updates are cheap and still run for every frame.
       for(const hero of heroGroup.children){
