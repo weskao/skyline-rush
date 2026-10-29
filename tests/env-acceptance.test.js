@@ -37,7 +37,7 @@ test('11A no device-specific differences: identical inputs give identical races'
     assert.deepEqual([a.player.distance, a.player.x, a.player.score, a.player.collisions], [b.player.distance, b.player.x, b.player.score, b.player.collisions], trackId);
   }
   // The simulation path never reads the device, viewport or input method.
-  for (const file of ['game.js', 'hazards.ts', 'hazard-race.ts', 'hazard-behavior.ts', 'hazard-schema.ts', 'hazard-safety.ts', 'object-catalog.ts', 'track-themes.ts']) {
+  for (const file of ['game.js', 'hazards.ts', 'hazard-race.ts', 'hazard-behavior.ts', 'hazard-schema.ts', 'hazard-safety.ts', 'object-catalog.ts', 'track-themes.ts', 'car-collisions.js', 'ring-layout.ts', 'risk-lines.ts', 'gauntlet-course.ts']) {
     assert.doesNotMatch(readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8'), /navigator|matchMedia|devicePixelRatio|ontouch|window\./, file);
   }
 });
