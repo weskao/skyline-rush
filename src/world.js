@@ -14,6 +14,7 @@ import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
+import { createRaceVisuals } from './race-visuals.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -720,7 +721,8 @@ export function createWorld(canvas) {
   let lastRace = null;
   let trackId, carBank = 0;
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let photoView = null, photoDefaults = null, photoCapture = null;
+  let photoView = null, photoCapture = null;
+  const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
   let sizeKey = '', warmupPending = true;
   function resize() {
@@ -810,34 +812,13 @@ export function createWorld(canvas) {
     },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
     setPhotoView(options) {
+      raceVisuals.photo(options ? options.sky : null);
       if (!options) {
         photoView = null;
-        if (photoDefaults) {
-          scene.background.copy(photoDefaults.background);
-          scene.fog.color.copy(photoDefaults.fogColor);
-          scene.fog.density = photoDefaults.fogDensity;
-          renderer.toneMappingExposure = photoDefaults.exposure;
-          photoDefaults = null;
-        }
         return;
       }
-      if (!photoDefaults) photoDefaults = {
-        background: scene.background.clone(), fogColor: scene.fog.color.clone(),
-        fogDensity: scene.fog.density, exposure: renderer.toneMappingExposure,
-      };
       const angle = Number.isFinite(options.angle) ? options.angle : 0;
       photoView = { angle: angle * Math.PI / 180, fov: photoFov(options.fov), sky: options.sky };
-      const styles = {
-        original: null,
-        sunset: ['#ec9478', '#bb7f89', .001, 1.15],
-        night: ['#1b2e5a', '#304b73', .0016, .72],
-        fog: ['#8297a4', '#8297a4', .004, 1.02],
-      };
-      const style = styles[options.sky] ?? null;
-      scene.background.set(style ? style[0] : photoDefaults.background);
-      scene.fog.color.set(style ? style[1] : photoDefaults.fogColor);
-      scene.fog.density = style ? style[2] : photoDefaults.fogDensity;
-      renderer.toneMappingExposure = style ? style[3] : photoDefaults.exposure;
     },
     capturePhoto() {
       if (photoCapture) return Promise.reject(new Error('Photo capture already in progress'));
@@ -850,6 +831,7 @@ export function createWorld(canvas) {
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
       if (lastRace !== race) { effects.reset(); aero.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; }
       if (trackId !== race.trackId) {
+        raceVisuals.reset();
         trackId = race.trackId;
         const palette = TRACK_PALETTES[trackId];
         gauntletBarriers.material.color.set(trackId === 'cosmic' || trackId === 'spiral' ? '#ed87fa' : trackId === 'aurora' || trackId === 'alpine' ? '#ffcf81' : '#ff946f');
@@ -881,6 +863,8 @@ export function createWorld(canvas) {
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
         warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
+      const visualPreset = race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
+      raceVisuals.apply(visualPreset);
       const distance = preview ? previewDistance(trackId) : car.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
@@ -914,10 +898,12 @@ export function createWorld(canvas) {
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
       const touch = touchPreference.matches;
-      weather.visible = !reducedMotion && visual.enabled && (trackId === 'neon' || trackId === 'aurora');
+      const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
+      weather.visible = !reducedMotion && visual.enabled && (raining || (visualPreset === 'track' && trackId === 'aurora'));
+      weather.material.size = raining ? .12 : .24;
       weatherGeometry.setDrawRange(0, touch || visual.quality === 'low' ? 60 : 180);
       if (weather.visible) {
-        for (let i = 0; i < 180; i++) weatherPositions[i * 3 + 1] = (i * 17 + time * (trackId === 'neon' ? -18 : -3)) % 32;
+        for (let i = 0; i < 180; i++) weatherPositions[i * 3 + 1] = (i * 17 + time * (raining ? -18 : -3)) % 32;
         weatherGeometry.attributes.position.needsUpdate = true;
         weather.position.set(car.x, car.altitude + 25, 15);
       }

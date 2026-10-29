@@ -4,10 +4,10 @@
 import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.ts';
 import { COLLECTIBLES_GUIDE_COPY } from '../collectibles-guide-copy.ts';
 import { DISPLAY_SETTINGS_COPY } from './display-settings.ts';
-import { CUP_RECOVERY_COPY } from './cup-recovery.ts';
+import { FEATURE_COPY } from './feature-copy.ts';
 export const UI = Object.freeze({
   en: {
-    ...CUP_RECOVERY_COPY.en,
+    ...FEATURE_COPY.en,
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
     'release.title': "What's new",
     'release.intro': "See what's new for your next race.",
@@ -149,7 +149,7 @@ export const UI = Object.freeze({
     'mode.preset.precision': 'Precision',
     'mode.ahead': '▲ Ahead {n} m',
     'mode.behind': '▼ Behind {n} m',
-    'mode.ghostUnavailable': 'Ghost replay is available in Classic and Time Attack.',
+    'mode.ghostUnavailable': 'Ghost replay is available in Classic, Custom Race and Time Attack.',
     'mode.historyTitle': 'Challenge records',
     'mode.historyNotice': 'Personal challenge results do not award Career stars or official medals.',
     'mode.historyFilter': 'Mode',
@@ -616,7 +616,7 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
-    ...CUP_RECOVERY_COPY['zh-TW'],
+    ...FEATURE_COPY['zh-TW'],
     'release.eyebrow': 'SKYLINE RUSH / 版本新消息',
     'release.title': '新版本功能',
     'release.intro': '看看這次更新，為你的下一場比賽帶來哪些驚喜。',
@@ -758,7 +758,7 @@ export const UI = Object.freeze({
     'mode.preset.precision': '精準挑戰',
     'mode.ahead': '▲ 領先 {n} 公尺',
     'mode.behind': '▼ 落後 {n} 公尺',
-    'mode.ghostUnavailable': '幽靈車回放可在經典競速與計時挑戰中使用。',
+    'mode.ghostUnavailable': '幽靈車回放可在經典競速、自訂比賽與計時挑戰中使用。',
     'mode.historyTitle': '挑戰模式紀錄',
     'mode.historyNotice': '個人挑戰成績不會獲得生涯星等或正式獎牌。',
     'mode.historyFilter': '模式',

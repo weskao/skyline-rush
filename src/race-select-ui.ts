@@ -7,6 +7,8 @@ import { refreshCustomSelects } from './custom-select.ts';
 import { createRouteMap } from './route-map.ts';
 import { timeString } from './time-format.ts';
 import type { GhostRun } from './ghost.ts';
+import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
+import type { VisualPreset } from './race-session.ts';
 
 // The simulation race comes from plain-JS game.js; this screen reads its selection fields only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +21,7 @@ interface RaceSelectOptions {
   /** The Daily Challenge being raced, or null for a normal selection. */
   getDaily(): unknown;
   clearDaily(): void;
-  createRace(trackId?: string, config?: unknown): Race;
+  createRace(trackId?: string, config?: unknown, presentation?: { visualPreset: VisualPreset }): Race;
   unlockedTracks: Set<string>;
   ghostFor(race: Race): GhostRun | null;
   ghostEnabled(): boolean;
@@ -46,7 +48,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
     ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value } : {}),
     ...(selectedMode === 'time' && $<HTMLInputElement>('#clean-trial').checked ? { clean: true } : {}),
-    ...(selectedMode === 'stunt' ? { duration: Number($<HTMLSelectElement>('#stunt-duration').value) } : {}) });
+    ...(selectedMode === 'stunt' ? { duration: Number($<HTMLSelectElement>('#stunt-duration').value) } : {}) }, racePresentationFor(selectedMode, trackId));
 
   let raceRouteMap: RouteMap | undefined;
   const trackRouteMaps = new Map<string, RouteMap>();
@@ -137,11 +139,12 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const ghost = options.ghostFor(race);
     const track = trackName(race.trackId, getLocale());
     $<HTMLInputElement>('#ghost-enabled').checked = options.ghostEnabled();
-    $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'custom' || race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
+    $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
   }
   function showTracks(): void {
     options.showHomeStatus();
     const race = getRace();
+    updateRaceSetup(race);
     document.body.dataset.raceMode = race.mode;
     renderModeRules();
     renderTrackButtons(race);
@@ -195,7 +198,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     showRuleInputs();
     changeRaceSelection();
   });
-  for (const id of ['hazard-tier', 'clean-trial', 'cup-length', 'stunt-duration']) $(`#${id}`).addEventListener('change', changeRaceSelection);
+  for (const id of ['hazard-tier', 'clean-trial', 'cup-length', 'stunt-duration', 'race-visual-preset']) $(`#${id}`).addEventListener('change', changeRaceSelection);
   $('#recent-custom-runs').addEventListener('click', ({ target }) => {
     const index = Number((target as Element).closest<HTMLElement>('button[data-recent]')?.dataset.recent);
     const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];

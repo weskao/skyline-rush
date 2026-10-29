@@ -83,6 +83,18 @@ Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates c
 
 Historical receipts below retain their original date and verification scope.
 
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `6bb9d13` on `feature/custom-race-presentation`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `6bb9d13` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547188). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `6bb9d13` exits 0: strict TS/Vue/JS, Node 826 / Browser 501 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/custom-presentation/make-verify-main-ca1c777-user-merge.log`.
+
+## Recent custom setup acceptance (2026-10-29)
+
+- [x] REPLAY-02 already exists on published code `6bb9d13`: keep three distinct recent Custom setups, reload and restore each complete rule config, Race Again from results, and Choose Track to edit an independent copy without modifying the completed race, base Coast track or official progress. Real controls and actual simulation settlement pass at desktop 1440×900 en and touch-emulated 390×844 zh-TW; page errors 0. No production source changes or additional audio are needed; existing confirmation/finish feedback is reused.
+- [x] Inspect the four original-resolution in-game captures and JSON receipt under `artifacts/custom-presentation/replay02-evidence/`. Complete local gate 826 Node / 501 Browser / 303 World Tour and exact-code CI 17/17 are recorded above. Chrome touch emulation does not complete physical-device acceptance.
+
+Historical receipts below retain their original date and verification scope. Earlier publication blockers were superseded by the user-published commits verified above.
+
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
@@ -92,6 +104,9 @@ Historical receipts below retain their original date and verification scope.
 - [x] Complete resulting-main `make verify` on code `f88d43a` (verified 2026-10-29): strict TS/Vue/JS checks, 808 Node passed / 3 emulator-scoped skips, locked production build, 500 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/cup-recovery/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
 - [x] Preserve 5 original-resolution 0.25.0 real-game images in `artifacts/cup-recovery/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `f88d43a` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
 - [x] Local Auth/Firestore emulator compatibility on code `f88d43a`: 15 browser and 3 Rules tests pass, exit 0. Receipt: `artifacts/cup-recovery/cloud-main-31ac7b1.log`; no production cloud writes.
+
+- [x] Complete resulting-main `make verify` on code `c5b885c` (verified 2026-10-29): strict TS/Vue/JS checks, 812 Node passed / 3 emulator-scoped skips, locked production build, 499 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
+- [x] Preserve 4 original-resolution 0.25.0 real-game images in `artifacts/custom-presentation/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `c5b885c` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
 - [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
 
 ## Main 0.25.0 integration (2026-10-28)
@@ -100,6 +115,8 @@ Historical receipts below retain their original date and verification scope.
 - [ ] Broader implementation/acceptance and exact-HEAD CI are separate from this merge check.
 
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `f88d43a` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
+
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `c5b885c` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
 - [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
 
 ## Historical main integration through 0197547 (2026-10-28)
@@ -135,6 +152,27 @@ Other independently tracked branches: `feature/custom-race-presentation` (Custom
 ## Shared continuation regression gates (2026-10-28)
 
 - [x] Measure the shared locale-HUD repair on code `50e34ca` against main `31ac7b1`: house `make perf BASE=31ac7b1 RATE=6 ROUNDS=3 RACE_SECONDS=20 TG=0`, alternating three 20s Chrome runs at 412×915 / DPR2 / 6× CPU, after task browser suites were idle; exit 0. Both median p50/p95 are 16.7/16.8ms; current 59.2fps vs baseline 58.6fps. Vsync-limited: no FPS improvement claimed. Log/JSON: `artifacts/regression-gates/hud-locale-perf-main-31ac7b1.*`. This covers the shared Classic HUD, not every feature mode, 5–8km quality tiers or physical thermals.
+
+- [x] Complete local `make verify` on code `354ada5` with main `0197547`: strict types, 809 Node passed / 3 emulator skips, locked build, 499 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main-0197547.log`. This is a historical receipt if a newer main is integrated.
+
+## Custom race Ghost and cosmetic presentation continuation (2026-10-28)
+
+Branch: `feature/custom-race-presentation`, checkpoint `29394e8`, integrates main `7cbdbe5`. This stage addresses the remaining Ghost/weather portion of 9C and cosmetic presets in 11C; Firebase/Gamepad and a whole-home layout rewrite remain separate.
+
+- [x] Observe feature RED before implementation: `createRace` ignored presentation, the preset selector/active-rule summary were absent, and Custom heat replay persistence was unavailable. Preserve receipts in `artifacts/custom-presentation/`.
+- [x] Reuse the integrated `ghost-store.ts` and `race-results.ts` for fastest compatible Custom heat Ghosts, including intermediate sprint heats and blocked-storage in-session fallback. Keep Classic/Time histories and Ghost signatures unchanged. Do not restore the branch's superseded duplicate Ghost store.
+- [x] Add typed Vue Custom/Free preset controls for Track/Day/Dusk/Night/Rain/Fog, a bilingual live rule summary and setup-step hint. Presentation stays outside `race.config`; retry retains it and changing track or returning to Classic resets it. Reuse the confirmation cue; no new music is appropriate.
+- [x] Keep speculative track preview creation pure: observe cancelled-swipe preset loss RED, fix the selection boundary, then pass the real browser short-drag cancellation test.
+- [x] Share photo/race atmosphere application in strict TypeScript; preserve Photo Studio camera/export behavior, restore the active race theme on close, and reuse bounded rain particles. Keep main at 688 lines and lower the renderer ceiling from 1346 to 1332.
+- [x] Fresh focused verification on integrated main: strict TypeScript/Vue/legacy checks and production build pass; 36 focused Node tests and 18 expanded lifecycle/scene/size tests pass. Desktop/touch Ghost, theme/retry/reset, live locale/photo restoration, visible bounded rain and cancelled-swipe checks pass. Settled real-game screenshots are under `artifacts/custom-presentation/`.
+- [x] Complete merged local `make verify` on code HEAD `359c36f`: strict TS/Vue/legacy checks, 802 Node passed / 3 emulator-dependent skipped, locked production build, 493 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main72466c3-final.log`. Shared repairs supersede the earlier timeout/perf/golden failures.
+- [x] Verify exact code commit `a3277a3`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40630628111 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
+- [ ] Physical-device visual/performance/thermal acceptance; PHOTO-01 and broader UX-01 remain separately open.
+- [ ] Broader UX-01: the existing home still physically places track cards before the mode picker. The compact hint/summary does not claim completion of a whole-home mode-first flow.
+- [ ] PHOTO-01 remains open: the existing orbit/lighting/PNG flow passes, but merged real-game capture still shows speed/charge HUD, a driving callout and the device notice behind Photo Studio. Complete preview HUD hiding and its device coverage separately; appearance restoration does not close this acceptance. Evidence: `artifacts/custom-presentation/photo-studio-merged.png`.
+
+- [x] Merged-main full browser receipt (2026-10-28): 486 passed / 2 skipped; only three inherited Phase 4 polyline assumptions failed. Integrate `6809503` (focused corrected suite 7/7) and rerun complete gates on the resulting source. This receipt does not claim a green full gate.
+
 
 - [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.
 - [x] Complete all six caller full local gates after the shared repair and main `31ac7b1`: Cup, Custom, Items, Event Lab, Endless and Circuit exit 0 (verified 2026-10-29). Each owning branch records its code SHA, full log and reviewed images above; Circuit uses the separate recheck log. Superseded/interrupted runs remain historical receipts.

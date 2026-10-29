@@ -73,6 +73,10 @@ Select a **track you have unlocked**, choose **GAME MODE** below the track cards
 
 An unfinished Championship Cup offers **Resume** or **Discard** on the home screen. Resume keeps settled stage points and restarts only the unfinished stage; retry rolls back only the stage being replayed. Completing or discarding the Cup clears its recovery entry. Deleting game progress also removes the checkpoint while preserving device preferences. Recovery uses this browser’s storage and cannot restore data the browser refused to save.
 
+### Custom presentation and Ghosts
+
+Custom Race can replay the fastest compatible Ghost for each sprint heat. Custom and Free Drive offer Track / Day / Dusk / Night / Rain / Fog presentation presets and a live rule summary. These cosmetic choices do not change record eligibility or ruleset identity. Retry retains the selected appearance; changing track or returning to Classic restores the track appearance. Photo Studio restores the active race appearance when closed.
+
 ### Race setup, results and accessibility
 
 - Mode and track selection remain accessible by keyboard and touch; contextual panels only show options relevant to the selected mode. Unavailable Cups explain the number of tracks still required.

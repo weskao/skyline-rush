@@ -78,6 +78,20 @@ test('an unfinished sprint series is an intermediate stage with no individual be
   assert.equal(settlement.series.sprintSeries.results.length, 1);
 });
 
+test('an intermediate Custom heat saves its own compatible Ghost without awarding a series best', () => {
+  const race = classic({ time: 70 }, { mode: 'custom', config: { mode: 'custom', stages: 3 } });
+  const ghosts = createGhostStore();
+  const trace = Array.from({ length: 701 }, (_, i) => [i / 700 * 5000, 0, 0]);
+  const { context, settlement } = settle(race, { ghosts, trace,
+    series: { sprintSeries: createSprintSeries(3), cup: null, stunt: null } });
+  assert.equal(ghosts.mode(race)?.time, 70);
+  assert.equal(settlement.intermediateStage, true);
+  assert.equal(settlement.record, false);
+  assert.equal(context.progress.modeHistory.length, 0);
+  assert.equal(context.progress.history.length, 0);
+  assert.equal(context.progress.unlocked.has('neon'), false);
+});
+
 test('a stunt heat adds its time, score and air time to the running stunt total', () => {
   const stunt = { duration: 60, elapsed: 0, score: 0, heats: 0, maxCombo: 0, airTime: 0, trackId: 'coast' };
   const race = classic({ time: 20, score: 300, endReason: 'route' }, { mode: 'stunt', config: { mode: 'stunt', duration: 60 }, styleAttack: { airTime: 3, maxCombo: 4 } });

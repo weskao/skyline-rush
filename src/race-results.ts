@@ -95,5 +95,6 @@ export function settleRace(race: FinishedRace, { series, progress, ghosts, daily
     const ghost = { time: race.elapsed, samples: trace ?? [] };
     if (record && trace && validGhost(ghost, trackId)) ghosts.saveClassic(trackId, ghost);
   }
+  if (race.mode === 'custom' && trace) ghosts.saveCustom(race, { time: race.elapsed, samples: trace });
   return { best, record, medals, next, intermediateStage, series: { sprintSeries, cup, stunt } };
 }

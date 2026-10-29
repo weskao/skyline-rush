@@ -197,7 +197,7 @@ const raceSelect = setupRaceSelectUI({
   clearDaily: () => { daily = null; },
   createRace,
   unlockedTracks,
-  ghostFor: race => race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null,
+  ghostFor: race => ghosts.forRace(race),
   ghostEnabled: () => touchUI.prefs().ghost,
   showHomeStatus: () => showHomeStatus(),
   refreshPhase: () => phaseUI(),
@@ -326,7 +326,7 @@ function restart(trackId = race.trackId) {
     const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
-  race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config));
+  race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config), race.session.presentation);
   if (stunt && race.mode === 'stunt') race.stuntLimit = Math.max(.01, stunt.duration - stunt.elapsed);
   hud.resetMemory();
   goUntil = 0;
@@ -574,14 +574,14 @@ try {
           try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
         }
       }
-      if (!race.modifier && (race.mode === 'classic' || race.mode === 'time')) recordGhost(trace, race);
+      if (!race.modifier && (race.mode === 'classic' || race.mode === 'time' || race.mode === 'custom')) recordGhost(trace, race);
       accumulator -= 1 / 60;
     }
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.
     if (calm && !wasCalm) vfx.stopMotionIfCalm(); wasCalm = calm;
     presentationState = presentation.update(race, dt, calm);
-    const ghost = touchUI.prefs().ghost && !race.modifier && race.phase !== 'ready' ? race.mode === 'classic' ? ghosts.classic(race.trackId) : race.mode === 'time' ? ghosts.mode(race) : null : null;
+    const ghost = touchUI.prefs().ghost && race.session.presentation.ghostEnabled && race.phase !== 'ready' ? ghosts.forRace(race) : null;
     const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
     if (shouldRender) {
       const renderStarted = performance.now();
