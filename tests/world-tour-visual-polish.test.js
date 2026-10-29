@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { RACE_TRACKS } from '../src/game.js';
-import { createWorldTourScene,WORLD_THEMES } from '../src/world-tour-scene.js';
+import { createWorldTourScene,WORLD_THEMES,detailPlan } from '../src/world-tour-scene.js';
 import { createSceneryKit,SCENERY_KINDS } from '../src/world-tour-scenery.js';
 import { trackPoint } from '../src/track-paths.ts';
 
@@ -135,4 +135,18 @@ test('Coastal water plane stays on a fixed sea level when the graded road moves'
     visual.update('tokyo',900,'high',RACE_TRACKS.tokyo.sections,2,true);
     assert.equal(water.visible,false,'Tokyo must not inherit Coast water');
   } finally {visual.dispose();}
+});
+
+test('Medium World Tour detail has its own draw-call budget without removing road obstacles',()=>{
+  for(const id of ids)for(const chunk of [3,8,13]){
+    const high=detailPlan(id,chunk),medium=detailPlan(id,chunk,'medium'),low=detailPlan(id,chunk,true);
+    const keys=items=>new Set(items.map(item=>item.distance+'|'+item.side+'|'+item.kind));
+    const full=keys(high),mid=keys(medium),small=keys(low);
+    assert.ok(low.length<medium.length&&medium.length<high.length,
+      id+' chunk '+chunk+' must stream low < medium < high roadside models');
+    assert.ok([...small].every(k=>mid.has(k)),id+' low-detail obstacles must remain in Medium');
+    assert.ok([...mid].every(k=>full.has(k)),id+' Medium must be a subset of the full authored scenery');
+    assert.ok(medium.every(item=>item.slot<3||low.some(i=>i.distance===item.distance&&i.side===item.side)),
+      id+' never removes any collision-important prop kept by Low');
+  }
 });
