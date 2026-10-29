@@ -115,10 +115,11 @@ function solidParts(id,item){
   }
   return parts;
 }
-// Low detail drops half the props, but never one that is solid in the road.
-export function detailPlan(id,chunk,low=false){
+// LOD drops decorative props, never obstacles that are solid in the road.
+export function detailPlan(id,chunk,quality=false){
   const items=landmarkSafePlan(id,chunk);
-  return low?items.filter(item=>item.slot<2||solidParts(id,item).length):items;
+  const slots=quality===true||quality==='low'?2:quality==='medium'?3:4;
+  return slots===4?items:items.filter(item=>item.slot<slots||solidParts(id,item).length);
 }
 // Every solid part on a World Tour road, sorted by distance; static per track, so cached for good.
 const obstacleCache=new Map();
