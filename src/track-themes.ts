@@ -3,6 +3,7 @@
 import { validateHazardPlacement, type HazardPlacement } from './hazard-schema.ts';
 import type { GameplayType } from './object-catalog.ts';
 import { CLASSIC_THEMED_PLACEMENTS } from './track-themes-classic.ts';
+import { WORLD_TOUR_THEMED_PLACEMENTS } from './track-themes-world-tour.ts';
 import { createHazards, type HazardTrack } from './hazards.ts';
 
 export interface ThemedHazard {
@@ -14,7 +15,7 @@ export interface ThemedHazard {
 }
 interface Hazardish { distance: number }
 
-const THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown[]>> = { ...CLASSIC_THEMED_PLACEMENTS };
+const THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown[]>> = { ...CLASSIC_THEMED_PLACEMENTS, ...WORLD_TOUR_THEMED_PLACEMENTS };
 export const THEMED_TRACKS: readonly string[] = Object.freeze(Object.keys(THEMED_PLACEMENTS));
 
 // Validated once per track; the tables are immutable, so the cache never needs invalidating.
