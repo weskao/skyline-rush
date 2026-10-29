@@ -13,7 +13,7 @@ for (const [name, viewport, hasTouch] of [
     page.on('pageerror', error => errors.push(error.message));
     await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon', 'canyon'])));
     await page.reload();
-    await page.locator('[data-race-mode="cup"]').click();
+    await page.locator('button[data-race-mode="cup"]').click();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     const finish = async () => {
@@ -57,10 +57,10 @@ test('a saved Cup becomes available after Classic unlocks its last required cour
     localStorage.setItem(key, JSON.stringify({ version: 1, cup: { tracks: ['coast', 'neon', 'canyon'], results: [] } }));
   }, key);
   await page.reload();
-  await page.locator('[data-race-mode="cup"]').click();
+  await page.locator('button[data-race-mode="cup"]').click();
   await page.locator('#cup-rules > summary').click();
   await expect(page.locator('#cup-recovery')).toHaveCount(0);
-  await page.locator('[data-race-mode="classic"]').click();
+  await page.locator('button[data-race-mode="classic"]').click();
   await page.locator('[data-track="neon"]').click();
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
@@ -72,6 +72,6 @@ test('a saved Cup becomes available after Classic unlocks its last required cour
   });
   await expect(page.locator('#race-overlay')).toBeVisible();
   await page.locator('#choose-track').click();
-  await page.locator('[data-race-mode="cup"]').click();
+  await page.locator('button[data-race-mode="cup"]').click();
   await expect(page.locator('#cup-resume')).toBeVisible();
 });

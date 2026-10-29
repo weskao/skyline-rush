@@ -100,7 +100,7 @@ for (const [name, viewport, hasTouch] of [
 
   const raceRamp = async (page, spot) => {
     await page.locator(`[data-track="${spot.trackId}"]`).click();
-    await page.locator('[data-race-mode="eventlab"]').click();
+    await page.locator('button[data-race-mode="eventlab"]').click();
     await page.locator('.lab-share > summary').click();
     await page.locator('#lab-json').fill(spot.json);
     await page.locator('#lab-import').click();

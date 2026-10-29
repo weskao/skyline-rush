@@ -23,7 +23,7 @@ for (const [name, viewport, hasTouch, locale] of [
       const config = normalizeRaceConfig({ mode: 'circuit', laps: lapCount });
       localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [JSON.stringify(['harbor-circuit', config, 'lap'])]: 20 }));
     }, lapCount);
-    await page.locator('[data-race-mode="circuit"]').click();
+    await page.locator('button[data-race-mode="circuit"]').click();
     await expect(page.locator('#start-button')).toBeEnabled();
     await page.locator('#circuit-rules > summary').click();
     const laps = page.locator('#circuit-laps + .custom-select');
@@ -77,7 +77,7 @@ for (const [name, viewport, hasTouch, locale] of [
     await page.locator('a.brand').click();
     await page.locator('#leave-end').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-    await page.locator('[data-race-mode="classic"]').click();
+    await page.locator('button[data-race-mode="classic"]').click();
     expect(await page.evaluate(() => window.gameplay.race.trackId)).toBe('coast');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);

@@ -87,7 +87,7 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [844, 390]])
     test('compact touch controls still take a 44px tap', async ({ page }) => {
       test.skip(width >= 1001, 'mouse layout');
       await page.goto('/');
-      await page.locator('[data-race-mode="custom"]').evaluate(el => el.click());
+      await page.locator('button[data-race-mode="custom"]').evaluate(el => el.click());
       await page.locator('#race-mode-rules > summary').scrollIntoViewIfNeeded();
       const groups = ['.aero-tools > button, .aero-tools > details > summary, .aero-tools > .custom-select > button',
         '#showcase-camera-prev, #showcase-camera-next', '[data-race-mode]', '#race-mode-rules > summary'];

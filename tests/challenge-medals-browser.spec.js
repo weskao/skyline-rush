@@ -31,7 +31,7 @@ for (const [name, viewport, hasTouch] of [
   test('clean trial settles once, preserves Career and survives retry and language changes', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('[data-race-mode="time"]').click();
+    await page.locator('button[data-race-mode="time"]').click();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await finish(page);
@@ -68,7 +68,7 @@ for (const [name, viewport, hasTouch] of [
 for (const [mode, ids] of [
   ['checkpoint', ['checkpoint-clean']], ['gauntlet', ['gauntlet-clear']], ['stunt', ['long-flight', 'aerial-combo']],
 ]) test(`${mode} real settlement adopts its own medal set`, async ({ gameplayPage: page }) => {
-  await page.locator(`[data-race-mode="${mode}"]`).click();
+  await page.locator(`button[data-race-mode="${mode}"]`).click();
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await finish(page, mode);
@@ -78,7 +78,7 @@ for (const [mode, ids] of [
 });
 
 test('a collided trial awards no clean medal', async ({ gameplayPage: page }) => {
-  await page.locator('[data-race-mode="time"]').click();
+  await page.locator('button[data-race-mode="time"]').click();
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await finish(page, 'time', true);
@@ -95,7 +95,7 @@ test('blocked medal storage retains session collection and exports a usable back
       return save.call(this, name, value);
     };
   }, key);
-  await page.locator('[data-race-mode="time"]').click();
+  await page.locator('button[data-race-mode="time"]').click();
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await finish(page);

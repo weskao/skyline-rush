@@ -9,7 +9,7 @@ const skipFirstRunTutorial = async page => {
   await page.locator('#tutorial-exit').click();
 };
 const startWithItems = async (page, { blockedStorage = false } = {}) => {
-  await page.locator('[data-race-mode="free"]').click();
+  await page.locator('button[data-race-mode="free"]').click();
   await page.locator('#race-mode-rules > summary').click();
   await page.locator('[data-race-rule="itemRules"]').evaluate(node => { node.value = 'active'; node.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('#start-button').click();
