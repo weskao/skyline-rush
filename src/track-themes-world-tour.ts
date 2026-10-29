@@ -2,9 +2,9 @@
 import { place, closure } from './themed-placement.ts';
 
 type Placement = ReturnType<typeof place>;
-// Motion comes from ENV-04's hazardFrame: a pulse is solid for half its cycle, a sweep slides one lane at most.
+// Motion comes from ENV-04's hazardFrame: a pulse is solid for half its cycle, a sweep slides 1.8 m from a base between two lanes, so it closes each of them in turn.
 const timed = (p: Placement, period: number, phase: number) => ({ ...p, movementPattern: { kind: 'pulse', period, phase } });
-const swept = (p: Placement, period: number, phase: number) => ({ ...p, movementPattern: { kind: 'sweep', amplitude: 1.6, period, phase } });
+const swept = (p: Placement, period: number, phase: number) => ({ ...p, movementPattern: { kind: 'sweep', amplitude: 1.8, period, phase } });
 
 export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown[]>> = {
   // Taipei Heritage: festival barricades and cone-lined boulevard closures, low enough to keep
@@ -51,12 +51,12 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
   // Cosmic Orbit: floating asteroid fragments and sweeping energy barriers between the solar winds.
   cosmic: [
     place('cosmic', 'cosmic-fragment-1', 'debris', 700, -2.5),
-    swept(place('cosmic', 'cosmic-barrier-1', 'energy-barrier', 1100, 2.5), 3.5, 0),
+    swept(place('cosmic', 'cosmic-barrier-1', 'energy-barrier', 1100, 4.6), 3.5, 0),
     place('cosmic', 'cosmic-fragment-2', 'debris', 2400, 7.5),
-    swept(place('cosmic', 'cosmic-barrier-2', 'energy-barrier', 2700, -7.5), 4, 2),
+    swept(place('cosmic', 'cosmic-barrier-2', 'energy-barrier', 2700, -4.6), 4, 2),
     place('cosmic', 'cosmic-fragment-3', 'debris', 4200, 2.5),
-    swept(place('cosmic', 'cosmic-barrier-3', 'energy-barrier', 4700, -2.5), 3, 1),
+    swept(place('cosmic', 'cosmic-barrier-3', 'energy-barrier', 4700, 4.6), 3, 1),
     place('cosmic', 'cosmic-fragment-4', 'debris', 5900, -7.5),
-    swept(place('cosmic', 'cosmic-barrier-4', 'energy-barrier', 7100, 7.5), 4.5, 4),
+    swept(place('cosmic', 'cosmic-barrier-4', 'energy-barrier', 7100, -4.6), 4.5, 4),
   ],
 };
