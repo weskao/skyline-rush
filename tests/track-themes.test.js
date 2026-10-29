@@ -4,6 +4,8 @@ import { createRace, startRace, stepRace, LANES, RACE_TRACKS } from '../src/game
 import { normalizeRaceConfig, validateRaceRequest, rulesSignature } from '../src/race-config.ts';
 import { THEMED_TRACKS, themedHazards, themedPlacements } from '../src/track-themes.ts';
 import { validateHazardPlacement } from '../src/hazard-schema.ts';
+import { hazardReach } from '../src/hazard-race.ts';
+import { OBJECT_CATALOG } from '../src/object-catalog.ts';
 
 // 11B: themed hazards are opt-in (Custom, Free Drive, Gauntlet); every other race and record is unchanged.
 const BLOCKED_SECTIONS = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
@@ -44,12 +46,13 @@ test('every themed placement is valid, off tunnels/gaps/shortcuts and leaves two
       assert.ok(p.distance > 450 && p.distance < track.length - 220, `${p.id} clear of start and finish`);
       assert.ok(!track.sections.some(s => BLOCKED_SECTIONS.has(s.type) && p.distance >= s.from - 35 && p.distance <= s.to + 35), `${p.id} off special sections`);
     }
+    // Gusts only shove; blockers and low-grip patches (which AI steers around) count against the open lanes.
+    const solid = themedHazards(trackId).filter(h => hazardReach(h) > 0);
     for (let d = 0; d < track.length; d += 2) {
       const blocked = new Set();
-      for (const p of placements) {
-        if (Math.abs(p.distance - d) > p.hitbox.halfLength + 2.2) continue;
-        const reach = p.hitbox.halfWidth + CAR_HALF_WIDTH + (p.movementPattern.kind === 'sweep' ? p.movementPattern.amplitude : 0);
-        for (const lane of LANES) if (Math.abs(lane - p.lateralOffset) < reach) blocked.add(lane);
+      for (const h of solid) {
+        if (Math.abs(h.distance - d) > h.halfLength + 2.2) continue;
+        for (const lane of LANES) if (Math.abs(lane - h.x) < hazardReach(h) + CAR_HALF_WIDTH) blocked.add(lane);
       }
       assert.ok(blocked.size <= 2, `${trackId} @${d}: ${blocked.size} lanes blocked`);
     }
@@ -68,36 +71,60 @@ test('themed hazards join Custom races sorted, and generated hazards stay clear 
   }
 });
 
-function driveThrough(trackId, hazard, x, elapsed = 0) {
+function driveThrough(trackId, hazard, x, startTime = 0) {
   const race = createRace(trackId, { mode: 'free', themes: true, traffic: 'off', items: false });
-  race.hazards = [{ ...hazard, hit: false, passed: false }];
+  race.hazards = hazard ? [{ ...hazard, hit: false, passed: false }] : [];
   race.rings = [];
   startRace(race);
-  race.elapsed = elapsed; // when a timed (pulse) hazard is crossed
+  race.elapsed = startTime;
+  hazard ??= { distance: 1000 };
   Object.assign(race.player, { distance: hazard.distance - 30, x, speed: 40 });
   // The driver holds the lane (e.g. counter-steering Canyon's crosswind); only the hazard decides the outcome.
-  for (let i = 0; i < 90 && !race.hazards[0].hit && !race.hazards[0].passed; i++) {
+  for (let i = 0; i < 90 && !race.hazards[0]?.hit && !race.hazards[0]?.passed; i++) {
     race.player.x = x;
     stepRace(race, { throttle: true }, 1 / 60);
   }
   return race;
 }
 
-test('each themed hazard knocks a car that drives into it and pays a clean pass beside it', () => {
-  for (const trackId of THEMED_TRACKS) for (const hazard of themedHazards(trackId)) {
-    // A timed gate is solid for half its cycle: drive into it at the first start time that meets it closed.
-    const move = hazard.placement.movementPattern;
-    const starts = move.kind === 'pulse' ? Array.from({ length: 8 }, (_, i) => i * move.period / 8) : [0];
-    const runs = starts.map(t => driveThrough(trackId, hazard, hazard.x, t));
-    const hit = runs.find(r => r.hazards[0].hit) ?? runs[0];
-    assert.equal(hit.hazards[0].hit, true, `${hazard.id} hit`);
-    if (move.kind === 'pulse') assert.ok(runs.some(r => r.hazards[0].passed && !r.player.collisions), `${hazard.id} open gate lets the car through`);
+const effect = h => OBJECT_CATALOG[h.type].effect;
+// Moving blockers are probed through a whole cycle: they must block at some moment and let the car through at another.
+const startTimes = h => h.placement.movementPattern.kind === 'static' ? [0]
+  : Array.from({ length: 40 }, (_, i) => i * h.placement.movementPattern.period / 40);
+
+test('each themed blocker knocks a car that drives into it and pays a clean pass beside it', () => {
+  for (const trackId of THEMED_TRACKS) for (const hazard of themedHazards(trackId).filter(h => effect(h) === 'block')) {
+    // A swinging gate times the lane nearest to it; other blockers are met head-on.
+    const line = hazard.placement.movementPattern.kind === 'sweep'
+      ? LANES.reduce((a, b) => Math.abs(b - hazard.x) < Math.abs(a - hazard.x) ? b : a) : hazard.x;
+    const runs = startTimes(hazard).map(t => driveThrough(trackId, hazard, line, t));
+    const hit = runs.find(r => r.hazards[0].hit);
+    assert.ok(hit, `${hazard.id} hit`);
     assert.equal(hit.player.collisions, 1, hazard.id);
-    const lane = LANES.find(l => Math.abs(l - hazard.x) > hazard.halfWidth + CAR_HALF_WIDTH + 3);
+    if (hazard.placement.movementPattern.kind !== 'static')
+      assert.ok(runs.some(r => r.hazards[0].passed && r.player.collisions === 0), `${hazard.id}: its motion opens a gap`);
+    const lane = LANES.find(l => Math.abs(l - hazard.x) > hazardReach(hazard) + CAR_HALF_WIDTH + 3);
     const pass = driveThrough(trackId, hazard, lane);
     assert.equal(pass.hazards[0].passed, true, `${hazard.id} pass`);
     assert.equal(pass.player.collisions, 0, hazard.id);
   }
+});
+
+test('gusts shove the car sideways and ice patches bleed speed, without a crash', () => {
+  const effects = new Set();
+  for (const trackId of THEMED_TRACKS) for (const hazard of themedHazards(trackId).filter(h => ['push', 'slow'].includes(effect(h)))) {
+    effects.add(effect(hazard));
+    const run = driveThrough(trackId, hazard, hazard.x);
+    assert.equal(run.hazards[0].passed, true, hazard.id);
+    assert.equal(run.player.collisions, 0, hazard.id);
+    if (effect(hazard) === 'push') assert.equal(run.player.x - hazard.x, hazard.placement.seed % 2 ? 1.5 : -1.5, hazard.id);
+    else {
+      const free = driveThrough(trackId, null, hazard.x);
+      while (free.player.distance < run.player.distance) stepRace(free, { throttle: true }, 1 / 60);
+      assert.ok(run.player.speed < free.player.speed * 0.9, `${hazard.id}: ${run.player.speed} vs ${free.player.speed}`);
+    }
+  }
+  assert.deepEqual([...effects].sort(), ['push', 'slow']);
 });
 
 test('a small themed cone is narrower than a gauntlet barrier: one metre beside it is clear', () => {
