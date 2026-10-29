@@ -261,7 +261,7 @@ export function createWorld(canvas) {
   scene.background = new THREE.Color('#946d87');
   scene.fog = new THREE.FogExp2('#94758a', 0.0013);
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 3000);
-  const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+  const motionPreference = matchMedia('(prefers-reduced-motion: reduce)'), touchPreference = matchMedia('(pointer: coarse)');
   // The scene is rendered into this target, not the canvas, so it must carry the MSAA samples or every
   // edge stays jagged and crawls as the camera moves (the flicker seen on the start screen and in races).
   const msaaSamples = quality => quality === 'low' ? 2 : 4;
@@ -917,7 +917,7 @@ export function createWorld(canvas) {
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
-      const touch = matchMedia('(pointer: coarse)').matches;
+      const touch = touchPreference.matches;
       weather.visible = !reducedMotion && visual.enabled && (trackId === 'neon' || trackId === 'aurora');
       weatherGeometry.setDrawRange(0, touch || visual.quality === 'low' ? 60 : 180);
       if (weather.visible) {
