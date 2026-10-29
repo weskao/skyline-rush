@@ -1,4 +1,13 @@
 
+## Mobile race HUD overlap — all devices (2026-10-29)
+
+**Branch:** `fix/mobile-hud-overlap` from `main` `0a08d02`. **Report:** Android phone, zh-TW, AIRFLOW on mid-race — telemetry panel covered the speed readout; toolbar crowded.
+
+- [x] **RED** (`tests/responsive-browser.spec.js` › racing HUD blocks stay apart, AIRFLOW on, new 375×667 / 412×892 Android-15 / 390×844 notch / 820×1180 iPad sizes, on-screen edge checks): 12 of 15 failed on `0a08d02` — `.airflow-hud` × speedometer/flight telemetry/POSITION/leaderboard (phones, landscape), `.race-route-map` × `.race-progress` (notch/Android top inset), `.race-progress` × `.aero-tools` (820px iPad), PAUSE off the right edge (375–400px en), POSITION × speed (844×390 with home-indicator inset).
+- [x] **GREEN** (`src/style.css`): AIRFLOW panel shows on the ready showcase only on phones/short landscape; live map follows the top inset; iPad AIRFLOW bar moves under the leaderboard; compact CONTROLS label ≤400px; 5px tighter POSITION lines on short touch landscape. Responsive spec 72/72, unit 837 pass / 0 fail, typecheck, `test:layout` 37/37.
+- [ ] Full `test:browser` and exact-HEAD GitHub CI `quality-gate`.
+- [ ] Physical-device check on the reporter's Android phone (emulated viewports only so far: 360×690, 360×780, 375×667, 384×832, 390×844, 412×892/915, 844×390, 820×1180, both locales).
+
 ## Phase 5 — World Tour visual, road geometry & minimap polish (2026-10-29)
 
 **Branch:** `feature/phase5-world-tour-polish`, created from `main` `7b1785e6`. **Scope:** Tokyo → Alpine → Taipei → Coastal → Cosmic, then ten-track regression and exact-HEAD CI. Plan: `docs/superpowers/plans/2026-10-29-phase5-world-tour-polish.md`.
