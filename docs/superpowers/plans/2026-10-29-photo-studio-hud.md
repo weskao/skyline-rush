@@ -45,8 +45,8 @@ Files: src/style.css only, unless a real lifecycle regression requires its exist
 ### Task 3: Responsive visual regression discovered in review
 
 - [x] Actual 320x740 screenshot shows the controls obscuring the car. Extend the existing owner test to project each visible car mesh (wheels/body/wings) and detect panel overlap; observe the real overlap assertion RED. Add 59px top-notch / 47px landscape inset cases and observe unsafe y12 versus y59 RED.
-- [ ] Use compact two-column orbit/FOV fields on narrow viewports, a 300px short-landscape panel and the existing shared safe-area variables. Preserve camera, car, font sizes and every control. Correct the UA dialog max-width only so the intended responsive width is honored.
-- [ ] Pass all 24 layout/track cases plus existing PNG test; inspect actual narrow/notch/landscape images before rerunning the complete gate. Preserve interrupted 007b858 full-gate log separately.
+- [x] Use compact two-column orbit/FOV fields on narrow viewports, a 300px short-landscape panel and the existing shared safe-area variables. Preserve camera, car, font sizes and every control. Correct the UA dialog max-width only so the intended responsive width is honored.
+- [x] Pass all 24 layout/track cases plus existing PNG test (25/25, exit 0); inspect actual narrow/notch/landscape images. Preserve interrupted 007b858 full-gate log separately.
 
 ### Task 4: Final quality gate
 
