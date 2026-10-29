@@ -4,10 +4,12 @@ import { createFramePacer, parseFpsPreference, FPS_STORAGE_KEY, AUTO_SAMPLE_WIND
 
 test('preferences are sanitized: old installations default to Auto and corrupt storage never crashes', () => {
   assert.equal(FPS_STORAGE_KEY, 'skyline-rush-target-fps-v1');
-  for (const invalid of [null, undefined, '', '120', 120, '90', {}, [], 'NaN', '"60"', 'off'])
+  for (const invalid of [null, undefined, '', 120, 90, '144', {}, [], 'NaN', '"60"', 'off'])
     assert.equal(parseFpsPreference(invalid), 'auto');
   assert.equal(parseFpsPreference('30'), '30');
   assert.equal(parseFpsPreference('60'), '60');
+  assert.equal(parseFpsPreference('90'), '90');
+  assert.equal(parseFpsPreference('120'), '120');
   assert.equal(parseFpsPreference('auto'), 'auto');
 });
 

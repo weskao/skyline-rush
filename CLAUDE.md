@@ -142,7 +142,10 @@ Keep Phase 2 Coast scenery/palette unchanged unless a separately measured
 regression justifies changes. All other track detail must be pooled/instanced,
 bounded by Low/Medium/High quality, outside the road clearance, and hidden
 when its track is not active. Never add Vue reactivity to the render loop.
-Keep Phase 3 Auto/30/60 FPS render pacing separate from fixed 60 Hz physics,
+Keep Phase 3 Auto/30/60/90/120 FPS render pacing separate from fixed 60 Hz physics,
+measured browser rAF capability and saved visual Quality; high-refresh manual choices
+remain selected even when browser refresh limits their effective draw rate. Auto
+promotes only on sustained measured low render cost and must step down under pressure.
 track/Ghost samples and deterministic replay state.
 
 Any change to track length, centreline, shortcuts, gaps or checkpoint

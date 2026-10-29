@@ -447,7 +447,7 @@ Branch: `feature/phase2-coast-visual-quality`. Scope: Coast art pass only; no Ph
 ## Phase 3 — FPS and adaptive performance (feature/phase3-adaptive-fps)
 
 - [x] Merge current `main` into this feature branch, preserving main's Vue/TypeScript module extraction and RED tests; merge commit `b370169`.
-- [x] Implement an isolated TypeScript FPS pacer supporting Auto, 30 FPS and 60 FPS (120 FPS withheld until real device/refresh capability validation).
+- [x] Implement an isolated TypeScript FPS pacer supporting Auto, 30 FPS and 60 FPS (the original Phase 3 delivery; the later 90/120 FPS extension is tracked below).
 - [x] Add local-only FPS preference storage with invalid-value fallback, bilingual VFX-panel controls, and independent Quality selection.
 - [x] Keep fixed 60 Hz simulation and ghost sampling outside the rendering limit, and accumulate VFX elapsed time across skipped renders.
 - [x] Limit adaptive rendering cost using the existing Three.js DPR/composer path without modifying saved graphics quality.
@@ -458,7 +458,7 @@ Branch: `feature/phase2-coast-visual-quality`. Scope: Coast art pass only; no Ph
 - [ ] Validate Android Chrome and iPhone Safari on real devices, including thermals, input latency, 120 Hz capability and long-session stability.
 - [x] Merge into latest main at owner's request without waiting for final CI; remaining verification gates stay open.
 
-**Scope:** Auto uses sustained measured CPU-side render submission time; browser/driver GPU queues and device temperature require real-world verification. A 120 FPS option is deliberately unavailable until those checks justify it. `?perf` reports actual presented frame intervals, not merely the rate of rAF callbacks. Manual FPS never silently changes itself.
+**Scope:** Auto uses sustained measured CPU-side render submission time; browser/driver GPU queues and device temperature require real-world verification. The original Phase 3 withheld 120 FPS pending physical-device acceptance; the follow-up branch adds 90/120 choices with conservative browser-refresh fallback, while device and thermal acceptance remains pending. `?perf` reports actual presented frame intervals, not merely the rate of rAF callbacks. Manual FPS never silently changes itself.
 
 ## FPS feature request — delivered in Phase 3 (2026-10-27)
 
@@ -466,7 +466,18 @@ Branch: `feature/phase2-coast-visual-quality`. Scope: Coast art pass only; no Ph
 
 - [x] **Manual FPS selection:** User-selectable 30 FPS and 60 FPS; stored independently of visual Quality, with stable 60 Hz gameplay physics. The 120 FPS option is deliberately not available until separately validated.
 - [x] **Automatic device-performance adaptation:** Auto adjusts render pacing/scale using sustained render-submission measurements; it respects a user's explicit manual FPS choice.
-- [ ] **Future device acceptance:** Independently verify 120 Hz support, input latency, before/after FPS/p50/p95 and thermals on physical Android/iPhone devices before adding further FPS options or making temperature claims.
+- [ ] **Future device acceptance:** Independently verify high-refresh support, input latency, before/after FPS/p50/p95 and thermals on physical Android/iPhone devices before claiming reliable 90/120 FPS or temperature improvements.
+
+## Phase 3 extension — 90/120 FPS (feature/phase3-120fps-support, 2026-10-28)
+
+- [x] Add persisted 90 FPS and 120 FPS manual choices in the existing bilingual VFX menu; keep graphics Quality independent.
+- [x] Observe actual foreground browser rAF cadence before allowing 90/120 drawing, with graceful lower-refresh fallback (selected preference remains stored).
+- [x] Extend Auto to cautiously promote through 60 → 90 → 120 only after sustained low render cost and measured refresh capability, retaining adaptive render scale and step-down under load.
+- [x] Preserve fixed 60 Hz physics/ghost simulation and fractional render deadlines for accurate 90 FPS pacing on 120 Hz screens.
+- [x] Test-first RED verified: [run 40629027500](https://github.com/weskao/skyline-rush/actions/runs/40629027500), unit-tests failed for missing 90/120 support at `734ef43`; the run was subsequently cancelled by a GREEN push.
+- [x] Add deterministic unit coverage for 60/90/120 Hz cadence, Auto recovery/load, suspend/resume and persisted preferences, plus bilingual browser UI regression.
+- [ ] Verify final HEAD's full GitHub CI quality-gate (typecheck, unit, browser shards, World Tour and Cloud Save) before treating branch as merge-ready.
+- [ ] Verify high-refresh p50/p95, latency, temperature/power and long-session stability on physical 90/120 Hz Android/iPhone devices. Browser rAF timing and CPU render-submission costs do **not** prove GPU or thermals.
 
 ## Player feedback: gameplay excitement and visual quality (2026-10-27)
 
