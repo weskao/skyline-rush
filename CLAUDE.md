@@ -40,6 +40,64 @@ own `setupXxxUI(deps)` TypeScript controller instead of adding to `src/main.js`.
 under ~60 lines. Legacy oversized files have ratcheting ceilings that may only go down.
 `tests/module-size.test.js` enforces it; seams and steps are in `.claude/rules/module-size.md`.
 
+## Rendering performance is a design requirement from day one — all ten tracks
+
+**Preserve perceived quality first.** Optimizations must keep road geometry, textures, materials,
+lighting, fog, landmarks, car silhouettes, shadows, motion effects, view distance, rendering
+resolution and accessibility equivalent at the **same** Low/Medium/High tier. Never claim a
+performance win obtained by silently removing scenery, reducing pixel ratio, shortening the
+draw distance or disabling VFX. A deliberate visual tradeoff requires separate user approval
+and real WebGL before/after evidence; prefer zero-fidelity-loss optimizations.
+
+**Before writing or changing any renderer/scene/effect code:**
+1. Inspect all affected routes: Coast, Neon, Canyon, Aurora, Sky Spiral and Taipei, Tokyo,
+   Alpine, Coastal, Cosmic. Profile the *existing* pipeline first (Draw Calls, Triangles,
+   FPS, frame-time p50/p95, CPU work, GPU uploads, memory where measurable) under identical
+   viewport, quality, camera, race distance and browser conditions. Identify a dominant
+   cost before adding a cache, shader, batch or third-party package.
+2. Write a focused failing test (RED) for the waste or correctness bug, e.g. duplicate
+   GPU draw submissions, rebuilt geometry/instance matrices on unchanged frames, missed
+   cache invalidation, repeated JS allocations or resource leaks. Measure reduction with
+   deterministic call/upload/instance counters; wall-clock times are supporting evidence,
+   not brittle pass/fail assertions. Observe GREEN, then refactor minimally.
+3. Reuse the shared Three.js geometry and material instances. Where visually identical,
+   static geometry/material combinations may use `InstancedMesh` and cross-chunk pooling,
+   but preserve every object's world transform, object count, solid obstacle, lighting
+   and existing material pipeline. Do **not** merge distinct materials, animated objects,
+   unique terrain or transparent-order-dependent objects merely to reduce Draw Calls.
+4. Cache immutable path samples, static transforms and shader resources; skip recomputation
+   and `BufferAttribute.needsUpdate` / `instanceMatrix.needsUpdate` when nothing changed.
+   A cache **must** define ownership, disposal and invalidation (track switch, streamed
+   chunk entering/leaving, quality change, camera/LOD dependency, relevant data updates,
+   WebGL context restoration). Do not allocate/dispose GPU resources or rebuild scene
+   hierarchies in the ordinary frame loop. Release resources only when nobody else uses
+   them; pooling must restore visibility and avoid duplicate draws when rebuilt.
+5. Control batching's downside: combined mesh bounds can defeat frustum culling and
+   increase overdraw/Triangles. Benchmark Draw Calls **and** Triangles, p95 frame time,
+   GPU memory/upload costs and visual occlusion; prefer spatially bounded pools over
+   enormous global batches. Faster CPU submissions are not proof of lower GPU energy.
+6. Keep render pacing (Auto/30/60/90/120 where implemented) separate from deterministic
+   fixed-step physics, AI, Ghost and Cloud Save. Never alter race rules or road topology
+   to make the renderer faster. Vue 3 + TypeScript strict remain the default for new
+   controllers/services; Three.js hot-path JS is an existing deliberate exception.
+7. Validate **all ten routes** at 1440×900, 390×844, 320×740 and 844×390 where
+   applicable, ready-screen Showcase plus races, English/zh-TW, Reduced Motion,
+   Low/Medium/High, pause/restart/track switch and mid-race streaming. Check camera/
+   vehicle/landmark visibility, collision parity, Ghost, Cloud Save and no shader-compilation
+   stalls or black frames. Use actual running WebGL captures, not generated illustrations.
+8. Report a per-track **before → after** table for Draw Calls, Triangles, FPS and
+   frame-time p50/p95. Note which figures come from software WebGL CI (not a controlled
+   physical-device benchmark); never claim mobile heat/battery or substantial performance
+   gains without matching real measurements. Run `npm run typecheck`, `npm test`,
+   `npm run build`, `npm run test:layout`, `npm run test:browser`, World Tour and
+   Cloud Save checks, and the full GitHub CI `quality-gate` for the *final HEAD*.
+   Record RED/GREEN evidence and any unverified gate in `TODO.md`; merge only when
+   project approval requirements are met.
+
+For implementation details, follow `.claude/rules/performance-review.md` and
+`docs/regression-first-workflow.md`. Optimize the shared root cause, not a
+track-specific cosmetic workaround.
+
 ## Mandatory regression-first workflow (every feature and bug fix)
 
 **Always follow `docs/regression-first-workflow.md`** before calling work complete:
