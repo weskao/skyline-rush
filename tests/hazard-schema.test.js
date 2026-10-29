@@ -43,4 +43,6 @@ test('ENV-02 validation is deterministic and returns a frozen copy', () => {
 test('ENV-02 compiles a placement into the world box the collision code uses', () => {
   assert.deepEqual(hazardBox(validateHazardPlacement({ ...valid(), type: 'barrier', altitude: 3 })),
     { from: 1198.9, to: 1201.1, left: -4.05, right: -0.95, bottom: 3, top: 5.5 });
+  assert.deepEqual(hazardBox(validateHazardPlacement({ ...valid(), type: 'ring', altitude: 5 })),
+    { from: 1199.5, to: 1200.5, left: -7.3, right: 2.3, bottom: 0.2, top: 9.8 });
 });

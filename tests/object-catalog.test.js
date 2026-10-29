@@ -20,10 +20,14 @@ test('ENV-01 catalog separates visual-only scenery from gameplay objects', () =>
   assert.ok(Object.isFrozen(OBJECT_CATALOG) && Object.isFrozen(OBJECT_CATALOG.barrier.hitbox));
 });
 
-test('ENV-01 hitboxes for objects the simulation already resolves match its constants', () => {
+test('ENV-01 hitboxes are the drawn footprints; contact reach stays in the simulation', () => {
   assert.deepEqual(OBJECT_CATALOG.barrier.hitbox, { halfWidth: 1.55, halfLength: 1.1, height: 2.5 });
-  assert.equal(OBJECT_CATALOG.ring.hitbox.halfWidth, RING_RADIUS);
-  assert.equal(OBJECT_CATALOG.pickup.hitbox.halfWidth, 1.7);
+  // Rings are anchored at their centre, as game.js measures ring.altitude.
+  assert.deepEqual(OBJECT_CATALOG.ring.hitbox, { halfWidth: RING_RADIUS, halfLength: 0.5, height: RING_RADIUS * 2 });
+  assert.equal(OBJECT_CATALOG.ring.anchor, 'center');
+  assert.deepEqual(OBJECT_CATALOG.pickup.hitbox, { halfWidth: 1, halfLength: 1, height: 2.5 });
+  assert.deepEqual(OBJECT_CATALOG.checkpoint.hitbox, { halfWidth: 3.2, halfLength: 0.5, height: 4.8 });
+  for (const type of GAMEPLAY_TYPES) if (type !== 'ring') assert.equal(OBJECT_CATALOG[type].anchor, 'ground', type);
   // Gauntlet barriers never take more than one lane (5 m) so two lanes stay open.
   for (const type of GAMEPLAY_TYPES) if (OBJECT_CATALOG[type].effect === 'block' && type !== 'rail-crossing') {
     assert.ok(OBJECT_CATALOG[type].hitbox.halfWidth * 2 <= 5, `${type} fits one lane`);

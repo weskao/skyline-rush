@@ -77,9 +77,10 @@ export function validateHazardPlacement(input: unknown): HazardPlacement {
 }
 
 /** World-space collision box in the same {from,to,left,right,bottom,top} shape as course obstacles. */
-export function hazardBox({ distance, lateralOffset, altitude, hitbox }: HazardPlacement) {
+export function hazardBox({ type, distance, lateralOffset, altitude, hitbox }: HazardPlacement) {
   const round = (n: number) => Math.round(n * 1000) / 1000; // keep authored decimals exact across devices
+  const bottom = OBJECT_CATALOG[type].anchor === 'center' ? altitude - hitbox.height / 2 : altitude;
   return { from: round(distance - hitbox.halfLength), to: round(distance + hitbox.halfLength),
     left: round(lateralOffset - hitbox.halfWidth), right: round(lateralOffset + hitbox.halfWidth),
-    bottom: altitude, top: round(altitude + hitbox.height) };
+    bottom: round(bottom), top: round(bottom + hitbox.height) };
 }
