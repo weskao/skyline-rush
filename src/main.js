@@ -32,6 +32,8 @@ import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
+import { drainSteps, SIM_STEP } from './frame-pacing.ts';
+import { createStuntRun, stuntHeatContinues, stuntHeatLimit } from './stunt-attack.ts';
 import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
 import { setupPhotoUI } from './photo-ui.ts';
@@ -307,7 +309,7 @@ function start() {
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
-  stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, trackId:race.trackId } : null;
+  stunt = race.mode === 'stunt' ? createStuntRun(race.trackId, race.config.duration) : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
   raceSelect.rememberTrack(race.trackId);
@@ -331,7 +333,7 @@ function restart(trackId = race.trackId) {
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
   race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config));
-  if (stunt && race.mode === 'stunt') race.stuntLimit = Math.max(.01, stunt.duration - stunt.elapsed);
+  if (stunt && race.mode === 'stunt') race.stuntLimit = stuntHeatLimit(stunt);
   hud.resetMemory();
   goUntil = 0;
   startRace(race);
@@ -408,14 +410,14 @@ ui['again-button'].addEventListener('click', () => {
   if (sprintSeries) sprintSeries = createSprintSeries(sprintSeries.count);
   if (cup) { cup = createCup([...unlockedTracks], cup.tracks[0], cup.tracks.length); restart(cup.tracks[0]); }
   else if (stunt) {
-    stunt = { ...stunt, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0 };
+    stunt = createStuntRun(stunt.trackId, stunt.duration);
     restart(stunt.trackId);
   } else restart();
 });
 $('#next-stage').addEventListener('click', () => {
   if (sprintSeries && race.phase === 'finished' && sprintSeries.results.length < sprintSeries.count) restart();
   else if (cup && race.phase === 'finished' && !cupComplete(cup)) restart(cup.tracks[cup.results.length]);
-  else if (stunt && race.phase === 'finished' && race.result.endReason === 'route' && stunt.elapsed < stunt.duration) restart(stunt.trackId);
+  else if (stunt && race.phase === 'finished' && stuntHeatContinues(stunt, race.result.endReason)) restart(stunt.trackId);
 });
 $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
 ui['pause-button'].addEventListener('click', pause);
@@ -557,10 +559,9 @@ try {
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
   function frame(now) {
     const rawDelta = (now - previousTime) / 1000; previousTime = now;
-    const dt = Math.max(0, Math.min(rawDelta, 0.05));
+    const dt = Math.max(0, Math.min(rawDelta, 0.05)), due = drainSteps(accumulator, dt); accumulator = due.accumulator;
     // The 0.05s clamp already keeps a tab-switch gap from becoming unseen racing (hiding also pauses);
     // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
-    accumulator += dt;
     const input = controls.read();
     if (tutorial) prepareTutorialInput(input, tutorial.step);
     else {
@@ -568,17 +569,16 @@ try {
       input.laneAssist = autoThrottle;
     }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
-    while (accumulator >= 1 / 60) {
-      stepRace(race, input, 1 / 60);
+    for (let step = 0; step < due.steps; step++) {
+      stepRace(race, input, SIM_STEP);
       if (tutorial) {
-        tutorial.update(input, 1 / 60);
+        tutorial.update(input, SIM_STEP);
         if (tutorial.complete && race.phase === 'racing') {
           race.phase = 'paused'; controls.clear();
           try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
         }
       }
       if (!race.modifier && (race.mode === 'classic' || race.mode === 'time')) recordGhost(trace, race);
-      accumulator -= 1 / 60;
     }
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.

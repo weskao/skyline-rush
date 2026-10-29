@@ -5,8 +5,8 @@ import { addCupResult, cupStandings, cupComplete, cupTotalTime, type CupState } 
 import { validGhost, type GhostSample } from './ghost.ts';
 import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
+import { addStuntHeat, stuntHeatContinues, type StuntRun } from './stunt-attack.ts';
 
-export interface StuntRun { duration: number; elapsed: number; score: number; heats: number; maxCombo: number; airTime: number; trackId: string }
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
 // The simulation race comes from plain-JS game.js; each history.ts writer validates the fields it stores.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,19 +38,13 @@ export function settleRace(race: FinishedRace, { series, progress, ghosts, daily
   const { stunt } = series;
   if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
   if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
-  if (stunt && race.mode === 'stunt') {
-    stunt.elapsed += race.result.time;
-    stunt.score += race.result.score;
-    stunt.heats++;
-    stunt.airTime += race.styleAttack.airTime;
-    stunt.maxCombo = Math.max(stunt.maxCombo, race.styleAttack.maxCombo);
-  }
+  if (stunt && race.mode === 'stunt') addStuntHeat(stunt, race);
   const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
   progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
   const trackId: string = race.trackId ?? 'coast';
   let best: number, record: boolean, next: string | null = null;
   const intermediateStage = !!((sprintSeries && sprintSeries.results.length < sprintSeries.count) || (cup && !cupComplete(cup)) ||
-    (stunt && race.result.endReason === 'route' && stunt.elapsed < stunt.duration));
+    (stunt && stuntHeatContinues(stunt, race.result.endReason)));
   if (intermediateStage) {
     best = 0; record = false; // A partial series never writes a misleading individual best.
   } else if (race.result.success === false && race.mode !== 'classic') {

@@ -1010,6 +1010,17 @@ cue is warranted for these pure simulation contracts.
 - [x] Save best score, combo, air time and medal thresholds by exact track/ruleset.
 - [ ] **Acceptance:** deterministic scoring independent of FPS and input device;
   end-of-timer results work without reaching the sprint finish.
+  - Evidence (feature/stunt-acceptance, 2026-10-29): `tests/stunt-acceptance.test.js` plays whole 120 s
+    Coast sessions (≥2 heats: route end → next heat with the remaining time → timer end) through the real
+    frame-to-step seam `drainSteps` (`src/frame-pacing.ts`, now used by the `main.js` frame loop). Totals
+    (score, heats, max combo, air time, elapsed) are identical at 30/60/120/144 Hz and a jittery display,
+    and identical for the same maneuvers made with keyboard keys or touch buttons via `createControls`.
+    The last heat ends on `timer` short of the route end, elapsed equals the duration, and the session
+    best saves. RED: missing `drainSteps`/`createStuntRun` seams; GREEN without scoring changes (no
+    product bug found). Session rules `createStuntRun`/`addStuntHeat`/`stuntHeatContinues`/
+    `stuntHeatLimit` now live once in `src/stunt-attack.ts` (were copied in `main.js`, `race-results.ts`,
+    `result-screen.ts`). Per-frame input sampling still shifts a held key by up to one display frame at
+    different rates; equal per-step input gives equal scores. Pending: full `make verify` and exact-HEAD CI.
 
 **Stunt best persistence (2026-10-23):** RED [`b4c4262`](https://github.com/weskao/skyline-rush/commit/b4c4262cc4557d58cf58243f99f078dfcc54f863),
 [Actions #39940564407](https://github.com/weskao/skyline-rush/actions/runs/39940564407);
