@@ -1495,9 +1495,10 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 @media (max-height: 500px) and (min-width: 761px) { .photo-screen { width: 300px; } }
 
 .photo-screen[open] { z-index: 120; }
-/* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state. */
-body:has(#photo-screen[open]) #app > :not(#world):not(#photo-screen),
-body:has(#photo-screen[open]) #perf-overlay { display: none; }
+/* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state.
+   A body class, not body:has(): a :has() here made every in-race style recalc restyle the whole page. */
+body.photo-studio #app > :not(#world):not(#photo-screen),
+body.photo-studio #perf-overlay { display: none; }
 #photo-open[hidden] { display: none !important; }
 
 /* Home discoverability: medal tally on the route line, today's challenge as a card above the mode picker.
