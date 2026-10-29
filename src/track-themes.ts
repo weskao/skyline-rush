@@ -42,8 +42,9 @@ export function withThemedHazards<T extends Hazardish>(generated: T[], themed: r
 }
 
 /** The race's hazard list: generated Gauntlet/practice hazards plus the opt-in track theme. */
-export function raceHazards(trackId: string, track: HazardTrack, lanes: readonly number[], config: { mode: string; hazardTier?: 'standard' | 'extreme'; hazards?: 'standard' | 'extreme'; themes?: boolean }) {
-  const generated = config.mode === 'gauntlet' ? createHazards(track, lanes, config.hazardTier) :
+export function raceHazards(trackId: string, track: HazardTrack, lanes: readonly number[], config: { mode: string; hazardTier?: 'standard' | 'extreme'; hazards?: 'standard' | 'extreme'; themes?: boolean },
+  course: { hazards: Hazardish[] } | null = null) { // MODE-07 mixed Gauntlet course, built once by createRace
+  const generated = course ? course.hazards : config.mode === 'gauntlet' ? createHazards(track, lanes, config.hazardTier) :
     config.hazards ? createHazards(track, lanes, config.hazards) : [];
   return withThemedHazards(generated, config.themes ? themedHazards(trackId) : []);
 }

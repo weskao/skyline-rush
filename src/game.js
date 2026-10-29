@@ -7,7 +7,7 @@ import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCa
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
 import { stepPlayerHazards, hazardReach, hazardTouch, nudge } from './hazard-race.ts';
-import { raceHazards } from './track-themes.ts';
+import { raceHazards } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
@@ -164,14 +164,14 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
   if ((trackId === CIRCUIT_ID) !== (config.mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
   const session = createRaceSessionContract(trackId, track.seed, config, presentation), risk = riskRules(config);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const rings = decorateBonusGates(ringsForItemRule(config.mode === 'circuit' ? lapItems(createRings(track, risk.rings), config.laps, 'ring') : createRings(track, risk.rings), config.itemRules), config);
+  const course = mixedCourse(trackId, track, LANES, config), rings = decorateBonusGates(ringsForItemRule(withHoops(config.mode === 'circuit' ? lapItems(createRings(track, risk.rings), config.laps, 'ring') : createRings(track, risk.rings), course), config.itemRules), config);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   const race = {
     trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? config.mode === 'circuit' ? lapItems(createPickups(track), config.laps, 'pickup') : createPickups(track) : [], rings,
     circuit: config.mode === 'circuit' ? createCircuit(config.laps) : null,
     props: [], risk, // solid World Tour scenery parts; main.js fills them from roadObstacles()
-    hazards: raceHazards(trackId, track, LANES, config),
+    hazards: raceHazards(trackId, track, LANES, config, course),
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     practice: config.mode === 'free' ? createPracticeStats() : null,
     styleAttack: config.mode === 'stunt' ? createStuntAttack() : null,

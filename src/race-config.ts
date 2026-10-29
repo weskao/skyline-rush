@@ -36,6 +36,8 @@ export function normalizeRaceConfig(value: unknown = {}) {
     ...((practice || mode === 'gauntlet') && value.themes === true ? { themes: true } : {}),
     ...(custom && isOneOf(value.stages, [2, 3, 5]) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
+    // MODE-07: only the mixed course is stored, so the original Gauntlet signature is unchanged.
+    ...(mode === 'gauntlet' && value.layout === 'mixed' ? { layout: 'mixed' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
     ...(mode === 'circuit' ? { laps: isOneOf(value.laps, [1, 3, 5]) ? value.laps : 3, topologyVersion: 1 } : {}),
     ...(mode === 'stunt' ? { duration: isOneOf(value.duration, [120, 180, 300]) ? value.duration : 120 } : {}),
@@ -61,7 +63,7 @@ const REQUEST_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze(
   custom: ['rivals', 'traffic', 'difficulty', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'stages', 'themes', 'riskLines'],
   free: ['traffic', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'themes', 'riskLines'],
   time: ['clean'],
-  gauntlet: ['hazardTier', 'themes'],
+  gauntlet: ['hazardTier', 'themes', 'layout'],
   checkpoint: ['bonusGates'],
   cup: ['cupTracks'],
   stunt: ['duration', 'bonusGates'],
@@ -104,6 +106,7 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
   if (Object.hasOwn(value, 'collision')) assertOption(isOneOf(value.collision, ['normal', 'relaxed']), 'collision');
   if (Object.hasOwn(value, 'riskLines')) assertOption(isOneOf(value.riskLines, ['on', 'off']), 'riskLines');
   if (Object.hasOwn(value, 'hazards')) assertOption(isOneOf(value.hazards, ['standard', 'extreme']), 'hazards');
+  if (Object.hasOwn(value, 'layout')) assertOption(isOneOf(value.layout, ['classic', 'mixed']), 'layout');
   if (Object.hasOwn(value, 'hazardTier')) assertOption(isOneOf(value.hazardTier, ['standard', 'extreme']), 'hazardTier');
   if (Object.hasOwn(value, 'stages')) assertOption(isOneOf(value.stages, [1, 2, 3, 5]), 'stages');
   if (Object.hasOwn(value, 'laps')) assertOption(isOneOf(value.laps, [1, 3, 5]), 'laps');
