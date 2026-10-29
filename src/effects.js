@@ -79,6 +79,7 @@ export function createEffects(scene, roadCenter) {
   const blue = [0.15, 0.8, 2.5], gold = [2.5, 1.8, 0.15], purple = [1.2, 0.3, 2.5], red = [2.5, 0.1, 0.15];
   const spectrum = [red, orange, gold, [0.15, 2, 0.65], blue, purple];
   const pickupColors = { cell: blue, can: orange, tank: gold, overcharge: spectrum };
+  const bonusStyles = { 'speed-pad': 'slipstream', 'air-pad': 'charge', 'recovery-pad': 'nitro', 'score-pad': 'risk', emp: 'mystery' };
   const ringColors = { charge: [0.1, 1.8, 2.5], nitro: gold, slipstream: purple, risk: red, mystery: spectrum };
   const ringGeometry = new THREE.TorusGeometry(1, 0.012, 6, 64);
   const rainbow = new Float32Array(ringGeometry.attributes.position.count * 3), tint = new THREE.Color();
@@ -144,10 +145,11 @@ export function createEffects(scene, roadCenter) {
         let slot = 0;
         for (const item of items) {
           const collected = source === 0 ? item.taken : item.hit;
+          const ringType = bonusStyles[item.type] ?? item.type;
           if (collected && !seen.has(item)) {
             seen.add(item);
             if (previousRace === race && active) burst(item, reducedMotion ? 6 : lowQuality ? 12 : 32,
-              source === 0 ? pickupColors[item.tier] : ringColors[item.type], car.speed);
+              source === 0 ? pickupColors[item.tier] : ringColors[ringType], car.speed);
           }
           if (collected || item.distance <= distance || item.distance > distance + 900 || slot >= group.children.length) continue;
           const mesh = group.children[slot++];
@@ -158,7 +160,7 @@ export function createEffects(scene, roadCenter) {
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
           mesh.rotation.y = source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2);
           mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
-          mesh.material = source === 0 ? pickupMaterials[item.tier] : ringMaterials[item.type];
+          mesh.material = source === 0 ? pickupMaterials[item.tier] : ringMaterials[ringType];
         }
         for (; slot < group.children.length; slot++) group.children[slot].visible = false;
       }

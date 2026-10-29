@@ -1,4 +1,5 @@
-<!-- source-sha256: 9db590b3e3d047e40baaeb4730697407c3d9ae4778d64562a451e506e90ae926 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 0cc921a06f31b8af006460824e603e1f891547595e396f073fec30bf184bdb1a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -73,6 +74,11 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 ### 盃賽恢復
 
 未完成的 Championship Cup 會在主畫面提供 **Resume** 或 **Discard**。Resume 會保留已結算階段的積分，並只重新開始未完成的階段；重試只會回溯正在重玩的階段。完成或放棄盃賽後，其恢復紀錄會被清除。刪除遊戲進度時也會一併移除檢查點，同時保留裝置偏好設定。恢復功能使用此瀏覽器的儲存空間，無法還原瀏覽器拒絕儲存的資料。
+
+Custom Race 可在各衝刺賽段重播相容規則下的最快幽靈車。Custom 與 Free Drive 提供 Track / Day / Dusk / Night / Rain / Fog 外觀預設及即時規則摘要。這些外觀選擇不影響成績資格或規則識別。重試保留所選外觀;切換賽道或返回 Classic 時恢復賽道外觀。關閉 Photo Studio 後會恢復目前比賽的外觀。
+### 選用道具與獎勵閘門
+
+Custom 與 Free Drive 提供 **Off / Classic Mystery Rings / Active Items / All Items**。持有道具共用一個欄位:按 **Q** 或觸控 **USE** 使用,之後等待冷卻。NITRO 與 FLY/BOOST 保留各自的操作。All Items 加入有上限的加速、飛行能量補充及單次碰撞恢復閘門;EMP 會短暫減速附近對手,單人模式則轉成 Magnet。恢復效果仍會計入正式碰撞次數。Stunt Attack 與 Checkpoint Rush 可另外啟用限時、不可疊加的 ×2 分數閘門。Classic 的預設行為維持原樣。
 
 ### 自訂呈現與幽靈
 

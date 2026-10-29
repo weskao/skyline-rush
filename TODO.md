@@ -94,6 +94,11 @@ Historical receipts below retain their original date and verification scope.
 - [x] Inspect the four original-resolution in-game captures and JSON receipt under `artifacts/custom-presentation/replay02-evidence/`. Complete local gate 826 Node / 501 Browser / 303 World Tour and exact-code CI 17/17 are recorded above. Chrome touch emulation does not complete physical-device acceptance.
 
 Historical receipts below retain their original date and verification scope. Earlier publication blockers were superseded by the user-published commits verified above.
+- [x] User-integrated `main@ca1c777` is an ancestor of `6c478de` on `feature/practice-item-rules`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `6c478de` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547695). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `6c478de` exits 0: strict TS/Vue/JS, Node 830 / Browser 502 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/item-rules/make-verify-main-ca1c777-user-merge.log`.
+
+Historical receipts below retain their original date and verification scope.
 
 ## Main camera-probe integration (2026-10-28)
 
@@ -107,6 +112,8 @@ Historical receipts below retain their original date and verification scope. Ear
 
 - [x] Complete resulting-main `make verify` on code `c5b885c` (verified 2026-10-29): strict TS/Vue/JS checks, 812 Node passed / 3 emulator-scoped skips, locked production build, 499 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
 - [x] Preserve 4 original-resolution 0.25.0 real-game images in `artifacts/custom-presentation/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `c5b885c` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
+- [x] Complete resulting-main `make verify` on code `5d080fe` (verified 2026-10-29): strict TS/Vue/JS checks, 816 Node passed / 3 emulator-scoped skips, locked production build, 500 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/item-rules/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
+- [x] Preserve 4 original-resolution 0.25.0 real-game images in `artifacts/item-rules/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `5d080fe` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
 - [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
 
 ## Main 0.25.0 integration (2026-10-28)
@@ -117,6 +124,7 @@ Historical receipts below retain their original date and verification scope. Ear
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `f88d43a` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
 
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `c5b885c` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `5d080fe` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
 - [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
 
 ## Historical main integration through 0197547 (2026-10-28)
@@ -172,6 +180,29 @@ Branch: `feature/custom-race-presentation`, checkpoint `29394e8`, integrates mai
 - [ ] PHOTO-01 remains open: the existing orbit/lighting/PNG flow passes, but merged real-game capture still shows speed/charge HUD, a driving callout and the device notice behind Photo Studio. Complete preview HUD hiding and its device coverage separately; appearance restoration does not close this acceptance. Evidence: `artifacts/custom-presentation/photo-studio-merged.png`.
 
 - [x] Merged-main full browser receipt (2026-10-28): 486 passed / 2 skipped; only three inherited Phase 4 polyline assumptions failed. Integrate `6809503` (focused corrected suite 7/7) and rerun complete gates on the resulting source. This receipt does not claim a green full gate.
+- [x] Complete local `make verify` on code `1776eda` with main `0197547`: strict types, 813 Node passed / 3 emulator skips, locked build, 500 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/item-rules/make-verify-main-0197547.log`. This is a historical receipt if a newer main is integrated.
+- [ ] Inspect the recorded feature-code SHA GitHub required jobs and `quality-gate`; the final documentation HEAD is checked separately. Real-device and remaining manual gates stay open.
+
+## Practice item rules and activation feedback (2026-10-27)
+
+Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation and the shared checkout's audio/keymap refactor; latest docs-only main `3a5c25a` integrated.
+
+- [x] ITEM-11 implementation: explicit Off / Classic / Active / All selection for Custom and Free Drive; legacy configs without `itemRules` retain their signatures and original supply-only `items: false` behavior. All ten tracks covered; strict conflicting requests rejected; recent setups retain new rules.
+- [x] Existing ITEM-01–05 feedback slice: actual mystery-ring pickup → held silhouette → Q/touch activation → bounded cooldown/active status, English/zh-TW, one-shot pickup/ready cues using the existing muted mixer. Main bootstrap shrinks seven lines; cached HUD writes remain idempotent. This does not complete every future ITEM-12 visual effect.
+- [x] Observed RED: Off still spawned supplies, unknown new rules collapsed recent setups, and Chrome lacked the rule selector. Follow-up RED caught a restored old setup retaining `activeItems: true` and filtered groups falsely awarding PERFECT LINE/NITRO; shared fixes preserve old-setup defaults and original ring index/group size.
+- [x] Focused proof: rule/config/mode tests 40 passed; final item/UI/activation tests 11 passed; complete Node suite 699 passed, 0 failed, 3 emulator-dependent skipped. Strict TS/Vue/JS checks and locked production build passed. Browser mode/HUD/parity suite 31/31 passed; final changed-rule desktop/touch/locale/recent-restore rerun 4/4 passed. Actual WebGL captures and logs: `artifacts/item-rules/`.
+- [x] Complete merged local `make verify` on code HEAD `6581403`: strict TS/Vue/legacy checks, 806 Node passed / 3 emulator-dependent skipped, locked build, 494 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/item-rules/make-verify-main72466c3-final.log`. Original-resolution desktop/touch item and bonus flows also pass.
+- [x] Verify exact code commit `e4c4c1e`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40633787236 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
+- [ ] Physical-device/audio/perception acceptance; broader ITEM-03/12 visuals remain open.
+- [x] Main integration (2026-10-28): preserve latest main `7cbdbe5`, including Phase 1–4 and the split bootstrap; move this branch's selection/reset changes into `race-select-ui.ts` and item HUD updates into the typed mode-panel callback. Preserve all new size ceilings: `game.js` remains 827 lines and `main.js` shrinks to 687. Fresh strict TS/Vue/JS checks, 17 focused Node checks and five real desktop/touch item browser cases pass. The historical 10/27 measurements above remain historical receipts, not proof for the merged source.
+- [x] Resolve the two inherited unit-gate failures through the shared main regression repair (Phase 4 timeout scaling and perf-overlay initialization); after merging main `2cd52d4`, the complete Node suite passes 804 / 0 failed / 3 emulator-dependent skipped. Main `72466c3` is now integrated; complete resulting `make verify` and latest-HEAD CI remain separate pending gates.
+
+## Related item expansion (2026-10-28)
+
+- [x] RED → GREEN for bounded speed/air/recovery gates at unchanged authored positions on all ten tracks; collision mitigation consumes once and preserves official collision counts. EMP affects opponents within 30 m for 1.5 s and safely converts to Magnet in solo use.
+- [x] Opt-in Stunt/Checkpoint five-second ×2 score gates, bounded nonstacking durations, independent rules signatures, paused timers and equal payouts at 30/60/120 physics steps. Classic defaults and old saved signatures remain unchanged.
+- [x] RED → GREEN for missing gate materials and HUD warnings. Reuse five existing warmed material variants and seven-mesh pool; cache HUD nodes, announce gate identity/distance and pickup once, show EMP silhouette/cooldown, and retain separate music/SFX settings. Relevant Node checks: 31 passed; browser item and bonus flows: 7 passed on desktop/touch, with English/zh-TW switching and real Q/tap activation. Screenshots inspected in `artifacts/item-rules/`.
+- [ ] Physical iOS/Android/audio/perception acceptance and broader ITEM-12 visual effects. Code CI and the complete merged local gate are recorded above.
 
 
 - [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.

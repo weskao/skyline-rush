@@ -1,5 +1,6 @@
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
 import { t } from './i18n.ts';
+import type { ItemRace } from './item-ui.ts';
 import { checkpointDirection } from './checkpoint-rush.ts';
 import type { SprintSeries } from './sprint-series.ts';
 import type { CupState } from './championship-cup.ts';
@@ -10,13 +11,13 @@ import type { StuntRun } from './race-results.ts';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type HudRace = any;
 export interface ModePanelOptions {
+  updateItem(race: ItemRace): void;
   getSprintSeries(): SprintSeries | null;
   getCup(): CupState | null;
   getStunt(): StuntRun | null;
   isTutorialActive(): boolean;
 }
-const NODE_IDS = ['clean-trial-hud', 'hazard-warning', 'elimination-hud', 'checkpoint-hud', 'sprint-stage', 'item-slot', 'item-status',
-  'activate-item', 'stunt-hud', 'practice-hud'];
+const NODE_IDS = ['clean-trial-hud', 'hazard-warning', 'elimination-hud', 'checkpoint-hud', 'sprint-stage', 'stunt-hud', 'practice-hud'];
 
 export function createModePanels(options: ModePanelOptions) {
   const hudNodes = Object.fromEntries(NODE_IDS.map(id => [id, document.getElementById(id)!])) as Record<string, HTMLElement>;
@@ -64,12 +65,7 @@ export function createModePanels(options: ModePanelOptions) {
       n: Math.min(sprintSeries.count, sprintSeries.results.length + (race.phase === 'finished' ? 0 : 1)),
       total: sprintSeries.count,
     }));
-    const slot = hudNodes['item-slot']!, carItem = race.player.heldItem;
-    setHudHidden(slot, !race.config.activeItems || race.phase === 'ready');
-    if (!slot.hidden) {
-      setHudText(hudNodes['item-status']!, carItem ? t('mode.itemReady', { item: t('mode.item.' + carItem) }) : t('mode.itemEmpty'));
-      (hudNodes['activate-item'] as HTMLButtonElement).disabled = !carItem || race.phase !== 'racing' || race.player.itemCooldown > 0;
-    }
+    options.updateItem(race);
     const stuntHud = hudNodes['stunt-hud']!;
     setHudHidden(stuntHud, !stunt || race.phase === 'ready');
     if (stunt) {

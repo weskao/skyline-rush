@@ -10,7 +10,7 @@ import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.ts';
-import { createRace as createBareRace, startRace, stepRace, useHeldItem, dailyChallenge, RACE_TRACKS } from './game.js';
+import { createRace as createBareRace, startRace, stepRace, dailyChallenge, RACE_TRACKS } from './game.js';
 import { createControls } from './input.ts';
 import { createSprintSeries } from './sprint-series.ts';
 import { createCheckpointRush } from './checkpoint-rush.ts';
@@ -47,6 +47,7 @@ import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-
 import { settleRace } from './race-results.ts';
 import { resultView, setupResultScreen } from './result-screen.ts';
 import { createRaceHud } from './race-hud.ts';
+import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
 import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
@@ -116,7 +117,7 @@ const controls = createControls(window, action => {
   if (action === 'pause') toggleSettings(false);
   if (action === 'pause') $('#vfx-panel').open = false;
   if (action === 'pause') toggleControls(false);
-  ({ start, restart, pause, item: triggerItem, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: vfx.toggleAirflow })[action]?.();
+  ({ start, restart, pause, item: itemUI.activate, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: vfx.toggleAirflow })[action]?.();
 }, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
 // Touch layout, slide pad, tilt and the Controls form live in touch-controls-ui.ts; showTracks() reads its ghost preference.
 const touchUI = setupTouchControlsUI({
@@ -135,6 +136,7 @@ const { motionOptions, enter } = createMotion(calmMotion);
 const hud = createRaceHud({
   ui,
   getRace: () => race,
+  updateItem: race => itemUI.update(race),
   getSprintSeries: () => sprintSeries,
   getCup: () => cup,
   getStunt: () => stunt,
@@ -379,10 +381,7 @@ function changeCamera() {
   ui['camera-button'].setAttribute('aria-pressed', String(mode === 1));
 }
 
-function triggerItem() {
-  if (useHeldItem(race)) sound.cue('pickup');
-}
-$('#activate-item').addEventListener('click', triggerItem);
+const itemUI = setupItemUI({ getRace: () => race, cue: name => sound.cue(name) });
 showAssist();
 ui['controls-button'].addEventListener('click', () => { toggleControls(); sound.cue('ui'); });
 // Capture phase so Escape only closes the panel and never reaches input.js as a pause/resume.

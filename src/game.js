@@ -4,8 +4,11 @@ import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
 import { createElimination, stepElimination } from './elimination.ts';
-import { bankItem, activateItem, tickItemCooldown } from './active-items.ts';
+import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './active-items.ts';
+import { decorateBonusGates, collectBonusGate, applyEMPPulse, recoveryRetention, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
+import { createRings, RING_RADIUS, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
+export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
 import { raceCompletion } from './race-objectives.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
@@ -114,15 +117,6 @@ export const shortcutPylons = section => Array.from({ length: Math.ceil((section
 }));
 const PYLON_HALF_WIDTH = 1.2; // m
 
-export const RING_RADIUS = 4.8;
-export const RISK_RING_RADIUS = 2.4;
-export const RING_FUEL = 20; // charge ring
-export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
-export const RISK_SCORE = 500;
-export const PERFECT_LINE_NITRO = 1;
-export const RING_SPACING = 220;
-export const MYSTERY_EFFECTS = ['shield', 'magnet', 'ghost', 'freeze'];
-export const EFFECT_TIMES = { shield: 10, magnet: 5, ghost: 3, freeze: 2 }; // seconds; shield also ends on the first absorbed hit
 export const MAGNET_RANGE = 12; // m
 export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
@@ -181,38 +175,6 @@ function createPickups(track) {
   return [...pickups.filter(pickup => !blocked(pickup)), overcharge].sort((a, b) => a.distance - b.distance);
 }
 
-// Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
-// other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
-function createRings(track) {
-  const random = seededRng(track.seed, RACE_STREAMS.rings);
-  const rings = [];
-  const inTunnel = distance => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
-  for (let distance = RING_SPACING; distance < track.length - 100;) {
-    const roll = random();
-    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? 'risk' : 'mystery';
-    let x = 2.5;
-    let altitude = 8;
-    if (!track.fixedRings) {
-      x = Math.round((random() * 2 - 1) * 70) / 10;
-      altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
-    }
-    if (inTunnel(distance)) { // the car cannot climb in a tunnel, so a 'risk' ring there would be free
-      altitude = 1.5;
-      if (type === 'risk') type = 'nitro';
-    }
-    rings.push({ distance, x, altitude, radius: type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS, type, group: 0 });
-    distance += track.fixedRings ? RING_SPACING : Math.round(200 + random() * 120);
-  }
-  for (let i = 0, group = 0; i < rings.length; group++) {
-    const left = rings.length - i;
-    let size = 3 + Math.floor(random() * 3);
-    if (left - size < 3) size = left <= 5 ? left : left - 3;
-    for (let j = i; j < i + size; j++) rings[j].group = group;
-    i += size;
-  }
-  return rings;
-}
-
 // The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
 export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `${RACE_STREAMS.mysteryPrefix}${index}`)() * MYSTERY_EFFECTS.length)];
 
@@ -246,7 +208,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
   const config = normalizeRaceConfig(options ?? {});
   const session = createRaceSessionContract(trackId, track.seed, config, presentation);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const rings = createRings(track);
+  const rings = decorateBonusGates(ringsForItemRule(createRings(track), config.itemRules), config);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
@@ -295,12 +257,12 @@ function collectRing(race, ring, index) {
     addNitro(car, 1);
     car.score += RISK_SCORE;
   } else if (ring.type === 'mystery') {
-    const effect = mysteryEffect(race.seed, index);
+    const effect = mysteryEffect(race.seed, ring.mysteryIndex ?? index);
     if (race.config.activeItems) bankItem(car, effect);
     else car.effects[effect] = EFFECT_TIMES[effect];
-  }
+  } else collectBonusGate(race, ring);
   car.groupHits[ring.group] = (car.groupHits[ring.group] ?? 0) + 1;
-  if (car.groupHits[ring.group] === race.rings.filter(other => other.group === ring.group).length) {
+  if (car.groupHits[ring.group] === (ring.groupSize ?? race.rings.filter(other => other.group === ring.group).length)) {
     car.perfectLines++; // PERFECT LINE: every ring of the group cleared
     car.score += 500;
     addNitro(car, PERFECT_LINE_NITRO);
@@ -325,7 +287,10 @@ export function startRace(race) {
 
 export function useHeldItem(race) {
   if (!race?.config?.activeItems || race.phase !== 'racing') return null;
-  return activateItem(race.player, race.rivals.length > 0);
+  if (race.player.heldItem === 'emp' && (race.mode !== 'custom' || race.config.itemRules !== 'all')) race.player.heldItem = 'magnet';
+  const effect = activateItem(race.player, race.rivals.length > 0);
+  if (effect === 'emp') applyEMPPulse(race);
+  return effect;
 }
 
 export { racePosition, sprintGaps } from './race-standings.ts';
@@ -442,7 +407,7 @@ function contact(race, kind, obstacleX, intensity, retention) {
     return;
   }
   const side = Math.sign(car.x - obstacleX) || -1, x = car.x;
-  const speedLost = knock(race, car, side, intensity, retention);
+  const speedLost = knock(race, car, side, intensity, recoveryRetention(car, retention));
   car.impact = { kind, intensity, side, speedLost, x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
   car.collisions++;
   car.combo = 0;
@@ -461,7 +426,7 @@ export function stepRace(race, input, dt) {
   race.elapsed += dt;
   const car = race.player;
   const previousScore = car.score;
-  if (race.config.activeItems) tickItemCooldown(car, dt);
+  if (race.config.activeItems || race.config.bonusGates) tickItemCooldown(car, dt);
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
   car.section = section?.type ?? null;
   car.inShortcut = car.section === 'shortcut' && Math.abs(car.x - section.x) < SHORTCUT_HALF_WIDTH &&
@@ -659,7 +624,7 @@ export function stepRace(race, input, dt) {
     // Rubber band: a rival far ahead of the player eases off, one far behind speeds up, by at most RUBBER_BAND_MAX.
     const gap = rival.distance - car.distance;
     const band = Math.sign(gap) * clamp((Math.abs(gap) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
-    const slow = (car.effects.freeze > 0 ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
+    const slow = (car.effects.freeze > 0 || rival.empUntil > race.elapsed ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
     rival.pace = rival.speed * slow;
     rival.distance += rival.pace * dt;
     avoidObstacles(race, rival, rival.pace, dt);
@@ -776,6 +741,7 @@ export function stepRace(race, input, dt) {
   }
   if (race.practice) samplePractice(race.practice, car, Math.max(0, Math.min(car.distance, race.length) - previousDistance), dt);
   if (race.styleAttack) car.score += scoreStuntAttack(race.styleAttack, car, car.score - previousScore, dt, race.elapsed);
+  car.score += bonusScore(car, race.mode, car.score - previousScore);
   if (race.mode === 'free' && car.distance >= race.length) {
     car.distance = race.length; // authored point-to-point road ends here; no fake infinite road
     car.speed = 0;
