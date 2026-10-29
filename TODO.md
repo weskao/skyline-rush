@@ -5,8 +5,16 @@
 
 - [x] **RED** (`tests/responsive-browser.spec.js` › racing HUD blocks stay apart, AIRFLOW on, new 375×667 / 412×892 Android-15 / 390×844 notch / 820×1180 iPad sizes, on-screen edge checks): 12 of 15 failed on `0a08d02` — `.airflow-hud` × speedometer/flight telemetry/POSITION/leaderboard (phones, landscape), `.race-route-map` × `.race-progress` (notch/Android top inset), `.race-progress` × `.aero-tools` (820px iPad), PAUSE off the right edge (375–400px en), POSITION × speed (844×390 with home-indicator inset).
 - [x] **GREEN** (`src/style.css`): AIRFLOW panel shows on the ready showcase only on phones/short landscape; live map follows the top inset; iPad AIRFLOW bar moves under the leaderboard; compact CONTROLS label ≤400px; 5px tighter POSITION lines on short touch landscape. Responsive spec 72/72, unit 837 pass / 0 fail, typecheck, `test:layout` 37/37.
-- [ ] Full `test:browser` and exact-HEAD GitHub CI `quality-gate`.
-- [ ] Physical-device check on the reporter's Android phone (emulated viewports only so far: 360×690, 360×780, 375×667, 384×832, 390×844, 412×892/915, 844×390, 820×1180, both locales).
+- [x] **RED → GREEN, round 2** (Playwright `devices` matrix, AIRFLOW on, real PAUSE/resume taps, 21 profiles × en/zh-TW): the pre-fix build failed 30 of 42 and round 1 still failed 5. Fixed in `src/style.css`:
+  - Touch landscape under 761px wide (740×360, 750×342, 658×320, 640×360) fell into the portrait HUD, so every block stacked. It now uses the landscape HUD, with a narrowed centre column.
+  - 1024×768 zh-TW: the AIRFLOW channel list no longer overlaps the speed readout (hidden below 840px tall).
+  - 780×360 and 814×380: the ≤380px-tall leaderboard shift ran 7px into the progress bar. Its width and the progress bar now follow the shift.
+  - 480×1040 en: PAUSE was off the right edge. The wordmark hides mid-race up to 540px.
+  - Spec sizes added: 740×360, 750×342, 780×360, 814×380, 480×1040, 658×320, 640×360. Matrix now 0 of 42 failing.
+- [x] Stylesheet baseline (`tests/fixtures/main-ui-contract.json` `cssBlob`) re-recorded for these intentional changes.
+- [x] Known limit: 568×320 (iPhone SE 1st gen landscape) is too narrow for the centre column. The layout is verified down to 640px wide.
+- [ ] Exact-HEAD GitHub CI `quality-gate`.
+- [ ] Physical-device check on the reporter's Android phone (emulated viewports and Playwright device profiles only).
 
 ## Phase 5 — World Tour visual, road geometry & minimap polish (2026-10-29)
 
