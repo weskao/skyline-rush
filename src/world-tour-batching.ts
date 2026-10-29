@@ -41,7 +41,7 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
     else groups.set(key, [mesh]);
   });
   let sourceMeshes=0,drawBatches=0;
-  const transforms: THREE.Matrix4[]=[];
+  const reusableMatrix=new THREE.Matrix4();
   for(const meshes of groups.values()){
     if(meshes.length<minimumInstances)continue;
     const instances=new THREE.InstancedMesh(meshes[0].geometry,meshes[0].material,meshes.length);
@@ -49,9 +49,8 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
     preserveRenderState(instances,meshes[0]);
     instances.userData.batchCount=meshes.length;
     for(let i=0;i<meshes.length;i++){
-      const matrix=new THREE.Matrix4().multiplyMatrices(inverse,meshes[i].matrixWorld);
-      instances.setMatrixAt(i,matrix);
-      transforms.push(matrix);
+      reusableMatrix.multiplyMatrices(inverse,meshes[i].matrixWorld);
+      instances.setMatrixAt(i,reusableMatrix);
       const ancestor=meshes[i].parent;
       if(ancestor && 'isGroup' in ancestor && ancestor.isGroup === true) ancestor.userData.batched=true;
     }
@@ -108,7 +107,7 @@ export function poolStaticChunks(
   pool.name = 'World Tour shared draw batches';
   const sources: THREE.Mesh[] = [];
   let drawsSaved = 0;
-  const instance = new THREE.Matrix4(), combined = new THREE.Matrix4();
+  const instance = new THREE.Matrix4(), combined = new THREE.Matrix4(), local = new THREE.Matrix4();
   for (const meshes of groups.values()) {
     if (meshes.length < 2) continue; // A lone source gains nothing.
     const total = meshes.reduce((n, mesh) =>
@@ -120,7 +119,7 @@ export function poolStaticChunks(
     preserveRenderState(batch,first);
     let at = 0;
     for (const mesh of meshes) {
-      const local = inverse.clone().multiply(mesh.matrixWorld);
+      local.multiplyMatrices(inverse,mesh.matrixWorld);
       const count = mesh instanceof THREE.InstancedMesh ? mesh.count : 1;
       for (let i = 0; i < count; i++) {
         if (mesh instanceof THREE.InstancedMesh) mesh.getMatrixAt(i, instance);
