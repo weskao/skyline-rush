@@ -1456,7 +1456,7 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .elimination-hud[data-urgent="true"]{border-color:#ffb19d;color:#fff0e9;background:#873a44ee;}
 
 /* Paused Free Drive Photo Studio: keep the scenery visible, no new dependencies. */
-.photo-screen { position: fixed; inset: 12px auto auto 12px; margin: 0; width: min(360px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
+.photo-screen { position: fixed; inset: max(12px, var(--safe-top)) auto auto max(12px, var(--safe-left)); margin: 0; width: min(360px, calc(100vw - max(12px, var(--safe-left)) - max(12px, var(--safe-right)))); max-width: none; max-height: calc(100dvh - max(12px, var(--safe-top)) - max(12px, var(--safe-bottom))); overflow: auto; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
 .photo-screen::backdrop { background: transparent; }
 .photo-panel { display: grid; gap: 12px; padding: 18px; font-size: 13px; }
 .photo-panel h2 { margin: 0; font-size: 18px; letter-spacing: .12em; }
@@ -1467,11 +1467,16 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .photo-actions { display: flex; gap: 10px; }
 .photo-actions button { min-height: 44px; flex: 1; border-radius: 6px; border: 1px solid #81e9e7; background: #21536a; color: #efffff; font-weight: 700; }
 .photo-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 400px) {
+  .photo-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px; }
+  .photo-panel > :not(label), .photo-panel > label:has(#photo-sky) { grid-column: 1 / -1; }
+}
+@media (max-height: 500px) and (min-width: 761px) { .photo-screen { width: 300px; } }
+
 .photo-screen[open] { z-index: 120; }
-body:has(#photo-screen[open]) .race-overlay,
-body:has(#photo-screen[open]) .race-info,
-body:has(#photo-screen[open]) .touch-controls,
-body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
+/* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state. */
+body:has(#photo-screen[open]) #app > :not(#world):not(#photo-screen),
+body:has(#photo-screen[open]) #perf-overlay { display: none; }
 #photo-open[hidden] { display: none !important; }
 
 /* Home discoverability: medal tally on the route line, today's challenge as a card above the mode picker.
