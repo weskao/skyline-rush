@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MAGNET_RANGE } from './game.js';
 
 // Shared by the model and its wake, so all four streams start at the actual ports.
 export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]];
@@ -137,6 +138,14 @@ export function createEffects(scene, roadCenter) {
     scene.add(ring);
     return ring;
   });
+  // ITEM-03: the magnet's pickup reach, drawn with the impact ring's geometry and shader program.
+  const magnetRing = rings[0].clone();
+  magnetRing.material = rings[0].material.clone();
+  magnetRing.material.color.setRGB(...blue);
+  magnetRing.name = 'magnet radius';
+  magnetRing.visible = false;
+  magnetRing.scale.setScalar(MAGNET_RANGE);
+  scene.add(magnetRing);
   return {
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}) {
       dt = Math.max(0, dt);
@@ -316,6 +325,14 @@ export function createEffects(scene, roadCenter) {
         }
         if (!event || race.elapsed < event.time) ring.visible = false;
       });
+      const magnet = car.effects?.magnet ?? 0;
+      magnetRing.visible = magnet > 0 && !preview;
+      if (magnetRing.visible) {
+        if (options.worldPoint) magnetRing.position.fromArray(options.worldPoint(car.distance, car.x, car.altitude + .05, distance));
+        else magnetRing.position.set(roadCenter(car.distance) + car.x - center, car.altitude + .05, 0);
+        // Fades over the final second; a gentle pulse unless motion is reduced.
+        magnetRing.material.opacity = Math.min(1, magnet) * (reducedMotion ? .3 : .3 + Math.sin(flowTime * 5) * .08);
+      }
       if (race.phase === 'countdown' || race.phase === 'ready') {
         lastImpact = null; lastLanding = null; lastShieldBlock = null;
       }
@@ -331,6 +348,7 @@ export function createEffects(scene, roadCenter) {
       alphas.fill(0);
       geometry.attributes.alpha.needsUpdate = true;
       rings.forEach(ring => { ring.userData.event = null; ring.visible = false; });
+      magnetRing.visible = false;
       lastImpact = lastLanding = lastShieldBlock = null;
       seen = new WeakSet(); previousRace = null; driftEmission = 0;
       cursor = 0;

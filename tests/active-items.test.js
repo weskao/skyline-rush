@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { bankItem, activateItem, tickItemCooldown } from '../src/active-items.ts';
-import { createRace, startRace, useHeldItem } from '../src/game.js';
+import { createRace, startRace, stepRace, useHeldItem } from '../src/game.js';
 const car = () => ({ effects:{shield:0,magnet:0,ghost:0,freeze:0}, heldItem:null, itemCooldown:0 });
 test('one held item can be banked; second pickup never overwrites', () => {
   const c = car(); assert.equal(bankItem(c,'shield'),true);
@@ -44,4 +44,16 @@ test('only opted-in Custom/Free Drive modes have active held items; Classic stay
   free.player.heldItem='freeze'; startRace(free);
   assert.equal(useHeldItem(free),'magnet');
   assert.equal(free.player.effects.magnet,5);
+});
+test('re-activating over a running ring or item effect refreshes it to its cap, never stacks', () => {
+  const c = car(); c.effects.magnet = 3; // a mystery ring magnet is already running
+  bankItem(c,'magnet'); assert.equal(activateItem(c,true),'magnet'); assert.equal(c.effects.magnet,5);
+  for(let i=0;i<8;i++) tickItemCooldown(c,.1);
+  bankItem(c,'magnet'); assert.equal(activateItem(c,true),'magnet'); assert.equal(c.effects.magnet,5);
+});
+test('an activated magnet runs out on the race clock', () => {
+  const race = createRace('coast',{mode:'free',activeItems:true}); startRace(race);
+  race.player.heldItem='magnet'; assert.equal(useHeldItem(race),'magnet');
+  for(let i=0;i<5*60+2;i++) stepRace(race,{},1/60);
+  assert.equal(race.player.effects.magnet,0);
 });

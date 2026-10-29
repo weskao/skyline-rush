@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Scene, Group, Vector3 } from 'three';
-import { createRace } from '../src/game.js';
+import { createRace, MAGNET_RANGE } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 
 test('a nonpositive first frame cannot revive dormant particles with uninitialized data', t => {
@@ -269,4 +269,28 @@ test('ITEM-12: a pickup beam marks rings that grant a held item, never Classic m
   assert.deepEqual([others.length, beam?.position.x, beam?.position.z], [0, 2, -200]);
   custom.rings[0].hit = true;
   assert.equal(shown(custom).length, 0, 'gone once collected');
+});
+
+test('ITEM-03: a magnet shows its pickup radius around the car only while it runs', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const ring = scene.getObjectByName('magnet radius');
+  assert.ok(ring && !ring.visible, 'in the scene from the start (shader warmup), hidden');
+  const race = createRace();
+  race.phase = 'racing';
+  Object.assign(race.player, { x: 1.5, distance: 400 });
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, false, 'no magnet, no ring');
+  race.player.effects.magnet = 4;
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, true);
+  assert.deepEqual([ring.position.x, ring.position.z, ring.scale.x], [1.5, 0, MAGNET_RANGE]);
+  assert.ok(ring.material.opacity > 0 && ring.material.opacity <= 0.5);
+  effects.update(race, 0.016, 0, true, false);
+  assert.equal(ring.visible, false, 'never on the home preview');
+  race.player.effects.magnet = 0;
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, false, 'gone when the magnet ends');
 });
