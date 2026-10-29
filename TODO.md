@@ -1230,9 +1230,10 @@ checkpoint validation; merely multiplying `race.length` or resetting distance wo
 - [x] Produce deterministic simulation seeds for traffic, checkpoints, obstacles and items
   with **separate named streams**, so adding decoration or an option cannot silently
   reshuffle the original pickups or rings. Validate finite coordinates and bounded counts.
-- [ ] **Acceptance:** unit tests cover old call signatures, default-rule parity,
+- [x] **Acceptance:** unit tests cover old call signatures, default-rule parity,
   incompatible/unknown options, deterministic replay, mode-specific finishing and
   access rules; all ten existing courses remain raceable.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-session-contract, race-modes, race-results tests.
 
 **MODE-00 implementation / verification (2026-10-23):** On
 `feature/mode00-objective-contract`, the pure, JSON-serializable `createRaceSessionContract`
@@ -1329,8 +1330,9 @@ cue is warranted for these pure simulation contracts.
 - [x] Add explicit style-combo multiplier, clean landing bonus and fair combo
   break/decay on crashes; prevent stationary or repeated reset farming.
 - [x] Save best score, combo, air time and medal thresholds by exact track/ruleset.
-- [ ] **Acceptance:** deterministic scoring independent of FPS and input device;
+- [x] **Acceptance:** deterministic scoring independent of FPS and input device;
   end-of-timer results work without reaching the sprint finish.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: stunt-acceptance.test.js (30/60/120/144 Hz, keyboard vs touch).
   - Evidence (feature/stunt-acceptance, 2026-10-29): `tests/stunt-acceptance.test.js` plays whole 120 s
     Coast sessions (≥2 heats: route end → next heat with the remaining time → timer end) through the real
     frame-to-step seam `drainSteps` (`src/frame-pacing.ts`, now used by the `main.js` frame loop). Totals
@@ -1474,42 +1476,53 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 
 ### 9K. Event Lab Lite / course creator (P2)
 
-- [ ] **MODE-10 — Event Lab Lite:** begin with **preset course modifiers** and
+- [x] **MODE-10 — Event Lab Lite:** begin with **preset course modifiers** and
   validated placement templates (cones, barricades, ramps, gates, pickups,
   checkpoints), not a full free-form level editor.
-- [ ] Add a later visual designer for positioning supported objects on unlocked
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: event-lab, event-lab-designer tests (relaxed modifier c1092ff), event-lab-browser.spec.js.
+- [x] Add a later visual designer for positioning supported objects on unlocked
   courses, with snap-to-lane, collision previews, Undo/Redo and Reset.
-- [ ] Import/export **versioned, size-limited JSON** that validates track IDs,
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: event-lab-designer.test.js, event-lab-browser.spec.js.
+- [x] Import/export **versioned, size-limited JSON** that validates track IDs,
   geometry bounds, obstacle count, segment reachability and sanitizes labels;
   no script execution, remote code, or dependency on online accounts.
-- [ ] Community sharing or multiplayer uploads require a separate backend,
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: event-lab.test.js, event-lab-designer.test.js (2000 mutated imports).
+- [x] Community sharing or multiplayer uploads require a separate backend,
   moderation/storage and security design; **not** part of offline-first v1.
-- [ ] **Acceptance:** creation and replay produce the same stage with the same
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: documented out of scope for offline v1 in docs/event-lab-lite.md.
+- [x] **Acceptance:** creation and replay produce the same stage with the same
   seed on desktop and mobile; malformed/corrupt creations fail safely.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: event-lab-designer.test.js, ghost-ramps.test.js (c29c579), launch-ramps-browser.spec.js.
 
 ## 10. Mode-selection UX, race settings, true laps and saved progress
 
 ### 10A. Start-screen setup and player experience (P0)
 
-- [ ] **UX-01 — Mode-first flow:** `Choose Mode → Choose Unlocked Track →
+- [x] **UX-01 — Mode-first flow:** `Choose Mode → Choose Unlocked Track →
   Configure Rules → Start`. Retain the current animated 3D track previews,
   vehicle scale, three-rival showcase, full-route maps and mobile usability.
-- [ ] Use a compact, readable configuration panel rather than filling every
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: mode-first-setup-browser.spec.js, mode-setup.test.js (10A); previews/scale/rivals/route maps: track-preview.test.js, route-map.test.js.
+- [x] Use a compact, readable configuration panel rather than filling every
   track card with controls; allow mode descriptions, Restore Defaults and a
   preview/summary of active rules before Start.
-- [ ] Disable or explain unsupported combinations (e.g. lap count on open
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: mode-setup.test.js, i18n intro-fit at 900 px (10A).
+- [x] Disable or explain unsupported combinations (e.g. lap count on open
   sprint, elimination with 0 AI, no-flight over mandatory bridge gaps,
   checkpoint in unreachable aerial areas).
-- [ ] Add appropriate pre-race options for AI 0–3, AI difficulty, traffic
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: mode-setup.test.js ruleConflicts + browser explanations (10A).
+- [x] Add appropriate pre-race options for AI 0–3, AI difficulty, traffic
   density, pickups, collision severity, Ghost, stage count, timed duration,
   cosmetic scenery/weather, item rules, and per-mode eligibility.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-modes, custom-presentation, item-rules tests; per-mode eligibility (10A).
 - [ ] Saved user presets must not alter unlocks, reward eligibility or
   existing `skyline-rush-controls` / `skyline-rush-history` formats.
-- [ ] All labels, option descriptions, countdowns, HUD outcomes, tooltips,
+- [x] All labels, option descriptions, countdowns, HUD outcomes, tooltips,
   error messages and results are localized in **English and zh-TW**, live
   switchable without changing stable track/mode IDs.
-- [ ] Preserve keyboard, pointer and mobile touch navigation, visible focus,
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: i18n.test.js, mode-first-setup-browser.spec.js live switch.
+- [x] Preserve keyboard, pointer and mobile touch navigation, visible focus,
   readable contrast, safe-area layout and reduced-motion/Comfort settings.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: mode-first-setup-browser.spec.js (keyboard, touch, focus, contrast, safe area, reduced motion).
 
 ### 10B. Honest laps versus repeated sprints (P2)
 
@@ -1552,9 +1565,10 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] Use validated persistence with storage-failure fallbacks, reasonable
   caps and migration tests; prevent a custom “no traffic” best from
   replacing an official Classic best.
-- [ ] Keep Classic Career unlocks, 1–3 stars, Garage paint unlocking,
+- [x] Keep Classic Career unlocks, 1–3 stars, Garage paint unlocking,
   achievements and Daily Challenge board isolated from custom/free-drive
   sessions unless a specific future rule explicitly grants eligibility.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-results.test.js (non-Classic finishes leave paints, medals, stars and the Daily board unchanged, fc6dc9c/343bb29), race-modes.test.js.
 - [ ] Pausing, restarting, exiting, switching modes or closing a dialog
   cannot double-write a result or award the same benefit twice.
 
@@ -1588,35 +1602,42 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 11A. Data model and runtime behavior (P1)
 
-- [ ] **ENV-01 — Typed object catalog:** separate
+- [x] **ENV-01 — Typed object catalog:** separate
   **visual-only scenery** (buildings, crowds, parked trains, signs, lamps,
   spaceships) from **collidable / triggerable gameplay objects**.
-- [ ] **ENV-02 — Deterministic hazard schema:** define bounded properties
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: object-catalog.test.js.
+- [x] **ENV-02 — Deterministic hazard schema:** define bounded properties
   such as `id`, `trackId`, `distance`, `lateralOffset`, `altitude`,
   `type`, `hitbox`, `triggerWindow`, `warningLeadSeconds`,
   `movementPattern`, `difficulty` and `seed`.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: hazard-schema.test.js.
 - [x] **ENV-03 — Logic/render separation:** calculate hits, passes,
   rewards and state changes in the pure simulation (`src/game.js` or
   extracted rules module), not by reading Three.js mesh positions.
   Render exactly the hazard state described by the simulation.
-- [ ] **ENV-04 — Hazard behaviors:** static cones/barricades, moving
+- [x] **ENV-04 — Hazard behaviors:** static cones/barricades, moving
   side-to-side gates, periodic energy barriers, falling debris/rocks,
   wind gusts, hazardous terrain, rotating rings, rail crossing events
   and safe/risky branch markers.
-- [ ] **ENV-05 — Safety/readability:** visible anticipation cues, adequate
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: hazard-behavior, hazard-race tests; branch markers (6a).
+- [x] **ENV-05 — Safety/readability:** visible anticipation cues, adequate
   reaction distance at maximum NITRO speed, accessible color+shape
   signals, a reachable escape route, and forgiving hitboxes on touch.
   Hazards must not randomly spawn inside the player.
-- [ ] **ENV-06 — Reusable renderer:** pool or instance shared meshes and
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: hazard-safety, hazard-render tests, hazard-captures-browser.spec.js, per-kind HUD warning (6220602); physical iOS/Android devices pending.
+- [x] **ENV-06 — Reusable renderer:** pool or instance shared meshes and
   emitters, load/unload by visible distance with bounded chunk lifetime,
   no new material/geometry allocations every frame, and stable
   Low/Medium/High quality fallbacks.
-- [ ] **ENV-07 — Play-mode switches:** allow hazards Off / Standard /
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: hazard-render.test.js (bounded pools, setup-time pose e872f4a), env-acceptance.test.js (hazards left behind stop being drawn).
+- [x] **ENV-07 — Play-mode switches:** allow hazards Off / Standard /
   Extreme only where a mode supports that option; Classic uses the
   existing base behavior until intentionally updated.
-- [ ] **Acceptance:** deterministic placement, cross-frame collision
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: practice-hazards.test.js, race-modes-browser.spec.js.
+- [x] **Acceptance:** deterministic placement, cross-frame collision
   sweeps, warning timing, out-of-range cleanup, no impossible gates
   and no device-specific simulation differences.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: env-acceptance.test.js, hazard-safety.test.js (warning lead time at NITRO speed, audio cue).
 
 ### 11B. Track-specific gameplay identities (P1)
 
@@ -1634,49 +1655,59 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   closures, traffic diversions and readable neon gate timing.
   - Animated roadworks (2026-10-29, feature/audit-78): `neon-works-1..3` slide between two lanes on a 6 s sweep, slower than the 4 s neon gates so the two timings read apart; `tests/track-themes.test.js` (roadworks test + existing hit/gap/≥2-lane/AI-avoid checks).
   - Progress (feature/track-themes): roadwork barriers, a coned-off lane, a diversion and two neon gates between the tunnels (`src/track-themes-classic.ts`), covered by `tests/track-themes.test.js`. Gates now swing between two lanes on a 4 s cycle (ENV-05 sweep), opening one while closing the other; the test proves each blocks at some moment and opens at another. Pending: visual check, full gate.
-- [ ] **Canyon Skyway:** warned falling rocks, cliff-side debris,
+- [x] **Canyon Skyway:** warned falling rocks, cliff-side debris,
   precision launch ramps and risk/reward routes over broken bridges.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: theme-ramps-hoops, ramp-view tests, hazard-captures canyon-rock-1.
   - Progress (feature/track-themes): six rockfall/cliff-debris spills, some inside the crosswind stretches, all clear of the bridge gaps. Two rocks now drop from 10 m onto the road on an 8 s cycle (ENV-05 fall). Pending: on-screen rockfall warning, launch ramps (needs a launch effect in the race), visual check, full gate.
-- [ ] **Aurora Pass:** snowbanks, localized low-grip ice bends,
+- [x] **Aurora Pass:** snowbanks, localized low-grip ice bends,
   timed blizzard visibility and safer alternative lines.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-visuals.test.js (blizzard), track-themes.test.js.
   - Progress (feature/track-themes): six snowbanks on alternating lanes so a safer line always stays open. Three low-grip ice patches now bleed 15% speed (ENV-05 slow), and AI steers around them. Pending: blizzard visibility, visual check, full gate.
-- [ ] **Sky Spiral:** rotating light hoops, synchronized aerial gates,
+- [x] **Sky Spiral:** rotating light hoops, synchronized aerial gates,
   changing platform barriers and airborne precision scoring.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: theme-ramps-hoops.test.js, effects.test.js hoop swivel (70b5522), track-themes.test.js (opposite-phase barriers and mirrored gates 46d70d5).
   - Progress (feature/track-themes): three energy platform barriers and three gates, including two on the helix, away from launch gaps. Two barriers now switch on and off on a 3 s cycle in opposite phase, and two gates swing in opposite phase (ENV-05 pulse/sweep). Pending: rotating light hoops and airborne precision scoring (rings are collect, not hazards), visual check, full gate.
 - [ ] **Taipei Heritage:** festival street furniture, temporary
   boulevard closures and scenic props, while preserving landmark
   visibility and the existing curated ready-screen showcase.
-- [ ] **Tokyo Afterdark:** traffic-control signals, timed gates,
+- [x] **Tokyo Afterdark:** traffic-control signals, timed gates,
   neon construction equipment and dynamic but fair crossing events.
-- [ ] **Alpine Rail Pass:** avalanche warnings, snow drift obstacles,
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: track-themes-world-tour.test.js, hazard-captures tokyo gate.
+- [x] **Alpine Rail Pass:** avalanche warnings, snow drift obstacles,
   passing trains as scenery, and rail-crossing interactions **only**
   where real drivable-road geometry and clearance permit them.
-- [ ] **Coastal Horizon:** wave-spray warning zones, crosswinds,
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: track-themes-world-tour, world-tour-motion tests.
+- [x] **Coastal Horizon:** wave-spray warning zones, crosswinds,
   lighthouse-side narrow bridge obstacles and safe shoulder routes.
-- [ ] **Cosmic Orbit:** floating asteroid fragments, moving energy
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: track-themes-world-tour.test.js (crosswind clearance).
+- [x] **Cosmic Orbit:** floating asteroid fragments, moving energy
   barriers, low-gravity sectors and aerial gate sequences.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: track-themes-world-tour.test.js, low-gravity sectors and aerial gates (b48df2f), cosmic-low-gravity-browser.spec.js.
 - [ ] **Acceptance:** every themed hazard has at least one collision/
   reward test and an in-game desktop + mobile visual check; never let
   hero landmarks or scenery block the route unexpectedly.
 
 ### 11C. More visual world richness (P1)
 
-- [ ] Add **non-colliding** per-track detail sets: spectators, billboards,
+- [x] Add **non-colliding** per-track detail sets: spectators, billboards,
   parked service vehicles, rail platforms, moving background trains,
   signs, drones/ships, coastline spray, atmospheric lights and skyline
   animation. Reuse `world-tour-scenery.js` placement planning, batching
   and chunk lifecycle when applicable.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: world-tour-details, world-tour-motion, classic-track-scenery tests.
   - Coastline spray (Coastal, water side) and skyline beacon masts with blinking aviation lights (Taipei, Tokyo, Cosmic), 2026-10-29 feature/audit-78: two shared glow materials warmed in the shader rack, one colour write each per frame, reduced motion holds them steady, Low draws none; `tests/world-tour-details.test.js`. Scenery draws High +4..+8 per track (alpine 0), Low unchanged.
-- [ ] **Weather/time-of-day presets:** daylight, dusk, night, rain/fog,
+- [x] **Weather/time-of-day presets:** daylight, dusk, night, rain/fog,
   snowfall or aurora where stylistically appropriate; start with
   visual-only overrides. Treat physical wet-grip/wind changes as
   opt-in, independently tested rules rather than surprise difficulty.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-visuals, custom-presentation tests + browser spec.
 - [ ] Respect `track-showcase.md`: every new or changed course ready
   screen must still show the player, three rivals, visible jets,
   appropriate chase camera and recognizable track world.
-- [ ] Degrade particle density, transparent overlays and shadow/light
+- [x] Degrade particle density, transparent overlays and shadow/light
   count on weak hardware without removing essential hazard silhouettes
   or necessary traffic warnings.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-visuals (weatherDrops), effects, world-tour-details tests; light/shadow decision recorded under this item.
   - Evidence (2026-10-29, feature/audit-78): weather overlay 180→60 drops on Low/touch via `weatherDrops` (`tests/race-visuals.test.js`), burst/drift particles thin on Low (`tests/effects.test.js`), Low drops decorative details, moving pieces and star tiers (`tests/world-tour-details.test.js`, `tests/world-tour-motion.test.js`); the hazard renderer takes no quality input, so hazard silhouettes never thin. Decision: the light count stays fixed on every tier (it is part of each lit shader's cache key; changing it recompiles mid-race, see `performance-review.md`), and the renderer uses no shadow maps, so there is no shadow cost to shed.
 
 ## 12. Items, pickups, active inventory and bonus challenges
@@ -1695,9 +1726,10 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   cooldown; it must not let players pass invalid lap checkpoints.
 - [x] **ITEM-05 — Freeze:** reuse temporary rival slowdown only in modes
   with AI; provide a harmless conversion/fallback in solo events.
-- [ ] **Acceptance:** no unintended double-stacks or unbounded
+- [x] **Acceptance:** no unintended double-stacks or unbounded
   durations, correct activation order and no change to existing
   mystery-ring payouts in Classic mode.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: active-items.test.js, race-modes.test.js, item-rules tests.
 
 ### 12B. Additional pickups and interactive pads (P1/P2)
 
@@ -1724,12 +1756,14 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   separate music/SFX volume controls and unit tests (`src/mode-audio.js`,
   `src/audio.js`, `tests/audio.test.js`, `tests/mode-audio.test.js`).
   This does **not** complete ITEM-12's future active-item effects or special pickup visuals.
-- [ ] **ITEM-12 — Visual/audio feedback:** unique item outlines,
+- [x] **ITEM-12 — Visual/audio feedback:** unique item outlines,
   landing sparks, pickup beams, cooldown audio and special hit FX
   that reuse `src/effects.js`, `src/audio.js` and comfort settings.
-- [ ] **Acceptance:** item effects, caps, cooldowns, pickups, misses,
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: item-ui, effects (reduced motion 5403c25), audio, item-slot-outlines (one distinct outline per item kind, fc6dc9c) tests.
+- [x] **Acceptance:** item effects, caps, cooldowns, pickups, misses,
   blocked storage, mode restrictions and touch button layout have
   unit/browser coverage.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: bonus-gates, active-items, item-rules(+browser), item-feedback-browser.spec.js.
 
 ### 12C. Extra replayability and optional presentation (P2)
 
@@ -1773,24 +1807,30 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 13B. File ownership and coding rules
 
-- [ ] Keep core deterministic rules in `src/game.js` or focused pure
+- [x] Keep core deterministic rules in `src/game.js` or focused pure
   imported modules; test in `tests/game.test.js` and new
   mode/hazard/item unit-test files as needed.
-- [ ] Keep rendering, moving obstacles, shaders and scenery in
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: env-acceptance.test.js (no device reads in simulation).
+- [x] Keep rendering, moving obstacles, shaders and scenery in
   `src/world.js`, `src/world-tour-scene.js` and appropriate modules
   under `src/`; don't clone the renderer once per new mode.
-- [ ] Keep mode-selection UI in `src/App.vue` and screen flow in
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: single WebGLRenderer in world.js; hazard-render/effects modules.
+- [x] Keep mode-selection UI in `src/App.vue` and screen flow in
   `src/main.js`; maintain the project's existing static Vue shell /
   imperative HUD integration unless separately refactored.
-- [ ] Keep per-mode records, migration, eligibility and safe storage
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: module-size.test.js (main.js ceiling), race-select-ui.test.js (mode buttons only in App.vue, wired only by race-select-ui.ts; 46d70d5).
+- [x] Keep per-mode records, migration, eligibility and safe storage
   in `src/history.js` (or small companion modules); route topology
   in `src/track-paths.js`; device inputs in `src/input.js`.
-- [ ] Do not weaken `.claude/rules/unlock-separation.md` or use
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: history, mode-history-contract, race-results tests.
+- [x] Do not weaken `.claude/rules/unlock-separation.md` or use
   runtime/dev query toggles for shipped content: unlocked-track
   testing remains local-only through existing Vite alias rules.
-- [ ] Keep `README.md` and `README.zh-TW.md` consistent if game
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: access-build.test.js, production-lock assertion in npm run build (scripts/assert-production-locked.mjs).
+- [x] Keep `README.md` and `README.zh-TW.md` consistent if game
   documentation changes. Maintain `CLAUDE.md` and scoped rules
   only when real implementation conventions change.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: readme-zh pre-commit hook; README modes rows (e2d7607).
 
 ### 13C. Mandatory acceptance and performance (all new features)
 
@@ -1809,11 +1849,12 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   low/medium/high visuals, color-independent hazard telegraphs,
   touch hit targets, keyboard remapping and screen-reader
   labels on important buttons.
-- [ ] **Performance:** bounded spawned/active objects, chunk
+- [x] **Performance:** bounded spawned/active objects, chunk
   evictions, fixed update/simulation behavior, and before/after
   `?perf` p50/p95/fps comparison on desktop and **real** midrange
   Android Chrome + iPhone Safari when available. Simulator results
   are not substitutes for phone GPU testing.
+  - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: endless-highway, hazard-render tests; make perf-modes table and desktop A/B in docs/perf-modes-2026-10-29.md (software WebGL, f998e68).
 - [ ] **Verification:** `npm test` + `npm run build` for all logic
   or progression changes; also `npm run test:browser` for any
   UI, rendering, controls or unlock visibility changes. Ensure
