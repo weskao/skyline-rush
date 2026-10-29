@@ -68,6 +68,32 @@ test('a failed mode run is a retry: its time shows but is never saved as a best'
   const { context, settlement } = settle(race);
   assert.deepEqual([settlement.best, settlement.record], [40, false]);
   assert.equal(context.progress.modeHistory.length, 0);
+  assert.deepEqual(settlement.challengeMedals, [], 'failed attempts do not award personal medals');
+});
+
+test('a clean Time Attack awards one personal medal independently of Career medals', () => {
+  const progress = loadSessionProgress(['coast']);
+  const timeRace = () => classic({ success: true, collisions: 0 }, { mode: 'time', config: { mode: 'time' } });
+  const first = settle(timeRace(), { progress }).settlement;
+  assert.deepEqual(first.challengeMedals, ['time-clean']);
+  assert.deepEqual(progress.medals, {}, 'personal medals do not change the four Career awards');
+  assert.deepEqual(settle(timeRace(), { progress }).settlement.challengeMedals, [], 'an earned medal is not announced twice');
+});
+
+test('completed Stunt runs retain aerial peaks from earlier heats and award only at the end', () => {
+  const progress = loadSessionProgress(['coast']);
+  const stunt = { duration: 120, elapsed: 0, score: 0, heats: 0, maxCombo: 0, airTime: 0, trackId: 'coast' };
+  const series = { sprintSeries: null, cup: null, stunt };
+  const heat = (endReason, longestFlight, maxAerialCombo) => classic({ success: true, time: 60, score: 1000, endReason }, {
+    mode: 'stunt', config: { mode: 'stunt', duration: 120 },
+    styleAttack: { maxCombo: 4, airTime: longestFlight, longestFlight, maxAerialCombo },
+  });
+  const first = settle(heat('route', 9, 4), { progress, series }).settlement;
+  assert.equal(first.intermediateStage, true);
+  assert.deepEqual(first.challengeMedals, []);
+  const final = settle(heat('timer', 1, 1), { progress, series }).settlement;
+  assert.equal(final.intermediateStage, false);
+  assert.deepEqual(final.challengeMedals, ['long-flight', 'aerial-combo']);
 });
 
 test('an unfinished sprint series is an intermediate stage with no individual best', () => {

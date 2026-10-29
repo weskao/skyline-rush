@@ -4,6 +4,8 @@
 
 - [x] Review the original requirement and existing scoring, settlement, History, storage/account/backup boundaries. Continue on independent `feature/challenge-medals`, leaving the six locally verified feature branches intact. Plan: `docs/superpowers/plans/2026-10-29-challenge-medals.md`.
 - [x] Observe real assertion RED through the existing Stunt scoring API: four original cases pass, four new cases fail for missing continuous-flight/aerial-chain telemetry. No missing-module or syntax error. Log: `artifacts/challenge-medals/stunt-metrics-red.log`.
+- [x] Stunt telemetry GREEN: 21 owner/sibling tests pass; after installing this worktree's existing TypeScript dependency, full Node suite passes 807 / 0 failures / 3 emulator skips. The earlier four missing-compiler failures are retained as environment setup evidence, not feature RED. Logs: `stunt-metrics-green.log`, `stunt-metrics-npm-test-ready.log`.
+- [x] Settlement RED through existing APIs: missing personal-award results fail clean Time Attack, failed-attempt and multi-heat Stunt cases. Log: `artifacts/challenge-medals/settlement-red.log`.
 - [ ] Implement and verify bounded aerial telemetry, five separate personal medals, safe local/session persistence and local backup/account isolation; no new cloud schema.
 - [ ] Verify bilingual Vue History/result presentation with real desktop/touch actions and unchanged four Career medals.
 - [ ] Complete resulting full local gate, existing emulator compatibility, real-game evidence and Stunt-path performance before marking REPLAY-01 complete. Exact-HEAD CI remains separately pending public-source authorization.
