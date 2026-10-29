@@ -162,6 +162,12 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
               <option value="extreme" data-i18n="mode.extreme">Extreme</option>
             </select>
           </label>
+          <label><span data-i18n="mode.gauntletLayout">Course</span>
+            <select id="gauntlet-layout" aria-label="Course" data-i18n-aria-label="mode.gauntletLayout">
+              <option value="classic" selected data-i18n="mode.layoutClassic">Barriers</option>
+              <option value="mixed" data-i18n="mode.layoutMixed">Mixed obstacles</option>
+            </select>
+          </label>
         </details>
         <details class="race-mode-rules" id="race-mode-rules" hidden>
           <summary data-i18n="mode.rules">Customize race rules</summary>

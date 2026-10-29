@@ -44,7 +44,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const selectedRace = (trackId: string): Race => selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
-    ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value } : {}),
+    ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value, layout: $<HTMLSelectElement>('#gauntlet-layout').value } : {}),
     ...(selectedMode === 'time' && $<HTMLInputElement>('#clean-trial').checked ? { clean: true } : {}),
     ...(selectedMode === 'stunt' ? { duration: Number($<HTMLSelectElement>('#stunt-duration').value) } : {}) });
 
@@ -195,7 +195,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     showRuleInputs();
     changeRaceSelection();
   });
-  for (const id of ['hazard-tier', 'clean-trial', 'cup-length', 'stunt-duration']) $(`#${id}`).addEventListener('change', changeRaceSelection);
+  for (const id of ['hazard-tier', 'gauntlet-layout', 'clean-trial', 'cup-length', 'stunt-duration']) $(`#${id}`).addEventListener('change', changeRaceSelection);
   $('#recent-custom-runs').addEventListener('click', ({ target }) => {
     const index = Number((target as Element).closest<HTMLElement>('button[data-recent]')?.dataset.recent);
     const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
