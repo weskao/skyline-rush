@@ -5,6 +5,7 @@ import { hazardX, type Hazard } from './hazards.ts';
 import { hazardFrame, hazardContact } from './hazard-behavior.ts';
 import type { HazardPlacement } from './hazard-schema.ts';
 import { OBJECT_CATALOG, type GameplayEffect } from './object-catalog.ts';
+import type { RiskRules } from './risk-lines.ts';
 
 export type RaceHazard = Hazard & { halfWidth?: number; halfLength?: number; height?: number; placement?: HazardPlacement };
 interface Car { distance: number; x: number; altitude?: number; speed: number }
@@ -51,7 +52,7 @@ export function nudge(car: Car, effect: GameplayEffect | null, h: RaceHazard): v
 
 // Every hazard can be hit or cleared only once. The physics layer decides
 // impacts; the renderer only draws the same authored hazards.
-export function stepPlayerHazards(race: { hazards: RaceHazard[]; elapsed: number }, car: PlayerCar, previousDistance: number, contact: Contact): void {
+export function stepPlayerHazards(race: { hazards: RaceHazard[]; elapsed: number; risk?: RiskRules }, car: PlayerCar, previousDistance: number, contact: Contact): void {
   for (const hazard of race.hazards) {
     if (hazard.distance > car.distance) break;
     if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
@@ -66,7 +67,7 @@ export function stepPlayerHazards(race: { hazards: RaceHazard[]; elapsed: number
     if (!effect && (!hazard.placement || hazardReach(hazard))) {
       // Risk/reward: a close, clean ground pass pays more than a distant lane change.
       const near = car.altitude < 2.4 && Math.abs(car.x - obstacleX) < 4;
-      car.score += near ? 300 : 150;
+      car.score += near ? race.risk?.nearScore ?? 300 : race.risk?.passScore ?? 150; // REPLAY-03 ground line
       if (near) car.nearMisses++;
     }
   }

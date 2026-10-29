@@ -35,7 +35,7 @@ interface RaceSelectOptions {
   cueUi(): void;
   reducedMotion: MediaQueryList;
 }
-type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates';
+type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines';
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
@@ -45,7 +45,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const trackButtons = (): HTMLButtonElement[] => [...document.querySelectorAll<HTMLButtonElement>('[data-track]')];
   const ruleInputs = (): HTMLInputElement[] => [...document.querySelectorAll<HTMLInputElement>('[data-race-rule]')];
   let selectedMode = 'classic';
-  const raceRules: Record<RuleKey, unknown> = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false };
+  const raceRules: Record<RuleKey, unknown> = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false, riskLines: 'on' };
   const cupCount = (): number => Number($<HTMLSelectElement>('#cup-length').value);
   const eventLab = setupEventLabUI({ ...options, select: next => {
     selectedMode = 'eventlab'; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
@@ -210,7 +210,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     changeRaceSelection();
   });
   for (const button of document.querySelectorAll<HTMLElement>('[data-race-preset]')) button.addEventListener('click', () => {
-    Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset as keyof typeof RULE_PRESETS], { collision: 'normal', hazards: 'off', stages: 1, activeItems: false, itemRules: button.dataset.racePreset === 'noitems' ? 'off' : undefined });
+    Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset as keyof typeof RULE_PRESETS], { collision: 'normal', hazards: 'off', stages: 1, activeItems: false, itemRules: button.dataset.racePreset === 'noitems' ? 'off' : undefined, riskLines: 'on' });
     showRuleInputs();
     changeRaceSelection();
   });
@@ -220,7 +220,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
     if (!entry || getRace().phase !== 'ready') return;
     for (const key of Object.keys(raceRules) as RuleKey[]) if (Object.hasOwn(entry.config, key)) raceRules[key] = (entry.config as Record<string, unknown>)[key];
-    raceRules.hazards = (entry.config as Record<string, unknown>).hazards ?? 'off';
+    raceRules.hazards = (entry.config as Record<string, unknown>).hazards ?? 'off'; raceRules.riskLines = (entry.config as Record<string, unknown>).riskLines ?? 'on';
     raceRules.itemRules = entry.config.itemRules; raceRules.activeItems = entry.config.activeItems ?? false;
     showRuleInputs();
     setRace(selectedRace(entry.trackId));

@@ -30,6 +30,8 @@ export function normalizeRaceConfig(value: unknown = {}) {
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
     ...(practice && isOneOf(value.hazards, ['standard', 'extreme']) ? { hazards: value.hazards } : {}),
+    // REPLAY-03 practice switch: only 'off' is stored, so default signatures stay identical.
+    ...(practice && value.riskLines === 'off' ? { riskLines: 'off' } : {}),
     // 11B themed track hazards are opt-in, so every other mode's rules signature stays the same.
     ...((practice || mode === 'gauntlet') && value.themes === true ? { themes: true } : {}),
     ...(custom && isOneOf(value.stages, [2, 3, 5]) ? { stages: value.stages } : {}),
@@ -56,8 +58,8 @@ export const rulesSignature = (config: unknown): string => JSON.stringify(normal
 // configs still use normalizeRaceConfig(), which intentionally retains safe fallbacks.
 const REQUEST_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   classic: [],
-  custom: ['rivals', 'traffic', 'difficulty', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'stages', 'themes'],
-  free: ['traffic', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'themes'],
+  custom: ['rivals', 'traffic', 'difficulty', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'stages', 'themes', 'riskLines'],
+  free: ['traffic', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'themes', 'riskLines'],
   time: ['clean'],
   gauntlet: ['hazardTier', 'themes'],
   checkpoint: ['bonusGates'],
@@ -100,6 +102,7 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
     if (Object.hasOwn(value, 'activeItems')) assertOption(value.activeItems === Boolean(expected.activeItems), 'activeItems conflicts with itemRules');
   } else if (value.activeItems === true && value.items === false) assertOption(false, 'activeItems with items disabled');
   if (Object.hasOwn(value, 'collision')) assertOption(isOneOf(value.collision, ['normal', 'relaxed']), 'collision');
+  if (Object.hasOwn(value, 'riskLines')) assertOption(isOneOf(value.riskLines, ['on', 'off']), 'riskLines');
   if (Object.hasOwn(value, 'hazards')) assertOption(isOneOf(value.hazards, ['standard', 'extreme']), 'hazards');
   if (Object.hasOwn(value, 'hazardTier')) assertOption(isOneOf(value.hazardTier, ['standard', 'extreme']), 'hazardTier');
   if (Object.hasOwn(value, 'stages')) assertOption(isOneOf(value.stages, [1, 2, 3, 5]), 'stages');
