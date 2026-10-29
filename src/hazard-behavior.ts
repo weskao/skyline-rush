@@ -8,7 +8,8 @@ export interface HazardFrame { readonly active: boolean; readonly lateralOffset:
 export interface CarProbe { readonly distance: number; readonly x: number; readonly altitude: number }
 
 // Matches game.js reach: |car.x - barrier.x| < 1.8 for a 1.55 m half-width barrier, ±2.2 m along the road.
-const CAR = { halfWidth: 0.25, halfLength: 2.2, height: 1.2 };
+// Narrower than the drawn 0.85 m car, so near touches forgive every input alike: the simulation never reads the device.
+export const CAR_PROBE = Object.freeze({ halfWidth: 0.25, halfLength: 2.2, height: 1.2 });
 const FALL_SHARE = 0.4; // debris spends 40% of its cycle falling, then rests on the road
 
 export function hazardFrame(p: HazardPlacement, time: number): HazardFrame {
@@ -29,8 +30,8 @@ export function hazardFrame(p: HazardPlacement, time: number): HazardFrame {
 export function hazardContact(p: HazardPlacement, frame: HazardFrame, car: CarProbe): GameplayEffect | null {
   if (!frame.active) return null;
   const box = hazardBox({ ...p, lateralOffset: frame.lateralOffset, altitude: frame.altitude });
-  const clear = car.distance + CAR.halfLength < box.from || car.distance - CAR.halfLength > box.to ||
-    car.x + CAR.halfWidth < box.left || car.x - CAR.halfWidth > box.right ||
-    car.altitude + CAR.height < box.bottom || car.altitude >= box.top;
+  const clear = car.distance + CAR_PROBE.halfLength < box.from || car.distance - CAR_PROBE.halfLength > box.to ||
+    car.x + CAR_PROBE.halfWidth < box.left || car.x - CAR_PROBE.halfWidth > box.right ||
+    car.altitude + CAR_PROBE.height < box.bottom || car.altitude >= box.top;
   return clear ? null : OBJECT_CATALOG[p.type].effect;
 }
