@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Color, FogExp2, Scene, ShaderMaterial } from 'three';
-import { createRaceVisuals } from '../src/race-visuals.ts';
+import { createRaceVisuals, weatherDrops } from '../src/race-visuals.ts';
+import { readFileSync } from 'node:fs';
 
 function fixture() {
   const scene = new Scene();
@@ -98,4 +99,13 @@ test('11B Aurora: a blizzard thickens the haze and clearing it restores the exac
   assert.equal(target.scene.fog.density, .0013);
   visuals.apply('night'); visuals.blizzard(1); visuals.blizzard(0);
   assert.equal(target.scene.fog.density, .0016, 'blizzard composes with the chosen sky');
+});
+
+test('weak hardware draws a third of the weather particles; hazard silhouettes never thin out', () => {
+  assert.equal(weatherDrops('high', false), 180);
+  assert.equal(weatherDrops('medium', false), 180);
+  assert.equal(weatherDrops('low', false), 60);
+  assert.equal(weatherDrops('high', true), 60, 'touch devices take the light overlay too');
+  // Essential hazard silhouettes are drawn the same at every quality: the hazard renderer takes no quality input.
+  assert.doesNotMatch(readFileSync(new URL('../src/hazard-render.ts', import.meta.url), 'utf8'), /quality/i);
 });
