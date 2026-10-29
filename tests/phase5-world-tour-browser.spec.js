@@ -1,4 +1,7 @@
 import { test, expect } from './helpers/test.js';
+import { writeFileSync } from 'node:fs';
+import { parsePerformanceEvidence } from '../src/performance-evidence.ts';
+
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -43,7 +46,7 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
     await expect(route).toHaveCount(1);
     await expect(route.locator('[data-racer]')).toHaveCount(4);
     const before = await route.evaluate(el => { window.__phase5Route = el; return el.querySelectorAll('*').length; });
-    await page.waitForTimeout(700);
+    await page.waitForTimeout(1700); // Give the software-WebGL rolling sample a nonzero interval.
     expect(await route.evaluate(el => el === window.__phase5Route)).toBe(true);
     expect(await route.evaluate(el => el.querySelectorAll('*').length)).toBe(before, 'cached route SVG is reused');
     await expect(route).toHaveAttribute('role', 'img');
@@ -57,6 +60,15 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
     }));
     expect(metrics.calls).toBeGreaterThanOrEqual(0);
     expect(metrics.triangles).toBeGreaterThanOrEqual(0);
+    const evidence = parsePerformanceEvidence({
+      track: id, quality: 'medium', width: viewport.width, height: viewport.height,
+      pixelRatio: await page.evaluate(() => devicePixelRatio),
+      browser: process.env.CI ? 'chromium-software-webgl' : 'chromium-local-webgl',
+      commit: process.env.GITHUB_SHA || 'local', drawCalls: metrics.calls,
+      triangles: metrics.triangles, line: metrics.line || '',
+    });
+    writeFileSync(info.outputPath(`render-performance-${id}-${viewport.width}x${viewport.height}.json`),
+      JSON.stringify(evidence, null, 2));
     console.log(`Phase5 software WebGL ${id} ${viewport.width}x${viewport.height}: ${metrics.line}; drawCalls=${metrics.calls}; triangles=${metrics.triangles} (not same-device before/after)`);
     // The passive minimap must never cover an active touch control.
     const overlapped = await page.evaluate(() => {

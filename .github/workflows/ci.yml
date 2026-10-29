@@ -64,9 +64,17 @@ jobs:
       - run: npm ci
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
       - run: npm run test:browser -- --shard=${{ matrix.shard }}/8
+      # Persist structured ten-track snapshots BEFORE test:layout (Playwright cleans test-results).
+      - name: Upload structured WebGL performance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-performance-${{ matrix.shard }}
+          path: test-results/**/render-performance-*.json
+          if-no-files-found: ignore
       # Phase 5 and final refactors run responsive layout once, with the browser quality gate.
       - name: Verify responsive layout for final refactor or World Tour polish
-        if: "${{ matrix.shard == 1 && (startsWith(github.ref, 'refs/heads/refactor/') || github.ref == 'refs/heads/feature/phase5-world-tour-polish') }}"
+        if: "${{ matrix.shard == 1 && (startsWith(github.ref, 'refs/heads/refactor/') || (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/phase5-world-tour-polish' || github.ref == 'refs/heads/feature/all-tracks-render-cache')) }}"
         run: npm run test:layout
       - if: failure()
         uses: actions/upload-artifact@v4
@@ -198,6 +206,18 @@ jobs:
     if: "${{ always() && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
+      # Auto-verify complete evidence and produce per-track performance Markdown.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: render-performance-*
+          path: ${{ runner.temp }}/render-performance
+          merge-multiple: true
+      - name: Verify software-WebGL evidence coverage and rendering budgets
+        run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
       - name: Require every verification suite to pass
         env:
           UNIT: ${{ needs.unit-tests.result }}
