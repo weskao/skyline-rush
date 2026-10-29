@@ -43,4 +43,15 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
     place('coastal', 'coastal-bridge-works-4', 'barrier', 4900, -2.5),
     place('coastal', 'coastal-bridge-works-5', 'barrier', 5300, 7.5),
   ],
+  // Cosmic Orbit: floating asteroid fragments and energy barriers between the solar winds.
+  cosmic: [
+    place('cosmic', 'cosmic-fragment-1', 'debris', 700, -2.5),
+    place('cosmic', 'cosmic-barrier-1', 'energy-barrier', 1100, 2.5),
+    place('cosmic', 'cosmic-fragment-2', 'debris', 2400, 7.5),
+    place('cosmic', 'cosmic-barrier-2', 'energy-barrier', 2700, -7.5),
+    place('cosmic', 'cosmic-fragment-3', 'debris', 4200, 2.5),
+    place('cosmic', 'cosmic-barrier-3', 'energy-barrier', 4700, -2.5),
+    place('cosmic', 'cosmic-fragment-4', 'debris', 5900, -7.5),
+    place('cosmic', 'cosmic-barrier-4', 'energy-barrier', 7100, 7.5),
+  ],
 };

@@ -16,6 +16,8 @@ const THEMES = {
   alpine: { types: ['debris', 'cone'], closure: true, maxHeight: 1.4 },
   // Lighthouse-side bridge works and sea-wall repairs; crosswinds wait for ENV-05.
   coastal: { types: ['barrier', 'cone'], closure: true, maxHeight: 2.5 },
+  // Floating asteroid fragments and energy barriers; their motion and low-gravity sectors arrive with ENV-05.
+  cosmic: { types: ['debris', 'energy-barrier'], closure: false, maxHeight: 3 },
 };
 
 for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its own themed hazards`, () => {
