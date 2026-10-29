@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { setTextIfChanged, setHiddenIfChanged } from '../src/hud-dom.ts';
+import { readFileSync } from 'node:fs';
+import { setTextIfChanged, setHiddenIfChanged, createAnimationGate } from '../src/hud-dom.ts';
 
 // A DOM-like setter is enough to prove that high-frequency HUD updates do not
 // reassign properties when their displayed value is already current.
@@ -38,4 +39,18 @@ test('steady HUD visibility does not thrash the DOM', () => {
   assert.equal(writes, 1);
   setHiddenIfChanged(node, false);
   assert.equal(writes, 1);
+});
+
+test('an idle HUD node never asks for its animations: getAnimations() forces a style flush every frame', () => {
+  let reads = 0, cancelled = 0;
+  const node = { animate: () => ({}), getAnimations: () => { reads++; return [{ cancel: () => cancelled++ }]; } };
+  const gate = createAnimationGate(node);
+  for (let frame = 0; frame < 100; frame++) gate.cancel();
+  assert.equal(reads, 0, 'nothing started, nothing to cancel');
+  gate.animate([{ opacity: 0 }, { opacity: 1 }], 100);
+  for (let frame = 0; frame < 100; frame++) gate.cancel();
+  assert.equal(reads, 1, 'one read cancels what was started');
+  assert.equal(cancelled, 1);
+  const hud = readFileSync(new URL('../src/race-hud.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(hud, /eventCallout\.getAnimations\(\)/, 'the callout cancels through the gate');
 });

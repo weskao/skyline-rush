@@ -1,4 +1,4 @@
-import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
+import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden, createAnimationGate } from './hud-dom.ts';
 import { trackProgressBottom } from './hud-progress-offset.ts';
 import { t, interpolate, getLocale, CATALOGS } from './i18n.ts';
 import { icon } from './icons.ts';
@@ -62,6 +62,7 @@ export function createRaceHud(options: HudOptions) {
   const callouts = createCallouts();
   const haptic = createHaptics();
   const eventCallout = $('#event-callout');
+  const calloutMotion = createAnimationGate(eventCallout);
   const calloutReports = [$('#maneuver-report'), ui['skill-report']!, $('#action-report')];
   const nitroHud = document.createElement('div');
   nitroHud.className = 'nitro-hud';
@@ -154,7 +155,7 @@ export function createRaceHud(options: HudOptions) {
   function updateCallout(race: HudRace, impactAge: number, calm: boolean): void {
     const visual = getVisual();
     const callout = callouts.update(race, impactAge <= 1.1);
-    if (!callout || calm) eventCallout.getAnimations().forEach(animation => animation.cancel());
+    if (!callout || calm) calloutMotion.cancel();
     setHudHidden(eventCallout, !callout);
     if (callout === shownCallout) return;
     for (const report of calloutReports) report.hidden = true;
@@ -165,8 +166,8 @@ export function createRaceHud(options: HudOptions) {
       report.replaceChildren(document.createTextNode(callout.title), detail);
       report.hidden = false;
       eventCallout.dataset.kind = callout.kind;
-      eventCallout.getAnimations().forEach(animation => animation.cancel());
-      if (!visual.comfortable && !reducedMotion.matches) eventCallout.animate([
+      calloutMotion.cancel();
+      if (!visual.comfortable && !reducedMotion.matches) calloutMotion.animate([
         { opacity: 0, transform: 'scale(.88)', offset: 0 },
         { opacity: 1, transform: 'scale(1)', offset: .2 },
         { opacity: 1, transform: 'scale(1)', offset: .85 },
