@@ -44,6 +44,38 @@ test('opening audio asks iOS for media playback so the silent switch does not mu
   assert.equal(session.type, 'playback');
 });
 
+test('a tap rebuilds a context iOS left suspended so saved music starts on the first touch', t => {
+  const activation = { isActive: false };
+  Object.defineProperty(navigator, 'userActivation', { value: activation, configurable: true });
+  t.after(() => { delete navigator.userActivation; });
+  let now = 0;
+  t.mock.method(performance, 'now', () => now);
+  const { nodes, sound } = installAudio(t);
+  const made = [];
+  globalThis.AudioContext = class extends globalThis.AudioContext {
+    state = 'suspended'; closed = false;
+    constructor() { super(); made.push(this); }
+    close() { this.closed = true; return super.close(); }
+    resume() { return new Promise(() => {}); } // iOS leaves a resume outside a gesture pending, so the context stays suspended
+  };
+  sound.setMusic(true);
+  sound.setEnabled(true);
+  assert.equal(made.length, 1, 'page load opens one context without rebuilding it');
+  activation.isActive = true;
+  sound.setMusic(true);
+  assert.equal(made.length, 2, 'the first tap replaces the context made outside a gesture');
+  assert.ok(made[0].closed);
+  assert.equal(nodes.filter(item => item.kind === 'compressor').at(-1).destination, made[1].destination);
+  sound.setEnabled(true);
+  assert.equal(made.length, 2, 'later events of the same tap leave the fresh context to start');
+  now = 5000;
+  sound.setMusic(true);
+  assert.equal(made.length, 3, 'a tapped context still stuck later (iOS interruption) is rebuilt');
+  const limiter = nodes.filter(item => item.kind === 'compressor').at(-1);
+  assert.ok(nodes.some(item => item.kind === 'gain' && item.destination === limiter && item.gain.value > 0),
+    'the rebuilt context keeps effects audible without another settings change');
+});
+
 test('a hidden page suspends audio so the playback session cannot keep music going in the background', t => {
   const { sound } = installAudio(t);
   sound.setHidden(true);

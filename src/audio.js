@@ -4,7 +4,7 @@ import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 
 export function createSound() {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
-  let music, warm, hats, snares, song = null, step = 0, nextStep = 0;
+  let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
   let enabled = false, musicOn = false, hidden = false;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
   let effectsLevel = 1, musicLevel = 1;
@@ -141,7 +141,16 @@ export function createSound() {
     return node;
   }
   function open() {
+    const tap = navigator.userActivation?.isActive ?? true;
+    // iOS WebKit can keep a context made at page load, or one interrupted in the background, suspended for good; a tap rebuilds it so it starts with the gesture.
+    if (context && tap && context.state !== 'running' && performance.now() - madeAt > 1000) {
+      silenceCues();
+      context.close().catch(() => {});
+      context = null;
+    }
     if (!context) {
+      madeAt = tap ? performance.now() : -Infinity;
+      nextStep = 0;
       // iOS mutes web audio while the silent switch is on unless the page asks for media playback.
       try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* Keep the browser's default session. */ }
       context = new AudioContext();
@@ -149,7 +158,7 @@ export function createSound() {
       filter = context.createBiquadFilter();
       gain = context.createGain();
       master = context.createGain();
-      master.gain.value = 0;
+      master.gain.value = enabled ? 1.6 * effectsLevel : 0;
       music = context.createGain();
       music.gain.value = 0;
       const limiter = context.createDynamicsCompressor();
