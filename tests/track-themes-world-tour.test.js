@@ -12,6 +12,8 @@ const THEMES = {
   taipei: { types: ['barrier', 'cone'], closure: true, maxHeight: 2.5 },
   // Traffic-control gates, neon construction equipment and a lane of roadworks.
   tokyo: { types: ['gate', 'barrier', 'cone'], closure: true, maxHeight: 3 },
+  // Snow drifts and avalanche debris on open mountain road; rail crossings wait for ENV-05.
+  alpine: { types: ['debris', 'cone'], closure: true, maxHeight: 1.4 },
 };
 
 for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its own themed hazards`, () => {

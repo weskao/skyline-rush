@@ -23,4 +23,14 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
     ...closure('tokyo', 'tokyo-roadworks', 4760, 7.5),
     place('tokyo', 'tokyo-signal-gate-4', 'gate', 6200, 2.5),
   ],
+  // Alpine Rail Pass: snow drifts and avalanche debris on the open mountain road.
+  alpine: [
+    place('alpine', 'alpine-avalanche-1', 'debris', 620, 2.5),
+    place('alpine', 'alpine-avalanche-2', 'debris', 2600, -2.5),
+    ...closure('alpine', 'alpine-drift-east', 2850, 7.5),
+    place('alpine', 'alpine-avalanche-3', 'debris', 4400, -7.5),
+    place('alpine', 'alpine-avalanche-4', 'debris', 5500, 2.5),
+    place('alpine', 'alpine-avalanche-5', 'debris', 6700, -2.5),
+    place('alpine', 'alpine-avalanche-6', 'debris', 7200, 7.5),
+  ],
 };
