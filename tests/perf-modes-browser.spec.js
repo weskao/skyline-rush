@@ -33,7 +33,7 @@ test('new content frame time, draw calls and triangles against Classic', async (
     await page.goto(`${gameplayURL}?perf`);
     for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator(`[data-race-mode="${s.mode}"]`).click();
+    await page.locator(`button[data-race-mode="${s.mode}"]`).click(); // <body> mirrors the selected mode in the same attribute
     if (s.hazards) await page.locator('[data-race-rule="hazards"]').selectOption(s.hazards);
     if (s.layout) await page.locator('#gauntlet-layout').selectOption(s.layout);
     await page.locator('[data-track="coast"]').click();
