@@ -104,6 +104,7 @@ Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates c
 Historical receipts below retain their original date and verification scope.
 
 
+- [x] Integrate `origin/main@bc5299b` (51 upstream commits) and docs-only `0a08d02`: TODO conflict kept both sides; `src/world.js` landed one line over its ratchet ceiling, so `17af970` folds the `trackId`/`carBank` declarations instead of raising it. Complete make verify on `808e5a0` passes: strict TS/Vue/JS, Node 848 / Browser 525 / World Tour 303; 3 emulator skips and 2 desktop touch skips. Log: `artifacts/main-bc5299b-make-verify.log`. CI pending.
 - [x] User-integrated `main@ca1c777` is an ancestor of `6bb9d13` on `feature/custom-race-presentation`; tracked tree was clean and no unresolved merge conflicts were found.
 - [x] Exact published code `6bb9d13` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547188). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
 - [x] Complete make verify on merged code `6bb9d13` exits 0: strict TS/Vue/JS, Node 826 / Browser 501 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/custom-presentation/make-verify-main-ca1c777-user-merge.log`.
