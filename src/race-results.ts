@@ -5,8 +5,11 @@ import { addCupResult, cupStandings, cupComplete, cupTotalTime, type CupState } 
 import { validGhost, type GhostSample } from './ghost.ts';
 import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
+import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
+import type { StuntAttackState } from './stunt-attack.ts';
 
-export interface StuntRun { duration: number; elapsed: number; score: number; heats: number; maxCombo: number; airTime: number; trackId: string }
+export interface StuntRun { duration: number; elapsed: number; score: number; heats: number; maxCombo: number; airTime: number; trackId: string;
+  longestFlight?: number; maxAerialCombo?: number }
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
 // The simulation race comes from plain-JS game.js; each history.ts writer validates the fields it stores.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,11 +28,24 @@ export interface Settlement {
   record: boolean;
   /** Medals earned for the first time by this run. */
   medals: string[];
+  challengeMedals: ChallengeMedalId[];
   /** Track the NEXT button offers, when this run moved the campaign forward. */
   next: string | null;
   /** A heat inside a sprint series, cup or stunt run with more to come. */
   intermediateStage: boolean;
   series: RaceSeries;
+}
+
+function addStuntHeat(stunt: StuntRun, race: { result: { time: number; score: number };
+  styleAttack: Pick<StuntAttackState, 'airTime' | 'maxCombo'> & Partial<Pick<StuntAttackState, 'longestFlight' | 'maxAerialCombo'>> }): void {
+  stunt.elapsed += race.result.time; stunt.score += race.result.score; stunt.heats++;
+  stunt.airTime += race.styleAttack.airTime;
+  stunt.maxCombo = Math.max(stunt.maxCombo, race.styleAttack.maxCombo);
+  const { longestFlight, maxAerialCombo } = race.styleAttack;
+  if (typeof longestFlight === 'number' && Number.isFinite(longestFlight) && longestFlight >= 0)
+    stunt.longestFlight = Math.max(stunt.longestFlight ?? 0, Math.min(race.result.time, longestFlight));
+  if (typeof maxAerialCombo === 'number' && Number.isInteger(maxAerialCombo) && maxAerialCombo >= 0 && maxAerialCombo <= 5)
+    stunt.maxAerialCombo = Math.max(stunt.maxAerialCombo ?? 0, maxAerialCombo);
 }
 
 /** Records a finished race: series progress, medals, bests, unlocks, history and ghosts. */
@@ -38,13 +54,7 @@ export function settleRace(race: FinishedRace, { series, progress, ghosts, daily
   const { stunt } = series;
   if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
   if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
-  if (stunt && race.mode === 'stunt') {
-    stunt.elapsed += race.result.time;
-    stunt.score += race.result.score;
-    stunt.heats++;
-    stunt.airTime += race.styleAttack.airTime;
-    stunt.maxCombo = Math.max(stunt.maxCombo, race.styleAttack.maxCombo);
-  }
+  if (stunt && race.mode === 'stunt') addStuntHeat(stunt, race);
   const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
   progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
   const trackId: string = race.trackId ?? 'coast';
@@ -95,5 +105,10 @@ export function settleRace(race: FinishedRace, { series, progress, ghosts, daily
     const ghost = { time: race.elapsed, samples: trace ?? [] };
     if (record && trace && validGhost(ghost, trackId)) ghosts.saveClassic(trackId, ghost);
   }
-  return { best, record, medals, next, intermediateStage, series: { sprintSeries, cup, stunt } };
+  let challengeMedals: ChallengeMedalId[] = [];
+  if (!intermediateStage) {
+    const challenge = recordChallengeMedals(stunt ? { ...race, result: { ...race.result, time: stunt.elapsed }, styleAttack: stunt } : race, progress.challengeMedals);
+    progress.challengeMedals = challenge.state; challengeMedals = challenge.awarded;
+  }
+  return { best, record, medals, challengeMedals, next, intermediateStage, series: { sprintSeries, cup, stunt } };
 }

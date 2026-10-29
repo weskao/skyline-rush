@@ -96,6 +96,17 @@ test('completed Stunt runs retain aerial peaks from earlier heats and award only
   assert.deepEqual(final.challengeMedals, ['long-flight', 'aerial-combo']);
 });
 
+test('a Stunt timer clips the final telemetry tick to the completed heat time', () => {
+  const stunt = { duration: 120, elapsed: 0, score: 0, heats: 0, maxCombo: 0, airTime: 0, trackId: 'coast' };
+  const race = classic({ success: true, time: 120, score: 1000, endReason: 'timer' }, {
+    mode: 'stunt', config: { mode: 'stunt', duration: 120 },
+    styleAttack: { maxCombo: 0, airTime: 120.02, longestFlight: 120.02, maxAerialCombo: 0 },
+  });
+  const { context, settlement } = settle(race, { series: { sprintSeries: null, cup: null, stunt } });
+  assert.deepEqual(settlement.challengeMedals, ['long-flight']);
+  assert.equal(context.progress.challengeMedals.longestFlight, 120);
+});
+
 test('an unfinished sprint series is an intermediate stage with no individual best', () => {
   const race = classic({ time: 30 }, { mode: 'custom', config: { mode: 'custom', stages: 3 } });
   const { settlement } = settle(race, { series: { sprintSeries: createSprintSeries(3), cup: null, stunt: null } });
