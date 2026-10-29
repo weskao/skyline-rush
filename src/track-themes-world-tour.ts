@@ -13,4 +13,14 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
     place('taipei', 'taipei-barricade-4', 'barrier', 5000, 2.5),
     place('taipei', 'taipei-barricade-5', 'barrier', 5600, -2.5),
   ],
+  // Tokyo Afterdark: traffic-control gates, neon construction equipment and a lane of roadworks.
+  tokyo: [
+    place('tokyo', 'tokyo-signal-gate-1', 'gate', 600, -2.5),
+    place('tokyo', 'tokyo-works-1', 'barrier', 1600, 7.5),
+    place('tokyo', 'tokyo-signal-gate-2', 'gate', 2200, 2.5),
+    place('tokyo', 'tokyo-works-2', 'barrier', 3300, -7.5),
+    place('tokyo', 'tokyo-signal-gate-3', 'gate', 3800, -2.5),
+    ...closure('tokyo', 'tokyo-roadworks', 4760, 7.5),
+    place('tokyo', 'tokyo-signal-gate-4', 'gate', 6200, 2.5),
+  ],
 };

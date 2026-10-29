@@ -10,6 +10,8 @@ const CAR_HALF_WIDTH = 0.85;
 const THEMES = {
   // Festival barricades and cone-lined boulevard closures, low enough to keep the Presidential Office in view.
   taipei: { types: ['barrier', 'cone'], closure: true, maxHeight: 2.5 },
+  // Traffic-control gates, neon construction equipment and a lane of roadworks.
+  tokyo: { types: ['gate', 'barrier', 'cone'], closure: true, maxHeight: 3 },
 };
 
 for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its own themed hazards`, () => {
