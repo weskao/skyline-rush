@@ -3,7 +3,7 @@ import type { TrackSection } from './game-types.ts';
 
 export interface HazardTrack { length: number; seed: number; sections: readonly TrackSection[] }
 export interface Hazard { distance: number; x: number; altitude: number; hit: boolean; passed: boolean; moving: boolean; phase: number; speed: number }
-const HAZARD_SECTION_TYPES = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
+export const HAZARD_SECTION_TYPES = new Set(['gap', 'launch', 'tunnel', 'boost-tunnel', 'shortcut']);
 
 // Obstacles move across a single lane at most; the other lanes always stay open.
 export function createHazards(track: HazardTrack, lanes: readonly number[], tier: 'standard' | 'extreme' = 'standard'): Hazard[] {
