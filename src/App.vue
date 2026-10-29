@@ -118,8 +118,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <div class="track-select" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
       <p id="track-note" class="track-note"></p>
       <section class="race-mode-picker race-rules-row" id="race-rules-row" aria-labelledby="race-rules-step">
-        <div class="race-mode-heading"><span id="race-rules-step" data-i18n="mode.step.rules">3 · Rules</span><small id="mode-rules-summary" role="status"></small></div>
-        <div class="race-rules-meta"><small id="mode-eligibility"></small><button type="button" class="text-button" id="rules-restore" data-i18n="mode.restoreDefaults">Restore defaults</button></div>
+        <div class="race-rules-head"><span id="race-rules-step" data-i18n="mode.step.rules">3 · Rules</span><p class="race-rules-text"><small id="mode-rules-summary" role="status"></small><small id="mode-eligibility"></small></p><button type="button" class="text-button" id="rules-restore" data-i18n="mode.restoreDefaults">Restore defaults</button></div>
         <small id="mode-conflicts" class="mode-conflicts" role="status"></small>
         <details class="race-mode-rules" id="recent-custom" hidden>
           <summary data-i18n="mode.recent">RECENT CUSTOM SETUPS</summary>
@@ -220,7 +219,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <div><span class="keys" data-keys="nitro"></span><span data-i18n="hint.nitro">Nitro</span></div>
         <div><kbd>V</kbd><span data-i18n="hint.airflow">Airflow</span></div>
       </div>
-      <p class="flight-tip" data-i18n="intro.tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</p>
+      <p class="flight-tip"><span class="tip-full" data-i18n="intro.tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</span><span class="tip-short" data-i18n="intro.tipShort">Build speed to fly, release to land. AUTO holds the throttle.</span></p>
     </section>
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>

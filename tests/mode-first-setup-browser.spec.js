@@ -15,10 +15,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.setViewportSize(viewport);
     await page.goto('/');
     await closeMusicPrompt(page);
-    const order = await page.evaluate(() => ['[data-race-mode="classic"]', '[data-track="coast"]', '#race-rules-row', '#start-button']
+    const order = await page.evaluate(() => ['button[data-race-mode="classic"]', '[data-track="coast"]', '#race-rules-row', '#start-button']
       .map(s => document.querySelector(s)).every((el, i, all) => i === 0 || (all[i - 1].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)));
     expect(order).toBe(true);
-    for (const selector of ['[data-race-mode="custom"]', '#rules-restore', '#start-button']) {
+    for (const selector of ['button[data-race-mode="custom"]', '#rules-restore', '#start-button']) {
       const box = await page.locator(selector).boundingBox();
       expect(box.height, selector).toBeGreaterThanOrEqual(viewport.width < 600 ? 36 : 34);
     }
@@ -33,14 +33,14 @@ test('rules row summarises, explains eligibility and restores defaults with real
   await closeMusicPrompt(page);
   await expect(page.locator('#mode-rules-summary')).toContainText('3 AI');
   await expect(page.locator('#mode-eligibility')).toHaveText('Counts for records, medals and unlocks');
-  await page.locator('[data-race-mode="free"]').click();
+  await page.locator('button[data-race-mode="free"]').click();
   await expect(page.locator('#mode-eligibility')).toHaveText('Practice: no results are saved');
-  await page.locator('[data-race-mode="stunt"]').click();
+  await page.locator('button[data-race-mode="stunt"]').click();
   await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
   await expect(page.locator('#mode-conflicts')).toContainText('Ghost replay');
 
   const before = await snapshot(page);
-  await page.locator('[data-race-mode="custom"]').click();
+  await page.locator('button[data-race-mode="custom"]').click();
   await page.locator('#race-mode-rules > summary').click();
   const rivals = page.locator('[data-race-rule="rivals"] + .custom-select');
   await rivals.getByRole('combobox').click();
@@ -60,22 +60,22 @@ test('rules row summarises, explains eligibility and restores defaults with real
 test('switching language live re-renders the rules row without changing mode or track ids', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('[data-race-mode="time"]').click();
-  await page.locator('#locale-select').selectOption('zh-TW');
+  await page.locator('button[data-race-mode="time"]').click();
+  await page.locator('#locale-select').selectOption('zh-TW', { force: true }); // the drawn custom select mirrors this native one, as in i18n-browser.spec.js
   await expect(page.locator('#mode-rules-summary')).toContainText('單人挑戰');
   await expect(page.locator('#race-rules-step')).toHaveText('3 · 規則');
   await expect(page.locator('#track-step')).toHaveText('2 · 賽道');
-  await expect(page.locator('[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('#locale-select').selectOption('en');
+  await expect(page.locator('button[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#locale-select').selectOption('en', { force: true });
   await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
 });
 
 test('keyboard alone can pick a mode, a track, restore rules and start', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('[data-race-mode="custom"]').focus();
+  await page.locator('button[data-race-mode="custom"]').focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('[data-race-mode="custom"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('button[data-race-mode="custom"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('[data-track="coast"]').focus();
   await page.keyboard.press('Enter');
   await page.locator('#rules-restore').focus();

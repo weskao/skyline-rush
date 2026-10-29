@@ -83,7 +83,10 @@ test('mobile game mode picker remains operable on phone portrait', async ({ page
   await closeMusicPrompt(page);
   await page.locator('button[data-race-mode="gauntlet"]').click();
   await expect(page.locator('button[data-race-mode="gauntlet"]')).toHaveAttribute('aria-pressed', 'true');
+  // 10A mode-first order (user-approved): on a phone Start follows the track and rules rows, one scroll away.
+  await page.locator('#start-button').scrollIntoViewIfNeeded();
   await expect(page.locator('#start-button')).toBeInViewport();
+  await expect(page.locator('#start-button')).toBeEnabled();
   await page.screenshot({ path: 'test-results/race-mode-mobile-menu.png' });
   expect(errors).toEqual([]);
 });

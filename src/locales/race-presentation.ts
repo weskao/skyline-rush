@@ -14,6 +14,8 @@ export const RACE_PRESENTATION_COPY = {
     'mode.step.track': '2 · Track',
     'mode.step.rules': '3 · Rules',
     'mode.themes': 'Themed track hazards',
+    // Start-screen flight tip on ≤1160px-tall desktops, where the full tip would push the intro past the fold.
+    'intro.tipShort': 'Build speed to fly, release to land. AUTO holds the throttle.',
     'mode.visualPreset': 'Sky & weather',
     'mode.visual.track': 'Track atmosphere',
     'mode.visual.day': 'Daylight',
@@ -49,6 +51,7 @@ export const RACE_PRESENTATION_COPY = {
     'mode.step.track': '2 · 賽道',
     'mode.step.rules': '3 · 規則',
     'mode.themes': '賽道主題障礙',
+    'intro.tipShort': '加速即可升空，放開就降落。「自動」幫你踩油門。',
     'mode.visualPreset': '天空與天氣',
     'mode.visual.track': '賽道原始氛圍',
     'mode.visual.day': '白天',

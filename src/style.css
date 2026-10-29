@@ -1350,12 +1350,16 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-mode-heading > span { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
 .race-mode-heading small { font-size: 10px; color: #d1e3ed; text-align: right; line-height: 1.4; }
 .race-mode-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
-.setup-step { margin: 12px 0 0; color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
-.race-rules-row { margin-top: 0; }
-.race-rules-row .race-mode-heading { margin-bottom: 2px; }
-.race-rules-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.race-rules-meta small, .mode-conflicts { font-size: 10px; color: #aee7fa; line-height: 1.4; }
-.mode-conflicts { display: block; color: #ffd39c; }
+/* 10A: the mode-first order costs no height. The track step is for screen readers, the rules row is one 44px line. */
+.setup-step { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.intro-copy + .race-mode-picker { margin-top: 0; }
+.flight-tip .tip-short { display: none; }
+.race-mode-picker.race-rules-row { display: block; margin-top: 0; padding: 0 10px; }
+.race-rules-head { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+#race-rules-step { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; white-space: nowrap; }
+.race-rules-text { flex: 1; display: grid; margin: 0; font-size: 10px; line-height: 1.35; color: #d1e3ed; }
+#mode-eligibility, .mode-conflicts { color: #aee7fa; }
+.mode-conflicts { display: block; font-size: 10px; line-height: 1.4; color: #ffd39c; padding-bottom: 6px; }
 .mode-conflicts:empty { display: none; }
 #rules-restore { margin: 0; min-height: 44px; padding: 0 8px; font-size: 11px; white-space: nowrap; }
 .race-mode-tabs button { min-height: 36px; padding: 3px 5px; border: 1px solid #627c8d; border-radius: 5px; background: #22384a; color: #eef6f8; font: 700 10px/1.25 'Avenir Next','Segoe UI',sans-serif; overflow-wrap: normal; }
@@ -1408,12 +1412,17 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="riva
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
 @media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(min-content,1fr)); } }
 @media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); } }
-/* 501-1160px-tall desktops: the picker heading moves beside the tabs, keeping the flight tip whole. */
+/* 501-1160px-tall desktops: everything above the fold, so the mode tabs, key hints and flight tip are compact. */
 @media (min-width: 1001px) and (min-height: 501px) and (max-height: 1160px) {
- .race-mode-picker { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 14px; padding: 8px 10px; }
- .race-mode-heading { flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; }
- .race-mode-heading small { text-align: left; max-width: 120px; }
- .race-mode-rules { grid-column: 1 / -1; }
+ /* 10A: eleven modes plus the rules row fit only if the tabs take the full width in two rows of six... */
+ .intro .race-mode-picker:not(.race-rules-row) { padding: 6px 10px; }
+ .race-mode-tabs { grid-template-columns: repeat(6,minmax(min-content,1fr)); }
+ /* ...and the key hints pay for the rules row: one tight row (user-approved, 2026-10-29). */
+ .intro-controls { flex-wrap: nowrap; gap: 14px; margin-top: 4px; }
+ .flight-tip .tip-full { display: none; }
+ .flight-tip .tip-short { display: inline; }
+ .race-mode-heading { margin-bottom: 2px; }
+ .intro-controls > div { gap: 6px; white-space: nowrap; }
 }
 
 /* The series counter sits in the race info without expanding the top HUD. */
