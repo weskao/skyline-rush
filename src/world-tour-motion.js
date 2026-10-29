@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RACE_TRACKS } from './game.js';
+import { BEACON, SPRAY, skylinePulse } from './world-tour-details.js';
 
 // One moving background piece per World Tour road (11C): far from the road, posed by
 // time alone, never batched or collided with. Models come from the shared scenery kit.
@@ -28,7 +29,12 @@ const STEP = 12;
 export function createWorldTourMotion(kit, parent, sceneryLayer) {
   // Shares the scenery layer's offset without counting as one of its streamed chunks.
   const layer = new THREE.Group(); layer.name = 'World Tour moving background'; parent.add(layer);
-  const pieces = new Map(), next = new THREE.Vector3(), pose = {};
+  const pieces = new Map(), next = new THREE.Vector3(), pose = {}, glow = {};
+  // The detail kit's shared beacon/spray glows: one colour write each per frame animates every copy.
+  const glows = [['beacon', BEACON], ['spray', SPRAY]].map(([name, hex]) => {
+    const material = kit.material(hex, true); material.userData.pulse = name;
+    return { name, material, base: new THREE.Color(hex) };
+  });
   // Built once per kind and reused; userData.dynamic keeps the static batcher away.
   function piece(kind) {
     if (!pieces.has(kind)) {
@@ -41,6 +47,8 @@ export function createWorldTourMotion(kit, parent, sceneryLayer) {
   }
   return {
     update(id, distance, quality, time, reducedMotion) {
+      if (reducedMotion) glow.beacon = glow.spray = 1; else skylinePulse(time, glow);
+      for (const g of glows) g.material.color.copy(g.base).multiplyScalar(glow[g.name]);
       const kind = quality === 'low' ? null : MOTION_KINDS[id];
       for (const p of pieces.values()) p.root.visible = p.kind === kind;
       if (!kind) return;

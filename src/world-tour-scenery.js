@@ -147,7 +147,7 @@ export function createSceneryKit() {
   };
   const wheels=(g,z)=>{for(const x of [-1.1,1.1]){S(g,'#20282e',x,1,z,.75);S(g,'#a8a9a5',x,1,z,.31);}};
   const props={
-    ...detailModels({B,R}),
+    ...detailModels({B,R,G:(g,c,x,y,z,w,h,d)=>add(g,'box',c,x,y,z,w,h,d,true)}),
     arcade(g){ // Taiwanese arcade façade with roofline, recessed arcade, shop awnings and signs
       B(g,'#b69c80',0,13,3,17,26,13);B(g,'#8c675e',0,25.8,3,19,2,15);
       for(const x of [-6,0,6]){
