@@ -1,5 +1,18 @@
 # TODO — Gameplay depth design
 
+## Current main integration and verification (2026-10-29)
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `6bb9d13` on `feature/custom-race-presentation`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `6bb9d13` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547188). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `6bb9d13` exits 0: strict TS/Vue/JS, Node 826 / Browser 501 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/custom-presentation/make-verify-main-ca1c777-user-merge.log`.
+
+## Recent custom setup acceptance (2026-10-29)
+
+- [x] REPLAY-02 already exists on published code `6bb9d13`: keep three distinct recent Custom setups, reload and restore each complete rule config, Race Again from results, and Choose Track to edit an independent copy without modifying the completed race, base Coast track or official progress. Real controls and actual simulation settlement pass at desktop 1440×900 en and touch-emulated 390×844 zh-TW; page errors 0. No production source changes or additional audio are needed; existing confirmation/finish feedback is reused.
+- [x] Inspect the four original-resolution in-game captures and JSON receipt under `artifacts/custom-presentation/replay02-evidence/`. Complete local gate 826 Node / 501 Browser / 303 World Tour and exact-code CI 17/17 are recorded above. Chrome touch emulation does not complete physical-device acceptance.
+
+Historical receipts below retain their original date and verification scope. Earlier publication blockers were superseded by the user-published commits verified above.
+
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
@@ -1389,7 +1402,7 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   chain, longest flight, zero-collision time trial, best aerial
   combination and themed gauntlet completion; keep separate from
   existing four Career medals.
-- [ ] **REPLAY-02 — Personalized challenge presets:** remember a
+- [x] **REPLAY-02 — Personalized challenge presets:** remember a
   few recent custom-rule setups and allow duplicate/retry from the
   results screen without modifying the base track.
 - [ ] **REPLAY-03 — Risk/reward course lines:** alternate ground and
