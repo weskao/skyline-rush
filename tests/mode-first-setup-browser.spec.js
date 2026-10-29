@@ -208,3 +208,57 @@ for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['lan
     expect(checked, 'rules dropdowns checked').toBeGreaterThan(3);
   });
 }
+
+// 1494: Comfort mode lives in the VFX panel beside the setup flow; it must be reachable and toggle by every input
+// without disturbing the chosen mode.
+const comfortOn = page => page.evaluate(() => ({ body: document.body.classList.contains('vfx-comfort'),
+  stored: JSON.parse(localStorage.getItem('skyline-rush-vfx') || '{}').comfortable === true }));
+
+test('keyboard alone opens the visual panel, reaches Comfort mode and toggles it, keeping the chosen mode', async ({ page }) => {
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await page.locator('button[data-race-mode="custom"]').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#vfx-panel > summary').focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => page.locator('#vfx-panel').evaluate(panel => panel.open)).toBe(true);
+  let reached = false;
+  for (let i = 0; i < 20 && !reached; i++) {
+    await page.keyboard.press('Tab');
+    reached = await page.evaluate(() => document.activeElement?.matches('[data-vfx="comfortable"]') ?? false);
+  }
+  expect(reached, 'Comfort mode is in the Tab order of the open panel').toBe(true);
+  expect(await page.evaluate(() => document.activeElement.matches(':focus-visible'))).toBe(true);
+  await page.keyboard.press('Space');
+  await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
+  expect(await comfortOn(page)).toEqual({ body: true, stored: true });
+  await page.keyboard.press('Space');
+  expect(await comfortOn(page)).toEqual({ body: false, stored: false });
+  await expect(page.locator('button[data-race-mode="custom"]')).toHaveAttribute('aria-pressed', 'true');
+});
+
+for (const [name, viewport, touch] of [['pointer', { width: 1440, height: 900 }, false], ['touch', { width: 390, height: 844 }, true]]) {
+  test.describe(`Comfort mode by ${name}`, () => {
+    test.use({ viewport, hasTouch: touch });
+    test(`${name}: Comfort mode is a full-size target that toggles on and off from the setup screen`, async ({ page }) => {
+      await page.goto('/');
+      await closeMusicPrompt(page);
+      const press = locator => touch ? locator.tap() : locator.click();
+      await press(page.locator('button[data-race-mode="time"]'));
+      await press(page.locator('#vfx-panel > summary'));
+      const row = page.locator('label:has(> [data-vfx="comfortable"])');
+      await row.scrollIntoViewIfNeeded();
+      const box = await row.boundingBox();
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+      await press(row.locator('span'));
+      await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
+      expect(await comfortOn(page)).toEqual({ body: true, stored: true });
+      await press(row.locator('span'));
+      await expect(page.locator('[data-vfx="comfortable"]')).not.toBeChecked();
+      expect(await comfortOn(page)).toEqual({ body: false, stored: false });
+      await expect(page.locator('button[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
+    });
+  });
+}

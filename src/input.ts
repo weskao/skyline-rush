@@ -45,12 +45,14 @@ export function createControls(target: ControlTarget = window, onAction: (action
   listen<KeyboardEvent>(target, 'keydown', event => {
     syncKeys();
     if ((event.target as Element | null)?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
-    if (event.code === 'Space' && (event.target as Element | null)?.closest?.('button')) return;
+    // Buttons and <details> summaries keep native Enter/Space activation (a summary opens its panel).
+    const nativeControl = (event.target as Element | null)?.closest?.('button, summary');
+    if (event.code === 'Space' && nativeControl) return;
     if (drivingKeys[event.code]) {
       event.preventDefault();
       keys.add(event.code);
     } else if (actionKeys[event.code as keyof typeof actionKeys] && !event.repeat) {
-      if (event.code === 'Enter' && (event.target as Element | null)?.closest?.('button, a[href]')) return; // links activate on Enter too
+      if (event.code === 'Enter' && (nativeControl || (event.target as Element | null)?.closest?.('a[href]'))) return; // links activate on Enter too
       event.preventDefault();
       if (['pause', 'restart', 'start'].includes(actionKeys[event.code as keyof typeof actionKeys])) clear();
       onAction(actionKeys[event.code as keyof typeof actionKeys]);
