@@ -1,5 +1,5 @@
 // 11B themed hazard data for the classic tracks (Coast, Neon, Canyon, Aurora, Sky Spiral).
-import { place, closure, sweep, pulse, fall } from './themed-placement.ts';
+import { place, closure, sweep, pulse, fall, hoop } from './themed-placement.ts';
 
 export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown[]>> = {
   // Coast: cargo spilled from delivery trucks, warned sea gusts and temporary shoulder closures along the seafront.
@@ -24,8 +24,12 @@ export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown
     place('neon', 'neon-works-3', 'barrier', 3600, -2.5),
     place('neon', 'neon-gate-2', 'gate', 3720, -4.6, sweep(4, Math.PI)),
   ],
-  // Canyon Skyway: warned rockfall and cliff-side debris, kept clear of the broken-bridge gaps.
+  // Canyon Skyway: warned rockfall and cliff-side debris, kept clear of the broken-bridge gaps. A precision
+  // launch ramp 36 m before each broken bridge is the risky line: hit it fast and the car jumps the gap without FLY.
   canyon: [
+    place('canyon', 'canyon-ramp-1', 'ramp', 1464, -2.5),
+    place('canyon', 'canyon-ramp-2', 'ramp', 2964, 2.5),
+    place('canyon', 'canyon-ramp-3', 'ramp', 4364, -2.5),
     place('canyon', 'canyon-rock-1', 'debris', 900, -2.5, fall(10, 8)),
     place('canyon', 'canyon-rock-2', 'debris', 1250, 7.5),
     place('canyon', 'canyon-debris-1', 'debris', 2700, -7.5),
@@ -45,8 +49,14 @@ export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown
     place('aurora', 'aurora-snowbank-5', 'debris', 3900, 7.5),
     place('aurora', 'aurora-snowbank-6', 'debris', 4600, -7.5),
   ],
-  // Sky Spiral: energy platform barriers and aerial gates on the helix, away from the launch gaps.
+  // Sky Spiral: energy platform barriers and aerial gates on the helix, away from the launch gaps, plus
+  // spinning light hoops 6 m up that pay the risk-ring score for a precise airborne line.
   spiral: [
+    place('spiral', 'spiral-hoop-1', 'ring', 1100, 2.5, hoop(6, 4)),
+    place('spiral', 'spiral-hoop-2', 'ring', 1700, -2.5, hoop(6, 4, Math.PI)),
+    place('spiral', 'spiral-hoop-3', 'ring', 2200, 2.5, hoop(6, 4)),
+    place('spiral', 'spiral-hoop-4', 'ring', 3450, -2.5, hoop(6, 4, Math.PI)),
+    place('spiral', 'spiral-hoop-5', 'ring', 4350, 0, hoop(6, 4)),
     place('spiral', 'spiral-barrier-1', 'energy-barrier', 700, -2.5, pulse(3)),
     place('spiral', 'spiral-gate-1', 'gate', 1500, 4.6, sweep(5)),
     place('spiral', 'spiral-gate-2', 'gate', 1900, -4.6, sweep(5, Math.PI)),

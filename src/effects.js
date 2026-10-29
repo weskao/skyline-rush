@@ -178,7 +178,7 @@ export function createEffects(scene, roadCenter) {
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
           if (source === 1 && options.worldFrame) {
             // Fixed route topology: a new gate identity invalidates this pool slot's orientation.
-            if (mesh.userData.frameItem !== item) {
+            if (mesh.userData.frameItem !== item || item.spin) { // a spinning hoop re-bases before its swivel
               const frame = options.worldFrame(item.distance);
               mesh.quaternion.setFromRotationMatrix(gateBasis.makeBasis(gateRight.fromArray(frame.right), gateUp.fromArray(frame.up), gateBack.fromArray(frame.forward).negate()));
               mesh.userData.frameItem = item;
@@ -187,6 +187,8 @@ export function createEffects(scene, roadCenter) {
             if (mesh.userData.frameItem) mesh.userData.frameItem = null;
             mesh.rotation.set(0, source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2), 0);
           }
+          // Themed hoops swivel ±35° on race time (paused with the race) and never turn edge-on to the driver.
+          if (source === 1 && item.spin && !reducedMotion) mesh.rotateY(0.6 * Math.sin(item.spin * race.elapsed + item.spinPhase));
           mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
           mesh.material = source === 0 ? pickupMaterials[item.tier] : ringMaterials[ringType];
           if (source === 1) {

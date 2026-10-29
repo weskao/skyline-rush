@@ -5,6 +5,12 @@ import type { GameplayType } from './object-catalog.ts';
 import { CLASSIC_THEMED_PLACEMENTS } from './track-themes-classic.ts';
 import { WORLD_TOUR_THEMED_PLACEMENTS } from './track-themes-world-tour.ts';
 import { createHazards, type HazardTrack } from './hazards.ts';
+import { RISK_RING_RADIUS } from './ring-layout.ts';
+import type { RiskRules } from './risk-lines.ts';
+import type { LaunchRamp } from './launch-ramps.ts';
+
+// Launch ramps go to race.ramps (the one launch rule) and hoops to race.rings (risk-ring scoring), never race.hazards.
+const ROUTED: ReadonlySet<GameplayType> = new Set(['ramp', 'ring']);
 
 export interface ThemedHazard {
   id: string; type: GameplayType; distance: number; x: number; altitude: number;
@@ -27,11 +33,26 @@ export function themedPlacements(trackId: string): readonly HazardPlacement[] {
 
 /** Fresh, mutable race hazards (hit/passed change during a race) for one track's theme. */
 export function themedHazards(trackId: string): ThemedHazard[] {
-  return themedPlacements(trackId).map(placement => ({
+  return themedPlacements(trackId).filter(placement => !ROUTED.has(placement.type)).map(placement => ({
     id: placement.id, type: placement.type, distance: placement.distance, x: placement.lateralOffset,
     altitude: placement.altitude, hit: false, passed: false, moving: false, phase: 0, speed: 0,
     halfWidth: placement.hitbox.halfWidth, halfLength: placement.hitbox.halfLength, height: placement.hitbox.height, placement,
   }));
+}
+
+export interface ThemedHoop { distance: number; x: number; altitude: number; radius: number; type: 'risk'; group: 0; spin: number; spinPhase: number }
+/** A theme's ramps and hoops for a race, or null when themes are off; hoops follow the risk-lines switch. */
+export function themedExtras(trackId: string, config: { themes?: boolean }, risk: RiskRules): { ramps: LaunchRamp[]; hoops: ThemedHoop[] } | null {
+  if (!config.themes) return null;
+  const placements = themedPlacements(trackId);
+  return {
+    ramps: placements.filter(p => p.type === 'ramp').map(p => ({ distance: p.distance, x: p.lateralOffset,
+      halfWidth: p.hitbox.halfWidth, halfLength: p.hitbox.halfLength, height: p.hitbox.height })),
+    hoops: risk.rings ? placements.filter(p => p.type === 'ring').map(p => ({ distance: p.distance, x: p.lateralOffset, altitude: p.altitude,
+      radius: RISK_RING_RADIUS, type: 'risk' as const, group: 0 as const,
+      spin: p.movementPattern.kind === 'rotate' ? 2 * Math.PI / p.movementPattern.period : 0,
+      spinPhase: 'phase' in p.movementPattern ? p.movementPattern.phase : 0 })) : [],
+  };
 }
 
 /** Generated hazards near an authored one are dropped so the two never close a third lane together. */
