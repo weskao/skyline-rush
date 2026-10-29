@@ -1263,9 +1263,10 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] **LAP-04 — Anti-shortcut checkpoints:** ordered sector validation
   prevents crossing the finish backwards, flying over the finish repeatedly,
   teleports or respawns from granting false laps.
-- [ ] **Acceptance:** completion requires the configured number of valid
+- [x] **Acceptance:** completion requires the configured number of valid
   laps; player/AI cameras, positions, world props, mini-route map, Ghost,
   checkpoints and collision physics remain continuous across every seam.
+  - Full local gate green on 0f81af7 (2026-10-29): `make verify` Node 869 pass / 0 fail, browser 527 pass / 2 skipped, World Tour 326 pass; log `artifacts/circuit/make-verify-0a08d02.log`. Exact-HEAD CI pending.
   - Evidence (2026-10-29, `tests/circuit-seam-acceptance.test.js` with existing `tests/circuit.test.js`):
     across all three seams of a 3-lap race (2000/4000/6000 m, 0.05 m steps) the Harbor beacon (scene
     origin), rivals ahead/behind, chase camera position and heading, Ghost (unwrapped samples, drawn 4 m
