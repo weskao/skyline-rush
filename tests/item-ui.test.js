@@ -34,7 +34,7 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
     bankItem(race.player, 'ghost'); ui.update(race);
     for (let i = 0; i < 8; i++) tickItemCooldown(race.player, .1);
     ui.update(race); ui.update(race);
-    assert.deepEqual(cues, ['pickup', 'pickup', 'pickup', 'ui']);
+    assert.deepEqual(cues, ['pickup', 'item-use', 'pickup', 'item-ready']);
     ui.activate(); ui.update(race);
     for (let i = 0; i < 8; i++) tickItemCooldown(race.player, .1);
     ui.update(race);

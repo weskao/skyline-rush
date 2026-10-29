@@ -232,3 +232,41 @@ test('disposing marker pools releases every tier material, including types no lo
   assert.ok([...disposed.values()].every(count => count === 1));
   assert.ok(groups.every(group => group.parent === null), 'scene disposal will not dispose these resources twice');
 });
+
+test('ITEM-12: a shield-blocked hit flashes a blue ring, never the orange crash ring', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const race = createRace();
+  race.phase = 'racing';
+  effects.update(race, 0.016, 0, false, false);
+  race.player.shieldBlock = { distance: race.player.distance, x: 0, altitude: 0, time: race.elapsed };
+  effects.update(race, 0.016, 0, false, false);
+  const visible = scene.children.filter(object => object.isMesh && object.geometry.type === 'RingGeometry' && object.visible);
+  assert.equal(visible.length, 1);
+  const { r, g, b } = visible[0].material.color;
+  assert.ok(b > r && b > g, 'blue shield flash');
+});
+
+test('ITEM-12: a pickup beam marks rings that grant a held item, never Classic mystery rings', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const beams = scene.getObjectByName('Item beams');
+  assert.ok(beams && beams.children.length > 0, 'pooled in the scene from load (shader warmup)');
+  const shown = race => { effects.update(race, 0.016, 0, false, false); return beams.children.filter(beam => beam.visible); };
+  const classic = createRace();
+  classic.phase = 'racing';
+  classic.rings = [{ type: 'mystery', distance: classic.player.distance + 200, x: 2, altitude: 0, radius: 3, hit: false }];
+  assert.equal(shown(classic).length, 0, 'Classic mystery rings stay as they were');
+  const custom = createRace('coast', { mode: 'custom', activeItems: true });
+  custom.phase = 'racing';
+  custom.rings = [{ type: 'mystery', distance: custom.player.distance + 200, x: 2, altitude: 0, radius: 3, hit: false },
+    { type: 'charge', distance: custom.player.distance + 260, x: 0, altitude: 0, radius: 3, hit: false }];
+  const [beam, ...others] = shown(custom);
+  assert.deepEqual([others.length, beam?.position.x, beam?.position.z], [0, 2, -200]);
+  custom.rings[0].hit = true;
+  assert.equal(shown(custom).length, 0, 'gone once collected');
+});

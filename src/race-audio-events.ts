@@ -6,7 +6,7 @@ interface AudioCar {
   thrusting?: boolean;
   impact?: { time: number; intensity: number; kind?: string } | null;
   landing?: { time: number; speed: number; chain?: boolean } | null;
-  nearMiss?: unknown; trick?: unknown;
+  nearMiss?: unknown; trick?: unknown; shieldBlock?: unknown;
 }
 export interface AudioRace extends ModeAudioRace {
   player: AudioCar & NonNullable<ModeAudioRace['player']>;
@@ -28,7 +28,7 @@ export function createRaceAudioEvents() {
   const modeAudioState = createModeAudioState();
   let previousRace: AudioRace | undefined, previousPhase: string | null = null, previousCount: number | null = null;
   let lastImpact: AudioCar['impact'] = null, lastLanding: AudioCar['landing'] = null;
-  let lastNearMiss: unknown = null, lastTrick: unknown = null;
+  let lastNearMiss: unknown = null, lastTrick: unknown = null, lastShieldBlock: unknown = null;
   let wasThrusting = false, wasBoosting = false, lowCharge = false;
   let collectedPickups = new WeakSet<object>();
   // One frame object is reused every tick (no per-frame garbage); read it before the next update.
@@ -50,7 +50,7 @@ export function createRaceAudioEvents() {
         silence = true;
         previousRace = race;
         previousPhase = previousCount = null;
-        lastImpact = lastLanding = lastNearMiss = lastTrick = null;
+        lastImpact = lastLanding = lastNearMiss = lastTrick = lastShieldBlock = null;
         wasThrusting = wasBoosting = lowCharge = false;
         collectedPickups = new WeakSet();
       }
@@ -69,6 +69,7 @@ export function createRaceAudioEvents() {
             if (car.landing.chain) sounds.push('chain-land');
           }
           if (car.nearMiss && car.nearMiss !== lastNearMiss) sounds.push('near');
+          if (car.shieldBlock && car.shieldBlock !== lastShieldBlock) sounds.push('shield-block');
           if (car.trick && car.trick !== lastTrick) sounds.push('whoosh');
           if (car.thrusting && !wasThrusting) sounds.push('lift');
           if (boosting && !wasBoosting) sounds.push('boost');
@@ -85,6 +86,7 @@ export function createRaceAudioEvents() {
       lastLanding = car.landing;
       lastNearMiss = car.nearMiss;
       lastTrick = car.trick;
+      lastShieldBlock = car.shieldBlock;
       wasThrusting = active && !!car.thrusting;
       wasBoosting = active && boosting;
       if (car.fuel >= 30) lowCharge = false;

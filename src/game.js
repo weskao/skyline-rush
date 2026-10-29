@@ -402,7 +402,7 @@ function bumpCars(race, a, b) {
 function contact(race, kind, obstacleX, intensity, retention) {
   const car = race.player;
   if (car.effects.shield > 0) { // the shield eats this hit: no damage, brief grace to clear the obstacle
-    car.effects.shield = 0;
+    car.effects.shield = 0; car.shieldBlock = { x: car.x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
     car.cooldown = 1;
     return;
   }

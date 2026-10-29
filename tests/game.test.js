@@ -1093,6 +1093,7 @@ test('shield absorbs exactly one collision', () => {
   assert.equal(race.player.collisions, 0);
   assert.equal(race.player.effects.shield, 0);
   assert.ok(race.player.speed > 38); // no speed lost
+  assert.deepEqual(race.player.shieldBlock && [race.player.shieldBlock.distance > 100, race.player.impact ?? null], [true, null], 'a blocked hit is its own event, not a crash');
   Object.assign(race.player, { distance: 200, cooldown: 0 });
   race.traffic = [{ x: 0, distance: 202, speed: 20, color: 0 }];
   advance(race, 0.1);
