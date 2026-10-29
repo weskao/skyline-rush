@@ -9,16 +9,16 @@ const TOTAL = DENSITY.high, STEP = 60;
 type Mesh = THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 interface Kit {
   group: THREE.Group;
-  meshes: [Mesh, Mesh, Mesh];
+  meshes: [Mesh, Mesh, Mesh, Mesh];
   slots: number[];
   initialized: boolean;
   previousQuality: VfxQuality | null;
   previousFirst: number | null;
 }
-const THEMES: Record<Theme, { body: string; trim: string; accent: string }> = {
-  neon: { body: '#33475b', trim: '#6aa6c6', accent: '#80e9ff' },
-  canyon: { body: '#956b53', trim: '#c19d77', accent: '#e9b887' },
-  aurora: { body: '#42665e', trim: '#bbcbd0', accent: '#e1f0f1' },
+const THEMES: Record<Theme, { body: string; trim: string; accent: string; detail: string; name: string }> = {
+  neon: { body: '#33475b', trim: '#6aa6c6', accent: '#80e9ff', detail: '#c98a5e', name: 'billboards' },
+  canyon: { body: '#956b53', trim: '#c19d77', accent: '#e9b887', detail: '#d8d3c4', name: 'service vans' },
+  aurora: { body: '#42665e', trim: '#bbcbd0', accent: '#e1f0f1', detail: '#59616b', name: 'spectator stands' },
 };
 
 export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (distance: number) => number) {
@@ -57,7 +57,10 @@ export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (dista
     }
     const meshes = [new THREE.InstancedMesh(bodyGeometry, material(color.body), TOTAL),
       new THREE.InstancedMesh(trimGeometry, material(color.trim), TOTAL),
-      new THREE.InstancedMesh(accentGeometry, accent, TOTAL)] as [Mesh, Mesh, Mesh];
+      new THREE.InstancedMesh(accentGeometry, accent, TOTAL),
+      // Fourth layer: human-scale roadside life (billboards, parked service vans, spectator stands).
+      new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), material(color.detail), TOTAL)] as [Mesh, Mesh, Mesh, Mesh];
+    meshes[3].name = `${id} ${color.name}`;
     for (const mesh of meshes) {
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.frustumCulled = false;
@@ -69,7 +72,12 @@ export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (dista
     const side = index % 2 ? 1 : -1;
     const x = roadCenter(distance) + side * (49 + (index * 11 % 33));
     const z = -distance;
-    const [body, trim, accent] = kits[id].meshes;
+    const [body, trim, accent, detail] = kits[id].meshes;
+    // Same sector, opposite kerb from the skyline body, still 30 m+ clear of the road.
+    const near = roadCenter(distance) - side * (38 + index % 4 * 3), dz = z;
+    if (id === 'neon') compose(detail, index, near, 12, dz, .8, 7, 14);
+    else if (id === 'canyon') compose(detail, index, near, 1.3, dz, 2.6, 2.6, 6);
+    else compose(detail, index, near, 2, dz, 6, 4, 16);
     if (id === 'neon') {
       const height = 28 + index % 7 * 7;
       const width = 14 + index % 3 * 3;

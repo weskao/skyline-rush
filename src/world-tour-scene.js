@@ -3,8 +3,8 @@ import { RACE_TRACKS, ROAD_LIMIT } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.ts';
 import { roadRibbon } from './geometry.ts';
 import { makeLandmark } from './world-tour-landmarks.js';
-import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
-import { createTunnelKit } from './world-tour-tunnels.js';
+import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad, DETAIL_KINDS, detailSetPlan } from './world-tour-scenery.js';
+import { createTunnelKit } from './world-tour-tunnels.js'; import { createWorldTourMotion } from './world-tour-motion.js';
 import { batchStaticChunk, poolStaticChunks, releaseStaticPool } from './world-tour-batching.ts';
 
 // One scenery system for five distinct destinations. Locations are authored as
@@ -57,8 +57,7 @@ const cube=new THREE.BoxGeometry(1,1,1);
 const cone=new THREE.ConeGeometry(1,1,7);
 const rock=new THREE.IcosahedronGeometry(1,0);
 const vec=v=>new THREE.Vector3(...v);
-const UNIT_Y=new THREE.Vector3(0,1,0);
-const ZER0=new THREE.Vector3();
+const UNIT_Y=new THREE.Vector3(0,1,0),ZER0=new THREE.Vector3();
 
 function seeded(i){const n=Math.sin(i*127.1+78.233)*43758.5453;return n-Math.floor(n);}
 const clamped=(id,s)=>Math.max(0,Math.min(RACE_TRACKS[id].length,s));
@@ -87,8 +86,9 @@ export function blocksLandmark(id,l,item){
 // out still. Only a prop with no clear slot stays put, shrunk to street scale.
 // shortcut: clear slots are checked against unblocked neighbours and this
 // chunk's moved props, not props moved in adjacent chunks.
+const landmarkBlocker=id=>item=>WORLD_THEMES[id].landmarks.some(l=>blocksLandmark(id,l,item));
 export function landmarkSafePlan(id,chunk,low=false){
-  const blocks=item=>WORLD_THEMES[id].landmarks.some(l=>blocksLandmark(id,l,item));
+  const blocks=landmarkBlocker(id);
   const items=sceneryPlan(id,chunk,low);
   if(!items.some(blocks))return items;
   const placed=[chunk-1,chunk,chunk+1].flatMap(c=>sceneryPlan(id,c,low)).filter(i=>!blocks(i));
@@ -173,7 +173,7 @@ export function createWorldTourScene(scene){
 
   const heroGroup=new THREE.Group();group.add(heroGroup);
   const sceneryLayer=new THREE.Group();sceneryLayer.name='Distance-anchored continuous scenery';group.add(sceneryLayer);
-  const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map();
+  const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map(),motion=createWorldTourMotion(kit,group,sceneryLayer);
   let sceneryTrack=null,sceneryDetail=null,rack=null,pooled=null;
   function releaseChunk(node){
     node.traverse(object=>{
@@ -202,7 +202,7 @@ export function createWorldTourScene(scene){
       if(chunks.has(index))continue;
       changed=true;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;chunk.userData.chunkIndex=index;
-      for(const item of detailPlan(id,index,level)){
+      for(const item of [...detailPlan(id,index,level),...detailSetPlan(id,index,level,landmarkBlocker(id))]){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
@@ -222,11 +222,11 @@ export function createWorldTourScene(scene){
   // Warm every streamed shader/variant before a new chunk appears mid-race.
   function shaderRack(id){
     const sample=new THREE.Group();sample.name='shader rack '+id;sample.visible=false;
-    for(const kind of SCENERY_KINDS[id])for(let i=0;i<3;i++)sample.add(kit.build(id,kind));
+    for(const kind of [...SCENERY_KINDS[id],...DETAIL_KINDS[id]])for(let i=0;i<3;i++)sample.add(kit.build(id,kind));
     const earth=kit.terrain(id,0);if(earth)sample.add(earth);
     sample.add(tunnelKit.buildChunk(id,0,['tunnel','tunnel','tunnel','boost-tunnel'].map(type=>({type,from:0,to:SCENERY_CHUNK_METRES}))));
     batchStaticChunk(sample);
-    for(const kind of SCENERY_KINDS[id])sample.add(kit.build(id,kind)); // plain variant, as in a chunk with under three copies
+    for(const kind of [...SCENERY_KINDS[id],...DETAIL_KINDS[id]])sample.add(kit.build(id,kind)); // plain variant, as in a chunk with under three copies
     return sample;
   }
   const boostGroup=new THREE.Group();boostGroup.name='Playable speed tunnel';group.add(boostGroup);
@@ -329,7 +329,7 @@ export function createWorldTourScene(scene){
       const home=trackPoint(id,origin),current=trackPoint(id,distance);
       group.position.set(home.x-current.x,home.y-current.y,home.z-current.z);
       sceneryLayer.position.set(-home.x,-home.y,-home.z);
-      streamScenery(id,distance,quality,sections);
+      streamScenery(id,distance,quality,sections);motion.update(id,distance,quality,time,reducedMotion);
       const rebuild=cachedOrigin!==origin||cachedQuality!==quality;
       if(rebuild){
         cachedOrigin=origin;cachedQuality=quality;
@@ -388,7 +388,7 @@ export function createWorldTourScene(scene){
       water.visible=landscape==='coast';
       if(water.visible)water.material.opacity=low?.7:.85;
       if(stars.visible){
-        stars.position.set(0,0,0);
+        stars.position.set(0,0,0);stars.geometry.setDrawRange(0,low?400:quality==='medium'?800:Infinity); // Fewer stars on weaker tiers.
         if(!reducedMotion)stars.rotation.y=Math.sin(time*.015)*.015;
       }
       // Physical driving reward is granted by game.js; portals are only the
