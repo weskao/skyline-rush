@@ -717,8 +717,7 @@ export function createWorld(canvas) {
   const smoothLook = new THREE.Vector3(0, 2, -25);
   let cameraMode = 0;
   let initialized = false;
-  let lastRace = null;
-  let trackId;
+  let lastRace = null, trackId;
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
   let carBank = 0;
   let photoView = null, photoDefaults = null, photoCapture = null;
