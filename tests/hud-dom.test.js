@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { setTextIfChanged, setHiddenIfChanged } from '../src/hud-dom.ts';
+import { setTextIfChanged, setHiddenIfChanged, createAnimationGate } from '../src/hud-dom.ts';
 
 // A DOM-like setter is enough to prove that high-frequency HUD updates do not
 // reassign properties when their displayed value is already current.
@@ -41,8 +41,7 @@ test('steady HUD visibility does not thrash the DOM', () => {
   assert.equal(writes, 1);
 });
 
-test('an idle HUD node never asks for its animations: getAnimations() forces a style flush every frame', async () => {
-  const { createAnimationGate } = await import('../src/hud-dom.ts');
+test('an idle HUD node never asks for its animations: getAnimations() forces a style flush every frame', () => {
   let reads = 0, cancelled = 0;
   const node = { animate: () => ({}), getAnimations: () => { reads++; return [{ cancel: () => cancelled++ }]; } };
   const gate = createAnimationGate(node);
