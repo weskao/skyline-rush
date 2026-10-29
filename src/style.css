@@ -734,7 +734,7 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .controls-reset { min-height: 44px; margin: 4px 6px 6px; border: 1px solid #779ca8; border-radius: 8px; background: transparent; font-size: 12px; }
 @media (max-width: 370px) {
   .controls-button { padding: 0 4px; font-size: 8px; letter-spacing: .6px; }
-  body:not([data-phase="ready"]) .brand { display: none; }
+  body:not([data-phase="ready"]):not([data-phase="paused"]) .brand { display: none; } /* paused: the brand is the way out of the race */
 }
 
 /* Control customization inherits the existing instrument panel. */
