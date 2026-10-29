@@ -1,3 +1,4 @@
+import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 import type { TrackConfig } from './game-types.ts';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
@@ -50,3 +51,9 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
   coastal: {"name":"Coastal Horizon","length":5800,"trafficDensity":1,"seed":9009,"sections":[{"from":850,"to":1300,"type":"crosswind","dir":1},{"from":2100,"to":2600,"type":"shortcut","x":7.5,"altitude":6},{"from":2950,"to":3310,"type":"boost-tunnel"},{"from":3950,"to":4600,"type":"crosswind","dir":-1}]},
   cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
 };
+
+// The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.
+export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : RACE_TRACKS[id];
+
+export const isModeTrack = (id: unknown, mode: unknown): id is string => typeof id === 'string' &&
+  (mode === 'circuit' ? id === CIRCUIT_ID : Object.hasOwn(RACE_TRACKS, id));

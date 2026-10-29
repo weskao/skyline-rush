@@ -76,9 +76,9 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
       score: sprintSeries.results.reduce((score, stage) => score + stage.score, 0) } } : race;
     ({ best, record } = recordModeRace(modeRace));
     progress.modeHistory = loadModeHistory();
-    if (race.mode === 'time' && record) {
+    if (['time', 'circuit'].includes(race.mode) && record) {
       const candidate = { time: race.elapsed, samples: trace ?? [] };
-      if (trace && validGhost(candidate, trackId)) ghosts.saveMode(race, candidate);
+      if (trace && validGhost(candidate, trackId, race.config)) ghosts.saveMode(race, candidate);
     }
   } else if (race.modifier) {
     const run = recordDaily(daily!, race);

@@ -82,6 +82,7 @@ export function createEffects(scene, roadCenter) {
   const pickupColors = { cell: blue, can: orange, tank: gold, overcharge: spectrum };
   const bonusStyles = { 'speed-pad': 'slipstream', 'air-pad': 'charge', 'recovery-pad': 'nitro', 'score-pad': 'risk', emp: 'mystery' };
   const ringColors = { charge: [0.1, 1.8, 2.5], nitro: gold, slipstream: purple, risk: red, mystery: spectrum };
+  const gateBasis = new THREE.Matrix4(), gateRight = new THREE.Vector3(), gateUp = new THREE.Vector3(), gateBack = new THREE.Vector3();
   const ringGeometry = new THREE.TorusGeometry(1, 0.012, 6, 64);
   const rainbow = new Float32Array(ringGeometry.attributes.position.count * 3), tint = new THREE.Color();
   for (let i = 0; i < ringGeometry.attributes.position.count; i++) {
@@ -175,7 +176,17 @@ export function createEffects(scene, roadCenter) {
             item.altitude + (source === 0 ? 0.85 : 0), distance));
           else mesh.position.set(roadCenter(item.distance) + item.x - center,
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
-          mesh.rotation.y = source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2);
+          if (source === 1 && options.worldFrame) {
+            // Fixed route topology: a new gate identity invalidates this pool slot's orientation.
+            if (mesh.userData.frameItem !== item) {
+              const frame = options.worldFrame(item.distance);
+              mesh.quaternion.setFromRotationMatrix(gateBasis.makeBasis(gateRight.fromArray(frame.right), gateUp.fromArray(frame.up), gateBack.fromArray(frame.forward).negate()));
+              mesh.userData.frameItem = item;
+            }
+          } else {
+            if (mesh.userData.frameItem) mesh.userData.frameItem = null;
+            mesh.rotation.set(0, source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2), 0);
+          }
           mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
           mesh.material = source === 0 ? pickupMaterials[item.tier] : ringMaterials[ringType];
           if (source === 1) {

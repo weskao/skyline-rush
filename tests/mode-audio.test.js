@@ -99,3 +99,16 @@ test('Endless kilometre milestones cue once and pause or restart never replays s
   assert.deepEqual(modeAudioCues(fresh, state), []);
   assert.equal(musicForMode(fresh), 'cruise');
 });
+
+test('each validated circuit lap cues once and pause or retry never replays it', () => {
+ const state = createModeAudioState(), r = race('circuit', { circuit: { player: { completed: 0 } } });
+ modeAudioCues(r, state);
+ r.circuit.player.completed = 1;
+ assert.deepEqual(modeAudioCues(r, state), ['gate-clear']);
+ assert.deepEqual(modeAudioCues(r, state), []);
+ r.phase = 'paused'; r.circuit.player.completed = 2;
+ assert.deepEqual(modeAudioCues(r, state), []);
+ r.phase = 'racing'; assert.deepEqual(modeAudioCues(r, state), []);
+ r.circuit.player.completed = 3; assert.deepEqual(modeAudioCues(r, state), ['gate-clear']);
+ assert.deepEqual(modeAudioCues(race('circuit', { circuit: { player: { completed: 0 } } }), state), []);
+});

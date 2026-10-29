@@ -74,7 +74,7 @@ function modeRecordLookup(trackId: string) {
       if (candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
           candidate.mode === run.mode) config = candidate;
     } catch { /* Opaque legacy rules still display as text. */ }
-    const found = { best: config ? loadModeBest(trackId, config) : null, ghost: run.mode === 'time' && !!config && !!loadModeGhost(trackId, config) };
+    const found = { best: config ? loadModeBest(trackId, config) : null, ghost: ['time', 'circuit'].includes(run.mode) && !!config && !!loadModeGhost(trackId, config) };
     saved.set(key, found);
     return found;
   };

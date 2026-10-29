@@ -89,6 +89,10 @@ Custom and Free Drive offer **Off / Classic Mystery Rings / Active Items / All I
 
 **Endless Highway** extends Coast beyond the authored finish as a distance-survival event. Traffic difficulty rises to a fixed cap; five collisions end a completed attempt. The personal record tracks longest absolute distance, separately from Career and Ghosts. Pause and WebGL recovery preserve the run. This first version supports Coast only; its nearby scenery and encounters use bounded pools.
 
+### Circuit Race
+
+**Circuit Race** adds Harbor Circuit, a separate, always-accessible 2 km closed loop with **1 / 3 / 5 laps**. Cross every sector in order to earn a lap; backward crossings, teleports and recovery cannot grant laps. HUD and results show splits, last lap, personal best lap and total time. Lap bests survive rolling History eviction; total times and Ghosts stay specific to the lap configuration. The ten original point-to-point courses keep their geography and Career progression.
+
 ### Race setup, results and accessibility
 
 - Mode and track selection remain accessible by keyboard and touch; contextual panels only show options relevant to the selected mode. Unavailable Cups explain the number of tracks still required.

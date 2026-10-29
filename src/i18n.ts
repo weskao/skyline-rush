@@ -1,3 +1,4 @@
+import { CIRCUIT_COPY } from './locales/circuit.ts';
 import { RACE_TRACKS } from './game.js';
 import { ENDLESS_COPY } from './locales/endless.ts';
 import { UI } from './locales/ui.ts';
@@ -11,9 +12,9 @@ const isLocale = (value: unknown): value is Locale =>
 const raceTracks = RACE_TRACKS as Record<string, { name?: string }>;
 export const TRACK_NAMES: Readonly<Record<Locale, Record<string, string>>> = Object.freeze({
   en: { coast: 'Coast', neon: 'Neon Downtown', canyon: 'Canyon Skyway', aurora: 'Aurora Pass', spiral: 'Sky Spiral',
-    taipei: 'Taipei Heritage', tokyo: 'Tokyo Afterdark', alpine: 'Alpine Rail Pass', coastal: 'Coastal Horizon', cosmic: 'Cosmic Orbit' },
+    taipei: 'Taipei Heritage', tokyo: 'Tokyo Afterdark', alpine: 'Alpine Rail Pass', coastal: 'Coastal Horizon', cosmic: 'Cosmic Orbit', 'harbor-circuit': 'Harbor Circuit' },
   'zh-TW': { coast: '海岸公路', neon: '霓虹都會', canyon: '峽谷天橋', aurora: '極光山道', spiral: '天際螺旋',
-    taipei: '台北古都', tokyo: '東京夜行', alpine: '山岳鐵道', coastal: '海岸天際', cosmic: '星際軌道' },
+    taipei: '台北古都', tokyo: '東京夜行', alpine: '山岳鐵道', coastal: '海岸天際', cosmic: '星際軌道', 'harbor-circuit': '港灣環道' },
 });
 const KEY = 'skyline-rush-locale';
 export const trackName = (trackId: string, locale: string = 'en'): string =>
@@ -25,7 +26,7 @@ export function saveLocale(locale: string, storage?: LocaleStorage): void {
 }
 
 export const CATALOGS = Object.freeze(Object.fromEntries(
-  SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...GAME[l], ...EVENT_LAB[l], ...ENDLESS_COPY[l] })]),
+  SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...GAME[l], ...EVENT_LAB[l], ...ENDLESS_COPY[l], ...CIRCUIT_COPY[l] })]),
 )) as unknown as Readonly<Record<Locale, Record<string, string>>>;
 
 // Any Chinese tag (zh, zh-CN, zh-Hans, zh-HK, zh-Hant...) maps to the one Chinese catalog we ship.

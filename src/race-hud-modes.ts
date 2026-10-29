@@ -1,3 +1,4 @@
+import { updateCircuitHud } from './circuit-hud.ts';
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
 import { t } from './i18n.ts';
 import type { ItemRace } from './item-ui.ts';
@@ -17,7 +18,7 @@ export interface ModePanelOptions {
   getStunt(): StuntRun | null;
   isTutorialActive(): boolean;
 }
-const NODE_IDS = ['clean-trial-hud', 'hazard-warning', 'elimination-hud', 'checkpoint-hud', 'sprint-stage', 'stunt-hud', 'practice-hud'];
+const NODE_IDS = ['clean-trial-hud', 'hazard-warning', 'elimination-hud', 'checkpoint-hud', 'sprint-stage', 'stunt-hud', 'practice-hud', 'circuit-hud'];
 
 export function createModePanels(options: ModePanelOptions) {
   const hudNodes = Object.fromEntries(NODE_IDS.map(id => [id, document.getElementById(id)!])) as Record<string, HTMLElement>;
@@ -89,6 +90,7 @@ export function createModePanels(options: ModePanelOptions) {
   }
   return {
     update(race: HudRace): void {
+      updateCircuitHud(hudNodes['circuit-hud']!, race.circuit, race.phase);
       updateObjectivePanels(race);
       updateSeriesPanels(race);
     },

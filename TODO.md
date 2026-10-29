@@ -113,6 +113,11 @@ Historical receipts below retain their original date and verification scope. Ear
 - [x] Exact published code `733d848` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547563). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
 - [x] Complete make verify on merged code `733d848` exits 0: strict TS/Vue/JS, Node 825 / Browser 497 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/endless/make-verify-main-ca1c777-user-merge.log`.
 
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `87421b9` on `feature/genuine-circuit-laps`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `87421b9` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818546894). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `87421b9` exits 0: strict TS/Vue/JS, Node 841 / Browser 503 / World Tour 326; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/circuit/make-verify-main-ca1c777-user-merge.log`.
+
 Historical receipts below retain their original date and verification scope.
 
 ## Main camera-probe integration (2026-10-28)
@@ -137,6 +142,11 @@ Historical receipts below retain their original date and verification scope.
 - [x] Complete resulting-main `make verify` on code `6883d0a` (verified 2026-10-29): strict TS/Vue/JS checks, 811 Node passed / 3 emulator-scoped skips, locked production build, 495 browser passed / 2 inapplicable desktop touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main-31ac7b1.log`.
 - [x] Preserve 8 original-resolution real-game images in `artifacts/endless/reviewed-main-31ac7b1/`; desktop and phone representatives were visually inspected. Fresh main31 original-resolution flows pass (2 cases). Chrome emulation remains separate from physical Safari/Android acceptance.
 - [x] Local Auth/Firestore compatibility on code `6883d0a`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/endless/cloud-main-31ac7b1.log`; no production cloud writes.
+
+- [x] Complete resulting-main `make verify` on code `362a380` (verified 2026-10-29): strict TS/Vue/JS checks, 827 Node passed / 3 emulator-scoped skips, locked production build, 501 browser passed / 2 inapplicable desktop touch-case skips, 326 dedicated World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-main-31ac7b1-recheck.log`.
+- [x] Preserve 20 original-resolution real-game images in `artifacts/circuit/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` equals this verified main31 integration; the images retain their original baseline label. Chrome emulation remains separate from physical Safari/Android acceptance.
+- [x] Local Auth/Firestore compatibility on code `362a380`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/circuit/cloud-main-31ac7b1.log`; no production cloud writes.
+- [x] After one high-host-load tilt failure, preserve the original first-run log/error context, observe 3/3 unchanged diagnostic repeats, then complete the entire recheck above with zero failures. No source, assertion or timeout changes. Add genuine unpaused desktop/phone first-seam crossings in `artifacts/circuit/seam-live-main-31ac7b1/`: visible HUD synced before capture, actual W-key input, lap count 0→1, four PNGs and two VP9 recordings (8.44s / 7.88s) validated. Original paused seam captures do not establish unobscured road geometry.
 - [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
 
 ## Main 0.25.0 integration (2026-10-28)
@@ -152,6 +162,8 @@ Historical receipts below retain their original date and verification scope.
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `903846e` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
 
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `6883d0a` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
+
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `362a380` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
 - [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
 
 ## Historical main integration through 0197547 (2026-10-28)
@@ -276,6 +288,25 @@ Base: `feature/event-lab-lite` a6c9f14 + origin/main 0a08d02 + `feature/env-haza
 - [x] Moving-traffic continuity RED → GREEN: a 20-minute deterministic driving regression reproduced nearby traffic disappearing when its birth chunk expired. Recycle by current distance and preserve the 40-car cap; all six Endless checks and the full Node suite pass (799 passed, 0 failed, 3 skipped). Logs: `artifacts/endless/traffic-continuity-{red,green,unit}.log`.
 - [x] Complete merged local `make verify` on code HEAD `12150b7`: strict TS/Vue/legacy checks, 801 Node passed / 3 emulator-dependent skipped, locked production build, 489 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main72466c3-final.log`. Cloud emulator checks also pass: 15 browser + 3 Rules tests (`cloud-main72466c3.log`).
 - [ ] Latest-feature-HEAD GitHub quality-gate, actual background-tab acceptance and physical iOS/Android GPU/thermal endurance. Same-name feature pushes passed the renewed automatic review; latest-HEAD CI remains pending.
+
+- [x] Complete local `make verify` on code `ca40ff0` with main `0197547`: strict types, 824 Node passed / 3 emulator skips, locked build, 501 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-main-0197547-post-landmark.log`. This is a historical receipt if a newer main is integrated.
+
+## Genuine circuit continuation (2026-10-28, feature/genuine-circuit-laps)
+
+- [x] Main camera integration exposed Harbor beacon clipping in both portrait locales (projected x 1.1326, limit 0.95). Preserve the unchanged browser RED and ready captures; move only the visual beacon from 240m to 150m along the route, retaining lateral clearance, scale, camera and track geometry. All 8 existing Circuit device/lap/Ghost flows pass; full resulting gate remains separate. Logs: `make-verify-main-0197547.log` (RED), `landmark-green.log` (focused GREEN).
+
+- [x] Real screenshot review exposed horizontal overflow in Circuit 5-lap phone metrics. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
+- [x] Repeat complete local `make verify` after the CSS fix on `9cee557`: strict TS/Vue/JS checks, 817 Node passed / 3 emulator skips, locked build, 495 browser passed / 2 skips and 72 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-result-wrap.log`. Pre-fix full-gate receipts below remain historical.
+
+
+- [x] Source/rules and topology-v1/history strategy in `docs/circuit-laps.md`; functional unknown-route RED is retained against baseline main for the separate `harbor-circuit` capability. The initial pre-implementation log was not preserved; follow-up RED/GREEN logs are retained. Preserve the ordered ten-route Classic/Daily/Cup catalog.
+- [x] Genuine 2 km closed geometry with one periodic road/vehicle/camera/item/Ghost/map frame; unwrapped progress and seam-aware physical gaps, ordered 1/3/5-lap sectors, interpolated splits and per-lap collectible identities.
+- [x] Follow-up RED/GREEN for Circuit records/Ghost bounds, default History selection, nonfinite progress, lap audio, ring orientation and shared geometry disposal. Permanent personal lap bests use the existing numeric bests map and survive rolling-history eviction/cloud merges.
+- [x] Strict TS/Vue checks and targeted history/Ghost/cloud checks pass (73 focused checks before the final matrix). 1/3/5-lap tests pass at 30/60/120 Hz; all six desktop/phone portrait/landscape × English/zh-TW real-game flows pass, including visible landmark/minimap, stored lap best, seam capture, result, retry, quit and Classic restart. Captures and logs: `artifacts/circuit/`.
+- [x] History discoverability RED → GREEN: Circuit Ghosts loaded but only Time Trial rows showed the Ghost badge. The shared view now includes valid Circuit Ghosts; 53 relevant Node checks, all 815 Node checks (3 emulator skips), and English desktop / zh-TW touch History menu flows pass. Cloud emulator checks pass: 15 browser + 3 Rules tests.
+- [x] Integrate fetched main `72466c3`; preserve both feature and main behavior. Original LAP-02/03/04 implementation boxes below are checked against the focused geometry, timing, sector and browser evidence. The broad seam/device acceptance remains open.
+- [x] Complete merged local `make verify` on code HEAD `c98a326`: strict TS/Vue/legacy checks, 817 Node passed / 3 emulator-dependent skipped, locked production build, 495 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-main72466c3-final.log`. The earlier interrupted run is superseded. Cloud emulator proof is recorded above.
+- [ ] Latest-feature-HEAD GitHub quality-gate and remaining manual acceptance: all showroom angles/AIRFLOW, rendered Ghost seam inspection, physical Safari/Android GPU, audio/perception and long-run checks. Same-name feature pushes passed the renewed automatic review; latest-HEAD CI remains pending.
 
 
 - [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.
@@ -1439,6 +1470,14 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [ ] **Acceptance:** completion requires the configured number of valid
   laps; player/AI cameras, positions, world props, mini-route map, Ghost,
   checkpoints and collision physics remain continuous across every seam.
+  - Evidence (2026-10-29, `tests/circuit-seam-acceptance.test.js` with existing `tests/circuit.test.js`):
+    across all three seams of a 3-lap race (2000/4000/6000 m, 0.05 m steps) the Harbor beacon (scene
+    origin), rivals ahead/behind, chase camera position and heading, Ghost (unwrapped samples, drawn 4 m
+    ahead) and mini-route marker move by < 0.2 m per step, and the marker never freezes. Every rival
+    finishes only after exactly 1/3/5 valid laps. Already covered: player completes exactly 1/3/5 laps at
+    30/60/120 Hz, teleport/backwards/recovery/hover cannot grant laps, per-lap item identities, and
+    collisions across the seam. Tests passed on existing code; mutation RED: unwrapped route marker,
+    non-periodic scene origin, and rivals finishing a lap early each fail. Pending: full gate + exact-HEAD CI.
 
 ### 10C. Result/history isolation and safeguards (P0)
 

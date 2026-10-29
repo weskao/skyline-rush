@@ -1,4 +1,6 @@
-import { RACE_TRACKS, ROAD_LIMIT } from './game.js';
+import { ROAD_LIMIT } from './game.js';
+import { raceTrack } from './race-tracks.ts';
+import { CIRCUIT_ID, circuitLaps } from './circuit-track.ts';
 
 export type GhostSample = [distance: number, x: number, altitude: number];
 export interface GhostRun { time: number; samples: GhostSample[] }
@@ -18,8 +20,11 @@ export function recordGhost(samples: GhostSample[], race: GhostRace): void {
 }
 
 // A saved ghost is untrusted: it must be a complete, physically possible run of this track.
-export function validGhost(ghost: unknown, trackId: string): ghost is GhostRun {
-  const track = (RACE_TRACKS as Record<string, { length: number }>)[trackId];
+export function validGhost(ghost: unknown, trackId: string, config?: unknown): ghost is GhostRun {
+  const track = raceTrack(trackId);
+  const laps = trackId === CIRCUIT_ID ? circuitLaps(config) : 1;
+  if (!laps) return false;
+  const length = (track?.length ?? 0) * laps;
   if (!track || !ghost || typeof ghost !== 'object') return false;
   const payload = ghost as Partial<GhostRun>;
   if (typeof payload.time !== 'number' || !Number.isFinite(payload.time) || payload.time <= 0 || !Array.isArray(payload.samples)) return false;
@@ -29,10 +34,11 @@ export function validGhost(ghost: unknown, trackId: string): ghost is GhostRun {
   for (const sample of samples) {
     if (!Array.isArray(sample) || sample.length !== 3 || !sample.every(Number.isFinite)) return false;
     const [distance, x, altitude] = sample;
-    if (distance < previous || distance > track.length || Math.abs(x) > ROAD_LIMIT || altitude < 0 || altitude > 12) return false;
+    if (trackId === CIRCUIT_ID && distance - previous > 14.01) return false;
+    if (distance < previous || distance > length || Math.abs(x) > ROAD_LIMIT || altitude < 0 || altitude > 12) return false;
     previous = distance;
   }
-  return previous >= track.length - 15; // the last sample is at most 0.1 s short of the line
+  return previous >= length - 15; // the last sample is at most 0.1 s short of the line
 }
 
 // shortcut: holds the last sample (≤ 0.1 s before the line) after it, upgrade if the finish pose matters

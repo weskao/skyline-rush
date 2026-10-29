@@ -31,7 +31,7 @@ export function createGhostStore() {
     mode,
     forRace(race: GhostRace): GhostRun | null {
       return race.modifier ? null : race.mode === 'classic' ? classic(race.trackId) :
-        race.mode === 'time' || race.mode === 'custom' ? mode(race) : null;
+        race.mode === 'time' || race.mode === 'custom' || race.mode === 'circuit' ? mode(race) : null;
     },
     saveClassic(trackId: string, ghost: GhostRun): void { saveGhost(trackId, ghost); classicGhosts.set(trackId, ghost); },
     saveMode,

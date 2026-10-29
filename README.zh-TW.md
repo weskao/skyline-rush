@@ -1,4 +1,4 @@
-<!-- source-sha256: 12c31ab52ead7a8b86a54dec86bca26ae542c558b8efe7d9bd0e460969b2c45c generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: c27264104513559efc10270999027e3c7fc9b1f317617c35c28b997b4f320b03 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 
 # Skyline Rush
 
@@ -65,6 +65,8 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
 選擇一條**已解鎖的賽道**,在賽道卡片下方選擇 **GAME MODE**,需要時展開其規則,然後按下 **Start race**(或按 Enter)。比賽仍然使用相同的 Three.js 道路、飛行、FLY / BOOST / NITRO 以及響應式觸控操作。開發分支提供下列模式:
 
+選擇一條**已解鎖的賽道**,在賽道卡片下方選擇 **GAME MODE**,需要時展開其規則,然後按下 **Start race**(或按 Enter)。比賽仍然使用相同的 Three.js 道路、飛行、FLY / BOOST / NITRO 以及響應式觸控操作。開發分支提供下列模式:
+
 | 模式 | 變化內容 | 勝利條件／進度 |
 | --- | --- | --- |
 | **Classic Race** | 標準的三名對手衝刺，可在 10 條賽道之一進行，包含車流、捷徑、光環與 NITRO。 | 登上頒獎台可解鎖下一條賽道；只有 Classic 會授予生涯星星、獎牌與官方最佳成績。 |
@@ -84,6 +86,10 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 ### 無盡公路
 
 **Endless Highway** 會延伸 Coast 的道路,越過原本終點後仍可繼續距離生存挑戰。車流難度逐步提升至固定上限;累計五次碰撞會結算本次挑戰。個人成績記錄最長絕對距離,與 Career 及幽靈車各自獨立。暫停與 WebGL 恢復會保留進度。第一版僅支援 Coast,附近景物與遭遇物件採用有上限的物件池。
+
+### 環道競速
+
+**Circuit Race** 新增獨立且所有玩家都能使用的港灣環道,每圈 2 公里,可選 **1 / 3 / 5 圈**。必須依序通過每個分段才會計入圈數;逆向通過、瞬移與恢復不會取得圈數。HUD 與結果顯示分段、上圈、個人最佳單圈及總時間。即使舊 History 紀錄輪替,最佳單圈仍會保留;總時間與幽靈車依圈數設定分開保存。原本十條點對點賽道的地形與 Career 進度維持原樣。
 
 ### 賽前設定、結果與無障礙功能
 

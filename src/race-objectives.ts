@@ -1,6 +1,6 @@
 export interface ObjectiveConfig { mode?: string; duration?: number }
 export type RaceObjective =
-  | Readonly<{ type: 'placement' | 'stage-points' | 'finish-time' | 'checkpoint-timer' | 'no-auto-finish' | 'survival' | 'distance-survival' }>
+  | Readonly<{ type: 'placement' | 'stage-points' | 'finish-time' | 'checkpoint-timer' | 'no-auto-finish' | 'survival' | 'distance-survival' | 'valid-laps' }>
   | Readonly<{ type: 'timed-score'; durationSeconds: number; routeEndAllowed: true }>;
 export interface ObjectiveRace {
   objective?: RaceObjective;
@@ -9,6 +9,7 @@ export interface ObjectiveRace {
   player: { distance: number };
   length: number;
   checkpoint?: { expired?: boolean };
+  circuit?: { player: { finishTime: number | null } } | null;
   elapsed: number;
   stuntLimit?: number;
 }
@@ -23,6 +24,8 @@ export function createRaceObjective(config: ObjectiveConfig = {}): RaceObjective
     case 'custom':
     case 'gauntlet':
       return Object.freeze({ type: 'placement' as const });
+    case 'circuit':
+      return Object.freeze({ type: 'valid-laps' as const });
     case 'cup':
       return Object.freeze({ type: 'stage-points' as const });
     case 'time':
@@ -53,6 +56,8 @@ export function raceCompletion(race: ObjectiveRace): RaceCompletion {
   const distance = race.player.distance;
   const routeEnd = distance >= race.length;
   switch (objective.type) {
+    case 'valid-laps':
+      return { done: race.circuit?.player.finishTime != null, reason: race.circuit?.player.finishTime != null ? 'route' : null };
     case 'no-auto-finish':
     case 'survival':
     case 'distance-survival':

@@ -275,7 +275,7 @@ function chooseTrack() {
   controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
-  document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
+  document.querySelector(`[data-track="${race.trackId}"], [data-race-mode="${race.mode}"]`).focus({ preventScroll: true });
   centerSelectedTrack();
 }
 $('#choose-track').addEventListener('click', chooseTrack);
@@ -297,7 +297,7 @@ const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 function start() {
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
-  if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
+  if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   // First Start presents the live practice; Skip / completion returns to this selected race.
   if (!hasSeenGuide()) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
@@ -316,7 +316,7 @@ function start() {
 
 function restart(trackId = race.trackId) {
   if (tutorial) { beginTutorial(); return; }
-  if (!world || (!daily && !unlockedTracks.has(trackId))) return;
+  if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
@@ -573,7 +573,7 @@ try {
           try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
         }
       }
-      if (!race.modifier && (race.mode === 'classic' || race.mode === 'time' || race.mode === 'custom')) recordGhost(trace, race);
+      if (!race.modifier && (['classic', 'time', 'custom', 'circuit'].includes(race.mode))) recordGhost(trace, race);
       accumulator -= 1 / 60;
     }
     const calm = calmMotion();
