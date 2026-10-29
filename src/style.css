@@ -1099,7 +1099,8 @@ body[data-phase="ready"] .telemetry { display: none; }
   scrollbar-color: var(--accent) #263849;
 }
 .intro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
-.intro-actions > * { flex-shrink: 0; }
+.intro-actions > *, .intro-primary > * { flex-shrink: 0; }
+.intro-primary { display: contents; } /* Start + Practice: one pinned row on phones, plain flex items elsewhere */
 .intro :is(.history-button, .garage-button, .practice-button), .intro .start-hint { margin: 0; }
 @media (min-width: 761px) and (max-width: 1000px) {
   .intro { top: clamp(148px, 17dvh, 180px); }
@@ -1425,6 +1426,19 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
  .race-mode-heading { margin-bottom: 2px; }
  .intro-controls > div { gap: 4px; white-space: nowrap; }
 }
+/* Phones and short landscape: 10A put the mode tabs and rules row above Start, and a 191px-tall landscape panel cannot
+   hold mode + track cards + Start at full size. The tabs swipe in one row like the track strip, and Start + Practice
+   stay pinned to the panel's bottom edge while the rest scrolls (user-approved, 2026-10-29). The actions box dissolves
+   so the pinned row's containing block is the scrolling intro itself; History and Garage scroll below it. */
+@media (max-width: 760px), (max-height: 500px) {
+ .race-mode-tabs { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; padding-bottom: 2px; }
+ .race-mode-tabs button { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
+ .intro .intro-actions { display: contents; }
+ .intro .intro-primary { position: sticky; bottom: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-block: 10px 4px; /* 320px: Practice wraps under Start */
+   background: linear-gradient(rgb(5 18 31 / 0), rgb(5 18 31 / .92) 10px); }
+ .intro .intro-actions > .text-button { display: inline-flex; margin: 8px 16px 0 0; }
+}
+@media (max-width: 760px) { .intro .intro-primary { bottom: 28px; } } /* clear of the phone panel's bottom fade */
 
 /* The series counter sits in the race info without expanding the top HUD. */
 .sprint-stage { display: inline-block; margin-top: 5px; color: #c9f4ff; font-size: 10px; font-weight: 700; letter-spacing: 1px; }

@@ -186,8 +186,8 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         </details>
       </section>
       <div class="intro-actions">
-        <button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
+        <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button></div>
         <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
         <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
