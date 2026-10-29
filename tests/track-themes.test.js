@@ -68,11 +68,12 @@ test('themed hazards join Custom races sorted, and generated hazards stay clear 
   }
 });
 
-function driveThrough(trackId, hazard, x) {
+function driveThrough(trackId, hazard, x, elapsed = 0) {
   const race = createRace(trackId, { mode: 'free', themes: true, traffic: 'off', items: false });
   race.hazards = [{ ...hazard, hit: false, passed: false }];
   race.rings = [];
   startRace(race);
+  race.elapsed = elapsed; // when a timed (pulse) hazard is crossed
   Object.assign(race.player, { distance: hazard.distance - 30, x, speed: 40 });
   // The driver holds the lane (e.g. counter-steering Canyon's crosswind); only the hazard decides the outcome.
   for (let i = 0; i < 90 && !race.hazards[0].hit && !race.hazards[0].passed; i++) {
@@ -84,8 +85,13 @@ function driveThrough(trackId, hazard, x) {
 
 test('each themed hazard knocks a car that drives into it and pays a clean pass beside it', () => {
   for (const trackId of THEMED_TRACKS) for (const hazard of themedHazards(trackId)) {
-    const hit = driveThrough(trackId, hazard, hazard.x);
+    // A timed gate is solid for half its cycle: drive into it at the first start time that meets it closed.
+    const move = hazard.placement.movementPattern;
+    const starts = move.kind === 'pulse' ? Array.from({ length: 8 }, (_, i) => i * move.period / 8) : [0];
+    const runs = starts.map(t => driveThrough(trackId, hazard, hazard.x, t));
+    const hit = runs.find(r => r.hazards[0].hit) ?? runs[0];
     assert.equal(hit.hazards[0].hit, true, `${hazard.id} hit`);
+    if (move.kind === 'pulse') assert.ok(runs.some(r => r.hazards[0].passed && !r.player.collisions), `${hazard.id} open gate lets the car through`);
     assert.equal(hit.player.collisions, 1, hazard.id);
     const lane = LANES.find(l => Math.abs(l - hazard.x) > hazard.halfWidth + CAR_HALF_WIDTH + 3);
     const pass = driveThrough(trackId, hazard, lane);

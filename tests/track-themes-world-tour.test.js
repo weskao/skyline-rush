@@ -10,14 +10,14 @@ const CAR_HALF_WIDTH = 0.85;
 const THEMES = {
   // Festival barricades and cone-lined boulevard closures, low enough to keep the Presidential Office in view.
   taipei: { types: ['barrier', 'cone'], closure: true, maxHeight: 2.5 },
-  // Traffic-control gates, neon construction equipment and a lane of roadworks.
-  tokyo: { types: ['gate', 'barrier', 'cone'], closure: true, maxHeight: 3 },
+  // Timed traffic-control gates, neon construction equipment and a lane of roadworks.
+  tokyo: { types: ['gate', 'barrier', 'cone'], closure: true, maxHeight: 3, moving: 'pulse' },
   // Snow drifts and avalanche debris on open mountain road; rail crossings wait for ENV-05.
   alpine: { types: ['debris', 'cone'], closure: true, maxHeight: 1.4 },
   // Lighthouse-side bridge works and sea-wall repairs; crosswinds wait for ENV-05.
   coastal: { types: ['barrier', 'cone'], closure: true, maxHeight: 2.5 },
-  // Floating asteroid fragments and energy barriers; their motion and low-gravity sectors arrive with ENV-05.
-  cosmic: { types: ['debris', 'energy-barrier'], closure: false, maxHeight: 3 },
+  // Floating asteroid fragments and sweeping energy barriers.
+  cosmic: { types: ['debris', 'energy-barrier'], closure: false, maxHeight: 3, moving: 'sweep' },
 };
 
 for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its own themed hazards`, () => {
@@ -26,7 +26,7 @@ for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its 
   assert.ok(placements.every(p => theme.types.includes(p.type)), `${trackId} uses ${theme.types}`);
   for (const type of theme.types) assert.ok(placements.some(p => p.type === type), `${trackId} shows ${type}`);
   if (theme.closure) assert.ok(placements.filter(p => p.type === 'cone').length >= 5, `${trackId} has a cone closure`);
-  if (theme.moving) assert.ok(placements.some(p => p.movementPattern.kind !== 'static'), `${trackId} has moving hazards`);
+  if (theme.moving) assert.ok(placements.some(p => p.movementPattern.kind === theme.moving), `${trackId} has ${theme.moving} hazards`);
   assert.ok(placements.every(p => p.altitude + p.hitbox.height <= theme.maxHeight), `${trackId} stays low`);
   // A crosswind pushes the car off its line, so no hazard sits inside one (±35 m).
   const winds = RACE_TRACKS[trackId].sections.filter(s => s.type === 'crosswind');

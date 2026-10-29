@@ -1,6 +1,11 @@
 // 11B themed hazard data for the World Tour roads (Taipei, Tokyo, Alpine, Coastal, Cosmic).
 import { place, closure } from './themed-placement.ts';
 
+type Placement = ReturnType<typeof place>;
+// Motion comes from ENV-04's hazardFrame: a pulse is solid for half its cycle, a sweep slides one lane at most.
+const timed = (p: Placement, period: number, phase: number) => ({ ...p, movementPattern: { kind: 'pulse', period, phase } });
+const swept = (p: Placement, period: number, phase: number) => ({ ...p, movementPattern: { kind: 'sweep', amplitude: 1.6, period, phase } });
+
 export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown[]>> = {
   // Taipei Heritage: festival barricades and cone-lined boulevard closures, low enough to keep
   // the Presidential Office in view.
@@ -13,15 +18,15 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
     place('taipei', 'taipei-barricade-4', 'barrier', 5000, 2.5),
     place('taipei', 'taipei-barricade-5', 'barrier', 5600, -2.5),
   ],
-  // Tokyo Afterdark: traffic-control gates, neon construction equipment and a lane of roadworks.
+  // Tokyo Afterdark: timed traffic-control gates, neon construction equipment and a lane of roadworks.
   tokyo: [
-    place('tokyo', 'tokyo-signal-gate-1', 'gate', 600, -2.5),
+    timed(place('tokyo', 'tokyo-signal-gate-1', 'gate', 600, -2.5), 4, 0),
     place('tokyo', 'tokyo-works-1', 'barrier', 1600, 7.5),
-    place('tokyo', 'tokyo-signal-gate-2', 'gate', 2200, 2.5),
+    timed(place('tokyo', 'tokyo-signal-gate-2', 'gate', 2200, 2.5), 4, 1.6),
     place('tokyo', 'tokyo-works-2', 'barrier', 3300, -7.5),
-    place('tokyo', 'tokyo-signal-gate-3', 'gate', 3800, -2.5),
+    timed(place('tokyo', 'tokyo-signal-gate-3', 'gate', 3800, -2.5), 4, 3.2),
     ...closure('tokyo', 'tokyo-roadworks', 4760, 7.5),
-    place('tokyo', 'tokyo-signal-gate-4', 'gate', 6200, 2.5),
+    timed(place('tokyo', 'tokyo-signal-gate-4', 'gate', 6200, 2.5), 4, 4.7),
   ],
   // Alpine Rail Pass: snow drifts and avalanche debris on the open mountain road.
   alpine: [
@@ -43,15 +48,15 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
     place('coastal', 'coastal-bridge-works-4', 'barrier', 4900, -2.5),
     place('coastal', 'coastal-bridge-works-5', 'barrier', 5300, 7.5),
   ],
-  // Cosmic Orbit: floating asteroid fragments and energy barriers between the solar winds.
+  // Cosmic Orbit: floating asteroid fragments and sweeping energy barriers between the solar winds.
   cosmic: [
     place('cosmic', 'cosmic-fragment-1', 'debris', 700, -2.5),
-    place('cosmic', 'cosmic-barrier-1', 'energy-barrier', 1100, 2.5),
+    swept(place('cosmic', 'cosmic-barrier-1', 'energy-barrier', 1100, 2.5), 3.5, 0),
     place('cosmic', 'cosmic-fragment-2', 'debris', 2400, 7.5),
-    place('cosmic', 'cosmic-barrier-2', 'energy-barrier', 2700, -7.5),
+    swept(place('cosmic', 'cosmic-barrier-2', 'energy-barrier', 2700, -7.5), 4, 2),
     place('cosmic', 'cosmic-fragment-3', 'debris', 4200, 2.5),
-    place('cosmic', 'cosmic-barrier-3', 'energy-barrier', 4700, -2.5),
+    swept(place('cosmic', 'cosmic-barrier-3', 'energy-barrier', 4700, -2.5), 3, 1),
     place('cosmic', 'cosmic-fragment-4', 'debris', 5900, -7.5),
-    place('cosmic', 'cosmic-barrier-4', 'energy-barrier', 7100, 7.5),
+    swept(place('cosmic', 'cosmic-barrier-4', 'energy-barrier', 7100, 7.5), 4.5, 4),
   ],
 };
