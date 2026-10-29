@@ -417,7 +417,9 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .touch-controls .touch-fly { width: calc(53px * var(--touch-scale, 1)); height: calc(68px * var(--touch-scale, 1)); }
   .touch-controls .touch-boost { width: calc(44px * var(--touch-scale, 1)); }
 }
-@media (hover: none) and (pointer: coarse) and (min-width: 761px) {
+/* Touch landscape under 761px wide (Android Chrome with its bars, Safari with toolbars) shares the landscape race HUD below;
+   the portrait phone HUD stacked every block on its thumb controls. */
+@media (hover: none) and (pointer: coarse) and (min-width: 761px), (hover: none) and (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
   body:not([data-phase="ready"]) .mode-indicator { position: fixed; left: 50%; top: 144px; transform: translateX(-50%); width: 225px; padding: 8px 12px; gap: 5px; }
   #flight-state { font-size: 21px; }
   .mode-key { display: none; }
@@ -434,16 +436,18 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .race-progress { width: 250px; }
   .impact-report { top: 28%; }
 }
-@media (pointer: coarse) and (min-width: 761px) and (max-height: 500px) {
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
   .leaderboard { position: fixed; left: 150px; top: 82px; width: clamp(96px, calc(50vw - 284px), 130px); padding: 4px 6px; }
   .racer { gap: 5px; }
   /* POSITION ended flush on the speed readout, so a home-indicator inset (it lifts the gauges) made them overlap */
   .time, .style-score { margin-top: 5px; }
 }
 /* Landscape Safari with its toolbar showing leaves ~340px: lift the race info and drop secondary lines so blocks stay apart. */
-@media (pointer: coarse) and (min-width: 761px) and (max-height: 380px) {
+@media (pointer: coarse) and (max-height: 380px) and (orientation: landscape) {
   .race-info, .leaderboard { top: 70px; }
-  .leaderboard { left: 166px; } /* clears POSITION when the place-change arrow widens it */
+  /* clears POSITION when the place-change arrow widens it; the width and progress bar follow so they stay 6px+ apart */
+  .leaderboard { left: 166px; width: clamp(96px, calc(50vw - 300px), 130px); }
+  .race-progress { width: min(250px, calc(100vw - 536px)); }
   .speed-ticks, .fuel-caption, .fuel-stat .boost-status { display: none; }
   .fuel-track { margin: 4px 0; }
   .fuel-heading { gap: 6px; }
@@ -454,6 +458,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   body:not([data-phase="ready"]) .telemetry .flight-telemetry { transform: translateY(-36px); }
   .time, .style-score { margin-top: 3px; }
   .racer { height: 21px; }
+}
+@media (pointer: coarse) and (min-width: 761px) and (max-height: 380px) {
   .intro { bottom: 16px; } /* the ready screen hides the telemetry this gap used to clear */
   .intro h1 { display: none; }
 }
@@ -607,6 +613,9 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 /* Phones and short landscape have no free slot for the telemetry panel mid-race: it covered the speed and race info.
    It stays on the ready showcase; while racing the pressed AIRFLOW button and the streamlines show it is on. */
 @media (max-width: 760px), (max-height: 500px) { body:not([data-phase="ready"]) .airflow-hud { display: none; } }
+/* Wider screens under ~840px tall keep the headline and mode only, as phones do: zh-TW's channel rows reached the
+   speed readout on a 1024x768 iPad. */
+@media (min-width: 761px) and (max-height: 839px) { body:not([data-phase="ready"]) :is(.aero-channels, .aero-disclaimer) { display: none; } }
 @media (max-height: 500px) {
   .aero-tools { top: 64px; right: max(16px, env(safe-area-inset-right, 0px)); }
   .airflow-hud { top: 150px; width: 160px; padding: 10px; }
@@ -741,6 +750,8 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 /* Below ~400px the full-width CONTROLS label pushed PAUSE off the right edge mid-race (375px Android report). */
 @media (max-width: 400px) { .controls-button { padding: 0 4px; font-size: 8px; letter-spacing: .6px; } }
 @media (max-width: 370px) { body:not([data-phase="ready"]) .brand { display: none; } }
+/* Up to 540px the wordmark plus the race toolbar (534px in English) also pushed PAUSE off the edge. */
+@media (max-width: 540px) { body:not([data-phase="ready"]) .brand > span { display: none; } }
 
 /* Control customization inherits the existing instrument panel. */
 .keymap-field { display: grid; grid-template-columns: 1fr; }
@@ -1288,7 +1299,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .race-route-map { --cluster-scale: 1; }
 body:has(#touch-controls[data-size="S"]) .race-route-map { --cluster-scale: .85; }
 body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15; }
-@media (min-width:761px) and (max-height:500px), (max-width:760px) and (min-height:501px) and (max-height:700px) {
+@media (max-height:500px) and (orientation:landscape), (max-width:760px) and (min-height:501px) and (max-height:700px) {
  .race-route-map { --cluster: calc(2 * var(--touch-cell) * var(--cluster-scale) + 20px); display:block; top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(var(--thumb-edge), var(--safe-right)) + var(--cluster)); }
  body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(var(--thumb-edge), var(--safe-left)) + var(--cluster)); }
 }
@@ -1637,3 +1648,18 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .cloud-player-details strong { display: block; font-size: 15px; color: #f3f9ff; }
 .cloud-player-details p { margin: 3px 0 0; font-size: 13px; color: #c5d7e2; }
 #cloud-sync-now:not(:disabled) { border-color: #66c6d5; }
+
+/* Touch landscape under 761px wide: what the shared landscape race HUD blocks above do not reset from the portrait phone
+   rules. POSITION and the leaderboard fill the left column (to 226px), the gauges the right; the progress bar and flight
+   mode narrow to the centre column between them. Laid out down to 640px wide. */
+@media (pointer: coarse) and (max-width: 760px) and (max-height: 500px) {
+  .race-info { inset: 82px 24px auto; }
+  .position-stat strong { font-size: 42px; }
+  .leaderboard { left: 130px; }
+  .race-progress { top: 0; width: min(250px, calc(100vw - 468px)); padding: 11px 13px 15px; }
+  body:not([data-phase="ready"]) .mode-indicator { width: min(225px, calc(100vw - 468px)); }
+  .fuel-stat { width: 126px; }
+  .speed-caption { display: none; }
+  .race-route-map { width: 67px; height: 73px; }
+}
+@media (pointer: coarse) and (max-width: 760px) and (max-height: 380px) { .race-info { top: 70px; } }

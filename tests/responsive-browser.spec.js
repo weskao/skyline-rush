@@ -141,13 +141,15 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
 }
 
 // zh-TW runs the tight viewports only: its CJK font stack widens HUD text (the place-change arrow once did), the roomy ones add no signal.
-const ZH_TW_HUD_SIZES = ['844x390', '874x339', '390x844', '375x667', '320x568'];
+const ZH_TW_HUD_SIZES = ['844x390', '780x360', '874x339', '750x342', '1024x768', '390x844', '375x667', '320x568'];
 // Device insets: iPhone landscape keeps a home-indicator inset below the page, a notch or Android 15's bars a top one.
 const NOTCH = { top: 47, bottom: 34, left: 0, right: 0 };
 const ANDROID_15_BUTTONS = { top: 48, bottom: 48, left: 0, right: 0 };
 const LANDSCAPE_ISLAND = { left: 62, right: 62, top: 0, bottom: 21 };
 for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch, insets] of [[844, 390, true, { left: 47, right: 47, top: 0, bottom: 21 }],
-  [874, 339, true, LANDSCAPE_ISLAND], [1440, 900, false], [1024, 768, true], [820, 1180, true], [390, 844, true, NOTCH], [412, 892, true, ANDROID_15_BUTTONS],
+  [874, 339, true, LANDSCAPE_ISLAND],
+  // Landscape phones under 761px wide (Android Chrome with its bars, Safari with toolbars) once got the portrait phone HUD.
+  [740, 360, true], [750, 342, true], [780, 360, true], [814, 380, true], [480, 1040, true], [658, 320, true], [640, 360, true], [1440, 900, false], [1024, 768, true], [820, 1180, true], [390, 844, true, NOTCH], [412, 892, true, ANDROID_15_BUTTONS],
   [375, 667, true], [360, 780, true], [320, 568, true]]) {
   if (locale === 'zh-TW' && !ZH_TW_HUD_SIZES.includes(`${width}x${height}`)) continue;
   test.describe(`race HUD ${width}x${height}${locale === 'zh-TW' ? ' zh-TW' : ''}`, () => {
