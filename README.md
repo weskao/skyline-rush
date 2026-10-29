@@ -261,6 +261,7 @@ For a phone check, serve the build on your network (`npx vite preview --host 0.0
 
 ```sh
 make perf BASE=main         # A/B in Chrome at 412×915, CPU throttled 6× (RATE=20 for a low-end phone), 3 alternating rounds
+make perf BASE=main VIEWPORT=desktop  # The same A/B at 1440×900 desktop size
 make perf-phone             # Like make phone: asks base version, Tailscale/Wi-Fi and Telegram; logs phone temperatures
 ```
 

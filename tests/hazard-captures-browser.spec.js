@@ -12,7 +12,7 @@ const CASES = [
   { track: 'aurora', id: 'aurora-ice-1', mesh: 'hazard-surfaces', times: [0] },
   { track: 'canyon', id: 'canyon-rock-1', mesh: 'gauntlet-barriers', times: [1.6] }, // 20% into an 8 s fall: half-way down
   { track: 'neon', id: 'neon-gate-1', mesh: 'gauntlet-barriers', times: [1, 3] }, // the two ends of a 4 s sweep
-  { track: 'tokyo', id: 'tokyo-signal-gate-1', mesh: 'gauntlet-barriers', times: [1, 3] }, // on, then off, in a 4 s pulse
+  { track: 'tokyo', id: 'tokyo-signal-gate-1', mesh: 'gauntlet-barriers', times: [1, 3], hold: 25, lane: -7.5 }, // on, then off, in a 4 s pulse; closer, so Tokyo's curve keeps it in a portrait frame
 ];
 
 for (const [name, viewport, hasTouch, locale] of [
@@ -37,18 +37,20 @@ for (const [name, viewport, hasTouch, locale] of [
       await expect(page.locator('#countdown')).toBeHidden({ timeout: ciTimeout(10_000) });
       const samples = [];
       for (const time of c.times) {
-        await page.evaluate(async ({ track, id, time }) => {
+        await page.evaluate(async ({ track, id, time, hold, lane }) => {
           const { themedHazards } = await import('/src/track-themes.ts');
           const race = window.gameplay.race, target = themedHazards(track).find(h => h.id === id);
           race.traffic = []; race.pickups = []; race.rings = [];
           race.hazards = [target];
-          const free = [-7.5, -2.5, 2.5, 7.5].find(lane => Math.abs(lane - target.x) > 5);
-          // Hold the car 45 m short with race time pinned, so the frame shows a known motion state.
+          const free = lane ?? [-7.5, -2.5, 2.5, 7.5].find(l => Math.abs(l - target.x) > 5);
+          // Hold the car short (45 m unless the case says) with race time pinned, so the frame shows a known motion state.
           cancelAnimationFrame(window.hazardPin);
-          const pin = () => { if (race.phase === 'racing') { Object.assign(race.player, { distance: target.distance - 45, x: free, speed: 0, altitude: 0 }); race.elapsed = time; } window.hazardPin = requestAnimationFrame(pin); };
+          const pin = () => { if (race.phase === 'racing') { Object.assign(race.player, { distance: target.distance - hold, x: free, speed: 0, altitude: 0 }); race.elapsed = time; } window.hazardPin = requestAnimationFrame(pin); };
           pin();
-        }, { track: c.track, id: c.id, time });
+        }, { track: c.track, id: c.id, time, hold: c.hold ?? 45, lane: c.lane });
         const read = () => page.evaluate(async ({ meshName }) => {
+          // Two frames: the pool already holds the previous time's pose until a frame renders the new pin.
+          await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
           const { scene, camera } = window.gameScene, mesh = scene.getObjectByName(meshName);
           const { hazardPose } = await import('/src/hazard-race.ts');
           const race = window.gameplay.race, target = race.hazards[0];
@@ -75,8 +77,8 @@ for (const [name, viewport, hasTouch, locale] of [
         expect(Math.abs(first.y - (first.poseAltitude + first.height / 2))).toBeLessThan(0.15);
       }
       if (c.id === 'neon-gate-1') expect(Math.abs(Math.abs(first.x - second.x) - 3.6)).toBeLessThan(0.1);
-      await page.evaluate(() => { cancelAnimationFrame(window.hazardPin); window.gameplay.race.phase = 'finished'; });
-      await page.keyboard.press('Escape');
+      // Just reload: forcing phase 'finished' without the race.result every real finish sets crashed the result screen.
+      await page.evaluate(() => cancelAnimationFrame(window.hazardPin));
       await page.reload();
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     }

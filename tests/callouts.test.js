@@ -226,3 +226,13 @@ test('a landed roll that refills flight charge names the charge in its detail', 
   assert.equal(callout?.title, 'TRICK +0.25');
   assert.equal(callout.detail, 'CLEAN LANDING · +5% CHARGE');
 });
+
+test('a hazard near-miss without a traffic combo never breaks the callouts', () => {
+  // hazard-race.ts counts close obstacle passes in nearMisses but only traffic near-misses set car.nearMiss.
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  Object.assign(race.player, { nearMisses: 1, nearMiss: null });
+  race.elapsed = 0.5;
+  assert.doesNotThrow(() => callouts.update(race));
+  assert.equal(callouts.update(race), null, 'the Obstacle Run HUD already counts dodges; no combo to announce');
+});

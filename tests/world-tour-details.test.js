@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { DETAIL_KINDS, detailSetPlan } from '../src/world-tour-details.js';
+import { DETAIL_KINDS, detailSetPlan, skylinePulse } from '../src/world-tour-details.js';
 import { SCENERY_KINDS, propParts, createSceneryKit } from '../src/world-tour-scenery.js';
 import { WORLD_THEMES, createWorldTourScene, blocksLandmark, roadObstacles } from '../src/world-tour-scene.js';
 import { RACE_TRACKS, ROAD_LIMIT } from '../src/game.js';
@@ -75,4 +75,28 @@ test('weak hardware draws fewer background stars; High keeps all of them', () =>
   assert.equal(drawn('high'),total);
   assert.ok(drawn('medium')<total&&drawn('low')<drawn('medium'),`${drawn('medium')} / ${drawn('low')}`);
   assert.equal(drawn('high'),total,'returning to High restores every star');
+});
+
+test('coastline spray surges and skyline beacons blink through one shared glow each; reduced motion holds them', () => {
+  assert.ok(DETAIL_KINDS.coastal.includes('sea-spray'));
+  for(const id of ['taipei','tokyo','cosmic'])assert.ok(DETAIL_KINDS[id].includes('beacon-mast'),id);
+  for(const id of ids)for(const c of chunks(id))for(const item of detailSetPlan(id,c,'high'))
+    if(item.kind==='sea-spray')assert.equal(item.side,1,'spray stays on the water side');
+  assert.deepEqual(skylinePulse(3),skylinePulse(3));
+  const samples=Array.from({length:100},(_,i)=>skylinePulse(i*.1));
+  for(const p of samples)for(const v of [p.beacon,p.spray])assert.ok(v>=.2&&v<=1,String(v));
+  assert.equal(Math.max(...samples.map(p=>p.beacon)),1);
+  assert.ok(Math.min(...samples.map(p=>p.beacon))<.5,'beacons blink');
+  assert.ok(new Set(samples.map(p=>p.spray.toFixed(2))).size>10,'spray surges');
+  const scene=new THREE.Scene(),tour=createWorldTourScene(scene),glows=new Map();
+  // The track's hidden shader rack carries each glow, so it compiles before racing starts.
+  for(const [id,name] of [['coastal','spray'],['tokyo','beacon']]){
+    tour.update(id,0,'high',[],0);
+    const rack=[];scene.traverse(o=>{if(o.name.startsWith('shader rack')&&!o.visible)o.traverse(m=>rack.push(m));});
+    const material=rack.find(m=>m.material?.userData.pulse===name)?.material;
+    assert.ok(material,`${id}: ${name} glow is warmed in the shader rack`);glows.set(name,material);
+  }
+  const colour=(t,reduced)=>{tour.update('tokyo',1213,'high',[],t,reduced);return glows.get('beacon').color.getHex();};
+  assert.notEqual(colour(.1),colour(1),'beacons blink while racing');
+  assert.equal(colour(.1,true),colour(1,true),'reduced motion holds the beacons steady');
 });

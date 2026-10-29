@@ -19,6 +19,8 @@ const STYLES = {
 
 // 11B Aurora Pass: two authored blizzard stretches (opt-in themed races only). Visual-only: the haze
 // thickens over 150 m ramps inside each stretch so visibility never jumps; grip and physics are unchanged.
+/** Weather particles drawn this frame: weak hardware and touch devices take a third of the transparent overlay. */
+export const weatherDrops = (quality: string, touch: boolean): number => touch || quality === 'low' ? 60 : 180;
 export const AURORA_BLIZZARDS = Object.freeze([{ from: 2000, to: 2500 }, { from: 3700, to: 4150 }]);
 const BLIZZARD_RAMP = 150, BLIZZARD_HAZE = 1.6;
 export function blizzardLevel(trackId: string, distance: number, themed: boolean): number {

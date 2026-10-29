@@ -13,6 +13,15 @@ export const hazardWarningDistance = (h: { placement?: HazardPlacement }): numbe
   ? Math.max(LEGACY_WARNING, Math.ceil(Math.max(h.placement.warningLeadSeconds, MIN_WARNING_SECONDS) * MAX_APPROACH_SPEED))
   : LEGACY_WARNING;
 
+/** The HUD warning line for a hazard; generated Gauntlet barriers keep their moving-barrier copy. */
+const WARNING_KEYS: Partial<Record<string, string>> = { push: 'mode.hazardWind', slow: 'mode.hazardGrip', launch: 'mode.hazardRamp' };
+export function hazardWarningKey(h: { placement?: HazardPlacement }): string {
+  if (!h.placement) return 'mode.hazardWarning';
+  const effect = OBJECT_CATALOG[h.placement.type].effect;
+  if (effect === 'block') return h.placement.movementPattern.kind === 'static' ? 'mode.hazardBlock' : 'mode.hazardWarning';
+  return WARNING_KEYS[effect] ?? 'mode.hazardAhead';
+}
+
 // A timed hazard (pulse) opens again, so waiting is its escape; push/slow/collect/trigger never close a lane.
 const closes = (p: HazardPlacement) => OBJECT_CATALOG[p.type].effect === 'block' && p.movementPattern.kind !== 'pulse';
 const reach = (p: HazardPlacement) => p.hitbox.halfWidth + (p.movementPattern.kind === 'sweep' ? p.movementPattern.amplitude : 0);
