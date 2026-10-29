@@ -418,7 +418,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .touch-controls .touch-boost { width: calc(44px * var(--touch-scale, 1)); }
 }
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) {
-  body:not([data-phase="ready"]) .mode-indicator { position: fixed; left: 50%; top: 144px; transform: translateX(-50%); width: 225px; padding: 8px 12px; gap: 5px; }
+  body:not([data-phase="ready"]) .mode-indicator { position: fixed; left: 50%; top: max(144px, calc(var(--race-progress-bottom, 0px) + 8px)); transform: translateX(-50%); width: 225px; padding: 8px 12px; gap: 5px; }
   #flight-state { font-size: 21px; }
   .mode-key { display: none; }
   .speed-number > strong { font-size: 45px; }
@@ -1262,10 +1262,10 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- .race-route-map { width:75px;height:88px;right:18px;top:272px; } /* below the 262px progress bar */
+ .race-route-map { width:75px;height:88px;right:18px;top:max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); } /* below the progress bar, which mode HUD rows grow */
 }
 @media(max-width:400px) {
- .race-route-map {width:59px;height:72px;right:14px;top:270px;}
+ .race-route-map {width:59px;height:72px;right:14px;top:max(270px, calc(var(--race-progress-bottom, 0px) + 8px));}
 }
 @media(max-height:500px) and (min-width:761px) {
  .race-route-map {width:67px;height:73px;}

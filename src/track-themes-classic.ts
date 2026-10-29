@@ -13,16 +13,16 @@ export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown
     place('coast', 'coast-gust-2', 'gust', 3900, 0, { seed: 2, warningLeadSeconds: 2 }),
     place('coast', 'coast-cargo-4', 'debris', 4150, -7.5),
   ],
-  // Neon Downtown: roadworks between the tunnels, a coned-off lane, a diversion and neon gates that
-// swing between two lanes, opening one while closing the other.
+  // Neon Downtown: roadworks barriers sliding between two lanes on a slow 6 s cycle, a coned-off lane, a diversion
+  // and neon gates that swing on a quicker 4 s beat, opening one lane while closing the other.
   neon: [
-    place('neon', 'neon-works-1', 'barrier', 500, 2.5),
+    place('neon', 'neon-works-1', 'barrier', 500, 4.6, sweep(6)),
     ...closure('neon', 'neon-lane-closure', 2380, -7.5),
-    place('neon', 'neon-works-2', 'barrier', 2520, -2.5),
+    place('neon', 'neon-works-2', 'barrier', 2520, -4.6, sweep(6, Math.PI)),
     place('neon', 'neon-branch-1', 'branch-marker', 2600, 0, { seed: 1 }), // risky right: past the swinging gate
     place('neon', 'neon-gate-1', 'gate', 2700, 4.6, sweep(4)),
     ...closure('neon', 'neon-diversion', 3480, 7.5),
-    place('neon', 'neon-works-3', 'barrier', 3600, -2.5),
+    place('neon', 'neon-works-3', 'barrier', 3600, -4.6, sweep(6)),
     place('neon', 'neon-gate-2', 'gate', 3720, -4.6, sweep(4, Math.PI)),
   ],
   // Canyon Skyway: warned rockfall and cliff-side debris, kept clear of the broken-bridge gaps. A precision

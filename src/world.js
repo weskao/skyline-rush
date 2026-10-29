@@ -15,7 +15,7 @@ import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
-import { createRaceVisuals, blizzardLevel } from './race-visuals.ts';
+import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
@@ -24,7 +24,7 @@ import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.ts';
-import { orientCarOnRoad } from './vehicle-pose.ts';
+import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
 import { classicRoadCenter, trackPoint, trackFrame, trackLocalPosition } from './track-paths.ts';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
@@ -565,7 +565,7 @@ export function createWorld(canvas) {
     // past it would pile up at the arch like parked cars; they leave the scene instead.
     const pastFinish = (trackId === 'spiral' || TOUR_IDS.has(trackId)) && car.distance > RACE_TRACKS[trackId].length;
     mesh.visible = isPlayer || (relative > -55 && relative < 900 && !pastFinish);
-    if (!mesh.visible) return;
+    if (!mesh.visible) return; mesh.userData.roadDistance = car.distance; mesh.userData.altitude = car.altitude || 0; // the pose the shadow sits under
     if (trackId === 'spiral' || framedRoad(trackId)) {
       if (trackId === 'spiral') mesh.position.fromArray(skyPosition(car.distance, car.x, car.altitude || 0, distance));
       else {
@@ -719,7 +719,7 @@ export function createWorld(canvas) {
       const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
       weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || blizzard > 0 || (visualPreset === 'track' && trackId === 'aurora'));
       weather.material.size = raining ? .12 : .24;
-      weatherGeometry.setDrawRange(0, touch || visual.quality === 'low' ? 60 : 180);
+      weatherGeometry.setDrawRange(0, weatherDrops(visual.quality, touch));
       if (weather.visible) {
         for (let i = 0; i < 180; i++) weatherPositions[i * 3 + 1] = (i * 17 + time * (raining ? -18 : -3)) % 32;
         weatherGeometry.attributes.position.needsUpdate = true;
@@ -892,10 +892,10 @@ export function createWorld(canvas) {
           ghostCar.rotation.y = -roadHeading(ghost.distance);
         }
       }
-      shadow.position.x = player.position.x;
-      shadow.position.z = player.position.z;
-      shadow.scale.setScalar(1 + player.position.y * 0.04);
-      shadow.material.opacity = 0.6 / (1 + player.position.y * 0.2);
+      const { roadDistance, altitude: lift } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
+      if (trackId === 'spiral' || framedRoad(trackId)) placeGroundShadow(shadow, trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance), player.position, lift);
+      else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
+      shadow.scale.setScalar(1 + lift * 0.04); shadow.material.opacity = 0.6 / (1 + lift * 0.2);
       if (trackId === 'spiral' || framedRoad(trackId)) {
         if(trackId==='spiral')finish.position.fromArray(skyPosition(race.length,0,0,distance));
         else {const p=trackPoint(trackId,race.length),o=trackPoint(trackId,distance);finish.position.set(p.x-o.x,p.y-o.y,p.z-o.z);}

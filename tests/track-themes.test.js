@@ -169,3 +169,14 @@ test('ENV-04 a themed course marks a safe/risky branch ahead of a hazard, risky 
     assert.ok(themedHazards(trackId).some(h => h.id === p.id), `${p.id}: markers reach race.hazards`);
   }
 });
+
+test('Neon roadworks barriers slide on their own cycle, slower than the neon gates', () => {
+  const neon = themedHazards('neon'), gate = neon.find(h => h.id === 'neon-gate-1').placement.movementPattern;
+  const works = neon.filter(h => h.id.startsWith('neon-works'));
+  assert.equal(works.length, 3);
+  for (const h of works) {
+    const move = h.placement.movementPattern;
+    assert.equal(move.kind, 'sweep', `${h.id} is animated`);
+    assert.ok(move.period > gate.period, `${h.id} reads apart from the gate timing`);
+  }
+});

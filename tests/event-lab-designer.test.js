@@ -143,3 +143,22 @@ test('jumps template places validated ramps and cones on every track, determinis
     assert.ok(a.objects.some(o => o.kind === 'ramp') && a.objects.some(o => o.kind === 'cone'), `${trackId} jumps template uses ramps and cones`);
   }
 });
+
+test('the relaxed modifier softens a barrier hit and is its own ruleset; standard keeps the full penalty', () => {
+  const hit = modifier => {
+    const race = lab.compileCourse(base(), lab.validateCourse(course([{ kind: 'barrier', distance: 400, lane: 1 }], { modifier }), access), access);
+    startRace(race); race.phase = 'racing';
+    Object.assign(race.player, { distance: 390, x: -2.5, speed: 50 });
+    let before = 50;
+    for (let i = 0; i < 60 && !race.player.collisions; i++) { before = race.player.speed; stepRace(race, {}, 1 / 60); }
+    return Object.assign(race, { before });
+  };
+  const relaxed = hit('relaxed'), standard = hit('standard');
+  assert.equal(relaxed.player.collisions, 1);
+  assert.equal(standard.player.collisions, 1);
+  assert.equal(relaxed.config.collision, 'relaxed');
+  assert.equal(Object.hasOwn(standard.config, 'collision'), false, 'standard adds no collision key');
+  assert.ok(relaxed.player.speed >= relaxed.before * 0.8 - 0.5, `relaxed keeps ≥80% speed (${relaxed.player.speed} of ${relaxed.before})`);
+  assert.ok(standard.player.speed < relaxed.player.speed, `standard ${standard.player.speed} < relaxed ${relaxed.player.speed}`);
+  assert.notEqual(relaxed.session.rulesSignature, standard.session.rulesSignature, 'relaxed runs never share records with standard');
+});

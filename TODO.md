@@ -1274,10 +1274,11 @@ cue is warranted for these pure simulation contracts.
 
 ### 9C. Custom Race (P0)
 
-- [ ] **MODE-02 — Custom Race:** choose an unlocked track, 0–3 rivals, AI
+- [x] **MODE-02 — Custom Race:** choose an unlocked track, 0–3 rivals, AI
   **Easy / Normal / Hard**, traffic **Off / Light / Normal / Heavy**, power-ups
   **On / Off**, collisions **Normal / Relaxed**, Ghost visibility and weather/time
   **visual preset**. Preserve original defaults in Classic mode.
+  - Evidence: `feature/custom-race-presentation` full `make verify` green on 808e5a0 (Node 848, browser 525/2 skip, World Tour 303); CI pending.
 - [x] AI difficulty adjusts clearly named parameters (target speed, mistake rate
   or rubber-band bounds) without breaking current rival personalities `NOVA`,
   `ORBIT` and `APEX`. Support 0, 1, 2 and 3 rivals correctly.
@@ -1507,9 +1508,10 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] **LAP-04 — Anti-shortcut checkpoints:** ordered sector validation
   prevents crossing the finish backwards, flying over the finish repeatedly,
   teleports or respawns from granting false laps.
-- [ ] **Acceptance:** completion requires the configured number of valid
+- [x] **Acceptance:** completion requires the configured number of valid
   laps; player/AI cameras, positions, world props, mini-route map, Ghost,
   checkpoints and collision physics remain continuous across every seam.
+  - Gate: `feature/genuine-circuit-laps` full `make verify` green on 0f81af7 (Node 869, browser 527/2 skip, World Tour 326); CI pending.
   - Evidence (2026-10-29, `tests/circuit-seam-acceptance.test.js` with existing `tests/circuit.test.js`):
     across all three seams of a 3-lap race (2000/4000/6000 m, 0.05 m steps) the Harbor beacon (scene
     origin), rivals ahead/behind, chase camera position and heading, Ghost (unwrapped samples, drawn 4 m
@@ -1613,6 +1615,7 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
     and no AI reach both fail. Gust zones (2) now shove every car 1.5 m via 6a's ENV-05 push effect (2026-10-29). Pending: on-screen gust warning cue, desktop + mobile visual check, full gate. Audio: reuses the existing barrier impact/near-miss cues; no new sound needed.
 - [ ] **Neon Downtown:** animated construction barriers, temporary lane
   closures, traffic diversions and readable neon gate timing.
+  - Animated roadworks (2026-10-29, feature/audit-78): `neon-works-1..3` slide between two lanes on a 6 s sweep, slower than the 4 s neon gates so the two timings read apart; `tests/track-themes.test.js` (roadworks test + existing hit/gap/≥2-lane/AI-avoid checks).
   - Progress (feature/track-themes): roadwork barriers, a coned-off lane, a diversion and two neon gates between the tunnels (`src/track-themes-classic.ts`), covered by `tests/track-themes.test.js`. Gates now swing between two lanes on a 4 s cycle (ENV-05 sweep), opening one while closing the other; the test proves each blocks at some moment and opens at another. Pending: visual check, full gate.
 - [ ] **Canyon Skyway:** warned falling rocks, cliff-side debris,
   precision launch ramps and risk/reward routes over broken bridges.
@@ -1646,6 +1649,7 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   signs, drones/ships, coastline spray, atmospheric lights and skyline
   animation. Reuse `world-tour-scenery.js` placement planning, batching
   and chunk lifecycle when applicable.
+  - Coastline spray (Coastal, water side) and skyline beacon masts with blinking aviation lights (Taipei, Tokyo, Cosmic), 2026-10-29 feature/audit-78: two shared glow materials warmed in the shader rack, one colour write each per frame, reduced motion holds them steady, Low draws none; `tests/world-tour-details.test.js`. Scenery draws High +4..+8 per track (alpine 0), Low unchanged.
 - [ ] **Weather/time-of-day presets:** daylight, dusk, night, rain/fog,
   snowfall or aurora where stylistically appropriate; start with
   visual-only overrides. Treat physical wet-grip/wind changes as
@@ -1656,6 +1660,7 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 - [ ] Degrade particle density, transparent overlays and shadow/light
   count on weak hardware without removing essential hazard silhouettes
   or necessary traffic warnings.
+  - Evidence (2026-10-29, feature/audit-78): weather overlay 180→60 drops on Low/touch via `weatherDrops` (`tests/race-visuals.test.js`), burst/drift particles thin on Low (`tests/effects.test.js`), Low drops decorative details, moving pieces and star tiers (`tests/world-tour-details.test.js`, `tests/world-tour-motion.test.js`); the hazard renderer takes no quality input, so hazard silhouettes never thin. Decision: the light count stays fixed on every tier (it is part of each lit shader's cache key; changing it recompiles mid-race, see `performance-review.md`), and the renderer uses no shadow maps, so there is no shadow cost to shed.
 
 ## 12. Items, pickups, active inventory and bonus challenges
 
