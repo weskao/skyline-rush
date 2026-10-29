@@ -4,6 +4,7 @@ import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
 import { RISK_RING_RADIUS } from '../src/ring-layout.ts';
 import { SECTION_SIGN_LABELS } from '../src/section-signs.ts';
 import { t } from '../src/i18n.ts';
+import { readFileSync } from 'node:fs';
 
 // 11B Cosmic Orbit: opt-in low-gravity sectors where a gliding car floats, each threaded by a rising
 // sequence of aerial gates scored through the existing risk-hoop path.
@@ -62,4 +63,13 @@ test('each sector is threaded by a rising sequence of aerial gates that pay the 
   stepRace(race, { throttle: true, fly: true }, .1);
   assert.ok(race.player.score >= 150 + race.risk.ringScore, 'pays the risk-hoop score');
   assert.equal(themed({ riskLines: 'off' }).rings.filter(r => r.spin).length, 0, 'risk lines off removes the gates');
+});
+
+test('a themed race never has more road sections than the roadside sign pool holds', () => {
+  // world.js sizes its section-sign pool from RACE_TRACKS; themed sections beyond it would silently lose their sign.
+  const pool = Math.max(...Object.values(RACE_TRACKS).map(track => track.sections.length));
+  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'),
+    /const sectionSigns = Array\.from\(\{ length: Math\.max\(\.\.\.Object\.values\(RACE_TRACKS\)\.map\(track => track\.sections\.length\)\) \}/, 'pool sized as measured here');
+  for (const trackId of Object.keys(RACE_TRACKS))
+    assert.ok(createRace(trackId, { mode: 'custom', themes: true }).sections.length <= pool, `${trackId} themed sections fit ${pool} signs`);
 });
