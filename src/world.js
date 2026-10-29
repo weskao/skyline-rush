@@ -899,7 +899,7 @@ export function createWorld(canvas) {
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
       const touch = touchPreference.matches;
       const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
-      weather.visible = !reducedMotion && visual.enabled && (raining || (visualPreset === 'track' && trackId === 'aurora'));
+      weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || (visualPreset === 'track' && trackId === 'aurora'));
       weather.material.size = raining ? .12 : .24;
       weatherGeometry.setDrawRange(0, touch || visual.quality === 'low' ? 60 : 180);
       if (weather.visible) {

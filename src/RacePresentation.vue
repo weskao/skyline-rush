@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, onUnmounted, shallowRef, watch } from 'vue';
-import { VISUAL_PRESETS } from './race-session.ts';
+import { presetsForTrack } from './race-session.ts';
 import { racePresentationView } from './race-presentation-ui.ts';
 import { getLocale, onLocaleChange, t, trackName } from './i18n.ts';
 import { refreshCustomSelects } from './custom-select.ts';
 
 const locale = shallowRef(getLocale());
 onUnmounted(onLocaleChange(value => { locale.value = value; }));
-watch([() => racePresentationView.visualPreset, locale], refreshCustomSelects, { flush: 'post' });
+const presets = computed(() => presetsForTrack(racePresentationView.setup?.trackId ?? ''));
+watch([() => racePresentationView.visualPreset, presets, locale], refreshCustomSelects, { flush: 'post' });
 const rulesSummary = computed(() => {
   const setup = racePresentationView.setup;
   if (!setup) return '';
@@ -32,7 +33,7 @@ const rulesSummary = computed(() => {
     <label class="race-presentation-label" for="race-visual-preset">
       <span data-i18n="mode.visualPreset">{{ t('mode.visualPreset') }}</span>
       <select id="race-visual-preset" v-model="racePresentationView.visualPreset" :aria-label="t('mode.visualPreset')" data-i18n-aria-label="mode.visualPreset">
-        <option v-for="preset in VISUAL_PRESETS" :key="preset" :value="preset" :data-i18n="`mode.visual.${preset}`">{{ t(`mode.visual.${preset}`) }}</option>
+        <option v-for="preset in presets" :key="preset" :value="preset" :data-i18n="`mode.visual.${preset}`">{{ t(`mode.visual.${preset}`) }}</option>
       </select>
     </label>
     <p id="race-presentation-summary" role="status">{{ t('mode.visualSummary', { preset: t(`mode.visual.${racePresentationView.visualPreset}`) }) }}</p>
