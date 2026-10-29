@@ -54,7 +54,7 @@ for (const [name, viewport, hasTouch, locale, trackIds, insets] of layouts) {
           for (const [side, value] of Object.entries(values)) document.documentElement.style.setProperty(`--safe-${side}`, `${value}px`);
         }, insets);
         await page.locator(`[data-track="${trackId}"]`).click();
-        await page.locator('[data-race-mode="free"]').click();
+        await page.locator('button[data-race-mode="free"]').click();
         await page.locator('#start-button').click();
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
         await page.keyboard.down('ArrowUp');

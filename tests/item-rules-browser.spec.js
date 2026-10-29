@@ -10,7 +10,7 @@ for (const [name, viewport, hasTouch] of [
   test('collecting a mystery ring exposes a usable held item, activation and cooldown', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('[data-race-mode="free"]').click();
+    await page.locator('button[data-race-mode="free"]').click();
     await page.locator('#race-mode-rules > summary').click();
     const select = page.locator('[data-race-rule="itemRules"]');
     await expect(select).toHaveCount(1);
@@ -39,7 +39,7 @@ for (const [name, viewport, hasTouch] of [
 });
 
 test('Off removes every reward source; presets and recent configurations restore the selected rule', async ({ gameplayPage: page }) => {
-  await page.locator('[data-race-mode="custom"]').click();
+  await page.locator('button[data-race-mode="custom"]').click();
   await page.locator('#race-mode-rules > summary').click();
   const choose = rule => page.locator('[data-race-rule="itemRules"]').evaluate((node, rule) => {
     node.value = rule; node.dispatchEvent(new Event('change', { bubbles: true }));
@@ -49,7 +49,7 @@ test('Off removes every reward source; presets and recent configurations restore
   await choose('all');
   await page.locator('#start-button').click();
   await page.reload();
-  await page.locator('[data-race-mode="custom"]').click();
+  await page.locator('button[data-race-mode="custom"]').click();
   await page.locator('#race-mode-rules > summary').click();
   await choose('active');
   await page.locator('#recent-custom > summary').click();
@@ -70,7 +70,7 @@ test('opening an older recent setup clears a previously restored active rule', a
     { trackId: 'coast', config: { mode: 'custom', items: true } },
   ])));
   await page.reload();
-  await page.locator('[data-race-mode="custom"]').click();
+  await page.locator('button[data-race-mode="custom"]').click();
   await page.locator('#recent-custom > summary').click();
   await page.locator('#recent-custom-runs button').nth(0).click();
   expect(await page.evaluate(() => window.gameplay.race.config.activeItems)).toBe(true);
