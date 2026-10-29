@@ -230,7 +230,7 @@ test('402x714 phone intro fades at its scroll edge and its last row scrolls clea
   const fade = await intro.evaluate(el => { const cs = getComputedStyle(el); return cs.getPropertyValue('mask-image') || cs.getPropertyValue('-webkit-mask-image'); });
   expect(fade).toContain('linear-gradient');
   await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
-  const gap = await intro.evaluate(el => el.getBoundingClientRect().bottom - el.querySelector('#race-mode-picker').getBoundingClientRect().bottom);
+  const gap = await intro.evaluate(el => el.getBoundingClientRect().bottom - el.querySelector('#race-rules-row').getBoundingClientRect().bottom); // the setup's last row since the 10A mode-first order
   expect(gap).toBeGreaterThanOrEqual(24);
 });
 

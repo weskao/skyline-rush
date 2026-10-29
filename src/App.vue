@@ -92,36 +92,8 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just</span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
       <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
-      <div class="track-select" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
-      <p id="track-note" class="track-note"></p>
-      <div class="intro-actions">
-        <button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
-        <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
-        <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
-        <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
-      </div>
-      <!-- Reserve space for the camera controls in compact layouts. -->
-      <nav class="showcase-camera-dock" id="showcase-camera-dock" aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
-        <span class="showcase-camera-heading" data-i18n="showcase.heading">CAMERA VIEW</span>
-        <div class="showcase-camera-actions">
-          <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous">‹</button>
-          <span id="showcase-camera-name" role="status" aria-live="polite"></span>
-          <button type="button" id="showcase-camera-next" aria-label="Next camera view" data-i18n-aria-label="showcase.next">›</button>
-        </div>
-        <span class="showcase-camera-dots" id="showcase-camera-dots" aria-hidden="true"></span>
-      </nav>
-      <section class="daily-card" id="daily-card" aria-labelledby="daily-card-title">
-        <span class="daily-card-icon" aria-hidden="true"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg></span>
-        <div class="daily-card-copy">
-          <h2 id="daily-card-title" data-i18n="daily.title">Daily challenge</h2>
-          <strong id="daily-card-route">{{ homeStatusView.dailyRoute }}</strong>
-          <small id="daily-card-best">{{ homeStatusView.dailyBest }}</small>
-        </div>
-        <button class="daily-card-start" id="daily-card-start" :disabled="homeStatusView.dailyStartDisabled" aria-describedby="daily-card-route"><span data-i18n="daily.play">Play</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-      </section>
       <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
-        <div class="race-mode-heading"><span data-i18n="mode.heading">GAME MODE</span><small id="mode-description"></small></div>
+        <div class="race-mode-heading"><span data-i18n="mode.step.mode">1 · Mode</span><small id="mode-description"></small></div>
         <div class="race-mode-tabs">
           <button type="button" data-race-mode="classic" aria-pressed="true" data-i18n="mode.classic">Classic Race</button>
           <button type="button" data-race-mode="custom" aria-pressed="false" data-i18n="mode.custom">Custom Race</button>
@@ -133,6 +105,14 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
           <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
         </div>
+      </div>
+      <p class="setup-step" id="track-step" data-i18n="mode.step.track">2 · Track</p>
+      <div class="track-select" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
+      <p id="track-note" class="track-note"></p>
+      <section class="race-mode-picker race-rules-row" id="race-rules-row" aria-labelledby="race-rules-step">
+        <div class="race-mode-heading"><span id="race-rules-step" data-i18n="mode.step.rules">3 · Rules</span><small id="mode-rules-summary" role="status"></small></div>
+        <div class="race-rules-meta"><small id="mode-eligibility"></small><button type="button" class="text-button" id="rules-restore" data-i18n="mode.restoreDefaults">Restore defaults</button></div>
+        <small id="mode-conflicts" class="mode-conflicts" role="status"></small>
         <details class="race-mode-rules" id="recent-custom" hidden>
           <summary data-i18n="mode.recent">RECENT CUSTOM SETUPS</summary>
           <div id="recent-custom-runs" class="recent-custom-runs"></div>
@@ -187,7 +167,33 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           </div>
           <RacePresentation />
         </details>
+      </section>
+      <div class="intro-actions">
+        <button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
+        <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
+        <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
+        <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
       </div>
+      <!-- Reserve space for the camera controls in compact layouts. -->
+      <nav class="showcase-camera-dock" id="showcase-camera-dock" aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
+        <span class="showcase-camera-heading" data-i18n="showcase.heading">CAMERA VIEW</span>
+        <div class="showcase-camera-actions">
+          <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous">‹</button>
+          <span id="showcase-camera-name" role="status" aria-live="polite"></span>
+          <button type="button" id="showcase-camera-next" aria-label="Next camera view" data-i18n-aria-label="showcase.next">›</button>
+        </div>
+        <span class="showcase-camera-dots" id="showcase-camera-dots" aria-hidden="true"></span>
+      </nav>
+      <section class="daily-card" id="daily-card" aria-labelledby="daily-card-title">
+        <span class="daily-card-icon" aria-hidden="true"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg></span>
+        <div class="daily-card-copy">
+          <h2 id="daily-card-title" data-i18n="daily.title">Daily challenge</h2>
+          <strong id="daily-card-route">{{ homeStatusView.dailyRoute }}</strong>
+          <small id="daily-card-best">{{ homeStatusView.dailyBest }}</small>
+        </div>
+        <button class="daily-card-start" id="daily-card-start" :disabled="homeStatusView.dailyStartDisabled" aria-describedby="daily-card-route"><span data-i18n="daily.play">Play</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+      </section>
       <!-- data-keys: the actions whose bound keys showKeyMap() (main.js) draws, so remaps and the arrow / J K L alternates stay listed. -->
       <div class="intro-controls">
         <div><span class="keys" data-keys="throttle left brake right"></span><span data-i18n="hint.drive">Drive</span></div>

@@ -1,7 +1,7 @@
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
 import { RULE_PRESETS } from './race-config.ts';
-import { DEFAULT_RULES } from './mode-setup.ts';
+import { DEFAULT_RULES, modeEligibility, modeRulesSummary, ruleConflicts } from './mode-setup.ts';
 import { itemRuleValue } from './item-ui.ts';
 import { createCup } from './championship-cup.ts';
 import { loadRecentCustom } from './recent-custom.ts';
@@ -101,6 +101,18 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const button of document.querySelectorAll<HTMLElement>('[data-race-preset]'))
       button.setAttribute('aria-pressed', String(!getRace().config.activeItems && Object.entries(RULE_PRESETS[button.dataset.racePreset as keyof typeof RULE_PRESETS]).every(([key, value]) => getRace().config[key] === value)));
     $('#mode-description').textContent = t('mode.description.' + selectedMode);
+    renderSetupRow();
+  }
+  // 10A rules row: what this race will use, what it saves, and why a setting cannot apply here.
+  function renderSetupRow(): void {
+    const race = getRace(), daily = !!options.getDaily();
+    $('#mode-rules-summary').textContent = modeRulesSummary(race.config, t);
+    $('#mode-eligibility').textContent = t('mode.eligibility.' + modeEligibility(selectedMode, { daily }));
+    const conflicts = ruleConflicts(selectedMode, raceRules, { unlocked: unlockedTracks.size, cupCount: cupCount() });
+    $('#mode-conflicts').textContent = conflicts.map(c => t(c.reason, c.params)).join(' · ');
+    const difficulty = $<HTMLSelectElement>('[data-race-rule="difficulty"]');
+    difficulty.disabled = conflicts.some(c => c.rule === 'difficulty');
+    refreshCustomSelects();
   }
   function renderTrackButtons(race: Race): void {
     // Solo sessions show elapsed time rather than a false "01 / 04" ranking.
@@ -202,6 +214,13 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     changeRaceSelection();
   });
   for (const id of ['hazard-tier', 'clean-trial', 'cup-length', 'stunt-duration', 'race-visual-preset']) $(`#${id}`).addEventListener('change', changeRaceSelection);
+  $('#rules-restore').addEventListener('click', () => {
+    Object.assign(raceRules, DEFAULT_RULES);
+    $<HTMLSelectElement>('#hazard-tier').value = 'standard'; $<HTMLInputElement>('#clean-trial').checked = false;
+    $<HTMLSelectElement>('#stunt-duration').value = '120'; $<HTMLSelectElement>('#cup-length').value = '3';
+    showRuleInputs();
+    changeRaceSelection();
+  });
   $('#recent-custom-runs').addEventListener('click', ({ target }) => {
     const index = Number((target as Element).closest<HTMLElement>('button[data-recent]')?.dataset.recent);
     const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];

@@ -1347,6 +1347,14 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-mode-heading > span { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
 .race-mode-heading small { font-size: 10px; color: #d1e3ed; text-align: right; line-height: 1.4; }
 .race-mode-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
+.setup-step { margin: 12px 0 0; color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
+.race-rules-row { margin-top: 0; }
+.race-rules-row .race-mode-heading { margin-bottom: 2px; }
+.race-rules-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.race-rules-meta small, .mode-conflicts { font-size: 10px; color: #aee7fa; line-height: 1.4; }
+.mode-conflicts { display: block; color: #ffd39c; }
+.mode-conflicts:empty { display: none; }
+#rules-restore { margin: 0; min-height: 44px; padding: 0 8px; font-size: 11px; white-space: nowrap; }
 .race-mode-tabs button { min-height: 36px; padding: 3px 5px; border: 1px solid #627c8d; border-radius: 5px; background: #22384a; color: #eef6f8; font: 700 10px/1.25 'Avenir Next','Segoe UI',sans-serif; overflow-wrap: normal; }
 .race-mode-tabs button[aria-pressed="true"] { color: #102338; background: #ffb491; border-color: #ffcfb4; }
 .race-mode-tabs button:focus-visible { outline: 3px solid #9de4ff; outline-offset: 2px; }
