@@ -3,9 +3,11 @@ import { createRings, RING_RADIUS, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERF
 export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
 import { physicalGap } from './circuit-track.ts';
-import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL, BARRIER_HALF_WIDTH, BARRIER_HEIGHT } from './car-collisions.js';
+import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
-import { createHazards, hazardX } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
+import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
+import { stepPlayerHazards, hazardReach, hazardTouch, nudge } from './hazard-race.ts';
+import { raceHazards } from './track-themes.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
@@ -169,8 +171,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? config.mode === 'circuit' ? lapItems(createPickups(track), config.laps, 'pickup') : createPickups(track) : [], rings,
     circuit: config.mode === 'circuit' ? createCircuit(config.laps) : null,
     props: [], // solid World Tour scenery parts; main.js fills them from roadObstacles()
-    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) :
-      config.hazards ? createHazards(track, LANES, config.hazards) : [],
+    hazards: raceHazards(trackId, track, LANES, config),
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     practice: config.mode === 'free' ? createPracticeStats() : null,
     styleAttack: config.mode === 'stunt' ? createStuntAttack() : null,
@@ -561,26 +562,7 @@ export function stepRace(race, input, dt) {
     if (fell || ring.hit || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring));
   }
-  // Every gauntlet barrier can be hit or cleared only once. The physics layer
-  // decides impacts; the renderer only draws the same authored hazards.
-  for (const hazard of race.hazards) {
-    if (hazard.distance > car.distance) break;
-    if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
-    const obstacleX = hazardX(hazard, race.elapsed);
-    const collision = Math.abs(car.x - obstacleX) < (hazard.halfWidth ?? BARRIER_HALF_WIDTH) + .25 && car.altitude < (hazard.height ?? BARRIER_HEIGHT) - .1;
-    if (collision && car.cooldown === 0) {
-      contact(race, 'barrier', obstacleX, 0.7, 0.6);
-      hazard.hit = true;
-    } else {
-      hazard.passed = true;
-      if (!collision) {
-        // Risk/reward: a close, clean ground pass pays more than a distant lane change.
-        const near = car.altitude < 2.4 && Math.abs(car.x - obstacleX) < 4;
-        car.score += near ? 300 : 150;
-        if (near) car.nearMisses++;
-      }
-    }
-  }
+  stepPlayerHazards(race, car, previousDistance, contact);
   const travelled = (race.endless ? car.distance : Math.min(car.distance, race.length)) - previousDistance;
   if (car.collisions + car.falls !== previousContacts) car.cleanDistance = 0;
   else {

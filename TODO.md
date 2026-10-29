@@ -1603,14 +1603,26 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 - [ ] **Coast:** scattered cargo, gust warnings and temporary shoulder
   closures; combine clean high-speed overtakes with coastal visibility.
+  - Progress (feature/track-themes, 2026-10-29): opt-in `themes: true` (Custom, Free Drive, Gauntlet only;
+    absent by default so Classic/Daily/Time/other records and rules signatures are unchanged — user decision).
+    Shared runtime `src/track-themes.ts` (validated ENV-02 placements → `race.hazards` entries carrying
+    `placement`), data in `src/track-themes-classic.ts`. Coast: four cargo spills and two six-cone shoulder
+    closures; per-hazard hit reach/height for player, AI avoidance and AI impacts (Gauntlet defaults unchanged).
+    `tests/track-themes.test.js`: opt-in boundary, ≤2 of 4 lanes blocked anywhere, off special sections,
+    hit knocks / clean pass pays, rivals change lane first. RED: module missing; mutation RED: fixed 1.8 m reach
+    and no AI reach both fail. Gust zones (2) now shove every car 1.5 m via 6a's ENV-05 push effect (2026-10-29). Pending: on-screen gust warning cue, desktop + mobile visual check, full gate. Audio: reuses the existing barrier impact/near-miss cues; no new sound needed.
 - [ ] **Neon Downtown:** animated construction barriers, temporary lane
   closures, traffic diversions and readable neon gate timing.
+  - Progress (feature/track-themes): roadwork barriers, a coned-off lane, a diversion and two neon gates between the tunnels (`src/track-themes-classic.ts`), covered by `tests/track-themes.test.js`. Gates now swing between two lanes on a 4 s cycle (ENV-05 sweep), opening one while closing the other; the test proves each blocks at some moment and opens at another. Pending: visual check, full gate.
 - [ ] **Canyon Skyway:** warned falling rocks, cliff-side debris,
   precision launch ramps and risk/reward routes over broken bridges.
+  - Progress (feature/track-themes): six rockfall/cliff-debris spills, some inside the crosswind stretches, all clear of the bridge gaps. Two rocks now drop from 10 m onto the road on an 8 s cycle (ENV-05 fall). Pending: on-screen rockfall warning, launch ramps (needs a launch effect in the race), visual check, full gate.
 - [ ] **Aurora Pass:** snowbanks, localized low-grip ice bends,
   timed blizzard visibility and safer alternative lines.
+  - Progress (feature/track-themes): six snowbanks on alternating lanes so a safer line always stays open. Three low-grip ice patches now bleed 15% speed (ENV-05 slow), and AI steers around them. Pending: blizzard visibility, visual check, full gate.
 - [ ] **Sky Spiral:** rotating light hoops, synchronized aerial gates,
   changing platform barriers and airborne precision scoring.
+  - Progress (feature/track-themes): three energy platform barriers and three gates, including two on the helix, away from launch gaps. Two barriers now switch on and off on a 3 s cycle in opposite phase, and two gates swing in opposite phase (ENV-05 pulse/sweep). Pending: rotating light hoops and airborne precision scoring (rings are collect, not hazards), visual check, full gate.
 - [ ] **Taipei Heritage:** festival street furniture, temporary
   boulevard closures and scenic props, while preserving landmark
   visibility and the existing curated ready-screen showcase.

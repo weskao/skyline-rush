@@ -30,6 +30,8 @@ export function normalizeRaceConfig(value: unknown = {}) {
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
     ...(practice && isOneOf(value.hazards, ['standard', 'extreme']) ? { hazards: value.hazards } : {}),
+    // 11B themed track hazards are opt-in, so every other mode's rules signature stays the same.
+    ...((practice || mode === 'gauntlet') && value.themes === true ? { themes: true } : {}),
     ...(custom && isOneOf(value.stages, [2, 3, 5]) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
@@ -54,10 +56,10 @@ export const rulesSignature = (config: unknown): string => JSON.stringify(normal
 // configs still use normalizeRaceConfig(), which intentionally retains safe fallbacks.
 const REQUEST_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   classic: [],
-  custom: ['rivals', 'traffic', 'difficulty', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'stages'],
-  free: ['traffic', 'items', 'activeItems', 'itemRules', 'collision', 'hazards'],
+  custom: ['rivals', 'traffic', 'difficulty', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'stages', 'themes'],
+  free: ['traffic', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'themes'],
   time: ['clean'],
-  gauntlet: ['hazardTier'],
+  gauntlet: ['hazardTier', 'themes'],
   checkpoint: ['bonusGates'],
   cup: ['cupTracks'],
   stunt: ['duration', 'bonusGates'],
@@ -89,7 +91,7 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
     assertOption(typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3, 'rivals');
   if (Object.hasOwn(value, 'traffic')) assertOption(typeof value.traffic === 'string' && Object.hasOwn(TRAFFIC, value.traffic), 'traffic');
   if (Object.hasOwn(value, 'difficulty')) assertOption(isOneOf(value.difficulty, DIFFICULTIES), 'difficulty');
-  for (const key of ['items', 'activeItems', 'clean', 'bonusGates'])
+  for (const key of ['items', 'activeItems', 'clean', 'bonusGates', 'themes'])
     if (Object.hasOwn(value, key)) assertOption(typeof value[key] === 'boolean', key);
   if (Object.hasOwn(value, 'itemRules')) {
     assertOption(isOneOf(value.itemRules, ITEM_RULES), 'itemRules');
