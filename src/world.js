@@ -15,7 +15,7 @@ import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
-import { createRaceVisuals, blizzardLevel } from './race-visuals.ts';
+import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
@@ -719,7 +719,7 @@ export function createWorld(canvas) {
       const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
       weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || blizzard > 0 || (visualPreset === 'track' && trackId === 'aurora'));
       weather.material.size = raining ? .12 : .24;
-      weatherGeometry.setDrawRange(0, touch || visual.quality === 'low' ? 60 : 180);
+      weatherGeometry.setDrawRange(0, weatherDrops(visual.quality, touch));
       if (weather.visible) {
         for (let i = 0; i < 180; i++) weatherPositions[i * 3 + 1] = (i * 17 + time * (raining ? -18 : -3)) % 32;
         weatherGeometry.attributes.position.needsUpdate = true;
