@@ -64,6 +64,7 @@ Files: new `src/ChallengeMedals.vue`, new `src/locales/challenge-medals.ts`; `sr
 - [x] Run strict typechecks, full npm test and full `make verify` on the resulting feature code; preserve RED/GREEN and failure receipts.
 - [x] Measure Stunt-path frame p50/p95 before/after with identical conditions; keep physical/all-quality long-drive gates separate.
 - [x] Mark REPLAY-01 and the local ledger complete only after observed gates; prepare updated overall progress/table for the requested thread report.
-- [ ] Exact-HEAD CI remains pending explicit public-source push authorization for all seven current feature HEADs. Physical Safari/Android, long-drive/all-quality thermal checks and independent review remain open. Never bypass the rejected public push, merge into main, PR, tag or deploy.
+- [x] The user published all seven feature merge commits; exact-commit CI for 3d8321b passes 17/17 required checks, and all seven feature code commits pass 119/119.
+- [ ] Physical Safari/Android, long-drive/all-quality thermal checks and independent review remain open. Later documentation-only HEADs require their own CI before merge. Do not merge feature branches into main, create a PR, tag or deploy without authorization.
 
 Observed final source: `6624322`; complete local gate exit 0, Node 843 / Browser 508 / World Tour 303, local Cloud 15 + 3. Stunt A/B median p50/p95 main 16.7/16.7 ms and feature 16.7/16.8 ms, with genuine FLY input. Preserved failures and current before/after evidence are recorded in TODO.md and artifacts/challenge-medals/.

@@ -1,5 +1,13 @@
 # TODO — Gameplay depth design
 
+## Current main integration and verification (2026-10-29)
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `3d8321b` on `feature/challenge-medals`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `3d8321b` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547979). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Current src is identical to locally verified `6624322`: complete make verify exit 0, Node 843 / Browser 508 / World Tour 303; local Cloud 15 + 3 and current original-resolution evidence pass. Requested main merge returned Already up to date.
+
+Historical receipts below retain their original date and verification scope.
+
 ## Expanded personal challenge medals — REPLAY-01 (2026-10-29)
 
 - [x] Review the original requirement and existing scoring, settlement, History, storage/account/backup boundaries. Continue on independent `feature/challenge-medals`, leaving the six locally verified feature branches intact. Plan: `docs/superpowers/plans/2026-10-29-challenge-medals.md`.
@@ -17,7 +25,8 @@
 - [x] Account-switch session-only loss RED → GREEN: the actual controller snapshots an empty old-account collection despite a current-session award; flush the session through the existing atomic local writer before switching. All 42 owner/lifecycle cases and full Node 843 / 0 failures / 3 emulator skips pass. Logs: `switch-session-{red,green,node}.log`. The earlier complete gate was intentionally stopped to include this protection, and must be restarted.
 - [x] Career shortcut regression RED → GREEN: adding reactive personal-medal rows shifted the old Career heading after its synchronous scroll. Reproduce the existing home-medal-chip assertion failure, then await Vue nextTick before History scrolling/focus. All 25 focused browser cases pass (1 desktop touch skip), full Node 843 / 0 failures / 3 emulator skips and strict types pass. The original 84ff28f full gate failed 2 / passed 506 / skipped 2; preserve both failures. Its separate guide page-close did not reproduce in 3 unchanged diagnostic runs. Logs: `history-scroll-{red,green,node,typecheck}.log`, `guide-diagnostic.log`.
 - [x] Final code `6624322` passes complete `make verify` with exit 0: strict TS/Vue/JS, Node 843 / 3 emulator skips, Browser 508 / 2 desktop touch skips, World Tour 303; all failures 0. Current-source local Cloud compatibility is 15 + 3. Eight original-resolution desktop/phone before/after images include results, collection and the repaired Career shortcut, with no page errors. Three alternating Stunt flight rounds at 412×915 / DPR 2 / 6× CPU / 20 s: main median p50/p95 16.7/16.7 ms, feature 16.7/16.8 ms; FPS 59.9/59.5. No FPS gain claimed. Logs: `make-verify-main-ca1c777-scroll-fix.log`, `perf-stunt.{log,json}`, `final-ui-main-ca1c777-scroll-fix/receipt.json` under `artifacts/challenge-medals/`.
-- [ ] Exact-HEAD GitHub CI still requires explicit public-source push authorization for this new seventh branch as well as the previous six. Physical Safari/Android, long-drive/all-quality thermal checks and independent review remain open; this is local feature completion, not merge readiness.
+- [x] Published `3d8321b` exact-commit CI passes all 17 required checks including quality-gate: https://github.com/weskao/skyline-rush/actions/runs/40818547979 . All seven published feature commits now pass 119/119 required checks.
+- [ ] Physical Safari/Android, long-drive/all-quality thermal checks and independent review remain open; subsequent documentation-only HEADs still need their own CI before a merge.
 
 ## Main camera-probe integration (2026-10-28)
 
