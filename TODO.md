@@ -1,5 +1,12 @@
 # TODO — Gameplay depth design
 
+## Photo Studio continuation — PHOTO-01 (2026-10-29)
+
+- [x] Inspect main ca1c777 and the real modal/CSS/renderer lifecycle; create independent feature/photo-studio-hud-isolation. Baseline strict types and Node pass: 815 / 3 emulator skips, failures 0. Plan: docs/superpowers/plans/2026-10-29-photo-studio-hud.md.
+- [x] RED observed: the real Photo Studio shows `.telemetry` despite the clean-preview contract; the new browser test fails Expected hidden / Received visible on unmodified main source. Log: artifacts/photo-studio/hud-red.log; original-resolution before image: artifacts/photo-studio/before-desktop-coast.png. Browser build is locked; no import/syntax failure.
+- [ ] GREEN: hide background chrome only while the native Photo Studio modal is open; preserve the paused race, world canvas, photo panel, camera/lighting/export and Back/Escape/resume.
+- [ ] Cross-track desktop/phone and narrow/landscape original-resolution images, complete make verify and exact-HEAD CI; keep physical devices and thermal acceptance separate.
+
 ## Feature request: 90 / 120 FPS render option (2026-10-29)
 Status: not supported. `src/frame-pacing.ts` caps rendering at 60 FPS (`FpsPreference = 'auto' | '30' | '60'`); 90/120 Hz displays still paint at most 60 times a second. Physics stays fixed at 60 Hz.
 - [ ] Measure first: `?perf` p50/p95 frame cost, draw calls and triangles per track at 60 FPS on a 120 Hz phone, to see whether 90/120 is affordable.
