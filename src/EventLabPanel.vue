@@ -80,7 +80,7 @@ const symbols: Record<CourseKind, string> = { barrier: '▰', cone: '▴', ramp:
     <header class="lab-header"><div><small>SKYLINE / EVENT LAB</small><h2 id="lab-title">{{ text('title') }}</h2></div><button id="lab-close" type="button" @click="close">{{ text('close') }}</button></header>
     <template v-if="draft">
       <p class="lab-note">{{ trackName(draft.trackId, locale) }} · {{ text('intro') }}</p>
-      <div class="lab-toolbar"><button type="button" @click="template('slalom')">{{ text('slalom') }}</button><button type="button" @click="template('collect')">{{ text('collect') }}</button><button id="lab-template-checkpoints" type="button" @click="template('checkpoints')">{{ text('checkpoints') }}</button>
+      <div class="lab-toolbar"><button type="button" @click="template('slalom')">{{ text('slalom') }}</button><button type="button" @click="template('collect')">{{ text('collect') }}</button><button id="lab-template-checkpoints" type="button" @click="template('checkpoints')">{{ text('checkpoints') }}</button><button id="lab-template-jumps" type="button" @click="template('jumps')">{{ text('jumps') }}</button>
         <button id="lab-undo" type="button" :disabled="!canUndo" @click="store(history!.undo())">{{ text('undo') }}</button>
         <button id="lab-redo" type="button" :disabled="!canRedo" @click="store(history!.redo())">{{ text('redo') }}</button>
         <button id="lab-reset" type="button" @click="store(history!.reset(resetDocument!))">{{ text('reset') }}</button></div>

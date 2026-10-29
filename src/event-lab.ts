@@ -95,9 +95,9 @@ export function previewPlacement(draft: CourseDocument, object: CourseObject, un
 }
 export const exportCourse = (document: CourseDocument): string => JSON.stringify(document, null, 2);
 
-export type CourseTemplate = 'slalom' | 'collect' | 'checkpoints';
+export type CourseTemplate = 'slalom' | 'collect' | 'checkpoints' | 'jumps';
 const TEMPLATE_KINDS: Record<CourseTemplate, readonly CourseKind[]> = {
-  slalom: ['barrier', 'pickup'], collect: ['pickup', 'ring'], checkpoints: ['checkpoint', 'pickup'] };
+  slalom: ['barrier', 'pickup'], collect: ['pickup', 'ring'], checkpoints: ['checkpoint', 'pickup'], jumps: ['ramp', 'cone'] };
 export function createCourse(trackId: string, template: CourseTemplate, seed: number, unlocked: ReadonlySet<string>, obstacles: readonly CourseObstacle[] = []): CourseDocument {
   requireCourse(typeof trackId === 'string' && Object.hasOwn(tracks, trackId), 'track');
   const random = seededRng(seed, 'event-lab-template-v1');

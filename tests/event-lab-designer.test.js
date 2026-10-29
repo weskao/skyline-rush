@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace } from '../src/game.js';
+import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
 import { seededRng } from '../src/rng.ts';
 import * as lab from '../src/event-lab.ts';
 
@@ -133,4 +133,13 @@ test('ramps fit the pooled renderer budget and keep plain races ramp-free', asyn
   assert.throws(() => lab.validateCourse(course(many), access), error => error.code === 'count');
   assert.doesNotThrow(() => lab.validateCourse(course(many.slice(0, 8)), access));
   assert.equal(crossesRamp(undefined, { distance: 0, x: 0 }, 5), false);
+});
+
+test('jumps template places validated ramps and cones on every track, deterministic by seed', () => {
+  const all = new Set(Object.keys(RACE_TRACKS));
+  for (const trackId of all) {
+    const a = lab.createCourse(trackId, 'jumps', 77, all);
+    assert.deepEqual(lab.createCourse(trackId, 'jumps', 77, all), a);
+    assert.ok(a.objects.some(o => o.kind === 'ramp') && a.objects.some(o => o.kind === 'cone'), `${trackId} jumps template uses ramps and cones`);
+  }
 });
