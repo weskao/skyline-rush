@@ -1,6 +1,6 @@
 {
-  "reference": "main bd71ac8 plus intentional camera layout correction cda325e",
-  "cssBlob": "8eb4d0021b89f9d078535e9bb840ec2ceaa24780",
+  "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient",
+  "cssBlob": "2878927be513b073130585d88130469940a0afad",
   "elements": [
     {
       "id": "whats-new-screen",

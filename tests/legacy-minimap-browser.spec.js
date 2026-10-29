@@ -28,6 +28,7 @@ test('all five original courses show their complete, curved route outline on the
     expect(geometry.mapHeight,`${id} SVG must have a visible height`).toBeGreaterThan(22);
     await expect(map.locator(ROUTE)).toHaveCount(1);
     await expect(map.locator(EXTRA)).toHaveCount(0);
+    await expect(map.locator('polyline')).toHaveCount(id === 'spiral' ? 3 : 1);
   }
 });
 for(const id of ids)test(`${id}: race minimap has a visible main path and all four racer indicators`,async({page})=>{
@@ -41,6 +42,7 @@ for(const id of ids)test(`${id}: race minimap has a visible main path and all fo
   await expect(map).toHaveAttribute('data-theme',id);
   await expect(map.locator(`svg ${ROUTE}`)).toHaveCount(1);
   await expect(map.locator(`svg ${EXTRA}`)).toHaveCount(0);
+  await expect(map.locator('polyline')).toHaveCount(id === 'spiral' ? 3 : 1);
   await expect(map.locator('circle[data-racer]')).toHaveCount(4);
   const shape=await map.locator(ROUTE).evaluate(el=>({w:el.getBBox().width,h:el.getBBox().height}));
   expect(shape.w).toBeGreaterThan(48);

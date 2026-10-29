@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { PORTRAIT_CAR_TOP } from './showcase-car-zone.js';
+import { selectLocale } from './helpers/locale-browser.js';
 
 test('ready screen offers a discoverable camera dock across all tracks',async({page})=>{
   await page.goto('/');
@@ -144,3 +145,22 @@ for (const [width, height, top] of [[320, 568, 0], [390, 844, 0], [390, 844, 59]
     }
   });
 }
+
+
+test('language switches relabel live AIRFLOW values before the next HUD tick', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#airflow-toggle').click();
+  await expect(page.locator('#aero-flow')).toHaveText('BODY STREAMLINES');
+  for (const [locale, expected] of [
+    ['zh-TW', ['車身流線', '低風阻', '展示中']],
+    ['en', ['BODY STREAMLINES', 'LOW DRAG', 'DEMONSTRATION']],
+  ]) {
+    // Capture the completed change event, before another animation frame can hide mixed-language text.
+    await page.locator('#locale-select').evaluate(select => select.addEventListener('change', () => {
+      window.airflowLocaleSnapshot = ['aero-flow', 'aero-floor', 'aero-jet'].map(id => document.getElementById(id).textContent);
+    }, { once: true }));
+    await selectLocale(page, locale);
+    expect(await page.evaluate(() => window.airflowLocaleSnapshot)).toEqual(expected);
+  }
+});
