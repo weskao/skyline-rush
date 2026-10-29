@@ -5,7 +5,7 @@ interface ActiveCallout extends CalloutEvent { started: number }
 interface CalloutPayout { hard?: boolean; nitro: number }
 interface CalloutPlayer {
   nearMisses: number; perfectLines: number; nitro: number; nitroTime: number; nitroUses: number;
-  rewardFuel: number; nearMiss: { combo: number; charge: number };
+  rewardFuel: number; nearMiss: { combo: number; charge: number } | null;
   drift?: { time: number } | null; trick?: unknown;
   trickPayout?: CalloutPayout | null;
   landing?: { chain?: boolean } | null;
@@ -54,7 +54,8 @@ export function createCallouts() {
       }
       const fuel = Math.round(next.rewardFuel - previous.rewardFuel); // flight charge the rewards added this frame
       if (next.perfect > previous.perfect) enqueue('perfect', 'callout.perfect', 'callout.perfect.detail');
-      if (next.near > previous.near) enqueue('near', ['callout.near', { n: car.nearMiss.combo }],
+      // Close obstacle passes also count in nearMisses but carry no combo (car.nearMiss is traffic-only).
+      if (next.near > previous.near && car.nearMiss) enqueue('near', ['callout.near', { n: car.nearMiss.combo }],
         car.nearMiss.charge < 0.5 ? 'callout.near.full' : ['callout.near.pct', { n: Math.round(car.nearMiss.charge) }]);
       if (next.uses > previous.uses || next.nitroTime > previous.nitroTime) {
         enqueue('nitro', 'callout.nitro', next.uses > previous.uses ? 'callout.nitro.burst' : 'callout.nitro.extend');
