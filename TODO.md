@@ -43,6 +43,24 @@
 
 # TODO — Gameplay depth design
 
+## Handoff checkpoint (2026-10-29)
+
+Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates completed work on the independent feature branches listed there; it does **not** mean those branches have been merged into main.
+
+- [x] Preserve seven completed feature branches with complete local gates after main `ca1c777` and 119/119 required checks on the recorded published feature-code commits.
+- [x] Verify REPLAY-02 recent Custom setups, result retry and independent editable copies using real desktop/phone browser controls; mark the original item below complete.
+- [x] Implement Photo Studio HUD isolation and responsive controls on `feature/photo-studio-hud-isolation`; observe both REDs, pass 25 focused cases plus actual touch/control/PNG validation, and preserve original-resolution evidence.
+- [x] Stop local work at the user's request and write the English handoff with branch names, worktree paths, exact commits, CI snapshots and restart commands. Original roadmap: 56/120 complete (46.67%), 64 remain.
+- [ ] Photo Studio full make verify and exact-source CI: the final local run was intentionally stopped after 31 browser cases; PHOTO-01 remains unchecked below.
+- [ ] Final handoff check found `origin/main@bc5299b` 51 commits ahead of local `main@ca1c777`; none of the nine feature branches contains it. Preserve handoff documents, integrate upstream when work resumes and repeat gates on the resulting source. Earlier receipts certify only their recorded baseline.
+- [ ] Recheck the latest documentation HEAD CI on the eight earlier branches. Older feature-code CI is green; these newer runs are still incomplete at handoff.
+- [ ] Physical Safari/Android, long-drive/all-quality thermal validation and independent review remain open. Merge into main, PR, tag and deployment still require explicit authorization.
+
+## origin/main bc5299b / 0a08d02 integration (2026-10-29)
+
+- [x] Merge origin/main `bc5299b` (51 commits) without conflicts. RED: `tests/module-size.test.js` failed because `src/world.js` was 1346 lines against this branch's lowered 1345 ceiling; GREEN by folding `let trackId, carBank = 0;` (the shared fold used by every integrated branch), never raising the ceiling.
+- [x] Complete make verify on code `a6c9f14` exits 0: strict TS/Vue/JS, Node 844 / 3 emulator skips, locked build, Browser 523 / 2 desktop touch skips, World Tour 303. Log: `artifacts/make-verify-bc5299b-a6c9f14.log`. Docs-only `0a08d02` merged afterwards; `src` unchanged. CI pending.
+
 ## Current main integration and verification (2026-10-29)
 
 - [x] User-integrated `main@ca1c777` is an ancestor of `8b34df1` on `feature/event-lab-lite`; tracked tree was clean and no unresolved merge conflicts were found.
@@ -105,19 +123,6 @@ Base: `feature/event-lab-lite` a6c9f14 + origin/main 0a08d02 + `feature/env-haza
 - [x] World Tour worktree isolation RED → GREEN: its fixture server ignored the existing `PLAYWRIGHT_PORT` override and always used 5183. Both browser/server now use the validated override; the default remains 5183 and invalid/shell values fail before server launch. Seven timeout/port regression tests pass; logs in `artifacts/regression-gates/world-tour-port-{red,green}.log`.
 - [x] Shared result layout RED → GREEN on the affected caller branches: five-lap Circuit and billion-metre Endless phone results overflowed their panels. Commit `3826f3a` adds only `flex-wrap` to the existing shared stats container, preserving spacing/font sizes; actual cell-bounds assertions pass in 8 Circuit and 2 Endless original-resolution flows. Caller branches are repeating the complete gate after integration.
 - [ ] Complete each independent feature's exact-HEAD GitHub CI after public-push authorization; all six full local gates now pass. Earlier published code/CI receipts remain historical. The newer automatic review rejected public code disclosure for missing explicit authorization, and the six-feature approval question is still pending; do not retry or bypass. Feature-to-main merge, main push, PR, tag and deployment require explicit authorization.
-
-## Handoff checkpoint (2026-10-29)
-
-Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates completed work on the independent feature branches listed there; it does **not** mean those branches have been merged into main.
-
-- [x] Preserve seven completed feature branches with complete local gates after main `ca1c777` and 119/119 required checks on the recorded published feature-code commits.
-- [x] Verify REPLAY-02 recent Custom setups, result retry and independent editable copies using real desktop/phone browser controls; mark the original item below complete.
-- [x] Implement Photo Studio HUD isolation and responsive controls on `feature/photo-studio-hud-isolation`; observe both REDs, pass 25 focused cases plus actual touch/control/PNG validation, and preserve original-resolution evidence.
-- [x] Stop local work at the user's request and write the English handoff with branch names, worktree paths, exact commits, CI snapshots and restart commands. Original roadmap: 56/120 complete (46.67%), 64 remain.
-- [ ] Photo Studio full make verify and exact-source CI: the final local run was intentionally stopped after 31 browser cases; PHOTO-01 remains unchecked below.
-- [ ] Final handoff check found `origin/main@bc5299b` 51 commits ahead of local `main@ca1c777`; none of the nine feature branches contains it. Preserve handoff documents, integrate upstream when work resumes and repeat gates on the resulting source. Earlier receipts certify only their recorded baseline.
-- [ ] Recheck the latest documentation HEAD CI on the eight earlier branches. Older feature-code CI is green; these newer runs are still incomplete at handoff.
-- [ ] Physical Safari/Android, long-drive/all-quality thermal validation and independent review remain open. Merge into main, PR, tag and deployment still require explicit authorization.
 
 ## Feature request: 90 / 120 FPS render option (2026-10-29)
 Status: not supported. `src/frame-pacing.ts` caps rendering at 60 FPS (`FpsPreference = 'auto' | '30' | '60'`); 90/120 Hz displays still paint at most 60 times a second. Physics stays fixed at 60 Hz.
