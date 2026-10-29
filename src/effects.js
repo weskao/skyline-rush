@@ -103,6 +103,13 @@ export function createEffects(scene, roadCenter) {
   const ringVariants = Object.values(ringMaterials), pickupVariants = Object.values(pickupMaterials);
   for (let i = 0; i < 7; i++) gates.add(new THREE.Mesh(ringGeometry, ringVariants[i % ringVariants.length]));
   for (let i = 0; i < 40; i++) pickups.add(new THREE.Mesh(pickupGeometry, pickupVariants[i % pickupVariants.length]));
+  // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.
+  const beamGeometry = new THREE.CylinderGeometry(0.08, 0.08, 14, 8, 1, true);
+  const beamMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(...gold), transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false });
+  const beams = new THREE.Group();
+  beams.name = 'Item beams';
+  for (let i = 0; i < 7; i++) beams.add(new THREE.Mesh(beamGeometry, beamMaterial));
+  scene.add(beams);
   const pickupSizes = { cell: 0.28, can: 0.48, tank: 0.7, overcharge: 0.95 };
   let previousRace = null, seen = new WeakSet(), driftEmission = 0;
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
@@ -162,9 +169,18 @@ export function createEffects(scene, roadCenter) {
           mesh.rotation.y = source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2);
           mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
           mesh.material = source === 0 ? pickupMaterials[item.tier] : ringMaterials[ringType];
+          if (source === 1) {
+            const beam = beams.children[slot - 1];
+            beam.visible = item.type === 'emp' || (item.type === 'mystery' && !!race.config?.activeItems);
+            if (beam.visible) { beam.position.copy(mesh.position); beam.position.y += 7; }
+          }
         }
-        for (; slot < group.children.length; slot++) group.children[slot].visible = false;
+        for (; slot < group.children.length; slot++) {
+          group.children[slot].visible = false;
+          if (source === 1) beams.children[slot].visible = false;
+        }
       }
+      beamMaterial.opacity = reducedMotion ? 0.3 : 0.3 + Math.sin(flowTime * 4) * 0.1;
       previousRace = race;
       if (active && !reducedMotion && car.drift && car.altitude < 0.2) {
         driftEmission = Math.min(8, driftEmission + dt * (lowQuality ? 16 : 60));
@@ -305,8 +321,8 @@ export function createEffects(scene, roadCenter) {
       }
     },
     dispose() {
-      gates.removeFromParent(); pickups.removeFromParent();
-      ringGeometry.dispose(); pickupGeometry.dispose();
+      gates.removeFromParent(); pickups.removeFromParent(); beams.removeFromParent();
+      ringGeometry.dispose(); pickupGeometry.dispose(); beamGeometry.dispose(); beamMaterial.dispose();
       for (const mat of Object.values(ringMaterials)) mat.dispose();
       for (const mat of Object.values(pickupMaterials)) mat.dispose();
     },
