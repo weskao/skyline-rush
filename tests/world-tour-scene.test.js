@@ -5,6 +5,7 @@ import { WORLD_THEMES, createWorldTourScene, blocksLandmark, landmarkSafePlan, d
 import { sceneryPlan, propParts, ROAD_CLEARANCE } from '../src/world-tour-scenery.js';
 import { makeLandmark } from '../src/world-tour-landmarks.js';
 import { RACE_TRACKS } from '../src/game.js';
+import { trackLocalPosition } from '../src/track-paths.ts';
 
 const ids=['taipei','tokyo','alpine','coastal','cosmic'];
 const expected={
@@ -97,4 +98,33 @@ test('roadside props may reach into the road as solid obstacles, never nearer th
   }
   assert.ok(solidCount>40,'solid props were checked against low detail');
   assert.ok(roadObstacles('tokyo').some(p=>p.kind==='train'&&p.bottom<1),'Tokyo trains stay in the road as obstacles');
+});
+
+// Counting trig calls is a deterministic stand-in for timing: every centreline sample costs two or more.
+function trigCalls(run){
+  const {sin,cos}=Math;let n=0;
+  Math.sin=x=>(n++,sin(x));Math.cos=x=>(n++,cos(x));
+  try{run();}finally{Math.sin=sin;Math.cos=cos;}
+  return n;
+}
+test('a road rebuild samples each row of the centreline once, not once per lane mark',()=>{
+  const tour=createWorldTourScene(new THREE.Scene());
+  tour.update('taipei',1200.5);
+  // Taipei costs two trig calls per sample; 139 rows x 24 samples is the budget (was ~69 samples a row).
+  const calls=trigCalls(()=>tour.update('taipei',1212.5));
+  assert.ok(calls<=139*24*2+200,`road rebuild made ${calls} trig calls`);
+  assert.ok(trigCalls(()=>tour.update('taipei',1213))<20,'staying inside a 12 m sector rebuilds nothing');
+});
+test('the rebuilt road ribbon still sits on the shared centreline on every World Tour road',()=>{
+  const scene=new THREE.Scene(),tour=createWorldTourScene(scene);
+  const group=scene.getObjectByName('World Tour authored scenery');
+  const road=group.children.find(o=>o.isMesh&&o.geometry.attributes.position.count===139*2);
+  for(const id of ids){
+    tour.update(id,1213);
+    const origin=1212,start=origin-160,positions=road.geometry.attributes.position.array;
+    for(const i of [0,40,138])for(const side of [0,1]){
+      const expected=trackLocalPosition(id,start+i*12,side?12:-12,0,origin).map(Math.fround);
+      assert.deepEqual([...positions.slice((i*2+side)*3,(i*2+side)*3+3)],expected,`${id} row ${i}`);
+    }
+  }
 });

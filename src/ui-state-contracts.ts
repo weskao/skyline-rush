@@ -35,7 +35,8 @@ export interface ReleaseView {
   date: string;
   heroSrc: string;
   // Takes the hero's place while it loads and plays; null falls back to heroSrc.
-  heroVideo: { src: string; poster: string; variant: 'desktop' | 'mobile'; controls: boolean } | null;
+  // `source` is the bundled clip; `src` stays empty (poster only) until the cached copy is ready.
+  heroVideo: { src: string; source: string; poster: string; variant: 'desktop' | 'mobile'; controls: boolean } | null;
 }
 export interface TutorialCoachView {
   visible: boolean;
