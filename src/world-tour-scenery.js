@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { RACE_TRACKS } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.ts';
+import { detailModels } from './world-tour-details.js';
+export { DETAIL_KINDS, detailSetPlan } from './world-tour-details.js';
 
 // Absolute distance anchors: reusing a chunk never restarts an animation or
 // causes the same roadside block to jump back to the camera.
@@ -145,6 +147,7 @@ export function createSceneryKit() {
   };
   const wheels=(g,z)=>{for(const x of [-1.1,1.1]){S(g,'#20282e',x,1,z,.75);S(g,'#a8a9a5',x,1,z,.31);}};
   const props={
+    ...detailModels({B,R}),
     arcade(g){ // Taiwanese arcade façade with roofline, recessed arcade, shop awnings and signs
       B(g,'#b69c80',0,13,3,17,26,13);B(g,'#8c675e',0,25.8,3,19,2,15);
       for(const x of [-6,0,6]){
