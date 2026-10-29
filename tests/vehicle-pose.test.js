@@ -46,3 +46,18 @@ test('steering lean and flight pitch are local offsets, not replacements for roa
     assert.ok(dot(frame.forward, forward) > 0.98, id);
   }
 });
+
+test('the ground shadow lies on the banked, sloped road under the car, along its heading', async () => {
+  const { placeGroundShadow } = await import('../src/vehicle-pose.ts');
+  const { trackLocalPosition } = await import('../src/track-paths.ts');
+  const planeNormal = new Vector3(0, 0, 1), planeLength = new Vector3(0, 1, 0); // PlaneGeometry(5, 8): 8 m along local y
+  for (const id of ['spiral', 'taipei', 'alpine', 'cosmic']) for (const distance of [900, 1260, 1650, 2100]) for (const x of [-7.5, -2.5, 2.5]) for (const altitude of [0, 3]) {
+    const frame = trackFrame(id, distance), origin = distance - 20, shadow = new Object3D();
+    const car = new Vector3(...trackLocalPosition(id, distance, x, altitude, origin));
+    placeGroundShadow(shadow, frame, car, altitude);
+    const road = new Vector3(...trackLocalPosition(id, distance, x, 0.03, origin));
+    assert.ok(shadow.position.distanceTo(road) < 1e-6, `${id} @${distance} x ${x} alt ${altitude}: shadow ${shadow.position.distanceTo(road)} m off the road`);
+    assert.ok(dot(frame.up, planeNormal.clone().applyQuaternion(shadow.quaternion)) > 0.999999, `${id} @${distance}: shadow tilts with the road`);
+    assert.ok(Math.abs(dot(frame.forward, planeLength.clone().applyQuaternion(shadow.quaternion))) > 0.999999, `${id} @${distance}: shadow follows the heading`);
+  }
+});
