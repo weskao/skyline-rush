@@ -44,7 +44,6 @@ for (const [name, viewport, hasTouch] of [
       });
       await expect.poll(drawn, { message: `${id} ${first.id}` }).toBeGreaterThan(0);
       await saveArtifact(page, { path: `artifacts/track-themes/${name}-${id}.jpeg`, quality: 70 });
-      await page.evaluate(() => { window.gameplay.race.phase = 'finished'; });
       await page.keyboard.press('Escape');
       await page.reload();
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
