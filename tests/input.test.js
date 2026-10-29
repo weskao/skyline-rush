@@ -73,6 +73,25 @@ test('Space on a focused menu button preserves native keyboard activation', () =
   controls.destroy();
 });
 
+test('Enter on a focused link or button keeps native activation; elsewhere it still starts the race', () => {
+  for (const tag of ['a[href]', 'button']) {
+    const actions = [];
+    const element = new EventTarget();
+    element.closest = selector => selector.split(',').map(part => part.trim()).includes(tag) ? element : null;
+    const controls = createControls(element, action => actions.push(action));
+    const event = send(element, 'keydown', { code: 'Enter' });
+    assert.equal(event.defaultPrevented, false, `${tag}: the browser activates it (the brand link opens the leave prompt)`);
+    assert.deepEqual(actions, [], `${tag}: Enter is not also a race action`);
+    controls.destroy();
+  }
+  const actions = [];
+  const target = new EventTarget();
+  const controls = createControls(target, action => actions.push(action));
+  assert.ok(send(target, 'keydown', { code: 'Enter' }).defaultPrevented);
+  assert.deepEqual(actions, ['start']);
+  controls.destroy();
+});
+
 test('touch pointer cancellation releases flight without releasing a separate accelerator', () => {
   const target = new EventTarget();
   const fly = new EventTarget();

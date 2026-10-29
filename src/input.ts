@@ -50,7 +50,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
       event.preventDefault();
       keys.add(event.code);
     } else if (actionKeys[event.code as keyof typeof actionKeys] && !event.repeat) {
-      if (event.code === 'Enter' && (event.target as Element | null)?.closest?.('button')) return;
+      if (event.code === 'Enter' && (event.target as Element | null)?.closest?.('button, a[href]')) return; // links activate on Enter too
       event.preventDefault();
       if (['pause', 'restart', 'start'].includes(actionKeys[event.code as keyof typeof actionKeys])) clear();
       onAction(actionKeys[event.code as keyof typeof actionKeys]);
