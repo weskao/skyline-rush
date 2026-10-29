@@ -93,3 +93,23 @@ test('13C reduced motion: hazard visuals carry no decorative motion, only the si
   r.update(race, 'coast', 50, 0, false);
   assert.deepEqual(snapshot(), first, 'the same race state always draws the same frame');
 });
+
+test('ENV-04 branch markers are drawn as a road-wide gantry whose arrow points at the risky side', () => {
+  const { r, mesh } = setup();
+  const markers = mesh('hazard-markers');
+  assert.ok(markers?.isInstancedMesh && markers.count === 0, 'pooled and present for shader warm-up');
+  assert.notEqual(markers.geometry, mesh('gauntlet-barriers').geometry);
+  const at = new THREE.Matrix4(), p = new THREE.Vector3(), s = new THREE.Vector3(), rq = new THREE.Quaternion();
+  const yaw = seed => {
+    r.update({ elapsed: 0, hazards: [entry('branch-marker', 100, { seed })] }, 'coast', 50, 0, false);
+    assert.equal(markers.count, 1);
+    assert.equal(mesh('gauntlet-barriers').count, 0, 'a sign is never drawn as a wall');
+    markers.getMatrixAt(0, at); at.decompose(p, rq, s);
+    assert.equal(p.x, 0, 'spans the road from its centre');
+    return 2 * Math.atan2(rq.y, rq.w);
+  };
+  assert.ok(Math.abs(yaw(3)) < 1e-6, 'odd seed: arrow points +x (right)');
+  assert.ok(Math.abs(Math.abs(yaw(4)) - Math.PI) < 1e-6, 'even seed: turned to point left');
+  r.update({ elapsed: 0, hazards: [] }, 'coast', 50, 0, false);
+  assert.equal(markers.count, 0);
+});

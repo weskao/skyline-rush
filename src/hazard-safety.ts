@@ -13,6 +13,9 @@ export const hazardWarningDistance = (h: { placement?: HazardPlacement }): numbe
   ? Math.max(LEGACY_WARNING, Math.ceil(Math.max(h.placement.warningLeadSeconds, MIN_WARNING_SECONDS) * MAX_APPROACH_SPEED))
   : LEGACY_WARNING;
 
+/** Signs (branch markers, checkpoints) are not hazards: the HUD and audio warn only about the rest. */
+export const isWarnedHazard = (h: { placement?: HazardPlacement }): boolean => !h.placement || OBJECT_CATALOG[h.placement.type].effect !== 'trigger';
+
 // A timed hazard (pulse) opens again, so waiting is its escape; push/slow/collect/trigger never close a lane.
 const closes = (p: HazardPlacement) => OBJECT_CATALOG[p.type].effect === 'block' && p.movementPattern.kind !== 'pulse';
 const reach = (p: HazardPlacement) => p.hitbox.halfWidth + (p.movementPattern.kind === 'sweep' ? p.movementPattern.amplitude : 0);

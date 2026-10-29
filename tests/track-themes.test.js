@@ -155,3 +155,17 @@ test('rivals change lane ahead of a themed hazard instead of driving through it'
     assert.equal(rival.cooldown, 0, `${hazard.id}: rival was knocked`);
   }
 });
+
+test('ENV-04 a themed course marks a safe/risky branch ahead of a hazard, risky side toward it', () => {
+  const markers = THEMED_TRACKS.flatMap(trackId => themedPlacements(trackId).filter(p => p.type === 'branch-marker').map(p => ({ trackId, p })));
+  assert.ok(markers.length >= 1, 'at least one themed course places a branch marker');
+  for (const { trackId, p } of markers) {
+    assert.equal(p.lateralOffset, 0, `${p.id}: the gantry spans the road`);
+    const side = p.seed % 2 ? 1 : -1;
+    // The risky line leads to a blocker on that side within 200 m: the payout is for taking it on.
+    const next = themedPlacements(trackId).find(o => o.distance > p.distance && o.distance - p.distance <= 200 && OBJECT_CATALOG[o.type].effect === 'block');
+    assert.ok(next, `${p.id}: a hazard follows the marker`);
+    assert.equal(Math.sign(next.lateralOffset), side, `${p.id}: the risky side is the hazard's side`);
+    assert.ok(themedHazards(trackId).some(h => h.id === p.id), `${p.id}: markers reach race.hazards`);
+  }
+});

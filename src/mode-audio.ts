@@ -1,4 +1,4 @@
-import { hazardWarningDistance } from './hazard-safety.ts';
+import { hazardWarningDistance, isWarnedHazard } from './hazard-safety.ts';
 import type { HazardPlacement } from './hazard-schema.ts';
 
 interface HazardCue { id?: string | number; distance: number; passed: boolean; hit: boolean; placement?: HazardPlacement }
@@ -83,7 +83,7 @@ export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): strin
     if (hit > state.hazardsHit) add('hazard-impact');
     state.hazardsPassed=passed;state.hazardsHit=hit;
     const distance=race.player?.distance ?? 0;
-    const ahead=race.hazards.find(h=>!h.passed && !h.hit && h.distance>distance && h.distance-distance<=(h.placement ? hazardWarningDistance(h) : 150));
+    const ahead=race.hazards.find(h=>!h.passed && !h.hit && h.distance>distance && isWarnedHazard(h) && h.distance-distance<=(h.placement ? hazardWarningDistance(h) : 150));
     if (ahead) {
       const id=ahead.id ?? ahead.distance;
       if (!state.warned.has(id)) {state.warned.add(id);add('hazard-warning');}

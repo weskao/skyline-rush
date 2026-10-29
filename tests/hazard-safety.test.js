@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { validateHazardPlacement } from '../src/hazard-schema.ts';
 import { courseSafetyIssues, hazardWarningDistance, MAX_APPROACH_SPEED } from '../src/hazard-safety.ts';
 import { CAR_PROBE } from '../src/hazard-behavior.ts';
@@ -65,4 +66,19 @@ test('ENV-05 legacy entries resolve exactly as before, never through hazardFrame
     assert.equal(hazardPose(h, t).x, x);
     assert.equal(hazardTouch(h, car, t).effect, Math.abs(car.x - x) < 1.8 && car.altitude < 2.4 ? 'block' : null);
   }
+});
+
+test('ENV-04 a branch marker is a sign, not a hazard: it neither warns nor hides the warning behind it', async () => {
+  const { createModeAudioState, modeAudioCues } = await import('../src/mode-audio.ts');
+  const { isWarnedHazard } = await import('../src/hazard-safety.ts');
+  const marker = { distance: 100, x: 0, altitude: 0, hit: false, passed: false, placement: at('sign', 100, 0, 'branch-marker') };
+  const barrier = { distance: 200, x: 0, altitude: 0, hit: false, passed: false, placement: at('wall', 200, 2.5, 'barrier') };
+  assert.equal(isWarnedHazard(marker), false);
+  assert.equal(isWarnedHazard(barrier), true);
+  assert.equal(isWarnedHazard({ distance: 1, hit: false, passed: false }), true, 'generated hazards always warn');
+  const cues = hazards => { const state = createModeAudioState(), r = { mode: 'custom', phase: 'racing', trackId: 'coast', player: { distance: 0 }, hazards }; modeAudioCues(r, state); return modeAudioCues(r, state); };
+  assert.deepEqual(cues([marker]), []);
+  assert.deepEqual(cues([marker, barrier]), ['hazard-warning']);
+  const hud = readFileSync(new URL('../src/race-hud-modes.ts', import.meta.url), 'utf8');
+  assert.match(hud, /isWarnedHazard\(/, 'the HUD warning skips signs the same way');
 });

@@ -77,3 +77,25 @@ test('ENV-05 the renderer draws hazards exactly where the simulation resolves th
   assert.match(render, /if \(!active\) continue;/, 'a switched-off barrier is not drawn as solid');
   assert.doesNotMatch(world + render, /hazardX\(/);
 });
+
+test('ENV-04 a branch marker pays the risky line once, the safe line nothing, and never crashes', () => {
+  // Seed parity picks the risky side, as for gusts: odd = right (+x), even = left.
+  const marker = seed => entry('branch-marker', { kind: 'static' }, { seed });
+  const risk = { rings: true, ringScore: 500, nearScore: 300, passScore: 150 };
+  const take = (hazard, car) => { const hits = []; stepPlayerHazards({ hazards: [hazard], elapsed: 0, risk }, car, 999, () => hits.push(1)); return hits; };
+  const right = marker(3), risky = player(5), safe = player(-5);
+  assert.deepEqual(take(right, risky), [], 'a marker is a sign, not a wall');
+  assert.equal(risky.score, 300, 'the risky line pays the close-pass reward');
+  assert.equal(right.passed, true);
+  take(right, risky);
+  assert.equal(risky.score, 300, 'a crossed marker never pays twice');
+  take(marker(3), safe);
+  assert.equal(safe.score, 0, 'the safe line pays nothing');
+  const left = player(-5);
+  take(marker(4), left);
+  assert.equal(left.score, 300, 'an even seed makes the left line the risky one');
+  const centre = player(0);
+  take(marker(3), centre);
+  assert.equal(centre.score, 0, 'the centre line commits to neither side');
+  assert.equal(risky.nearMisses, 0, 'not a near miss: no near-miss callout or combo');
+});

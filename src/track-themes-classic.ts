@@ -19,6 +19,7 @@ export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown
     place('neon', 'neon-works-1', 'barrier', 500, 2.5),
     ...closure('neon', 'neon-lane-closure', 2380, -7.5),
     place('neon', 'neon-works-2', 'barrier', 2520, -2.5),
+    place('neon', 'neon-branch-1', 'branch-marker', 2600, 0, { seed: 1 }), // risky right: past the swinging gate
     place('neon', 'neon-gate-1', 'gate', 2700, 4.6, sweep(4)),
     ...closure('neon', 'neon-diversion', 3480, 7.5),
     place('neon', 'neon-works-3', 'barrier', 3600, -2.5),

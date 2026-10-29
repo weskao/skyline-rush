@@ -50,6 +50,9 @@ export function nudge(car: Car, effect: GameplayEffect | null, h: RaceHazard): v
   else if (effect === 'slow') car.speed *= TERRAIN_RETENTION;
 }
 
+/** A branch marker's risky side, by seed parity as for gusts: odd = right (+x), even = left. */
+export const riskySide = (h: RaceHazard): 1 | -1 => h.placement!.seed % 2 ? 1 : -1;
+
 // Every hazard can be hit or cleared only once. The physics layer decides
 // impacts; the renderer only draws the same authored hazards.
 export function stepPlayerHazards(race: { hazards: RaceHazard[]; elapsed: number; risk?: RiskRules }, car: PlayerCar, previousDistance: number, contact: Contact): void {
@@ -64,6 +67,7 @@ export function stepPlayerHazards(race: { hazards: RaceHazard[]; elapsed: number
     }
     hazard.passed = true;
     nudge(car, effect, hazard);
+    if (effect === 'trigger' && hazard.placement!.type === 'branch-marker' && Math.sign(car.x) === riskySide(hazard)) car.score += race.risk?.nearScore ?? 300;
     if (!effect && (!hazard.placement || hazardReach(hazard))) {
       // Risk/reward: a close, clean ground pass pays more than a distant lane change.
       const near = car.altitude < 2.4 && Math.abs(car.x - obstacleX) < 4;
