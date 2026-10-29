@@ -63,7 +63,7 @@ test('themed hazards join Custom races sorted, and generated hazards stay clear 
   for (const trackId of THEMED_TRACKS) {
     const race = createRace(trackId, { mode: 'custom', themes: true, hazards: 'extreme' });
     const themed = race.hazards.filter(h => h.type);
-    assert.equal(themed.length, themedPlacements(trackId).length);
+    assert.equal(themed.length, themedHazards(trackId).length); // ramps and hoops are routed to race.ramps / race.rings
     assert.deepEqual(race.hazards.map(h => h.distance), [...race.hazards.map(h => h.distance)].sort((a, b) => a - b));
     for (const generated of race.hazards.filter(h => !h.type))
       assert.ok(themed.every(h => Math.abs(h.distance - generated.distance) > 35), `generated @${generated.distance}`);
