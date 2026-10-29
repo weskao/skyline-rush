@@ -2,11 +2,11 @@ import { loadCircuitLapBest } from './circuit-records.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { icon } from './icons.ts';
 import { timeString } from './time-format.ts';
-import { stuntMedal } from './stunt-attack.ts';
+import { stuntMedal, stuntHeatContinues } from './stunt-attack.ts';
 import { sprintTotal, type SprintSeries } from './sprint-series.ts';
 import { cupStandings, cupComplete, cupTotalTime, type CupState } from './championship-cup.ts';
 import type { ChallengeMedalId } from './history-challenge-medals.ts';
-import type { StuntRun } from './race-results.ts';
+import type { StuntRun } from './stunt-attack.ts';
 
 // The simulation race comes from plain-JS game.js; only its finished result fields are read here.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +44,7 @@ function eliminationView(race: FinishedRace): ResultView {
 }
 function stuntView(race: FinishedRace, { best, stunt }: FinishedResult): ResultView {
   const run = stunt!;
-  const continuing = run.elapsed < run.duration && race.result.endReason === 'route';
+  const continuing = stuntHeatContinues(run, race.result.endReason);
   const left = Math.max(0, run.duration - run.elapsed);
   const medal = continuing ? null : stuntMedal(run.score, run.duration);
   return {

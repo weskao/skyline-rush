@@ -5,7 +5,7 @@ import type { ItemRace } from './item-ui.ts';
 import { checkpointDirection } from './checkpoint-rush.ts';
 import type { SprintSeries } from './sprint-series.ts';
 import type { CupState } from './championship-cup.ts';
-import type { StuntRun } from './race-results.ts';
+import type { StuntRun } from './stunt-attack.ts';
 
 // Mode-specific HUD panels: objectives (clean trial, hazards, elimination, checkpoints) and run progress
 // (sprint/cup heat, active item, stunt clock, practice telemetry). Same write-only-on-change rules as race-hud.ts.
