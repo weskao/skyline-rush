@@ -190,7 +190,7 @@ for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['lan
     await closeMusicPrompt(page);
     let checked = 0;
     for (const mode of ['circuit', 'custom', 'time', 'gauntlet']) {
-      await page.locator(`[data-race-mode="${mode}"]`).click();
+      await page.locator(`button[data-race-mode="${mode}"]`).click();
       for (const summary of await page.locator('#race-rules-row details:not([open]) > summary').filter({ visible: true }).all()) await summary.click();
       for (const combobox of await page.locator('#race-rules-row .custom-select [role="combobox"]').filter({ visible: true }).all()) {
         await combobox.scrollIntoViewIfNeeded();
