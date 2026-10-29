@@ -74,6 +74,7 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 ### Custom 外觀與幽靈車
 
 Custom Race 可在各衝刺賽段重播相容規則下的最快幽靈車。Custom 與 Free Drive 提供 Track / Day / Dusk / Night / Rain / Fog 外觀預設及即時規則摘要。這些外觀選擇不影響成績資格或規則識別。重試保留所選外觀;切換賽道或返回 Classic 時恢復賽道外觀。關閉 Photo Studio 後會恢復目前比賽的外觀。
+
 ### 選用道具與獎勵閘門
 
 Custom 與 Free Drive 提供 **Off / Classic Mystery Rings / Active Items / All Items**。持有道具共用一個欄位:按 **Q** 或觸控 **USE** 使用,之後等待冷卻。NITRO 與 FLY/BOOST 保留各自的操作。All Items 加入有上限的加速、飛行能量補充及單次碰撞恢復閘門;EMP 會短暫減速附近對手,單人模式則轉成 Magnet。恢復效果仍會計入正式碰撞次數。Stunt Attack 與 Checkpoint Rush 可另外啟用限時、不可疊加的 ×2 分數閘門。Classic 的預設行為維持原樣。
