@@ -105,3 +105,32 @@ test('a cone still closes its lane for reachability', () => {
   const props = [{ from: 290, to: 310, left: -10, right: -1, bottom: 0, top: 4 }];
   assert.throws(() => lab.validateCourse(course([{ kind: 'cone', distance: 300, lane: 2 }]), access, props), error => error.code === 'reachable');
 });
+
+test('authored ramps launch grounded cars with the shared Sky Spiral impulse', async () => {
+  const { OBJECT_CATALOG } = await import('../src/object-catalog.ts');
+  const { launchImpulse } = await import('../src/launch-ramps.ts');
+  const document = lab.validateCourse(course([{ kind: 'ramp', distance: 400, lane: 1 }]), access);
+  const race = lab.compileCourse(base(), document, access);
+  const ramp = OBJECT_CATALOG.ramp.hitbox;
+  assert.deepEqual(race.ramps, [{ distance: 400, x: -2.5, halfWidth: ramp.halfWidth, halfLength: ramp.halfLength, height: ramp.height }]);
+  assert.equal(race.hazards.length, 0, 'a ramp is driven over, never a wall');
+  startRace(race); race.phase = 'racing';
+  const drive = (x, speed) => {
+    Object.assign(race.player, { distance: 400 + ramp.halfLength - .5, x, speed, altitude: 0, verticalSpeed: 0 });
+    stepRace(race, { throttle: true }, 1 / 60);
+    return race.player;
+  };
+  const launched = drive(-2.5, 50);
+  assert.ok(launched.altitude > 0, 'crossing the lip at speed leaves the ground');
+  assert.ok(launched.verticalSpeed > launchImpulse(50) - 2, 'impulse matches the shared rule');
+  assert.equal(drive(-2.5 + ramp.halfWidth + .5, 50).altitude, 0, 'missing the ramp sideways stays grounded');
+  assert.equal(drive(-2.5, 20).altitude, 0, 'too slow to launch');
+});
+
+test('ramps fit the pooled renderer budget and keep plain races ramp-free', async () => {
+  const { crossesRamp } = await import('../src/launch-ramps.ts');
+  const many = Array.from({ length: 9 }, (_, i) => ({ kind: 'ramp', distance: 300 + i * 60, lane: 1 }));
+  assert.throws(() => lab.validateCourse(course(many), access), error => error.code === 'count');
+  assert.doesNotThrow(() => lab.validateCourse(course(many.slice(0, 8)), access));
+  assert.equal(crossesRamp(undefined, { distance: 0, x: 0 }, 5), false);
+});

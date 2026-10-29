@@ -22,7 +22,7 @@ test('bounded import rejects corrupt, unknown, locked, unsafe and overlapping cr
   assert.equal(typeof lab.importCourse, 'function');
   const bad = [null, { version: 2 }, course({ trackId: 'unknown' }), course({ trackId: 'neon' }),
     course({ seed: -1 }), course({ label: '<script>alert(1)</script>' }), course({ label: 'x'.repeat(41) }),
-    course({ objects: [{ kind: 'ramp', distance: 300, lane: 1 }] }),
+    course({ objects: [{ kind: 'catapult', distance: 300, lane: 1 }] }),
     course({ objects: [{ kind: 'barrier', distance: 0, lane: 1 }] }),
     course({ objects: [{ kind: 'barrier', distance: 300, lane: 4 }] }),
     course({ objects: Array.from({ length: 25 }, (_, i) => ({ kind: 'pickup', distance: 300 + 80 * i, lane: 1 })) }),

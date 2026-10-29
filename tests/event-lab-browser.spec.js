@@ -90,6 +90,17 @@ for (const [name, viewport, hasTouch] of [
     const count = await page.locator('.lab-marker').count();
     await page.locator('#lab-add').click();
     await expect(page.locator('.lab-marker')).toHaveCount(count);
+    // Aim a ramp by tapping the map until the preview says it fits, then add it.
+    await page.locator('#lab-kind').selectOption('ramp');
+    let fits = false;
+    for (const down of [.35, .5, .65, .8]) for (const across of [.125, .375, .625, .875]) {
+      if (fits) break;
+      await press({ x: box.width * across, y: box.height * down });
+      fits = !(await page.locator('#lab-preview').getAttribute('class')).includes('lab-error');
+    }
+    expect(fits).toBe(true);
+    await page.locator('#lab-add').click();
+    await expect(page.locator('.lab-marker')).toHaveCount(count + 1);
     await page.screenshot({ path: `artifacts/event-lab/${name}-${locale}-designer.png` });
     await page.locator('#lab-use').click();
     await page.locator('#start-button').click();
@@ -101,6 +112,12 @@ for (const [name, viewport, hasTouch] of [
     });
     await expect.poll(() => page.evaluate(() => window.gameScene.scene.getObjectByName('checkpoint-gates').count)).toBeGreaterThan(0);
     await page.screenshot({ path: `artifacts/event-lab/${name}-${locale}-checkpoints.png` });
+    await page.evaluate(() => {
+      const race = window.gameplay.race, ramp = race.ramps[0];
+      Object.assign(race.player, { distance: ramp.distance - 40, speed: 0, x: ramp.x });
+    });
+    await expect.poll(() => page.evaluate(() => window.gameScene.scene.getObjectByName('launch-ramps').count)).toBeGreaterThan(0);
+    await page.screenshot({ path: `artifacts/event-lab/${name}-${locale}-ramp.png` });
     expect(errors).toEqual([]);
   });
 });

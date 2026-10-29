@@ -72,7 +72,7 @@ function place(event: MouseEvent): void {
   lane.value = snapped.lane; distance.value = snapped.distance;
 }
 const markerStyle = (object: { lane: number; distance: number }) => ({ left: `${object.lane * 25 + 12.5}%`, top: `${(object.distance - 200) / (maxDistance.value - 200) * 90 + 5}%` });
-const symbols: Record<CourseKind, string> = { barrier: '▰', cone: '▴', ring: '◎', pickup: '◆', checkpoint: '⛩' };
+const symbols: Record<CourseKind, string> = { barrier: '▰', cone: '▴', ramp: '◢', ring: '◎', pickup: '◆', checkpoint: '⛩' };
 </script>
 
 <template>
@@ -106,7 +106,7 @@ const symbols: Record<CourseKind, string> = { barrier: '▰', cone: '▴', ring:
           </li>
         </ol>
       </div>
-      <fieldset class="lab-fields"><legend>{{ text('add') }}</legend><label>{{ text('object') }}<select id="lab-kind" v-model="kind"><option v-for="entry in (['barrier', 'cone', 'ring', 'pickup', 'checkpoint'] as const)" :key="entry" :value="entry">{{ text(entry) }}</option></select></label>
+      <fieldset class="lab-fields"><legend>{{ text('add') }}</legend><label>{{ text('object') }}<select id="lab-kind" v-model="kind"><option v-for="entry in (['barrier', 'cone', 'ramp', 'ring', 'pickup', 'checkpoint'] as const)" :key="entry" :value="entry">{{ text(entry) }}</option></select></label>
         <label>{{ text('distance') }}<input id="lab-distance" v-model.number="distance" type="number" min="200" :max="maxDistance" step="10"></label>
         <label>{{ text('lane') }}<input id="lab-lane" v-model.number="lane" type="number" min="0" max="3" step="1"></label><button id="lab-add" type="button" @click="add">{{ text('add') }}</button>
         <p id="lab-preview" class="lab-note" :class="{ 'lab-error': preview }" aria-live="polite">{{ preview ? text('error.' + preview) : text('fits') }}</p></fieldset>

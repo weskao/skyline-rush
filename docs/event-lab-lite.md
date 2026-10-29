@@ -24,8 +24,13 @@ carrying its catalog half-width and height, which player, rival and traffic cont
 and the pooled barrier renderer all read. Cones reuse the barrier pool at their own
 size, so they add no material or draw call.
 
-Deferred: placeable ramps (need a catalog `ramp` type and shared launch physics),
-remote assets and scripting.
+Ramps (catalog `launch` effect, at most 8) compile to `race.ramps`. A grounded car
+crossing a ramp's lip inside its width above 32 m/s gets the same impulse as a Sky
+Spiral launch section (`src/launch-ramps.ts`). One pooled wedge mesh draws them
+(`src/ramp-view.ts`); its material exists from world setup, so no shader compiles
+mid-race. Rivals and traffic drive over ramps without launching.
+
+Deferred: remote assets and scripting.
 
 Out of scope for offline v1: community sharing and multiplayer uploads. They need a
 separate backend, moderation, storage and security design. Courses travel only as

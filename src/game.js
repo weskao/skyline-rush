@@ -1,5 +1,5 @@
 import { seededRng, RACE_STREAMS } from './rng.ts';
-import { createHazards, hazardX } from './hazards.ts';
+import { createHazards, hazardX } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
@@ -584,10 +584,10 @@ export function stepRace(race, input, dt) {
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
-  if (race.trackId === 'spiral' && car.section === 'launch' && car.altitude === 0 && car.speed > 32 &&
-      car.distance >= section.to - car.speed * dt - 1) {
-    car.altitude = 0.02;
-    car.verticalSpeed = Math.max(car.verticalSpeed, 6 + car.speed * 0.075);
+  if (car.altitude === 0 && car.speed > LAUNCH_MIN_SPEED && (race.trackId === 'spiral' && car.section === 'launch' &&
+      car.distance >= section.to - car.speed * dt - 1 || crossesRamp(race.ramps, car, car.speed * dt + 1))) {
+    car.altitude = 0.02; // Event Lab ramps share the Spiral impulse
+    car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
   const roofHit = car.section === 'tunnel' && car.altitude + CAR_HEIGHT > TUNNEL_CEILING;
