@@ -1468,10 +1468,9 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .photo-actions button { min-height: 44px; flex: 1; border-radius: 6px; border: 1px solid #81e9e7; background: #21536a; color: #efffff; font-weight: 700; }
 .photo-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .photo-screen[open] { z-index: 120; }
-body:has(#photo-screen[open]) .race-overlay,
-body:has(#photo-screen[open]) .race-info,
-body:has(#photo-screen[open]) .touch-controls,
-body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
+/* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state. */
+body:has(#photo-screen[open]) #app > :not(#world):not(#photo-screen),
+body:has(#photo-screen[open]) #perf-overlay { display: none; }
 #photo-open[hidden] { display: none !important; }
 
 /* Home discoverability: medal tally on the route line, today's challenge as a card above the mode picker.

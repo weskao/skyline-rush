@@ -4,7 +4,7 @@
 
 - [x] Inspect main ca1c777 and the real modal/CSS/renderer lifecycle; create independent feature/photo-studio-hud-isolation. Baseline strict types and Node pass: 815 / 3 emulator skips, failures 0. Plan: docs/superpowers/plans/2026-10-29-photo-studio-hud.md.
 - [x] RED observed: the real Photo Studio shows `.telemetry` despite the clean-preview contract; the new browser test fails Expected hidden / Received visible on unmodified main source. Log: artifacts/photo-studio/hud-red.log; original-resolution before image: artifacts/photo-studio/before-desktop-coast.png. Browser build is locked; no import/syntax failure.
-- [ ] GREEN: hide background chrome only while the native Photo Studio modal is open; preserve the paused race, world canvas, photo panel, camera/lighting/export and Back/Escape/resume.
+- [x] GREEN: one modal-open CSS rule shows only the canvas and Photo Studio, also hiding optional body-level ?perf output. All 22 ten-track/desktop/phone/narrow/landscape real-game lifecycle cases plus the existing orbit/lighting/PNG test pass (23/23). Back restores prior visibility, native Escape stays paused, and real Resume drives again; page errors 0. Preserve 22 DPR-1 after images and receipt in artifacts/photo-studio/; six representative original-resolution images inspected. Existing UI/save sound is retained; no new music or render-loop state.
 - [ ] Cross-track desktop/phone and narrow/landscape original-resolution images, complete make verify and exact-HEAD CI; keep physical devices and thermal acceptance separate.
 
 ## Feature request: 90 / 120 FPS render option (2026-10-29)

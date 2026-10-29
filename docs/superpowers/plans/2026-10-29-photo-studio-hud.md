@@ -38,9 +38,9 @@ Files: tests/photo-studio-browser.spec.js; TODO.md.
 
 Files: src/style.css only, unless a real lifecycle regression requires its existing typed controller.
 
-- [ ] Replace incomplete four-selector HUD hiding with one photo-open rule for non-canvas/non-photo app roots and the optional performance strip.
-- [ ] Pass focused browser regression and existing orbit/lighting/PNG tests; preserve after images and inspect representative full-resolution views.
-- [ ] Verify repeat open, camera/lighting restoration, real Back/Escape clicks and continued driving without console errors; commit.
+- [x] Replace incomplete four-selector HUD hiding with one photo-open rule for non-canvas/non-photo app roots and the optional performance strip.
+- [x] Pass focused browser regression and existing orbit/lighting/PNG tests; preserve after images and inspect representative full-resolution views.
+- [x] Verify repeat open, existing camera/lighting/export, real Back/Escape and continued driving without console errors; 23/23 focused browser cases pass. Preserve 22 original-resolution after images; six representatives inspected.
 
 ### Task 3: Final quality gate
 
