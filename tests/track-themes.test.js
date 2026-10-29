@@ -74,7 +74,11 @@ function driveThrough(trackId, hazard, x) {
   race.rings = [];
   startRace(race);
   Object.assign(race.player, { distance: hazard.distance - 30, x, speed: 40 });
-  for (let i = 0; i < 90; i++) stepRace(race, { throttle: true }, 1 / 60);
+  // The driver holds the lane (e.g. counter-steering Canyon's crosswind); only the hazard decides the outcome.
+  for (let i = 0; i < 90 && !race.hazards[0].hit && !race.hazards[0].passed; i++) {
+    race.player.x = x;
+    stepRace(race, { throttle: true }, 1 / 60);
+  }
   return race;
 }
 
