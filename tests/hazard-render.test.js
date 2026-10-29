@@ -113,3 +113,18 @@ test('ENV-04 branch markers are drawn as a road-wide gantry whose arrow points a
   r.update({ elapsed: 0, hazards: [] }, 'coast', 50, 0, false);
   assert.equal(markers.count, 0);
 });
+
+test('ENV-06 the per-frame path reuses one pose object instead of allocating one per hazard', async () => {
+  const { hazardPose } = await import('../src/hazard-race.ts');
+  const source = readFileSync(new URL('../src/hazard-render.ts', import.meta.url), 'utf8');
+  const update = source.slice(source.indexOf('    update('));
+  assert.match(update, /hazardPose\(hazard, race\.elapsed, pose\)/, 'update() hands hazardPose its reused pose');
+  assert.match(source.slice(0, source.indexOf('    update(')), /const pose = \{/, 'the pose is built once at setup');
+  const pose = { x: 0, altitude: 0, active: true };
+  const generated = { distance: 100, x: 2.5, altitude: 0, hit: false, passed: false, moving: true, phase: 0, speed: 1.05 };
+  for (const hazard of [generated, entry('gust', 110), entry('gate', 120, { movementPattern: { kind: 'sweep', amplitude: 1.2, period: 4, phase: 0 } })])
+    for (const t of [0, 1.3, 2.7]) {
+      assert.equal(hazardPose(hazard, t, pose), pose, 'written in place');
+      assert.deepEqual({ ...pose }, hazardPose(hazard, t), 'the same pose the simulation resolves');
+    }
+});

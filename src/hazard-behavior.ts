@@ -12,18 +12,23 @@ export interface CarProbe { readonly distance: number; readonly x: number; reado
 export const CAR_PROBE = Object.freeze({ halfWidth: 0.25, halfLength: 2.2, height: 1.2 });
 const FALL_SHARE = 0.4; // debris spends 40% of its cycle falling, then rests on the road
 
-export function hazardFrame(p: HazardPlacement, time: number): HazardFrame {
+export const hazardFrame = (p: HazardPlacement, time: number): HazardFrame =>
+  hazardFrameInto(p, time, { active: true, lateralOffset: 0, altitude: 0, angle: 0 });
+
+/** hazardFrame written into `out`, so the per-frame renderer can reuse one object. */
+export function hazardFrameInto(p: HazardPlacement, time: number, out: { -readonly [K in keyof HazardFrame]: HazardFrame[K] }): HazardFrame {
   const move = p.movementPattern;
-  const base = { active: true, lateralOffset: p.lateralOffset, altitude: p.altitude, angle: 0 };
-  if (move.kind === 'static') return base;
+  out.active = true; out.lateralOffset = p.lateralOffset; out.altitude = p.altitude; out.angle = 0;
+  if (move.kind === 'static') return out;
   const t = Number.isFinite(time) ? time : 0; // fail safely on corrupt external timestamps
   const cycle = ((t % move.period) + move.period) % move.period / move.period + move.phase / (2 * Math.PI);
   const u = cycle - Math.floor(cycle), turn = u * 2 * Math.PI;
   const max = HAZARD_LIMITS.maxLateral;
-  if (move.kind === 'sweep') return { ...base, lateralOffset: Math.max(-max, Math.min(max, p.lateralOffset + Math.sin(turn) * move.amplitude)) };
-  if (move.kind === 'pulse') return { ...base, active: u < 0.5 };
-  if (move.kind === 'rotate') return { ...base, angle: turn };
-  return { ...base, altitude: p.altitude * Math.max(0, 1 - u / FALL_SHARE) };
+  if (move.kind === 'sweep') out.lateralOffset = Math.max(-max, Math.min(max, p.lateralOffset + Math.sin(turn) * move.amplitude));
+  else if (move.kind === 'pulse') out.active = u < 0.5;
+  else if (move.kind === 'rotate') out.angle = turn;
+  else out.altitude = p.altitude * Math.max(0, 1 - u / FALL_SHARE);
+  return out;
 }
 
 /** The effect a touching car receives, or null when the car is clear or the hazard is switched off. */

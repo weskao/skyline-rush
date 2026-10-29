@@ -2,7 +2,8 @@
 // Authored entries (with a validated placement) move and act through ENV-04's
 // hazardFrame/hazardContact; generated Gauntlet/practice hazards keep their original rules.
 import { hazardX, type Hazard } from './hazards.ts';
-import { hazardFrame, hazardContact } from './hazard-behavior.ts';
+import { hazardFrame, hazardFrameInto, hazardContact } from './hazard-behavior.ts';
+import { ROAD_LIMIT } from './game.js'; // read only inside functions, so an import cycle cannot hit the TDZ
 import type { HazardPlacement } from './hazard-schema.ts';
 import { OBJECT_CATALOG, type GameplayEffect } from './object-catalog.ts';
 import type { RiskRules } from './risk-lines.ts';
@@ -13,13 +14,17 @@ interface PlayerCar extends Car { altitude: number; cooldown: number; score: num
 type Contact = (race: unknown, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
 
 const BARRIER_HALF_WIDTH = 1.55; // drawn gauntlet barrier: 3.1 m wide
-const GUST_SHOVE = 1.5, ROAD_LIMIT = 9, TERRAIN_RETENTION = 0.85; // m sideways, m, share of speed kept
+const GUST_SHOVE = 1.5, TERRAIN_RETENTION = 0.85; // m sideways, share of speed kept
 
-/** Where a hazard is at a race time; inactive ones (a switched-off energy barrier) are not solid. */
-export function hazardPose(h: RaceHazard, time: number): { x: number; altitude: number; active: boolean } {
-  if (!h.placement) return { x: hazardX(h, time), altitude: h.altitude, active: true };
-  const frame = hazardFrame(h.placement, time);
-  return { x: frame.lateralOffset, altitude: frame.altitude, active: frame.active };
+type HazardPose = { x: number; altitude: number; active: boolean };
+const scratchFrame = { active: true, lateralOffset: 0, altitude: 0, angle: 0 }; // read before hazardPose returns, never handed out
+/** Where a hazard is at a race time; inactive ones (a switched-off energy barrier) are not solid.
+ *  The renderer passes one reused `out` so drawing allocates nothing per hazard per frame. */
+export function hazardPose(h: RaceHazard, time: number, out: HazardPose = { x: 0, altitude: 0, active: true }): HazardPose {
+  if (!h.placement) { out.x = hazardX(h, time); out.altitude = h.altitude; out.active = true; return out; }
+  const frame = hazardFrameInto(h.placement, time, scratchFrame);
+  out.x = frame.lateralOffset; out.altitude = frame.altitude; out.active = frame.active;
+  return out;
 }
 
 /** Half-width an AI keeps clear of, covering a moving hazard's whole sweep; 0 = never steer around it. */
