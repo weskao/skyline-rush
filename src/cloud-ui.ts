@@ -25,8 +25,8 @@ interface CloudOptions {
   services: CloudServices;
   /** The session's current progress, which may be newer than storage when storage is blocked. */
   getProgress(): Progress;
-  /** Adopt merged progress into the session and refresh the screens that show it. */
   getLocalChallengeMedals?(): ChallengeMedalState;
+  /** Adopt merged progress into the session and refresh the screens that show it. */
   applyProgress(merged: MergedProgress, localChallengeMedals?: ChallengeMedalState): void;
 }
 
@@ -177,7 +177,9 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
     if (!cloudUser || cloudOwner === cloudUser.uid || !confirm(t('cloud.switchConfirm'))) return;
     const uid = cloudUser.uid;
     await cloudSync.catch(() => {});
-    if (cloudUser?.uid !== uid || cloudOwner === uid || !switchCloudAccount(cloudOwner, uid)) {
+    if (cloudUser?.uid !== uid || cloudOwner === uid ||
+        !saveLocalProgress({ ...getProgress(), localChallengeMedals: getLocalChallengeMedals() }) ||
+        !switchCloudAccount(cloudOwner, uid)) {
       announceCloud('cloud.failed');
       return;
     }

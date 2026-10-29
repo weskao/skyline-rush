@@ -166,7 +166,7 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
   }
   // Home status: today's challenge and the medal tally sit on the start screen instead of inside History.
   function showHomeStatus() {
-    const { sessionDaily, sessionMedals, sessionChallengeMedals, world } = getData();
+    const { sessionDaily, sessionMedals, world } = getData();
     const today = dailyChallenge();
     const best = dailyBoard(sessionDaily, today.id)[0];
     const medals = Object.keys(sessionMedals).length;
