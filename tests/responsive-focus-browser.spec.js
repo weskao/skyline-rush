@@ -5,21 +5,28 @@ import { ciTimeout } from './helpers/ci.js';
 // 13C Responsive (TODO 1788): at every supported size, an open setup dialog keeps Tab/Shift+Tab inside and hands
 // focus back to its opener, a setup popover never strands focus, and the in-race End action is reachable by pointer.
 const VIEWPORTS = [[1440, 900], [390, 844], [320, 740], [844, 390]];
-// Where focus is: inside the dialog, on the browser's own UI (a native modal hands Tab past its last control to the
-// address bar, which leaves document.activeElement on <body>), or on a page control outside the dialog (escaped).
-const focusPlace = (page, selector) => page.evaluate(sel => {
-  const el = document.activeElement;
-  if (document.querySelector(sel).contains(el)) return 'inside';
-  return !el || el === document.body ? 'browser' : `escaped to ${el.tagName}#${el.id}.${el.getAttribute('class') ?? ''}`;
-}, selector);
-
 // Walks twice the dialog's tab stops each way: focus never reaches the page behind, and it keeps coming back inside.
+// The page logs where each Tab lands (on its keyup), so slow CI frames cost one round trip per press, not two; a Tab
+// that reaches the browser's own UI dispatches no keyup to the page. Places: inside the dialog, on the browser's own UI
+// (a native modal hands Tab past its last control to the address bar, leaving activeElement on <body>), or escaped.
 async function assertTrapped(page, selector) {
   const stops = await page.locator(`${selector} :is(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):visible`).count();
   expect(stops, `${selector} has focusable controls`).toBeGreaterThan(0);
+  await page.evaluate(sel => {
+    window.focusPlaces = [];
+    window.removeEventListener('keyup', window.logFocusPlace, true);
+    window.logFocusPlace = event => {
+      if (event.key !== 'Tab') return;
+      const el = document.activeElement;
+      window.focusPlaces.push(document.querySelector(sel).contains(el) ? 'inside'
+        : !el || el === document.body ? 'browser' : `escaped to ${el.tagName}#${el.id}.${el.getAttribute('class') ?? ''}`);
+    };
+    window.addEventListener('keyup', window.logFocusPlace, true);
+  }, selector);
   for (const key of ['Tab', 'Shift+Tab']) {
-    const places = [];
-    for (let i = 0; i < stops * 2 + 4; i++) { await page.keyboard.press(key); places.push(await focusPlace(page, selector)); }
+    await page.evaluate(() => { window.focusPlaces = []; });
+    for (let i = 0; i < stops * 2 + 4; i++) await page.keyboard.press(key);
+    const places = await page.evaluate(() => window.focusPlaces);
     expect(places.filter(place => place.startsWith('escaped')), `${key} never focuses the page behind ${selector}`).toEqual([]);
     expect(places.filter(place => place === 'inside').length, `${key} cycles back into ${selector}`).toBeGreaterThan(stops * 2);
   }
@@ -31,6 +38,12 @@ for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () 
   test.use({ viewport: { width, height }, hasTouch: phone, isMobile: phone });
 
   test('the Event Lab setup dialog traps Tab and returns focus to its mode button', async ({ gameplayPage: page }) => {
+    // ~500 Tab presses wait on the live preview's frames; CPU-only CI draws them several times slower than a GPU.
+    test.setTimeout(ciTimeout(90_000));
+    // Focus handling is graphics-independent: Low keeps those frames cheap.
+    await page.evaluate(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', preset: 'cinematic', enabled: true })));
+    await page.reload();
+    if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     const opener = page.locator('button[data-race-mode="eventlab"]');
     for (const close of ['Escape', 'button']) {
       await opener.focus();
