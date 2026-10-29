@@ -388,7 +388,7 @@ export function createWorldTourScene(scene){
       water.visible=landscape==='coast';
       if(water.visible)water.material.opacity=low?.7:.85;
       if(stars.visible){
-        stars.position.set(0,0,0);
+        stars.position.set(0,0,0);stars.geometry.setDrawRange(0,low?400:quality==='medium'?800:Infinity); // Fewer stars on weaker tiers.
         if(!reducedMotion)stars.rotation.y=Math.sin(time*.015)*.015;
       }
       // Physical driving reward is granted by game.js; portals are only the

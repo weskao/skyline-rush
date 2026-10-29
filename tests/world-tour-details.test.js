@@ -65,3 +65,14 @@ test('streamed chunks draw the detail sets beside the existing street props', ()
     assert.ok(DETAIL_KINDS[id].some(kind=>names.has(kind)),id+' streams no details');
   }
 });
+
+test('weak hardware draws fewer background stars; High keeps all of them', () => {
+  const scene=new THREE.Scene(),tour=createWorldTourScene(scene);
+  const stars=[];scene.traverse(o=>{if(o.isPoints)stars.push(o);});
+  assert.equal(stars.length,1);
+  const total=stars[0].geometry.attributes.position.count;
+  const drawn=q=>{tour.update('cosmic',1213,q);return Math.min(total,stars[0].geometry.drawRange.count);};
+  assert.equal(drawn('high'),total);
+  assert.ok(drawn('medium')<total&&drawn('low')<drawn('medium'),`${drawn('medium')} / ${drawn('low')}`);
+  assert.equal(drawn('high'),total,'returning to High restores every star');
+});
