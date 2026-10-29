@@ -7,6 +7,7 @@ import { createGhostStore } from '../src/ghost-store.ts';
 import { createSprintSeries } from '../src/sprint-series.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { loadHistory } from '../src/history-classic.ts';
+import { MODE_NAMES } from '../src/cloud-mode-bests.ts';
 
 beforeEach(() => {
   const store = new Map();
@@ -102,4 +103,20 @@ test('a repeated stunt settle never counts the same heat twice', () => {
   const { context } = settle(race, { series: { sprintSeries: null, cup: null, stunt } });
   settleRace(race, context);
   assert.deepEqual([stunt.heats, stunt.elapsed, stunt.score], [1, 20, 300]);
+});
+
+test('no non-Classic finish touches Classic unlocks, stars, medals, bests, history or the Daily board', () => {
+  const classicState = progress => {
+    const { unlocked, modeHistory, ...rest } = progress, { modeHistory: stored, ...saved } = loadSessionProgress([]);
+    return JSON.stringify({ unlocked: [...unlocked], ...rest, saved: { ...saved, unlocked: null } });
+  };
+  for (const mode of MODE_NAMES) {
+    const store = new Map();
+    globalThis.localStorage = { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) };
+    const progress = loadSessionProgress(['coast']);
+    const before = classicState(progress);
+    settle(classic({ position: 1, time: 50, stars: 3, nearMisses: 40 }, { mode, config: { mode } }), { progress });
+    assert.equal(classicState(progress), before, `${mode} finish left Classic progress unchanged`);
+    assert.equal(progress.modeHistory.length, 1, `${mode} finish is recorded in its own mode history`);
+  }
 });
