@@ -1286,9 +1286,10 @@ cue is warranted for these pure simulation contracts.
   endless roadway, reverse-map continuity or loop back to the start until implemented.
 - [x] Optional practice HUD: current speed, air time, travel distance, max speed,
   clean near-miss chain and trick counter; hide rival position and race countdown.
-- [ ] **Acceptance:** crossing the old finish cannot save an official best, stars,
+- [x] **Acceptance:** crossing the old finish cannot save an official best, stars,
   campaign unlock or Daily record; exit/restart/pause work for keyboard and touch;
   world buffers do not grow across repeated sessions.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: race-modes.test.js, mode-acceptance-browser.spec.js (keyboard/touch pause/restart/exit).
 
 ### 9C. Custom Race (P0)
 
@@ -1305,9 +1306,10 @@ cue is warranted for these pure simulation contracts.
   time or points explicitly and reset physical state between stages.
 - [x] Support validated presets **Standard / Traffic Rush / No Items / Air Focus /
   Precision** and a custom configuration, all with one-tap Reset to Default.
-- [ ] **Acceptance:** generated item/traffic counts, HUD placement labels, AI finish
+- [x] **Acceptance:** generated item/traffic counts, HUD placement labels, AI finish
   detection and results all work with 0 rivals; Custom scores never overwrite
   Classic or Daily records.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: race-modes, race-ghosts, mode-acceptance-browser.spec.js (0-rival HUD and results).
 
 ### 9D. Time Attack / Ghost Trial (P0)
 
@@ -1319,8 +1321,9 @@ cue is warranted for these pure simulation contracts.
   Keep separate Ghost data for mode-specific bests if necessary.
 - [x] Optional **Clean Time Trial** variant: collisions invalidate a clean medal or
   apply an explicit time penalty; do not silently change legacy physics.
-- [ ] **Acceptance:** timed results/ghosts remain isolated from Classic bests;
+- [x] **Acceptance:** timed results/ghosts remain isolated from Classic bests;
   blocked localStorage never prevents play; mobile HUD remains readable.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: race-modes, mode-history-contract, mode-acceptance-browser.spec.js (blocked storage, phone HUD).
 
 ### 9E. Stunt & Style Attack (P1)
 
@@ -1405,9 +1408,10 @@ acceptance remains under the shared stage-wide QA, not claimed here.
 
 ### 9H. Obstacle Gauntlet (P1)
 
-- [ ] **MODE-07 — Obstacle Gauntlet:** fixed-seed hazard challenges with
+- [x] **MODE-07 — Obstacle Gauntlet:** fixed-seed hazard challenges with
   escalating moving gates, road barricades, flying hoops, debris and safe/risky
   alternate lines. Keep the ordinary track drivable in Classic mode by default.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: gauntlet-course, gauntlet-motion tests, obstacle-gauntlet-browser.spec.js.
 - [x] Add difficulty tiers based on warning time, obstacle spacing and
   activation frequency **without random unavoidable collisions**.
 - [x] Score clean obstacle passes, near-misses and finish time; practice and
@@ -1469,8 +1473,9 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [x] Build extendable road geometry, scene chunks, encounter seeds, objective
   markers, camera/traffic recycling and safe recovery. Respect absolute distance
   to avoid repeated scenery, teleporting objects or floating-point problems.
-- [ ] Keep memory/GPU resources bounded after lengthy play; verify pause, resume,
+- [x] Keep memory/GPU resources bounded after lengthy play; verify pause, resume,
   context loss and browser tab backgrounding.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: endless-highway.test.js, endless-highway-browser + endless-bounds-browser specs (pause, context loss, backgrounding).
 - [x] **Acceptance:** play can continue past the former end without hitting
   clamped `trackPoint()`, missing geometry, a fake lap or an unintended finish.
 
@@ -1514,8 +1519,9 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
   density, pickups, collision severity, Ghost, stage count, timed duration,
   cosmetic scenery/weather, item rules, and per-mode eligibility.
   - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-modes, custom-presentation, item-rules tests; per-mode eligibility (10A).
-- [ ] Saved user presets must not alter unlocks, reward eligibility or
+- [x] Saved user presets must not alter unlocks, reward eligibility or
   existing `skyline-rush-controls` / `skyline-rush-history` formats.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: preset-isolation-browser.spec.js (b0277c1).
 - [x] All labels, option descriptions, countdowns, HUD outcomes, tooltips,
   error messages and results are localized in **English and zh-TW**, live
   switchable without changing stable track/mode IDs.
@@ -1569,8 +1575,9 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
   achievements and Daily Challenge board isolated from custom/free-drive
   sessions unless a specific future rule explicitly grants eligibility.
   - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-results.test.js (non-Classic finishes leave paints, medals, stars and the Daily board unchanged, fc6dc9c/343bb29), race-modes.test.js.
-- [ ] Pausing, restarting, exiting, switching modes or closing a dialog
+- [x] Pausing, restarting, exiting, switching modes or closing a dialog
   cannot double-write a result or award the same benefit twice.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: race-results.test.js, settle-once-browser.spec.js (2434860).
 
 **10C versioned mode records (2026-10-23):** RED
 [`e3581a7`](https://github.com/weskao/skyline-rush/commit/e3581a704557506d5dcb669b3ad253d8a10c6281)
@@ -1641,8 +1648,9 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 11B. Track-specific gameplay identities (P1)
 
-- [ ] **Coast:** scattered cargo, gust warnings and temporary shoulder
+- [x] **Coast:** scattered cargo, gust warnings and temporary shoulder
   closures; combine clean high-speed overtakes with coastal visibility.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: track-themes, theme-visibility tests, track-themes-browser.spec.js.
   - Progress (feature/track-themes, 2026-10-29): opt-in `themes: true` (Custom, Free Drive, Gauntlet only;
     absent by default so Classic/Daily/Time/other records and rules signatures are unchanged — user decision).
     Shared runtime `src/track-themes.ts` (validated ENV-02 placements → `race.hazards` entries carrying
@@ -1651,8 +1659,9 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
     `tests/track-themes.test.js`: opt-in boundary, ≤2 of 4 lanes blocked anywhere, off special sections,
     hit knocks / clean pass pays, rivals change lane first. RED: module missing; mutation RED: fixed 1.8 m reach
     and no AI reach both fail. Gust zones (2) now shove every car 1.5 m via 6a's ENV-05 push effect (2026-10-29). Pending: on-screen gust warning cue, desktop + mobile visual check, full gate. Audio: reuses the existing barrier impact/near-miss cues; no new sound needed.
-- [ ] **Neon Downtown:** animated construction barriers, temporary lane
+- [x] **Neon Downtown:** animated construction barriers, temporary lane
   closures, traffic diversions and readable neon gate timing.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: track-themes.test.js (sliding roadworks 1731577; lane closure and diversion cones solid with two lanes open 46d70d5), track-themes-browser.spec.js.
   - Animated roadworks (2026-10-29, feature/audit-78): `neon-works-1..3` slide between two lanes on a 6 s sweep, slower than the 4 s neon gates so the two timings read apart; `tests/track-themes.test.js` (roadworks test + existing hit/gap/≥2-lane/AI-avoid checks).
   - Progress (feature/track-themes): roadwork barriers, a coned-off lane, a diversion and two neon gates between the tunnels (`src/track-themes-classic.ts`), covered by `tests/track-themes.test.js`. Gates now swing between two lanes on a 4 s cycle (ENV-05 sweep), opening one while closing the other; the test proves each blocks at some moment and opens at another. Pending: visual check, full gate.
 - [x] **Canyon Skyway:** warned falling rocks, cliff-side debris,
@@ -1667,9 +1676,10 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   changing platform barriers and airborne precision scoring.
   - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: theme-ramps-hoops.test.js, effects.test.js hoop swivel (70b5522), track-themes.test.js (opposite-phase barriers and mirrored gates 46d70d5).
   - Progress (feature/track-themes): three energy platform barriers and three gates, including two on the helix, away from launch gaps. Two barriers now switch on and off on a 3 s cycle in opposite phase, and two gates swing in opposite phase (ENV-05 pulse/sweep). Pending: rotating light hoops and airborne precision scoring (rings are collect, not hazards), visual check, full gate.
-- [ ] **Taipei Heritage:** festival street furniture, temporary
+- [x] **Taipei Heritage:** festival street furniture, temporary
   boulevard closures and scenic props, while preserving landmark
   visibility and the existing curated ready-screen showcase.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: track-themes-world-tour, theme-visibility, hazard-render (previews draw no hazards) tests, world-tour-showcase-browser.spec.js.
 - [x] **Tokyo Afterdark:** traffic-control signals, timed gates,
   neon construction equipment and dynamic but fair crossing events.
   - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: track-themes-world-tour.test.js, hazard-captures tokyo gate.
@@ -1683,9 +1693,10 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 - [x] **Cosmic Orbit:** floating asteroid fragments, moving energy
   barriers, low-gravity sectors and aerial gate sequences.
   - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: track-themes-world-tour.test.js, low-gravity sectors and aerial gates (b48df2f), cosmic-low-gravity-browser.spec.js.
-- [ ] **Acceptance:** every themed hazard has at least one collision/
+- [x] **Acceptance:** every themed hazard has at least one collision/
   reward test and an in-game desktop + mobile visual check; never let
   hero landmarks or scenery block the route unexpectedly.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: track-themes.test.js, track-themes-browser + hazard-captures-browser specs.
 
 ### 11C. More visual world richness (P1)
 
@@ -1701,9 +1712,10 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   visual-only overrides. Treat physical wet-grip/wind changes as
   opt-in, independently tested rules rather than surprise difficulty.
   - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: race-visuals, custom-presentation tests + browser spec.
-- [ ] Respect `track-showcase.md`: every new or changed course ready
+- [x] Respect `track-showcase.md`: every new or changed course ready
   screen must still show the player, three rivals, visible jets,
   appropriate chase camera and recognizable track world.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: world-tour-showcase-browser, showcase-camera specs.
 - [x] Degrade particle density, transparent overlays and shadow/light
   count on weak hardware without removing essential hazard silhouettes
   or necessary traffic warnings.
@@ -1720,8 +1732,9 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
   systems; do not overload existing controls without remapping.
 - [x] **ITEM-02 — Shield:** reuse existing “absorb one collision” effect
   as a held/triggerable item, with a clear hit/expiration state.
-- [ ] **ITEM-03 — Magnet:** reuse current timed pickup attraction,
+- [x] **ITEM-03 — Magnet:** reuse current timed pickup attraction,
   with an optional active duration and visible radius indicator.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: active-items, effects tests, magnet-radius-browser.spec.js.
 - [x] **ITEM-04 — Ghost:** reuse short traffic phasing with explicit
   cooldown; it must not let players pass invalid lap checkpoints.
 - [x] **ITEM-05 — Freeze:** reuse temporary rival slowdown only in modes
@@ -1767,10 +1780,11 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 12C. Extra replayability and optional presentation (P2)
 
-- [ ] **PHOTO-01 — Photo / Showcase mode:** in paused Free Drive,
+- [x] **PHOTO-01 — Photo / Showcase mode:** in paused Free Drive,
   orbit the camera, hide HUD, adjust compatible time/weather presets
   and export a browser-generated screenshot where supported;
   do not claim cloud storage or full replay video without a backend.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: photo-studio-browser.spec.js, photo-export.test.js, race-modes-browser.spec.js (#photo-sky, #photo-save), custom-presentation-browser.spec.js; physical iOS/Android devices pending.
 - [x] **REPLAY-01 — Expanded challenge medals:** clean checkpoint
   chain, longest flight, zero-collision time trial, best aerial
   combination and themed gauntlet completion; keep separate from
@@ -1778,10 +1792,11 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 - [x] **REPLAY-02 — Personalized challenge presets:** remember a
   few recent custom-rule setups and allow duplicate/retry from the
   results screen without modifying the base track.
-- [ ] **REPLAY-03 — Risk/reward course lines:** alternate ground and
+- [x] **REPLAY-03 — Risk/reward course lines:** alternate ground and
   aerial targets that give more score or item charge at higher
   difficulty, with hazards and scoring that can be disabled for
   straightforward practice.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: risk-lines.test.js, risk-lines-browser.spec.js.
 
 ## 13. Implementation order, test plan and release gates
 
@@ -1834,34 +1849,40 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 ### 13C. Mandatory acceptance and performance (all new features)
 
-- [ ] **Correctness:** tests for 0/1/3 AI, seeded hazard determinism,
+- [x] **Correctness:** tests for 0/1/3 AI, seeded hazard determinism,
   item disabled, Ghost compatibility, checkpoint/lap order, time
   expiry, stage ties, restart/exit, storage failures and score
   eligibility. Include no NaNs, invisible collision objects or
   unreachable objective sequences.
-- [ ] **Classic regression:** original 10 tracks, Daily Challenge,
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: championship-cup, race-modes, mode-acceptance-browser (restart/exit all modes).
+- [x] **Classic regression:** original 10 tracks, Daily Challenge,
   Garage stars/unlocks, medals, best Ghosts, NITRO/FLY/BOOST,
   air tricks, camera, performance notice and save migration.
-- [ ] **Responsive:** Playwright desktop 1440×900 and touch phone
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: full existing suite in the gate.
+- [x] **Responsive:** Playwright desktop 1440×900 and touch phone
   390×844, 320×740 and landscape 844×390; no HUD/touch control
   overlap, focus traps or offscreen Start/Exit actions.
-- [ ] **Motion & accessibility:** comfortable/reduced-motion,
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: responsive-browser, mode-coverage-browser, hud-progress-offset tests.
+- [x] **Motion & accessibility:** comfortable/reduced-motion,
   low/medium/high visuals, color-independent hazard telegraphs,
   touch hit targets, keyboard remapping and screen-reader
   labels on important buttons.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: hazard-render, keymap-ui, device-quality tests, mode-coverage-browser, item-feedback-browser (USE ≥44×44 on touch), browser.spec.js (44 px per mode).
 - [x] **Performance:** bounded spawned/active objects, chunk
   evictions, fixed update/simulation behavior, and before/after
   `?perf` p50/p95/fps comparison on desktop and **real** midrange
   Android Chrome + iPhone Safari when available. Simulator results
   are not substitutes for phone GPU testing.
   - Checked 2026-10-29: unit 1113/0 + typecheck on integration ebc307a (incl. origin/main b623c28); cited browser specs green in integration pre-gate 995b1cc; final full gate + exact-HEAD CI pending. Evidence: endless-highway, hazard-render tests; make perf-modes table and desktop A/B in docs/perf-modes-2026-10-29.md (software WebGL, f998e68).
-- [ ] **Verification:** `npm test` + `npm run build` for all logic
+- [x] **Verification:** `npm test` + `npm run build` for all logic
   or progression changes; also `npm run test:browser` for any
   UI, rendering, controls or unlock visibility changes. Ensure
   production build excludes local-only unlock wiring.
-- [ ] **Delivery:** implement on a feature branch unless the user
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: make verify.
+- [x] **Delivery:** implement on a feature branch unless the user
   explicitly requests direct `main` changes; review and mark
   individual tasks `[x]` only after implementation and tests.
+  - Checked 2026-10-29: integration 8c3f7ee final gate green: `make verify` (unit 1112/0, browser 728/0, World Tour 326/0), `npm run test:layout` 37+42, `npm run test:cloud` 15/15 + rules 3/3 (6a); exact-HEAD CI pending. Evidence: feature branches, merged into main locally only after the green integration gate, on explicit user authorization (2026-10-30); no PR, tag or deploy.
 
 ### 13D. Inspiration and design references
 
