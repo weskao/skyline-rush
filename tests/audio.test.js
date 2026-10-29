@@ -238,7 +238,7 @@ test('racing Coast retains the shared race pad after new course songs are added'
   assert.equal(heard.some(hz => Math.abs(hz - midiHz(57)) < 0.05), false);
 });
 
-test('ITEM-12: using an item and its cooldown ending each have their own sound, not the generic UI blip', t => {
+test('ITEM-12: item use, cooldown ready and a shield block each have their own sound, not the generic UI blip', t => {
   const { nodes, sound } = installAudio(t);
   sound.setEnabled(true);
   const pitches = name => {
@@ -247,7 +247,7 @@ test('ITEM-12: using an item and its cooldown ending each have their own sound, 
     return nodes.slice(start).filter(n => n.kind === 'oscillator').map(n => n.frequency.value).join();
   };
   const generic = pitches('ui'), pickup = pitches('pickup');
-  const use = pitches('item-use'), ready = pitches('item-ready');
-  assert.ok(use && ready);
-  assert.equal(new Set([generic, pickup, use, ready]).size, 4);
+  const use = pitches('item-use'), ready = pitches('item-ready'), block = pitches('shield-block');
+  assert.ok(use && ready && block);
+  assert.equal(new Set([generic, pickup, use, ready, block]).size, 5);
 });

@@ -232,3 +232,19 @@ test('disposing marker pools releases every tier material, including types no lo
   assert.ok([...disposed.values()].every(count => count === 1));
   assert.ok(groups.every(group => group.parent === null), 'scene disposal will not dispose these resources twice');
 });
+
+test('ITEM-12: a shield-blocked hit flashes a blue ring, never the orange crash ring', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const race = createRace();
+  race.phase = 'racing';
+  effects.update(race, 0.016, 0, false, false);
+  race.player.shieldBlock = { distance: race.player.distance, x: 0, altitude: 0, time: race.elapsed };
+  effects.update(race, 0.016, 0, false, false);
+  const visible = scene.children.filter(object => object.isMesh && object.geometry.type === 'RingGeometry' && object.visible);
+  assert.equal(visible.length, 1);
+  const { r, g, b } = visible[0].material.color;
+  assert.ok(b > r && b > g, 'blue shield flash');
+});
