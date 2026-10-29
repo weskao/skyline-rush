@@ -6,7 +6,7 @@ import { hazardFrame, hazardContact } from './hazard-behavior.ts';
 import type { HazardPlacement } from './hazard-schema.ts';
 import { OBJECT_CATALOG, type GameplayEffect } from './object-catalog.ts';
 
-export type RaceHazard = Hazard & { halfWidth?: number; height?: number; placement?: HazardPlacement };
+export type RaceHazard = Hazard & { halfWidth?: number; halfLength?: number; height?: number; placement?: HazardPlacement };
 interface Car { distance: number; x: number; altitude?: number; speed: number }
 interface PlayerCar extends Car { altitude: number; cooldown: number; score: number; nearMisses: number }
 type Contact = (race: unknown, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
