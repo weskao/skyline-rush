@@ -15,7 +15,7 @@ import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
-import { createRaceVisuals } from './race-visuals.ts';
+import { createRaceVisuals, blizzardLevel } from './race-visuals.ts';
 import { updateSkyline } from './skyline-scenery.ts';
 import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
@@ -683,7 +683,7 @@ export function createWorld(canvas) {
         warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
       const visualPreset = race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
-      raceVisuals.apply(visualPreset);
+      raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, car.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : car.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality,race.endless ? race.seed : undefined);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
@@ -718,7 +718,7 @@ export function createWorld(canvas) {
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
       const touch = touchPreference.matches;
       const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
-      weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || (visualPreset === 'track' && trackId === 'aurora'));
+      weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || blizzard > 0 || (visualPreset === 'track' && trackId === 'aurora'));
       weather.material.size = raining ? .12 : .24;
       weatherGeometry.setDrawRange(0, touch || visual.quality === 'low' ? 60 : 180);
       if (weather.visible) {
