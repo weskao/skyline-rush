@@ -14,6 +14,8 @@ const THEMES = {
   tokyo: { types: ['gate', 'barrier', 'cone'], closure: true, maxHeight: 3 },
   // Snow drifts and avalanche debris on open mountain road; rail crossings wait for ENV-05.
   alpine: { types: ['debris', 'cone'], closure: true, maxHeight: 1.4 },
+  // Lighthouse-side bridge works and sea-wall repairs; crosswinds wait for ENV-05.
+  coastal: { types: ['barrier', 'cone'], closure: true, maxHeight: 2.5 },
 };
 
 for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its own themed hazards`, () => {
@@ -24,6 +26,9 @@ for (const [trackId, theme] of Object.entries(THEMES)) test(`${trackId} has its 
   if (theme.closure) assert.ok(placements.filter(p => p.type === 'cone').length >= 5, `${trackId} has a cone closure`);
   if (theme.moving) assert.ok(placements.some(p => p.movementPattern.kind !== 'static'), `${trackId} has moving hazards`);
   assert.ok(placements.every(p => p.altitude + p.hitbox.height <= theme.maxHeight), `${trackId} stays low`);
+  // A crosswind pushes the car off its line, so no hazard sits inside one (±35 m).
+  const winds = RACE_TRACKS[trackId].sections.filter(s => s.type === 'crosswind');
+  for (const p of placements) assert.ok(!winds.some(s => p.distance >= s.from - 35 && p.distance <= s.to + 35), `${p.id} clear of crosswind`);
 });
 
 for (const trackId of Object.keys(THEMES)) test(`${trackId} hazards plus roadside props keep two lanes open`, () => {

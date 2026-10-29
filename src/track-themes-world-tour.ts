@@ -33,4 +33,14 @@ export const WORLD_TOUR_THEMED_PLACEMENTS: Readonly<Record<string, readonly unkn
     place('alpine', 'alpine-avalanche-5', 'debris', 6700, -2.5),
     place('alpine', 'alpine-avalanche-6', 'debris', 7200, 7.5),
   ],
+  // Coastal Horizon: lighthouse-side bridge works and sea-wall repairs, shoulder line kept open.
+  coastal: [
+    place('coastal', 'coastal-bridge-works-1', 'barrier', 560, 7.5),
+    ...closure('coastal', 'coastal-bridge-lane', 1500, 2.5),
+    place('coastal', 'coastal-bridge-works-2', 'barrier', 1850, -7.5),
+    place('coastal', 'coastal-bridge-works-3', 'barrier', 3600, 2.5),
+    ...closure('coastal', 'coastal-seawall', 4680, -7.5),
+    place('coastal', 'coastal-bridge-works-4', 'barrier', 4900, -2.5),
+    place('coastal', 'coastal-bridge-works-5', 'barrier', 5300, 7.5),
+  ],
 };
