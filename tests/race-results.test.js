@@ -8,7 +8,9 @@ import { createSprintSeries } from '../src/sprint-series.ts';
 import { RACE_TRACKS, createRace, stepRace } from '../src/game.js';
 import { CIRCUIT_ID } from '../src/circuit-track.ts';
 import { loadHistory } from '../src/history-classic.ts';
-import { MODE_NAMES } from '../src/cloud-mode-bests.ts';
+import { MODE_NAMES, mergeModeBests } from '../src/cloud-mode-bests.ts';
+import { readLocalModeBests } from '../src/cloud-progress.ts';
+import { validateCourse, compileCourse } from '../src/event-lab.ts';
 
 beforeEach(() => {
   const store = new Map();
@@ -182,4 +184,27 @@ test('no non-Classic finish touches Classic unlocks, stars, medals, bests, histo
     assert.equal(classicState(progress), before, `${mode} finish left Classic progress unchanged`);
     assert.equal(progress.modeHistory.length, 1, `${mode} finish is recorded in its own mode history`);
   }
+});
+
+test('an Event Lab finish never touches Classic progress and its records stay on this device', () => {
+  const access = new Set(['coast']);
+  const document = validateCourse({ version: 1, label: 'Isolation', trackId: 'coast', seed: 321, modifier: 'standard',
+    objects: [{ kind: 'barrier', distance: 300, lane: 2 }] }, access);
+  const race = compileCourse(createRace('coast', { mode: 'custom', rivals: 0, traffic: 'off' }), document, access);
+  race.phase = 'finished';
+  race.elapsed = 80;
+  race.result = { position: 1, time: 80, score: 20, stars: 3, collisions: 0, nearMisses: 0, success: true };
+  const progress = loadSessionProgress(['coast']);
+  const classicState = () => JSON.stringify({ ...progress, unlocked: [...progress.unlocked], modeHistory: null, saved: { ...loadSessionProgress([]), unlocked: null, modeHistory: null } });
+  const before = classicState();
+  const { settlement } = settle(race, { progress });
+  assert.equal(classicState(), before, 'Classic unlocks, stars, medals, bests, history and Daily untouched');
+  assert.deepEqual([settlement.best, progress.modeHistory.at(-1).mode], [80, 'eventlab'], 'recorded locally as its own course');
+  // A Custom finish next to it proves the cloud payload is not empty by accident.
+  settle(classic({ time: 70 }, { mode: 'custom', config: { mode: 'custom' } }), { progress });
+  const modes = bests => Object.keys(bests).map(key => JSON.parse(key)[1].mode);
+  assert.ok(modes(readLocalModeBests().bests).includes('eventlab'), 'the course best is kept on this device');
+  const cloud = modes(mergeModeBests(readLocalModeBests()).bests);
+  assert.ok(cloud.includes('custom'), 'other modes still reach the cloud payload');
+  assert.ok(!cloud.includes('eventlab'), 'Event Lab bests never reach cloud mode bests');
 });
