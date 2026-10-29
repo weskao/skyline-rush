@@ -20,3 +20,29 @@ test('five architectural tunnel styles are distinct and have subdued side lighti
  assert.ok(alpine.children.some(x=>x.getObjectByName('dark railway bore')));
  tunnels.dispose();kit.dispose();
 });
+
+test('tunnel segments keep one 24 m absolute rhythm across streamed chunk boundaries',()=>{
+ const kit=createSceneryKit(),tunnels=createTunnelKit(kit);
+ try {
+  for(const id of ids){
+   for(const section of RACE_TRACKS[id].sections.filter(s=>s.type==='tunnel'||s.type==='boost-tunnel')){
+    const first=Math.floor(section.from/SCENERY_CHUNK_METRES);
+    const last=Math.ceil(section.to/SCENERY_CHUNK_METRES);
+    const actual=[];
+    for(let chunk=first;chunk<last;chunk++){
+     const group=tunnels.buildChunk(id,chunk,RACE_TRACKS[id].sections);
+     for(const child of group.children.filter(c=>c.name.startsWith('tunnel:'+id+':'))){
+      // The kit places every shell at a centreline point from its source section.
+      // A section's 24m rhythm must not reset at each 120m streaming boundary.
+      const d=-child.position.z;
+      assert.ok(Number.isFinite(d),id+' needs finite world positions');
+      actual.push(d);
+     }
+    }
+    const expected=[];
+    for(let d=section.from+12;d<section.to;d+=24)expected.push(d);
+    assert.deepEqual(actual,expected,id+' @ '+section.from+' tunnel continuity');
+   }
+  }
+ } finally {tunnels.dispose();kit.dispose();}
+});
