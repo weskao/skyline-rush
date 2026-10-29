@@ -81,6 +81,21 @@ Historical receipts below retain their original date and verification scope.
 - [x] Verify exact code commit `68701b7`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40634074855 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
 - [ ] Physical-device acceptance. Original MODE-10 remains open for ramp/cone/checkpoint editing; no community/backend functionality is claimed.
 
+## Event Lab designer (2026-10-29, feature/event-lab-designer)
+
+Base: `feature/event-lab-lite` a6c9f14 + origin/main 0a08d02 + `feature/env-hazard-schema` 6289b46 (ENV-01/02 catalog).
+
+- [x] RED → GREEN: timed checkpoints (Checkpoint Rush runtime, max 16), two-adjacent-lane reachability for solid objects (`reachable`), checkpoint and jumps templates.
+- [x] RED → GREEN: designer collision preview (`previewPlacement`) and map tap snap-to-lane/10 m (`snapPlacement`); ghost outline + live reason in the panel.
+- [x] RED → GREEN: cones with catalog-sized contact for player, rivals and traffic and catalog-sized barrier-pool rendering; footprints read from `OBJECT_CATALOG`.
+- [x] RED → GREEN: ramps (max 8) through one shared launch rule `src/launch-ramps.ts` (Sky Spiral sections + authored ramps) and pooled wedge `src/ramp-view.ts`. `world.js` folded its duplicated road-position closure: 1345 → 1342, ceiling lowered.
+- [x] Launch-seam regression: all 10 tracks × 30/60/120 FPS launch, land, finite state, airtime spread < 0.25 s, rivals drive over ramps; ramp case RED on pre-ramp `game.js`, Spiral case unchanged (preserved behaviour).
+- [x] Acceptance unit tests: identical compiled stage from the same document/seed independent of device; 2000 mutated/truncated imports fail only with `CourseError`.
+- [x] Audio: Event Lab checkpoints now play the shared gate pass/miss/low-time cues (RED → GREEN in `tests/mode-audio.test.js`). Ramp take-off intentionally adds no cue (Spiral launches have none; flight is visible).
+- [ ] Browser: `tests/event-lab-browser.spec.js` (designer tap/preview/checkpoints/ramp render) and `tests/launch-ramps-browser.spec.js` (Spiral helix/joins/launch captures; first-grounded-frame wheel clearance ≤ 0.12 m on Spiral helix and flattest/steepest World Tour ramp spots), desktop + phone. World Tour roads have no lateral bank (`trackFrame` right.y = 0); banked coverage is Sky Spiral.
+- [ ] Full local `make verify` on the branch HEAD; exact-HEAD CI pending.
+- [ ] Pending, not claimed: ghost replay over ramps, physical devices.
+
 ## Shared continuation regression gates (2026-10-28)
 
 - [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.
