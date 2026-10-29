@@ -33,8 +33,10 @@ const lines = [
   'These are CI software-renderer observations at 30 FPS preference, Medium quality.',
   'They are **not** controlled real-device GPU, thermal or battery measurements.',
   '',
-  '| Track | Viewport | Draw Calls | Triangles | FPS | Frame p50 / p95 |',
-  '|---|---|---:|---:|---:|---:|',
+  'Baseline: Phase 5 pre-pooling CI [40803061305](https://github.com/weskao/skyline-rush/actions/runs/40803061305). Only 1440×900 Medium World Tour has a reference.',
+  '',
+  '| Track | Viewport | DPR | Draw Calls | Pre-pool draws | Change | Triangles | FPS | Frame p50 / p95 |',
+  '|---|---|---:|---:|---:|---:|---:|---:|---:|',
 ];
 for (const record of records.sort((a,b) => a.track.localeCompare(b.track)
     || b.viewport.width-a.viewport.width)) {
@@ -44,8 +46,12 @@ for (const record of records.sort((a,b) => a.track.localeCompare(b.track)
     problems.push('Untrusted or mismatched performance record: ' + record.track);
     continue;
   }
-  lines.push(`| ${record.track} | ${record.viewport.width}×${record.viewport.height} | ${record.drawCalls} | ${record.triangles} | ${record.fps} | ${record.p50Ms} / ${record.p95Ms} ms |`);
   const baseline = WORLD_TOUR_SOFTWARE_BASELINE[record.track];
+  const matchedBaseline = baseline && record.viewport.width === 1440 &&
+    record.viewport.height === 900 && record.quality === 'medium';
+  const before = matchedBaseline ? baseline.drawCalls : null;
+  const change = before ? ((record.drawCalls - before) / before * 100).toFixed(1) + '%' : '—';
+  lines.push(`| ${record.track} | ${record.viewport.width}×${record.viewport.height} | ${record.viewport.pixelRatio} | ${record.drawCalls} | ${before ?? '—'} | ${change} | ${record.triangles} | ${record.fps} | ${record.p50Ms} / ${record.p95Ms} ms |`);
   // Flag large rendering regressions on exactly matching 1440x900 Medium software WebGL.
   // Deliberately do not gate on FPS/p95: CI CPU scheduling is noisy.
   if (baseline && record.viewport.width === 1440 && record.viewport.height === 900 &&

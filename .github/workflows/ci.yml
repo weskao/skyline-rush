@@ -72,10 +72,6 @@ jobs:
           name: render-performance-${{ matrix.shard }}
           path: test-results/**/render-performance-*.json
           if-no-files-found: ignore
-      # Phase 5 and final refactors run responsive layout once, with the browser quality gate.
-      - name: Verify responsive layout for final refactor or World Tour polish
-        if: "${{ matrix.shard == 1 && (startsWith(github.ref, 'refs/heads/refactor/') || (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/phase5-world-tour-polish' || github.ref == 'refs/heads/feature/all-tracks-render-cache')) }}"
-        run: npm run test:layout
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -126,6 +122,11 @@ jobs:
         with:
           name: cloud-save-failures
           path: test-results
+
+      # Phase 5 and final refactors run responsive layout once, with the browser quality gate.
+      - name: Verify responsive layout for final refactor or World Tour polish
+        if: "${{ matrix.shard == 1 && (startsWith(github.ref, 'refs/heads/refactor/') || (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/phase5-world-tour-polish' || github.ref == 'refs/heads/feature/all-tracks-render-cache')) }}"
+        run: npm run test:layout
 
   # Catch WebGL crashes that short preview tests miss when the player reaches
   # the middle of all five long World Tour routes. Test-only Vite fixture:
