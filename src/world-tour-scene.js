@@ -200,7 +200,7 @@ export function createWorldTourScene(scene){
     for(let index=start;index<=end;index++){
       if(chunks.has(index))continue;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
-      for(const item of detailPlan(id,index,level==='low')){
+      for(const item of detailPlan(id,index,level)){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
