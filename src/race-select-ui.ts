@@ -1,6 +1,7 @@
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
 import { RULE_PRESETS } from './race-config.ts';
+import { DEFAULT_RULES } from './mode-setup.ts';
 import { itemRuleValue } from './item-ui.ts';
 import { createCup } from './championship-cup.ts';
 import { loadRecentCustom } from './recent-custom.ts';
@@ -42,7 +43,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const trackButtons = (): HTMLButtonElement[] => [...document.querySelectorAll<HTMLButtonElement>('[data-track]')];
   const ruleInputs = (): HTMLInputElement[] => [...document.querySelectorAll<HTMLInputElement>('[data-race-rule]')];
   let selectedMode = 'classic';
-  const raceRules: Record<RuleKey, unknown> = { rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false, itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false };
+  const raceRules: Record<RuleKey, unknown> = { ...DEFAULT_RULES };
   const cupCount = (): number => Number($<HTMLSelectElement>('#cup-length').value);
   const selectedRace = (trackId: string): Race => selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)

@@ -4,6 +4,7 @@ import { presetsForTrack } from './race-session.ts';
 import { racePresentationView } from './race-presentation-ui.ts';
 import { getLocale, onLocaleChange, t, trackName } from './i18n.ts';
 import { refreshCustomSelects } from './custom-select.ts';
+import { modeRulesSummary } from './mode-setup.ts';
 
 const locale = shallowRef(getLocale());
 onUnmounted(onLocaleChange(value => { locale.value = value; }));
@@ -13,16 +14,7 @@ const rulesSummary = computed(() => {
   const setup = racePresentationView.setup;
   if (!setup) return '';
   const { mode, config, trackId } = setup;
-  return [t('mode.' + mode), trackName(trackId, locale.value),
-    t('mode.setupAI', { n: config.rivals }),
-    t('mode.setupTraffic', { value: t('mode.' + config.traffic) }),
-    t(config.items ? 'mode.setupSuppliesOn' : 'mode.setupSuppliesOff'),
-    t('mode.setupCollision', { value: t('mode.' + (config.collision ?? 'normal')) }),
-    t('mode.setupHazards', { value: t('mode.' + (config.hazards ?? 'off')) }),
-    ...(config.activeItems ? [t('mode.activeItems')] : []),
-    ...(mode === 'custom' ? [t('mode.setupDifficulty', { value: t('mode.' + config.difficulty) }),
-      t('mode.setupStages', { n: config.stages ?? 1 })] : []),
-  ].join(' · ');
+  return [t('mode.' + mode), trackName(trackId, locale.value), modeRulesSummary(config, t)].join(' · ');
 });
 </script>
 
