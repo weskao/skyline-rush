@@ -67,3 +67,25 @@ test('Sky Spiral themes add a bounded set of spinning precision hoops scored as 
 test('switching risk lines off removes the themed hoops too', () => {
   assert.equal(themed('spiral', { riskLines: 'off' }).rings.filter(r => r.spin).length, 0);
 });
+
+test('passing under a Spiral hoop neither collects it nor pays the risk bonus', () => {
+  const race = ready(themed('spiral'));
+  const hoop = race.rings.find(r => r.spin);
+  Object.assign(race.player, { distance: hoop.distance - 1, x: hoop.x, altitude: 0, speed: 30, score: 0 });
+  stepRace(race, { throttle: true }, .1);
+  assert.ok(!hoop.hit, 'a hoop 6 m up is out of reach from the road');
+  assert.ok(race.player.score < race.risk.ringScore);
+});
+
+test('rivals drive over Canyon ramps exactly as they drive the road without them', () => {
+  // AI never launches: its run through a ramp lane is identical with and without the ramp.
+  const run = withRamps => {
+    const race = ready(themed('canyon', { rivals: 1 }));
+    if (!withRamps) race.ramps = [];
+    const rival = race.rivals[0], ramp = themed('canyon').ramps[0];
+    Object.assign(rival, { distance: ramp.distance - 30, x: ramp.x, altitude: 0 });
+    for (let i = 0; i < 600; i++) stepRace(race, { throttle: true }, 1 / 60);
+    return { distance: rival.distance, x: rival.x, altitude: rival.altitude || 0, falls: rival.falls ?? 0 };
+  };
+  assert.deepEqual(run(true), run(false));
+});

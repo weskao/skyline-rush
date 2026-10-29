@@ -64,6 +64,14 @@ test('themed hazards join Custom races sorted, and generated hazards stay clear 
     const race = createRace(trackId, { mode: 'custom', themes: true, hazards: 'extreme' });
     const themed = race.hazards.filter(h => h.type);
     assert.equal(themed.length, themedHazards(trackId).length); // ramps and hoops are routed to race.ramps / race.rings
+    // Every placement lands in exactly one place, so a dropped one fails instead of vanishing.
+    const placements = themedPlacements(trackId), key = p => `${p.distance}:${p.lateralOffset ?? p.x}`;
+    const ramps = race.ramps ?? [], hoops = race.rings.filter(r => r.spin);
+    assert.deepEqual(themed.map(h => h.id).sort(), placements.filter(p => !['ramp', 'ring'].includes(p.type)).map(p => p.id).sort());
+    assert.deepEqual(ramps.map(key).sort(), placements.filter(p => p.type === 'ramp').map(key).sort(), `${trackId} ramps`);
+    assert.deepEqual(hoops.map(key).sort(), placements.filter(p => p.type === 'ring').map(key).sort(), `${trackId} hoops`);
+    assert.ok(hoops.every(r => r.type === 'risk'));
+    assert.equal(themed.length + ramps.length + hoops.length, placements.length);
     assert.deepEqual(race.hazards.map(h => h.distance), [...race.hazards.map(h => h.distance)].sort((a, b) => a - b));
     for (const generated of race.hazards.filter(h => !h.type))
       assert.ok(themed.every(h => Math.abs(h.distance - generated.distance) > 35), `generated @${generated.distance}`);
