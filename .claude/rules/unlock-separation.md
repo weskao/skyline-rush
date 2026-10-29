@@ -15,8 +15,8 @@ paths:
 Mechanism (keep every link intact):
 
 - `src/main.js` imports `@progression-access`.
-- `vite.config.js` resolves it to `src/access/production.js` (dev and release).
-- `vite.unlocked.config.js` resolves it to `src/access/dev-unlocked.js`, serves localhost only,
+- `vite.config.js` resolves it to `src/access/production.ts` (dev and release).
+- `vite.unlocked.config.js` resolves it to `src/access/dev-unlocked.ts`, serves localhost only,
   and must keep rejecting `build`.
 - `npm run build` runs `scripts/assert-production-locked.mjs` against `dist/`.
 

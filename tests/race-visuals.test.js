@@ -72,3 +72,30 @@ test('snowfall and aurora presets recolor the sky and restore the track, aurora 
   assert.equal(target.sky.aurora.value, 0);
   assert.equal(target.scene.background.getHexString(), '94758a');
 });
+
+test('11B Aurora: themed races drive into two warned blizzard stretches that ramp in and out smoothly', async () => {
+  const { blizzardLevel, AURORA_BLIZZARDS } = await import('../src/race-visuals.ts');
+  assert.ok(AURORA_BLIZZARDS.length >= 2);
+  for (const { from, to } of AURORA_BLIZZARDS) {
+    assert.equal(blizzardLevel('aurora', (from + to) / 2, true), 1);
+    assert.equal(blizzardLevel('aurora', from - 1, true), 0);
+    assert.equal(blizzardLevel('aurora', (from + to) / 2, false), 0, 'opt-in themes only');
+    assert.equal(blizzardLevel('coast', (from + to) / 2, true), 0, 'Aurora only');
+    for (let d = from - 10; d < to + 10; d += 1)
+      assert.ok(Math.abs(blizzardLevel('aurora', d + 1, true) - blizzardLevel('aurora', d, true)) <= 1 / 100, 'no visibility jump');
+  }
+});
+
+test('11B Aurora: a blizzard thickens the haze and clearing it restores the exact atmosphere', () => {
+  const target = fixture();
+  const visuals = createRaceVisuals(target);
+  visuals.blizzard(0);
+  assert.equal(target.scene.fog.density, .0013, 'no blizzard writes nothing');
+  visuals.blizzard(1);
+  assert.ok(target.scene.fog.density > .0013 * 2, 'visibility drops in a blizzard');
+  visuals.blizzard(.5);
+  visuals.blizzard(0);
+  assert.equal(target.scene.fog.density, .0013);
+  visuals.apply('night'); visuals.blizzard(1); visuals.blizzard(0);
+  assert.equal(target.scene.fog.density, .0016, 'blizzard composes with the chosen sky');
+});

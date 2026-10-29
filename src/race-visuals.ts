@@ -17,9 +17,22 @@ const STYLES = {
   aurora: { background: '#0b1630', fog: '#16294a', density: .0014, exposure: .78, top: '#040a20', horizon: '#1c3555', cloudTint: '#2b3a52', cloudOpacity: .15, warmth: 0, aurora: 1 },
 } as const;
 
+// 11B Aurora Pass: two authored blizzard stretches (opt-in themed races only). Visual-only: the haze
+// thickens over 150 m ramps inside each stretch so visibility never jumps; grip and physics are unchanged.
+export const AURORA_BLIZZARDS = Object.freeze([{ from: 2000, to: 2500 }, { from: 3700, to: 4150 }]);
+const BLIZZARD_RAMP = 150, BLIZZARD_HAZE = 1.6;
+export function blizzardLevel(trackId: string, distance: number, themed: boolean): number {
+  if (!themed || trackId !== 'aurora') return 0;
+  let level = 0;
+  for (const { from, to } of AURORA_BLIZZARDS)
+    level = Math.max(level, Math.min(1, (distance - from) / BLIZZARD_RAMP, (to - distance) / BLIZZARD_RAMP));
+  return Math.max(0, level);
+}
+
 export function createRaceVisuals({ scene, sky, renderer }: Targets) {
   let preset: VisualPreset = 'track';
   let photoDefaults: Atmosphere | null = null;
+  let fogBase: number | null = null, blizzardNow = 0; // haze before the blizzard factor; reset with the atmosphere
   let defaults: {
     background: Color; fog: Color; density: number; exposure: number;
     top: Color; horizon: Color; cloudTint: Color; cloudOpacity: number; warmth: number; aurora: number;
@@ -29,6 +42,7 @@ export function createRaceVisuals({ scene, sky, renderer }: Targets) {
   function setAtmosphere(style: Atmosphere): void {
     scene.background.set(style.background); scene.fog.color.set(style.fog);
     scene.fog.density = style.density; renderer.toneMappingExposure = style.exposure;
+    fogBase = style.density; blizzardNow = 0;
   }
   function apply(next: VisualPreset): void {
     if (next === preset) return;
@@ -51,5 +65,11 @@ export function createRaceVisuals({ scene, sky, renderer }: Targets) {
     photoDefaults ??= captureAtmosphere();
     setAtmosphere(style === 'sunset' ? STYLES.dusk : style === 'night' || style === 'fog' ? STYLES[style] : photoDefaults);
   }
-  return { apply, photo, reset: () => { photo(null); apply('track'); defaults = null; } };
+  function blizzard(level: number): void {
+    if (level === blizzardNow) return;
+    fogBase ??= scene.fog.density;
+    scene.fog.density = fogBase * (1 + BLIZZARD_HAZE * level);
+    blizzardNow = level;
+  }
+  return { apply, photo, blizzard, reset: () => { blizzard(0); photo(null); apply('track'); defaults = null; fogBase = null; } };
 }
