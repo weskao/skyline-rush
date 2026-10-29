@@ -71,9 +71,12 @@ export function validateHazardPlacement(input: unknown): HazardPlacement {
   if (!inRange(warningLeadSeconds, HAZARD_LIMITS.minWarning, HAZARD_LIMITS.maxWarning)) fail('warningLeadSeconds');
   if (difficulty !== 'standard' && difficulty !== 'extreme') fail('difficulty');
   if (!Number.isInteger(seed) || !inRange(seed, 0, 0xffffffff)) fail('seed');
+  const movementPattern = readMovement(raw.movementPattern);
+  // A launch only stays predictable from a fixed wedge on the road surface.
+  if (OBJECT_CATALOG[type].effect === 'launch' && (altitude !== 0 || movementPattern.kind !== 'static')) fail('launch placement');
   return Object.freeze({ id, trackId, type, distance, lateralOffset, altitude, hitbox,
     triggerWindow: Object.freeze({ from: window.from as number, to: window.to as number }),
-    warningLeadSeconds, movementPattern: readMovement(raw.movementPattern), difficulty, seed: seed as number });
+    warningLeadSeconds, movementPattern, difficulty, seed: seed as number });
 }
 
 /** World-space collision box in the same {from,to,left,right,bottom,top} shape as course obstacles. */
