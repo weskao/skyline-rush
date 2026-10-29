@@ -294,3 +294,28 @@ test('ITEM-03: a magnet shows its pickup radius around the car only while it run
   effects.update(race, 0.016, 0, false, false);
   assert.equal(ring.visible, false, 'gone when the magnet ends');
 });
+
+test('ITEM-12: reduced motion holds the item beam and magnet pulses steady instead of throbbing', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const pulses = reducedMotion => {
+    const scene = new Scene();
+    const effects = createEffects(scene, () => 0);
+    const race = createRace('coast', { mode: 'custom', activeItems: true });
+    race.phase = 'racing';
+    race.rings = [{ type: 'mystery', distance: race.player.distance + 200, x: 2, altitude: 0, radius: 3, hit: false }];
+    race.player.effects.magnet = 4;
+    const beam = scene.getObjectByName('Item beams').children[0], ring = scene.getObjectByName('magnet radius');
+    const seen = { beam: new Set(), magnet: new Set() };
+    for (let frame = 0; frame < 40; frame++) {
+      effects.update(race, 0.016, 0, false, reducedMotion);
+      assert.ok(beam.visible && ring.visible);
+      seen.beam.add(beam.material.opacity.toFixed(3));
+      seen.magnet.add(ring.material.opacity.toFixed(3));
+    }
+    return { beam: seen.beam.size, magnet: seen.magnet.size };
+  };
+  assert.deepEqual(pulses(true), { beam: 1, magnet: 1 }, 'one steady opacity each');
+  const moving = pulses(false);
+  assert.ok(moving.beam > 1 && moving.magnet > 1, 'the full-motion pulse still plays');
+});
