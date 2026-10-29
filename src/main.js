@@ -15,7 +15,7 @@ import { createControls } from './input.ts';
 import { createSprintSeries } from './sprint-series.ts';
 import { createCheckpointRush } from './checkpoint-rush.ts';
 import { saveRecentCustom } from './recent-custom.ts';
-import { createCup, cupComplete } from './championship-cup.ts';
+import { cupComplete } from './championship-cup.ts';
 import { createWorld } from './world.js';
 import { roadObstacles } from './world-tour-scene.js';
 import { createSound } from './audio.js';
@@ -32,6 +32,8 @@ import { createPresentation } from './presentation.ts';
 import { PAINTS } from './appearance.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
+import { drainSteps, SIM_STEP } from './frame-pacing.ts';
+import { createStuntRun, stuntHeatContinues, stuntHeatLimit } from './stunt-attack.ts';
 import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
 import { setupPhotoUI } from './photo-ui.ts';
@@ -51,6 +53,8 @@ import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
 import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
+import { setupCupRecovery } from './cup-recovery-ui.ts';
+import { focusRace, setupRaceNavigation } from './race-navigation-ui.ts';
 
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
@@ -205,13 +209,22 @@ const raceSelect = setupRaceSelectUI({
   cueUi: () => sound.cue('ui'),
   reducedMotion,
 });
-const { showTracks, centerSelectedTrack, selectedRace, cupCount } = raceSelect;
+const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
+const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
+  canResume: () => !!world && race.phase === 'ready' && !contextLost && !document.querySelector('dialog[open]'),
+  resume: saved => {
+    cup = saved; daily = null; sprintSeries = null; stunt = null;
+    raceSelect.restoreCup(saved);
+    controls.clear(); leaveIntro(); startRace(race); focusRace(); sound.cue('ui');
+  },
+});
+const showTracks = () => { raceSelect.showTracks(); cupRecovery.refresh(); };
 $('#ghost-enabled').addEventListener('change', ({ target }) => touchUI.setGhost(target.checked));
 // The first showTracks() calls showHomeStatus(), so initialize this controller first.
 // Its callbacks read live session data rather than capturing an old snapshot.
 const { showHistory, showHomeStatus } = createHistoryView({
   getData: () => ({ sessionHistory: progress.history, sessionModeHistory: progress.modeHistory, sessionBests: progress.bests,
-    sessionDaily: progress.daily, sessionMedals: progress.medals, world }),
+    sessionDaily: progress.daily, sessionMedals: progress.medals, sessionChallengeMedals: progress.challengeMedals, world }),
   timeString,
 });
 showTracks(); centerSelectedTrack();
@@ -221,9 +234,9 @@ const currentProgress = () => progressSnapshot(progress);
 // Cloud Save lives in cloud-ui.ts; this boundary owns the session copies it merges into.
 const cloud = setupCloudUI({
   services: { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails },
-  getProgress: currentProgress,
-  applyProgress: merged => {
-    adoptProgress(progress, merged);
+  getProgress: currentProgress, getLocalChallengeMedals: () => progress.challengeMedals,
+  applyProgress: (merged, localChallengeMedals) => {
+    adoptProgress(progress, merged, localChallengeMedals);
     showTracks();
     if (historyDialog.isOpen()) showHistory();
     showGarage();
@@ -264,7 +277,7 @@ function chooseTrack() {
   controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
-  document.querySelector(`[data-track="${race.trackId}"]`).focus({ preventScroll: true });
+  document.querySelector(`[data-track="${race.trackId}"], [data-race-mode="${race.mode}"]`).focus({ preventScroll: true });
   centerSelectedTrack();
 }
 $('#choose-track').addEventListener('click', chooseTrack);
@@ -279,37 +292,21 @@ const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   isEditingLayout: () => touchUI.isEditing(),
   touchMatches: () => touchPreference.matches,
 });
-// Brand click mid-race pauses and asks first; on the intro/results screens the link just goes home.
-const leaveScreen = $('#leave-screen');
-leaveScreen.addEventListener('keydown', event => event.stopPropagation());
-document.querySelector('.brand').addEventListener('click', event => {
-  if (!['racing', 'countdown', 'paused'].includes(race.phase) || document.querySelector('dialog[open]')) return;
-  event.preventDefault();
-  if (race.phase !== 'paused') pause();
-  controls.clear(); leaveScreen.showModal();
-});
-$('#leave-keep').addEventListener('click', () => { leaveScreen.close(); if (race.phase === 'paused') pause(); });
-$('#leave-end').addEventListener('click', () => { leaveScreen.close(); chooseTrack(); });
+setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => controls.clear(), chooseTrack });
 
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
-
-// Driving keys are ignored while a form control has focus, so hand the keyboard back to the race.
-function focusRace() {
-  $('#vfx-panel').open = false;
-  document.activeElement?.blur();
-}
 
 function start() {
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
-  if (!world || race.phase !== 'ready' || (!daily && !unlockedTracks.has(race.trackId)) || document.querySelector('dialog[open]')) return;
+  if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
   // First Start presents the live practice; Skip / completion returns to this selected race.
   if (!hasSeenGuide()) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
-  cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? createCup([...unlockedTracks],race.trackId,cupCount()) : null;
-  stunt = race.mode === 'stunt' ? { duration:race.config.duration, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0, trackId:race.trackId } : null;
+  cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? cupRecovery.start(race.trackId,cupCount()) : null;
+  stunt = race.mode === 'stunt' ? createStuntRun(race.trackId, race.config.duration) : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
   raceSelect.rememberTrack(race.trackId);
@@ -321,19 +318,20 @@ function start() {
 
 function restart(trackId = race.trackId) {
   if (tutorial) { beginTutorial(); return; }
-  if (!world || (!daily && !unlockedTracks.has(trackId))) return;
+  if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   const wipe = $('#race-wipe');
+  if (cup) cup = cupRecovery.retry(cup, trackId);
   wipe.getAnimations().forEach(animation => animation.cancel());
   wipe.hidden = calmMotion();
   if (!wipe.hidden) {
     const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
-  race = createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config), race.session.presentation);
-  if (stunt && race.mode === 'stunt') race.stuntLimit = Math.max(.01, stunt.duration - stunt.elapsed);
+  race = race.eventCourse ? raceSelect.recreate(race, trackId) : createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config), race.session.presentation);
+  if (stunt && race.mode === 'stunt') race.stuntLimit = stuntHeatLimit(stunt);
   hud.resetMemory();
   goUntil = 0;
   startRace(race);
@@ -405,16 +403,16 @@ ui['start-button'].addEventListener('click', start);
 ui['restart-button'].addEventListener('click', () => restart());
 ui['again-button'].addEventListener('click', () => {
   if (sprintSeries) sprintSeries = createSprintSeries(sprintSeries.count);
-  if (cup) { cup = createCup([...unlockedTracks], cup.tracks[0], cup.tracks.length); restart(cup.tracks[0]); }
+  if (cup) { cup = cupRecovery.start(cup.tracks[0], cup.tracks.length); restart(cup.tracks[0]); }
   else if (stunt) {
-    stunt = { ...stunt, elapsed:0, score:0, heats:0, maxCombo:0, airTime:0 };
+    stunt = createStuntRun(stunt.trackId, stunt.duration);
     restart(stunt.trackId);
   } else restart();
 });
 $('#next-stage').addEventListener('click', () => {
   if (sprintSeries && race.phase === 'finished' && sprintSeries.results.length < sprintSeries.count) restart();
   else if (cup && race.phase === 'finished' && !cupComplete(cup)) restart(cup.tracks[cup.results.length]);
-  else if (stunt && race.phase === 'finished' && race.result.endReason === 'route' && stunt.elapsed < stunt.duration) restart(stunt.trackId);
+  else if (stunt && race.phase === 'finished' && stuntHeatContinues(stunt, race.result.endReason)) restart(stunt.trackId);
 });
 $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
 ui['pause-button'].addEventListener('click', pause);
@@ -493,6 +491,7 @@ function phaseUI() {
     controls.clear();
     const settled = settleRace(race, { series: { sprintSeries, cup, stunt }, progress, ghosts, daily, trace: traceRace === race ? trace : null });
     ({ sprintSeries, cup } = settled.series);
+    if (cup) cupRecovery.remember(cup);
     const { best, record, medals } = settled;
     $('#next-button').hidden = !settled.next;
     if (settled.next) $('#next-button').dataset.next = settled.next;
@@ -504,7 +503,7 @@ function phaseUI() {
     $('#new-best').hidden = !record;
     $('#result-style').hidden = race.mode !== 'classic';
     $('#result-links').hidden = false;
-    lastResult = { race, best, record, medals, series: sprintSeries, cup, stunt, next: settled.next };
+    lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, series: sprintSeries, cup, stunt, next: settled.next };
   }
   phaseText();
 }
@@ -556,10 +555,9 @@ try {
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
   function frame(now) {
     const rawDelta = (now - previousTime) / 1000; previousTime = now;
-    const dt = Math.max(0, Math.min(rawDelta, 0.05));
+    const dt = Math.max(0, Math.min(rawDelta, 0.05)), due = drainSteps(accumulator, dt); accumulator = due.accumulator;
     // The 0.05s clamp already keeps a tab-switch gap from becoming unseen racing (hiding also pauses);
     // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
-    accumulator += dt;
     const input = controls.read();
     if (tutorial) prepareTutorialInput(input, tutorial.step);
     else {
@@ -567,17 +565,16 @@ try {
       input.laneAssist = autoThrottle;
     }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
-    while (accumulator >= 1 / 60) {
-      stepRace(race, input, 1 / 60);
+    for (let step = 0; step < due.steps; step++) {
+      stepRace(race, input, SIM_STEP);
       if (tutorial) {
-        tutorial.update(input, 1 / 60);
+        tutorial.update(input, SIM_STEP);
         if (tutorial.complete && race.phase === 'racing') {
           race.phase = 'paused'; controls.clear();
           try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
         }
       }
-      if (!race.modifier && (race.mode === 'classic' || race.mode === 'time' || race.mode === 'custom')) recordGhost(trace, race);
-      accumulator -= 1 / 60;
+      if (!race.modifier && (['classic', 'time', 'custom', 'circuit'].includes(race.mode))) recordGhost(trace, race);
     }
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.

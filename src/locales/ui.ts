@@ -3,12 +3,10 @@
 // NITRO / FLY / BOOST, Skyline Rush and rival names stay English in every locale.
 import { MOBILE_GUIDE_COPY } from '../mobile-guide-copy.ts';
 import { COLLECTIBLES_GUIDE_COPY } from '../collectibles-guide-copy.ts';
-import { DISPLAY_SETTINGS_COPY } from './display-settings.ts';
-import { RACE_PRESENTATION_COPY } from './race-presentation.ts';
-import { ITEM_SETTINGS_COPY } from './item-settings.ts';
+import { FEATURE_COPY } from './feature-copy.ts';
 export const UI = Object.freeze({
   en: {
-    ...ITEM_SETTINGS_COPY.en,
+    ...FEATURE_COPY.en,
     'release.eyebrow': 'SKYLINE RUSH / RELEASE NOTES',
     'release.title': "What's new",
     'release.intro': "See what's new for your next race.",
@@ -133,8 +131,8 @@ export const UI = Object.freeze({
     'mode.direction.center': '◎ CENTER',
     'mode.gates': 'GATES CLEARED',
     'mode.gauntletDifficulty': 'Obstacle intensity',
-    'mode.practiceHazards': 'Road hazard intensity',
-    'mode.hazardTier': 'Moving barriers and spacing',
+    'mode.practiceHazards': 'Road hazard intensity', 'mode.riskLines': 'High rings and close-pass bonus', 'mode.on': 'On',
+    'mode.hazardTier': 'Moving barriers and spacing', 'mode.gauntletLayout': 'Course', 'mode.layoutClassic': 'Barriers', 'mode.layoutMixed': 'Mixed obstacles: gates, debris and hoops',
     'mode.standard': 'Standard',
     'mode.extreme': 'Extreme',
     'mode.hazardWarning': '⚠ MOVING BARRIER · {n} m',
@@ -310,7 +308,6 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': 'Realistic',
     'vfx.preset.cinematic': 'Cinematic',
     'vfx.preset.extreme': 'Extreme · sci-fi',
-    ...DISPLAY_SETTINGS_COPY.en, ...RACE_PRESENTATION_COPY.en,
     'vfx.aeroMode': 'Aerodynamics',
     'vfx.aeroMode.drag': 'Low drag',
     'vfx.aeroMode.downforce': 'High downforce',
@@ -616,7 +613,7 @@ export const UI = Object.freeze({
     'error.contextLost': 'The WebGL graphics connection was lost. Reload this page to start a new race.',
   },
   'zh-TW': {
-    ...ITEM_SETTINGS_COPY['zh-TW'],
+    ...FEATURE_COPY['zh-TW'],
     'release.eyebrow': 'SKYLINE RUSH / 版本新消息',
     'release.title': '新版本功能',
     'release.intro': '看看這次更新，為你的下一場比賽帶來哪些驚喜。',
@@ -741,8 +738,8 @@ export const UI = Object.freeze({
     'mode.direction.center': '◎ 正前方',
     'mode.gates': '通過關卡',
     'mode.gauntletDifficulty': '障礙強度',
-    'mode.practiceHazards': '道路障礙強度',
-    'mode.hazardTier': '移動障礙與間距',
+    'mode.practiceHazards': '道路障礙強度', 'mode.riskLines': '高空圓環與貼身閃避加分', 'mode.on': '開啟',
+    'mode.hazardTier': '移動障礙與間距', 'mode.gauntletLayout': '賽道配置', 'mode.layoutClassic': '路障', 'mode.layoutMixed': '綜合障礙：閘門、落石與飛行圓環',
     'mode.standard': '標準',
     'mode.extreme': '極限',
     'mode.hazardWarning': '⚠ 前方移動障礙 · {n} 公尺',
@@ -917,7 +914,6 @@ export const UI = Object.freeze({
     'vfx.preset.realistic': '寫實',
     'vfx.preset.cinematic': '電影感',
     'vfx.preset.extreme': '極致 · 科幻',
-    ...DISPLAY_SETTINGS_COPY['zh-TW'], ...RACE_PRESENTATION_COPY['zh-TW'],
     'vfx.aeroMode': '空氣力學',
     'vfx.aeroMode.drag': '低風阻',
     'vfx.aeroMode.downforce': '高下壓力',

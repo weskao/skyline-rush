@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Scene, Group, Vector3 } from 'three';
-import { createRace } from '../src/game.js';
+import { createRace, MAGNET_RANGE } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 
 test('a nonpositive first frame cannot revive dormant particles with uninitialized data', t => {
@@ -231,4 +231,66 @@ test('disposing marker pools releases every tier material, including types no lo
   assert.equal(disposed.size, 11, 'all nine materials and both shared geometries are released');
   assert.ok([...disposed.values()].every(count => count === 1));
   assert.ok(groups.every(group => group.parent === null), 'scene disposal will not dispose these resources twice');
+});
+
+test('ITEM-12: a shield-blocked hit flashes a blue ring, never the orange crash ring', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const race = createRace();
+  race.phase = 'racing';
+  effects.update(race, 0.016, 0, false, false);
+  race.player.shieldBlock = { distance: race.player.distance, x: 0, altitude: 0, time: race.elapsed };
+  effects.update(race, 0.016, 0, false, false);
+  const visible = scene.children.filter(object => object.isMesh && object.geometry.type === 'RingGeometry' && object.visible);
+  assert.equal(visible.length, 1);
+  const { r, g, b } = visible[0].material.color;
+  assert.ok(b > r && b > g, 'blue shield flash');
+});
+
+test('ITEM-12: a pickup beam marks rings that grant a held item, never Classic mystery rings', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const beams = scene.getObjectByName('Item beams');
+  assert.ok(beams && beams.children.length > 0, 'pooled in the scene from load (shader warmup)');
+  const shown = race => { effects.update(race, 0.016, 0, false, false); return beams.children.filter(beam => beam.visible); };
+  const classic = createRace();
+  classic.phase = 'racing';
+  classic.rings = [{ type: 'mystery', distance: classic.player.distance + 200, x: 2, altitude: 0, radius: 3, hit: false }];
+  assert.equal(shown(classic).length, 0, 'Classic mystery rings stay as they were');
+  const custom = createRace('coast', { mode: 'custom', activeItems: true });
+  custom.phase = 'racing';
+  custom.rings = [{ type: 'mystery', distance: custom.player.distance + 200, x: 2, altitude: 0, radius: 3, hit: false },
+    { type: 'charge', distance: custom.player.distance + 260, x: 0, altitude: 0, radius: 3, hit: false }];
+  const [beam, ...others] = shown(custom);
+  assert.deepEqual([others.length, beam?.position.x, beam?.position.z], [0, 2, -200]);
+  custom.rings[0].hit = true;
+  assert.equal(shown(custom).length, 0, 'gone once collected');
+});
+
+test('ITEM-03: a magnet shows its pickup radius around the car only while it runs', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const ring = scene.getObjectByName('magnet radius');
+  assert.ok(ring && !ring.visible, 'in the scene from the start (shader warmup), hidden');
+  const race = createRace();
+  race.phase = 'racing';
+  Object.assign(race.player, { x: 1.5, distance: 400 });
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, false, 'no magnet, no ring');
+  race.player.effects.magnet = 4;
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, true);
+  assert.deepEqual([ring.position.x, ring.position.z, ring.scale.x], [1.5, 0, MAGNET_RANGE]);
+  assert.ok(ring.material.opacity > 0 && ring.material.opacity <= 0.5);
+  effects.update(race, 0.016, 0, true, false);
+  assert.equal(ring.visible, false, 'never on the home preview');
+  race.player.effects.magnet = 0;
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, false, 'gone when the magnet ends');
 });

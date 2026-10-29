@@ -2,6 +2,7 @@
 import { RACE_TRACKS } from './game.js';
 import { icons, ICON_ATTRS } from './icons.ts';
 import SignInButton from './SignInButton.vue';
+import ChallengeMedals from './ChallengeMedals.vue';
 import { historyView } from './history-view-state.ts';
 import { cloudView, updateCloudView } from './cloud-view-state.ts';
 function hideBrokenCloudAvatar() { updateCloudView({ avatarFailed: true }); }
@@ -37,7 +38,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
       <p id="cloud-status" role="status" :data-cloud-state="cloudView.statusState" :aria-busy="cloudView.statusBusy">{{ cloudView.statusText }}</p>
       <p id="cloud-last-sync">{{ cloudView.lastSyncText }}</p>
     </section>
-    <label class="history-filter"><span data-i18n="history.track">Track</span> <select id="history-track" aria-label="History track" data-i18n-aria-label="history.trackAria"><option v-for="(track, id) in RACE_TRACKS" :value="id">{{ track.name }}</option></select></label>
+    <label class="history-filter"><span data-i18n="history.track">Track</span> <select id="history-track" aria-label="History track" data-i18n-aria-label="history.trackAria"><option v-for="(track, id) in RACE_TRACKS" :value="id">{{ track.name }}</option><option value="harbor-circuit">Harbor Circuit</option></select></label>
     <figure class="history-trend" :hidden="!historyView.trendVisible"><figcaption id="history-trend-label">{{ historyView.trendLabel }}</figcaption><svg id="history-chart" viewBox="0 0 500 80" role="img" aria-labelledby="history-trend-label"><polyline :points="historyView.trendPolyPoints"/><circle v-for="(point, i) in historyView.trendCircles" :key="i" :cx="point.x" :cy="point.y" r="3"><title>{{ point.title }}</title></circle></svg></figure>
     <p id="history-empty" data-i18n="history.empty" :hidden="!historyView.historyEmpty">No runs here yet. Finish a race to start your history.</p>
     <div id="history-runs" class="history-runs"><details v-for="(run, i) in historyView.historyRuns" :key="i" class="history-run"><summary><span v-for="(field, j) in run.fields" :key="j">{{ field }}</span><b v-if="run.best" class="history-best">{{ run.bestLabel }}</b></summary><p>{{ run.detail }}</p></details></div>
@@ -48,17 +49,20 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
         <select id="mode-history-filter" aria-label="Challenge history mode" data-i18n-aria-label="mode.historyFilterAria">
           <option value="all" data-i18n="mode.historyAll">All modes</option>
           <option value="custom" data-i18n="mode.custom">Custom Race</option>
+          <option value="eventlab" data-i18n="mode.eventlab">Event Lab</option>
           <option value="time" data-i18n="mode.time">Time Attack</option>
           <option value="gauntlet" data-i18n="mode.gauntlet">Obstacle Run</option>
           <option value="checkpoint" data-i18n="mode.checkpoint">Checkpoint Rush</option>
           <option value="cup" data-i18n="mode.cup">Championship Cup</option>
           <option value="stunt" data-i18n="mode.stunt">Stunt Attack</option>
+          <option value="endless" data-i18n="mode.endless">Endless Highway</option>
           <option value="elimination" data-i18n="mode.elimination">Elimination</option>
         </select>
       </label>
       <p id="mode-history-empty" data-i18n="mode.historyEmpty" :hidden="!historyView.modeHistoryEmpty">Complete a Custom Race or Time Attack to save a personal record.</p>
       <div id="mode-history-runs" class="mode-history-runs"><p v-for="(run, i) in historyView.modeRuns" :key="i" :data-mode="run.mode" :data-personal-best="String(run.personalBest)" :data-ghost="String(run.ghost)">{{ run.text }}</p></div>
     </section>
+    <ChallengeMedals />
     <section id="daily-challenge" class="history-extra" aria-labelledby="daily-title">
       <h3 id="daily-title" data-i18n="daily.title">Daily challenge</h3>
       <p id="daily-status">{{ historyView.dailyStatus }}</p>

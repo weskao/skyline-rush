@@ -12,6 +12,8 @@ test('Restore defaults returns every rule to the values a fresh Custom race uses
   const custom = normalizeRaceConfig({ mode: 'custom', ...DEFAULT_RULES, hazards: undefined });
   assert.deepEqual(custom, normalizeRaceConfig({ mode: 'custom' }));
   assert.equal(DEFAULT_RULES.hazards, 'off');
+  assert.equal(DEFAULT_RULES.themes, false, 'themed track hazards are opt-in');
+  assert.equal(DEFAULT_RULES.riskLines, 'on');
   assert.ok(Object.isFrozen(DEFAULT_RULES));
 });
 
@@ -44,12 +46,18 @@ test('every mode gets a one-line rules summary built from its own settings', () 
   assert.match(summary('stunt', { duration: 180 }), /mode\.stuntMinutes\.180/);
   assert.match(summary('gauntlet', { hazardTier: 'extreme' }), /mode\.setupTier\{"value":"mode\.extreme"\}/);
   assert.match(summary('cup', { cupTracks: ['coast', 'neon', 'canyon', 'aurora', 'spiral'] }), /mode\.setupCupTracks\{"n":5\}/);
+  assert.match(summary('circuit', { laps: 5 }), /circuit\.laps 5/);
+  assert.match(summary('endless'), /^mode\.setupSolo/);
+  for (const mode of ['custom', 'free', 'gauntlet']) {
+    assert.match(summary(mode, { themes: true }), /mode\.themes/, mode);
+    assert.doesNotMatch(summary(mode), /mode\.themes/, mode);
+  }
   for (const mode of MODES) assert.ok(summary(mode).length > 0, mode);
 });
 
 test('new setup copy exists in English and Traditional Chinese', () => {
   const keys = ['mode.conflict.noRivals', 'mode.restoreDefaults', 'mode.editRules', 'mode.setupSolo', 'mode.setupTier', 'mode.setupCupTracks',
-    'mode.eligibility.records', 'mode.eligibility.daily', 'mode.eligibility.modeBests', 'mode.eligibility.practice', 'mode.step.mode', 'mode.step.track', 'mode.step.rules'];
+    'mode.eligibility.records', 'mode.eligibility.daily', 'mode.eligibility.modeBests', 'mode.eligibility.practice', 'mode.step.mode', 'mode.step.track', 'mode.step.rules', 'mode.themes'];
   for (const key of keys) {
     assert.ok(UI.en[key], `en ${key}`);
     assert.ok(UI['zh-TW'][key], `zh-TW ${key}`);

@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from '../src/race-config.ts';
+import { normalizeRaceConfig, rulesSignature, validateRaceRequest, MODES } from '../src/race-config.ts';
 import { createRaceSessionContract } from '../src/race-session.ts';
-import { createRace, RACE_TRACKS } from '../src/game.js';
+import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
 import { RACE_STREAMS, seededRng } from '../src/rng.ts';
+import { CIRCUIT_ID } from '../src/circuit-track.ts';
 
 test('MODE-00: strict user config rejects unsupported combinations and malformed values', () => {
   const invalid = [
@@ -151,4 +152,74 @@ test('MODE-00: direct session requests fail closed, but normalized legacy calls 
   const direct = createRaceSessionContract('coast', 1001, { mode: 'time', clean: true });
   assert.equal(direct.mode, 'time');
   assert.equal(direct.objective.type, 'finish-time');
+});
+
+const scripted = i => ({ throttle: i % 400 < 340, brake: i % 400 >= 370, steer: Math.sin(i / 45), nitro: i % 300 < 20, fly: i % 500 > 480 });
+const snapshot = race => JSON.stringify({ phase: race.phase, elapsed: race.elapsed, result: race.result,
+  cars: [race.player, ...race.rivals, ...race.traffic].map(car => [car.distance, car.x, car.altitude ?? 0, car.speed, car.collisions ?? 0, car.score ?? 0]) });
+const drive = (trackId, mode, steps) => {
+  const race = createRace(trackId, mode === 'classic' ? undefined : { mode });
+  startRace(race);
+  for (let i = 0; i < steps; i++) stepRace(race, scripted(i), 1 / 60);
+  return race;
+};
+
+test('9A: every mode replays bit-for-bit from the same track, rules and input sequence', () => {
+  for (const trackId of Object.keys(RACE_TRACKS)) for (const mode of MODES) {
+    if (mode === 'endless' && trackId !== 'coast') continue; // Coast only: see the Endless contract below
+    if (mode === 'circuit') continue; // its own route only: see the Circuit contract below
+    assert.equal(snapshot(drive(trackId, mode, 600)), snapshot(drive(trackId, mode, 600)), `${trackId} ${mode}`);
+  }
+});
+
+test('9A: every finishing mode settles a finite result at the end of all ten courses; Free Drive stops at the road end', () => {
+  for (const trackId of Object.keys(RACE_TRACKS)) for (const mode of MODES) {
+    if (mode === 'endless') continue; // open road: it has no road end to finish at (contract below)
+    if (mode === 'circuit') continue; // finishes on valid laps of its own route (contract below)
+    const race = drive(trackId, mode, 240);
+    race.rivals.forEach(rival => { rival.distance = 100; });
+    Object.assign(race.player, { distance: race.length - 1, speed: 80 });
+    // Elimination ends on its 10 s knockout clock, not at the road end; 40 s bounds every mode.
+    for (let i = 0; i < 2400 && race.phase === 'racing' && mode !== 'free'; i++) stepRace(race, { throttle: true }, 1 / 60);
+    if (mode === 'free') for (let i = 0; i < 4; i++) stepRace(race, { throttle: true }, 1 / 60);
+    if (mode === 'free') assert.deepEqual([race.phase, race.result, race.player.distance], ['racing', null, race.length], trackId);
+    else {
+      assert.equal(race.phase, 'finished', `${trackId} ${mode}`);
+      assert.ok(Number.isFinite(race.result.time) && race.result.time > 0, `${trackId} ${mode} time`);
+    }
+  }
+});
+
+test('9A: Endless runs on Coast only, rolls past every authored finish and ends on its own collision rule', () => {
+  for (const trackId of Object.keys(RACE_TRACKS)) if (trackId !== 'coast')
+    assert.throws(() => createRace(trackId, { mode: 'endless' }), /Coast only/, trackId);
+  const race = drive('coast', 'endless', 240);
+  Object.assign(race.player, { distance: RACE_TRACKS.coast.length - 1, speed: 80, collisions: 0 });
+  race.player.effects.ghost = 10; // drive through traffic so only the road end is being tested
+  for (let i = 0; i < 120; i++) stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.phase, 'racing');
+  assert.ok(race.player.distance > RACE_TRACKS.coast.length, 'no finish line at the authored road end');
+  race.player.effects.ghost = 0;
+  Object.assign(race.player, { collisions: 4, cooldown: 0, x: 10.1, speed: 80, steering: 1 });
+  stepRace(race, { throttle: true, steer: 1 }, .1);
+  assert.deepEqual([race.phase, race.result.endReason, race.result.collisions], ['finished', 'collisions', 5]);
+  assert.ok(Number.isFinite(race.result.distance) && race.result.distance > RACE_TRACKS.coast.length);
+});
+
+test('9A: Circuit runs only on its own route, replays bit-for-bit and finishes on valid laps, never on a teleport', () => {
+  for (const trackId of Object.keys(RACE_TRACKS)) assert.throws(() => createRace(trackId, { mode: 'circuit' }), /circuit route/, trackId);
+  for (const mode of MODES) if (mode !== 'circuit') assert.throws(() => createRace(CIRCUIT_ID, mode === 'classic' ? undefined : { mode }), /circuit route/, mode);
+  assert.equal(snapshot(drive(CIRCUIT_ID, 'circuit', 600)), snapshot(drive(CIRCUIT_ID, 'circuit', 600)));
+  const teleport = createRace(CIRCUIT_ID, { mode: 'circuit', laps: 1 });
+  startRace(teleport);
+  Object.assign(teleport, { phase: 'racing' });
+  Object.assign(teleport.player, { distance: teleport.length - 1, speed: 88 });
+  stepRace(teleport, { throttle: true }, .1);
+  assert.equal(teleport.phase, 'racing', 'jumping to the line is not a lap');
+  const race = createRace(CIRCUIT_ID, { mode: 'circuit', laps: 1 });
+  race.phase = 'racing'; race.pickups = []; race.rings = []; race.player.x = 2.5;
+  while (race.phase === 'racing' && race.elapsed < 120) stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.phase, 'finished');
+  assert.equal(race.result.lapTimes.length, 1);
+  assert.ok(Number.isFinite(race.result.time) && race.result.time > 0);
 });

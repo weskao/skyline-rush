@@ -1,5 +1,5 @@
 // A small, versioned contract for practice modes; Classic and Daily stay identical.
-export const MODES: readonly string[] = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination']);
+export const MODES: readonly string[] = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'endless', 'circuit']);
 const TRAFFIC: Readonly<Record<string, number>> = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
 const DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
 export const ITEM_RULES = ['off', 'classic', 'active', 'all'] as const;
@@ -16,12 +16,12 @@ export function normalizeRaceConfig(value: unknown = {}) {
   const itemRules = practice && isOneOf(value.itemRules, ITEM_RULES) ? value.itemRules : null;
   const items = itemRules ? itemRules === 'classic' || itemRules === 'all' : practice && typeof value.items === 'boolean' ? value.items : true;
   const activeItems = itemRules ? itemRules === 'active' || itemRules === 'all' : practice && items && value.activeItems === true;
-  const rivals = custom && typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' || mode === 'elimination' ? 3 : 0;
+  const rivals = custom && typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' || mode === 'elimination' || mode === 'circuit' ? 3 : 0;
   return Object.freeze({
     rulesVersion: 1,
     mode,
     rivals,
-    traffic: practice && typeof value.traffic === 'string' && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet', 'checkpoint'].includes(mode) ? 'off' : 'normal',
+    traffic: practice && typeof value.traffic === 'string' && Object.hasOwn(TRAFFIC, value.traffic) ? value.traffic : ['time', 'gauntlet', 'checkpoint', 'circuit'].includes(mode) ? 'off' : 'normal',
     difficulty: custom && isOneOf(value.difficulty, DIFFICULTIES) ? value.difficulty : 'normal',
     items,
     ...(activeItems ? { activeItems: true } : {}),
@@ -30,9 +30,16 @@ export function normalizeRaceConfig(value: unknown = {}) {
     // Keep pre-existing bests/ghosts comparable: the default remains absent from rules signatures.
     ...(practice && value.collision === 'relaxed' ? { collision: 'relaxed' } : {}),
     ...(practice && isOneOf(value.hazards, ['standard', 'extreme']) ? { hazards: value.hazards } : {}),
+    // REPLAY-03 practice switch: only 'off' is stored, so default signatures stay identical.
+    ...(practice && value.riskLines === 'off' ? { riskLines: 'off' } : {}),
+    // 11B themed track hazards are opt-in, so every other mode's rules signature stays the same.
+    ...((practice || mode === 'gauntlet') && value.themes === true ? { themes: true } : {}),
     ...(custom && isOneOf(value.stages, [2, 3, 5]) ? { stages: value.stages } : {}),
     ...(mode === 'gauntlet' && value.hazardTier === 'extreme' ? { hazardTier: 'extreme' } : {}),
+    // MODE-07: only the mixed course is stored, so the original Gauntlet signature is unchanged.
+    ...(mode === 'gauntlet' && value.layout === 'mixed' ? { layout: 'mixed' } : {}),
     ...(mode === 'time' && value.clean === true ? { clean: true } : {}),
+    ...(mode === 'circuit' ? { laps: isOneOf(value.laps, [1, 3, 5]) ? value.laps : 3, topologyVersion: 1 } : {}),
     ...(mode === 'stunt' ? { duration: isOneOf(value.duration, [120, 180, 300]) ? value.duration : 120 } : {}),
     ...(mode === 'cup' && Array.isArray(value.cupTracks) && [3,5].includes(value.cupTracks.length) &&
        value.cupTracks.every(id => typeof id === 'string') && new Set(value.cupTracks).size === value.cupTracks.length
@@ -53,14 +60,16 @@ export const rulesSignature = (config: unknown): string => JSON.stringify(normal
 // configs still use normalizeRaceConfig(), which intentionally retains safe fallbacks.
 const REQUEST_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   classic: [],
-  custom: ['rivals', 'traffic', 'difficulty', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'stages'],
-  free: ['traffic', 'items', 'activeItems', 'itemRules', 'collision', 'hazards'],
+  custom: ['rivals', 'traffic', 'difficulty', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'stages', 'themes', 'riskLines'],
+  free: ['traffic', 'items', 'activeItems', 'itemRules', 'collision', 'hazards', 'themes', 'riskLines'],
   time: ['clean'],
-  gauntlet: ['hazardTier'],
+  gauntlet: ['hazardTier', 'themes', 'layout'],
   checkpoint: ['bonusGates'],
   cup: ['cupTracks'],
   stunt: ['duration', 'bonusGates'],
   elimination: [],
+  endless: [],
+  circuit: ['laps', 'topologyVersion'],
 });
 const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isOneOf = <T extends string | number>(value: unknown, values: readonly T[]): value is T => values.includes(value as T);
@@ -86,7 +95,7 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
     assertOption(typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3, 'rivals');
   if (Object.hasOwn(value, 'traffic')) assertOption(typeof value.traffic === 'string' && Object.hasOwn(TRAFFIC, value.traffic), 'traffic');
   if (Object.hasOwn(value, 'difficulty')) assertOption(isOneOf(value.difficulty, DIFFICULTIES), 'difficulty');
-  for (const key of ['items', 'activeItems', 'clean', 'bonusGates'])
+  for (const key of ['items', 'activeItems', 'clean', 'bonusGates', 'themes'])
     if (Object.hasOwn(value, key)) assertOption(typeof value[key] === 'boolean', key);
   if (Object.hasOwn(value, 'itemRules')) {
     assertOption(isOneOf(value.itemRules, ITEM_RULES), 'itemRules');
@@ -95,9 +104,13 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
     if (Object.hasOwn(value, 'activeItems')) assertOption(value.activeItems === Boolean(expected.activeItems), 'activeItems conflicts with itemRules');
   } else if (value.activeItems === true && value.items === false) assertOption(false, 'activeItems with items disabled');
   if (Object.hasOwn(value, 'collision')) assertOption(isOneOf(value.collision, ['normal', 'relaxed']), 'collision');
+  if (Object.hasOwn(value, 'riskLines')) assertOption(isOneOf(value.riskLines, ['on', 'off']), 'riskLines');
   if (Object.hasOwn(value, 'hazards')) assertOption(isOneOf(value.hazards, ['standard', 'extreme']), 'hazards');
+  if (Object.hasOwn(value, 'layout')) assertOption(isOneOf(value.layout, ['classic', 'mixed']), 'layout');
   if (Object.hasOwn(value, 'hazardTier')) assertOption(isOneOf(value.hazardTier, ['standard', 'extreme']), 'hazardTier');
   if (Object.hasOwn(value, 'stages')) assertOption(isOneOf(value.stages, [1, 2, 3, 5]), 'stages');
+  if (Object.hasOwn(value, 'laps')) assertOption(isOneOf(value.laps, [1, 3, 5]), 'laps');
+  if (Object.hasOwn(value, 'topologyVersion')) assertOption(value.topologyVersion === 1, 'topologyVersion');
   if (Object.hasOwn(value, 'duration')) assertOption(isOneOf(value.duration, [120, 180, 300]), 'duration');
   if (Object.hasOwn(value, 'cupTracks')) {
     const tracks = value.cupTracks;

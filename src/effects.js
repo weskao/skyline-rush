@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MAGNET_RANGE } from './game.js';
 
 // Shared by the model and its wake, so all four streams start at the actual ports.
 export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]];
@@ -71,7 +72,7 @@ export function createEffects(scene, roadCenter) {
     jet.visible = false; cores.add(jet);
   }
   let flowTime = 0;
-  let cursor = 0, lastImpact = null, lastLanding = null;
+  let cursor = 0, lastImpact = null, lastLanding = null, lastShieldBlock = null;
   const emissions = new Float64Array(4), strengths = new Float64Array(4);
   const nozzles = new Uint8Array(4);
   const nozzlePosition = new THREE.Vector3(), nozzleVelocity = new THREE.Vector3();
@@ -81,6 +82,7 @@ export function createEffects(scene, roadCenter) {
   const pickupColors = { cell: blue, can: orange, tank: gold, overcharge: spectrum };
   const bonusStyles = { 'speed-pad': 'slipstream', 'air-pad': 'charge', 'recovery-pad': 'nitro', 'score-pad': 'risk', emp: 'mystery' };
   const ringColors = { charge: [0.1, 1.8, 2.5], nitro: gold, slipstream: purple, risk: red, mystery: spectrum };
+  const gateBasis = new THREE.Matrix4(), gateRight = new THREE.Vector3(), gateUp = new THREE.Vector3(), gateBack = new THREE.Vector3();
   const ringGeometry = new THREE.TorusGeometry(1, 0.012, 6, 64);
   const rainbow = new Float32Array(ringGeometry.attributes.position.count * 3), tint = new THREE.Color();
   for (let i = 0; i < ringGeometry.attributes.position.count; i++) {
@@ -103,6 +105,13 @@ export function createEffects(scene, roadCenter) {
   const ringVariants = Object.values(ringMaterials), pickupVariants = Object.values(pickupMaterials);
   for (let i = 0; i < 7; i++) gates.add(new THREE.Mesh(ringGeometry, ringVariants[i % ringVariants.length]));
   for (let i = 0; i < 40; i++) pickups.add(new THREE.Mesh(pickupGeometry, pickupVariants[i % pickupVariants.length]));
+  // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.
+  const beamGeometry = new THREE.CylinderGeometry(0.08, 0.08, 14, 8, 1, true);
+  const beamMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(...gold), transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false });
+  const beams = new THREE.Group();
+  beams.name = 'Item beams';
+  for (let i = 0; i < 7; i++) beams.add(new THREE.Mesh(beamGeometry, beamMaterial));
+  scene.add(beams);
   const pickupSizes = { cell: 0.28, can: 0.48, tank: 0.7, overcharge: 0.95 };
   let previousRace = null, seen = new WeakSet(), driftEmission = 0;
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
@@ -121,7 +130,8 @@ export function createEffects(scene, roadCenter) {
         0.4 + Math.random() * 0.65, color.length > 3 ? color[i % color.length] : color, landing ? 2 : 12, landing ? 2 : 0, landing ? 0.2 : 0.85);
     }
   }
-  const rings = [orange].map(color => {
+  // rings[0] flashes a crash, rings[1] a hit the shield blocked (ITEM-12); one shader program for both.
+  const rings = [orange, blue].map(color => {
     const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(...color), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 72), mat);
     ring.rotation.x = -Math.PI / 2;
@@ -129,6 +139,14 @@ export function createEffects(scene, roadCenter) {
     scene.add(ring);
     return ring;
   });
+  // ITEM-03: the magnet's pickup reach, drawn with the impact ring's geometry and shader program.
+  const magnetRing = rings[0].clone();
+  magnetRing.material = rings[0].material.clone();
+  magnetRing.material.color.setRGB(...blue);
+  magnetRing.name = 'magnet radius';
+  magnetRing.visible = false;
+  magnetRing.scale.setScalar(MAGNET_RANGE);
+  scene.add(magnetRing);
   return {
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}) {
       dt = Math.max(0, dt);
@@ -158,12 +176,31 @@ export function createEffects(scene, roadCenter) {
             item.altitude + (source === 0 ? 0.85 : 0), distance));
           else mesh.position.set(roadCenter(item.distance) + item.x - center,
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
-          mesh.rotation.y = source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2);
+          if (source === 1 && options.worldFrame) {
+            // Fixed route topology: a new gate identity invalidates this pool slot's orientation.
+            if (mesh.userData.frameItem !== item) {
+              const frame = options.worldFrame(item.distance);
+              mesh.quaternion.setFromRotationMatrix(gateBasis.makeBasis(gateRight.fromArray(frame.right), gateUp.fromArray(frame.up), gateBack.fromArray(frame.forward).negate()));
+              mesh.userData.frameItem = item;
+            }
+          } else {
+            if (mesh.userData.frameItem) mesh.userData.frameItem = null;
+            mesh.rotation.set(0, source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2), 0);
+          }
           mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
           mesh.material = source === 0 ? pickupMaterials[item.tier] : ringMaterials[ringType];
+          if (source === 1) {
+            const beam = beams.children[slot - 1];
+            beam.visible = item.type === 'emp' || (item.type === 'mystery' && !!race.config?.activeItems);
+            if (beam.visible) { beam.position.copy(mesh.position); beam.position.y += 7; }
+          }
         }
-        for (; slot < group.children.length; slot++) group.children[slot].visible = false;
+        for (; slot < group.children.length; slot++) {
+          group.children[slot].visible = false;
+          if (source === 1) beams.children[slot].visible = false;
+        }
       }
+      beamMaterial.opacity = reducedMotion ? 0.3 : 0.3 + Math.sin(flowTime * 4) * 0.1;
       previousRace = race;
       if (active && !reducedMotion && car.drift && car.altitude < 0.2) {
         driftEmission = Math.min(8, driftEmission + dt * (lowQuality ? 16 : 60));
@@ -183,6 +220,10 @@ export function createEffects(scene, roadCenter) {
       if (car.impact !== lastImpact) {
         lastImpact = car.impact;
         if (lastImpact && active) { burst(lastImpact, 95, orange, car.speed); rings[0].userData.event = lastImpact; }
+      }
+      if (car.shieldBlock !== lastShieldBlock) {
+        lastShieldBlock = car.shieldBlock;
+        if (lastShieldBlock && active) { burst(lastShieldBlock, reducedMotion ? 6 : lowQuality ? 12 : 40, blue, car.speed); rings[1].userData.event = lastShieldBlock; }
       }
       if (car.landing !== lastLanding) {
         lastLanding = car.landing;
@@ -295,13 +336,21 @@ export function createEffects(scene, roadCenter) {
         }
         if (!event || race.elapsed < event.time) ring.visible = false;
       });
+      const magnet = car.effects?.magnet ?? 0;
+      magnetRing.visible = magnet > 0 && !preview;
+      if (magnetRing.visible) {
+        if (options.worldPoint) magnetRing.position.fromArray(options.worldPoint(car.distance, car.x, car.altitude + .05, distance));
+        else magnetRing.position.set(roadCenter(car.distance) + car.x - center, car.altitude + .05, 0);
+        // Fades over the final second; a gentle pulse unless motion is reduced.
+        magnetRing.material.opacity = Math.min(1, magnet) * (reducedMotion ? .3 : .3 + Math.sin(flowTime * 5) * .08);
+      }
       if (race.phase === 'countdown' || race.phase === 'ready') {
-        lastImpact = null; lastLanding = null;
+        lastImpact = null; lastLanding = null; lastShieldBlock = null;
       }
     },
     dispose() {
-      gates.removeFromParent(); pickups.removeFromParent();
-      ringGeometry.dispose(); pickupGeometry.dispose();
+      gates.removeFromParent(); pickups.removeFromParent(); beams.removeFromParent();
+      ringGeometry.dispose(); pickupGeometry.dispose(); beamGeometry.dispose(); beamMaterial.dispose();
       for (const mat of Object.values(ringMaterials)) mat.dispose();
       for (const mat of Object.values(pickupMaterials)) mat.dispose();
     },
@@ -310,7 +359,8 @@ export function createEffects(scene, roadCenter) {
       alphas.fill(0);
       geometry.attributes.alpha.needsUpdate = true;
       rings.forEach(ring => { ring.userData.event = null; ring.visible = false; });
-      lastImpact = lastLanding = null;
+      magnetRing.visible = false;
+      lastImpact = lastLanding = lastShieldBlock = null;
       seen = new WeakSet(); previousRace = null; driftEmission = 0;
       cursor = 0;
       emissions.fill(0); strengths.fill(0); nozzles.fill(0);

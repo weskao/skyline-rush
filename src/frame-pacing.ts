@@ -74,3 +74,12 @@ export function createFramePacer(initial: unknown = 'auto') {
     },
   };
 }
+
+/** Physics always advances in whole 1/60 s steps, whatever the display rate; a hitch counts as at most 0.05 s. */
+export const SIM_STEP = 1 / 60;
+export function drainSteps(accumulator: number, dt: number): { steps: number; accumulator: number } {
+  accumulator += Math.max(0, Math.min(dt, 0.05));
+  let steps = 0;
+  while (accumulator >= SIM_STEP) { accumulator -= SIM_STEP; steps++; }
+  return { steps, accumulator };
+}

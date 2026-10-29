@@ -32,10 +32,10 @@ const modeGhostId = (trackId: string, config: unknown): string => trackId + ':' 
 export function loadModeGhost(trackId: string, config: unknown, storage?: HistoryStorage): GhostRun | null {
   const ghosts = asRecord(read(MODE_GHOST_KEY, storage));
   const item = ghosts[modeGhostId(trackId, config)];
-  return validGhost(item, trackId) ? item : null;
+  return validGhost(item, trackId, config) ? item : null;
 }
 export function saveModeGhost(trackId: string, config: unknown, ghost: unknown, storage?: HistoryStorage): boolean {
-  if (!validGhost(ghost, trackId)) return false;
+  if (!validGhost(ghost, trackId, config)) return false;
   const previous = asRecord(read(MODE_GHOST_KEY, storage));
   const bounded = boundedGhosts(previous, modeGhostId(trackId, config), ghost);
   if (!bounded) return false;

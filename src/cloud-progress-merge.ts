@@ -1,6 +1,9 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { MEDALS, HISTORY_LIMIT } from './history.ts';
 import { MODE_NAMES } from './cloud-mode-bests.ts';
+import { isModeTrack } from './race-tracks.ts';
+import { validCircuitRecord } from './circuit-records.ts';
+import type { LapTime } from './circuit-laps.ts';
 import { validStars } from './history-stats.ts';
 
 type RawRecord = Record<string, unknown>;
@@ -61,14 +64,18 @@ function modeRun(raw: unknown): NormalizedRun | null {
   const run = asRecord(raw);
   const when = date(run.date);
   const id = run.track, mode = run.mode, time = run.time, rules = run.rules;
-  if (!when || !track(id) || typeof mode !== 'string' || !(MODE_NAMES as readonly string[]).includes(mode) ||
+  if (!when || !isModeTrack(id, mode) || typeof mode !== 'string' || !(MODE_NAMES as readonly string[]).includes(mode) ||
       !validTime(time) || typeof rules !== 'string' || !rules.length || rules.length > 4096) return null;
+  if (mode === 'endless' && (id !== 'coast' || typeof run.distance !== 'number' ||
+      !Number.isFinite(run.distance) || run.distance < 0 || run.distance > Number.MAX_SAFE_INTEGER)) return null;
+  if (mode === 'circuit' && !validCircuitRecord(run)) return null;
   const telemetry: RawRecord = {};
+  if (mode === 'circuit') telemetry.lapTimes = (run.lapTimes as LapTime[]).map(lap => ({ time: lap.time, splits: [...lap.splits] }));
   for (const key of ['rulesVersion', 'stageCount', 'itemsUsed', 'hazardPasses', 'hazardHits']) {
     if (validInt(run[key])) telemetry[key] = run[key];
   }
   if (typeof run.distance === 'number' && Number.isFinite(run.distance) &&
-      run.distance >= 0 && run.distance <= 100000) telemetry.distance = run.distance;
+      run.distance >= 0 && run.distance <= (mode === 'endless' ? Number.MAX_SAFE_INTEGER : 100000)) telemetry.distance = run.distance;
   if (run.lapCount === null) telemetry.lapCount = null;
   else if (validInt(run.lapCount)) telemetry.lapCount = run.lapCount;
   if (run.modeId === mode) telemetry.modeId = mode;

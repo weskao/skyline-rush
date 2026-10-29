@@ -1,13 +1,16 @@
+import { CIRCUIT_ID } from './circuit-track.ts';
+import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
 import { RULE_PRESETS } from './race-config.ts';
 import { DEFAULT_RULES, modeEligibility, modeRulesSummary, ruleConflicts } from './mode-setup.ts';
 import { itemRuleValue } from './item-ui.ts';
-import { createCup } from './championship-cup.ts';
+import { createCup, type CupState } from './championship-cup.ts';
 import { loadRecentCustom } from './recent-custom.ts';
 import { refreshCustomSelects } from './custom-select.ts';
 import { createRouteMap } from './route-map.ts';
 import { timeString } from './time-format.ts';
+import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
 import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
 import type { VisualPreset } from './race-session.ts';
@@ -33,7 +36,7 @@ interface RaceSelectOptions {
   cueUi(): void;
   reducedMotion: MediaQueryList;
 }
-type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates';
+type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
@@ -45,10 +48,14 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   let selectedMode = 'classic';
   const raceRules: Record<RuleKey, unknown> = { ...DEFAULT_RULES };
   const cupCount = (): number => Number($<HTMLSelectElement>('#cup-length').value);
-  const selectedRace = (trackId: string): Race => selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
+  const eventLab = setupEventLabUI({ ...options, select: next => {
+    selectedMode = 'eventlab'; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
+  } });
+  const selectedRace = (trackId: string): Race => selectedMode === 'circuit' ? options.createRace(CIRCUIT_ID, { mode: 'circuit', laps: Number($<HTMLSelectElement>('#circuit-laps').value) }) : selectSprint(trackId === CIRCUIT_ID ? 'coast' : trackId);
+  const selectSprint = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(selectedMode === 'endless' ? 'coast' : trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
-    ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value } : {}),
+    ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value, layout: $<HTMLSelectElement>('#gauntlet-layout').value } : {}),
     ...(selectedMode === 'time' && $<HTMLInputElement>('#clean-trial').checked ? { clean: true } : {}),
     ...(selectedMode === 'stunt' ? { duration: Number($<HTMLSelectElement>('#stunt-duration').value) } : {}) }, racePresentationFor(selectedMode, trackId));
 
@@ -85,6 +92,8 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     $('#gauntlet-rules').hidden = selectedMode !== 'gauntlet';
     $('#time-trial-rules').hidden = selectedMode !== 'time';
     $('#cup-rules').hidden = selectedMode !== 'cup';
+    $('#circuit-rules').hidden = selectedMode !== 'circuit';
+    $('.track-select').hidden = selectedMode === 'circuit';
     $('#stunt-rules').hidden = selectedMode !== 'stunt';
     $('#bonus-gates-rule').hidden = !['stunt', 'checkpoint'].includes(selectedMode);
     const recent = selectedMode === 'custom' ? loadRecentCustom().filter(entry => unlockedTracks.has(entry.trackId)) : [];
@@ -126,24 +135,26 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const button of trackButtons()) {
       const id = button.dataset.track!;
       const locked = !unlockedTracks.has(id);
+      button.disabled = selectedMode === 'endless' && id !== 'coast';
       button.classList.toggle('is-locked', locked);
       button.setAttribute('aria-pressed', String(id === race.trackId));
       button.querySelector('small')!.textContent = t(locked ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
       const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1]!;
-      button.title = locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
+      button.title = button.disabled ? t('mode.description.endless') : locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
     }
   }
+  const canRace = (trackId: string): boolean => getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId);
   function renderRouteInfo(race: Race): void {
     const daily = options.getDaily();
     const startButton = ui['start-button'] as HTMLButtonElement;
-    startButton.disabled = !daily && (!unlockedTracks.has(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount()));
+    startButton.disabled = !daily && (!canRace(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount()));
     startButton.setAttribute('aria-describedby', 'track-note');
     $('.start-hint').hidden = startButton.disabled;
-    $('#track-length').textContent = t('track.sprint', { km: (RACE_TRACKS as Record<string, { length: number }>)[race.trackId]!.length / 1000 });
+    $('#track-length').textContent = race.endless ? t('mode.endlessRoute') : race.mode === 'circuit' ? t('circuit.length', { laps: race.config.laps, km: race.length / 1000 }) : t('track.sprint', { km: raceTrack(race.trackId)!.length / 1000 });
     const tracks = Object.keys(RACE_TRACKS);
     const next = tracks[tracks.indexOf(race.trackId) + 1];
     const previous = tracks[tracks.indexOf(race.trackId) - 1]!;
-    $('#track-note').textContent = (selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', { n: cupCount() }) + ' · ' : '') + (!daily && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+    $('#track-note').textContent = (selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', { n: cupCount() }) + ' · ' : '') + (!daily && race.trackId !== CIRCUIT_ID && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
     const name = trackName(race.trackId, getLocale());
     const route = (race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
     $('.route-heading').textContent = route;
@@ -154,7 +165,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const ghost = options.ghostFor(race);
     const track = trackName(race.trackId, getLocale());
     $<HTMLInputElement>('#ghost-enabled').checked = options.ghostEnabled();
-    $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
+    $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : ['free', 'endless'].includes(race.mode) ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
   }
   function showTracks(): void {
     options.showHomeStatus();
@@ -168,7 +179,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   }
   // The browser clamps scrollLeft, so the first and last tracks rest at the row's edges instead of the middle.
   function centerSelectedTrack(smooth = false): void {
-    const button = document.querySelector<HTMLElement>(`[data-track="${getRace().trackId}"]`)!, row = button.parentElement!;
+    const button = document.querySelector<HTMLElement>(`[data-track="${getRace().trackId}"]`);
+    if (!button) return;
+    const row = button.parentElement!;
     row.scrollBy({ left: button.getBoundingClientRect().left + button.offsetWidth / 2 - row.getBoundingClientRect().left - row.clientWidth / 2, behavior: smooth && !options.reducedMotion.matches ? 'smooth' : 'instant' });
   }
   function changeRaceSelection(): void {
@@ -205,19 +218,21 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     buttons[(index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length]!.focus();
   });
   for (const button of document.querySelectorAll<HTMLElement>('button[data-race-mode]')) button.addEventListener('click', () => {
+    if (button.dataset.raceMode === 'eventlab') { eventLab.open(); return; }
     selectedMode = button.dataset.raceMode!;
     changeRaceSelection();
   });
   for (const button of document.querySelectorAll<HTMLElement>('[data-race-preset]')) button.addEventListener('click', () => {
-    Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset as keyof typeof RULE_PRESETS], { collision: 'normal', hazards: 'off', stages: 1, activeItems: false, itemRules: button.dataset.racePreset === 'noitems' ? 'off' : undefined });
+    Object.assign(raceRules, RULE_PRESETS[button.dataset.racePreset as keyof typeof RULE_PRESETS], { collision: 'normal', hazards: 'off', stages: 1, activeItems: false, itemRules: button.dataset.racePreset === 'noitems' ? 'off' : undefined, riskLines: 'on' });
     showRuleInputs();
     changeRaceSelection();
   });
-  for (const id of ['hazard-tier', 'clean-trial', 'cup-length', 'stunt-duration', 'race-visual-preset']) $(`#${id}`).addEventListener('change', changeRaceSelection);
+  for (const id of ['hazard-tier', 'gauntlet-layout', 'clean-trial', 'cup-length', 'stunt-duration', 'race-visual-preset', 'circuit-laps']) $(`#${id}`).addEventListener('change', changeRaceSelection);
   $('#rules-restore').addEventListener('click', () => {
     Object.assign(raceRules, DEFAULT_RULES);
     $<HTMLSelectElement>('#hazard-tier').value = 'standard'; $<HTMLInputElement>('#clean-trial').checked = false;
     $<HTMLSelectElement>('#stunt-duration').value = '120'; $<HTMLSelectElement>('#cup-length').value = '3';
+    $<HTMLSelectElement>('#gauntlet-layout').value = 'classic';
     showRuleInputs();
     changeRaceSelection();
   });
@@ -226,7 +241,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const entry = loadRecentCustom().filter(item => unlockedTracks.has(item.trackId))[index];
     if (!entry || getRace().phase !== 'ready') return;
     for (const key of Object.keys(raceRules) as RuleKey[]) if (Object.hasOwn(entry.config, key)) raceRules[key] = (entry.config as Record<string, unknown>)[key];
-    raceRules.hazards = (entry.config as Record<string, unknown>).hazards ?? 'off';
+    raceRules.hazards = (entry.config as Record<string, unknown>).hazards ?? 'off'; raceRules.riskLines = (entry.config as Record<string, unknown>).riskLines ?? 'on';
     raceRules.itemRules = entry.config.itemRules; raceRules.activeItems = entry.config.activeItems ?? false;
     showRuleInputs();
     setRace(selectedRace(entry.trackId));
@@ -240,10 +255,17 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   try { const last = sessionStorage.getItem(LAST_TRACK_KEY); if (last && unlockedTracks.has(last)) setRace(selectedRace(last)); } catch { /* Coast stays the default without storage. */ }
 
   return {
-    selectedRace,
+    recreate: eventLab.recreate,
+    selectedRace, canRace,
     selectedMode: (): string => selectedMode,
     /** The Daily Challenge always races the Classic rules. */
     selectClassic(): void { selectedMode = 'classic'; },
+    restoreCup(cup: CupState): void {
+      selectedMode = 'cup';
+      $<HTMLSelectElement>('#cup-length').value = String(cup.tracks.length);
+      setRace(options.createRace(cup.tracks[cup.results.length], { mode: 'cup', cupTracks: cup.tracks }));
+      showTracks();
+    },
     cupCount,
     showTracks,
     centerSelectedTrack,

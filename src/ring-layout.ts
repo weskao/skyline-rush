@@ -6,7 +6,7 @@ export const RISK_RING_RADIUS = 2.4;
 export const RING_SPACING = 220;
 export const RING_FUEL = 20; // charge ring
 export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
-export const RISK_SCORE = 500;
+export { RISK_SCORE } from './risk-lines.ts';
 export const PERFECT_LINE_NITRO = 1;
 export const MYSTERY_EFFECTS = ['shield', 'magnet', 'ghost', 'freeze'];
 export const EFFECT_TIMES = { shield: 10, magnet: 5, ghost: 3, freeze: 2 }; // seconds; shield also ends on the first absorbed hit
@@ -15,13 +15,13 @@ export interface RaceRing { distance: number; x: number; altitude: number; radiu
 
 // Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
 // other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
-export function createRings(track: TrackConfig): RaceRing[] {
+export function createRings(track: TrackConfig, riskLines = true): RaceRing[] {
   const random = seededRng(track.seed, RACE_STREAMS.rings);
   const rings: RaceRing[] = [];
   const inTunnel = (distance: number) => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
   for (let distance = RING_SPACING; distance < track.length - 100;) {
     const roll = random();
-    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? 'risk' : 'mystery';
+    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? (riskLines ? 'risk' : 'nitro') : 'mystery'; // same roll either way: layout unchanged
     let x = 2.5;
     let altitude = 8;
     if (!track.fixedRings) {

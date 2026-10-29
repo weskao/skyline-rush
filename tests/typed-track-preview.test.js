@@ -6,7 +6,7 @@ import { HERO_PREVIEWS, isCuratedPreview, previewPlayer, previewRival, showcaseC
 test('every preview mode is defined by one strict TypeScript service without shadow JS', () => {
   assert.equal(existsSync(new URL('../src/track-preview.ts', import.meta.url)), true);
   assert.equal(existsSync(new URL('../src/track-preview.js', import.meta.url)), false);
-  assert.equal(Object.keys(HERO_PREVIEWS).length, 5);
+  assert.deepEqual(Object.keys(HERO_PREVIEWS).sort(), ['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic', 'harbor-circuit'].sort());
   const player = { x: 2, altitude: 1, thrusting: true, speed: 50 };
   const grounded = previewPlayer('future-road', player, 7, false, true);
   assert.equal(grounded.altitude, 0);

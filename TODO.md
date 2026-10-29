@@ -56,7 +56,33 @@ Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates c
 - [ ] Recheck the latest documentation HEAD CI on the eight earlier branches. Older feature-code CI is green; these newer runs are still incomplete at handoff.
 - [ ] Physical Safari/Android, long-drive/all-quality thermal validation and independent review remain open. Merge into main, PR, tag and deployment still require explicit authorization.
 
+## Photo Studio continuation — PHOTO-01 (2026-10-29)
+
+- [x] Final responsive source `d4e4e73` passes strict TS/Vue/legacy checks and Node 815 / 0 failures / 3 emulator skips. Focused browser gate: 25/25, exit 0. Actual desktop/phone controls and PNG decoding pass; the phone capture uses real touchscreen taps. Receipt: `artifacts/photo-studio/controls-responsive/receipt.json`.
+- [x] Preserve all work and stop local verification at the user's explicit handoff request. The final `make verify` was terminated with exit 143 after browser ordinal 31; no full-gate success is claimed. No task-owned browser/make processes remain. English handoff: `/Users/wes_flutter/Documents/Workspace/skyline-rush/HANDOFF-TODO-2026-10-29.md`.
+- [ ] Upstream changed at handoff: `origin/main@bc5299b` is 51 commits ahead of the local ca1c777 main baseline and is not in this branch. Preserve this handoff-only TODO edit, integrate upstream when work resumes, resolve conflicts without dropping either side and repeat complete gates on the resulting source.
+- [ ] Resume full `make verify` on `d4e4e73` (or the actual source being resumed) and inspect exact-commit CI run 40851948100. PHOTO-01 stays unchecked until these gates pass; later commits need their own exact-HEAD CI. Latest source is published; this handoff-only TODO edit is intentionally uncommitted.
+
+- [x] Inspect main ca1c777 and the real modal/CSS/renderer lifecycle; create independent feature/photo-studio-hud-isolation. Baseline strict types and Node pass: 815 / 3 emulator skips, failures 0. Plan: docs/superpowers/plans/2026-10-29-photo-studio-hud.md.
+- [x] RED observed: the real Photo Studio shows `.telemetry` despite the clean-preview contract; the new browser test fails Expected hidden / Received visible on unmodified main source. Log: artifacts/photo-studio/hud-red.log; original-resolution before image: artifacts/photo-studio/before-desktop-coast.png. Browser build is locked; no import/syntax failure.
+- [x] GREEN: one modal-open CSS rule shows only the canvas and Photo Studio, also hiding optional body-level ?perf output. All 22 ten-track/desktop/phone/narrow/landscape real-game lifecycle cases plus the existing orbit/lighting/PNG test pass (23/23). Back restores prior visibility, native Escape stays paused, and real Resume drives again; page errors 0. Preserve 22 DPR-1 after images and receipt in artifacts/photo-studio/; six representative original-resolution images inspected. Existing UI/save sound is retained; no new music or render-loop state.
+- [x] Narrow/safe-area RED observed: the 320x740 panel ends at y422 and overlaps actual visible-mesh car bounds starting at y338; a 59px safe-top case puts the panel at y12. Both browser assertions fail before responsive CSS changes. Log: artifacts/photo-studio/preview-safearea-red.log; original-resolution before images preserved. The first full gate was intentionally stopped (exit 143 after 162 browser passes); its partial log is not a passing full-gate receipt.
+- [x] Responsive GREEN: narrow screens place the original orbit/FOV fields side by side; the modal honors shared safe-area variables and short-landscape width. Actual per-mesh full-car projection confirms no panel overlap in all 24 track/layout cases, including 59px portrait and 47px landscape insets; the existing PNG case also passes (25/25, exit 0). Car, camera and font sizes are unchanged. Preserve 24 original-resolution after-responsive images; four narrow/inset/landscape representatives inspected. Short-landscape actions remain reachable by scrolling.
+- [ ] Cross-track desktop/phone and narrow/landscape original-resolution images, complete make verify and exact-HEAD CI; keep physical devices and thermal acceptance separate.
+
 ## Current main integration and verification (2026-10-29)
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `4117dcc` on `feature/regression-gate-repair`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] All six owning caller branches pass complete post-merge make verify on their user-published code: Cup, Custom, Items, Event Lab, Endless and Circuit. Receipts identify exact SHAs in each owning TODO. This helper has no separate standalone local full-gate receipt.
+- [x] User-published helper code `4117dcc` passes all 17 required GitHub checks including quality-gate: https://github.com/weskao/skyline-rush/actions/runs/40818547878 . Later TODO-only commits need their own latest-HEAD CI before merge.
+
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `9b5202f` on `feature/cup-session-recovery`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `9b5202f` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818546745). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `9b5202f` exits 0: strict TS/Vue/JS, Node 822 / Browser 502 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/cup-recovery/make-verify-main-ca1c777-user-merge.log`.
+
+Historical receipts below retain their original date and verification scope.
+
 
 - [x] User-integrated `main@ca1c777` is an ancestor of `6bb9d13` on `feature/custom-race-presentation`; tracked tree was clean and no unresolved merge conflicts were found.
 - [x] Exact published code `6bb9d13` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547188). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
@@ -72,29 +98,137 @@ Historical receipts below retain their original date and verification scope. Ear
 - [x] Exact published code `6c478de` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547695). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
 - [x] Complete make verify on merged code `6c478de` exits 0: strict TS/Vue/JS, Node 830 / Browser 502 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/item-rules/make-verify-main-ca1c777-user-merge.log`.
 
+## origin/main bc5299b / 0a08d02 integration (2026-10-29)
+
+- [x] Merge origin/main `bc5299b` (51 commits) without conflicts. RED: `tests/module-size.test.js` failed because `src/world.js` was 1346 lines against this branch's lowered 1345 ceiling; GREEN by folding `let trackId, carBank = 0;` (the shared fold used by every integrated branch), never raising the ceiling.
+- [x] Complete make verify on code `a6c9f14` exits 0: strict TS/Vue/JS, Node 844 / 3 emulator skips, locked build, Browser 523 / 2 desktop touch skips, World Tour 303. Log: `artifacts/make-verify-bc5299b-a6c9f14.log`. Docs-only `0a08d02` merged afterwards; `src` unchanged. CI pending.
+
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `8b34df1` on `feature/event-lab-lite`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `8b34df1` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547459). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `8b34df1` exits 0: strict TS/Vue/JS, Node 822 / Browser 499 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/event-lab/make-verify-main-ca1c777-user-merge.log`.
+
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `733d848` on `feature/endless-highway`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `733d848` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547563). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `733d848` exits 0: strict TS/Vue/JS, Node 825 / Browser 497 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/endless/make-verify-main-ca1c777-user-merge.log`.
+
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `87421b9` on `feature/genuine-circuit-laps`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `87421b9` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818546894). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `87421b9` exits 0: strict TS/Vue/JS, Node 841 / Browser 503 / World Tour 326; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/circuit/make-verify-main-ca1c777-user-merge.log`.
+
 Historical receipts below retain their original date and verification scope.
+
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `3d8321b` on `feature/challenge-medals`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `3d8321b` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547979). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Current src is identical to locally verified `6624322`: complete make verify exit 0, Node 843 / Browser 508 / World Tour 303; local Cloud 15 + 3 and current original-resolution evidence pass. Requested main merge returned Already up to date.
+
+
+## Expanded personal challenge medals — REPLAY-01 (2026-10-29)
+
+- [x] Review the original requirement and existing scoring, settlement, History, storage/account/backup boundaries. Continue on independent `feature/challenge-medals`, leaving the six locally verified feature branches intact. Plan: `docs/superpowers/plans/2026-10-29-challenge-medals.md`.
+- [x] Observe real assertion RED through the existing Stunt scoring API: four original cases pass, four new cases fail for missing continuous-flight/aerial-chain telemetry. No missing-module or syntax error. Log: `artifacts/challenge-medals/stunt-metrics-red.log`.
+- [x] Stunt telemetry GREEN: 21 owner/sibling tests pass; after installing this worktree's existing TypeScript dependency, full Node suite passes 807 / 0 failures / 3 emulator skips. The earlier four missing-compiler failures are retained as environment setup evidence, not feature RED. Logs: `stunt-metrics-green.log`, `stunt-metrics-npm-test-ready.log`.
+- [x] Settlement RED through existing APIs: missing personal-award results fail clean Time Attack, failed-attempt and multi-heat Stunt cases. Log: `artifacts/challenge-medals/settlement-red.log`.
+- [x] Five-medal settlement/store GREEN: actual settlement RED, then Checkpoint/Gauntlet owner RED (2 fail / 7 pass), then timer-final-tick RED; full Node now 819 pass / 0 fail / 3 emulator skips. Strict TS/Vue/JS checks pass before the final numeric clipping correction; repeat them after lifecycle integration. Award dates stay separate from Career, survive History trimming and fall back to the session when storage is blocked. Logs in `artifacts/challenge-medals/`.
+- [x] Local lifecycle RED/GREEN: six new assertion failures plus the already-passing cloud-boundary guard; 46 controller/storage/session tests now pass. Actual browser export/import first failed for absent medal data, then both passed. Future-version stores refuse account switching; quota failure rolls back progress.
+- [x] Vue History/results RED/GREEN: missing collection fails after a successful import; both backup browser flows now pass with immediate 1 / 5 collection and unchanged Career count. Result announcements and explicit local adoption pass 11 focused cases; full Node 828 pass / 0 fail / 3 emulator skips; strict TS/Vue/JS pass with the worktree-local npm cache. Logs: `artifacts/challenge-medals/lifecycle-ui-*.log`, `history-backup-browser-green.log`.
+- [x] Implement and verify bounded aerial telemetry, five separate personal medals, safe local/session persistence and local backup/account isolation; no new cloud schema.
+- [x] Verify bilingual Vue History/result presentation with real desktop/touch actions and unchanged four Career medals.
+- [x] Integrate latest main `ca1c777` into this feature; resolve the TODO header conflict by preserving both the complete feature ledger and main's new 90/120 FPS request. Preserve shared History/Intl/media/scenery cache fixes.
+- [x] Current-source emulator compatibility passes 15 browser cases and 3 Rules cases on `6624322`. Log: `artifacts/challenge-medals/cloud-main-ca1c777-scroll-fix.log`. No production cloud writes or new cloud schema.
+- [x] Original-resolution gameplay matrix passes all 11 cases after correcting the new test's intentionally hidden landscape shortcut and seeding Stunt completion at the timer rather than an intermediate route heat. A baseline worktree created while Vite was live also caused a reload in one phone case; preserve that failure and keep baseline preparation separate from the next run. Final result captures wait for the visible overlay and completed counters; initial premature captures remain archived.
+- [x] Account-switch session-only loss RED → GREEN: the actual controller snapshots an empty old-account collection despite a current-session award; flush the session through the existing atomic local writer before switching. All 42 owner/lifecycle cases and full Node 843 / 0 failures / 3 emulator skips pass. Logs: `switch-session-{red,green,node}.log`. The earlier complete gate was intentionally stopped to include this protection, and must be restarted.
+- [x] Career shortcut regression RED → GREEN: adding reactive personal-medal rows shifted the old Career heading after its synchronous scroll. Reproduce the existing home-medal-chip assertion failure, then await Vue nextTick before History scrolling/focus. All 25 focused browser cases pass (1 desktop touch skip), full Node 843 / 0 failures / 3 emulator skips and strict types pass. The original 84ff28f full gate failed 2 / passed 506 / skipped 2; preserve both failures. Its separate guide page-close did not reproduce in 3 unchanged diagnostic runs. Logs: `history-scroll-{red,green,node,typecheck}.log`, `guide-diagnostic.log`.
+- [x] Final code `6624322` passes complete `make verify` with exit 0: strict TS/Vue/JS, Node 843 / 3 emulator skips, Browser 508 / 2 desktop touch skips, World Tour 303; all failures 0. Current-source local Cloud compatibility is 15 + 3. Eight original-resolution desktop/phone before/after images include results, collection and the repaired Career shortcut, with no page errors. Three alternating Stunt flight rounds at 412×915 / DPR 2 / 6× CPU / 20 s: main median p50/p95 16.7/16.7 ms, feature 16.7/16.8 ms; FPS 59.9/59.5. No FPS gain claimed. Logs: `make-verify-main-ca1c777-scroll-fix.log`, `perf-stunt.{log,json}`, `final-ui-main-ca1c777-scroll-fix/receipt.json` under `artifacts/challenge-medals/`.
+- [x] Published `3d8321b` exact-commit CI passes all 17 required checks including quality-gate: https://github.com/weskao/skyline-rush/actions/runs/40818547979 . All seven published feature commits now pass 119/119 required checks.
+- [ ] Physical Safari/Android, long-drive/all-quality thermal checks and independent review remain open; subsequent documentation-only HEADs still need their own CI before a merge.
 
 ## Main camera-probe integration (2026-10-28)
 
 - [x] Merge requested main `31ac7b124c72a217dbb0706fdce385c56fa5c4fc` into this independent branch without conflicts; feature `src` is unchanged. Preserve every simulation tick and sampled/final WebGL frame in the upstream camera-probe optimization.
+- [x] Merge-specific validation passes all 39 focused size/haptic/camera/release/draw-helper checks. Shared application fixes are covered by all six completed caller full gates; no standalone full-gate receipt is claimed here.
+- [ ] Exact-HEAD CI for this helper/placeholder remains unverified. The pending publication request covers only the six implemented feature branches; no push from this helper/placeholder is authorized.
+
+- [x] Complete resulting-main `make verify` on code `f88d43a` (verified 2026-10-29): strict TS/Vue/JS checks, 808 Node passed / 3 emulator-scoped skips, locked production build, 500 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/cup-recovery/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
+- [x] Preserve 5 original-resolution 0.25.0 real-game images in `artifacts/cup-recovery/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `f88d43a` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
+- [x] Local Auth/Firestore emulator compatibility on code `f88d43a`: 15 browser and 3 Rules tests pass, exit 0. Receipt: `artifacts/cup-recovery/cloud-main-31ac7b1.log`; no production cloud writes.
+
 - [x] Complete resulting-main `make verify` on code `c5b885c` (verified 2026-10-29): strict TS/Vue/JS checks, 812 Node passed / 3 emulator-scoped skips, locked production build, 499 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
 - [x] Preserve 4 original-resolution 0.25.0 real-game images in `artifacts/custom-presentation/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `c5b885c` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
 - [x] Complete resulting-main `make verify` on code `5d080fe` (verified 2026-10-29): strict TS/Vue/JS checks, 816 Node passed / 3 emulator-scoped skips, locked production build, 500 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/item-rules/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
 - [x] Preserve 4 original-resolution 0.25.0 real-game images in `artifacts/item-rules/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `5d080fe` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
+
+- [x] Complete resulting-main `make verify` on code `903846e` (verified 2026-10-29): strict TS/Vue/JS checks, 808 Node passed / 3 emulator-scoped skips, locked production build, 497 browser passed / 2 inapplicable desktop touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main-31ac7b1.log`.
+- [x] Preserve 12 original-resolution real-game images in `artifacts/event-lab/reviewed-main-31ac7b1/`; desktop and phone representatives were visually inspected. Fresh main31 original-resolution flows pass (4 cases). Chrome emulation remains separate from physical Safari/Android acceptance.
+- [x] Local Auth/Firestore compatibility on code `903846e`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/event-lab/cloud-main-31ac7b1.log`; no production cloud writes.
+
+- [x] Complete resulting-main `make verify` on code `6883d0a` (verified 2026-10-29): strict TS/Vue/JS checks, 811 Node passed / 3 emulator-scoped skips, locked production build, 495 browser passed / 2 inapplicable desktop touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main-31ac7b1.log`.
+- [x] Preserve 8 original-resolution real-game images in `artifacts/endless/reviewed-main-31ac7b1/`; desktop and phone representatives were visually inspected. Fresh main31 original-resolution flows pass (2 cases). Chrome emulation remains separate from physical Safari/Android acceptance.
+- [x] Local Auth/Firestore compatibility on code `6883d0a`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/endless/cloud-main-31ac7b1.log`; no production cloud writes.
+
+- [x] Complete resulting-main `make verify` on code `362a380` (verified 2026-10-29): strict TS/Vue/JS checks, 827 Node passed / 3 emulator-scoped skips, locked production build, 501 browser passed / 2 inapplicable desktop touch-case skips, 326 dedicated World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-main-31ac7b1-recheck.log`.
+- [x] Preserve 20 original-resolution real-game images in `artifacts/circuit/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` equals this verified main31 integration; the images retain their original baseline label. Chrome emulation remains separate from physical Safari/Android acceptance.
+- [x] Local Auth/Firestore compatibility on code `362a380`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/circuit/cloud-main-31ac7b1.log`; no production cloud writes.
+- [x] After one high-host-load tilt failure, preserve the original first-run log/error context, observe 3/3 unchanged diagnostic repeats, then complete the entire recheck above with zero failures. No source, assertion or timeout changes. Add genuine unpaused desktop/phone first-seam crossings in `artifacts/circuit/seam-live-main-31ac7b1/`: visible HUD synced before capture, actual W-key input, lap count 0→1, four PNGs and two VP9 recordings (8.44s / 7.88s) validated. Original paused seam captures do not establish unobscured road geometry.
 - [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
+
+- [x] Merge-specific validation passes all 39 focused size/haptic/camera/release/draw-helper checks. At the recorded base `fdeed8a`, expanded medals were unimplemented; the new phase ledger above tracks current implementation. No standalone full-gate receipt is claimed for that earlier placeholder.
 
 ## Main 0.25.0 integration (2026-10-28)
 
 - [x] Merge latest requested main `01526118767b99a85b0a9b7570bdd87a27ac304e` into this independent branch. Preserve all feature source: the `src` tree is identical to the pre-merge parent. Integrate 0.25.0 metadata, per-map camera cases and six CI World Tour shards; retain the validated worktree port override. All 36 focused size/camera/haptic/release checks pass.
+- [ ] Broader implementation/acceptance and exact-HEAD CI are separate from this merge check.
+
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `f88d43a` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
+
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `c5b885c` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `5d080fe` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
+
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `903846e` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
+
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `6883d0a` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
+
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `362a380` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
 - [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
 
 ## Historical main integration through 0197547 (2026-10-28)
 
 - [x] Integrate captured main `0197547d01a7bd4618bee7a969fdbc67e2caf1ac` (including `ebd30e5` / `d71fc65`) into this independent branch, resolve conflicts and preserve both main and feature behavior. Main now separates release data and includes upcoming notes; all 36 focused renderer/camera/haptic/release tests pass. Shared AIRFLOW locale repair `3e7f7d6` is included. This is the fixed baseline for the final verification batch.
-- [x] Complete local `make verify` on code `354ada5` with main `0197547`: strict types, 809 Node passed / 3 emulator skips, locked build, 499 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main-0197547.log`. This is a historical receipt if a newer main is integrated.
+- [ ] Broader feature implementation, full acceptance and exact-HEAD CI remain separate from this main-merge check.
+
+- [x] Complete local `make verify` on code `ef2fa05` with main `0197547`: strict types, 805 Node passed / 3 emulator skips, locked build, 500 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/cup-recovery/make-verify-main-0197547.log`. This is a historical receipt if a newer main is integrated.
 - [ ] Inspect the recorded feature-code SHA GitHub required jobs and `quality-gate`; the final documentation HEAD is checked separately. Real-device and remaining manual gates stay open.
+
+## Staged roadmap continuation (2026-10-27)
+
+The owner authorized TDD implementation of the remaining non-Firebase/non-Gamepad roadmap in independently mergeable feature branches. Unrelated features start from `origin/main`, not the dirty audio/keymap refactor checkout. This is implementation authorization, not merge/PR/release/deploy authorization.
+
+### Stage: Cup session recovery — `feature/cup-session-recovery`
+
+- [x] Observe real Chrome RED for a valid completed-heat checkpoint with no recovery entry; preserve `artifacts/cup-recovery/browser-red.log`.
+- [x] Round-trip versioned Cup checkpoints with the shared standings validation; reject corrupt/oversized/complete/locked saves and tolerate denied storage. Observe functional round-trip/retry RED, then 12/12 focused Cup unit tests GREEN.
+- [x] Add Vue-owned bilingual Resume/Discard controls; preserve standings, restart only the unfinished heat, roll back a retried completed heat, and clear recovery after final completion. Desktop and touch-phone tests finish real simulated heats, retry, advance, quit, resume and verify one final mode record with no Career stars.
+- [x] Independent review found access restoration did not refresh the recovery entry. Observe Classic-unlock RED → GREEN and update the existing event-driven `showTracks` path, without frame-loop polling.
+- [x] Deletion lifecycle RED → GREEN: clearing game progress left the new Cup checkpoint behind. The shared cleanup now removes its exported key, preserves device controls/audio, and reports a failed removal so the deletion guard remains active. Focused Cup/cloud checks: 35 passed; full Node: 798 passed, 0 failed, 3 emulator skips. Extended the existing emulator deletion browser test; fresh emulator verification passes 15 browser + 3 Rules tests (`artifacts/cup-recovery/deletion-cloud.log`).
+- [x] Observe desktop intro overflow RED (164 px), then fit the fixed height by collapsing the promotional logo/slogan only while saved Cup settings are expanded. Recovery buttons retain 44 px targets. A second review found the selector also matched a hidden Cup panel; observe Classic-switch RED before restricting it to the visible panel.
+- [x] Pre-main-integration `make verify` completed: strict TS/Vue/legacy checks, 697 unit passed / 3 emulator-dependent skipped, production build, 456 browser passed and 72 World Tour passed. Receipt: `artifacts/cup-recovery/make-verify-final.log`. The initial interrupted run is superseded by this complete run.
+- [x] Integrate fetched main `7cbdbe5` (2026-10-28), retaining its flight/combo, Coast scenery, FPS pacing and module split. Resolve both TODO/main conflicts; restore Cup mode through `race-select-ui.ts`, checkpoint the result from `settleRace`, and reuse `result-screen.ts`. Move unchanged leave/focus navigation to a typed controller so `main.js` shrinks from 688 to 685 lines. New Cup copy uses a small locale subcatalog; no size ceiling was raised. Fresh strict typecheck and 39 focused unit tests passed; independent review reran 42 focused tests with no remaining Important findings.
+- [x] Complete merged local `make verify` on code HEAD `25771ef`: strict TS/Vue/legacy checks, 798 Node passed / 3 emulator-dependent skipped, locked build, 494 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/cup-recovery/make-verify-main72466c3-post-delete.log`. The initial setup lock and superseded interrupted runs are not green receipts. Original-resolution recovery/heat flows also pass.
+- [x] Verify exact code commit `02acf84`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40633492551 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
+- [ ] Physical-device Cup recovery/standings/touch acceptance; Chrome touch emulation is separate evidence. No original track physics, shaders or per-frame audio were changed. Existing confirmation SFX is reused.
+
+Other independently tracked branches: `feature/custom-race-presentation` (Custom ruleset Ghost and cosmetic presets/setup summary) and `feature/practice-item-rules` (explicit item rules, real activation/cooldown and related new pads/items). Remaining genuine circuit laps, richer themed hazards, challenge medals, Endless Highway and Event Lab remain open. Existing Photo Studio, held Shield/Magnet/Ghost/Freeze and recent Custom setup storage are reused rather than reimplemented. Tutorial entry-flow decisions are being discussed separately.
+
+- [x] Merged-main broad regression observed (2026-10-28): full browser run reached 487 passed / 2 skipped; the only three failures were inherited Phase 4 polyline-count assumptions. Integrate `6809503`, whose focused main-path/minimap suite passes 7/7. The complete resulting `make verify` and exact-HEAD CI remain pending, not implied by this receipt.
+
+## Shared continuation regression gates (2026-10-28)
+
+- [x] Measure the shared locale-HUD repair on code `50e34ca` against main `31ac7b1`: house `make perf BASE=31ac7b1 RATE=6 ROUNDS=3 RACE_SECONDS=20 TG=0`, alternating three 20s Chrome runs at 412×915 / DPR2 / 6× CPU, after task browser suites were idle; exit 0. Both median p50/p95 are 16.7/16.8ms; current 59.2fps vs baseline 58.6fps. Vsync-limited: no FPS improvement claimed. Log/JSON: `artifacts/regression-gates/hud-locale-perf-main-31ac7b1.*`. This covers the shared Classic HUD, not every feature mode, 5–8km quality tiers or physical thermals.
+
+- [x] Complete local `make verify` on code `354ada5` with main `0197547`: strict types, 809 Node passed / 3 emulator skips, locked build, 499 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/custom-presentation/make-verify-main-0197547.log`. This is a historical receipt if a newer main is integrated.
 
 ## Custom race Ghost and cosmetic presentation continuation (2026-10-28)
 
@@ -137,7 +271,72 @@ Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation a
 - [x] RED → GREEN for missing gate materials and HUD warnings. Reuse five existing warmed material variants and seven-mesh pool; cache HUD nodes, announce gate identity/distance and pickup once, show EMP silhouette/cooldown, and retain separate music/SFX settings. Relevant Node checks: 31 passed; browser item and bonus flows: 7 passed on desktop/touch, with English/zh-TW switching and real Q/tap activation. Screenshots inspected in `artifacts/item-rules/`.
 - [ ] Physical iOS/Android/audio/perception acceptance and broader ITEM-12 visual effects. Code CI and the complete merged local gate are recorded above.
 
-## Shared continuation regression gates (2026-10-28)
+
+- [x] Complete fresh local `make verify` on code `bf7ed70` after captured main `0197547` and shared locale repair: strict TS/Vue/JS checks, 805 Node passed / 3 emulator skips, locked build, 497 browser passed / 2 conditional skips, 94 World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main-0197547.log`. Fresh original-resolution real-game flows also pass; reviewed captures: `artifacts/event-lab/reviewed-main-0197547/`. Earlier SHA receipts below remain historical.
+
+## Event Lab v1 continuation (2026-10-28, feature/event-lab-lite)
+
+- [x] Observe schema/import/history/runtime RED; implement immutable version-1 local course documents, lane/distance editing, two templates, bounded Undo/Redo/Reset and text import/export. Unknown fields, inaccessible tracks, unsafe road sections, overlaps, malformed/oversized input and blocked storage are handled at the shared validation boundary.
+- [x] Compile authored barriers, NITRO rings and supplies into actual simulation/render arrays; real collision/refill checks pass. Retry preserves the canonical course and seed while resetting mutable flags. Course records remain isolated from Custom/Career.
+- [x] Follow-up RED → GREEN for a too-dense imported ring layout: require 150 m ring spacing so all visible authored gates fit the existing seven-ring pool. Preserve 44px mobile controls and a scrolling dialog.
+- [x] Five core tests and four real Chrome desktop/touch × English/zh-TW editor-to-race/retry flows pass; strict Vue/TS check passes. Actual editor, barrier and result captures reviewed in `artifacts/event-lab/`.
+- [x] Complete merged local `make verify` on code HEAD `068027c`: strict TS/Vue/legacy checks, 798 Node passed / 3 emulator-dependent skipped, locked build, 491 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main72466c3-final.log`. Local cloud emulator: 15 browser + 3 Rules passed. Original-resolution flows pass; result capture waits for the final stored best and visible panel.
+- [x] Verify exact code commit `68701b7`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40634074855 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
+- [ ] Physical-device acceptance. Original MODE-10 remains open for ramp/cone/checkpoint editing; no community/backend functionality is claimed.
+
+## Event Lab designer (2026-10-29, feature/event-lab-designer)
+
+Base: `feature/event-lab-lite` a6c9f14 + origin/main 0a08d02 + `feature/env-hazard-schema` 6289b46 (ENV-01/02 catalog).
+
+- [x] RED → GREEN: timed checkpoints (Checkpoint Rush runtime, max 16), two-adjacent-lane reachability for solid objects (`reachable`), checkpoint and jumps templates.
+- [x] RED → GREEN: designer collision preview (`previewPlacement`) and map tap snap-to-lane/10 m (`snapPlacement`); ghost outline + live reason in the panel.
+- [x] RED → GREEN: cones with catalog-sized contact for player, rivals and traffic and catalog-sized barrier-pool rendering; footprints read from `OBJECT_CATALOG`.
+- [x] RED → GREEN: ramps (max 8) through one shared launch rule `src/launch-ramps.ts` (Sky Spiral sections + authored ramps) and pooled wedge `src/ramp-view.ts`. `world.js` folded its duplicated road-position closure: 1345 → 1342, ceiling lowered.
+- [x] Launch-seam regression: all 10 tracks × 30/60/120 FPS launch, land, finite state, airtime spread < 0.25 s, rivals drive over ramps; ramp case RED on pre-ramp `game.js`, Spiral case unchanged (preserved behaviour).
+- [x] Acceptance unit tests: identical compiled stage from the same document/seed independent of device; 2000 mutated/truncated imports fail only with `CourseError`.
+- [x] Audio: Event Lab checkpoints now play the shared gate pass/miss/low-time cues (RED → GREEN in `tests/mode-audio.test.js`). Ramp take-off intentionally adds no cue (Spiral launches have none; flight is visible).
+- [ ] Browser: `tests/event-lab-browser.spec.js` (designer tap/preview/checkpoints/ramp render) and `tests/launch-ramps-browser.spec.js` (Spiral helix/joins/launch captures; first-grounded-frame wheel clearance ≤ 0.12 m on Spiral helix and flattest/steepest World Tour ramp spots), desktop + phone. World Tour roads have no lateral bank (`trackFrame` right.y = 0); banked coverage is Sky Spiral.
+- [ ] Full local `make verify` on the branch HEAD; exact-HEAD CI pending.
+- [ ] Pending, not claimed: ghost replay over ramps, physical devices.
+
+
+- [x] Complete fresh local `make verify` on code `1515586` after captured main `0197547` and shared locale repair: strict TS/Vue/JS checks, 808 Node passed / 3 emulator skips, locked build, 495 browser passed / 2 conditional skips, 94 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main-0197547.log`. Fresh original-resolution real-game flows also pass; reviewed captures: `artifacts/endless/reviewed-main-0197547/`. Earlier SHA receipts below remain historical.
+
+## Endless Highway continuation (2026-10-28, feature/endless-highway)
+
+- [x] Real screenshot review exposed horizontal overflow in billion-metre phone results. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
+- [x] Repeat complete local `make verify` after the CSS fix on `c0cd624`: strict TS/Vue/JS checks, 801 Node passed / 3 emulator skips, locked build, 489 browser passed / 2 skips and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-result-wrap.log`. Pre-fix full-gate receipts below remain historical.
+- [ ] Verify exact post-wrap feature-HEAD GitHub quality-gate; no earlier HEAD CI is substituted.
+
+
+- [x] Observe mode/streaming/settlement RED; implement Coast-only absolute-distance survival beyond authored finishes, five-contact settlement, capped difficulty and deterministic five-chunk traffic/pickup/ring pools. Classic/Daily/Cup routes and ordered catalogs remain unchanged.
+- [x] Rebase Coast scenery and skyline GPU transforms near the camera, preserve existing materials/pools, hide finite minimap/progress/finish arch and avoid Ghost trace accumulation. Tests cover 8 km, 2 million metres and billion-metre progress with fixed object/resource counts.
+- [x] Persist longest distance independently from Career, including a fifth real collision and rolling-history/cloud normalization/max-distance merges; reuse cruise music and one-shot milestones.
+- [x] Follow-up GREEN: 126 focused core/type/Classic-route checks and two real desktop/touch bilingual browser flows pass, including pause, actual WebGL loss/restore, flight input, result persistence, locale switch and restart. Actual full-resolution distant-road/result captures inspected in `artifacts/endless/`.
+- [x] Moving-traffic continuity RED → GREEN: a 20-minute deterministic driving regression reproduced nearby traffic disappearing when its birth chunk expired. Recycle by current distance and preserve the 40-car cap; all six Endless checks and the full Node suite pass (799 passed, 0 failed, 3 skipped). Logs: `artifacts/endless/traffic-continuity-{red,green,unit}.log`.
+- [x] Complete merged local `make verify` on code HEAD `12150b7`: strict TS/Vue/legacy checks, 801 Node passed / 3 emulator-dependent skipped, locked production build, 489 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main72466c3-final.log`. Cloud emulator checks also pass: 15 browser + 3 Rules tests (`cloud-main72466c3.log`).
+- [ ] Latest-feature-HEAD GitHub quality-gate, actual background-tab acceptance and physical iOS/Android GPU/thermal endurance. Same-name feature pushes passed the renewed automatic review; latest-HEAD CI remains pending.
+
+- [x] Complete local `make verify` on code `ca40ff0` with main `0197547`: strict types, 824 Node passed / 3 emulator skips, locked build, 501 browser passed / 2 conditional skips and 94 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-main-0197547-post-landmark.log`. This is a historical receipt if a newer main is integrated.
+
+## Genuine circuit continuation (2026-10-28, feature/genuine-circuit-laps)
+
+- [x] Main camera integration exposed Harbor beacon clipping in both portrait locales (projected x 1.1326, limit 0.95). Preserve the unchanged browser RED and ready captures; move only the visual beacon from 240m to 150m along the route, retaining lateral clearance, scale, camera and track geometry. All 8 existing Circuit device/lap/Ghost flows pass; full resulting gate remains separate. Logs: `make-verify-main-0197547.log` (RED), `landmark-green.log` (focused GREEN).
+
+- [x] Real screenshot review exposed horizontal overflow in Circuit 5-lap phone metrics. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
+- [x] Repeat complete local `make verify` after the CSS fix on `9cee557`: strict TS/Vue/JS checks, 817 Node passed / 3 emulator skips, locked build, 495 browser passed / 2 skips and 72 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-result-wrap.log`. Pre-fix full-gate receipts below remain historical.
+
+
+- [x] Source/rules and topology-v1/history strategy in `docs/circuit-laps.md`; functional unknown-route RED is retained against baseline main for the separate `harbor-circuit` capability. The initial pre-implementation log was not preserved; follow-up RED/GREEN logs are retained. Preserve the ordered ten-route Classic/Daily/Cup catalog.
+- [x] Genuine 2 km closed geometry with one periodic road/vehicle/camera/item/Ghost/map frame; unwrapped progress and seam-aware physical gaps, ordered 1/3/5-lap sectors, interpolated splits and per-lap collectible identities.
+- [x] Follow-up RED/GREEN for Circuit records/Ghost bounds, default History selection, nonfinite progress, lap audio, ring orientation and shared geometry disposal. Permanent personal lap bests use the existing numeric bests map and survive rolling-history eviction/cloud merges.
+- [x] Strict TS/Vue checks and targeted history/Ghost/cloud checks pass (73 focused checks before the final matrix). 1/3/5-lap tests pass at 30/60/120 Hz; all six desktop/phone portrait/landscape × English/zh-TW real-game flows pass, including visible landmark/minimap, stored lap best, seam capture, result, retry, quit and Classic restart. Captures and logs: `artifacts/circuit/`.
+- [x] History discoverability RED → GREEN: Circuit Ghosts loaded but only Time Trial rows showed the Ghost badge. The shared view now includes valid Circuit Ghosts; 53 relevant Node checks, all 815 Node checks (3 emulator skips), and English desktop / zh-TW touch History menu flows pass. Cloud emulator checks pass: 15 browser + 3 Rules tests.
+- [x] Integrate fetched main `72466c3`; preserve both feature and main behavior. Original LAP-02/03/04 implementation boxes below are checked against the focused geometry, timing, sector and browser evidence. The broad seam/device acceptance remains open.
+- [x] Complete merged local `make verify` on code HEAD `c98a326`: strict TS/Vue/legacy checks, 817 Node passed / 3 emulator-dependent skipped, locked production build, 495 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/circuit/make-verify-main72466c3-final.log`. The earlier interrupted run is superseded. Cloud emulator proof is recorded above.
+- [ ] Latest-feature-HEAD GitHub quality-gate and remaining manual acceptance: all showroom angles/AIRFLOW, rendered Ghost seam inspection, physical Safari/Android GPU, audio/perception and long-run checks. Same-name feature pushes passed the renewed automatic review; latest-HEAD CI remains pending.
+
+
 
 - [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.
 - [x] Complete all six caller full local gates after the shared repair and main `31ac7b1`: Cup, Custom, Items, Event Lab, Endless and Circuit exit 0 (verified 2026-10-29). Each owning branch records its code SHA, full log and reviewed images above; Circuit uses the separate recheck log. Superseded/interrupted runs remain historical receipts.
@@ -1114,6 +1313,17 @@ cue is warranted for these pure simulation contracts.
 - [x] Save best score, combo, air time and medal thresholds by exact track/ruleset.
 - [ ] **Acceptance:** deterministic scoring independent of FPS and input device;
   end-of-timer results work without reaching the sprint finish.
+  - Evidence (feature/stunt-acceptance, 2026-10-29): `tests/stunt-acceptance.test.js` plays whole 120 s
+    Coast sessions (≥2 heats: route end → next heat with the remaining time → timer end) through the real
+    frame-to-step seam `drainSteps` (`src/frame-pacing.ts`, now used by the `main.js` frame loop). Totals
+    (score, heats, max combo, air time, elapsed) are identical at 30/60/120/144 Hz and a jittery display,
+    and identical for the same maneuvers made with keyboard keys or touch buttons via `createControls`.
+    The last heat ends on `timer` short of the route end, elapsed equals the duration, and the session
+    best saves. RED: missing `drainSteps`/`createStuntRun` seams; GREEN without scoring changes (no
+    product bug found). Session rules `createStuntRun`/`addStuntHeat`/`stuntHeatContinues`/
+    `stuntHeatLimit` now live once in `src/stunt-attack.ts` (were copied in `main.js`, `race-results.ts`,
+    `result-screen.ts`). Per-frame input sampling still shifts a held key by up to one display frame at
+    different rates; equal per-step input gives equal scores. Pending: full `make verify` and exact-HEAD CI.
 
 **Stunt best persistence (2026-10-23):** RED [`b4c4262`](https://github.com/weskao/skyline-rush/commit/b4c4262cc4557d58cf58243f99f078dfcc54f863),
 [Actions #39940564407](https://github.com/weskao/skyline-rush/actions/runs/39940564407);
@@ -1300,6 +1510,14 @@ smoke all GREEN. Device-specific QA belongs to shared manual acceptance.
 - [ ] **Acceptance:** completion requires the configured number of valid
   laps; player/AI cameras, positions, world props, mini-route map, Ghost,
   checkpoints and collision physics remain continuous across every seam.
+  - Evidence (2026-10-29, `tests/circuit-seam-acceptance.test.js` with existing `tests/circuit.test.js`):
+    across all three seams of a 3-lap race (2000/4000/6000 m, 0.05 m steps) the Harbor beacon (scene
+    origin), rivals ahead/behind, chase camera position and heading, Ghost (unwrapped samples, drawn 4 m
+    ahead) and mini-route marker move by < 0.2 m per step, and the marker never freezes. Every rival
+    finishes only after exactly 1/3/5 valid laps. Already covered: player completes exactly 1/3/5 laps at
+    30/60/120 Hz, teleport/backwards/recovery/hover cannot grant laps, per-lap item identities, and
+    collisions across the seam. Tests passed on existing code; mutation RED: unwrapped route marker,
+    non-periodic scene origin, and rivals finishing a lap early each fail. Pending: full gate + exact-HEAD CI.
 
 ### 10C. Result/history isolation and safeguards (P0)
 
@@ -1385,14 +1603,26 @@ or unlocks. Focused/unit/build/real browser mode smoke all pass.
 
 - [ ] **Coast:** scattered cargo, gust warnings and temporary shoulder
   closures; combine clean high-speed overtakes with coastal visibility.
+  - Progress (feature/track-themes, 2026-10-29): opt-in `themes: true` (Custom, Free Drive, Gauntlet only;
+    absent by default so Classic/Daily/Time/other records and rules signatures are unchanged — user decision).
+    Shared runtime `src/track-themes.ts` (validated ENV-02 placements → `race.hazards` entries carrying
+    `placement`), data in `src/track-themes-classic.ts`. Coast: four cargo spills and two six-cone shoulder
+    closures; per-hazard hit reach/height for player, AI avoidance and AI impacts (Gauntlet defaults unchanged).
+    `tests/track-themes.test.js`: opt-in boundary, ≤2 of 4 lanes blocked anywhere, off special sections,
+    hit knocks / clean pass pays, rivals change lane first. RED: module missing; mutation RED: fixed 1.8 m reach
+    and no AI reach both fail. Gust zones (2) now shove every car 1.5 m via 6a's ENV-05 push effect (2026-10-29). Pending: on-screen gust warning cue, desktop + mobile visual check, full gate. Audio: reuses the existing barrier impact/near-miss cues; no new sound needed.
 - [ ] **Neon Downtown:** animated construction barriers, temporary lane
   closures, traffic diversions and readable neon gate timing.
+  - Progress (feature/track-themes): roadwork barriers, a coned-off lane, a diversion and two neon gates between the tunnels (`src/track-themes-classic.ts`), covered by `tests/track-themes.test.js`. Gates now swing between two lanes on a 4 s cycle (ENV-05 sweep), opening one while closing the other; the test proves each blocks at some moment and opens at another. Pending: visual check, full gate.
 - [ ] **Canyon Skyway:** warned falling rocks, cliff-side debris,
   precision launch ramps and risk/reward routes over broken bridges.
+  - Progress (feature/track-themes): six rockfall/cliff-debris spills, some inside the crosswind stretches, all clear of the bridge gaps. Two rocks now drop from 10 m onto the road on an 8 s cycle (ENV-05 fall). Pending: on-screen rockfall warning, launch ramps (needs a launch effect in the race), visual check, full gate.
 - [ ] **Aurora Pass:** snowbanks, localized low-grip ice bends,
   timed blizzard visibility and safer alternative lines.
+  - Progress (feature/track-themes): six snowbanks on alternating lanes so a safer line always stays open. Three low-grip ice patches now bleed 15% speed (ENV-05 slow), and AI steers around them. Pending: blizzard visibility, visual check, full gate.
 - [ ] **Sky Spiral:** rotating light hoops, synchronized aerial gates,
   changing platform barriers and airborne precision scoring.
+  - Progress (feature/track-themes): three energy platform barriers and three gates, including two on the helix, away from launch gaps. Two barriers now switch on and off on a 3 s cycle in opposite phase, and two gates swing in opposite phase (ENV-05 pulse/sweep). Pending: rotating light hoops and airborne precision scoring (rings are collect, not hazards), visual check, full gate.
 - [ ] **Taipei Heritage:** festival street furniture, temporary
   boulevard closures and scenic props, while preserving landmark
   visibility and the existing curated ready-screen showcase.

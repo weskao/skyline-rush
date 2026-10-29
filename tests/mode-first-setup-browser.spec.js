@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 // 10A UX-01: Choose Mode → Choose Track → Rules → Start on one screen, with real pointer/keyboard input.
 async function closeMusicPrompt(page) {
@@ -83,5 +84,5 @@ test('keyboard alone can pick a mode, a track, restore rules and start', async (
   await expect(page.locator('#mode-rules-summary')).toContainText('3 AI');
   await page.locator('#start-button').focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#intro')).toBeHidden({ timeout: 8000 });
+  await expect(page.locator('#intro')).toBeHidden({ timeout: ciTimeout(8000) });
 });

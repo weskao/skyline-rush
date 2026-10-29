@@ -1,10 +1,12 @@
+import { updateCircuitHud } from './circuit-hud.ts';
 import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden } from './hud-dom.ts';
 import { t } from './i18n.ts';
 import type { ItemRace } from './item-ui.ts';
 import { checkpointDirection } from './checkpoint-rush.ts';
+import { hazardWarningDistance } from './hazard-safety.ts';
 import type { SprintSeries } from './sprint-series.ts';
 import type { CupState } from './championship-cup.ts';
-import type { StuntRun } from './race-results.ts';
+import type { StuntRun } from './stunt-attack.ts';
 
 // Mode-specific HUD panels: objectives (clean trial, hazards, elimination, checkpoints) and run progress
 // (sprint/cup heat, active item, stunt clock, practice telemetry). Same write-only-on-change rules as race-hud.ts.
@@ -17,7 +19,7 @@ export interface ModePanelOptions {
   getStunt(): StuntRun | null;
   isTutorialActive(): boolean;
 }
-const NODE_IDS = ['clean-trial-hud', 'hazard-warning', 'elimination-hud', 'checkpoint-hud', 'sprint-stage', 'stunt-hud', 'practice-hud'];
+const NODE_IDS = ['clean-trial-hud', 'hazard-warning', 'elimination-hud', 'checkpoint-hud', 'sprint-stage', 'stunt-hud', 'practice-hud', 'circuit-hud'];
 
 export function createModePanels(options: ModePanelOptions) {
   const hudNodes = Object.fromEntries(NODE_IDS.map(id => [id, document.getElementById(id)!])) as Record<string, HTMLElement>;
@@ -31,7 +33,7 @@ export function createModePanels(options: ModePanelOptions) {
     const hazardWarning = hudNodes['hazard-warning']!;
     const hazardAhead = race.hazards.length ? race.hazards.find((h: HudRace) => !h.passed && !h.hit && h.distance > race.player.distance) : null;
     const hazardDistance = hazardAhead ? Math.ceil(hazardAhead.distance - race.player.distance) : Infinity;
-    setHudHidden(hazardWarning, !hazardAhead || hazardDistance > 170 || race.phase !== 'racing');
+    setHudHidden(hazardWarning, !hazardAhead || hazardDistance > hazardWarningDistance(hazardAhead) || race.phase !== 'racing');
     if (!hazardWarning.hidden) setHudText(hazardWarning, t('mode.hazardWarning', { n: hazardDistance }));
     const eliminationHud = hudNodes['elimination-hud']!;
     setHudHidden(eliminationHud, !race.elimination || race.phase === 'ready');
@@ -89,6 +91,7 @@ export function createModePanels(options: ModePanelOptions) {
   }
   return {
     update(race: HudRace): void {
+      updateCircuitHud(hudNodes['circuit-hud']!, race.circuit, race.phase);
       updateObjectivePanels(race);
       updateSeriesPanels(race);
     },

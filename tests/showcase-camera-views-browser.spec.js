@@ -5,7 +5,7 @@ import { RACE_TRACKS } from '../src/game.js';
 // Real WebGL camera placement for the six ready-screen views: the dock label alone
 // (showcase-camera-browser.spec.js) cannot catch a camera that ends up somewhere else.
 // Every map, current and future: a new track joins these checks by being added to RACE_TRACKS.
-const TRACKS = Object.keys(RACE_TRACKS);
+const TRACKS = [...Object.keys(RACE_TRACKS), 'harbor-circuit'];
 const FIXED = { rear: 0, right: 90, front: 180, left: -90 };
 const VIEWPORTS = [{ width: 1440, height: 900 }, { width: 1777, height: 863 }, { width: 390, height: 844 }];
 // A full orbit renders ~1,250 frames; CPU-only WebGL on CI needs several minutes for it, so those tests outrun the 180 s default.

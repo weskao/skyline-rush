@@ -4,7 +4,7 @@
 type Translate = (key: string, params?: Record<string, string | number>) => string;
 /** The rule values a fresh Custom/Free race starts with; Restore defaults returns to exactly these. */
 export const DEFAULT_RULES = Object.freeze({ rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false,
-  itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false });
+  itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false, riskLines: 'on', themes: false });
 
 export type Eligibility = 'records' | 'daily' | 'modeBests' | 'practice';
 /** What a finished run of this mode saves; Free Drive never writes a result. */
@@ -27,7 +27,7 @@ export function ruleConflicts(mode: string, rules: { rivals?: unknown }, { unloc
 interface SummaryConfig {
   mode: string; rivals: number; traffic: string; difficulty: string; items: boolean; activeItems?: boolean;
   collision?: string; hazards?: string; stages?: number; hazardTier?: string; clean?: boolean; duration?: number;
-  cupTracks?: readonly string[];
+  cupTracks?: readonly string[]; themes?: boolean; laps?: number;
 }
 /** One readable line of the rules a race will use, for every mode. */
 export function modeRulesSummary(config: SummaryConfig, t: Translate): string {
@@ -46,6 +46,9 @@ export function modeRulesSummary(config: SummaryConfig, t: Translate): string {
     checkpoint: () => [t('mode.setupSolo')],
     cup: () => [t('mode.setupAI', { n: config.rivals }), t('mode.setupCupTracks', { n: config.cupTracks?.length ?? 3 })],
     stunt: () => [t('mode.setupSolo'), t(`mode.stuntMinutes.${config.duration ?? 120}`)],
+    endless: () => [t('mode.setupSolo'), field('mode.setupTraffic', config.traffic)],
+    circuit: () => [t('mode.setupAI', { n: config.rivals }), `${t('circuit.laps')} ${config.laps ?? 3}`],
   };
-  return (parts[config.mode] ?? parts.classic)().join(' · ');
+  const themed = config.themes ? [t('mode.themes')] : []; // 11B opt-in themed hazards (Custom, Free Drive, Gauntlet)
+  return [...(parts[config.mode] ?? parts.classic)(), ...themed].join(' · ');
 }

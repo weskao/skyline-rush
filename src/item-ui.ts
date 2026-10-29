@@ -44,7 +44,7 @@ export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (n
     }
     lastBonus = car.lastBonus; warned = near ?? undefined;
   }
-  function activate() { if (useHeldItem(getRace())) cue('pickup'); }
+  function activate() { if (useHeldItem(getRace())) cue('item-use'); }
   button.addEventListener('click', activate);
   return { activate, update(race: ItemRace) {
     const car = race.player;
@@ -62,7 +62,7 @@ export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (n
     if (button.disabled !== disabled) button.disabled = disabled;
     if (race.phase === 'racing') {
       if (car.heldItem && car.heldItem !== previousHeld) cue('pickup');
-      else if (car.heldItem && wasCooling && !cooling) cue('ui');
+      else if (car.heldItem && wasCooling && !cooling) cue('item-ready');
     }
     previousHeld = car.heldItem; wasCooling = cooling;
   } };

@@ -69,6 +69,10 @@ Select a **track you have unlocked**, choose **GAME MODE** below the track cards
 | **Checkpoint Rush** | Race through glowing 3D gate arches. Start with **28 seconds**; each clean gate grants **+10 seconds** (capped at 60) and **250 style points**. | Reach every gate and the finish before the clock expires. Missed gates and timeouts do **not** save a valid best. The HUD shows gates cleared, time remaining and distance to the next target. |
 | **Championship Cup** | Pick a **3- or 5-track** Cup made only of already unlocked routes; race NOVA, ORBIT and APEX on each stage. | Placements award **10 / 7 / 5 / 3 points**; cumulative standings and total time decide the champion, with ties broken by time. Cup results are separate from Career unlocks. |
 
+### Cup recovery
+
+An unfinished Championship Cup offers **Resume** or **Discard** on the home screen. Resume keeps settled stage points and restarts only the unfinished stage; retry rolls back only the stage being replayed. Completing or discarding the Cup clears its recovery entry. Deleting game progress also removes the checkpoint while preserving device preferences. Recovery uses this browser’s storage and cannot restore data the browser refused to save.
+
 ### Custom presentation and Ghosts
 
 Custom Race can replay the fastest compatible Ghost for each sprint heat. Custom and Free Drive offer Track / Day / Dusk / Night / Rain / Fog presentation presets and a live rule summary. These cosmetic choices do not change record eligibility or ruleset identity. Retry retains the selected appearance; changing track or returning to Classic restores the track appearance. Photo Studio restores the active race appearance when closed.
@@ -76,6 +80,18 @@ Custom Race can replay the fastest compatible Ghost for each sprint heat. Custom
 ### Optional items and bonus gates
 
 Custom and Free Drive offer **Off / Classic Mystery Rings / Active Items / All Items**. Held items use one slot: press **Q** or tap **USE** to activate, then wait for cooldown. NITRO and FLY/BOOST keep their own controls. All Items adds bounded speed, air-charge and one-hit recovery gates; EMP briefly slows nearby rivals and converts to Magnet in solo play. Recovery preserves official collision counts. Stunt Attack and Checkpoint Rush can separately opt into temporary, nonstacking ×2 score gates. Classic defaults stay unchanged.
+
+### Event Lab Lite v1
+
+**Event Lab Lite** edits local course templates with barriers, NITRO rings and supplies on unlocked routes. Change their lane and distance, Undo/Redo/Reset edits, and import or export a validated course as text. Starting compiles the course into real race encounters; retry preserves the course and seed. Course results stay separate from Career and Custom records. Cones, authored ramps, checkpoint editing and community sharing remain outside this first version.
+
+### Endless Highway
+
+**Endless Highway** extends Coast beyond the authored finish as a distance-survival event. Traffic difficulty rises to a fixed cap; five collisions end a completed attempt. The personal record tracks longest absolute distance, separately from Career and Ghosts. Pause and WebGL recovery preserve the run. This first version supports Coast only; its nearby scenery and encounters use bounded pools.
+
+### Circuit Race
+
+**Circuit Race** adds Harbor Circuit, a separate, always-accessible 2 km closed loop with **1 / 3 / 5 laps**. Cross every sector in order to earn a lap; backward crossings, teleports and recovery cannot grant laps. HUD and results show splits, last lap, personal best lap and total time. Lap bests survive rolling History eviction; total times and Ghosts stay specific to the lap configuration. The ten original point-to-point courses keep their geography and Career progression.
 
 ### Race setup, results and accessibility
 

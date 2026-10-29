@@ -38,3 +38,17 @@ test('Invalid obstacle tiers do not add hidden obstacles', () => {
     assert.equal(game.config.hazards,undefined);
   }
 });
+
+test('ENV-07 hazard intensity is offered only by modes that support it', async () => {
+  const { MODES } = await import('../src/race-config.ts');
+  const { CIRCUIT_ID } = await import('../src/circuit-track.ts');
+  for (const mode of MODES) {
+    const route = mode === 'circuit' ? CIRCUIT_ID : 'coast'; // Circuit races only on its own route
+    const practice = mode === 'custom' || mode === 'free';
+    for (const hazards of ['standard', 'extreme']) {
+      assert.equal(normalizeRaceConfig({ mode, hazards }).hazards, practice ? hazards : undefined, `${mode} ${hazards}`);
+      assert.equal(createRace(route, { mode, hazards }).hazards.length > 0, practice || mode === 'gauntlet', `${mode} ${hazards}`);
+    }
+    assert.equal(normalizeRaceConfig({ mode, hazardTier: 'extreme' }).hazardTier, mode === 'gauntlet' ? 'extreme' : undefined, mode);
+  }
+});

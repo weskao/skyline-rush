@@ -1,16 +1,19 @@
+import { loadCircuitLapBest } from './circuit-records.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { icon } from './icons.ts';
 import { timeString } from './time-format.ts';
-import { stuntMedal } from './stunt-attack.ts';
+import { stuntMedal, stuntHeatContinues } from './stunt-attack.ts';
 import { sprintTotal, type SprintSeries } from './sprint-series.ts';
 import { cupStandings, cupComplete, cupTotalTime, type CupState } from './championship-cup.ts';
-import type { StuntRun } from './race-results.ts';
+import type { ChallengeMedalId } from './history-challenge-medals.ts';
+import type { StuntRun } from './stunt-attack.ts';
 
 // The simulation race comes from plain-JS game.js; only its finished result fields are read here.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FinishedRace = any;
 export interface FinishedResult {
   best: number; record: boolean; medals: string[];
+  challengeMedals?: readonly ChallengeMedalId[];
   series: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null;
   /** Track the NEXT button offers, if any. */
   next: string | null;
@@ -41,7 +44,7 @@ function eliminationView(race: FinishedRace): ResultView {
 }
 function stuntView(race: FinishedRace, { best, stunt }: FinishedResult): ResultView {
   const run = stunt!;
-  const continuing = run.elapsed < run.duration && race.result.endReason === 'route';
+  const continuing = stuntHeatContinues(run, race.result.endReason);
   const left = Math.max(0, run.duration - run.elapsed);
   const medal = continuing ? null : stuntMedal(run.score, run.duration);
   return {
@@ -115,8 +118,24 @@ function standardView(race: FinishedRace, { best, record, medals, series, next }
   };
 }
 
+function endlessView(race: FinishedRace, { best, record }: FinishedResult): ResultView {
+  return { title: t('mode.endlessFinished'), copy: t(record ? 'mode.endlessRecord' : 'mode.endlessSummary'),
+    stats: row(t('mode.endlessDistance'), (race.result.distance / 1000).toFixed(2) + ' km') +
+      row(t('mode.endlessBest'), (best / 1000).toFixed(2) + ' km') + row(t('mode.totalTime'), timeString(race.elapsed)), counts: [] };
+}
+
+function circuitView(race: FinishedRace, { best }: FinishedResult): ResultView {
+  const times = race.circuit.player.lapTimes;
+  return { title: t('circuit.complete'), copy: t('circuit.summary', { laps: race.config.laps }),
+    stats: row(t('result.yourTime'), timeString(race.result.time)) + row(t('result.best'), timeString(best)) +
+      row(t('circuit.best'), timeString(Math.min(loadCircuitLapBest(race.config) ?? Infinity, ...times.map((lap: { time: number }) => lap.time)))) +
+      times.map((lap: { time: number }, i: number) => row(t('circuit.lapRow', { lap: i + 1 }), timeString(lap.time))).join(''), counts: [] };
+}
+
 // First match wins: mode-specific outcomes before the generic podium screen.
 const VIEWS: [(race: FinishedRace, finished: FinishedResult) => unknown, (race: FinishedRace, finished: FinishedResult) => ResultView][] = [
+  [race => race.mode === 'endless', endlessView],
+  [race => race.mode === 'circuit', circuitView],
   [race => race.mode === 'elimination', eliminationView],
   [(_race, { stunt }) => stunt, stuntView],
   [(_race, { cup }) => cup, cupView],
@@ -125,7 +144,11 @@ const VIEWS: [(race: FinishedRace, finished: FinishedResult) => unknown, (race: 
   [race => race.mode === 'checkpoint' && !race.result.success, checkpointFailedView],
 ];
 export function resultView(race: FinishedRace, finished: FinishedResult): ResultView {
-  return (VIEWS.find(([applies]) => applies(race, finished))?.[1] ?? standardView)(race, finished);
+  const view = (VIEWS.find(([applies]) => applies(race, finished))?.[1] ?? standardView)(race, finished);
+  if (finished.challengeMedals?.length) view.copy += t('challengeMedal.new', {
+    list: finished.challengeMedals.map(id => t(`challengeMedal.${id}`)).join(t('list.separator')),
+  });
+  return view;
 }
 
 export interface ResultCount { element: HTMLElement; value: number; format(value: number): string }

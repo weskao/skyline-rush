@@ -13,8 +13,12 @@ import { releaseView } from './release-view-state.ts';
 import TutorialCoach from './TutorialCoach.vue';
 import SettingsPanel from './SettingsPanel.vue';
 import ControlsPanel from './ControlsPanel.vue';
+import CircuitSettings from './CircuitSettings.vue';
 import HistoryPanel from './HistoryPanel.vue';
+import EventLabPanel from './EventLabPanel.vue';
 import { homeStatusView } from './home-status-view-state.ts';
+import CupRecovery from './CupRecovery.vue';
+
 import RacePresentation from './RacePresentation.vue';
 import ItemRules from './ItemRules.vue';
 import ItemSlot from './ItemSlot.vue';
@@ -28,6 +32,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 <template>
   <ReleaseNotesPanel />
   <GuidePanel />
+  <EventLabPanel />
   <TutorialCoach />
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
   <div class="scene-shade"></div>
@@ -103,7 +108,10 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
           <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
           <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
+          <button type="button" data-race-mode="endless" aria-pressed="false" data-i18n="mode.endless">Endless Highway</button>
+          <button type="button" data-race-mode="circuit" aria-pressed="false" data-i18n="mode.circuit">Circuit Race</button>
           <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
+          <button type="button" data-race-mode="eventlab" aria-pressed="false" data-i18n="mode.eventlab">Event Lab</button>
         </div>
       </div>
       <p class="setup-step" id="track-step" data-i18n="mode.step.track">2 · Track</p>
@@ -118,6 +126,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <div id="recent-custom-runs" class="recent-custom-runs"></div>
         </details>
         <label id="bonus-gates-rule" class="bonus-gates-rule" hidden><input type="checkbox" data-race-rule="bonusGates"> <span data-i18n="mode.bonusGates">Bonus gates · temporary boosts and double style score</span></label>
+        <CircuitSettings />
         <details class="race-mode-rules" id="stunt-rules" hidden>
           <summary data-i18n="mode.stuntRules">Stunt Attack duration</summary>
           <label><span data-i18n="mode.stuntDuration">Active driving time</span>
@@ -128,6 +137,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         </details>
         <details class="race-mode-rules" id="cup-rules" hidden>
           <summary data-i18n="mode.cupSettings">Championship format</summary>
+          <CupRecovery />
           <label><span data-i18n="mode.cupLength">Number of unique tracks</span>
             <select id="cup-length" aria-label="Cup stages" data-i18n-aria-label="mode.cupLength">
               <option value="3" selected>3</option><option value="5">5</option>
@@ -144,6 +154,12 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
             <select id="hazard-tier" aria-label="Obstacle intensity" data-i18n-aria-label="mode.gauntletDifficulty">
               <option value="standard" selected data-i18n="mode.standard">Standard</option>
               <option value="extreme" data-i18n="mode.extreme">Extreme</option>
+            </select>
+          </label>
+          <label><span data-i18n="mode.gauntletLayout">Course</span>
+            <select id="gauntlet-layout" aria-label="Course" data-i18n-aria-label="mode.gauntletLayout">
+              <option value="classic" selected data-i18n="mode.layoutClassic">Barriers</option>
+              <option value="mixed" data-i18n="mode.layoutMixed">Mixed obstacles</option>
             </select>
           </label>
         </details>
@@ -163,6 +179,8 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
             <label id="sprint-stages-setting"><span data-i18n="mode.stages">Sprint stages (not laps)</span><select data-race-rule="stages" aria-label="Sprint stages (not laps)" data-i18n-aria-label="mode.stages"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>
             <label><span data-i18n="mode.collision">Collision penalty</span><select data-race-rule="collision" aria-label="Collision penalty" data-i18n-aria-label="mode.collision"><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="relaxed" data-i18n="mode.relaxed">Relaxed</option></select></label>
             <label><span data-i18n="mode.practiceHazards">Road hazards</span><select data-race-rule="hazards" aria-label="Road hazards" data-i18n-aria-label="mode.practiceHazards"><option value="off" selected data-i18n="mode.off">Off</option><option value="standard" data-i18n="mode.standard">Standard</option><option value="extreme" data-i18n="mode.extreme">Extreme</option></select></label>
+            <label><span data-i18n="mode.riskLines">High rings and close-pass bonus</span><select data-race-rule="riskLines" aria-label="High rings and close-pass bonus" data-i18n-aria-label="mode.riskLines"><option value="on" selected data-i18n="mode.on">On</option><option value="off" data-i18n="mode.off">Off</option></select></label>
+            <label class="race-items"><input data-race-rule="themes" type="checkbox"> <span data-i18n="mode.themes">Themed track hazards</span></label>
             <ItemRules />
           </div>
           <RacePresentation />
@@ -207,7 +225,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
       <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">04</strong><span>/ 04</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
-      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><ItemSlot /><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
+      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="circuit-hud" class="sprint-stage" role="status" hidden></output><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><ItemSlot /><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"></div>
     </section>
 

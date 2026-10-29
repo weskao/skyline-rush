@@ -2,6 +2,7 @@ import { loadBests, loadHistory, loadModeHistory, loadMedals, loadStars, loadDai
 import { readLocalProgress } from './cloud-progress.ts';
 import type { MergedProgress } from './cloud-progress-merge.ts';
 import type { DailyRun } from './history-daily.ts';
+import { loadChallengeMedals, type ChallengeMedalState } from './history-challenge-medals.ts';
 
 type Stored<T> = T | MergedProgress['history'][number];
 /**
@@ -13,6 +14,7 @@ export interface SessionProgress {
   bests: Record<string, number>;
   stars: Record<string, number>;
   medals: Record<string, string>;
+  challengeMedals: ChallengeMedalState;
   history: Stored<ReturnType<typeof loadHistory>[number]>[];
   modeHistory: Stored<ReturnType<typeof loadModeHistory>[number]>[];
   daily: DailyRun[];
@@ -20,11 +22,12 @@ export interface SessionProgress {
 
 export function loadSessionProgress(unlocked: Iterable<string>): SessionProgress {
   return { unlocked: new Set(unlocked), bests: loadBests(), stars: loadStars(), medals: loadMedals(),
-    history: loadHistory(), modeHistory: loadModeHistory(), daily: loadDaily() };
+    history: loadHistory(), modeHistory: loadModeHistory(), daily: loadDaily(), challengeMedals: loadChallengeMedals() };
 }
 
 /** bests and stars keep their identity because other screens hold them. */
-export function adoptProgress(progress: SessionProgress, merged: MergedProgress): void {
+export function adoptProgress(progress: SessionProgress, merged: MergedProgress, localChallengeMedals?: ChallengeMedalState): void {
+  if (localChallengeMedals) progress.challengeMedals = localChallengeMedals;
   for (const id of merged.unlocked) progress.unlocked.add(id);
   Object.assign(progress.stars, merged.stars);
   Object.assign(progress.bests, merged.bests);
