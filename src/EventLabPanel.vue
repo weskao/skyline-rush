@@ -3,7 +3,7 @@ import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch } from 'v
 import { getLocale, onLocaleChange, t, trackName } from './i18n.ts';
 import { eventLabView, useEventCourse } from './event-lab-ui.ts';
 import { COURSE_BYTES, COURSE_OBJECTS, CourseError, createCourse, createCourseHistory, exportCourse, importCourse,
-  saveCourse, validateCourse, type CourseDocument, type CourseKind, type CourseTemplate } from './event-lab.ts';
+  previewPlacement, saveCourse, snapPlacement, validateCourse, type CourseDocument, type CourseKind, type CourseTemplate } from './event-lab.ts';
 import { RACE_TRACKS } from './game.js';
 
 const dialog = useTemplateRef<HTMLDialogElement>('dialog');
@@ -62,6 +62,16 @@ function importDraft(): void { attempt(() => commit(importCourse(json.value, unl
 function close(): void { eventLabView.open = false; }
 const errorText = computed(() => error.value ? text('error.' + error.value) : '');
 const maxDistance = computed(() => (RACE_TRACKS as Record<string, { length: number }>)[eventLabView.trackId].length - 200);
+// Collision preview for the pending Add placement; recomputed only when the draft or inputs change.
+const preview = computed(() => draft.value && previewPlacement(draft.value,
+  { kind: kind.value, distance: Math.round(distance.value / 10) * 10, lane: lane.value }, unlocked(), eventLabView.obstacles));
+function place(event: MouseEvent): void {
+  if (event.target !== event.currentTarget) return; // marker clicks select instead
+  const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  const snapped = snapPlacement((event.clientX - box.left) / box.width, (event.clientY - box.top) / box.height, maxDistance.value);
+  lane.value = snapped.lane; distance.value = snapped.distance;
+}
+const markerStyle = (object: { lane: number; distance: number }) => ({ left: `${object.lane * 25 + 12.5}%`, top: `${(object.distance - 200) / (maxDistance.value - 200) * 90 + 5}%` });
 const symbols: Record<CourseKind, string> = { barrier: '▰', ring: '◎', pickup: '◆', checkpoint: '⛩' };
 </script>
 
@@ -81,9 +91,10 @@ const symbols: Record<CourseKind, string> = { barrier: '▰', ring: '◎', picku
       <p id="lab-error" class="lab-error" role="alert">{{ errorText }}</p>
       <p v-if="storageBlocked" role="status">{{ text('storage') }}</p>
       <div class="lab-designer">
-        <div class="lab-map" role="group" :aria-label="text('map')">
+        <div class="lab-map" role="group" :aria-label="text('map')" @click="place">
+          <span id="lab-ghost" class="lab-ghost" :class="preview ? 'blocked' : 'fits'" aria-hidden="true" :style="markerStyle({ lane, distance })">{{ symbols[kind] }}</span>
           <div class="lab-lane-head"><span v-for="n in 4" :key="n">{{ n - 1 }}</span></div>
-          <button v-for="(object, index) in draft.objects" :key="index" type="button" class="lab-marker" :class="{ selected: selected === index }" :style="{ left: `${object.lane * 25 + 12.5}%`, top: `${(object.distance - 200) / (maxDistance - 200) * 90 + 5}%` }"
+          <button v-for="(object, index) in draft.objects" :key="index" type="button" class="lab-marker" :class="{ selected: selected === index }" :style="markerStyle(object)"
             :aria-label="`${text(object.kind)} · ${object.distance} m · ${text('lane')} ${object.lane}`" :aria-pressed="selected === index" @click="selected = index">{{ symbols[object.kind] }}</button>
         </div>
         <ol class="lab-objects">
@@ -97,7 +108,8 @@ const symbols: Record<CourseKind, string> = { barrier: '▰', ring: '◎', picku
       </div>
       <fieldset class="lab-fields"><legend>{{ text('add') }}</legend><label>{{ text('object') }}<select id="lab-kind" v-model="kind"><option v-for="entry in (['barrier', 'ring', 'pickup', 'checkpoint'] as const)" :key="entry" :value="entry">{{ text(entry) }}</option></select></label>
         <label>{{ text('distance') }}<input id="lab-distance" v-model.number="distance" type="number" min="200" :max="maxDistance" step="10"></label>
-        <label>{{ text('lane') }}<input id="lab-lane" v-model.number="lane" type="number" min="0" max="3" step="1"></label><button id="lab-add" type="button" @click="add">{{ text('add') }}</button></fieldset>
+        <label>{{ text('lane') }}<input id="lab-lane" v-model.number="lane" type="number" min="0" max="3" step="1"></label><button id="lab-add" type="button" @click="add">{{ text('add') }}</button>
+        <p id="lab-preview" class="lab-note" :class="{ 'lab-error': preview }" aria-live="polite">{{ preview ? text('error.' + preview) : text('fits') }}</p></fieldset>
       <details class="lab-share"><summary>{{ text('share') }}</summary>
         <label for="lab-json">{{ text('json') }} · {{ COURSE_BYTES / 1024 }} KB</label><textarea id="lab-json" v-model="json" :maxlength="COURSE_BYTES" rows="5" spellcheck="false"></textarea>
         <div class="lab-toolbar"><button id="lab-export" type="button" @click="json = exportCourse(draft); error = ''">{{ text('export') }}</button><button id="lab-import" type="button" @click="importDraft">{{ text('import') }}</button></div>
@@ -122,6 +134,7 @@ const symbols: Record<CourseKind, string> = { barrier: '▰', ring: '◎', picku
 .lab-map { position: relative; background: repeating-linear-gradient(90deg, #203747 0%, #203747 calc(25% - 1px), #7894a5 calc(25% - 1px), #7894a5 25%); border-radius: 8px; border: 1px solid #7894a5; }
 .lab-lane-head { display: flex; color: #d4e4ee; font-size: 12px; }.lab-lane-head span { width: 25%; text-align: center; }
 .lab-dialog .lab-marker { position: absolute; transform: translate(-50%, -50%); width: 44px; padding: 0; font-size: 22px; z-index: 1; }
+.lab-ghost { position: absolute; transform: translate(-50%, -50%); width: 40px; line-height: 40px; text-align: center; font-size: 20px; border: 2px dashed #6df1db; border-radius: 6px; pointer-events: none; opacity: .75; }.lab-ghost.blocked { border-color: #ff9a6b; color: #ffd1b2; }
 .lab-marker.selected, .lab-objects .selected { border-color: #6df1db; background-color: #28514e; }
 .lab-objects { overflow: auto; padding: 0 4px; margin: 0; list-style: none; }.lab-objects li { display: grid; grid-template-columns: minmax(80px, 1fr) 86px 64px 44px; align-items: end; gap: 6px; margin-bottom: 8px; padding: 6px; border: 1px solid #506675; border-radius: 8px; }
 .lab-objects strong { align-self: center; font-size: 12px; }.lab-objects label { font-size: 11px; }.lab-objects input { width: 100%; }.lab-share { margin-top: 16px; }.lab-share summary { min-height: 44px; cursor: pointer; }.lab-share textarea { width: 100%; box-sizing: border-box; background: #08151d; color: #eef7fa; border: 1px solid #7894a5; padding: 8px; }.lab-footer { justify-content: flex-end; margin-top: 12px; }

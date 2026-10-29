@@ -63,3 +63,20 @@ test('acceptance: mutated or truncated creations fail only with a course error',
     try { lab.importCourse(mutated, access); } catch (error) { assert.ok(error instanceof lab.CourseError, `${error} for ${mutated}`); }
   }
 });
+
+test('designer snaps a map point to a lane and the 10 m grid inside the safe range', () => {
+  assert.deepEqual(lab.snapPlacement(0.1, 0.05, 2000), { lane: 0, distance: 200 });
+  assert.deepEqual(lab.snapPlacement(0.6, 0.5, 2000), { lane: 2, distance: 1100 });
+  assert.deepEqual(lab.snapPlacement(1.4, 2, 2000), { lane: 3, distance: 2000 });
+  assert.deepEqual(lab.snapPlacement(Number.NaN, -1, 2000), { lane: 0, distance: 200 });
+});
+
+test('collision preview reports why a placement fails without changing the draft', () => {
+  const draft = lab.validateCourse(course([{ kind: 'barrier', distance: 300, lane: 1 }]), access);
+  const props = [{ from: 590, to: 610, left: -10, right: -1, bottom: 0, top: 4 }];
+  assert.equal(lab.previewPlacement(draft, { kind: 'pickup', distance: 500, lane: 2 }, access, props), null);
+  assert.equal(lab.previewPlacement(draft, { kind: 'pickup', distance: 320, lane: 2 }, access, props), 'spacing');
+  assert.equal(lab.previewPlacement(draft, { kind: 'barrier', distance: 600, lane: 3 }, access, props), 'reachable');
+  assert.equal(lab.previewPlacement(draft, { kind: 'pickup', distance: 600, lane: 0 }, access, props), 'blocked');
+  assert.equal(draft.objects.length, 1);
+});

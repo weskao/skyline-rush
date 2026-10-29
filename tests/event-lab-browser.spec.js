@@ -69,4 +69,38 @@ for (const [name, viewport, hasTouch] of [
     await selectLocale(page, locale === 'en' ? 'zh-TW' : 'en');
     expect(errors).toEqual([]);
   });
+
+  test('designer map snaps to lanes, previews collisions and races authored checkpoints', async ({ gameplayPage: page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await selectLocale(page, locale);
+    await page.locator('[data-race-mode="eventlab"]').click();
+    await page.locator('#lab-template-checkpoints').click();
+    const map = page.locator('.lab-map'), box = await map.boundingBox();
+    const press = position => hasTouch ? map.tap({ position }) : map.click({ position });
+    // Lane 3 near the end: an empty grid cell far from template objects.
+    await press({ x: box.width * .9, y: box.height * .97 });
+    await expect(page.locator('#lab-lane')).toHaveValue('3');
+    const ghost = await page.locator('#lab-ghost').boundingBox();
+    expect(ghost.x + ghost.width / 2).toBeGreaterThan(box.x + box.width * .75);
+    // Aim at the first template object: the preview must flag it before anything is added.
+    await page.locator('#lab-distance').fill(await page.locator('.lab-objects input[type=number]').first().inputValue());
+    await expect(page.locator('#lab-ghost')).toHaveClass(/blocked/);
+    await expect(page.locator('#lab-preview')).toHaveClass(/lab-error/);
+    const count = await page.locator('.lab-marker').count();
+    await page.locator('#lab-add').click();
+    await expect(page.locator('.lab-marker')).toHaveCount(count);
+    await page.screenshot({ path: `artifacts/event-lab/${name}-${locale}-designer.png` });
+    await page.locator('#lab-use').click();
+    await page.locator('#start-button').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+    expect(await page.evaluate(() => window.gameplay.race.checkpoint.gates.length)).toBeGreaterThan(0);
+    await page.evaluate(() => {
+      const race = window.gameplay.race, gate = race.checkpoint.gates[0];
+      Object.assign(race.player, { distance: gate.distance - 40, speed: 0, x: gate.x });
+    });
+    await expect.poll(() => page.evaluate(() => window.gameScene.scene.getObjectByName('checkpoint-gates').count)).toBeGreaterThan(0);
+    await page.screenshot({ path: `artifacts/event-lab/${name}-${locale}-checkpoints.png` });
+    expect(errors).toEqual([]);
+  });
 });

@@ -77,6 +77,19 @@ export function importCourse(json: string, unlocked: ReadonlySet<string>, obstac
   try { value = JSON.parse(json); } catch { throw new CourseError('format'); }
   return validateCourse(value, unlocked, obstacles);
 }
+const clamp01 = (v: number) => Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0;
+/** Map fractions (0..1 across, 0..1 down) to the lane/10 m grid the editor map draws: 5%..95% spans 200 m..max. */
+export function snapPlacement(across: number, down: number, maxDistance: number): { lane: number; distance: number } {
+  const t = clamp01((clamp01(down) - .05) / .9);
+  return { lane: Math.min(3, Math.floor(clamp01(across) * 4)), distance: Math.round((200 + t * (maxDistance - 200)) / 10) * 10 };
+}
+/** Collision preview: the error code the draft would get with this object added, or null when it fits. */
+export function previewPlacement(draft: CourseDocument, object: CourseObject, unlocked: ReadonlySet<string>, obstacles: readonly CourseObstacle[] = []): string | null {
+  try { validateCourse({ ...draft, objects: [...draft.objects, object] }, unlocked, obstacles); return null; } catch (error) {
+    if (error instanceof CourseError) return error.code;
+    throw error;
+  }
+}
 export const exportCourse = (document: CourseDocument): string => JSON.stringify(document, null, 2);
 
 export type CourseTemplate = 'slalom' | 'collect' | 'checkpoints';
