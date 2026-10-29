@@ -48,6 +48,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
         <select id="mode-history-filter" aria-label="Challenge history mode" data-i18n-aria-label="mode.historyFilterAria">
           <option value="all" data-i18n="mode.historyAll">All modes</option>
           <option value="custom" data-i18n="mode.custom">Custom Race</option>
+          <option value="eventlab" data-i18n="mode.eventlab">Event Lab</option>
           <option value="time" data-i18n="mode.time">Time Attack</option>
           <option value="gauntlet" data-i18n="mode.gauntlet">Obstacle Run</option>
           <option value="checkpoint" data-i18n="mode.checkpoint">Checkpoint Rush</option>

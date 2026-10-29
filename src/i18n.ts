@@ -1,6 +1,7 @@
 import { RACE_TRACKS } from './game.js';
 import { UI } from './locales/ui.ts';
 import { GAME } from './locales/game.ts';
+import { EVENT_LAB } from './locales/event-lab.ts';
 export const SUPPORTED_LOCALES = Object.freeze(['en', 'zh-TW'] as const);
 export type Locale = typeof SUPPORTED_LOCALES[number];
 interface LocaleStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
@@ -23,7 +24,7 @@ export function saveLocale(locale: string, storage?: LocaleStorage): void {
 }
 
 export const CATALOGS = Object.freeze(Object.fromEntries(
-  SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...GAME[l] })]),
+  SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...GAME[l], ...EVENT_LAB[l] })]),
 )) as unknown as Readonly<Record<Locale, Record<string, string>>>;
 
 // Any Chinese tag (zh, zh-CN, zh-Hans, zh-HK, zh-Hant...) maps to the one Chinese catalog we ship.

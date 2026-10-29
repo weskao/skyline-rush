@@ -56,7 +56,7 @@ export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): strin
     return cues;
   }
   const add = (cue: string): void => {if (cues.length < 2) cues.push(cue);};
-  if (race.mode==='checkpoint' && race.checkpoint) {
+  if (race.checkpoint) { // Checkpoint Rush and Event Lab's authored checkpoints share the gate cues
     const cp=race.checkpoint;
     if (cp.passed > state.passed) add('gate-clear');
     else if (cp.missed > state.missed) add('gate-miss');

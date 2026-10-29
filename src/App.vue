@@ -14,6 +14,7 @@ import TutorialCoach from './TutorialCoach.vue';
 import SettingsPanel from './SettingsPanel.vue';
 import ControlsPanel from './ControlsPanel.vue';
 import HistoryPanel from './HistoryPanel.vue';
+import EventLabPanel from './EventLabPanel.vue';
 import { homeStatusView } from './home-status-view-state.ts';
 import CupRecovery from './CupRecovery.vue';
 
@@ -30,6 +31,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 <template>
   <ReleaseNotesPanel />
   <GuidePanel />
+  <EventLabPanel />
   <TutorialCoach />
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
   <div class="scene-shade"></div>
@@ -134,6 +136,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
           <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
           <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
+          <button type="button" data-race-mode="eventlab" aria-pressed="false" data-i18n="mode.eventlab">Event Lab</button>
         </div>
         <details class="race-mode-rules" id="recent-custom" hidden>
           <summary data-i18n="mode.recent">RECENT CUSTOM SETUPS</summary>

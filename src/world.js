@@ -26,7 +26,7 @@ import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCamera
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
-import { hazardX } from './hazards.ts';
+import { hazardX } from './hazards.ts'; import { createRampPool, drawRamps } from './ramp-view.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 
@@ -400,7 +400,7 @@ export function createWorld(canvas) {
   const shortcutDeck = instances(box, new THREE.MeshBasicMaterial({ transparent: true, opacity: .28, depthWrite: false }), segments, scene);
   const shortcutPylonMeshes = instances(box, material('#d9dcda', .4, .5), 8, scene);
   const gauntletBarriers = instances(box, new THREE.MeshBasicMaterial({ color: '#ff946f' }), 24, scene);
-  gauntletBarriers.name = 'gauntlet-barriers'; gauntletBarriers.count = 0;
+  gauntletBarriers.name = 'gauntlet-barriers'; gauntletBarriers.count = 0; const launchRamps = createRampPool(scene);
   // Neon uprights + beam for each timed checkpoint; pooled like the gauntlet barriers.
   const checkpointGates = instances(box, new THREE.MeshBasicMaterial({ color: '#54f3dd' }), 48, scene);
   checkpointGates.name = 'checkpoint-gates'; checkpointGates.count = 0;
@@ -1033,15 +1033,14 @@ export function createWorld(canvas) {
 
       // Bounded InstancedMesh: one distinct marker per reachable barrier,
       // no scene allocations or three.js collision checks on the hot path.
+      const at = (d, x, y) => trackId === 'spiral' ? skyPosition(d, x, y, distance) // one road frame for every authored object
+        : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, d, x, y, distance) : [roadCenter(d) - center + x, y, distance - d];
       let visibleHazards = 0;
       if (!preview && race.hazards.length) for (const hazard of race.hazards) {
         if (hazard.distance < distance - 16 || hazard.distance > distance + 550) continue;
         if (visibleHazards >= gauntletBarriers.instanceMatrix.count) break;
-        const x = hazardX(hazard, race.elapsed);
-        const xyz = trackId === 'spiral' ? skyPosition(hazard.distance, x, 1.25, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, hazard.distance, x, 1.25, distance)
-            : [roadCenter(hazard.distance) - center + x, 1.25, distance - hazard.distance];
-        put(gauntletBarriers, visibleHazards++, ...xyz, 3.1, 2.5, 1.3);
+        const y = (hazard.height ?? 2.5) / 2; // authored cones draw at catalog size
+        put(gauntletBarriers, visibleHazards++, ...at(hazard.distance, hazardX(hazard, race.elapsed), y), (hazard.halfWidth ?? 1.55) * 2, y * 2, 1.3);
       }
       gauntletBarriers.count = visibleHazards;
       if (visibleHazards) gauntletBarriers.instanceMatrix.needsUpdate = true;
@@ -1050,15 +1049,13 @@ export function createWorld(canvas) {
       if (!preview && race.checkpoint) for (const gate of race.checkpoint.gates) {
         if (gate.passed || gate.missed || gate.distance < distance - 16 || gate.distance > distance + 550) continue;
         if (visibleGateParts + 3 > checkpointGates.instanceMatrix.count) break;
-        const locate = (x, y) => trackId === 'spiral' ? skyPosition(gate.distance, x, y, distance)
-          : TOUR_IDS.has(trackId) ? trackLocalPosition(trackId, gate.distance, x, y, distance)
-            : [roadCenter(gate.distance) - center + x, y, distance - gate.distance];
-        put(checkpointGates, visibleGateParts++, ...locate(gate.x - 3.2, gate.altitude + 2.4), .32, 4.8, .44);
-        put(checkpointGates, visibleGateParts++, ...locate(gate.x + 3.2, gate.altitude + 2.4), .32, 4.8, .44);
-        put(checkpointGates, visibleGateParts++, ...locate(gate.x, gate.altitude + 4.8), 6.7, .34, .44);
+        put(checkpointGates, visibleGateParts++, ...at(gate.distance, gate.x - 3.2, gate.altitude + 2.4), .32, 4.8, .44);
+        put(checkpointGates, visibleGateParts++, ...at(gate.distance, gate.x + 3.2, gate.altitude + 2.4), .32, 4.8, .44);
+        put(checkpointGates, visibleGateParts++, ...at(gate.distance, gate.x, gate.altitude + 4.8), 6.7, .34, .44);
       }
       checkpointGates.count = visibleGateParts;
       if (visibleGateParts) checkpointGates.instanceMatrix.needsUpdate = true;
+      drawRamps(launchRamps, preview ? null : race.ramps, distance, at);
 
       if (preview) {
         const groundedShowcase = visual.enabled && visual.airflow;

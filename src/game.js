@@ -1,5 +1,5 @@
 import { seededRng, RACE_STREAMS } from './rng.ts';
-import { createHazards, hazardX } from './hazards.ts';
+import { createHazards, hazardX } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
@@ -348,7 +348,7 @@ function avoidObstacles(race, other, pace, dt) {
   if (altitude < BARRIER_HEIGHT) for (const h of hazards) {
     if (h.distance > d + AI_LOOKAHEAD) break;
     if (h.distance < d - 2.2) continue;
-    const reach = BARRIER_HALF_WIDTH + (h.moving ? 1.8 : 0); // a moving barrier blocks its whole sweep
+    const reach = (h.halfWidth ?? BARRIER_HALF_WIDTH) + (h.moving ? 1.8 : 0); // a moving barrier blocks its whole sweep
     blockers.push(h.x - reach, h.x + reach);
   }
   let target = other.homeX ?? other.x;
@@ -388,7 +388,7 @@ function aiImpacts(race, other, before, pace) {
     if (hazard.distance > other.distance) break;
     if (hazard.distance <= before) continue;
     const obstacleX = hazardX(hazard, race.elapsed);
-    if (Math.abs(other.x - obstacleX) < 1.8) return void knock(race, other, Math.sign(other.x - obstacleX) || -1, 0.7, 0.6);
+    if (Math.abs(other.x - obstacleX) < (hazard.halfWidth ?? BARRIER_HALF_WIDTH) + .25 && (other.altitude || 0) < (hazard.height ?? BARRIER_HEIGHT) - .1) return void knock(race, other, Math.sign(other.x - obstacleX) || -1, 0.7, 0.6);
   }
 }
 function bumpCars(race, a, b) {
@@ -549,10 +549,10 @@ export function stepRace(race, input, dt) {
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
-  if (race.trackId === 'spiral' && car.section === 'launch' && car.altitude === 0 && car.speed > 32 &&
-      car.distance >= section.to - car.speed * dt - 1) {
-    car.altitude = 0.02;
-    car.verticalSpeed = Math.max(car.verticalSpeed, 6 + car.speed * 0.075);
+  if (car.altitude === 0 && car.speed > LAUNCH_MIN_SPEED && (race.trackId === 'spiral' && car.section === 'launch' &&
+      car.distance >= section.to - car.speed * dt - 1 || crossesRamp(race.ramps, car, car.speed * dt + 1))) {
+    car.altitude = 0.02; // Event Lab ramps share the Spiral impulse
+    car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
   const roofHit = car.section === 'tunnel' && car.altitude + CAR_HEIGHT > TUNNEL_CEILING;
@@ -714,7 +714,7 @@ export function stepRace(race, input, dt) {
     if (hazard.distance > car.distance) break;
     if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
     const obstacleX = hazardX(hazard, race.elapsed);
-    const collision = Math.abs(car.x - obstacleX) < 1.8 && car.altitude < 2.4;
+    const collision = Math.abs(car.x - obstacleX) < (hazard.halfWidth ?? BARRIER_HALF_WIDTH) + .25 && car.altitude < (hazard.height ?? BARRIER_HEIGHT) - .1;
     if (collision && car.cooldown === 0) {
       contact(race, 'barrier', obstacleX, 0.7, 0.6);
       hazard.hit = true;

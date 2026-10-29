@@ -81,6 +81,10 @@ Custom Race can replay the fastest compatible Ghost for each sprint heat. Custom
 
 Custom and Free Drive offer **Off / Classic Mystery Rings / Active Items / All Items**. Held items use one slot: press **Q** or tap **USE** to activate, then wait for cooldown. NITRO and FLY/BOOST keep their own controls. All Items adds bounded speed, air-charge and one-hit recovery gates; EMP briefly slows nearby rivals and converts to Magnet in solo play. Recovery preserves official collision counts. Stunt Attack and Checkpoint Rush can separately opt into temporary, nonstacking ×2 score gates. Classic defaults stay unchanged.
 
+### Event Lab Lite v1
+
+**Event Lab Lite** edits local course templates with barriers, NITRO rings and supplies on unlocked routes. Change their lane and distance, Undo/Redo/Reset edits, and import or export a validated course as text. Starting compiles the course into real race encounters; retry preserves the course and seed. Course results stay separate from Career and Custom records. Cones, authored ramps, checkpoint editing and community sharing remain outside this first version.
+
 ### Race setup, results and accessibility
 
 - Mode and track selection remain accessible by keyboard and touch; contextual panels only show options relevant to the selected mode. Unavailable Cups explain the number of tracks still required.

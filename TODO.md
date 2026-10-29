@@ -98,6 +98,16 @@ Historical receipts below retain their original date and verification scope. Ear
 - [x] Exact published code `6c478de` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547695). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
 - [x] Complete make verify on merged code `6c478de` exits 0: strict TS/Vue/JS, Node 830 / Browser 502 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/item-rules/make-verify-main-ca1c777-user-merge.log`.
 
+## origin/main bc5299b / 0a08d02 integration (2026-10-29)
+
+- [x] Merge origin/main `bc5299b` (51 commits) without conflicts. RED: `tests/module-size.test.js` failed because `src/world.js` was 1346 lines against this branch's lowered 1345 ceiling; GREEN by folding `let trackId, carBank = 0;` (the shared fold used by every integrated branch), never raising the ceiling.
+- [x] Complete make verify on code `a6c9f14` exits 0: strict TS/Vue/JS, Node 844 / 3 emulator skips, locked build, Browser 523 / 2 desktop touch skips, World Tour 303. Log: `artifacts/make-verify-bc5299b-a6c9f14.log`. Docs-only `0a08d02` merged afterwards; `src` unchanged. CI pending.
+
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `8b34df1` on `feature/event-lab-lite`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `8b34df1` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547459). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `8b34df1` exits 0: strict TS/Vue/JS, Node 822 / Browser 499 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/event-lab/make-verify-main-ca1c777-user-merge.log`.
+
 Historical receipts below retain their original date and verification scope.
 
 ## Main camera-probe integration (2026-10-28)
@@ -114,6 +124,10 @@ Historical receipts below retain their original date and verification scope.
 - [x] Preserve 4 original-resolution 0.25.0 real-game images in `artifacts/custom-presentation/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `c5b885c` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
 - [x] Complete resulting-main `make verify` on code `5d080fe` (verified 2026-10-29): strict TS/Vue/JS checks, 816 Node passed / 3 emulator-scoped skips, locked production build, 500 browser passed / 2 desktop-only touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/item-rules/make-verify-main-31ac7b1.log`. Earlier 0152611 runs remain separate historical receipts.
 - [x] Preserve 4 original-resolution 0.25.0 real-game images in `artifacts/item-rules/reviewed-main-0152611/`; desktop and phone representatives were visually inspected. Their runtime `src` tree is identical to verified code `5d080fe` after the test-only upstream merge. Chrome emulation is not physical Safari/Android acceptance.
+
+- [x] Complete resulting-main `make verify` on code `903846e` (verified 2026-10-29): strict TS/Vue/JS checks, 808 Node passed / 3 emulator-scoped skips, locked production build, 497 browser passed / 2 inapplicable desktop touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main-31ac7b1.log`.
+- [x] Preserve 12 original-resolution real-game images in `artifacts/event-lab/reviewed-main-31ac7b1/`; desktop and phone representatives were visually inspected. Fresh main31 original-resolution flows pass (4 cases). Chrome emulation remains separate from physical Safari/Android acceptance.
+- [x] Local Auth/Firestore compatibility on code `903846e`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/event-lab/cloud-main-31ac7b1.log`; no production cloud writes.
 - [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
 
 ## Main 0.25.0 integration (2026-10-28)
@@ -125,6 +139,8 @@ Historical receipts below retain their original date and verification scope.
 
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `c5b885c` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `5d080fe` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
+
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `903846e` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
 - [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
 
 ## Historical main integration through 0197547 (2026-10-28)
@@ -203,6 +219,34 @@ Branch: `feature/practice-item-rules`, independent of Cup, Custom presentation a
 - [x] Opt-in Stunt/Checkpoint five-second ×2 score gates, bounded nonstacking durations, independent rules signatures, paused timers and equal payouts at 30/60/120 physics steps. Classic defaults and old saved signatures remain unchanged.
 - [x] RED → GREEN for missing gate materials and HUD warnings. Reuse five existing warmed material variants and seven-mesh pool; cache HUD nodes, announce gate identity/distance and pickup once, show EMP silhouette/cooldown, and retain separate music/SFX settings. Relevant Node checks: 31 passed; browser item and bonus flows: 7 passed on desktop/touch, with English/zh-TW switching and real Q/tap activation. Screenshots inspected in `artifacts/item-rules/`.
 - [ ] Physical iOS/Android/audio/perception acceptance and broader ITEM-12 visual effects. Code CI and the complete merged local gate are recorded above.
+
+
+- [x] Complete fresh local `make verify` on code `bf7ed70` after captured main `0197547` and shared locale repair: strict TS/Vue/JS checks, 805 Node passed / 3 emulator skips, locked build, 497 browser passed / 2 conditional skips, 94 World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main-0197547.log`. Fresh original-resolution real-game flows also pass; reviewed captures: `artifacts/event-lab/reviewed-main-0197547/`. Earlier SHA receipts below remain historical.
+
+## Event Lab v1 continuation (2026-10-28, feature/event-lab-lite)
+
+- [x] Observe schema/import/history/runtime RED; implement immutable version-1 local course documents, lane/distance editing, two templates, bounded Undo/Redo/Reset and text import/export. Unknown fields, inaccessible tracks, unsafe road sections, overlaps, malformed/oversized input and blocked storage are handled at the shared validation boundary.
+- [x] Compile authored barriers, NITRO rings and supplies into actual simulation/render arrays; real collision/refill checks pass. Retry preserves the canonical course and seed while resetting mutable flags. Course records remain isolated from Custom/Career.
+- [x] Follow-up RED → GREEN for a too-dense imported ring layout: require 150 m ring spacing so all visible authored gates fit the existing seven-ring pool. Preserve 44px mobile controls and a scrolling dialog.
+- [x] Five core tests and four real Chrome desktop/touch × English/zh-TW editor-to-race/retry flows pass; strict Vue/TS check passes. Actual editor, barrier and result captures reviewed in `artifacts/event-lab/`.
+- [x] Complete merged local `make verify` on code HEAD `068027c`: strict TS/Vue/legacy checks, 798 Node passed / 3 emulator-dependent skipped, locked build, 491 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main72466c3-final.log`. Local cloud emulator: 15 browser + 3 Rules passed. Original-resolution flows pass; result capture waits for the final stored best and visible panel.
+- [x] Verify exact code commit `68701b7`: unit/typecheck, all 8 browser shards, Cloud Save, World Tour and `quality-gate` succeed on https://github.com/weskao/skyline-rush/actions/runs/40634074855 . This records the verified code revision; the following documentation-only HEAD is checked separately before reporting final branch status.
+- [ ] Physical-device acceptance. Original MODE-10 remains open for ramp/cone/checkpoint editing; no community/backend functionality is claimed.
+
+## Event Lab designer (2026-10-29, feature/event-lab-designer)
+
+Base: `feature/event-lab-lite` a6c9f14 + origin/main 0a08d02 + `feature/env-hazard-schema` 6289b46 (ENV-01/02 catalog).
+
+- [x] RED → GREEN: timed checkpoints (Checkpoint Rush runtime, max 16), two-adjacent-lane reachability for solid objects (`reachable`), checkpoint and jumps templates.
+- [x] RED → GREEN: designer collision preview (`previewPlacement`) and map tap snap-to-lane/10 m (`snapPlacement`); ghost outline + live reason in the panel.
+- [x] RED → GREEN: cones with catalog-sized contact for player, rivals and traffic and catalog-sized barrier-pool rendering; footprints read from `OBJECT_CATALOG`.
+- [x] RED → GREEN: ramps (max 8) through one shared launch rule `src/launch-ramps.ts` (Sky Spiral sections + authored ramps) and pooled wedge `src/ramp-view.ts`. `world.js` folded its duplicated road-position closure: 1345 → 1342, ceiling lowered.
+- [x] Launch-seam regression: all 10 tracks × 30/60/120 FPS launch, land, finite state, airtime spread < 0.25 s, rivals drive over ramps; ramp case RED on pre-ramp `game.js`, Spiral case unchanged (preserved behaviour).
+- [x] Acceptance unit tests: identical compiled stage from the same document/seed independent of device; 2000 mutated/truncated imports fail only with `CourseError`.
+- [x] Audio: Event Lab checkpoints now play the shared gate pass/miss/low-time cues (RED → GREEN in `tests/mode-audio.test.js`). Ramp take-off intentionally adds no cue (Spiral launches have none; flight is visible).
+- [ ] Browser: `tests/event-lab-browser.spec.js` (designer tap/preview/checkpoints/ramp render) and `tests/launch-ramps-browser.spec.js` (Spiral helix/joins/launch captures; first-grounded-frame wheel clearance ≤ 0.12 m on Spiral helix and flattest/steepest World Tour ramp spots), desktop + phone. World Tour roads have no lateral bank (`trackFrame` right.y = 0); banked coverage is Sky Spiral.
+- [ ] Full local `make verify` on the branch HEAD; exact-HEAD CI pending.
+- [ ] Pending, not claimed: ghost replay over ramps, physical devices.
 
 
 - [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.

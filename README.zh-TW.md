@@ -1,4 +1,4 @@
-<!-- source-sha256: 0cc921a06f31b8af006460824e603e1f891547595e396f073fec30bf184bdb1a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 8193aaaebdf6fb77eda2b4f7b6920e7615b483cc218c64617501b5b09286e213 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 
 # Skyline Rush
 
@@ -61,6 +61,8 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
 選擇一條**已解鎖的賽道**，在賽道卡片下方選擇 **GAME MODE**，需要時展開規則說明，然後按下 **Start race**（或 Enter）。比賽仍使用相同的 Three.js 道路、飛行、FLY / BOOST / NITRO 與響應式觸控操作。開發分支包含以下模式：
 
+選擇一條**已解鎖的賽道**,在賽道卡片下方選擇 **GAME MODE**,需要時展開其規則,然後按下 **Start race**(或按 Enter)。比賽仍然使用相同的 Three.js 道路、飛行、FLY / BOOST / NITRO 以及響應式觸控操作。開發分支提供下列模式:
+
 | 模式 | 變化內容 | 勝利條件／進度 |
 | --- | --- | --- |
 | **Classic Race** | 標準的三名對手衝刺，可在 10 條賽道之一進行，包含車流、捷徑、光環與 NITRO。 | 登上頒獎台可解鎖下一條賽道；只有 Classic 會授予生涯星星、獎牌與官方最佳成績。 |
@@ -72,6 +74,12 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 | **Championship Cup** | 選擇由已解鎖路線組成的 **3 或 5 條賽道**盃賽；每個階段與 NOVA、ORBIT 和 APEX 競速。 | 名次分別獲得 **10 / 7 / 5 / 3 分**；以累計積分與總時間決定冠軍，同分時以時間決勝。盃賽成績與生涯解鎖分開計算。 |
 
 ### 盃賽恢復
+
+### Event Lab Lite 第一版
+
+**Event Lab Lite** 可在已解鎖路線上編輯本機賽道樣板中的障礙、NITRO 環與補給。可調整車道與距離,復原/重做/重設編輯,並以文字匯入或匯出經驗證的賽道。開始後會將賽道轉為實際比賽物件;重試會保留賽道與種子。賽道成績與 Career、Custom 紀錄分開。交通錐、自訂坡道、檢查點編輯及社群分享尚未包含在第一版。
+
+### 賽前設定、結果與無障礙功能
 
 未完成的 Championship Cup 會在主畫面提供 **Resume** 或 **Discard**。Resume 會保留已結算階段的積分，並只重新開始未完成的階段；重試只會回溯正在重玩的階段。完成或放棄盃賽後，其恢復紀錄會被清除。刪除遊戲進度時也會一併移除檢查點，同時保留裝置偏好設定。恢復功能使用此瀏覽器的儲存空間，無法還原瀏覽器拒絕儲存的資料。
 

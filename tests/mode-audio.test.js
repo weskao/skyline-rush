@@ -72,3 +72,15 @@ test('pausing consumes checkpoint state without replaying missed events on resum
  r.phase='racing';
  assert.deepEqual(modeAudioCues(r,state),[]);
 });
+
+test('authored Event Lab checkpoints play the same gate cues once', () => {
+ const state=createModeAudioState();
+ const r=race('eventlab',{checkpoint:{passed:0,missed:0,timeLeft:28}});
+ modeAudioCues(r,state);
+ r.checkpoint.passed=1;
+ assert.deepEqual(modeAudioCues(r,state),['gate-clear']);
+ assert.deepEqual(modeAudioCues(r,state),[]);
+ r.checkpoint.missed=1;
+ assert.deepEqual(modeAudioCues(r,state),['gate-miss']);
+ assert.deepEqual(modeAudioCues(race('eventlab',{checkpoint:null}),createModeAudioState()),[]);
+});

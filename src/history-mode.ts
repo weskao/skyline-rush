@@ -6,7 +6,7 @@ import { readStored as read, writeStored as write, type HistoryStorage } from '.
 export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
 export const STUNT_BESTS_KEY = 'skyline-rush-stunt-bests-v1';
 export const MODE_BESTS_KEY = 'skyline-rush-mode-bests-v1';
-const MODE_TYPES: ReadonlySet<string> = new Set(['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination']);
+const MODE_TYPES: ReadonlySet<string> = new Set(['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'eventlab']);
 const MODE_MAX_SECONDS = 7 * 24 * 60 * 60;
 const MODE_MAX_RULES_LENGTH = 4096;
 const asRecord = (value: unknown): Record<string, unknown> =>
