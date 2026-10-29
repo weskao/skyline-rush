@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRaceConfig, rulesSignature, validateRaceRequest } from '../src/race-config.ts';
+import { normalizeRaceConfig, rulesSignature, validateRaceRequest, MODES } from '../src/race-config.ts';
 import { createRaceSessionContract } from '../src/race-session.ts';
-import { createRace, RACE_TRACKS } from '../src/game.js';
+import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
 import { RACE_STREAMS, seededRng } from '../src/rng.ts';
 
 test('MODE-00: strict user config rejects unsupported combinations and malformed values', () => {
@@ -151,4 +151,35 @@ test('MODE-00: direct session requests fail closed, but normalized legacy calls 
   const direct = createRaceSessionContract('coast', 1001, { mode: 'time', clean: true });
   assert.equal(direct.mode, 'time');
   assert.equal(direct.objective.type, 'finish-time');
+});
+
+const scripted = i => ({ throttle: i % 400 < 340, brake: i % 400 >= 370, steer: Math.sin(i / 45), nitro: i % 300 < 20, fly: i % 500 > 480 });
+const snapshot = race => JSON.stringify({ phase: race.phase, elapsed: race.elapsed, result: race.result,
+  cars: [race.player, ...race.rivals, ...race.traffic].map(car => [car.distance, car.x, car.altitude ?? 0, car.speed, car.collisions ?? 0, car.score ?? 0]) });
+const drive = (trackId, mode, steps) => {
+  const race = createRace(trackId, mode === 'classic' ? undefined : { mode });
+  startRace(race);
+  for (let i = 0; i < steps; i++) stepRace(race, scripted(i), 1 / 60);
+  return race;
+};
+
+test('9A: every mode replays bit-for-bit from the same track, rules and input sequence', () => {
+  for (const trackId of Object.keys(RACE_TRACKS)) for (const mode of MODES)
+    assert.equal(snapshot(drive(trackId, mode, 600)), snapshot(drive(trackId, mode, 600)), `${trackId} ${mode}`);
+});
+
+test('9A: every finishing mode settles a finite result at the end of all ten courses; Free Drive stops at the road end', () => {
+  for (const trackId of Object.keys(RACE_TRACKS)) for (const mode of MODES) {
+    const race = drive(trackId, mode, 240);
+    race.rivals.forEach(rival => { rival.distance = 100; });
+    Object.assign(race.player, { distance: race.length - 1, speed: 80 });
+    // Elimination ends on its 10 s knockout clock, not at the road end; 40 s bounds every mode.
+    for (let i = 0; i < 2400 && race.phase === 'racing' && mode !== 'free'; i++) stepRace(race, { throttle: true }, 1 / 60);
+    if (mode === 'free') for (let i = 0; i < 4; i++) stepRace(race, { throttle: true }, 1 / 60);
+    if (mode === 'free') assert.deepEqual([race.phase, race.result, race.player.distance], ['racing', null, race.length], trackId);
+    else {
+      assert.equal(race.phase, 'finished', `${trackId} ${mode}`);
+      assert.ok(Number.isFinite(race.result.time) && race.result.time > 0, `${trackId} ${mode} time`);
+    }
+  }
 });
