@@ -5,7 +5,7 @@ import { roadRibbon } from './geometry.ts';
 import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js';
-import { batchStaticChunk } from './world-tour-batching.ts';
+import { batchStaticChunk, poolStaticChunks, releaseStaticPool } from './world-tour-batching.ts';
 
 // One scenery system for five distinct destinations. Locations are authored as
 // race-distance + roadside offsets; meshes follow the *real* 3D driving path.
@@ -174,7 +174,7 @@ export function createWorldTourScene(scene){
   const heroGroup=new THREE.Group();group.add(heroGroup);
   const sceneryLayer=new THREE.Group();sceneryLayer.name='Distance-anchored continuous scenery';group.add(sceneryLayer);
   const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map();
-  let sceneryTrack=null,sceneryDetail=null,rack=null;
+  let sceneryTrack=null,sceneryDetail=null,rack=null,pooled=null;
   function releaseChunk(node){
     node.traverse(object=>{
       if(object.userData?.ownGeometry)object.geometry.dispose();
@@ -184,8 +184,9 @@ export function createWorldTourScene(scene){
     });
     node.removeFromParent();
   }
-  function clearChunks(){for(const node of chunks.values())releaseChunk(node);chunks.clear();}
+  function clearChunks(){releaseStaticPool(pooled);pooled=null;for(const node of chunks.values())releaseChunk(node);chunks.clear();}
   function streamScenery(id,distance,quality,sections){
+    let changed=false;
     const level=quality==='low'?'low':quality==='medium'?'medium':'high';
     const centerChunk=Math.floor(Math.max(0,distance)/SCENERY_CHUNK_METRES);
     if(sceneryTrack!==id||sceneryDetail!==level){
@@ -195,10 +196,11 @@ export function createWorldTourScene(scene){
     const start=Math.max(0,centerChunk-behind);
     const end=Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+ahead);
     for(const [index,node] of chunks){
-      if(index<start||index>end){releaseChunk(node);chunks.delete(index);}
+      if(index<start||index>end){releaseChunk(node);chunks.delete(index);changed=true;}
     }
     for(let index=start;index<=end;index++){
       if(chunks.has(index))continue;
+      changed=true;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;
       for(const item of detailPlan(id,index,level)){
         const prop=kit.build(id,item.kind,item.size);
@@ -216,6 +218,7 @@ export function createWorldTourScene(scene){
       chunk.userData.batchStats=stats;
       sceneryLayer.add(chunk);chunks.set(index,chunk);
     }
+    if(changed)pooled=poolStaticChunks(sceneryLayer,chunks.values(),pooled);
   }
   // Hidden sample of everything a track can stream in later — every prop kind batched (instanced) and plain, the
   // terrain ribbon, every tunnel shell variant and entrance — so the first-frame shader warmup (world.js) builds

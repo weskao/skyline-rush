@@ -42,3 +42,69 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
   }
   return {sourceMeshes,drawBatches,trianglesPreserved:true};
 }
+
+// Pool static drawables from multiple 120m chunks by shared geometry/material.
+// Only rebuild when the streamed set changes; keep the source tree for probes.
+export function releaseStaticPool(pool: THREE.Group | null | undefined): void {
+  if (!pool) return;
+  for (const source of pool.userData.sources as THREE.Mesh[]) source.visible = true;
+  for (const child of pool.children) if (child instanceof THREE.InstancedMesh) child.dispose();
+  pool.removeFromParent();
+}
+export function poolStaticChunks(
+  layer: THREE.Group,
+  chunks: Iterable<THREE.Group>,
+  previous: THREE.Group | null = null,
+): THREE.Group {
+  releaseStaticPool(previous);
+  layer.updateWorldMatrix(true, false);
+  const inverse = layer.matrixWorld.clone().invert();
+  const groups = new Map<string, THREE.Mesh[]>();
+  for (const chunk of chunks) {
+    chunk.updateWorldMatrix(true, true);
+    chunk.traverse(object => {
+      if (!('isMesh' in object) || object.isMesh !== true ||
+          !object.visible || object.userData.ownGeometry) return;
+      const mesh = object as THREE.Mesh;
+      if (!mesh.geometry || !mesh.material || Array.isArray(mesh.material)) return;
+      const key = mesh.geometry.uuid + '|' + mesh.material.uuid;
+      const list = groups.get(key);
+      if (list) list.push(mesh);
+      else groups.set(key, [mesh]);
+    });
+  }
+  const pool = new THREE.Group();
+  pool.name = 'World Tour shared draw batches';
+  const sources: THREE.Mesh[] = [];
+  let drawsSaved = 0;
+  const instance = new THREE.Matrix4(), combined = new THREE.Matrix4();
+  for (const meshes of groups.values()) {
+    if (meshes.length < 2) continue; // A lone source gains nothing.
+    const total = meshes.reduce((n, mesh) =>
+      n + (mesh instanceof THREE.InstancedMesh ? mesh.count : 1), 0);
+    if (!total) continue;
+    const first = meshes[0];
+    const batch = new THREE.InstancedMesh(first.geometry, first.material, total);
+    batch.name = 'scenery shared GPU batch';
+    let at = 0;
+    for (const mesh of meshes) {
+      const local = inverse.clone().multiply(mesh.matrixWorld);
+      const count = mesh instanceof THREE.InstancedMesh ? mesh.count : 1;
+      for (let i = 0; i < count; i++) {
+        if (mesh instanceof THREE.InstancedMesh) mesh.getMatrixAt(i, instance);
+        else instance.identity();
+        batch.setMatrixAt(at++, combined.multiplyMatrices(local, instance));
+      }
+      mesh.visible = false;
+      sources.push(mesh);
+    }
+    batch.instanceMatrix.needsUpdate = true;
+    batch.computeBoundingSphere();
+    pool.add(batch);
+    drawsSaved += meshes.length - 1;
+  }
+  pool.userData.sources = sources;
+  pool.userData.drawsSaved = drawsSaved;
+  layer.add(pool);
+  return pool;
+}
