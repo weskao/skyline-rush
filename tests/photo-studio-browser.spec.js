@@ -68,6 +68,13 @@ for (const [name, viewport, hasTouch, locale, trackIds, insets] of layouts) {
           distance: window.gameplay.race.player.distance,
         }));
         const visibility = await Promise.all(backgroundUI.map(selector => page.locator(selector).isVisible()));
+        // body.photo-studio must follow [open] in the same microtask, not a task later on 'close'.
+        await page.evaluate(() => {
+          const dialog = document.querySelector('#photo-screen');
+          window.photoFlips = [];
+          new MutationObserver(() => window.photoFlips.push({ open: dialog.open, studio: document.body.classList.contains('photo-studio') }))
+            .observe(dialog, { attributes: true, attributeFilter: ['open'] });
+        });
         await page.locator('#photo-open').click();
         await expect(page.locator('#photo-screen')).toBeVisible();
         await expect(page.locator('#world')).toBeVisible();
@@ -98,6 +105,9 @@ for (const [name, viewport, hasTouch, locale, trackIds, insets] of layouts) {
         await page.keyboard.press('Escape');
         await expect(page.locator('#photo-screen')).toBeHidden();
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+        const flips = await page.evaluate(() => window.photoFlips);
+        expect(flips.map(flip => flip.open), 'open, Close, open, Escape').toEqual([true, false, true, false]);
+        for (const flip of flips) expect(flip.studio, `body.photo-studio at the [open] flip ${JSON.stringify(flips)}`).toBe(flip.open);
         await page.locator('#resume-button').click();
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
         await page.keyboard.down('ArrowUp');
