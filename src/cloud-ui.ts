@@ -1,4 +1,4 @@
-import { t, getLocale } from './i18n.ts';
+import { t, formatDate } from './i18n.ts';
 import { updateCloudView, updateCloudProfile } from './cloud-view-state.ts';
 import { claimCloudOwner, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus,
   writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.ts';
@@ -83,7 +83,7 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
     updateCloudView({
       syncDisabled: !user || cloudDeleting || cloudOwner !== user.uid,
       lastSyncText: lastCloudSync
-        ? t('cloud.lastSync', { time: new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short' }).format(lastCloudSync) })
+        ? t('cloud.lastSync', { time: formatDate(lastCloudSync, { dateStyle: 'medium', timeStyle: 'short' }) })
         : t('cloud.neverSynced'),
     });
   }
