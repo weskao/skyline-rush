@@ -719,9 +719,8 @@ export function createWorld(canvas) {
   let cameraMode = 0;
   let initialized = false;
   let lastRace = null;
-  let trackId;
+  let trackId, carBank = 0;
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let carBank = 0;
   let photoView = null, photoCapture = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
