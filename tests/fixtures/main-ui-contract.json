@@ -1,6 +1,6 @@
 {
   "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient",
-  "cssBlob": "cbab6a3828fa3e342d62a42a5799747e0d8a0150",
+  "cssBlob": "1abff58559b0eabba1ce18c8f8e007a38d01c2d7",
   "elements": [
     {
       "id": "whats-new-screen",

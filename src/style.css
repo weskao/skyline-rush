@@ -1011,7 +1011,7 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
   .overlay-content > p { margin-bottom: 16px; }
 }
 @media (max-height: 500px) and (min-width: 761px) {
-  .intro { top: 80px; left: 5%; max-width: 550px; bottom: 90px; overflow: auto; padding: 5px; }
+  .intro { top: 80px; left: max(5%, calc(var(--safe-left) + 8px)); max-width: 550px; bottom: 90px; overflow: auto; padding: 5px; } /* a landscape notch must not cover Start */
   .intro h1 { font-size: 40px; margin-bottom: 10px; }
   .intro-copy, .intro-controls, .flight-tip, .route-label { display: none; }
   .track-note { margin-block: 8px; font-size: 10px; }
