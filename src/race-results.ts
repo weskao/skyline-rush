@@ -32,8 +32,19 @@ export interface Settlement {
   series: RaceSeries;
 }
 
-/** Records a finished race: series progress, medals, bests, unlocks, history and ghosts. */
-export function settleRace(race: FinishedRace, { series, progress, ghosts, daily, trace }: SettleContext): Settlement {
+// One settlement per race object: every restart builds a new race, so entries die with it.
+const settled = new WeakMap<object, Settlement>();
+
+/** Records a finished race once: series progress, medals, bests, unlocks, history and ghosts. */
+export function settleRace(race: FinishedRace, context: SettleContext): Settlement {
+  const previous = settled.get(race);
+  if (previous) return previous; // pause, dialogs and phase refreshes must never double-award
+  const settlement = settleOnce(race, context);
+  settled.set(race, settlement);
+  return settlement;
+}
+
+function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace }: SettleContext): Settlement {
   let { sprintSeries, cup } = series;
   const { stunt } = series;
   if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);

@@ -6,6 +6,7 @@ import { loadSessionProgress } from '../src/session-progress.ts';
 import { createGhostStore } from '../src/ghost-store.ts';
 import { createSprintSeries } from '../src/sprint-series.ts';
 import { RACE_TRACKS } from '../src/game.js';
+import { loadHistory } from '../src/history-classic.ts';
 
 beforeEach(() => {
   const store = new Map();
@@ -84,4 +85,21 @@ test('a stunt heat adds its time, score and air time to the running stunt total'
   const { settlement } = settle(race, { series: { sprintSeries: null, cup: null, stunt } });
   assert.deepEqual(settlement.series.stunt, { duration: 60, elapsed: 20, score: 300, heats: 1, maxCombo: 4, airTime: 3, trackId: 'coast' });
   assert.equal(settlement.intermediateStage, true, 'time is left, so the next heat follows');
+});
+
+test('settling the same finished race twice writes its result and rewards once', () => {
+  const race = classic({ position: 1, time: 61.5, stars: 3 });
+  const { context, settlement } = settle(race);
+  const again = settleRace(race, context);
+  assert.equal(again, settlement, 'a repeated settle returns the first settlement');
+  assert.equal(context.progress.history.length, 1);
+  assert.equal(loadHistory().length, 1, 'stored history holds one run');
+});
+
+test('a repeated stunt settle never counts the same heat twice', () => {
+  const stunt = { duration: 60, elapsed: 0, score: 0, heats: 0, maxCombo: 0, airTime: 0, trackId: 'coast' };
+  const race = classic({ time: 20, score: 300, endReason: 'route' }, { mode: 'stunt', config: { mode: 'stunt', duration: 60 }, styleAttack: { airTime: 3, maxCombo: 4 } });
+  const { context } = settle(race, { series: { sprintSeries: null, cup: null, stunt } });
+  settleRace(race, context);
+  assert.deepEqual([stunt.heats, stunt.elapsed, stunt.score], [1, 20, 300]);
 });
