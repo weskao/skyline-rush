@@ -34,6 +34,10 @@ Production builds, 1440×900, median of 5 alternating rounds.
 | B | after fix 0b00515 | 33.3 | 50.0 | 33.3 |
 | C | after fix 0b00515 | 16.7 | 33.4 | 44.8 |
 | C | main 0a08d02 | 16.7 | 33.3 | 55.2 |
+| D | both fixes 844e0ad | 16.7 | 33.4 | 51.7 |
+| D | main 0a08d02 | 16.7 | 33.4 | 51.4 |
+| E | both fixes 844e0ad | 16.7 | 16.8 | 57.2 |
+| E | first fix only 0b00515 | 16.7 | 33.4 | 48.2 |
 
 **Cause.** A sourcemapped CPU profile (10 s, same conditions) traced most `getAnimations` self time to one line.
 - **Where:** `updateCallout` in `src/race-hud.ts`. With no callout on screen it called `getAnimations()` on every HUD tick, which forces a style recalculation.
@@ -43,4 +47,15 @@ Production builds, 1440×900, median of 5 alternating rounds.
 **Fix.** `createAnimationGate` in `src/hud-dom.ts` reads a node's animations only after it has started one.
 - **Test:** `tests/hud-dom.test.js` counts the reads. It was RED before the fix and GREEN after.
 - **Result:** fps rose about 22% against the pre-fix build (run B), and p95 now matches main (run C).
-- **Open:** main still leads by about 19% fps in run C, so another per-frame cost remains.
+- **Open after this fix:** main still led by about 19% fps in run C, so a second per-frame cost remained.
+
+**Second cause.** It was not draws, JS or uploads.
+- **Ruled out:** WebGL calls per frame were equal (about 410 draws, 61–63 `useProgram`, no texture uploads), and JS self time per function was equal.
+- **Where:** the timeline showed each style recalculation restyling about 107 elements, against 19 on main.
+- **Culprit:** invalidation tracking named `body:has(#photo-screen[open]) #app > :not(#world):not(#photo-screen)` from Photo Studio. Its "everything but" subject gives Chrome no class to scope the work, so any DOM change restyles the whole page.
+- **Confirmation:** deleting only that rule at runtime brought recalcs back to 20 elements.
+
+**Second fix.** Photo Studio sets `body.photo-studio` on open and drops it when the dialog hides: Close button, Escape (`cancel`), with `close` as a backstop.
+- **Guard:** `tests/page-utilities.test.js` fails on any body-level `:has()` rule whose subject names no class or id. It was RED on exactly that selector.
+- **Result:** desktop fps now matches main (run D) and beats the first fix alone (run E).
+- **Commits:** 844e0ad and 332d3b5. 332d3b5 changes only when the class comes off, not the CSS that was measured.
