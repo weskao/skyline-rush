@@ -9,7 +9,7 @@ const finish = async (page, mode = 'time', collision = false) => {
     // Seed a distant scenario; the real simulation crosses the line and settles it.
     race.elapsed = mode === 'stunt' ? 119.95 : 80;
     race.traffic = [];
-    Object.assign(race.player, { distance: race.length - 2, speed: 60, collisions: collision ? 1 : 0, x: 2.5 });
+    Object.assign(race.player, { distance: race.length - (mode === 'stunt' ? 100 : 2), speed: 60, collisions: collision ? 1 : 0, x: 2.5 });
     if (race.checkpoint) {
       race.checkpoint.passed = race.checkpoint.gates.length;
       race.checkpoint.missed = 0;

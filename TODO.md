@@ -11,6 +11,9 @@
 - [x] Vue History/results RED/GREEN: missing collection fails after a successful import; both backup browser flows now pass with immediate 1 / 5 collection and unchanged Career count. Result announcements and explicit local adoption pass 11 focused cases; full Node 828 pass / 0 fail / 3 emulator skips; strict TS/Vue/JS pass with the worktree-local npm cache. Logs: `artifacts/challenge-medals/lifecycle-ui-*.log`, `history-backup-browser-green.log`.
 - [ ] Implement and verify bounded aerial telemetry, five separate personal medals, safe local/session persistence and local backup/account isolation; no new cloud schema.
 - [ ] Verify bilingual Vue History/result presentation with real desktop/touch actions and unchanged four Career medals.
+- [x] Integrate latest main `ca1c777` into this feature; resolve the TODO header conflict by preserving both the complete feature ledger and main's new 90/120 FPS request. Preserve shared History/Intl/media/scenery cache fixes.
+- [x] Existing local emulator compatibility passes 15 browser cases and 3 Rules cases before this latest main merge. Repeat on the resulting code. No production cloud writes or new cloud schema.
+- [ ] Re-run the complete gameplay matrix after correcting the new test's intentionally hidden landscape shortcut and seeding Stunt completion at the timer rather than an intermediate route heat. A baseline worktree created while Vite was live also caused a reload in one phone case; preserve that failure and keep baseline preparation separate from the next run.
 - [ ] Complete resulting full local gate, existing emulator compatibility, real-game evidence and Stunt-path performance before marking REPLAY-01 complete. Exact-HEAD CI remains separately pending public-source authorization.
 
 ## Main camera-probe integration (2026-10-28)

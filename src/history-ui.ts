@@ -90,8 +90,8 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
     return Number.isFinite(date.getTime()) ? formatDate(date, { month: 'short', day: 'numeric' }) : t('history.noDate');
   }
   function showHistory() {
-    const { sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world } = getData();
-    const personal = getData().sessionChallengeMedals ?? loadChallengeMedals();
+    const { sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, sessionChallengeMedals, world } = getData();
+    const personal = sessionChallengeMedals ?? loadChallengeMedals();
     updateHistoryView({
       challengeMedalCount: t('challengeMedal.count', { n: Object.keys(personal.awards).length }),
       challengeMedalPeaks: t('challengeMedal.peaks', { air: personal.longestFlight.toFixed(1), combo: personal.maxAerialCombo }),
@@ -166,7 +166,7 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
   }
   // Home status: today's challenge and the medal tally sit on the start screen instead of inside History.
   function showHomeStatus() {
-    const { sessionDaily, sessionMedals, world } = getData();
+    const { sessionDaily, sessionMedals, sessionChallengeMedals, world } = getData();
     const today = dailyChallenge();
     const best = dailyBoard(sessionDaily, today.id)[0];
     const medals = Object.keys(sessionMedals).length;
