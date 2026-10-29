@@ -11,6 +11,8 @@ import { loadHistory } from '../src/history-classic.ts';
 import { MODE_NAMES, mergeModeBests } from '../src/cloud-mode-bests.ts';
 import { readLocalModeBests } from '../src/cloud-progress.ts';
 import { validateCourse, compileCourse } from '../src/event-lab.ts';
+import { availablePaints } from '../src/access/production.ts';
+import { loadMedals, loadStars } from '../src/history-achievements.ts';
 
 beforeEach(() => {
   const store = new Map();
@@ -228,5 +230,27 @@ test('10C: every re-render of a finished race (pause, restart, exit, mode switch
       assert.equal(JSON.stringify([...writes]), once, `${mode} ${event} writes nothing more`);
       assert.equal(JSON.stringify({ ...context.progress, unlocked: [...context.progress.unlocked] }), awarded, `${mode} ${event} awards nothing more`);
     }
+  }
+});
+
+test('a Custom, Time Attack or Cup finish leaves Garage paints and achievements as they were', () => {
+  // Paints unlock from the summed best stars; achievements are the Classic medals. Both stored and in-session.
+  const career = progress => {
+    const sum = stars => Object.values(stars).reduce((a, b) => a + b, 0);
+    return { paints: availablePaints(sum(loadStars())), sessionPaints: availablePaints(sum(progress.stars)),
+      medals: Object.keys(loadMedals()).sort(), sessionMedals: Object.keys(progress.medals).sort() };
+  };
+  const control = loadSessionProgress(['coast']), start = career(control);
+  settle(classic({ position: 1, time: 50, stars: 3, nearMisses: 40 }), { progress: control });
+  const earned = career(control);
+  assert.ok(earned.paints.length > start.paints.length && earned.medals.length > start.medals.length,
+    'the same winning finish in Classic unlocks a paint and medals, so the check below can see a change');
+  for (const mode of ['custom', 'time', 'cup']) {
+    const store = new Map();
+    globalThis.localStorage = { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) };
+    const progress = loadSessionProgress(['coast']), before = career(progress);
+    settle(finishedRaceFor(mode), { progress });
+    assert.deepEqual(career(progress), before, `${mode} finish leaves Garage paints and achievements unchanged`);
+    assert.deepEqual(progress.stars, {}, `${mode} finish earns no Classic stars`);
   }
 });
