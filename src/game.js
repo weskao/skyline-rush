@@ -7,7 +7,7 @@ import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
 import { createElimination, stepElimination } from './elimination.ts';
 import { bankItem, activateItem, tickItemCooldown } from './active-items.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
-import { raceCompletion } from './race-objectives.ts';
+import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
 
@@ -119,7 +119,7 @@ export const RING_RADIUS = 4.8;
 export const RISK_RING_RADIUS = 2.4;
 export const RING_FUEL = 20; // charge ring
 export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
-export const RISK_SCORE = 500;
+export { RISK_SCORE } from './risk-lines.ts';
 export const PERFECT_LINE_NITRO = 1;
 export const RING_SPACING = 220;
 export const MYSTERY_EFFECTS = ['shield', 'magnet', 'ghost', 'freeze'];
@@ -184,13 +184,13 @@ function createPickups(track) {
 
 // Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
 // other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
-function createRings(track) {
+function createRings(track, riskLines = true) {
   const random = seededRng(track.seed, RACE_STREAMS.rings);
   const rings = [];
   const inTunnel = distance => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
   for (let distance = RING_SPACING; distance < track.length - 100;) {
     const roll = random();
-    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? 'risk' : 'mystery';
+    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? (riskLines ? 'risk' : 'nitro') : 'mystery'; // same roll either way: layout unchanged
     let x = 2.5;
     let altitude = 8;
     if (!track.fixedRings) {
@@ -247,12 +247,12 @@ export function createRace(trackId = 'coast', modifier = null) {
   const config = normalizeRaceConfig(options ?? {});
   const session = createRaceSessionContract(trackId, track.seed, config);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const rings = createRings(track);
+  const risk = riskRules(config), rings = createRings(track, risk.rings);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   return {
     trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
-    props: [], // solid World Tour scenery parts; main.js fills them from roadObstacles()
+    props: [], risk, // props: solid World Tour scenery parts; main.js fills them from roadObstacles()
     hazards: raceHazards(trackId, track, LANES, config),
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     practice: config.mode === 'free' ? createPracticeStats() : null,
@@ -293,7 +293,7 @@ function collectRing(race, ring, index) {
   else if (ring.type === 'slipstream') car.miniBoost = Math.max(car.miniBoost, SLIPSTREAM_BOOST);
   else if (ring.type === 'risk') {
     addNitro(car, 1);
-    car.score += RISK_SCORE;
+    car.score += race.risk.ringScore;
   } else if (ring.type === 'mystery') {
     const effect = mysteryEffect(race.seed, index);
     if (race.config.activeItems) bankItem(car, effect);
@@ -758,7 +758,7 @@ export function stepRace(race, input, dt) {
       if (!collision) {
         // Risk/reward: a close, clean ground pass pays more than a distant lane change.
         const near = car.altitude < 2.4 && Math.abs(car.x - obstacleX) < 4;
-        car.score += near ? 300 : 150;
+        car.score += near ? race.risk.nearScore : race.risk.passScore;
         if (near) car.nearMisses++;
       }
     }
