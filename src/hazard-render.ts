@@ -1,9 +1,11 @@
 // Draws race.hazards exactly where the simulation resolves them, from bounded pooled meshes.
 // ENV-05/06: one pool per effect, so colour AND silhouette tell players what a hazard does:
 // walls are tinted boxes, gusts are cyan arrows pointing the way they shove, ice/rough ground is a
-// pale sheet on the road. Every pool is attached at setup (count 0) so shader warm-up builds it.
+// pale plate with dark raised stripes on the road. No decorative motion: only the simulated pose moves,
+// so reduced motion has nothing to freeze here. Every pool is attached at setup (count 0) so shader warm-up builds it.
 import * as THREE from 'three';
 import { hazardPose, type RaceHazard } from './hazard-race.ts';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OBJECT_CATALOG } from './object-catalog.ts';
 
 type Vec3 = [number, number, number] | number[];
@@ -19,13 +21,25 @@ export const HAZARD_POOLS: Readonly<Record<Pool, number>> = Object.freeze({ bloc
 const BEHIND = 16, AHEAD = 550; // m drawn around the camera
 const POOL_OF: Partial<Record<string, Pool>> = { block: 'block', push: 'push', slow: 'slow' };
 
+// Unit plate with four raised cross-stripes, coloured per vertex (no texture): pale plate, dark stripes. The
+// silhouette and the brightness contrast both tell ice/rough ground apart from walls without relying on hue.
+function stripedPlate(): THREE.BufferGeometry {
+  const tint = (geometry: THREE.BufferGeometry, rgb: [number, number, number]) => {
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(Array.from({ length: geometry.attributes.position.count }, () => rgb).flat(), 3));
+    return geometry;
+  };
+  const plate = tint(new THREE.BoxGeometry(1, 0.5, 1).translate(0, -0.25, 0), [0.83, 0.95, 1]);
+  const stripes = [-0.375, -0.125, 0.125, 0.375].map(z => tint(new THREE.BoxGeometry(0.9, 1, 0.08).translate(0, 0, z), [0.18, 0.36, 0.5]));
+  return mergeGeometries([plate, ...stripes])!;
+}
+
 // instances/put are world.js's pooled InstancedMesh helpers.
 export function createHazardRenderer(scene: THREE.Scene, box: THREE.BufferGeometry, instances: Instances, put: Put, place: Place) {
   const barriers = instances(box, new THREE.MeshBasicMaterial({ color: '#ff946f' }), HAZARD_POOLS.block, scene);
   // A 4-sided cone laid on its side points +x; put()'s angle turns it to face the shove direction.
   const arrow = new THREE.ConeGeometry(0.5, 1, 4).rotateZ(-Math.PI / 2);
   const gusts = instances(arrow, new THREE.MeshBasicMaterial({ color: '#6fe3ff' }), HAZARD_POOLS.push, scene);
-  const surfaces = instances(box, new THREE.MeshBasicMaterial({ color: '#d4f1ff' }), HAZARD_POOLS.slow, scene);
+  const surfaces = instances(stripedPlate(), new THREE.MeshBasicMaterial({ color: '#ffffff', vertexColors: true }), HAZARD_POOLS.slow, scene);
   barriers.name = 'gauntlet-barriers'; gusts.name = 'hazard-gusts'; surfaces.name = 'hazard-surfaces';
   barriers.count = gusts.count = surfaces.count = 0;
   const pools = { block: barriers, push: gusts, slow: surfaces };

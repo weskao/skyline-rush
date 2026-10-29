@@ -69,3 +69,27 @@ test('ENV-06 the per-frame path allocates no three.js objects and ignores the qu
   assert.doesNotMatch(update, /new THREE\./, 'materials and geometry are built once at setup');
   assert.doesNotMatch(source, /quality/i, 'hazards are gameplay: drawn the same on Low, Medium and High');
 });
+
+test('13C ice and rough ground differ from walls by shape and brightness, not colour alone', () => {
+  const { mesh } = setup();
+  const walls = mesh('gauntlet-barriers'), surfaces = mesh('hazard-surfaces');
+  assert.notEqual(surfaces.geometry, walls.geometry, 'a striped plate, not a recoloured wall');
+  assert.ok(surfaces.geometry.attributes.position.count > walls.geometry.attributes.position.count, 'raised stripes on a plate');
+  const colors = surfaces.geometry.attributes.color;
+  assert.ok(colors && surfaces.material.vertexColors, 'the stripe pattern is built into the geometry, not a texture');
+  const lum = i => 0.2126 * colors.getX(i) + 0.7152 * colors.getY(i) + 0.0722 * colors.getZ(i);
+  const levels = Array.from({ length: colors.count }, (_, i) => lum(i));
+  assert.ok(Math.max(...levels) - Math.min(...levels) > 0.4, 'stripes contrast in brightness, readable without colour vision');
+});
+
+test('13C reduced motion: hazard visuals carry no decorative motion, only the simulated pose', () => {
+  const source = readFileSync(new URL('../src/hazard-render.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /performance\.now|Date\.now|clock|requestAnimationFrame/, 'no wall-clock-driven glow, bob or spin');
+  const { r, mesh } = setup();
+  const race = { elapsed: 1, hazards: [entry('gust', 110), entry('terrain', 120), entry('barrier', 130)] };
+  const snapshot = () => ['gauntlet-barriers', 'hazard-gusts', 'hazard-surfaces'].map(n => Array.from(mesh(n).instanceMatrix.array.slice(0, 16)));
+  r.update(race, 'coast', 50, 0, false);
+  const first = snapshot();
+  r.update(race, 'coast', 50, 0, false);
+  assert.deepEqual(snapshot(), first, 'the same race state always draws the same frame');
+});
