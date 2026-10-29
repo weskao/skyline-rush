@@ -72,6 +72,6 @@ export function detailModels({ B, R, G }) {
     'beacon-mast'(g){for(const z of [-1.2,1.2])R(g,DARK,0,13,z,.22,26);for(const y of [6,14,22])B(g,DARK,0,y,0,.3,.3,2.6);
       G(g,BEACON,0,26.6,0,1.1,1.1,1.1);G(g,BEACON,0,15,0,.8,.8,.8);
     },
-    'sea-spray'(g){G(g,SPRAY,0,.6,0,7,1.2,26);G(g,SPRAY,-1.5,1.6,-6,3.5,1.6,8);G(g,SPRAY,1.2,1.4,7,3,1.3,7);},
+    'sea-spray'(g){G(g,SPRAY,0,1,0,8,2,26);G(g,SPRAY,-1.5,4,-6,3.5,6,6);G(g,SPRAY,1.2,3.2,7,3,4.4,5);G(g,SPRAY,.4,5.5,0,2.4,4,3);},
   };
 }
