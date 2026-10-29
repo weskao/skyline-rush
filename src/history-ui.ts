@@ -18,7 +18,7 @@ interface SavedRace {
   distance?: number;
   longestCombo?: number;
 }
-interface SavedModeRace {
+interface SavedModeRace { distance?: number;
   track: string;
   mode: string;
   rules: string;
@@ -97,12 +97,12 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
     const savedFor = modeRecordLookup(trackId);
     const modeRuns = modes.map(run => {
       const { best, ghost } = savedFor(run);
-      const personalBest = best !== null && (run.mode === 'stunt' ? run.score === best : run.time === best);
+      const personalBest = best !== null && (run.mode === 'endless' ? run.distance === best : run.mode === 'stunt' ? run.score === best : run.time === best);
       const details = run.mode === 'stunt'
         ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
           run.medal ? t('mode.medal.' + run.medal) : '',
           t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) })]
-        : [t('mode.' + run.mode), timeString(run.time)];
+        : [t('mode.' + run.mode), ...(run.mode === 'endless' ? [(Number(run.distance || 0) / 1000).toFixed(2) + ' km'] : []), timeString(run.time)];
       const text = [...details, personalBest ? t('mode.historyPersonalBest') : null,
         ghost ? t('mode.historyGhost') : null, shortDate(run.date)].filter(Boolean).join(' · ');
       return { mode: run.mode, personalBest, ghost, text };

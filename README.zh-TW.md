@@ -1,4 +1,4 @@
-<!-- source-sha256: 8193aaaebdf6fb77eda2b4f7b6920e7615b483cc218c64617501b5b09286e213 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 12c31ab52ead7a8b86a54dec86bca26ae542c558b8efe7d9bd0e460969b2c45c generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 
 # Skyline Rush
 
@@ -63,6 +63,8 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
 選擇一條**已解鎖的賽道**,在賽道卡片下方選擇 **GAME MODE**,需要時展開其規則,然後按下 **Start race**(或按 Enter)。比賽仍然使用相同的 Three.js 道路、飛行、FLY / BOOST / NITRO 以及響應式觸控操作。開發分支提供下列模式:
 
+選擇一條**已解鎖的賽道**,在賽道卡片下方選擇 **GAME MODE**,需要時展開其規則,然後按下 **Start race**(或按 Enter)。比賽仍然使用相同的 Three.js 道路、飛行、FLY / BOOST / NITRO 以及響應式觸控操作。開發分支提供下列模式:
+
 | 模式 | 變化內容 | 勝利條件／進度 |
 | --- | --- | --- |
 | **Classic Race** | 標準的三名對手衝刺，可在 10 條賽道之一進行，包含車流、捷徑、光環與 NITRO。 | 登上頒獎台可解鎖下一條賽道；只有 Classic 會授予生涯星星、獎牌與官方最佳成績。 |
@@ -78,6 +80,10 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 ### Event Lab Lite 第一版
 
 **Event Lab Lite** 可在已解鎖路線上編輯本機賽道樣板中的障礙、NITRO 環與補給。可調整車道與距離,復原/重做/重設編輯,並以文字匯入或匯出經驗證的賽道。開始後會將賽道轉為實際比賽物件;重試會保留賽道與種子。賽道成績與 Career、Custom 紀錄分開。交通錐、自訂坡道、檢查點編輯及社群分享尚未包含在第一版。
+
+### 無盡公路
+
+**Endless Highway** 會延伸 Coast 的道路,越過原本終點後仍可繼續距離生存挑戰。車流難度逐步提升至固定上限;累計五次碰撞會結算本次挑戰。個人成績記錄最長絕對距離,與 Career 及幽靈車各自獨立。暫停與 WebGL 恢復會保留進度。第一版僅支援 Coast,附近景物與遭遇物件採用有上限的物件池。
 
 ### 賽前設定、結果與無障礙功能
 

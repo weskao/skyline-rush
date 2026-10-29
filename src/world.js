@@ -15,6 +15,7 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals } from './race-visuals.ts';
+import { updateSkyline } from './skyline-scenery.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -725,6 +726,8 @@ export function createWorld(canvas) {
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
   let sizeKey = '', warmupPending = true;
+  const restoreWarmup = () => { warmupPending = true; };
+  canvas.addEventListener('webglcontextrestored', restoreWarmup);
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
     // setSize reallocates the drawing buffer and every composer target, blanking a frame; mobile URL-bar and
@@ -866,7 +869,7 @@ export function createWorld(canvas) {
       const visualPreset = race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
       raceVisuals.apply(visualPreset);
       const distance = preview ? previewDistance(trackId) : car.distance;
-      if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality);} else coastScenery.hide();
+      if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality,race.endless ? race.seed : undefined);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
       const center = trackId === 'spiral' ? skyPosition(distance)[0] : TOUR_IDS.has(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
       // Smooth mountain bore lighting over 38 m for road readability.
@@ -1016,20 +1019,7 @@ export function createWorld(canvas) {
         put(lamps, i, x - side * 3.3, 12.8, z, 0.85, 0.06, 0.4);
       }
       poles.instanceMatrix.needsUpdate = lamps.instanceMatrix.needsUpdate = true;
-      city.position.set(-center * 0.6, 0, distance % 2200);
-      buildingData.forEach((b, i) => {
-        // Only re-upload a building's 19 transforms when it wraps behind the camera.
-        const wrap = b.d < distance % 2200 ? -2200 : 0;
-        if (b.wrap === wrap) return;
-        b.wrap = wrap;
-        const z = -b.d + wrap + 100;
-        const x = b.x;
-        put(buildings, i, x, b.h / 2 - 6, z, b.w, b.h, 16);
-        for (let j = 0; j < 18; j++) {
-          put(windows, i * 18 + j, x + (j % 3 - 1) * b.w * 0.28, 3 + Math.floor(j / 3) * (b.h - 10) / 6, z + 8.05, b.w * 0.1, 1.1, 0.05);
-        }
-        buildings.instanceMatrix.needsUpdate = windows.instanceMatrix.needsUpdate = true;
-      });
+      updateSkyline(city, buildings, windows, buildingData, put, distance, center, race.endless ? race.seed : undefined);
 
       // Bounded InstancedMesh: one distinct marker per reachable barrier,
       // no scene allocations or three.js collision checks on the hot path.
@@ -1105,7 +1095,7 @@ export function createWorld(canvas) {
         const frame=trackId==='spiral'?skyFrame(race.length):trackFrame(trackId,race.length);
         finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
       } else { finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance)); finish.rotation.set(0,0,0); }
-      finish.visible = race.length - distance < 1400;
+      finish.visible = !race.endless && race.length - distance < 1400;
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
         TOUR_IDS.has(trackId) ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin) } : visual);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, distance, visual, reducedMotion);
@@ -1309,6 +1299,7 @@ export function createWorld(canvas) {
     },
     dispose() {
       stopLocaleSigns();
+      canvas.removeEventListener('webglcontextrestored', restoreWarmup);
       skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
       scene.traverse(object => {

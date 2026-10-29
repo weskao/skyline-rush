@@ -6,7 +6,7 @@ import { readStored as read, writeStored as write, type HistoryStorage } from '.
 export const MODE_HISTORY_KEY = 'skyline-rush-mode-history-v1';
 export const STUNT_BESTS_KEY = 'skyline-rush-stunt-bests-v1';
 export const MODE_BESTS_KEY = 'skyline-rush-mode-bests-v1';
-const MODE_TYPES: ReadonlySet<string> = new Set(['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'eventlab']);
+const MODE_TYPES: ReadonlySet<string> = new Set(['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'eventlab', 'endless']);
 const MODE_MAX_SECONDS = 7 * 24 * 60 * 60;
 const MODE_MAX_RULES_LENGTH = 4096;
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -18,7 +18,7 @@ const numberFinite = (n: unknown): n is number =>
 
 export interface ModeHistoryRun {
   mode: string; track: string; rules: string; time: number;
-  score?: number; position?: number; maxCombo?: number; airTime?: number;
+  distance?: number; score?: number; position?: number; maxCombo?: number; airTime?: number;
   [key: string]: unknown;
 }
 export interface ModeConfig {
@@ -39,7 +39,8 @@ export const validModeHistoryRun = (raw: unknown): raw is ModeHistoryRun => {
   return typeof run.mode === 'string' && MODE_TYPES.has(run.mode) &&
     typeof run.track === 'string' && Object.hasOwn(RACE_TRACKS, run.track) &&
     typeof run.rules === 'string' && run.rules.length > 0 && run.rules.length <= MODE_MAX_RULES_LENGTH &&
-    valid(run.time) && run.time <= MODE_MAX_SECONDS &&
+    valid(run.time) && run.time <= (run.mode === 'endless' ? Number.MAX_SAFE_INTEGER : MODE_MAX_SECONDS) &&
+    (run.mode !== 'endless' || run.track === 'coast' && numberFinite(run.distance) && run.distance >= 0 && run.distance <= Number.MAX_SAFE_INTEGER) &&
     (run.score === undefined || (numberFinite(run.score) && run.score >= 0)) &&
     (run.position === undefined || (numberFinite(run.position) && Number.isInteger(run.position) &&
       run.position >= 0 && run.position <= 4));
@@ -80,14 +81,14 @@ export function loadStuntBest(trackId: string, config: ModeConfig | undefined, s
 const modeBestId = (trackId: string, config: ModeConfig | undefined): string =>
   JSON.stringify([trackId, config]);
 const validModeBest = (value: unknown, mode: string): value is number =>
-  numberFinite(value) && (mode === 'stunt' ? value >= 0 : value > 0 && value <= MODE_MAX_SECONDS);
+  numberFinite(value) && (mode === 'stunt' ? value >= 0 : value > 0 && value <= (mode === 'endless' ? Number.MAX_SAFE_INTEGER : MODE_MAX_SECONDS));
 export function loadModeBest(trackId: string, config: ModeConfig | undefined, storage?: HistoryStorage): number | null {
   const mode = config?.mode;
   if (!Object.hasOwn(RACE_TRACKS, trackId) || typeof mode !== 'string' || !MODE_TYPES.has(mode)) return null;
   const signature = JSON.stringify(config);
   const values = loadModeHistory(storage)
     .filter(run => run.track === trackId && run.rules === signature)
-    .map(run => mode === 'stunt' ? run.score : run.time)
+    .map(run => mode === 'endless' ? run.distance : mode === 'stunt' ? run.score : run.time)
     .filter((value): value is number => validModeBest(value, mode));
   const saved = asRecord(read(MODE_BESTS_KEY, storage))[modeBestId(trackId, config)];
   if (validModeBest(saved, mode)) values.push(saved);
@@ -96,12 +97,13 @@ export function loadModeBest(trackId: string, config: ModeConfig | undefined, st
     const older = loadStuntBest(trackId, config, storage);
     if (older && validModeBest(older.score, mode)) values.push(older.score);
   }
-  return !values.length ? null : mode === 'stunt' ? Math.max(...values) : Math.min(...values);
+  return !values.length ? null : ['stunt', 'endless'].includes(mode) ? Math.max(...values) : Math.min(...values);
 }
 export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = new Date()) {
   const result = race.result;
   if (!MODE_TYPES.has(race.mode) || !Object.hasOwn(RACE_TRACKS, race.trackId) ||
-      !result || !valid(result.time) || result.time > MODE_MAX_SECONDS ||
+      !result || !valid(result.time) || result.time > (race.mode === 'endless' ? Number.MAX_SAFE_INTEGER : MODE_MAX_SECONDS) ||
+      (race.mode === 'endless' && (race.trackId !== 'coast' || !valid(result.distance) || result.distance > Number.MAX_SAFE_INTEGER)) ||
       result.success === false ||
       (result.position !== undefined && (!Number.isInteger(result.position) ||
         result.position < 1 || result.position > 4)) ||
@@ -114,18 +116,19 @@ export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = n
   const previous = loadModeHistory(storage);
   const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
   const scoreAttack = race.mode === 'stunt';
+  const distanceAttack = race.mode === 'endless', maximize = scoreAttack || distanceAttack;
   const preservedBest = loadModeBest(race.trackId, race.config, storage);
-  const previousBest = scoreAttack
-    ? Math.max(preservedBest ?? -Infinity, ...comparable.filter(run => numberFinite(run.score)).map(run => run.score!))
+  const previousBest = maximize
+    ? Math.max(preservedBest ?? -Infinity, ...comparable.map(run => distanceAttack ? run.distance! : run.score!).filter(numberFinite))
     : Math.min(preservedBest ?? Infinity, ...comparable.map(run => run.time));
-  const value = scoreAttack ? result.score! : result.time;
-  const record = scoreAttack ? value > previousBest : value < previousBest;
-  const best = scoreAttack ? Math.max(previousBest, value) : Math.min(previousBest, value);
+  const value = distanceAttack ? result.distance! : scoreAttack ? result.score! : result.time;
+  const record = maximize ? value > previousBest : value < previousBest;
+  const best = maximize ? Math.max(previousBest, value) : Math.min(previousBest, value);
   const nonnegativeInt = (n: unknown): number =>
     numberFinite(n) && Number.isSafeInteger(n) && n >= 0 ? Math.min(n, 1000000) : 0;
   const hazards = Array.isArray(race.hazards) ? race.hazards : [];
   const distance = numberFinite(result.distance) && result.distance >= 0
-    ? Math.min(result.distance, 100000)
+    ? Math.min(result.distance, distanceAttack ? Number.MAX_SAFE_INTEGER : 100000)
     : numberFinite(race.length) ? Math.max(0, race.length) : 0;
   const stageCount = race.mode === 'cup' ? race.config?.cupTracks?.length ?? 3 : race.config?.stages ?? 1;
   write(MODE_HISTORY_KEY, [...previous, {

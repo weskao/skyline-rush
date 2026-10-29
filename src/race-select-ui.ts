@@ -48,7 +48,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const eventLab = setupEventLabUI({ ...options, select: next => {
     selectedMode = 'eventlab'; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
   } });
-  const selectedRace = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
+  const selectedRace = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(selectedMode === 'endless' ? 'coast' : trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
     ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value } : {}),
@@ -117,11 +117,12 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const button of trackButtons()) {
       const id = button.dataset.track!;
       const locked = !unlockedTracks.has(id);
+      button.disabled = selectedMode === 'endless' && id !== 'coast';
       button.classList.toggle('is-locked', locked);
       button.setAttribute('aria-pressed', String(id === race.trackId));
       button.querySelector('small')!.textContent = t(locked ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
       const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1]!;
-      button.title = locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
+      button.title = button.disabled ? t('mode.description.endless') : locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
     }
   }
   function renderRouteInfo(race: Race): void {
@@ -130,7 +131,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     startButton.disabled = !daily && (!unlockedTracks.has(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount()));
     startButton.setAttribute('aria-describedby', 'track-note');
     $('.start-hint').hidden = startButton.disabled;
-    $('#track-length').textContent = t('track.sprint', { km: (RACE_TRACKS as Record<string, { length: number }>)[race.trackId]!.length / 1000 });
+    $('#track-length').textContent = race.endless ? t('mode.endlessRoute') : t('track.sprint', { km: (RACE_TRACKS as Record<string, { length: number }>)[race.trackId]!.length / 1000 });
     const tracks = Object.keys(RACE_TRACKS);
     const next = tracks[tracks.indexOf(race.trackId) + 1];
     const previous = tracks[tracks.indexOf(race.trackId) - 1]!;
@@ -145,7 +146,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const ghost = options.ghostFor(race);
     const track = trackName(race.trackId, getLocale());
     $<HTMLInputElement>('#ghost-enabled').checked = options.ghostEnabled();
-    $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : race.mode === 'free' ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
+    $('#ghost-status').textContent = race.modifier ? t('ghost.daily') : ['free', 'endless'].includes(race.mode) ? t('mode.ghostUnavailable') : ghost ? t('ghost.ready', { track, time: timeString(ghost.time) }) : t('ghost.none', { track });
   }
   function showTracks(): void {
     options.showHomeStatus();

@@ -63,12 +63,14 @@ function modeRun(raw: unknown): NormalizedRun | null {
   const id = run.track, mode = run.mode, time = run.time, rules = run.rules;
   if (!when || !track(id) || typeof mode !== 'string' || !(MODE_NAMES as readonly string[]).includes(mode) ||
       !validTime(time) || typeof rules !== 'string' || !rules.length || rules.length > 4096) return null;
+  if (mode === 'endless' && (id !== 'coast' || typeof run.distance !== 'number' ||
+      !Number.isFinite(run.distance) || run.distance < 0 || run.distance > Number.MAX_SAFE_INTEGER)) return null;
   const telemetry: RawRecord = {};
   for (const key of ['rulesVersion', 'stageCount', 'itemsUsed', 'hazardPasses', 'hazardHits']) {
     if (validInt(run[key])) telemetry[key] = run[key];
   }
   if (typeof run.distance === 'number' && Number.isFinite(run.distance) &&
-      run.distance >= 0 && run.distance <= 100000) telemetry.distance = run.distance;
+      run.distance >= 0 && run.distance <= (mode === 'endless' ? Number.MAX_SAFE_INTEGER : 100000)) telemetry.distance = run.distance;
   if (run.lapCount === null) telemetry.lapCount = null;
   else if (validInt(run.lapCount)) telemetry.lapCount = run.lapCount;
   if (run.modeId === mode) telemetry.modeId = mode;

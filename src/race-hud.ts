@@ -112,8 +112,8 @@ export function createRaceHud(options: HudOptions) {
   function updateProgress(race: HudRace, car: HudRace): void {
     setHudText(ui.timer!, timeString(race.elapsed));
     setHudText(ui.distance!, (car.distance / 1000).toFixed(2));
-    ui['progress-fill']!.style.width = `${car.distance / race.length * 100}%`;
-    setHudText(hudNodes['race-length']!, (race.length / 1000).toFixed(2));
+    ui['progress-fill']!.style.width = `${race.endless ? 0 : car.distance / race.length * 100}%`;
+    setHudText(hudNodes['race-length']!, race.endless ? '∞' : (race.length / 1000).toFixed(2));
     const timeGhost = race.mode === 'time' && getControlPrefs().ghost ? options.timeTrialGhost(race) : null;
     const split = hudNodes['ghost-split']!;
     setHudHidden(split, !timeGhost || race.phase !== 'racing');
@@ -233,7 +233,8 @@ export function createRaceHud(options: HudOptions) {
   function updateStatus(race: HudRace, car: HudRace, input: HudInput, impactAge: number): void {
     const length = race.length;
     let status = L[`phase.${race.phase}`]!;
-    if (race.mode === 'free' && car.distance >= length) status = L['mode.endOfRoad']!;
+    if (race.endless) status = t('mode.endlessHud', { lives: Math.max(0, 5 - car.collisions), next: Math.floor(car.distance / 1000) + 1 });
+    else if (race.mode === 'free' && car.distance >= length) status = L['mode.endOfRoad']!;
     else if (race.phase === 'racing' && race.mode === 'classic' && car.distance >= length - 500) {
       const { ahead, behind } = sprintGaps(race);
       status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;

@@ -59,7 +59,7 @@ export function createRaceSessionContract(
     mode: config.mode,
     simulation,
     presentation: Object.freeze({
-      ghostEnabled: (presentation.ghostEnabled ?? true) as boolean,
+      ghostEnabled: config.mode !== 'endless' && (presentation.ghostEnabled ?? true) as boolean,
       visualPreset: visualPreset as VisualPreset,
     }),
     objective: createRaceObjective(config),

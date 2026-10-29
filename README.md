@@ -85,6 +85,10 @@ Custom and Free Drive offer **Off / Classic Mystery Rings / Active Items / All I
 
 **Event Lab Lite** edits local course templates with barriers, NITRO rings and supplies on unlocked routes. Change their lane and distance, Undo/Redo/Reset edits, and import or export a validated course as text. Starting compiles the course into real race encounters; retry preserves the course and seed. Course results stay separate from Career and Custom records. Cones, authored ramps, checkpoint editing and community sharing remain outside this first version.
 
+### Endless Highway
+
+**Endless Highway** extends Coast beyond the authored finish as a distance-survival event. Traffic difficulty rises to a fixed cap; five collisions end a completed attempt. The personal record tracks longest absolute distance, separately from Career and Ghosts. Pause and WebGL recovery preserve the run. This first version supports Coast only; its nearby scenery and encounters use bounded pools.
+
 ### Race setup, results and accessibility
 
 - Mode and track selection remain accessible by keyboard and touch; contextual panels only show options relevant to the selected mode. Unavailable Cups explain the number of tracks still required.

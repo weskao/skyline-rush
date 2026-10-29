@@ -115,8 +115,15 @@ function standardView(race: FinishedRace, { best, record, medals, series, next }
   };
 }
 
+function endlessView(race: FinishedRace, { best, record }: FinishedResult): ResultView {
+  return { title: t('mode.endlessFinished'), copy: t(record ? 'mode.endlessRecord' : 'mode.endlessSummary'),
+    stats: row(t('mode.endlessDistance'), (race.result.distance / 1000).toFixed(2) + ' km') +
+      row(t('mode.endlessBest'), (best / 1000).toFixed(2) + ' km') + row(t('mode.totalTime'), timeString(race.elapsed)), counts: [] };
+}
+
 // First match wins: mode-specific outcomes before the generic podium screen.
 const VIEWS: [(race: FinishedRace, finished: FinishedResult) => unknown, (race: FinishedRace, finished: FinishedResult) => ResultView][] = [
+  [race => race.mode === 'endless', endlessView],
   [race => race.mode === 'elimination', eliminationView],
   [(_race, { stunt }) => stunt, stuntView],
   [(_race, { cup }) => cup, cupView],

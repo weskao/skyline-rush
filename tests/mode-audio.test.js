@@ -84,3 +84,18 @@ test('authored Event Lab checkpoints play the same gate cues once', () => {
  assert.deepEqual(modeAudioCues(r,state),['gate-miss']);
  assert.deepEqual(modeAudioCues(race('eventlab',{checkpoint:null}),createModeAudioState()),[]);
 });
+
+test('Endless kilometre milestones cue once and pause or restart never replays stale milestones', () => {
+  const state = createModeAudioState();
+  const race = { mode: 'endless', trackId: 'coast', phase: 'racing', player: { distance: 900 } };
+  modeAudioCues(race, state);
+  race.player.distance = 1001;
+  assert.deepEqual(modeAudioCues(race, state), ['gate-clear']);
+  assert.deepEqual(modeAudioCues(race, state), []);
+  race.phase = 'paused'; race.player.distance = 2001;
+  assert.deepEqual(modeAudioCues(race, state), []);
+  race.phase = 'racing'; assert.deepEqual(modeAudioCues(race, state), []);
+  const fresh = { ...race, player: { distance: 0 } };
+  assert.deepEqual(modeAudioCues(fresh, state), []);
+  assert.equal(musicForMode(fresh), 'cruise');
+});

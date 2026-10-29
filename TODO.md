@@ -108,6 +108,11 @@ Historical receipts below retain their original date and verification scope. Ear
 - [x] Exact published code `8b34df1` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547459). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
 - [x] Complete make verify on merged code `8b34df1` exits 0: strict TS/Vue/JS, Node 822 / Browser 499 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/event-lab/make-verify-main-ca1c777-user-merge.log`.
 
+
+- [x] User-integrated `main@ca1c777` is an ancestor of `733d848` on `feature/endless-highway`; tracked tree was clean and no unresolved merge conflicts were found.
+- [x] Exact published code `733d848` GitHub CI: 17/17 required checks passed; quality-gate success. [CI run](https://github.com/weskao/skyline-rush/actions/runs/40818547563). This receipt names the tested commit; later TODO-only commits require their own latest-HEAD CI before merge.
+- [x] Complete make verify on merged code `733d848` exits 0: strict TS/Vue/JS, Node 825 / Browser 497 / World Tour 303; Node has 3 emulator skips and Browser 2 desktop touch skips. Source is unchanged. Log: `artifacts/endless/make-verify-main-ca1c777-user-merge.log`.
+
 Historical receipts below retain their original date and verification scope.
 
 ## Main camera-probe integration (2026-10-28)
@@ -128,6 +133,10 @@ Historical receipts below retain their original date and verification scope.
 - [x] Complete resulting-main `make verify` on code `903846e` (verified 2026-10-29): strict TS/Vue/JS checks, 808 Node passed / 3 emulator-scoped skips, locked production build, 497 browser passed / 2 inapplicable desktop touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/event-lab/make-verify-main-31ac7b1.log`.
 - [x] Preserve 12 original-resolution real-game images in `artifacts/event-lab/reviewed-main-31ac7b1/`; desktop and phone representatives were visually inspected. Fresh main31 original-resolution flows pass (4 cases). Chrome emulation remains separate from physical Safari/Android acceptance.
 - [x] Local Auth/Firestore compatibility on code `903846e`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/event-lab/cloud-main-31ac7b1.log`; no production cloud writes.
+
+- [x] Complete resulting-main `make verify` on code `6883d0a` (verified 2026-10-29): strict TS/Vue/JS checks, 811 Node passed / 3 emulator-scoped skips, locked production build, 495 browser passed / 2 inapplicable desktop touch-case skips, 303 dedicated World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main-31ac7b1.log`.
+- [x] Preserve 8 original-resolution real-game images in `artifacts/endless/reviewed-main-31ac7b1/`; desktop and phone representatives were visually inspected. Fresh main31 original-resolution flows pass (2 cases). Chrome emulation remains separate from physical Safari/Android acceptance.
+- [x] Local Auth/Firestore compatibility on code `6883d0a`: 15 browser + 3 Rules tests pass, exit 0. Receipt: `artifacts/endless/cloud-main-31ac7b1.log`; no production cloud writes.
 - [ ] Publish and verify exact-HEAD CI after the pending public feature-push authorization is resolved. Automatic review rejected the earlier public push for missing explicit disclosure authorization; no retry or workaround. No feature-to-main merge, main push, PR, tag or deployment is authorized.
 
 ## Main 0.25.0 integration (2026-10-28)
@@ -141,6 +150,8 @@ Historical receipts below retain their original date and verification scope.
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `5d080fe` after main `31ac7b1`; exact counts and source-equivalent original-resolution evidence are recorded above. Earlier 0197547 and 0152611 logs retain their original baseline labels.
 
 - [x] Complete the resulting 0.25.0 local gate and real-game review on code `903846e` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
+
+- [x] Complete the resulting 0.25.0 local gate and real-game review on code `6883d0a` after main `31ac7b1`; current receipts and original-resolution evidence are recorded above. Earlier baseline logs retain their original labels.
 - [ ] Publish only after explicit push authorization, then inspect exact-HEAD unit, Cloud Save, all 8 browser and all 6 World Tour shards plus quality-gate. A fresh automatic review rejected the attempted public feature push; an explicit six-feature approval question is pending. No feature-to-main merge, main push, PR, tag or deployment is authorized; no push-review workaround.
 
 ## Historical main integration through 0197547 (2026-10-28)
@@ -247,6 +258,24 @@ Base: `feature/event-lab-lite` a6c9f14 + origin/main 0a08d02 + `feature/env-haza
 - [ ] Browser: `tests/event-lab-browser.spec.js` (designer tap/preview/checkpoints/ramp render) and `tests/launch-ramps-browser.spec.js` (Spiral helix/joins/launch captures; first-grounded-frame wheel clearance ≤ 0.12 m on Spiral helix and flattest/steepest World Tour ramp spots), desktop + phone. World Tour roads have no lateral bank (`trackFrame` right.y = 0); banked coverage is Sky Spiral.
 - [ ] Full local `make verify` on the branch HEAD; exact-HEAD CI pending.
 - [ ] Pending, not claimed: ghost replay over ramps, physical devices.
+
+
+- [x] Complete fresh local `make verify` on code `1515586` after captured main `0197547` and shared locale repair: strict TS/Vue/JS checks, 808 Node passed / 3 emulator skips, locked build, 495 browser passed / 2 conditional skips, 94 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main-0197547.log`. Fresh original-resolution real-game flows also pass; reviewed captures: `artifacts/endless/reviewed-main-0197547/`. Earlier SHA receipts below remain historical.
+
+## Endless Highway continuation (2026-10-28, feature/endless-highway)
+
+- [x] Real screenshot review exposed horizontal overflow in billion-metre phone results. Observe the new cell-bounds assertion fail before shared CSS commit `3826f3a`; the existing result container now wraps, retaining font sizes/gaps. Fresh original-resolution flows pass (Circuit: 8, including 1/3/5 laps; Endless: 2). Capture only visible, settled result panels.
+- [x] Repeat complete local `make verify` after the CSS fix on `c0cd624`: strict TS/Vue/JS checks, 801 Node passed / 3 emulator skips, locked build, 489 browser passed / 2 skips and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-result-wrap.log`. Pre-fix full-gate receipts below remain historical.
+- [ ] Verify exact post-wrap feature-HEAD GitHub quality-gate; no earlier HEAD CI is substituted.
+
+
+- [x] Observe mode/streaming/settlement RED; implement Coast-only absolute-distance survival beyond authored finishes, five-contact settlement, capped difficulty and deterministic five-chunk traffic/pickup/ring pools. Classic/Daily/Cup routes and ordered catalogs remain unchanged.
+- [x] Rebase Coast scenery and skyline GPU transforms near the camera, preserve existing materials/pools, hide finite minimap/progress/finish arch and avoid Ghost trace accumulation. Tests cover 8 km, 2 million metres and billion-metre progress with fixed object/resource counts.
+- [x] Persist longest distance independently from Career, including a fifth real collision and rolling-history/cloud normalization/max-distance merges; reuse cruise music and one-shot milestones.
+- [x] Follow-up GREEN: 126 focused core/type/Classic-route checks and two real desktop/touch bilingual browser flows pass, including pause, actual WebGL loss/restore, flight input, result persistence, locale switch and restart. Actual full-resolution distant-road/result captures inspected in `artifacts/endless/`.
+- [x] Moving-traffic continuity RED → GREEN: a 20-minute deterministic driving regression reproduced nearby traffic disappearing when its birth chunk expired. Recycle by current distance and preserve the 40-car cap; all six Endless checks and the full Node suite pass (799 passed, 0 failed, 3 skipped). Logs: `artifacts/endless/traffic-continuity-{red,green,unit}.log`.
+- [x] Complete merged local `make verify` on code HEAD `12150b7`: strict TS/Vue/legacy checks, 801 Node passed / 3 emulator-dependent skipped, locked production build, 489 browser passed / 2 skipped and 72 World Tour passed; exit 0. Receipt: `artifacts/endless/make-verify-main72466c3-final.log`. Cloud emulator checks also pass: 15 browser + 3 Rules tests (`cloud-main72466c3.log`).
+- [ ] Latest-feature-HEAD GitHub quality-gate, actual background-tab acceptance and physical iOS/Android GPU/thermal endurance. Same-name feature pushes passed the renewed automatic review; latest-HEAD CI remains pending.
 
 
 - [x] AIRFLOW locale-change RED → GREEN: a real 390×844 / 59px safe-area test measured the zh-TW card bottom at 306px (limit 303.84px) because CJK label sizes applied while live values were still English. A deterministic real-menu change-event regression fails on the old code, then passes after synchronously relabeling three cached message keys; all 30 camera/telemetry browser tests pass without changing CSS, font size or assertions. Logs: `artifacts/regression-gates/airflow-locale-{red,green}.log`.

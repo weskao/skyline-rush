@@ -1,5 +1,5 @@
 // A small, versioned contract for practice modes; Classic and Daily stay identical.
-export const MODES: readonly string[] = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination']);
+export const MODES: readonly string[] = Object.freeze(['classic', 'custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'endless']);
 const TRAFFIC: Readonly<Record<string, number>> = Object.freeze({ off: 0, light: 0.5, normal: 1, heavy: 1.5 });
 const DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
 export const ITEM_RULES = ['off', 'classic', 'active', 'all'] as const;
@@ -61,6 +61,7 @@ const REQUEST_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze(
   cup: ['cupTracks'],
   stunt: ['duration', 'bonusGates'],
   elimination: [],
+  endless: [],
 });
 const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isOneOf = <T extends string | number>(value: unknown, values: readonly T[]): value is T => values.includes(value as T);
