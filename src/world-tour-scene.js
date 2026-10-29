@@ -4,7 +4,7 @@ import { trackPoint, trackFrame } from './track-paths.ts';
 import { roadRibbon } from './geometry.ts';
 import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad, DETAIL_KINDS, detailSetPlan } from './world-tour-scenery.js';
-import { createTunnelKit } from './world-tour-tunnels.js';
+import { createTunnelKit } from './world-tour-tunnels.js'; import { createWorldTourMotion } from './world-tour-motion.js';
 import { batchStaticChunk, poolStaticChunks, releaseStaticPool } from './world-tour-batching.ts';
 
 // One scenery system for five distinct destinations. Locations are authored as
@@ -173,7 +173,7 @@ export function createWorldTourScene(scene){
 
   const heroGroup=new THREE.Group();group.add(heroGroup);
   const sceneryLayer=new THREE.Group();sceneryLayer.name='Distance-anchored continuous scenery';group.add(sceneryLayer);
-  const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map();
+  const kit=createSceneryKit(),tunnelKit=createTunnelKit(kit),chunks=new Map(),motion=createWorldTourMotion(kit,group,sceneryLayer);
   let sceneryTrack=null,sceneryDetail=null,rack=null,pooled=null;
   function releaseChunk(node){
     node.traverse(object=>{
@@ -329,7 +329,7 @@ export function createWorldTourScene(scene){
       const home=trackPoint(id,origin),current=trackPoint(id,distance);
       group.position.set(home.x-current.x,home.y-current.y,home.z-current.z);
       sceneryLayer.position.set(-home.x,-home.y,-home.z);
-      streamScenery(id,distance,quality,sections);
+      streamScenery(id,distance,quality,sections);motion.update(id,distance,quality,time,reducedMotion);
       const rebuild=cachedOrigin!==origin||cachedQuality!==quality;
       if(rebuild){
         cachedOrigin=origin;cachedQuality=quality;
