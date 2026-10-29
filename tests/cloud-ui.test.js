@@ -32,3 +32,32 @@ test('only https avatars are shown; anything else falls back to initials', () =>
   assert.equal(safeAvatarUrl(null), '');
   assert.equal(safeAvatarUrl(undefined), '');
 });
+
+test('account switch snapshots session-only personal medals before the page reloads', async () => {
+  const values = new Map([['skyline-rush-cloud-owner', 'alice']]);
+  const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
+  const personal = { version: 1, awards: { 'time-clean': '2026-10-29T01:00:00.000Z' }, longestFlight: 0, maxAerialCombo: 0 };
+  const handlers = new Map();
+  let onUser, reloads = 0;
+  const mocks = {
+    localStorage: storage, confirm: () => true, location: { reload: () => { reloads++; } },
+    window: { addEventListener() {} },
+    document: { querySelector: selector => ({ addEventListener: (event, handler) => handlers.set(`${selector}:${event}`, handler) }) },
+  };
+  const originals = new Map(Object.keys(mocks).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  for (const [key, value] of Object.entries(mocks)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+  try {
+    setupCloudUI({ services: { watchCloudUser(callback) { onUser = callback; } },
+      getProgress: () => ({ version: 2, unlocked: ['coast'], stars: {}, bests: {}, medals: {}, history: [], modeHistory: [], daily: [] }),
+      getLocalChallengeMedals: () => personal, applyProgress() {} });
+    onUser({ uid: 'bob' });
+    await handlers.get('#cloud-switch:click')();
+    assert.equal(reloads, 1);
+    assert.deepEqual(JSON.parse(values.get('skyline-rush-cloud-account:alice')).localChallengeMedals, personal);
+    assert.deepEqual(JSON.parse(values.get('skyline-rush-challenge-medals-v1')).awards, {}, 'Bob must still start empty');
+  } finally {
+    for (const [key, descriptor] of originals) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key];
+    }
+  }
+});

@@ -1,6 +1,6 @@
 {
-  "reference": "main bd71ac8 plus intentional camera layout correction cda325e",
-  "cssBlob": "d8d5a5942a43d3928726a200a3f497372a35b6fb",
+  "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient; mode HUD offset: phone route map and short-landscape mode indicator sit below the race progress block that mode HUD rows grow; every-device race HUD spacing (main 266210c/f83b67e)",
+  "cssBlob": "d7e54109960eb7d626bb79756d6f8ec3f2221997",
   "elements": [
     {
       "id": "whats-new-screen",
@@ -474,11 +474,141 @@
       "classes": []
     },
     {
+      "id": "race-mode-picker",
+      "tag": "div",
+      "classes": [
+        "race-mode-picker"
+      ]
+    },
+    {
+      "id": "mode-description",
+      "tag": "small",
+      "classes": []
+    },
+    {
+      "id": "track-step",
+      "tag": "p",
+      "classes": [
+        "setup-step"
+      ]
+    },
+    {
       "id": "track-note",
       "tag": "p",
       "classes": [
         "track-note"
       ]
+    },
+    {
+      "id": "race-rules-row",
+      "tag": "section",
+      "classes": [
+        "race-mode-picker",
+        "race-rules-row"
+      ]
+    },
+    {
+      "id": "race-rules-step",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "mode-rules-summary",
+      "tag": "small",
+      "classes": []
+    },
+    {
+      "id": "mode-eligibility",
+      "tag": "small",
+      "classes": []
+    },
+    {
+      "id": "rules-restore",
+      "tag": "button",
+      "classes": [
+        "text-button"
+      ]
+    },
+    {
+      "id": "mode-conflicts",
+      "tag": "small",
+      "classes": [
+        "mode-conflicts"
+      ]
+    },
+    {
+      "id": "recent-custom",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "recent-custom-runs",
+      "tag": "div",
+      "classes": [
+        "recent-custom-runs"
+      ]
+    },
+    {
+      "id": "stunt-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "stunt-duration",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "cup-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "cup-length",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "time-trial-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "clean-trial",
+      "tag": "input",
+      "classes": []
+    },
+    {
+      "id": "gauntlet-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "hazard-tier",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "race-mode-rules",
+      "tag": "details",
+      "classes": [
+        "race-mode-rules"
+      ]
+    },
+    {
+      "id": "sprint-stages-setting",
+      "tag": "label",
+      "classes": []
     },
     {
       "id": "start-button",
@@ -560,92 +690,6 @@
       "classes": [
         "daily-card-start"
       ]
-    },
-    {
-      "id": "race-mode-picker",
-      "tag": "div",
-      "classes": [
-        "race-mode-picker"
-      ]
-    },
-    {
-      "id": "mode-description",
-      "tag": "small",
-      "classes": []
-    },
-    {
-      "id": "recent-custom",
-      "tag": "details",
-      "classes": [
-        "race-mode-rules"
-      ]
-    },
-    {
-      "id": "recent-custom-runs",
-      "tag": "div",
-      "classes": [
-        "recent-custom-runs"
-      ]
-    },
-    {
-      "id": "stunt-rules",
-      "tag": "details",
-      "classes": [
-        "race-mode-rules"
-      ]
-    },
-    {
-      "id": "stunt-duration",
-      "tag": "select",
-      "classes": []
-    },
-    {
-      "id": "cup-rules",
-      "tag": "details",
-      "classes": [
-        "race-mode-rules"
-      ]
-    },
-    {
-      "id": "cup-length",
-      "tag": "select",
-      "classes": []
-    },
-    {
-      "id": "time-trial-rules",
-      "tag": "details",
-      "classes": [
-        "race-mode-rules"
-      ]
-    },
-    {
-      "id": "clean-trial",
-      "tag": "input",
-      "classes": []
-    },
-    {
-      "id": "gauntlet-rules",
-      "tag": "details",
-      "classes": [
-        "race-mode-rules"
-      ]
-    },
-    {
-      "id": "hazard-tier",
-      "tag": "select",
-      "classes": []
-    },
-    {
-      "id": "race-mode-rules",
-      "tag": "details",
-      "classes": [
-        "race-mode-rules"
-      ]
-    },
-    {
-      "id": "sprint-stages-setting",
-      "tag": "label",
-      "classes": []
     },
     {
       "id": "race-info",

@@ -72,3 +72,43 @@ test('pausing consumes checkpoint state without replaying missed events on resum
  r.phase='racing';
  assert.deepEqual(modeAudioCues(r,state),[]);
 });
+
+test('authored Event Lab checkpoints play the same gate cues once', () => {
+ const state=createModeAudioState();
+ const r=race('eventlab',{checkpoint:{passed:0,missed:0,timeLeft:28}});
+ modeAudioCues(r,state);
+ r.checkpoint.passed=1;
+ assert.deepEqual(modeAudioCues(r,state),['gate-clear']);
+ assert.deepEqual(modeAudioCues(r,state),[]);
+ r.checkpoint.missed=1;
+ assert.deepEqual(modeAudioCues(r,state),['gate-miss']);
+ assert.deepEqual(modeAudioCues(race('eventlab',{checkpoint:null}),createModeAudioState()),[]);
+});
+
+test('Endless kilometre milestones cue once and pause or restart never replays stale milestones', () => {
+  const state = createModeAudioState();
+  const race = { mode: 'endless', trackId: 'coast', phase: 'racing', player: { distance: 900 } };
+  modeAudioCues(race, state);
+  race.player.distance = 1001;
+  assert.deepEqual(modeAudioCues(race, state), ['gate-clear']);
+  assert.deepEqual(modeAudioCues(race, state), []);
+  race.phase = 'paused'; race.player.distance = 2001;
+  assert.deepEqual(modeAudioCues(race, state), []);
+  race.phase = 'racing'; assert.deepEqual(modeAudioCues(race, state), []);
+  const fresh = { ...race, player: { distance: 0 } };
+  assert.deepEqual(modeAudioCues(fresh, state), []);
+  assert.equal(musicForMode(fresh), 'cruise');
+});
+
+test('each validated circuit lap cues once and pause or retry never replays it', () => {
+ const state = createModeAudioState(), r = race('circuit', { circuit: { player: { completed: 0 } } });
+ modeAudioCues(r, state);
+ r.circuit.player.completed = 1;
+ assert.deepEqual(modeAudioCues(r, state), ['gate-clear']);
+ assert.deepEqual(modeAudioCues(r, state), []);
+ r.phase = 'paused'; r.circuit.player.completed = 2;
+ assert.deepEqual(modeAudioCues(r, state), []);
+ r.phase = 'racing'; assert.deepEqual(modeAudioCues(r, state), []);
+ r.circuit.player.completed = 3; assert.deepEqual(modeAudioCues(r, state), ['gate-clear']);
+ assert.deepEqual(modeAudioCues(race('circuit', { circuit: { player: { completed: 0 } } }), state), []);
+});

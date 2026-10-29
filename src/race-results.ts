@@ -5,8 +5,8 @@ import { addCupResult, cupStandings, cupComplete, cupTotalTime, type CupState } 
 import { validGhost, type GhostSample } from './ghost.ts';
 import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
-
-export interface StuntRun { duration: number; elapsed: number; score: number; heats: number; maxCombo: number; airTime: number; trackId: string }
+import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
+import { addStuntHeat, stuntHeatContinues, type StuntRun } from './stunt-attack.ts';
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
 // The simulation race comes from plain-JS game.js; each history.ts writer validates the fields it stores.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,6 +25,7 @@ export interface Settlement {
   record: boolean;
   /** Medals earned for the first time by this run. */
   medals: string[];
+  challengeMedals: ChallengeMedalId[];
   /** Track the NEXT button offers, when this run moved the campaign forward. */
   next: string | null;
   /** A heat inside a sprint series, cup or stunt run with more to come. */
@@ -32,25 +33,30 @@ export interface Settlement {
   series: RaceSeries;
 }
 
-/** Records a finished race: series progress, medals, bests, unlocks, history and ghosts. */
-export function settleRace(race: FinishedRace, { series, progress, ghosts, daily, trace }: SettleContext): Settlement {
+// One settlement per race object: every restart builds a new race, so entries die with it.
+const settled = new WeakMap<object, Settlement>();
+
+/** Records a finished race once: series progress, medals, bests, unlocks, history and ghosts. */
+export function settleRace(race: FinishedRace, context: SettleContext): Settlement {
+  const previous = settled.get(race);
+  if (previous) return previous; // pause, dialogs and phase refreshes must never double-award
+  const settlement = settleOnce(race, context);
+  settled.set(race, settlement);
+  return settlement;
+}
+
+function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace }: SettleContext): Settlement {
   let { sprintSeries, cup } = series;
   const { stunt } = series;
   if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
   if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
-  if (stunt && race.mode === 'stunt') {
-    stunt.elapsed += race.result.time;
-    stunt.score += race.result.score;
-    stunt.heats++;
-    stunt.airTime += race.styleAttack.airTime;
-    stunt.maxCombo = Math.max(stunt.maxCombo, race.styleAttack.maxCombo);
-  }
+  if (stunt && race.mode === 'stunt') addStuntHeat(stunt, race);
   const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
   progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
   const trackId: string = race.trackId ?? 'coast';
   let best: number, record: boolean, next: string | null = null;
   const intermediateStage = !!((sprintSeries && sprintSeries.results.length < sprintSeries.count) || (cup && !cupComplete(cup)) ||
-    (stunt && race.result.endReason === 'route' && stunt.elapsed < stunt.duration));
+    (stunt && stuntHeatContinues(stunt, race.result.endReason)));
   if (intermediateStage) {
     best = 0; record = false; // A partial series never writes a misleading individual best.
   } else if (race.result.success === false && race.mode !== 'classic') {
@@ -65,9 +71,9 @@ export function settleRace(race: FinishedRace, { series, progress, ghosts, daily
       score: sprintSeries.results.reduce((score, stage) => score + stage.score, 0) } } : race;
     ({ best, record } = recordModeRace(modeRace));
     progress.modeHistory = loadModeHistory();
-    if (race.mode === 'time' && record) {
+    if (['time', 'circuit'].includes(race.mode) && record) {
       const candidate = { time: race.elapsed, samples: trace ?? [] };
-      if (trace && validGhost(candidate, trackId)) ghosts.saveMode(race, candidate);
+      if (trace && validGhost(candidate, trackId, race.config)) ghosts.saveMode(race, candidate);
     }
   } else if (race.modifier) {
     const run = recordDaily(daily!, race);
@@ -95,5 +101,11 @@ export function settleRace(race: FinishedRace, { series, progress, ghosts, daily
     const ghost = { time: race.elapsed, samples: trace ?? [] };
     if (record && trace && validGhost(ghost, trackId)) ghosts.saveClassic(trackId, ghost);
   }
-  return { best, record, medals, next, intermediateStage, series: { sprintSeries, cup, stunt } };
+  if (race.mode === 'custom' && trace) ghosts.saveCustom(race, { time: race.elapsed, samples: trace });
+  let challengeMedals: ChallengeMedalId[] = [];
+  if (!intermediateStage) {
+    const challenge = recordChallengeMedals(stunt ? { ...race, result: { ...race.result, time: stunt.elapsed }, styleAttack: stunt } : race, progress.challengeMedals);
+    progress.challengeMedals = challenge.state; challengeMedals = challenge.awarded;
+  }
+  return { best, record, medals, challengeMedals, next, intermediateStage, series: { sprintSeries, cup, stunt } };
 }

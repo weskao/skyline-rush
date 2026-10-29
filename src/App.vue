@@ -13,8 +13,15 @@ import { releaseView } from './release-view-state.ts';
 import TutorialCoach from './TutorialCoach.vue';
 import SettingsPanel from './SettingsPanel.vue';
 import ControlsPanel from './ControlsPanel.vue';
+import CircuitSettings from './CircuitSettings.vue';
 import HistoryPanel from './HistoryPanel.vue';
+import EventLabPanel from './EventLabPanel.vue';
 import { homeStatusView } from './home-status-view-state.ts';
+import CupRecovery from './CupRecovery.vue';
+
+import RacePresentation from './RacePresentation.vue';
+import ItemRules from './ItemRules.vue';
+import ItemSlot from './ItemSlot.vue';
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
 
@@ -25,6 +32,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 <template>
   <ReleaseNotesPanel />
   <GuidePanel />
+  <EventLabPanel />
   <TutorialCoach />
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
   <div class="scene-shade"></div>
@@ -89,11 +97,97 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just</span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
       <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
+      <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
+        <div class="race-mode-heading"><span data-i18n="mode.step.mode">1 · Mode</span><small id="mode-description"></small></div>
+        <div class="race-mode-tabs">
+          <button type="button" data-race-mode="classic" aria-pressed="true" data-i18n="mode.classic">Classic Race</button>
+          <button type="button" data-race-mode="custom" aria-pressed="false" data-i18n="mode.custom">Custom Race</button>
+          <button type="button" data-race-mode="free" aria-pressed="false" data-i18n="mode.free">Free Drive</button>
+          <button type="button" data-race-mode="time" aria-pressed="false" data-i18n="mode.time">Time Attack</button>
+          <button type="button" data-race-mode="gauntlet" aria-pressed="false" data-i18n="mode.gauntlet">Obstacle Run</button>
+          <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
+          <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
+          <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
+          <button type="button" data-race-mode="endless" aria-pressed="false" data-i18n="mode.endless">Endless Highway</button>
+          <button type="button" data-race-mode="circuit" aria-pressed="false" data-i18n="mode.circuit">Circuit Race</button>
+          <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
+          <button type="button" data-race-mode="eventlab" aria-pressed="false" data-i18n="mode.eventlab">Event Lab</button>
+        </div>
+      </div>
+      <p class="setup-step" id="track-step" data-i18n="mode.step.track">2 · Track</p>
       <div class="track-select" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
       <p id="track-note" class="track-note"></p>
+      <section class="race-mode-picker race-rules-row" id="race-rules-row" aria-labelledby="race-rules-step">
+        <div class="race-rules-head"><span id="race-rules-step" data-i18n="mode.step.rules">3 · Rules</span><p class="race-rules-text"><small id="mode-rules-summary" role="status"></small><small id="mode-eligibility"></small></p><button type="button" class="text-button" id="rules-restore" data-i18n="mode.restoreDefaults">Restore defaults</button></div>
+        <small id="mode-conflicts" class="mode-conflicts" role="status"></small>
+        <details class="race-mode-rules" id="recent-custom" hidden>
+          <summary data-i18n="mode.recent">RECENT CUSTOM SETUPS</summary>
+          <div id="recent-custom-runs" class="recent-custom-runs"></div>
+        </details>
+        <label id="bonus-gates-rule" class="bonus-gates-rule" hidden><input type="checkbox" data-race-rule="bonusGates"> <span data-i18n="mode.bonusGates">Bonus gates · temporary boosts and double style score</span></label>
+        <CircuitSettings />
+        <details class="race-mode-rules" id="stunt-rules" hidden>
+          <summary data-i18n="mode.stuntRules">Stunt Attack duration</summary>
+          <label><span data-i18n="mode.stuntDuration">Active driving time</span>
+            <select id="stunt-duration" aria-label="Stunt duration" data-i18n-aria-label="mode.stuntDuration">
+              <option value="120" selected data-i18n="mode.stuntMinutes.120">2 min</option><option value="180" data-i18n="mode.stuntMinutes.180">3 min</option><option value="300" data-i18n="mode.stuntMinutes.300">5 min</option>
+            </select>
+          </label>
+        </details>
+        <details class="race-mode-rules" id="cup-rules" hidden>
+          <summary data-i18n="mode.cupSettings">Championship format</summary>
+          <CupRecovery />
+          <label><span data-i18n="mode.cupLength">Number of unique tracks</span>
+            <select id="cup-length" aria-label="Cup stages" data-i18n-aria-label="mode.cupLength">
+              <option value="3" selected>3</option><option value="5">5</option>
+            </select>
+          </label>
+        </details>
+        <details class="race-mode-rules" id="time-trial-rules" hidden>
+          <summary data-i18n="mode.cleanRules">Clean Time Trial</summary>
+          <label><input type="checkbox" id="clean-trial"> <span data-i18n="mode.cleanDescription">No collisions allowed for a valid record</span></label>
+        </details>
+        <details class="race-mode-rules" id="gauntlet-rules" hidden>
+          <summary data-i18n="mode.gauntletDifficulty">Obstacle intensity</summary>
+          <label><span data-i18n="mode.hazardTier">Obstacle speed and spacing</span>
+            <select id="hazard-tier" aria-label="Obstacle intensity" data-i18n-aria-label="mode.gauntletDifficulty">
+              <option value="standard" selected data-i18n="mode.standard">Standard</option>
+              <option value="extreme" data-i18n="mode.extreme">Extreme</option>
+            </select>
+          </label>
+          <label><span data-i18n="mode.gauntletLayout">Course</span>
+            <select id="gauntlet-layout" aria-label="Course" data-i18n-aria-label="mode.gauntletLayout">
+              <option value="classic" selected data-i18n="mode.layoutClassic">Barriers</option>
+              <option value="mixed" data-i18n="mode.layoutMixed">Mixed obstacles</option>
+            </select>
+          </label>
+        </details>
+        <details class="race-mode-rules" id="race-mode-rules" hidden>
+          <summary data-i18n="mode.rules">Customize race rules</summary>
+          <div class="race-presets" role="group" aria-label="Rule presets" data-i18n-aria-label="mode.presets">
+            <button type="button" data-race-preset="standard" aria-pressed="true" data-i18n="mode.preset.standard">Standard</button>
+            <button type="button" data-race-preset="traffic" aria-pressed="false" data-i18n="mode.preset.traffic">Traffic Rush</button>
+            <button type="button" data-race-preset="noitems" aria-pressed="false" data-i18n="mode.preset.noitems">No Items</button>
+            <button type="button" data-race-preset="air" aria-pressed="false" data-i18n="mode.preset.air">Air Focus</button>
+            <button type="button" data-race-preset="precision" aria-pressed="false" data-i18n="mode.preset.precision">Precision</button>
+          </div>
+          <div class="race-mode-rule-grid">
+            <label><span data-i18n="mode.rivals">AI opponents</span><select data-race-rule="rivals" aria-label="AI opponents" data-i18n-aria-label="mode.rivals"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></label>
+            <label><span data-i18n="mode.difficulty">AI difficulty</span><select data-race-rule="difficulty" aria-label="AI difficulty" data-i18n-aria-label="mode.difficulty"><option value="easy" data-i18n="mode.easy">Easy</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="hard" data-i18n="mode.hard">Hard</option></select></label>
+            <label><span data-i18n="mode.traffic">Traffic</span><select data-race-rule="traffic" aria-label="Traffic density" data-i18n-aria-label="mode.traffic"><option value="off" data-i18n="mode.off">Off</option><option value="light" data-i18n="mode.light">Light</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="heavy" data-i18n="mode.heavy">Heavy</option></select></label>
+            <label id="sprint-stages-setting"><span data-i18n="mode.stages">Sprint stages (not laps)</span><select data-race-rule="stages" aria-label="Sprint stages (not laps)" data-i18n-aria-label="mode.stages"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>
+            <label><span data-i18n="mode.collision">Collision penalty</span><select data-race-rule="collision" aria-label="Collision penalty" data-i18n-aria-label="mode.collision"><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="relaxed" data-i18n="mode.relaxed">Relaxed</option></select></label>
+            <label><span data-i18n="mode.practiceHazards">Road hazards</span><select data-race-rule="hazards" aria-label="Road hazards" data-i18n-aria-label="mode.practiceHazards"><option value="off" selected data-i18n="mode.off">Off</option><option value="standard" data-i18n="mode.standard">Standard</option><option value="extreme" data-i18n="mode.extreme">Extreme</option></select></label>
+            <label><span data-i18n="mode.riskLines">High rings and close-pass bonus</span><select data-race-rule="riskLines" aria-label="High rings and close-pass bonus" data-i18n-aria-label="mode.riskLines"><option value="on" selected data-i18n="mode.on">On</option><option value="off" data-i18n="mode.off">Off</option></select></label>
+            <label class="race-items"><input data-race-rule="themes" type="checkbox"> <span data-i18n="mode.themes">Themed track hazards</span></label>
+            <ItemRules />
+          </div>
+          <RacePresentation />
+        </details>
+      </section>
       <div class="intro-actions">
-        <button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
+        <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button></div>
         <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
         <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
@@ -117,73 +211,6 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         </div>
         <button class="daily-card-start" id="daily-card-start" :disabled="homeStatusView.dailyStartDisabled" aria-describedby="daily-card-route"><span data-i18n="daily.play">Play</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
       </section>
-      <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
-        <div class="race-mode-heading"><span data-i18n="mode.heading">GAME MODE</span><small id="mode-description"></small></div>
-        <div class="race-mode-tabs">
-          <button type="button" data-race-mode="classic" aria-pressed="true" data-i18n="mode.classic">Classic Race</button>
-          <button type="button" data-race-mode="custom" aria-pressed="false" data-i18n="mode.custom">Custom Race</button>
-          <button type="button" data-race-mode="free" aria-pressed="false" data-i18n="mode.free">Free Drive</button>
-          <button type="button" data-race-mode="time" aria-pressed="false" data-i18n="mode.time">Time Attack</button>
-          <button type="button" data-race-mode="gauntlet" aria-pressed="false" data-i18n="mode.gauntlet">Obstacle Run</button>
-          <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
-          <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
-          <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
-          <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
-        </div>
-        <details class="race-mode-rules" id="recent-custom" hidden>
-          <summary data-i18n="mode.recent">RECENT CUSTOM SETUPS</summary>
-          <div id="recent-custom-runs" class="recent-custom-runs"></div>
-        </details>
-        <details class="race-mode-rules" id="stunt-rules" hidden>
-          <summary data-i18n="mode.stuntRules">Stunt Attack duration</summary>
-          <label><span data-i18n="mode.stuntDuration">Active driving time</span>
-            <select id="stunt-duration" aria-label="Stunt duration" data-i18n-aria-label="mode.stuntDuration">
-              <option value="120" selected data-i18n="mode.stuntMinutes.120">2 min</option><option value="180" data-i18n="mode.stuntMinutes.180">3 min</option><option value="300" data-i18n="mode.stuntMinutes.300">5 min</option>
-            </select>
-          </label>
-        </details>
-        <details class="race-mode-rules" id="cup-rules" hidden>
-          <summary data-i18n="mode.cupSettings">Championship format</summary>
-          <label><span data-i18n="mode.cupLength">Number of unique tracks</span>
-            <select id="cup-length" aria-label="Cup stages" data-i18n-aria-label="mode.cupLength">
-              <option value="3" selected>3</option><option value="5">5</option>
-            </select>
-          </label>
-        </details>
-        <details class="race-mode-rules" id="time-trial-rules" hidden>
-          <summary data-i18n="mode.cleanRules">Clean Time Trial</summary>
-          <label><input type="checkbox" id="clean-trial"> <span data-i18n="mode.cleanDescription">No collisions allowed for a valid record</span></label>
-        </details>
-        <details class="race-mode-rules" id="gauntlet-rules" hidden>
-          <summary data-i18n="mode.gauntletDifficulty">Obstacle intensity</summary>
-          <label><span data-i18n="mode.hazardTier">Obstacle speed and spacing</span>
-            <select id="hazard-tier" aria-label="Obstacle intensity" data-i18n-aria-label="mode.gauntletDifficulty">
-              <option value="standard" selected data-i18n="mode.standard">Standard</option>
-              <option value="extreme" data-i18n="mode.extreme">Extreme</option>
-            </select>
-          </label>
-        </details>
-        <details class="race-mode-rules" id="race-mode-rules" hidden>
-          <summary data-i18n="mode.rules">Customize race rules</summary>
-          <div class="race-presets" role="group" aria-label="Rule presets" data-i18n-aria-label="mode.presets">
-            <button type="button" data-race-preset="standard" aria-pressed="true" data-i18n="mode.preset.standard">Standard</button>
-            <button type="button" data-race-preset="traffic" aria-pressed="false" data-i18n="mode.preset.traffic">Traffic Rush</button>
-            <button type="button" data-race-preset="noitems" aria-pressed="false" data-i18n="mode.preset.noitems">No Items</button>
-            <button type="button" data-race-preset="air" aria-pressed="false" data-i18n="mode.preset.air">Air Focus</button>
-            <button type="button" data-race-preset="precision" aria-pressed="false" data-i18n="mode.preset.precision">Precision</button>
-          </div>
-          <div class="race-mode-rule-grid">
-            <label><span data-i18n="mode.rivals">AI opponents</span><select data-race-rule="rivals" aria-label="AI opponents" data-i18n-aria-label="mode.rivals"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></label>
-            <label><span data-i18n="mode.difficulty">AI difficulty</span><select data-race-rule="difficulty" aria-label="AI difficulty" data-i18n-aria-label="mode.difficulty"><option value="easy" data-i18n="mode.easy">Easy</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="hard" data-i18n="mode.hard">Hard</option></select></label>
-            <label><span data-i18n="mode.traffic">Traffic</span><select data-race-rule="traffic" aria-label="Traffic density" data-i18n-aria-label="mode.traffic"><option value="off" data-i18n="mode.off">Off</option><option value="light" data-i18n="mode.light">Light</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="heavy" data-i18n="mode.heavy">Heavy</option></select></label>
-            <label id="sprint-stages-setting"><span data-i18n="mode.stages">Sprint stages (not laps)</span><select data-race-rule="stages" aria-label="Sprint stages (not laps)" data-i18n-aria-label="mode.stages"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>
-            <label><span data-i18n="mode.collision">Collision penalty</span><select data-race-rule="collision" aria-label="Collision penalty" data-i18n-aria-label="mode.collision"><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="relaxed" data-i18n="mode.relaxed">Relaxed</option></select></label>
-            <label><span data-i18n="mode.practiceHazards">Road hazards</span><select data-race-rule="hazards" aria-label="Road hazards" data-i18n-aria-label="mode.practiceHazards"><option value="off" selected data-i18n="mode.off">Off</option><option value="standard" data-i18n="mode.standard">Standard</option><option value="extreme" data-i18n="mode.extreme">Extreme</option></select></label>
-            <label class="race-items"><input data-race-rule="items" type="checkbox" checked> <span data-i18n="mode.items">NITRO pickups</span></label>
-            <label class="race-items"><input data-race-rule="activeItems" type="checkbox"> <span data-i18n="mode.activeItems">Hold mystery power-ups</span></label>
-          </div>
-        </details>
-      </div>
       <!-- data-keys: the actions whose bound keys showKeyMap() (main.js) draws, so remaps and the arrow / J K L alternates stay listed. -->
       <div class="intro-controls">
         <div><span class="keys" data-keys="throttle left brake right"></span><span data-i18n="hint.drive">Drive</span></div>
@@ -192,12 +219,12 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <div><span class="keys" data-keys="nitro"></span><span data-i18n="hint.nitro">Nitro</span></div>
         <div><kbd>V</kbd><span data-i18n="hint.airflow">Airflow</span></div>
       </div>
-      <p class="flight-tip" data-i18n="intro.tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</p>
+      <p class="flight-tip"><span class="tip-full" data-i18n="intro.tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</span><span class="tip-short" data-i18n="intro.tipShort">Build speed to fly, release to land. AUTO holds the throttle.</span></p>
     </section>
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
       <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">04</strong><span>/ 04</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
-      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><div id="item-slot" class="item-slot" hidden><span id="item-status" role="status"></span><button type="button" id="activate-item" data-i18n="mode.itemActivate" disabled>USE · Q</button></div><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
+      <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="circuit-hud" class="sprint-stage" role="status" hidden></output><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><ItemSlot /><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"></div>
     </section>
 
@@ -280,3 +307,8 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   <div class="layout-toolbar" id="layout-toolbar" hidden><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span><button id="layout-done" data-i18n="layout.done">Done editing</button></div>
   <div class="bottomline"><span><i></i> <span data-i18n="footer.tagline">BEYOND THE ROAD</span></span><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button><span data-i18n="footer.genre">AN ORIGINAL ARCADE FLIGHT RACER</span></div>
 </template>
+
+<style scoped>
+.bonus-gates-rule { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 12px; }
+.bonus-gates-rule[hidden] { display: none; }
+</style>

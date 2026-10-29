@@ -29,3 +29,14 @@ export function orientCarOnRoad<T extends { quaternion: Quaternion }>(
   if (bank) mesh.quaternion.multiply(lean.setFromAxisAngle(leanAxis, bank));
   return mesh;
 }
+
+const flat = new Quaternion().setFromAxisAngle(pitchAxis, -Math.PI / 2); // the shadow plane faces local +z
+/** Lay the car's ground shadow on the road under it (3 cm up), tilted with the road and turned with its heading. */
+export function placeGroundShadow<T extends { position: Vector3; quaternion: Quaternion }>(
+  shadow: T, frame: RoadPoseFrame, carPosition: Vector3, altitude: number,
+): T {
+  up.fromArray(frame.up);
+  shadow.position.copy(carPosition).addScaledVector(up, 0.03 - altitude);
+  orientCarOnRoad(shadow, frame).quaternion.multiply(flat);
+  return shadow;
+}

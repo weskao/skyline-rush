@@ -1,3 +1,5 @@
+import { nextTick } from 'vue';
+
 // History dialog lifecycle: open from any History/Medals/Cloud entry, animated close, focus return.
 // The records themselves are rendered by history-ui.ts.
 interface HistoryDialogOptions {
@@ -12,9 +14,11 @@ export function setupHistoryDialog({ getTrackId, showHistory, clearControls, cal
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const historyScreen = $<HTMLDialogElement>('#history-screen');
   let historyOpener: HTMLElement | null = null;
-  for (const button of document.querySelectorAll<HTMLElement>('[data-open-history]')) button.addEventListener('click', () => {
+  for (const button of document.querySelectorAll<HTMLElement>('[data-open-history]')) button.addEventListener('click', async () => {
     clearControls(); historyOpener = button; $<HTMLSelectElement>('#history-track').value = getTrackId();
     showHistory(); historyScreen.showModal();
+    await nextTick();
+    if (!historyScreen.open) return;
     if (button.dataset.openHistory === 'medals') $('#achievements-title').scrollIntoView({ block: 'start' });
     if (button.dataset.openHistory === 'cloud') ($('#cloud-login').hidden ? $('#cloud-logout') : $('#cloud-login')).focus();
   });

@@ -1,5 +1,6 @@
 import { formatDate, t, trackName, getLocale } from './i18n.ts';
 import { loadModeBest, loadModeGhost, careerStats, dailyBoard, MEDALS } from './history.ts';
+import { CHALLENGE_MEDALS, loadChallengeMedals, type ChallengeMedalState } from './history-challenge-medals.ts';
 import { dailyChallenge } from './game.js';
 import { updateHistoryView } from './history-view-state.ts';
 import { updateHomeStatusView } from './home-status-view-state.ts';
@@ -18,7 +19,7 @@ interface SavedRace {
   distance?: number;
   longestCombo?: number;
 }
-interface SavedModeRace {
+interface SavedModeRace { distance?: number;
   track: string;
   mode: string;
   rules: string;
@@ -44,6 +45,7 @@ interface HistoryData {
   sessionBests: Record<string, number>;
   sessionDaily: SavedDailyRace[];
   sessionMedals: Record<string, string>;
+  sessionChallengeMedals?: ChallengeMedalState;
   world: unknown | null | undefined;
 }
 interface HistoryDependencies {
@@ -74,7 +76,7 @@ function modeRecordLookup(trackId: string) {
       if (candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
           candidate.mode === run.mode) config = candidate;
     } catch { /* Opaque legacy rules still display as text. */ }
-    const found = { best: config ? loadModeBest(trackId, config) : null, ghost: run.mode === 'time' && !!config && !!loadModeGhost(trackId, config) };
+    const found = { best: config ? loadModeBest(trackId, config) : null, ghost: ['time', 'circuit'].includes(run.mode) && !!config && !!loadModeGhost(trackId, config) };
     saved.set(key, found);
     return found;
   };
@@ -88,7 +90,14 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
     return Number.isFinite(date.getTime()) ? formatDate(date, { month: 'short', day: 'numeric' }) : t('history.noDate');
   }
   function showHistory() {
-    const { sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, world } = getData();
+    const { sessionHistory, sessionModeHistory, sessionBests, sessionDaily, sessionMedals, sessionChallengeMedals, world } = getData();
+    const personal = sessionChallengeMedals ?? loadChallengeMedals();
+    updateHistoryView({
+      challengeMedalCount: t('challengeMedal.count', { n: Object.keys(personal.awards).length }),
+      challengeMedalPeaks: t('challengeMedal.peaks', { air: personal.longestFlight.toFixed(1), combo: personal.maxAerialCombo }),
+      challengeMedals: CHALLENGE_MEDALS.map(id => ({ id, name: t(`challengeMedal.${id}`), detail: t(`challengeMedal.${id}.detail`),
+        awarded: !!personal.awards[id], status: personal.awards[id] ? t('medal.awarded', { date: shortDate(personal.awards[id]) }) : t('medal.notAwarded') })),
+    });
     const trackId = document.querySelector<HTMLSelectElement>('#history-track')!.value;
     const runs = sessionHistory.filter(run => run.track === trackId && Number.isFinite(run.time) && run.time > 0).slice(-50);
     const modeFilter = document.querySelector<HTMLSelectElement>('#mode-history-filter')!.value;
@@ -97,12 +106,12 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
     const savedFor = modeRecordLookup(trackId);
     const modeRuns = modes.map(run => {
       const { best, ghost } = savedFor(run);
-      const personalBest = best !== null && (run.mode === 'stunt' ? run.score === best : run.time === best);
+      const personalBest = best !== null && (run.mode === 'endless' ? run.distance === best : run.mode === 'stunt' ? run.score === best : run.time === best);
       const details = run.mode === 'stunt'
         ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
           run.medal ? t('mode.medal.' + run.medal) : '',
           t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) })]
-        : [t('mode.' + run.mode), timeString(run.time)];
+        : [t('mode.' + run.mode), ...(run.mode === 'endless' ? [(Number(run.distance || 0) / 1000).toFixed(2) + ' km'] : []), timeString(run.time)];
       const text = [...details, personalBest ? t('mode.historyPersonalBest') : null,
         ghost ? t('mode.historyGhost') : null, shortDate(run.date)].filter(Boolean).join(' · ');
       return { mode: run.mode, personalBest, ghost, text };

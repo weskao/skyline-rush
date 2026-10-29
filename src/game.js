@@ -1,69 +1,28 @@
+import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
+import { createRings, RING_RADIUS, RING_FUEL, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
+export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
+import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
+import { physicalGap } from './circuit-track.ts';
+import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
-import { createHazards, hazardX } from './hazards.ts';
+import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
+import { stepPlayerHazards, hazardReach, hazardTouch, nudge } from './hazard-race.ts';
+import { raceHazards, themedExtras } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
 import { createElimination, stepElimination } from './elimination.ts';
-import { bankItem, activateItem, tickItemCooldown } from './active-items.ts';
+import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './active-items.ts';
+import { decorateBonusGates, collectBonusGate, applyEMPPulse, recoveryRetention, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
-import { raceCompletion } from './race-objectives.ts';
+import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
-
-/** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
-// Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
-// `x` / `altitude` place a shortcut corridor.
-/** @type {Record<string, TrackConfig>} */
-export const RACE_TRACKS = {
-  coast: { // fixedRings: the original gate grid
-    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, fixedRings: true,
-    sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
-  },
-  neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002,
-    sections: [
-      { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
-      { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
-    ],
-  },
-  canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003,
-    sections: [
-      { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
-      { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
-      { from: 3000, to: 3070, type: 'gap' }, { from: 3300, to: 4100, type: 'crosswind', dir: -1 },
-      { from: 4400, to: 4470, type: 'gap' },
-    ],
-  },
-  aurora: {
-    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004,
-    sections: [
-      { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
-      { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
-      { from: 4920, to: 5380, type: 'shortcut', x: 7.5, altitude: 6 },
-    ],
-  },
-  spiral: {
-    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005,
-    sections: [
-      { from: 1100, to: 2200, type: 'spiral' },
-      { from: 2800, to: 2870, type: 'launch' },
-      { from: 2870, to: 2935, type: 'gap' },
-      { from: 3700, to: 3775, type: 'launch' },
-      { from: 3775, to: 3840, type: 'gap' },
-      { from: 4550, to: 4630, type: 'launch' },
-      { from: 4630, to: 4700, type: 'gap' },
-      { from: 4950, to: 5450, type: 'shortcut', x: -7.5, altitude: 6 },
-    ],
-  },
-  taipei: {"name":"Taipei Heritage","length":6200,"trafficDensity":1.1,"seed":6006,"sections":[{"from":850,"to":1200,"type":"tunnel"},{"from":1950,"to":2450,"type":"shortcut","x":-7.5,"altitude":6},{"from":3120,"to":3450,"type":"boost-tunnel"},{"from":4100,"to":4450,"type":"tunnel"}]},
-  tokyo: {"name":"Tokyo Afterdark","length":6800,"trafficDensity":1.4,"seed":7007,"sections":[{"from":850,"to":1350,"type":"tunnel"},{"from":2450,"to":2950,"type":"shortcut","x":7.5,"altitude":6},{"from":4150,"to":4650,"type":"tunnel"},{"from":5050,"to":5450,"type":"boost-tunnel"}]},
-  alpine: {"name":"Alpine Rail Pass","length":7600,"trafficDensity":0.8,"seed":8008,"sections":[{"from":900,"to":1420,"type":"uphill"},{"from":1600,"to":2200,"type":"tunnel"},{"from":3100,"to":3600,"type":"shortcut","x":-7.5,"altitude":6},{"from":3850,"to":4200,"type":"boost-tunnel"},{"from":4700,"to":5200,"type":"tunnel"},{"from":5900,"to":6400,"type":"uphill"}]},
-  coastal: {"name":"Coastal Horizon","length":5800,"trafficDensity":1,"seed":9009,"sections":[{"from":850,"to":1300,"type":"crosswind","dir":1},{"from":2100,"to":2600,"type":"shortcut","x":7.5,"altitude":6},{"from":2950,"to":3310,"type":"boost-tunnel"},{"from":3950,"to":4600,"type":"crosswind","dir":-1}]},
-  cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
-};
+import { RACE_TRACKS, raceTrack } from './race-tracks.ts';
+import { CIRCUIT_ID } from './circuit-track.ts';
+export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
 export const MAX_SPEED = 88;
 export const ROAD_LIMIT = 10.2;
@@ -114,15 +73,6 @@ export const shortcutPylons = section => Array.from({ length: Math.ceil((section
 }));
 const PYLON_HALF_WIDTH = 1.2; // m
 
-export const RING_RADIUS = 4.8;
-export const RISK_RING_RADIUS = 2.4;
-export const RING_FUEL = 20; // charge ring
-export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
-export const RISK_SCORE = 500;
-export const PERFECT_LINE_NITRO = 1;
-export const RING_SPACING = 220;
-export const MYSTERY_EFFECTS = ['shield', 'magnet', 'ghost', 'freeze'];
-export const EFFECT_TIMES = { shield: 10, magnet: 5, ghost: 3, freeze: 2 }; // seconds; shield also ends on the first absorbed hit
 export const MAGNET_RANGE = 12; // m
 export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
@@ -148,7 +98,6 @@ export const RIVAL_HOP_PERIOD = { NOVA: 13, ORBIT: 9, APEX: 13 }; // seconds per
 export const RUBBER_BAND_MAX = 0.04; // speed multiplier changes by at most +/- this
 export const RUBBER_BAND_FREE = 50; // m of lead/deficit with no effect
 export const RUBBER_BAND_RANGE = 250; // m beyond the free zone to reach the full effect
-
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 // Pickups come only from the track's 'pickups' stream so every run of a track is identical.
@@ -181,38 +130,6 @@ function createPickups(track) {
   return [...pickups.filter(pickup => !blocked(pickup)), overcharge].sort((a, b) => a.distance - b.distance);
 }
 
-// Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
-// other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
-function createRings(track) {
-  const random = seededRng(track.seed, RACE_STREAMS.rings);
-  const rings = [];
-  const inTunnel = distance => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
-  for (let distance = RING_SPACING; distance < track.length - 100;) {
-    const roll = random();
-    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? 'risk' : 'mystery';
-    let x = 2.5;
-    let altitude = 8;
-    if (!track.fixedRings) {
-      x = Math.round((random() * 2 - 1) * 70) / 10;
-      altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
-    }
-    if (inTunnel(distance)) { // the car cannot climb in a tunnel, so a 'risk' ring there would be free
-      altitude = 1.5;
-      if (type === 'risk') type = 'nitro';
-    }
-    rings.push({ distance, x, altitude, radius: type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS, type, group: 0 });
-    distance += track.fixedRings ? RING_SPACING : Math.round(200 + random() * 120);
-  }
-  for (let i = 0, group = 0; i < rings.length; group++) {
-    const left = rings.length - i;
-    let size = 3 + Math.floor(random() * 3);
-    if (left - size < 3) size = left <= 5 ? left : left - 3;
-    for (let j = i; j < i + size; j++) rings[j].group = group;
-    i += size;
-  }
-  return rings;
-}
-
 // The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
 export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `${RACE_STREAMS.mysteryPrefix}${index}`)() * MYSTERY_EFFECTS.length)];
 
@@ -237,23 +154,24 @@ export function dailyChallenge(date = new Date()) {
   return { id, track, modifier: modifiers[Math.floor(random() * modifiers.length)] };
 }
 
-export function createRace(trackId = 'coast', modifier = null) {
-  const track = RACE_TRACKS[trackId];
+export function createRace(trackId = 'coast', modifier = null, presentation = {}) {
+  const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   const options = modifier !== null && typeof modifier === 'object' && !Array.isArray(modifier) ? modifier : null;
   const dailyModifier = options ? null : modifier;
   if (dailyModifier !== null && !DAILY_MODIFIERS.includes(dailyModifier)) throw new Error(`Unknown modifier: ${dailyModifier}`);
   const config = normalizeRaceConfig(options ?? {});
-  const session = createRaceSessionContract(trackId, track.seed, config);
+  if ((trackId === CIRCUIT_ID) !== (config.mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
+  const session = createRaceSessionContract(trackId, track.seed, config, presentation), risk = riskRules(config), themed = themedExtras(trackId, config, risk);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const rings = createRings(track);
+  const course = mixedCourse(trackId, track, LANES, config), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(config.mode === 'circuit' ? lapItems(createRings(track, risk.rings), config.laps, 'ring') : createRings(track, risk.rings), course), themed), config.itemRules), config);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
-  return {
-    trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length, sections: track.sections.map(section => ({ ...section })),
-    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? createPickups(track) : [], rings,
-    props: [], // solid World Tour scenery parts; main.js fills them from roadObstacles()
-    hazards: config.mode === 'gauntlet' ? createHazards(track, LANES, config.hazardTier) :
-      config.hazards ? createHazards(track, LANES, config.hazards) : [],
+  const race = {
+    trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: (themed?.sections.length ? [...track.sections, ...themed.sections].sort((a, b) => a.from - b.from) : track.sections).map(section => ({ ...section })),
+    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? config.mode === 'circuit' ? lapItems(createPickups(track), config.laps, 'pickup') : createPickups(track) : [], rings,
+    circuit: config.mode === 'circuit' ? createCircuit(config.laps) : null,
+    props: [], risk, ...(themed && { ramps: themed.ramps }), // props: solid World Tour scenery parts; main.js fills them from roadObstacles()
+    hazards: raceHazards(trackId, track, LANES, config, course),
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,
     practice: config.mode === 'free' ? createPracticeStats() : null,
     styleAttack: config.mode === 'stunt' ? createStuntAttack() : null,
@@ -281,8 +199,9 @@ export function createRace(trackId = 'coast', modifier = null) {
       speed: 23 + (i % 5) * 3, cruise: 23 + (i % 5) * 3, altitude: 0, cooldown: 0, color: i % 5,
     })),
   };
+  prepareEndless(race);
+  return race;
 }
-
 function collectRing(race, ring, index) {
   const car = race.player;
   ring.hit = true;
@@ -293,14 +212,14 @@ function collectRing(race, ring, index) {
   else if (ring.type === 'slipstream') car.miniBoost = Math.max(car.miniBoost, SLIPSTREAM_BOOST);
   else if (ring.type === 'risk') {
     addNitro(car, 1);
-    car.score += RISK_SCORE;
+    car.score += race.risk.ringScore;
   } else if (ring.type === 'mystery') {
-    const effect = mysteryEffect(race.seed, index);
+    const effect = mysteryEffect(race.seed, ring.mysteryIndex ?? index);
     if (race.config.activeItems) bankItem(car, effect);
     else car.effects[effect] = EFFECT_TIMES[effect];
-  }
+  } else collectBonusGate(race, ring);
   car.groupHits[ring.group] = (car.groupHits[ring.group] ?? 0) + 1;
-  if (car.groupHits[ring.group] === race.rings.filter(other => other.group === ring.group).length) {
+  if (car.groupHits[ring.group] === (ring.groupSize ?? race.rings.filter(other => other.group === ring.group).length)) {
     car.perfectLines++; // PERFECT LINE: every ring of the group cleared
     car.score += 500;
     addNitro(car, PERFECT_LINE_NITRO);
@@ -325,124 +244,23 @@ export function startRace(race) {
 
 export function useHeldItem(race) {
   if (!race?.config?.activeItems || race.phase !== 'racing') return null;
-  return activateItem(race.player, race.rivals.length > 0);
+  if (race.player.heldItem === 'emp' && (race.mode !== 'custom' || race.config.itemRules !== 'all')) race.player.heldItem = 'magnet';
+  const effect = activateItem(race.player, race.rivals.length > 0);
+  if (effect === 'emp') applyEMPPulse(race);
+  return effect;
 }
 
 export { racePosition, sprintGaps } from './race-standings.ts';
 
-// Index of the first scenery part (sorted by `from`, each under 20 m deep) that can still reach distance d.
-function firstProp(props, d) {
-  let lo = 0, hi = props.length;
-  while (lo < hi) { const mid = (lo + hi) >> 1; if (props[mid].from < d - 20) lo = mid + 1; else hi = mid; }
-  return lo;
-}
-
-// Car body against scenery parts (sorted by distance); the swept range catches thin parts at high speed.
-function hitProp(props, car, previousDistance) {
-  const altitude = car.altitude || 0;
-  for (let i = firstProp(props, previousDistance - 2.2); i < props.length; i++) {
-    const p = props[i];
-    if (p.from > car.distance + 2.2) break;
-    if (p.to > previousDistance - 2.2 && p.right > car.x - 0.85 && p.left < car.x + 0.85 &&
-      p.top > altitude && p.bottom < altitude + 1.8) return p;
-  }
-  return null;
-}
-// A solid prop cannot be driven through: step out to its open-road side (it never reaches past ROAD_CLEARANCE).
-const clearOf = (prop, x) => prop.left > 0 ? Math.min(x, prop.left - 1.1) : Math.max(x, prop.right + 1.1);
-
-// Rivals and traffic steer around solid scenery, gauntlet barriers and slower cars ahead instead of driving
-// through them: they keep their own lane while it is clear, else take the nearest free line beside the obstacle.
-// Scenery parts stay under 20 m deep (largest: a scaled train, ~9 m), which bounds the look-back.
-const AI_LOOKAHEAD = 80, LANE_SHIFT = 6, AI_HALF_WIDTH = 0.85, AI_MARGIN = 1.4; // m ahead, m/s sideways, m, m
-const BARRIER_HALF_WIDTH = 1.55, BARRIER_HEIGHT = 2.5; // drawn gauntlet barrier: 3.1 x 2.5 m
-const TRAFFIC_ACCEL = 5; // m/s² a knocked traffic car regains toward its cruise speed
-const blockers = []; // reused every call: no per-frame allocation on this hot path
-function laneFree(x) {
-  if (Math.abs(x) > ROAD_LIMIT) return false;
-  for (let i = 0; i < blockers.length; i += 2) if (x + AI_HALF_WIDTH > blockers[i] && x - AI_HALF_WIDTH < blockers[i + 1]) return false;
-  return true;
-}
-// A car alongside, or one ahead this car closes on within ~3 s, blocks its own width.
-function carBlocker(d, altitude, pace, car, carPace) {
-  const gap = car.distance - d;
-  if (gap > -4.4 && gap < Math.min(AI_LOOKAHEAD, 4.4 + (pace - carPace) * 3) && Math.abs((car.altitude || 0) - altitude) < 1.8) {
-    blockers.push(car.x - AI_HALF_WIDTH, car.x + AI_HALF_WIDTH);
-  }
-}
-function avoidObstacles(race, other, pace, dt) {
-  const { props, hazards } = race, d = other.distance, altitude = other.altitude || 0;
-  blockers.length = 0;
-  for (const car of race.traffic) if (car !== other) carBlocker(d, altitude, pace, car, car.speed);
-  for (const car of race.rivals) if (car !== other) carBlocker(d, altitude, pace, car, car.pace ?? car.speed);
-  carBlocker(d, altitude, pace, race.player, race.player.speed);
-  for (let i = firstProp(props, d); i < props.length && props[i].from < d + AI_LOOKAHEAD; i++) {
-    const p = props[i];
-    if (p.to > d - 2.2 && p.top > altitude && p.bottom < altitude + 1.8) blockers.push(p.left, p.right);
-  }
-  if (altitude < BARRIER_HEIGHT) for (const h of hazards) {
-    if (h.distance > d + AI_LOOKAHEAD) break;
-    if (h.distance < d - 2.2) continue;
-    const reach = BARRIER_HALF_WIDTH + (h.moving ? 1.8 : 0); // a moving barrier blocks its whole sweep
-    blockers.push(h.x - reach, h.x + reach);
-  }
-  let target = other.homeX ?? other.x;
-  if (!laneFree(target)) {
-    target = other.x; // nowhere free: hold the line rather than swerve into something else
-    let best = Infinity;
-    for (let i = 0; i < blockers.length; i++) {
-      const x = i % 2 ? blockers[i] + AI_MARGIN : blockers[i] - AI_MARGIN;
-      if (Math.abs(x - other.x) < best && laneFree(x)) { best = Math.abs(x - other.x); target = x; }
-    }
-  }
-  other.x += clamp(target - other.x, -LANE_SHIFT * dt, LANE_SHIFT * dt);
-}
-
-// The one collision response every car shares (player, rivals, traffic): speed loss, a sideways knock, a short grace.
-function knock(race, car, side, intensity, retention) {
-  const retainedSpeed = race.config.collision === 'relaxed' ? Math.max(retention, 0.8) : retention;
-  const speedLost = car.speed * (1 - retainedSpeed);
-  car.speed *= retainedSpeed;
-  car.x = clamp(car.x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
-  car.cooldown = 1.5;
-  return speedLost;
-}
-
-// Rivals and traffic take the player's hits, with the same boxes, when avoidance cannot save them.
-const aiRetention = other => other.nitroTime > 0 ? 0.7 : 0.45;
-function aiImpacts(race, other, before, pace) {
-  if (other.cooldown > 0) return;
-  const prop = hitProp(race.props, other, before);
-  if (prop) {
-    knock(race, other, Math.sign(other.x - (prop.left + prop.right) / 2) || -1, clamp(pace / 100, 0.25, 1), aiRetention(other));
-    other.x = clearOf(prop, other.x);
-    return;
-  }
-  if ((other.altitude || 0) >= 2.4) return;
-  for (const hazard of race.hazards) {
-    if (hazard.distance > other.distance) break;
-    if (hazard.distance <= before) continue;
-    const obstacleX = hazardX(hazard, race.elapsed);
-    if (Math.abs(other.x - obstacleX) < 1.8) return void knock(race, other, Math.sign(other.x - obstacleX) || -1, 0.7, 0.6);
-  }
-}
-function bumpCars(race, a, b) {
-  if ((a.cooldown > 0 && b.cooldown > 0) || Math.abs(a.distance - b.distance) >= 4.4 || Math.abs(a.x - b.x) >= 1.7 ||
-    Math.abs((a.altitude || 0) - (b.altitude || 0)) >= 1.8) return;
-  const side = Math.sign(a.x - b.x) || -1, intensity = clamp(Math.abs(a.speed - b.speed) / 70, 0.25, 1);
-  if (!(a.cooldown > 0)) knock(race, a, side, intensity, aiRetention(a));
-  if (!(b.cooldown > 0)) knock(race, b, -side, intensity, aiRetention(b));
-}
-
 function contact(race, kind, obstacleX, intensity, retention) {
   const car = race.player;
   if (car.effects.shield > 0) { // the shield eats this hit: no damage, brief grace to clear the obstacle
-    car.effects.shield = 0;
+    car.effects.shield = 0; car.shieldBlock = { x: car.x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
     car.cooldown = 1;
     return;
   }
   const side = Math.sign(car.x - obstacleX) || -1, x = car.x;
-  const speedLost = knock(race, car, side, intensity, retention);
+  const speedLost = knock(race, car, side, intensity, recoveryRetention(car, retention));
   car.impact = { kind, intensity, side, speedLost, x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
   car.collisions++;
   car.combo = 0;
@@ -458,10 +276,11 @@ export function stepRace(race, input, dt) {
     return;
   }
   if (race.phase !== 'racing') return;
+  streamEndless(race);
   race.elapsed += dt;
   const car = race.player;
   const previousScore = car.score;
-  if (race.config.activeItems) tickItemCooldown(car, dt);
+  if (race.config.activeItems || race.config.bonusGates) tickItemCooldown(car, dt);
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
   car.section = section?.type ?? null;
   car.inShortcut = car.section === 'shortcut' && Math.abs(car.x - section.x) < SHORTCUT_HALF_WIDTH &&
@@ -498,7 +317,7 @@ export function stepRace(race, input, dt) {
   // SLIPSTREAM: judged on last frame's positions; the timer runs while a car is ahead in draft range.
   const slip = car.slipstream;
   const inDraft = other => {
-    const gap = other.distance - car.distance;
+    const gap = physicalGap(race.trackId, car.distance, other.distance);
     return gap >= SLIPSTREAM_MIN_GAP && gap <= SLIPSTREAM_MAX_GAP && Math.abs(other.x - car.x) < SLIPSTREAM_LATERAL &&
       Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
   };
@@ -575,7 +394,7 @@ export function stepRace(race, input, dt) {
     car.fuel = Math.max(0, car.fuel - (car.inShortcut ? 0 : FLY_DRAIN) * dt); // the corridor carries the car
     if (car.fuel === 0) { car.exhausted = true; car.fuelOuts++; } // thrusting needs !exhausted, so this counts each run-out once
   } else if (car.altitude > 0) {
-    car.verticalSpeed -= (fly ? 11 : 7) * dt; // releasing FLY glides
+    car.verticalSpeed -= (fly ? 11 : 7) * (car.section === 'low-gravity' ? 0.4 : 1) * dt; // releasing FLY glides; themed low gravity floats
     if (!fly && !boost) car.fuel = Math.min(100, car.fuel + GLIDE_FUEL_REGEN * dt);
   } else if (!flyInput && !boost) {
     car.fuel = Math.min(100, car.fuel + (car.section === 'uphill' ? 6.5 : 13) * dt);
@@ -584,10 +403,10 @@ export function stepRace(race, input, dt) {
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
-  if (race.trackId === 'spiral' && car.section === 'launch' && car.altitude === 0 && car.speed > 32 &&
-      car.distance >= section.to - car.speed * dt - 1) {
-    car.altitude = 0.02;
-    car.verticalSpeed = Math.max(car.verticalSpeed, 6 + car.speed * 0.075);
+  if (car.altitude === 0 && car.speed > LAUNCH_MIN_SPEED && (race.trackId === 'spiral' && car.section === 'launch' &&
+      car.distance >= section.to - car.speed * dt - 1 || crossesRamp(race.ramps, car, car.speed * dt + 1))) {
+    car.altitude = 0.02; // Event Lab ramps share the Spiral impulse
+    car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
   const roofHit = car.section === 'tunnel' && car.altitude + CAR_HEIGHT > TUNNEL_CEILING;
@@ -640,7 +459,7 @@ export function stepRace(race, input, dt) {
     avoidObstacles(race, traffic, traffic.speed, dt);
     aiImpacts(race, traffic, before, traffic.speed);
     // Recycle distant traffic so the same small scene stays populated for the full sprint.
-    if (traffic.distance < car.distance - 60) traffic.distance += 1400;
+    if (!race.endless && traffic.distance < car.distance - 60) traffic.distance += 1400;
   }
   race.rivals.forEach((rival, i) => {
     const period = RIVAL_HOP_PERIOD[rival.name] ?? 13;
@@ -659,12 +478,12 @@ export function stepRace(race, input, dt) {
     // Rubber band: a rival far ahead of the player eases off, one far behind speeds up, by at most RUBBER_BAND_MAX.
     const gap = rival.distance - car.distance;
     const band = Math.sign(gap) * clamp((Math.abs(gap) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
-    const slow = (car.effects.freeze > 0 ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
+    const slow = (car.effects.freeze > 0 || rival.empUntil > race.elapsed ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
     rival.pace = rival.speed * slow;
     rival.distance += rival.pace * dt;
     avoidObstacles(race, rival, rival.pace, dt);
     aiImpacts(race, rival, before, rival.pace);
-    if (rival.distance >= race.length && rival.finishTime === null) {
+    if (!race.circuit && rival.distance >= race.length && rival.finishTime === null) {
       rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / rival.pace;
     }
   });
@@ -677,7 +496,7 @@ export function stepRace(race, input, dt) {
 
   if (car.cooldown === 0) {
     const obstacle = car.effects.ghost > 0 ? null : [...race.traffic, ...race.rivals].find(other =>
-      Math.abs(other.distance - car.distance) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
+      Math.abs(physicalGap(race.trackId, car.distance, other.distance)) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
       Math.abs((other.altitude || 0) - car.altitude) < 1.8,
     );
     const prop = car.effects.ghost > 0 ? null : hitProp(race.props, car, previousDistance);
@@ -740,30 +559,11 @@ export function stepRace(race, input, dt) {
   for (const ring of race.rings) { // sorted by distance
     if (ring.distance > car.distance) break;
     // shortcut: tests the car's end-of-step x/altitude, not the interpolated crossing (error < 0.7 m at dt 0.1), upgrade if risk rings feel unfair
-    if (fell || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
+    if (fell || ring.hit || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring));
   }
-  // Every gauntlet barrier can be hit or cleared only once. The physics layer
-  // decides impacts; the renderer only draws the same authored hazards.
-  for (const hazard of race.hazards) {
-    if (hazard.distance > car.distance) break;
-    if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
-    const obstacleX = hazardX(hazard, race.elapsed);
-    const collision = Math.abs(car.x - obstacleX) < 1.8 && car.altitude < 2.4;
-    if (collision && car.cooldown === 0) {
-      contact(race, 'barrier', obstacleX, 0.7, 0.6);
-      hazard.hit = true;
-    } else {
-      hazard.passed = true;
-      if (!collision) {
-        // Risk/reward: a close, clean ground pass pays more than a distant lane change.
-        const near = car.altitude < 2.4 && Math.abs(car.x - obstacleX) < 4;
-        car.score += near ? 300 : 150;
-        if (near) car.nearMisses++;
-      }
-    }
-  }
-  const travelled = Math.min(car.distance, race.length) - previousDistance;
+  stepPlayerHazards(race, car, previousDistance, contact);
+  const travelled = (race.endless ? car.distance : Math.min(car.distance, race.length)) - previousDistance;
   if (car.collisions + car.falls !== previousContacts) car.cleanDistance = 0;
   else {
     car.cleanDistance += travelled;
@@ -776,6 +576,7 @@ export function stepRace(race, input, dt) {
   }
   if (race.practice) samplePractice(race.practice, car, Math.max(0, Math.min(car.distance, race.length) - previousDistance), dt);
   if (race.styleAttack) car.score += scoreStuntAttack(race.styleAttack, car, car.score - previousScore, dt, race.elapsed);
+  car.score += bonusScore(car, race.mode, car.score - previousScore);
   if (race.mode === 'free' && car.distance >= race.length) {
     car.distance = race.length; // authored point-to-point road ends here; no fake infinite road
     car.speed = 0;
@@ -795,10 +596,12 @@ export function stepRace(race, input, dt) {
       return;
     }
   }
+  if (finishEndless(race)) return;
+  stepCircuit(race, dt);
   const completion = raceCompletion(race);
   if (completion.done) {
-    const finishTime = completion.reason === 'timer' ? race.stuntLimit : completion.reason === 'expired' ? race.elapsed :
-      race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance);
+    const finishTime = race.circuit?.player.finishTime ?? (completion.reason === 'timer' ? race.stuntLimit : completion.reason === 'expired' ? race.elapsed :
+      race.elapsed - dt + dt * (race.length - previousDistance) / (car.distance - previousDistance));
     const position = 1 + race.rivals.filter(rival => rival.finishTime !== null && rival.finishTime < finishTime).length;
     car.distance = Math.min(car.distance, race.length); // An expired timer must not teleport the car to the finish.
     race.elapsed = finishTime;
@@ -809,6 +612,7 @@ export function stepRace(race, input, dt) {
       stars: score >= race.length * 0.5 ? 3 : score >= race.length * 0.25 ? 2 : 1,
       success: race.checkpoint ? !race.checkpoint.expired && race.checkpoint.passed === race.checkpoint.gates.length :
         !(race.mode === 'time' && race.config.clean && car.collisions > 0),
+      ...(race.circuit ? { lapTimes: race.circuit.player.lapTimes } : {}),
       ...(race.mode === 'stunt' ? { endReason: completion.reason } : {}) };
     race.phase = 'finished';
     car.thrusting = false;

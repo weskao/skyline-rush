@@ -1,8 +1,8 @@
-import { RACE_TRACKS } from './game.js';
+import { raceTrack } from './race-tracks.ts';
+import { CIRCUIT_ID, circuitFrame } from './circuit-track.ts';
 import { skyFrame, skyPoint, type Vec3, type SkyPoint } from './sky-track.ts';
 
 interface OverviewPoint { distance: number; x: number; y: number }
-const tracks = RACE_TRACKS as Readonly<Record<string, { length: number }>>;
 
 // A single distance -> main-road mapping drives previews, minimaps and world geometry.
 // The original flat routes retain their exact world-space centreline.
@@ -23,8 +23,9 @@ const unit = ([x, y, z]: Vec3): Vec3 => {
 const cross = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
 export function trackPoint(trackId: string, distance: number): SkyPoint {
-  const track = tracks[trackId];
+  const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
+  if (trackId === CIRCUIT_ID) return circuitFrame(distance).point;
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, track.length);
   if (trackId === 'spiral') return skyPoint(s);
   const profile = profiles[trackId];
@@ -33,8 +34,9 @@ export function trackPoint(trackId: string, distance: number): SkyPoint {
 }
 
 export function trackFrame(trackId: string, distance: number) {
-  const track = tracks[trackId];
+  const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
+  if (trackId === CIRCUIT_ID) return circuitFrame(distance);
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, track.length);
   if (trackId === 'spiral') return skyFrame(s);
   const a = trackPoint(trackId, s - 0.5);
@@ -75,7 +77,7 @@ const mapFit = (points: readonly OverviewPoint[], mode: 'flat' | 'world-tour'): 
 };
 
 export function trackOverview(trackId: string, count = 128): OverviewPoint[] {
-  const track=tracks[trackId];
+  const track=raceTrack(trackId);
   if(!track)throw new Error(`Unknown track: ${trackId}`);
   const size=Number.isInteger(count)?Math.max(2,Math.min(1000,count)):128;
   const points=Array.from({length:size},(_,i)=>{

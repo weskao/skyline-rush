@@ -1,8 +1,12 @@
-interface HazardCue { id?: string | number; distance: number; passed: boolean; hit: boolean }
+import { hazardWarningDistance, isWarnedHazard } from './hazard-safety.ts';
+import type { HazardPlacement } from './hazard-schema.ts';
+
+interface HazardCue { id?: string | number; distance: number; passed: boolean; hit: boolean; placement?: HazardPlacement }
 export interface ModeAudioRace {
   phase: string;
   mode: string;
   trackId: string;
+  circuit?: { player: { completed: number } } | null;
   checkpoint?: { passed: number; missed: number; timeLeft: number } | null;
   hazards?: HazardCue[] | null;
   styleAttack?: { combo: number } | null;
@@ -15,23 +19,23 @@ export interface ModeAudioState {
   passed: number; missed: number; warning: boolean;
   hazardsPassed: number; hazardsHit: number;
   warned: Set<string | number>;
-  combo: number;
+  combo: number; milestone: number; circuitLap: number;
   trickPayout?: { hard?: boolean } | null;
 }
 // Pure mode-specific sound events: one-shot transitions, no Web Audio dependencies.
 const COURSE_MUSIC: Record<string, string> = {spiral:'spiral',neon:'neon',canyon:'canyon',aurora:'aurora',taipei:'taipei',tokyo:'tokyo',alpine:'alpine',coastal:'coastal',cosmic:'cosmic'};
-const MODE_MUSIC: Record<string, string> = {checkpoint:'checkpoint',stunt:'stunt',gauntlet:'gauntlet',cup:'cup',free:'cruise',elimination:'gauntlet'};
+const MODE_MUSIC: Record<string, string> = {checkpoint:'checkpoint',stunt:'stunt',gauntlet:'gauntlet',cup:'cup',free:'cruise',endless:'cruise',elimination:'gauntlet'};
 export const musicForMode = (race: ModeAudioRace): string => ['ready','finished'].includes(race.phase) ? 'intro' : MODE_MUSIC[race.mode] || COURSE_MUSIC[race.trackId] || 'race';
 
 export const createModeAudioState = (): ModeAudioState => ({ race:null, phase:null, passed:0, missed:0, warning:false,
-  hazardsPassed:0, hazardsHit:0, warned:new Set(), combo:0, trickPayout:null });
+  hazardsPassed:0, hazardsHit:0, warned:new Set(), combo:0, milestone:0, circuitLap:0, trickPayout:null });
 
 export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): string[] {
   if (race !== state.race) {
     state.race=race; state.phase=race.phase;
     state.passed=race.checkpoint?.passed || 0;
     state.missed=race.checkpoint?.missed || 0;
-    state.warning=false;
+    state.warning=false; state.milestone=Math.floor((race.player?.distance ?? 0)/1000); state.circuitLap=race.circuit?.player.completed ?? 0;
     state.hazardsPassed=race.hazards?.filter(h => h.passed && !h.hit).length || 0;
     state.hazardsHit=race.hazards?.filter(h => h.hit).length || 0;
     state.warned=new Set();
@@ -47,6 +51,8 @@ export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): strin
   }
   state.phase=race.phase;
   if (race.phase !== 'racing') {
+    state.milestone=Math.floor((race.player?.distance ?? 0)/1000);
+    state.circuitLap=race.circuit?.player.completed ?? 0;
     state.passed=race.checkpoint?.passed || 0;
     state.missed=race.checkpoint?.missed || 0;
     state.hazardsPassed=race.hazards?.filter(h=>h.passed && !h.hit).length || 0;
@@ -55,8 +61,14 @@ export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): strin
     state.trickPayout=race.player?.trickPayout;
     return cues;
   }
+  const milestone=Math.floor((race.player?.distance ?? 0)/1000);
+  if(race.mode==='endless' && milestone>state.milestone)cues.push('gate-clear');
+  state.milestone=milestone;
+  const lap=race.circuit?.player.completed ?? 0;
+  if (lap>state.circuitLap) cues.push('gate-clear');
+  state.circuitLap=lap;
   const add = (cue: string): void => {if (cues.length < 2) cues.push(cue);};
-  if (race.mode==='checkpoint' && race.checkpoint) {
+  if (race.checkpoint) { // Checkpoint Rush and Event Lab's authored checkpoints share the gate cues
     const cp=race.checkpoint;
     if (cp.passed > state.passed) add('gate-clear');
     else if (cp.missed > state.missed) add('gate-miss');
@@ -71,7 +83,7 @@ export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): strin
     if (hit > state.hazardsHit) add('hazard-impact');
     state.hazardsPassed=passed;state.hazardsHit=hit;
     const distance=race.player?.distance ?? 0;
-    const ahead=race.hazards.find(h=>!h.passed && !h.hit && h.distance>distance && h.distance-distance<=150);
+    const ahead=race.hazards.find(h=>!h.passed && !h.hit && h.distance>distance && isWarnedHazard(h) && h.distance-distance<=(h.placement ? hazardWarningDistance(h) : 150));
     if (ahead) {
       const id=ahead.id ?? ahead.distance;
       if (!state.warned.has(id)) {state.warned.add(id);add('hazard-warning');}

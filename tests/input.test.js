@@ -65,10 +65,41 @@ test('camera, audio, airflow and auto accelerator shortcuts preserve held drivin
 
 test('Space on a focused menu button preserves native keyboard activation', () => {
   const button = new EventTarget();
-  button.closest = selector => selector === 'button' ? button : null;
+  button.closest = selector => selector.split(',').map(s => s.trim()).includes('button') ? button : null;
   const controls = createControls(button);
   const event = send(button, 'keydown', { code: 'Space' });
   assert.equal(event.defaultPrevented, false);
+  assert.equal(controls.read().fly, false);
+  controls.destroy();
+});
+
+test('Enter on a focused link or button keeps native activation; elsewhere it still starts the race', () => {
+  for (const tag of ['a[href]', 'button']) {
+    const actions = [];
+    const element = new EventTarget();
+    element.closest = selector => selector.split(',').map(part => part.trim()).includes(tag) ? element : null;
+    const controls = createControls(element, action => actions.push(action));
+    const event = send(element, 'keydown', { code: 'Enter' });
+    assert.equal(event.defaultPrevented, false, `${tag}: the browser activates it (the brand link opens the leave prompt)`);
+    assert.deepEqual(actions, [], `${tag}: Enter is not also a race action`);
+    controls.destroy();
+  }
+  const actions = [];
+  const target = new EventTarget();
+  const controls = createControls(target, action => actions.push(action));
+  assert.ok(send(target, 'keydown', { code: 'Enter' }).defaultPrevented);
+  assert.deepEqual(actions, ['start']);
+  controls.destroy();
+});
+
+test('Enter and Space on a focused panel summary open it instead of starting the race or flying', () => {
+  // A <details> summary (visual settings, Fine tuning, Custom rules) is a native disclosure button.
+  const summary = new EventTarget();
+  summary.closest = selector => selector.split(',').map(s => s.trim()).includes('summary') ? summary : null;
+  const actions = [];
+  const controls = createControls(summary, action => actions.push(action));
+  for (const code of ['Enter', 'Space']) assert.equal(send(summary, 'keydown', { code }).defaultPrevented, false, code);
+  assert.deepEqual(actions, []);
   assert.equal(controls.read().fly, false);
   controls.destroy();
 });

@@ -14,6 +14,9 @@ interface HistoryModeRow {
   text: string;
 }
 interface HistoryView {
+  challengeMedals: Array<{ id: string; name: string; detail: string; awarded: boolean; status: string }>;
+  challengeMedalCount: string;
+  challengeMedalPeaks: string;
   modeHistoryEmpty: boolean;
   modeRuns: HistoryModeRow[];
   dailyStatus: string;
@@ -31,6 +34,7 @@ interface HistoryView {
   historyRuns: HistoryRun[];
 }
 export const historyView = reactive<HistoryView>({
+  challengeMedals: [], challengeMedalCount: '', challengeMedalPeaks: '',
   modeHistoryEmpty: true, modeRuns: [],
   dailyStatus: 'No daily challenge is available yet.', dailyStartDisabled: true,
   dailyBoard: ['No challenge runs recorded yet.'],

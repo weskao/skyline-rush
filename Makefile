@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: help dev dev-unlocked dev-feature test-unlocked phone perf perf-phone run verify deploy stop-old-dev
+.PHONY: help dev dev-unlocked dev-feature test-unlocked phone perf perf-modes perf-phone run verify deploy stop-old-dev
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -43,10 +43,15 @@ phone: node_modules ## `make phone [name]`: menu to start, check or stop a dev s
 # Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
 # baseline built in .claude/worktrees/perf-<sha>. Desktop throttles Chrome's CPU; phone mode asks like `make phone`
 # (version, Tailscale/Wi-Fi, Telegram) for anything not passed and logs Android temperatures.
-PERF_ARGS = $(if $(BASE),--base $(BASE)) $(if $(RATE),--rate $(RATE)) $(if $(ROUNDS),--rounds $(ROUNDS)) $(if $(RACE_SECONDS),--seconds $(RACE_SECONDS)) $(if $(VIA),--via $(VIA)) $(if $(TG),--tg $(TG))
-perf: node_modules ## `make perf [BASE=main] [RATE=6] [ROUNDS=3]`: p50/p95/fps of a race in CPU-throttled Chrome
+PERF_ARGS = $(if $(BASE),--base $(BASE)) $(if $(RATE),--rate $(RATE)) $(if $(ROUNDS),--rounds $(ROUNDS)) $(if $(RACE_SECONDS),--seconds $(RACE_SECONDS)) $(if $(VIA),--via $(VIA)) $(if $(TG),--tg $(TG)) $(if $(VIEWPORT),--viewport $(VIEWPORT))
+perf: node_modules ## `make perf [BASE=main] [RATE=6] [ROUNDS=3] [VIEWPORT=desktop]`: p50/p95/fps of a race in CPU-throttled Chrome
 	$(NPM) run build
 	node scripts/perf.mjs desktop $(PERF_ARGS)
+
+# Scenario frame times for new content vs Classic (dev server, themed hazards loaded in-page); JSON in artifacts/perf-modes/.
+perf-modes: node_modules ## `make perf-modes [RATE=6] [ROUNDS=3] [VIEWPORT=desktop]`: p50/p95, draw calls, triangles: Classic vs themes, Obstacle Run, Endless
+	$(NPM) run build
+	PERF_MODES=1 RATE=$(or $(RATE),6) ROUNDS=$(or $(ROUNDS),3) $(if $(RACE_SECONDS),RACE_SECONDS=$(RACE_SECONDS)) $(if $(VIEWPORT),VIEWPORT=$(VIEWPORT)) npx playwright test tests/perf-modes-browser.spec.js --reporter=line
 
 perf-phone: node_modules ## `make perf-phone [BASE=main] [VIA=tailscale|wifi|auto] [TG=0]`: like `make phone` for ?perf builds, plus phone temperatures
 	$(NPM) run build

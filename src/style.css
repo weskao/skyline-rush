@@ -166,7 +166,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 .text-button { background: transparent; border: 0; color: #c7d0d7; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 12px; margin: 23px auto 0; padding: 8px; }
 .text-button svg { width: 16px; height: 16px; }
 .text-button:hover { color: var(--accent); }
-.result-stats { display: flex; justify-content: center; gap: 40px; margin: 30px 0 34px; }
+.result-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; margin: 30px 0 34px; }
 .result-stats > div { display: flex; flex-direction: column; gap: 8px; }
 .result-stats span { font-size: 8px; letter-spacing: 1.6px; color: #bac6cf; }
 .result-stats strong { font: 700 32px 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
@@ -420,7 +420,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 /* Touch landscape under 761px wide (Android Chrome with its bars, Safari with toolbars) shares the landscape race HUD below;
    the portrait phone HUD stacked every block on its thumb controls. */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px), (hover: none) and (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
-  body:not([data-phase="ready"]) .mode-indicator { position: fixed; left: 50%; top: 144px; transform: translateX(-50%); width: 225px; padding: 8px 12px; gap: 5px; }
+  body:not([data-phase="ready"]) .mode-indicator { position: fixed; left: 50%; top: max(144px, calc(var(--race-progress-bottom, 0px) + 8px)); transform: translateX(-50%); width: 225px; padding: 8px 12px; gap: 5px; }
   #flight-state { font-size: 21px; }
   .mode-key { display: none; }
   .speed-number > strong { font-size: 45px; }
@@ -749,7 +749,7 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .controls-reset { min-height: 44px; margin: 4px 6px 6px; border: 1px solid #779ca8; border-radius: 8px; background: transparent; font-size: 12px; }
 /* Below ~400px the full-width CONTROLS label pushed PAUSE off the right edge mid-race (375px Android report). */
 @media (max-width: 400px) { .controls-button { padding: 0 4px; font-size: 8px; letter-spacing: .6px; } }
-@media (max-width: 370px) { body:not([data-phase="ready"]) .brand { display: none; } }
+@media (max-width: 370px) { body:not([data-phase="ready"]):not([data-phase="paused"]) .brand { display: none; } } /* paused: the brand is the way out of the race */
 /* Up to 540px the wordmark plus the race toolbar (534px in English) also pushed PAUSE off the edge. */
 @media (max-width: 540px) { body:not([data-phase="ready"]) .brand > span { display: none; } }
 
@@ -1027,7 +1027,7 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
   .overlay-content > p { margin-bottom: 16px; }
 }
 @media (max-height: 500px) and (min-width: 761px) {
-  .intro { top: 80px; left: 5%; max-width: 550px; bottom: 90px; overflow: auto; padding: 5px; }
+  .intro { top: 80px; left: max(5%, calc(var(--safe-left) + 8px)); max-width: 550px; bottom: 90px; overflow: auto; padding: 5px; } /* a landscape notch must not cover Start */
   .intro h1 { font-size: 40px; margin-bottom: 10px; }
   .intro-copy, .intro-controls, .flight-tip, .route-label { display: none; }
   .track-note { margin-block: 8px; font-size: 10px; }
@@ -1115,7 +1115,8 @@ body[data-phase="ready"] .telemetry { display: none; }
   scrollbar-color: var(--accent) #263849;
 }
 .intro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
-.intro-actions > * { flex-shrink: 0; }
+.intro-actions > *, .intro-primary > * { flex-shrink: 0; }
+.intro-primary { display: contents; } /* Start + Practice: one pinned row on phones, plain flex items elsewhere */
 .intro :is(.history-button, .garage-button, .practice-button), .intro .start-hint { margin: 0; }
 @media (min-width: 761px) and (max-width: 1000px) {
   .intro { top: clamp(148px, 17dvh, 180px); }
@@ -1279,10 +1280,10 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- .race-route-map { width:75px;height:88px;right:18px;top:272px; } /* below the 262px progress bar */
+ .race-route-map { width:75px;height:88px;right:18px;top:max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); } /* below the progress bar, which mode HUD rows grow */
 }
 @media(max-width:400px) {
- .race-route-map {width:59px;height:72px;right:14px;top:270px;}
+ .race-route-map {width:59px;height:72px;right:14px;top:max(270px, calc(var(--race-progress-bottom, 0px) + 8px));}
 }
 @media(max-height:500px) and (min-width:761px) {
  .race-route-map {width:67px;height:73px;}
@@ -1328,6 +1329,9 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .track-route-map[data-theme="cosmic"],.race-route-map[data-theme="cosmic"]{
  --map-line:#9caac2;--map-bg:#1f2637;--map-edge:#495e78;--map-player:#eeebec;
 }
+.race-route-map[data-theme="harbor-circuit"] {
+ --map-line:#e3bb8d;--map-bg:#203d42;--map-edge:#86b5b0;--map-player:#fff1d6;
+}
 .track-route-map[data-theme],.race-route-map[data-theme] {
  background:var(--map-bg);border-color:var(--map-edge);box-shadow:none;
 }
@@ -1364,6 +1368,19 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
 .race-mode-heading > span { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
 .race-mode-heading small { font-size: 10px; color: #d1e3ed; text-align: right; line-height: 1.4; }
 .race-mode-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
+/* 10A: the mode-first order costs no height. The track step is for screen readers, the rules row is one 44px line. */
+.setup-step { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.intro-copy + .race-mode-picker { margin-top: 0; }
+.flight-tip .tip-short { display: none; }
+.race-mode-picker.race-rules-row { position: relative; z-index: 1; display: block; margin-top: 0; padding: 0 10px; } /* its blur is a stacking context: lift it so open dropdowns cover the Start row below */
+.race-rules-head { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+#race-rules-step { color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; white-space: nowrap; }
+.race-rules-text { flex: 1; display: grid; margin: 0; font-size: 10px; line-height: 1.35; color: #d1e3ed; }
+.race-rules-text small { font-size: 10px; } /* <small> would shrink CJK text below the readable minimum */
+#mode-eligibility, .mode-conflicts { color: #aee7fa; }
+.mode-conflicts { display: block; font-size: 10px; line-height: 1.4; color: #ffd39c; padding-bottom: 6px; }
+.mode-conflicts:empty { display: none; }
+#rules-restore { margin: 0; min-height: 44px; padding: 0 8px; font-size: 11px; white-space: nowrap; }
 .race-mode-tabs button { min-height: 36px; padding: 3px 5px; border: 1px solid #627c8d; border-radius: 5px; background: #22384a; color: #eef6f8; font: 700 10px/1.25 'Avenir Next','Segoe UI',sans-serif; overflow-wrap: normal; }
 .race-mode-tabs button[aria-pressed="true"] { color: #102338; background: #ffb491; border-color: #ffcfb4; }
 .race-mode-tabs button:focus-visible { outline: 3px solid #9de4ff; outline-offset: 2px; }
@@ -1414,13 +1431,36 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="riva
 body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="difficulty"]) { display:none; }
 @media (max-width:760px) { .race-mode-tabs { grid-template-columns: repeat(3,minmax(min-content,1fr)); } }
 @media (max-width:370px) { .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); } }
-/* 501-1160px-tall desktops: the picker heading moves beside the tabs, keeping the flight tip whole. */
+/* 501-1160px-tall desktops: everything above the fold, so the mode tabs, key hints and flight tip are compact. */
 @media (min-width: 1001px) and (min-height: 501px) and (max-height: 1160px) {
- .race-mode-picker { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 14px; padding: 8px 10px; }
- .race-mode-heading { flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; }
- .race-mode-heading small { text-align: left; max-width: 120px; }
- .race-mode-rules { grid-column: 1 / -1; }
+ /* 10A: eleven modes plus the rules row fit only if the tabs take the full width in two rows of six... */
+ .intro .race-mode-picker:not(.race-rules-row) { padding: 6px 10px; }
+ .race-mode-tabs { grid-template-columns: repeat(6,minmax(min-content,1fr)); }
+ /* ...and the key hints pay for the rules row: one tight row (user-approved, 2026-10-29). */
+ .intro-controls { flex-wrap: nowrap; gap: 8px; margin-top: 4px; }
+ .flight-tip .tip-full { display: none; }
+ .flight-tip .tip-short { display: inline; }
+ .race-mode-heading { margin-bottom: 2px; }
+ .intro-controls > div { gap: 4px; white-space: nowrap; }
 }
+/* Phones and short landscape: 10A put the mode tabs and rules row above Start, and a 191px-tall landscape panel cannot
+   hold mode + track cards + Start at full size. The tabs swipe in one row like the track strip, and Start + Practice
+   stay pinned to the panel's bottom edge while the rest scrolls (user-approved, 2026-10-29). The actions box dissolves
+   so the pinned row's containing block is the scrolling intro itself; History and Garage scroll below it. */
+@media (max-width: 760px), (max-height: 500px) {
+ .race-mode-tabs { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; padding-bottom: 2px; }
+ .race-mode-tabs button { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
+ .intro .intro-actions { display: contents; }
+ .intro .intro-primary { position: sticky; bottom: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-block: 10px 4px; /* 320px: Practice wraps under Start */
+   background: linear-gradient(rgb(5 18 31 / 0), rgb(5 18 31 / .92) 10px); }
+ .intro .intro-actions > .text-button { display: inline-flex; margin: 8px 16px 0 0; }
+ .intro:has(.race-mode-picker) { scroll-padding-bottom: 72px; } /* controls scrolled or tabbed to land above the pinned row */
+ .intro .race-rules-row:has([aria-expanded="true"]) { z-index: 2; } /* an open dropdown covers the pinned row */
+}
+/* Narrow panels lift the pinned row 28px clear of the bottom fade (60px above the scrollport edge with its padding), so the
+   scroll margin is the row plus 60px: one line in landscape (568x320 keeps a 52px view), two lines at 320px wide. */
+@media (max-width: 760px) { .intro .intro-primary { bottom: 28px; } .intro:has(.race-mode-picker) { scroll-padding-bottom: 120px; } }
+@media (max-width: 760px) and (min-height: 501px) { .intro:has(.race-mode-picker) { scroll-padding-bottom: 190px; } }
 
 /* The series counter sits in the race info without expanding the top HUD. */
 .sprint-stage { display: inline-block; margin-top: 5px; color: #c9f4ff; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
@@ -1473,7 +1513,7 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .elimination-hud[data-urgent="true"]{border-color:#ffb19d;color:#fff0e9;background:#873a44ee;}
 
 /* Paused Free Drive Photo Studio: keep the scenery visible, no new dependencies. */
-.photo-screen { position: fixed; inset: 12px auto auto 12px; margin: 0; width: min(360px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
+.photo-screen { position: fixed; inset: max(12px, var(--safe-top)) auto auto max(12px, var(--safe-left)); margin: 0; width: min(360px, calc(100vw - max(12px, var(--safe-left)) - max(12px, var(--safe-right)))); max-width: none; max-height: calc(100dvh - max(12px, var(--safe-top)) - max(12px, var(--safe-bottom))); overflow: auto; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
 .photo-screen::backdrop { background: transparent; }
 .photo-panel { display: grid; gap: 12px; padding: 18px; font-size: 13px; }
 .photo-panel h2 { margin: 0; font-size: 18px; letter-spacing: .12em; }
@@ -1484,11 +1524,17 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .photo-actions { display: flex; gap: 10px; }
 .photo-actions button { min-height: 44px; flex: 1; border-radius: 6px; border: 1px solid #81e9e7; background: #21536a; color: #efffff; font-weight: 700; }
 .photo-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 400px) {
+  .photo-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px; }
+  .photo-panel > :not(label), .photo-panel > label:has(#photo-sky) { grid-column: 1 / -1; }
+}
+@media (max-height: 500px) and (min-width: 761px) { .photo-screen { width: 300px; } }
+
 .photo-screen[open] { z-index: 120; }
-body:has(#photo-screen[open]) .race-overlay,
-body:has(#photo-screen[open]) .race-info,
-body:has(#photo-screen[open]) .touch-controls,
-body:has(#photo-screen[open]) .flight-director { visibility: hidden; }
+/* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state.
+   A body class, not body:has(): a :has() here made every in-race style recalc restyle the whole page. */
+body.photo-studio #app > :not(#world):not(#photo-screen),
+body.photo-studio #perf-overlay { display: none; }
 #photo-open[hidden] { display: none !important; }
 
 /* Home discoverability: medal tally on the route line, today's challenge as a card above the mode picker.
@@ -1648,6 +1694,9 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .cloud-player-details strong { display: block; font-size: 15px; color: #f3f9ff; }
 .cloud-player-details p { margin: 3px 0 0; font-size: 13px; color: #c5d7e2; }
 #cloud-sync-now:not(:disabled) { border-color: #66c6d5; }
+
+body[data-race-mode="endless"] #race-route-map,
+body[data-race-mode="endless"] .progress-track { display: none; }
 
 /* Touch landscape under 761px wide: what the shared landscape race HUD blocks above do not reset from the portrait phone
    rules. POSITION and the leaderboard fill the left column (to 226px), the gauges the right; the progress bar and flight

@@ -55,9 +55,9 @@ Captured from the running game in Chrome mobile emulation at 390×844 (portrait)
 
 ## Game modes and replayability (development branch)
 
-> **Work in progress · 22 October 2026.** These mode additions are on [`feature/race-modes-p0`](https://github.com/weskao/skyline-rush/tree/feature/race-modes-p0), not necessarily on the [deployed GitHub Pages build](https://weskao.github.io/skyline-rush/). The existing screenshots above show earlier gameplay; current mode captures are linked below. The [roadmap](TODO.md) includes additional unfinished features.
+> **Work in progress · 29 October 2026.** These mode additions are combined on the `feature/roadmap-integration` development branch and are not yet merged into `main` or the [deployed GitHub Pages build](https://weskao.github.io/skyline-rush/).
 
-Select a **track you have unlocked**, choose **GAME MODE** below the track cards, expand its rules when needed, then press **Start race** (or Enter). Racing still uses the same Three.js road, flying, FLY / BOOST / NITRO and responsive touch controls. Seven modes are available in the development branch:
+Select a **track you have unlocked**, choose **GAME MODE** below the track cards, expand its rules when needed, then press **Start race** (or Enter). Racing still uses the same Three.js road, flying, FLY / BOOST / NITRO and responsive touch controls. The development branch includes the following modes:
 
 | Mode | What changes | Win condition / progression |
 | --- | --- | --- |
@@ -68,6 +68,39 @@ Select a **track you have unlocked**, choose **GAME MODE** below the track cards
 | **Obstacle Run** | Seeded roadside barriers; **Standard** or **Extreme** density. Some obstacles sweep sideways; warning HUD previews approaching danger. | Dodge hazards, earn style points for clean passes and use the ordinary route's finish. Obstacle placement and collision share deterministic logic; Classic is unchanged. |
 | **Checkpoint Rush** | Race through glowing 3D gate arches. Start with **28 seconds**; each clean gate grants **+10 seconds** (capped at 60) and **250 style points**. | Reach every gate and the finish before the clock expires. Missed gates and timeouts do **not** save a valid best. The HUD shows gates cleared, time remaining and distance to the next target. |
 | **Championship Cup** | Pick a **3- or 5-track** Cup made only of already unlocked routes; race NOVA, ORBIT and APEX on each stage. | Placements award **10 / 7 / 5 / 3 points**; cumulative standings and total time decide the champion, with ties broken by time. Cup results are separate from Career unlocks. |
+| **Stunt Attack** | A **120 / 180 / 300 s** style session across back-to-back heats: drifts, air tricks, near misses and rings build a combo score. | The timer ends the session, not the finish line; a local style medal and best score per duration. |
+| **Elimination** | Four-racer Last Driver Standing: the last-placed driver is knocked out every ten seconds. | Survive to be the last driver standing; an early knockout ends your run without rewards. |
+
+### Cup recovery
+
+An unfinished Championship Cup offers **Resume** or **Discard** on the home screen. Resume keeps settled stage points and restarts only the unfinished stage; retry rolls back only the stage being replayed. Completing or discarding the Cup clears its recovery entry. Deleting game progress also removes the checkpoint while preserving device preferences. Recovery uses this browser’s storage and cannot restore data the browser refused to save.
+
+### Custom presentation and Ghosts
+
+Custom Race can replay the fastest compatible Ghost for each sprint heat. Custom and Free Drive offer Track / Day / Dusk / Night / Rain / Fog presentation presets and a live rule summary. These cosmetic choices do not change record eligibility or ruleset identity. Retry retains the selected appearance; changing track or returning to Classic restores the track appearance. Photo Studio restores the active race appearance when closed.
+
+### Optional items and bonus gates
+
+Custom and Free Drive offer **Off / Classic Mystery Rings / Active Items / All Items**. Held items use one slot: press **Q** or tap **USE** to activate, then wait for cooldown. NITRO and FLY/BOOST keep their own controls. All Items adds bounded speed, air-charge and one-hit recovery gates; EMP briefly slows nearby rivals and converts to Magnet in solo play. Recovery preserves official collision counts. Stunt Attack and Checkpoint Rush can separately opt into temporary, nonstacking ×2 score gates. Classic defaults stay unchanged.
+
+### Event Lab Lite v1
+
+**Event Lab Lite** edits local course templates with barriers, NITRO rings and supplies on unlocked routes. Change their lane and distance, Undo/Redo/Reset edits, and import or export a validated course as text. Starting compiles the course into real race encounters; retry preserves the course and seed. Course results stay separate from Career and Custom records. Cones, authored ramps, checkpoint editing and community sharing remain outside this first version.
+
+### Endless Highway
+
+**Endless Highway** extends Coast beyond the authored finish as a distance-survival event. Traffic difficulty rises to a fixed cap; five collisions end a completed attempt. The personal record tracks longest absolute distance, separately from Career and Ghosts. Pause and WebGL recovery preserve the run. This first version supports Coast only; its nearby scenery and encounters use bounded pools.
+
+### Circuit Race
+
+**Circuit Race** adds Harbor Circuit, a separate, always-accessible 2 km closed loop with **1 / 3 / 5 laps**. Cross every sector in order to earn a lap; backward crossings, teleports and recovery cannot grant laps. HUD and results show splits, last lap, personal best lap and total time. Lap bests survive rolling History eviction; total times and Ghosts stay specific to the lap configuration. The ten original point-to-point courses keep their geography and Career progression.
+
+### Track themes, obstacles and risk lines
+
+- **Track themes** (opt-in in Custom, Free Drive and Obstacle Run) give every route its own hazards: Coast cargo and gusts, Neon roadworks, Canyon rockfall, Aurora snowbanks, ice and blizzards, Sky Spiral energy gates, Taipei festival barricades, Tokyo signal gates, Alpine avalanches, Coastal wave spray and Cosmic energy walls. Hazards are warned ahead, always leave two lanes open and never change Classic.
+- **Obstacle Run** offers a **Mixed obstacles** course: sweeping gates, falling debris and hoops over barricades that reward flying through or driving around.
+- **Risk lines**: high risk rings and close passes pay more on Custom Hard and can be switched off for relaxed practice.
+- The roads gained non-solid roadside life: spectators, billboards, service vans, rail platforms, passing trains, ships and drones. Lower graphics settings draw less of it.
 
 ### Race setup, results and accessibility
 
@@ -81,7 +114,7 @@ Select a **track you have unlocked**, choose **GAME MODE** below the track cards
 
 The screenshots used to inspect these modes were taken **from the running browser game**, not concept art. [Download the actual Playwright capture set](https://github.com/weskao/skyline-rush/actions/runs/39742666980/artifacts/12410172411) (Custom solo, Free Drive, Time Attack, Obstacle Run, Extreme obstacles, Checkpoint Rush and mobile mode menu). GitHub Actions artifacts may require sign-in and expire; to recreate them locally, run `npx playwright test tests/race-modes-browser.spec.js` and open `test-results/race-mode-*.png`. CI screenshots are software-rendered at reduced resolution, not representative of final device image quality.
 
-**Verification snapshot, commit `beab3e2`:** `npm test`, the production build and the World Tour mid-race test passed; the focused race-mode browser job reported **11 passed / 1 failed** (Clean Time Trial browser test timeout). This branch is **not fully verified or deployed**. Future roadmap items—including Stunt Attack, unlimited procedural roads, genuine closed-circuit laps, active inventory and the course editor—remain pending unless marked `[x]` in [TODO.md](TODO.md).
+**Verification:** each feature lists its tests and full-gate receipts in `TODO.md`. Physical iPhone and Android checks are still pending.
 
 ## Run locally
 
@@ -228,6 +261,7 @@ For a phone check, serve the build on your network (`npx vite preview --host 0.0
 
 ```sh
 make perf BASE=main         # A/B in Chrome at 412×915, CPU throttled 6× (RATE=20 for a low-end phone), 3 alternating rounds
+make perf BASE=main VIEWPORT=desktop  # The same A/B at 1440×900 desktop size
 make perf-phone             # Like make phone: asks base version, Tailscale/Wi-Fi and Telegram; logs phone temperatures
 ```
 

@@ -1,0 +1,26 @@
+export const CIRCUIT_COPY = {
+  en: {
+    'mode.circuit': 'Circuit Race',
+    'mode.description.circuit': 'Race a real loop. Complete every sector to count a lap.',
+    'track.note.harbor-circuit': 'Harbor Circuit · a continuous 2 km loop. Open to every driver.',
+    'circuit.settings': 'Harbor Circuit · race format', 'circuit.laps': 'Laps',
+    'circuit.length': '{laps} laps · {km} km total',
+    'circuit.hud': 'LAP {lap} / {total} · LAST {last} · BEST {best}',
+    'circuit.splits': 'SPLITS {splits}',
+    'circuit.invalid': 'Lap invalid — restart to race again',
+    'circuit.complete': 'Circuit complete', 'circuit.last': 'Last lap', 'circuit.best': 'Personal best lap',
+    'circuit.lapRow': 'Lap {lap}', 'circuit.summary': 'All {laps} laps and sectors complete.',
+  },
+  'zh-TW': {
+    'mode.circuit': '環道競速',
+    'mode.description.circuit': '在真正的封閉環道競速，依序通過每個分段才算完成一圈。',
+    'track.note.harbor-circuit': '港灣環道 · 每圈 2 公里，所有車手都能參賽。',
+    'circuit.settings': '港灣環道 · 比賽設定', 'circuit.laps': '圈數',
+    'circuit.length': '{laps} 圈 · 全程 {km} 公里',
+    'circuit.hud': '第 {lap} / {total} 圈 · 上圈 {last} · 最佳 {best}',
+    'circuit.splits': '分段 {splits}',
+    'circuit.invalid': '本圈無效，請重新開始比賽',
+    'circuit.complete': '環道賽完成', 'circuit.last': '上一圈', 'circuit.best': '個人最佳單圈',
+    'circuit.lapRow': '第 {lap} 圈', 'circuit.summary': '已完成全部 {laps} 圈與所有分段。',
+  },
+};

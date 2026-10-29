@@ -43,3 +43,42 @@ test('air time and multiplier scale with time rather than frame count', () => {
   assert.equal(a.airTime,b.airTime);
   assert.equal(a.maxCombo,b.maxCombo);
 });
+
+test('longest Stunt flight measures one continuous flight rather than total air time', () => {
+  const state = createStuntAttack(), c = car();
+  c.altitude = 3;
+  for (let i = 0; i < 40; i++) scoreStuntAttack(state, c, 0, .1, i * .1);
+  c.altitude = 0; scoreStuntAttack(state, c, 0, .1, 4);
+  c.altitude = 3;
+  for (let i = 0; i < 40; i++) scoreStuntAttack(state, c, 0, .1, 4.1 + i * .1);
+  assert.ok(Math.abs(state.longestFlight - 4) < 1e-9, 'two four-second flights are not one eight-second flight');
+  assert.ok(Math.abs(state.airTime - 8) < 1e-9);
+});
+
+test('aerial Stunt chains exclude earlier ground actions and end at landing', () => {
+  const state = createStuntAttack(), c = car();
+  c.rings = 3; scoreStuntAttack(state, c, 0, .1, 1);
+  c.altitude = 3; scoreStuntAttack(state, c, 0, .1, 1.1);
+  assert.equal(state.maxAerialCombo, 0, 'ground actions cannot become an aerial chain');
+  c.rings = 5; scoreStuntAttack(state, c, 0, .1, 1.2);
+  assert.equal(state.maxAerialCombo, 2);
+  c.altitude = 0; scoreStuntAttack(state, c, 0, .1, 1.3);
+  c.altitude = 3; c.rings = 6; scoreStuntAttack(state, c, 0, .1, 1.4);
+  assert.equal(state.maxAerialCombo, 2, 'a later flight starts its own chain');
+});
+
+test('longest Stunt flight is independent of simulation frame rate', () => {
+  for (const fps of [30, 60, 120]) {
+    const state = createStuntAttack(), c = car(); c.altitude = 3;
+    for (let i = 0; i < fps * 8; i++) scoreStuntAttack(state, c, 0, 1 / fps, i / fps);
+    assert.ok(Math.abs(state.longestFlight - 8) < 1e-9);
+  }
+});
+
+test('a collision breaks the active aerial chain without erasing its best', () => {
+  const state = createStuntAttack(), c = car(); c.altitude = 3;
+  c.rings = 2; scoreStuntAttack(state, c, 0, .1, 1);
+  c.collisions++; scoreStuntAttack(state, c, 0, .1, 1.1);
+  c.rings = 3; scoreStuntAttack(state, c, 0, .1, 1.2);
+  assert.equal(state.maxAerialCombo, 2);
+});

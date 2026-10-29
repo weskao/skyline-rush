@@ -111,3 +111,13 @@ test('the frame reports racing and boosting state for the engine mix', () => {
   race.phase = 'ready'; race.player.nitroTime = 0;
   assert.deepEqual([events.update(race, true).active, events.update(race, true).boosting], [false, false]);
 });
+
+test('ITEM-12: a shield blocking a hit plays its own cue once, and never a crash impulse', () => {
+  const events = createRaceAudioEvents();
+  const race = racing();
+  events.update(race, true);
+  race.player.shieldBlock = { distance: 100, x: 0, altitude: 0, time: race.elapsed };
+  const frame = events.update(race, true);
+  assert.deepEqual([cues(frame), impulses(frame)], [['shield-block'], []]);
+  assert.deepEqual(cues(events.update(race, true)), []);
+});

@@ -1,7 +1,8 @@
-import { RACE_TRACKS } from './game.js';
+import { isModeTrack } from './race-tracks.ts';
+import { circuitLaps } from './circuit-track.ts';
 
 // Versioned permanent bests are separate from the rolling 50-race history.
-export const MODE_NAMES = ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'] as const;
+export const MODE_NAMES = ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'endless', 'circuit'] as const;
 const BESTS_LIMIT = 200;
 type Mode = (typeof MODE_NAMES)[number];
 type RecordValue = Record<string, unknown>;
@@ -18,10 +19,12 @@ function validModeKey(key: string): Mode | null {
   if (key.length > 4200) return null;
   try {
     const parsed: unknown = JSON.parse(key);
-    if (!Array.isArray(parsed) || parsed.length !== 2 || !Object.hasOwn(RACE_TRACKS, parsed[0])) return null;
+    if (!Array.isArray(parsed) || ![2, 3].includes(parsed.length)) return null;
     const config = asRecord(parsed[1]);
     const mode = config?.mode;
-    return typeof mode === 'string' && MODE_NAMES.includes(mode as Mode) ? mode as Mode : null;
+    if (parsed.length === 3 && (mode !== 'circuit' || parsed[2] !== 'lap')) return null;
+    return typeof mode === 'string' && MODE_NAMES.includes(mode as Mode) && isModeTrack(parsed[0], mode) &&
+      (mode !== 'endless' || parsed[0] === 'coast') && (mode !== 'circuit' || circuitLaps(config) !== null) ? mode as Mode : null;
   } catch { return null; }
 }
 
@@ -39,7 +42,7 @@ export function mergeModeBests(local: unknown = {}, remote: unknown = null): Per
       if (!mode || typeof value !== 'number' || !Number.isFinite(value) || value < 0 ||
           (mode !== 'stunt' && value === 0)) continue;
       bests[key] = bests[key] === undefined ? value
-        : mode === 'stunt' ? Math.max(bests[key], value) : Math.min(bests[key], value);
+        : mode === 'stunt' || mode === 'endless' ? Math.max(bests[key], value) : Math.min(bests[key], value);
     }
   }
   for (const data of [right?.stunts, left?.stunts]) {

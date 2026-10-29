@@ -14,7 +14,8 @@ test('Neon, Canyon and Aurora use bounded reusable instancing outside the drivea
     kit.update(id, 345, 'high');
     const group = kit.groups[id];
     assert.equal(group.visible, true);
-    assert.ok(group.children.length >= 2 && group.children.length <= 3, id);
+    // Body, trim, accent plus one human-scale detail layer: four draws per theme at most.
+    assert.ok(group.children.length >= 2 && group.children.length <= 4, id);
     for (const name of CLASSIC_SCENIC_TRACKS) if (name !== id) assert.equal(kit.groups[name].visible, false);
     for (const mesh of group.children) {
       assert.equal(mesh.isInstancedMesh, true, id);
@@ -98,5 +99,25 @@ test('Quality caps and streaming geometry are deterministic without per-frame ch
   }
   kit.hide();
   for (const id of CLASSIC_SCENIC_TRACKS) assert.equal(kit.groups[id].visible, false);
+  kit.dispose();
+});
+
+test('each classic theme adds one instanced human-scale detail layer beside its skyline', () => {
+  const scene = new THREE.Scene();
+  const kit = createClassicTrackScenery(scene, center);
+  const expected = { neon: 'billboards', canyon: 'service vans', aurora: 'spectator stands' };
+  const matrix = new THREE.Matrix4(), position = new THREE.Vector3(), scale = new THREE.Vector3(), q = new THREE.Quaternion();
+  for (const id of CLASSIC_SCENIC_TRACKS) {
+    kit.update(id, 345, 'high');
+    const detail = kit.groups[id].getObjectByName(`${id} ${expected[id]}`);
+    assert.ok(detail?.isInstancedMesh, id);
+    for (let i = 0; i < detail.count; i++) {
+      detail.getMatrixAt(i, matrix); matrix.decompose(position, q, scale);
+      assert.ok(scale.y <= 16, `${id} detail stays human-scale`);
+      assert.ok(Math.abs(position.x - center(-position.z)) - scale.x / 2 >= 30, `${id} detail must clear shoulder`);
+    }
+    kit.update(id, 345, 'low');
+    assert.equal(detail.count, 8, 'detail follows the visible quality tier');
+  }
   kit.dispose();
 });

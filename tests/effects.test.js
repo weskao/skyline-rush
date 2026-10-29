@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Scene, Group, Vector3 } from 'three';
-import { createRace } from '../src/game.js';
+import { createRace, MAGNET_RANGE } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 
 test('a nonpositive first frame cannot revive dormant particles with uninitialized data', t => {
@@ -231,4 +231,116 @@ test('disposing marker pools releases every tier material, including types no lo
   assert.equal(disposed.size, 11, 'all nine materials and both shared geometries are released');
   assert.ok([...disposed.values()].every(count => count === 1));
   assert.ok(groups.every(group => group.parent === null), 'scene disposal will not dispose these resources twice');
+});
+
+test('ITEM-12: a shield-blocked hit flashes a blue ring, never the orange crash ring', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const race = createRace();
+  race.phase = 'racing';
+  effects.update(race, 0.016, 0, false, false);
+  race.player.shieldBlock = { distance: race.player.distance, x: 0, altitude: 0, time: race.elapsed };
+  effects.update(race, 0.016, 0, false, false);
+  const visible = scene.children.filter(object => object.isMesh && object.geometry.type === 'RingGeometry' && object.visible);
+  assert.equal(visible.length, 1);
+  const { r, g, b } = visible[0].material.color;
+  assert.ok(b > r && b > g, 'blue shield flash');
+});
+
+test('ITEM-12: a pickup beam marks rings that grant a held item, never Classic mystery rings', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const beams = scene.getObjectByName('Item beams');
+  assert.ok(beams && beams.children.length > 0, 'pooled in the scene from load (shader warmup)');
+  const shown = race => { effects.update(race, 0.016, 0, false, false); return beams.children.filter(beam => beam.visible); };
+  const classic = createRace();
+  classic.phase = 'racing';
+  classic.rings = [{ type: 'mystery', distance: classic.player.distance + 200, x: 2, altitude: 0, radius: 3, hit: false }];
+  assert.equal(shown(classic).length, 0, 'Classic mystery rings stay as they were');
+  const custom = createRace('coast', { mode: 'custom', activeItems: true });
+  custom.phase = 'racing';
+  custom.rings = [{ type: 'mystery', distance: custom.player.distance + 200, x: 2, altitude: 0, radius: 3, hit: false },
+    { type: 'charge', distance: custom.player.distance + 260, x: 0, altitude: 0, radius: 3, hit: false }];
+  const [beam, ...others] = shown(custom);
+  assert.deepEqual([others.length, beam?.position.x, beam?.position.z], [0, 2, -200]);
+  custom.rings[0].hit = true;
+  assert.equal(shown(custom).length, 0, 'gone once collected');
+});
+
+test('ITEM-03: a magnet shows its pickup radius around the car only while it runs', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const ring = scene.getObjectByName('magnet radius');
+  assert.ok(ring && !ring.visible, 'in the scene from the start (shader warmup), hidden');
+  const race = createRace();
+  race.phase = 'racing';
+  Object.assign(race.player, { x: 1.5, distance: 400 });
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, false, 'no magnet, no ring');
+  race.player.effects.magnet = 4;
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, true);
+  assert.deepEqual([ring.position.x, ring.position.z, ring.scale.x], [1.5, 0, MAGNET_RANGE]);
+  assert.ok(ring.material.opacity > 0 && ring.material.opacity <= 0.5);
+  effects.update(race, 0.016, 0, true, false);
+  assert.equal(ring.visible, false, 'never on the home preview');
+  race.player.effects.magnet = 0;
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(ring.visible, false, 'gone when the magnet ends');
+});
+
+test('ITEM-12: reduced motion holds the item beam and magnet pulses steady instead of throbbing', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const pulses = reducedMotion => {
+    const scene = new Scene();
+    const effects = createEffects(scene, () => 0);
+    const race = createRace('coast', { mode: 'custom', activeItems: true });
+    race.phase = 'racing';
+    race.rings = [{ type: 'mystery', distance: race.player.distance + 200, x: 2, altitude: 0, radius: 3, hit: false }];
+    race.player.effects.magnet = 4;
+    const beam = scene.getObjectByName('Item beams').children[0], ring = scene.getObjectByName('magnet radius');
+    const seen = { beam: new Set(), magnet: new Set() };
+    for (let frame = 0; frame < 40; frame++) {
+      effects.update(race, 0.016, 0, false, reducedMotion);
+      assert.ok(beam.visible && ring.visible);
+      seen.beam.add(beam.material.opacity.toFixed(3));
+      seen.magnet.add(ring.material.opacity.toFixed(3));
+    }
+    return { beam: seen.beam.size, magnet: seen.magnet.size };
+  };
+  assert.deepEqual(pulses(true), { beam: 1, magnet: 1 }, 'one steady opacity each');
+  const moving = pulses(false);
+  assert.ok(moving.beam > 1 && moving.magnet > 1, 'the full-motion pulse still plays');
+});
+
+test('11B: a Sky Spiral hoop sits on the helix road frame and swivels ±0.6 rad on race time, held still by reduced motion', async t => {
+  const { trackLocalPosition, trackFrame } = await import('../src/track-paths.ts');
+  const { scene, race, update } = raceScene(t);
+  const spiral = createRace('spiral', { mode: 'custom', rivals: 0, traffic: 'off', themes: true });
+  const hoop = spiral.rings.find(r => r.spin && r.distance > 1100 && r.distance < 2200);
+  race.rings = [hoop]; race.player.distance = hoop.distance - 50;
+  const options = { worldPoint: (s, x, y, o) => trackLocalPosition('spiral', s, x, y, o), worldFrame: s => trackFrame('spiral', s) };
+  const frame = trackFrame('spiral', hoop.distance), up = new Vector3(...frame.up), forward = new Vector3(...frame.forward);
+  const pose = (elapsed, reduced = false) => {
+    race.elapsed = elapsed; update(0.016, options, reduced);
+    const mesh = scene.getObjectByName('Race rings').children.find(m => m.visible);
+    const facing = new Vector3(0, 0, -1).applyQuaternion(mesh.quaternion);
+    return { mesh, swivel: Math.atan2(facing.clone().cross(forward).dot(up), facing.dot(forward)), tilt: new Vector3(0, 1, 0).applyQuaternion(mesh.quaternion).dot(up) };
+  };
+  const a = pose(0.3), expected = new Vector3(...trackLocalPosition('spiral', hoop.distance, hoop.x, hoop.altitude, race.player.distance));
+  assert.ok(a.mesh.position.distanceTo(expected) < 1e-6, `drawn ${a.mesh.position.toArray()} vs road ${expected.toArray()}`);
+  assert.ok(a.tilt > 0.999999, 'the swivel turns about the road up axis, never tipping the hoop');
+  for (const elapsed of [0.3, 1.1, 2.6]) {
+    const { swivel } = pose(elapsed);
+    assert.ok(Math.abs(Math.abs(swivel) - Math.abs(0.6 * Math.sin(hoop.spin * elapsed + hoop.spinPhase))) < 1e-6, `swivel @${elapsed}s = ${swivel}`);
+  }
+  assert.ok(Math.abs(pose(1.1).swivel - pose(2.6).swivel) > 0.05, 'it moves with race time');
+  assert.ok(Math.abs(pose(1.1, true).swivel) < 1e-9, 'reduced motion holds the hoop square to the road');
 });
