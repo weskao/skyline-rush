@@ -97,7 +97,10 @@ test('a release cannot be published without player notes for that version', () =
   const reviews = { [packageMeta.version]: reviewHash(releaseForVersion(packageMeta.version)) };
   assert.deepEqual(checkReleaseNotes(packageMeta.version, { reviews }), []);
   assert.deepEqual(checkReleaseNotes('v' + packageMeta.version, { reviews }), []);
-  assert.match(checkReleaseNotes('99.0.0').join('\n'), /no What's New entry for 99\.0\.0/);
+  const released = RELEASE_NOTES.filter(release => release.version !== UPCOMING);
+  assert.match(checkReleaseNotes('99.0.0', { notes: released }).join('\n'), /no What's New entry for 99\.0\.0/);
+  const upcoming = [{ ...released[0], version: UPCOMING }, ...released];
+  assert.doesNotMatch(checkReleaseNotes('99.0.0', { notes: upcoming, reviews: {} }).join('\n'), /no What's New entry/, 'a newer version resolves to the Upcoming entry');
   assert.match(checkReleaseNotes('').join('\n'), /version/);
 });
 
