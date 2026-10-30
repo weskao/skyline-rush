@@ -20,3 +20,5 @@ artifacts/perf-modes/
 artifacts/airflow-wake/
 artifacts/airflow-wake-recordings/
 artifacts/barrel-roll-wake/
+artifacts/barrel-roll-physics/
+artifacts/worktree-cleanup/
