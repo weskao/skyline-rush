@@ -1,3 +1,35 @@
+## UX/UI — AIR → ROAD CHAIN, tutorial and mobile controls (2026-10-31)
+
+**Branch:** `feature/ux-ui-combo-mobile-controls` (created from `main`). **Scope of this branch:** items 1–3 below. **Current step:** requirements and acceptance criteria only; no game logic, tutorial or control-layout implementation has been made. **Workflow:** trace the existing behavior → write failing regression tests (RED) → minimal implementation (GREEN) → refactor → full regression and exact-HEAD CI. Preserve existing race physics, player control authority, desktop input and en/zh-TW support.
+
+### 1. 空地連擊 / AIR → ROAD CHAIN — hard to trigger (P0)
+
+- [ ] Reproduce the reported low trigger frequency with real keyboard and mobile-touch play; trace the actual landing/flight state, input timing and clean-landing thresholds before changing any physics or rewards. The current advertised sequence is powered flight (BOOST or NITRO) followed by a smooth landing; compare it with the implementation and existing `tests/phase1-flight-flow.test.js`.
+- [ ] Make the intended maneuver understandable and reliably achievable through normal player input (including an explicit precondition/ready or failure hint if helpful), without accidental triggers, double payouts or an exploit. Preserve the intended distinction between clean and hard landings and avoid changing unrelated modes.
+- [ ] TDD: unit tests for eligible/short/ordinary/hard/collision landings, BOOST/NITRO combinations, single payout, cooldown/reset and race restart; real-browser desktop/mobile touch tests for player-triggered activation and localized on-screen/sound feedback.
+
+### 2. Add 空地連擊 to the tutorial (P0)
+
+- [ ] Add a dedicated AIR → ROAD CHAIN teaching step with concise en/zh-TW instructions: take off → use BOOST or NITRO in the air → land smoothly → observe the chain reward. Only advance after the real game event succeeds; show helpful retry feedback without taking control of the vehicle.
+- [ ] Preserve existing tutorial progress/step transitions, free steering and normal inputs; do not teleport, auto-steer or silently grant a chain to complete the lesson. Check keyboard, touch, pause/resume, retry and accessibility announcements.
+- [ ] TDD: RED → GREEN tests for both locales, genuine success vs failed landing, repeated attempts, no false completion, unaffected previous/next tutorial steps and normal race behavior.
+
+### 3. Mobile in-race controls: ergonomics and optional customization (P1)
+
+- [ ] Audit and improve mobile gameplay button positions, touch sizes and group spacing for comfortable thumbs and one-/two-handed operation (FLY, BOOST, NITRO, steering, accelerator/brake as applicable). Keep actionable hit targets at least 44×44 CSS px, preferably 48×48, without blocking the car, camera, HUD, minimap or results dialogs.
+- [ ] Support narrow/wide phones, portrait/landscape, notches, safe-area insets, home indicators, browser edge-swipe zones and orientation changes; maintain pointer/touch release handling when phase changes or a button becomes hidden.
+- [ ] Evaluate an optional **edit-controls mode** to drag/reposition entire control groups, with safe bounded zones, visible edit/confirm/reset actions, local preference persistence, sensible defaults and orientation-aware layouts. Dragging in edit mode must not steer/accelerate or disrupt normal gameplay; offer a usable non-drag alternative for accessibility. Do not require customization for a good default layout.
+- [ ] TDD and acceptance: unit tests for layout bounds, save/restore/reset and touch cancellation; real-device/browser tests across representative phone sizes, two locales, landscape/portrait, multiple fingers and pause/finish transitions; no overlapping/unclickable UI or performance regression.
+
+### 4. Foldable and dual-screen layouts — separate future branch (P2; out of scope here)
+
+- [ ] **Future branch only:** plan and later implement in an independently created `feature/foldable-layout-adaptation` branch from then-current `main`; do not implement foldable-specific layout code in the present branch.
+- [ ] Define and verify target form factors, including cover screen, unfolded inner screen, portrait/landscape, split-screen, tabletop/flex posture and hinge/crease occlusion. User-suggested examples include “iPhone Duo” and “Samsung Fold 8”; confirm actual device availability, viewport specifications and browser support before making device-specific claims.
+- [ ] Use responsive viewport/safe-area and progressive enhancement for supported fold/viewport-segment APIs, with graceful fallback in ordinary browsers. Keep HUD, track view, camera, minimap and touch controls reachable and readable without placing critical controls across a hinge.
+- [ ] Set up an emulated viewport/hinge matrix and physical-device acceptance where available, covering layout changes while racing, rotation, taps, pointer release and performance. Use TDD and validate separately in its own branch.
+
+**Completion gates for items 1–3:** requirements confirmed against code; RED/GREEN evidence; Vue 3 + strict TypeScript preferred for new UI/controller code; `npm run typecheck`, `npm test`, `npm run build`, browser/layout regressions, `make verify` and full GitHub Actions `quality-gate` on the final branch HEAD. Do not mark implementation done, create a PR or merge to `main` based on this TODO-only commit.
+
 ## Endless Highway — all ten tracks and seamless continuation (2026-10-30)
 
 **Branch:** `feature/endless-highway-all-tracks`. Keep the existing MODE-09, do not add a twelfth mode. The original finite Sprint/Circuit/Ghost tracks must remain unchanged.
