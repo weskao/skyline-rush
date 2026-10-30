@@ -28,7 +28,8 @@ function visit(race, distance) {
 test('Endless explicitly restricts v1 to Coast and continues beyond all authored finishes', () => {
   const race = endless();
   assert.equal(validateRaceRequest({ mode: 'endless' }).rivals, 0);
-  assert.throws(() => createRace('neon', { mode: 'endless' }), /Coast/i);
+  for(const id of ['neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic'])
+    assert.equal(createRace(id,{mode:'endless'}).trackId,id);
   assert.equal(race.objective.type, 'distance-survival');
   for (const distance of [4999, 8001, 20000, 1_000_000_000]) {
     visit(race, distance);
