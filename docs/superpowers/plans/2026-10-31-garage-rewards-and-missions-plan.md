@@ -48,6 +48,18 @@
 - `src/history-achievements.ts`: Task 3 ownership — Show honest result reward and mission progress only after committed settlement, with partial/offline states; test `tests/history-achievements-typescript.test.js`.
 - `src/cloud-progress.ts`: Task 4 ownership — Test repeated settlement, retry/reconnect, mode eligibility, account changes and old records; test `tests/cloud-progress.test.js`.
 
+### Visual Design & Art Asset Gate (required before visually affected code tasks)
+
+**Companion prompt:** [garage-rewards-and-missions visual design prompt](../prompts/2026-10-31-garage-rewards-and-missions-visual-design.md).
+
+**Scope:** earned-only result cards, task status, future soft-currency icon. Any icon/reward animation must reflect real committed settlement; no invented rate or client credit.
+
+- [ ] **V1 — SDD / Concept:** Revisit current `CLAUDE.md` and existing `src/icons.ts`, current Vue/CSS and WebGL. Draft at least portrait 390×844, landscape 844×390, desktop 1440×900 and Low/Medium/High comparison mockups as appropriate. Record actual control/visual semantics, safe areas, UI copy in en/zh-TW and which output is icon vs screenshot vs real renderer effect. Do not infer implementation from a generated image.
+- [ ] **V2 — Design Review:** Compare concept to project quality/accessibility requirements. Confirm critical elements remain visible on Low and when VFX is disabled/Reduced Motion; choose existing icons/cheaper DOM first. Keep unavailable features explicitly Coming soon. Document accepted visual references; do not produce speculative asset sprawl.
+- [ ] **V3 — BDD / RED:** For each changed visual component, add failing layout/interaction/renderer assertions on real source output, including phone portrait and landscape, desktop, touch, and correct effect/ability state. Assert no clipped vehicle, unclickable results controls, blocked road or overlapping buttons. If only mockups are needed, verify the responsive contract rather than manufacturing production image files.
+- [ ] **V4 — GREEN / Asset Integration:** During an authorized implementation phase only, produce optimized original SVG/WebP assets if justified, use Vue/CSS for interactive text/HUD and current Three.js for dynamic VFX. Keep visual identity aligned across Low/Medium/High with tiered GPU cost, quality-change cleanup and shader warmup. Re-run focused RED tests to GREEN.
+- [ ] **V5 — Verify:** Capture real-game WebGL before/after screenshot/video and compare FPS/frame-time p50/p95, Draw Calls, Triangles, texture/resource lifecycle. Complete the relevant Task 5 cross-platform gate and exact HEAD CI. Only then consider marking visual work `- [x]` in the complete canonical TODO.
+
 ## TDD tasks (not started)
 
 ### Task 1: Design eligible genuine-race events, versioned unique settlement IDs and pure mission progress reducers
