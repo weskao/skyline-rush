@@ -107,3 +107,22 @@ export function writeOrientationLayouts(layouts: OrientationLayouts, storage?: P
   catch { /* Layout remains active in memory when storage is blocked. */ }
 }
 export function orientationForViewport(width: number, height: number): LayoutOrientation { return width > height ? 'landscape' : 'portrait'; }
+
+export const HUD_WIDGETS_KEY = 'skyline-rush-hud-widgets';
+export interface HudWidgets { leaderboard: boolean; map: boolean; telemetry: boolean }
+export const DEFAULT_HUD_WIDGETS: Readonly<HudWidgets> = Object.freeze({ leaderboard: true, map: true, telemetry: true });
+export function normalizeHudWidgets(value: unknown): HudWidgets {
+  return {
+    leaderboard: isRecord(value) && typeof value.leaderboard === 'boolean' ? value.leaderboard : true,
+    map: isRecord(value) && typeof value.map === 'boolean' ? value.map : true,
+    telemetry: isRecord(value) && typeof value.telemetry === 'boolean' ? value.telemetry : true,
+  };
+}
+export function readHudWidgets(storage?: Pick<Storage, 'getItem'>): HudWidgets {
+  try { return normalizeHudWidgets(JSON.parse((storage ?? globalThis.localStorage).getItem(HUD_WIDGETS_KEY) ?? 'null')); }
+  catch { return normalizeHudWidgets(null); }
+}
+export function writeHudWidgets(value: HudWidgets, storage?: Pick<Storage, 'setItem'>): void {
+  try { (storage ?? globalThis.localStorage).setItem(HUD_WIDGETS_KEY, JSON.stringify(normalizeHudWidgets(value))); }
+  catch { /* Widgets remain visible/usable in memory. */ }
+}

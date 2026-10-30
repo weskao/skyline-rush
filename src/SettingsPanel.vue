@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { activateHudMode, readHudMode, type HudDisplayMode } from './control-settings.ts';
+import { activateHudMode, readHudMode, readHudWidgets, writeHudWidgets, type HudDisplayMode, type HudWidgets } from './control-settings.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
 const hudMode = ref<HudDisplayMode>(readHudMode());
+const widgets = ref<HudWidgets>(readHudWidgets());
+function applyWidgetVisibility(): void {
+  document.body.dataset.hudLeaderboardVisible = String(widgets.value.leaderboard);
+  document.body.dataset.hudMapVisible = String(widgets.value.map);
+  document.body.dataset.hudTelemetryVisible = String(widgets.value.telemetry);
+}
+function setWidget(key: keyof HudWidgets, enabled: boolean): void {
+  widgets.value = { ...widgets.value, [key]: enabled };
+  applyWidgetVisibility();
+  writeHudWidgets(widgets.value);
+}
 const isChinese = ref(getLocale() === 'zh-TW');
 onUnmounted(onLocaleChange(locale => { isChinese.value = locale === 'zh-TW'; }));
-onMounted(() => { document.body.dataset.hudMode = hudMode.value; });
+onMounted(() => { document.body.dataset.hudMode = hudMode.value; applyWidgetVisibility(); });
 function chooseHudMode(mode: HudDisplayMode): void {
   hudMode.value = activateHudMode(mode, document.body);
 }
@@ -28,6 +39,11 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
             <legend>{{ isChinese ? '遊戲介面 · HUD' : 'Race HUD' }}</legend>
             <label class="hud-choice"><input type="radio" name="hud-mode" value="hybrid" :checked="hudMode === 'hybrid'" @change="chooseHudMode('hybrid')"><span>{{ isChinese ? '沉浸式 (Hybrid A+B)' : 'Immersive (Hybrid A+B)' }}</span></label>
             <label class="hud-choice"><input type="radio" name="hud-mode" value="competitive" :checked="hudMode === 'competitive'" @change="chooseHudMode('competitive')"><span>{{ isChinese ? '競技資訊 (C)' : 'Competitive (C)' }}</span></label>
+            <div v-if="hudMode === 'competitive'" class="hud-widget-options">
+              <label class="hud-choice"><input type="checkbox" :checked="widgets.leaderboard" @change="setWidget('leaderboard', !widgets.leaderboard)"><span>{{ isChinese ? '顯示排行榜' : 'Show leaderboard' }}</span></label>
+              <label class="hud-choice"><input type="checkbox" :checked="widgets.map" @change="setWidget('map', !widgets.map)"><span>{{ isChinese ? '顯示小地圖' : 'Show minimap' }}</span></label>
+              <label class="hud-choice"><input type="checkbox" :checked="widgets.telemetry" @change="setWidget('telemetry', !widgets.telemetry)"><span>{{ isChinese ? '顯示額外統計' : 'Show secondary stats' }}</span></label>
+            </div>
             <button type="button" class="hud-default" @click="chooseHudMode('hybrid')">{{ isChinese ? '重設為預設介面' : 'Reset HUD to default' }}</button>
           </fieldset>
         </div>
@@ -39,6 +55,7 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
 .hud-choice { display: flex; align-items: center; gap: 9px; min-height: 44px; font-size: 12px; cursor: pointer; }
 .hud-choice input { accent-color: #8fe5ff; min-width: 19px; min-height: 19px; }
 .hud-default { min-height: 44px; font-size: 11px; text-decoration: underline; }
+.hud-widget-options { border-left: 1px solid rgb(190 215 230 / .3); margin: 6px 0 6px 6px; padding-left: 12px; }
 #settings-panel { max-height: min(70dvh, 620px); overflow-y: auto; }
 </style>
 <style>
@@ -46,6 +63,9 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
 @media (max-width: 760px) {
   body[data-hud-mode="hybrid"] #leaderboard { display: none; }
 }
+body[data-hud-leaderboard-visible="false"] #leaderboard { display: none; }
+body[data-hud-map-visible="false"] #race-route-map { display: none; }
+body[data-hud-telemetry-visible="false"] #style-score { display: none; }
 /* On short landscape screens, rankings yield to the car, road and touch controls. */
 @media (max-height: 390px) and (orientation: landscape) {
   body[data-hud-mode="competitive"] #leaderboard { display: none; }
