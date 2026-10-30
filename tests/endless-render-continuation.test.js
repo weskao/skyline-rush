@@ -47,3 +47,23 @@ test('all five World Tour Endless roads generate bounded themed chunks and colli
     }
   }finally{tour.dispose();}
 });
+
+test('Sky Spiral Endless keeps its visible hero fixed through repeating scenery seams',()=>{
+  const scene=new THREE.Scene(),sky=createSkyScene(scene);
+  const root=scene.getObjectByName('Sky Spiral 3D course');
+  const visibleAhead=()=>root.children
+    .filter(node=>node.visible && node.children.some(child=>child.geometry?.type==='CylinderGeometry'))
+    .filter(node=>node.position.z < -50 && node.position.z > -1450)
+    .map(node=>node.position.clone());
+  try {
+    for(const seam of [6600,8400,10200,12000,13800,15600]){
+      sky.update(seam-.25,'high',true);
+      const before=visibleAhead();
+      sky.update(seam+.25,'high',true);
+      const after=visibleAhead();
+      assert.ok(before.length>0 && after.length>0,'visible hero must not vanish around '+seam);
+      assert.ok(before.some(p=>after.some(q=>p.distanceTo(q)<5)),
+        'no visible landmark may teleport at '+seam+'m');
+    }
+  }finally{sky.dispose();}
+});
