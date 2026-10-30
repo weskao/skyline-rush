@@ -20,7 +20,8 @@
    - `CLAUDE.md` 與適用的 `.claude/rules/`（特別是 `ui-architecture`、`performance-review`、`device-quality`、`touch-input`、`ui-phase-interactions`）
    - `docs/superpowers/specs/2026-10-31-high-speed-vfx-design.md`（SDD + BDD）
    - `docs/superpowers/plans/2026-10-31-high-speed-vfx-plan.md`（Superpowers 實作計畫）
-   - `docs/superpowers/prompts/2026-10-31-high-speed-vfx-visual-design.md`（畫面／美術／素材設計 Prompt，按需製作與審核）   - 原始需求 `https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/TODO.md` 中對應項目與全平台 S1–S3 規範。
+   - `docs/superpowers/prompts/2026-10-31-high-speed-vfx-visual-design.md`（畫面／美術／素材設計 Prompt，按需製作與審核）
+   - 原始需求 `https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/TODO.md` 中對應項目與全平台 S1–S3 規範。
 3. 依照實際差異，在**自己的分支**同步最新 `main`，必要時採非破壞式 rebase/merge 並保留已有的規劃文件與成果。絕不能以舊版 TODO 直接覆寫新的 TODO。
 
 ### 2. SDD → BDD → TDD（使用 Superpowers 實際技能）
@@ -36,6 +37,18 @@
 - 驗收 Android Chrome / iOS Safari & Chrome：**直向＋橫向**，Desktop 常用瀏覽器和必要平板尺寸；`en`/`zh-TW`、Low/Medium/High、Reduced Motion、VFX Off、Mute，且 touch/keyboard/mouse、pause/restart/finish 按鈕都有效。
 - **Low/Medium/High** 只對 GPU／高耗能動畫分級，不能改動核心 HUD 資訊、遊戲規則、車輛數或操作。畫面新設計必須以實際 Vue/CSS/Three.js 實作，概念圖片只能做參考，不能替代真正的 UI／動態特效。
 - 對影響畫面的改動執行真實 WebGL 截圖／影片與前後效能比較：Draw Calls、Triangles、FPS、Frame Time p50/p95；如無法操作實機需明確列為未驗證。
+
+### 3A. GPT 圖片生成／透明背景／實際素材整合（Wave 2／3 新增）
+
+**本分支的素材策略：以動態渲染為主，生成圖非預設。** 可以使用 GPT 圖片生成來製作 4 階段 NITRO／BOOST 分鏡、色彩／光感參考。只有效能測試證明需要簡單的粒子／能量環貼圖時，才生成透明背景的原創 sprite；**不要**以一張全螢幕模糊圖取代 `Three.js` 的速度線、FOV、Shader 或真實動態效果。
+
+1. **先讀既有資源：** 檢視 `src/icons.ts`、`public/icons/`、現有 Vue/CSS 與 Three.js 材質／特效；有可複用的 SVG、程序化幾何或 CSS 就不要重複生成圖片。將素材分成「概念稿」、「可直接使用的原創靜態資產」、「須由真實 Three.js 即時繪製的動態特效」。
+2. **必要時實際產圖：** 在被分派的 GPT 對話內，若圖片生成能力可用，使用該功能產出可審核的原創設計稿／素材；**不可以只說會生成或把圖片工具參數貼成文字**。若沒有圖片生成工具，寫明限制與待補素材，不可杜撰完成的 PNG、SVG、預覽 URL。
+3. **透明背景判斷：** 徽章、類別 icon、粒子 sprite、可獨立疊加的 VFX 縮圖預設 **transparent background / true alpha channel / no white or checkerboard baked into pixels**；需要場景燈光、展示間或故事背景時才做不透明版本。要求乾淨 Alpha 邊緣、無裁切主體、無內建多餘文字、無浮水印、無商用競品 Logo。
+4. **格式與整合：** UI 小圖示優先既有 24×24 SVG／Vue icon；若使用產生的點陣圖，原稿優先高解析透明 PNG，測試 Alpha、裁切與不同背景可讀性後轉成壓縮透明 WebP。背景使用經壓縮 WebP/JPEG（不得依賴 JPEG 透明）；依設計需要加入適當 1×/2× 版本與檔案尺寸預算。圖片生成輸出**不等於可編輯向量圖**，不可把 PNG 假稱 SVG。正式採用才放進所屬 `public/` 素材資料夾，設計稿放 `docs/designs/<feature>/`，並附來源／用途／壓縮與格式記錄。
+5. **真實畫面與可操作性：** UI 的文字、名次、分數、狀態與觸控按鈕由 Vue 3 + TS + CSS／SVG 真正控制，3D 車輛和速度 VFX 由共用 Three.js renderer 驅動；**不得**用產生的概念圖或截圖遮蓋實際 WebGL 作為完工畫面。
+6. **SDD → BDD → TDD 與品質：** 先定義資產契約／場景／Alpha 條件，再定義 Given／When／Then，對不存在／載入失敗／低畫質／Reduced Motion／深淺背景與小螢幕寫 RED 測試，製作／整合後執行 GREEN。驗收 Android/iOS 直橫向、桌面、Low／Medium／High、VFX Off，使用實際遊戲截圖對比設計，量測下載大小、FPS／p95 frame time、Draw Calls／Triangles 或 shader/cache 影響，無資產時有正常 Fallback。
+7. **執行與放行：** 本次是規劃文件更新，**不代表已有 PNG/WebP/SVG 或已實作**。後續各分支只在自己的 Wave 依賴完成後開始，完成實作與完整驗證才在正確整合的 `TODO.md` 改成 `- [x]`，不得自行合併 main 或跨分支搶改共用 renderer。
 
 ### 4. 完成、TODO 勾選與合併 Gate
 
