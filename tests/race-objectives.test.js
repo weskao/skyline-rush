@@ -6,7 +6,7 @@ import { createRaceObjective, raceCompletion } from '../src/race-objectives.ts';
 // MODE-00 RED: a mode's win condition must not be inferred from route length alone.
 test('every shipped mode has an explicit serializable objective', () => {
   const expected = {
-    classic: 'placement', custom: 'placement', free: 'no-auto-finish',
+    classic: 'placement', custom: 'placement', free: 'route-end',
     time: 'finish-time', gauntlet: 'placement', checkpoint: 'checkpoint-timer',
     cup: 'stage-points', stunt: 'timed-score', elimination: 'survival',
   };
@@ -22,13 +22,18 @@ test('every shipped mode has an explicit serializable objective', () => {
   assert.throws(() => createRaceObjective({ mode: 'bogus' }), /mode/i);
 });
 
-test('Free Drive and Elimination never auto-finish at the authored route end', () => {
-  for (const mode of ['free', 'elimination']) {
-    const race = createRace('coast', { mode });
-    assert.equal(race.objective.type, mode === 'free' ? 'no-auto-finish' : 'survival');
-    race.player.distance = race.length;
-    assert.deepEqual(raceCompletion(race), { done: false, reason: null });
-  }
+test('Elimination never auto-finishes at the authored route end', () => {
+  const race = createRace('coast', { mode: 'elimination' });
+  race.player.distance = race.length;
+  assert.deepEqual(raceCompletion(race), { done: false, reason: null });
+});
+
+test('Free Drive finishes at the authored route end and not before', () => {
+  const race = createRace('coast', { mode: 'free' });
+  race.player.distance = race.length - 1;
+  assert.deepEqual(raceCompletion(race), { done: false, reason: null });
+  race.player.distance = race.length;
+  assert.deepEqual(raceCompletion(race), { done: true, reason: 'route' });
 });
 
 test('Timed style scores finish by timer OR route end, without pretending they are laps', () => {

@@ -50,16 +50,23 @@ for (const [name, viewport, hasTouch] of [
     expect(errors).toEqual([]);
   });
 
-  test('9B: reaching the old finish in Free Drive saves nothing and shows no result', async ({ gameplayPage: page }) => {
+  test('9B: reaching the road end finishes Free Drive, saves nothing and Race Again starts a new run', async ({ gameplayPage: page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
     const before = await classicStorage(page);
     await pickMode(page, 'free');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await teleportToFinish(page);
-    await page.waitForFunction(() => window.gameplay.race.player.distance === window.gameplay.race.length);
-    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
-    await expect(page.locator('#race-overlay')).toBeHidden();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
+    await expect(page.locator('#race-overlay')).toBeVisible();
+    await expect(page.locator('#new-best')).toBeHidden();
     expect(await classicStorage(page)).toEqual(before);
+    await page.evaluate(() => { window.firstRace = window.gameplay.race; });
+    await (hasTouch ? page.locator('#again-button').tap() : page.locator('#again-button').click());
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+    expect(await page.evaluate(() => window.gameplay.race !== window.firstRace && window.gameplay.race.mode === 'free')).toBe(true);
+    expect(errors).toEqual([]);
   });
 
   test('9B: repeated Free Drive sessions do not grow GPU buffers', async ({ gameplayPage: page }) => {

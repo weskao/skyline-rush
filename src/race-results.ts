@@ -61,6 +61,8 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     best = 0; record = false; // A partial series never writes a misleading individual best.
   } else if (race.result.success === false && race.mode !== 'classic') {
     best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
+  } else if (race.mode === 'free') {
+    best = race.elapsed; record = false; // Free Drive is practice: it ends the run but saves no best or history.
   } else if (race.mode === 'stunt' && stunt) {
     ({ best, record } = recordModeRace({ ...race, result: { ...race.result, time: stunt.elapsed, score: Math.round(stunt.score), maxCombo: stunt.maxCombo, airTime: stunt.airTime } }));
     progress.modeHistory = loadModeHistory();

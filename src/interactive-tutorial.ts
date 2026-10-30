@@ -21,6 +21,7 @@ export function createInteractiveTutorial() {
     config: { mode: 'free'; traffic: 'off'; items: false; collision: 'relaxed' }
   ) => ReturnType<typeof createRace>;
   const race = tutorialRace('coast', { mode: 'free', traffic: 'off', items: false, collision: 'relaxed' });
+  race.objective = Object.freeze({ type: 'no-auto-finish' as const }); // update() loops the road; a lesson never ends the run
   race.rings = [];
   race.rivals = [];
   race.traffic = [];

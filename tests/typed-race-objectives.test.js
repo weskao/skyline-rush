@@ -16,7 +16,8 @@ test('typed objective contracts preserve immutable mode behavior', () => {
 test('typed completion preserves route, checkpoint, timer and endless modes', () => {
   const race = { mode: 'classic', player: { distance: 100 }, length: 100, elapsed: 10 };
   assert.deepEqual(raceCompletion(race), { done: true, reason: 'route' });
-  assert.deepEqual(raceCompletion({ ...race, mode: 'free' }), { done: false, reason: null });
+  assert.deepEqual(raceCompletion({ ...race, mode: 'free' }), { done: true, reason: 'route' });
+  assert.deepEqual(raceCompletion({ ...race, mode: 'free', objective: { type: 'no-auto-finish' } }), { done: false, reason: null });
   assert.deepEqual(raceCompletion({ ...race, mode: 'checkpoint', checkpoint: { expired: true } }),
     { done: true, reason: 'expired' });
   assert.deepEqual(raceCompletion({ ...race, mode: 'stunt', length: 200, elapsed: 180, stuntLimit: 180 }),

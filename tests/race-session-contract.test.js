@@ -172,7 +172,7 @@ test('9A: every mode replays bit-for-bit from the same track, rules and input se
   }
 });
 
-test('9A: every finishing mode settles a finite result at the end of all ten courses; Free Drive stops at the road end', () => {
+test('9A: every finishing mode, Free Drive included, settles a finite result at the end of all ten courses', () => {
   for (const trackId of Object.keys(RACE_TRACKS)) for (const mode of MODES) {
     if (mode === 'endless') continue; // open road: it has no road end to finish at (contract below)
     if (mode === 'circuit') continue; // finishes on valid laps of its own route (contract below)
@@ -180,13 +180,10 @@ test('9A: every finishing mode settles a finite result at the end of all ten cou
     race.rivals.forEach(rival => { rival.distance = 100; });
     Object.assign(race.player, { distance: race.length - 1, speed: 80 });
     // Elimination ends on its 10 s knockout clock, not at the road end; 40 s bounds every mode.
-    for (let i = 0; i < 2400 && race.phase === 'racing' && mode !== 'free'; i++) stepRace(race, { throttle: true }, 1 / 60);
-    if (mode === 'free') for (let i = 0; i < 4; i++) stepRace(race, { throttle: true }, 1 / 60);
-    if (mode === 'free') assert.deepEqual([race.phase, race.result, race.player.distance], ['racing', null, race.length], trackId);
-    else {
-      assert.equal(race.phase, 'finished', `${trackId} ${mode}`);
-      assert.ok(Number.isFinite(race.result.time) && race.result.time > 0, `${trackId} ${mode} time`);
-    }
+    for (let i = 0; i < 2400 && race.phase === 'racing'; i++) stepRace(race, { throttle: true }, 1 / 60);
+    assert.equal(race.phase, 'finished', `${trackId} ${mode}`);
+    assert.ok(Number.isFinite(race.result.time) && race.result.time > 0, `${trackId} ${mode} time`);
+    assert.ok(race.player.distance <= race.length, `${trackId} ${mode} stays on the authored road`);
   }
 });
 

@@ -1,6 +1,6 @@
 export interface ObjectiveConfig { mode?: string; duration?: number }
 export type RaceObjective =
-  | Readonly<{ type: 'placement' | 'stage-points' | 'finish-time' | 'checkpoint-timer' | 'no-auto-finish' | 'survival' | 'distance-survival' | 'valid-laps' }>
+  | Readonly<{ type: 'placement' | 'stage-points' | 'finish-time' | 'checkpoint-timer' | 'route-end' | 'no-auto-finish' | 'survival' | 'distance-survival' | 'valid-laps' }>
   | Readonly<{ type: 'timed-score'; durationSeconds: number; routeEndAllowed: true }>;
 export interface ObjectiveRace {
   objective?: RaceObjective;
@@ -33,7 +33,7 @@ export function createRaceObjective(config: ObjectiveConfig = {}): RaceObjective
     case 'checkpoint':
       return Object.freeze({ type: 'checkpoint-timer' as const });
     case 'free':
-      return Object.freeze({ type: 'no-auto-finish' as const });
+      return Object.freeze({ type: 'route-end' as const });
     case 'endless':
       return Object.freeze({ type: 'distance-survival' as const });
     case 'elimination':
@@ -71,6 +71,7 @@ export function raceCompletion(race: ObjectiveRace): RaceCompletion {
     case 'placement':
     case 'stage-points':
     case 'finish-time':
+    case 'route-end':
       return routeEnd ? { done: true, reason: 'route' } : { done: false, reason: null };
     default:
       throw new RangeError('Unknown race objective: ' + String((objective as { type: string }).type));

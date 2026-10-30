@@ -73,9 +73,12 @@ test('the eligibility line matches what a finished run actually saves', () => {
     assert.ok(written().includes('skyline-rush-mode-bests-v1'), `${mode}: ${written().join()}`);
     assert.ok(!written().includes('skyline-rush-history') && !written().includes('skyline-rush-unlocked'), `${mode} touched Classic progress`);
   }
-  // Free Drive never finishes, so a practice run can't save anything.
+  // Free Drive ends at the road end, but a practice run saves nothing.
   assert.equal(modeEligibility('free'), 'practice');
   const free = createRace('coast', { mode: 'free' });
-  free.player.distance = free.length + 100; free.elapsed = 600;
-  assert.equal(raceCompletion(free).done, false);
+  free.player.distance = free.length;
+  assert.equal(raceCompletion(free).done, true);
+  globalThis.localStorage.store.clear();
+  settle(finished('free'));
+  assert.deepEqual(written().filter(key => /history|best|unlocked/.test(key)), [], written().join());
 });

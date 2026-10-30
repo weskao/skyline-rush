@@ -52,7 +52,7 @@ test('custom race preserves selected AI count and normal track configuration', (
   assert.equal(race.config.difficulty, 'hard');
 });
 
-test('free driving never awards a race finish when reaching the end of an open track', () => {
+test('free driving ends the run at the end of the route instead of parking the car there', () => {
   const race = createRace('coast', { mode: 'free' });
   assert.equal(race.rivals.length, 0);
   startRace(race);
@@ -61,8 +61,8 @@ test('free driving never awards a race finish when reaching the end of an open t
   race.player.distance = race.length - 0.1;
   race.player.speed = 85;
   stepRace(race, { throttle: true }, 1 / 60);
-  assert.equal(race.phase, 'racing');
-  assert.equal(race.result, null);
+  assert.equal(race.phase, 'finished');
+  assert.equal(race.result.position, 1);
   assert.ok(race.player.distance <= race.length);
 });
 
@@ -118,11 +118,10 @@ test('Time Attack ghosts never overwrite Classic ghosts', () => {
   assert.equal(loadModeGhost('coast', createRace('coast').config, storage), null);
 });
 
-test('Free Drive skips countdown and has no compulsory race finish', () => {
+test('Free Drive skips countdown and races until the road end', () => {
   const race = createRace('coast', { mode: 'free' });
   startRace(race);
   assert.equal(race.phase, 'racing');
-  race.player.distance = race.length - 0.1;
   race.player.speed = 85;
   stepRace(race, { throttle: true }, 1 / 60);
   assert.equal(race.phase, 'racing');

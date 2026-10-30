@@ -577,12 +577,6 @@ export function stepRace(race, input, dt) {
   if (race.practice) samplePractice(race.practice, car, Math.max(0, Math.min(car.distance, race.length) - previousDistance), dt);
   if (race.styleAttack) car.score += scoreStuntAttack(race.styleAttack, car, car.score - previousScore, dt, race.elapsed);
   car.score += bonusScore(car, race.mode, car.score - previousScore);
-  if (race.mode === 'free' && car.distance >= race.length) {
-    car.distance = race.length; // authored point-to-point road ends here; no fake infinite road
-    car.speed = 0;
-    car.thrusting = false;
-    car.boosting = false;
-  }
   if (race.elimination) {
     // Keep the original course bounded even if a future car tuning reaches the end early.
     if (car.distance >= race.length) { car.distance = race.length; car.speed = 0; }

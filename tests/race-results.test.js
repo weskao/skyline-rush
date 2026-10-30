@@ -177,6 +177,18 @@ function finishedRaceFor(mode) {
   return classic({ position: 1, time: 50, stars: 3, nearMisses: 40, ...result }, { mode, config: { mode } });
 }
 
+test('a Free Drive finish settles as practice: no best, record, history or Classic progress', () => {
+  const race = createRace('coast', { mode: 'free' });
+  race.phase = 'racing'; race.player.distance = race.length - 0.1; race.player.speed = 85;
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.phase, 'finished');
+  const progress = loadSessionProgress(['coast']);
+  const { settlement } = settle(race, { progress });
+  assert.deepEqual([settlement.best, settlement.record, settlement.next], [race.elapsed, false, null]);
+  assert.equal(progress.modeHistory.length, 0);
+  assert.equal(progress.history.length, 0);
+});
+
 test('no non-Classic finish touches Classic unlocks, stars, medals, bests, history or the Daily board', () => {
   const classicState = progress => {
     const { unlocked, modeHistory, ...rest } = progress, { modeHistory: stored, ...saved } = loadSessionProgress([]);
