@@ -60,7 +60,8 @@ const vec=v=>new THREE.Vector3(...v);
 const UNIT_Y=new THREE.Vector3(0,1,0),ZER0=new THREE.Vector3();
 
 function seeded(i){const n=Math.sin(i*127.1+78.233)*43758.5453;return n-Math.floor(n);}
-const clamped=(id,s)=>Math.max(0,Math.min(RACE_TRACKS[id].length,s));
+let endlessActive=false;
+const clamped=(id,s)=>Math.max(0,endlessActive?s:Math.min(RACE_TRACKS[id].length,s));
 
 // An authored plaza keeps the approach sightline to a hero landmark open: a
 // roadside item drops out only if, seen from some road point of the approach,
@@ -68,11 +69,11 @@ const clamped=(id,s)=>Math.max(0,Math.min(RACE_TRACKS[id].length,s));
 // Everything else on both kerbs stays, so the street does not go empty.
 export function blocksLandmark(id,l,item){
   if(!l.plaza||item.distance<l.at-l.plaza||item.distance>l.at+60)return false;
-  const at=(s,lateral)=>{const f=trackFrame(id,s);return [f.point.x+f.right[0]*lateral,f.point.z+f.right[2]*lateral];};
+  const at=(s,lateral)=>{const f=trackFrame(id,s,endlessActive);return [f.point.x+f.right[0]*lateral,f.point.z+f.right[2]*lateral];};
   const [lx,lz]=at(l.at,l.side*(l.offset||80)),[ix,iz]=at(item.distance,item.side*item.offset);
   const radius=(l.radius||30)*(l.scale||1);
   for(let s=l.at-l.plaza;s<item.distance;s+=30){
-    const p=trackPoint(id,s),ax=lx-p.x,az=lz-p.z,bx=ix-p.x,bz=iz-p.z;
+    const p=trackPoint(id,s,endlessActive),ax=lx-p.x,az=lz-p.z,bx=ix-p.x,bz=iz-p.z;
     const toLandmark=Math.hypot(ax,az),toItem=Math.hypot(bx,bz);
     if(toItem>=toLandmark)continue;
     const angle=Math.abs(Math.atan2(ax*bz-az*bx,ax*bx+az*bz));
@@ -133,6 +134,14 @@ export function roadObstacles(id){
   return obstacleCache.get(id);
 }
 
+/** Keep Endless procedural collision geometry in a fixed window, including post-finish chunks. */
+export function endlessRoadObstacles(id,distance){
+  if(!WORLD_THEMES[id])return [];
+  const chunk=Math.floor(Math.max(0,distance)/SCENERY_CHUNK_METRES),parts=[];
+  for(let c=Math.max(0,chunk-2);c<=chunk+10;c++)
+    for(const item of landmarkSafePlan(id,c))parts.push(...solidParts(id,item));
+  return parts.sort((a,b)=>a.from-b.from);
+}
 export function createWorldTourScene(scene){
   const group=new THREE.Group();group.name='World Tour authored scenery';group.visible=false;scene.add(group);
   const geometry=roadRibbon(ROWS);
@@ -194,7 +203,7 @@ export function createWorldTourScene(scene){
     }
     const [behind,ahead]=level==='high'?[3,10]:level==='medium'?[2,9]:[2,7];
     const start=Math.max(0,centerChunk-behind);
-    const end=Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+ahead);
+    const end=endlessActive?centerChunk+ahead:Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+ahead);
     for(const [index,node] of chunks){
       if(index<start||index>end){releaseChunk(node);chunks.delete(index);changed=true;}
     }
@@ -267,12 +276,12 @@ export function createWorldTourScene(scene){
   const dummy=new THREE.Object3D(),basis=new THREE.Matrix4(),world=new THREE.Vector3();
   let active=null, heroMaterials=[],cachedOrigin=null,cachedQuality=null,homeId=null,homeOrigin=null,homePoint=null;
   // One home sample per rebuild origin; callers pass the frame they already hold (its point is the centreline at s).
-  const local=(id,s,x=0,y=0,origin=0,f=trackFrame(id,clamped(id,s)),c=f.point)=>{
-    if(homeId!==id||homeOrigin!==origin){homeId=id;homeOrigin=origin;homePoint=trackPoint(id,clamped(id,origin));}
+  const local=(id,s,x=0,y=0,origin=0,f=trackFrame(id,clamped(id,s),endlessActive),c=f.point)=>{
+    if(homeId!==id||homeOrigin!==origin){homeId=id;homeOrigin=origin;homePoint=trackPoint(id,clamped(id,origin),endlessActive);}
     return [c.x-homePoint.x+f.right[0]*x+f.up[0]*y,c.y-homePoint.y+f.right[1]*x+f.up[1]*y,c.z-homePoint.z+f.right[2]*x+f.up[2]*y];
   };
   const pose=(target,id,s,x,y,origin)=>{
-    const f=trackFrame(id,clamped(id,s));
+    const f=trackFrame(id,clamped(id,s),endlessActive);
     basis.makeBasis(vec(f.right),vec(f.up),vec(f.forward).negate());
     target.position.fromArray(local(id,s,x,y,origin,f));
     target.quaternion.setFromRotationMatrix(basis);
@@ -317,7 +326,9 @@ export function createWorldTourScene(scene){
     }
   }
   return {
-    update(id,distance,quality='high',sections=[],time=0,reducedMotion=false){
+    update(id,distance,quality='high',sections=[],time=0,reducedMotion=false,endless=false){
+      if(endlessActive!==endless){cachedOrigin=null;homeOrigin=null;clearChunks();}
+      endlessActive=endless;
       configure(id);group.visible=true;
       const theme=WORLD_THEMES[id],low=quality==='low',landscape=theme.prop;
       // The world is authored in camera-relative coordinates. Moving the
@@ -326,16 +337,16 @@ export function createWorldTourScene(scene){
       // Before: >1000 CPU transforms + GPU instance-buffer uploads per frame.
       // Now: only when travelling into the next 12 m road sector.
       const origin=Math.floor(Math.max(0,distance)/STEP)*STEP;
-      const home=trackPoint(id,origin),current=trackPoint(id,distance);
+      const home=trackPoint(id,origin,endlessActive),current=trackPoint(id,distance,endlessActive);
       group.position.set(home.x-current.x,home.y-current.y,home.z-current.z);
       sceneryLayer.position.set(-home.x,-home.y,-home.z);
-      streamScenery(id,distance,quality,sections);motion.update(id,distance,quality,time,reducedMotion);
+      streamScenery(id,distance,quality,sections);motion.update(id,distance,quality,time,reducedMotion,endless);
       const rebuild=cachedOrigin!==origin||cachedQuality!==quality;
       if(rebuild){
         cachedOrigin=origin;cachedQuality=quality;
         const start=Math.max(0,origin-160);
         for(let i=0;i<=ROWS;i++){
-        const s=clamped(id,start+i*STEP),f=trackFrame(id,s);
+        const s=clamped(id,start+i*STEP),f=trackFrame(id,s,endlessActive);
         for(let side=0;side<2;side++){
           const index=(i*2+side)*3;
           positions.set(local(id,s,side?HALF:-HALF,0,origin,f),index);
