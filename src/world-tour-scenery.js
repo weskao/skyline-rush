@@ -59,15 +59,15 @@ const hash = (a, b = 0, c = 0) => {
   n = Math.imul(n ^ (n >>> 16), 2246822507) >>> 0;
   return ((n ^ (n >>> 13)) >>> 0) / 4294967296;
 };
-export function sceneryPlan(trackId, chunk, low = false) {
+export function sceneryPlan(trackId, chunk, low = false, endless = false) {
   if (!SCENERY_KINDS[trackId]) throw Error('Unknown World Tour scenery: ' + trackId);
-  const kinds = SCENERY_KINDS[trackId];
+  const kinds = SCENERY_KINDS[trackId], length = RACE_TRACKS[trackId].length;
   const items = [];
   // Specific distance and side are stable across rerenders and detail levels.
   for (const side of [-1, 1]) for (let i = 0; i < (low ? 2 : 4); i++) {
     const seed = chunk * 17 + i + (side === 1 ? 6 : 0);
     const distance = chunk * SCENERY_CHUNK_METRES + 13 + i * 27 + hash(seed, 14) * 13;
-    if (distance < 0) continue; // Infinite roadside chunks remain reproducible.
+    if (distance < 0 || (!endless && distance > length)) continue;
     const type = kinds[Math.floor(hash(seed, trackId.length) * kinds.length)];
     // Keep human-scale street furniture directly behind the sidewalks.
     // Larger facades sit one plot farther away, not hundreds of metres
