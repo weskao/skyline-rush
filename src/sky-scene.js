@@ -78,6 +78,24 @@ export function createSkyScene(scene) {
   const nextLandmark = landmark.clone(true);
   nextLandmark.visible = false;
   group.add(nextLandmark);
+  // Four shared material variants per hero, created once. Never fade the
+  // original neon rail/beacon materials along with the landmark.
+  const originalTowerMaterials = [tower.material, towerCore.material];
+  const landmarkMaterials = [landmark, nextLandmark].map(hero => {
+    const variants = new Map();
+    hero.traverse(mesh => {
+      if (!mesh.isMesh) return;
+      const source = mesh.material;
+      if (!variants.has(source)) {
+        const material = source.clone();
+        material.transparent = true;
+        material.depthWrite = false;
+        variants.set(source, { material, opacity: source.opacity });
+      }
+      mesh.material = variants.get(source).material;
+    });
+    return [...variants.values()];
+  });
   const skyline = new THREE.Group();
   group.add(skyline);
   const towerGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -154,13 +172,17 @@ export function createSkyScene(scene) {
       const extension=endless&&distance>5600;
       if (extension) {
         const anchor = 5600 + Math.max(1, Math.floor((distance - 5600) / 1800)) * 1800;
-        for (const [hero, at] of [[landmark, anchor], [nextLandmark, anchor + 1800]]) {
-          hero.visible = Math.abs(at - distance) < 1450;
+        for (const [index, [hero, at]] of [[landmark, anchor], [nextLandmark, anchor + 1800]].entries()) {
+          const t = Math.max(0, Math.min(1, (1700 - Math.abs(at - distance)) / 500));
+          const opacity = t * t * (3 - 2 * t);
+          hero.visible = opacity > 0;
+          for (const variant of landmarkMaterials[index]) variant.material.opacity = variant.opacity * opacity;
           hero.position.set(SKY_SPIRAL.radius - origin.x, -origin.y, skyPoint(at, true).z - origin.z);
         }
       } else {
         landmark.visible = true;
         nextLandmark.visible = false;
+        for (const variant of landmarkMaterials[0]) variant.material.opacity = variant.opacity;
         landmark.position.set(SKY_SPIRAL.radius - origin.x, -origin.y, -SKY_SPIRAL.start - origin.z);
       }
       skyline.position.set(-origin.x,-origin.y,(extension?skyPoint(distance+900,endless).z+SKY_SPIRAL.start:0)-origin.z);
@@ -206,6 +228,8 @@ export function createSkyScene(scene) {
       group.removeFromParent();
       geometry.dispose();
       road.material.dispose();
+      for (const variants of landmarkMaterials) for (const { material } of variants) material.dispose();
+      for (const material of originalTowerMaterials) material.dispose();
       for (const mat of [cyan, magenta, stripes, concrete, cloudMat, backdrop.material]) mat.dispose();
       backdrop.geometry.dispose();
       for (const mesh of [borders, rails, beacons, laneLines]) mesh.dispose();
