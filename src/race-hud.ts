@@ -142,8 +142,9 @@ export function createRaceHud(options: HudOptions) {
     const visual = getVisual();
     const { state, cueReady } = nitroReadiness.update({ charge: car.nitro, phase: race.phase, active: nitroActive });
     if (cueReady) {
-      options.onNitroReady();
-      if (nitroButton && readHudFeedback().animation && visual.enabled && !visual.comfortable && !reducedMotion.matches) {
+      const feedback = readHudFeedback();
+      if (feedback.sound) options.onNitroReady();
+      if (nitroButton && feedback.animation && visual.enabled && !visual.comfortable && !reducedMotion.matches) {
         nitroButton.animate([{ boxShadow: '0 0 0 0 rgb(255 213 128 / .8)' }, { boxShadow: '0 0 0 12px rgb(255 213 128 / 0)' }], { duration: 650 });
       }
     }

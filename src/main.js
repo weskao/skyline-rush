@@ -49,7 +49,6 @@ import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-
 import { settleRace } from './race-results.ts';
 import { resultView, setupResultScreen } from './result-screen.ts';
 import { createRaceHud } from './race-hud.ts';
-import { readHudFeedback } from './control-settings.ts';
 import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
 import { timeString } from './time-format.ts';
@@ -149,7 +148,7 @@ const hud = createRaceHud({
   getControlPrefs: () => touchUI.prefs(),
   flyKeyLabel: () => keyLabel(keymap.getKeyMap().fly[0]),
   getVisual: () => vfx.settings(),
-  onNitroReady: () => { if (readHudFeedback().sound) sound.cue('item-ready'); },
+  onNitroReady: () => sound.cue('item-ready'),
   timeTrialGhost: race => ghosts.mode(race),
   isAutoThrottle: () => autoThrottle,
   getGoUntil: () => goUntil,
