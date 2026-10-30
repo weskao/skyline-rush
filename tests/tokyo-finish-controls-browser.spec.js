@@ -62,6 +62,21 @@ for (const [name, viewport, hasTouch] of [
       expect(errors).toEqual([]);
     });
 
+    // iOS WebKit never reports the release of a touch whose target lost its box (display: none), and while that
+    // finger counts as down no later tap synthesizes a click: the results buttons went dead until a reload.
+    test('touch controls hide by visibility at the finish so a held finger can still release', async ({ gameplayPage: page }) => {
+      test.skip(!hasTouch, 'touch controls only lay out on touch viewports');
+      await collidedTokyoFinish(page);
+      const touchControls = page.locator('#touch-controls');
+      await expect(touchControls).toBeHidden();
+      await expect(touchControls).toHaveAttribute('hidden', '');
+      expect(await touchControls.evaluate(element => { const { display, visibility } = getComputedStyle(element); return { display, visibility }; }))
+        .toEqual({ display: 'grid', visibility: 'hidden' });
+      const gas = page.locator('#touch-controls [data-control="throttle"]');
+      const box = await gas.evaluate(element => { const { left, top, width, height } = element.getBoundingClientRect(); return { x: left + width / 2, y: top + height / 2 }; });
+      expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('#touch-controls'), box)).toBeNull();
+    });
+
     test('race again still responds after collisions and a completed Tokyo race', async ({ gameplayPage: page }) => {
       await collidedTokyoFinish(page);
       await page.locator('#again-button').click();
