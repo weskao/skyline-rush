@@ -6,7 +6,7 @@ import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad, DETAIL_KINDS, detailSetPlan } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js'; import { createWorldTourMotion } from './world-tour-motion.js';
 import { batchStaticChunk, poolStaticChunks, releaseStaticPool } from './world-tour-batching.ts';
-
+import { createEndlessObstacleWindow } from './endless-world-tour-window.js';
 // One scenery system for five distinct destinations. Locations are authored as
 // race-distance + roadside offsets; meshes follow the *real* 3D driving path.
 export const WORLD_THEMES = {
@@ -51,18 +51,15 @@ export const WORLD_THEMES = {
     ],
   },
 };
-
 const ROWS=138, STEP=12, HALF=12;
 const cube=new THREE.BoxGeometry(1,1,1);
 const cone=new THREE.ConeGeometry(1,1,7);
 const rock=new THREE.IcosahedronGeometry(1,0);
 const vec=v=>new THREE.Vector3(...v);
 const UNIT_Y=new THREE.Vector3(0,1,0),ZER0=new THREE.Vector3();
-
 function seeded(i){const n=Math.sin(i*127.1+78.233)*43758.5453;return n-Math.floor(n);}
 let endlessActive=false;
 const clamped=(id,s)=>Math.max(0,endlessActive?s:Math.min(RACE_TRACKS[id].length,s));
-
 // An authored plaza keeps the approach sightline to a hero landmark open: a
 // roadside item drops out only if, seen from some road point of the approach,
 // it sits nearer than the landmark and inside its angular width (ground plane).
@@ -81,18 +78,17 @@ export function blocksLandmark(id,l,item){
   }
   return false;
 }
-
 // Props that would block a landmark move instead of vanishing, so the approach
 // keeps its original density: one plot farther out, the other kerb, or further
 // out still. Only a prop with no clear slot stays put, shrunk to street scale.
 // shortcut: clear slots are checked against unblocked neighbours and this
 // chunk's moved props, not props moved in adjacent chunks.
 const landmarkBlocker=id=>item=>WORLD_THEMES[id].landmarks.some(l=>blocksLandmark(id,l,item));
-export function landmarkSafePlan(id,chunk,low=false){
+export function landmarkSafePlan(id,chunk,low=false,endless=false){
   const blocks=landmarkBlocker(id);
-  const items=sceneryPlan(id,chunk,low);
+  const items=sceneryPlan(id,chunk,low,endless);
   if(!items.some(blocks))return items;
-  const placed=[chunk-1,chunk,chunk+1].flatMap(c=>sceneryPlan(id,c,low)).filter(i=>!blocks(i));
+  const placed=[chunk-1,chunk,chunk+1].flatMap(c=>sceneryPlan(id,c,low,endless)).filter(i=>!blocks(i));
   const clear=c=>!blocks(c)&&placed.every(p=>p.side!==c.side||
     Math.abs(p.distance-c.distance)>=9||Math.abs(p.offset-c.offset)>=14);
   return items.map(item=>{
@@ -117,8 +113,8 @@ function solidParts(id,item){
   return parts;
 }
 // LOD drops decorative props, never obstacles that are solid in the road.
-export function detailPlan(id,chunk,quality=false){
-  const items=landmarkSafePlan(id,chunk),slots=quality===true||quality==='low'?2:quality==='medium'?3:4;
+export function detailPlan(id,chunk,quality=false,endless=false){
+  const items=landmarkSafePlan(id,chunk,false,endless),slots=quality===true||quality==='low'?2:quality==='medium'?3:4;
   return slots===4?items:items.filter(item=>item.slot<slots||solidParts(id,item).length);
 }
 // Every solid part on a World Tour road, sorted by distance; static per track, so cached for good.
@@ -134,14 +130,7 @@ export function roadObstacles(id){
   return obstacleCache.get(id);
 }
 
-/** Keep Endless procedural collision geometry in a fixed window, including post-finish chunks. */
-export function endlessRoadObstacles(id,distance){
-  if(!WORLD_THEMES[id])return [];
-  const chunk=Math.floor(Math.max(0,distance)/SCENERY_CHUNK_METRES),parts=[];
-  for(let c=Math.max(0,chunk-2);c<=chunk+10;c++)
-    for(const item of landmarkSafePlan(id,c))parts.push(...solidParts(id,item));
-  return parts.sort((a,b)=>a.from-b.from);
-}
+export const endlessRoadObstacles=createEndlessObstacleWindow(WORLD_THEMES,landmarkSafePlan,solidParts,SCENERY_CHUNK_METRES);
 export function createWorldTourScene(scene){
   const group=new THREE.Group();group.name='World Tour authored scenery';group.visible=false;scene.add(group);
   const geometry=roadRibbon(ROWS);
@@ -211,7 +200,7 @@ export function createWorldTourScene(scene){
       if(chunks.has(index))continue;
       changed=true;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;chunk.userData.chunkIndex=index;
-      for(const item of [...detailPlan(id,index,level),...detailSetPlan(id,index,level,landmarkBlocker(id))]){
+      for(const item of [...detailPlan(id,index,level,endlessActive),...detailSetPlan(id,index,level,landmarkBlocker(id),endlessActive)]){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
