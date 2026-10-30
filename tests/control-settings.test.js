@@ -64,3 +64,11 @@ test('invalid values and unavailable storage safely use Hybrid A+B', () => {
   assert.doesNotThrow(() => writeHudMode('competitive', blocked));
   assert.equal(resolveHudMode('COMPETITIVE'), 'hybrid');
 });
+
+test('HUD mode activation sets only presentation state, not control layout or action input', () => {
+  assert.equal(typeof hudSettings.activateHudMode, 'function');
+  const root = { dataset: { phase: 'racing' } };
+  const storage = { setItem(key, value) { assert.equal(key, hudSettings.HUD_MODE_KEY); assert.equal(value, 'competitive'); } };
+  assert.equal(hudSettings.activateHudMode('competitive', root, storage), 'competitive');
+  assert.deepEqual(root.dataset, { phase: 'racing', hudMode: 'competitive' });
+});

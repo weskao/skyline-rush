@@ -80,3 +80,11 @@ export function writeHudMode(mode: HudDisplayMode, storage: HudModeWriter = glob
   try { storage.setItem(HUD_MODE_KEY, resolveHudMode(mode)); }
   catch { /* Keep the chosen display mode in the mounted UI even if storage is blocked. */ }
 }
+
+/** Call from a Settings interaction, not the render loop. */
+export function activateHudMode(mode: HudDisplayMode, root: Pick<HTMLElement, 'dataset'>, storage?: HudModeWriter): HudDisplayMode {
+  const selected = resolveHudMode(mode);
+  root.dataset.hudMode = selected;
+  writeHudMode(selected, storage);
+  return selected;
+}
