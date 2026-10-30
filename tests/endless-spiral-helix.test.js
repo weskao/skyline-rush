@@ -27,3 +27,16 @@ test('Sky Spiral Endless keeps the authored 5.6km exactly and repeats a gently c
     }
   }
 });
+
+// Regression: pose/frame and render origin must share the *extended* point.
+// Previously skyFrame(s, true).point accidentally kept the finite straight
+// skyPoint(s) and made the drawn helix disagree with car and terrain.
+test('Endless Sky Spiral frame point equals extended road centre at every helix turn',()=>{
+  for(const lap of [0,1,20,100]){
+    const d=FINISH+lap*PERIOD+START+LENGTH/3;
+    const expected=skyPoint(d,true), frame=skyFrame(d,true);
+    assert.ok(delta(frame.point,expected)<1e-9,'frame centre must match 3D helix');
+    assert.ok(Math.hypot(...skyPosition(d,0,0,d,true))<1e-8,'self-relative position is zero');
+    assert.ok(delta(skyFrame(d,false).point,skyPoint(d,false))<1e-9,'finite sprint frame unchanged');
+  }
+});
