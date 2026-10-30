@@ -48,6 +48,18 @@
 - `src/effects.js`: Task 3 ownership — Ensure warm-up/renderer disposal paths and Low/Medium/High costs without duplicated shaders or fullscreen glare; test `tests/nitro-fly-browser.spec.js`.
 - `src/aero-vfx.js`: Task 4 ownership — Prove no black-frame/shader compile and compare real WebGL tracks/viewpoints/phone frame times; test `tests/black-frame-browser.spec.js`.
 
+### Visual Design & Art Asset Gate (required before visually affected code tasks)
+
+**Companion prompt:** [high-speed-vfx visual design prompt](../prompts/2026-10-31-high-speed-vfx-visual-design.md).
+
+**Scope:** speed-ramp storyboard for start/sustain/end and quality-tier VFX. Design references do not become static overlays; actual VFX stays in Three.js.
+
+- [ ] **V1 — SDD / Concept:** Revisit current `CLAUDE.md` and existing `src/icons.ts`, current Vue/CSS and WebGL. Draft at least portrait 390×844, landscape 844×390, desktop 1440×900 and Low/Medium/High comparison mockups as appropriate. Record actual control/visual semantics, safe areas, UI copy in en/zh-TW and which output is icon vs screenshot vs real renderer effect. Do not infer implementation from a generated image.
+- [ ] **V2 — Design Review:** Compare concept to project quality/accessibility requirements. Confirm critical elements remain visible on Low and when VFX is disabled/Reduced Motion; choose existing icons/cheaper DOM first. Keep unavailable features explicitly Coming soon. Document accepted visual references; do not produce speculative asset sprawl.
+- [ ] **V3 — BDD / RED:** For each changed visual component, add failing layout/interaction/renderer assertions on real source output, including phone portrait and landscape, desktop, touch, and correct effect/ability state. Assert no clipped vehicle, unclickable results controls, blocked road or overlapping buttons. If only mockups are needed, verify the responsive contract rather than manufacturing production image files.
+- [ ] **V4 — GREEN / Asset Integration:** During an authorized implementation phase only, produce optimized original SVG/WebP assets if justified, use Vue/CSS for interactive text/HUD and current Three.js for dynamic VFX. Keep visual identity aligned across Low/Medium/High with tiered GPU cost, quality-change cleanup and shader warmup. Re-run focused RED tests to GREEN.
+- [ ] **V5 — Verify:** Capture real-game WebGL before/after screenshot/video and compare FPS/frame-time p50/p95, Draw Calls, Triangles, texture/resource lifecycle. Complete the relevant Task 5 cross-platform gate and exact HEAD CI. Only then consider marking visual work `- [x]` in the complete canonical TODO.
+
 ## TDD tasks (not started)
 
 ### Task 1: Define bounded pure intensity mapping from real speed/acceleration, cap and active BOOST/NITRO, plus comfort overrides
