@@ -554,6 +554,8 @@ try {
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad());
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
   function frame(now) {
+    // Requested first: a frame that throws still reports its error, but never freezes the game for good.
+    animationId = requestAnimationFrame(frame);
     const rawDelta = (now - previousTime) / 1000; previousTime = now;
     const dt = Math.max(0, Math.min(rawDelta, 0.05)), due = drainSteps(accumulator, dt); accumulator = due.accumulator;
     // The 0.05s clamp already keeps a tab-switch gap from becoming unseen racing (hiding also pauses);
@@ -593,7 +595,6 @@ try {
       hudElapsed = 0;
     }
     perfOverlay?.record(now, rawDelta, race.phase === 'racing', shouldRender);
-    animationId = requestAnimationFrame(frame);
   }
   animationId = requestAnimationFrame(frame);
 } catch (error) {
