@@ -32,7 +32,7 @@ dev: stop-old-dev node_modules ## `make`: Vite + Vue dev server with hot reload 
 dev-diag: stop-old-dev node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(WITH_EMULATORS) '$(NPM) run dev'
 
-phone-diag: ## `make phone-diag [name]`: like `make phone`, with the on-screen diagnostic panel compiled in
+phone-diag: ## `make phone-diag [name|off]`: like `make phone`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(MAKE) phone $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
@@ -51,7 +51,7 @@ phone: node_modules ## `make phone [name|off]`: menu to start, check or stop a p
 
 # The unlocked config binds 127.0.0.1 so `make dev-unlocked` stays Mac-only; phone-dev's own `--host 0.0.0.0` CLI
 # flag overrides it, so this is the only phone-reachable all-unlocked server. Still a dev server: never a build.
-phone-unlocked: ## `make phone-unlocked [name]`: like `make phone`, with all tracks and paints unlocked
+phone-unlocked: ## `make phone-unlocked [name|off]`: like `make phone`, with all tracks and paints unlocked
 	$(MAKE) phone PHONE_VITE_ARGS="-- --config vite.unlocked.config.js" $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
