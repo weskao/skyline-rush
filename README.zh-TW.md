@@ -1,4 +1,4 @@
-<!-- source-sha256: 7569df047f56406b1eed64656639f092f1e6e5e6a48ce1623aec339e75cce854 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 989e3ddf79e9619a530ae0c10e4f86d673d2256613e5fd29a5b3d449c996ef97 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -64,7 +64,7 @@ https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 | --- | --- | --- |
 | **Classic Race** | 標準的 3 名對手衝刺，可在 10 條賽道之一進行，含車流、捷徑、光環與 NITRO。 | 登上頒獎台可解鎖下一條賽道；只有 Classic 會授予生涯星星、獎牌與正式最佳紀錄。 |
 | **Custom Race** | 選擇 **0–3 名對手**、Easy / Normal / Hard AI、Off / Light / Normal / Heavy 車流、NITRO 道具開／關，以及 Normal / Relaxed 碰撞懲罰。有五種預設：Standard、Traffic Rush、No Items、Air Focus 與 Precision。 | 非排名結果有各自的歷史紀錄。可進行 **1 / 2 / 3 / 5 個衝刺階段**並比較累計時間。各階段重複跑點對點路線；它們**不是環圈賽**。 |
-| **Free Drive** | 獨自探索任何已解鎖的賽道，可調整道路車流與道具，沒有名次，也沒有強制勝利。 | 自由駕駛、飄移與飛行，然後重新開始或選擇其他賽道。這條設計好的道路有終點；這**不是**無限世界模式。 |
+| **Free Drive** | 獨自探索任何已解鎖的賽道，可調整道路車流與道具，沒有名次，也沒有強制勝利。 | 自由駕駛、飄移與飛行，直到道路盡頭；抵達終點即結束本次駕駛並顯示結果，不保存任何紀錄。這**不是**無限世界模式。 |
 | **Time Attack** | 單人計時衝刺，提供相容的最佳紀錄 Ghost 與領先／落後分段。可選用 **Clean Time Trial** 開關。 | 依賽道與規則記錄最佳時間；Clean 跑法只要有任何碰撞即視為無效，且不會取代個人最佳。 |
 | **Obstacle Run** | 以種子生成的路邊障礙；密度分為 **Standard** 或 **Extreme**。部分障礙會橫向掃過；警告 HUD 會預告逼近的危險。 | 閃避危險、乾淨通過可獲得風格分數，並使用一般路線的終點。障礙物配置與碰撞共用確定性邏輯；Classic 不受影響。 |
 | **Checkpoint Rush** | 穿越發光的 3D 拱門。起始時間為 **28 秒**；每通過一道乾淨的拱門獲得 **+10 秒**（上限 60）與 **250 風格分數**。 | 在時間用盡前通過每道拱門並抵達終點。漏掉拱門與超時**不會**儲存有效的最佳紀錄。HUD 顯示已通過的拱門、剩餘時間與到下一個目標的距離。 |
