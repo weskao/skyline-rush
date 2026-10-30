@@ -686,7 +686,7 @@ export function createWorld(canvas) {
       const distance = preview ? previewDistance(trackId) : car.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality,race.endless ? race.seed : undefined);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
-      const center = trackId === 'spiral' ? skyPosition(distance)[0] : framedRoad(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance);
+      const center = trackId === 'spiral' ? skyPosition(distance)[0] : framedRoad(trackId) ? trackPoint(trackId,distance).x : roadCenter(distance), originY = trackId === 'spiral' ? skyPosition(distance)[1] : framedRoad(trackId) ? trackPoint(trackId,distance).y : 0; // render-origin height, for world-space aero history
       // Smooth mountain bore lighting over 38 m for road readability.
       const tour=TOUR_IDS.has(trackId);
       const bore=tour&&trackId==='alpine'?race.sections.find(s=>
@@ -905,7 +905,7 @@ export function createWorld(canvas) {
       finish.visible = trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
         framedRoad(trackId) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin), worldFrame: trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
-      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, trackId === CIRCUIT_ID ? -trackPoint(trackId,distance).z : distance, visual, reducedMotion);
+      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, center, trackId === CIRCUIT_ID ? -trackPoint(trackId,distance).z : distance, visual, reducedMotion, originY);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
       if (photoView && race.phase === 'paused') {

@@ -138,7 +138,7 @@ export function createAeroVFX(scene, vehicle) {
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   let hadPosition = false, wasBoosting = false, time = 0, reveal = 0, strength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  let quality = 1, settings, delta, centerX, originDistance, rollStrength = 0, wakeStrength = 0;
+  let quality = 1, settings, delta, centerX, originDistance, originHeight, rollStrength = 0, wakeStrength = 0;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
@@ -167,8 +167,8 @@ export function createAeroVFX(scene, vehicle) {
   return {
     reset,
     group: local, // effects riding on the vehicle; not part of its silhouette
-    update(race, dt, center, distance, options, reducedMotion) {
-      settings = options; centerX = center; originDistance = distance;
+    update(race, dt, center, distance, options, reducedMotion, originY = 0) { // originY: absolute height of the render origin, so history stays world-space on sloped roads
+      settings = options; centerX = center; originDistance = distance; originHeight = originY;
       let ribbonKindDirty = false;
       dt = clamp(Number.isFinite(dt) ? dt : 0, 0, 0.1);
       const car = race.player, active = race.phase === 'racing', preview = race.phase === 'ready';
@@ -187,7 +187,7 @@ export function createAeroVFX(scene, vehicle) {
       strength = THREE.MathUtils.damp(strength, boost ? 1 : demonstration, boost ? 55 : 7, dt);
       wakeStrength = Math.max(strength, rollStrength * 0.7);
       vehicle.updateWorldMatrix(true, false);
-      current.copy(vehicle.position); current.x += center; current.z -= distance;
+      current.copy(vehicle.position); current.x += center; current.y += originY; current.z -= distance;
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
@@ -262,7 +262,7 @@ export function createAeroVFX(scene, vehicle) {
           const end = j === 2 || j === 4 || j === 5, side = j === 1 || j === 3 || j === 4 ? 1 : -1;
           corner.copy(end ? s.b : s.a).addScaledVector(end ? s.right : s.left, side);
           const offset = i * 18 + j * 3;
-          ribbonPositions[offset] = corner.x - center; ribbonPositions[offset + 1] = corner.y; ribbonPositions[offset + 2] = corner.z + distance;
+          ribbonPositions[offset] = corner.x - center; ribbonPositions[offset + 1] = corner.y - originY; ribbonPositions[offset + 2] = corner.z + distance;
           ribbonAlpha[i * 6 + j] = enabled && s.life > 0 ? s.life / s.maxLife * (s.roll ? settings.airflowDensity * settings.airflowOpacity * 0.3 : calm ? 0.04 : 0.12) : 0;
         }
       }
@@ -274,10 +274,10 @@ export function createAeroVFX(scene, vehicle) {
         if (p.life === 0) continue;
         if (!p.roll) {
           p.pos.addScaledVector(p.velocity, dt); p.velocity.multiplyScalar(Math.exp(-dt * 2));
-          if (p.pos.y < 0.09) { p.pos.y = 0.09; p.velocity.y = Math.abs(p.velocity.y) * 0.1; p.velocity.x *= 1 + dt; }
+          if (p.pos.y < originHeight + 0.09) { p.pos.y = originHeight + 0.09; p.velocity.y = Math.abs(p.velocity.y) * 0.1; p.velocity.x *= 1 + dt; }
         }
         const age = p.maxLife - p.life;
-        positions[i * 3] = p.pos.x - centerX; positions[i * 3 + 1] = p.pos.y; positions[i * 3 + 2] = p.pos.z + originDistance;
+        positions[i * 3] = p.pos.x - centerX; positions[i * 3 + 1] = p.pos.y - originHeight; positions[i * 3 + 2] = p.pos.z + originDistance;
         sizes[i] = p.roll ? p.size : p.size + age * 2;
         alphas[i] = p.opacity * Math.min(1, age * 25) * (p.life / p.maxLife) ** 1.5;
       }
@@ -285,11 +285,11 @@ export function createAeroVFX(scene, vehicle) {
       for (let i = 0; i < ghosts.length; i++) {
         const g = ghosts[i]; g.life = Math.max(0, g.life - dt);
         g.mesh.visible = enabled && !calm && g.life > 0 && i < settings.afterimages;
-        g.mesh.position.copy(g.position); g.mesh.position.x -= center; g.mesh.position.z += distance;
+        g.mesh.position.copy(g.position); g.mesh.position.x -= center; g.mesh.position.y -= originY; g.mesh.position.z += distance;
         g.mesh.material.opacity = g.life / 0.45 * 0.14;
       }
       shock.visible = enabled && !calm && shockAge < 0.23;
-      shock.position.copy(shockPosition); shock.position.x -= center; shock.position.z += distance;
+      shock.position.copy(shockPosition); shock.position.x -= center; shock.position.y -= originY; shock.position.z += distance;
       shock.scale.setScalar(0.5 + shockAge * 20);
       shock.material.opacity = Math.max(0, 1 - shockAge / 0.23) ** 2 * settings.shockwave * 0.45;
       previous.copy(current); previousRotation.copy(vehicle.quaternion);
