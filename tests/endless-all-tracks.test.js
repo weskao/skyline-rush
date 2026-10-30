@@ -30,11 +30,12 @@ test('endless is one existing mode and supports all ten tracks without authored 
 test('World Tour & Sky Spiral centreline extends continuously beyond authored finish',()=>{
  for(const id of ['spiral','taipei','tokyo','alpine','coastal','cosmic']){
    const finish=RACE_TRACKS[id].length;
-   const p=trackPoint(id,finish),next=trackPoint(id,finish+12),far=trackPoint(id,finish+100000);
+   const p=trackPoint(id,finish,true),next=trackPoint(id,finish+12,true),far=trackPoint(id,finish+100000,true);
+   assert.deepEqual(trackPoint(id,finish+120),trackPoint(id,finish),'finite path remains clamped');
    assert.ok(Math.hypot(next.x-p.x,next.y-p.y,next.z-p.z)>1,id+' must extend');
    assert.ok(Math.hypot(far.x-next.x,far.y-next.y,far.z-next.z)>1000);
    for(const d of [finish-1,finish,finish+1,finish+120,finish+32000]){
-     const frame=trackFrame(id,d),at=trackLocalPosition(id,d,0,0,d);
+     const frame=trackFrame(id,d,true),at=trackLocalPosition(id,d,0,0,d,true);
      assert.ok(frame.forward.every(Number.isFinite)&&at.every(Number.isFinite));
      assert.ok(Math.hypot(...at)<.0001,'self-relative point must be origin');
    }
