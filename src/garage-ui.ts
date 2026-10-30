@@ -51,6 +51,7 @@ export function setupGarageUI({
       id, getEquippedPaint(), stars, PAINTS, availablePaints(stars),
     );
     const name = t('paint.' + id);
+    updateGarageStudioView({ ownedPaints: availablePaints(stars), equippedPaint: getEquippedPaint() });
     updateGarageView({
       status: t('garage.status.' + state, { name, stars: need, have: stars }),
       equipDisabled: !canEquip,
@@ -95,6 +96,7 @@ export function setupGarageUI({
     clearControls();
   }
 
+  $('#garage-restore-default').addEventListener('click', () => previewPaint('pearl'));
   $('#garage-equip').addEventListener('click', () => {
     // Guard the data boundary, not only the disabled UI: a locked paint is never persisted.
     if (!garagePresentation(previewing, getEquippedPaint(), getStars(), PAINTS, availablePaints(getStars())).canEquip) return;
@@ -140,7 +142,7 @@ export function setupGarageUI({
   });
   garageScreen.addEventListener('keydown', event => event.stopPropagation());
   document.querySelectorAll<HTMLButtonElement>('[data-garage-angle]').forEach(button =>
-    button.addEventListener('click', () => setCamera(garagePreset(button.dataset.garageAngle!), button.dataset.garageAngle)));
+    button.addEventListener('click', () => setCamera(garagePreset(button.dataset.garageAngle!), button.dataset.garageAngle ?? '')));
   $('#garage-rotate-left').addEventListener('click', () => setCamera(dragGarageCamera(camera, -40, 0)));
   $('#garage-rotate-right').addEventListener('click', () => setCamera(dragGarageCamera(camera, 40, 0)));
   $('#garage-zoom-in').addEventListener('click', () => setCamera(zoomGarageCamera(camera, .85)));

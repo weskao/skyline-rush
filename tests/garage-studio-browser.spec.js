@@ -59,3 +59,17 @@ test('scenario 4 — Browser back releases Studio without trapping race controls
   await page.locator('#start-button').click();
   await expect(page.locator('body')).not.toHaveAttribute('data-phase', 'ready');
 });
+
+test('studio design — paint states and default restoration reflect actual ownership', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
+  await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('data-state', 'locked');
+  await page.locator('[data-paint="obsidian"]').click();
+  await expect(page.locator('#garage-equip')).toBeDisabled();
+  await page.locator('#garage-restore-default').click();
+  await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#garage-preview #world')).toBeVisible();
+});
