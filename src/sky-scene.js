@@ -41,9 +41,9 @@ export function createSkyScene(scene) {
   const rightVector = new THREE.Vector3();
   const upVector = new THREE.Vector3();
   const backVector = new THREE.Vector3();
-  function pose(instance, index, s, lateral, rise, width, height, depth, origin) {
-    const frame = skyFrame(s);
-    const [x, y, z] = skyPosition(s, lateral, rise, origin);
+  function pose(instance, index, s, lateral, rise, width, height, depth, origin, endless = false) {
+    const frame = skyFrame(s, endless);
+    const [x, y, z] = skyPosition(s, lateral, rise, origin, endless);
     rightVector.fromArray(frame.right);
     upVector.fromArray(frame.up);
     backVector.fromArray(frame.forward).negate();
@@ -144,11 +144,11 @@ export function createSkyScene(scene) {
     update(distance, quality = 'high', endless = false) {
       group.visible = true;
       backdrop.material.uniforms.time.value = distance * 0.0015;
-      const origin = skyPoint(distance);
+      const origin = skyPoint(distance, endless);
       // Loop existing architecture in the camera's streaming window without new GPU allocations.
       const extension=endless&&distance>5600, next=5600+Math.ceil((distance-5600+800)/1800)*1800;
-      landmark.position.set(SKY_SPIRAL.radius-origin.x,-origin.y,(extension?skyPoint(next).z:-SKY_SPIRAL.start)-origin.z);
-      skyline.position.set(-origin.x,-origin.y,(extension?skyPoint(distance+900).z+SKY_SPIRAL.start:0)-origin.z);
+      landmark.position.set(SKY_SPIRAL.radius-origin.x,-origin.y,(extension?skyPoint(next,endless).z:-SKY_SPIRAL.start)-origin.z);
+      skyline.position.set(-origin.x,-origin.y,(extension?skyPoint(distance+900,endless).z+SKY_SPIRAL.start:0)-origin.z);
       fogBanks.position.copy(skyline.position);
       skyline.visible = quality !== 'low';
       fogBanks.visible = quality === 'high';
@@ -160,9 +160,9 @@ export function createSkyScene(scene) {
       if (start !== lastRoadStart) {
       for (let i = 0; i <= ROWS; i++) {
         const s = endless ? start + i * STEP : Math.min(5600, start + i * STEP);
-        const frame = skyFrame(s);
+        const frame = skyFrame(s,endless);
         for (let side = 0; side < 2; side++) {
-          const [x, y, z] = skyPosition(s, side ? WIDTH : -WIDTH, 0, 0);
+          const [x, y, z] = skyPosition(s, side ? WIDTH : -WIDTH, 0, 0, endless);
           const offset = (i * 2 + side) * 3;
           positions.set([x, y, z], offset);
           normals.set(frame.up, offset);
@@ -173,12 +173,12 @@ export function createSkyScene(scene) {
         indices.set(gap ? [a, a, a, a, a, a] : [a, a + 1, a + 2, a + 1, a + 3, a + 2], k);
         const mid = s + STEP * 0.5;
         for (let side = 0; side < 2; side++) {
-          pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17, 0.16, 0.12, STEP, 0);
-          pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60, 0.38, 1.1, STEP, 0);
-          pose(beacons, i * 2 + side, mid, side ? 12.75 : -12.75, 1.12, 0.08, 0.09, STEP, 0);
+          pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17, 0.16, 0.12, STEP, 0, endless);
+          pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60, 0.38, 1.1, STEP, 0, endless);
+          pose(beacons, i * 2 + side, mid, side ? 12.75 : -12.75, 1.12, 0.08, 0.09, STEP, 0, endless);
         }
         for (let lane = 0; lane < 3; lane++) {
-          pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025, 0.14, 0.03, 4.0, 0);
+          pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025, 0.14, 0.03, 4.0, 0, endless);
         }
       }
       for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.index]) attribute.needsUpdate = true;
