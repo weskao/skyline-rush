@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: help dev dev-unlocked dev-feature test-unlocked phone perf perf-modes perf-phone run verify deploy stop-old-dev
+.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag perf perf-modes perf-phone run verify deploy stop-old-dev
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -26,6 +26,14 @@ stop-old-dev:
 
 dev: stop-old-dev node_modules ## `make`: Vite + Vue dev server with hot reload and Firebase emulators on http://127.0.0.1:5173
 	$(WITH_EMULATORS) '$(NPM) run dev'
+
+# VITE_DIAG=1 compiles in src/crash-log.ts: a live banner with frame counter, lifecycle and input events plus the
+# stored crash log. Production builds never include it (scripts/assert-production-locked.mjs refuses the marker).
+dev-diag: stop-old-dev node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
+	VITE_DIAG=1 $(WITH_EMULATORS) '$(NPM) run dev'
+
+phone-diag: ## `make phone-diag [name]`: like `make phone`, with the on-screen diagnostic panel compiled in
+	VITE_DIAG=1 $(MAKE) phone $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
 dev-unlocked: stop-old-dev node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
@@ -62,9 +70,9 @@ perf-phone: node_modules ## `make perf-phone [BASE=main] [VIA=tailscale|wifi|aut
 dev-feature: ## `make dev-feature <name>`: that feature branch, all-unlocked, https://127.0.0.1:5443
 	node scripts/dev-feature.mjs $(filter-out $@,$(MAKECMDGOALS))
 
-DEV_FEATURE_ARGS := $(filter-out dev-feature phone,$(MAKECMDGOALS))
-DEV_FEATURE_NAME := $(filter-out dev dev-unlocked test-unlocked run deploy node_modules,$(DEV_FEATURE_ARGS))
-ifneq ($(filter dev-feature phone,$(MAKECMDGOALS)),)
+DEV_FEATURE_ARGS := $(filter-out dev-feature phone phone-diag,$(MAKECMDGOALS))
+DEV_FEATURE_NAME := $(filter-out dev dev-diag dev-unlocked test-unlocked run deploy node_modules,$(DEV_FEATURE_ARGS))
+ifneq ($(filter dev-feature phone phone-diag,$(MAKECMDGOALS)),)
 ifneq ($(DEV_FEATURE_NAME),)
 $(eval $(DEV_FEATURE_NAME):;@:)
 endif

@@ -249,6 +249,7 @@ compile at first draw", "One NaN pixel is a black frame").
 | `make dev-unlocked` (= `make test-unlocked`) | Local-only all-unlocked server (not a test runner) |
 | `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS localhost |
 | `make phone [name]` | Same menu as `/phone-dev`: start/check/stop a phone-reachable locked dev server for this checkout, a worktree or a branch |
+| `make dev-diag` / `make phone-diag [name]` | Same servers with the on-screen diagnostic banner compiled in (`VITE_DIAG=1` → `src/crash-log.ts`); production builds never include it |
 | `npm test` | Node unit tests |
 | `npm run build` | Production build + release-bundle lock assertion |
 | `npm run test:browser` | Playwright suite (pretest builds production assets) |
