@@ -12,7 +12,7 @@
 
 **Repository:** https://github.com/weskao/skyline-rush
 **Target branch:** `feature/garage-preview-studio`
-**Wave:** 1 · **TODO:** 5.2, 5.4 · **Status:** PLAN ONLY — NOT IMPLEMENTED
+**Wave:** 1 · **TODO:** 5.2, 5.4 · **Status:** IMPLEMENTATION IN PROGRESS — TEST / DEVICE / CI GATES OUTSTANDING
 **Dependency:** None; retain existing PAINTS and ownership; do not invent Skins or Shop implementations.
 
 ## Global Constraints
@@ -137,3 +137,9 @@
 - [ ] All files and contracts were reconfirmed against latest `main` at implementation time.
 - [ ] No user-facing claim of successful tests or CI before observed evidence.
 - [ ] No implementation has occurred in this planning-only commit.
+
+## Implementation handoff update (2026-10-31)
+
+Tasks 1–4 have initial feature code and BDD tests on this branch; **none of the task checkboxes above imply completed acceptance**. Files currently changed beyond the four primary file owners are `src/garage-camera.ts`, `src/world.js` (same-renderer typed adapter), `tests/garage-camera.test.js`, `tests/garage-studio-source.test.js` and `tests/garage-studio-browser.spec.js`. No PAINTS or economy files were changed.
+
+Focused isolated tests: `node --experimental-strip-types --test tests/garage-camera.test.js` 4/4 and source-selector contract 2/2; BDD browser scenarios have been written but not yet run on the integrated project. `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, `make verify`, real WebGL comparison, iOS/Android device matrix and exact-HEAD `quality-gate` remain unverified. Do not mark canonical TODO 5.2/5.4 complete or advance any dependent Wave on this evidence.

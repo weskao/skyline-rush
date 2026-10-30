@@ -37,7 +37,7 @@ const angles = ['front', 'rear', 'side', 'top', 'cinematic'] as const;
       <section class="garage-visual">
         <div id="garage-preview" class="garage-preview" tabindex="0" role="group" :aria-label="copy.hint" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + -"></div>
         <p v-show="garageStudioView.page === 'studio'" class="garage-hint">{{ copy.hint }}</p>
-        <nav v-show="garageStudioView.page === 'studio'" class="garage-camera-controls" aria-label="Camera controls">
+        <nav v-show="garageStudioView.page === 'studio'" class="garage-camera-controls" :aria-label="locale === 'zh-TW' ? '鏡頭控制' : 'Camera controls'">
           <button v-for="(angle, index) in angles" :key="angle" type="button" :data-garage-angle="angle" :aria-pressed="garageStudioView.angle === angle">{{ copy.angles[index] }}</button>
           <button type="button" id="garage-rotate-left" :aria-label="copy.left">↶</button>
           <button type="button" id="garage-rotate-right" :aria-label="copy.right">↷</button>

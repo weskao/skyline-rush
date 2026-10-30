@@ -3,7 +3,7 @@
 **Repository:** https://github.com/weskao/skyline-rush
 **Branch:** `feature/garage-preview-studio`
 **Wave:** 1 · **Source TODO:** 5.2, 5.4
-**Status:** DOCUMENTATION ONLY · **Date:** 2026-10-31
+**Status:** IMPLEMENTATION IN PROGRESS — ACCEPTANCE NOT COMPLETE · **Date:** 2026-10-31
 **Dependencies:** None; retain existing PAINTS and ownership; do not invent Skins or Shop implementations.
 
 ## 1. Goals and boundaries (SDD)
@@ -100,3 +100,15 @@ Design choices: isolate event/state contracts from presentation, use Vue 3 + Typ
 - TDD RED→GREEN→Refactor, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, World Tour/Cloud Save when relevant, `make verify`, exact-HEAD GitHub CI. Only mark `TODO.md` item `- [x]` after each *fully implemented and verified* requirement is complete; never mark for a plan.
 - Each agent owns its feature branch and specific files; dependent implementation waits for prerequisites merged into `main` after user approval. If source TODO is absent on the branch, first integrate the approved spec using an explicit non-destructive merge/cherry-pick and do not copy stale contents over main.
 
+
+## 7. Implementation contract reconciliation (2026-10-31)
+
+These implementation notes supersede the initial documentation-only description above; existing BDD scenarios remain binding.
+
+- **Vue contract:** `GaragePanel.vue` presents Garage Home and a full-viewport Studio in one accessible native dialog; `garageStudioView.page` is the single event-driven `'home' | 'studio'` screen state. Its reactive properties are updated by user interactions only, never by the simulation frame loop.
+- **Typed camera adapter:** `garage-camera.ts` defines `GarageCamera { yaw, pitch, zoom, autoRotate }`, bounded `dragGarageCamera`, `zoomGarageCamera`, `garagePreset`, `releaseGarageOrbit`, and `toggleGarageOrbit`. `garage-ui.ts` passes snapshots via the small `GarageWorld.setGarageCamera(GarageCamera | null)` interface into the existing JS renderer.
+- **Renderer ownership:** `src/world.js` retains the single pre-existing canvas, scene, materials and composer. The studio only changes preview camera pose; no second renderer/context or new shader materials are created. Preexisting `PAINTS` catalog and production entitlement checks remain authoritative; locked paints cannot be equipped.
+- **Navigation lifecycle:** same-document browser history models home/studio transitions. Browser Back, on-screen Back and Close leave or return safely; close returns the canvas, original equipped appearance and focus to Garage. Drag, wheel, pinch and keyboard controls do not modify race rules.
+- **Accessibility and graphics:** portrait/landscape responsive CSS and en/zh-TW interactive copy; existing Low/Medium/High rendering source is left alone. Reduced Motion suppresses automatic camera motion; muted/VFX-off don't remove critical controls. No new skins/shop or speculative visual assets.
+- **Local focused evidence:** isolated camera unit suite observed RED for missing orbit-release behavior and then 4/4 GREEN; two source contract checks passed on an isolated mirrored fixture. This is **not** a claim that the full checked-out repository or TypeScript, Vite, Playwright or physical devices have passed.
+- **Outstanding mandatory acceptance:** full exact-HEAD GitHub `quality-gate`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, `make verify`, Cloud Save/World Tour, physical iOS/Android and before/after WebGL/p50/p95/Draw Calls/Triangles. Keep canonical TODO 5.2/5.4 **unchecked** pending those gates. Full source-of-truth product TODO remains on `feature/ux-ui-combo-mobile-controls`, and must not be overwritten with a stale copy.
