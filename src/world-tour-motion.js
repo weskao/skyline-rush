@@ -13,11 +13,11 @@ const wrap = (value, span) => ((value % span) + span) % span;
 // one kerb (anything over the road would have to be solid). Only `distance` and the
 // model-local bob/yaw change with time, so placement can step along the road frame.
 // `out` lets the frame loop reuse one object instead of allocating a pose per frame.
-export function motionPose(trackId, distance, time, out = {}) {
+export function motionPose(trackId, distance, time, out = {}, endless = false) {
   const kind = MOTION_KINDS[trackId], length = RACE_TRACKS[trackId].length;
   const train = kind === 'train', ship = kind === 'ship';
   const along = train ? 300 - wrap(time * 32, 700) : ship ? 320 + Math.sin(time * .05) * 90 : 90 + Math.sin(time * .35) * 45;
-  out.kind = kind; out.distance = Math.max(0, Math.min(length, distance + along));
+  out.kind = kind; out.distance = Math.max(0,endless?distance+along:Math.min(length,distance+along));
   out.side = ship || (!train && trackId === 'cosmic') ? 1 : -1;
   out.offset = train ? 80 : ship ? 170 : 40;
   out.altitude = train || ship ? 0 : 8 + Math.sin(time * 1.3);
@@ -46,14 +46,14 @@ export function createWorldTourMotion(kit, parent, sceneryLayer) {
     return pieces.get(kind);
   }
   return {
-    update(id, distance, quality, time, reducedMotion) {
+    update(id, distance, quality, time, reducedMotion, endless = false) {
       if (reducedMotion) glow.beacon = glow.spray = 1; else skylinePulse(time, glow);
       for (const g of glows) g.material.color.copy(g.base).multiplyScalar(glow[g.name]);
       const kind = quality === 'low' ? null : MOTION_KINDS[id];
       for (const p of pieces.values()) p.root.visible = p.kind === kind;
       if (!kind) return;
       layer.position.copy(sceneryLayer.position);
-      motionPose(id, distance, reducedMotion ? 0 : time, pose); const p = piece(kind);
+      motionPose(id, distance, reducedMotion ? 0 : time, pose, endless); const p = piece(kind);
       // Sample the road frame only when the piece crosses a 12 m step (no trig per frame).
       const step = Math.floor(pose.distance / STEP) * STEP;
       if (p.id !== id || p.step !== step) {
