@@ -44,7 +44,7 @@ function launchProfile(distance: number): number {
   return offset;
 }
 
-export function skyPoint(distance: number): SkyPoint {
+export function skyPoint(distance: number, endless = false): SkyPoint {
   const s = Number.isFinite(distance) ? distance : 0;
   const { start, end, radius } = SKY_SPIRAL;
   const y = elevation(s) + launchProfile(s);
@@ -53,7 +53,18 @@ export function skyPoint(distance: number): SkyPoint {
     const angle = TAU * (s - start) / (end - start);
     return { x: radius * (1 - Math.cos(angle)), y, z: -start - radius * Math.sin(angle) };
   }
-  return { x: 0, y, z: -start - (s - end) };
+  const original = { x: 0, y, z: -start - (s - end) };
+  // Only Endless adds repeatable 3D loops after the untouched 5.6 km sprint.
+  if (!endless || s <= 5600) return original;
+  const phase = (s - 5600) % 3800;
+  if (phase <= 900 || phase >= 2500) return original;
+  const u = (phase - 900) / 1600, angle = TAU * u;
+  const envelope = Math.sin(Math.PI * u) ** 2;
+  return {
+    x: SKY_SPIRAL.radius * (1 - Math.cos(angle)),
+    y: y + SKY_SPIRAL.rise * envelope,
+    z: original.z - SKY_SPIRAL.radius * Math.sin(angle) * envelope,
+  };
 }
 
 const unit = (vector: Vec3): Vec3 => {
@@ -66,8 +77,8 @@ const cross = (a: Vec3, b: Vec3): Vec3 => [
   a[0] * b[1] - a[1] * b[0],
 ];
 
-export function skyFrame(distance: number) {
-  const before = skyPoint(distance - 0.25), after = skyPoint(distance + 0.25);
+export function skyFrame(distance: number, endless = false) {
+  const before = skyPoint(distance - 0.25, endless), after = skyPoint(distance + 0.25, endless);
   const forward = unit([after.x - before.x, after.y - before.y, after.z - before.z]);
   const horizontalRight = unit([-forward[2], 0, forward[0]]);
   const normal = unit(cross(horizontalRight, forward));
@@ -78,9 +89,9 @@ export function skyFrame(distance: number) {
   return { point: skyPoint(distance), forward, right, up, bank };
 }
 
-export function skyPosition(distance: number, lateral = 0, altitude = 0, originDistance = 0): Vec3 {
-  const { point, right, up } = skyFrame(distance);
-  const origin = skyPoint(originDistance);
+export function skyPosition(distance: number, lateral = 0, altitude = 0, originDistance = 0, endless = false): Vec3 {
+  const { point, right, up } = skyFrame(distance, endless);
+  const origin = skyPoint(originDistance, endless);
   return [
     point.x - origin.x + right[0] * lateral + up[0] * altitude,
     point.y - origin.y + right[1] * lateral + up[1] * altitude,
