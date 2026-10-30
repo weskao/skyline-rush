@@ -290,6 +290,26 @@ of the UI/UX design review rather than an optional afterthought.
   regression tests when the controls or interaction flow change. State briefly in
   the implementation summary whether audio was added or intentionally unnecessary.
 
+## UI changes: Low / Medium / High quality presentation
+
+For every UI change, decide whether its presentation must differ by the saved visual Quality
+tier (Low / Medium / High) and say so in the implementation summary.
+
+- **3D-rendered UI is where quality matters.** Anything drawn through the Three.js scene or
+  post-processing — the home showcase preview, in-race HUD effects, camera transitions,
+  particle/glow/bloom accents, animated backdrops behind panels — costs GPU per frame and must
+  define a presentation per tier (e.g. fewer instances, simpler material, no bloom pass at Low).
+  Perceived intent stays the same at every tier; only the cost changes.
+- **Cheap DOM UI ignores quality tiers.** Dialogs, menus, settings panels, lists, text, static
+  images and plain CSS transitions render the same at Low, Medium and High. Do not add quality
+  branches, settings or tests for them.
+- **Borderline cases are measured, not guessed**: a CSS `backdrop-filter`, large box-shadows,
+  or a long-running CSS animation layered over the live canvas counts as 3D-adjacent when it
+  measurably raises frame time on the Low tier; otherwise treat it as cheap DOM UI.
+- Read the tier from the existing Quality setting (`src/vfx-settings.js`, `src/device-quality.js`);
+  never add a second quality source or fork by device/OS. Changing tier at runtime must apply
+  without a reload, following the cache-invalidation rules in "Rendering performance".
+
 ## Player-facing release announcement writing
 
 Every What's New announcement and release note shown **inside the game** must be written
