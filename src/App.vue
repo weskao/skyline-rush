@@ -10,6 +10,7 @@ import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
 import { releaseView } from './release-view-state.ts';
+import { setupInputModality } from './input-modality.ts';
 import TutorialCoach from './TutorialCoach.vue';
 import SettingsPanel from './SettingsPanel.vue';
 import ControlsPanel from './ControlsPanel.vue';
@@ -22,6 +23,8 @@ import CupRecovery from './CupRecovery.vue';
 import RacePresentation from './RacePresentation.vue';
 import ItemRules from './ItemRules.vue';
 import ItemSlot from './ItemSlot.vue';
+
+setupInputModality();
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
 

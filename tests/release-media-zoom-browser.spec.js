@@ -86,11 +86,12 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     expect(errors).toEqual([]);
   });
 
-  // The enlarged view, and the picture or clip that gets focus back on close, never draw a focus ring that flashes.
-  test('no focus ring shows on the enlarged view or on the button it returns focus to', async ({ page, gameplayURL }) => {
+  // The enlarged view, the notes panel behind it and the picture or clip that gets focus back never draw a focus ring.
+  // A tap closes it on touch screens (as on iPhone) and Escape elsewhere; both leave the notes panel without a ring.
+  test('no focus ring shows on the enlarged view, the notes panel or the button focus returns to', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);
     const ring = locator => locator.evaluate(el => getComputedStyle(el).outlineStyle);
-    const viewer = page.locator('#release-media-viewer');
+    const viewer = page.locator('#release-media-viewer'), panel = page.locator('#release-panel');
     const openers = [page.locator('#release-items .release-zoom').first()];
     if (height > 420) openers.push(page.locator('#release-video-zoom'));
     for (const opener of openers) {
@@ -98,11 +99,25 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
       await press(opener, touch);
       await expect(viewer).toBeVisible();
       expect(await ring(viewer), 'enlarged view').toBe('none');
-      await page.keyboard.press('Escape');
+      if (touch) await viewer.tap({ position: { x: 20, y: 200 } }); else await page.keyboard.press('Escape');
       await expect(viewer).toBeHidden();
-      await expect(opener).toBeFocused();
       expect(await ring(opener), 'button that regains focus').toBe('none');
+      await panel.focus();
+      expect(await ring(panel), 'notes panel').toBe('none');
     }
+  });
+
+  // Chromium keeps matching :focus-visible for scripted focus after a key press, which is how iOS shows a ring after a tap.
+  test('a ring appears for the keyboard only, on any dialog button', async ({ page, gameplayURL }) => {
+    await openNotes(page, gameplayURL);
+    const next = page.locator('#release-continue');
+    const ring = () => next.evaluate(el => { el.focus(); return getComputedStyle(el).outlineStyle; });
+    await page.keyboard.press('Shift');
+    expect(await ring(), 'keyboard focus shows a ring').not.toBe('none');
+    await page.evaluate(() => document.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
+    expect(await ring(), 'script focus after a tap shows none').toBe('none');
+    await page.keyboard.press('Shift');
+    expect(await ring(), 'the keyboard brings the ring back').not.toBe('none');
   });
 
   test('the release clip opens whole and playing, and the clip behind waits until it closes', async ({ page, gameplayURL }) => {
