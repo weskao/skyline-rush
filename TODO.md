@@ -2173,3 +2173,11 @@ never conflate future modes with existing Control “steering mode” options.
 - [ ] Physical Safari/iOS/Android, device heat/battery, per-track controlled performance benchmarks and exact-commit remote GitHub quality-gate remain separate acceptance. No commit/push/merge/PR/deploy authorized.
 
 Model boundary: these are unsteady streak/history markers in still air, not instantaneous CFD streamlines or a prediction of pressure, turbulence or induced swirl. No fixed decorative helix, opposite-winding pair, or artificial exhaust velocity is added for roll-only markers.
+
+## Main regression sweep — sibling worktree reload (2026-10-31)
+
+- [x] Reproduce: the flight HUD browser test returned to the ready screen while Vite logged sibling worktree HTML/tsconfig changes; expected `READY TO FLY`, received `BUILD SPEED` after an unsolicited navigation.
+- [x] RED → GREEN: `node --test tests/vite-worktree-watch.test.js` failed on the sibling HTML exclusion before the fix; watcher, production-access and feature-server checks now pass 7/7. The exclusion is anchored to this checkout to preserve live reload in worktree servers.
+- [x] Original browser regression: `CI=1 npx playwright test tests/browser.spec.js -g 'flight HUD explains'` passed 1/1 (15.3 s), including takeoff, low charge, descent, touchdown and recharging.
+- [x] Isolate verification after concurrent edits advanced `main` to `d0b6048`: shared-workspace runs mixed changing source/builds and failed release-media/result-actions checks. The full gate now runs in detached `.claude/worktrees/main-test-verification` with only this repair applied and independent dependencies/build outputs.
+- [ ] Full `CI=1 make verify` and exact-commit GitHub `quality-gate` after the authorized commit/push. Physical-device acceptance is separate; no gameplay/rendering behavior changed.

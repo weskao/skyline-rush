@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 // whitespace 'preserve' keeps the inter-element spaces the pre-Vue innerHTML markup rendered.
 export default defineConfig({
   plugins: [vue({ template: { compilerOptions: { whitespace: 'preserve' } } })],
+  // Anchor to this checkout so a server inside a worktree still watches its own source.
+  server: { watch: { ignored: [fileURLToPath(new URL('./.claude/worktrees/**', import.meta.url))] } },
   // The normal server and every production build resolve to the locked access implementation.
   resolve: { alias: { '@progression-access': fileURLToPath(new URL('./src/access/production.ts', import.meta.url)) } },
 });
