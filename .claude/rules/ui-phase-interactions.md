@@ -30,6 +30,10 @@ The finished screen, paused screen and ready screen are not exempt from input te
 - A restart/finish/pause must not leave a stale `<dialog open>`, inert ancestor,
   pointer capture, invisible full-screen clickable surface, or animation that traps
   interaction. Release active driving input and preserve keyboard, mouse, and touch.
+- The frame loop requests its next frame **first** (`frame()` in `src/main.js`). A frame that
+  throws after the finish once froze the picture and made every button look dead until a reload,
+  because the next frame was only requested after the whole frame succeeded. Never move the
+  request back to the end or swallow the error; guard: `tests/finish-frame-recovery-browser.spec.js`.
 - Test a **real** browser sequence on every affected track: drive, deliberately collide
   more than once, finish, use the camera button, switch languages, select Next where
   unlocked, retry, and verify the next race starts. Repeat on desktop and phone
