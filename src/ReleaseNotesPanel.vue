@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { releaseView } from './release-view-state.ts';
 import ReleaseMediaViewer from './ReleaseMediaViewer.vue';
+import CloseButton from './CloseButton.vue';
 const viewer = ref<InstanceType<typeof ReleaseMediaViewer> | null>(null);
 function hideBrokenThumbnail(index: number) {
   const entry = releaseView.entries[index];
@@ -21,7 +22,7 @@ function zoomClip() {
         <h2 id="release-title" data-i18n="release.title">What's new</h2>
         <p id="release-intro" class="release-intro" data-i18n="release.intro">See what's new for your next race.</p>
       </div>
-      <button id="release-close" type="button" class="release-close" aria-label="Close what's new" data-i18n-aria-label="release.close">×</button>
+      <CloseButton id="release-close" label="Close what's new" data-i18n-aria-label="release.close" />
     </header>
     <div id="release-versions" class="release-versions" role="tablist" aria-label="Versions" data-i18n-aria-label="release.versions">
       <button v-for="tab in releaseView.tabs" :key="tab.version" type="button" :id="tab.id" class="release-tab" :tabindex="tab.selected ? 0 : -1" :data-version="tab.version" role="tab" aria-controls="release-panel" :aria-selected="tab.selected">

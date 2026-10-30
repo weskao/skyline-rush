@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import CloseButton from './CloseButton.vue';
 
 export interface ZoomedMedia { kind: 'image' | 'video'; src: string; label: string; poster?: string; source?: string }
 defineProps<{ closeLabel: string }>();
@@ -35,7 +36,7 @@ defineExpose({ open });
 </script>
 <template>
   <dialog ref="dialog" id="release-media-viewer" class="release-media-viewer" :aria-label="media?.label" @click="closeOnTap" @close="restore">
-    <button type="button" class="release-viewer-close" :aria-label="closeLabel">×</button>
+    <CloseButton class="release-viewer-close" :label="closeLabel" />
     <img v-if="media?.kind === 'image'" :src="media.src" :alt="media.label">
     <video v-else-if="media" :src="media.src" :poster="media.poster" :data-source="media.source" muted loop playsinline disablepictureinpicture
       :autoplay="!still" :controls="still"></video>
@@ -48,6 +49,5 @@ defineExpose({ open });
 .release-media-viewer::backdrop { background: rgb(2 6 14 / .9); }
 /* Never upscaled past the file's own size, never cropped. */
 .release-media-viewer img, .release-media-viewer video { display: block; max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 18px 48px rgb(0 6 16 / .6); }
-.release-viewer-close { position: fixed; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); width: 44px; height: 44px; padding: 0;
-  border: 1px solid rgb(150 227 255 / .35); border-radius: 50%; background: rgb(8 16 28 / .85); font-size: 26px; line-height: 1; color: #eefbff; }
+.release-viewer-close { position: fixed; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
 </style>

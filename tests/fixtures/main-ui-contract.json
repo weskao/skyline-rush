@@ -1,6 +1,6 @@
 {
   "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient; mode HUD offset: phone route map and short-landscape mode indicator sit below the race progress block that mode HUD rows grow; every-device race HUD spacing (main 266210c/f83b67e); one-row held-item slot at ≤400 px",
-  "cssBlob": "0c3a79a4eaa760111cf106b073f27f649024fcea",
+  "cssBlob": "e3130f64943b29540c852ac34d227a1160f6b6fb",
   "elements": [
     {
       "id": "whats-new-screen",
@@ -26,7 +26,7 @@
       "id": "release-close",
       "tag": "button",
       "classes": [
-        "release-close"
+        "close-button"
       ]
     },
     {
@@ -1058,7 +1058,7 @@
       "id": "history-close",
       "tag": "button",
       "classes": [
-        "controls-button"
+        "close-button"
       ]
     },
     {
@@ -1287,7 +1287,7 @@
       "id": "garage-close",
       "tag": "button",
       "classes": [
-        "controls-button"
+        "close-button"
       ]
     },
     {

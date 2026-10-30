@@ -2,6 +2,7 @@
 import { RACE_TRACKS } from './game.js';
 import { icons, ICON_ATTRS } from './icons.ts';
 import SignInButton from './SignInButton.vue';
+import CloseButton from './CloseButton.vue';
 import ChallengeMedals from './ChallengeMedals.vue';
 import { historyView } from './history-view-state.ts';
 import { cloudView, updateCloudView } from './cloud-view-state.ts';
@@ -13,7 +14,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 
 <template>
   <dialog id="history-screen" class="history-screen" aria-labelledby="history-title">
-    <header class="history-heading"><h2 id="history-title" data-i18n="history.title">Race history</h2><button class="controls-button" id="history-close" aria-label="Close history" data-i18n-aria-label="history.close" data-i18n="common.close">Close</button></header>
+    <header class="history-heading"><h2 id="history-title" data-i18n="history.title">Race history</h2><CloseButton id="history-close" label="Close history" data-i18n-aria-label="history.close" /></header>
     <p id="career-summary" class="career-summary">{{ historyView.careerSummary }}</p>
     <section class="history-extra" aria-labelledby="cloud-title">
       <h3 id="cloud-title" data-i18n="cloud.title">Cloud save</h3>
