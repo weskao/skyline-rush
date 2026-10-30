@@ -27,3 +27,6 @@ export function zoomGarageCamera(state: GarageCamera, multiplier: number): Garag
     ? { ...state, zoom: clamp(state.zoom * multiplier, .75, 1.6) } : state;
 }
 export const toggleGarageOrbit = (state: GarageCamera): GarageCamera => ({ ...state, autoRotate: !state.autoRotate });
+
+export const releaseGarageOrbit = (camera: GarageCamera, paused: boolean): GarageCamera =>
+  ({ ...camera, autoRotate: !paused });

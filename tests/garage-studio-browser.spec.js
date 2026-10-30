@@ -28,7 +28,12 @@ test('scenario 2 — Orbit works with accessible camera buttons and drag', async
   await page.keyboard.press('ArrowLeft');
   await expect(page.locator('#garage-auto-rotate')).toHaveAttribute('aria-pressed', 'false');
   await page.locator('#garage-zoom-in').click();
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-camera-zoom', '0.850');
   await page.locator('#garage-zoom-out').click();
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-camera-zoom', '0.977');
+  await page.locator('#garage-preview').hover();
+  await page.mouse.wheel(0, 100);
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-camera-zoom', '1.080');
 });
 
 test('scenario 3 — Paint migration preserves original entitlement after preview and close', async ({ page }) => {

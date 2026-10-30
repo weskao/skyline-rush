@@ -23,3 +23,10 @@ test('scenario 2 — Orbit: view presets, auto rotation and reset are independen
   assert.equal(toggleGarageOrbit(top).autoRotate, true);
   assert.deepEqual(defaultGarageCamera(), { yaw: .7, pitch: .27, zoom: 1, autoRotate: true });
 });
+
+test('scenario 2 — releasing drag resumes slow orbit unless explicitly paused', async () => {
+  const { releaseGarageOrbit } = await import('../src/garage-camera.ts');
+  const moved = dragGarageCamera(defaultGarageCamera(), 50, 0);
+  assert.equal(releaseGarageOrbit(moved, false).autoRotate, true);
+  assert.equal(releaseGarageOrbit(moved, true).autoRotate, false);
+});

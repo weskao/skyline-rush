@@ -29,7 +29,7 @@ const angles = ['front', 'rear', 'side', 'top', 'cinematic'] as const;
   <dialog id="garage-screen" class="history-screen garage-screen" :data-page="garageStudioView.page" aria-labelledby="garage-title">
     <header class="garage-heading">
       <button v-show="garageStudioView.page === 'studio'" id="garage-studio-back" type="button" :aria-label="copy.back">‹ {{ copy.back }}</button>
-      <h2 id="garage-title">{{ garageStudioView.page === 'studio' ? copy.title : 'Garage' }}</h2><CloseButton id="garage-close" label="Close garage" data-i18n-aria-label="garage.close" /></header>
+      <h2 id="garage-title">{{ garageStudioView.page === 'studio' ? copy.title : (locale === 'zh-TW' ? '車庫' : 'Garage') }}</h2><CloseButton id="garage-close" label="Close garage" data-i18n-aria-label="garage.close" /></header>
     <p class="collection-note garage-intro" v-show="garageStudioView.page === 'home'" data-i18n="garage.intro">Explore paint and tail light combinations. Appearance never changes performance.</p>
     
     <button id="garage-studio-open" v-show="garageStudioView.page === 'home'" type="button" class="garage-entry">{{ copy.open }} ↗</button>
@@ -94,7 +94,7 @@ const angles = ['front', 'rear', 'side', 'top', 'cinematic'] as const;
   #garage-screen .garage-layout { grid-template-columns: minmax(0, 1fr) minmax(180px, 260px); gap: 8px; }
   #garage-screen .garage-hint { display: none; }
   #garage-screen .garage-camera-controls { max-height: 72px; overflow-y: auto; }
-  #garage-screen .garage-camera-controls button { font-size: 11px; min-height: 38px; }
+  #garage-screen .garage-camera-controls button { font-size: 11px; min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { #garage-screen, #garage-screen * { animation: none !important; transition: none !important; } }
 </style>

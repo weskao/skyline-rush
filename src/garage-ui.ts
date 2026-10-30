@@ -1,6 +1,6 @@
 import { PAINTS } from './appearance.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
-import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera } from './garage-camera.ts';
+import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import { t } from './i18n.ts';
 // Keep progression checks locked to the same implementation used in production.
@@ -42,6 +42,7 @@ export function setupGarageUI({
   const historyKey = '__skylineGaragePage';
   let previewing = getEquippedPaint();
   let camera = defaultGarageCamera();
+  let autoPaused = false;
   const contacts = new Map<number, { x: number; y: number }>();
 
   function showGarage(id: string = previewing): void {
@@ -65,6 +66,8 @@ export function setupGarageUI({
   }
   function setCamera(next: GarageCamera, angle = ''): void {
     camera = next;
+    preview.dataset.cameraZoom = camera.zoom.toFixed(3);
+    preview.dataset.cameraYaw = camera.yaw.toFixed(3);
     updateGarageStudioView({ angle, autoRotate: camera.autoRotate });
     getWorld()?.setGarageCamera(garageStudioView.page === 'studio' ? camera : null);
   }
@@ -86,8 +89,10 @@ export function setupGarageUI({
     else garageScreen.close();
   }
   function releaseContact(id: number): void {
-    contacts.delete(id);
-    if (contacts.size === 0 && garageScreen.open) clearControls();
+    const hadPointer = contacts.delete(id);
+    if (!hadPointer || contacts.size !== 0 || !garageScreen.open) return;
+    if (garageStudioView.page === 'studio') setCamera(releaseGarageOrbit(camera, autoPaused));
+    clearControls();
   }
 
   $('#garage-equip').addEventListener('click', () => {
@@ -106,6 +111,7 @@ export function setupGarageUI({
     preview.append($('#world'));
     world.resize();
     previewPaint(getEquippedPaint());
+    autoPaused = false;
     setCamera(defaultGarageCamera());
     pushPage('home');
   });
@@ -140,7 +146,10 @@ export function setupGarageUI({
   $('#garage-zoom-in').addEventListener('click', () => setCamera(zoomGarageCamera(camera, .85)));
   $('#garage-zoom-out').addEventListener('click', () => setCamera(zoomGarageCamera(camera, 1.15)));
   $('#garage-reset').addEventListener('click', () => setCamera(defaultGarageCamera()));
-  $('#garage-auto-rotate').addEventListener('click', () => setCamera(toggleGarageOrbit(camera)));
+  $('#garage-auto-rotate').addEventListener('click', () => {
+    autoPaused = camera.autoRotate;
+    setCamera(toggleGarageOrbit(camera));
+  });
   preview.addEventListener('pointerdown', event => {
     if (garageStudioView.page !== 'studio' || event.pointerType === 'mouse' && event.button !== 0) return;
     contacts.set(event.pointerId, { x: event.clientX, y: event.clientY });
