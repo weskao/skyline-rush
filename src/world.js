@@ -536,7 +536,7 @@ export function createWorld(canvas) {
   let cameraMode = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0;
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let photoView = null, photoCapture = null;
+  let photoView = null, photoCapture = null, garageCamera = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
   let sizeKey = '', warmupPending = true;
@@ -607,7 +607,7 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize,
+    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; },
     previewAppearance(paint) {
       player.userData.body.material.color.set(paint.paint);
       player.userData.lightColor.fromArray(paint.light);
@@ -908,7 +908,11 @@ export function createWorld(canvas) {
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
-      if (photoView && race.phase === 'paused') {
+      if (preview && garageCamera) {
+        const a = garageCamera.yaw + (garageCamera.autoRotate && !reducedMotion ? time * .13 : 0);
+        const p = garageCamera.pitch, d = Math.max(11, 3.5 / (Math.tan(50 * Math.PI / 360) * Math.max(.35, Math.min(1.2, camera.aspect)))) * garageCamera.zoom;
+        desiredCamera.set(player.position.x + Math.sin(a) * Math.cos(p) * d, player.position.y + 1 + Math.sin(p) * d, player.position.z + Math.cos(a) * Math.cos(p) * d); lookTarget.copy(player.position); lookTarget.y += 1;
+      } else if (photoView && race.phase === 'paused') {
         desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
           player.position.y + 5, player.position.z + Math.cos(photoView.angle) * 14);
         lookTarget.copy(player.position); lookTarget.y += 1;
@@ -975,10 +979,8 @@ export function createWorld(canvas) {
         else lookTarget.set(car.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, car.altitude * 0.85 + 1.5, -25);
       }
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
-      const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
-      const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
-      const landingAge = car.landing ? race.elapsed - car.landing.time : 10;
-      const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
+      const impactAge = car.impact ? race.elapsed - car.impact.time : 10; const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
+      const landingAge = car.landing ? race.elapsed - car.landing.time : 10; const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
       if (!reducedMotion && race.phase === 'racing') {
         desiredCamera.x += Math.sin(time * 61) * impact * 0.27;
         desiredCamera.y += Math.sin(time * 47) * impact * 0.15 - landing * 0.3;
@@ -986,16 +988,14 @@ export function createWorld(canvas) {
         desiredCamera.x += Math.sin(time * 65) * feedback.ignition * visual.shake * 0.12;
         desiredCamera.z += boostStrength * (visual.enabled ? 0.22 : 0);
       }
-      if(preview) {
+      if(preview && !garageCamera) {
         // Preserve scenery clearance, then fit the complete car within the
         // actual viewport, regardless of track and selected camera angle.
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7);
-      if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
-      camera.position.lerp(desiredCamera, smoothing);
-      smoothLook.lerp(lookTarget, smoothing);
+      const smoothing = 1 - Math.exp(-dt * 7); if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
+      camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
       if (photoView && race.phase === 'paused') {
         camera.position.copy(desiredCamera);
