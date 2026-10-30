@@ -42,11 +42,12 @@ dev-unlocked: stop-old-dev node_modules ## `make dev-unlocked`: local-only Vite 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
 
 # Same menu and flags as the personal /phone-dev skill. Serves the normal locked config with no emulators;
-# the unlocked config stays desktop-only. `make phone <name>` serves that branch (or feature/<name>) from its worktree.
+# the unlocked config stays desktop-only. `make phone <name>` serves that branch (or feature/<name>) from its worktree;
+# `make phone off` stops every server phone-dev started (like `/phone-dev off`), so a branch named `off` can't be served.
 PHONE_DEV := $(HOME)/.claude/skills/phone-dev/scripts/phone_dev.py
-phone: node_modules ## `make phone [name]`: menu to start, check or stop a dev server a phone can open
+phone: node_modules ## `make phone [name|off]`: menu to start, check or stop a phone dev server; `off` stops them all
 	@test -f "$(PHONE_DEV)" || { echo "make phone needs the phone-dev skill at $(PHONE_DEV)"; exit 1; }
-	@python3 "$(PHONE_DEV)" --interactive $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME))
+	@python3 "$(PHONE_DEV)" $(if $(filter off,$(DEV_FEATURE_NAME)),--off,--interactive $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME)))
 
 # Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
 # baseline built in .claude/worktrees/perf-<sha>. Desktop throttles Chrome's CPU; phone mode asks like `make phone`
