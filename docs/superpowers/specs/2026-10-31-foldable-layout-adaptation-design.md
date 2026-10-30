@@ -68,6 +68,20 @@ Design choices: isolate event/state contracts from presentation, use Vue 3 + Typ
 4. Hinge zone can cover race controls
 5. Keep normal mobile/desktop regression green
 
+## 4A. Image Generation and Asset Contracts (Wave 2 / Wave 3)
+
+**Decision:** Usually no production images: use SVG, annotated geometry and CSS for fold/hinge safe zones; optionally generate design reference boards. An isolated transparent zone/hinge overlay is for docs only, not a device-specific runtime mask.
+
+- **Necessity gate:** review `src/icons.ts`, `public/icons/`, existing Vue/CSS/Three.js before making any image. The need for a concept sheet does **not** automatically justify a production bitmap. Record why the asset is needed and who owns it.
+- **Prompt / production plan:** [Visual brief](../prompts/2026-10-31-foldable-layout-adaptation-visual-design.md); [Superpowers plan](../plans/2026-10-31-foldable-layout-adaptation-plan.md). The separately assigned future GPT may generate original images **only if actually needed and its image generation capability is available**; otherwise record the missing deliverable and use documented SVG/CSS/Three.js fallback. No pretend asset URLs or pre-emptive completion claims.
+- **Alpha and formats:** true alpha RGBA PNG / compressed transparent WebP for isolated icon, badge, sprite or overlay, **not** white/checkerboard as image pixels; opaque compressed WebP/JPEG for standalone backgrounds. Actual vector SVG must be properly authored, not a renamed raster. Verify alpha over light, dark and saturated backgrounds, silhouette at intended CSS size, safe margins, transparent edge fringes and no baked interactive text.
+- **Runtime semantics:** use real Vue 3 + strict TypeScript for controls/labels/rank/reward status; use shared Three.js renderer for 3D cars/dynamic VFX. Generated concepts are not runtime screenshots or fully implemented gameplay. No branded copyrighted lookalikes or unapproved real-money claims.
+- **SDD → BDD → TDD / accessibility:** define asset semantics and ownership/loader contract, write failing behavior tests when a code behavior is missing, keep readable alt/label/fallback on asset error, test touch/focus and occlusion. Verified BDD edge cases:
+  1. Given no viewport-segment API is exposed, When the screen resizes, Then the UI retains safe fallback and no image is required.
+  2. Given a hinge separates screen regions, When a touch control is repositioned, Then it never straddles the hinge or disappears behind decoration.
+- **Quality and measurement:** Low / Medium / High must preserve game state/critical HUD, en/zh-TW, mobile Android/iOS browsers in portrait+landscape and desktop, VFX Off, Reduced Motion and sound mute. Check image bytes, alpha, decoder/texture memory, first-use shader cost, Draw Calls, FPS and frame-time p95 where relevant. Inspect actual game output, not only a generated design board.
+- **Completion:** do not check any `TODO.md` item `- [x]` until genuine asset integration, relevant SDD/BDD/TDD and CI are verified. This is a future implementation requirement, **not** an instruction to generate art now.
+
 ## 5. Cross-platform visual and performance acceptance
 
 | Area | Required gate |
