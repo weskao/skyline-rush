@@ -1,6 +1,7 @@
 ---
 paths:
-  - "src/release-notes.js"
+  - "src/release-notes.ts"
+  - "src/release-notes-data.ts"
   - "scripts/check-release-notes.mjs"
   - "scripts/release-notes-reviews.json"
 ---
@@ -21,3 +22,7 @@ paths:
   voids the review. Never write `scripts/release-notes-reviews.json` by hand.
 - Every `AskUserQuestion` in the review or release flow has a first option ending in
   "(Recommended)", with the reason in its description.
+- The coming release's entry is written as `version: UPCOMING`, never a version number, with media
+  under `public/whats-new/<theme-slug>/`. It shows first as "Upcoming" until the release commit bumps
+  `package.json`, which names it; the review and the gate find it under the version being released.
+  Before writing the next notes, stamp the shipped entry with its version and tag date.

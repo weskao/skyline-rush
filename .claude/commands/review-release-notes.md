@@ -9,10 +9,10 @@ The release gate (`scripts/release-gate.sh` → `scripts/check-release-notes.mjs
 whose notes were never reviewed, or were edited after their review. This command is the review.
 
 1. **Automatic check.** Run `node scripts/check-release-notes.mjs $ARGUMENTS`. Fix every problem it
-   lists in `src/release-notes.js` (developer terms, links, emails, secrets, file or code names,
+   lists in `src/release-notes-data.ts` (developer terms, links, emails, secrets, file or code names,
    commit ids, over-long text, missing language). Only the "not reviewed" line may remain.
 2. **Fresh-eyes review.** Spawn one sub-agent that did not write the notes. Give it only the
-   `$ARGUMENTS` entry (en + zh-TW) from `src/release-notes.js`, what shipped in that version and
+   `$ARGUMENTS` entry (en + zh-TW) from `src/release-notes-data.ts`, what shipped in that version and
    this checklist; it reads no code and edits nothing. What shipped is
    `node scripts/check-release-notes.mjs --changes` (the version's feat / fix / perf commits since
    the last tag, tooling scopes removed — docs, tests, CI, build, release, hooks and dev setup
@@ -39,5 +39,5 @@ whose notes were never reviewed, or were edited after their review. This command
    never skips these questions, and you never approve on the user's behalf.
 4. **Record the review** only after the user approves: `node scripts/check-release-notes.mjs
    --approve $ARGUMENTS`. It re-runs the automatic check and stores the copy's fingerprint in
-   `scripts/release-notes-reviews.json`. Commit that file together with `src/release-notes.js`.
+   `scripts/release-notes-reviews.json`. Commit that file together with `src/release-notes-data.ts`.
    Any later edit to the entry changes the fingerprint, and the gate asks for a new review.
