@@ -31,3 +31,27 @@
 - [ ] TDD RED: write relevant UI layout/renderer regression test and verify failure; then implement only accepted SVG/assets/real-time visuals; observe GREEN and refactor.
 - [ ] Inspect **real** running WebGL/UI screenshots and actual pointer/keyboard interactions, not generated concept sheets, to approve implementation; verify files optimized and accessible.
 - [ ] Check `TODO.md` item only when real integrated feature, image integration, BDD/TDD, `make verify` and exact-HEAD CI are proven green. Do not check off in design phase.
+
+## GPT image-generation decision and production-ready asset prompt (Wave 2／3)
+
+**Asset decision:** SVG/Mermaid/CSS wireframe preferred; avoid generated pseudo-mobile device imagery except as concept for usability review.
+
+**Potential outputs:** Foldable cover/inner/hinge wireframe diagrams, not production photos.
+
+**Transparency:** If diagrams need layered annotations, transparent overlay only; standalone UX boards may use opaque neutral backdrop. A transparent PNG/WebP needs **real alpha channel**; a white/checkerboard background drawn into RGB pixels is **not transparent**. SVG/vector icons must be actually authored as SVG and checked, never created by renaming a raster file.
+
+### Direct image-generation brief (use only if actually needed during implementation)
+
+> Design accurate browser UI foldable layout wireframes: narrow cover screen portrait, wide inner screen, hinge-spanned split view and tabletop/landscape. Represent reserved touch zones, HUD safe areas, unobstructed car/road sightline. If a separate hinge or touch-zone overlay is delivered it must have a **true transparent alpha background**; no device manufacturer trademarks. These are design schematics, not runtime background images. Visual design for Skyline Rush (https://github.com/weskao/skyline-rush), branch `feature/foldable-layout-adaptation`. Keep the original game art direction: realistic car/track with restrained arcade effects. Generate individual assets separately when a transparent background is requested. Concept boards and production assets are **different deliverables**. Responsive preview on Android/iOS browser portrait and landscape plus desktop. Low/Medium/High visual quality, Reduced Motion and VFX Off must remain usable. Never reproduce a competitor's identifiable art or trademark.
+
+### Production acceptance & planned storage
+
+- [ ] **S0 — Decide necessity:** inspect `src/icons.ts`, `public/icons/`, CSS, current Three.js effects and actual source assets. If reusable primitives are adequate, explicitly mark “no new image generated” and proceed; a new bitmap is not automatically a better UI.
+- [ ] **S1 — Generate only with real tools:** when visual assets add demonstrable value, use available GPT image-generation capability in the implementation chat and inspect its actual results. If unavailable, note blocked design work rather than pretending the file exists.
+- [ ] **S2 — Check transparent alpha:** verify background really disappears over white, dark and saturated checker tiles (the test checker is outside the asset), no unintentional matte/fringes, no cropping, artifacts, trademark/copyright reuse or unreadable fine detail at intended CSS pixels.
+- [ ] **S3 — Package:** store reviewed concept boards under `docs/designs/foldable-layout-adaptation/` and production assets in an established appropriate `public/` path, using semantic names. Prefer existing 24×24 SVG icons where possible; for raster use transparent PNG as source and WebP/PNG after compression as appropriate. Document size, dimensions, alpha mode, actual usage and fallbacks; **do not commit font binaries, massive uncompressed atlases, screenshot-based interactive UI or unused candidate assets**.
+- [ ] **S4 — BDD/TDD:** Given missing/slow asset, wrong quality tier, RTL? (not required), VFX Off/Reduced Motion or short landscape; When component renders; Then readable semantic fallback and valid controls remain. Verify 320×740, 390×844, 844×390 and 1440×900, en/zh-TW, touch/keyboard, Low/Medium/High; perform RED→GREEN and capture actual UI/WebGL screenshots.
+- [ ] **S5 — Real perf:** measure decoded image/texture memory, network bytes, shader warmup, Draw Calls and p50/p95 frame time if changed. Do not make raster art a fake dynamic renderer or UI. Only mark the corresponding implementation TODO `- [x]` after full feature proof and exact-HEAD CI green.
+
+**No image asset has been generated or installed by this planning document.**
+
