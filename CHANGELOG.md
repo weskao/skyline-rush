@@ -1,3 +1,391 @@
+## [0.26.0] - 2026-10-30
+
+### 🚀 Features
+
+- **release-notes:** List new highlights first
+- **release-notes:** Cache the what's new clip
+- **phase5:** Cached Alpine/Cosmic grade cues; keep World Tour size ratchet
+- **phase5:** GREEN distinct asphalt finish for five World Tour tracks
+- **perf:** Typed comparable all-track WebGL evidence and software baseline
+- **cup:** Recover interrupted championship sessions
+- **custom:** Checkpoint Ghost replay and cosmetic race presets
+- **items:** Add explicit practice rules and activation feedback
+- **items:** Add bounded bonus gates and nearby EMP pulse
+- **custom:** Add snowfall and aurora sky presets where they suit the track
+- **audio:** Give item use and cooldown-ready their own cues
+- **items:** Make a shield-blocked hit visible and audible
+- **effects:** Beam a light column over rings that grant a held item
+- **effects:** Show the magnet's pickup radius around the car
+- **event-lab:** Add validated local course editor and playable drafts
+- **event-lab:** Place timed checkpoints and keep two lanes reachable
+- **event-lab:** Preview collisions and snap map taps to lanes
+- **env:** Add typed object catalog and bounded hazard schema
+- **event-lab:** Place cones with catalog-sized contact
+- **env:** Add ramp launch type with ground-fixed placement bounds
+- **event-lab:** Place jump ramps that share the Sky Spiral launch
+- **event-lab:** Add a jumps template with ramps and cones
+- **endless:** Stream bounded Coast survival and longest-distance records
+- **circuit:** Add genuine laps with validated sectors and permanent lap records
+- Track continuous stunt flight and aerial chains
+- Award five isolated personal challenge medals
+- Show personal medals and preserve local backup and account lifecycle
+- **world-tour:** Add non-colliding roadside detail sets
+- **world-tour:** Add one moving background piece per World Tour road
+- **classic:** Add billboards, service vans and spectator stands
+- **env:** Add deterministic hazard behaviours
+- **themes:** Add opt-in themed track hazards, starting with Coast cargo and shoulder closures
+- **env:** Drive authored hazards through ENV-04 frames and effects
+- **env:** Enforce fair hazard courses and warn in time at full NITRO
+- **themes:** Add Neon, Canyon, Aurora and Sky Spiral themed hazards
+- **themes:** Bring classic themes to life with gusts, ice, rockfall and timed gates
+- **render:** Give each hazard effect its own pooled colour and shape
+- **themes:** Add Taipei festival barricades and boulevard closures
+- **themes:** Add Tokyo traffic-control gates and neon roadworks
+- **themes:** Add Alpine snow drifts and avalanche debris
+- **themes:** Add Coastal bridge works and sea-wall repairs
+- **themes:** Add Cosmic asteroid fragments and energy barriers
+- **themes:** Time Tokyo's signal gates and sweep Cosmic's energy barriers
+- **themes:** Add Coastal wave-spray gusts and Alpine avalanche falls
+- **rules:** Scale risk-line rewards and let practice switch them off
+- **ui:** Add a practice switch for high rings and close-pass bonus
+- **gauntlet:** Build a seeded mixed obstacle course
+- **gauntlet:** Race the mixed obstacle course with layout:'mixed'
+- **ui:** Choose the Gauntlet course: Barriers or Mixed obstacles
+- **render:** Give ice and rough ground a colour-independent stripe cue
+- **themes:** Canyon launch ramps over broken bridges and Sky Spiral light hoops
+- **themes:** Add Aurora's timed blizzard stretches
+- **perf:** VIEWPORT=desktop runs make perf and make perf-modes at 1440x900
+- **hazards:** Draw, place and score safe/risky branch markers
+- **themes:** Slide Neon roadworks barriers between lanes on a slower beat than the gates
+- **scenery:** Add coastline spray and blinking skyline beacons to World Tour details
+- **hud:** Name the hazard ahead in its warning: barrier, crosswind, low grip or ramp
+- **setup:** Add mode-first rules summary, eligibility and conflict rules
+- **setup:** Put mode first, then track, then a rules row with Restore defaults before Start
+- **setup:** Explain fixed-rule modes and prove eligibility claims
+- **themes:** Add Cosmic low-gravity sectors and aerial gate sequences (11B)
+- **fps:** Add measured-refresh 90/120 caps and conservative Auto promotion
+
+### 🐛 Bug Fixes
+
+- **phase5:** Align World Tour tunnel shells across scenery chunks
+- **phase5:** Render grade cues without modifying protected CSS baseline
+- **phase5:** Preserve approved UI stylesheet snapshot
+- **phase5:** GREEN anchor Coastal Horizon water to world sea level
+- **perf:** Preserve sorting, shadows and layers in static instancing
+- **ci:** Keep responsive layout in Browser shard and protect workflow structure
+- **ci:** Skip ten-track artifact gate for focused refactor jobs
+- **photo:** Hide background chrome in studio
+- **photo:** Keep controls clear of car and insets
+- **ui:** Wrap result metrics within the results panel
+- **showcase:** Aim every camera view from its own side
+- **showcase:** Orbit on a steady circle centred on the car
+- **ui:** Keep phone AIRFLOW telemetry above the showcase car
+- **showcase:** Frame every home camera angle fully
+- Relabel cached airflow values synchronously on language changes
+- **cup:** Clear recovery checkpoints with game progress
+- **results:** Settle each finished race once
+- **env:** Size catalog hitboxes to drawn footprints and anchor rings at centre
+- **audio:** Play gate cues for Event Lab checkpoints
+- **endless:** Retain nearby moving traffic across chunk boundaries
+- **integration:** Resolve the stylesheet pin left conflicted by the endless-bounds merge
+- **circuit:** Expose saved Ghosts in History
+- Frame the Harbor beacon in portrait showcase
+- Preserve session personal medals before account switching
+- Wait for reactive History rows before shortcut scrolling
+- **themes:** Sweep Cosmic energy barriers between lanes so each opens
+- **integration:** Drop the duplicate updateSkyline import that broke the build
+- **world:** Drop the duplicate updateSkyline import the integration merge left
+- **hud:** Skip the near-miss callout for close obstacle passes
+- **ghost:** Sample at exact 10 Hz race time so ramp jumps replay their arc
+- **hud:** Keep the phone route map and landscape mode indicator below a grown progress bar
+- **scenery:** Raise the coastline spray plumes so they read from the road
+- **world:** Lay the car's ground shadow on banked and sloped roads
+- **visuals:** A photo taken in an Aurora blizzard no longer leaves the fog doubled
+- **world:** Draw Sky Spiral rings and pickups on the helix (1625)
+- **world:** Drop the duplicate skyline import that broke the production build
+- **setup:** Keep the mode-first start screen above the fold on 900px desktops
+- **setup:** Keep 10A start screen within width and type minimums
+- **setup:** Keep the start screen clear of a landscape notch
+- **setup:** Remember the raced mode when returning home
+- **hazards:** Gusts push to the real road edge; hazard drawing reuses one pose
+- **setup:** Rules-row dropdowns open above the Start row
+- **ui:** Enter opens the leave prompt from the brand link; narrow phones keep a way out while paused
+- **input:** Let Enter and Space open a focused panel summary
+- **photo:** Restore the paused UI in the frame the studio closes
+- **hud:** Keep race hud blocks apart on every device
+- **hud:** Space race hud on landscape phones and tablets
+- **setup:** Pin Start on phones so mode-first setup fits
+- **setup:** Keep rules dropdowns and scrolled controls clear of pinned start
+- **audio:** Rebuild iOS suspended audio contexts
+- **daily:** Preserve disabled-flight accessibility through HUD ticks; correct hidden-select locale test
+- **showcase:** Keep camera controls clear of first-visit quality notice
+- **ci:** Run required quality gate on fix branches
+- **hud:** Keep the held-item slot on one row at ≤400 px
+
+### 💼 Other
+
+- **phase5:** Integrate latest main and preserve World Tour quality budget
+- Integrate latest main into Cup recovery
+- Integrate main and port Custom presentation to typed services
+- Integrate latest main and adapt practice item controllers
+- Origin/main race HUD spacing (266210c, f83b67e) into roadmap integration
+- Photo-studio class/dialog guard f96ae4e (6a)
+- Short-landscape pinned Start and safe areas ddb9a3f (17)
+- Roadmap integration (sections 9-13: modes, hazards, items, photo, setup) into main
+- IOS suspended audio context rebuild (feature/firebase-cloud-save 612f3f3)
+- What's New announcement UX proposal (feature/release-announcement-spec)
+- Cup session recovery bc5299b integration note (feature/cup-session-recovery)
+- Custom race presentation bc5299b integration note (feature/custom-race-presentation)
+- Record feature/genuine-circuit-laps as merged (its 10B acceptance check is already in main with the same 0f81af7 gate evidence)
+- Record ci/showcase-camera-verification as merged (superseded)
+- Run the required CI quality gate on fix/** branches (fix/ci-topbar-stacking)
+- 90/120 Hz render pacing (feature/phase3-120fps-support)
+
+### 🚜 Refactor
+
+- **phase5:** Keep renderer below existing 453-line ratchet
+- **phase5:** Respect legacy World Tour module-size ratchet
+- **perf:** Respect legacy renderer line ceiling without weakening tests
+- **perf:** Reuse GPU instance matrices and remove unused allocations
+- **world:** Fold trackId and carBank declarations to keep merged ceiling
+- **world:** Fold trackId and carBank declarations to keep merged ceiling
+- **world:** Fold trackId and carBank declarations to keep merged ceiling
+- **items:** Extract typed authored ring layout without behavior changes
+- **world:** Fold trackId and carBank declarations to keep merged ceiling
+- **world:** Hold ratcheted renderer ceiling after main integration
+- **world:** Use the shared trackId/carBank fold for the renderer ceiling
+- **world:** Hold ratcheted renderer ceiling after main integration
+- **world:** Use the shared trackId/carBank fold for the renderer ceiling
+- **engine:** Extract route data and vehicle modules
+- **world:** Compact renderer state to stay under its size ceiling
+- **sim:** Move player hazard crossings into hazard-race.ts
+- **render:** Move pooled hazard drawing into hazard-render.ts
+- **release:** Move pre-0.23 What's New entries into their own data module
+
+### 📚 Documentation
+
+- Add 90/120 fps option to todo
+- **phase5:** Record World Tour TDD plan and compatibility gates
+- **phase5:** Record scoped World Tour checklist and unverified gates
+- Add rules for caching and repeated work
+- **phase5:** Mark verified road-material and sea-level TDD stages complete
+- **phase5:** Record full CI, WebGL evidence and Medium LOD RED/GREEN
+- Enforce fidelity-preserving all-track rendering performance contract
+- **phase5:** Reconcile 12 pending acceptance gates with executable evidence
+- **todo:** Record branch progress and handoff
+- **todo:** Record photo studio handoff state
+- Record continuation review and verification state
+- Record fixed main baseline and focused integration checks
+- Record requested 0.25 main integration and retained source
+- Record main camera probe integration gates
+- Record final continuation verification
+- **todo:** Record verified main integration
+- **cup:** Record merged-main regression evidence and remaining gates
+- **cup:** Mark verified standings recovery complete
+- Record verified continuation gates and usage
+- Record verified code gates and remaining acceptance
+- Record fixed main baseline and focused integration checks
+- Preserve complete verified 0197547 baseline receipts
+- Record requested 0.25 main integration and retained source
+- Record main camera probe integration gates
+- Record verified 0.25 local gate
+- Record final continuation verification
+- **todo:** Record verified main integration
+- **custom:** Record full merged-browser evidence and pending gates
+- Record merged local gate and verified feature usage
+- Record verified continuation gates and usage
+- Record verified code gates and remaining acceptance
+- Record fixed main baseline and focused integration checks
+- Preserve complete verified 0197547 baseline receipts
+- Record requested 0.25 main integration and retained source
+- Record main camera probe integration gates
+- Record verified 0.25 local gate
+- Record final continuation verification
+- **todo:** Record verified main integration
+- Mark individually verified roadmap features complete
+- Record verified continuation gates and usage
+- Record verified code gates and remaining acceptance
+- Record fixed main baseline and focused integration checks
+- Preserve complete verified 0197547 baseline receipts
+- Record requested 0.25 main integration and retained source
+- Record main camera probe integration gates
+- Record verified 0.25 local gate
+- Record final continuation verification
+- **todo:** Record verified main integration
+- Record verified continuation gates and usage
+- Record verified code gates and remaining acceptance
+- Record fixed main baseline and focused integration checks
+- Record main-integrated full local and visual verification
+- Record requested 0.25 main integration and retained source
+- Record main camera probe integration gates
+- Record final continuation verification
+- **todo:** Record verified main integration
+- **todo:** Record Event Lab designer evidence and open gates
+- Mark individually verified roadmap features complete
+- Record merged local gate and verified feature usage
+- Record verified code gates and remaining acceptance
+- Record fixed main baseline and focused integration checks
+- Record main-integrated full local and visual verification
+- Record requested 0.25 main integration and retained source
+- Record main camera probe integration gates
+- Record final continuation verification
+- **todo:** Record verified main integration
+- Record merged local gate and verified feature usage
+- Record verified code gates and remaining acceptance
+- Record fixed main baseline and focused integration checks
+- Preserve complete verified 0197547 baseline receipts
+- Record requested 0.25 main integration and retained source
+- Record main camera probe integration gates
+- Record final continuation verification
+- **todo:** Record verified main integration
+- Record continuation review and verification state
+- Record fixed main baseline and focused integration checks
+- Record requested 0.25 main integration and retained source
+- Record main camera probe integration gates
+- Record final continuation verification
+- Record verified personal medals and roadmap progress
+- **todo:** Record verified main integration
+- **themes:** Document the new modes and guard Coast and landmark sightlines
+- **todo:** Check MODE-02 and the 10B acceptance on their green branch gates
+- **readme:** Restore heading spacing in the zh-TW guide
+- **perf:** Record C5 new-content and 1792 desktop before/after evidence
+- **perf:** Record the style-invalidation fix and desktop parity with main
+- **todo:** Record mobile hud overlap evidence
+- **todo:** Record round-2 mobile hud evidence
+- **todo:** Check 41 roadmap items whose cited unit and browser evidence is green
+- **todo:** Check the last 21 roadmap items on the green 8c3f7ee final gate
+- Propose What's New announcement UX and release behavior
+- **todo:** Track release announcement UX and TDD acceptance
+- **todo:** Record the bc5299b integration gate for cup session recovery
+- **todo:** Record the bc5299b integration gate for custom race presentation
+- **todo:** Check 10B laps acceptance after the full local gate
+- **release:** Review 0.26.0 notes
+
+### ⚡ Performance
+
+- **phase5:** GREEN distinct medium World Tour scenery budget
+- **world-tour:** Reuse centreline samples in rebuild
+- **world:** Create the touch media query once
+- **history:** Parse saved ghosts once per ruleset
+- **i18n:** Reuse date and number formatters
+- **phase5:** Pass graphics tier through to World Tour detail plan
+- **phase5:** GREEN medium decorative density with obstacle parity
+- **phase5:** Pool identical static World Tour drawables across streamed chunks
+- **classic:** Cache four classic road mesh and lane uploads across unchanged sectors
+- Bound World Tour GPU pools to two 120m chunks to retain frustum culling
+- **world-tour:** Draw fewer background stars on Medium and Low
+- **hud:** Skip the per-frame callout getAnimations() style flush
+- **css:** Scope Photo Studio hiding to a body class, not body:has()
+
+### 🧪 Testing
+
+- **phase5:** RED for absolute-distance World Tour tunnel continuity
+- **phase5:** Inspect world-space tunnel coordinates without test-only metadata
+- **phase5:** RED medium World Tour streaming-budget regression
+- **phase5:** Capture WebGL World Tour across 4 viewport sizes and quality tiers
+- **phase5:** RED cached uphill/downhill route cues on 3D World Tour maps
+- **phase5:** Capture actual WebGL art evidence and lock road/physics parity
+- **phase5:** Pass route DOM count to Playwright browser evaluate
+- **phase5:** RED destination-specific World Tour road PBR with safe budgets
+- **phase5:** RED sea-level stability across Coastal Horizon hills
+- **phase5:** RED tier-specific Medium prop density preserving solid scenery
+- **perf:** RED cross-chunk draw pooling and no per-frame reconstruction
+- **perf:** Fix test module syntax to observe expected RED assertion
+- **perf:** RED classic road upload gate with pixel-equivalent world transforms
+- **perf:** Assert all classic mesh origins share visual parity using real centreline
+- **perf:** RED spatially bounded cross-chunk GPU pools
+- **perf:** RED machine-readable ten-track WebGL evidence and comparable budgets
+- **perf:** RED preserve transparent sorting and shadow semantics across GPU batches
+- **ci:** Validate all-35 evidence collection, missing snapshots and draw-call regression gate
+- **ci:** RED avoid requiring absent WebGL artifacts in focused refactor verification
+- **ci:** Inspect step-level condition immediately after download and verify steps
+- **ci:** Scope full-regression assertions to each required job and evidence gate
+- **photo:** Reproduce background hud leak
+- **photo:** Catch car overlap and unsafe insets
+- **ui:** Re-record stylesheet baseline for the Photo Studio panel
+- Repair inherited regression gate assumptions
+- **minimap:** Distinguish main route from approved Spiral annotations
+- Isolate World Tour servers with the existing worktree port
+- **showcase:** Probe real WebGL bearing for camera views
+- **showcase:** Keep camera probe out of preview suite
+- **showcase:** Orbit keeps a steady radius, rate and car spot
+- **showcase:** Cover every map's six views, framing and occlusion
+- Pin reviewed d71 main styles and lower renderer ceiling
+- Record d71 main integration and preserve feature validation
+- **ui:** Re-record stylesheet baseline after airflow and whats-new css
+- Reproduce mixed-language airflow values before the next HUD tick
+- Record d71 main integration and preserve feature validation
+- Record d71 main integration and preserve feature validation
+- Record d71 main integration and preserve feature validation
+- **items:** Pin capped re-activation and bounded item effects
+- **results:** Prove non-Classic finishes never touch Classic progress
+- **session:** Replay every mode bit-for-bit and finish it on all ten courses
+- Record d71 main integration and preserve feature validation
+- **launch:** Guard the shared launch rule on every track and frame rate
+- **launch:** Assert wheel clearance at the first grounded frame after a ramp
+- **endless:** Approve finite-HUD hiding in the CSS contract
+- **ui:** Cover settled bounded results on phones
+- Record d71 main integration and preserve feature validation
+- **circuit:** Pin reviewed Harbor map palette contract
+- **ui:** Cover settled bounded results on phones
+- Record d71 main integration and preserve feature validation
+- **circuit:** Prove lap seams stay continuous and rivals need every lap
+- **modes:** Teach the all-modes checks Endless Highway's own contract
+- Record d71 main integration and preserve feature validation
+- Define continuous flight and aerial chain medals telemetry
+- Require isolated personal medals in race settlement
+- Protect personal medals across local account and backup changes
+- Cover personal medal backup transport and localized announcements
+- Exercise personal medal settlement and controls on desktop and phones
+- Target completed stunt timer and visible History controls
+- Reproduce session-only medal loss during account switch
+- **stunt:** Prove Stunt Attack sessions score the same at any frame rate or input device
+- **modes:** Teach the all-modes checks Harbor Circuit's own contract
+- **env:** Add 11A acceptance across every themed track
+- **themes:** Add WebGL check that every themed track draws its hazards
+- **results:** Keep Event Lab finishes off Classic progress and the cloud
+- **env:** Pin hazard intensity to the modes that support it
+- **env:** Scan the merged simulation modules for device reads too
+- **env:** Capture every hazard effect in the real WebGL scene
+- **themes:** Every themed placement lands in exactly one race list
+- **perf:** Add make perf-modes for new-content frame time vs Classic
+- **perf:** Select the mode button, not <body>'s mirrored attribute
+- **perf:** Set rule selects the way the gauntlet spec does
+- **hazard-captures:** Sample the gate after a frame renders and stop faking a finish
+- **themes:** Capture every themed hazard type, ramp and hoop per track
+- **event-lab:** Relaxed modifier softens barrier hits and is its own ruleset (1460)
+- **themes:** Leave the race by pause and reload, not a forced finish with no result
+- **modes:** Browser acceptance for 9A-9D, 9J endless bounds, 12A/12B items and 13C audit gaps
+- **visuals:** Weak hardware draws a third of the weather overlay; hazard silhouettes never thin
+- **items:** Reduced motion holds the item beam and magnet pulses steady
+- **results:** A finish writes and awards once through pause, restart, exit, mode switch and dialogs (10C)
+- **presets:** Rule presets and saved Custom setups leave unlocks, eligibility, controls and history untouched (10A)
+- **setup:** Cover conflicts, focus, contrast, safe area and motion
+- **ui:** Restore the 10A mode-first element order in the UI contract
+- **hud:** Import createAnimationGate statically
+- **themes:** Themed road sections never outgrow the roadside sign pool
+- **themes,ui:** Pin Neon closures, Spiral antiphase hazards and the App.vue mode picker
+- Guard unique item outlines and Career paint/achievement isolation
+- A non-Classic finish with a Daily modifier leaves the Daily board alone (1538)
+- **responsive:** Focus trap, focus return and the pause-menu End action at four sizes (1788)
+- **setup:** Reach and toggle Comfort mode by every input
+- **specs:** Locate mode tabs by their button; guard against bare [data-race-mode] locators
+- **setup:** Locate the rules-row mode tabs by their button
+- **photo:** Guard body.photo-studio against dialog [open] at every flip
+- **ci:** Reproduce missing fix-branch quality gate trigger
+- **fps:** Specify 90/120 Hz pacing and adaptive fallback (RED)
+- **fps:** Cover high-refresh settings, persistence, and locale; document browser caps
+- **fps:** Measure high-rate cadence after warm-up; track acceptance gates
+- **ci:** Stop slow CPU WebGL frames failing photo and hazard specs
+- **responsive:** Keep the Event Lab focus-trap walk within CI's frame budget
+- **responsive:** Give the desktop Event Lab focus-trap walk room on CPU-only CI
+
+### ⚙️ Miscellaneous Tasks
+
+- **phase5:** Enforce layout verification and document CI/TDD evidence
+- **perf:** Capture and validate structured ten-track WebGL budgets on exact HEAD
+- **perf:** Preserve visual artifacts before layout and report before/after draw calls
+- Run focused showcase and daily accessibility regressions
 ## [0.25.0] - 2026-10-28
 
 ### 🚀 Features
