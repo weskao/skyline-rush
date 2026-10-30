@@ -38,7 +38,9 @@ function zoomClip() {
         muted loop playsinline preload="none" disablepictureinpicture :controls="releaseView.heroVideo.controls"
         :aria-hidden="releaseView.heroVideo.controls ? undefined : 'true'" @error="releaseView.heroVideo = null"
         @click="releaseView.heroVideo.controls || zoomClip()"></video>
-      <button id="release-video-zoom" type="button" class="release-zoom-corner" :aria-label="releaseView.zoom.video" @click="zoomClip">⤢</button>
+      <button id="release-video-zoom" type="button" class="release-zoom-corner" :aria-label="releaseView.zoom.video" @click="zoomClip">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M10 19H5v-5M19 5l-14 14" /></svg>
+      </button>
       </div>
       <button id="release-hero-zoom" type="button" class="release-zoom" :aria-label="releaseView.zoom.image" :hidden="!releaseView.heroSrc || !!releaseView.heroVideo"
         @click="zoomImage(releaseView.heroSrc, releaseView.zoom.image, $event)">
@@ -70,5 +72,7 @@ function zoomClip() {
 /* Short landscape screens hide the hero clip to save height (style.css); its enlarge button goes with it. */
 @media (max-height: 420px) { .release-hero-frame { display: none; } }
 .release-zoom-corner { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; padding: 0; border: 1px solid rgb(150 227 255 / .35); border-radius: 50%;
-  background: rgb(8 16 28 / .78); font-size: 22px; line-height: 1; color: #eefbff; }
+  background: rgb(8 16 28 / .78); color: #eefbff; display: grid; place-items: center; }
+/* Drawn, not a "⤢" glyph: fallback fonts (Android) offset the glyph inside the circle. */
+.release-zoom-corner svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 </style>
