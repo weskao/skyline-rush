@@ -61,13 +61,13 @@ const hash = (a, b = 0, c = 0) => {
 };
 export function sceneryPlan(trackId, chunk, low = false) {
   if (!SCENERY_KINDS[trackId]) throw Error('Unknown World Tour scenery: ' + trackId);
-  const kinds = SCENERY_KINDS[trackId], length = RACE_TRACKS[trackId].length;
+  const kinds = SCENERY_KINDS[trackId];
   const items = [];
   // Specific distance and side are stable across rerenders and detail levels.
   for (const side of [-1, 1]) for (let i = 0; i < (low ? 2 : 4); i++) {
     const seed = chunk * 17 + i + (side === 1 ? 6 : 0);
     const distance = chunk * SCENERY_CHUNK_METRES + 13 + i * 27 + hash(seed, 14) * 13;
-    if (distance < 0 || distance > length) continue;
+    if (distance < 0) continue; // Infinite roadside chunks remain reproducible.
     const type = kinds[Math.floor(hash(seed, trackId.length) * kinds.length)];
     // Keep human-scale street furniture directly behind the sidewalks.
     // Larger facades sit one plot farther away, not hundreds of metres
@@ -271,7 +271,7 @@ export function createSceneryKit() {
   };
   const basis=new THREE.Matrix4(),right=new THREE.Vector3(),up=new THREE.Vector3(),forward=new THREE.Vector3();
   function place(group, trackId, distance, lateral, rise = 0) {
-    const f=trackFrame(trackId,distance),p=trackPoint(trackId,distance);
+    const f=trackFrame(trackId,distance,true),p=trackPoint(trackId,distance,true);
     right.fromArray(f.right);up.fromArray(f.up);forward.fromArray(f.forward).negate();
     basis.makeBasis(right,up,forward);
     group.position.set(p.x+f.right[0]*lateral+f.up[0]*rise,
@@ -300,7 +300,7 @@ export function createSceneryKit() {
       const vertices=[],index=[];
       for(let j=0;j<=strips;j++){
         const distance=start+(end-start)*j/strips;
-        const p=trackPoint(trackId,distance),frame=trackFrame(trackId,distance);
+        const p=trackPoint(trackId,distance,true),frame=trackFrame(trackId,distance,true);
         // Use terrainHeight for props and ground; never derive them independently.
         for(let i=0;i<rings;i++){
           const lateral=trackId==='alpine'?[16,23,39,72][i]:[15,25,48,92][i];
