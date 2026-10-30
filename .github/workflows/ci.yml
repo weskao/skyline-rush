@@ -45,16 +45,17 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-  # CPU-only WebGL makes the serial suite take about two hours on one runner; shards run it in parallel. Playwright
-  # splits the alphabetical test list into equal contiguous slices, so more shards also keep one heavy spec file
-  # from dominating a slice.
+  # CPU-only WebGL makes the serial suite take about six runner-hours; shards run it in parallel. Playwright splits
+  # the test list into equal contiguous slices (no duration balancing), so a slice that lands on the heavy i18n,
+  # responsive or track-theme tests sets the wall time: 8 slices peaked at 72 min, 16 at about 45 (measured on main).
+  # Together with world-tour-mid-race this stays near GitHub's 20 concurrent jobs; more shards would mostly queue.
   browser-tests:
     if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,8 +64,7 @@ jobs:
           cache: npm
       - run: npm ci
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
-      - run: npm run test:browser -- --shard=${{ matrix.shard }}/8
-      # Persist structured ten-track snapshots BEFORE test:layout (Playwright cleans test-results).
+      - run: npm run test:browser -- --shard=${{ matrix.shard }}/16
       - name: Upload structured WebGL performance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,11 +99,8 @@ jobs:
           name: world-tour-screenshots-${{ matrix.shard }}
           path: test-results/**/world-tour-*.png
           if-no-files-found: ignore
-
-      # Phase 5, Endless Highway and final refactors run responsive layout once, with the browser quality gate.
-      - name: Verify responsive layout for final refactor or World Tour polish
-        if: "${{ matrix.shard == 1 && (startsWith(github.ref, 'refs/heads/refactor/') || (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/phase5-world-tour-polish' || github.ref == 'refs/heads/feature/all-tracks-render-cache' || github.ref == 'refs/heads/feature/endless-highway-all-tracks')) }}"
-        run: npm run test:layout
+      # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
+      # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
 
   cloud-save:
     if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
@@ -135,11 +132,12 @@ jobs:
   world-tour-mid-race:
     if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
     runs-on: ubuntu-latest
-    # CPU-only WebGL renders the ~230 per-map camera tests (about 150k frames) at ~9 fps, hours on one runner.
+    # CPU-only WebGL renders the ~250 per-map camera tests (about 150k frames) at ~9 fps, over two hours on one
+    # runner. The slow camera views sit at the end of the list, so 6 contiguous slices ran 5 to 40 min; 8 peak at ~34.
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -147,7 +145,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright test --config=playwright.world-tour.config.js --shard=${{ matrix.shard }}/6
+      - run: npx playwright test --config=playwright.world-tour.config.js --shard=${{ matrix.shard }}/8
       - name: Upload real mid-race WebGL screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -156,55 +154,11 @@ jobs:
           path: test-results/**/world-tour-*-mid-race.png
           if-no-files-found: ignore
 
-  # Coast-only A/B screenshots use actual WebGL from the exact integrated
-  # main SHA and the current feature build. Never call the showcase shot a before-code screenshot.
-  coast-visual-evidence:
-    if: "${{ github.ref == 'refs/heads/feature/phase2-coast-visual-quality' }}"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - name: Build main baseline from the exact integrated parent
-        env:
-          BASELINE_SHA: 3788ca36ce52ceb0a304555e5f1dcc564d8181ef
-        run: |
-          git fetch --no-tags --depth=1 origin "$BASELINE_SHA"
-          git worktree add --detach "$RUNNER_TEMP/coast-reference" "$BASELINE_SHA"
-          (cd "$RUNNER_TEMP/coast-reference" && npm ci && npm run build)
-      - name: Capture unchanged main BEFORE
-        env:
-          COAST_BASELINE: '1'
-          COAST_PREVIEW_DIR: ${{ runner.temp }}/coast-reference/dist
-        run: npx playwright test tests/coast-visual-browser.spec.js
-      - name: Preserve genuine BEFORE screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coast-webgl-before-main-3788ca36
-          path: test-results/**/coast-visual-before-*.png
-          if-no-files-found: warn
-      - name: Capture Phase 2 AFTER
-        run: npx playwright test tests/coast-visual-browser.spec.js
-      - name: Preserve genuine AFTER screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coast-webgl-after
-          path: test-results/**/coast-visual-after-*.png
-          if-no-files-found: warn
-      # Playwright cleans test-results at the start of each suite: archive screenshots first.
-      - run: npm run test:layout
-
   # A single required status for every feature branch and normal main push.
   # A branch ruleset can require this job; no direct-push protection is implied
   # by the workflow file alone.
   quality-gate:
-    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, coast-visual-evidence]
+    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race]
     if: "${{ always() && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
@@ -228,8 +182,6 @@ jobs:
           BROWSER: ${{ needs.browser-tests.result }}
           CLOUD: ${{ needs.cloud-save.result }}
           WORLD_TOUR: ${{ needs.world-tour-mid-race.result }}
-          COAST: ${{ needs.coast-visual-evidence.result }}
-          PHASE2: ${{ github.ref == 'refs/heads/feature/phase2-coast-visual-quality' }}
           FOCUSED: ${{ startsWith(github.ref, 'refs/heads/refactor/') && !((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}
         run: |
           printf 'unit=%s browser=%s cloud=%s world-tour=%s\\n' "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"
@@ -248,10 +200,6 @@ jobs:
             done
             echo "::notice::Focused verification only; full regression remains mandatory before final acceptance."
             exit 0
-          fi
-          if [ "$PHASE2" = true ] && [ "$COAST" != success ]; then
-            echo "::error::Phase 2 requires exact-main Coast BEFORE/AFTER WebGL captures and layout checks."
-            exit 1
           fi
           for result in "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"; do
             if [ "$result" != success ]; then
