@@ -67,3 +67,20 @@ test('Sky Spiral Endless keeps its visible hero fixed through repeating scenery 
     }
   }finally{sky.dispose();}
 });
+
+test('Sky Spiral Endless hero fades smoothly at the forward visibility threshold',()=>{
+  const scene=new THREE.Scene(),sky=createSkyScene(scene);
+  const root=scene.getObjectByName('Sky Spiral 3D course');
+  const hero=root.children.find(node=>node.children.some(child=>child.geometry?.type==='CylinderGeometry'));
+  const tower=hero.children.find(child=>child.geometry?.type==='CylinderGeometry');
+  try{
+    const opacity=distance=>{
+      sky.update(distance,'high',true);
+      return hero.visible?tower.material.opacity:0;
+    };
+    const before=opacity(5949.5),after=opacity(5950.5);
+    assert.ok(before>0 && before<1,'approaching distant landmark must already be fading in');
+    assert.ok(after>0 && after<1,'distant landmark must not appear at full opacity');
+    assert.ok(Math.abs(after-before)<.05,'visibility across a 1m drive must be smooth');
+  }finally{sky.dispose();}
+});
