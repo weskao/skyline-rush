@@ -20,14 +20,14 @@ const hash = (a, b) => {
 export function detailSetPlan(trackId, chunk, quality = 'high', blocks = null) {
   const kinds = DETAIL_KINDS[trackId];
   if (!kinds) return [];
-  const length = RACE_TRACKS[trackId].length, items = [];
+  const items = [];
   // High: one per kerb per chunk; Medium: one per chunk; Low: none (decoration only).
   if (quality === 'low' || quality === true) return [];
   const sides = quality === 'high' ? [-1, 1] : [chunk % 4 < 2 ? -1 : 1];
   for (const side of sides) {
     const seed = chunk * 13 + (side === 1 ? 5 : 0);
     const distance = chunk * 120 + 40 + hash(seed, 3) * 40;
-    if (distance > length) continue;
+    // Preserve absolute-distance detail generation beyond finite course ends.
     // Ships and spray stay on the open-water (right) side of the coast road.
     const pool = kinds.filter(kind => !WATER.has(kind) || side === 1);
     const kind = pool[Math.floor(hash(seed, trackId.length) * pool.length)];
