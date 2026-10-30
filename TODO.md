@@ -2100,3 +2100,20 @@ never conflate future modes with existing Control “steering mode” options.
 - [ ] Run complete `make verify` on the resulting branch and inspect exact-commit GitHub `quality-gate`; retain real hardware gates separately.
 
 - [x] Integrate current main `2cd52d4` (BOOST/chain landing, spark/audio cue, localized release clips). Resolve only overlapping test assumptions; preserve the new gameplay and media. Shared FPS test now checks the 1000/1016/1032 ms sequence and zero early counter reads. Reviewed main's three release-video CSS rules before synchronizing the style contract. Fresh full Node: 791 passed / 3 skipped; affected minimap/parity/release-video browser suite: 13 passed.
+
+
+## Barrel-roll wake direction and quality (2026-10-30)
+
+- [x] Source/rules: use the real `player.trick`, existing quaternion history, pooled ribbon and particles; keep BOOST and manual AIRFLOW behavior. Engine hot-path JS stays in the existing rendering exception.
+- [x] RED: adapted baseline fails roll-emission, direction/pitch, quality, lifecycle and elevated-origin regressions; see `artifacts/barrel-roll-physics/red.log`.
+- [x] GREEN: passive still-air markers, world-space edge streaks, full XYZ origin rebasing; owner/shader/module-size 18/18. Both sides obey dphi/dz = -omega/U in straight constant-speed tests; doubling speed doubles pitch.
+- [x] Cross-track unit regression: four Classic tracks, Sky Spiral, five World Tour tracks and Harbor Circuit retain history under origin shifts. Low hides added roll wake; Medium/High sample at existing .5/1 quality. Master, opacity, density, comfort and reduced motion clear roll-owned history immediately.
+- [x] Full unit suite: 1133 pass, 3 skips. TS/Vue/legacy JS checks and production build pass (existing chunk-size/import-attribute warnings).
+- [x] Real WebGL A/B: desktop 1440x900 / mobile emulation 390x844, identical real simulation inputs, pose and camera; active ribbon vertices 0 -> 180, draw calls 263 -> 263, triangles 72929 -> 72929 on Coast. No FPS/thermal claim.
+- [x] Desktop native keyboard recording: actual Low/Medium/High barrel rolls with BOOST and manual AIRFLOW off; max added ribbon vertices 0/126/264, no page errors.
+- [x] Mobile multi-touch recording: actual Low/Medium/High rolls, vertices 0/126/252, BOOST/AIRFLOW off, no page errors; 45.2 s MP4 reviewed and delivered. Earlier missed gestures are retained as driver failures, not product evidence.
+- [x] Full World Tour gate: 326/326 pass (2.5 min).
+- [ ] Full browser gate: 746 pass / 3 skips / 1 timing failure in stalled-frame test (0.15 s vs <0.12 s). Identical isolated reruns 3/3 pass; full-run failure remains recorded. These are make verify components, not an exact `make verify` invocation (direct installed typecheck tools avoid mutating shared dependencies).
+- [ ] Physical Safari/iOS/Android, device heat/battery, per-track controlled performance benchmarks and exact-commit remote GitHub quality-gate remain separate acceptance. No commit/push/merge/PR/deploy authorized.
+
+Model boundary: these are unsteady streak/history markers in still air, not instantaneous CFD streamlines or a prediction of pressure, turbulence or induced swirl. No fixed decorative helix, opposite-winding pair, or artificial exhaust velocity is added for roll-only markers.
