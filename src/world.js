@@ -23,7 +23,7 @@ import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
-import { skyPosition, skyFrame } from './sky-track.ts';
+import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
 import { classicRoadCenter, trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition } from './track-paths.ts';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
@@ -60,7 +60,8 @@ function fitText(context, label, x, y, maxWidth, basePx, locale) {
 export function createWorld(canvas) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false;
-  const trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d)=>finiteFrame(id,d,endlessActive),
+  const skyPosition=(d,x=0,y=0,o=0)=>finiteSkyPosition(d,x,y,o,endlessActive),skyFrame=d=>finiteSkyFrame(d,endlessActive),
+    trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d)=>finiteFrame(id,d,endlessActive),
     trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
   // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
@@ -112,7 +113,6 @@ export function createWorld(canvas) {
   scene.environmentIntensity = 0.42;
   room.dispose();
   env.dispose();
-
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
   scene.add(ambient);
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
