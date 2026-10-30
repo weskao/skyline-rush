@@ -1,3 +1,38 @@
+## [0.27.0] - 2026-10-30
+
+### 🚀 Features
+
+- **release-notes:** Show the coming release's notes as Upcoming before it has a version
+- **release-notes:** Tap a What's New picture or clip to see it whole
+
+### 🐛 Bug Fixes
+
+- **free-drive:** Finish the run at the road end
+- **loop:** Request the next frame before running this one
+
+### 🚜 Refactor
+
+- **ui:** Close every panel with one shared round × button
+
+### 📚 Documentation
+
+- **release:** Write the coming release's notes without a version number
+- **release:** Note picture formats and the enlarged view
+- **readme:** Free drive now ends at the road end
+- **rules:** Keep the frame loop alive after a throwing frame
+- **release:** Review 0.27.0 notes
+- **release:** Add the no-freeze fix to 0.27.0 notes
+- **release:** Review 0.27.0 notes again
+
+### 🧪 Testing
+
+- **finish:** Reproduce frozen results after a failing frame (RED)
+- **release-notes:** Keep the no-entry check independent of the Upcoming entry
+- **release-notes:** Follow Upcoming notes in browser specs
+
+### ⚙️ Miscellaneous Tasks
+
+- **gitignore:** Ignore browser-spec screenshot output
 ## [0.26.0] - 2026-10-30
 
 ### 🚀 Features
