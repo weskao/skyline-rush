@@ -21,11 +21,17 @@ export interface ReleaseEntry {
 interface ReleaseStore { getItem(key: string): string | null; setItem(key: string, value: string): void }
 
 import packageMeta from '../package.json' with { type: 'json' };
-import { RELEASE_NOTES } from './release-notes-data.ts';
+import { RELEASE_NOTES as WRITTEN_NOTES, UPCOMING } from './release-notes-data.ts';
 const { version } = packageMeta;
 
+export { UPCOMING };
+// The next release's notes are written with this in place of a version. Until the release commit bumps package.json
+// (while the running version still has its own entry) they show first as upcoming; from then on they carry that version.
+export const resolveUpcoming = (notes: readonly ReleaseEntry[], current: string): readonly ReleaseEntry[] =>
+  notes.some(release => release.version === current) ? notes
+    : notes.map(release => release.version === UPCOMING ? { ...release, version: current } : release);
 // The player-written entries live in release-notes-data.ts so adding a version never grows this logic module.
-export { RELEASE_NOTES };
+export const RELEASE_NOTES = resolveUpcoming(WRITTEN_NOTES, version);
 export const NOTES_SEEN_KEY = 'skyline-rush-whats-new-seen-v1';
 export const RECENT_RELEASE_LIMIT = 5;
 
@@ -35,10 +41,11 @@ export function compareVersions(a: unknown, b: unknown): number {
   const [x, y] = [versionParts(a), versionParts(b)];
   return (x[0]! - y[0]!) || (x[1]! - y[1]!) || (x[2]! - y[2]!);
 }
-// Newest first, never a version newer than the running build (notes are written before the release).
+// Upcoming notes first, then newest first, never a version newer than the running build.
+const upcomingFirst = (release: ReleaseEntry): number => Number(release.version === UPCOMING);
 export const recentReleases = (current: string = version, notes: readonly ReleaseEntry[] = RELEASE_NOTES, limit: number = RECENT_RELEASE_LIMIT): ReleaseEntry[] =>
-  notes.filter(release => compareVersions(release.version, current) <= 0)
-    .sort((a, b) => compareVersions(b.version, a.version)).slice(0, limit);
+  notes.filter(release => release.version === UPCOMING || compareVersions(release.version, current) <= 0)
+    .sort((a, b) => upcomingFirst(b) - upcomingFirst(a) || compareVersions(b.version, a.version)).slice(0, limit);
 export const releaseForVersion = (v: string = version): ReleaseEntry | null => RELEASE_NOTES.find(release => release.version === v) ?? null;
 export const CURRENT_RELEASE = recentReleases()[0] ?? null;
 
@@ -51,7 +58,7 @@ export function shouldAnnounce(release: Pick<ReleaseEntry, 'version' | 'highligh
   return seen == null ? returningPlayer : compareVersions(release.version, seen) > 0;
 }
 export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): void {
-  if (!release) return;
+  if (!release || release.version === UPCOMING) return;
   try { storage?.setItem(NOTES_SEEN_KEY, release.version); } catch { /* remembered in memory by the app */ }
 }
 // Display order inside a release: NEW first, then improvements, then fixes; unknown kinds last.

@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import packageMeta from '../package.json' with { type: 'json' };
 import {
   CURRENT_RELEASE, NOTES_SEEN_KEY, RELEASE_NOTES, RECENT_RELEASE_LIMIT, releaseForVersion, recentReleases,
-  compareVersions, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo
+  compareVersions, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, UPCOMING, resolveUpcoming
 } from '../src/release-notes.ts';
-import { checkReleaseNotes, copyProblems, reviewHash, playerFacingChanges } from '../scripts/check-release-notes.mjs';
+import { checkReleaseNotes, copyProblems, reviewHash, playerFacingChanges, releaseEntryFor } from '../scripts/check-release-notes.mjs';
 
 const storage = () => {
   const data = new Map();
@@ -60,11 +60,23 @@ test('the dialog lists at most five released versions, newest first, never a fut
   assert.equal(shipped[0], CURRENT_RELEASE);
 });
 
+test('the next release is written without a version: shown first as upcoming, then it takes the released version', () => {
+  const notes = [{ version: UPCOMING, highlights: [{}] }, { version: '0.2.0', highlights: [{}] }, { version: '0.1.0', highlights: [{}] }];
+  const before = resolveUpcoming(notes, '0.2.0');
+  assert.deepEqual(recentReleases('0.2.0', before).map(r => r.version), [UPCOMING, '0.2.0', '0.1.0'], 'visible before the release');
+  assert.deepEqual(recentReleases('0.3.0', resolveUpcoming(notes, '0.3.0')).map(r => r.version), ['0.3.0', '0.2.0', '0.1.0'], 'the release commit names it');
+  const store = storage();
+  store.setItem(NOTES_SEEN_KEY, '0.2.0');
+  assert.equal(shouldAnnounce(before[0], store), false, 'unreleased notes never pop up by themselves');
+  markAnnouncementSeen(before[0], store);
+  assert.equal(store.getItem(NOTES_SEEN_KEY), '0.2.0', 'opening unreleased notes does not overwrite the last seen version');
+});
+
 test('every stored release, shown or archived, is complete in both languages with bundled images', () => {
   const versions = RELEASE_NOTES.map(r => r.version);
-  assert.equal(new Set(versions).size, versions.length, 'unique versions');
+  assert.equal(new Set(versions).size, versions.length, 'unique versions (one upcoming entry at most: stamp the released one with its version and date first)');
   for (const release of RELEASE_NOTES) {
-    assert.match(release.version, /^\d+\.\d+\.\d+$/);
+    assert.match(release.version, new RegExp(`^(\\d+\\.\\d+\\.\\d+|${UPCOMING})$`));
     assert.match(release.date, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(release.highlights.length, `${release.version} has highlights`);
     const images = [release.image, ...release.highlights.map(h => h.image)].filter(Boolean);
@@ -156,6 +168,17 @@ test('a release is refused until its notes are reviewed, and again if they chang
   const edited = { ...release, highlights: [{ ...release.highlights[0], title: { en: 'Edited', 'zh-TW': '已修改' } }, ...release.highlights.slice(1)] };
   assert.notEqual(reviewHash(edited), reviewHash(release));
   assert.deepEqual(checkReleaseNotes(v, { reviews: { [v]: reviewHash(release) } }), []);
+});
+
+test('the review and the gate find the upcoming entry under the version being released', () => {
+  const upcoming = { ...entry('Fly longer.', '飛得更久。'), version: UPCOMING };
+  const notes = [upcoming, { ...entry('Race at night.', '夜間賽。'), version: '0.2.0' }];
+  const reviews = { '0.3.0': reviewHash({ ...upcoming, version: '0.3.0' }) };
+  assert.equal(releaseEntryFor('0.3.0', notes), upcoming);
+  assert.deepEqual(checkReleaseNotes('0.3.0', { notes, reviews }), [], 'before the release commit');
+  assert.deepEqual(checkReleaseNotes('0.3.0', { notes: resolveUpcoming(notes, '0.3.0'), reviews }), [], 'after it, the review still matches');
+  assert.match(checkReleaseNotes('0.1.9', { notes, reviews }).join('\n'), /no What's New entry for 0\.1\.9/, 'never under an older version');
+  assert.match(checkReleaseNotes('0.3.0', { notes, reviews: {} }).join('\n'), /not reviewed/);
 });
 
 test('the gate also refuses notes that fail the player copy check', () => {

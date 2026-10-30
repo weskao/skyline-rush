@@ -4,7 +4,9 @@ import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 // Announcements are written for players, never generated directly from developer commits.
 // Every published version keeps its entry (and any image under public/) for good, older ones in
 // release-notes-archive.ts; the dialog only shows the newest RECENT_RELEASE_LIMIT of them. scripts/check-release-notes.mjs
-// stops a release whose version has no entry.
+// stops a release whose version has no entry. The coming release is written as `version: UPCOMING`, never a number:
+// it shows as upcoming until the release commit bumps package.json, which names it (resolveUpcoming in release-notes.ts).
+export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
     version: '0.26.0', date: '2026-10-30', image: null,

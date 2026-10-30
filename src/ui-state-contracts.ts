@@ -12,6 +12,7 @@ export interface GuideView {
 export interface ReleaseTab {
   id: string;
   version: string;
+  label: string;
   selected: boolean;
   latest: boolean;
   note: string;

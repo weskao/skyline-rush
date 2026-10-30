@@ -2,7 +2,7 @@ import { nextTick } from 'vue';
 import { releaseView, updateReleaseView } from './release-view-state.ts';
 import { HISTORY_KEY } from './history.ts';
 import { getLocale, t, formatDate, SUPPORTED_LOCALES } from './i18n.ts';
-import { CURRENT_RELEASE, NOTES_SEEN_KEY, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind } from './release-notes.ts';
+import { CURRENT_RELEASE, NOTES_SEEN_KEY, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind } from './release-notes.ts';
 import { createReleaseMediaCache } from './release-media-cache.ts';
 
 // Pure keyboard navigation, independently testable without a DOM.
@@ -42,6 +42,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     catch { return false; }
   };
   const releaseDay = (date: string, options: Intl.DateTimeFormatOptions): string => formatDate(new Date(date + 'T00:00:00'), options);
+  const versionLabel = (version: string): string => version === UPCOMING ? t('release.upcoming') : 'v' + version;
   // Absolute, so the address matches what Cache Storage records for it.
   const bundled = (path: string): string => new URL(import.meta.env.BASE_URL + path, location.href).href;
   const clipSources = new Set(RECENT_RELEASES.flatMap(release => SUPPORTED_LOCALES.flatMap(locale =>
@@ -70,6 +71,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     const tabs = RECENT_RELEASES.map((release, index) => ({
       id: 'release-tab-' + index,
       version: release.version,
+      label: versionLabel(release.version),
       selected: index === releaseIndex,
       latest: index === 0,
       note: index ? releaseDay(release.date, { month: 'short', day: 'numeric' }) : t('release.latest'),
@@ -83,7 +85,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     updateReleaseView({
       tabs,
       panelLabel: 'release-tab-' + releaseIndex,
-      version: 'v' + release.version,
+      version: versionLabel(release.version),
       date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
       heroSrc: hero ? import.meta.env.BASE_URL + hero : '',
       heroVideo: clip && {
