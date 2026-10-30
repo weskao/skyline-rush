@@ -1,6 +1,6 @@
 import { seededRng } from './rng.ts';
 
-// Coast v1 extends the existing classicRoadCenter, never a finite route or lap.
+// Endless extends each themed route; finite sprint geometry and rules are unchanged.
 export const ENDLESS_CHUNK = 500;
 export const ENDLESS_COLLISIONS = 5;
 export interface EndlessState { chunk: number; milestones: number }
@@ -16,6 +16,7 @@ interface EndlessRace {
     thrusting: boolean; boosting: boolean; score: number; nearMisses: number; nitroUses: number;
     rings: number; perfectLines: number };
   result: unknown;
+  streamProps?: (distance: number) => void;
 }
 const lanes = [-7.5, -2.5, 2.5, 7.5];
 // New chunks gradually add traffic up to eight cars per 500 m at 20 km.
@@ -60,11 +61,12 @@ export function streamEndless(race: EndlessRace): void {
   race.pickups.sort((a, b) => a.distance - b.distance);
   race.rings.sort((a, b) => a.distance - b.distance);
   for (const key of Object.keys(race.player.groupHits)) if (+key < first || +key > last) delete race.player.groupHits[key];
+  race.streamProps?.(race.player.distance);
   race.endless.chunk = chunk;
 }
 export function prepareEndless(race: EndlessRace): void {
   if (race.mode !== 'endless') return;
-  if (race.trackId !== 'coast') throw new RangeError('Endless Highway v1 supports Coast only');
+
   race.sections.length = race.traffic.length = race.pickups.length = race.rings.length = 0;
   race.endless = { chunk: -10, milestones: 0 };
   streamEndless(race);
