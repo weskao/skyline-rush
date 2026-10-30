@@ -10,13 +10,28 @@ function tick(session, action = {}, dt = DT) {
   stepRace(session.race, input, dt);
   session.update(input, dt);
 }
+function performAirChain(session) {
+  const start = session.index;
+  for (let i = 0; i < 66; i++) tick(session, { fly: true, boost: true });
+  for (let i = 0; i < 250 && session.index === start; i++) tick(session);
+  assert.equal(session.index, start + 1, 'air chain requires a real powered-flight landing');
+}
+function performBarrelRoll(session) {
+  const start = session.index;
+  for (let i = 0; i < 26; i++) tick(session, { fly: true });
+  for (let i = 0; i < 6; i++) tick(session, { fly: true, steer: -1 });
+  for (let i = 0; i < 6; i++) tick(session, { fly: true, steer: 1 });
+  for (let i = 0; i < 45; i++) tick(session, { fly: true });
+  for (let i = 0; i < 250 && session.index === start; i++) tick(session);
+  assert.equal(session.index, start + 1, 'barrel roll requires an actual paid gentle landing');
+}
 function perform(session, action) {
   const initial = session.index;
   for (let frame = 0; frame < 600 && session.index === initial; frame++) tick(session, action);
   assert.equal(session.index, initial + 1, `did not complete ${session.step}`);
 }
 
-test('real driving completes all eight lessons without producing a race result or changing normal races', () => {
+test('real driving completes all ten lessons without producing a race result or changing normal races', () => {
   const normal = createRace();
   const session = createInteractiveTutorial();
   assert.equal(session.race.mode, 'free');
@@ -27,13 +42,15 @@ test('real driving completes all eight lessons without producing a race result o
     ['throttle', { throttle: true }], ['left', { steer: -1 }],
     ['right', { steer: 1 }], ['brake', { brake: true }],
     ['fly', { fly: true }], ['land', { fly: false }],
-    ['boost', { boost: true }], ['nitro', { nitro: true }],
+    ['boost', { boost: true }], ['airChain', null], ['barrelRoll', null], ['nitro', { nitro: true }],
   ];
   for (const [name, action] of lessons) {
     assert.equal(session.step, name);
     if (name === 'land') assert.ok(session.race.player.altitude > 1, 'landing must start from actual flight');
     if (name === 'nitro') assert.equal(session.race.player.nitro, 1);
-    perform(session, action);
+    if (name === 'airChain') performAirChain(session);
+    else if (name === 'barrelRoll') performBarrelRoll(session);
+    else perform(session, action);
   }
   assert.equal(session.complete, true);
   assert.equal(session.progress, 1);
@@ -88,6 +105,8 @@ test('held FLY cannot complete the landing lesson and no charge cannot complete 
   assert.equal(session.step, 'land');
   perform(session, { fly: false });
   perform(session, { boost: true });
+  performAirChain(session);
+  performBarrelRoll(session);
   session.race.player.nitro = 0;
   for (let i = 0; i < 60; i++) tick(session, { nitro: true });
   assert.equal(session.complete, false);
@@ -100,6 +119,8 @@ test('NITRO activation alone does not finish practice; sprint and steering stay 
     { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
     { fly: true }, { fly: false }, { boost: true },
   ]) perform(session, action);
+  performAirChain(session);
+  performBarrelRoll(session);
   const car = session.race.player;
   assert.equal(session.step, 'nitro');
   tick(session, { nitro: true });

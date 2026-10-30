@@ -1,7 +1,7 @@
 import { createRace, startRace } from './game.js';
 import { createTutorialManeuverState, type ManeuverSnapshot } from './tutorial-maneuver-state.ts';
 
-export const TUTORIAL_STEPS = Object.freeze(['throttle', 'left', 'right', 'brake', 'fly', 'land', 'boost', 'nitro'] as const);
+export const TUTORIAL_STEPS = Object.freeze(['throttle', 'left', 'right', 'brake', 'fly', 'land', 'boost', 'airChain', 'barrelRoll', 'nitro'] as const);
 export type TutorialStep = typeof TUTORIAL_STEPS[number];
 export interface TutorialInput {
   throttle?: boolean; brake?: boolean; laneAssist?: boolean; steer?: number;
@@ -29,7 +29,7 @@ export function createInteractiveTutorial() {
   startRace(race);
   const car = race.player;
   let index = 0, held = 0, previousSpeed = 0, previousElapsed = race.elapsed;
-  let nitroCoach: ReturnType<typeof createTutorialManeuverState> | null = null;
+  let maneuver: ReturnType<typeof createTutorialManeuverState> | null = null;
   const snapshot = (): ManeuverSnapshot => ({
     altitude: car.altitude, thrusting: car.thrusting, flightBoosted: car.flightBoosted,
     landing: car.landing, trick: car.trick, trickPayout: car.trickPayout,
@@ -50,7 +50,8 @@ export function createInteractiveTutorial() {
     car.drift = car.trick = null;
     if (step !== 'land') car.altitude = car.verticalSpeed = 0;
     previousSpeed = car.speed;
-    nitroCoach = step === 'nitro' ? createTutorialManeuverState('nitro', snapshot()) : null;
+    maneuver = step === 'airChain' || step === 'barrelRoll' || step === 'nitro'
+      ? createTutorialManeuverState(step, snapshot()) : null;
     held = 0;
   }
   prepare();
@@ -59,8 +60,8 @@ export function createInteractiveTutorial() {
     race,
     get index() { return index; },
     get step() { return TUTORIAL_STEPS[index] ?? null; },
-    get progress() { return index === TUTORIAL_STEPS.length ? 1 : nitroCoach?.progress ?? Math.min(1, held / .4); },
-    get coachPhase() { return nitroCoach?.phase ?? 'ready'; },
+    get progress() { return index === TUTORIAL_STEPS.length ? 1 : maneuver?.progress ?? Math.min(1, held / .4); },
+    get coachPhase() { return maneuver?.phase ?? 'ready'; },
     get complete() { return index === TUTORIAL_STEPS.length; },
     update(input: unknown, dt: number): void {
       if (index === TUTORIAL_STEPS.length || race.phase !== 'racing' || !Number.isFinite(dt) || dt <= 0 || race.elapsed <= previousElapsed) return;
@@ -84,10 +85,10 @@ export function createInteractiveTutorial() {
       else if (step === 'fly') valid = controls.fly === true && car.altitude > 1;
       else if (step === 'land') valid = !controls.fly && car.altitude < .15;
       else if (step === 'boost') valid = controls.boost === true && car.boosting;
-      else if (step === 'nitro') valid = nitroCoach!.update(snapshot(), dt);
+      else if (step === 'airChain' || step === 'barrelRoll' || step === 'nitro') valid = maneuver!.update(snapshot(), dt);
       previousSpeed = car.speed;
       held = valid ? held + Math.min(dt, .05) : 0;
-      if (valid && (held >= .4 || step === 'land' || step === 'nitro')) {
+      if (valid && (held >= .4 || step === 'land' || step === 'airChain' || step === 'barrelRoll' || step === 'nitro')) {
         index++;
         if (index < TUTORIAL_STEPS.length) prepare();
       }
