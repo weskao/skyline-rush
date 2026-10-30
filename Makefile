@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag perf perf-modes perf-phone run verify deploy stop-old-dev
+.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy stop-old-dev
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -32,7 +32,7 @@ dev: stop-old-dev node_modules ## `make`: Vite + Vue dev server with hot reload 
 dev-diag: stop-old-dev node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(WITH_EMULATORS) '$(NPM) run dev'
 
-phone-diag: ## `make phone-diag [name]`: like `make phone`, with the on-screen diagnostic panel compiled in
+phone-diag: ## `make phone-diag [name|off]`: like `make phone`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(MAKE) phone $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
@@ -41,12 +41,18 @@ dev-unlocked: stop-old-dev node_modules ## `make dev-unlocked`: local-only Vite 
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
 
-# Same menu and flags as the personal /phone-dev skill. Serves the normal locked config with no emulators;
-# the unlocked config stays desktop-only. `make phone <name>` serves that branch (or feature/<name>) from its worktree.
+# Same menu and flags as the personal /phone-dev skill. Serves the normal locked config with no emulators.
+# `make phone <name>` serves that branch (or feature/<name>) from its worktree;
+# `make phone off` stops every server phone-dev started (like `/phone-dev off`), so a branch named `off` can't be served.
 PHONE_DEV := $(HOME)/.claude/skills/phone-dev/scripts/phone_dev.py
-phone: node_modules ## `make phone [name]`: menu to start, check or stop a dev server a phone can open
+phone: node_modules ## `make phone [name|off]`: menu to start, check or stop a phone dev server; `off` stops them all
 	@test -f "$(PHONE_DEV)" || { echo "make phone needs the phone-dev skill at $(PHONE_DEV)"; exit 1; }
-	@python3 "$(PHONE_DEV)" --interactive $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME))
+	@python3 "$(PHONE_DEV)" $(if $(filter off,$(DEV_FEATURE_NAME)),--off,--interactive $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME)) $(PHONE_VITE_ARGS))
+
+# The unlocked config binds 127.0.0.1 so `make dev-unlocked` stays Mac-only; phone-dev's own `--host 0.0.0.0` CLI
+# flag overrides it, so this is the only phone-reachable all-unlocked server. Still a dev server: never a build.
+phone-unlocked: ## `make phone-unlocked [name|off]`: like `make phone`, with all tracks and paints unlocked
+	$(MAKE) phone PHONE_VITE_ARGS="-- --config vite.unlocked.config.js" $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
 # baseline built in .claude/worktrees/perf-<sha>. Desktop throttles Chrome's CPU; phone mode asks like `make phone`
@@ -70,9 +76,9 @@ perf-phone: node_modules ## `make perf-phone [BASE=main] [VIA=tailscale|wifi|aut
 dev-feature: ## `make dev-feature <name>`: that feature branch, all-unlocked, https://127.0.0.1:5443
 	node scripts/dev-feature.mjs $(filter-out $@,$(MAKECMDGOALS))
 
-DEV_FEATURE_ARGS := $(filter-out dev-feature phone phone-diag,$(MAKECMDGOALS))
+DEV_FEATURE_ARGS := $(filter-out dev-feature phone phone-diag phone-unlocked,$(MAKECMDGOALS))
 DEV_FEATURE_NAME := $(filter-out dev dev-diag dev-unlocked test-unlocked run deploy node_modules,$(DEV_FEATURE_ARGS))
-ifneq ($(filter dev-feature phone phone-diag,$(MAKECMDGOALS)),)
+ifneq ($(filter dev-feature phone phone-diag phone-unlocked,$(MAKECMDGOALS)),)
 ifneq ($(DEV_FEATURE_NAME),)
 $(eval $(DEV_FEATURE_NAME):;@:)
 endif
