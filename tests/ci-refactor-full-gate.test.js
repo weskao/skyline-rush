@@ -14,7 +14,7 @@ function jobSection(name, next) {
 
 test('an explicit refactor push enables every full-regression job and evidence gate', () => {
   const browser = jobSection('browser-tests', 'cloud-save');
-  const worldTour = jobSection('world-tour-mid-race', 'coast-visual-evidence');
+  const worldTour = jobSection('world-tour-mid-race', 'quality-gate');
   const quality = jobSection('quality-gate', 'release-verified');
 
   // A global count became stale when the performance artifact download and
@@ -35,8 +35,7 @@ test('an explicit refactor push enables every full-regression job and evidence g
       `performance gate ${step} must be guarded by the full-regression marker`);
   }
 
-  assert.match(browser, /npm run test:layout/,
-    'final verification must also include responsive layout suite');
-  assert.match(browser, /matrix.shard == 1/,
-    'run layout once, without repeating all eight shards');
+  // The layout specs are already in the sharded suite; a second run cost one shard 30 minutes.
+  assert.doesNotMatch(browser, /test:layout/,
+    'browser matrix must not rerun the layout specs the shards already cover');
 });
