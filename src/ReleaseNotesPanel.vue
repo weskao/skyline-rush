@@ -65,6 +65,9 @@ function zoomClip() {
 <style scoped>
 .release-zoom { display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: zoom-in; }
 .release-zoom[hidden] { display: none; }
+/* Tapping a picture or clip, or getting focus back when its enlarged view closes, never flashes a focus ring. */
+.release-zoom, .release-zoom-corner, .release-hero-frame video { -webkit-tap-highlight-color: transparent; }
+.release-zoom:focus-visible, .release-zoom-corner:focus-visible, .release-hero-frame video:focus-visible { outline: none; }
 /* Hugs the centered clip so the enlarge button sits on its corner: 480 px wide landscape, height-sized portrait. */
 .release-hero-frame { position: relative; width: min(100%, 480px); margin-inline: auto; }
 .release-hero-frame:has(video[data-variant="mobile"]) { width: fit-content; }

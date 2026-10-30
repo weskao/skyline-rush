@@ -80,6 +80,8 @@ defineExpose({ open });
   padding: calc(max(12px, env(safe-area-inset-top)) + 56px) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 .release-media-viewer[open] { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; }
 .release-media-viewer::backdrop { background: rgb(2 6 14 / .9); }
+.release-media-viewer, .release-media-viewer img, .release-media-viewer video { -webkit-tap-highlight-color: transparent; }
+.release-media-viewer:focus-visible, .release-media-viewer img:focus-visible, .release-media-viewer video:focus-visible { outline: none; }
 /* Never upscaled past the file's own size, never cropped. */
 .release-media-viewer img, .release-media-viewer video { display: block; max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 18px 48px rgb(0 6 16 / .6);
   opacity: 0; transition: opacity .2s ease-out; }

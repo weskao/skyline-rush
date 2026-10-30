@@ -86,6 +86,25 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     expect(errors).toEqual([]);
   });
 
+  // The enlarged view, and the picture or clip that gets focus back on close, never draw a focus ring that flashes.
+  test('no focus ring shows on the enlarged view or on the button it returns focus to', async ({ page, gameplayURL }) => {
+    await openNotes(page, gameplayURL);
+    const ring = locator => locator.evaluate(el => getComputedStyle(el).outlineStyle);
+    const viewer = page.locator('#release-media-viewer');
+    const openers = [page.locator('#release-items .release-zoom').first()];
+    if (height > 420) openers.push(page.locator('#release-video-zoom'));
+    for (const opener of openers) {
+      await opener.scrollIntoViewIfNeeded();
+      await press(opener, touch);
+      await expect(viewer).toBeVisible();
+      expect(await ring(viewer), 'enlarged view').toBe('none');
+      await page.keyboard.press('Escape');
+      await expect(viewer).toBeHidden();
+      await expect(opener).toBeFocused();
+      expect(await ring(opener), 'button that regains focus').toBe('none');
+    }
+  });
+
   test('the release clip opens whole and playing, and the clip behind waits until it closes', async ({ page, gameplayURL }) => {
     const errors = await openNotes(page, gameplayURL);
     const hero = page.locator('#release-video'), zoom = page.locator('#release-video-zoom');
