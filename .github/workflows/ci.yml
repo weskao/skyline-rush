@@ -100,9 +100,9 @@ jobs:
           path: test-results/**/world-tour-*.png
           if-no-files-found: ignore
 
-      # Phase 5 and final refactors run responsive layout once, with the browser quality gate.
+      # Phase 5, Endless Highway and final refactors run responsive layout once, with the browser quality gate.
       - name: Verify responsive layout for final refactor or World Tour polish
-        if: "${{ matrix.shard == 1 && (startsWith(github.ref, 'refs/heads/refactor/') || (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/phase5-world-tour-polish' || github.ref == 'refs/heads/feature/all-tracks-render-cache')) }}"
+        if: "${{ matrix.shard == 1 && (startsWith(github.ref, 'refs/heads/refactor/') || (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/phase5-world-tour-polish' || github.ref == 'refs/heads/feature/all-tracks-render-cache' || github.ref == 'refs/heads/feature/endless-highway-all-tracks')) }}"
         run: npm run test:layout
 
   cloud-save:
