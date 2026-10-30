@@ -81,10 +81,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const createRace = (...args) => {
   const created = createBareRace(...args);
   created.props = roadObstacles(created.trackId);
-  if(created.endless){
-    created.streamProps = distance => { created.props = endlessRoadObstacles(created.trackId,distance); };
-    created.streamProps(0);
-  }
+  if(created.endless){created.streamProps=distance=>{created.props=endlessRoadObstacles(created.trackId,distance);};created.streamProps(0);}
   if (created.checkpoint && created.props.length)
     created.checkpoint = createCheckpointRush(RACE_TRACKS[created.trackId], created.props);
   return created;
