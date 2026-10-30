@@ -1,6 +1,6 @@
 ## UX/UI — AIR → ROAD CHAIN, tutorial and mobile controls (2026-10-31)
 
-**Branch:** `feature/ux-ui-combo-mobile-controls` (created from `main`). **Scope of this branch:** items 1–3 below. **Current step:** requirements and acceptance criteria only; no game logic, tutorial or control-layout implementation has been made. **Workflow:** trace the existing behavior → write failing regression tests (RED) → minimal implementation (GREEN) → refactor → full regression and exact-HEAD CI. Preserve existing race physics, player control authority, desktop input and en/zh-TW support.
+**Branch:** `feature/ux-ui-combo-mobile-controls` (created from `main`). **Scope of this chat:** requirements/documentation only for items 1–7; no gameplay, UI runtime, rendering, asset, persistence, purchase or CI configuration implementation. Items 4–5 (and the future economy) need separately approved feature branches. **Current step:** design and acceptance planning, not implementation. **Workflow:** trace the existing behavior → write failing regression tests (RED) → minimal implementation (GREEN) → refactor → full regression and exact-HEAD CI. Preserve existing race physics, player control authority, desktop input and en/zh-TW support.
 
 ### 1. 空地連擊 / AIR → ROAD CHAIN — hard to trigger (P0)
 
@@ -28,13 +28,177 @@
 - [ ] Use responsive viewport/safe-area and progressive enhancement for supported fold/viewport-segment APIs, with graceful fallback in ordinary browsers. Keep HUD, track view, camera, minimap and touch controls reachable and readable without placing critical controls across a hinge.
 - [ ] Set up an emulated viewport/hinge matrix and physical-device acceptance where available, covering layout changes while racing, rotation, taps, pointer release and performance. Use TDD and validate separately in its own branch.
 
-### 5. Garage Skins — thruster, airflow, trails and launch VFX (P2; separate future branch)
+### 5. Garage Skins / Preview Studio / Economy Planning (P2, planning first; implementation in separate branches)
 
-- [ ] **Separate feature branch only:** when implementation begins, create `feature/garage-vfx-skins` from the then-current `main` and develop/verify it independently. This TODO entry is planning only; do **not** implement Garage Skins in `feature/ux-ui-combo-mobile-controls`.
-- [ ] Extend Garage with a **Skins** section/tab, separate from the existing `PAINTS` vehicle finish/tail-light catalog. Let players browse, live-preview, equip and restore the default appearance for visual-only skin families: thruster/jet glow and exhaust/plume shape and color; airflow streamlines/vapor/wake; BOOST/NITRO trails, sparks and shockwaves; race-start/launch flares and cinematic highlights. Define a small cohesive starter catalog before expanding it; avoid an unreadable combinatorial set of independent toggles.
-- [ ] Specify skin presets, ownership/availability rules and persistence (including sensible defaults and backward compatibility with existing Garage paint preferences). Do not imply purchases, currency, rewards or unlock conditions that the current game does not actually support; preview vs equip and locked states must be explicit.
-- [ ] Respect existing `src/GaragePanel.vue`, `src/garage-ui.ts`, `src/appearance.ts`, `src/vfx-settings.ts` and shared renderer/effect ownership. The selected skin must remain cosmetic: no change to acceleration, speed, hitboxes, flight, physics, race scores, balance, Ghost or saved-record determinism. Keep player VFX enable/quality, reduced-motion and comfort settings authoritative; avoid intrusive flashes or covering the road, HUD and vehicle.
-- [ ] TDD acceptance: typed Vue 3 + TypeScript UI/state and deterministic tests for catalog, equip/preview/reset, persistence, localization, disabled/locked states, lifecycle and track/garage switching. Verify real WebGL appearance on all relevant tracks and desktop/mobile (portrait/landscape), color/contrast and accessibility, before/after Draw Calls and frame-time p50/p95 under identical settings, low/medium/high quality and reduced motion. Do not allocate unbounded geometry or introduce frame-loop leaks; run `make verify` and exact-HEAD GitHub CI on the separate implementation branch.
+**Current status:** planning and discussion only (2026-10-31). This is a large cross-cutting product area: Garage UI, Preview Studio, VFX cosmetics, inventory, rewards, currency, persistence and future monetization. **No implementation in this branch or conversation.** Finalize requirements and UX before creating smaller dedicated branches from the then-current `main`.
+
+**Decisions accepted in this discussion:**
+- **Confirmed:** Garage becomes an **independent full-screen page / Preview Studio**, not merely an enlarged dialog.
+- **Confirmed:** during the initial rollout **all new Garage Skins may be previewed and temporarily equipped for free**. This is *trial access, not permanent ownership*; it must not be recorded as owned in the player account.
+- **Confirmed:** provide extensibility for currencies, end-of-race rewards, missions and future real-money purchases, **but do not implement a heavy economy or paid checkout now**.
+- **Recommended structure:** Garage Home → Preview Studio → Inventory / Collection. Garage Home shows equipped items and entries to Paint / Skins / Rewards / Missions / Shop (coming soon). Inventory groups Owned / Locked / Trial / Preview Only. Shop, currencies and missions may initially be visibly labeled Coming soon rather than pretending they already work.
+- **Not yet selected:** final currency brand/icon, exact starter-skin quantities or pricing, item rarity and permanent-unlock rules. Proposed names: **Aero Core** or **Flux** (Pit Coin as an alternative); names/prices are *proposals*, not promised rewards.
+
+#### 5.1 Scope and product goal
+
+- [ ] Expand Garage from a simple dialog-based paint preview into a richer cosmetic system:
+  - vehicle finish / paint
+  - thruster / jet exhaust skins
+  - airflow / wake / vapor skins
+  - BOOST / NITRO trails, sparks, shockwaves and glow skins
+  - race-start / launch flare / intro visual effects
+  - future cosmetic categories (wheel glow, underglow, finish celebration, badge/banner, UI cosmetic packs, etc.)
+- [ ] Keep all Garage customizations **cosmetic only**. No effect on car performance, handling, speed, hitboxes, scoring, physics, Ghost determinism or balance.
+- [ ] Preserve compatibility with existing VFX settings, Reduced Motion, quality levels and accessibility constraints. The existing `src/GaragePanel.vue` is a dialog with `PAINTS` (vehicle paints and tail lights); do not break currently owned finishes or confuse existing progression unlocks with new trial cosmetics.
+
+#### 5.2 Garage Preview Studio — independent full-screen page
+
+- [ ] **Implement the decided full-screen Garage page / Preview Studio** rather than relying on only a small modal dialog. Evaluate whether to use an SPA screen or distinct client-side route while retaining browser history, mobile back navigation and clean return to the previous race/home state.
+- [ ] Support:
+  - larger preview canvas and full-car silhouette visibility, including exhaust and rear-light effects
+  - front / rear / side / top / orbit / cinematic preview angles
+  - rotate and inspect from different angles, including hold/long-press + drag to orbit; ordinary drag must also work for pointer/mouse users
+  - release to resume slow auto-rotate, with an option to pause auto-rotate
+  - reset camera and optional pinch / wheel zoom, with bounded distance and car always in frame
+  - preview moving effects: idle thruster, airflow, nitro burst, launch flare, boosted trails, and optional finish effects
+  - preview background options if useful (dark studio / bright stage / simple track-like scene), provided they do not obscure skins
+  - change categories and items without leaving the page, with a stable camera unless the player chooses another angle
+- [ ] Develop mobile and desktop layouts separately where necessary: large central car preview, categories/equipment controls around edges, safe areas, no clipping or interaction traps, and thumb-friendly actions.
+- [ ] Confirm behavior when the player enters/exits Preview Studio during a running/paused game: game input released, preview-only resources isolated, no lingering overlays, WebGL state returned correctly, proper focus and history restoration.
+
+#### 5.3 Cosmetic categories and starter catalog
+
+- [ ] Start with a **small curated catalog** rather than a combinatorial matrix of effects:
+  - Thruster skins
+  - Airflow skins
+  - Nitro / BOOST trail skins
+  - Launch / intro flare skins
+- [ ] Each category must distinguish default, preview, temporary equip, owned, locked, free trial, and future purchasable states; state transitions must be explicit and readable.
+- [ ] Curated presets / bundles are preferred for a consistent "realistic × arcade racing" aesthetic. Plan visual themes (e.g. electric cyan, neon violet, molten orange) as examples, **not** final assets.
+- [ ] Preview animation should be representative of actual gameplay and obey effect/quality constraints; do not ship a preview effect that differs materially from an equipped in-race effect.
+
+#### 5.4 Interaction and controls inside Garage
+
+- [ ] Design interactions for tap/click category selection, tap/click item preview, equip/unequip/restore default, hold+drag orbit, optional swipe browsing, pinch/wheel zoom and explicit VFX demo triggers (NITRO burst, launch flare, airflow loop).
+- [ ] Offer dedicated touch-friendly camera controls and accessible keyboard/button alternatives; long-press should **not be the only** way to rotate the car. Dragging the car must not accidentally swipe categories or launch a race.
+- [ ] Make preview, owned, locked, free trial, equipped and coming soon states distinguishable using both labels/icons and color; announce selection/changes for assistive technologies.
+- [ ] Enforce camera bounds, no clipping of vehicle/trails, predictable close/back handling, and reliable pointer release after interrupted gestures.
+
+#### 5.5 Currency, rewards, missions and acquisition design
+
+- [ ] Design an item acquisition matrix for eventual ownership via end-of-race rewards, missions/quests, daily/weekly tasks, challenge milestones, events and future shop purchase. Decide which items are earnable vs future premium before the shop is implemented.
+- [ ] Keep a **soft currency** (earnable through play) concept separate from a **future optional premium currency**; do not make the premium balance or purchasing system live yet. Currency name, icons, prices, earning rates, caps and conversion policies remain design choices.
+- [ ] Plan an end-of-race results summary showing earned currency, mission progress, cosmetic unlock progress and optional bonus multipliers **only once those systems genuinely exist**. Distinguish reward preview/projection from committed settlement.
+- [ ] Define mission types in an extensible, event-based manner: race completion, clean landing / AIR → ROAD CHAIN, drifting, distance, challenge milestones, repeatable daily/weekly objectives. Avoid contradictory/duplicate reward grants after restart, reconnect or replay.
+- [ ] Clarify the interface flows: Garage Home balance → Rewards/Missions → post-race settlement → Inventory → optional Shop (coming soon), without implying that payments or balances already work in the current game.
+
+#### 5.6 Temporary free-use phase before the full economy launches
+
+- [ ] **Chosen transitional rollout:** initially, all **new Garage Skins** are free to preview and use temporarily; none of those trial skins is granted as permanent inventory ownership merely by equipping it. Existing legitimately owned paint finishes remain owned and unchanged.
+- [ ] UI must clearly say **Free Trial / Preview Period / Trial Equip Only / Not Permanently Owned** (localized in en/zh-TW), and explain in advance that future access may require earning or buying items.
+- [ ] Keep `access`/`entitlement` separate from `ownership` and `equipped`; a saved trial selection, if needed to preserve UX, is only an appearance preference and never an inventory grant. Do not write trial ownership into Firebase/Firestore or another authoritative player profile.
+- [ ] Define feature/config flags for trial access, item availability and store launch. A flag change must revalidate the selected cosmetic and gracefully fall back to the default if trial access expires; do not remove any legitimate owned items.
+- [ ] During transition, keep existing paint unlock/progression rules and history intact; tests must cover switching accounts/devices, expired trial, offline cache, saved preference from older versions and restoration after reload.
+- [ ] Provide transparent messaging before removing temporary access; do not promise a permanent entitlement or charge players for an item without a separately authorized future purchase flow.
+
+#### 5.7 Future monetization readiness
+
+- [ ] **Future-only architecture**, no real-money/IAP flow in the current implementation scope: soft currency, premium currency, packs/bundles, shop sections, time-limited offers, entitlement checks and server-validated purchases.
+- [ ] Separate catalog metadata, inventory ownership, equipped preference, trial access, pricing, rewards and storefront/presentation logic. Do not bake "everything free" into the ownership schema or game physics.
+- [ ] Plan interfaces/boundaries for catalog, ownership, reward ledger, purchase/store and UI. Prefer no premature external/payment dependencies and avoid engineering a working currency ledger until its feature phase.
+- [ ] Before any real-money launch: verify platform/app-store and local legal requirements for virtual goods, refunds, disclosures, consumer protections and minors; require server-side validation, non-forgeable entitlements, idempotent purchase/reward settlement, account recovery and auditability. Never trust the client for authoritative paid balance/ownership.
+- [ ] Specify migration, refunds, chargeback handling and ownership restoration **when** implementing payments. Do not make live monetization, revenue claims or store buttons without a compliant approved integration.
+
+#### 5.8 UI assets, emoji, icons and visual language
+
+- [ ] Design a coherent set of Garage/economy assets: soft-currency symbol, future premium-currency indicator, mission, unlock/locked, temporary trial, equipped, preview-only, thruster, airflow, NITRO and launch-effect category icons.
+- [ ] Consider drawing custom icons/miniatures and optional preview thumbnails/reward illustrations in the game's **realistic × arcade racing** style, with suitable contrast and 1x/2x sizes. Emoji may be used as temporary planning placeholders but are not a reliable cross-device asset strategy.
+- [ ] Keep labels and icon variants legible on phone-sized screens, in en/zh-TW and at reduced motion/low VFX settings. Use SVG or appropriate optimised raster assets only when justified; reuse existing icon sets where possible.
+- [ ] Evaluate **Aero Core / Flux / Pit Coin** brand concepts and the reward/shop UI visual language before accepting a currency name; no new asset files are to be created in this planning-only change.
+
+#### 5.9 Data model and persistence planning
+
+- [ ] Draft versioned catalog entries for cosmetic ID, category/subcategory, visual preset/preview metadata, compatibility, rarity (if introduced), unlock conditions, optional price/reward metadata and availability.
+- [ ] Model **owned inventory**, **time-limited trial permission**, **equipped selection** and **currency/reward balance** as separate concepts; clarify which are authoritative/server-backed vs local UX preferences. A cosmetic may be previewed without being owned.
+- [ ] Keep backward compatibility with existing Garage `PAINTS`, saved paint choices and user profiles. Treat existing item IDs as stable keys; unavailable or removed SKUs must fall back safely rather than corrupt a saved profile.
+- [ ] Design the entitlement/resolution order for future phases: permanently owned item > currently permitted trial item > default item. Never grant ownership from a local-only feature flag, and do not let account switching leak selections across users.
+- [ ] Reserve extensible fields and migration/version strategy without committing to a speculative or working purchase schema now.
+
+#### 5.10 Branch strategy
+
+- [ ] Keep `feature/ux-ui-combo-mobile-controls` documentation-only for this design phase.
+- [ ] Implement later on *independent* branches from the then-current `main`, in dependency order:
+  - `feature/garage-preview-studio` — full-screen screen/navigation, cameras, interactions and current paints
+  - `feature/garage-vfx-skins` — catalog, preview/apply, cosmetic ownership vs trial selection
+  - `feature/garage-economy-foundation` — future currency/entitlement models, when economics are approved
+  - `feature/garage-rewards-and-missions` — actual race payouts, mission progress and idempotent settlement, after foundation
+  - `feature/garage-store-readiness` — future shop/checkout foundations only when separately authorized
+- [ ] Avoid one enormous branch; each phase should work independently, keep the prior phase intact, have its own RED → GREEN → refactor cycle, and meet project merge gates before integration. No implementation/merge/PR requested now.
+
+#### 5.11 Technical and UX acceptance
+
+- [ ] Preview Studio must show the complete car and selected effect across desktop/mobile portrait+landscape, common notches/safe areas and varied vehicle/camera positions, with no broken back navigation or invisible clickable overlays.
+- [ ] Test all preview interactions including two-finger gestures, short/long presses, keyboard/mouse, focus, repeat selection, pause/finish/race return and reduced-motion behavior in both locales.
+- [ ] TDD coverage for catalog states, preview/equip/reset, trial-vs-owned distinction, trial expiration, invalid-skin fallback, persistence migrations, account switching, and, once built, reward settlement and mission progress.
+- [ ] Check Low/Medium/High VFX and disabled VFX, reduced motion, sound/comfort preferences, render resource cleanup, GPU draw-call/triangle changes and p50/p95 frame-time; do not add unbounded particles or per-frame allocations.
+- [ ] Future implementation branches must pass `npm run typecheck`, `npm test`, `npm run build`, browser/layout regressions, `make verify` and exact-HEAD GitHub CI; validate actual WebGL/physical-device behavior separately from simulated screenshots.
+
+### 6. NITRO/BOOST readiness feedback and mobile control states (P0 usability / P1 visual polish; plan only)
+
+**Goal:** players can tell at a glance whether they have enough NITRO/BOOST charge, whether a button is operable, and when a full charge is ready, without covering the road or depending solely on sound/color. Retain normal race/control rules; do not invent a new charge mechanic.
+
+- [ ] Audit the actual fuel/charge thresholds, charging events, cooldown and toggle/input behavior in all race modes (including tutorial, no-flight restrictions and pause/finish). Decide what "one full NITRO bar" actually means against current code, rather than basing logic on an unverified mockup.
+- [ ] Specify a **four-state UI contract** for NITRO and applicable abilities: **Disabled/Unavailable** (muted icon + short reason), **Charging** (accurate segment/ring progress), **READY** (persistent distinct halo + clear label/icon), **Active** (active outline/energy streak + remaining-use indication). Distinguish cooldown/no charge from globally disabled or mode-locked controls; never show READY when action cannot succeed.
+- [ ] Trigger a **one-shot** distinct ready sound and short celebratory pulse/ring burst **only on the crossing into available/full state**, not on every frame, on repeated rerenders, or after pause/resume. Re-arm after genuine consumption/reset; debounce threshold jitter and prevent overlapping sound spam. Respect music/sound volume and mute, browser gesture restrictions, reduced motion, comfort options and haptics preferences.
+- [ ] Recommend: short (e.g. 0.5–1.0 s) bright ring/shimmer and light outward energy effect when ready, followed by a subtle persistent ready indicator. The effect remains readable in low VFX quality, and any large flashes/rapid flicker can be disabled independently; no aggressive screen-wide flash or camera shake merely for meter completion.
+- [ ] Provide optional settings for **ready sound**, **ability-ready animation**, **haptics** (if already supported), control opacity, scale and tooltip/help; defaults should be informative but non-disruptive, and never disable actual ability input just because feedback is off.
+- [ ] Use existing input ergonomics audit from item 3 for button placement; minimum interactive hit targets of 44×44 CSS px (prefer 48×48), consistent NITRO/BOOST/FLY icon meanings, adequate thumb spacing and obvious pressed/held indication.
+- [ ] Offer default fixed controls plus a separate optional edit mode for draggable **groups**; snap/bound movement to safe zones, save portrait vs landscape layouts, reset to default, and ensure edit gestures cannot accidentally trigger abilities. Do not require customization for usable defaults.
+- [ ] TDD: charging/ready/consume/recharge thresholds, disabled reason, one-shot sound, muted/gesture-locked audio, animation preference, low quality/reduced motion, account/viewport preference changes, multi-touch and cancellation, race restart, menu open/close and tutorial/other race modes.
+
+### 7. Mobile in-race HUD redesign — preserve the playfield (P1; plan only)
+
+**Problem:** distance-to-finish, center hint/toast, telemetry, minimap, position/leaderboard and controls can collectively obscure too much of the game, especially mobile portrait and short landscape. Optimize *real viewport visibility* instead of merely reducing opacity or shuffling overlapping boxes.
+
+#### 7.1 Concept directions to compare (from the visual concepts already discussed)
+
+- [ ] **A — Minimal immersive / preferred baseline:** compact edge-anchored HUD, central racing view as clear as possible, contextual information auto-collapses when safe. Avoid hiding time-critical race requirements.
+- [ ] **B — Balanced standard:** persistent but smaller position, progress, speed and map; optional expanded telemetry/leaderboard on demand; consistent across mobile and desktop.
+- [ ] **C — Competitive custom:** more detailed standings/map/telemetry and configurable widgets, but always enforce occlusion and hit-target constraints.
+- [ ] **Recommended hybrid to prototype first:** **A's uncluttered playfield + B's information hierarchy + item 3's optional control customization + item 6's strong but short NITRO-ready feedback**. Treat these as *concept proposals*, not verified UI screenshots or final art; retain options for comparison before development.
+
+#### 7.2 Placement and disclosure rules
+
+- [ ] Move distance-to-finish/race progress to a compact **top-edge progress strip** or slim side widget; show meaningful remaining distance/checkpoints without a large central panel. Preserve accurate progress for Sprint/Circuit/Endless/other modes, where "finish" may not apply; mode-specific wording required.
+- [ ] Put key facts (position, speed, time/lap and available abilities) near safe outer zones, with a stable layout. Use small icon + number/status rather than a wide text card when localization allows; optionally collapse leaderboard and detailed telemetry.
+- [ ] Keep minimap legible at a reduced size and offer a hide/minimize/expand choice, but never let it overlap steering or the car's rear/approach visibility. Check road/car/obstacle occlusion at realistic camera positions, not only rectangles.
+- [ ] Replace **center-screen hint/toast** with brief edge-anchored chips or compact icon prompts outside the driving sightline, limit simultaneous notices, prioritize critical warnings, deduplicate repeats and allow dismiss/auto-collapse. Tutorial steps requiring attention may use a dedicated accessible panel, without taking steering control.
+- [ ] Use temporary context cues (e.g. unobtrusive READY indicator) near the relevant button rather than stacking huge banners in the center. Avoid losing high-priority collision, objective or accessibility feedback when notifications are condensed.
+- [ ] Rework pause, camera and global tools to remain discoverable/tappable without consuming a permanent large header; keep finish/results buttons above decorative overlays. Respect notch, Dynamic Island, home indicator, viewport resizing and safe-area CSS.
+- [ ] Consider compact **custom SVG/icon/image assets** where they genuinely reduce text and noise. Pair every meaningful icon with an accessible name, and preserve localization and contrast. Do not replace crucial text/quantities with ambiguous art.
+- [ ] Prioritize the lower-left/right **thumb zones** for driving controls, 44×44 CSS px minimum targets (prefer 48×48) and responsive gaps. Keep car/track visible between control groups; adapt landscape/portrait independently and test browser back-swipe edge interactions.
+
+#### 7.3 Visibility preferences and behavior
+
+- [ ] Offer sensible default HUD plus **Compact / Standard / Competitive** display-density presets (only if usability evaluation justifies all three), and separate toggles for optional map, leaderboard, secondary telemetry and hint verbosity. Required position/progress/warnings must never disappear accidentally.
+- [ ] Keep layout preferences distinct from renderer quality and game rules; store locally unless a future explicit sync design is approved. No change to speed/physics/boost or scoring.
+- [ ] For smaller screens: collapse low-priority widgets before shrinking touch targets or hiding important status; preserve safe zones for oncoming traffic, car and route. Avoid large semi-transparent overlays that still block visibility.
+- [ ] Compare image/icon vs text treatments for: race position, remaining distance, map, speed, AIR → ROAD CHAIN hint, NITRO-ready, and finish notification. Record the chosen hierarchy before converting any widget to art.
+
+#### 7.4 TDD and acceptance matrix
+
+- [ ] Capture **before/after actual running-game screenshots**, not generated artwork, for 320×740, 390×844, 412×892 portrait; 844×390 and short landscape (including known 568×320 limitations); desktop 1440×900 and relevant tablets. Add foldable cover/inner screen variants later in item 4's separate branch.
+- [ ] Test both `en` / `zh-TW`, browser safe areas, device rotation/resizes, compact vs expanded, accessibility font scaling, color contrast, reduced motion, VFX enabled, active AIRFLOW, nitro-ready/active, long hints, different race modes and results/pause transitions.
+- [ ] Browser assertions: no overlap between critical HUD/controls, no control off-screen, no interaction blocked by translucent overlays, results/topbar controls remain clickable, and an explicit **central racing sightline occlusion check**. Test real touch/gesture paths and pointer cleanup.
+- [ ] Verify layout does not add noticeable main-thread work, frame-time regression or excessive DOM churn; document any tradeoff between information density, visible game area and readability. Keep automated layout/browser/CI checks and physical-device visual acceptance as distinct gates.
+- [ ] This is **documentation/specification only** at present. Any later implementation needs its own RED → GREEN → refactor, user approval, full `make verify`, exact-HEAD CI and real-device acceptance where possible.
+
+### Planning-only release order / boundaries (items 1–7)
+
+- [ ] **P0 (first implementation candidate):** make AIR → ROAD CHAIN reasonably learnable/triggerable and add tutorial (items 1–2); plan the NITRO-ready state contract/one-shot notification (item 6) before choosing visual intensity.
+- [ ] **P1 (mobile UX):** ergonomic touch controls and optional edit mode (item 3); refine NITRO states and audio/animation (item 6); then refactor Mobile HUD and hints using A+B hybrid baseline (item 7). Avoid simultaneous unrelated rendering/physics rewrites.
+- [ ] **P2 (independent branches):** foldable/dual-screen compatibility (item 4); independent full-screen Garage Studio, Skins and trial access (item 5); **economy foundation/rewards/store only when separately approved**.
+- [ ] Confirm mockups and acceptance conditions before implementation; future branches start from current `main`, preserving project Vue 3 + strict TypeScript preferences, TDD, visual proof, CI gates and existing gameplay. **Nothing under items 1–7 is marked complete by this document update.**
 
 **Completion gates for items 1–3:** requirements confirmed against code; RED/GREEN evidence; Vue 3 + strict TypeScript preferred for new UI/controller code; `npm run typecheck`, `npm test`, `npm run build`, browser/layout regressions, `make verify` and full GitHub Actions `quality-gate` on the final branch HEAD. Do not mark implementation done, create a PR or merge to `main` based on this TODO-only commit.
 
