@@ -72,3 +72,15 @@ test('HUD mode activation sets only presentation state, not control layout or ac
   assert.equal(hudSettings.activateHudMode('competitive', root, storage), 'competitive');
   assert.deepEqual(root.dataset, { phase: 'racing', hudMode: 'competitive' });
 });
+
+test('HUD preference survives a localStorage getter that throws before access', () => {
+  const oldDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  try {
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('SecurityError'); } });
+    assert.equal(hudSettings.readHudMode(), 'hybrid');
+    assert.doesNotThrow(() => hudSettings.writeHudMode('hybrid'));
+  } finally {
+    if (oldDescriptor) Object.defineProperty(globalThis, 'localStorage', oldDescriptor);
+    else delete globalThis.localStorage;
+  }
+});

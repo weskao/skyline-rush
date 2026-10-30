@@ -71,13 +71,13 @@ export function resolveHudMode(value: unknown): HudDisplayMode {
   return value === 'competitive' ? 'competitive' : 'hybrid';
 }
 
-export function readHudMode(storage: HudModeReader = globalThis.localStorage): HudDisplayMode {
-  try { return resolveHudMode(storage.getItem(HUD_MODE_KEY)); }
+export function readHudMode(storage?: HudModeReader): HudDisplayMode {
+  try { return resolveHudMode((storage ?? globalThis.localStorage).getItem(HUD_MODE_KEY)); }
   catch { return 'hybrid'; }
 }
 
-export function writeHudMode(mode: HudDisplayMode, storage: HudModeWriter = globalThis.localStorage): void {
-  try { storage.setItem(HUD_MODE_KEY, resolveHudMode(mode)); }
+export function writeHudMode(mode: HudDisplayMode, storage?: HudModeWriter): void {
+  try { (storage ?? globalThis.localStorage).setItem(HUD_MODE_KEY, resolveHudMode(mode)); }
   catch { /* Keep the chosen display mode in the mounted UI even if storage is blocked. */ }
 }
 
