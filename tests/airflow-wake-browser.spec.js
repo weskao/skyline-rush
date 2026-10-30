@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { ciTimeout } from './helpers/ci.js';
 
 test('airflow renders on every track with bounded resources and no shader errors', async ({ gameplayPage: page }, info) => {
-  test.setTimeout(ciTimeout(60_000));
+  test.setTimeout(ciTimeout(120_000)); // 11 software-WebGL tracks plus quality changes need a bounded full-suite budget.
   const errors = [], records = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -41,7 +41,7 @@ test('airflow renders on every track with bounded resources and no shader errors
   const counts = [];
   for (const quality of ['low', 'medium', 'high']) {
     await page.locator('#vfx-panel > summary').click();
-    await page.getByRole('combobox', { name: 'Quality', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Quality', exact: true }).click({ timeout: ciTimeout(15_000) });
     await page.getByRole('option', { name: quality[0].toUpperCase() + quality.slice(1), exact: true }).click();
     await page.locator('#vfx-panel > summary').click();
     await page.waitForTimeout(300);
@@ -80,7 +80,8 @@ test('flight flick triggers the roll wake without AIRFLOW preview', async ({ gam
     requestAnimationFrame(sample);
     return info.count;
   });
-  await page.waitForTimeout(1800);
+  // Wait for the real ribbon to fade, not a wall-clock delay (software WebGL advances fewer game frames).
+  await expect.poll(() => page.evaluate(() => window.rollLive()), { timeout: ciTimeout(15_000) }).toBe(baseline);
   let release;
   if (mobile) {
     const session = await page.context().newCDPSession(page);

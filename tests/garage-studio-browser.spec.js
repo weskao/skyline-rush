@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { selectLocale } from './helpers/locale-browser.js';
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }, { width: 320, height: 740 }]) {
   test(`scenario 1 — Full-screen entry stays within safe viewport ${viewport.width}×${viewport.height}`, async ({ page }) => {
@@ -83,4 +84,16 @@ test('studio design — paint states and default restoration reflect actual owne
   await page.locator('#garage-restore-default').click();
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#garage-preview #world')).toBeVisible();
+});
+
+// Regression: the showroom is announced in the selected language, not as an English-only aria label.
+test('garage showroom accessible label follows the active locale', async ({ page }) => {
+  await page.goto('/');
+  await selectLocale(page, 'zh-TW');
+  await page.locator('#garage-button').click();
+  await expect(page.locator('#garage-screen .garage-visual')).toHaveAttribute('aria-label', '3D 車輛展示間');
+  await page.locator('#garage-close').click();
+  await selectLocale(page, 'en');
+  await page.locator('#garage-button').click();
+  await expect(page.locator('#garage-screen .garage-visual')).toHaveAttribute('aria-label', '3D vehicle showroom');
 });

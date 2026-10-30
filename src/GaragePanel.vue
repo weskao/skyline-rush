@@ -10,7 +10,7 @@ let unsubscribe: (() => void) | undefined;
 onMounted(() => { unsubscribe = onLocaleChange(value => { locale.value = value; }); });
 onUnmounted(() => unsubscribe?.());
 const copy = computed(() => locale.value === 'zh-TW' ? {
-  title: '預覽工作室', open: '開啟全螢幕預覽', back: '返回車庫',
+  showroom: '3D 車輛展示間', title: '預覽工作室', open: '開啟全螢幕預覽', back: '返回車庫',
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'],
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
   auto: '自動旋轉', reset: '重設鏡頭', collection: '車漆收藏',
@@ -18,7 +18,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆', equipment: '裝備・即將推出',
   titleLine: '自訂外觀 • 探索車漆 • 自由預覽',
 } : {
-  title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
+  showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'],
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
   auto: 'Auto rotate', reset: 'Reset camera', collection: 'Paint collection',
@@ -41,7 +41,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
     <button id="garage-studio-open" v-show="garageStudioView.page === 'home'" type="button" class="garage-entry">{{ copy.open }} ↗</button>
     <p v-show="garageStudioView.page === 'studio'" class="garage-kicker">{{ copy.titleLine }}</p>
     <div class="garage-layout">
-      <section class="garage-visual" aria-label="3D vehicle showroom">
+      <section class="garage-visual" :aria-label="copy.showroom">
         <div id="garage-preview" class="garage-preview" tabindex="0" role="group" :aria-label="copy.hint" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + -"></div>
         <p v-show="garageStudioView.page === 'studio'" class="garage-hint">{{ copy.hint }}</p>
         <nav v-show="garageStudioView.page === 'studio'" class="garage-camera-controls" :aria-label="locale === 'zh-TW' ? '鏡頭控制' : 'Camera controls'">
