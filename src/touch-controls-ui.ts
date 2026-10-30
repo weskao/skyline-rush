@@ -223,7 +223,14 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     });
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) button.addEventListener(type, event => { if (event.pointerId === drag?.id) { drag = null; applyControls(); } });
   }
-  window.addEventListener('resize', () => { controls.clear(); applyControls(false); });
+  let lastOrientation = currentOrientation();
+  window.addEventListener('resize', () => {
+    const orientation = currentOrientation();
+    // iOS browser chrome resizes the viewport during ordinary driving; clear input only for rotation.
+    if (orientation !== lastOrientation) controls.clear();
+    lastOrientation = orientation;
+    applyControls(false);
+  });
 
   return {
     prefs: (): ControlPreferences => controlPrefs,
