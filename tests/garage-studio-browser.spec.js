@@ -1,6 +1,6 @@
 import { test, expect } from './helpers/test.js';
 
-for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }, { width: 320, height: 740 }]) {
   test(`scenario 1 — Full-screen entry stays within safe viewport ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
@@ -13,6 +13,17 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     expect(box.width).toBeGreaterThanOrEqual(viewport.width - 2);
     expect(box.height).toBeGreaterThanOrEqual(viewport.height - 2);
     await expect(page.locator('#garage-close')).toBeInViewport();
+    const preview = page.locator('#garage-preview');
+    await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
+    const bounds = JSON.parse((await preview.getAttribute('data-car-bounds')) ?? '{}');
+    expect(bounds.maxX).toBeLessThan(0.94);
+    expect(bounds.minX).toBeGreaterThan(-0.94);
+    const shot = await page.locator('#garage-preview #world').screenshot();
+    await test.info().attach(`garage-real-webgl-${viewport.width}x${viewport.height}`, { body: shot, contentType: 'image/png' });
+    const drawCalls = Number(await preview.getAttribute('data-draw-calls'));
+    const triangles = Number(await preview.getAttribute('data-triangles'));
+    expect(drawCalls).toBeGreaterThan(0);
+    expect(triangles).toBeGreaterThan(0);
   });
 }
 

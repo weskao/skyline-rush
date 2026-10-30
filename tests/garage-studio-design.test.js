@@ -17,3 +17,11 @@ test('Garage Studio defines portrait, landscape, safe area and motion fallback',
   assert.match(vue, /min-height: 44px/);
   assert.match(vue, /prefers-reduced-motion/);
 });
+
+test('garage stage publishes render evidence after the actual frame, not per race frame', () => {
+  const ui = src('garage-ui.ts');
+  assert.match(ui, /inspectGarageStudio\?\.\(\)/);
+  assert.match(ui, /inspectRenderLoad\?\.\(\)/);
+  assert.match(ui, /preview\.dataset\.carInFrame/);
+  assert.match(ui, /requestAnimationFrame\(\(\) => requestAnimationFrame/);
+});

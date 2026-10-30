@@ -14,6 +14,8 @@ interface GarageWorld {
   previewAppearance(paint: Paint): void;
   resize(): void;
   setGarageCamera(camera: GarageCamera | null): void;
+  inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean } | null;
+  inspectRenderLoad?(): { drawCalls: number; triangles: number };
 }
 interface GarageDependencies {
   getWorld(): GarageWorld | null | undefined;
@@ -44,6 +46,25 @@ export function setupGarageUI({
   let camera = defaultGarageCamera();
   let autoPaused = false;
   const contacts = new Map<number, { x: number; y: number }>();
+  let pendingStudioInspection = false;
+  function inspectStudioAfterFrame() {
+    if (pendingStudioInspection || garageStudioView.page !== 'studio') return;
+    pendingStudioInspection = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      pendingStudioInspection = false;
+      if (!garageScreen.open || garageStudioView.page !== 'studio') return;
+      const bounds = getWorld()?.inspectGarageStudio?.();
+      if (bounds) {
+        preview.dataset.carInFrame = String(bounds.inFrame);
+        preview.dataset.carBounds = JSON.stringify(bounds);
+      }
+      const load = getWorld()?.inspectRenderLoad?.();
+      if (load) {
+        preview.dataset.drawCalls = String(load.drawCalls);
+        preview.dataset.triangles = String(load.triangles);
+      }
+    }));
+  }
 
   function showGarage(id: string = previewing): void {
     const stars = getStars();
@@ -71,11 +92,13 @@ export function setupGarageUI({
     preview.dataset.cameraYaw = camera.yaw.toFixed(3);
     updateGarageStudioView({ angle, autoRotate: camera.autoRotate });
     getWorld()?.setGarageCamera(garageStudioView.page === 'studio' ? camera : null);
+    inspectStudioAfterFrame();
   }
   function showPage(page: 'home' | 'studio'): void {
     updateGarageStudioView({ page });
     getWorld()?.setGarageCamera(page === 'studio' ? camera : null);
     getWorld()?.resize();
+    inspectStudioAfterFrame();
     queueMicrotask(() => (page === 'studio' ? preview : $('#garage-studio-open')).focus({ preventScroll: true }));
   }
   function pushPage(page: 'home' | 'studio'): void {
