@@ -130,11 +130,12 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
       return;
     }
     await expect.poll(() => playing(hero)).toBe(true);
-    const zoomBox = await zoom.boundingBox(), heroBox = await hero.boundingBox();
+    // Measure together: the notes entrance animation can move between browser round trips.
+    const [zoomBox, heroBox, iconBox] = await zoom.evaluate(el =>
+      [el, document.getElementById('release-video'), el.querySelector('svg')].map(node => node.getBoundingClientRect().toJSON()));
     expect(zoomBox.width >= TOUCH && zoomBox.height >= TOUCH, `enlarge is a full touch target: ${JSON.stringify(zoomBox)}`).toBe(true);
     expect(zoomBox.x >= heroBox.x && zoomBox.y >= heroBox.y && zoomBox.x + zoomBox.width <= heroBox.x + heroBox.width && zoomBox.y + zoomBox.height <= heroBox.y + heroBox.height, 'enlarge sits on the clip').toBe(true);
     // A drawn icon, not a font glyph: Android's fallback font pushed "⤢" toward the lower left of its circle.
-    const iconBox = await zoom.locator('svg').boundingBox();
     expect(Math.abs(iconBox.x + iconBox.width / 2 - (zoomBox.x + zoomBox.width / 2)) <= 0.5
       && Math.abs(iconBox.y + iconBox.height / 2 - (zoomBox.y + zoomBox.height / 2)) <= 0.5, `enlarge icon centred: ${JSON.stringify({ iconBox, zoomBox })}`).toBe(true);
     await watchFades(page);
