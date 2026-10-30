@@ -17,8 +17,8 @@ for (const [label, viewport, locale, touch] of [
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       await page.locator('button[data-race-mode="endless"]').click();
       await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'endless');
-      await expect(page.locator('[data-track="neon"]')).toBeDisabled();
-      await expect(page.locator('#mode-description')).toContainText(locale === 'en' ? 'Coast only' : '僅限海岸');
+      await expect(page.locator('[data-track="neon"]')).toBeEnabled();
+      await expect(page.locator('#mode-description')).toContainText(locale === 'en' ? 'All tracks' : '所有賽道');
       await page.screenshot({ path: `artifacts/endless/${label}-ready.png` });
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
