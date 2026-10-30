@@ -17,7 +17,7 @@ import { createCheckpointRush } from './checkpoint-rush.ts';
 import { saveRecentCustom } from './recent-custom.ts';
 import { cupComplete } from './championship-cup.ts';
 import { createWorld } from './world.js';
-import { roadObstacles } from './world-tour-scene.js';
+import { roadObstacles, endlessRoadObstacles } from './world-tour-scene.js';
 import { createSound } from './audio.js';
 import { readAudio } from './audio-settings.ts';
 import { setupVfxUI } from './vfx-ui.ts';
@@ -81,6 +81,10 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const createRace = (...args) => {
   const created = createBareRace(...args);
   created.props = roadObstacles(created.trackId);
+  if(created.endless){
+    created.streamProps = distance => { created.props = endlessRoadObstacles(created.trackId,distance); };
+    created.streamProps(0);
+  }
   if (created.checkpoint && created.props.length)
     created.checkpoint = createCheckpointRush(RACE_TRACKS[created.trackId], created.props);
   return created;
