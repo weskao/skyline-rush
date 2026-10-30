@@ -21,6 +21,8 @@
 - [ ] Evaluate an optional **edit-controls mode** to drag/reposition entire control groups, with safe bounded zones, visible edit/confirm/reset actions, local preference persistence, sensible defaults and orientation-aware layouts. Dragging in edit mode must not steer/accelerate or disrupt normal gameplay; offer a usable non-drag alternative for accessibility. Do not require customization for a good default layout.
 - [ ] TDD and acceptance: unit tests for layout bounds, save/restore/reset and touch cancellation; real-device/browser tests across representative phone sizes, two locales, landscape/portrait, multiple fingers and pause/finish transitions; no overlapping/unclickable UI or performance regression.
 
+**Completion gates for items 1–3:** requirements confirmed against code; RED/GREEN evidence; Vue 3 + strict TypeScript preferred for new UI/controller code; `npm run typecheck`, `npm test`, `npm run build`, browser/layout regressions, `make verify` and full GitHub Actions `quality-gate` on the final branch HEAD. Do not mark implementation done, create a PR or merge to `main` based on this TODO-only commit.
+
 ### 4. Foldable and dual-screen layouts — separate future branch (P2; out of scope here)
 
 - [ ] **Future branch only:** plan and later implement in an independently created `feature/foldable-layout-adaptation` branch from then-current `main`; do not implement foldable-specific layout code in the present branch.
@@ -87,6 +89,8 @@
 #### 5.5 Currency, rewards, missions and acquisition design
 
 - [ ] Design an item acquisition matrix for eventual ownership via end-of-race rewards, missions/quests, daily/weekly tasks, challenge milestones, events and future shop purchase. Decide which items are earnable vs future premium before the shop is implemented.
+- [ ] **Proposed starter acquisition matrix (not final prices/entitlements):** default skins = permanently free; selected Thruster variants = repeatable race rewards; Airflow variants = mission/challenge milestones; NITRO/BOOST trails = clean-driving or AIR → ROAD CHAIN achievements; Launch flares = event rewards or earnable long-term challenges. Keep paths to earn cosmetics without mandatory payment, make the cosmetic-only nature transparent and prevent limited events from permanently removing essential functionality. **During the accepted trial phase, all these new items remain trial-usable regardless of future acquisition path.** Validate difficulty, rewards and availability before committing.
+
 - [ ] Keep a **soft currency** (earnable through play) concept separate from a **future optional premium currency**; do not make the premium balance or purchasing system live yet. Currency name, icons, prices, earning rates, caps and conversion policies remain design choices.
 - [ ] Plan an end-of-race results summary showing earned currency, mission progress, cosmetic unlock progress and optional bonus multipliers **only once those systems genuinely exist**. Distinguish reward preview/projection from committed settlement.
 - [ ] Define mission types in an extensible, event-based manner: race completion, clean landing / AIR → ROAD CHAIN, drifting, distance, challenge milestones, repeatable daily/weekly objectives. Avoid contradictory/duplicate reward grants after restart, reconnect or replay.
@@ -199,8 +203,6 @@
 - [ ] **P1 (mobile UX):** ergonomic touch controls and optional edit mode (item 3); refine NITRO states and audio/animation (item 6); then refactor Mobile HUD and hints using A+B hybrid baseline (item 7). Avoid simultaneous unrelated rendering/physics rewrites.
 - [ ] **P2 (independent branches):** foldable/dual-screen compatibility (item 4); independent full-screen Garage Studio, Skins and trial access (item 5); **economy foundation/rewards/store only when separately approved**.
 - [ ] Confirm mockups and acceptance conditions before implementation; future branches start from current `main`, preserving project Vue 3 + strict TypeScript preferences, TDD, visual proof, CI gates and existing gameplay. **Nothing under items 1–7 is marked complete by this document update.**
-
-**Completion gates for items 1–3:** requirements confirmed against code; RED/GREEN evidence; Vue 3 + strict TypeScript preferred for new UI/controller code; `npm run typecheck`, `npm test`, `npm run build`, browser/layout regressions, `make verify` and full GitHub Actions `quality-gate` on the final branch HEAD. Do not mark implementation done, create a PR or merge to `main` based on this TODO-only commit.
 
 ## Endless Highway — all ten tracks and seamless continuation (2026-10-30)
 
