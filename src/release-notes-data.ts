@@ -9,6 +9,27 @@ import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
+    version: UPCOMING, date: '2026-10-30', image: null,
+    highlights: [
+      {
+        id: 'free-drive-road-end', kind: 'fix', image: null,
+        title: { en: 'Free Drive now ends at the road end', 'zh-TW': '自由駕駛開到路的盡頭就會結束' },
+        description: {
+          en: 'You no longer get stuck at the end of the road. Free Drive now finishes there and shows your time. It\'s just practice, so it won\'t count toward your records.',
+          'zh-TW': '再也不會卡在路的盡頭。自由駕駛開到終點就會結束並顯示你的時間，這只是練習，不會計入你的紀錄。'
+        }
+      },
+      {
+        id: 'whats-new-enlarge', kind: 'improvement', image: null,
+        title: { en: 'See What\'s New pictures in full', 'zh-TW': '「新功能」的圖片可以完整放大看' },
+        description: {
+          en: 'Pictures and clips in What\'s New can now be opened bigger and shown in full, on any screen. Tap or click anywhere, or press Esc, to close.',
+          'zh-TW': '「新功能」裡的圖片和影片可以點開放大，完整呈現不被裁切，在各種螢幕上都能用。點畫面任何地方或按 Esc 就能關閉。'
+        }
+      }
+    ]
+  },
+  {
     version: '0.26.0', date: '2026-10-30', image: null,
     video: {
       desktop: {
