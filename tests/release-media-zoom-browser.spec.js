@@ -34,6 +34,16 @@ const onScreen = (box, width, height) => box && box.x >= 0 && box.y >= 0 && box.
 const uncropped = (box, natural) => Math.abs(box.width / box.height - natural.width / natural.height) < 0.02;
 const naturalSize = media => media.evaluate(el => el instanceof HTMLVideoElement ? { width: el.videoWidth, height: el.videoHeight } : { width: el.naturalWidth, height: el.naturalHeight });
 const playing = video => video.evaluate(el => !el.paused && el.currentTime > 0);
+// Records which layers of the enlarged view animate: the view itself and its dimmed backdrop.
+const watchFades = page => page.evaluate(() => {
+  window.viewerFades = [];
+  const animate = Element.prototype.animate;
+  Element.prototype.animate = function (keyframes, options) {
+    if (this.id === 'release-media-viewer') window.viewerFades.push(options?.pseudoElement ?? 'view');
+    return animate.call(this, keyframes, options);
+  };
+});
+const fades = page => page.evaluate(() => window.viewerFades.splice(0));
 
 for (const [device, width, height, touch] of DEVICES) test.describe(device, () => {
   test.use({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
@@ -44,8 +54,10 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     await thumb.scrollIntoViewIfNeeded();
     const thumbBox = await thumb.boundingBox(), thumbSrc = await thumb.locator('img').getAttribute('src');
     const viewer = page.locator('#release-media-viewer'), shown = viewer.locator('img');
+    await watchFades(page);
     await press(thumb, touch);
     await expect(viewer).toBeVisible();
+    expect(await fades(page), 'the picture and its backdrop fade in').toEqual(['view', '::backdrop']);
     await expect(shown).toHaveAttribute('src', thumbSrc);
     await expect.poll(() => shown.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
     const box = await shown.boundingBox();
@@ -58,6 +70,7 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
 
     await page.keyboard.press('Escape');
     await expect(viewer).toBeHidden();
+    expect(await fades(page), 'and fade out before closing').toEqual(['view', '::backdrop']);
     await expect(page.locator('#whats-new-screen'), 'Escape leaves the notes open').toBeVisible();
     await expect(thumb, 'focus returns to the picture').toBeFocused();
     await page.keyboard.press('Enter');
@@ -86,10 +99,19 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     const zoomBox = await zoom.boundingBox(), heroBox = await hero.boundingBox();
     expect(zoomBox.width >= TOUCH && zoomBox.height >= TOUCH, `enlarge is a full touch target: ${JSON.stringify(zoomBox)}`).toBe(true);
     expect(zoomBox.x >= heroBox.x && zoomBox.y >= heroBox.y && zoomBox.x + zoomBox.width <= heroBox.x + heroBox.width && zoomBox.y + zoomBox.height <= heroBox.y + heroBox.height, 'enlarge sits on the clip').toBe(true);
+    // A drawn icon, not a font glyph: Android's fallback font pushed "⤢" toward the lower left of its circle.
+    const iconBox = await zoom.locator('svg').boundingBox();
+    expect(Math.abs(iconBox.x + iconBox.width / 2 - (zoomBox.x + zoomBox.width / 2)) <= 0.5
+      && Math.abs(iconBox.y + iconBox.height / 2 - (zoomBox.y + zoomBox.height / 2)) <= 0.5, `enlarge icon centred: ${JSON.stringify({ iconBox, zoomBox })}`).toBe(true);
+    await watchFades(page);
     await press(zoom, touch);
     const viewer = page.locator('#release-media-viewer'), clip = viewer.locator('video');
     await expect(viewer).toBeVisible();
+    expect(await fades(page), 'the clip and its backdrop fade in').toEqual(['view', '::backdrop']);
     await expect(clip).toHaveAttribute('data-source', await hero.getAttribute('data-source'));
+    // The poster is a still from mid-clip: a playing clip shows nothing until its own first frame, then fades in.
+    expect(await clip.getAttribute('poster'), 'no mid-clip still flashes before the first frame').toBeNull();
+    await expect.poll(() => clip.evaluate(el => el.readyState >= 2 && getComputedStyle(el).opacity === '1')).toBe(true);
     expect(await clip.evaluate(el => el.muted && el.loop && el.playsInline)).toBe(true);
     await expect.poll(() => playing(clip)).toBe(true);
     await expect.poll(() => hero.evaluate(el => el.paused), 'only one clip plays').toBe(true);
@@ -99,6 +121,7 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     await page.screenshot({ path: test.info().outputPath(`release-zoom-video-${width}x${height}.png`) });
     await page.keyboard.press('Escape');
     await expect(viewer).toBeHidden();
+    expect(await fades(page), 'and fade out before closing').toEqual(['view', '::backdrop']);
     await expect(page.locator('#whats-new-screen')).toBeVisible();
     await expect(zoom).toBeFocused();
     await expect.poll(() => playing(hero), 'the clip behind plays again').toBe(true);
@@ -135,15 +158,18 @@ test.describe('reduced motion and languages', () => {
   test('under reduced motion the enlarged clip waits with controls, and its controls never close it', async ({ page, gameplayURL }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const errors = await openNotes(page, gameplayURL);
+    await watchFades(page);
     await page.locator('#release-video-zoom').click();
     const clip = page.locator('#release-media-viewer video');
     await expect(clip).toBeVisible();
+    expect(await clip.getAttribute('poster'), 'the still waits in place of the clip').toBeTruthy();
     await clip.evaluate(el => { window.zoomPlays = 0; el.addEventListener('play', () => window.zoomPlays++); });
     expect(await clip.evaluate(el => el.controls && el.paused && !el.autoplay)).toBe(true);
     await clip.click();
     await expect(page.locator('#release-media-viewer'), 'pressing the controls keeps it open').toBeVisible();
     await page.locator('#release-media-viewer .release-viewer-close').click();
     await expect(page.locator('#release-media-viewer')).toBeHidden();
+    expect(await fades(page), 'nothing fades under reduced motion').toEqual([]);
     expect(errors).toEqual([]);
   });
 

@@ -129,6 +129,8 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 
 `make` and `make dev-unlocked` also start local Firebase Auth/Firestore emulators (needs Java 21+), so the cloud-save Google sign-in works with fake test accounts and never touches real saves. Cloud-save operations and Spark quota checks for the project owner are in `docs/cloud-save.md`.
 
+`make dev-diag` and `make phone-diag` serve the same builds with an on-screen diagnostic banner compiled in (frame counter, page lifecycle and touch events with their hit targets, plus the last uncaught errors kept across reloads), for chasing a freeze or dead buttons on a real phone. Production builds never contain it: `npm run build` refuses a bundle that carries the diagnostic module.
+
 `make phone` opens a terminal menu that starts, checks or stops a dev server your phone can open (over Tailscale or the same Wi-Fi) and prints the phone URL once it answers. The menu lists this checkout, other worktrees and recent branches, or takes a typed branch name; `make phone <name>` goes straight to that branch (or `feature/<name>`), creating its worktree under `.claude/worktrees/` when needed. It always serves the normal locked build: the all-unlocked server (`make dev-unlocked`, `make dev-feature`) stays desktop-only. It needs the personal `phone-dev` Claude Code skill (`/phone-dev` asks the same menu) and runs without the emulators, so cloud-save sign-in on the phone uses the real project.
 
 ## Controls

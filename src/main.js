@@ -98,6 +98,7 @@ const AUTO_KEY = 'skyline-rush-auto';
 let autoThrottle = true;
 try { autoThrottle = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
 let animationId;
+if (import.meta.env.VITE_DIAG) import('./crash-log.ts').then(({ installCrashLog, showCrashLog }) => { const raceContext = () => ({ phase: race.phase, track: race.trackId, mode: race.mode }); installCrashLog(window, localStorage, raceContext); showCrashLog($('#error-message'), localStorage, { win: window, context: raceContext }); }); // diagnostic builds only; production drops the module
 let pausedPhase = 'racing';
 const progress = loadSessionProgress(availableTracks());
 const unlockedTracks = progress.unlocked; // one Set for the session; merges add to it in place

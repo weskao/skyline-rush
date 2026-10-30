@@ -12,7 +12,10 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-
 /* Press feedback never changes the box: a shrinking button drops clicks released near its edge. */
 button { transition: filter var(--dur-base) var(--ease-spring); }
 button:active:not(:disabled), button.is-pressed:not(:disabled) { filter: brightness(.82); transition-duration: var(--dur-fast); }
-button[hidden], [hidden] { display: none !important; }
+button[hidden], [hidden]:not(.touch-controls) { display: none !important; }
+/* Hidden by visibility, never display: iOS WebKit drops the release of a touch whose target lost its box, and
+   while it still counts that finger as down no later tap synthesizes a click (results buttons went dead). */
+.touch-controls[hidden] { visibility: hidden; }
 .vfx-comfort button { transition: none; }
 @media (prefers-reduced-motion: reduce) { button { transition: none !important; } }
 svg { width: 22px; height: 22px; flex-shrink: 0; }
