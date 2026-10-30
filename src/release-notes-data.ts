@@ -20,6 +20,14 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
+        id: 'no-frozen-screen', kind: 'fix', image: null,
+        title: { en: 'The game keeps going after a hiccup', 'zh-TW': '遇到小狀況，遊戲也不會當住' },
+        description: {
+          en: 'If something glitches, the screen keeps moving and the buttons keep working, so you can tap Race again without reloading the page.',
+          'zh-TW': '就算偶爾出了點狀況，畫面還是會繼續動、按鈕也都能按，不用重新整理頁面，就能直接點「再跑一次」。'
+        }
+      },
+      {
         id: 'whats-new-enlarge', kind: 'improvement', image: null,
         title: { en: 'See What\'s New pictures in full', 'zh-TW': '「新功能」的圖片可以完整放大看' },
         description: {
