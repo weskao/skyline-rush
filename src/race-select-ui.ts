@@ -53,7 +53,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     selectedMode = 'eventlab'; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
   } });
   const selectedRace = (trackId: string): Race => selectedMode === 'circuit' ? options.createRace(CIRCUIT_ID, { mode: 'circuit', laps: Number($<HTMLSelectElement>('#circuit-laps').value) }) : selectSprint(trackId === CIRCUIT_ID ? 'coast' : trackId);
-  const selectSprint = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(selectedMode === 'endless' ? 'coast' : trackId, { mode: selectedMode, ...raceRules,
+  const selectSprint = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
     ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value, layout: $<HTMLSelectElement>('#gauntlet-layout').value } : {}),
@@ -136,7 +136,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const button of trackButtons()) {
       const id = button.dataset.track!;
       const locked = !unlockedTracks.has(id);
-      button.disabled = selectedMode === 'endless' && id !== 'coast';
+      button.disabled = false; // All unlocked tracks are eligible for Endless.
       button.classList.toggle('is-locked', locked);
       button.setAttribute('aria-pressed', String(id === race.trackId));
       button.querySelector('small')!.textContent = t(locked ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
