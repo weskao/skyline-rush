@@ -81,7 +81,9 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
   `public/whats-new/<theme-slug>/` (e.g. `public/whats-new/night-racing/new-track.en.webp`; older
   releases used version folders), reference them
   relative to `public/`, localize per language when they contain text, and never delete an old
-  release's images. A missing image falls back to text.
+  release's images. A missing image falls back to text. Formats: png, jpg, webp, avif and animated gif/
+  webp. Players tap any picture or the clip to see it whole and uncropped (`ReleaseMediaViewer.vue`), so a
+  thumbnail may crop as long as the full file reads well enlarged.
 - **Video** (optional `video` on the entry): a short muted clip that replaces the hero image
   while the dialog is open. Give both a `desktop` (landscape, 960×600) and a `mobile` (portrait,
   390×844) clip, each `{ src, poster }` localized like images (`.mp4`/`.webm` + a still), all under
