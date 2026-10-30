@@ -68,6 +68,20 @@ Design choices: isolate event/state contracts from presentation, use Vue 3 + Typ
 4. Sprint position validator only accepts 1–4
 5. Track bottlenecks and cloud/ghost rule signatures must be preserved
 
+## 4A. Image Generation and Asset Contracts (Wave 2 / Wave 3)
+
+**Decision:** Optional only: original compact numbered/rank insignia with true transparent alpha if current icons cannot express eight-car order. Car instances, grids, and ranks remain data-driven game/Vue/SVG. No generated art may fake physical grid order.
+
+- **Necessity gate:** review `src/icons.ts`, `public/icons/`, existing Vue/CSS/Three.js before making any image. The need for a concept sheet does **not** automatically justify a production bitmap. Record why the asset is needed and who owns it.
+- **Prompt / production plan:** [Visual brief](../prompts/2026-10-31-race-difficulty-eight-car-grid-visual-design.md); [Superpowers plan](../plans/2026-10-31-race-difficulty-eight-car-grid-plan.md). The separately assigned future GPT may generate original images **only if actually needed and its image generation capability is available**; otherwise record the missing deliverable and use documented SVG/CSS/Three.js fallback. No pretend asset URLs or pre-emptive completion claims.
+- **Alpha and formats:** true alpha RGBA PNG / compressed transparent WebP for isolated icon, badge, sprite or overlay, **not** white/checkerboard as image pixels; opaque compressed WebP/JPEG for standalone backgrounds. Actual vector SVG must be properly authored, not a renamed raster. Verify alpha over light, dark and saturated backgrounds, silhouette at intended CSS size, safe margins, transparent edge fringes and no baked interactive text.
+- **Runtime semantics:** use real Vue 3 + strict TypeScript for controls/labels/rank/reward status; use shared Three.js renderer for 3D cars/dynamic VFX. Generated concepts are not runtime screenshots or fully implemented gameplay. No branded copyrighted lookalikes or unapproved real-money claims.
+- **SDD → BDD → TDD / accessibility:** define asset semantics and ownership/loader contract, write failing behavior tests when a code behavior is missing, keep readable alt/label/fallback on asset error, test touch/focus and occlusion. Verified BDD edge cases:
+  1. Given the roster contains eight real racers, When reverse-grid preview renders, Then its badge and text map to real stable driver IDs and order even if optional images fail.
+  2. Given Low VFX and short iPhone landscape, When 8-car standings render, Then all ranks, collision-safe spawn and click targets remain correct without bitmap assets.
+- **Quality and measurement:** Low / Medium / High must preserve game state/critical HUD, en/zh-TW, mobile Android/iOS browsers in portrait+landscape and desktop, VFX Off, Reduced Motion and sound mute. Check image bytes, alpha, decoder/texture memory, first-use shader cost, Draw Calls, FPS and frame-time p95 where relevant. Inspect actual game output, not only a generated design board.
+- **Completion:** do not check any `TODO.md` item `- [x]` until genuine asset integration, relevant SDD/BDD/TDD and CI are verified. This is a future implementation requirement, **not** an instruction to generate art now.
+
 ## 5. Cross-platform visual and performance acceptance
 
 | Area | Required gate |
