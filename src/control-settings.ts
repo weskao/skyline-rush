@@ -126,3 +126,30 @@ export function writeHudWidgets(value: HudWidgets, storage?: Pick<Storage, 'setI
   try { (storage ?? globalThis.localStorage).setItem(HUD_WIDGETS_KEY, JSON.stringify(normalizeHudWidgets(value))); }
   catch { /* Widgets remain visible/usable in memory. */ }
 }
+
+export const HUD_FEEDBACK_KEY = 'skyline-rush-hud-feedback';
+export interface HudFeedback { sound: boolean; animation: boolean }
+export const DEFAULT_HUD_FEEDBACK: Readonly<HudFeedback> = Object.freeze({ sound: true, animation: true });
+export function normalizeHudFeedback(value: unknown): HudFeedback {
+  return {
+    sound: isRecord(value) && typeof value.sound === 'boolean' ? value.sound : true,
+    animation: isRecord(value) && typeof value.animation === 'boolean' ? value.animation : true,
+  };
+}
+export function readHudFeedback(storage?: Pick<Storage, 'getItem'>): HudFeedback {
+  try { return normalizeHudFeedback(JSON.parse((storage ?? globalThis.localStorage).getItem(HUD_FEEDBACK_KEY) ?? 'null')); }
+  catch { return normalizeHudFeedback(null); }
+}
+export function writeHudFeedback(value: HudFeedback, storage?: Pick<Storage, 'setItem'>): void {
+  try { (storage ?? globalThis.localStorage).setItem(HUD_FEEDBACK_KEY, JSON.stringify(normalizeHudFeedback(value))); }
+  catch { /* Retain in-memory preferences when storage is blocked. */ }
+}
+export function resetHudPreferences(storage?: Pick<Storage, 'setItem'>) {
+  const mode: HudDisplayMode = 'hybrid';
+  const widgets = normalizeHudWidgets(null);
+  const feedback = normalizeHudFeedback(null);
+  writeHudMode(mode, storage);
+  writeHudWidgets(widgets, storage);
+  writeHudFeedback(feedback, storage);
+  return { mode, widgets, feedback };
+}

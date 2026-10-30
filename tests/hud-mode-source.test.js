@@ -17,3 +17,11 @@ test('Hybrid and Competitive keep essential progress and yield the center to gam
   assert.match(view, /@media \(max-width: 760px\)/);
   assert.doesNotMatch(view, /#race-progress\s*\{\s*display:\s*none/);
 });
+
+test('Settings exposes independent READY sound and animation toggles and a true reset for all HUD options', () => {
+  assert.match(view, /readHudFeedback\(/);
+  assert.match(view, /writeHudFeedback\(/);
+  assert.match(view, /resetHudPreferences\(/);
+  assert.match(view, /type="checkbox"[^>]*:checked="feedback\.sound"/);
+  assert.match(view, /type="checkbox"[^>]*:checked="feedback\.animation"/);
+});

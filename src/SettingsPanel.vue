@@ -1,9 +1,22 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { activateHudMode, readHudMode, readHudWidgets, writeHudWidgets, type HudDisplayMode, type HudWidgets } from './control-settings.ts';
+import { activateHudMode, readHudMode, readHudWidgets, writeHudWidgets, readHudFeedback, writeHudFeedback, resetHudPreferences, type HudDisplayMode, type HudWidgets, type HudFeedback } from './control-settings.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
 const hudMode = ref<HudDisplayMode>(readHudMode());
 const widgets = ref<HudWidgets>(readHudWidgets());
+const feedback = ref<HudFeedback>(readHudFeedback());
+function setHudFeedback(key: keyof HudFeedback, enabled: boolean): void {
+  feedback.value = { ...feedback.value, [key]: enabled };
+  writeHudFeedback(feedback.value);
+}
+function resetHudDefaults(): void {
+  const defaults = resetHudPreferences();
+  hudMode.value = defaults.mode;
+  widgets.value = defaults.widgets;
+  feedback.value = defaults.feedback;
+  document.body.dataset.hudMode = defaults.mode;
+  applyWidgetVisibility();
+}
 function applyWidgetVisibility(): void {
   document.body.dataset.hudLeaderboardVisible = String(widgets.value.leaderboard);
   document.body.dataset.hudMapVisible = String(widgets.value.map);
@@ -44,7 +57,9 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
               <label class="hud-choice"><input type="checkbox" :checked="widgets.map" @change="setWidget('map', !widgets.map)"><span>{{ isChinese ? '顯示小地圖' : 'Show minimap' }}</span></label>
               <label class="hud-choice"><input type="checkbox" :checked="widgets.telemetry" @change="setWidget('telemetry', !widgets.telemetry)"><span>{{ isChinese ? '顯示額外統計' : 'Show secondary stats' }}</span></label>
             </div>
-            <button type="button" class="hud-default" @click="chooseHudMode('hybrid')">{{ isChinese ? '重設為預設介面' : 'Reset HUD to default' }}</button>
+            <label class="hud-choice"><input type="checkbox" :checked="feedback.sound" @change="setHudFeedback('sound', !feedback.sound)"><span>{{ isChinese ? 'NITRO 就緒提示音' : 'NITRO READY sound' }}</span></label>
+            <label class="hud-choice"><input type="checkbox" :checked="feedback.animation" @change="setHudFeedback('animation', !feedback.animation)"><span>{{ isChinese ? 'NITRO 就緒動畫' : 'NITRO READY animation' }}</span></label>
+            <button type="button" class="hud-default" @click="resetHudDefaults()">{{ isChinese ? '重設為預設介面' : 'Reset HUD to default' }}</button>
           </fieldset>
         </div>
       </div>

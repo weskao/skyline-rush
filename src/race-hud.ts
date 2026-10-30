@@ -6,7 +6,7 @@ import { timeString } from './time-format.ts';
 import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED } from './game.js';
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
-import type { ControlPreferences } from './control-settings.ts';
+import { readHudFeedback, type ControlPreferences } from './control-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
 import { createHaptics } from './haptics.ts';
@@ -141,7 +141,12 @@ export function createRaceHud(options: HudOptions) {
   function updateNitro(now: number, race: HudRace, car: HudRace, nitroActive: boolean): void {
     const visual = getVisual();
     const { state, cueReady } = nitroReadiness.update({ charge: car.nitro, phase: race.phase, active: nitroActive });
-    if (cueReady) options.onNitroReady();
+    if (cueReady) {
+      options.onNitroReady();
+      if (nitroButton && readHudFeedback().animation && visual.enabled && !visual.comfortable && !reducedMotion.matches) {
+        nitroButton.animate([{ boxShadow: '0 0 0 0 rgb(255 213 128 / .8)' }, { boxShadow: '0 0 0 12px rgb(255 213 128 / 0)' }], { duration: 650 });
+      }
+    }
     if (nitroMeter.dataset.nitroState !== state) nitroMeter.dataset.nitroState = state;
     if (nitroButton) {
       if (nitroButton.dataset.nitroState !== state) nitroButton.dataset.nitroState = state;
