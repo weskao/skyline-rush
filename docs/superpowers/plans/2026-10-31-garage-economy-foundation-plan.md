@@ -48,6 +48,15 @@
 - `src/cloud-progress.ts`: Task 3 ownership — Define dormant soft-currency/reward/premium metadata contracts without enabling a live balance or granting ownership; test `tests/garage-view-state.test.js`.
 - `src/history-storage.ts`: Task 4 ownership — Exercise corrupt saves, account transitions and ownership security/Cloud Save regressions; test `tests/firestore-rules.test.js`.
 
+### Task V0: Deliberately no image generation — economy foundation is data-only
+
+**Decision:** This is a pure typed entitlement and persistence branch. NO asset/image generation, no new graphics prerequisites, no paid currency icon or wallet UI.
+
+- [ ] **Step 1 — SDD:** isolate typed catalog/entitlement/ownership/trial and migration/persistence contracts without an image loader, icon dependency or storefront.
+- [ ] **Step 2 — BDD/RED:** add the explicit invariant: Given trial permission and an unowned item, When account changes or trial expires, Then resolver falls back correctly without any new image or asset dependency. Confirm the regression fails for incorrect state handling, not for a missing image.
+- [ ] **Step 3 — GREEN/Refactor:** deliver the smallest data-model fix while preserving Cloud Save and account isolation. Avoid speculative decorative resources.
+- [ ] **Step 4 — Verify:** existing UI remains unchanged; no image-generation, asset bytes or extra render passes may be introduced. Do not mark the implementation TODO complete until data tests and final CI are verified.
+
 ## TDD tasks (not started)
 
 ### Task 1: Define typed versioned item catalog and explicit Owned/Trial/Preview/Equipped resolver with stable IDs
