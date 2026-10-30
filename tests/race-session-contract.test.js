@@ -187,9 +187,13 @@ test('9A: every finishing mode, Free Drive included, settles a finite result at 
   }
 });
 
-test('9A: Endless runs on Coast only, rolls past every authored finish and ends on its own collision rule', () => {
-  for (const trackId of Object.keys(RACE_TRACKS)) if (trackId !== 'coast')
-    assert.throws(() => createRace(trackId, { mode: 'endless' }), /Coast only/, trackId);
+test('9A: Endless supports each track, continues past authored finishes, and ends on collisions only', () => {
+  for(const trackId of Object.keys(RACE_TRACKS)){
+    const race=createRace(trackId,{mode:'endless'});
+    assert.equal(race.trackId,trackId);
+    assert.ok(race.endless,trackId);
+    assert.equal(race.sections.length,0,trackId+' has no finite gap obstacles');
+  }
   const race = drive('coast', 'endless', 240);
   Object.assign(race.player, { distance: RACE_TRACKS.coast.length - 1, speed: 80, collisions: 0 });
   race.player.effects.ghost = 10; // drive through traffic so only the road end is being tested
