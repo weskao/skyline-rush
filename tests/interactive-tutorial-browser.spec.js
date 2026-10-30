@@ -20,21 +20,20 @@ const keyStep = async (page, key, next) => {
 const keyboardChain = async page => {
   await page.keyboard.down('Space');
   await page.keyboard.down('Shift');
-  await page.waitForTimeout(1100);
+  await page.waitForTimeout(750);
   await page.keyboard.up('Shift');
   await page.keyboard.up('Space');
   await step(page, 'barrelRoll');
 };
 const keyboardRoll = async page => {
   await page.keyboard.down('Space');
-  await page.waitForTimeout(330);
+  await page.waitForTimeout(450);
   await page.keyboard.down('a');
-  await page.waitForTimeout(110);
+  await page.waitForTimeout(90);
   await page.keyboard.up('a');
   await page.keyboard.down('d');
-  await page.waitForTimeout(110);
+  await page.waitForTimeout(90);
   await page.keyboard.up('d');
-  await page.waitForTimeout(740);
   await page.keyboard.up('Space');
   await step(page, 'nitro');
 };
@@ -222,12 +221,12 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
       if (flyMode === 'toggle') {
         await button('fly').tap();
-        await hold(button('boost'), 1100);
+        await hold(button('boost'), 750);
         await button('fly').tap();
       } else {
         await touch('touchStart', [fly]);
         await touch('touchStart', [fly, boost]);
-        await page.waitForTimeout(1100);
+        await page.waitForTimeout(750);
         await touch('touchEnd', [fly]);
         await touch('touchEnd', []);
       }
@@ -237,7 +236,7 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       const pad = effectiveMode === 'slide' ? await point(page.locator('.touch-pad'), 2) : null;
       if (flyMode === 'toggle') await button('fly').tap();
       else await touch('touchStart', [fly]);
-      await page.waitForTimeout(330);
+      await page.waitForTimeout(450);
       if (pad) {
         await touch('touchStart', flyMode === 'toggle' ? [pad] : [fly, pad]);
         await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x-55}] : [fly,{...pad,x:pad.x-55}]);
@@ -253,7 +252,7 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await page.waitForTimeout(110);
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
       }
-      await page.waitForTimeout(740);
+      // Let the spin finish while gliding; holding FLY longer risks a hard landing.
       if (flyMode === 'toggle') await button('fly').tap();
       else await touch('touchEnd', []);
       await step(page, 'nitro');

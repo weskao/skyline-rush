@@ -12,16 +12,16 @@ function tick(session, action = {}, dt = DT) {
 }
 function performAirChain(session) {
   const start = session.index;
-  for (let i = 0; i < 66; i++) tick(session, { fly: true, boost: true });
+  for (let i = 0; i < 42; i++) tick(session, { fly: true, boost: true });
   for (let i = 0; i < 250 && session.index === start; i++) tick(session);
   assert.equal(session.index, start + 1, 'air chain requires a real powered-flight landing');
 }
 function performBarrelRoll(session) {
   const start = session.index;
-  for (let i = 0; i < 26; i++) tick(session, { fly: true });
-  for (let i = 0; i < 6; i++) tick(session, { fly: true, steer: -1 });
-  for (let i = 0; i < 6; i++) tick(session, { fly: true, steer: 1 });
-  for (let i = 0; i < 45; i++) tick(session, { fly: true });
+  for (let i = 0; i < 30; i++) tick(session, { fly: true });
+  for (let i = 0; i < 3; i++) tick(session, { fly: true, steer: -1 });
+  for (let i = 0; i < 3; i++) tick(session, { fly: true, steer: 1 });
+  // Releasing thrust after the flick keeps the landing gentle while the roll finishes.
   for (let i = 0; i < 250 && session.index === start; i++) tick(session);
   assert.equal(session.index, start + 1, 'barrel roll requires an actual paid gentle landing');
 }
