@@ -48,6 +48,18 @@
 - `src/garage-view-state.ts`: Task 3 ownership — Keep existing renderer/canvas ownership and accessible Garage Home/Collection entry points; test `tests/showcase-camera-browser.spec.js`.
 - `src/App.vue`: Task 4 ownership — Test portrait/landscape and desktop camera gestures, history/back, focus and return to race; test `tests/close-button-browser.spec.js`.
 
+### Visual Design & Art Asset Gate (required before visually affected code tasks)
+
+**Companion prompt:** [garage-preview-studio visual design prompt](../prompts/2026-10-31-garage-preview-studio-visual-design.md).
+
+**Scope:** full-screen Studio composition, camera-orbit affordances and optional background. Use existing Three.js car/model and reusable Vue component controls, not a screenshot-backed modal.
+
+- [ ] **V1 — SDD / Concept:** Revisit current `CLAUDE.md` and existing `src/icons.ts`, current Vue/CSS and WebGL. Draft at least portrait 390×844, landscape 844×390, desktop 1440×900 and Low/Medium/High comparison mockups as appropriate. Record actual control/visual semantics, safe areas, UI copy in en/zh-TW and which output is icon vs screenshot vs real renderer effect. Do not infer implementation from a generated image.
+- [ ] **V2 — Design Review:** Compare concept to project quality/accessibility requirements. Confirm critical elements remain visible on Low and when VFX is disabled/Reduced Motion; choose existing icons/cheaper DOM first. Keep unavailable features explicitly Coming soon. Document accepted visual references; do not produce speculative asset sprawl.
+- [ ] **V3 — BDD / RED:** For each changed visual component, add failing layout/interaction/renderer assertions on real source output, including phone portrait and landscape, desktop, touch, and correct effect/ability state. Assert no clipped vehicle, unclickable results controls, blocked road or overlapping buttons. If only mockups are needed, verify the responsive contract rather than manufacturing production image files.
+- [ ] **V4 — GREEN / Asset Integration:** During an authorized implementation phase only, produce optimized original SVG/WebP assets if justified, use Vue/CSS for interactive text/HUD and current Three.js for dynamic VFX. Keep visual identity aligned across Low/Medium/High with tiered GPU cost, quality-change cleanup and shader warmup. Re-run focused RED tests to GREEN.
+- [ ] **V5 — Verify:** Capture real-game WebGL before/after screenshot/video and compare FPS/frame-time p50/p95, Draw Calls, Triangles, texture/resource lifecycle. Complete the relevant Task 5 cross-platform gate and exact HEAD CI. Only then consider marking visual work `- [x]` in the complete canonical TODO.
+
 ## TDD tasks (not started)
 
 ### Task 1: Define Vue/TypeScript navigation states and preview camera contract without changing paint ownership
