@@ -141,12 +141,14 @@ export function createSkyScene(scene) {
   const roadInstances = [borders, rails, beacons, laneLines];
 
   return {
-    update(distance, quality = 'high') {
+    update(distance, quality = 'high', endless = false) {
       group.visible = true;
       backdrop.material.uniforms.time.value = distance * 0.0015;
       const origin = skyPoint(distance);
-      landmark.position.set(SKY_SPIRAL.radius - origin.x, -origin.y, -SKY_SPIRAL.start - origin.z);
-      skyline.position.set(-origin.x, -origin.y, -origin.z);
+      // Loop existing architecture in the camera's streaming window without new GPU allocations.
+      const extension=endless&&distance>5600, next=5600+Math.ceil((distance-5600+800)/1800)*1800;
+      landmark.position.set(SKY_SPIRAL.radius-origin.x,-origin.y,(extension?skyPoint(next).z:-SKY_SPIRAL.start)-origin.z);
+      skyline.position.set(-origin.x,-origin.y,(extension?skyPoint(distance+900).z+SKY_SPIRAL.start:0)-origin.z);
       fogBanks.position.copy(skyline.position);
       skyline.visible = quality !== 'low';
       fogBanks.visible = quality === 'high';
@@ -157,7 +159,7 @@ export function createSkyScene(scene) {
       for (const mesh of roadInstances) mesh.position.copy(road.position);
       if (start !== lastRoadStart) {
       for (let i = 0; i <= ROWS; i++) {
-        const s = Math.min(5600, start + i * STEP);
+        const s = endless ? start + i * STEP : Math.min(5600, start + i * STEP);
         const frame = skyFrame(s);
         for (let side = 0; side < 2; side++) {
           const [x, y, z] = skyPosition(s, side ? WIDTH : -WIDTH, 0, 0);
