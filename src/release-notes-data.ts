@@ -9,7 +9,44 @@ import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-10-30', image: null,
+    version: UPCOMING, date: '2026-10-31', image: null,
+    highlights: [
+      {
+        id: 'endless-every-road', kind: 'new', image: null,
+        title: { en: 'Endless Highway on every road', 'zh-TW': '無盡公路，每條賽道都能跑' },
+        description: {
+          en: 'Keep driving past the old finish line on all ten roads. New scenery keeps appearing ahead of you, and Sky Spiral\'s loops simply carry on.',
+          'zh-TW': '十條賽道都能一路開過原本的終點線，前方的風景會不斷出現，天空螺旋的環道也會一圈接著一圈延伸下去。'
+        }
+      },
+      {
+        id: 'sky-spiral-landmarks', kind: 'improvement', image: null,
+        title: { en: 'Smoother Sky Spiral scenery', 'zh-TW': '天空螺旋的風景更自然' },
+        description: {
+          en: 'Sky Spiral landmarks now fade in softly instead of popping into view, and look the same every time the spiral loops around.',
+          'zh-TW': '天空螺旋的地標會柔和浮現，不再突然冒出來；螺旋繞到下一圈時，看起來也始終一致。'
+        }
+      },
+      {
+        id: 'barrel-roll-wake', kind: 'new', image: null,
+        title: { en: 'Barrel rolls leave a swirling trail', 'zh-TW': '翻滾時拖出旋轉氣流' },
+        description: {
+          en: 'Pull off a barrel roll and a swirl of air trails behind your car, so every roll looks as dramatic as it feels.',
+          'zh-TW': '做出翻滾時，車後會拖出一道旋轉的氣流，讓每一次翻滾都更有看頭。'
+        }
+      },
+      {
+        id: 'iphone-touch-release', kind: 'fix', image: null,
+        title: { en: 'iPhone touch controls let go reliably', 'zh-TW': 'iPhone 觸控按鈕能確實放開' },
+        description: {
+          en: 'On iPhone, lifting your finger now reliably releases a touch control, so your car no longer keeps steering or accelerating by itself.',
+          'zh-TW': '在 iPhone 上，手指一離開螢幕，觸控按鈕就會確實放開，車子不會再自己持續轉向或加速。'
+        }
+      }
+    ]
+  },
+  {
+    version: '0.27.0', date: '2026-10-30', image: null,
     highlights: [
       {
         id: 'free-drive-road-end', kind: 'fix', image: null,
