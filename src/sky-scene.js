@@ -73,6 +73,11 @@ export function createSkyScene(scene) {
     halo.position.y = -25 + i * 25;
     landmark.add(halo);
   }
+  // Keep two absolute-distance landmarks so a visible tower never teleports
+  // when the endless course streams into the next repeat.
+  const nextLandmark = landmark.clone(true);
+  nextLandmark.visible = false;
+  group.add(nextLandmark);
   const skyline = new THREE.Group();
   group.add(skyline);
   const towerGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -146,8 +151,18 @@ export function createSkyScene(scene) {
       backdrop.material.uniforms.time.value = distance * 0.0015;
       const origin = skyPoint(distance, endless);
       // Loop existing architecture in the camera's streaming window without new GPU allocations.
-      const extension=endless&&distance>5600, next=5600+Math.ceil((distance-5600+800)/1800)*1800;
-      landmark.position.set(SKY_SPIRAL.radius-origin.x,-origin.y,(extension?skyPoint(next,endless).z:-SKY_SPIRAL.start)-origin.z);
+      const extension=endless&&distance>5600;
+      if (extension) {
+        const anchor = 5600 + Math.max(1, Math.floor((distance - 5600) / 1800)) * 1800;
+        for (const [hero, at] of [[landmark, anchor], [nextLandmark, anchor + 1800]]) {
+          hero.visible = Math.abs(at - distance) < 1450;
+          hero.position.set(SKY_SPIRAL.radius - origin.x, -origin.y, skyPoint(at, true).z - origin.z);
+        }
+      } else {
+        landmark.visible = true;
+        nextLandmark.visible = false;
+        landmark.position.set(SKY_SPIRAL.radius - origin.x, -origin.y, -SKY_SPIRAL.start - origin.z);
+      }
       skyline.position.set(-origin.x,-origin.y,(extension?skyPoint(distance+900,endless).z+SKY_SPIRAL.start:0)-origin.z);
       fogBanks.position.copy(skyline.position);
       skyline.visible = quality !== 'low';
