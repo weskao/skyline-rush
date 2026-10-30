@@ -197,12 +197,23 @@
 - [ ] Verify layout does not add noticeable main-thread work, frame-time regression or excessive DOM churn; document any tradeoff between information density, visible game area and readability. Keep automated layout/browser/CI checks and physical-device visual acceptance as distinct gates.
 - [ ] This is **documentation/specification only** at present. Any later implementation needs its own RED → GREEN → refactor, user approval, full `make verify`, exact-HEAD CI and real-device acceptance where possible.
 
-### Planning-only release order / boundaries (items 1–7)
+### 8. Tutorial — 桶滾 / BARREL ROLL (P0; planning only)
 
-- [ ] **P0 (first implementation candidate):** make AIR → ROAD CHAIN reasonably learnable/triggerable and add tutorial (items 1–2); plan the NITRO-ready state contract/one-shot notification (item 6) before choosing visual intensity.
+**Goal:** add a dedicated barrel-roll lesson to the existing tutorial. Teach the actual player-input technique without automating steering or creating a tutorial-only fake stunt. This is **a TODO/documentation change, not an implementation**.
+
+- [ ] Audit the current tutorial step flow, lesson-completion events, mobile touch controls, and actual barrel-roll rules in `src/game.js` before implementing. The current engine describes a barrel roll as a **quick opposite-direction steering press while airborne** (existing `TRICK_FLICK_WINDOW = 0.3` seconds and `TRICK_ROLL_TIME = 0.7` seconds); a **clean landing** pays `TRICK_NITRO = 0.25`. Confirm these thresholds and the relevant state transitions against the latest `main` when work starts; do not change them solely to force tutorial completion.
+- [ ] Add a clear en/zh-TW teaching sequence: (1) gain speed and press FLY to take off, (2) quickly steer one way then the opposite way while airborne to initiate **桶滾 / BARREL ROLL**, (3) maintain control and land cleanly, (4) observe the trick feedback and +0.25 NITRO reward. Keep instructions compact and adapt keyboard / mobile-touch hints; distinguish **桶滾** from **空地連擊** (item 2).
+- [ ] Advance the lesson only when the engine has confirmed the intended maneuver **and valid landing/reward**; do not pass on arbitrary steering, an incomplete roll, a failed landing, a collision or unrelated NITRO gain. Offer a short contextual failure/retry hint without flooding center-screen notifications (coordinate with item 7).
+- [ ] Preserve total player control: no auto-steering, injected inputs, snaps, forced teleport, or assist that changes racing physics. Players may keep driving/steering during the lesson; handle retry, step transitions, pause/resume, reset, quick opposite thumb presses and lost/canceled touch pointers safely.
+- [ ] Provide accessible success/failure feedback in both languages, visible with muted sound or Reduced Motion; optional effects and audio must honor existing VFX, sound and comfort settings.
+- [ ] **TDD acceptance:** deterministic RED → GREEN tests for correct reversal timing, airborne-only trigger, valid vs hard landing, no duplicate reward, unsuccessful retry, tutorial-only step completion, normal race parity, en/zh-TW text and real keyboard/mobile multi-touch completion. Run tutorial/browser regression and full project verification/CI on the future implementation branch.
+
+### Planning-only release order / boundaries (items 1–8)
+
+- [ ] **P0 (first implementation candidate):** make AIR → ROAD CHAIN reasonably learnable/triggerable and add its tutorial (items 1–2); **add the dedicated barrel-roll tutorial lesson (item 8)** based on real airborne steering reversal and clean landing; plan the NITRO-ready state contract/one-shot notification (item 6) before choosing visual intensity.
 - [ ] **P1 (mobile UX):** ergonomic touch controls and optional edit mode (item 3); refine NITRO states and audio/animation (item 6); then refactor Mobile HUD and hints using A+B hybrid baseline (item 7). Avoid simultaneous unrelated rendering/physics rewrites.
 - [ ] **P2 (independent branches):** foldable/dual-screen compatibility (item 4); independent full-screen Garage Studio, Skins and trial access (item 5); **economy foundation/rewards/store only when separately approved**.
-- [ ] Confirm mockups and acceptance conditions before implementation; future branches start from current `main`, preserving project Vue 3 + strict TypeScript preferences, TDD, visual proof, CI gates and existing gameplay. **Nothing under items 1–7 is marked complete by this document update.**
+- [ ] Confirm mockups and acceptance conditions before implementation; future branches start from current `main`, preserving project Vue 3 + strict TypeScript preferences, TDD, visual proof, CI gates and existing gameplay. **Nothing under items 1–8 is marked complete by this document update.**
 
 ## Endless Highway — all ten tracks and seamless continuation (2026-10-30)
 
