@@ -8,6 +8,7 @@ interface TutorialSnapshot {
   complete: boolean;
   progress: number;
   step: string | null;
+  coachPhase?: string;
 }
 interface TutorialDependencies {
   getTutorial(): TutorialSnapshot | null;
@@ -38,7 +39,7 @@ export function setupTutorialUI({
     if (!tutorial) return;
     const race = getRace(), touch = getTouchMatches(), inputPrefs = getInputPrefs(), controlPrefs = getControlPrefs();
     progress.value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
-    const view = [tutorial.step, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode].join('/');
+    const view = [tutorial.step, tutorial.coachPhase, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode].join('/');
     if (!force && tutorialView === view) return;
     tutorialView = view;
     const step = tutorial.step;
@@ -51,7 +52,7 @@ export function setupTutorialUI({
         total: TUTORIAL_STEPS.length,
         action: t(step === 'land' ? 'tutorial.landTitle' : 'keymap.' + step),
       }),
-      instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' : 'tutorial.' + step),
+      instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' : step === 'nitro' && tutorial.coachPhase === 'sprinting' ? 'tutorial.nitroSprint' : 'tutorial.' + step),
       pauseText: t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause'),
       pauseHidden: done,
       completeActionsHidden: !done,

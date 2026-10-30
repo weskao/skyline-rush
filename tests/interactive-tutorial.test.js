@@ -94,6 +94,26 @@ test('held FLY cannot complete the landing lesson and no charge cannot complete 
   assert.equal(session.step, 'nitro');
 });
 
+test('NITRO activation alone does not finish practice; sprint and steering stay live', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [
+    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
+    { fly: true }, { fly: false }, { boost: true },
+  ]) perform(session, action);
+  const car = session.race.player;
+  assert.equal(session.step, 'nitro');
+  tick(session, { nitro: true });
+  assert.equal(session.complete, false, 'a single NITRO press must not complete practice');
+  assert.equal(session.coachPhase, 'sprinting');
+  for (let i = 0; i < 12; i++) tick(session, { steer: -1 });
+  assert.ok(car.steering < 0, 'real steering remains responsive throughout NITRO');
+  for (let i = 0; i < 60; i++) tick(session);
+  assert.equal(session.complete, false, 'less than 1.6s of sprint is insufficient');
+  for (let i = 0; i < 120 && !session.complete; i++) tick(session);
+  assert.equal(session.complete, true);
+  assert.equal(session.race.phase, 'racing', 'simulation remains live until UI acknowledges completion');
+});
+
 test('reaching the road end recovers the same lesson without advancing or stranding the car', () => {
   const session = createInteractiveTutorial();
   session.race.player.distance = session.race.length;
