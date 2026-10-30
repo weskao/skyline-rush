@@ -45,8 +45,9 @@ test('World Tour & Sky Spiral centreline extends continuously beyond authored fi
 test('World Tour procedural detail still exists far beyond finite landmarks',()=>{
  for(const id of ['taipei','tokyo','alpine','coastal','cosmic']){
    for(const chunk of [Math.ceil(RACE_TRACKS[id].length/120)+3,100,400]){
-     const props=sceneryPlan(id,chunk);
+     const props=sceneryPlan(id,chunk,false,true);
      assert.ok(props.length>0,id+' / '+chunk+' should be an inhabited road');
+     assert.equal(sceneryPlan(id,chunk).length,0,'finite scenery must stop at its authored finish');
      assert.ok(props.every(p=>p.distance>=chunk*120&&p.distance<(chunk+1)*120));
    }
  }
