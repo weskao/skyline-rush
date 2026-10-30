@@ -49,3 +49,11 @@ test('NITRO ignores replayed events, invalid frames and interrupted sprint', () 
   assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 2.2, speed: 85 }, NaN), false);
   assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 2.2, speed: 85 }, 0), false);
 });
+
+test('BARREL ROLL must not reuse a landing from before the latest roll', () => {
+  const oldLanding = { chain: false };
+  const car = { ...fresh(), landing: oldLanding };
+  const state = createTutorialManeuverState('barrelRoll', car);
+  state.update({ ...car, altitude: 2, trick: { done: true } }, 1 / 60);
+  assert.equal(state.update({ ...car, trickPayout: { nitro: .25, hard: false } }, 1 / 60), false);
+});

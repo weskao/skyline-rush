@@ -52,10 +52,12 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
           phase = 'rolling';
         }
         if (car.trickPayout && car.trickPayout !== lastPayout) {
-          const earned = rolling && car.landing !== null && car.trickPayout.nitro > 0 && !car.trickPayout.hard;
+          const earned = rolling && car.landing !== null && car.landing !== lastLanding &&
+            car.trickPayout.nitro > 0 && !car.trickPayout.hard;
           rolling = false;
           phase = 'ready';
           lastPayout = car.trickPayout;
+          lastLanding = car.landing;
           return earned;
         }
         if (car.landing && car.landing !== lastLanding) {
