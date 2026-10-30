@@ -59,7 +59,7 @@ for(const id of IDS){
       const first=observations[1],last=observations[2];
       for(const field of ['nodes','geometries','textures','programs'])
         expect(last[field],`${id} ${field} must remain bounded as distance grows`).toBeLessThanOrEqual(first[field]+12);
-      await page.screenshot({path:info.outputPath(`endless-${id}-85km.png`),animations:'disabled'});
+      await page.screenshot({path:`test-results/race-mode-endless-${id}-85km.png`,animations:'disabled'});
       expect(errors).toEqual([]);
     });
 }

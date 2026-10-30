@@ -1,3 +1,15 @@
+## Endless Highway — all ten tracks and seamless continuation (2026-10-30)
+
+**Branch:** `feature/endless-highway-all-tracks`. Keep the existing MODE-09, do not add a twelfth mode. The original finite Sprint/Circuit/Ghost tracks must remain unchanged.
+
+- [x] Extend the existing Endless Highway selection to all ten tracks: Coast, Neon, Canyon, Aurora, Sky Spiral, Taipei, Tokyo, Alpine, Coastal and Cosmic. Retain each route's theme and original finite-route behavior.
+- [x] Add deterministic absolute-distance road/scenery continuation, local-origin camera/geometry and bounded traffic, pickups, rings, chunks and collision windows; preserve World Tour themed scenery beyond the authored finish.
+- [x] Add TDD coverage for all ten tracks at 25/50/85 km, finite-vs-endless parity, World Tour stream bounds, Sky Spiral helix joins, render-frame parity and landmark fade/teleport regressions.
+- [x] Add CI screenshot capture at 85 km for all ten Endless routes; publish the actual WebGL images through the existing `race-mode-screenshots-*` artifact upload, so exact-HEAD visual acceptance can be reviewed before merge.
+- [ ] Physical-device manual acceptance: long-drive road seams, steering/flight transitions, occlusion, thermals and real GPU frame pacing across ten tracks (software WebGL CI is not hardware evidence).
+
+**Merge gate:** require full exact-feature-HEAD GitHub CI GREEN (typecheck/unit, 8/8 browser incl. responsive layout, 6/6 World Tour, cloud save and quality-gate) and inspection of captured WebGL screenshots. Then direct non-force merge to `main` without PR and verify `main` CI. Historical passing SHAs are not substitutes for the current HEAD.
+
 
 ## Mobile race HUD overlap — all devices (2026-10-29)
 
