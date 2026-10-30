@@ -87,7 +87,11 @@ export function createGarageStage(environment: THREE.Texture) {
   function dispose() {
     // The car model borrows global box, lamp, spoke and body geometry from car-model.js.
     // Disposing those would invalidate race meshes sharing the same WebGL context.
-    for (const mesh of stageMeshes) { mesh.geometry.dispose(); mesh.material.dispose(); }
+    for (const mesh of stageMeshes) {
+      mesh.geometry.dispose();
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      materials.forEach(material => material.dispose());
+    }
     car.traverse(object => {
       if (object instanceof THREE.Mesh) {
         const materials = Array.isArray(object.material) ? object.material : [object.material];
