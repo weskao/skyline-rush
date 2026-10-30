@@ -17,7 +17,29 @@ const keyStep = async (page, key, next) => {
   await page.keyboard.up(key);
 };
 
-test('keyboard practice requires real actions, completes all eight steps and preserves career', async ({ page }) => {
+const keyboardChain = async page => {
+  await page.keyboard.down('Space');
+  await page.keyboard.down('Shift');
+  await page.waitForTimeout(1100);
+  await page.keyboard.up('Shift');
+  await page.keyboard.up('Space');
+  await step(page, 'barrelRoll');
+};
+const keyboardRoll = async page => {
+  await page.keyboard.down('Space');
+  await page.waitForTimeout(330);
+  await page.keyboard.down('a');
+  await page.waitForTimeout(110);
+  await page.keyboard.up('a');
+  await page.keyboard.down('d');
+  await page.waitForTimeout(110);
+  await page.keyboard.up('d');
+  await page.waitForTimeout(740);
+  await page.keyboard.up('Space');
+  await step(page, 'nitro');
+};
+
+test('keyboard practice requires real actions, completes all ten steps and preserves career', async ({ page }) => {
   await begin(page);
   const before = await career(page);
   await page.waitForTimeout(800);
@@ -28,7 +50,9 @@ test('keyboard practice requires real actions, completes all eight steps and pre
   await keyStep(page, 's', 'fly');
   await keyStep(page, 'Space', 'land');
   await step(page, 'boost');
-  await keyStep(page, 'Shift', 'nitro');
+  await keyStep(page, 'Shift', 'airChain');
+  await keyboardChain(page);
+  await keyboardRoll(page);
   await keyStep(page, 'e', 'complete');
   await expect(page.locator('#tutorial-retry')).toBeVisible();
   await expect(page.locator('#tutorial-done')).toHaveText('Back to game');
@@ -88,7 +112,9 @@ test.describe('first visit without storage', () => {
     await keyStep(page,'s','fly');
     await keyStep(page,'Space','land');
     await step(page,'boost');
-    await keyStep(page,'Shift','nitro');
+    await keyStep(page,'Shift','airChain');
+    await keyboardChain(page);
+    await keyboardRoll(page);
     await keyStep(page,'e','complete');
     await expect(page.locator('#tutorial-done')).toHaveText('Start race');
     await page.locator('#tutorial-done').click();
@@ -173,6 +199,17 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await step(page,next);
         await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       };
+      const point = async (target, id) => {
+        const b = await target.boundingBox();
+        return { id, x: b.x + b.width / 2, y: b.y + b.height / 2 };
+      };
+      const touch = (type, points) => session.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+      const hold = async (target, duration) => {
+        const p = await point(target, 1);
+        await touch('touchStart', [p]);
+        await page.waitForTimeout(duration);
+        await touch('touchEnd', []);
+      };
       const button = action => page.locator(`#touch-controls [data-control="${action}"]`);
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
@@ -181,7 +218,45 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       await gesture(button('fly'),'land');
       if(flyMode==='toggle') await button('fly').tap();
       await step(page,'boost');
-      await gesture(button('boost'),'nitro');
+      await gesture(button('boost'),'airChain');
+      const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
+      if (flyMode === 'toggle') {
+        await button('fly').tap();
+        await hold(button('boost'), 1100);
+        await button('fly').tap();
+      } else {
+        await touch('touchStart', [fly]);
+        await touch('touchStart', [fly, boost]);
+        await page.waitForTimeout(1100);
+        await touch('touchEnd', [fly]);
+        await touch('touchEnd', []);
+      }
+      await step(page, 'barrelRoll');
+      const steerTarget = effectiveMode === 'slide' ? page.locator('.touch-pad') : button('left');
+      const left = await point(steerTarget, 2), right = await point(button('right'), 3);
+      const pad = effectiveMode === 'slide' ? await point(page.locator('.touch-pad'), 2) : null;
+      if (flyMode === 'toggle') await button('fly').tap();
+      else await touch('touchStart', [fly]);
+      await page.waitForTimeout(330);
+      if (pad) {
+        await touch('touchStart', flyMode === 'toggle' ? [pad] : [fly, pad]);
+        await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x-55}] : [fly,{...pad,x:pad.x-55}]);
+        await page.waitForTimeout(110);
+        await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x+55}] : [fly,{...pad,x:pad.x+55}]);
+        await page.waitForTimeout(110);
+        await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
+      } else {
+        await touch('touchStart', flyMode === 'toggle' ? [left] : [fly,left]);
+        await page.waitForTimeout(110);
+        await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
+        await touch('touchStart', flyMode === 'toggle' ? [right] : [fly,right]);
+        await page.waitForTimeout(110);
+        await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
+      }
+      await page.waitForTimeout(740);
+      if (flyMode === 'toggle') await button('fly').tap();
+      else await touch('touchEnd', []);
+      await step(page, 'nitro');
       await gesture(button('nitro'),'complete');
       const box=await page.locator('#tutorial-exit').boundingBox();
       expect(box.width).toBeGreaterThanOrEqual(44);
