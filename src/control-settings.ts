@@ -59,3 +59,24 @@ export function controlSettings(values: unknown = {}): ControlPreferences {
     version: d.version,
   };
 }
+
+
+// HUD presentation is independent of driving preferences; older v1 control settings remain untouched.
+export const HUD_MODE_KEY = 'skyline-rush-hud-mode';
+export type HudDisplayMode = 'hybrid' | 'competitive';
+type HudModeReader = Pick<Storage, 'getItem'>;
+type HudModeWriter = Pick<Storage, 'setItem'>;
+
+export function resolveHudMode(value: unknown): HudDisplayMode {
+  return value === 'competitive' ? 'competitive' : 'hybrid';
+}
+
+export function readHudMode(storage: HudModeReader = globalThis.localStorage): HudDisplayMode {
+  try { return resolveHudMode(storage.getItem(HUD_MODE_KEY)); }
+  catch { return 'hybrid'; }
+}
+
+export function writeHudMode(mode: HudDisplayMode, storage: HudModeWriter = globalThis.localStorage): void {
+  try { storage.setItem(HUD_MODE_KEY, resolveHudMode(mode)); }
+  catch { /* Keep the chosen display mode in the mounted UI even if storage is blocked. */ }
+}
