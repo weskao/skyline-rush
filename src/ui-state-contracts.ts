@@ -25,6 +25,7 @@ export interface ReleaseEntry {
   title: string;
   description: string;
   image: string;
+  zoomLabel: string;
 }
 export interface ReleaseView {
   openHidden: boolean;
@@ -38,6 +39,8 @@ export interface ReleaseView {
   // Takes the hero's place while it loads and plays; null falls back to heroSrc.
   // `source` is the bundled clip; `src` stays empty (poster only) until the cached copy is ready.
   heroVideo: { src: string; source: string; poster: string; variant: 'desktop' | 'mobile'; controls: boolean } | null;
+  // Screen-reader names for the hero enlarge buttons and the enlarged view's close button.
+  zoom: { image: string; video: string; close: string };
 }
 export interface TutorialCoachView {
   visible: boolean;

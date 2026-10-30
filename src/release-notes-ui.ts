@@ -88,16 +88,18 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
       version: versionLabel(release.version),
       date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
       heroSrc: hero ? import.meta.env.BASE_URL + hero : '',
+      zoom: { image: t('release.zoomImage'), video: t('release.zoomVideo'), close: t('release.zoomClose') },
       heroVideo: clip && {
         src: mediaCache.peek(source) ?? '', source, poster: import.meta.env.BASE_URL + clip.poster,
         variant: clip.variant, controls: reducedMotion.matches,
       },
       entries: highlightsByKind(release.highlights).map(item => {
-        const image = releaseImage(item.image, locale);
+        const image = releaseImage(item.image, locale), title = releaseText(item.title, locale);
         return {
           kind: item.kind,
           kindLabel: t('release.kind.' + item.kind),
-          title: releaseText(item.title, locale),
+          title,
+          zoomLabel: t('release.zoomEntry', { title }),
           description: releaseText(item.description, locale),
           image: image ? import.meta.env.BASE_URL + image : '',
         };

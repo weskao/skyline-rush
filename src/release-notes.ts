@@ -76,7 +76,7 @@ const bundledPath = (value: LocalizedImage | undefined, locale: string, extensio
   return typeof path === 'string' && new RegExp(`^(?!\\/)(?!.*\\.\\.)[a-zA-Z0-9][a-zA-Z0-9/_.-]*\\.(?:${extensions})$`).test(path) ? path : null;
 };
 export const releaseImage = (value: LocalizedImage | undefined, locale: string): string | null =>
-  bundledPath(value, locale, 'png|jpe?g|webp|avif');
+  bundledPath(value, locale, 'png|jpe?g|webp|avif|gif');
 
 export function releaseHeroVideo(video: ReleaseVideo | null | undefined, locale: string, portrait: boolean):
   { src: string; poster: string; variant: keyof ReleaseVideo } | null {

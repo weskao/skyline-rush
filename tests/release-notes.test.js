@@ -116,6 +116,7 @@ test('current entry is curated in both languages', () => {
 
 test('image fields can be missing or localized and cannot contain remote or traversal URLs', () => {
   assert.equal(releaseImage(null, 'en'), null);
+  assert.equal(releaseImage('whats-new/drift/lap.gif', 'en'), 'whats-new/drift/lap.gif', 'animated pictures are allowed');
   assert.equal(releaseImage({en:'image-en.jpeg','zh-TW':'image-zh.jpeg'}, 'zh-TW'), 'image-zh.jpeg');
   assert.equal(releaseImage('https://example.com/x.png', 'en'), null);
   assert.equal(releaseImage('../secret.png', 'en'), null);
