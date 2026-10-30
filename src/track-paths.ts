@@ -27,7 +27,7 @@ export function trackPoint(trackId: string, distance: number, extended = false):
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance).point;
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
-  if (trackId === 'spiral') return skyPoint(s);
+  if (trackId === 'spiral') return skyPoint(s, extended);
   const profile = profiles[trackId];
   if (profile) return { ...profile(s), z: -s };
   return { x: classicRoadCenter(s), y: 0, z: -s };
@@ -38,7 +38,7 @@ export function trackFrame(trackId: string, distance: number, extended = false) 
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance);
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
-  if (trackId === 'spiral') return skyFrame(s);
+  if (trackId === 'spiral') return skyFrame(s, extended);
   const a = trackPoint(trackId, s - 0.5, extended);
   const b = trackPoint(trackId, s + 0.5, extended);
   // The end derivative is a one-sided difference, not a zero-length tangent.
