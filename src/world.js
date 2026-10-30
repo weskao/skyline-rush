@@ -562,7 +562,7 @@ export function createWorld(canvas) {
     const relative = physicalGap(trackId, distance, car.distance);
     // Tour and sky routes end at the finish and trackPoint clamps there, so cars
     // past it would pile up at the arch like parked cars; they leave the scene instead.
-    const pastFinish = (trackId === 'spiral' || TOUR_IDS.has(trackId)) && car.distance > RACE_TRACKS[trackId].length;
+    const pastFinish = !endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId)) && car.distance > RACE_TRACKS[trackId].length;
     mesh.visible = isPlayer || (relative > -55 && relative < 900 && !pastFinish);
     if (!mesh.visible) return; mesh.userData.roadDistance = car.distance; mesh.userData.altitude = car.altitude || 0; // the pose the shadow sits under
     if (trackId === 'spiral' || framedRoad(trackId)) {

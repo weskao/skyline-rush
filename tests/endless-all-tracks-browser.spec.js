@@ -38,7 +38,11 @@ for(const id of IDS){
             if(obj.name?.includes('chunk-') && obj.name?.includes('world-tour-'))chunkCount++;
             if(obj.visible && obj.isMesh && obj.parent?.name?.includes('world-tour-'))visibleScenery++;
           });
-          return {nodes,chunkCount,visibleScenery,geometries:renderer.info.memory.geometries,
+          const trafficRendered=scene.children.filter(obj=>obj.visible &&
+            Number.isFinite(obj.userData?.roadDistance) &&
+            obj.userData.roadDistance>race.player.distance+5 &&
+            obj.userData.roadDistance<race.player.distance+900).length;
+          return {nodes,chunkCount,visibleScenery,trafficRendered,geometries:renderer.info.memory.geometries,
             textures:renderer.info.memory.textures,programs:renderer.info.programs?.length,
             props:race.props?.length||0,traffic:race.traffic.length,pickups:race.pickups.length,rings:race.rings.length,
             phase:race.phase,trackId:race.trackId};
@@ -46,6 +50,8 @@ for(const id of IDS){
       }
       expect(observations.every(o=>o.phase==='racing'&&o.trackId===id)).toBe(true);
       expect(observations.every(o=>o.traffic<=40&&o.pickups<=20&&o.rings<=15)).toBe(true);
+      expect(observations.every(o=>o.trafficRendered>0),
+        `${id} must draw actual NPC cars past the finite sprint finish`).toBe(true);
       if(TOUR.has(id)){
         expect(observations.every(o=>o.chunkCount>0&&o.chunkCount<=15),`${id} scenes must keep streaming beyond finish`).toBe(true);
         expect(observations.every(o=>o.props<150),`${id} solid props must be bounded`).toBe(true);
