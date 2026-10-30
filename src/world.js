@@ -25,7 +25,7 @@ import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition, skyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
-import { classicRoadCenter, trackPoint, trackFrame, trackLocalPosition } from './track-paths.ts';
+import { classicRoadCenter, trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition } from './track-paths.ts';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
@@ -63,6 +63,11 @@ function fitText(context, label, x, y, maxWidth, basePx, locale) {
 }
 
 export function createWorld(canvas) {
+  // The renderer alone opts into the infinite continuation; finite records stay untouched.
+  let endlessActive=false;
+  const trackPoint=(id,d)=>finitePoint(id,d,endlessActive);
+  const trackFrame=(id,d)=>finiteFrame(id,d,endlessActive);
+  const trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
   // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
   renderer.info.autoReset=false; // Combine scene and composer submissions per frame for QA.
@@ -643,6 +648,7 @@ export function createWorld(canvas) {
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
+      endlessActive=!!race.endless;
       const preview = race.phase === 'ready';
       const car = race.player;
       const reducedMotion = motionPreference.matches || visual.comfortable;
@@ -728,8 +734,8 @@ export function createWorld(canvas) {
       if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide();
       if (trackId === 'spiral' || framedRoad(trackId)) {
         if (trackId === CIRCUIT_ID) { skyScene.hide(); worldTourScene.hide(); }
-        else if (trackId === 'spiral') { skyScene.update(distance, visual.quality); worldTourScene.hide(); }
-        else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion); }
+        else if (trackId === 'spiral') { skyScene.update(distance, visual.quality, !!race.endless); worldTourScene.hide(); }
+        else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion,!!race.endless); }
         road.visible = false;
         for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls, cliffs, surfaceMarks]) m.visible = false;
         towers.forEach(t => { t.visible = false; });
