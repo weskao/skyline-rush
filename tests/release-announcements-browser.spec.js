@@ -1,9 +1,16 @@
 import fs from 'node:fs';
 import { test, expect } from './helpers/test.js';
-import { recentReleases } from '../src/release-notes.ts';
+import { recentReleases, UPCOMING } from '../src/release-notes.ts';
 
 const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const SEEN_KEY = 'skyline-rush-whats-new-seen-v1';
+// Notes for the coming release show first as Upcoming and are never announced, marked unread or recorded as seen;
+// once the release commit names them they count like any other entry, so these checks follow what the build holds.
+const announced = recentReleases().map(release => release.version).filter(v => v !== UPCOMING);
+const hasUpcoming = recentReleases().some(release => release.version === UPCOMING);
+const tabFor = (dialog, v) => dialog.locator(`[role="tab"][data-version="${v}"]`);
+// Upcoming notes stop the automatic opening, so the reader opens the dialog; opening marks the unread releases alike.
+const openIfNotAuto = page => hasUpcoming ? page.locator('#whats-new-open').click() : Promise.resolve();
 // Page scripts run after the helper's context script, so this replaces its "already seen" record on the first load only.
 const seedSeen = (page, value) => page.addInitScript(([key, seen]) => {
   if (sessionStorage.getItem('seeded-whats-new')) return;
@@ -49,7 +56,7 @@ test('players switch between the latest releases by click and keyboard', async (
   expect(count).toBeGreaterThanOrEqual(3);
   expect(count).toBeLessThanOrEqual(5);
   await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
-  await expect(tabs.first()).toContainText('v' + version);
+  await expect(tabs.first()).toContainText(hasUpcoming ? 'Upcoming' : 'v' + version);
   await expect(dialog.getByRole('tabpanel')).toBeVisible();
 
   const second = tabs.nth(1);
@@ -102,7 +109,7 @@ test('release notes support optional localized hero images without leaking racin
   const dialog = page.locator('#whats-new-screen');
   const hero = dialog.locator('#release-hero');
   for (const release of recentReleases()) {
-    await dialog.getByRole('tab').filter({ hasText: 'v' + release.version }).click();
+    await tabFor(dialog, release.version).click();
     for (const locale of ['en', 'zh-TW']) {
       await page.locator('#locale-select').selectOption(locale, { force: true });
       await expect(dialog.locator('.release-entry').first()).toBeVisible();
@@ -125,6 +132,12 @@ test('a returning player on an older version gets the notes once, and the record
   await seedSeen(page, '0.1.0');
   await page.goto('/');
   const dialog = page.locator('#whats-new-screen');
+  if (hasUpcoming) { // Upcoming notes never open by themselves and never replace the record
+    await settle(page);
+    await expect(dialog).toBeHidden();
+    expect(await page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBe('0.1.0');
+    return;
+  }
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true');
   await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBe(version);
@@ -136,10 +149,11 @@ test('a returning player on an older version gets the notes once, and the record
 });
 
 test.describe('several releases missed', () => {
-  const shown = recentReleases().map(release => release.version);
+  const shown = announced;
   test.use({ whatsNewSeen: shown[2] });
   test('every release newer than the last one read is marked new until the notes are reopened', async ({ page }) => {
     await page.goto('/');
+    await openIfNotAuto(page);
     const dialog = page.locator('#whats-new-screen');
     await expect(dialog).toBeVisible();
     const marked = dialog.getByRole('tab').filter({ has: page.locator('.release-tab-unread') });
@@ -153,13 +167,15 @@ test.describe('several releases missed', () => {
     await expect(marked.nth(1)).toContainText('未讀');
     await page.locator('#release-continue').click();
     await page.locator('#whats-new-open').click(); // opening the notes counted as reading every release
-    await expect(dialog.locator('.release-tab-unread')).toHaveCount(0);
+    // ...unless Upcoming notes lead: they record no read, so the marks stay until the release is named
+    await expect(dialog.locator('.release-tab-unread')).toHaveCount(hasUpcoming ? 2 : 0);
   });
 
   for (const [width, height] of [[1440,900],[390,844]]) test(`the unread badge sits on the tab's top-right corner at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
-    const tab = page.locator('#whats-new-screen').getByRole('tab').first();
+    await openIfNotAuto(page);
+    const tab = tabFor(page.locator('#whats-new-screen'), announced[0]);
     await expect(tab.locator('.release-tab-unread')).toBeVisible();
     const [t, badge, label, rail] = await Promise.all([tab, tab.locator('.release-tab-unread'), tab.locator('.release-tab-version'), page.locator('#release-versions')].map(l => l.boundingBox()));
     expect(Math.abs(badge.y + badge.height / 2 - t.y)).toBeLessThanOrEqual(2); // centred on the top border
@@ -185,7 +201,7 @@ test.describe('first visit', () => {
     await page.goto('/');
     await settle(page);
     await expect(page.locator('#whats-new-screen')).toBeHidden();
-    await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBe(version);
+    await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBe(hasUpcoming ? null : version);
   });
 });
 

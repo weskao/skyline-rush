@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { recentReleases } from '../src/release-notes.ts';
 
 // Tapping a What's New picture or clip shows all of it, uncropped and on screen, on desktops, tablets and phones.
 // Escape, the close button or a tap anywhere closes only the enlarged view and hands focus back.
@@ -21,6 +22,9 @@ async function openNotes(page, gameplayURL, patch = '') {
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   await page.locator('#whats-new-open').click();
   await expect(page.locator('#whats-new-screen')).toBeVisible();
+  // Upcoming notes lead the tabs without pictures or a clip: read the newest release that has both.
+  const [newest] = recentReleases(), media = recentReleases().find(release => release.video && release.highlights.some(item => item.image));
+  if (!patch && media && media !== newest) await page.locator(`#whats-new-screen [role="tab"][data-version="${media.version}"]`).click();
   return errors;
 }
 const TOUCH = 44 - 0.01; // 44 px touch targets, give or take subpixel layout
