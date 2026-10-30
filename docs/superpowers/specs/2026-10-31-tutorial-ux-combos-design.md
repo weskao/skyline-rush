@@ -3,7 +3,7 @@
 **Repository:** https://github.com/weskao/skyline-rush
 **Branch:** `feature/tutorial-ux-combos`
 **Wave:** 1 · **Source TODO:** 1, 2, 8, 9
-**Status:** DOCUMENTATION ONLY · **Date:** 2026-10-31
+**Status:** IMPLEMENTATION SUBMITTED · FULL CI / DEVICE ACCEPTANCE PENDING · **Date:** 2026-10-31
 **Dependencies:** None; agree on shared NITRO event semantics with HUD work, but do not edit HUD controller.
 
 ## 1. Goals and boundaries (SDD)
@@ -92,7 +92,7 @@ Design choices: isolate event/state contracts from presentation, use Vue 3 + Typ
 ### Required shared constraints
 
 - Baseline main commit: `bea47cf61c162b4341021fa6d24ca45850af7796`. Product requirements: [UX/UI source TODO](https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/TODO.md); **they have not yet been merged into main**. Before implementation reconcile this source into the working branch without overwriting newer main data.
-- Planning-only commit. No source edits, no tests run, no merge/PR/deploy. Product spec and BDD are intended implementation contracts, not proof of behavior.
+- Original planning commit was documentation-only; implementation now exists on this feature branch. Source and browser tests have been committed, but the complete CI/visual/device acceptance gate remains open. No merge/PR/deploy has been performed.
 - Read the current `CLAUDE.md`, `.claude/rules/ui-architecture.md`, `performance-review.md`, `device-quality.md`, `touch-input.md`, `ui-phase-interactions.md` and domain-specific rules; follow newer revisions when implementing.
 - New UI: Vue 3 + strict TypeScript (SFC `<script setup lang="ts">`), typed adapters for necessary JS physics/Three.js render loop. No Vue reactive writes or DOM queries per frame.
 - Android Chrome and iPhone Safari/Chrome portrait + landscape, tablet and desktop; `en`/`zh-TW`, Low/Medium/High, VFX off, Reduced Motion, muted audio; preserve critical controls/data at every tier.

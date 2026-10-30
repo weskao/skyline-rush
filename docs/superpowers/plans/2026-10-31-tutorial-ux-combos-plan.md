@@ -12,13 +12,15 @@
 
 **Repository:** https://github.com/weskao/skyline-rush
 **Target branch:** `feature/tutorial-ux-combos`
-**Wave:** 1 · **TODO:** 1, 2, 8, 9 · **Status:** PLAN ONLY — NOT IMPLEMENTED
+**Wave:** 1 · **TODO:** 1, 2, 8, 9 · **Status:** IMPLEMENTED, FULL ACCEPTANCE PENDING
 **Dependency:** None; agree on shared NITRO event semantics with HUD work, but do not edit HUD controller.
+
+**Implementation checkpoint:** Ten steps, real engine event observer, bilingual coaching and keyboard/touch regression tests are committed; full browser, typecheck and performance gates still require a successful exact-HEAD CI. No TODO completion claims are justified yet.
 
 ## Global Constraints
 
 - Baseline main commit: `bea47cf61c162b4341021fa6d24ca45850af7796`. Product requirements: [UX/UI source TODO](https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/TODO.md); **they have not yet been merged into main**. Before implementation reconcile this source into the working branch without overwriting newer main data.
-- Planning-only commit. No source edits, no tests run, no merge/PR/deploy. Product spec and BDD are intended implementation contracts, not proof of behavior.
+- The original planning commit was documentation-only. This branch now includes implementation and regression tests, but full CI and real browser/WebGL/device checks remain required. No merge/PR/deploy.
 - Read the current `CLAUDE.md`, `.claude/rules/ui-architecture.md`, `performance-review.md`, `device-quality.md`, `touch-input.md`, `ui-phase-interactions.md` and domain-specific rules; follow newer revisions when implementing.
 - New UI: Vue 3 + strict TypeScript (SFC `<script setup lang="ts">`), typed adapters for necessary JS physics/Three.js render loop. No Vue reactive writes or DOM queries per frame.
 - Android Chrome and iPhone Safari/Chrome portrait + landscape, tablet and desktop; `en`/`zh-TW`, Low/Medium/High, VFX off, Reduced Motion, muted audio; preserve critical controls/data at every tier.
@@ -137,3 +139,10 @@
 - [ ] All files and contracts were reconfirmed against latest `main` at implementation time.
 - [ ] No user-facing claim of successful tests or CI before observed evidence.
 - [ ] No implementation has occurred in this planning-only commit.
+
+## 2026-10-31 Implementation / CI checkpoint
+
+- Added `src/tutorial-maneuver-state.ts` and focused engine-event observer tests, while keeping physics and controls unchanged.
+- Expanded tutorial from eight to ten real-engine steps and updated `src/tutorial-ui.ts`, `src/TutorialCoach.vue`, `src/locales/ui.ts`, unit and Playwright test cases.
+- Exact feature HEAD `9184c16afc932d481471b8b59328249ba3507a66` had CI run [41130940770](https://github.com/weskao/skyline-rush/actions/runs/41130940770) **cancelled** before unit/browser/world-tour suites completed. Cloud Save succeeded; quality-gate failed with ENOENT because no browser-generated `render-performance-*` artifact directory existed after cancellation. This is *not* a green test run or proof of code failure.
+- Re-ran the cancelled `unit-tests` job on that SHA; full-suite execution and WebGL/physical-device evidence are not yet confirmed. Do not check off TODO 1/2/8/9, bypass validation, or merge `main` until a successful exact-HEAD quality gate and required acceptance evidence exist.
