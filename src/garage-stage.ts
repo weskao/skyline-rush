@@ -20,11 +20,13 @@ export function createGarageStage(environment: THREE.Texture) {
   );
   platform.position.y = -0.16;
   scene.add(platform);
+  const stageMeshes: THREE.Mesh[] = [platform];
   for (const [radius, color] of [[5.55, '#04c9ee'], [5.36, '#faac65']] as const) {
     const rim = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.035, 6, 64), new THREE.MeshBasicMaterial({ color }));
     rim.rotation.x = -Math.PI / 2;
     rim.position.y = -0.057;
     scene.add(rim);
+    stageMeshes.push(rim);
   }
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(44, 44),
@@ -33,12 +35,14 @@ export function createGarageStage(environment: THREE.Texture) {
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.27;
   scene.add(floor);
+  stageMeshes.push(floor);
   const backdrop = new THREE.Mesh(
     new THREE.PlaneGeometry(45, 22),
     new THREE.MeshBasicMaterial({ color: '#0a1a2a' }),
   );
   backdrop.position.set(0, 7, -17);
   scene.add(backdrop);
+  stageMeshes.push(backdrop);
   const ambient = new THREE.HemisphereLight('#b8eafa', '#14212a', 2);
   const key = new THREE.DirectionalLight('#b9eaff', 3.2);
   key.position.set(-6, 12, -5);
@@ -81,9 +85,11 @@ export function createGarageStage(environment: THREE.Texture) {
   }
 
   function dispose() {
-    scene.traverse(object => {
+    // The car model borrows global box, lamp, spoke and body geometry from car-model.js.
+    // Disposing those would invalidate race meshes sharing the same WebGL context.
+    for (const mesh of stageMeshes) { mesh.geometry.dispose(); mesh.material.dispose(); }
+    car.traverse(object => {
       if (object instanceof THREE.Mesh) {
-        object.geometry.dispose();
         const materials = Array.isArray(object.material) ? object.material : [object.material];
         materials.forEach(material => material.dispose());
       }
