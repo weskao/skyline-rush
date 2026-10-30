@@ -16,8 +16,7 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
-import { createGarageStage } from './garage-stage.ts';
-import { createCircuitScene } from './circuit-scene.ts';
+import { createGarageStage } from './garage-stage.ts'; import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
@@ -83,8 +82,7 @@ export function createWorld(canvas) {
   const msaaSamples = quality => quality === 'low' ? 2 : 4;
   const sceneTarget = samples => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples });
   const composer = new EffectComposer(renderer, sceneTarget(4)); // configureVFX re-targets for the saved quality tier
-  const renderPass = new RenderPass(scene, camera);
-  composer.addPass(renderPass);
+  const renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 1.1);
   // The bloom blur spreads one NaN/Inf scene texel into a screen-sized black rectangle (seen when a nozzle shader hit
   // 0*Inf at an MSAA sliver). Dropping non-finite texels at the high pass caps such a bug at a one-pixel speck.
@@ -112,8 +110,7 @@ export function createWorld(canvas) {
   const room = new RoomEnvironment();
   const environment = env.fromScene(room, 0.04);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0.42;
-  let garageStage = null, garagePaint = null;
+  scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null;
   room.dispose();
   env.dispose();
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
@@ -610,19 +607,10 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize, setGarageCamera(snapshot) {
-      if (!!garageCamera !== !!snapshot) initialized = false;
-      garageCamera = snapshot;
-      if (snapshot && !garageStage) {
-        garageStage = createGarageStage(environment.texture);
-        if (garagePaint) garageStage.setPaint(garagePaint);
-      }
-      if (!snapshot) renderPass.scene = scene;
-    },
+    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); if (garagePaint) garageStage.setPaint(garagePaint); } if (!snapshot) renderPass.scene = scene; },
     inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
-      garagePaint = paint;
-      garageStage?.setPaint(paint);
+      garagePaint = paint; garageStage?.setPaint(paint);
       player.userData.body.material.color.set(paint.paint);
       player.userData.lightColor.fromArray(paint.light);
     },
@@ -656,16 +644,7 @@ export function createWorld(canvas) {
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
-      if (garageCamera && garageStage && race.phase === 'ready') {
-        renderPass.scene = garageStage.scene;
-        garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable);
-        lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0;
-        bloom.enabled = visual.quality !== 'low';
-        bloom.strength = 0.12;
-        renderer.info.reset();
-        composer.render(dt);
-        return;
-      }
+      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.12; renderer.info.reset(); composer.render(dt); return; }
       renderPass.scene = scene;
       endlessActive=!!race.endless;
       const preview = race.phase === 'ready';
@@ -933,11 +912,7 @@ export function createWorld(canvas) {
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion);
       const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
       const portrait = camera.aspect < 0.8;
-      if (preview && garageCamera) {
-        const a = garageCamera.yaw + (garageCamera.autoRotate && !reducedMotion ? time * .13 : 0);
-        const p = garageCamera.pitch, d = Math.max(11, 3.5 / (Math.tan(50 * Math.PI / 360) * Math.max(.35, Math.min(1.2, camera.aspect)))) * garageCamera.zoom;
-        desiredCamera.set(player.position.x + Math.sin(a) * Math.cos(p) * d, player.position.y + 1 + Math.sin(p) * d, player.position.z + Math.cos(a) * Math.cos(p) * d); lookTarget.copy(player.position); lookTarget.y += 1;
-      } else if (photoView && race.phase === 'paused') {
+      if (photoView && race.phase === 'paused') {
         desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
           player.position.y + 5, player.position.z + Math.cos(photoView.angle) * 14);
         lookTarget.copy(player.position); lookTarget.y += 1;
@@ -1130,8 +1105,7 @@ export function createWorld(canvas) {
       });
     },
     dispose() {
-      garageStage?.dispose();
-      stopLocaleSigns();
+      garageStage?.dispose(); stopLocaleSigns();
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
       circuitScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
