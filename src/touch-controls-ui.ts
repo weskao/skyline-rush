@@ -1,5 +1,5 @@
 import { t } from './i18n.ts';
-import { controlSettings, CONTROLS_KEY, type ControlPreferences } from './control-settings.ts';
+import { controlSettings, CONTROLS_KEY, normalizeOrientationLayouts, readOrientationLayouts, writeOrientationLayouts, orientationForViewport, type ControlPreferences } from './control-settings.ts';
 import type { createControls } from './input.ts';
 
 type Controls = ReturnType<typeof createControls>;
@@ -56,6 +56,8 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
   // In-memory source of truth: input.ts reads it on every pointermove, so storage is only touched on load/change.
   let controlPrefs = controlSettings();
   try { controlPrefs = controlSettings(JSON.parse(localStorage.getItem(CONTROLS_KEY)!)); } catch { /* Defaults work without storage. */ }
+  let orientedLayouts = readOrientationLayouts(controlPrefs.layout);
+  const currentOrientation = () => orientationForViewport(innerWidth, innerHeight);
   let editingLayout = false;
   let inputPrefs: InputPrefs = { ...controlPrefs, editing: false };
   let tiltRequest = 0, tiltGranted = false, tiltSeen = false;
@@ -75,7 +77,7 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     $('#tilt-enable').hidden = controlPrefs.mode !== 'tilt';
     if (controlPrefs.mode !== 'tilt') { controls.setTilt(false); tiltGranted = false; clearTimeout(tiltTimeout); }
     for (const button of touchButtons) {
-      const point = isTutorialActive() ? undefined : controlPrefs.layout[button.dataset.control as keyof ControlPreferences['layout']];
+      const point = isTutorialActive() ? undefined : orientedLayouts[currentOrientation()][button.dataset.control as keyof ControlPreferences['layout']];
       button.classList.toggle('is-positioned', !!point);
       if (point) {
         const { left, top } = layoutPosition(point, controlPrefs.hand, { width: button.offsetWidth, height: button.offsetHeight }, { width: innerWidth, height: innerHeight });
@@ -88,7 +90,10 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
       if (input.type === 'radio') input.checked = input.value === String(value);
       else { input.value = String(value); (input.previousElementSibling as HTMLOutputElement).value = `${Math.round(Number(value) * 100)}%`; }
     }
-    if (persist) try { localStorage.setItem(CONTROLS_KEY, JSON.stringify(controlPrefs)); } catch { /* Settings remain usable in memory. */ }
+    if (persist) {
+      try { localStorage.setItem(CONTROLS_KEY, JSON.stringify(controlPrefs)); } catch { /* Settings remain usable in memory. */ }
+      writeOrientationLayouts(orientedLayouts);
+    }
   }
 
   // input.ts keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.ts).
@@ -175,7 +180,7 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     }
   }
   $('#tilt-enable').addEventListener('click', enableTilt);
-  $('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); applyControls(); cueUi(); });
+  $('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); orientedLayouts = normalizeOrientationLayouts(null); applyControls(); cueUi(); });
 
   function editLayout(editing: boolean): void {
     editingLayout = editing;
@@ -188,24 +193,37 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
   }
   $('#layout-edit').addEventListener('click', () => editLayout(true));
   $('#layout-done').addEventListener('click', () => editLayout(false));
-  $('#layout-reset').addEventListener('click', () => { controlPrefs = { ...controlPrefs, layout: {} }; applyControls(); });
+  $('#layout-reset').addEventListener('click', () => { controlPrefs = { ...controlPrefs, layout: {} }; orientedLayouts = normalizeOrientationLayouts(null); applyControls(); });
   for (const button of touchButtons) {
-    let drag: { id: number; dx: number; dy: number } | null = null;
+    let drag: { id: number; x: number; y: number; origins: { action: keyof ControlPreferences['layout']; x: number; y: number; width: number; height: number }[] } | null = null;
     button.addEventListener('pointerdown', event => {
       if (!editingLayout) return;
       event.preventDefault();
-      drag = { id: event.pointerId, dx: event.clientX - (button.getBoundingClientRect().left + button.offsetWidth / 2), dy: event.clientY - (button.getBoundingClientRect().top + button.offsetHeight / 2) };
+      // Moving either member moves its whole thumb cluster; the pad remains input-owned.
+      const steer = ['left', 'right', 'brake'].includes(button.dataset.control!);
+      const peers = touchButtons.filter(peer => steer === ['left', 'right', 'brake'].includes(peer.dataset.control!));
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, origins: peers.map(peer => {
+        const rect = peer.getBoundingClientRect();
+        return { action: peer.dataset.control as keyof ControlPreferences['layout'],
+          x: rect.left + rect.width / 2, y: rect.top + rect.height / 2,
+          width: peer.offsetWidth, height: peer.offsetHeight };
+      }) };
       button.setPointerCapture(event.pointerId);
     });
     button.addEventListener('pointermove', event => {
       if (!editingLayout || event.pointerId !== drag?.id) return;
-      const point = layoutPoint(event.clientX - drag.dx, event.clientY - drag.dy, { width: button.offsetWidth, height: button.offsetHeight }, controlPrefs.hand, { width: innerWidth, height: innerHeight });
-      controlPrefs = { ...controlPrefs, layout: { ...controlPrefs.layout, [button.dataset.control!]: point } };
+      const offsetX = event.clientX - drag.x, offsetY = event.clientY - drag.y;
+      const next = { ...orientedLayouts[currentOrientation()] };
+      for (const origin of drag.origins) {
+        next[origin.action] = layoutPoint(origin.x + offsetX, origin.y + offsetY,
+          { width: origin.width, height: origin.height }, controlPrefs.hand, { width: innerWidth, height: innerHeight });
+      }
+      orientedLayouts = { ...orientedLayouts, [currentOrientation()]: next };
       applyControls(false);
     });
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) button.addEventListener(type, event => { if (event.pointerId === drag?.id) { drag = null; applyControls(); } });
   }
-  window.addEventListener('resize', () => applyControls());
+  window.addEventListener('resize', () => { controls.clear(); applyControls(false); });
 
   return {
     prefs: (): ControlPreferences => controlPrefs,

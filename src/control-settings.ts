@@ -88,3 +88,22 @@ export function activateHudMode(mode: HudDisplayMode, root: Pick<HTMLElement, 'd
   writeHudMode(selected, storage);
   return selected;
 }
+
+export const ORIENTATION_LAYOUT_KEY = 'skyline-rush-controls-layout-v2';
+export type LayoutOrientation = 'portrait' | 'landscape';
+export interface OrientationLayouts { version: 2; portrait: ControlPreferences['layout']; landscape: ControlPreferences['layout'] }
+export function normalizeOrientationLayouts(value: unknown, legacy: ControlPreferences['layout'] = {}): OrientationLayouts {
+  const sanitized = (layout: unknown): ControlPreferences['layout'] => controlSettings({ version: 1, layout }).layout;
+  const fallback = sanitized(legacy);
+  if (!isRecord(value) || value.version !== 2) return { version: 2, portrait: { ...fallback }, landscape: { ...fallback } };
+  return { version: 2, portrait: sanitized(value.portrait), landscape: sanitized(value.landscape) };
+}
+export function readOrientationLayouts(legacy: ControlPreferences['layout'] = {}, storage?: Pick<Storage, 'getItem'>): OrientationLayouts {
+  try { return normalizeOrientationLayouts(JSON.parse((storage ?? globalThis.localStorage).getItem(ORIENTATION_LAYOUT_KEY) ?? 'null'), legacy); }
+  catch { return normalizeOrientationLayouts(null, legacy); }
+}
+export function writeOrientationLayouts(layouts: OrientationLayouts, storage?: Pick<Storage, 'setItem'>): void {
+  try { (storage ?? globalThis.localStorage).setItem(ORIENTATION_LAYOUT_KEY, JSON.stringify(normalizeOrientationLayouts(layouts))); }
+  catch { /* Layout remains active in memory when storage is blocked. */ }
+}
+export function orientationForViewport(width: number, height: number): LayoutOrientation { return width > height ? 'landscape' : 'portrait'; }
