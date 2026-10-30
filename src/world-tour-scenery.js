@@ -288,13 +288,13 @@ export function createSceneryKit() {
   }
   // Continuous sculpted rock / coast ribbons with *absolute* distance-based
   // noise. Adjacent 120m sections share the same endpoint and do not pop.
-  function terrain(trackId,chunk,low=false){
+  function terrain(trackId,chunk,low=false,endless=false){
     if(!['alpine','coastal'].includes(trackId))return null;
     const length=RACE_TRACKS[trackId].length, root=new THREE.Group();
     root.name='terrain:'+trackId+':'+chunk;
     const strips=low?6:10,rings=4;
     const start=chunk*SCENERY_CHUNK_METRES;
-    const end=Math.min(start+SCENERY_CHUNK_METRES,length);
+    const end=endless?start+SCENERY_CHUNK_METRES:Math.min(start+SCENERY_CHUNK_METRES,length);
     if(start>=end)return root;
     for(const side of [-1,1]){
       const vertices=[],index=[];

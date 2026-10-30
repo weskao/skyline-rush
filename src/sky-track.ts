@@ -86,7 +86,7 @@ export function skyFrame(distance: number, endless = false) {
   const bank = 0.11 * spiralBlend;
   const right = horizontalRight.map((v, i) => v * Math.cos(bank) + normal[i] * Math.sin(bank)) as Vec3;
   const up = normal.map((v, i) => v * Math.cos(bank) - horizontalRight[i] * Math.sin(bank)) as Vec3;
-  return { point: skyPoint(distance), forward, right, up, bank };
+  return { point: skyPoint(distance, endless), forward, right, up, bank };
 }
 
 export function skyPosition(distance: number, lateral = 0, altitude = 0, originDistance = 0, endless = false): Vec3 {

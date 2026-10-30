@@ -206,7 +206,7 @@ export function createWorldTourScene(scene){
           terrainHeight(id,item.distance,item.side,item.offset));
         chunk.add(prop);
       }
-      const earth=kit.terrain(id,index,level==='low');
+      const earth=kit.terrain(id,index,level==='low',endlessActive);
       if(earth)chunk.add(earth);
       chunk.add(tunnelKit.buildChunk(id,index,sections));
       // One-time static batching keeps every model/material, greatly reducing
