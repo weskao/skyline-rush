@@ -17,17 +17,17 @@ const hash = (a, b) => {
 
 // `blocks` (optional) reports a landmark sightline hit; such details move across
 // the road or farther out, and drop only when no clear spot exists.
-export function detailSetPlan(trackId, chunk, quality = 'high', blocks = null) {
+export function detailSetPlan(trackId, chunk, quality = 'high', blocks = null, endless = false) {
   const kinds = DETAIL_KINDS[trackId];
   if (!kinds) return [];
-  const items = [];
+  const length = RACE_TRACKS[trackId].length, items = [];
   // High: one per kerb per chunk; Medium: one per chunk; Low: none (decoration only).
   if (quality === 'low' || quality === true) return [];
   const sides = quality === 'high' ? [-1, 1] : [chunk % 4 < 2 ? -1 : 1];
   for (const side of sides) {
     const seed = chunk * 13 + (side === 1 ? 5 : 0);
     const distance = chunk * 120 + 40 + hash(seed, 3) * 40;
-    // Preserve absolute-distance detail generation beyond finite course ends.
+    if (!endless && distance > length) continue;
     // Ships and spray stay on the open-water (right) side of the coast road.
     const pool = kinds.filter(kind => !WATER.has(kind) || side === 1);
     const kind = pool[Math.floor(hash(seed, trackId.length) * pool.length)];
