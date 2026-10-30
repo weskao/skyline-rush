@@ -1,4 +1,4 @@
-<!-- source-sha256: d54b490ac6c6e2f0d30e50b01d0bd3dbeea0fd4cb16e6e551ea96af1961b3993 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 47bdf03a20230467b080f10133c27dc70e11c5c49ba15ec92fa2f9bd05dd9dd4 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -281,7 +281,7 @@ make deploy                              # Deploy remote main manually through t
 # after scripts/release-gate.sh has seen a green CI run for the commit on main.
 ```
 
-CI（`.github/workflows/ci.yml`）會在推送到 `main`、pull request、版本標籤推送（`v*`）與手動執行時，建置並執行單元測試與 Chrome 瀏覽器測試。瀏覽器測試以八個平行分片執行（`--shard=N/8`），而對同一分支的較新推送會取消它所取代的那次執行。手動執行會在所有檢查通過後發佈；版本標籤推送會重新執行單元測試，確認（`release-verified`）被標記的程式碼已在 `main` 上通過完整測試套件，而不是重新執行瀏覽器測試，然後發佈並驗證公開網站。若標籤所在的提交從未在 `main` 上通過 CI，就不會部署。一般的分支推送與 pull request 只會執行檢查。Pages 的建置使用 `--base=/skyline-rush/`，讓腳本、樣式與字型從專案網址載入。GitHub Pages 必須使用 **GitHub Actions** 作為發佈來源。手動部署需要已驗證的 GitHub CLI（`gh auth login`）；請先推送你的提交，因為 `make deploy` 使用的是遠端 `main`。部署不再依賴本機的 pre-push hook 或 Netlify 登入。當任何檢查或部署在推送、標籤或手動執行時失敗，`notify-telegram` 工作會將失敗執行的連結傳送到 Telegram；它需要儲存庫的 secrets `TELEGRAM_BOT_TOKEN` 與 `TELEGRAM_CHAT_ID`（以 `gh secret set <NAME>` 設定各項，它會提示輸入值），缺少時會安靜地略過。
+CI（`.github/workflows/ci.yml`）會在推送到 `main`、pull request、版本標籤推送（`v*`）與手動執行時，建置並執行單元測試與 Chrome 瀏覽器測試。瀏覽器測試以 16 個平行分片執行（`--shard=N/16`），World Tour 長程測試則以 8 個分片執行，而對同一分支的較新推送會取消它所取代的那次執行。手動執行會在所有檢查通過後發佈；版本標籤推送會重新執行單元測試，確認（`release-verified`）被標記的程式碼已在 `main` 上通過完整測試套件，而不是重新執行瀏覽器測試，然後發佈並驗證公開網站。若標籤所在的提交從未在 `main` 上通過 CI，就不會部署。一般的分支推送與 pull request 只會執行檢查。Pages 的建置使用 `--base=/skyline-rush/`，讓腳本、樣式與字型從專案網址載入。GitHub Pages 必須使用 **GitHub Actions** 作為發佈來源。手動部署需要已驗證的 GitHub CLI（`gh auth login`）；請先推送你的提交，因為 `make deploy` 使用的是遠端 `main`。部署不再依賴本機的 pre-push hook 或 Netlify 登入。當任何檢查或部署在推送、標籤或手動執行時失敗，`notify-telegram` 工作會將失敗執行的連結傳送到 Telegram；它需要儲存庫的 secrets `TELEGRAM_BOT_TOKEN` 與 `TELEGRAM_CHAT_ID`（以 `gh secret set <NAME>` 設定各項，它會提示輸入值），缺少時會安靜地略過。
 
 連結預覽圖片是 `public/og-image.jpeg`，為 `public/og-image.en.jpeg` 的副本；`node scripts/capture-og-images.mjs og` 會擷取兩種語言的封面並更新該副本。爬蟲無法切換語言，因此 `index.html` 只參照英文封面（搭配 `og:locale` `en_US` 與 `og:locale:alternate` `zh_TW`），而 `public/og-image.zh-TW.jpeg` 是供直接連結使用的中文版本。更改封面後，請提高 `index.html` 中 `og:image` 的 `?v=`，讓社群網站抓取新的圖片。
 
