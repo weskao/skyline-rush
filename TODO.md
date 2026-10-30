@@ -19,6 +19,29 @@
 - [x] Diagnostic panel kept, out of production: `src/crash-log.ts` loads only through `if (import.meta.env.VITE_DIAG) import(…)` in `src/main.js`, so a normal build drops the module; `make dev-diag` / `make phone-diag` set the flag and the banner shows without any URL parameter; `scripts/assert-production-locked.mjs` refuses a `dist/` containing its storage key (`skyline-rush-crash-log`), like the unlock marker. `src/main.js` shrank to 686 lines (ceiling lowered).
 - [ ] Release: add the player-facing Upcoming What's New entry (results buttons respond after a race on iPhone) before `/release`.
 
+## Barrel-roll wake correction (2026-10-30)
+
+- [x] Clarify the intended trigger: existing airborne quick steering reversal (`player.trick`, 0.7-second barrel roll), rather than independently rotating showroom airflow. The earlier AIRFLOW recordings below do not demonstrate this requirement.
+- [x] RED: corrected owner tests produced 7 pass / 3 fail for missing automatic roll wake, unwanted showroom spirals, and missing roll lifecycle.
+- [x] GREEN: follow the real vehicle transform; activate appended helical streamlines, world-space vapor and the existing historical ribbon only during a real roll, then fade. Do not require AIRFLOW preview or BOOST, alter physics/scoring, or fake exhaust/FOV feedback. Low omits the added effect, Medium/High increase detail; VFX enabled/density/opacity/reduced-motion/comfort remain authoritative.
+- [x] Owner and shader safety tests: 14/14 pass, covering completion retained until landing, cancellation, pause, reset, read-only simulation and immediate clearing of already emitted roll-owned trails after a visual setting is disabled. Independent narrow re-review found no remaining actionable issues.
+- [x] Real keyboard/touch WebGL regressions plus warmup/black-frame checks: 5/5 pass. Full Node execution: 1131 pass / 3 skip; type checks and production build pass. Final dedicated World Tour: 326/326 pass.
+- [ ] Full local browser gate and exact-change CI: browser 745 pass / 3 skip / 5 fail; isolated retry 5 pass / 1 fail (mobile theme scenario loses gameplay inspection hook after logged source reload). Keep shared-preview HTTP failures and source-reload interference distinct from the passing roll checks; do not mark merge-ready. See `artifacts/barrel-roll-wake/verification.md`.
+- [x] Corrected desktop/mobile `screen-record` MP4s each demonstrate three real input-triggered rolls with AIRFLOW preview/BOOST input off, Low/Medium/High detail, and return-to-center touch steering. Telegram message_id: 22969 / 22975; paths and receipt metadata in `artifacts/barrel-roll-wake/delivery.json`.
+- [x] Send three annotated real-game key frames (message_id: 22972 / 22973 / 22974), plus controlled Git-original/current before-after WebGL images (message_id: 22977 / 22978 / 22979). A/B asserts identical race state, vehicle/camera transforms and sky pixels; final files retained in `artifacts/barrel-roll-wake/screenshots/`.
+
+## Earlier airflow interpretation — superseded by barrel-roll correction (2026-10-30)
+
+- [x] Review shared AIRFLOW renderer and caller in `world.js`; scope: `aero-vfx.js`, owner unit/browser tests and this evidence log. Existing JS shader renderer remains the deliberate hot-path exception; no UI/state/physics change.
+- [x] RED: `node --test tests/aero-vfx.test.js` — 6 pass, 2 fail because paired spirals and rotation are absent.
+- [x] GREEN: paired expanding counter-rotating wakes share the existing flow geometry/material/draw; controls, reduced motion and reset respected. Owner + shader safety: 12/12 pass.
+- [x] Quality RED → GREEN: regression first failed on unbounded submitted geometry; Low now omits the new wake, Medium draws one 32-segment pair, High adds a 64-segment pair. Actual custom Quality dropdown switches verified in Chrome; disabled/AIRFLOW/density/opacity controls suppress the wake without GPU allocation or uploads.
+- [x] Type checks, production build and full Node suite: 1129 pass / 3 skip / 0 fail. New test timeout initially tripped the CI-budget guard; corrected to the existing `ciTimeout` helper. Shader warmup and NaN/bloom checks pass.
+- [x] Before/after real-WebGL measurements on all ten tracks and desktop/phone screenshots: `artifacts/airflow-wake/verification.md`, `before.json`, `after.json`, `before.png`, `low.png`, `medium.png`, `high.png` and `native-results/`. Medium adds 512 triangles to the shared batch, no added flow draw calls; short p50/p95 samples are observations, not thermal/performance claims. Final full-resolution airflow + black-frame + shader-warmup: 3/3 pass.
+- [x] World Tour full suite: 326/326 pass (`CI=1 npx playwright test --config=playwright.world-tour.config.js --workers=2`). Independent code review: no actionable introduced findings.
+- [ ] Full `make verify` green: type/unit/build passed, then the full equivalent browser command (`CI=1 npm run test:browser -- --workers=4`) reported 742 pass / 3 skip / 6 fail. Failures: Endless desktop-en/phone-zh, Event Lab edit/import/export desktop-en/desktop-zh/phone-zh, finish-frame recovery phone. All three files pass independently (12/12); Vite reloads coincided with the original failures, but the full suite remains recorded as red. Full-resolution parallel trials were interrupted after contention/timeouts, not counted as successful gates.
+- [ ] Exact-change GitHub `quality-gate`, cloud emulators, physical iOS/Android, thermal and continuous long-distance acceptance. Changes remain uncommitted; no push, PR, merge, tag or deploy performed.
+
 ## Mobile race HUD overlap — all devices (2026-10-29)
 
 **Branch:** `fix/mobile-hud-overlap` from `main` `0a08d02`. **Report:** Android phone, zh-TW, AIRFLOW on mid-race — telemetry panel covered the speed readout; toolbar crowded.

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { TRICK_ROLL_TIME } from './game.js';
 
 export const REAR_PORTS = [-0.62, -0.22, 0.22, 0.62].map(x => ({ position: [x, 0.64, 2.39], direction: [0, 0, 1], size: 0.065 }));
 const MAX_PARTICLES = 512, MAX_GHOSTS = 8;
@@ -97,7 +98,7 @@ export function createAeroVFX(scene, vehicle) {
   });
   jetMaterial.dispose();
 
-  const particles = Array.from({ length: MAX_PARTICLES }, () => ({ life: 0, pos: new THREE.Vector3(), velocity: new THREE.Vector3() }));
+  const particles = Array.from({ length: MAX_PARTICLES }, () => ({ life: 0, roll: false, pos: new THREE.Vector3(), velocity: new THREE.Vector3() }));
   const positions = new Float32Array(MAX_PARTICLES * 3), alphas = new Float32Array(MAX_PARTICLES), sizes = new Float32Array(MAX_PARTICLES);
   const particleGeo = new THREE.BufferGeometry();
   for (const [name, array, size] of [['position', positions, 3], ['alpha', alphas, 1], ['size', sizes, 1]]) particleGeo.setAttribute(name, new THREE.BufferAttribute(array, size).setUsage(THREE.DynamicDrawUsage));
@@ -109,17 +110,18 @@ export function createAeroVFX(scene, vehicle) {
       gl_FragColor=vec4(.8,.9,.98,exp(-r*r*5.)*(1.-smoothstep(.6,1.,r))*vAlpha);}`,
   }));
   vapor.name = 'World space gas wake'; vapor.frustumCulled = false; scene.add(vapor);
-  const segments = Array.from({ length: 64 }, () => ({ life: 0, a: new THREE.Vector3(), b: new THREE.Vector3(), left: new THREE.Vector3(), right: new THREE.Vector3() }));
-  const ribbonPositions = new Float32Array(64 * 18), ribbonAlpha = new Float32Array(64 * 6), ribbonUV = new Float32Array(64 * 12);
+  const segments = Array.from({ length: 64 }, () => ({ life: 0, roll: false, a: new THREE.Vector3(), b: new THREE.Vector3(), left: new THREE.Vector3(), right: new THREE.Vector3() }));
+  const ribbonPositions = new Float32Array(64 * 18), ribbonAlpha = new Float32Array(64 * 6), ribbonUV = new Float32Array(64 * 12), ribbonKinds = new Float32Array(64 * 6);
   const ribbonGeo = new THREE.BufferGeometry();
   for (let i = 0; i < 64; i++) ribbonUV.set([0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1], i * 12);
   ribbonGeo.setAttribute('position', new THREE.BufferAttribute(ribbonPositions, 3).setUsage(THREE.DynamicDrawUsage));
   ribbonGeo.setAttribute('alpha', new THREE.BufferAttribute(ribbonAlpha, 1).setUsage(THREE.DynamicDrawUsage));
   ribbonGeo.setAttribute('uv', new THREE.BufferAttribute(ribbonUV, 2));
+  ribbonGeo.setAttribute('rollWake', new THREE.BufferAttribute(ribbonKinds, 1).setUsage(THREE.DynamicDrawUsage));
   const ribbon = new THREE.Mesh(ribbonGeo, new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    vertexShader: 'attribute float alpha;varying float vAlpha;varying vec2 vUv;void main(){vAlpha=alpha;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: 'varying float vAlpha;varying vec2 vUv;void main(){float edge=pow(max(0.,sin(vUv.x*3.14159)),3.);gl_FragColor=vec4(.5,.8,1.,edge*vAlpha);}',
+    vertexShader: 'attribute float alpha,rollWake;varying float vAlpha,vRoll;varying vec2 vUv;void main(){vAlpha=alpha;vRoll=rollWake;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader: 'varying float vAlpha,vRoll;varying vec2 vUv;void main(){float u=clamp(vUv.x,0.,1.);float edge=vRoll>.5?pow(max(0.,1.-min(u,1.-u)*12.),2.):pow(max(0.,sin(vUv.x*3.14159)),3.);gl_FragColor=vec4(.5,.8,1.,edge*vAlpha);}',
   }));
   ribbon.name = 'Continuous dash ribbon'; ribbon.frustumCulled = false; scene.add(ribbon);
   let segmentCursor = 0;
@@ -136,17 +138,22 @@ export function createAeroVFX(scene, vehicle) {
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   let hadPosition = false, wasBoosting = false, time = 0, reveal = 0, strength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  let quality = 1, settings, delta, centerX, originDistance;
+  let quality = 1, settings, delta, centerX, originDistance, rollStrength = 0, wakeStrength = 0;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
     for (const port of REAR_PORTS) {
       const p = particles[cursor]; cursor = (cursor + 1) % Math.round(MAX_PARTICLES * quality);
       p.pos.fromArray(port.position).applyQuaternion(sampleRotation).add(sample);
-      p.velocity.fromArray(port.direction).applyQuaternion(sampleRotation).multiplyScalar(18 + strength * 20);
-      p.velocity.x += Math.sin(cursor * 2.4) * 1.5; p.velocity.y += Math.cos(cursor * 1.7) * 0.7;
+      p.roll = rollStrength * 0.7 > strength;
+      // shortcut: still-air frozen-convection markers, use a validated flow solver for pressure or swirl predictions.
+      if (p.roll) p.velocity.set(0, 0, 0);
+      else {
+        p.velocity.fromArray(port.direction).applyQuaternion(sampleRotation).multiplyScalar(18 + strength * 20);
+        p.velocity.x += Math.sin(cursor * 2.4) * 1.5; p.velocity.y += Math.cos(cursor * 1.7) * 0.7;
+      }
       p.life = p.maxLife = Math.min(1.1, settings.trailLength / Math.max(30, delta));
-      p.size = 0.22; p.opacity = strength * settings.vaporDensity * 0.35;
+      p.size = 0.22; p.opacity = (p.roll ? rollStrength * settings.airflowDensity * settings.airflowOpacity * 0.6 : strength * 0.35) * settings.vaporDensity;
     }
   }
   function reset() {
@@ -155,12 +162,14 @@ export function createAeroVFX(scene, vehicle) {
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
     jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = false;
     hadPosition = wasBoosting = false; strength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null;
+    rollStrength = wakeStrength = 0;
   }
   return {
     reset,
     group: local, // effects riding on the vehicle; not part of its silhouette
     update(race, dt, center, distance, options, reducedMotion) {
       settings = options; centerX = center; originDistance = distance;
+      let ribbonKindDirty = false;
       dt = clamp(Number.isFinite(dt) ? dt : 0, 0, 0.1);
       const car = race.player, active = race.phase === 'racing', preview = race.phase === 'ready';
       const enabled = settings.enabled;
@@ -170,9 +179,13 @@ export function createAeroVFX(scene, vehicle) {
       if (calm) quality = Math.min(quality, 0.5);
       time += dt;
       const show = settings.airflow && enabled;
+      const rollEnabled = enabled && !calm && settings.quality !== 'low' && settings.airflowDensity > 0 && settings.airflowOpacity > 0;
+      const rolling = active && car.altitude > 0 && car.trick && !car.trick.done && car.trick.time < TRICK_ROLL_TIME;
+      rollStrength = rollEnabled ? THREE.MathUtils.damp(rollStrength, rolling ? 1 : 0, rolling ? 35 : 8, dt) : 0;
       reveal = THREE.MathUtils.damp(reveal, show ? 1 : 0, show ? 3 : 6, dt);
       const demonstration = show && preview ? 0.32 * THREE.MathUtils.smoothstep(reveal, 0.85, 0.99) : 0;
       strength = THREE.MathUtils.damp(strength, boost ? 1 : demonstration, boost ? 55 : 7, dt);
+      wakeStrength = Math.max(strength, rollStrength * 0.7);
       vehicle.updateWorldMatrix(true, false);
       current.copy(vehicle.position); current.x += center; current.z -= distance;
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
@@ -204,7 +217,7 @@ export function createAeroVFX(scene, vehicle) {
         u.diamonds.value = settings.machDiamonds; u.extreme.value = settings.preset === 'extreme' ? 1 : 0;
       });
       delta = car.speed;
-      if (strength > 0.01 && enabled && dt > 0) {
+      if (wakeStrength > 0.01 && enabled && dt > 0) {
         emission += dt * 35 * quality * settings.vaporDensity;
         if (emission >= 1) {
           dashSamples(previous, current, 0.6 / quality, Math.min(32, Math.ceil(emission) + Math.ceil(previous.distanceTo(current) * quality)), emitAt);
@@ -223,43 +236,49 @@ export function createAeroVFX(scene, vehicle) {
           ghostDistance %= 2.4;
         }
       }
-      if (boost && dt > 0 && previous.distanceToSquared(current) > 0.0001) {
+      if ((boost || rollStrength > 0.1) && dt > 0 && previous.distanceToSquared(current) > 0.0001) {
         const start = Math.max(0, 1 - 60 / previous.distanceTo(current));
         sample.lerpVectors(previous, current, start);
         sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, start);
         ribbonFrom.set(0, 0.55, 2.5).applyQuaternion(sampleRotation).add(sample);
         ribbonSide.set(0.65, 0, 0).applyQuaternion(sampleRotation);
         dashSamples(previous, current, 0.8 / quality, 16, t => {
-          const s = segments[segmentCursor]; segmentCursor = (segmentCursor + 1) % segments.length;
+          const slot = segmentCursor, s = segments[slot]; segmentCursor = (segmentCursor + 1) % segments.length;
           s.a.copy(ribbonFrom); s.left.copy(ribbonSide);
           sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
           sample.lerpVectors(previous, current, t);
           s.b.set(0, 0.55, 2.5).applyQuaternion(sampleRotation).add(sample);
           s.right.set(0.65, 0, 0).applyQuaternion(sampleRotation);
           s.life = s.maxLife = Math.min(0.6, settings.trailLength / Math.max(30, car.speed));
+          s.roll = !boost;
+          const kind = s.roll ? 1 : 0;
+          if (ribbonKinds[slot * 6] !== kind) { ribbonKinds.fill(kind, slot * 6, slot * 6 + 6); ribbonKindDirty = true; }
           ribbonFrom.copy(s.b); ribbonSide.copy(s.right);
         });
       }
       for (let i = 0; i < segments.length; i++) {
-        const s = segments[i]; s.life = Math.max(0, s.life - dt);
+        const s = segments[i]; s.life = s.roll && !rollEnabled ? 0 : Math.max(0, s.life - dt);
         for (let j = 0; j < 6; j++) {
           const end = j === 2 || j === 4 || j === 5, side = j === 1 || j === 3 || j === 4 ? 1 : -1;
           corner.copy(end ? s.b : s.a).addScaledVector(end ? s.right : s.left, side);
           const offset = i * 18 + j * 3;
           ribbonPositions[offset] = corner.x - center; ribbonPositions[offset + 1] = corner.y; ribbonPositions[offset + 2] = corner.z + distance;
-          ribbonAlpha[i * 6 + j] = enabled && s.life > 0 ? s.life / s.maxLife * (calm ? 0.04 : 0.12) : 0;
+          ribbonAlpha[i * 6 + j] = enabled && s.life > 0 ? s.life / s.maxLife * (s.roll ? settings.airflowDensity * settings.airflowOpacity * 0.3 : calm ? 0.04 : 0.12) : 0;
         }
       }
       ribbonGeo.attributes.position.needsUpdate = ribbonGeo.attributes.alpha.needsUpdate = true;
+      if (ribbonKindDirty) ribbonGeo.attributes.rollWake.needsUpdate = true;
       for (let i = 0; i < MAX_PARTICLES; i++) {
-        const p = particles[i]; p.life = Math.max(0, p.life - dt);
+        const p = particles[i]; p.life = p.roll && !rollEnabled ? 0 : Math.max(0, p.life - dt);
         alphas[i] = 0;
         if (p.life === 0) continue;
-        p.pos.addScaledVector(p.velocity, dt); p.velocity.multiplyScalar(Math.exp(-dt * 2));
-        if (p.pos.y < 0.09) { p.pos.y = 0.09; p.velocity.y = Math.abs(p.velocity.y) * 0.1; p.velocity.x *= 1 + dt; }
+        if (!p.roll) {
+          p.pos.addScaledVector(p.velocity, dt); p.velocity.multiplyScalar(Math.exp(-dt * 2));
+          if (p.pos.y < 0.09) { p.pos.y = 0.09; p.velocity.y = Math.abs(p.velocity.y) * 0.1; p.velocity.x *= 1 + dt; }
+        }
         const age = p.maxLife - p.life;
         positions[i * 3] = p.pos.x - centerX; positions[i * 3 + 1] = p.pos.y; positions[i * 3 + 2] = p.pos.z + originDistance;
-        sizes[i] = p.size + age * 2;
+        sizes[i] = p.roll ? p.size : p.size + age * 2;
         alphas[i] = p.opacity * Math.min(1, age * 25) * (p.life / p.maxLife) ** 1.5;
       }
       for (const attribute of Object.values(particleGeo.attributes)) attribute.needsUpdate = true;
