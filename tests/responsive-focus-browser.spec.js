@@ -38,8 +38,9 @@ for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () 
   test.use({ viewport: { width, height }, hasTouch: phone, isMobile: phone });
 
   test('the Event Lab setup dialog traps Tab and returns focus to its mode button', async ({ gameplayPage: page }) => {
-    // ~500 Tab presses wait on the live preview's frames; CPU-only CI draws them several times slower than a GPU.
-    test.setTimeout(ciTimeout(90_000));
+    // ~500 Tab presses wait on the live preview's frames; CPU-only CI draws them several times slower than a GPU
+    // (the 1440x900 walk alone took over 270 s there).
+    test.setTimeout(ciTimeout(180_000));
     // Focus handling is graphics-independent: Low keeps those frames cheap.
     await page.evaluate(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', preset: 'cinematic', enabled: true })));
     await page.reload();
