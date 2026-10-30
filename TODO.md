@@ -1,3 +1,12 @@
+## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
+
+**Branch:** `feature/ci-speedup`. Measured on `main` run 41024921317 (`cff7886`): 75 min wall. Browser shard 8 took 72 min; shard 1 took 38 min of suite plus a 30 min `npm run test:layout` rerun of specs the sharded suite already contains; World Tour shards ran 5–40 min (the slow camera views sit at the end of the list); unit 1 min, cloud-save 1.5 min.
+
+- [x] Drop the layout rerun from the browser matrix (its four spec files are matched by `playwright.config.js`); the pre-push hook keeps it locally. RED → GREEN: `tests/ci-refactor-full-gate.test.js` and `tests/performance-workflow.test.js` now refuse a second layout run inside the matrix.
+- [x] Remove the `coast-visual-evidence` job and the `mode00-tdd.yml` / `whats-new-feature.yml` workflows: their branches no longer exist on origin (only `main` does), and the two workflows duplicated `ci.yml` on their branch.
+- [x] 8 → 16 browser shards, 6 → 8 World Tour shards. Simulation from the measured per-test durations × Playwright's actual `--shard` membership: browser max 75 → 45 min, World Tour 40 → 34 min; 26 jobs stay near GitHub's 20-concurrent-job cap. Round-robin by `file:line` was simulated and rejected (133 lines each hold several tests; World Tour has 15 locations), it balances worse than contiguous slices.
+- [ ] Confirm on this branch's first CI run: wall time ≈ 45–50 min, `quality-gate` green, `verify-performance-evidence` still finds all 35 captures across 16 shards.
+
 ## Endless Highway — all ten tracks and seamless continuation (2026-10-30)
 
 **Branch:** `feature/endless-highway-all-tracks`. Keep the existing MODE-09, do not add a twelfth mode. The original finite Sprint/Circuit/Ghost tracks must remain unchanged.

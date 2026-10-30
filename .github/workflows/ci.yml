@@ -45,16 +45,17 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-  # CPU-only WebGL makes the serial suite take about two hours on one runner; shards run it in parallel. Playwright
-  # splits the alphabetical test list into equal contiguous slices, so more shards also keep one heavy spec file
-  # from dominating a slice.
+  # CPU-only WebGL makes the serial suite take about six runner-hours; shards run it in parallel. Playwright splits
+  # the test list into equal contiguous slices (no duration balancing), so a slice that lands on the heavy i18n,
+  # responsive or track-theme tests sets the wall time: 8 slices peaked at 72 min, 16 at about 45 (measured on main).
+  # Together with world-tour-mid-race this stays near GitHub's 20 concurrent jobs; more shards would mostly queue.
   browser-tests:
     if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,7 +64,7 @@ jobs:
           cache: npm
       - run: npm ci
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
-      - run: npm run test:browser -- --shard=${{ matrix.shard }}/8
+      - run: npm run test:browser -- --shard=${{ matrix.shard }}/16
       - name: Upload structured WebGL performance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -131,11 +132,12 @@ jobs:
   world-tour-mid-race:
     if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
     runs-on: ubuntu-latest
-    # CPU-only WebGL renders the ~230 per-map camera tests (about 150k frames) at ~9 fps, hours on one runner.
+    # CPU-only WebGL renders the ~250 per-map camera tests (about 150k frames) at ~9 fps, over two hours on one
+    # runner. The slow camera views sit at the end of the list, so 6 contiguous slices ran 5 to 40 min; 8 peak at ~34.
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -143,7 +145,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright test --config=playwright.world-tour.config.js --shard=${{ matrix.shard }}/6
+      - run: npx playwright test --config=playwright.world-tour.config.js --shard=${{ matrix.shard }}/8
       - name: Upload real mid-race WebGL screenshots
         if: always()
         uses: actions/upload-artifact@v4
