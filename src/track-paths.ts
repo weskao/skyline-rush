@@ -22,36 +22,36 @@ const unit = ([x, y, z]: Vec3): Vec3 => {
 };
 const cross = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
-export function trackPoint(trackId: string, distance: number): SkyPoint {
+export function trackPoint(trackId: string, distance: number, extended = false): SkyPoint {
   const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance).point;
-  const s = clamp(Number.isFinite(distance) ? distance : 0, 0, track.length);
+  const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyPoint(s);
   const profile = profiles[trackId];
   if (profile) return { ...profile(s), z: -s };
   return { x: classicRoadCenter(s), y: 0, z: -s };
 }
 
-export function trackFrame(trackId: string, distance: number) {
+export function trackFrame(trackId: string, distance: number, extended = false) {
   const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance);
-  const s = clamp(Number.isFinite(distance) ? distance : 0, 0, track.length);
+  const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyFrame(s);
-  const a = trackPoint(trackId, s - 0.5);
-  const b = trackPoint(trackId, s + 0.5);
+  const a = trackPoint(trackId, s - 0.5, extended);
+  const b = trackPoint(trackId, s + 0.5, extended);
   // The end derivative is a one-sided difference, not a zero-length tangent.
   const forward = unit([b.x - a.x, b.y - a.y, b.z - a.z]);
   const right = unit([-forward[2], 0, forward[0]]);
-  return { point: trackPoint(trackId, s), forward, right, up: unit(cross(right, forward)) };
+  return { point: trackPoint(trackId, s, extended), forward, right, up: unit(cross(right, forward)) };
 }
 
 /** Convert game-distance, lane and altitude to camera-relative 3D coordinates. */
-export function trackLocalPosition(trackId: string, distance: number, lateral = 0, altitude = 0, origin = 0): Vec3 {
-  const point = trackPoint(trackId, distance);
-  const home = trackPoint(trackId, origin);
-  const frame = trackFrame(trackId, distance);
+export function trackLocalPosition(trackId: string, distance: number, lateral = 0, altitude = 0, origin = 0, extended = false): Vec3 {
+  const point = trackPoint(trackId, distance, extended);
+  const home = trackPoint(trackId, origin, extended);
+  const frame = trackFrame(trackId, distance, extended);
   return [
     point.x - home.x + frame.right[0] * lateral + frame.up[0] * altitude,
     point.y - home.y + frame.right[1] * lateral + frame.up[1] * altitude,
