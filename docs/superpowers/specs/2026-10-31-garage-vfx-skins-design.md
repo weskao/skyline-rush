@@ -68,6 +68,20 @@ Design choices: isolate event/state contracts from presentation, use Vue 3 + Typ
 4. Preview differs from in-race effect if separate render paths diverge
 5. No currency before economy work
 
+## 4A. Image Generation and Asset Contracts (Wave 2 / Wave 3)
+
+**Decision:** Image generation is recommended only for original visual assets that materially improve Garage: transparent PNG/WebP category/icon thumbnails for Thruster, Airflow, NITRO Trails and Launch Flare; opaque studio scene background only if explicitly useful. Real 3D animations use shared renderer and never fake owned/trial status.
+
+- **Necessity gate:** review `src/icons.ts`, `public/icons/`, existing Vue/CSS/Three.js before making any image. The need for a concept sheet does **not** automatically justify a production bitmap. Record why the asset is needed and who owns it.
+- **Prompt / production plan:** [Visual brief](../prompts/2026-10-31-garage-vfx-skins-visual-design.md); [Superpowers plan](../plans/2026-10-31-garage-vfx-skins-plan.md). The separately assigned future GPT may generate original images **only if actually needed and its image generation capability is available**; otherwise record the missing deliverable and use documented SVG/CSS/Three.js fallback. No pretend asset URLs or pre-emptive completion claims.
+- **Alpha and formats:** true alpha RGBA PNG / compressed transparent WebP for isolated icon, badge, sprite or overlay, **not** white/checkerboard as image pixels; opaque compressed WebP/JPEG for standalone backgrounds. Actual vector SVG must be properly authored, not a renamed raster. Verify alpha over light, dark and saturated backgrounds, silhouette at intended CSS size, safe margins, transparent edge fringes and no baked interactive text.
+- **Runtime semantics:** use real Vue 3 + strict TypeScript for controls/labels/rank/reward status; use shared Three.js renderer for 3D cars/dynamic VFX. Generated concepts are not runtime screenshots or fully implemented gameplay. No branded copyrighted lookalikes or unapproved real-money claims.
+- **SDD → BDD → TDD / accessibility:** define asset semantics and ownership/loader contract, write failing behavior tests when a code behavior is missing, keep readable alt/label/fallback on asset error, test touch/focus and occlusion. Verified BDD edge cases:
+  1. Given a trial-only effect with an RGBA thumbnail, When selected in Preview Studio, Then true alpha composites on dark/light backgrounds and ownership remains false.
+  2. Given an item image fails to load on Low/Medium/High, When the user equips a valid cosmetic, Then text/icon fallback, entitlement checks and real renderer state still work.
+- **Quality and measurement:** Low / Medium / High must preserve game state/critical HUD, en/zh-TW, mobile Android/iOS browsers in portrait+landscape and desktop, VFX Off, Reduced Motion and sound mute. Check image bytes, alpha, decoder/texture memory, first-use shader cost, Draw Calls, FPS and frame-time p95 where relevant. Inspect actual game output, not only a generated design board.
+- **Completion:** do not check any `TODO.md` item `- [x]` until genuine asset integration, relevant SDD/BDD/TDD and CI are verified. This is a future implementation requirement, **not** an instruction to generate art now.
+
 ## 5. Cross-platform visual and performance acceptance
 
 | Area | Required gate |
