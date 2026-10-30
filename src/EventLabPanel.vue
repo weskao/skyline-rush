@@ -5,6 +5,7 @@ import { eventLabView, useEventCourse } from './event-lab-ui.ts';
 import { COURSE_BYTES, COURSE_OBJECTS, CourseError, createCourse, createCourseHistory, exportCourse, importCourse,
   previewPlacement, saveCourse, snapPlacement, validateCourse, type CourseDocument, type CourseKind, type CourseTemplate } from './event-lab.ts';
 import { RACE_TRACKS } from './game.js';
+import CloseButton from './CloseButton.vue';
 
 const dialog = useTemplateRef<HTMLDialogElement>('dialog');
 const locale = ref(getLocale());
@@ -77,7 +78,7 @@ const symbols: Record<CourseKind, string> = { barrier: '▰', cone: '▴', ramp:
 
 <template>
   <dialog ref="dialog" id="event-lab-dialog" class="lab-dialog" aria-labelledby="lab-title" @cancel.prevent="close" @keydown.stop>
-    <header class="lab-header"><div><small>SKYLINE / EVENT LAB</small><h2 id="lab-title">{{ text('title') }}</h2></div><button id="lab-close" type="button" @click="close">{{ text('close') }}</button></header>
+    <header class="lab-header"><div><small>SKYLINE / EVENT LAB</small><h2 id="lab-title">{{ text('title') }}</h2></div><CloseButton id="lab-close" :label="text('close')" @click="close" /></header>
     <template v-if="draft">
       <p class="lab-note">{{ trackName(draft.trackId, locale) }} · {{ text('intro') }}</p>
       <div class="lab-toolbar"><button type="button" @click="template('slalom')">{{ text('slalom') }}</button><button type="button" @click="template('collect')">{{ text('collect') }}</button><button id="lab-template-checkpoints" type="button" @click="template('checkpoints')">{{ text('checkpoints') }}</button><button id="lab-template-jumps" type="button" @click="template('jumps')">{{ text('jumps') }}</button>
@@ -125,7 +126,7 @@ const symbols: Record<CourseKind, string> = { barrier: '▰', cone: '▴', ramp:
 .lab-dialog::backdrop { background: #030c14d9; }
 .lab-header, .lab-toolbar, .lab-fields, .lab-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .lab-header { justify-content: space-between; }.lab-header h2 { margin: 5px 0; }.lab-header small { color: #62dfcb; letter-spacing: .12em; }
-.lab-dialog button, .lab-dialog input, .lab-dialog select { min-height: 44px; border: 1px solid #728b9b; border-radius: 6px; background: #172e3c; color: inherit; padding: 6px 10px; box-sizing: border-box; }
+.lab-dialog button:not(.close-button), .lab-dialog input, .lab-dialog select { min-height: 44px; border: 1px solid #728b9b; border-radius: 6px; background: #172e3c; color: inherit; padding: 6px 10px; box-sizing: border-box; }
 .lab-dialog button { cursor: pointer; }.lab-dialog button:disabled { opacity: .4; cursor: default; }
 .lab-dialog :focus-visible { outline: 3px solid #6df1db; outline-offset: 2px; }
 .lab-fields { margin-top: 12px; }.lab-fields label { flex: 1; min-width: 110px; }.lab-fields input, .lab-fields select { display: block; width: 100%; margin-top: 4px; }
