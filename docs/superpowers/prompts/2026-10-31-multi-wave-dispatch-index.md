@@ -64,6 +64,26 @@ flowchart TD
 5. 等所有功能真正完成後，才進行全專案 **10 張賽道 × 競速模式 × Android/iOS 直橫向 × Desktop × Low/Medium/High × en/zh-TW** 的整合驗收、規則版本／Ghost／Cloud Save／8車性能及無界面遮擋的檢查；如果組合過多採 pairwise 覆蓋並對高風險路徑做全矩陣，列出未測條件。
 6. 產出明確的檢查表和每分支 commit / CI URL / 未驗證原因，不要宣稱沒有證據的綠燈；**任何後續合併或發佈都必須重新取得使用者明確批准**。
 
+## Wave 2 / Wave 3 — GPT visual-generation and transparent-asset requirements (2026-10-31 update)
+
+**These are conditional future-implementation gates, not a request to generate images in this planning-only round.** Each assigned GPT must inspect existing SVG/CSS, `src/icons.ts`, `public/icons/` and current shared Three.js resources *first*. Create new artwork **only if justified** by interface clarity, missing asset or proven renderer need, with actual image-generation tool if available. Generated concept boards are not production assets or proof of a playable scene.
+
+| Wave | Feature | Image-generation decision | Asset/background rule |
+| --- | --- | --- | --- |
+| 2 | [AI / 8-car grid](https://github.com/weskao/skyline-rush/tree/feature/race-difficulty-eight-car-grid) | Optional original rank/car-number medallions, but physical grid and live leaderboard must use data-driven SVG/Vue/Three.js | Separated insignia require **true transparent RGBA**, backgrounds only for non-runtime diagrams |
+| 2 | [High-speed VFX](https://github.com/weskao/skyline-rush/tree/feature/high-speed-vfx) | Storyboards for speed ramp; optional particle/ring sprite **only if measured**. Real BOOST/NITRO must remain live shaders/FOV/particles | Full-scene storyboard may be opaque; particle/ring sprite true transparent Alpha, no baked motion blur image |
+| 2 | [Foldable layout](https://github.com/weskao/skyline-rush/tree/feature/foldable-layout-adaptation) | Prefer CSS/SVG/Mermaid wireframe; no runtime image normally needed | Transparent only for optional design annotation overlay, never a device-specific hardcoded runtime mask |
+| 2 | [Garage VFX Skins](https://github.com/weskao/skyline-rush/tree/feature/garage-vfx-skins) | **Strongest image need:** four category icons, skin thumbnail candidates, possibly Studio background | Icon/badge/effect cutout: transparent PNG/WebP true Alpha; Studio scene: separate compressed opaque background if needed |
+| 3 | [Garage Economy Foundation](https://github.com/weskao/skyline-rush/tree/feature/garage-economy-foundation) | **No image generation.** Entitlement, trials, schema and storage only | No font/icon/photo generation prerequisite or paid wallet illustration |
+| 3 | [Rewards / Missions](https://github.com/weskao/skyline-rush/tree/feature/garage-rewards-and-missions) | Optional original achievement/mission/provisional soft-currency glyphs after economic authorization | Transparent symbols, no text/numbers/rates baked into art; actual rewards data-driven and once-only |
+| 3 | [Store Readiness](https://github.com/weskao/skyline-rush/tree/feature/garage-store-readiness) | Optional muted Coming Soon artwork; not necessary for usable disabled store | Transparent small icon or decorative cutout; opaque only for standalone background; **no** paid checkout art, price or BUY CTA |
+
+**In each of these seven existing branches, the matching four files have been updated where applicable:** `docs/superpowers/specs/2026-10-31-<slug>-design.md` (image/ownership BDD), `docs/superpowers/plans/2026-10-31-<slug>-plan.md` (optional Task V0), `docs/superpowers/prompts/2026-10-31-<slug>-dispatch.md` (copy-paste implementation directive), plus `...-visual-design.md` (ready-to-use image-generation brief) for all except economy foundation.
+
+**Asset gate:** use existing icons where sufficient → SDD signoff on actual need, output dimensions, destination and fallback → when justified, create real original image → inspect Alpha over multiple contrasting backgrounds (not an embedded checkerboard) → optimize PNG/transparent WebP or genuine SVG, avoid large uncompressed textures → BDD/TDD missing-asset tests → actual in-game Vue/Three.js integration and Android/iOS portrait/landscape + desktop + Low/Medium/High/Reduced Motion validation → capture real WebGL evidence, network bytes, memory/FPS/Draw Calls/p95 frame-time. Never mark `TODO.md` `- [x]` from a generated concept image alone.
+
+**CI gate:** documentation pushes may trigger GitHub Actions even though no code changed. Do not claim green on queued/cancelled/failed runs. Only check and remediate real failures at exact branch HEAD; the existing main CI failure is separate and must be root-caused before considering implementation branches releasable. Never auto-merge or publish on an unverified status.
+
 ## Coordination notes
 
 - UI/UX planning TODO `feature/ux-ui-combo-mobile-controls` has not been merged into `main`. Implementation branches were created from `main` (2026-10-31; `bea47cf61c162b4341021fa6d24ca45850af7796`). Before TDD work begins, reconcile approved requirements without overwriting their history.
