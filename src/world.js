@@ -33,7 +33,6 @@ import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
-
 const roadCenter = classicRoadCenter;
 const roadHeading = distance => Math.atan((roadCenter(distance + 1) - roadCenter(distance - 1)) / 2);
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -41,10 +40,8 @@ const matrix = new THREE.Matrix4();
 const rotation = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
-
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
 const framedRoad = id => TOUR_IDS.has(id) || id === CIRCUIT_ID;
-
 function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   position.set(x, y, z);
   scale.set(sx, sy, sz);
@@ -52,7 +49,6 @@ function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   matrix.compose(position, rotation, scale);
   mesh.setMatrixAt(index, matrix);
 }
-
 // Canvas sign text: Latin keeps the generic sans-serif; zh-TW appends CJK families. The font shrinks until the text fits.
 const signFont = (px, locale) => `bold ${px}px ${locale === 'zh-TW' ? '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif' : 'sans-serif'}`;
 function fitText(context, label, x, y, maxWidth, basePx, locale) {
@@ -61,13 +57,11 @@ function fitText(context, label, x, y, maxWidth, basePx, locale) {
   while (px > 12 && context.measureText(label).width > maxWidth) context.font = signFont(--px, locale);
   context.fillText(label, x, y);
 }
-
 export function createWorld(canvas) {
-  // The renderer alone opts into the infinite continuation; finite records stay untouched.
+  // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false;
-  const trackPoint=(id,d)=>finitePoint(id,d,endlessActive);
-  const trackFrame=(id,d)=>finiteFrame(id,d,endlessActive);
-  const trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
+  const trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d)=>finiteFrame(id,d,endlessActive),
+    trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
   // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
   renderer.info.autoReset=false; // Combine scene and composer submissions per frame for QA.
