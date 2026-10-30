@@ -5,14 +5,12 @@ import { readFileSync } from 'node:fs';
 const workflow=readFileSync(new URL('../.github/workflows/ci.yml',import.meta.url),'utf8');
 const section=(name,next)=>workflow.split('  '+name+':')[1]?.split('  '+next+':')[0]||'';
 
-test('responsive layout executes inside Browser shard 1 after screenshot artifacts are uploaded',()=>{
+test('Browser shards upload their WebGL evidence and run no second Playwright suite that would clean it',()=>{
   const browser=section('browser-tests','cloud-save');
   const cloud=section('cloud-save','world-tour-mid-race');
-  const shots=browser.indexOf('Upload actual World Tour screenshots');
-  const layout=browser.indexOf('Verify responsive layout for final refactor or World Tour polish');
-  assert.ok(layout>shots&&shots>=0,'do not let layout clean the WebGL artifacts before upload');
-  assert.ok(browser.includes("feature/all-tracks-render-cache"),'run layout in the all-track optimization branch');
-  assert.ok(browser.includes("refs/heads/main"),'protect main after integration too');
+  assert.ok(browser.indexOf('Upload actual World Tour screenshots')>=0,'World Tour screenshots are uploaded from the shards');
+  // Playwright cleans test-results at the start of a run; the layout specs already run inside the shards.
+  assert.ok(!browser.includes('test:layout'),'one Playwright run per shard');
   assert.ok(!cloud.includes('matrix.shard')&&!cloud.includes('test:layout'),'cloud-save is not a Browser matrix job');
 });
 
