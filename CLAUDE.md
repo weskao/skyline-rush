@@ -303,11 +303,15 @@ that genuinely shipped in the announced version; never present a mockup or roadm
 as released. Images are optional and must match the shipped content; always provide
 readable text when an image is missing. Follow `docs/release-announcements.md`.
 
-**Every release ships its What's New notes.** Before publishing a version, add its entry at the top
-of `RELEASE_NOTES` in `src/release-notes.js` (en + zh-TW, player-first). Add an image only when it
-makes the change easier to grasp; store it under `public/whats-new/<version>/` and keep every older
-release's entry and images in the repo — the dialog shows only the newest five versions, the rest
-stay archived. Leave out what players never need: fine tuning details, code structure or refactors,
+**Every release ships its What's New notes.** Before publishing, add the coming release's entry at the
+top of `RELEASE_NOTES` in `src/release-notes-data.ts` (en + zh-TW, player-first) **with
+`version: UPCOMING`, never a version number**: the dialog shows it first, labelled "Upcoming", in dev
+and on `main`, and the release commit's `package.json` bump gives it the released version. Starting
+the next release's notes, first stamp the shipped one with its version and tag date
+(`git log -1 --format=%cs v<version>`); `npm test` refuses two upcoming entries. Add an image only when
+it makes the change easier to grasp; store it under `public/whats-new/<theme-slug>/` (a name for the
+release's content, never a version number) and keep every older release's entry and images in the
+repo — the dialog shows only the newest five versions, the rest stay archived. Leave out what players never need: fine tuning details, code structure or refactors,
 tests and tooling, back-office, admin or server setup, and anything sensitive (links, accounts, keys,
 unannounced plans). Then run `/review-release-notes <version>`: an automatic copy check, a fresh-eyes
 sub-agent review and your approval record the copy's fingerprint. `scripts/release-gate.sh` runs

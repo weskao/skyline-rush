@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { RELEASE_NOTES, releaseText, releaseImage, releaseHeroVideo } from '../src/release-notes.ts';
+import { RELEASE_NOTES, UPCOMING, compareVersions, releaseText, releaseImage, releaseHeroVideo } from '../src/release-notes.ts';
 
 const LOCALES = ['en', 'zh-TW'];
 const REVIEWS_FILE = new URL('./release-notes-reviews.json', import.meta.url);
@@ -61,16 +61,21 @@ export const reviewHash = release => crypto.createHash('sha256')
 
 const loadReviews = () => { try { return JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf8')); } catch { return {}; } };
 
+// The entry for `target`: its own, or the upcoming one when `target` is newer than every versioned entry.
+export const releaseEntryFor = (target, notes = RELEASE_NOTES) => notes.find(release => release.version === target)
+  ?? (notes.every(release => release.version === UPCOMING || compareVersions(target, release.version) > 0)
+    ? notes.find(release => release.version === UPCOMING) ?? null : null);
+
 export function checkReleaseNotes(raw, { notes = RELEASE_NOTES, reviews = loadReviews() } = {}) {
   const target = String(raw ?? '').trim().replace(/^v/, '');
   if (!/^\d+\.\d+\.\d+$/.test(target)) return ['pass the release version, e.g. 0.22.0'];
   const problems = [];
-  const entry = notes.find(release => release.version === target);
+  const entry = releaseEntryFor(target, notes);
   if (!entry) {
-    problems.push(`no What's New entry for ${target}: add player-facing notes to src/release-notes.js before publishing`);
+    problems.push(`no What's New entry for ${target}: add the player-facing notes to src/release-notes-data.ts as the version '${UPCOMING}' entry before publishing`);
   } else if (!reviews[target]) {
     problems.push(`${target}: notes not reviewed — run /review-release-notes ${target}`);
-  } else if (reviews[target] !== reviewHash(entry)) {
+  } else if (reviews[target] !== reviewHash({ ...entry, version: target })) {
     problems.push(`${target}: notes changed since their review — run /review-release-notes ${target} again`);
   }
   // Archived entries stay checked too: their text and images remain in the repo.
@@ -108,8 +113,8 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url &
 } else if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   const approve = process.argv[2] === '--approve';
   const version = String(process.argv[approve ? 3 : 2] ?? '').replace(/^v/, '');
-  const reviews = loadReviews(), entry = RELEASE_NOTES.find(release => release.version === version);
-  if (approve && entry) reviews[version] = reviewHash(entry);
+  const reviews = loadReviews(), entry = releaseEntryFor(version);
+  if (approve && entry) reviews[version] = reviewHash({ ...entry, version });
   const problems = checkReleaseNotes(version, { reviews });
   for (const problem of problems) console.error(`check-release-notes: ${problem}`);
   if (approve && !problems.length) {

@@ -53,9 +53,10 @@ dependency, third-party network call, game-rule change or backend.
 - Audio: none. The home menus are silent and the notes are informational; no sound is the only
   carrier of any information.
 
-## 4. Release data — `src/release-notes.js`
+## 4. Release data — `src/release-notes-data.ts`
 
-One frozen entry per **published** version, never generated from commits:
+One frozen entry per **published** version, never generated from commits. The coming release is
+written with `version: UPCOMING` (never a version number) until it ships; see section 6.
 
 ```js
 {
@@ -74,16 +75,17 @@ One frozen entry per **published** version, never generated from commits:
 
 - **History is kept**: every published entry and its images stay in the repo. The dialog shows the
   newest five whose version is ≤ the running `package.json` version; older ones remain archived
-  (and still validated) but are not displayed. A version written ahead of its release stays hidden
-  until that version ships.
+  (and still validated) but are not displayed. The `UPCOMING` entry is listed first, labelled
+  "Upcoming", before the release; the release commit's `package.json` bump gives it that version.
 - **Images**: optional, only when a picture makes the change easier to understand. Store them in
-  `public/whats-new/<version>/` (e.g. `public/whats-new/0.22.0/new-track.en.webp`), reference them
+  `public/whats-new/<theme-slug>/` (e.g. `public/whats-new/night-racing/new-track.en.webp`; older
+  releases used version folders), reference them
   relative to `public/`, localize per language when they contain text, and never delete an old
   release's images. A missing image falls back to text.
 - **Video** (optional `video` on the entry): a short muted clip that replaces the hero image
   while the dialog is open. Give both a `desktop` (landscape, 960×600) and a `mobile` (portrait,
   390×844) clip, each `{ src, poster }` localized like images (`.mp4`/`.webm` + a still), all under
-  `public/whats-new/<version>/`. Landscape screens get `desktop`, portrait ones `mobile`. It loops
+  `public/whats-new/<theme-slug>/`. Landscape screens get `desktop`, portrait ones `mobile`. It loops
   inline only while the notes are open and pauses on close. Under reduced motion it shows the
   poster with controls instead of autoplaying. A clip that fails to load falls back to the hero
   image or the text. Record the real game (no mockups), keep each clip ≈ 6 s and under 1 MB. When
@@ -120,8 +122,11 @@ One frozen entry per **published** version, never generated from commits:
 
 ## 6. Releasing a new version
 
-1. Before publishing, add the new version's entry at the top of `RELEASE_NOTES`, with en + zh-TW copy
-   written per the policy above and optional images under `public/whats-new/<version>/`.
+1. Before publishing, add the coming release's entry at the top of `RELEASE_NOTES` as
+   `version: UPCOMING` (no version number), with en + zh-TW copy written per the policy above and
+   optional images under `public/whats-new/<theme-slug>/`. If the previous release's entry is still
+   `UPCOMING`, first stamp it with its version and tag date (`git log -1 --format=%cs v<version>`):
+   `npm test` refuses two upcoming entries, and editing a shipped entry voids its review.
 2. `/review-release-notes <version>` (`.claude/commands/review-release-notes.md`) reviews the copy:
    - **Automatic copy check** (`copyProblems` in `scripts/check-release-notes.mjs`): rejects developer
      terms in en and zh-TW (refactor, shader, backend, database, CI, 重構, 後端, 後台, 資料庫, 架構,

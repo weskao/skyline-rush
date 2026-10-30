@@ -18,20 +18,21 @@ from the survey. Later phases reuse this answer and do not ask again.
 ## Phase N — What's New notes (before tests, intro or any release write)
 
 版本確定後，在對話中列出預計發佈版本、上一版、公告日期，以及該版本在
-`src/release-notes.js` 的完整公告：每項標題與內容都包含 English + 繁體中文。
+`src/release-notes-data.ts` 的完整公告：每項標題與內容都包含 English + 繁體中文。
 即使公告已審核通過，也必須展示全文；不能只回報檢查通過、摘要或檔案路徑。
 若審核修改公告，在最終核准前再次展示最後版本，避免核准的內容與看到的不同。
 
 1. `node scripts/check-release-notes.mjs <version>` — read-only.
    - **Passes** → go to Phase T.
-   - **No entry for the version** → stop. The notes are written first (CLAUDE.md "Every release
-     ships its What's New notes"); offer to draft them from `node scripts/check-release-notes.mjs --changes` (player-facing
+   - **No entry for the version** → stop. The notes are written first, as the `version: UPCOMING`
+     entry (CLAUDE.md "Every release ships its What's New notes"); the check finds it under any
+     version newer than every released entry; offer to draft them from `node scripts/check-release-notes.mjs --changes` (player-facing
      commits since the last tag), rewritten as player copy, then review them.
    - **Copy problems, not reviewed, or changed since review** → run
      `.claude/commands/review-release-notes.md` with the version: automatic check, fresh-eyes
      sub-agent review, the user's answers (every `AskUserQuestion` carries a "(Recommended)" first
      option), then `--approve`.
-2. After an approval, commit `src/release-notes.js` and `scripts/release-notes-reviews.json`
+2. After an approval, commit `src/release-notes-data.ts` and `scripts/release-notes-reviews.json`
    together on the release branch (`docs(release): review <version> notes`) and push it: the gate
    only tags a commit that is on `origin/main` with a green CI run, and waits for a running one.
 3. Re-run step 1; continue only when it passes.
