@@ -10,6 +10,22 @@ function tick(session, action = {}, dt = DT) {
   stepRace(session.race, input, dt);
   session.update(input, dt);
 }
+function performDrift(session) {
+  const start = session.index;
+  const car = session.race.player;
+  // Earlier one-way steering may leave the car on a rail; drive back to centre first.
+  for (let i = 0; i < 300 && Math.abs(car.x) > 1; i++) tick(session, { steer: -Math.sign(car.x) });
+  assert.equal(session.index, start, 'steering alone is not drifting');
+  const nitroBefore = car.nitro;
+  // Keep the car away from the guardrail: sustained one-way steering hits the
+  // rail, which correctly cancels a real drift in the physics engine.
+  for (let i = 0; i < 130; i++) tick(session, { brake: true, steer: Math.floor(i / 10) % 2 ? 1 : -1 });
+  assert.equal(session.index, start, 'drift is paid only on release');
+  tick(session, { throttle: true });
+  assert.equal(session.index, start + 1, 'real drift payout advances the lesson');
+  assert.ok(car.nitro >= nitroBefore + 0.3 - 1e-6, 'two-second drift pays NITRO');
+  assert.ok(car.miniBoost > 0, 'release grants a real mini boost');
+}
 function performAirChain(session) {
   const start = session.index;
   for (let i = 0; i < 42; i++) tick(session, { fly: true, boost: true });
@@ -26,12 +42,13 @@ function performBarrelRoll(session) {
   assert.equal(session.index, start + 1, 'barrel roll requires an actual paid gentle landing');
 }
 function perform(session, action) {
+  if (session.step === 'drift') performDrift(session);
   const initial = session.index;
   for (let frame = 0; frame < 600 && session.index === initial; frame++) tick(session, action);
   assert.equal(session.index, initial + 1, `did not complete ${session.step}`);
 }
 
-test('real driving completes all ten lessons without producing a race result or changing normal races', () => {
+test('real driving completes all eleven lessons without producing a race result or changing normal races', () => {
   const normal = createRace();
   const session = createInteractiveTutorial();
   assert.equal(session.race.mode, 'free');
@@ -41,14 +58,15 @@ test('real driving completes all ten lessons without producing a race result or 
   const lessons = [
     ['throttle', { throttle: true }], ['left', { steer: -1 }],
     ['right', { steer: 1 }], ['brake', { brake: true }],
-    ['fly', { fly: true }], ['land', { fly: false }],
+    ['drift', null], ['fly', { fly: true }], ['land', { fly: false }],
     ['boost', { boost: true }], ['airChain', null], ['barrelRoll', null], ['nitro', { nitro: true }],
   ];
   for (const [name, action] of lessons) {
     assert.equal(session.step, name);
     if (name === 'land') assert.ok(session.race.player.altitude > 1, 'landing must start from actual flight');
     if (name === 'nitro') assert.equal(session.race.player.nitro, 1);
-    if (name === 'airChain') performAirChain(session);
+    if (name === 'drift') performDrift(session);
+    else if (name === 'airChain') performAirChain(session);
     else if (name === 'barrelRoll') performBarrelRoll(session);
     else perform(session, action);
   }
@@ -206,6 +224,8 @@ test('an interrupted NITRO lesson refills only after release and remains player-
   performBarrelRoll(session);
   const car = session.race.player;
   const previousUses = car.nitroUses;
+  // Real players read the coach first: auto-throttle gains speed before NITRO is pressed.
+  for (let i = 0; i < 30; i++) tick(session);
   for (let i = 0; i < 180; i++) tick(session, { nitro: true, brake: true });
   assert.equal(session.step, 'nitro', 'braking during activation must not fake a sprint');
   assert.equal(car.nitroUses, previousUses + 1, 'one real charge was spent');
@@ -289,4 +309,16 @@ test('neutral tutorial controls do not pull left and wrong-step steering still o
   const settledX = car.x;
   for (let frame = 0; frame < 100; frame++) advance();
   assert.ok(Math.abs(car.x - settledX) < 0.001, 'once steering settles, the car must not auto-center');
+});
+
+test('drift cannot complete without a real payout and must not reward a crash', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [{ throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true }]) perform(session, action);
+  assert.equal(session.step, 'drift');
+  for (let i = 0; i < 80; i++) tick(session, { steer: -1 });
+  assert.equal(session.step, 'drift', 'steering alone is not drifting');
+  for (let i = 0; i < 30; i++) tick(session, { brake: true, steer: -1 });
+  tick(session);
+  assert.equal(session.step, 'drift', 'less than one second earns no payout');
+  performDrift(session);
 });
