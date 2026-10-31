@@ -24,7 +24,7 @@ function validModeKey(key: string): Mode | null {
     const mode = config?.mode;
     if (parsed.length === 3 && (mode !== 'circuit' || parsed[2] !== 'lap')) return null;
     return typeof mode === 'string' && MODE_NAMES.includes(mode as Mode) && isModeTrack(parsed[0], mode) &&
-      (mode !== 'endless' || parsed[0] === 'coast') && (mode !== 'circuit' || circuitLaps(config) !== null) ? mode as Mode : null;
+      (mode !== 'circuit' || circuitLaps(config) !== null) ? mode as Mode : null;
   } catch { return null; }
 }
 
