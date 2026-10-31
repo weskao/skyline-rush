@@ -171,12 +171,12 @@ export function createAeroVFX(scene, vehicle) {
     setSkins(ids) {
       // Event-driven cosmetic updates reuse existing materials, geometries and GPU buffers.
       const palette = skinVfxPalette(ids ?? {});
-      launchSkinActive = ids?.['launch-flare'] === 'launch-flare-blue';
+      launchSkinActive = palette['launch-flare'][2] > 1;
       flow.material.uniforms.skinTint.value.fromArray(palette.airflow);
       for (const jet of jets) jet.material.uniforms.skinTint.value.fromArray(palette.thruster);
       vapor.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
       ribbon.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
-      if (ids?.['launch-flare'] === 'launch-flare-blue') shock.material.color.setRGB(...palette['launch-flare']);
+      if (launchSkinActive) shock.material.color.setRGB(...palette['launch-flare']);
       else shock.material.color.set('#bdeeff');
     },
     group: local, // effects riding on the vehicle; not part of its silhouette
