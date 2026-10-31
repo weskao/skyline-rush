@@ -15,8 +15,22 @@
 
 **Repository:** https://github.com/weskao/skyline-rush
 **Target branch:** `feature/high-speed-vfx`
-**Wave:** 2 · **TODO:** 10 · **Status:** PLAN ONLY — NOT IMPLEMENTED
+**Wave:** 2 · **TODO:** 10 · **Status:** IMPLEMENTATION IN PROGRESS — EXACT-HEAD FULL CI AND VISUAL REVIEW REQUIRED
 **Dependency:** Mobile Controls/HUD merged first; honor its ability state and do not edit controls during independent VFX work.
+
+
+## Wave 2 implementation evidence (2026-10-31, not final acceptance)
+
+- [x] Inspected latest `develop` (`a021044d`) and preexisting branch HEAD (`e3b2032`); merged non-destructively as `3fbe4cb`, preserving Wave 1 and all seven Wave 2 authored documents.
+- [x] RED observed on GitHub Actions run [41201178381](https://github.com/weskao/skyline-rush/actions/runs/41201178381): two new controller tests failed because the four-phase controller was absent (1207 passed).
+- [x] GREEN observed for the two controller tests in [41201443420](https://github.com/weskao/skyline-rush/actions/runs/41201443420); a new renderer RED test failed because its reusable `nitroMix` uniform was absent.
+- [x] Implemented typed `createSprintVfx` with READY / IGNITION / SUSTAIN / RECOVERY and a bounded independent NITRO/BOOST blend; `src/world.js` reads real race snapshots without changing `src/game.js`; `src/aero-vfx.js` extends its existing shader/pools with cyan/purple palette, limiting motion in Reduced Motion and hiding VFX immediately when disabled.
+- [x] Added browser-level real WebGL evidence capture (game canvas screenshots, 10-second rAF frame-time samples, video, Draw Calls/Triangles/program count/texture count) and upload paths on feature-branch full CI.
+- [ ] Full exact-final-HEAD Typecheck/Unit/Build/Browser/World Tour/Cloud Save/Quality Gate GREEN; review any inherited `develop` browser failures. Initial `develop` run [41195915543](https://github.com/weskao/skyline-rush/actions/runs/41195915543) failed multiple browser shards.
+- [ ] Download/inspect real render evidence and 12-second animation, compare matching before/after p50/p95/Draw Calls/Triangles/texture memory, and validate real mobile thermals; testing in CI SwiftShader does not establish physical GPU memory usage or mobile thermal safety.
+- [ ] Manual signoff of visual fidelity and physical device interaction. Do not mark TODO #10 complete or merge to `develop`/`main`.
+
+**Asset decision:** no new PNG/WebP sprites justified: the existing pooled Three.js shaders and geometry can produce both live colorways; `sprint-vfx-storyboard.svg` remains concept-only. No source changes to race physics or actual NITRO rule constants.
 
 ## Global Constraints
 
