@@ -34,3 +34,17 @@ test('account switch clears trial and selected preview; disabling flag revokes e
   setGarageSkinAccount('runtime_a');
   assert.equal(currentGarageSkins()['nitro-trail'], 'nitro-trail-basic');
 });
+
+test('short-lived trial expires automatically and notifies subscribers without another click', async () => {
+  setGarageSkinAccount('timer_driver');
+  setGarageSkinTrial(true, Date.now() + 50);
+  assert.equal(equipGarageSkin('thruster-ion'), true);
+  let revoked = false;
+  const unsubscribe = subscribeGarageSkins(() => {
+    if (currentGarageSkins().thruster === 'thruster-basic') revoked = true;
+  });
+  await new Promise(resolve => setTimeout(resolve, 150));
+  assert.equal(currentGarageSkins().thruster, 'thruster-basic');
+  assert.equal(revoked, true);
+  unsubscribe();
+});
