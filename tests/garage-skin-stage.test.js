@@ -32,3 +32,14 @@ test('Studio preview uses the same real Aero renderer and cosmetics as the race 
   assert.equal(localDisposed, 1, 'Studio disposes unique Aero tube geometry');
   assert.equal(worldDisposed, 1, 'Studio disposes unique world-space Nitro ribbon geometry');
 });
+
+test('garage camera fit and full-car bounds ignore cosmetic VFX tube geometry', () => {
+  const stage = createGarageStage(new THREE.Texture());
+  const camera = new THREE.PerspectiveCamera(49, .65, .1, 500);
+  stage.update(camera, defaultGarageCamera(), 1, false);
+  const before = stage.inspectBounds(camera);
+  const aero = stage.scene.getObjectByName('Airflow showcase');
+  aero.scale.setScalar(5);
+  assert.deepEqual(stage.inspectBounds(camera), before, 'an oversized VFX tube must not shrink or clip the vehicle');
+  stage.dispose();
+});
