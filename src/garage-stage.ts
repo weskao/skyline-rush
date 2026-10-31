@@ -79,7 +79,7 @@ export function createGarageStage(environment: THREE.Texture) {
     // The preview repeats real ignition/trail behaviour with a small, bounded motion.
     const dt = Number.isFinite(lastTime) ? Math.max(0, Math.min(0.05, time - lastTime)) : 1 / 60;
     lastTime = time;
-    car.position.z = reducedMotion ? 0 : Math.sin(time * 2) * 0.18;
+    car.position.z = reducedMotion ? 0 : Math.sin(time * 2) * 0.65;
     aero.update(previewRace, dt, origin, previewSettings, reducedMotion);
   }
 
