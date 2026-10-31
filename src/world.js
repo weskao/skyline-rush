@@ -10,7 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { roadRibbon } from './geometry.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
-import { vfxSettings } from './vfx-settings.ts';
+import { vfxSettings, createSprintVfx } from './vfx-settings.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
@@ -528,6 +528,9 @@ export function createWorld(canvas) {
   const circuitScene = createCircuitScene(scene);
   const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : TOUR_IDS.has(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
+  const sprintVisual = createSprintVfx();
+  // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
+  const sprintInput = { phase: 'ready', nitro: false, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
   let visual = vfxSettings();
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
@@ -651,8 +654,9 @@ export function createWorld(canvas) {
       const car = race.player;
       const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
-      if (lastRace !== race) { effects.reset(); aero.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; }
+      if (lastRace !== race) { effects.reset(); aero.reset(); sprintVisual.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; }
       if (trackId !== race.trackId) {
+        sprintVisual.reset();
         raceVisuals.reset();
         trackId = race.trackId;
         const palette = TRACK_PALETTES[trackId];
@@ -909,8 +913,13 @@ export function createWorld(canvas) {
       finish.visible = trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
         framedRoad(trackId) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin), worldFrame: trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
-      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion);
-      const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
+      Object.assign(sprintInput, {
+        phase: race.phase, nitro: car.nitroTime > 0, boost: !!(car.boosting || car.miniBoost > 0),
+        speed: car.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion,
+      });
+      const sprintFrame = sprintVisual.update(sprintInput);
+      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion, sprintFrame);
+      const boostStrength = race.phase === 'racing' ? sprintFrame.power : 0;
       const portrait = camera.aspect < 0.8;
       if (photoView && race.phase === 'paused') {
         desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
@@ -1004,10 +1013,10 @@ export function createWorld(canvas) {
       camera.lookAt(smoothLook);
       carBank = THREE.MathUtils.damp(carBank, !reducedMotion && car.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt);
       camera.rotation.z += carBank;
-      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + boostStrength * (visual.enabled ? visual.fov : 0) - impact * 4;
+      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + (visual.enabled ? sprintFrame.fov * Math.min(1, visual.fov / 7) : 0) - impact * 4;
       camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();
-      lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : boostStrength * visual.motionBlur;
+      lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : sprintFrame.blur * visual.motionBlur;
       lens.uniforms.impact.value = reducedMotion ? 0 : impact;
       projectedNozzle.copy(feedback.nozzle).project(camera);
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
@@ -1035,7 +1044,7 @@ export function createWorld(canvas) {
         } catch (error) { request.reject(error); }
       }
     },
-    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles}; },
+    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
       // Read-only projection for browser QA: verify the player and all three
