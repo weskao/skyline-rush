@@ -9,7 +9,7 @@ interface EliminationRace {
   player: { distance: number };
   rivals: EliminationRacer[];
 }
-// Four-racer Last Driver Standing: one deterministic knockout every ten seconds.
+// Last Driver Standing: one deterministic knockout every ten seconds for any field size.
 export const createElimination = (): EliminationState => ({ nextAt: 10, eliminated: [], outcome: null });
 export function stepElimination(state: EliminationState, race: EliminationRace): { eliminated: string; outcome: EliminationState['outcome'] } | null {
   if (state.outcome || race.elapsed < state.nextAt) return null;

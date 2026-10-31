@@ -291,7 +291,7 @@ test('landing emits one touchdown event with the actual descent speed and resets
 });
 
 test('air dash: holding fly and boost together drains fuel at 18 per second and keeps the boost speed cap', () => {
-  const race = racing();
+  const race = racing(); race.rivals = [];
   race.player.speed = 80;
   advance(race, 1, { fly: true, boost: true });
   assert.ok(Math.abs(race.player.fuel - 82) < 0.5);

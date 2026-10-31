@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { MAGNET_RANGE } from './game.js';
 
-// Shared by the model and its wake, so all four streams start at the actual ports.
+// Shared by all car models and their wakes: every thrust stream starts at its actual port.
 export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]];
 
 // One reusable GPU pool keeps airflow, sparks and landing dust bounded.
