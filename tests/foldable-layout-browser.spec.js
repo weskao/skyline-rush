@@ -61,3 +61,62 @@ test.describe('dual-screen fold/unfold', () => {
     await expect(steer).not.toHaveClass(/is-held/);
   });
 });
+
+
+test.describe('ordinary viewport fallback acceptance', () => {
+  test.use({ hasTouch: true });
+  test('cover/phone/tablet/short-landscape sizes retain accessible controls and localized HUD', async ({ page }) => {
+    test.setTimeout(240000);
+    await page.addInitScript(() => {
+      localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', size: 'M' }));
+      localStorage.setItem('skyline-rush-hud-mode', 'hybrid');
+    });
+    for (const [width, height, locale] of [
+      [320, 740, 'en'], [390, 844, 'zh-TW'], [844, 390, 'en'],
+      [568, 320, 'zh-TW'], [1440, 900, 'en'],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto('/');
+      if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+      await page.locator('#locale-select').selectOption(locale, { force: true });
+      await page.locator('#start-button').click();
+      const touch = page.locator('#touch-controls');
+      await expect(touch).toHaveAttribute('data-fold-axis', '');
+      await expect(page.locator('[data-control="nitro"]')).toBeVisible();
+      const buttons = await touch.locator('[data-control]:visible').evaluateAll(elements => elements.map(b => {
+        const r = b.getBoundingClientRect();
+        return { x: r.left, right: r.right, y: r.top, bottom: r.bottom, w: r.width, h: r.height };
+      }));
+      expect(buttons.length).toBeGreaterThanOrEqual(4);
+      for (const rect of buttons) {
+        expect(rect.w).toBeGreaterThanOrEqual(44);
+        expect(rect.h).toBeGreaterThanOrEqual(44);
+        expect(rect.x).toBeGreaterThanOrEqual(-1);
+        expect(rect.right).toBeLessThanOrEqual(width + 1);
+        expect(rect.y).toBeGreaterThanOrEqual(-1);
+        expect(rect.bottom).toBeLessThanOrEqual(height + 1);
+      }
+      await page.screenshot({ path: test.info().outputPath(`fallback-${width}x${height}-${locale}.png`), animations: 'disabled' });
+    }
+  });
+
+  test('stacked segments protect controls from a horizontal hinge', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 900 });
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => [
+        { left: 0, top: 0, width: 600, height: 430 }, { left: 0, top: 460, width: 600, height: 440 },
+      ] });
+      localStorage.setItem('skyline-rush-controls-layout-v2', JSON.stringify({ version: 2,
+        portrait: { fly: { x: 0.82, y: 0.5 } }, landscape: {} }));
+    });
+    await page.goto('/');
+    if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+    await page.locator('#start-button').click();
+    const touch = page.locator('#touch-controls');
+    await expect(touch).toHaveAttribute('data-fold-axis', 'horizontal');
+    const fly = await page.locator('[data-control="fly"]').boundingBox();
+    expect(fly.y + fly.height <= 430 || fly.y >= 460).toBe(true);
+    await page.screenshot({ path: test.info().outputPath('foldable-stacked-600x900.png'), animations: 'disabled' });
+  });
+});
