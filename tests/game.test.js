@@ -37,7 +37,7 @@ test('starting requires a countdown and countdown holds every racer on the grid'
   assert.equal(race.phase, 'countdown');
   assert.equal(race.player.distance, 0);
   assert.equal(race.player.altitude, 0);
-  assert.equal(race.rivals[0].distance, 0);
+  assert.equal(race.rivals[0].distance, race.grid.find(slot => slot.id === race.rivals[0].name).distance);
   advance(race, 1.1);
   assert.equal(race.phase, 'racing');
 });
@@ -117,7 +117,7 @@ test('pause and invalid frame intervals leave race state unchanged', () => {
 test('all rivals race and use flight; position compares distance, finish freezes the result', () => {
   const race = racing();
   advance(race, 8, { throttle: true });
-  assert.equal(race.rivals.length, 3);
+  assert.equal(race.rivals.length, 7);
   assert.ok(race.rivals.every(rival => rival.distance > 100));
   let airborne = false;
   for (let i = 0; i < 600; i++) {
@@ -1200,7 +1200,7 @@ test('rival nitro fires by personality and respects its charge budget', () => {
   const step = race => stepRace(race, {}, 1 / 60);
   const early = fresh();
   step(early);
-  assert.deepEqual(early.rivals.map(rival => rival.nitro), [RIVAL_NITRO_CHARGES, RIVAL_NITRO_CHARGES, RIVAL_NITRO_CHARGES]);
+  assert.ok(early.rivals.every(rival => rival.nitro === RIVAL_NITRO_CHARGES));
   const novaRace = fresh(); // NOVA: steady, fixed schedule
   novaRace.elapsed = RIVAL_NITRO_NOVA_FIRST + 0.1;
   step(novaRace);

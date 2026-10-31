@@ -20,7 +20,7 @@ test('stage completion records totals only when finished, never counts duplicate
   assert.throws(()=>addSprintStage(final,{phase:'finished',result:{time:14,position:1}}));
 });
 test('invalid stage results do not update the series', () => {
-  for (const result of [{time:-1,position:1},{time:NaN,position:1},{time:10,position:5},{time:10,position:1,score:Infinity}]) {
+  for (const result of [{time:-1,position:1},{time:NaN,position:1},{time:10,position:9},{time:10,position:1,score:Infinity}]) {
     assert.throws(()=>addSprintStage(createSprintSeries(2),{phase:'finished',result}));
   }
 });

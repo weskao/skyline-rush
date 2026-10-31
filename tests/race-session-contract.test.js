@@ -11,7 +11,7 @@ test('MODE-00: strict user config rejects unsupported combinations and malformed
     { mode: 'classic', rivals: 0 },
     { mode: 'time', traffic: 'heavy' },
     { mode: 'free', difficulty: 'hard' },
-    { mode: 'custom', rivals: 4 },
+    { mode: 'custom', rivals: 8 },
     { mode: 'custom', rivals: -1 },
     { mode: 'custom', rivals: 1.5 },
     { mode: 'custom', traffic: 'extremely-heavy' },

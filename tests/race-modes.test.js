@@ -6,7 +6,7 @@ import { createRace, startRace, stepRace, useHeldItem, RACE_TRACKS } from '../sr
 test('normalization keeps classic defaults and validates mode names', () => {
   const config = normalizeRaceConfig();
   assert.equal(config.mode, 'classic');
-  assert.equal(config.rivals, 3);
+  assert.equal(config.rivals, 7);
   assert.equal(config.traffic, 'normal');
   assert.equal(config.items, true);
   assert.equal(config.difficulty, 'normal');
@@ -28,7 +28,7 @@ test('classic and Daily Challenge physics and traffic remain unchanged', () => {
   const daily = createRace('coast', 'double-traffic');
   assert.equal(classic.mode, 'classic');
   assert.equal(classic.modifier, null);
-  assert.equal(classic.rivals.length, 3);
+  assert.equal(classic.rivals.length, 7);
   assert.equal(classic.traffic.length, 36);
   assert.equal(daily.modifier, 'double-traffic');
   assert.equal(daily.traffic.length, 72);
@@ -130,7 +130,7 @@ test('Free Drive skips countdown and races until the road end', () => {
 test('AI opponent count supports one or three opponents without changing Classic', () => {
   assert.equal(createRace('coast', { mode: 'custom', rivals: 1 }).rivals.length, 1);
   assert.equal(createRace('coast', { mode: 'custom', rivals: 3 }).rivals.length, 3);
-  assert.equal(createRace('coast').rivals.length, 3);
+  assert.equal(createRace('coast').rivals.length, 7);
 });
 
 import { RULE_PRESETS } from '../src/race-config.ts';
@@ -288,10 +288,10 @@ test('clean Time Attack never records runs after contact, while old Time Attack 
   assert.equal(createRace('coast',{mode:'classic',clean:true}).config.clean,undefined);
 });
 
-test('Championship is a distinct ranked 3-rival mode with no Career unlock eligibility', () => {
+test('Championship is a distinct ranked seven-rival mode with no Career unlock eligibility', () => {
   const race=createRace('coast',{mode:'cup',cupTracks:['coast','neon','canyon']});
   assert.equal(race.mode,'cup');
-  assert.equal(race.rivals.length,3);
+  assert.equal(race.rivals.length,7);
   assert.deepEqual(race.config.cupTracks,['coast','neon','canyon']);
   assert.equal(createRace('coast').config.cupTracks,undefined);
 });
@@ -333,8 +333,8 @@ test('active mystery inventory is opt-in and does not change Classic behavior', 
   assert.equal(useHeldItem(classic),null);
 });
 
-test('Elimination begins with three AI and can end without awarding a Career unlock', () => {
-  const race=createRace('coast',{mode:'elimination'});
+test('Legacy four-car Elimination still finishes without Career unlock', () => {
+  const race=createRace('coast',normalizeRaceConfig({mode:'elimination',rulesVersion:1,rivals:3}));
   assert.equal(race.rivals.length,3);
   assert.equal(race.elimination.nextAt,10);
   race.phase='racing';race.elapsed=9.999;

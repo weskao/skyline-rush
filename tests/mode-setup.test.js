@@ -40,7 +40,7 @@ test('unsupported combinations are named with a reason instead of silently ignor
 
 test('every mode gets a one-line rules summary built from its own settings', () => {
   const summary = (mode, extra = {}) => modeRulesSummary(normalizeRaceConfig({ mode, ...extra }), fakeT);
-  assert.match(summary('classic'), /mode\.setupAI\{"n":3\}/);
+  assert.match(summary('classic'), /mode\.setupAI\{"n":7\}/);
   assert.match(summary('custom', { rivals: 1, difficulty: 'hard', stages: 3 }), /mode\.setupAI\{"n":1\}.*mode\.setupDifficulty.*mode\.setupStages\{"n":3\}/);
   assert.match(summary('time', { clean: true }), /mode\.setupSolo.*mode\.cleanRules/);
   assert.match(summary('stunt', { duration: 180 }), /mode\.stuntMinutes\.180/);

@@ -42,6 +42,6 @@ export function addSprintStage(series: SprintSeries, race: FinishedSprint | null
 
 export function nextSprintGrid(series: SprintSeries): string[] | null {
   const previous = series.results.at(-1)?.order;
-  return previous ? reversedGrid(previous) : null;
+  return previous && previous.length >= 2 ? reversedGrid(previous) : null;
 }
 export const sprintTotal = (series: SprintSeries): number => series.results.reduce((time, run) => time + run.time, 0);
