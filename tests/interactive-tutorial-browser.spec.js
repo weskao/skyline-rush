@@ -18,6 +18,20 @@ const keyStep = async (page, key, next) => {
   await page.keyboard.up(key);
 };
 
+// DRIFT needs >= 162 km/h on entry; the brake lesson's held key can slow the car, so wait for auto-throttle.
+const driftReady = page => page.waitForFunction(() => Number(document.querySelector('#speed')?.textContent) >= 170, null, { polling: 'raf' });
+// The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
+const driftCharged = page => page.waitForFunction(() => Number(document.querySelector('#tutorial-progress')?.value) >= 5, null, { polling: 'raf' });
+const keyboardDrift = async page => {
+  await driftReady(page);
+  await page.keyboard.down('a');
+  await page.keyboard.down('s');
+  await driftCharged(page);
+  await page.keyboard.up('s');
+  await page.keyboard.up('a');
+  await step(page, 'fly');
+};
+
 const keyboardChain = async page => {
   await page.keyboard.down('Space');
   await page.keyboard.down('Shift');
@@ -56,7 +70,8 @@ const keyboardToNitro = async page => {
   await keyStep(page, 'w', 'left');
   await keyStep(page, 'a', 'right');
   await keyStep(page, 'd', 'brake');
-  await keyStep(page, 's', 'fly');
+  await keyStep(page, 's', 'drift');
+  await keyboardDrift(page);
   await keyStep(page, 'Space', 'land');
   await step(page, 'boost');
   await keyStep(page, 'Shift', 'airChain');
@@ -245,7 +260,18 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('right'),'brake',effectiveMode==='slide'?55:0);
-      await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'fly',0,effectiveMode==='slide'?55:0);
+      await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'drift',0,effectiveMode==='slide'?55:0);
+      await driftReady(page);
+      if (effectiveMode === 'slide') {
+        // One thumb: slide down (brake) and sideways (steer) on the pad.
+        const b = await page.locator('.touch-pad').boundingBox();
+        const p = { id: 1, x: b.x + b.width / 2, y: b.y + b.height * .25 };
+        await touch('touchStart', [p]);
+        await touch('touchMove', [{ ...p, x: p.x - 55, y: p.y + 55 }]);
+      } else await touch('touchStart', [await point(button('left'), 1), await point(button('brake'), 2)]);
+      await driftCharged(page);
+      await touch('touchEnd', []);
+      await step(page,'fly');
       await gesture(button('fly'),'land');
       if(flyMode==='toggle') await tapTouch(button('fly'));
       await step(page,'boost');
