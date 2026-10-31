@@ -392,9 +392,11 @@ no deploy unless the user explicitly asks.
   (local `--no-ff`, `/merge-into-main` targets `develop` when it exists); CI runs the full gate there.
 - **Release:** merge `develop` into `main`, push, wait for green CI on that merge commit, then
   `/release` on `main` — the gate and tag flow above are unchanged.
-- **After every release, merge `main` back into `develop`** so the `docs: release …` commit (version
+- **After every release, `main` is merged back into `develop`** so the `docs: release …` commit (version
   bump, release-notes stamp) reaches it; skipping it makes the next release merge conflict.
-- **Hotfix:** branch from `main`, merge into `main`, release, then merge `main` into `develop`.
+  `/release` does this last (`scripts/release-back-merge.sh`, pushed without touching any checkout); on a
+  conflict or rejected push it leaves `develop` untouched and prints the manual merge — do it then.
+- **Hotfix:** branch from `main`, merge into `main`, then `/release` (which back-merges into `develop`).
 
 ## Ready-screen floating controls: responsive spacing
 
