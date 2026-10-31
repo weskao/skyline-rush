@@ -205,22 +205,34 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       };
       const touch = (type, points) => session.send('Input.dispatchTouchEvent', { type, touchPoints: points });
       const button = action => page.locator(`#touch-controls [data-control="${action}"]`);
+      // A CDP touch pair avoids Playwright's actionability delay while FLY is
+      // latched; that delay can turn a clean AIR→ROAD landing into a hard one
+      // on software-WebGL runners. These are real browser pointer events.
+      const tapTouch = async target => {
+        const p = await point(target, 9);
+        await touch('touchStart', [p]);
+        await touch('touchEnd', []);
+      };
+      const waitForCoachText = text => page.waitForFunction(
+        text => document.querySelector('#tutorial-instruction')?.textContent?.includes(text),
+        text, { polling: 'raf' },
+      );
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('right'),'brake',effectiveMode==='slide'?55:0);
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'fly',0,effectiveMode==='slide'?55:0);
       await gesture(button('fly'),'land');
-      if(flyMode==='toggle') await button('fly').tap();
+      if(flyMode==='toggle') await tapTouch(button('fly'));
       await step(page,'boost');
       await gesture(button('boost'),'airChain');
       const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
       if (flyMode === 'toggle') {
-        await button('fly').tap();
+        await tapTouch(button('fly'));
         const p = await point(button('boost'), 1);
         await touch('touchStart', [p]);
         await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
         await touch('touchEnd', []);
-        await button('fly').tap();
+        await tapTouch(button('fly'));
       } else {
         await touch('touchStart', [fly]);
         await touch('touchStart', [fly, boost]);
@@ -235,32 +247,38 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       // for a bounding box of a hidden control.
       const right = effectiveMode === 'slide' ? null : await point(button('right'), 3);
       const pad = effectiveMode === 'slide' ? left : null;
-      if (flyMode === 'toggle') await button('fly').tap();
+      if (flyMode === 'toggle') await tapTouch(button('fly'));
       else await touch('touchStart', [fly]);
-      await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeGreaterThan(.5);
+      // Observe a genuine takeoff at animation-frame cadence. Polling the HUD
+      // through Playwright can consume the fuel and leave a 12 m hard landing
+      // before the player's 0.3 s flick window even begins.
+      await page.waitForFunction(
+        () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
+        null, { polling: 'raf' },
+      );
       if (pad) {
         await touch('touchStart', flyMode === 'toggle' ? [pad] : [fly, pad]);
         await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x-55}] : [fly,{...pad,x:pad.x-55}]);
         // Observe the first engine-confirmed flick at animation-frame cadence, then
         // immediately reverse within the real 0.3s trick window. Coarse locator
         // polling can itself consume the player's entire timing window on CI.
-        await page.waitForFunction(() => document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected'), null, { polling: 'raf' });
+        await waitForCoachText('First airborne steering press detected');
         await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x+55}] : [fly,{...pad,x:pad.x+55}]);
-        await expect(page.locator('#tutorial-instruction')).toContainText('BARREL ROLL in progress');
+        await waitForCoachText('BARREL ROLL in progress');
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
       } else {
         await touch('touchStart', flyMode === 'toggle' ? [left] : [fly,left]);
         // Observe the first engine-confirmed flick at animation-frame cadence, then
         // immediately reverse within the real 0.3s trick window. Coarse locator
         // polling can itself consume the player's entire timing window on CI.
-        await page.waitForFunction(() => document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected'), null, { polling: 'raf' });
+        await waitForCoachText('First airborne steering press detected');
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
         await touch('touchStart', flyMode === 'toggle' ? [right] : [fly,right]);
-        await expect(page.locator('#tutorial-instruction')).toContainText('BARREL ROLL in progress');
+        await waitForCoachText('BARREL ROLL in progress');
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
       }
       // Let the spin finish while gliding; holding FLY longer risks a hard landing.
-      if (flyMode === 'toggle') await button('fly').tap();
+      if (flyMode === 'toggle') await tapTouch(button('fly'));
       else await touch('touchEnd', []);
       await step(page, 'nitro');
       await gesture(button('nitro'),'complete');
