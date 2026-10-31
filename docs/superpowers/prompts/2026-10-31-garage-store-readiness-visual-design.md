@@ -8,7 +8,13 @@
 
 **Branch:** `feature/garage-store-readiness`
 **Date:** 2026-10-31
-**Status:** Prompt only; assets intentionally NOT created in this documentation stage.
+**Status:** Independent visual assets listed below have been committed; actual feature/UI integration is deferred until Wave prerequisites pass.
+
+## 已預製並存入 GitHub 的素材（2026-10-31）
+
+**已完成：** [Commit `4802122`](https://github.com/weskao/skyline-rush/commit/480212262d5e5ae0d2dd11065cec7f489d685ef3)。[`coming-soon.svg`](https://github.com/weskao/skyline-rush/blob/feature/garage-store-readiness/public/feature-assets/garage-store-readiness/coming-soon.svg)、[`collection.svg`](https://github.com/weskao/skyline-rush/blob/feature/garage-store-readiness/public/feature-assets/garage-store-readiness/collection.svg)；詳見 [素材清單](https://github.com/weskao/skyline-rush/blob/feature/garage-store-readiness/public/feature-assets/garage-store-readiness/ASSET-MANIFEST.md)。
+
+非交易性 Coming Soon 與 Collection 圖示完成；真正商店頁面、付款規則與商品尚未獲准實作。 **不要在正式開發階段無理由重新生成同類圖示**；先驗證是否能直接引用現有素材，測試真實瀏覽器畫面與載入失敗 fallback。所有素材仍未接入 Vue／Three.js，**不可把圖片完成當成 TODO 實作完成**。
 
 ## Ready-to-paste visual generation / design prompt
 
@@ -53,5 +59,5 @@
 - [ ] **S4 — BDD/TDD:** Given missing/slow asset, wrong quality tier, RTL? (not required), VFX Off/Reduced Motion or short landscape; When component renders; Then readable semantic fallback and valid controls remain. Verify 320×740, 390×844, 844×390 and 1440×900, en/zh-TW, touch/keyboard, Low/Medium/High; perform RED→GREEN and capture actual UI/WebGL screenshots.
 - [ ] **S5 — Real perf:** measure decoded image/texture memory, network bytes, shader warmup, Draw Calls and p50/p95 frame time if changed. Do not make raster art a fake dynamic renderer or UI. Only mark the corresponding implementation TODO `- [x]` after full feature proof and exact-HEAD CI green.
 
-**No image asset has been generated or installed by this planning document.**
+**This design brief is not proof that runtime integration exists.** The pre-created SVG assets listed above are real and committed; further optional imagery must be justified separately.
 
