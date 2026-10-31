@@ -13,7 +13,7 @@ const LEGACY_CEILINGS = {
   'src/game.js': 631,
   'src/world-tour-scene.js': 453,
   'src/CollectiblesGuide.vue': 477,
-  'src/locales/ui.ts': 1220, // translation catalog: data, not logic
+  'src/locales/ui.ts': 1145, // ratchet down after extracting tutorial strings; never raise this limit
 };
 const SLACK = 25;
 
