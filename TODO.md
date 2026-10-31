@@ -1,3 +1,18 @@
+## Wave 2 — TODO #10: High-speed VFX / NITRO / BOOST (2026-10-31)
+
+**Branch:** `feature/high-speed-vfx`; integration target `develop` (do not merge without approval).
+
+- [x] Non-destructively integrate `develop` into existing feature branch (`3fbe4cb`), preserving Wave 1 Garage/Tutorial/HUD and preexisting VFX design documents.
+- [x] Observe RED for four-phase NITRO/BOOST typed controller: unit run 41201178381 had two expected failures; create reusable controller and observe both tests GREEN at run 41201443420.
+- [x] Observe RED for missing renderer NITRO/BOOST color palette: unit run 41201443420 failed only its new shader uniform test.
+- [x] Add bounded speed-sensitive READY/IGNITION/SUSTAIN/RECOVERY controller, cyan BOOST / violet NITRO reusable shader uniforms, restrained camera FOV/blur, VFX Off and Reduced Motion handling without changing `src/game.js` physics.
+- [x] Add a real WebGL Playwright screenshot/video/10s rAF frame-time/Draw Calls/Triangles/program/texture resource evidence test and CI artifact collection.
+- [ ] Exact-final-HEAD full GitHub Actions green (unit/typecheck/browser/cloud/World Tour/quality-gate); investigate inherited failing `develop` browser shards if necessary.
+- [ ] Inspect actual WebGL screenshots and 10–20s video, verify Low/Medium/High and mobile portrait/landscape; measure matching baseline-versus-new render frame-time p50/p95/FPS/Draw Calls/Triangles/Texture Memory, plus hardware thermal/comfort signoff.
+- [ ] Final wave approval and merge to `develop` (not authorized here).
+
+**Evidence:** [first controller RED](https://github.com/weskao/skyline-rush/actions/runs/41201178381), [controller GREEN / renderer RED](https://github.com/weskao/skyline-rush/actions/runs/41201443420), [develop inherited failures](https://github.com/weskao/skyline-rush/actions/runs/41195915543). Do not treat planning storyboard as a gameplay screenshot or claim complete acceptance until exact-HEAD CI and visual evidence pass.
+
 ## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
 
 **Branch:** `feature/ci-speedup`. Measured on `main` run 41024921317 (`cff7886`): 75 min wall. Browser shard 8 took 72 min; shard 1 took 38 min of suite plus a 30 min `npm run test:layout` rerun of specs the sharded suite already contains; World Tour shards ran 5–40 min (the slow camera views sit at the end of the list); unit 1 min, cloud-save 1.5 min.
