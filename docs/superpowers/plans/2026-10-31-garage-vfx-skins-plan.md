@@ -210,3 +210,25 @@
 - **BDD/TDD:** a local isolated Node v22.16 proof run (using `--experimental-strip-types`) observed RED: 8/8 new contract tests failed with behavior stubs; GREEN: 8/8 passed with the catalog implementation. Standalone strict TypeScript 5.8.3 check passed. `tests/garage-skin-catalog.test.js` and `tests/garage-vfx-catalog-browser.spec.js` were committed. These narrow checks are **not** full-repository verification.
 - **Still required for Phase A signoff:** exact final-HEAD GitHub CI quality-gate, all repository regression suites, real WebGL + DOM screenshots and manual device/visual review. CI artifacts are not substitutes for human fidelity approval. No `TODO.md` #5.1/#5.3/#5.6/#5.8/#5.9 item is marked done by this checkpoint.
 - **Phase B HARD GATE:** High-speed VFX must be complete and pass TDD, screenshot and performance acceptance, receive explicit user approval, be merged to develop, and newest develop full CI must pass. Only then sync develop again and implement renderer binding, preview/equip, persistent owned skins, bounded trial periods, account/Cloud Save reconciliation, quality scaling, Reduced Motion and GPU disposal. No PR, deployment, or automatic integration merge.
+
+
+## 2026-11-01 Phase B implementation checkpoint — runtime coded; acceptance NOT complete
+
+**Worktree/merge provenance:** `feature/garage-vfx-skins` includes develop `d3be1c0af1ff1ec1df39896cd21264715c9f5c5e` (GitHub compare: behind=0 at start). Preserve existing Wave 1 Studio, Mobile HUD and PAINTS. Do not merge this feature back into develop until final accepted verification.
+
+**Current Phase B source:**
+- `src/garage-skin-session.ts` is a version-1 account-scoped ephemeral trial/equip/preview controller. Trial expiry/revocation clears temporary selections; permanent owned equipment alone is eligible for `skinCloudPayload`. No new Firestore writes, sales or entitlement grants.
+- `src/garage-skin-runtime.ts` provides event-driven reactive state and explicit trial expiry timer, with auth-switch clearing via `src/garage-ui.ts`. The default free-to-try flag is in-memory, not permanent owned inventory.
+- `src/garage-skin-palette.ts` validates independent Thruster/Airflow/NITRO/Launch selectors and returns finite uniform palettes. `src/aero-vfx.js` updates shared material uniforms and an existing launch shock material; no new shader material, geometry or GPU buffer is allocated on skin selection.
+- `src/garage-stage.ts` reuses `createAeroVFX` in the same Three.js renderer/scene architecture, animates a bounded synthetic VFX demonstration without moving the car silhouette, and disposes stage-only resources. `src/world.js` holds distinct race-equipped and Studio-selected cosmetic snapshots and warms Studio shader programs before the first frame/context restoration.
+- `src/GarageSkinCatalog.vue` provides bilingual accessible Preview/Try controls and actual status; existing paints and paint stars are untouched. Missing raster assets use the four committed SVG icons. **No reference-approved 3× WebP has been imported.**
+
+**Regression code added/updated (RED tests committed before each matching implementation, but test execution is not yet independently observed):** `tests/garage-skin-session.test.js`, `garage-skin-runtime.test.js`, `garage-skin-palette.test.js`, `garage-skin-renderer.test.js`, `garage-skin-stage.test.js`, `garage-skin-warmup.test.js`, `garage-skin-trial-browser.spec.js`, `garage-vfx-catalog-browser.spec.js`. The source-size ratchets for `src/main.js` and `src/world.js` were preserved.
+
+**Required acceptance still open (do NOT mark TODO items [x]):**
+- Full repository TypeScript/Vue/legacy JS checks, Node tests, production build, Playwright across three viewports and Low/Medium/High, Cloud Save, full World Tour regression and all exact-HEAD CI jobs; final result must be observed, not presumed.
+- Capture and inspect actual WebGL screenshots/performance budgets (draw calls, triangles, p50/p95) on the final SHA; mobile Safari/Android physical-device checks and approved fidelity references are not available in this GitHub-only environment.
+- High-speed VFX `feature/high-speed-vfx` has **not** yet been merged to develop; its latest full-regression and develop full CI must be reviewed/accepted, and any subsequent upstream API changes must be integrated safely before final feature acceptance. This is an upstream gate, not permission to merge that independent branch here.
+- No real-money currency, store, owned-skin sale, Cloud Save trial write or upgrade of a free trial to permanent inventory.
+
+Only after these gates succeed may the feature be called complete, TODO #5.1/#5.3/#5.6/#5.8/#5.9 be checked, or this feature be proposed for an integration merge.

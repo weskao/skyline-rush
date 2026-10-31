@@ -121,3 +121,15 @@ Design choices: isolate event/state contracts from presentation, use Vue 3 + Typ
 ## Phase A implementation note — 2026-10-31
 
 The separate, non-rendering TypeScript `src/garage-skin-catalog.ts` and read-only Vue `src/GarageSkinCatalog.vue` establish the cosmetic catalog, status, account and asset fallback interface without implying that Three.js effects or time-limited trials are running. The initial catalog contains four default and four proposed optional effects; no cloud-owned skins, premium pictures, or trial action has been enabled. New contract/browser tests exist; final CI, actual visual comparison and user acceptance are pending. See the Phase A checkpoint in the plan. Previous planning-only statements in older sections apply only to unstarted Phase B.
+
+
+## Phase B implementation note — 2026-11-01 (pending verification)
+
+The earlier Phase A-only paragraph records its historical checkpoint. Since then, Phase B runtime and tests have been committed on `feature/garage-vfx-skins`:
+- A typed `createGarageSkinSession` controls preview, free trial, expiry, default fallback, owned-vs-trial serialization and account isolation.
+- A reactive Vue controller drives the newly enabled Preview/Try buttons without minting permanent entitlements or altering existing PAINTS/Cloud Save schema.
+- The actual shared `createAeroVFX` shaders now accept bounded, separately validated cosmetic tint uniforms. Thruster, airflow, NITRO vapor/ribbon and the pre-existing launch shockwave get independent choices. The existing full-screen Garage Studio has a real Aero demo; no extra WebGL renderer is created.
+- The new Studio preview temporarily changes the effect emitter for existing ribbon geometry and restores car position before rendering. The measured car silhouette excludes the attached Aero mesh. Studio GPU resources are cleaned up and shaders prewarmed once per context.
+- Tests exist for entitlement, expiry, account isolation, resource reuse, shader warmup, Studio effect geometry and browser portrait/landscape/desktop interactions.
+
+**Verification and dependency caveat:** These are committed implementations and test *sources*, not a claim that all tests/CI, screenshot fidelity, physical device or performance acceptance have passed. The High-speed VFX dependency remains a separate unmerged feature until its own CI and integration pass. Source TODO items and final Phase B status remain open.
