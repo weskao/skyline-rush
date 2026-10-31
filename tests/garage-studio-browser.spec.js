@@ -7,6 +7,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.goto('/');
     await page.locator('#garage-button').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
+    // The BEFORE capture is the actual legacy Garage Home WebGL, never a generated mockup.
+    const before = await page.locator('#garage-preview #world').screenshot();
+    await test.info().attach(`garage-before-home-${viewport.width}x${viewport.height}.png`, { body: before, contentType: 'image/png' });
     await page.locator('#garage-studio-open').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'studio');
     await expect(page.locator('#garage-preview #world')).toBeVisible();
@@ -21,6 +24,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     expect(bounds.minX).toBeGreaterThan(-0.94);
     const shot = await page.locator('#garage-preview #world').screenshot();
     await test.info().attach(`garage-real-webgl-${viewport.width}x${viewport.height}`, { body: shot, contentType: 'image/png' });
+    // The AFTER capture includes the real Vue controls so reviewers can compare against the GPT concept layouts.
+    const fullStudio = await page.screenshot();
+    await test.info().attach(`garage-after-studio-${viewport.width}x${viewport.height}.png`, { body: fullStudio, contentType: 'image/png' });
     const drawCalls = Number(await preview.getAttribute('data-draw-calls'));
     const triangles = Number(await preview.getAttribute('data-triangles'));
     expect(drawCalls).toBeGreaterThan(0);
