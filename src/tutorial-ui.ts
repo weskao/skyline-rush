@@ -8,6 +8,7 @@ interface TutorialSnapshot {
   complete: boolean;
   progress: number;
   step: string | null;
+  coachPhase?: string;
 }
 interface TutorialDependencies {
   getTutorial(): TutorialSnapshot | null;
@@ -19,11 +20,14 @@ interface TutorialDependencies {
 }
 
 export function tutorialHintKey(step: string | null, steerMode: string, flyMode: string): string {
-  const action = step === 'land' ? 'fly' : step;
+  const action = step === 'land' ? 'fly' : step === 'airChain' ? 'boost' : step === 'barrelRoll' ? 'left' : step;
   if (['left', 'right', 'brake'].includes(step ?? '') && steerMode === 'slide') return 'tutorial.slide.' + step;
   if (['left', 'right'].includes(step ?? '') && steerMode === 'tilt') return 'tutorial.tilt.' + step;
   if (step === 'land') return flyMode === 'toggle' ? 'tutorial.touch.landToggle' : 'tutorial.touch.land';
   if (step === 'fly' && flyMode === 'toggle') return 'tutorial.touch.flyToggle';
+  if (step === 'airChain') return 'tutorial.touch.airChain';
+  if (step === 'barrelRoll') return steerMode === 'slide' ? 'tutorial.slide.barrelRoll'
+    : steerMode === 'tilt' ? 'tutorial.tilt.barrelRoll' : 'tutorial.touch.barrelRoll';
   return 'tutorial.touch.' + action;
 }
 
@@ -38,25 +42,39 @@ export function setupTutorialUI({
     if (!tutorial) return;
     const race = getRace(), touch = getTouchMatches(), inputPrefs = getInputPrefs(), controlPrefs = getControlPrefs();
     progress.value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
-    const view = [tutorial.step, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode].join('/');
+    const view = [tutorial.step, tutorial.coachPhase, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode].join('/');
     if (!force && tutorialView === view) return;
     tutorialView = view;
     const step = tutorial.step;
     const done = tutorial.complete;
-    const action = step === 'land' ? 'fly' : step;
+    const phase = tutorial.coachPhase ?? 'ready';
+    // Only highlight a control if pressing it is appropriate *now*.
+    // Landing and finished-roll phases must not highlight BOOST or FLY.
+    const action = step === 'land' ? 'fly' : step === 'airChain'
+      ? phase === 'airborne' ? null : 'fly'
+      : step === 'barrelRoll' ? (phase === 'ready' || phase === 'retry') ? 'fly' : null : step;
+    const keys = step === 'airChain' ? 'fly boost' : step === 'barrelRoll' ? 'fly left right' : action;
     updateCoachView({
       step: step ?? 'complete',
       title: done ? t('tutorial.complete') : t('tutorial.step', {
         n: tutorial.index + 1,
         total: TUTORIAL_STEPS.length,
-        action: t(step === 'land' ? 'tutorial.landTitle' : 'keymap.' + step),
+        action: t(step === 'land' ? 'tutorial.landTitle' : step === 'airChain' || step === 'barrelRoll' ? 'tutorial.' + step + 'Title' : 'keymap.' + step),
       }),
-      instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' : 'tutorial.' + step),
+      instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' :
+        step === 'nitro' && phase === 'sprinting' ? 'tutorial.nitroSprint' :
+        step === 'nitro' && phase === 'retry' ? 'tutorial.nitroRetry' :
+        step === 'airChain' && phase === 'airborne' ? 'tutorial.airChainAirborne' :
+        step === 'airChain' && phase === 'retry' ? 'tutorial.airChainRetry' :
+        step === 'barrelRoll' && phase === 'readyToLand' ? 'tutorial.barrelRollReadyToLand' :
+        step === 'barrelRoll' && phase === 'retry' ? 'tutorial.barrelRollRetry' :
+        step === 'barrelRoll' && phase === 'rolling' ? 'tutorial.barrelRollRolling' :
+        step === 'barrelRoll' && phase === 'flicked' ? 'tutorial.barrelRollFlicked' : 'tutorial.' + step),
       pauseText: t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause'),
       pauseHidden: done,
       completeActionsHidden: !done,
       assistHidden: done,
-      hintKeys: done || touch ? '' : action ?? '',
+      hintKeys: done || touch ? '' : keys ?? '',
       hintText: !done && touch ? t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode)) : '',
     });
     for (const target of document.querySelectorAll<HTMLElement>('.tutorial-target')) target.classList.remove('tutorial-target');
@@ -64,8 +82,8 @@ export function setupTutorialUI({
     if (!touch) {
       nextTick(() => showKeyMap());
     } else {
-      let target = $('#touch-controls [data-control="' + action + '"]');
-      if (['left', 'right', 'brake'].includes(step ?? '') && inputPrefs.mode === 'slide') target = $('.touch-pad');
+      let target = action ? $('#touch-controls [data-control="' + action + '"]') : null;
+      if ((['left', 'right', 'brake'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked') && inputPrefs.mode === 'slide') target = $('.touch-pad');
       target?.classList.add('tutorial-target');
     }
   }
