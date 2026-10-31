@@ -1,4 +1,4 @@
-# Check main, feature and fix branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
+# Check main, develop, feature and fix branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
 name: CI
 
 on:
@@ -7,6 +7,7 @@ on:
     # remains excluded per its explicit CI-stop request.
     branches:
       - main
+      - develop
       - 'feature/**'
       - 'refactor/**'
       - 'fix/**'
