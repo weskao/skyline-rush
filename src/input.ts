@@ -32,11 +32,14 @@ export function createControls(target: ControlTarget = window, onAction: (action
   let flyLatched = false;
   let flyEnabled = true;
   const cleanups: Array<() => void> = [];
-  function listen<T extends Event>(element: EventTarget, type: string, handler: (event: T) => void): void {
+  function listen<T extends Event>(element: EventTarget, type: string, handler: (event: T) => void, options?: AddEventListenerOptions): void {
     const listener = handler as EventListener;
-    element.addEventListener(type, listener);
+    element.addEventListener(type, listener, options);
     cleanups.push(() => element.removeEventListener(type, listener));
   }
+  // iOS shows its long-press magnifier loupe despite user-select: none; only a cancelled touchstart stops it.
+  // Pointer events still fire, and these controls never rely on the click a touchstart cancel suppresses.
+  const holdWithoutLoupe = (element: EventTarget) => listen(element, 'touchstart', event => event.preventDefault(), { passive: false });
   function clear() {
     keys.clear(); pointers.clear(); flyLatched = false;
     tiltBase = null; tiltSteer = 0;
@@ -97,6 +100,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
     bindButton(button: ControlButton, control: DriveAction) {
       if (control === 'fly' || control === 'boost') actionButtons.set(control, button);
       if (control === 'brake') brakeButton = button;
+      holdWithoutLoupe(button);
       listen<PointerEvent>(button, 'pointerdown', event => {
         event.preventDefault();
         if (defaultSettings()?.editing || button.disabled || (control === 'fly' && !flyEnabled)) return;
@@ -137,6 +141,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
       const slide: SlideBinding = { pointerId: null, pad: createSlidePad() };
       slides.push(slide);
       const syncLock = () => slide.pad.setFullLock(getSettings()?.fullLock ?? 60);
+      holdWithoutLoupe(element);
       listen<PointerEvent>(element, 'pointerdown', event => {
         event.preventDefault();
         slide.pointerId = event.pointerId; // the newest finger owns the pad (see bindButton)
