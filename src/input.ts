@@ -1,4 +1,5 @@
 import { createSlidePad } from './slide-pad.ts';
+import { installGameTouchGuard } from './ios-touch-guard.ts';
 import type { DriveAction, KeyMap } from './key-map.ts';
 import type { ControlPreferences } from './control-settings.ts';
 
@@ -32,6 +33,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
   let flyLatched = false;
   let flyEnabled = true;
   const cleanups: Array<() => void> = [];
+  if (typeof document !== 'undefined') cleanups.push(installGameTouchGuard(document));
   function listen<T extends Event>(element: EventTarget, type: string, handler: (event: T) => void, options?: AddEventListenerOptions): void {
     const listener = handler as EventListener;
     element.addEventListener(type, listener, options);
