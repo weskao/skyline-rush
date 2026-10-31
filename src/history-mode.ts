@@ -41,7 +41,7 @@ export const validModeHistoryRun = (raw: unknown): raw is ModeHistoryRun => {
     isModeTrack(run.track, run.mode) &&
     typeof run.rules === 'string' && run.rules.length > 0 && run.rules.length <= MODE_MAX_RULES_LENGTH &&
     valid(run.time) && run.time <= (run.mode === 'endless' ? Number.MAX_SAFE_INTEGER : MODE_MAX_SECONDS) &&
-    (run.mode !== 'endless' || run.track === 'coast' && numberFinite(run.distance) && run.distance >= 0 && run.distance <= Number.MAX_SAFE_INTEGER) &&
+    (run.mode !== 'endless' || numberFinite(run.distance) && run.distance >= 0 && run.distance <= Number.MAX_SAFE_INTEGER) &&
     (run.mode !== 'circuit' || validCircuitRecord(run)) &&
     (run.score === undefined || (numberFinite(run.score) && run.score >= 0)) &&
     (run.position === undefined || (numberFinite(run.position) && Number.isInteger(run.position) &&
@@ -105,7 +105,7 @@ export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = n
   const result = race.result;
   if (!MODE_TYPES.has(race.mode) || !isModeTrack(race.trackId, race.mode) ||
       !result || !valid(result.time) || result.time > (race.mode === 'endless' ? Number.MAX_SAFE_INTEGER : MODE_MAX_SECONDS) ||
-      (race.mode === 'endless' && (race.trackId !== 'coast' || !valid(result.distance) || result.distance > Number.MAX_SAFE_INTEGER)) ||
+      (race.mode === 'endless' && (!valid(result.distance) || result.distance > Number.MAX_SAFE_INTEGER)) ||
       result.success === false ||
       race.mode === 'circuit' && !validCircuitTimes(race.config, result.time, result.lapTimes) ||
       (result.position !== undefined && (!Number.isInteger(result.position) ||
