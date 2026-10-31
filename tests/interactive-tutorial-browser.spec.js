@@ -327,8 +327,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         // Let the engine sample the first steering edge without waiting for
         // Vue/DOM text propagation inside the 0.3-second trick window.
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
-        await touch('touchEnd', []);
-        await touch('touchStart', [right]);
+        // Release LEFT and press RIGHT with no round trip between them: each awaited
+        // CDP call can cost a slow software-WebGL frame, and the window is ~6 frames.
+        await Promise.all([touch('touchEnd', []), touch('touchStart', [right])]);
         await waitForCoachText('BARREL ROLL spinning');
         await touch('touchEnd', []);
       }
