@@ -57,6 +57,17 @@
 - [ ] **Step 3 — GREEN/Refactor:** deliver the smallest data-model fix while preserving Cloud Save and account isolation. Avoid speculative decorative resources.
 - [ ] **Step 4 — Verify:** existing UI remains unchanged; no image-generation, asset bytes or extra render passes may be introduced. Do not mark the implementation TODO complete until data tests and final CI are verified.
 
+### Task VF — reference-locked visual fidelity / honest no-art exception
+
+**Source:** [Feature visual design contract](https://github.com/weskao/skyline-rush/blob/feature/garage-economy-foundation/docs/designs/garage-economy-foundation/VISUAL-FIDELITY.md); [Shared Visual Fidelity Gate](https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/docs/superpowers/specs/2026-10-31-visual-fidelity-gate.md).
+
+- [ ] **Inspect:** candidate high-resolution AI reference sheets (not real game captures) with source hashes in the feature contract; delivered `skyline-rush-design-reference-crops.zip` is available in the conversation, **not yet uploaded to GitHub**. Check current icon/asset files and gameplay code for the actual scope. Data-only branches need no new art.
+- [ ] **SDD signoff:** identify selected image and commit approved file bytes to `docs/designs/garage-economy-foundation/references/`, record SHA plus the real UI/3D element/camera/motion geometry and appearance. Do not infer approval from source file existence. Do not substitute simplified 96px vector icons for the original polished 3D art without approval.
+- [ ] **BDD RED:** add browser state/layout tests for actual affected screens, phone portrait 390×844, landscape 844×390, desktop 1440×900, quality Low/Medium/High, reduced motion, bilingual labels, missing-asset fallback. Capture the current live UI as RED visual baseline; do not invent browser screenshots.
+- [ ] **GREEN:** implement only after prerequisites and design approval: Vue 3 strict TS/CSS for interactive UI, shared Three.js for 3D/glow/trails, true-alpha PNG/WebP/real SVG when needed. Preserve game mechanics/performance and shared renderer lifecycle.
+- [ ] **Final visual gate:** compare real WebGL screenshots and recorded animation to approved reference side by side; record layout, materials, glow, icon identity, motion, device viewports and performance as PASS / FAIL / BLOCKED / APPROVED_DEVIATION with reviewer and evidence. A green CI cannot waive design signoff.
+- [ ] **TODO:** check `- [x]` only after actual feature + BDD/TDD + approved visual acceptance and exact HEAD CI; no automatic PR/merge/deployment. If this is a nonvisual economy foundation, document an explicit `NOT_APPLICABLE` visual exception instead of creating speculative art.
+
 ## TDD tasks (not started)
 
 ### Task 1: Define typed versioned item catalog and explicit Owned/Trial/Preview/Equipped resolver with stable IDs
