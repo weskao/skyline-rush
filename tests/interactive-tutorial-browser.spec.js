@@ -189,6 +189,8 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
   test.describe(`touch practice ${width}x${height} ${mode} ${flyMode}${custom?' custom layout':''}`, () => {
     test.use({viewport:{width,height},hasTouch:true,isMobile:true});
     test('real touch controls finish practice without the coach blocking actions', async ({ page, context }) => {
+      // Three bounded genuine retries need more than the generic single-attempt CI budget.
+      test.setTimeout(ciTimeout(100000));
       const prefs = {version:1,mode,flyMode,...(custom?{layout:{throttle:{x:.15,y:.18}}}:{})};
       await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls',JSON.stringify(prefs)), prefs);
       await begin(page);
