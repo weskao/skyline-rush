@@ -61,6 +61,25 @@ test('real driving completes all ten lessons without producing a race result or 
   assert.equal(normal.player.speed, 0);
 });
 
+test('BARREL ROLL awards the real payout after releasing FLY before steering in a controlled glide', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [
+    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
+    { fly: true }, { fly: false }, { boost: true },
+  ]) perform(session, action);
+  performAirChain(session);
+  assert.equal(session.step, 'barrelRoll');
+  for (let i = 0; i < 30; i++) tick(session, { fly: true });
+  assert.ok(session.race.player.altitude > 1.5, 'takeoff must come from the real flight physics');
+  for (let i = 0; i < 3; i++) tick(session, { steer: -1 });
+  for (let i = 0; i < 3; i++) tick(session, { steer: 1 });
+  assert.ok(session.race.player.trick, 'opposite airborne steering creates the real engine roll');
+  for (let i = 0; i < 250 && session.step === 'barrelRoll'; i++) tick(session);
+  assert.equal(session.step, 'nitro', 'the roll must complete and land gently before advancing');
+  assert.ok(session.race.player.trickPayout?.nitro > 0, 'the engine must award a genuine payout');
+  assert.equal(session.race.player.trickPayout.hard, false, 'a hard landing never counts');
+});
+
 test('wrong actions reset a sustained lesson and repeated evaluation cannot fabricate driving', () => {
   const session = createInteractiveTutorial();
   for (let i = 0; i < 120; i++) tick(session);

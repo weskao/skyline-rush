@@ -28,14 +28,26 @@ const keyboardChain = async page => {
 const keyboardRoll = async page => {
   await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
   await page.keyboard.down('Space');
-  await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeGreaterThan(.5);
+  // Release FLY at a safe height before the steering flick. The real engine
+  // allows a roll while gliding; holding thrust through Playwright assertions
+  // can lift the car too high for a soft landing on slow WebGL runners.
+  await page.waitForFunction(
+    () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
+    null, { polling: 'raf' },
+  );
+  await page.keyboard.up('Space');
   await page.keyboard.down('a');
-  await expect(page.locator('#tutorial-instruction')).toContainText('First airborne steering press detected');
+  await page.waitForFunction(
+    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected'),
+    null, { polling: 'raf' },
+  );
   await page.keyboard.up('a');
   await page.keyboard.down('d');
-  await expect(page.locator('#tutorial-instruction')).toContainText('BARREL ROLL in progress');
+  await page.waitForFunction(
+    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('BARREL ROLL in progress'),
+    null, { polling: 'raf' },
+  );
   await page.keyboard.up('d');
-  await page.keyboard.up('Space');
   await step(page, 'nitro');
 };
 
@@ -230,7 +242,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await tapTouch(button('fly'));
         const p = await point(button('boost'), 1);
         await touch('touchStart', [p]);
-        await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
+        // Read the engine-confirmed flight cue at animation-frame cadence,
+        // then unlatch FLY before the car climbs into a hard-landing height.
+        await waitForCoachText('Powered flight detected');
         await touch('touchEnd', []);
         await tapTouch(button('fly'));
       } else {
@@ -249,37 +263,34 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       const pad = effectiveMode === 'slide' ? left : null;
       if (flyMode === 'toggle') await tapTouch(button('fly'));
       else await touch('touchStart', [fly]);
-      // Observe a genuine takeoff at animation-frame cadence. Polling the HUD
-      // through Playwright can consume the fuel and leave a 12 m hard landing
-      // before the player's 0.3 s flick window even begins.
+      // A genuine takeoff is required, but steering can happen during the
+      // ensuing glide. Unlatch/release FLY before the flick so slow CI frames
+      // cannot leave the car at 12 m with an unavoidable hard landing.
       await page.waitForFunction(
         () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
         null, { polling: 'raf' },
       );
-      if (pad) {
-        await touch('touchStart', flyMode === 'toggle' ? [pad] : [fly, pad]);
-        await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x-55}] : [fly,{...pad,x:pad.x-55}]);
-        // Observe the first engine-confirmed flick at animation-frame cadence, then
-        // immediately reverse within the real 0.3s trick window. Coarse locator
-        // polling can itself consume the player's entire timing window on CI.
-        await waitForCoachText('First airborne steering press detected');
-        await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x+55}] : [fly,{...pad,x:pad.x+55}]);
-        await waitForCoachText('BARREL ROLL in progress');
-        await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
-      } else {
-        await touch('touchStart', flyMode === 'toggle' ? [left] : [fly,left]);
-        // Observe the first engine-confirmed flick at animation-frame cadence, then
-        // immediately reverse within the real 0.3s trick window. Coarse locator
-        // polling can itself consume the player's entire timing window on CI.
-        await waitForCoachText('First airborne steering press detected');
-        await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
-        await touch('touchStart', flyMode === 'toggle' ? [right] : [fly,right]);
-        await waitForCoachText('BARREL ROLL in progress');
-        await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
-      }
-      // Let the spin finish while gliding; holding FLY longer risks a hard landing.
       if (flyMode === 'toggle') await tapTouch(button('fly'));
       else await touch('touchEnd', []);
+      if (pad) {
+        await touch('touchStart', [pad]);
+        await touch('touchMove', [{...pad,x:pad.x-55}]);
+        // The two real steering edges must still fall inside the engine's
+        // 0.3-second trick window; never synthesize a trick or payout.
+        await waitForCoachText('First airborne steering press detected');
+        await touch('touchMove', [{...pad,x:pad.x+55}]);
+        await waitForCoachText('BARREL ROLL in progress');
+        await touch('touchEnd', []);
+      } else {
+        await touch('touchStart', [left]);
+        await waitForCoachText('First airborne steering press detected');
+        await touch('touchEnd', []);
+        await touch('touchStart', [right]);
+        await waitForCoachText('BARREL ROLL in progress');
+        await touch('touchEnd', []);
+      }
+      // The actual engine must finish the roll and pay NITRO on a gentle
+      // landing before the coach can advance to the next lesson.
       await step(page, 'nitro');
       await gesture(button('nitro'),'complete');
       const box=await page.locator('#tutorial-exit').boundingBox();
