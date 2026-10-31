@@ -72,3 +72,15 @@ test('Cloud payload never serializes ephemeral trial/equip/preview fields', () =
   assert.equal(data.selectedPaint, undefined);
   assert.deepEqual(data.equipped, { 'nitro-trail': 'nitro-trail-cyan' });
 });
+
+
+test('original PAINTS star thresholds remain the sole paint entitlement source', async () => {
+  const { PAINTS, ownedPaints } = await import('../src/appearance.ts');
+  const snapshot = JSON.stringify(PAINTS);
+  assert.deepEqual(ownedPaints(0), ['pearl']);
+  assert.equal(ownedPaints(3).includes('aurora'), true);
+  assert.equal(ownedPaints(16).includes('cobalt'), true);
+  assert.equal(ownedPaints(16).includes('obsidian'), false);
+  skinCloudPayload(profile({ owned: ['thruster-ion'] }));
+  assert.equal(JSON.stringify(PAINTS), snapshot);
+});
