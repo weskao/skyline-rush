@@ -82,13 +82,14 @@ test.describe('touch controls', () => {
     await page.keyboard.press('p');
     await expect(page.locator('#layout-toolbar')).toBeHidden();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')));
+    // Layouts persist per orientation (control-settings.ts ORIENTATION_LAYOUT_KEY); 844x390 is landscape.
+    const readLayout = () => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape);
+    const saved = { layout: await readLayout() };
     expect(Object.keys(saved.layout)).toHaveLength(7);
     await page.reload();
     await start(page);
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', 'right');
-    const savedAgain = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')));
-    expect(savedAgain.layout).toEqual(saved.layout);
+    expect(await readLayout()).toEqual(saved.layout);
     for (const [action, point] of Object.entries(saved.layout)) {
       const rect = await page.locator(`[data-control="${action}"]`).boundingBox();
       expect(rect.x + rect.width / 2).toBeCloseTo((1 - point.x) * 844, 0);
