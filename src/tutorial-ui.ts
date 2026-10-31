@@ -52,7 +52,7 @@ export function setupTutorialUI({
     // Landing and finished-roll phases must not highlight BOOST or FLY.
     const action = step === 'land' ? 'fly' : step === 'airChain'
       ? phase === 'airborne' ? null : 'fly'
-      : step === 'barrelRoll' ? phase === 'ready' ? 'fly' : null : step;
+      : step === 'barrelRoll' ? (phase === 'ready' || phase === 'retry') ? 'fly' : null : step;
     const keys = step === 'airChain' ? 'fly boost' : step === 'barrelRoll' ? 'fly left right' : action;
     updateCoachView({
       step: step ?? 'complete',
@@ -65,7 +65,9 @@ export function setupTutorialUI({
         step === 'nitro' && phase === 'sprinting' ? 'tutorial.nitroSprint' :
         step === 'nitro' && phase === 'retry' ? 'tutorial.nitroRetry' :
         step === 'airChain' && phase === 'airborne' ? 'tutorial.airChainAirborne' :
+        step === 'airChain' && phase === 'retry' ? 'tutorial.airChainRetry' :
         step === 'barrelRoll' && phase === 'readyToLand' ? 'tutorial.barrelRollReadyToLand' :
+        step === 'barrelRoll' && phase === 'retry' ? 'tutorial.barrelRollRetry' :
         step === 'barrelRoll' && phase === 'rolling' ? 'tutorial.barrelRollRolling' :
         step === 'barrelRoll' && phase === 'flicked' ? 'tutorial.barrelRollFlicked' : 'tutorial.' + step),
       pauseText: t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause'),

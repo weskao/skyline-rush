@@ -11,6 +11,7 @@ test('AIR→ROAD CHAIN completes only from a new engine-confirmed powered flight
   assert.equal(state.update({ ...car, altitude: 2, thrusting: true, flightBoosted: true, poweredFlightTime: .2 }, 1 / 60), false);
   assert.equal(state.phase, 'ready', 'do not cue release before the engine can award a chain');
   assert.equal(state.update({ ...car, landing: { chain: false } }, 1 / 60), false, 'hard landing cannot count');
+  assert.equal(state.phase, 'retry', 'a failed powered-flight landing offers real retry guidance');
   assert.equal(state.update({ ...car, altitude: 2, thrusting: true, flightBoosted: true, poweredFlightTime: .5 }, 1 / 60), false);
   assert.equal(state.phase, 'airborne', 'engine-ready flight cues a safe release');
   const success = { chain: true };
@@ -30,9 +31,20 @@ test('BARREL ROLL requires a new real roll and a new clean engine payout', () =>
   state.update({ ...car, altitude: 3, trick: { done: true } }, 1 / 60);
   assert.equal(state.phase, 'readyToLand', 'only a finished engine roll cues a landing');
   assert.equal(state.update({ ...car, landing: { chain: false }, trickPayout: invalid }, 1 / 60), false);
-  assert.equal(state.phase, 'ready', 'a failed landing resets the coach');
+  assert.equal(state.phase, 'retry', 'an unsuccessful barrel-roll landing offers retry guidance');
   state.update({ ...car, altitude: 3, trick: { done: true } }, 1 / 60);
   assert.equal(state.update({ ...car, landing: { chain: false }, trickPayout: { nitro: .25, hard: false } }, 1 / 60), true);
+});
+
+test('short flight and incomplete barrel roll never award a tutorial step, but show retry cues', () => {
+  const car = fresh(), chain = createTutorialManeuverState('airChain', car);
+  chain.update({ ...car, altitude: 1, thrusting: true, poweredFlightTime: .1 }, 1 / 60);
+  assert.equal(chain.update({ ...car, landing: { chain: false } }, 1 / 60), false);
+  assert.equal(chain.phase, 'retry');
+  const roll = createTutorialManeuverState('barrelRoll', car);
+  roll.update({ ...car, altitude: 2, trick: { done: false } }, 1 / 60);
+  assert.equal(roll.update({ ...car, landing: { chain: false }, trick: null }, 1 / 60), false);
+  assert.equal(roll.phase, 'retry');
 });
 
 test('NITRO needs genuine activation, observable acceleration and sustained sprint', () => {

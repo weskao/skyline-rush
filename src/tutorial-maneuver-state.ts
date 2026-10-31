@@ -22,6 +22,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
   let lastPayout = initial.trickPayout;
   let lastFlick = initial.flick;
   let airborne = false;
+  let attemptedFlight = false;
   let rolling = false;
   let nitroActivated = false;
   let sprintSeconds = 0;
@@ -35,6 +36,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
     update(car: ManeuverSnapshot, dt: number): boolean {
       if (!Number.isFinite(dt) || dt <= 0 || dt > 0.1) return false;
       if (kind === 'airChain') {
+        if (car.altitude > 0 && car.thrusting) attemptedFlight = true;
         // The engine awards the chain only after 0.4s of powered flight. Do not tell
         // the learner to release FLY before that actual engine threshold is met.
         if (car.altitude > 0 && car.thrusting && car.flightBoosted && car.poweredFlightTime >= 0.4) {
@@ -44,7 +46,8 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
         if (car.landing && car.landing !== lastLanding) {
           const earned = airborne && car.landing.chain === true;
           airborne = false;
-          phase = 'ready';
+          phase = !earned && attemptedFlight ? 'retry' : 'ready';
+          attemptedFlight = false;
           lastLanding = car.landing;
           return earned;
         }
@@ -52,6 +55,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
         return false;
       }
       if (kind === 'barrelRoll') {
+        if (car.altitude > 0) attemptedFlight = true;
         if (car.altitude > 0 && car.trick) {
           rolling = true;
           // A real trick needs 0.7s to finish. Do not cue landing too early.
@@ -65,14 +69,16 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
           const earned = rolling && car.landing !== null && car.landing !== lastLanding &&
             car.trickPayout.nitro > 0 && !car.trickPayout.hard;
           rolling = false;
-          phase = 'ready';
+          phase = !earned && attemptedFlight ? 'retry' : 'ready';
+          attemptedFlight = false;
           lastPayout = car.trickPayout;
           lastLanding = car.landing;
           return earned;
         }
         if (car.landing && car.landing !== lastLanding) {
           rolling = false;
-          phase = 'ready';
+          phase = attemptedFlight ? 'retry' : 'ready';
+          attemptedFlight = false;
         }
         lastLanding = car.landing;
         lastPayout = car.trickPayout;
