@@ -25,3 +25,8 @@ test('garage stage publishes render evidence after the actual frame, not per rac
   assert.match(ui, /preview\.dataset\.carInFrame/);
   assert.match(ui, /requestAnimationFrame\(\(\) => requestAnimationFrame/);
 });
+
+test('camera changes invalidate old frame evidence before the next WebGL capture', () => {
+  const ui = src('garage-ui.ts');
+  assert.match(ui, /delete preview\.dataset\.carInFrame/);
+});

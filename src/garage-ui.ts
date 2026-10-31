@@ -90,6 +90,8 @@ export function setupGarageUI({
     camera = next;
     preview.dataset.cameraZoom = camera.zoom.toFixed(3);
     preview.dataset.cameraYaw = camera.yaw.toFixed(3);
+    // Never let QA or assistive evidence claim the previous camera's bounds.
+    delete preview.dataset.carInFrame;
     updateGarageStudioView({ angle, autoRotate: camera.autoRotate });
     getWorld()?.setGarageCamera(garageStudioView.page === 'studio' ? camera : null);
     inspectStudioAfterFrame();
@@ -97,6 +99,7 @@ export function setupGarageUI({
   function showPage(page: 'home' | 'studio'): void {
     if (page === 'home') contacts.clear();
     updateGarageStudioView({ page });
+    delete preview.dataset.carInFrame;
     getWorld()?.setGarageCamera(page === 'studio' ? camera : null);
     getWorld()?.resize();
     inspectStudioAfterFrame();
