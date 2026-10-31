@@ -293,7 +293,8 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         } else {
           await touch('touchStart', [fly]);
           await touch('touchStart', [fly, boost]);
-          await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
+          // rAF polling releases thrust as soon as the engine confirms powered flight.
+          await waitForCoachText('Powered flight detected');
           await touch('touchEnd', [fly]);
           await touch('touchEnd', []);
         }
@@ -331,12 +332,17 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
           await touch('touchMove', [{...pad,x:pad.x-55}]);
           await waitForCoachText('First airborne steering press detected');
           await touch('touchMove', [{...pad,x:pad.x+55}]);
+          // Keep the opposite steering input active until a simulation frame
+          // samples it; ending it in the same CDP turn can erase the flick.
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
           await touch('touchEnd', []);
         } else {
           await touch('touchStart', [left]);
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
           await touch('touchEnd', []);
           await touch('touchStart', [right]);
+          // The fixed-step game reads touch state on rAF, not at CDP dispatch.
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
           await touch('touchEnd', []);
         }
         await page.waitForFunction(() => {
