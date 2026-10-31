@@ -11,18 +11,29 @@
 **Wave：** 2  
 **分支的主要檔案所有權：** src/race-config.ts; src/game.js; src/championship-cup.ts; src/sprint-series.ts; src/race-results.ts。
 
-**前置/平行條件：** WAIT until tutorial-ux-combos is fully verified and merged to main with user approval if core src/game.js intersects, and reconcile baseline. It is parallel with high-speed-vfx and foldable after their gates.
+**前置/平行條件：** WAIT until tutorial-ux-combos is fully verified and merged to develop with user approval if core src/game.js intersects, and reconcile baseline. It is parallel with high-speed-vfx and foldable after their gates.
+
+### Wave 2 整合主線與解鎖條件（2026-10-31）
+
+**唯一功能整合目標：`develop`，不是 `main`。** Wave 1 Tutorial、Mobile HUD、Garage Studio 已合併 `develop`，整合點為 `a021044dff22f8dab3845d182794d7d397b56d06`。**整合 CI [#41195915543](https://github.com/weskao/skyline-rush/actions/runs/41195915543) 最後已知為 pending；開始前必須重新讀取最新 develop HEAD 的 GitHub Actions，確認 unit-tests、cloud-save、browser-tests、world-tour-mid-race、quality-gate 全面完成且成功，不能把 focused green 或 skipped 當完整驗收。** 如果失敗：先定位問題，依職責修復，不得假稱 Wave Gate 成立。
+
+**本分支前置判斷：** Tutorial UX 已在 develop，待 develop 最新 full-regression 完整通過後方可啟動；避免與其他分支共同改動 src/game.js。
+
+1. 先比較本分支最新 HEAD 與 `develop`，只在自己的分支非破壞式 merge 最新 `develop`；保留既有 `docs/designs/`、`docs/superpowers/`、SVG、TODO 分工及測試。最新 `develop` 可能高於上述整合點，永遠以 GitHub 實際 HEAD 為準。
+2. 限本分支責任範圍實作；SDD → BDD → TDD RED / GREEN / REFACTOR。Wave 1 的 3D、HUD、Tutorial 功能不得被 W2 舊基底覆寫；如有邏輯衝突，寫出契約並加回歸測試。
+3. 原始視覺圖仍是待核准參考；3× PNG/WebP 候選圖尚未上傳 GitHub，不得指向不存在檔案。已提交的分類 SVG 和設計分鏡可重用，但它們不是實際動態效果。遵循 `VISUAL-FIDELITY.md` 與 `plan.md`，真實 WebGL 截圖對照、手機直橫向、Low/Medium/High 等皆要驗收。
+4. 本分支完成後在**本分支**做全部目標測試／完整 regression（手動 `full_regression=true` 或 `[full-regression]`），確認 exact HEAD CI，僅勾選已驗收的 TODO 子項。最後**回報並請使用者授權才 merge `develop`**；禁止自行 merge `develop`、`main`、開 PR 或部署。
 
 ### 1. 正確的 Git 分支與規格
 
-1. 先查驗 `feature/race-difficulty-eight-car-grid` 是否存在、它的 HEAD，以及最新 `main`。**不要另開 PR，也不要誤改 main**。若前置分支尚未真正完成、CI 未綠或尚未獲准合併，**停在審核/規劃，不准先開始依賴性的實作**。
-2. 依序閱讀本分支的下列檔案，並依最新 `main` 實際原始碼進行衝突/差異檢查：
+1. 先查驗 `feature/race-difficulty-eight-car-grid` 是否存在、它的 HEAD，以及最新 `develop`。**不要另開 PR，也不要誤改 develop/main**。若前置分支尚未真正完成、CI 未綠或尚未獲准合併，**停在審核/規劃，不准先開始依賴性的實作**。
+2. 依序閱讀本分支的下列檔案，並依最新 `develop` 實際原始碼進行衝突/差異檢查：
    - `CLAUDE.md` 與適用的 `.claude/rules/`（特別是 `ui-architecture`、`performance-review`、`device-quality`、`touch-input`、`ui-phase-interactions`）
    - `docs/superpowers/specs/2026-10-31-race-difficulty-eight-car-grid-design.md`（SDD + BDD）
    - `docs/superpowers/plans/2026-10-31-race-difficulty-eight-car-grid-plan.md`（Superpowers 實作計畫）
    - `docs/superpowers/prompts/2026-10-31-race-difficulty-eight-car-grid-visual-design.md`（畫面／美術／素材設計 Prompt，按需製作與審核）
    - 原始需求 `https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/TODO.md` 中對應項目與全平台 S1–S3 規範。
-3. 依照實際差異，在**自己的分支**同步最新 `main`，必要時採非破壞式 rebase/merge 並保留已有的規劃文件與成果。絕不能以舊版 TODO 直接覆寫新的 TODO。
+3. 依照實際差異，在**自己的分支**同步最新 `develop`，必要時採非破壞式 rebase/merge 並保留已有的規劃文件與成果。絕不能以舊版 TODO 直接覆寫新的 TODO。
 
 ### 2. SDD → BDD → TDD（使用 Superpowers 實際技能）
 
@@ -48,7 +59,7 @@
 4. **格式與整合：** UI 小圖示優先既有 24×24 SVG／Vue icon；若使用產生的點陣圖，原稿優先高解析透明 PNG，測試 Alpha、裁切與不同背景可讀性後轉成壓縮透明 WebP。背景使用經壓縮 WebP/JPEG（不得依賴 JPEG 透明）；依設計需要加入適當 1×/2× 版本與檔案尺寸預算。圖片生成輸出**不等於可編輯向量圖**，不可把 PNG 假稱 SVG。正式採用才放進所屬 `public/` 素材資料夾，設計稿放 `docs/designs/<feature>/`，並附來源／用途／壓縮與格式記錄。
 5. **真實畫面與可操作性：** UI 的文字、名次、分數、狀態與觸控按鈕由 Vue 3 + TS + CSS／SVG 真正控制，3D 車輛和速度 VFX 由共用 Three.js renderer 驅動；**不得**用產生的概念圖或截圖遮蓋實際 WebGL 作為完工畫面。
 6. **SDD → BDD → TDD 與品質：** 先定義資產契約／場景／Alpha 條件，再定義 Given／When／Then，對不存在／載入失敗／低畫質／Reduced Motion／深淺背景與小螢幕寫 RED 測試，製作／整合後執行 GREEN。驗收 Android/iOS 直橫向、桌面、Low／Medium／High、VFX Off，使用實際遊戲截圖對比設計，量測下載大小、FPS／p95 frame time、Draw Calls／Triangles 或 shader/cache 影響，無資產時有正常 Fallback。
-7. **執行與放行：** 本次是規劃文件更新，**不代表已有 PNG/WebP/SVG 或已實作**。後續各分支只在自己的 Wave 依賴完成後開始，完成實作與完整驗證才在正確整合的 `TODO.md` 改成 `- [x]`，不得自行合併 main 或跨分支搶改共用 renderer。
+7. **執行與放行：** 本次是規劃文件更新，**不代表已有 PNG/WebP/SVG 或已實作**。後續各分支只在自己的 Wave 依賴完成後開始，完成實作與完整驗證才在正確整合的 `TODO.md` 改成 `- [x]`，不得自行合併 develop 或 main 或跨分支搶改共用 renderer。
 
 ### 3B. 預先完成的獨立美術資產／待前置完成的工作
 
@@ -71,7 +82,7 @@
 - 實作完畢後執行相關 `npm run typecheck`、`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`、`make verify`，以及受影響的 World Tour、Cloud Save 等測試；確認最後 HEAD 的 GitHub Actions `quality-gate` 完整通過。
 - **確認本分支所負責的每一項需求真正完成、BDD/TDD 與所有驗收通過後，才到 `TODO.md` 把對應子項目從 `- [ ]` 改為 `- [x]`，附上 commit / 測試／CI 證據。** 若 TODO 尚在原規劃分支，先協調將最新版完整需求非破壞式同步進此分支；不可直接拿舊檔覆蓋，也不可把仍待後續分支完成的整個 #5 提前標記完成。未完成項目必須維持 `- [ ]`。
 - 最後回報：實際 root cause／設計變更、修改檔案、commit SHA、BDD/TDD 結果、各裝置與畫質驗收、尚存風險、可否進下一 Wave。
-- **禁止自動建立 PR、部署或合併 main；需使用者明確授權。** 下一 Wave 只在它的所有必要前置分支真正完成、已合併進最新 main 且最終 CI 綠燈後啟動。獨立分支可以平行開發，但共享檔案與型別契約須協調以降低 Git conflicts。
+- **禁止自動建立 PR、部署或合併 develop/main；需使用者明確授權。** 下一 Wave 只在它的所有必要前置分支真正完成、已合併進最新 develop 且最終 CI 綠燈後啟動。獨立分支可以平行開發，但共享檔案與型別契約須協調以降低 Git conflicts。
 
 請依照以上要求對**此指定分支**逐步完成工作；不得將其它分支的內容偷渡進來，也不得宣稱未完成驗收為成功。
 
