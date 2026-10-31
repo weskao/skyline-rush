@@ -15,6 +15,7 @@ import { createElimination, stepElimination } from './elimination.ts';
 import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './active-items.ts';
 import { decorateBonusGates, collectBonusGate, applyEMPPulse, recoveryRetention, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
+import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
@@ -154,20 +155,24 @@ export function dailyChallenge(date = new Date()) {
   return { id, track, modifier: modifiers[Math.floor(random() * modifiers.length)] };
 }
 
-export function createRace(trackId = 'coast', modifier = null, presentation = {}) {
+export function createRace(trackId = 'coast', modifier = null, presentation = {}, nextGrid = undefined) {
   const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   const options = modifier !== null && typeof modifier === 'object' && !Array.isArray(modifier) ? modifier : null;
   const dailyModifier = options ? null : modifier;
   if (dailyModifier !== null && !DAILY_MODIFIERS.includes(dailyModifier)) throw new Error(`Unknown modifier: ${dailyModifier}`);
   const config = normalizeRaceConfig(options ?? {});
+  const driverIds = RACE_DRIVER_IDS.slice(1, config.rivals + 1);
+  const grid = startingGrid(driverIds, nextGrid);
+  const slots = new Map(grid.map(slot => [slot.id, slot]));
+  const playerSlot = slots.get('YOU');
   if ((trackId === CIRCUIT_ID) !== (config.mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
   const session = createRaceSessionContract(trackId, track.seed, config, presentation), risk = riskRules(config), themed = themedExtras(trackId, config, risk);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
   const course = mixedCourse(trackId, track, LANES, config), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(config.mode === 'circuit' ? lapItems(createRings(track, risk.rings), config.laps, 'ring') : createRings(track, risk.rings), course), themed), config.itemRules), config);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   const race = {
-    trackId, modifier: dailyModifier, mode: config.mode, config, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: (themed?.sections.length ? [...track.sections, ...themed.sections].sort((a, b) => a.from - b.from) : track.sections).map(section => ({ ...section })),
+    trackId, modifier: dailyModifier, mode: config.mode, config, grid, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: (themed?.sections.length ? [...track.sections, ...themed.sections].sort((a, b) => a.from - b.from) : track.sections).map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? config.mode === 'circuit' ? lapItems(createPickups(track), config.laps, 'pickup') : createPickups(track) : [], rings,
     circuit: config.mode === 'circuit' ? createCircuit(config.laps) : null,
     props: [], risk, ...(themed && { ramps: themed.ramps }), // props: solid World Tour scenery parts; main.js fills them from roadObstacles()
@@ -178,7 +183,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
     elimination: config.mode === 'elimination' ? createElimination() : null,
     stuntLimit: config.mode === 'stunt' ? config.duration : null,
     player: {
-      distance: 0, x: 2.5, speed: 0, altitude: 0, verticalSpeed: 0,
+      distance: playerSlot.distance, x: playerSlot.x, speed: 0, altitude: 0, verticalSpeed: 0,
       fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
@@ -190,8 +195,8 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
       heldItem: null, itemCooldown: 0,
     },
-    rivals: ['NOVA', 'ORBIT', 'APEX'].slice(0, config.rivals).map((name, i) => ({
-      name, x: LANES[i === 2 ? 3 : i], homeX: LANES[i === 2 ? 3 : i], distance: 0, speed: 0,
+    rivals: driverIds.map((name, i) => ({
+      id: name, name, x: slots.get(name).x, homeX: slots.get(name).x, distance: slots.get(name).distance, speed: 0,
       altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroTime: 0, nitroHop: -1, pace: 0, cooldown: 0,
     })),
     traffic: Array.from({ length: Math.round(36 * density) }, (_, i) => ({
@@ -235,7 +240,7 @@ function rivalWantsNitro(race, rival, hop) {
     return fire;
   }
   if (rival.name === 'APEX') return rival.distance >= race.length * RIVAL_NITRO_APEX_FROM;
-  return false;
+  return race.elapsed >= 10 + (RIVAL_NITRO_CHARGES - rival.nitro) * (16 + RACE_DRIVER_IDS.indexOf(rival.name));
 }
 
 export function startRace(race) {
