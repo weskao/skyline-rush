@@ -674,7 +674,7 @@ test.describe('tablet touch screen', () => {
       expect(fly.width, mode).toBeGreaterThanOrEqual(64);
       expect(820 - (fly.y + fly.height), mode).toBeGreaterThanOrEqual(48);
       expect(1180 - (fly.x + fly.width), mode).toBeGreaterThanOrEqual(32);
-      const [cluster, gauges] = await Promise.all([page.getByRole('button', { name: 'Activate nitro', exact: true }).boundingBox(), page.locator('.fuel-stat').boundingBox()]);
+      const [cluster, gauges] = await Promise.all([page.locator('[data-control="nitro"]').boundingBox(), page.locator('.fuel-stat').boundingBox()]);
       expect(gauges.y + gauges.height, mode).toBeLessThanOrEqual(cluster.y);
     }
   });
@@ -786,7 +786,7 @@ const visibleBounds = page => page.locator('#touch-controls button, .touch-pad, 
   .filter(element => element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden')
   .map(element => {
     const { left, right, top, bottom, width, height } = element.getBoundingClientRect();
-    return { name: element.getAttribute('aria-label') ?? element.className, pad: element.classList.contains('touch-pad'), left, right, top, bottom, width, height };
+    return { name: element.getAttribute('aria-label') ?? element.className, control: element.dataset.control ?? null, pad: element.classList.contains('touch-pad'), left, right, top, bottom, width, height };
   }));
 
 for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
@@ -976,7 +976,8 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
 
     test('right hand in Buttons mode mirrors the steering buttons', async ({ page }) => {
       const centerX = async name => {
-        const box = await page.getByRole('button', { name, exact: true }).boundingBox();
+        const target = name === 'nitro' ? page.locator('[data-control="nitro"]') : page.getByRole('button', { name, exact: true });
+        const box = await target.boundingBox();
         return box.x + box.width / 2;
       };
       for (const hand of ['left', 'right']) {
@@ -987,7 +988,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
         for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${hand} ${name}`).toBe(true);
         // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Activate nitro'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
+        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'nitro'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
       }
     });
 
@@ -1072,9 +1073,11 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
           await expect(page.locator('#touch-controls')).toBeVisible();
           const bounds = await visibleBounds(page);
           const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
-          expect(touchButtons.map(bound => bound.name).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
-            ? ['Accelerate', 'Activate nitro', 'Hold to boost', 'Hold to fly']
-            : ['Accelerate', 'Activate nitro', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']);
+          // The NITRO accessibility label intentionally reflects READY/CHARGING/UNAVAILABLE.
+          // Verify stable action identity rather than pinning a transient state string.
+          expect(touchButtons.map(bound => bound.control).filter(Boolean).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
+            ? ['boost', 'fly', 'nitro', 'throttle']
+            : ['boost', 'brake', 'fly', 'left', 'nitro', 'right', 'throttle']);
           expect(bounds.some(bound => bound.pad)).toBe(mode === 'slide');
           for (const bound of bounds) {
             const label = `${mode} ${size} ${bound.name}`;

@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 // This is a DOM + live WebGL integration test, not a flattened design mockup.
 test.describe('dual-screen fold/unfold', () => {
@@ -66,7 +67,7 @@ test.describe('dual-screen fold/unfold', () => {
 test.describe('ordinary viewport fallback acceptance', () => {
   test.use({ hasTouch: true });
   test('cover/phone/tablet/short-landscape sizes retain accessible controls and localized HUD', async ({ page }) => {
-    test.setTimeout(240000);
+    test.setTimeout(ciTimeout(240000));
     await page.addInitScript(() => {
       localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', size: 'M' }));
       localStorage.setItem('skyline-rush-hud-mode', 'hybrid');
