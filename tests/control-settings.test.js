@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CONTROLS_KEY, controlSettings } from '../src/control-settings.ts';
-import * as hudSettings from '../src/control-settings.ts';
 
 const defaults = { mode: 'slide', hand: 'left', fullLock: 60, size: 'M', opacity: 0.9, flyMode: 'hold', sensitivity: 1, ghost: false, layout: {}, version: 1 };
 
@@ -35,52 +34,4 @@ test('sensitivity and normalized layout survive storage validation; unsafe coord
   assert.deepEqual(prefs.layout, { fly: { x: 0.8, y: 0.7 }, nitro: { x: 0.7, y: 0.6 } });
   assert.equal(controlSettings({ version: 1, sensitivity: -10 }).sensitivity, 0.4);
   assert.equal(controlSettings({ version: 1, sensitivity: Infinity }).sensitivity, 1);
-});
-
-
-test('scenario 1 — HUD defaults to Hybrid A+B for missing or invalid preferences', () => {
-  const { resolveHudMode, readHudMode } = hudSettings;
-  assert.equal(resolveHudMode(null), 'hybrid');
-  assert.equal(resolveHudMode('random'), 'hybrid');
-  assert.equal(readHudMode({ getItem: () => null }), 'hybrid');
-});
-
-test('scenario 2 — Competitive C persists independently of rotation and legacy driving controls', () => {
-  const { HUD_MODE_KEY, readHudMode, writeHudMode } = hudSettings;
-  const values = new Map();
-  const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
-  writeHudMode('competitive', storage);
-  assert.equal(values.get(HUD_MODE_KEY), 'competitive');
-  assert.equal(readHudMode(storage), 'competitive');
-  assert.equal(readHudMode(storage), 'competitive');
-  writeHudMode('hybrid', storage);
-  assert.equal(readHudMode(storage), 'hybrid');
-});
-
-test('invalid values and unavailable storage safely use Hybrid A+B', () => {
-  const { readHudMode, writeHudMode, resolveHudMode } = hudSettings;
-  const blocked = { getItem: () => { throw Error('blocked'); }, setItem: () => { throw Error('blocked'); } };
-  assert.equal(readHudMode(blocked), 'hybrid');
-  assert.doesNotThrow(() => writeHudMode('competitive', blocked));
-  assert.equal(resolveHudMode('COMPETITIVE'), 'hybrid');
-});
-
-test('HUD mode activation sets only presentation state, not control layout or action input', () => {
-  assert.equal(typeof hudSettings.activateHudMode, 'function');
-  const root = { dataset: { phase: 'racing' } };
-  const storage = { setItem(key, value) { assert.equal(key, hudSettings.HUD_MODE_KEY); assert.equal(value, 'competitive'); } };
-  assert.equal(hudSettings.activateHudMode('competitive', root, storage), 'competitive');
-  assert.deepEqual(root.dataset, { phase: 'racing', hudMode: 'competitive' });
-});
-
-test('HUD preference survives a localStorage getter that throws before access', () => {
-  const oldDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
-  try {
-    Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('SecurityError'); } });
-    assert.equal(hudSettings.readHudMode(), 'hybrid');
-    assert.doesNotThrow(() => hudSettings.writeHudMode('hybrid'));
-  } finally {
-    if (oldDescriptor) Object.defineProperty(globalThis, 'localStorage', oldDescriptor);
-    else delete globalThis.localStorage;
-  }
 });

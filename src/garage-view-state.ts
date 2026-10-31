@@ -12,10 +12,3 @@ export const garageView = reactive<GarageView>({
 export function updateGarageView(fields: Partial<GarageView>) {
   Object.assign(garageView, fields);
 }
-
-export const garageStudioView = reactive<{ page: 'home' | 'studio'; angle: string; autoRotate: boolean; ownedPaints: string[]; equippedPaint: string }>({
-  page: 'home', angle: '', autoRotate: true, ownedPaints: ['pearl'], equippedPaint: 'pearl',
-});
-export function updateGarageStudioView(fields: Partial<typeof garageStudioView>) {
-  Object.assign(garageStudioView, fields);
-}

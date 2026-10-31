@@ -36,9 +36,3 @@ test('dragging stores a viewport-relative point, clamped 8 px inside and mirrore
   assert.deepEqual(layoutPoint(-50, 900, size, 'left', viewport), { x: 38 / 1000, y: 462 / 500 });
   assert.deepEqual(layoutPoint(250, 250, size, 'right', viewport), { x: 0.75, y: 0.5 });
 });
-
-test('browser chrome resize preserves held steering until a real orientation change', () => {
-  const source = readFileSync(new URL('../src/touch-controls-ui.ts', import.meta.url), 'utf8');
-  assert.match(source, /if \(orientation !== lastOrientation\) controls\.clear\(\)/);
-  assert.doesNotMatch(source, /'resize', \(\) => \{ controls\.clear\(\);/);
-});

@@ -6,11 +6,10 @@ import { timeString } from './time-format.ts';
 import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED } from './game.js';
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
-import { readHudFeedback, type ControlPreferences } from './control-settings.ts';
+import type { ControlPreferences } from './control-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
 import { createHaptics } from './haptics.ts';
-import { createNitroReadiness } from './nitro-readiness.ts';
 
 // The in-race HUD, written every HUD tick (~13 Hz) from the frame loop. It stays imperative:
 // elements are looked up once, text/hidden are written only when they change, no Vue reactivity.
@@ -27,7 +26,6 @@ interface HudOptions extends ModePanelOptions {
   /** Printed label of the first FLY key, e.g. SPACE. */
   flyKeyLabel(): string;
   getVisual(): VfxSettings;
-  onNitroReady(): void;
   timeTrialGhost(race: HudRace): GhostRun | null;
   isAutoThrottle(): boolean;
   /** GO stays on screen until this time after the countdown ends. */
@@ -73,8 +71,6 @@ export function createRaceHud(options: HudOptions) {
   const nitroSegments = [...nitroHud.querySelectorAll<HTMLElement>('.nitro-segment')];
   const nitroStatus = $('#nitro-status');
   const nitroMeter = $('#nitro-meter');
-  const nitroButton = touchButtons.find(button => button.dataset.control === 'nitro');
-  const nitroReadiness = createNitroReadiness();
   // HUD text is read every tick: a plain catalog lookup (key parity is unit-tested), swapped on a language switch.
   let L: Record<string, string> = CATALOGS[getLocale() as keyof typeof CATALOGS];
   let flowKey = 'hud.streamlines', floorKey = 'hud.lowDrag', jetKey = 'hud.demo';
@@ -140,28 +136,12 @@ export function createRaceHud(options: HudOptions) {
   }
   function updateNitro(now: number, race: HudRace, car: HudRace, nitroActive: boolean): void {
     const visual = getVisual();
-    const { state, cueReady } = nitroReadiness.update({ charge: car.nitro, phase: race.phase, active: nitroActive });
-    if (cueReady) {
-      const feedback = readHudFeedback();
-      if (feedback.sound) options.onNitroReady();
-      if (nitroButton && feedback.animation && visual.enabled && !visual.comfortable && !reducedMotion.matches) {
-        nitroButton.animate([{ boxShadow: '0 0 0 0 rgb(255 213 128 / .8)' }, { boxShadow: '0 0 0 12px rgb(255 213 128 / 0)' }], { duration: 650 });
-      }
-    }
-    if (nitroMeter.dataset.nitroState !== state) nitroMeter.dataset.nitroState = state;
-    if (nitroButton) {
-      if (nitroButton.dataset.nitroState !== state) nitroButton.dataset.nitroState = state;
-      const label = t(state === 'ready' ? 'hud.nitroReady' : state === 'active' ? 'hud.nitroActive'
-        : state === 'charging' ? 'hud.nitroCharging' : 'hud.nitroUnavailable');
-      if (nitroButton.getAttribute('aria-label') !== label) nitroButton.setAttribute('aria-label', label);
-    }
     nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
     nitroMeter.classList.toggle('is-max', car.nitro >= 3);
     nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
     if (car.nitro > previousNitro && race.phase === 'racing') nitroRefillUntil = now + .6;
     nitroMeter.dataset.refilling = String(race.phase === 'racing' && now < nitroRefillUntil);
-    setHudText(nitroStatus, state === 'ready' ? L['hud.nitroReady']! : state === 'disabled' ? L['hud.nitroUnavailable']!
-      : state === 'active' ? L['hud.nitroActive']! : interpolate(L['hud.nitroCount']!, { n: car.nitro.toFixed(2) }));
+    setHudText(nitroStatus, nitroActive ? L['hud.nitroActive']! : car.nitro >= 3 ? L['hud.nitroMax']! : interpolate(L['hud.nitroCount']!, { n: car.nitro.toFixed(2) }));
     for (const [index, segment] of nitroSegments.entries()) {
       const fill = Math.min(1, Math.max(0, car.nitro - index));
       (segment.firstElementChild as HTMLElement).style.transform = `scaleX(${fill})`;
@@ -348,7 +328,7 @@ export function createRaceHud(options: HudOptions) {
   return {
     update,
     /** A new race starts: charge and NITRO refill cues compare against a full tank and empty NITRO. */
-    resetMemory(): void { previousFuel = 100; previousNitro = 0; nitroReadiness.reset(); },
+    resetMemory(): void { previousFuel = 100; previousNitro = 0; },
     memory: (): HudMemory => ({ previousFuel, previousNitro }),
     restoreMemory(memory: HudMemory): void { ({ previousFuel, previousNitro } = memory); },
     /** The flight/road label is change-gated; the next tick rewrites it. */
