@@ -45,7 +45,9 @@ Follow Phases T, A and B and the final report of `$HOME/.claude/commands/release
 `RELEASE_SCRIPT` resolves to this project's `scripts/release.sh`, whose `scripts/release-gate.sh`
 re-runs the notes check first, then requires `main` = `origin/main`, a green CI run and
 `npm test` + `npm run build`, before the shared script writes the changelog, commits, tags,
-pushes and creates the GitHub Release.
+pushes and creates the GitHub Release. Last, `scripts/release-back-merge.sh` pushes a merge of
+`main` into `develop`; if it prints `⚠️  main → develop back-merge not done`, report it in the
+final report and run the manual merge it prints after the user approves.
 
 
 ## 發版簡介與完成通知
