@@ -40,8 +40,28 @@ test('Wave 2 real WebGL: NITRO violet, BOOST cyan, simultaneous bounded and reco
   expect(combined.nitroMix).toBeLessThanOrEqual(1);
   expect(combined.programs).toBe(boost.programs);
   await page.screenshot({ path: info.outputPath('high-speed-vfx-nitro.png') });
-  // Sustained captured animation; no extra 3D scene meshes are created by the sprint.
+  // Sample real requestAnimationFrame cadence during a ten-second recorded WebGL race.
+  await page.evaluate(() => {
+    const samples = window.vfxFrameSamples = [];
+    let previous = null, active = true;
+    window.stopVfxFrameSamples = () => { active = false; };
+    const sample = now => {
+      if (!active) return;
+      if (previous !== null && now - previous > 0 && now - previous <= 250) samples.push(now - previous);
+      previous = now;
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
   await page.waitForTimeout(10_000);
+  const cadence = await page.evaluate(() => {
+    window.stopVfxFrameSamples();
+    const sorted = [...window.vfxFrameSamples].sort((a,b) => a-b);
+    if (!sorted.length) return { frames: 0, p50Ms: null, p95Ms: null, meanFps: null };
+    const percentile = p => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))];
+    return { frames: sorted.length, p50Ms: percentile(0.5), p95Ms: percentile(0.95),
+      meanFps: 1000 / (sorted.reduce((sum, ms) => sum + ms, 0) / sorted.length) };
+  });
   const recovered = await read();
   expect(recovered.nitroMix).toBe(0);
   expect(recovered.programs).toBe(combined.programs);
@@ -51,7 +71,7 @@ test('Wave 2 real WebGL: NITRO violet, BOOST cyan, simultaneous bounded and reco
     Object.values(sample).every(Number.isFinite))).toBe(true);
   await page.screenshot({ path: info.outputPath('high-speed-vfx-recovery.png') });
   await writeFile(info.outputPath('high-speed-vfx-render-performance.json'),
-    JSON.stringify({ browser: 'CI Chrome SwiftShader', viewport: '1440x900', boost, combined, recovered,
+    JSON.stringify({ browser: 'CI Chrome SwiftShader', viewport: '1440x900', boost, combined, recovered, cadence,
       note: 'Exact-frame Three.js counters, NOT physical GPU/frame-time before/after comparison.' }, null, 2));
   expect(errors).toEqual([]);
   await page.keyboard.up('w');
