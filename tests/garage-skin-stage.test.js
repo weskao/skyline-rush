@@ -21,6 +21,8 @@ test('Studio preview uses the same real Aero renderer and cosmetics as the race 
   const count = stage.scene.children.length;
   for (let i = 0; i < 50; i++) stage.update(camera, defaultGarageCamera(), 1 + (i + 1) / 60, false);
   assert.equal(stage.scene.children.length, count, 'preview frames do not allocate new meshes');
+  assert.equal(stage.scene.children.find(object => object.userData.body)?.position.z, 0,
+    'the visible car must remain centred while its shared wake is demonstrated');
   assert.ok(ribbon.geometry.attributes.alpha.array.some(alpha => alpha > 0), 'real NITRO trail must be visible in Studio preview');
   let localDisposed = 0, worldDisposed = 0;
   flow.children.find(child => child.geometry?.attributes.flowType).geometry
