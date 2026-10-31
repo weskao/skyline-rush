@@ -141,7 +141,7 @@ export function createAeroVFX(scene, vehicle) {
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   let hadPosition = false, wasBoosting = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  let quality = 1, settings, delta;
+  let quality = 1, settings, delta, launchSkinActive = false, lastPhase = 'ready';
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
@@ -164,13 +164,14 @@ export function createAeroVFX(scene, vehicle) {
     segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonGeo.attributes.alpha.needsUpdate = true;
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
     jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = false;
-    hadPosition = wasBoosting = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null;
+    hadPosition = wasBoosting = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null; lastPhase = 'ready';
   }
   return {
     reset,
     setSkins(ids) {
       // Event-driven cosmetic updates reuse existing materials, geometries and GPU buffers.
       const palette = skinVfxPalette(ids ?? {});
+      launchSkinActive = ids?.['launch-flare'] === 'launch-flare-blue';
       flow.material.uniforms.skinTint.value.fromArray(palette.airflow);
       for (const jet of jets) jet.material.uniforms.skinTint.value.fromArray(palette.thruster);
       vapor.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
@@ -203,10 +204,10 @@ export function createAeroVFX(scene, vehicle) {
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
-      if (boost && !wasBoosting) {
+      if (boost && !wasBoosting || launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown')) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }
-      wasBoosting = boost; lastImpact = car.impact;
+      wasBoosting = boost; lastPhase = race.phase; lastImpact = car.impact;
       shockAge += dt;
       const fu = flow.material.uniforms;
       fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + strength * 0.6);
