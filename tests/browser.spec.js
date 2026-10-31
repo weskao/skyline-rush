@@ -674,7 +674,7 @@ test.describe('tablet touch screen', () => {
       expect(fly.width, mode).toBeGreaterThanOrEqual(64);
       expect(820 - (fly.y + fly.height), mode).toBeGreaterThanOrEqual(48);
       expect(1180 - (fly.x + fly.width), mode).toBeGreaterThanOrEqual(32);
-      const [cluster, gauges] = await Promise.all([page.getByRole('button', { name: 'Activate nitro', exact: true }).boundingBox(), page.locator('.fuel-stat').boundingBox()]);
+      const [cluster, gauges] = await Promise.all([page.locator('[data-control="nitro"]').boundingBox(), page.locator('.fuel-stat').boundingBox()]);
       expect(gauges.y + gauges.height, mode).toBeLessThanOrEqual(cluster.y);
     }
   });
@@ -976,7 +976,8 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
 
     test('right hand in Buttons mode mirrors the steering buttons', async ({ page }) => {
       const centerX = async name => {
-        const box = await page.getByRole('button', { name, exact: true }).boundingBox();
+        const button = name === 'Nitro button' ? page.locator('[data-control="nitro"]') : page.getByRole('button', { name, exact: true });
+        const box = await button.boundingBox();
         return box.x + box.width / 2;
       };
       for (const hand of ['left', 'right']) {
@@ -987,7 +988,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
         for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${hand} ${name}`).toBe(true);
         // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Activate nitro'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
+        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Nitro button'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
       }
     });
 
@@ -1073,7 +1074,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
           const bounds = await visibleBounds(page);
           const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
           expect(touchButtons.map(bound => bound.name).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
-            ? ['Accelerate', 'Activate nitro', 'Hold to boost', 'Hold to fly']
+            ? ['Accelerate', 'NITRO UNAVAILABLE', 'Hold to boost', 'Hold to fly']
             : ['Accelerate', 'Activate nitro', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']);
           expect(bounds.some(bound => bound.pad)).toBe(mode === 'slide');
           for (const bound of bounds) {

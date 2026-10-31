@@ -27,7 +27,7 @@ for (const [name, viewport, hasTouch] of [
       window.vibrations = [];
       Object.defineProperty(navigator, 'vibrate', { configurable: true, value: pattern => { window.vibrations.push(pattern); return true; } });
       const race = window.gameplay.race;
-      race.traffic = []; race.pickups = []; race.rings = [];
+      race.rivals = []; race.traffic = []; race.pickups = []; race.rings = [];
       Object.assign(race.player, { speed: 60, altitude: 4, verticalSpeed: 0, fuel: 95 });
     });
     if (hasTouch) {

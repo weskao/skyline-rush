@@ -272,7 +272,7 @@ export function createRaceHud(options: HudOptions) {
     const names = ['YOU', ...race.rivals.map((rival: { name: string }) => rival.name)];
     if (names.join(',') !== roster) {
       roster = names.join(',');
-      if (positionFieldSize) setHudText(positionFieldSize, `/ ${String(names.length).padStart(2, '0')}`);
+      if (positionFieldSize) setHudText(positionFieldSize, names.length === 1 ? '' : `/ ${String(names.length).padStart(2, '0')}`);
       ui.leaderboard!.innerHTML = names.map(() => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
       leaderboardRows = [...ui.leaderboard!.children] as HTMLElement[];
       racerRows.clear();
