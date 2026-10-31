@@ -8,7 +8,13 @@
 
 **Branch:** `feature/garage-vfx-skins`
 **Date:** 2026-10-31
-**Status:** Prompt only; assets intentionally NOT created in this documentation stage.
+**Status:** Independent visual assets listed below have been committed; actual feature/UI integration is deferred until Wave prerequisites pass.
+
+## 已預製並存入 GitHub 的素材（2026-10-31）
+
+**已完成：** [Commit `45f0649`](https://github.com/weskao/skyline-rush/commit/45f0649e9c07fc39f2432659322addd995c021bd)。[`thruster.svg`](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/public/feature-assets/garage-vfx-skins/thruster.svg)、[`airflow.svg`](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/public/feature-assets/garage-vfx-skins/airflow.svg)、[`nitro-trail.svg`](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/public/feature-assets/garage-vfx-skins/nitro-trail.svg)、[`launch-flare.svg`](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/public/feature-assets/garage-vfx-skins/launch-flare.svg)；詳見 [素材清單](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/public/feature-assets/garage-vfx-skins/ASSET-MANIFEST.md)。
+
+四種分類用 SVG 圖示已完成，真正的 Skins 材質、分類縮圖、試用／持有狀態與遊戲內 VFX 仍需等 Garage Studio + High-speed VFX。 **不要在正式開發階段無理由重新生成同類圖示**；先驗證是否能直接引用現有素材，測試真實瀏覽器畫面與載入失敗 fallback。所有素材仍未接入 Vue／Three.js，**不可把圖片完成當成 TODO 實作完成**。
 
 ## Ready-to-paste visual generation / design prompt
 
@@ -53,5 +59,5 @@
 - [ ] **S4 — BDD/TDD:** Given missing/slow asset, wrong quality tier, RTL? (not required), VFX Off/Reduced Motion or short landscape; When component renders; Then readable semantic fallback and valid controls remain. Verify 320×740, 390×844, 844×390 and 1440×900, en/zh-TW, touch/keyboard, Low/Medium/High; perform RED→GREEN and capture actual UI/WebGL screenshots.
 - [ ] **S5 — Real perf:** measure decoded image/texture memory, network bytes, shader warmup, Draw Calls and p50/p95 frame time if changed. Do not make raster art a fake dynamic renderer or UI. Only mark the corresponding implementation TODO `- [x]` after full feature proof and exact-HEAD CI green.
 
-**No image asset has been generated or installed by this planning document.**
+**This design brief is not proof that runtime integration exists.** The pre-created SVG assets listed above are real and committed; further optional imagery must be justified separately.
 
