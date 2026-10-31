@@ -14,4 +14,5 @@ test('touch guide distinguishes slider, tilt and toggle-to-land variants', () =>
   assert.equal(tutorialHintKey('barrelRoll', 'buttons', 'hold'), 'tutorial.touch.barrelRoll');
   assert.equal(tutorialHintKey('barrelRoll', 'slide', 'hold'), 'tutorial.slide.barrelRoll');
   assert.equal(tutorialHintKey('barrelRoll', 'tilt', 'hold'), 'tutorial.tilt.barrelRoll');
+  assert.equal(tutorialHintKey('airChain', 'slide', 'toggle'), 'tutorial.touch.airChain');
 });

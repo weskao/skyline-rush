@@ -7,7 +7,8 @@ test('all bilingual interactive tutorial strings are retained in the public UI c
   const english = Object.keys(TUTORIAL_COPY.en).sort();
   const chinese = Object.keys(TUTORIAL_COPY['zh-TW']).sort();
   assert.deepEqual(chinese, english, 'the two tutorial languages must have identical keys');
-  assert.equal(english.length, 49, 'all lesson, coaching and touch/tilt hints remain available');
+  assert.equal(english.length, 50, 'all lesson, coaching and touch/tilt hints remain available');
+  assert.ok(english.includes('tutorial.barrelRollReadyToLand'));
   assert.ok(english.includes('tutorial.barrelRollFlicked'), 'new airborne reverse-steer coaching must be localized');
   for (const locale of ['en', 'zh-TW']) {
     for (const key of english) {

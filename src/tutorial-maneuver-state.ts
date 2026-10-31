@@ -1,6 +1,6 @@
 /** Observe engine outcomes only. No mutation of the race, controls, or car. */
 export type ManeuverLesson = 'airChain' | 'barrelRoll' | 'nitro';
-export type ManeuverPhase = 'ready' | 'airborne' | 'flicked' | 'rolling' | 'sprinting';
+export type ManeuverPhase = 'ready' | 'airborne' | 'flicked' | 'rolling' | 'readyToLand' | 'sprinting';
 export interface ManeuverSnapshot {
   altitude: number;
   thrusting: boolean;
@@ -54,7 +54,8 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
       if (kind === 'barrelRoll') {
         if (car.altitude > 0 && car.trick) {
           rolling = true;
-          phase = 'rolling';
+          // A real trick needs 0.7s to finish. Do not cue landing too early.
+          phase = car.trick.done ? 'readyToLand' : 'rolling';
         } else if (car.altitude > 0 && car.flick && car.flick !== lastFlick) {
           // Surface the first real steering press before the opposite flick.
           phase = 'flicked';

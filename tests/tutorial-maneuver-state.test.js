@@ -25,9 +25,12 @@ test('BARREL ROLL requires a new real roll and a new clean engine payout', () =>
   const firstFlick = { dir: -1, time: 1 };
   state.update({ ...car, altitude: 3, flick: firstFlick }, 1 / 60);
   assert.equal(state.phase, 'flicked', 'first real flick should be visible to the learner');
-  state.update({ ...car, altitude: 3, trick: { done: true } }, 1 / 60);
+  state.update({ ...car, altitude: 3, trick: { done: false } }, 1 / 60);
   assert.equal(state.phase, 'rolling');
+  state.update({ ...car, altitude: 3, trick: { done: true } }, 1 / 60);
+  assert.equal(state.phase, 'readyToLand', 'only a finished engine roll cues a landing');
   assert.equal(state.update({ ...car, landing: { chain: false }, trickPayout: invalid }, 1 / 60), false);
+  assert.equal(state.phase, 'ready', 'a failed landing resets the coach');
   state.update({ ...car, altitude: 3, trick: { done: true } }, 1 / 60);
   assert.equal(state.update({ ...car, landing: { chain: false }, trickPayout: { nitro: .25, hard: false } }, 1 / 60), true);
 });

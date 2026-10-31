@@ -49,7 +49,16 @@ export function createInteractiveTutorial() {
     car.nitroHeld = false;
     car.miniBoost = 0;
     car.drift = car.trick = null;
-    if (step !== 'land') car.altitude = car.verticalSpeed = 0;
+    if (step !== 'land') {
+      car.altitude = car.verticalSpeed = 0;
+      // A fresh exercise must never inherit an earlier flight's chain credit.
+      car.poweredFlightTime = 0;
+      car.flightBoosted = false;
+    }
+    if (step === 'barrelRoll') {
+      car.flick = null;
+      car.steerSign = 0;
+    }
     previousSpeed = car.speed;
     maneuver = step === 'airChain' || step === 'barrelRoll' || step === 'nitro'
       ? createTutorialManeuverState(step, snapshot()) : null;

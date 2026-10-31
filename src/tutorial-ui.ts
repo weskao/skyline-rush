@@ -48,9 +48,11 @@ export function setupTutorialUI({
     const step = tutorial.step;
     const done = tutorial.complete;
     const phase = tutorial.coachPhase ?? 'ready';
+    // Only highlight a control if pressing it is appropriate *now*.
+    // Landing and finished-roll phases must not highlight BOOST or FLY.
     const action = step === 'land' ? 'fly' : step === 'airChain'
-      ? phase === 'airborne' ? 'boost' : 'fly'
-      : step === 'barrelRoll' ? phase === 'rolling' ? 'left' : 'fly' : step;
+      ? phase === 'airborne' ? null : 'fly'
+      : step === 'barrelRoll' ? phase === 'ready' ? 'fly' : null : step;
     const keys = step === 'airChain' ? 'fly boost' : step === 'barrelRoll' ? 'fly left right' : action;
     updateCoachView({
       step: step ?? 'complete',
@@ -62,6 +64,7 @@ export function setupTutorialUI({
       instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' :
         step === 'nitro' && phase === 'sprinting' ? 'tutorial.nitroSprint' :
         step === 'airChain' && phase === 'airborne' ? 'tutorial.airChainAirborne' :
+        step === 'barrelRoll' && phase === 'readyToLand' ? 'tutorial.barrelRollReadyToLand' :
         step === 'barrelRoll' && phase === 'rolling' ? 'tutorial.barrelRollRolling' :
         step === 'barrelRoll' && phase === 'flicked' ? 'tutorial.barrelRollFlicked' : 'tutorial.' + step),
       pauseText: t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause'),
@@ -76,8 +79,8 @@ export function setupTutorialUI({
     if (!touch) {
       nextTick(() => showKeyMap());
     } else {
-      let target = $('#touch-controls [data-control="' + action + '"]');
-      if ((['left', 'right', 'brake'].includes(step ?? '') || step === 'barrelRoll' && phase === 'rolling') && inputPrefs.mode === 'slide') target = $('.touch-pad');
+      let target = action ? $('#touch-controls [data-control="' + action + '"]') : null;
+      if ((['left', 'right', 'brake'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked') && inputPrefs.mode === 'slide') target = $('.touch-pad');
       target?.classList.add('tutorial-target');
     }
   }

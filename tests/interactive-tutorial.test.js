@@ -80,6 +80,28 @@ test('BARREL ROLL awards the real payout after releasing FLY before steering in 
   assert.equal(session.race.player.trickPayout.hard, false, 'a hard landing never counts');
 });
 
+test('new air-chain and barrel-roll lessons cannot inherit old flight or flick inputs', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [
+    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
+    { fly: true }, { fly: false },
+  ]) perform(session, action);
+  assert.equal(session.step, 'boost');
+  const car = session.race.player;
+  // Regression: the prior tutorial lesson could leave in-flight credit even
+  // after the next lesson reset the altitude, producing a false chain cue.
+  car.poweredFlightTime = 6;
+  car.flightBoosted = true;
+  perform(session, { boost: true });
+  assert.equal(session.step, 'airChain');
+  assert.equal(car.poweredFlightTime, 0, 'new chain attempt has no prior powered flight');
+  assert.equal(car.flightBoosted, false, 'prior boost credit must not leak');
+  performAirChain(session);
+  assert.equal(session.step, 'barrelRoll');
+  assert.equal(car.flick, null, 'previous steering edges do not start this lesson');
+  assert.equal(car.steerSign, 0);
+});
+
 test('wrong actions reset a sustained lesson and repeated evaluation cannot fabricate driving', () => {
   const session = createInteractiveTutorial();
   for (let i = 0; i < 120; i++) tick(session);
