@@ -15,7 +15,7 @@
 
 **Repository:** https://github.com/weskao/skyline-rush
 **Target branch:** `feature/garage-vfx-skins`
-**Wave:** 2 · **TODO:** 5.1, 5.3, 5.6, 5.8, 5.9 · **Status:** PLAN ONLY — NOT IMPLEMENTED
+**Wave:** 2 · **TODO:** 5.1, 5.3, 5.6, 5.8, 5.9 · **Status:** PHASE A CONTRACT IMPLEMENTED / FINAL CI & VISUAL REVIEW PENDING / PHASE B GATED
 **Dependency:** Garage Preview Studio AND High-speed VFX merged first; stable VFX binding and camera contract.
 
 ## Global Constraints
@@ -201,3 +201,12 @@
 - [ ] All files and contracts were reconfirmed against latest `main` at implementation time.
 - [ ] No user-facing claim of successful tests or CI before observed evidence.
 - [ ] No implementation has occurred in this planning-only commit.
+
+## 2026-10-31 Phase A execution checkpoint (do not mark entire feature complete)
+
+- **Upstream integration:** merged develop `a021044dff22f8dab3845d182794d7d397b56d06` into this existing branch with a two-parent non-destructive merge `cbce7109f6a68cc3cb936235ecf08c82c05b0923`. Merge-base comparison confirmed the feature's 11 original doc/SVG additions had no path conflicts. Wave 1 Garage Studio and its tests remain from develop.
+- **Typed data + boundaries:** `src/garage-skin-catalog.ts` defines four categories, eight stable IDs (default + curated per category), version 1, permanent/temporary status resolution, account-scoped data validation and cloud serialization. Trial-only selections are memory/session contract values; no trial entitlement is written to Cloud Save, no real ownership has been granted. Existing PAINTS functions, save keys, game physics and Cloud Save implementation remain unchanged.
+- **Read-only preview UI contract:** `src/GarageSkinCatalog.vue` is mounted inside existing Garage Studio; shows distinct default/coming-soon items, bilingual names and a semantic text fallback on image load errors. Does **not** expose fake Equip/Unequip, actual preview VFX, inventory, trial timers or shop/currency. Card art stays at 96 CSS px; reserved badge contract is 72 CSS px. Precommitted category SVG assets are used. The 3× raster images in the handoff are **not available in Git**, thus no speculative WebP URL is requested.
+- **BDD/TDD:** a local isolated Node v22.16 proof run (using `--experimental-strip-types`) observed RED: 8/8 new contract tests failed with behavior stubs; GREEN: 8/8 passed with the catalog implementation. Standalone strict TypeScript 5.8.3 check passed. `tests/garage-skin-catalog.test.js` and `tests/garage-vfx-catalog-browser.spec.js` were committed. These narrow checks are **not** full-repository verification.
+- **Still required for Phase A signoff:** exact final-HEAD GitHub CI quality-gate, all repository regression suites, real WebGL + DOM screenshots and manual device/visual review. CI artifacts are not substitutes for human fidelity approval. No `TODO.md` #5.1/#5.3/#5.6/#5.8/#5.9 item is marked done by this checkpoint.
+- **Phase B HARD GATE:** High-speed VFX must be complete and pass TDD, screenshot and performance acceptance, receive explicit user approval, be merged to develop, and newest develop full CI must pass. Only then sync develop again and implement renderer binding, preview/equip, persistent owned skins, bounded trial periods, account/Cloud Save reconciliation, quality scaling, Reduced Motion and GPU disposal. No PR, deployment, or automatic integration merge.

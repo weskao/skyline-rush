@@ -6,7 +6,7 @@
 **Repository:** https://github.com/weskao/skyline-rush
 **Branch:** `feature/garage-vfx-skins`
 **Wave:** 2 · **Source TODO:** 5.1, 5.3, 5.6, 5.8, 5.9
-**Status:** DOCUMENTATION ONLY · **Date:** 2026-10-31
+**Status:** PHASE A CONTRACT CODED / CI & VISUAL VALIDATION PENDING; PHASE B BLOCKED · **Date:** 2026-10-31
 **Dependencies:** Garage Preview Studio AND High-speed VFX merged first; stable VFX binding and camera contract.
 
 ## 1. Goals and boundaries (SDD)
@@ -117,3 +117,7 @@ Design choices: isolate event/state contracts from presentation, use Vue 3 + Typ
 - TDD RED→GREEN→Refactor, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, World Tour/Cloud Save when relevant, `make verify`, exact-HEAD GitHub CI. Only mark `TODO.md` item `- [x]` after each *fully implemented and verified* requirement is complete; never mark for a plan.
 - Each agent owns its feature branch and specific files; dependent implementation waits for prerequisites merged into `main` after user approval. If source TODO is absent on the branch, first integrate the approved spec using an explicit non-destructive merge/cherry-pick and do not copy stale contents over main.
 
+
+## Phase A implementation note — 2026-10-31
+
+The separate, non-rendering TypeScript `src/garage-skin-catalog.ts` and read-only Vue `src/GarageSkinCatalog.vue` establish the cosmetic catalog, status, account and asset fallback interface without implying that Three.js effects or time-limited trials are running. The initial catalog contains four default and four proposed optional effects; no cloud-owned skins, premium pictures, or trial action has been enabled. New contract/browser tests exist; final CI, actual visual comparison and user acceptance are pending. See the Phase A checkpoint in the plan. Previous planning-only statements in older sections apply only to unstarted Phase B.
