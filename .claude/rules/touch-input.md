@@ -1,6 +1,9 @@
 ---
 paths:
-  - "src/input.js"
+  - "src/input.ts"
+  - "src/ios-touch-guard.ts"
+  - "tests/ios-touch-guard.test.js"
+  - "tests/ios-touch-guard-browser.spec.js"
   - "src/slide-pad.js"
   - "src/style.css"
   - "tests/input.test.js"
@@ -15,7 +18,7 @@ the back/forward edge swipe (WebKit bugs 136531, 239014). A pointer that holds s
 pins the car to one wall for the rest of the race.
 
 - No touch pointer may hold a control forever: the newest finger on the slide pad or on a touch button
-  takes it over from any pointer still holding it (`bindSlidePad`, `bindButton` in `src/input.js`;
+  takes it over from any pointer still holding it (`bindSlidePad`, `bindButton` in `src/input.ts`;
   the `padTouch` mirror in `src/main.js` follows the same rule).
 - The slide pad keeps 20 px clear of the side edges (`.touch-pad` in `src/style.css`), so a steer
   cannot start inside the edge-swipe zone. Guards: `tests/input.test.js` (stuck-pointer takeover)
@@ -32,3 +35,12 @@ send wheel input through `trackpadSwipe` (dispatched `WheelEvent`, pinned CSS-pi
 `timeStamp`), never through `page.mouse.wheel` or CDP `mouseWheel`: those stamp on delivery and scale deltas
 per runner (Linux CI made a 40 px nudge a full swipe). Guards: both trackpad tests in
 `tests/track-swipe-browser.spec.js`.
+
+## iOS long-press loupe without breaking the UI
+
+A one-finger `touchstart` may show a magnifier on iPhone despite the root CSS
+selection/callout rules. Use `installGameTouchGuard` for noninteractive game surfaces,
+not a blanket `preventDefault()`: native controls and scrolling panels still need
+WebKit's synthesized click and scroll events. Leave two-finger gestures alone; keep
+existing dedicated touch cancellation for driving controls. Regress with the guard's
+unit and phone-browser specs plus real iPhone testing.
