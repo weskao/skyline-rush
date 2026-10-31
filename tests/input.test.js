@@ -420,3 +420,19 @@ test('a new touch on a touch button releases an older pointer stuck on that same
   assert.equal(controls.read().throttle, true);
   controls.destroy();
 });
+
+test('holding a touch button or the slide pad cancels touchstart, so iOS shows no magnifier loupe', () => {
+  const controls = createControls(new EventTarget());
+  const gas = new EventTarget();
+  const pad = new EventTarget();
+  controls.bindButton(gas, 'throttle');
+  controls.bindSlidePad(pad);
+  // iOS ignores user-select: none for its long-press loupe; only a cancelled touchstart stops it.
+  assert.ok(send(gas, 'touchstart').defaultPrevented);
+  assert.ok(send(pad, 'touchstart').defaultPrevented);
+  // The press still drives the car through pointer events.
+  send(gas, 'pointerdown', { pointerId: 1 });
+  assert.equal(controls.read().throttle, true);
+  controls.destroy();
+  assert.equal(send(gas, 'touchstart').defaultPrevented, false);
+});
