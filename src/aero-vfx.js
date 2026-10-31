@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { skinVfxPalette } from './garage-skin-palette.ts';
+import { skinVfxPalette } from '#garage-skin-palette';
 import { TRICK_ROLL_TIME } from './game.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 

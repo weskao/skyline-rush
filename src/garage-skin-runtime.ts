@@ -6,8 +6,10 @@ import { createGarageSkinSession } from './garage-skin-session.ts';
 let accountId = 'guest';
 const session = createGarageSkinSession(accountId, Date.now);
 // Free-to-try is a temporary feature flag, NEVER a purchase or a cloud entitlement.
+declare const __GARAGE_SKIN_TRIAL__: boolean;
+const trialMode = typeof __GARAGE_SKIN_TRIAL__ === 'undefined' || __GARAGE_SKIN_TRIAL__;
 const freeTrialExpiry = Number.MAX_SAFE_INTEGER;
-session.setTrial({ enabled: true, expiresAt: freeTrialExpiry });
+session.setTrial({ enabled: trialMode, expiresAt: trialMode ? freeTrialExpiry : 0 });
 export const garageSkinState = reactive({ revision: 0 });
 const listeners = new Set<() => void>();
 let expiryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -52,10 +54,11 @@ export function setGarageSkinAccount(nextId: string | null): void {
   accountId = id;
   clearExpiryTimer();
   session.setAccount(id);
-  session.setTrial({ enabled: true, expiresAt: freeTrialExpiry });
+  session.setTrial({ enabled: trialMode, expiresAt: trialMode ? freeTrialExpiry : 0 });
   publish();
 }
 export function setGarageSkinTrial(enabled: boolean, expiresAt: number): void {
+  if (!trialMode) return;
   clearExpiryTimer();
   session.setTrial({ enabled, expiresAt });
   publish();
