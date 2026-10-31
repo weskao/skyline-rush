@@ -9,7 +9,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     const catalog = page.locator('#garage-vfx-catalog');
     await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
     const preview = page.locator('#garage-preview');
-    await expect(preview).toHaveAttribute('data-shader-programs', /\\d+/);
+    await expect(preview).toHaveAttribute('data-shader-programs', /\d+/);
     const programsBefore = Number(await preview.getAttribute('data-shader-programs'));
     const ion = catalog.locator('[data-skin="thruster-ion"]');
     await expect(ion).toHaveAttribute('data-state', 'trial');
