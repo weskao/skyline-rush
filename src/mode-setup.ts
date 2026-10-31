@@ -3,7 +3,7 @@
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
 /** The rule values a fresh Custom/Free race starts with; Restore defaults returns to exactly these. */
-export const DEFAULT_RULES = Object.freeze({ rivals: 3, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false,
+export const DEFAULT_RULES = Object.freeze({ rivals: 7, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false,
   itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false, riskLines: 'on', themes: false });
 
 export type Eligibility = 'records' | 'daily' | 'modeBests' | 'practice';

@@ -20,7 +20,7 @@ export function normalizeRaceConfig(value: unknown = {}) {
   const legacyFour = !custom && value.rulesVersion === 1 && value.rivals === 3;
   const competitive = ['classic', 'cup', 'elimination', 'circuit'].includes(mode);
   const rivals = custom
-    ? typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 7 ? value.rivals : 3
+    ? typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 7 ? value.rivals : 7
     : competitive ? legacyFour ? 3 : 7 : 0;
   return Object.freeze({
     rulesVersion: 1,
@@ -53,9 +53,9 @@ export function normalizeRaceConfig(value: unknown = {}) {
 }
 
 export const RULE_PRESETS = Object.freeze({
-  standard: Object.freeze({ rivals: 3, difficulty: 'normal', traffic: 'normal', items: true }),
-  traffic: Object.freeze({ rivals: 3, difficulty: 'hard', traffic: 'heavy', items: true }),
-  noitems: Object.freeze({ rivals: 3, difficulty: 'normal', traffic: 'normal', items: false }),
+  standard: Object.freeze({ rivals: 7, difficulty: 'normal', traffic: 'normal', items: true }),
+  traffic: Object.freeze({ rivals: 7, difficulty: 'hard', traffic: 'heavy', items: true }),
+  noitems: Object.freeze({ rivals: 7, difficulty: 'normal', traffic: 'normal', items: false }),
   air: Object.freeze({ rivals: 1, difficulty: 'easy', traffic: 'off', items: true }),
   precision: Object.freeze({ rivals: 0, difficulty: 'normal', traffic: 'light', items: false }),
 });

@@ -53,7 +53,7 @@ test('MODE-00: strict requests accept exact eligible values without affecting le
     assert.deepEqual(normalized, normalizeRaceConfig(input));
     assert.deepEqual(JSON.parse(JSON.stringify(normalized)), normalized);
   }
-  assert.equal(normalizeRaceConfig({ mode: 'custom', rivals: 99 }).rivals, 3,
+  assert.equal(normalizeRaceConfig({ mode: 'custom', rivals: 99 }).rivals, 7,
     'legacy configuration normalization remains tolerant for existing saved settings');
   assert.throws(() => validateRaceRequest(
     { mode: 'cup', cupTracks: ['coast', 'neon', 'wrong-track'] },

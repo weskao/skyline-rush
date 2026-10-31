@@ -17,7 +17,7 @@ test('normalization keeps classic defaults and validates mode names', () => {
 
 test('custom settings are bounded and have deterministic safe defaults', () => {
   assert.deepEqual(normalizeRaceConfig({ mode: 'custom', rivals: 0, traffic: 'off', items: false }).rivals, 0);
-  assert.equal(normalizeRaceConfig({ mode: 'custom', rivals: 20 }).rivals, 3);
+  assert.equal(normalizeRaceConfig({ mode: 'custom', rivals: 20 }).rivals, 7);
   assert.equal(normalizeRaceConfig({ mode: 'custom', traffic: 'garbage' }).traffic, 'normal');
   assert.equal(normalizeRaceConfig({ mode: 'time', rivals: 3 }).rivals, 0);
   assert.equal(normalizeRaceConfig({ mode: 'free', rivals: 1 }).rivals, 0);
@@ -137,7 +137,7 @@ import { RULE_PRESETS } from '../src/race-config.ts';
 
 test('rule presets cover five distinct, valid race configurations', () => {
   assert.deepEqual(Object.keys(RULE_PRESETS), ['standard', 'traffic', 'noitems', 'air', 'precision']);
-  assert.equal(RULE_PRESETS.standard.rivals, 3);
+  assert.equal(RULE_PRESETS.standard.rivals, 7);
   assert.equal(RULE_PRESETS.traffic.traffic, 'heavy');
   assert.equal(RULE_PRESETS.noitems.items, false);
   assert.equal(RULE_PRESETS.air.traffic, 'off');
