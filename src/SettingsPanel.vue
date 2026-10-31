@@ -41,7 +41,7 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
 </script>
 <template>
       <div class="settings">
-        <button class="icon-button" id="settings-button" :aria-label="isChinese ? '音訊與遊戲介面設定' : 'Audio and HUD settings'" :aria-expanded="panelsView.settingsOpen" aria-controls="settings-panel" :title="isChinese ? '音訊與遊戲介面設定' : 'Audio and HUD settings'"><svg v-bind="ICON_ATTRS" v-html="icons[audioView.settingsIcon]"></svg></button>
+        <button class="icon-button" id="settings-button" :aria-label="isChinese ? '音訊設定' : 'Audio settings'" :aria-expanded="panelsView.settingsOpen" aria-controls="settings-panel" :title="isChinese ? '音訊與遊戲介面設定' : 'Audio and HUD settings'"><svg v-bind="ICON_ATTRS" v-html="icons[audioView.settingsIcon]"></svg></button>
         <div class="settings-panel" id="settings-panel" role="group" :aria-label="isChinese ? '音訊與遊戲介面設定' : 'Audio and HUD settings'" :hidden="!panelsView.settingsOpen">
           <div class="audio-head"><span data-i18n="audio.head">Audio</span><button class="mute-all" id="mute-all" aria-keyshortcuts="M"><span>{{ audioView.muteAllText }}</span><kbd aria-hidden="true">M</kbd></button></div>
           <div class="audio-channel" v-for="{ kind, label } in AUDIO_CHANNELS" :key="kind">
@@ -49,8 +49,8 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
             <input type="range" min="0" max="100" step="5" :value="audioView[kind].level" :aria-valuetext="audioView[kind].valueText" :style="{ '--fill': audioView[kind].level + '%' }" :aria-label="label + ' volume'" :data-i18n-aria-label="'audio.' + kind + 'Volume'">
           </div>
           <fieldset class="hud-mode-selector">
-            <legend>{{ isChinese ? '遊戲介面 · HUD' : 'Race HUD' }}</legend>
-            <label class="hud-choice"><input type="radio" name="hud-mode" value="hybrid" :checked="hudMode === 'hybrid'" @change="chooseHudMode('hybrid')"><span>{{ isChinese ? '沉浸式 (Hybrid A+B)' : 'Immersive (Hybrid A+B)' }}</span></label>
+            <legend>{{ isChinese ? '遊戲介面' : 'Race HUD' }}</legend>
+            <label class="hud-choice"><input type="radio" name="hud-mode" value="hybrid" :checked="hudMode === 'hybrid'" @change="chooseHudMode('hybrid')"><span>{{ isChinese ? '沉浸式 (A+B)' : 'Immersive (Hybrid A+B)' }}</span></label>
             <label class="hud-choice"><input type="radio" name="hud-mode" value="competitive" :checked="hudMode === 'competitive'" @change="chooseHudMode('competitive')"><span>{{ isChinese ? '競技資訊 (C)' : 'Competitive (C)' }}</span></label>
             <div v-if="hudMode === 'competitive'" class="hud-widget-options">
               <label class="hud-choice"><input type="checkbox" :checked="widgets.leaderboard" @change="setWidget('leaderboard', !widgets.leaderboard)"><span>{{ isChinese ? '顯示排行榜' : 'Show leaderboard' }}</span></label>

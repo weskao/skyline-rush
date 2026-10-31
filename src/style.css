@@ -1746,3 +1746,6 @@ body[data-fold-axis="horizontal"] .race-route-map {
   top: clamp(80px, 30vh, calc(var(--fold-pane-top-end) - 115px));
   bottom: auto;
 }
+
+/* CJK NITRO availability remains legible during countdown, pause and racing. */
+html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }

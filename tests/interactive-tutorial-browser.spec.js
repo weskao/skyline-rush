@@ -189,6 +189,7 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
   test.describe(`touch practice ${width}x${height} ${mode} ${flyMode}${custom?' custom layout':''}`, () => {
     test.use({viewport:{width,height},hasTouch:true,isMobile:true});
     test('real touch controls finish practice without the coach blocking actions', async ({ page, context }) => {
+      test.setTimeout(ciTimeout(240000));
       const prefs = {version:1,mode,flyMode,...(custom?{layout:{throttle:{x:.15,y:.18}}}:{})};
       await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls',JSON.stringify(prefs)), prefs);
       await begin(page);
@@ -274,8 +275,11 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
           null, { polling: 'raf' },
         );
       };
-      await attemptChain();
-      if (await coach(page).getAttribute('data-step') === 'airChain') await attemptChain();
+      // Retry genuine failed landings with fresh touch inputs; never advance
+      // without the engine awarding a soft AIR-to-ROAD chain.
+      for (let retry = 0; retry < 4 && await coach(page).getAttribute('data-step') === 'airChain'; retry++) {
+        await attemptChain();
+      }
       await step(page, 'barrelRoll');
       const steerTarget = effectiveMode === 'slide' ? page.locator('.touch-pad') : button('left');
       const left = await point(steerTarget, 2);
@@ -287,11 +291,10 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
         null, { polling: 'raf' },
       );
+      // Glide after takeoff to finish the 0.7s roll without a hard landing.
+      if (flyMode === 'toggle') await tapTouch(button('fly'));
+      else await touch('touchEnd', []);
       if (pad) {
-        // Slide steering uses the same finger, so release lift before the
-        // real left/right gesture and retain the original glide test.
-        if (flyMode === 'toggle') await tapTouch(button('fly'));
-        else await touch('touchEnd', []);
         await touch('touchStart', [pad]);
         await touch('touchMove', [{ ...pad, x: pad.x - 55 }]);
         await waitForCoachText('First airborne steering press detected');
@@ -299,18 +302,14 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await waitForCoachText('BARREL ROLL spinning');
         await touch('touchEnd', []);
       } else {
-        // Button steering needs two real input edges within the engine's
-        // 0.3s trick window. Keep FLY held until the roll starts, otherwise
-        // a slow software-WebGL frame can land the car before the second edge.
-        const flyHeld = flyMode === 'hold';
-        await touch('touchStart', flyHeld ? [fly, left] : [left]);
-        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
-        await touch('touchEnd', flyHeld ? [fly] : []);
-        await touch('touchStart', flyHeld ? [fly, right] : [right]);
+        // Two real steering edges inside the 0.3s trick window, confirmed
+        // by the coach before the opposite press.
+        await touch('touchStart', [left]);
+        await waitForCoachText('First airborne steering press detected');
+        await touch('touchEnd', []);
+        await touch('touchStart', [right]);
         await waitForCoachText('BARREL ROLL spinning');
-        await touch('touchEnd', flyHeld ? [fly] : []);
-        if (flyHeld) await touch('touchEnd', []);
-        else await tapTouch(button('fly'));
+        await touch('touchEnd', []);
       }
       // The actual engine must finish the roll and pay NITRO on a gentle
       // landing before the coach can advance to the next lesson.

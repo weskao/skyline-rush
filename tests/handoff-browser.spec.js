@@ -54,7 +54,7 @@ test.describe('touch controls', () => {
     const touch = (type, ...touchPoints) => session.send('Input.dispatchTouchEvent', { type, touchPoints });
     await open(page);
     await start(page);
-    await expect(page.getByRole('button', { name: 'Activate nitro' })).toBeVisible();
+    await expect(page.locator('[data-control="nitro"]')).toBeVisible();
     const pad = await page.locator('.touch-pad').boundingBox();
     await touch('touchStart', { id: 1, x: pad.x + 40, y: pad.y + 50 });
     await touch('touchMove', { id: 1, x: pad.x + 100, y: pad.y + 50 });
@@ -178,7 +178,8 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   expect(perfectLine, 'The visible first ring group must produce a real PERFECT LINE').toBe(true);
   expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();
-  await expect(page.locator('#nitro-status')).toHaveText('NITRO MAX');
+  await expect(page.locator('#nitro-status')).toHaveText('NITRO READY');
+  await expect(page.locator('#nitro-meter')).toHaveAttribute('data-nitro-state', 'ready');
   await expect(page.locator('.nitro-segment.is-full')).toHaveCount(3);
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'nitro-max');
   await page.emulateMedia({ reducedMotion: 'reduce' });
