@@ -10,7 +10,8 @@ const fakeT = (key, params) => params ? `${key}${JSON.stringify(params)}` : key;
 
 test('Restore defaults returns every rule to the values a fresh Custom race uses', () => {
   const custom = normalizeRaceConfig({ mode: 'custom', ...DEFAULT_RULES, hazards: undefined });
-  assert.deepEqual(custom, normalizeRaceConfig({ mode: 'custom' }));
+  assert.deepEqual(custom, normalizeRaceConfig({ mode: 'custom', rivals: 7 }));
+  assert.equal(normalizeRaceConfig({ mode: 'custom' }).rivals, 3, 'legacy v1 Custom signatures retain four-car identity');
   assert.equal(DEFAULT_RULES.hazards, 'off');
   assert.equal(DEFAULT_RULES.themes, false, 'themed track hazards are opt-in');
   assert.equal(DEFAULT_RULES.riskLines, 'on');
