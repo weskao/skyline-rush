@@ -8,5 +8,6 @@ test('CI push events include fix branches while leaving retired MODE-00 disabled
   const branches = yaml.match(/^    branches:\n((?:      - [^\n]+\n)+)/m)?.[1] ?? '';
   assert.match(branches, /^      - ['"]?develop['"]?$/m);
   assert.match(branches, /^      - ['"]?fix\/\*\*['"]?$/m);
+  assert.match(branches, /^      - ['"]?develop['"]?$/m);
   assert.match(branches, /^      - ['"]?!feature\/mode00-objective-contract['"]?$/m);
 });
