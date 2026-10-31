@@ -54,3 +54,11 @@ test('CI unit gate executes the locked production build and refuses unpublished 
   const locked = readFileSync(new URL('../src/GarageSkinComingSoon.vue', import.meta.url), 'utf8');
   assert.doesNotMatch(locked, /GarageSkinCatalog|@click|equipGarageSkin|thruster-ion|nitro-trail-cyan/);
 });
+
+test('Pages deploy pins a reviewed garage release mode instead of inheriting mutable repo environment', async () => {
+  const { readFileSync } = await import('node:fs');
+  const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const deploy = workflow.slice(workflow.indexOf('  deploy:'), workflow.indexOf('  # Failure-only pager'));
+  assert.match(deploy, /GARAGE_VFX_RELEASE_MODE: (?:coming-soon|trial|released)/);
+  assert.match(deploy, /node scripts\/assert-production-locked\.mjs/);
+});
