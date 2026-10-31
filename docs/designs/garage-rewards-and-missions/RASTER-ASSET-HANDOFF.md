@@ -56,8 +56,8 @@
      `${import.meta.env.BASE_URL}feature-assets/garage-rewards-and-missions/raster/${name}@3x.webp`;
    ```
    ```vue
-   <!-- Example for a reviewed 96x96 candidate; retain real labels/state as live Vue text -->
-   <img :src="assetUrl('example-name')" width="96" height="96"
+   <!-- Example using a real candidate key; decorative artwork only until reviewed -->
+   <img :src="assetUrl('mission-race')" width="96" height="96"
         style="object-fit:contain" alt="" decoding="async" loading="lazy" />
    ```
    For 72px keys use `width="72" height="72"`; only the button *visual study* keys use `width="144" height="52"`. Keep the real `<button>` and translated text as DOM. Never use a screenshot for a whole clickable panel.
