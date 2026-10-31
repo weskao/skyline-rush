@@ -21,6 +21,7 @@ interface GarageWorld {
   setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>): void;
   inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean } | null;
   inspectRenderLoad?(): { drawCalls: number; triangles: number };
+  inspectPrograms?(): number;
 }
 interface GarageDependencies {
   getWorld(): GarageWorld | null | undefined;
@@ -83,6 +84,8 @@ export function setupGarageUI({
         preview.dataset.drawCalls = String(load.drawCalls);
         preview.dataset.triangles = String(load.triangles);
       }
+      const programs = getWorld()?.inspectPrograms?.();
+      if (programs !== undefined) preview.dataset.shaderPrograms = String(programs);
     }));
   }
 
