@@ -251,58 +251,66 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       await step(page,'boost');
       await gesture(button('boost'),'airChain');
       const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
-      if (flyMode === 'toggle') {
-        await tapTouch(button('fly'));
-        const p = await point(button('boost'), 1);
-        await touch('touchStart', [p]);
-        // Read the engine-confirmed flight cue at animation-frame cadence,
-        // then unlatch FLY before the car climbs into a hard-landing height.
-        await waitForCoachText('Powered flight detected');
-        await touch('touchEnd', []);
-        await tapTouch(button('fly'));
-      } else {
-        await touch('touchStart', [fly]);
-        await touch('touchStart', [fly, boost]);
-        await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
-        await touch('touchEnd', [fly]);
-        await touch('touchEnd', []);
-      }
+      // The chain is awarded at the actual landing, not merely when the coach
+      // observes powered flight. A hard landing is a legitimate retry.
+      const attemptChain = async () => {
+        if (flyMode === 'toggle') {
+          await tapTouch(button('fly'));
+          const p = await point(button('boost'), 1);
+          await touch('touchStart', [p]);
+          await waitForCoachText('Powered flight detected');
+          await touch('touchEnd', []);
+          await tapTouch(button('fly'));
+        } else {
+          await touch('touchStart', [fly]);
+          await touch('touchStart', [fly, boost]);
+          await waitForCoachText('Powered flight detected');
+          await touch('touchEnd', [fly]);
+          await touch('touchEnd', []);
+        }
+        // Complete a genuine engine landing before assessing success/retry.
+        await page.waitForFunction(
+          () => Number(document.querySelector('#altitude')?.textContent) <= 0.15,
+          null, { polling: 'raf' },
+        );
+      };
+      await attemptChain();
+      if (await coach(page).getAttribute('data-step') === 'airChain') await attemptChain();
       await step(page, 'barrelRoll');
       const steerTarget = effectiveMode === 'slide' ? page.locator('.touch-pad') : button('left');
       const left = await point(steerTarget, 2);
-      // Slide mode intentionally hides left/right buttons; never ask Playwright
-      // for a bounding box of a hidden control.
       const right = effectiveMode === 'slide' ? null : await point(button('right'), 3);
       const pad = effectiveMode === 'slide' ? left : null;
       if (flyMode === 'toggle') await tapTouch(button('fly'));
       else await touch('touchStart', [fly]);
-      // A genuine takeoff is required, but steering can happen during the
-      // ensuing glide. Unlatch/release FLY before the flick so slow CI frames
-      // cannot leave the car at 12 m with an unavoidable hard landing.
       await page.waitForFunction(
         () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
         null, { polling: 'raf' },
       );
-      if (flyMode === 'toggle') await tapTouch(button('fly'));
-      else await touch('touchEnd', []);
       if (pad) {
+        // Slide steering uses the same finger, so release lift before the
+        // real left/right gesture and retain the original glide test.
+        if (flyMode === 'toggle') await tapTouch(button('fly'));
+        else await touch('touchEnd', []);
         await touch('touchStart', [pad]);
-        await touch('touchMove', [{...pad,x:pad.x-55}]);
-        // The two real steering edges must still fall inside the engine's
-        // 0.3-second trick window; never synthesize a trick or payout.
+        await touch('touchMove', [{ ...pad, x: pad.x - 55 }]);
         await waitForCoachText('First airborne steering press detected');
-        await touch('touchMove', [{...pad,x:pad.x+55}]);
+        await touch('touchMove', [{ ...pad, x: pad.x + 55 }]);
         await waitForCoachText('BARREL ROLL spinning');
         await touch('touchEnd', []);
       } else {
-        await touch('touchStart', [left]);
-        // Let the engine sample the first steering edge without waiting for
-        // Vue/DOM text propagation inside the 0.3-second trick window.
+        // Button steering needs two real input edges within the engine's
+        // 0.3s trick window. Keep FLY held until the roll starts, otherwise
+        // a slow software-WebGL frame can land the car before the second edge.
+        const flyHeld = flyMode === 'hold';
+        await touch('touchStart', flyHeld ? [fly, left] : [left]);
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
-        await touch('touchEnd', []);
-        await touch('touchStart', [right]);
+        await touch('touchEnd', flyHeld ? [fly] : []);
+        await touch('touchStart', flyHeld ? [fly, right] : [right]);
         await waitForCoachText('BARREL ROLL spinning');
-        await touch('touchEnd', []);
+        await touch('touchEnd', flyHeld ? [fly] : []);
+        if (flyHeld) await touch('touchEnd', []);
+        else await tapTouch(button('fly'));
       }
       // The actual engine must finish the roll and pay NITRO on a gentle
       // landing before the coach can advance to the next lesson.
