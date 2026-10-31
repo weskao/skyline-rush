@@ -56,8 +56,9 @@ export function createInteractiveTutorial() {
       car.flightBoosted = false;
     }
     if (step === 'barrelRoll') {
+      // Clear old flick history, but preserve the held steering sign: clearing
+      // it fabricates a new input edge when the key remains pressed.
       car.flick = null;
-      car.steerSign = 0;
     }
     previousSpeed = car.speed;
     maneuver = step === 'airChain' || step === 'barrelRoll' || step === 'nitro'

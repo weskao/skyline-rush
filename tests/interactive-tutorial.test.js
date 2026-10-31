@@ -99,7 +99,27 @@ test('new air-chain and barrel-roll lessons cannot inherit old flight or flick i
   performAirChain(session);
   assert.equal(session.step, 'barrelRoll');
   assert.equal(car.flick, null, 'previous steering edges do not start this lesson');
-  assert.equal(car.steerSign, 0);
+});
+
+test('holding steering across an earned AIR→ROAD landing never fabricates a new flick', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [
+    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
+    { fly: true }, { fly: false }, { boost: true },
+  ]) perform(session, action);
+  assert.equal(session.step, 'airChain');
+  for (let i = 0; i < 42; i++) tick(session, { fly: true, boost: true });
+  const car = session.race.player;
+  for (let i = 0; i < 250 && session.step === 'airChain'; i++) {
+    // Start a genuine steering hold just before the engine landing event.
+    const steer = car.altitude > 0 && car.verticalSpeed < 0 && car.altitude < 0.5 ? -1 : 0;
+    tick(session, { steer });
+  }
+  assert.equal(session.step, 'barrelRoll');
+  assert.equal(car.steerSign, -1, 'lesson change must preserve a physically held key');
+  assert.equal(car.flick, null, 'the previous lesson flick has no credit in the new lesson');
+  tick(session, { steer: -1, fly: true });
+  assert.equal(car.flick, null, 'still holding left cannot be interpreted as a new press');
 });
 
 test('wrong actions reset a sustained lesson and repeated evaluation cannot fabricate driving', () => {
