@@ -46,6 +46,8 @@ jobs:
       # Strict TS + real Vue SFC template semantic check + documented JS islands.
       - run: npm run typecheck
       - run: npm test
+      # Always prove the public (default) artifact excludes unreleased Garage modules and assets.
+      - run: npm run build
 
   # CPU-only WebGL makes the serial suite take about 6.4 runner-hours. Playwright's own --shard cuts equal contiguous
   # slices, so 16 of them ran 14 to 48 min; scripts/ci-shards.mjs packs tests by the durations in
