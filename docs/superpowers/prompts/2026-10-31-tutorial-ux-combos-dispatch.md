@@ -37,6 +37,12 @@
 - **Low/Medium/High** 只對 GPU／高耗能動畫分級，不能改動核心 HUD 資訊、遊戲規則、車輛數或操作。畫面新設計必須以實際 Vue/CSS/Three.js 實作，概念圖片只能做參考，不能替代真正的 UI／動態特效。
 - 對影響畫面的改動執行真實 WebGL 截圖／影片與前後效能比較：Draw Calls、Triangles、FPS、Frame Time p50/p95；如無法操作實機需明確列為未驗證。
 
+### 3C. Visual Fidelity Gate（新增）
+
+必讀 [本分支原始圖片映射與待核准清單](https://github.com/weskao/skyline-rush/blob/feature/tutorial-ux-combos/docs/designs/tutorial-ux-combos/VISUAL-FIDELITY.md)，以及共享 Visual Fidelity Gate。先從會話的 `skyline-rush-design-reference-crops.zip` 取得**真實高畫質概念圖片**，確認原始圖片已核准並將實際位元組保存到本分支 `docs/designs/tutorial-ux-combos/references/`，紀錄 SHA。不能用簡化 SVG 示意圖、只含文字的提示或 AI 假截圖冒充原本精緻美術。
+
+使用 SDD → BDD → TDD RED→GREEN→Refactor，對照實際可操作的 AIR→ROAD、桶滾、NITRO 演出，在 Mobile 直／橫、Desktop、Low／Medium／High 建立真實 Playwright 截圖與動畫並排評測；重視圖示質感、半透明提示、動態、車體/道路不遮擋。**Visual Fidelity 未經使用者核准之前，不得標記 TODO 已完成**；CI 綠燈不足以證明畫面達標。
+
 ### 4. 完成、TODO 勾選與合併 Gate
 
 - 實作完畢後執行相關 `npm run typecheck`、`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`、`make verify`，以及受影響的 World Tour、Cloud Save 等測試；確認最後 HEAD 的 GitHub Actions `quality-gate` 完整通過。
