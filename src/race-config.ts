@@ -16,7 +16,12 @@ export function normalizeRaceConfig(value: unknown = {}) {
   const itemRules = practice && isOneOf(value.itemRules, ITEM_RULES) ? value.itemRules : null;
   const items = itemRules ? itemRules === 'classic' || itemRules === 'all' : practice && typeof value.items === 'boolean' ? value.items : true;
   const activeItems = itemRules ? itemRules === 'active' || itemRules === 'all' : practice && items && value.activeItems === true;
-  const rivals = custom && typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3 ? value.rivals : custom || mode === 'classic' || mode === 'cup' || mode === 'elimination' || mode === 'circuit' ? 3 : 0;
+  // Explicit v1 4-car competitive saves retain their identity; new races use seven AI.
+  const legacyFour = !custom && value.rulesVersion === 1 && value.rivals === 3;
+  const competitive = ['classic', 'cup', 'elimination', 'circuit'].includes(mode);
+  const rivals = custom
+    ? typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 7 ? value.rivals : 3
+    : competitive ? legacyFour ? 3 : 7 : 0;
   return Object.freeze({
     rulesVersion: 1,
     mode,
@@ -92,7 +97,7 @@ export function validateRaceRequest(value: unknown = {}, { availableTracks }: { 
   }
   if (Object.hasOwn(value, 'rulesVersion')) assertOption(value.rulesVersion === 1, 'rulesVersion');
   if (Object.hasOwn(value, 'rivals'))
-    assertOption(typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 3, 'rivals');
+    assertOption(typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 7, 'rivals');
   if (Object.hasOwn(value, 'traffic')) assertOption(typeof value.traffic === 'string' && Object.hasOwn(TRAFFIC, value.traffic), 'traffic');
   if (Object.hasOwn(value, 'difficulty')) assertOption(isOneOf(value.difficulty, DIFFICULTIES), 'difficulty');
   for (const key of ['items', 'activeItems', 'clean', 'bonusGates', 'themes'])
