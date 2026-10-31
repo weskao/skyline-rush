@@ -57,3 +57,72 @@ export function vfxSettings(values: unknown = {}): VfxSettings {
   }));
   return { ...base, ...ranges } as VfxSettings;
 }
+
+
+// Wave 2: presentation-only sprint state. No gameplay/physics values are ever mutated.
+// Each frame and both channel objects are reused: no reactive or GPU allocations in the hot path.
+export type SprintPhase = 'ready' | 'ignition' | 'sustain' | 'recovery';
+export type SprintInput = {
+  phase: string; nitro: boolean; boost: boolean; speed: number; cap: number; dt: number;
+  enabled: boolean; quality: VfxQuality; reducedMotion: boolean;
+};
+type SprintChannel = { phase: SprintPhase; intensity: number; ignition: number; age: number; release: number };
+const finite = (value: number, fallback = 0): number => Number.isFinite(value) ? value : fallback;
+const unit = (value: number): number => Math.max(0, Math.min(1, finite(value)));
+const channel = (): SprintChannel => ({ phase: 'ready', intensity: 0, ignition: 0, age: 0, release: 0 });
+
+export function createSprintVfx() {
+  const nitro = channel(), boost = channel();
+  const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0 };
+  const clear = (part: SprintChannel): void => {
+    part.phase = 'ready'; part.intensity = part.ignition = part.age = part.release = 0;
+  };
+  const reset = (): typeof frame => {
+    clear(nitro); clear(boost);
+    frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = 0;
+    return frame;
+  };
+  const advance = (part: SprintChannel, active: boolean, dt: number, speedScale: number): void => {
+    if (active && (part.phase === 'ready' || part.phase === 'recovery')) {
+      part.phase = 'ignition'; part.age = 0;
+    } else if (!active && (part.phase === 'sustain' || part.phase === 'ignition')) {
+      part.phase = 'recovery'; part.age = 0; part.release = part.intensity;
+    } else part.age += dt;
+    if (part.phase === 'ignition') {
+      if (part.age >= 0.18) part.phase = 'sustain';
+      part.ignition = Math.max(0, 1 - part.age / 0.18);
+      part.intensity = speedScale * (0.65 + 0.35 * (1 - part.ignition));
+    } else if (part.phase === 'sustain') {
+      part.ignition = 0;
+      part.intensity = speedScale;
+    } else if (part.phase === 'recovery') {
+      if (part.age >= 0.45) { clear(part); return; }
+      part.intensity = part.release * (1 - part.age / 0.45) ** 2;
+      part.ignition = 0;
+    } else part.intensity = part.ignition = 0;
+    part.intensity = unit(part.intensity);
+  };
+  return {
+    reset,
+    update(input: SprintInput): typeof frame {
+      // A paused game must not consume an ignition window or advance a fade.
+      if (input.phase === 'paused') return frame;
+      if (input.phase !== 'racing' || !input.enabled) return reset();
+      const dt = Math.max(0, Math.min(0.1, finite(input.dt)));
+      const cap = Math.max(40, finite(input.cap, 110));
+      const speed = Math.max(0, finite(input.speed));
+      const speedScale = unit((speed - 12) / (cap - 12));
+      advance(nitro, !!input.nitro, dt, speedScale);
+      advance(boost, !!input.boost, dt, speedScale);
+      // Independent channels never add; simultaneous activation is capped at one.
+      frame.power = unit(Math.max(nitro.intensity, boost.intensity * 0.8));
+      frame.nitroMix = nitro.intensity > 0 ? unit(nitro.intensity / Math.max(0.01, frame.power)) : 0;
+      const tier = input.quality === 'high' ? 1 : input.quality === 'medium' ? 0.65 : 0.3;
+      const comfort = input.reducedMotion;
+      frame.particles = frame.power * (comfort ? 0.2 : tier);
+      frame.fov = comfort ? 0 : Math.min(5, frame.power * tier * 4.5);
+      frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * 0.6);
+      return frame;
+    },
+  };
+}
