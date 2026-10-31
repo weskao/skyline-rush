@@ -126,3 +126,18 @@ test('locked paint state is announced in active language without pretending it i
   await expect(page.locator('#garage-equip')).toBeDisabled();
   await expect(page.locator('#garage-restore-default')).toBeVisible();
 });
+
+test('camera remains in frame across all preset angles and zoom boundaries', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  const preview = page.locator('#garage-preview');
+  for (const angle of ['front', 'rear', 'side', 'top', 'cinematic']) {
+    await page.locator(`[data-garage-angle="${angle}"]`).click();
+    for (let i = 0; i < 7; i++) await page.locator('#garage-zoom-in').click();
+    await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
+    for (let i = 0; i < 8; i++) await page.locator('#garage-zoom-out').click();
+    await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
+  }
+});
