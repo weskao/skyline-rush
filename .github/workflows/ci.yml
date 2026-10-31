@@ -79,6 +79,16 @@ jobs:
         with:
           name: browser-failures-${{ matrix.shard }}
           path: test-results
+      - name: Upload Wave 2 actual WebGL sprint VFX frames and animation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: high-speed-vfx-evidence-${{ matrix.shard }}
+          path: |
+            test-results/**/high-speed-vfx-*.png
+            test-results/**/high-speed-vfx-*.webm
+            test-results/**/high-speed-vfx-*.json
+          if-no-files-found: ignore
       - name: Upload actual race-mode game screenshots
         if: always()
         uses: actions/upload-artifact@v4
