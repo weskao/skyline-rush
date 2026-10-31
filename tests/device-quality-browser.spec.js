@@ -40,7 +40,7 @@ test('high-capability fresh visitor keeps full graphics and sees no performance 
 // The notice floats over the toolbar's panels (it once blocked every click in them on 4-core CI runners), so opening
 // any panel puts it away: the reader is already in the settings it points to.
 const panels = {
-  audio: { open: page => page.getByRole('button', { name: 'Audio settings' }).click(), control: page => page.getByRole('switch', { name: 'Sound effects' }) },
+  audio: { open: page => page.getByRole('button', { name: 'Audio and HUD settings' }).click(), control: page => page.getByRole('switch', { name: 'Sound effects' }) },
   controls: { open: page => page.locator('#controls-button').click(), control: page => page.locator('#controls-panel button:visible').first() },
   vfx: { open: page => page.locator('#vfx-panel > summary').click(), control: page => page.locator('.vfx-settings .custom-select button').first() },
 };
