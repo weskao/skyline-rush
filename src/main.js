@@ -265,7 +265,7 @@ const historyDialog = setupHistoryDialog({
   calm: calmMotion,
   motionOptions,
 });
-const { showGarage } = setupGarageUI({
+const { showGarage, syncSkins } = setupGarageUI({
   getWorld: () => world,
   canOpen: () => race.phase === 'ready',
   clearControls: () => controls.clear(),
@@ -547,6 +547,7 @@ function updateUI(now, input) {
 
 try {
   world = createWorld($('#world'));
+  syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(vfx.settings());

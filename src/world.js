@@ -111,6 +111,7 @@ export function createWorld(canvas) {
   const environment = env.fromScene(room, 0.04);
   scene.environment = environment.texture;
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null;
+  let garagePreviewSkins = {};
   room.dispose();
   env.dispose();
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
@@ -607,7 +608,19 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); if (garagePaint) garageStage.setPaint(garagePaint); } if (!snapshot) renderPass.scene = scene; },
+    resize, setGarageCamera(snapshot) {
+      if (!!garageCamera !== !!snapshot) initialized = false;
+      garageCamera = snapshot;
+      if (snapshot && !garageStage) {
+        garageStage = createGarageStage(environment.texture);
+        if (garagePaint) garageStage.setPaint(garagePaint);
+        garageStage.configureVFX(visual);
+        garageStage.setSkins(garagePreviewSkins);
+      }
+      if (!snapshot) renderPass.scene = scene;
+    },
+    setCosmeticSkins(ids) { aero.setSkins(ids); },
+    setGarageSkinPreview(ids) { garagePreviewSkins = ids; garageStage?.setSkins(ids); },
     inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint);
@@ -619,6 +632,7 @@ export function createWorld(canvas) {
     },
     configureVFX(options) {
       visual=vfxSettings(options);
+      garageStage?.configureVFX(visual);
       const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
