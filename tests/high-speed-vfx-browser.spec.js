@@ -62,8 +62,11 @@ test('Wave 2 real WebGL: NITRO violet, BOOST cyan, simultaneous bounded and reco
     return { frames: sorted.length, p50Ms: percentile(0.5), p95Ms: percentile(0.95),
       meanFps: 1000 / (sorted.reduce((sum, ms) => sum + ms, 0) / sorted.length) };
   });
+  // On software WebGL, ten wall-clock seconds can advance fewer than four game seconds.
+  // End the test's NITRO/mini-BOOST fixtures explicitly, then verify the *visual* recovery.
+  await page.evaluate(() => Object.assign(window.gameplay.race.player, { nitroTime: 0, miniBoost: 0 }));
+  await expect.poll(async () => (await read()).nitroMix, { timeout: 15_000 }).toBe(0);
   const recovered = await read();
-  expect(recovered.nitroMix).toBe(0);
   expect(recovered.programs).toBe(combined.programs);
   expect(recovered.textureCount).toBeLessThanOrEqual(combined.textureCount + 1);
   expect(recovered.geometryCount).toBeLessThanOrEqual(combined.geometryCount + 1);
