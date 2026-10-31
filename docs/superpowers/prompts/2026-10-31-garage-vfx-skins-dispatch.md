@@ -66,6 +66,23 @@
 
 在前置 Wave 真正完成後，使用 SDD → BDD → TDD 將正式 UI／特效轉為 Vue 3 + strict TypeScript + Three.js，強制檢查 mobile Android/iOS 直橫向與 Desktop、Low/Medium/High、無障礙、真透明背景及 FPS。以 Playwright 擷取**真實**畫面與 10–20 秒操作影片，比對核准圖的構圖、材質、光影、顏色、Icon、按鈕及動畫。沒有真實截圖／設計核准，不得宣稱達成 Visual Fidelity 或將 TODO 子項目勾選 `- [x]`。如果本分支實際只有 Economy 型別／資料契約，則標為 `NOT_APPLICABLE`，不必浪費資源生成圖片。
 
+### 3D. 3× 素材尺寸與匯入規格（2026-10-31）
+
+此前 GPT 對話已在本地輸出 `skyline-rush-3x-garage-vfx-skins.zip` 與完整 `skyline-rush-3x-ui-assets.zip`；其中 27 個**獨立候選素材**皆有透明 PNG／WebP 版本，分組為 Skins: metallic thruster variants, cyan/purple/gold/red trails, flare sprites, cosmetic/rarity status images。
+
+**注意：這些 PNG/WebP 目前只存在於對話 ZIP，尚未上傳到 GitHub，也還沒套用到真實 Vue／Three.js 介面。** 請先實際匯入檔案，並在圖像／透明邊緣驗收後使用。來源是 AI 圖片拼版的精細裁切、去背及 Lanczos 放大，不是原生生成出三倍細節的無瑕高解析素材；不可聲稱原生 3×。
+
+**強制正確顯示尺寸：**
+
+- `288×288 raster px → 96×96 CSS px`（Garage 主要素材、獎勵圖示）。
+- `216×216 raster px → 72×72 CSS px`（HUD／Store 小圖示）。
+- `432×156 raster px → 144×52 CSS px`（僅按鈕設計參考；文字、狀態與點擊由真正 Vue 控制）。
+- Vue `<img>` 或 CSS 必須設定 `width`／`height` 或 `inline-size`／`block-size` 為**1× 預定尺寸**，加 `object-fit: contain`；不能讓 3× 圖片以原始 px 尺寸撐大整個 UI。
+- 不要把 CSS 像素當成實機像素；高 DPI 只決定影像細緻度。盡量採用 WebP、lazy loading 和 Low 畫質 fallback，評估 GPU texture memory。
+- 用真正暗／亮背景檢查透明 Alpha，不要只看名為 `transparent` 的棋盤格。
+
+整合與驗收時先讀 `docs/superpowers/plans/2026-10-31-garage-vfx-skins-plan.md` 的 **Candidate 3× Raster Asset Delivery**，逐項標記已上傳、已整合、TDD、真實截圖及 CI；功能未達 Wave 依賴與 Visual Fidelity Gate 之前**不可勾選 TODO 主項**。
+
 ### 4. 完成、TODO 勾選與合併 Gate
 
 - 實作完畢後執行相關 `npm run typecheck`、`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`、`make verify`，以及受影響的 World Tour、Cloud Save 等測試；確認最後 HEAD 的 GitHub Actions `quality-gate` 完整通過。
