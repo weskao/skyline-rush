@@ -84,6 +84,24 @@ flowchart TD
 
 **CI gate:** documentation pushes may trigger GitHub Actions even though no code changed. Do not claim green on queued/cancelled/failed runs. Only check and remediate real failures at exact branch HEAD; the existing main CI failure is separate and must be root-caused before considering implementation branches releasable. Never auto-merge or publish on an unverified status.
 
+## Independent artwork pre-production results (2026-10-31)
+
+**GitHub asset work completed in the owning branches without starting dependent gameplay/UI implementation.** Reuse these preproduced original SVGs and inspect branch `plan.md` / `ASSET-MANIFEST.md` before launching a new GPT worker. Artwork completion **does not mark TODO feature items as done**.
+
+| Wave | Branch | Preproduced assets | Status / next gate |
+| --- | --- | --- | --- |
+| 2 | [Garage VFX Skins](https://github.com/weskao/skyline-rush/tree/feature/garage-vfx-skins) | [4 transparent SVG icons](https://github.com/weskao/skyline-rush/tree/feature/garage-vfx-skins/public/feature-assets/garage-vfx-skins) — thruster, airflow, nitro-trail, launch-flare; [commit `45f0649`](https://github.com/weskao/skyline-rush/commit/45f0649e9c07fc39f2432659322addd995c021bd) | Asset files ready; wait for Studio + high-speed renderer to integrate Skins, trials, real VFX |
+| 2 | [High-speed VFX](https://github.com/weskao/skyline-rush/tree/feature/high-speed-vfx) | [NITRO/BOOST four-stage SVG storyboard](https://github.com/weskao/skyline-rush/blob/feature/high-speed-vfx/docs/designs/high-speed-vfx/sprint-vfx-storyboard.svg); [commit `e891bc8`](https://github.com/weskao/skyline-rush/commit/e891bc8069ccc603a0aaeaa626ef0ccd9cdb2316) | Opaque concept image only; wait for Mobile HUD + actual Three.js performance verification |
+| 2 | [8-car AI grid](https://github.com/weskao/skyline-rush/tree/feature/race-difficulty-eight-car-grid) | None needed: ranks/positions must remain data-driven Vue/CSS/SVG | Deferred until tutorial/core engine gate; optional icon only if proven necessary |
+| 2 | [Foldable](https://github.com/weskao/skyline-rush/tree/feature/foldable-layout-adaptation) | None needed: later hinge-safe CSS/SVG layout | Deferred until Mobile HUD gate |
+| 3 | [Rewards / Missions](https://github.com/weskao/skyline-rush/tree/feature/garage-rewards-and-missions) | [4 transparent SVG icons](https://github.com/weskao/skyline-rush/tree/feature/garage-rewards-and-missions/public/feature-assets/garage-rewards-and-missions) — medal, daily, weekly, trophy; [commit `2acc0e4`](https://github.com/weskao/skyline-rush/commit/2acc0e484296f74123866dd30842b1d98b840a48) | Icons ready; real currency art and settlement await Economy approval |
+| 3 | [Store Readiness](https://github.com/weskao/skyline-rush/tree/feature/garage-store-readiness) | [2 transparent SVG icons](https://github.com/weskao/skyline-rush/tree/feature/garage-store-readiness/public/feature-assets/garage-store-readiness) — coming-soon, collection; [commit `4802122`](https://github.com/weskao/skyline-rush/commit/480212262d5e5ae0d2dd11065cec7f489d685ef3) | Icons ready; no real Buy/Pay; wait for Economy Foundation |
+| 3 | [Economy Foundation](https://github.com/weskao/skyline-rush/tree/feature/garage-economy-foundation) | None needed: typed data/entitlements only | No image generation; wait for Garage Skins prerequisite |
+
+**Count:** 10 independent, transparent-root 96×96 SVG icons, 1 standalone intentionally opaque storyboard SVG, 4 GitHub asset commits, and 7 updated per-branch Superpowers plans / dispatch prompts. These are actual committed image files, not PNGs renamed to SVG. The earlier GPT image-generation concept sheet is **not** a production asset and has not been committed to any branch. Background image, per-Skin texture/thumbnail, shaders, game viewport layout, money/paid store and results screens remain dependency-gated and unimplemented.
+
+**Verification performed:** Source SVG files were fetched back through GitHub and checked for expected transparent roots, 96×96 viewport, titles, balanced XML-like tag structure, and absence of external resources/scripts. These checks **do not** constitute actual iPhone/Android/desktop screenshot, UI integration, TDD or green CI evidence. When integrating, test missing-asset fallbacks, readable bilingual labels, Low/Medium/High, Reduced Motion and exact-HEAD CI before marking any `TODO.md` `- [x]`.
+
 ## Coordination notes
 
 - UI/UX planning TODO `feature/ux-ui-combo-mobile-controls` has not been merged into `main`. Implementation branches were created from `main` (2026-10-31; `bea47cf61c162b4341021fa6d24ca45850af7796`). Before TDD work begins, reconcile approved requirements without overwriting their history.
