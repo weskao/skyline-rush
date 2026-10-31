@@ -8,7 +8,8 @@ import { mergeProgress } from '../src/cloud-progress-merge.ts';
 import { settleRace } from '../src/race-results.ts';
 import { loadSessionProgress } from '../src/session-progress.ts';
 import { createGhostStore } from '../src/ghost-store.ts';
-import { streamEndless } from '../src/endless-highway.ts';
+import { streamEndless, ENDLESS_COLLISIONS } from '../src/endless-highway.ts';
+import { RACE_TRACKS } from '../src/race-tracks.ts';
 
 function endless() {
   assert.ok(MODES.includes('endless'), 'Distance Survival must be an explicit selectable mode');
@@ -128,4 +129,25 @@ test('longest distance survives rolling history and cloud merges preserve long-r
   const progress = mergeProgress({ modeHistory: loadModeHistory(store) }, null);
   assert.equal(progress.modeHistory.length, 50);
   assert.ok(progress.modeHistory.every(run => run.distance > 100_000));
+});
+
+// Endless opened to every track while saving still accepted Coast only: the finish threw in phaseUI
+// every frame, so the results screen never appeared and the HUD froze after the last collision.
+test('the collision finish settles and syncs a distance record on every Endless track', () => {
+  for (const id of Object.keys(RACE_TRACKS)) {
+    const race = createRace(id, { mode: 'endless' }); race.phase = 'racing'; visit(race, 12_000);
+    race.player.collisions = ENDLESS_COLLISIONS;
+    stepRace(race, { throttle: true }, 1 / 60);
+    assert.equal(race.phase, 'finished', id);
+    const storage = memory(); globalThis.localStorage = storage;
+    try {
+      const settled = settleRace(race, { series: { sprintSeries: null, cup: null, stunt: null },
+        progress: loadSessionProgress([id]), ghosts: createGhostStore(), daily: null, trace: [] });
+      assert.equal(settled.best, race.result.distance, id);
+      assert.equal(loadModeHistory(storage).length, 1, `${id} run must survive reload`);
+      const key = JSON.stringify([id, race.config]);
+      assert.equal(mergeModeBests({ bests: { [key]: race.result.distance } }).bests[key], race.result.distance, `${id} best must sync`);
+      assert.equal(mergeProgress({ modeHistory: loadModeHistory(storage) }, null).modeHistory.length, 1, `${id} run must sync`);
+    } finally { delete globalThis.localStorage; }
+  }
 });

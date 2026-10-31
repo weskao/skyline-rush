@@ -107,7 +107,7 @@ test('flight flick triggers the roll wake without AIRFLOW preview', async ({ gam
   await expect.poll(() => page.evaluate(() => window.rollEvidence.max)).toBeGreaterThan(baseline);
   await page.screenshot({ path: info.outputPath('actual-barrel-roll.png') });
   await release();
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(ciTimeout(1800)); // game time lags the wall clock on CPU-only CI, so the wake needs longer to fade
   const result = await page.evaluate(() => {
     return { count: window.rollLive(), boost: window.gameplay.race.player.boosting, programs: window.gameScene.renderer.info.programs.length, beforePrograms: window.rollEvidence.programs };
   });

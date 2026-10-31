@@ -34,6 +34,11 @@ The finished screen, paused screen and ready screen are not exempt from input te
   throws after the finish once froze the picture and made every button look dead until a reload,
   because the next frame was only requested after the whole frame succeeded. Never move the
   request back to the end or swallow the error; guard: `tests/finish-frame-recovery-browser.spec.js`.
+- A mode's track list and its record validators change together. Endless opened to every track while
+  `recordModeRace` (`src/history-mode.ts`) and the cloud merges still accepted Coast only, so the
+  finish threw in `phaseUI` every frame: no results screen, HUD frozen after the last collision.
+  Guards: `tests/endless-highway.test.js` iterates `RACE_TRACKS` (a new track is covered
+  automatically); `tests/endless-finish-browser.spec.js` checks the real results screen.
 - Test a **real** browser sequence on every affected track: drive, deliberately collide
   more than once, finish, use the camera button, switch languages, select Next where
   unlocked, retry, and verify the next race starts. Repeat on desktop and phone
