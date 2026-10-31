@@ -147,6 +147,20 @@
 - [ ] **Step 4:** Update branch from latest `main` only when dependencies are merged; resolve conflicts with both sides' features; rerun all relevant tests and inspect **exact-HEAD** GitHub CI `quality-gate`.
 - [ ] **Step 5:** Only after all BDD and TDD acceptance passes, change completed corresponding requirement(s) to `- [x]` in the approved full `TODO.md`, retaining unchecked partial requirements and recording evidence. **Important:** the planning TODO exists on `feature/ux-ui-combo-mobile-controls`, not base `main`. Coordinate integration before marking; never overwrite newer TODO. Commit progress evidence, request explicit permission before a direct main merge; do not create PR.
 
+### Independent artwork pre-production handoff — 2026-10-31
+
+**Branch:** `feature/garage-rewards-and-missions` · **Art-only status:** `independent-icons-complete`. This status is distinct from feature implementation and final CI acceptance.
+
+- [x] **Original standalone visual files created and committed** in [`2acc0e4`](https://github.com/weskao/skyline-rush/commit/2acc0e484296f74123866dd30842b1d98b840a48): `public/feature-assets/garage-rewards-and-missions/finish-medal.svg`, `public/feature-assets/garage-rewards-and-missions/daily-mission.svg`, `public/feature-assets/garage-rewards-and-missions/weekly-challenge.svg`, `public/feature-assets/garage-rewards-and-missions/trophy.svg`.
+- [x] **Asset manifest written:** [`public/feature-assets/garage-rewards-and-missions/ASSET-MANIFEST.md`](https://github.com/weskao/skyline-rush/blob/feature/garage-rewards-and-missions/public/feature-assets/garage-rewards-and-missions/ASSET-MANIFEST.md). Files exist in this branch independently of Wave dependencies; they are not yet imported by runtime UI.
+- [x] **Standalone artwork format selected:** original self-contained 96×96 SVG icons with transparent root backgrounds, no scripts, external fonts, baked text or painted checkerboard; no raster RGBA/PNG is claimed.
+
+**Remaining dependency-gated work:** DO NOT create real currency icon or live reward values yet. Wait for Economy Foundation plus authorization of reward math and secure settlement; then display these universal category icons via Vue with dynamic localized labels and data-driven statuses. Test idempotent payout and failure/pending/paid states, icon fallback, mobile/desktop and Quality tiers.
+
+- [ ] **Pending:** renderer/UI integration, missing-asset fallback tests where relevant, genuine BDD/TDD RED→GREEN, en/zh-TW, iOS/Android browser portrait/landscape, desktop, Low/Medium/High and reduced-motion/VFX-off as applicable.
+- [ ] **Pending:** final exact feature-HEAD `quality-gate` evidence, TODO `- [x]` only for fully accepted feature requirements, and user-approved merge gate; **do not mark TODO items as completed from these assets alone**.
+- [ ] **Integration rule:** preserve these existing asset paths when syncing newest `main`; do not regenerate equivalent icons unless the actual GUI or performance review rejects their suitability. Do not overwrite newer branch code/docs from parallel GPT chats.
+
 ## Self-review before implementation
 
 - [ ] Every SDD requirement and BDD scenario maps to a task and deterministic test.
