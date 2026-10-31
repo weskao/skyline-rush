@@ -786,7 +786,7 @@ const visibleBounds = page => page.locator('#touch-controls button, .touch-pad, 
   .filter(element => element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden')
   .map(element => {
     const { left, right, top, bottom, width, height } = element.getBoundingClientRect();
-    return { name: element.getAttribute('aria-label') ?? element.className, pad: element.classList.contains('touch-pad'), left, right, top, bottom, width, height };
+    return { name: element.getAttribute('aria-label') ?? element.className, control: element.dataset.control ?? null, pad: element.classList.contains('touch-pad'), left, right, top, bottom, width, height };
   }));
 
 for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
@@ -976,8 +976,8 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
 
     test('right hand in Buttons mode mirrors the steering buttons', async ({ page }) => {
       const centerX = async name => {
-        const button = name === 'NITRO UNAVAILABLE' ? page.locator('[data-control="nitro"]') : page.getByRole('button', { name, exact: true });
-        const box = await button.boundingBox();
+        const target = name === 'nitro' ? page.locator('[data-control="nitro"]') : page.getByRole('button', { name, exact: true });
+        const box = await target.boundingBox();
         return box.x + box.width / 2;
       };
       for (const hand of ['left', 'right']) {
@@ -988,7 +988,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
         for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${hand} ${name}`).toBe(true);
         // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'NITRO UNAVAILABLE'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
+        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'nitro'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
       }
     });
 
@@ -1073,9 +1073,11 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
           await expect(page.locator('#touch-controls')).toBeVisible();
           const bounds = await visibleBounds(page);
           const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
-          expect(touchButtons.map(bound => bound.name.startsWith('NITRO ') ? 'NITRO' : bound.name).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
-            ? ['Accelerate', 'Hold to boost', 'Hold to fly', 'NITRO']
-            : ['Accelerate', 'Brake', 'Hold to boost', 'Hold to fly', 'NITRO', 'Steer left', 'Steer right']);
+          // The NITRO accessibility label intentionally reflects READY/CHARGING/UNAVAILABLE.
+          // Verify stable action identity rather than pinning a transient state string.
+          expect(touchButtons.map(bound => bound.control).filter(Boolean).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
+            ? ['boost', 'fly', 'nitro', 'throttle']
+            : ['boost', 'brake', 'fly', 'left', 'nitro', 'right', 'throttle']);
           expect(bounds.some(bound => bound.pad)).toBe(mode === 'slide');
           for (const bound of bounds) {
             const label = `${mode} ${size} ${bound.name}`;
