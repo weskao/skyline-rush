@@ -109,9 +109,9 @@ inspect the **full GitHub CI `quality-gate` for the exact HEAD commit**.
 Use `TODO.md` to track evidence. CI, manual visual confirmation and historical
 RED evidence are distinct gates — never claim one proves the others.
 
-Only mark the branch **merge-ready** when the latest `main` has been integrated,
+Only mark the branch **merge-ready** when the latest `develop` has been integrated,
 all required checks are green and the user-visible symptoms have been retested.
-Do not merge into `main`, create a PR or deploy without explicit user approval.
+Do not merge into `develop` or `main`, create a PR or deploy without explicit user approval.
 Direct pushes cannot be prevented by Markdown; branch rulesets are required for
 server-enforced status protection.
 
@@ -385,8 +385,18 @@ and a CI timing flake cannot leave a tag unpublished.
 
 ## Branch workflow
 
-Commit and push to the current development branch. No PR, no merge into `main`, no deploy
-unless the user explicitly asks.
+Commit and push to the current development branch. No PR, no merge into `develop` or `main`,
+no deploy unless the user explicitly asks.
+
+- `feature/**`, `fix/**` and `refactor/**` branch from `develop` and merge back into `develop`
+  (local `--no-ff`, `/merge-into-main` targets `develop` when it exists); CI runs the full gate there.
+- **Release:** merge `develop` into `main`, push, wait for green CI on that merge commit, then
+  `/release` on `main` — the gate and tag flow above are unchanged.
+- **After every release, `main` is merged back into `develop`** so the `docs: release …` commit (version
+  bump, release-notes stamp) reaches it; skipping it makes the next release merge conflict.
+  `/release` does this last (`scripts/release-back-merge.sh`, pushed without touching any checkout); on a
+  conflict or rejected push it leaves `develop` untouched and prints the manual merge — do it then.
+- **Hotfix:** branch from `main`, merge into `main`, then `/release` (which back-merges into `develop`).
 
 ## Ready-screen floating controls: responsive spacing
 
