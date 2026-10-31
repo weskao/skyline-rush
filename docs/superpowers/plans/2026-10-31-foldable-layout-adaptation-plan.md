@@ -15,7 +15,7 @@
 
 **Repository:** https://github.com/weskao/skyline-rush
 **Target branch:** `feature/foldable-layout-adaptation`
-**Wave:** 2 · **TODO:** 4 · **Status:** PLAN ONLY — NOT IMPLEMENTED
+**Wave:** 2 · **TODO:** 4 · **Status:** IMPLEMENTED ON FEATURE BRANCH — FULL CI AND REAL-DEVICE VISUAL ACCEPTANCE PENDING
 **Dependency:** Mobile Controls/HUD merged first; reuse its saved orientation controls and HUD modes.
 
 ## Global Constraints
@@ -180,3 +180,12 @@
 - [ ] All files and contracts were reconfirmed against latest `main` at implementation time.
 - [ ] No user-facing claim of successful tests or CI before observed evidence.
 - [ ] No implementation has occurred in this planning-only commit.
+
+## 2026-10-31 implementation evidence (pending final acceptance)
+
+- Source branch: `feature/foldable-layout-adaptation`, integrated `develop` non-destructively via merge `6ce992f`.
+- Unit-first Red → Green: `tests/foldable-layout.test.js` has four cases, with three initial expected failures before the pure geometry implementation, followed by four passing isolated Node cases. Full project test acceptance is separate.
+- Core source changes: `src/foldable-layout.ts` (viewport segment validation/geometry, non-Foldable fallback), `src/touch-controls-ui.ts` (hinge-safe projection, fold/rotation input release), `src/style.css` (pane-aware HUD/slide pad).
+- Regression coverage: `tests/touch-controls-ui.test.js`, `tests/foldable-layout-browser.spec.js` for cover/inner/stacked hinge; 320×740, 390×844, 844×390, 568×320, 1440×900; en/zh-TW and Reduced Motion.
+- The branch CI is triggered with `[full-regression]` to run all 16 browser and 8 World Tour shards plus typecheck, unit, Cloud Save and performance gate. Actual Playwright WebGL screenshots are uploaded as `foldable-layout-screenshots-*` artifacts when those tests run.
+- **Outstanding gates:** exact-HEAD full CI pass, review of original browser screenshots and vehicle/road/HUD occlusion, physical fold/unfold + iPhone/Android touch-input acceptance, visual-fidelity reference approval, quality tier comparisons and performance measurements. The parent TODO #4 remains unchecked until all are confirmed.
