@@ -269,3 +269,31 @@ test('wave2 sprint state: combined effects are bounded, comfort and VFX off supp
   sprint.reset();
   assert.equal(sprint.update({ ...base, phase: 'paused' }).power, 0, 'restart clears visual state');
 });
+
+test('wave2 renderer distinguishes purple NITRO from cyan BOOST with shared geometry and bounded repeated triggers', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const { scene, vfx, race, options, vehicle } = fixture();
+  const sprint = createSprintVfx();
+  const input = { phase: 'racing', nitro: false, boost: true, speed: 82, cap: 110,
+    dt: 0.05, enabled: true, quality: 'high', reducedMotion: false };
+  const flow = vehicle.getObjectByName('Airflow showcase').children[0];
+  const initialObjects = scene.children.length;
+  let state = sprint.update(input);
+  vfx.update(race, 0.05, new Vector3(), options, false, state);
+  assert.ok(flow.material.uniforms.nitroMix, 'shader has a reusable NITRO color uniform');
+  const cyan = flow.material.uniforms.nitroMix.value;
+  race.player.boosting = false; race.player.nitroTime = 1;
+  state = sprint.update({ ...input, nitro: true, boost: false });
+  vfx.update(race, 0.05, new Vector3(), options, false, state);
+  const violet = flow.material.uniforms.nitroMix.value;
+  assert.ok(violet > cyan, 'NITRO must be visually distinguishable from BOOST');
+  race.player.boosting = true;
+  for (let i = 0; i < 60; i++) {
+    state = sprint.update({ ...input, nitro: i % 2 === 0, boost: true });
+    vfx.update(race, 0.05, new Vector3(), options, false, state);
+  }
+  assert.equal(scene.children.length, initialObjects, 'no per-trigger scene object allocations');
+  assert.ok(flow.material.uniforms.nitroMix.value <= 1, 'shader mix remains bounded');
+  vfx.reset();
+  assert.equal(scene.children.length, initialObjects, 'reset reuses existing GPU resources');
+});
