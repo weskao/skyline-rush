@@ -241,13 +241,19 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       if (pad) {
         await touch('touchStart', flyMode === 'toggle' ? [pad] : [fly, pad]);
         await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x-55}] : [fly,{...pad,x:pad.x-55}]);
-        await expect(page.locator('#tutorial-instruction')).toContainText('First airborne steering press detected');
+        // Observe the first engine-confirmed flick at animation-frame cadence, then
+        // immediately reverse within the real 0.3s trick window. Coarse locator
+        // polling can itself consume the player's entire timing window on CI.
+        await page.waitForFunction(() => document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected'), null, { polling: 'raf' });
         await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x+55}] : [fly,{...pad,x:pad.x+55}]);
         await expect(page.locator('#tutorial-instruction')).toContainText('BARREL ROLL in progress');
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
       } else {
         await touch('touchStart', flyMode === 'toggle' ? [left] : [fly,left]);
-        await expect(page.locator('#tutorial-instruction')).toContainText('First airborne steering press detected');
+        // Observe the first engine-confirmed flick at animation-frame cadence, then
+        // immediately reverse within the real 0.3s trick window. Coarse locator
+        // polling can itself consume the player's entire timing window on CI.
+        await page.waitForFunction(() => document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected'), null, { polling: 'raf' });
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
         await touch('touchStart', flyMode === 'toggle' ? [right] : [fly,right]);
         await expect(page.locator('#tutorial-instruction')).toContainText('BARREL ROLL in progress');

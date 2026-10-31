@@ -5,7 +5,9 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { ciTimeout } from './helpers/ci.js';
 
 test('airflow renders on every track with bounded resources and no shader errors', async ({ gameplayPage: page }, info) => {
-  test.setTimeout(ciTimeout(60_000));
+  // Ten CPU-rendered tracks, screenshots and 30 live frames per track can
+  // exceed three wall-clock minutes on CI. Keep every visual/resource assertion.
+  test.setTimeout(ciTimeout(120_000));
   const errors = [], records = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -107,7 +109,10 @@ test('flight flick triggers the roll wake without AIRFLOW preview', async ({ gam
   await expect.poll(() => page.evaluate(() => window.rollEvidence.max)).toBeGreaterThan(baseline);
   await page.screenshot({ path: info.outputPath('actual-barrel-roll.png') });
   await release();
-  await page.waitForTimeout(1800);
+  // The ribbon fades in simulation time (max 0.6s), not wall-clock time.
+  // Poll actual WebGL vertex alphas instead of assuming 1.8s is enough
+  // on CPU-only runners. This still requires every live roll vertex to clear.
+  await expect.poll(() => page.evaluate(() => window.rollLive()), { timeout: ciTimeout(12_000) }).toBe(baseline);
   const result = await page.evaluate(() => {
     return { count: window.rollLive(), boost: window.gameplay.race.player.boosting, programs: window.gameScene.renderer.info.programs.length, beforePrograms: window.rollEvidence.programs };
   });
