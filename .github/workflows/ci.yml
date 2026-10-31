@@ -1,9 +1,10 @@
 # Check main, develop, feature and fix branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
+# Browser and World Tour suites run only on main and develop (or an explicit full regression); other branches get unit + cloud-save.
 name: CI
 
 on:
   push:
-    # Feature and fix branches get the same gate; the retired MODE-00 branch
+    # Feature/fix/refactor pushes get the focused gate; the retired MODE-00 branch
     # remains excluded per its explicit CI-stop request.
     branches:
       - main
@@ -51,7 +52,7 @@ jobs:
   # responsive or track-theme tests sets the wall time: 8 slices peaked at 72 min, 16 at about 45 (measured on main).
   # Together with world-tour-mid-race this stays near GitHub's 20 concurrent jobs; more shards would mostly queue.
   browser-tests:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -131,7 +132,7 @@ jobs:
   # the middle of all five long World Tour routes. Test-only Vite fixture:
   # it is not included in the distributable production build.
   world-tour-mid-race:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
+    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
     runs-on: ubuntu-latest
     # CPU-only WebGL renders the ~250 per-map camera tests (about 150k frames) at ~9 fps, over two hours on one
     # runner. The slow camera views sit at the end of the list, so 6 contiguous slices ran 5 to 40 min; 8 peak at ~34.
@@ -155,7 +156,7 @@ jobs:
           path: test-results/**/world-tour-*-mid-race.png
           if-no-files-found: ignore
 
-  # A single required status for every feature branch and normal main push.
+  # A single required status for every branch push: full on main/develop, focused elsewhere.
   # A branch ruleset can require this job; no direct-push protection is implied
   # by the workflow file alone.
   quality-gate:
@@ -169,13 +170,13 @@ jobs:
         with:
           node-version: 22
       - uses: actions/download-artifact@v4
-        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
+        if: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')) }}"
         with:
           pattern: render-performance-*
           path: ${{ runner.temp }}/render-performance
           merge-multiple: true
       - name: Verify software-WebGL evidence coverage and rendering budgets
-        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
+        if: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')) }}"
         run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
       - name: Require every verification suite to pass
         env:
@@ -183,19 +184,19 @@ jobs:
           BROWSER: ${{ needs.browser-tests.result }}
           CLOUD: ${{ needs.cloud-save.result }}
           WORLD_TOUR: ${{ needs.world-tour-mid-race.result }}
-          FOCUSED: ${{ startsWith(github.ref, 'refs/heads/refactor/') && !((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}
+          FOCUSED: ${{ !(github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}
         run: |
           printf 'unit=%s browser=%s cloud=%s world-tour=%s\\n' "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"
           if [ "$FOCUSED" = 'true' ]; then
             for result in "$UNIT" "$CLOUD"; do
               if [ "$result" != success ]; then
-                echo "::error::Focused refactor CI requires typecheck/unit and cloud-save."
+                echo "::error::Focused branch CI requires typecheck/unit and cloud-save."
                 exit 1
               fi
             done
             for result in "$BROWSER" "$WORLD_TOUR"; do
               if [ "$result" != skipped ]; then
-                echo "::error::Browser and World Tour must be skipped in focused refactor CI."
+                echo "::error::Browser and World Tour must be skipped in focused branch CI."
                 exit 1
               fi
             done

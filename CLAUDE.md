@@ -364,9 +364,12 @@ order and never re-sort it by hand.
 - `README.md` changed → sync `README.zh-TW.md` via `scripts/readme-zh.mjs` (hooks enforce it).
 - A commit on `main` is not a deploy; publication rules are in `.github/workflows/ci.yml`.
 
-- All feature branches (except the explicitly disabled MODE-00 branch) run the same remote CI;
-  the `quality-gate` job requires unit, browser, cloud-save and World Tour checks to
-  succeed. A successful run on a previous commit does **not** validate the new HEAD.
+- Only `main` and `develop` run the full remote CI: the `quality-gate` job requires unit,
+  browser, cloud-save and World Tour checks to succeed. `feature/**`, `fix/**` and `refactor/**`
+  pushes run a focused gate (unit + cloud-save; browser and World Tour skipped) unless the commit
+  message has `[full-regression]` or a manual run sets `full_regression`. The full suite on
+  `develop` after the merge is the acceptance gate. A successful run on a previous commit does
+  **not** validate the new HEAD.
 - CI runs and optional screenshot artifacts are evidence for review, not substitutes
   for real vehicle/road contact or manual interaction testing on devices.
 
