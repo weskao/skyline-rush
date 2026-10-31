@@ -102,6 +102,22 @@ flowchart TD
 
 **Verification performed:** Source SVG files were fetched back through GitHub and checked for expected transparent roots, 96×96 viewport, titles, balanced XML-like tag structure, and absence of external resources/scripts. These checks **do not** constitute actual iPhone/Android/desktop screenshot, UI integration, TDD or green CI evidence. When integrating, test missing-asset fallbacks, readable bilingual labels, Low/Medium/High, Reduced Motion and exact-HEAD CI before marking any `TODO.md` `- [x]`.
 
+## Visual Fidelity — original AI reference restoration and branch gates (2026-10-31)
+
+The user's original rich neon/metallic style images have been **located** as real PNG files in the current conversation, cropped into **14 candidate reference images**, and packaged in `skyline-rush-design-reference-crops.zip` (conversation download; **the PNG bytes are not yet in GitHub**). This matters: earlier simplified 96px SVGs and dark CSS sketches do not have the same fidelity as original art, and CI green does not certify visual consistency.
+
+**Source hashes for provenance:**
+
+- `image(20261030-194940).png`: `b5c230027dd8c7923e73550135ec05f216d9941c2e2b725177764fd0f153ab7d`
+- `a_clean_high_resolution_game_ui_asset_showcase_sh.png`: `ed04a69c57a9d6982f0f5f6ed02aa7542821c617134065fbdd040d7ef91bca41`
+- `a_detailed_infographic_style_concept_design_mockup.png`: `80db0c6a726362ac3df9981b98427eff96e558809368404ab2734919d22943c3`
+
+**Shared specification:** [Visual Fidelity Gate](https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/docs/superpowers/specs/2026-10-31-visual-fidelity-gate.md). All ten feature branches now have a `docs/designs/<slug>/VISUAL-FIDELITY.md` listing original reference crop(s), actual code owners and pending approval. Two Wave 1 branches also contain **editable DRAFT** layout SVGs (`feature/garage-preview-studio` desktop/mobile and `feature/mobile-controls-hud` portrait/landscape). They are placement sketches, *not* accepted production-grade artwork.
+
+**Correct workflow for visually affected implementation:** Import and preserve approved image bytes into the feature branch with real Git blob SHAs; lock the viewport-responsive geometry, graphics/lighting/typography/camera and interactivity contract; obtain design approval; RED BDD/Playwright tests and baseline real screenshots; GREEN Vue 3 strict TypeScript/CSS + shared Three.js implementation and actual assets; refactor and run screenshot/video comparison + performance and browser tests; final exact-HEAD CI; only then mark verified TODO child items `- [x]`. If screenshots or design approval cannot be obtained, record **BLOCKED / PENDING_REVIEW**, never claim parity or infer a percent score. All artwork and reviews must remain true for Android/iOS portrait+landscape, desktop, Low/Medium/High and Reduced Motion.
+
+**Reference locations per branch:** [Tutorial](https://github.com/weskao/skyline-rush/blob/feature/tutorial-ux-combos/docs/designs/tutorial-ux-combos/VISUAL-FIDELITY.md) · [HUD](https://github.com/weskao/skyline-rush/blob/feature/mobile-controls-hud/docs/designs/mobile-controls-hud/VISUAL-FIDELITY.md) · [Garage](https://github.com/weskao/skyline-rush/blob/feature/garage-preview-studio/docs/designs/garage-preview-studio/VISUAL-FIDELITY.md) · [High-speed VFX](https://github.com/weskao/skyline-rush/blob/feature/high-speed-vfx/docs/designs/high-speed-vfx/VISUAL-FIDELITY.md) · [Garage Skins](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/docs/designs/garage-vfx-skins/VISUAL-FIDELITY.md) · [Rewards](https://github.com/weskao/skyline-rush/blob/feature/garage-rewards-and-missions/docs/designs/garage-rewards-and-missions/VISUAL-FIDELITY.md) · [Store](https://github.com/weskao/skyline-rush/blob/feature/garage-store-readiness/docs/designs/garage-store-readiness/VISUAL-FIDELITY.md).
+
 ## Coordination notes
 
 - UI/UX planning TODO `feature/ux-ui-combo-mobile-controls` has not been merged into `main`. Implementation branches were created from `main` (2026-10-31; `bea47cf61c162b4341021fa6d24ca45850af7796`). Before TDD work begins, reconcile approved requirements without overwriting their history.
