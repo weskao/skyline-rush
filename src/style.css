@@ -791,6 +791,8 @@ body.layout-editing #touch-controls { display: grid; }
 .layout-editing .telemetry { opacity: .35; pointer-events: none; }
 .layout-editing .aero-tools { visibility: hidden; }
 .nitro-hud { margin-top: 10px; font-size: 8px; letter-spacing: 1px; color: #f2d39e; }
+/* Bilingual status includes Han glyphs: keep them legible at all orientations. */
+#nitro-status:lang(zh-TW) { font-size: 10px; }
 .nitro-meter { display: flex; gap: 4px; margin-top: 5px; }
 .nitro-segment { flex: 1; height: 7px; overflow: hidden; border: 1px solid #ae946f; border-radius: 8px; background: #233748; }
 .nitro-segment i { display: block; position: relative; height: 100%; background: #f7c576; transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }

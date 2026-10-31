@@ -276,7 +276,10 @@ export function createRaceHud(options: HudOptions) {
       ui.leaderboard!.innerHTML = names.map(() => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
       leaderboardRows = [...ui.leaderboard!.children] as HTMLElement[];
       racerRows.clear();
-      names.forEach((name, i) => racerRows.set(name, leaderboardRows[i]!));
+      names.forEach((name, i) => {
+        if (name !== 'YOU') leaderboardRows[i]!.children[2]!.setAttribute('lang', 'en');
+        racerRows.set(name, leaderboardRows[i]!);
+      });
       leaderboardOrder = '';
     }
     const racers: { name: string; distance: number; player?: boolean }[] = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
