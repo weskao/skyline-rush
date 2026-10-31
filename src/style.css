@@ -1749,3 +1749,8 @@ body[data-fold-axis="horizontal"] .race-route-map {
 
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
+
+/* Short landscape audio menus must scroll entirely inside the visible viewport. */
+@media (max-height: 380px) {
+  .settings-panel { max-height: calc(100dvh - 100px - env(safe-area-inset-bottom, 0px)); }
+}

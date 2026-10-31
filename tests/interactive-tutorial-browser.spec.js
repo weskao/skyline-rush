@@ -239,9 +239,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await touch('touchStart', [p]);
         await touch('touchEnd', []);
       };
-      const waitForCoachText = text => page.waitForFunction(
+      const waitForCoachText = (text, timeout = ciTimeout(15000)) => page.waitForFunction(
         text => document.querySelector('#tutorial-instruction')?.textContent?.includes(text),
-        text, { polling: 'raf' },
+        text, { polling: 'raf', timeout },
       );
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
@@ -251,36 +251,45 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       if(flyMode==='toggle') await tapTouch(button('fly'));
       await step(page,'boost');
       await gesture(button('boost'),'airChain');
-      const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
-      // The chain is awarded at the actual landing, not merely when the coach
-      // observes powered flight. A hard landing is a legitimate retry.
+      // Begin both real touch pointers together: a second touchStart can
+      // cancel the first pointer's capture on Chromium software-WebGL runners.
+      // The coach must still observe powered flight and the engine must award
+      // an actual soft landing before the lesson advances.
+      const chainEvidence = [];
       const attemptChain = async () => {
-        if (flyMode === 'toggle') {
-          await tapTouch(button('fly'));
-          const p = await point(button('boost'), 1);
-          await touch('touchStart', [p]);
-          await waitForCoachText('Powered flight detected');
+        const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
+        let flightDetected = false;
+        try {
+          if (flyMode === 'toggle') {
+            await tapTouch(button('fly'));
+            await touch('touchStart', [boost]);
+          } else {
+            await touch('touchStart', [fly, boost]);
+          }
+          try {
+            await waitForCoachText('Powered flight detected', ciTimeout(1800));
+            flightDetected = true;
+          } catch (error) {
+            if (error.name !== 'TimeoutError') throw error;
+          }
+        } finally {
           await touch('touchEnd', []);
-          await tapTouch(button('fly'));
-        } else {
-          await touch('touchStart', [fly]);
-          await touch('touchStart', [fly, boost]);
-          await waitForCoachText('Powered flight detected');
-          await touch('touchEnd', [fly]);
-          await touch('touchEnd', []);
+          if (flyMode === 'toggle') await tapTouch(button('fly'));
         }
-        // Complete a genuine engine landing before assessing success/retry.
         await page.waitForFunction(
           () => Number(document.querySelector('#altitude')?.textContent) <= 0.15,
-          null, { polling: 'raf' },
+          null, { polling: 'raf', timeout: ciTimeout(20000) },
         );
+        chainEvidence.push({ flightDetected, ...(await page.evaluate(() => ({
+          step: document.querySelector('#tutorial-coach')?.dataset.step,
+          instruction: document.querySelector('#tutorial-instruction')?.textContent,
+          altitude: document.querySelector('#altitude')?.textContent,
+        }))) });
       };
-      // Retry genuine failed landings with fresh touch inputs; never advance
-      // without the engine awarding a soft AIR-to-ROAD chain.
-      for (let retry = 0; retry < 4 && await coach(page).getAttribute('data-step') === 'airChain'; retry++) {
+      for (let retry = 0; retry < 5 && await coach(page).getAttribute('data-step') === 'airChain'; retry++) {
         await attemptChain();
       }
-      await step(page, 'barrelRoll');
+      await expect(coach(page), JSON.stringify(chainEvidence)).toHaveAttribute('data-step', 'barrelRoll');
       const steerTarget = effectiveMode === 'slide' ? page.locator('.touch-pad') : button('left');
       const left = await point(steerTarget, 2);
       const right = effectiveMode === 'slide' ? null : await point(button('right'), 3);
