@@ -58,6 +58,14 @@
 
 **強制交接：** 先讀 `docs/superpowers/plans/2026-10-31-garage-vfx-skins-plan.md` 的「Independent artwork pre-production handoff」；不能因為檔案已存在就把任何遊戲功能或 `TODO.md` 主項目標記 `- [x]`。既有素材與 `ASSET-MANIFEST.md` 應保留，後續真正 Vue/Three.js 整合、Fallback、BDD/TDD、Android/iOS 直橫向及完整 CI 仍須完成，且遵循原 Wave 前置依賴。
 
+### 3C. Visual Fidelity Gate：以原始圖片為準的畫面驗收
+
+**所屬分支參考圖、素材與待核准清單：** [Feature visual design contract](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/docs/designs/garage-vfx-skins/VISUAL-FIDELITY.md)
+
+請使用使用者提供的**原始高畫質概念圖**作為候選美術方向，不是用先前自製的簡化 SVG 冒充同一張圖片。原圖的 SHA-256 已記在上述文件，會話中有 `skyline-rush-design-reference-crops.zip`；**GitHub 尚未保存該 ZIP 內原始 PNG bytes**，後續須先保留正式選定的來源檔並記錄 Git SHA，等待美術核准。已存在的簡化 SVG 可重用作分類提示，但不能當高擬真美術已完成。
+
+在前置 Wave 真正完成後，使用 SDD → BDD → TDD 將正式 UI／特效轉為 Vue 3 + strict TypeScript + Three.js，強制檢查 mobile Android/iOS 直橫向與 Desktop、Low/Medium/High、無障礙、真透明背景及 FPS。以 Playwright 擷取**真實**畫面與 10–20 秒操作影片，比對核准圖的構圖、材質、光影、顏色、Icon、按鈕及動畫。沒有真實截圖／設計核准，不得宣稱達成 Visual Fidelity 或將 TODO 子項目勾選 `- [x]`。如果本分支實際只有 Economy 型別／資料契約，則標為 `NOT_APPLICABLE`，不必浪費資源生成圖片。
+
 ### 4. 完成、TODO 勾選與合併 Gate
 
 - 實作完畢後執行相關 `npm run typecheck`、`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`、`make verify`，以及受影響的 World Tour、Cloud Save 等測試；確認最後 HEAD 的 GitHub Actions `quality-gate` 完整通過。
