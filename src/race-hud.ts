@@ -54,6 +54,7 @@ export function createRaceHud(options: HudOptions) {
   let leaderboardRows: HTMLElement[] = [];
   let roster = '';
   const racerRows = new Map<string, HTMLElement>();
+  const positionFieldSize = document.getElementById('position-field-size');
   const touchButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-control]')];
   const speedNeedle = $('#speed-needle');
   const positionChange = $('#position-change');
@@ -271,6 +272,7 @@ export function createRaceHud(options: HudOptions) {
     const names = ['YOU', ...race.rivals.map((rival: { name: string }) => rival.name)];
     if (names.join(',') !== roster) {
       roster = names.join(',');
+      if (positionFieldSize) setHudText(positionFieldSize, `/ ${String(names.length).padStart(2, '0')}`);
       ui.leaderboard!.innerHTML = names.map(() => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
       leaderboardRows = [...ui.leaderboard!.children] as HTMLElement[];
       racerRows.clear();

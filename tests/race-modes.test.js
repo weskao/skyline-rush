@@ -17,7 +17,7 @@ test('normalization keeps classic defaults and validates mode names', () => {
 
 test('custom settings are bounded and have deterministic safe defaults', () => {
   assert.deepEqual(normalizeRaceConfig({ mode: 'custom', rivals: 0, traffic: 'off', items: false }).rivals, 0);
-  assert.equal(normalizeRaceConfig({ mode: 'custom', rivals: 20 }).rivals, 7);
+  assert.equal(normalizeRaceConfig({ mode: 'custom', rivals: 20 }).rivals, 3);
   assert.equal(normalizeRaceConfig({ mode: 'custom', traffic: 'garbage' }).traffic, 'normal');
   assert.equal(normalizeRaceConfig({ mode: 'time', rivals: 3 }).rivals, 0);
   assert.equal(normalizeRaceConfig({ mode: 'free', rivals: 1 }).rivals, 0);

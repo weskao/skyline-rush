@@ -20,7 +20,7 @@ export function normalizeRaceConfig(value: unknown = {}) {
   const legacyFour = !custom && value.rulesVersion === 1 && value.rivals === 3;
   const competitive = ['classic', 'cup', 'elimination', 'circuit'].includes(mode);
   const rivals = custom
-    ? typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 7 ? value.rivals : 7
+    ? typeof value.rivals === 'number' && Number.isInteger(value.rivals) && value.rivals >= 0 && value.rivals <= 7 ? value.rivals : 3
     : competitive ? legacyFour ? 3 : 7 : 0;
   return Object.freeze({
     rulesVersion: 1,

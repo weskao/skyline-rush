@@ -14,6 +14,7 @@ test('eight-car Classic renders real WebGL, eight HUD rows and eight minimap mar
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
   await expect(page.locator('#leaderboard .racer')).toHaveCount(8, { timeout: ciTimeout(15000) });
+  await expect(page.locator('#position-field-size')).toHaveText('/ 08');
   await expect(page.locator('#race-route-map [data-racer]')).toHaveCount(8);
   await page.screenshot({ path: 'test-results/race-mode-eight-car-grid-desktop.png' });
   expect(errors).toEqual([]);
