@@ -80,3 +80,15 @@ test('default cosmetics are equipped without a trial and do not modify PAINTS', 
   assert.equal(skins.active('launch-flare'), 'launch-flare-basic');
   assert.deepEqual(skins.cloudPayload(), { version: 1, accountId: account, owned: [], equipped: { 'launch-flare': 'launch-flare-basic' } });
 });
+
+test('revoking trial drops temporary equips; a later feature flag must not silently re-equip', () => {
+  const skins = createGarageSkinSession(account, clock);
+  skins.setTrial(trial);
+  assert.equal(skins.equip('thruster-ion'), true);
+  assert.equal(skins.select('nitro-trail-cyan'), true);
+  skins.setTrial({ enabled: false, expiresAt: 0 });
+  assert.equal(skins.active('thruster'), 'thruster-basic');
+  assert.equal(skins.preview('nitro-trail'), 'nitro-trail-basic');
+  skins.setTrial(trial);
+  assert.equal(skins.active('thruster'), 'thruster-basic');
+});
