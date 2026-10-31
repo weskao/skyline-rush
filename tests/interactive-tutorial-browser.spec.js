@@ -44,7 +44,7 @@ const keyboardRoll = async page => {
   await page.keyboard.up('a');
   await page.keyboard.down('d');
   await page.waitForFunction(
-    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('BARREL ROLL in progress'),
+    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('BARREL ROLL spinning'),
     null, { polling: 'raf' },
   );
   await page.keyboard.up('d');
@@ -291,14 +291,14 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         // 0.3-second trick window; never synthesize a trick or payout.
         await waitForCoachText('First airborne steering press detected');
         await touch('touchMove', [{...pad,x:pad.x+55}]);
-        await waitForCoachText('BARREL ROLL in progress');
+        await waitForCoachText('BARREL ROLL spinning');
         await touch('touchEnd', []);
       } else {
         await touch('touchStart', [left]);
         await waitForCoachText('First airborne steering press detected');
         await touch('touchEnd', []);
         await touch('touchStart', [right]);
-        await waitForCoachText('BARREL ROLL in progress');
+        await waitForCoachText('BARREL ROLL spinning');
         await touch('touchEnd', []);
       }
       // The actual engine must finish the roll and pay NITRO on a gentle

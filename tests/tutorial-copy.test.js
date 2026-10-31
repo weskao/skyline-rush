@@ -19,4 +19,8 @@ test('all bilingual interactive tutorial strings are retained in the public UI c
   }
   assert.match(UI.en['tutorial.completedCopy'], /ten actions/);
   assert.match(UI['zh-TW']['tutorial.completedCopy'], /十項操作/);
+  for (const key of ['tutorial.barrelRoll', 'tutorial.touch.barrelRoll', 'tutorial.slide.barrelRoll', 'tutorial.tilt.barrelRoll']) {
+    assert.match(UI.en[key], /release it to glide/, `${key}: English must cue a safe glide`);
+    assert.match(UI['zh-TW'][key], /放開/, `${key}: Traditional Chinese must cue releasing FLY`);
+  }
 });
