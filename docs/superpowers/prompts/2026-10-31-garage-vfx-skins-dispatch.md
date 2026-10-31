@@ -50,6 +50,14 @@
 6. **SDD → BDD → TDD 與品質：** 先定義資產契約／場景／Alpha 條件，再定義 Given／When／Then，對不存在／載入失敗／低畫質／Reduced Motion／深淺背景與小螢幕寫 RED 測試，製作／整合後執行 GREEN。驗收 Android/iOS 直橫向、桌面、Low／Medium／High、VFX Off，使用實際遊戲截圖對比設計，量測下載大小、FPS／p95 frame time、Draw Calls／Triangles 或 shader/cache 影響，無資產時有正常 Fallback。
 7. **執行與放行：** 本次是規劃文件更新，**不代表已有 PNG/WebP/SVG 或已實作**。後續各分支只在自己的 Wave 依賴完成後開始，完成實作與完整驗證才在正確整合的 `TODO.md` 改成 `- [x]`，不得自行合併 main 或跨分支搶改共用 renderer。
 
+### 3B. 預先完成的獨立美術資產／待前置完成的工作
+
+**已提交到本分支的素材（完成範圍僅限素材檔案）：** [Commit `45f0649`](https://github.com/weskao/skyline-rush/commit/45f0649e9c07fc39f2432659322addd995c021bd)；路徑 `public/feature-assets/garage-vfx-skins/`；檔案 `thruster.svg`, `airflow.svg`, `nitro-trail.svg`, `launch-flare.svg`。
+
+四款通用分類圖示是**已提交、可重用的透明 SVG**；不要重複生成，只有新 Skins 品項縮圖、真正 VFX／試用狀態必須等 Garage Studio + High-speed VFX 完成後才開始整合。
+
+**強制交接：** 先讀 `docs/superpowers/plans/2026-10-31-garage-vfx-skins-plan.md` 的「Independent artwork pre-production handoff」；不能因為檔案已存在就把任何遊戲功能或 `TODO.md` 主項目標記 `- [x]`。既有素材與 `ASSET-MANIFEST.md` 應保留，後續真正 Vue/Three.js 整合、Fallback、BDD/TDD、Android/iOS 直橫向及完整 CI 仍須完成，且遵循原 Wave 前置依賴。
+
 ### 4. 完成、TODO 勾選與合併 Gate
 
 - 實作完畢後執行相關 `npm run typecheck`、`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`、`make verify`，以及受影響的 World Tour、Cloud Save 等測試；確認最後 HEAD 的 GitHub Actions `quality-gate` 完整通過。
