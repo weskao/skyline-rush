@@ -1073,9 +1073,11 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
           await expect(page.locator('#touch-controls')).toBeVisible();
           const bounds = await visibleBounds(page);
           const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
-          expect(touchButtons.map(bound => bound.name).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
-            ? ['Accelerate', 'NITRO UNAVAILABLE', 'Hold to boost', 'Hold to fly']
-            : ['Accelerate', 'Activate nitro', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']);
+          // The HUD owns NITRO's accessible state label; geometry checks should not depend on charge timing.
+          const names = touchButtons.map(bound => bound.name.replace(/^NITRO .+$/, 'NITRO')).sort();
+          expect(names, `${mode} ${size}`).toEqual((mode === 'slide'
+            ? ['Accelerate', 'NITRO', 'Hold to boost', 'Hold to fly']
+            : ['Accelerate', 'NITRO', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']).sort());
           expect(bounds.some(bound => bound.pad)).toBe(mode === 'slide');
           for (const bound of bounds) {
             const label = `${mode} ${size} ${bound.name}`;

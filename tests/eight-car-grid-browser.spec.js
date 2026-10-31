@@ -27,6 +27,8 @@ test('Custom 2 and 8 total racers work in a real mobile race, preserving leaderb
   await page.goto('/');
   await closeMusic(page);
   await page.locator('button[data-race-mode="custom"]').click();
+  // Custom rules live inside a collapsed <details>; open the real UI before selecting.
+  await page.locator('#race-mode-rules > summary').click();
   const rivals = page.locator('[data-race-rule="rivals"] + .custom-select');
   await rivals.getByRole('combobox').click();
   await rivals.getByRole('option', { name: '7', exact: true }).click();
@@ -45,6 +47,8 @@ test('Custom two-car race runs in real portrait WebGL with one AI', async ({ pag
   await page.goto('/');
   await closeMusic(page);
   await page.locator('button[data-race-mode="custom"]').click();
+  // Custom rules live inside a collapsed <details>; open the real UI before selecting.
+  await page.locator('#race-mode-rules > summary').click();
   const rivals = page.locator('[data-race-rule="rivals"] + .custom-select');
   await rivals.getByRole('combobox').click();
   await rivals.getByRole('option', { name: '1', exact: true }).click();

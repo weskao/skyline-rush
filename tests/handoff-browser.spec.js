@@ -81,12 +81,12 @@ test.describe('touch controls', () => {
     await page.keyboard.press('p');
     await expect(page.locator('#layout-toolbar')).toBeHidden();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')));
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape);
     expect(Object.keys(saved.layout)).toHaveLength(7);
     await page.reload();
     await start(page);
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', 'right');
-    const savedAgain = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')));
+    const savedAgain = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape);
     expect(savedAgain.layout).toEqual(saved.layout);
     for (const [action, point] of Object.entries(saved.layout)) {
       const rect = await page.locator(`[data-control="${action}"]`).boundingBox();
@@ -108,7 +108,7 @@ test.describe('touch controls', () => {
     await page.locator('#layout-done').click();
     await page.locator('#controls-button').click();
     await page.locator('#layout-reset').click();
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).layout)).toEqual({});
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape)).toEqual({});
   });
   test('edited touch buttons remain inside notched-screen safe areas', async ({ page, context }) => {
     await open(page);

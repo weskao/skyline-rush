@@ -45,7 +45,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 @media (hover: hover) { .icon-button:hover:not(:disabled) { background: rgb(255 255 255 / .15); } }
 /* Icons are re-rendered on audio changes; keep click targets on the stable button. */
 .icon-button svg { pointer-events: none; }
-.settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; max-height: calc(100dvh - 80px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
+.settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; max-height: calc(100dvh - 82px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
 #settings-panel { width: min(260px, calc(100vw - 24px)); }
 /* Chrome ignores ::-webkit-scrollbar once scrollbar-color is set, so the standard properties are for Firefox only. */
 @supports not selector(::-webkit-scrollbar) { #settings-panel { scrollbar-width: thin; scrollbar-color: rgb(195 224 244 / .35) transparent; } }
@@ -444,6 +444,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .impact-report { top: 28%; }
 }
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  /* Reserve the left 100px for the speed readout; eight leaderboard rows occupy the next column. */
+  .speedometer { width: 100px; flex: 0 0 100px; }
   .leaderboard { position: fixed; left: 150px; top: 82px; width: clamp(96px, calc(50vw - 284px), 130px); padding: 4px 6px; }
   .racer { gap: 5px; }
   /* POSITION ended flush on the speed readout, so a home-indicator inset (it lifts the gauges) made them overlap */
@@ -1211,7 +1213,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-spiral-direction { stroke:#fff6d9; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
-.race-route-map { position:fixed; top:292px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
+.race-route-map { position:fixed; top:300px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
 .route-driver-you { fill:#fff; stroke:#09e5ff; stroke-width:2.1; }
