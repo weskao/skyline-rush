@@ -288,14 +288,15 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
           const p = await point(button('boost'), 1);
           await touch('touchStart', [p]);
           await waitForCoachText('Powered flight detected');
+          // Unlatch FLY in the first dispatch: on slow software-WebGL frames every
+          // extra round trip lets the car climb past a soft-landing height.
+          await touch('touchStart', [p, await point(button('fly'), 2)]);
           await touch('touchEnd', []);
-          await tapTouch(button('fly'));
         } else {
           await touch('touchStart', [fly]);
           await touch('touchStart', [fly, boost]);
-          // rAF polling releases thrust as soon as the engine confirms powered flight.
           await waitForCoachText('Powered flight detected');
-          await touch('touchEnd', [fly]);
+          // One dispatch releases FLY and BOOST together, for the same reason.
           await touch('touchEnd', []);
         }
         await page.waitForFunction(() => {
@@ -339,8 +340,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         } else {
           await touch('touchStart', [left]);
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
-          await touch('touchEnd', []);
-          await touch('touchStart', [right]);
+          // Release LEFT and press RIGHT with no round trip between them: each awaited
+          // CDP call can cost a slow software-WebGL frame, and the window is ~6 frames.
+          await Promise.all([touch('touchEnd', []), touch('touchStart', [right])]);
           // The fixed-step game reads touch state on rAF, not at CDP dispatch.
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
           await touch('touchEnd', []);
