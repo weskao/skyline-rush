@@ -14,7 +14,7 @@ function performDrift(session) {
   const start = session.index;
   const car = session.race.player;
   const nitroBefore = car.nitro;
-  for (let i = 0; i < 130; i++) tick(session, { brake: true, steer: -1 });
+  // Keep the car away from the guardrail: sustained one-way steering hits the\n  // rail, which correctly cancels a real drift in the physics engine.\n  for (let i = 0; i < 130; i++) tick(session, { brake: true, steer: Math.floor(i / 10) % 2 ? 1 : -1 });
   assert.equal(session.index, start, 'drift is paid only on release');
   tick(session, { throttle: true });
   assert.equal(session.index, start + 1, 'real drift payout advances the lesson');
