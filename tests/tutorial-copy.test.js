@@ -7,8 +7,11 @@ test('all bilingual interactive tutorial strings are retained in the public UI c
   const english = Object.keys(TUTORIAL_COPY.en).sort();
   const chinese = Object.keys(TUTORIAL_COPY['zh-TW']).sort();
   assert.deepEqual(chinese, english, 'the two tutorial languages must have identical keys');
-  assert.equal(english.length, 53, 'all lesson, coaching and touch/tilt hints remain available');
+  assert.equal(english.length, 59, 'all lesson, coaching and touch/tilt hints remain available');
   assert.ok(english.includes('tutorial.barrelRollReadyToLand'));
+  assert.ok(english.includes('tutorial.drift'));
+  assert.match(UI.en['tutorial.drift'], /0.15 NITRO/);
+  assert.match(UI['zh-TW']['tutorial.drift'], /甩尾/);
   assert.ok(english.includes('tutorial.barrelRollFlicked'), 'new airborne reverse-steer coaching must be localized');
   for (const locale of ['en', 'zh-TW']) {
     for (const key of english) {
@@ -17,8 +20,8 @@ test('all bilingual interactive tutorial strings are retained in the public UI c
       assert.ok(UI[locale][key].length > 0, `${locale} ${key}`);
     }
   }
-  assert.match(UI.en['tutorial.completedCopy'], /ten actions/);
-  assert.match(UI['zh-TW']['tutorial.completedCopy'], /十項操作/);
+  assert.match(UI.en['tutorial.completedCopy'], /eleven actions/);
+  assert.match(UI['zh-TW']['tutorial.completedCopy'], /十一項操作/);
   for (const key of ['tutorial.barrelRoll', 'tutorial.touch.barrelRoll', 'tutorial.slide.barrelRoll', 'tutorial.tilt.barrelRoll']) {
     assert.match(UI.en[key], /release it to glide/, `${key}: English must cue a safe glide`);
     assert.match(UI['zh-TW'][key], /放開/, `${key}: Traditional Chinese must cue releasing FLY`);
