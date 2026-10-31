@@ -56,6 +56,10 @@ export function createGarageSkinSession(accountId: string, now: () => number, in
         enabled: next.enabled === true,
         expiresAt: Number.isFinite(next.expiresAt) ? next.expiresAt : 0,
       };
+      if (!trial.enabled || trial.expiresAt <= now()) {
+        selected = null;
+        for (const category of Object.keys(temporary) as SkinCategory[]) delete temporary[category];
+      }
     },
     setAccount(nextId: string, initialProfile?: unknown) {
       profile = normalizeSkinProfile(initialProfile, nextId);
