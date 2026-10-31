@@ -72,7 +72,7 @@ export function createInteractiveTutorial() {
     race,
     get index() { return index; },
     get step() { return TUTORIAL_STEPS[index] ?? null; },
-    get progress() { return index === TUTORIAL_STEPS.length ? 1 : TUTORIAL_STEPS[index] === 'drift' ? Math.min(1, (car.drift?.time ?? 0) / 1) : maneuver?.progress ?? Math.min(1, held / .4); },
+    get progress() { return index === TUTORIAL_STEPS.length ? 1 : TUTORIAL_STEPS[index] === 'drift' ? Math.min(1, ((car as unknown as { drift: { time: number } | null }).drift?.time ?? 0) / 1) : maneuver?.progress ?? Math.min(1, held / .4); },
     get coachPhase() { return maneuver?.phase ?? 'ready'; },
     get complete() { return index === TUTORIAL_STEPS.length; },
     update(input: unknown, dt: number): void {
@@ -94,7 +94,7 @@ export function createInteractiveTutorial() {
       else if (step === 'left') valid = typeof controls.steer === 'number' && Number.isFinite(controls.steer) && controls.steer < 0 && car.steering < 0;
       else if (step === 'right') valid = typeof controls.steer === 'number' && Number.isFinite(controls.steer) && controls.steer > 0 && car.steering > 0;
       else if (step === 'brake') valid = controls.brake === true && car.braking && car.speed < previousSpeed;
-      else if (step === 'drift') valid = car.driftPayout?.nitro >= 0.15 && car.miniBoost > 0;
+      else if (step === 'drift') valid = ((car as unknown as { driftPayout: { nitro: number } | null }).driftPayout?.nitro ?? 0) >= 0.15 && car.miniBoost > 0;
       else if (step === 'fly') valid = controls.fly === true && car.altitude > 1;
       else if (step === 'land') valid = !controls.fly && car.altitude < .15;
       else if (step === 'boost') valid = controls.boost === true && car.boosting;
