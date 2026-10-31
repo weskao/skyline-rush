@@ -714,6 +714,10 @@ test.describe('phone game gestures', () => {
     for (const type of ['contextmenu', 'dragstart', 'selectstart']) {
       expect(await title.evaluate((element, type) => element.dispatchEvent(new Event(type, { bubbles: true, cancelable: true })), type)).toBe(false);
     }
+    // iOS shows its long-press magnifier loupe despite user-select: none; holding a control must cancel touchstart.
+    for (const selector of ['#touch-controls [data-control="throttle"]', '.touch-pad']) {
+      expect(await page.locator(selector).evaluate(element => element.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true })))).toBe(false);
+    }
     // Touch starts with AUTO on, which shows the gas as held; turn it off so the gas button reflects only the finger.
     const assist = page.locator('#assist-button');
     const onBorder = await assist.evaluate((element) => getComputedStyle(element).borderColor);
