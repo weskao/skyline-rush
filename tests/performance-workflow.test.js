@@ -23,14 +23,14 @@ test('CI quality-gate validates complete structured WebGL output before reportin
   assert.ok(quality.includes('Require every verification suite to pass'));
 });
 
-test('focused refactor CI skips artifact download and performance gate when Browser is intentionally skipped',()=>{
+test('focused branch CI skips artifact download and performance gate when Browser is intentionally skipped',()=>{
   const quality=section('quality-gate','release-verified');
   for(const marker of ['- uses: actions/download-artifact@v4',
     '- name: Verify software-WebGL evidence coverage and rendering budgets']){
     const index=quality.indexOf(marker);
     assert.ok(index>=0,'missing gate: '+marker);
     const stepLines=quality.slice(index).split('\n').slice(0,3).join('\n');
-    assert.match(stepLines,/if:.*refactor.*full.regression/,
-      'performance gate must only run for full Browser CI, not focused refactor CI');
+    assert.match(stepLines,/if:.*refs\/heads\/develop.*full.regression/,
+      'performance gate must only run for full Browser CI, not focused branch CI');
   }
 });
