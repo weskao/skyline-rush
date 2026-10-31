@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CAR_STYLES, makeCar } from './car-model.js';
 import type { GarageCamera } from './garage-camera.ts';
+import { garageFittedDistance } from './garage-camera.ts';
 import type { PaintPreset } from './appearance.ts';
 
 // Dedicated scene, not a renderer or canvas. Reuse the world's composer, camera and GPU context.
@@ -14,6 +15,7 @@ export function createGarageStage(environment: THREE.Texture) {
   const car = makeCar(CAR_STYLES.roadster);
   car.position.y = 0.06;
   scene.add(car);
+  const carRadius = new THREE.Box3().setFromObject(car).getBoundingSphere(new THREE.Sphere()).radius;
   const platform = new THREE.Mesh(
     new THREE.CylinderGeometry(5.65, 5.65, 0.18, 64),
     new THREE.MeshStandardMaterial({ color: '#172a36', metalness: 0.7, roughness: 0.36 }),
@@ -54,7 +56,7 @@ export function createGarageStage(environment: THREE.Texture) {
   function update(camera: THREE.PerspectiveCamera, state: GarageCamera, time: number, reducedMotion: boolean) {
     const yaw = state.yaw + (state.autoRotate && !reducedMotion ? time * 0.13 : 0);
     // Camera distance is larger on narrow portrait previews; full silhouette wins over filling the frame.
-    const distance = Math.max(10, 8.5 / Math.max(0.65, Math.min(1, camera.aspect))) * state.zoom;
+    const distance = garageFittedDistance(camera.aspect, state.zoom, carRadius);
     camera.fov = 49;
     camera.position.set(Math.sin(yaw) * Math.cos(state.pitch) * distance,
       0.95 + Math.sin(state.pitch) * distance,

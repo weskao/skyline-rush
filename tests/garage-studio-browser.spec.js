@@ -97,3 +97,32 @@ test('garage showroom accessible label follows the active locale', async ({ page
   await page.locator('#garage-button').click();
   await expect(page.locator('#garage-screen .garage-visual')).toHaveAttribute('aria-label', '3D vehicle showroom');
 });
+
+test('restoring default paint persists an equipped owned finish across close and reopen', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('skyline-rush-stars', JSON.stringify({ coast: 3 }));
+    localStorage.setItem('skyline-rush-paint', JSON.stringify('aurora'));
+  });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  await expect(page.locator('[data-paint="aurora"]')).toHaveAttribute('data-state', 'equipped');
+  await page.locator('#garage-restore-default').click();
+  await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('pearl');
+  await page.locator('#garage-close').click();
+  await expect(page.locator('#garage-screen')).toBeHidden();
+  await page.locator('#garage-button').click();
+  await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
+});
+
+test('locked paint state is announced in active language without pretending it is owned', async ({ page }) => {
+  await page.goto('/');
+  await selectLocale(page, 'zh-TW');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('aria-label', /未解鎖/);
+  await page.locator('[data-paint="obsidian"]').click();
+  await expect(page.locator('#garage-equip')).toBeDisabled();
+  await expect(page.locator('#garage-restore-default')).toBeVisible();
+});

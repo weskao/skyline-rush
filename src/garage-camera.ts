@@ -30,3 +30,13 @@ export const toggleGarageOrbit = (state: GarageCamera): GarageCamera => ({ ...st
 
 export const releaseGarageOrbit = (camera: GarageCamera, paused: boolean): GarageCamera =>
   ({ ...camera, autoRotate: !paused });
+
+/** Fit the entire car's bounding sphere in both FOV axes, including narrow phones. */
+export function garageFittedDistance(aspect: number, zoom: number, radius: number): number {
+  const safeAspect = Number.isFinite(aspect) && aspect > 0 ? clamp(aspect, .45, 2.5) : 1;
+  const safeZoom = Number.isFinite(zoom) && zoom > 0 ? clamp(zoom, .75, 1.6) : 1;
+  const safeRadius = Number.isFinite(radius) && radius > 0 ? radius : 3.2;
+  const halfFov = Math.atan(Math.tan(49 * Math.PI / 360) * Math.min(1, safeAspect));
+  const fitted = safeRadius * 1.1 / Math.sin(halfFov);
+  return Math.max(fitted, Math.max(10, 8.5 / Math.max(.65, Math.min(1, safeAspect))) * safeZoom);
+}

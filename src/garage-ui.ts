@@ -95,6 +95,7 @@ export function setupGarageUI({
     inspectStudioAfterFrame();
   }
   function showPage(page: 'home' | 'studio'): void {
+    if (page === 'home') contacts.clear();
     updateGarageStudioView({ page });
     getWorld()?.setGarageCamera(page === 'studio' ? camera : null);
     getWorld()?.resize();
@@ -119,7 +120,12 @@ export function setupGarageUI({
     clearControls();
   }
 
-  $('#garage-restore-default').addEventListener('click', () => previewPaint('pearl'));
+  $('#garage-restore-default').addEventListener('click', () => {
+    // Restore is a saved equip action, not a temporary preview; pearl is always owned.
+    if (!availablePaints(getStars()).includes('pearl')) return;
+    setEquippedPaint('pearl');
+    previewPaint('pearl');
+  });
   $('#garage-equip').addEventListener('click', () => {
     // Guard the data boundary, not only the disabled UI: a locked paint is never persisted.
     if (!garagePresentation(previewing, getEquippedPaint(), getStars(), PAINTS, availablePaints(getStars())).canEquip) return;

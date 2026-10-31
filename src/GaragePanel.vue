@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { getLocale, onLocaleChange } from './i18n.ts';
+import { getLocale, onLocaleChange, t } from './i18n.ts';
 import { garageStudioView } from './garage-view-state.ts';
 import { PAINTS } from './appearance.ts';
 import { garageView } from './garage-view-state.ts';
@@ -17,6 +17,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   coming: '裝備及新特效・即將推出', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆', equipment: '裝備・即將推出',
   titleLine: '自訂外觀 • 探索車漆 • 自由預覽',
+  preview: '預覽', unlockNote: '累積賽道星數可解鎖車漆；未解鎖車漆僅能試看。',
 } : {
   showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'],
@@ -25,6 +26,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   coming: 'Equipment and new effects · Coming soon', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint', equipment: 'Equipment · Coming soon',
   titleLine: 'CUSTOMIZE • INSPECT • PREVIEW',
+  preview: 'Preview', unlockNote: 'Earn track stars to unlock paint; locked finishes are preview-only.',
 });
 const angles = ['front', 'rear', 'side', 'top', 'cinematic'] as const;
 const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equipped'
@@ -57,11 +59,12 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
       <aside class="garage-collection">
         <div v-show="garageStudioView.page === 'studio'" class="garage-tabs"><span class="active">{{ copy.collection }}</span><span aria-disabled="true">{{ copy.equipment }}</span></div>
         <h3>{{ copy.collection }}</h3>
-    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`Preview ${id}`" :data-i18n-aria-label="`paint.${id}.preview`" :aria-pressed="id === garageView.selected" :key="id"><i :style="{ backgroundColor: paint.paint }" aria-hidden="true"></i><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ paint.name }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></button></div>
+    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><i :style="{ backgroundColor: paint.paint }" aria-hidden="true"></i><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ paint.name }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></button></div>
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
     <button id="garage-equip" class="controls-reset" :disabled="garageView.equipDisabled" aria-label="Equip finish" data-i18n-aria-label="garage.equip">{{ garageView.equipLabel }}</button>
     <button v-show="garageStudioView.page === 'studio'" id="garage-restore-default" type="button" class="garage-restore">{{ copy.restore }}</button>
-        <p class="collection-note" data-i18n="garage.previewNote">Additional finishes are previews. Cosmetic unlocks are not available yet.</p>
+        <p v-show="garageStudioView.page === 'home'" class="collection-note" data-i18n="garage.previewNote">Additional finishes are previews. Cosmetic unlocks are not available yet.</p>
+        <p v-show="garageStudioView.page === 'studio'" class="collection-note">{{ copy.unlockNote }}</p>
         <p class="garage-coming">{{ copy.coming }}</p>
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
       </aside>

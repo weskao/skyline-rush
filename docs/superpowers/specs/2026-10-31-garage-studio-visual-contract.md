@@ -20,3 +20,10 @@ The render pipeline retains **one** `THREE.WebGLRenderer`, canvas, PerspectiveCa
 - RED/GREEN static scene/paint-state contract tests; Playwright 1440×900, 390×844, 844×390; keyboard and pointer controls, back and close.
 - Mandatory subsequent evidence: **actual** Playwright WebGL screenshots (before/after), car NDC bounds using `inspectGarageStudio()`, Draw Calls / Triangles, FPS and frame-time p50/p95 for each Quality tier. Physical iPhone/Android touch + thermal testing not automated here.
 - Check exact HEAD GitHub `quality-gate`. **Do not mark TODO 5.2/5.4 complete** without complete real-world verification.
+
+## Implementation refinements
+
+- Camera radius is measured from the real shared roadster body. Its mathematical FOV fit applies to 0.5×–1.8× aspect ratios and all safe zoom levels; zoom is never allowed to clip a vehicle.
+- “Restore default paint” is a persistent equip of the already-owned `pearl` finish, not a temporary preview. Locked cosmetics remain preview-only.
+- Paint buttons announce equipped/owned/locked in the active language; the Studio instructions accurately describe real star unlocks rather than claiming all cosmetics are unavailable.
+- When leaving Studio for Garage Home, pending pointer contacts are cleared to prevent an interrupted orbit gesture from affecting later input.
