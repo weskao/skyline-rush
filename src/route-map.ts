@@ -8,7 +8,7 @@ import { RACE_DRIVER_IDS } from './race-grid.ts';
 const NS = 'http://www.w3.org/2000/svg';
 interface RoutePoint { x: number; y: number }
 interface RouteSample extends RoutePoint { distance: number }
-interface RouteDriver { id: string; distance: number }
+interface RouteDriver { id: string; distance: number; x?: number }
 const cache = new Map<string, RouteSample[]>();
 const lineCache = new Map<string, string>();
 const overpassCache = new Map<string, string>();
@@ -137,7 +137,11 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
       const marker = markers.get(driver.id);
       if (!marker) continue;
       const point = routeMarker(trackId, driver.distance);
-      const x = point.x.toFixed(2), y = point.y.toFixed(2);
+      const ahead = routeMarker(trackId, driver.distance + 10);
+      const dx = ahead.x - point.x, dy = ahead.y - point.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const side = (driver.x ?? 0) * 0.6;
+      const x = (point.x - dy / length * side).toFixed(2), y = (point.y + dx / length * side).toFixed(2);
       // Avoid forcing SVG layout/style work on frames whose tiny marker
       // movement is still subpixel at the current map size.
       if (marker.getAttribute('cx') !== x) marker.setAttribute('cx', x);

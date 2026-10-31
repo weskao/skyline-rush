@@ -1213,6 +1213,18 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-driver-nova { fill:#fc58a1; }
 .route-driver-orbit { fill:#f5c15b; }
 .route-driver-apex { fill:#82df9c; }
+.route-driver-vega { fill:#ad94ff; }
+.route-driver-pulse { fill:#5ce0b7; }
+.route-driver-comet { fill:#f8c562; }
+.route-driver-rift { fill:#ff7ab9; }
+/* Eight ranks stay legible across short mobile landscape and bilingual HUDs. */
+.leaderboard:has(.racer:nth-child(8)) .racer { min-height: 20px; }
+@media (max-width: 760px), (max-height: 500px) {
+  .leaderboard:has(.racer:nth-child(8)) .racer { height: 23px; }
+}
+@media (max-height: 380px) and (pointer: coarse) {
+  .leaderboard:has(.racer:nth-child(8)) .racer { height: 20px; }
+}
 /* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
 @media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
