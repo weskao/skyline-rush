@@ -1,6 +1,7 @@
 import { updateSkyline } from './skyline-scenery.ts';
 import * as THREE from 'three';
-import { flipRgbaRows, photoFov } from './photo-export.ts';
+import { photoFov } from './photo-export.ts';
+import { capturePhoto } from './photo-capture.ts';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -1030,18 +1031,7 @@ export function createWorld(canvas) {
       if (photoCapture) {
         const request = photoCapture;
         photoCapture = null;
-        try {
-          const resolution = renderer.getDrawingBufferSize(new THREE.Vector2());
-          const width = resolution.x, height = resolution.y;
-          if (width * height > 16_000_000) throw new RangeError('Screenshot too large');
-          const pixels = new Uint8Array(width * height * 4);
-          renderer.getContext().readPixels(0,0,width,height,
-            renderer.getContext().RGBA,renderer.getContext().UNSIGNED_BYTE,pixels);
-          const output = document.createElement('canvas');
-          output.width = width; output.height = height;
-          output.getContext('2d').putImageData(new ImageData(flipRgbaRows(pixels,width,height),width,height),0,0);
-          output.toBlob(blob => blob ? request.resolve(blob) : request.reject(new Error('PNG export unavailable')),'image/png');
-        } catch (error) { request.reject(error); }
+        void capturePhoto(renderer).then(request.resolve, request.reject);
       }
     },
     inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },

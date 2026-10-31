@@ -197,7 +197,7 @@ const stored = (page, key) => page.evaluate(key => localStorage.getItem(key), ke
 
 test('music and sound effects start on and each remember an off choice in localStorage', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'true');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
   await audioSwitch(page, 'Music').click();
@@ -206,7 +206,7 @@ test('music and sound effects start on and each remember an off choice in localS
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => stored(page, 'skyline-rush-sound')).toBe('off');
   await page.reload();
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await page.locator('#intro-title').click();
@@ -217,7 +217,7 @@ const volumeSlider = (page, name) => page.getByRole('slider', { name: `${name} v
 
 test('each channel has a volume slider; muting keeps its level, unmuting restores it, and both survive a reload', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   const music = volumeSlider(page, 'Music');
   await expect(music).toHaveValue('100');
   await expect(volumeSlider(page, 'Sound effects')).toHaveValue('100');
@@ -234,7 +234,7 @@ test('each channel has a volume slider; muting keeps its level, unmuting restore
   await expect(music).toHaveValue('40');
   await audioSwitch(page, 'Music').click();
   await page.reload();
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await audioSwitch(page, 'Music').click();
   await expect(volumeSlider(page, 'Music')).toHaveValue('40');
@@ -244,7 +244,7 @@ test('each channel has a volume slider; muting keeps its level, unmuting restore
 test('dragging a volume slider to zero mutes it and unmuting returns to the level before the drag', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   const effects = volumeSlider(page, 'Sound effects');
   const box = await effects.boundingBox();
   const y = box.y + box.height / 2;
@@ -263,7 +263,7 @@ test('a volume slider shows its level live while dragging, before release, witho
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   const music = volumeSlider(page, 'Music');
   const box = await music.boundingBox();
   const y = box.y + box.height / 2;
@@ -280,7 +280,7 @@ test('a volume slider shows its level live while dragging, before release, witho
 test('one quick button mutes everything and brings back each saved level', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await volumeSlider(page, 'Sound effects').focus();
   for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowLeft');
   await page.getByRole('button', { name: 'Mute all' }).click();
@@ -297,7 +297,7 @@ test('the audio panel scrolls instead of running off a short landscape phone scr
   await page.setViewportSize({ width: 568, height: 240 });
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   const panel = page.locator('#settings-panel');
   const layout = await panel.evaluate(el => ({ bottom: el.getBoundingClientRect().bottom, overflow: getComputedStyle(el).overflowY, scrolls: el.scrollHeight > el.clientHeight }));
   expect(layout.bottom).toBeLessThanOrEqual(240);
@@ -310,7 +310,7 @@ test('the audio panel scrolls instead of running off a short landscape phone scr
 test('intro music plays after the first interaction and race music replaces it', async ({ page }) => {
   await page.addInitScript(measureAudio);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [50] }).toBeGreaterThan(0.001);
   await audioSwitch(page, 'Music').click();
@@ -324,7 +324,7 @@ test('intro music plays after the first interaction and race music replaces it',
 test('music stops while the page is hidden and comes back when it is shown', async ({ page }) => {
   await page.addInitScript(measureAudio);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await expect.poll(() => page.evaluate(() => window.audioState?.())).toBe('running');
   const setHidden = hidden => page.evaluate(hidden => {
     Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
@@ -381,7 +381,7 @@ test('a saved music-off choice stays silent after the first gesture and keeps so
   await page.keyboard.press('Shift');
   await page.waitForTimeout(500);
   expect(await level(page)).toBeLessThan(0.0001);
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
 });
@@ -432,7 +432,7 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);
   await page.keyboard.press('m');
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
@@ -440,7 +440,7 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeGreaterThan(0.001);
   await page.keyboard.press('p');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await audioSwitch(page, 'Sound effects').click();
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
@@ -457,7 +457,7 @@ test('audio initialization failure leaves the silent game playable and retryable
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(30);
-  await page.getByRole('button', { name: 'Audio settings' }).click();
+  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await audioSwitch(page, 'Sound effects').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
@@ -472,7 +472,7 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'The road is just the beginning.' })).toBeVisible();
   await expect(page.locator('canvas#world')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Audio settings' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Audio and HUD settings' })).toBeVisible();
   await page.getByRole('button', { name: 'Change camera' }).click();
   await expect(page.getByRole('button', { name: 'Change camera' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Change camera' }).click();
@@ -674,7 +674,7 @@ test.describe('tablet touch screen', () => {
       expect(fly.width, mode).toBeGreaterThanOrEqual(64);
       expect(820 - (fly.y + fly.height), mode).toBeGreaterThanOrEqual(48);
       expect(1180 - (fly.x + fly.width), mode).toBeGreaterThanOrEqual(32);
-      const [cluster, gauges] = await Promise.all([page.getByRole('button', { name: 'Activate nitro', exact: true }).boundingBox(), page.locator('.fuel-stat').boundingBox()]);
+      const [cluster, gauges] = await Promise.all([page.getByRole('button', { name: 'NITRO UNAVAILABLE', exact: true }).boundingBox(), page.locator('.fuel-stat').boundingBox()]);
       expect(gauges.y + gauges.height, mode).toBeLessThanOrEqual(cluster.y);
     }
   });
@@ -987,7 +987,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
         for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${hand} ${name}`).toBe(true);
         // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Activate nitro'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
+        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'NITRO UNAVAILABLE'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
       }
     });
 
@@ -1073,8 +1073,8 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
           const bounds = await visibleBounds(page);
           const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
           expect(touchButtons.map(bound => bound.name).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
-            ? ['Accelerate', 'Activate nitro', 'Hold to boost', 'Hold to fly']
-            : ['Accelerate', 'Activate nitro', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']);
+            ? ['Accelerate', 'NITRO UNAVAILABLE', 'Hold to boost', 'Hold to fly']
+            : ['Accelerate', 'NITRO UNAVAILABLE', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']);
           expect(bounds.some(bound => bound.pad)).toBe(mode === 'slide');
           for (const bound of bounds) {
             const label = `${mode} ${size} ${bound.name}`;

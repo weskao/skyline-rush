@@ -65,6 +65,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Wave 2 video recording needs Playwright's FFmpeg binary, not the system binary.
+      - run: npx playwright install ffmpeg
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
       - run: npm run test:browser -- --shard=${{ matrix.shard }}/16
       - name: Upload structured WebGL performance evidence

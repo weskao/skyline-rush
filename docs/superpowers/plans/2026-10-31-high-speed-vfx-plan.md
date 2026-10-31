@@ -20,6 +20,9 @@
 
 
 ## Wave 2 implementation evidence (2026-10-31, not final acceptance)
+- [ ] Full regression #41202125982 at 24b59a9 failed: unit module-size ratchet, missing Playwright FFmpeg for the real WebGL video, plus browser regressions also reproduced on develop baseline #41195915543. This branch's follow-up fix extracts photo canvas readback, installs FFmpeg, and updates stale Wave 1 UI test contracts (audio/HUD, NITRO readiness) while keeping simulation and NITRO rules unchanged. Exact-head re-verification is pending; no claim of green CI.
+- [ ] No `high-speed-vfx-evidence-*` artifact was produced by that failed run; screenshot/video and before/after p50/p95 DrawCalls/Triangles/Texture Count comparisons remain unverified. Do not mark manual acceptance complete.
+
 
 - [x] Inspected latest `develop` (`a021044d`) and preexisting branch HEAD (`e3b2032`); merged non-destructively as `3fbe4cb`, preserving Wave 1 and all seven Wave 2 authored documents.
 - [x] RED observed on GitHub Actions run [41201178381](https://github.com/weskao/skyline-rush/actions/runs/41201178381): two new controller tests failed because the four-phase controller was absent (1207 passed).
