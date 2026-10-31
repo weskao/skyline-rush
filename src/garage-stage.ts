@@ -19,6 +19,8 @@ export function createGarageStage(environment: THREE.Texture) {
   const car = makeCar(CAR_STYLES.roadster);
   car.position.y = 0.06;
   scene.add(car);
+  // Measure the real vehicle before attaching any cosmetic shader/geometry.
+  const carRadius = new THREE.Box3().setFromObject(car).getBoundingSphere(new THREE.Sphere()).radius;
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
@@ -27,7 +29,6 @@ export function createGarageStage(environment: THREE.Texture) {
   const previewRace = { phase: 'racing', player: previewDriver };
   let previewSettings: VfxSettings = vfxSettings({ airflow: true });
   let lastTime = NaN;
-  const carRadius = new THREE.Box3().setFromObject(car).getBoundingSphere(new THREE.Sphere()).radius;
   const platform = new THREE.Mesh(
     new THREE.CylinderGeometry(5.65, 5.65, 0.18, 64),
     new THREE.MeshStandardMaterial({ color: '#172a36', metalness: 0.7, roughness: 0.36 }),
@@ -86,7 +87,8 @@ export function createGarageStage(environment: THREE.Texture) {
   }
 
   function inspectBounds(camera: THREE.PerspectiveCamera) {
-    const bounds = new THREE.Box3().setFromObject(car);
+    const bounds = new THREE.Box3().makeEmpty();
+    for (const part of car.children) if (part !== aero.group) bounds.expandByObject(part);
     const point = new THREE.Vector3();
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const x of [bounds.min.x, bounds.max.x])
