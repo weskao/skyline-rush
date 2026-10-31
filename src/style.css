@@ -1736,11 +1736,11 @@ body[data-race-mode="endless"] .progress-track { display: none; }
 }
 /* Place the competition progress away from the vertical seam, leaving the car sightline clear. */
 body[data-fold-axis="vertical"] .race-progress {
-  left: calc((var(--fold-pane-right-start) + 100vw) / 2);
+  left: calc(50vw + var(--fold-pane-right-start) / 2);
   width: min(250px, calc(100vw - var(--fold-pane-right-start) - 32px));
 }
 body[data-fold-axis="vertical"]:not([data-phase="ready"]) .mode-indicator {
-  left: calc((var(--fold-pane-right-start) + 100vw) / 2);
+  left: calc(50vw + var(--fold-pane-right-start) / 2);
 }
 body[data-fold-axis="horizontal"] .race-route-map {
   top: clamp(80px, 30vh, calc(var(--fold-pane-top-end) - 115px));
