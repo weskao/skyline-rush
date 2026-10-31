@@ -133,6 +133,19 @@ The originating GPT chat created **59 individual 3× transparent-raster image ca
 
 **Not done:** no uploaded 3× bitmaps, no live-game visual integration, no exact-HEAD CI. These are all pending design, dependency, TDD and Visual Fidelity gates, so no feature TODO is marked complete.
 
+## Reusable 3× art manifest — source-of-truth paths
+
+The user chose **reuse-ready repository Markdown over exporting images into the reply**. An exact, checked **3× image / 1× CSS usage manifest** now exists in each owning branch. The manifest lists all candidate keys, true `288→96` / `216→72` / `432×156→144×52` pixel mappings, immutable source ZIP SHA-256, alpha/provenance limitations and branch-safe local import commands (including Vite `import.meta.env.BASE_URL` for GitHub Pages).
+
+| Owning branch | Asset keys | Durable GitHub documentation | Import status |
+| --- | ---: | --- | --- |
+| `feature/garage-vfx-skins` | 27 | [3× raster handoff](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/docs/designs/garage-vfx-skins/RASTER-ASSET-HANDOFF.md) | Binary ZIP not in Git; still requires manual import & visual review |
+| `feature/garage-rewards-and-missions` | 8 | [3× raster handoff](https://github.com/weskao/skyline-rush/blob/feature/garage-rewards-and-missions/docs/designs/garage-rewards-and-missions/RASTER-ASSET-HANDOFF.md) | Binary ZIP not in Git; blocked on economy for live reward UI |
+| `feature/garage-store-readiness` | 6 | [3× raster handoff](https://github.com/weskao/skyline-rush/blob/feature/garage-store-readiness/docs/designs/garage-store-readiness/RASTER-ASSET-HANDOFF.md) | Binary ZIP not in Git; Coming Soon only |
+| `feature/mobile-controls-hud` | 18 | [3× raster handoff](https://github.com/weskao/skyline-rush/blob/feature/mobile-controls-hud/docs/designs/mobile-controls-hud/RASTER-ASSET-HANDOFF.md) | Binary ZIP not in Git; button photos with baked text are **not** ready-to-ship interactive controls |
+
+**Do not infer full integration:** All 59 candidate images (PNG + WebP = 118 binary files) still live only inside source ZIP archives saved in the original GPT conversation. These ZIPs are NOT publicly fetchable from the GitHub repository, and a chat reference alone is not a durable binary source. Future implementers must obtain the source ZIP, validate its stated hash, import appropriate assets to their own branch, and show browser/WebGL acceptance evidence before completing code and TODO items. Existing SVG vector fallbacks remain available where they were already committed.
+
 ## Coordination notes
 
 - UI/UX planning TODO `feature/ux-ui-combo-mobile-controls` has not been merged into `main`. Implementation branches were created from `main` (2026-10-31; `bea47cf61c162b4341021fa6d24ca45850af7796`). Before TDD work begins, reconcile approved requirements without overwriting their history.
