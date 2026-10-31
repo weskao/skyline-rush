@@ -15,8 +15,8 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'],
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
   auto: '自動旋轉', reset: '重設鏡頭', collection: '車漆收藏',
-  coming: '裝備及新特效・即將推出', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
-  cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆', equipment: '裝備・即將推出',
+  coming: '特效可免費試用，試用不等於永久擁有', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
+  cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆', equipment: '特效試用',
   titleLine: '自訂外觀 • 探索車漆 • 自由預覽',
   preview: '預覽', unlockNote: '累積賽道星數可解鎖車漆；未解鎖車漆僅能試看。',
 } : {
@@ -24,8 +24,8 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'],
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
   auto: 'Auto rotate', reset: 'Reset camera', collection: 'Paint collection',
-  coming: 'Equipment and new effects · Coming soon', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
-  cosmetic: 'Appearance does not change performance', restore: 'Restore default paint', equipment: 'Equipment · Coming soon',
+  coming: 'Try cosmetic VFX for free; trial is not ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
+  cosmetic: 'Appearance does not change performance', restore: 'Restore default paint', equipment: 'VFX trial',
   titleLine: 'CUSTOMIZE • INSPECT • PREVIEW',
   preview: 'Preview', unlockNote: 'Earn track stars to unlock paint; locked finishes are preview-only.',
 });

@@ -2,16 +2,16 @@ import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
-  test(`Phase A skins catalog is read-only, bilingual and preserves PAINTS on ${viewport.width}x${viewport.height}`, async ({ page }) => {
+  test(`Garage VFX catalog is bilingual and preserves PAINTS on ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
     await page.locator('#garage-studio-open').click();
     const catalog = page.locator('#garage-vfx-catalog');
     await expect(catalog).toBeVisible();
-    await expect(catalog).toHaveAttribute('data-preview-contract', 'contract-only');
+    await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
     await expect(catalog.locator('[data-skin]')).toHaveCount(8);
-    await expect(catalog.getByRole('button')).toHaveCount(0);
+    await expect(catalog.getByRole('button')).toHaveCount(16);
     await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
     await expect(page.locator('#garage-preview #world')).toBeVisible();
     const screenshot = await page.screenshot();
@@ -26,7 +26,7 @@ test('missing SVG artwork shows a text fallback and never unlocks a skin', async
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('[data-skin="thruster-ion"]');
   await expect(ion.locator('.garage-vfx-fallback')).toBeVisible();
-  await expect(ion).toHaveAttribute('data-state', 'locked');
+  await expect(ion).toHaveAttribute('data-state', 'trial');
   await expect(page.locator('#garage-equip')).toBeDisabled();
 });
 

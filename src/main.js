@@ -1,5 +1,6 @@
 import './style.css';
 import { setupGarageUI } from './garage-ui.ts';
+import { setGarageSkinAccount } from './garage-skin-runtime.ts';
 import { createHistoryView } from './history-ui.ts';
 import { setupCloudUI } from './cloud-ui.ts';
 import { setupGuideUI } from './guide-ui.ts';
@@ -273,6 +274,8 @@ const { showGarage, syncSkins } = setupGarageUI({
   setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
   getStars: () => starTotal(progress.stars),
 });
+// Auth changes invalidate ephemeral cosmetic trials/preview without writing Cloud Save.
+watchCloudUser(user => setGarageSkinAccount(user?.uid ?? null));
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
   controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
