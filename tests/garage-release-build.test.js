@@ -45,3 +45,12 @@ test('the production build asserts that unpublished skin code and artwork are ex
   assert.match(gate, /thruster-ion/);
   assert.match(gate, /feature-assets\/garage-vfx-skins/);
 });
+
+test('CI unit gate executes the locked production build and refuses unpublished bundle leaks', async () => {
+  const { readFileSync } = await import('node:fs');
+  const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const unit = ci.slice(ci.indexOf('  unit-tests:'), ci.indexOf('  browser-tests:'));
+  assert.match(unit, /- run: npm run build/);
+  const locked = readFileSync(new URL('../src/GarageSkinComingSoon.vue', import.meta.url), 'utf8');
+  assert.doesNotMatch(locked, /GarageSkinCatalog|@click|equipGarageSkin|thruster-ion|nitro-trail-cyan/);
+});
