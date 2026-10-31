@@ -167,15 +167,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: actions/download-artifact@v4
-        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
-        with:
-          pattern: render-performance-*
-          path: ${{ runner.temp }}/render-performance
-          merge-multiple: true
-      - name: Verify software-WebGL evidence coverage and rendering budgets
-        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
-        run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
+      # Surface failed/cancelled suites before relying on browser evidence.
       - name: Require every verification suite to pass
         env:
           UNIT: ${{ needs.unit-tests.result }}
@@ -207,6 +199,15 @@ jobs:
               exit 1
             fi
           done
+      - uses: actions/download-artifact@v4
+        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
+        with:
+          pattern: render-performance-*
+          path: ${{ runner.temp }}/render-performance
+          merge-multiple: true
+      - name: Verify software-WebGL evidence coverage and rendering budgets
+        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
+        run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
 
   # A release tag sits on `docs: release X`, a notes/version commit above code that already passed the full suite on
   # main. Re-running two runner-hours of CPU WebGL there only adds a chance that a timing flake leaves the tag
