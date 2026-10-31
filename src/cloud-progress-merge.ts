@@ -66,7 +66,7 @@ function modeRun(raw: unknown): NormalizedRun | null {
   const id = run.track, mode = run.mode, time = run.time, rules = run.rules;
   if (!when || !isModeTrack(id, mode) || typeof mode !== 'string' || !(MODE_NAMES as readonly string[]).includes(mode) ||
       !validTime(time) || typeof rules !== 'string' || !rules.length || rules.length > 4096) return null;
-  if (mode === 'endless' && (id !== 'coast' || typeof run.distance !== 'number' ||
+  if (mode === 'endless' && (typeof run.distance !== 'number' ||
       !Number.isFinite(run.distance) || run.distance < 0 || run.distance > Number.MAX_SAFE_INTEGER)) return null;
   if (mode === 'circuit' && !validCircuitRecord(run)) return null;
   const telemetry: RawRecord = {};
