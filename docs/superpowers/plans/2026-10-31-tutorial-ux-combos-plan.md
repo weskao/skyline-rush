@@ -62,6 +62,16 @@
 - [ ] **V4 — GREEN / Asset Integration:** During an authorized implementation phase only, produce optimized original SVG/WebP assets if justified, use Vue/CSS for interactive text/HUD and current Three.js for dynamic VFX. Keep visual identity aligned across Low/Medium/High with tiered GPU cost, quality-change cleanup and shader warmup. Re-run focused RED tests to GREEN.
 - [ ] **V5 — Verify:** Capture real-game WebGL before/after screenshot/video and compare FPS/frame-time p50/p95, Draw Calls, Triangles, texture/resource lifecycle. Complete the relevant Task 5 cross-platform gate and exact HEAD CI. Only then consider marking visual work `- [x]` in the complete canonical TODO.
 
+### Task VF — approved-design visual fidelity gate (visual implementation not yet accepted)
+
+**Source:** [Original art map and review](https://github.com/weskao/skyline-rush/blob/feature/tutorial-ux-combos/docs/designs/tutorial-ux-combos/VISUAL-FIDELITY.md); shared [Visual Fidelity Gate](https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/docs/superpowers/specs/2026-10-31-visual-fidelity-gate.md).
+
+- [ ] Map the original design references, current real screenshots and existing simplified tutorial UI to exact positions, icon states, camera/road sightlines and BDD cases. Candidate PNG crops were exported as a conversation download but **are not committed into GitHub yet**; archive approved bytes and Git SHA in this branch first.
+- [ ] Review responsive 390×844, 844×390, 1440×900 and small-phone stress, zh-TW/en, Low/Medium/High and reduced motion, touch/keyboard; mark reference status pending until explicit visual approval.
+- [ ] TDD RED→GREEN: fix real visual and behavior differences using Vue3/TS + genuine renderer; test with actual Playwright screenshot and interactive video of AIR→ROAD CHAIN, barrel roll and NITRO sustained phase. Never paste AI scene imagery as a functional screen.
+- [ ] Record side-by-side differences and reviewer signoff for positions, lighting, art, timing and non-occluded road in `docs/evidence/tutorial-ux-combos/VISUAL-ACCEPTANCE.md`.
+- [ ] Only after visually accepted and final HEAD CI green may the corresponding TODO subitems be marked complete; never auto-merge main.
+
 ## TDD implementation tasks (source committed; final verification pending)
 
 ### Task 1: Introduce explicit tutorial event/phase observation for activation, in-progress and landing completion rather than a button-press shortcut
