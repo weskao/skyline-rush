@@ -1,5 +1,8 @@
 # Foldable and Dual-screen Layout Support — SDD Design Spec and BDD Acceptance
 
+> **Branch integration policy override (2026-10-31):** `develop` is the sole integration target, **not `main`**. Wave 1 Tutorial/Mobile HUD/Garage Studio were integrated at `a021044dff22f8dab3845d182794d7d397b56d06`; its [full develop CI](https://github.com/weskao/skyline-rush/actions/runs/41195915543) was pending when this note was written. Before feature coding, verify latest actual develop HEAD full-regression CI is green. This feature's additional prerequisite: The merged Mobile HUD control/safe-area contract must remain intact. Sync newest develop into this existing branch **non-destructively**, preserving all specs, tests, source and assets. Do not auto-merge the completed feature into develop/main or open a PR. Historical `main` references are superseded by this note.
+
+
 **Repository:** https://github.com/weskao/skyline-rush
 **Branch:** `feature/foldable-layout-adaptation`
 **Wave:** 2 · **Source TODO:** 4

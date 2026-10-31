@@ -1,5 +1,8 @@
 # Foldable and Dual-screen Layout Support Implementation Plan
 
+> **Branch integration policy override (2026-10-31):** `develop` is the sole integration target, **not `main`**. Wave 1 Tutorial/Mobile HUD/Garage Studio were integrated at `a021044dff22f8dab3845d182794d7d397b56d06`; its [full develop CI](https://github.com/weskao/skyline-rush/actions/runs/41195915543) was pending when this note was written. Before feature coding, verify latest actual develop HEAD full-regression CI is green. This feature's additional prerequisite: The merged Mobile HUD control/safe-area contract must remain intact. Sync newest develop into this existing branch **non-destructively**, preserving all specs, tests, source and assets. Do not auto-merge the completed feature into develop/main or open a PR. Historical `main` references are superseded by this note.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Responsive cover/inner display, split-screen, hinge, rotation and browser viewport resizing; progressive enhancements for viewport segments; preserve thumb controls, HUD and camera sightline across fold and ordinary phones.
