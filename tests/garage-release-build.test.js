@@ -5,9 +5,9 @@ import { selectGarageReleaseBuild } from '../scripts/garage-release-build.mjs';
 test('production defaults to coming-soon with a safe locked UI and runtime (not hidden trial code)', () => {
   const result = selectGarageReleaseBuild('production', undefined);
   assert.equal(result.mode, 'coming-soon');
-  assert.match(result.aliases['@garage-skin-ui'], /GarageSkinComingSoon\.vue$/);
-  assert.match(result.aliases['@garage-skin-runtime'], /garage-skin-runtime-locked\.ts$/);
-  assert.match(result.aliases['@garage-skin-palette'], /garage-skin-palette-locked\.ts$/);
+  assert.match(result.aliases['#garage-skin-ui'], /GarageSkinComingSoon\.vue$/);
+  assert.match(result.aliases['#garage-skin-runtime'], /garage-skin-runtime-locked\.ts$/);
+  assert.match(result.aliases['#garage-skin-palette'], /garage-skin-palette-locked\.ts$/);
 });
 
 test('development and preview can select trial; release uses a separate strategy with no trial grants', () => {
@@ -15,8 +15,8 @@ test('development and preview can select trial; release uses a separate strategy
   for (const mode of ['trial', 'released']) {
     const config = selectGarageReleaseBuild('production', mode);
     assert.equal(config.mode, mode);
-    assert.match(config.aliases['@garage-skin-runtime'], /garage-skin-runtime\.ts$/);
-    assert.match(config.aliases['@garage-skin-ui'], /GarageSkinCatalog\.vue$/);
+    assert.match(config.aliases['#garage-skin-runtime'], /garage-skin-runtime\.ts$/);
+    assert.match(config.aliases['#garage-skin-ui'], /GarageSkinCatalog\.vue$/);
   }
 });
 
@@ -32,8 +32,8 @@ test('no runtime mode switching: production source entry is resolved through dis
   const ui = readFileSync(new URL('../src/GaragePanel.vue', import.meta.url), 'utf8');
   const garage = readFileSync(new URL('../src/garage-ui.ts', import.meta.url), 'utf8');
   assert.match(vite, /selectGarageReleaseBuild/);
-  assert.match(ui, /@garage-skin-ui/);
-  assert.match(garage, /@garage-skin-runtime/);
+  assert.match(ui, /#garage-skin-ui/);
+  assert.match(garage, /#garage-skin-runtime/);
   assert.doesNotMatch(ui, /import GarageSkinCatalog from '\.\/GarageSkinCatalog\.vue'/);
   assert.doesNotMatch(garage, /from '\.\/garage-skin-runtime\.ts'/);
 });

@@ -17,10 +17,10 @@ export function selectGarageReleaseBuild(viteMode, explicit = undefined) {
   return {
     mode,
     aliases: {
-      '@garage-skin-ui': source(locked ? 'GarageSkinComingSoon.vue' : 'GarageSkinCatalog.vue'),
-      '@garage-skin-runtime': source(locked ? 'garage-skin-runtime-locked.ts' : 'garage-skin-runtime.ts'),
-      '@garage-skin-palette': source(locked ? 'garage-skin-palette-locked.ts' : 'garage-skin-palette.ts'),
-      '@garage-release-config': source(`garage-release-${mode}.ts`),
+      '#garage-skin-ui': source(locked ? 'GarageSkinComingSoon.vue' : 'GarageSkinCatalog.vue'),
+      '#garage-skin-runtime': source(locked ? 'garage-skin-runtime-locked.ts' : 'garage-skin-runtime.ts'),
+      '#garage-skin-palette': source(locked ? 'garage-skin-palette-locked.ts' : 'garage-skin-palette.ts'),
+      '#garage-release-config': source(`garage-release-${mode}.ts`),
     },
   };
 }

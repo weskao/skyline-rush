@@ -10,10 +10,10 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@garage-skin-ui": ["src/GarageSkinCatalog.vue"],
-      "@garage-skin-runtime": ["src/garage-skin-runtime.ts"],
-      "@garage-skin-palette": ["src/garage-skin-palette.ts"],
-      "@garage-release-config": ["src/garage-release-trial.ts"]
+      "#garage-skin-ui": ["src/GarageSkinCatalog.vue"],
+      "#garage-skin-runtime": ["src/garage-skin-runtime.ts"],
+      "#garage-skin-palette": ["src/garage-skin-palette.ts"],
+      "#garage-release-config": ["src/garage-release-trial.ts"]
     },
     "strict": true,
     "noEmit": true,
