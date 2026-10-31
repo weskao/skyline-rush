@@ -210,3 +210,62 @@ test('historical wake survives full XYZ floating-origin shifts on elevated and c
     indices.forEach((i, j) => assert.ok(point(g, i).add(b).distanceTo(before[j]) < .0002, track));
   }
 });
+
+
+// Wave 2 RED contracts: the same visual state never writes gameplay physics.
+test('wave2 sprint state: NITRO and BOOST have distinct ignition, sustain, recovery and ready phases', async () => {
+  const mod = await import('../src/vfx-settings.ts');
+  assert.equal(typeof mod.createSprintVfx, 'function', 'four-stage visual controller must exist');
+  const sprint = mod.createSprintVfx();
+  const input = { phase: 'racing', nitro: false, boost: false, speed: 80, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false };
+  assert.equal(sprint.update(input).nitro.phase, 'ready');
+  let state = sprint.update({ ...input, nitro: true });
+  assert.equal(state.nitro.phase, 'ignition');
+  assert.ok(state.nitro.ignition > 0);
+  for (let i = 0; i < 6; i++) state = sprint.update({ ...input, nitro: true });
+  assert.equal(state.nitro.phase, 'sustain');
+  assert.equal(state.boost.phase, 'ready');
+  assert.ok(state.nitro.intensity > 0);
+  state = sprint.update({ ...input, nitro: false });
+  assert.equal(state.nitro.phase, 'recovery');
+  for (let i = 0; i < 12; i++) state = sprint.update(input);
+  assert.equal(state.nitro.phase, 'ready');
+  state = sprint.update({ ...input, boost: true });
+  assert.equal(state.boost.phase, 'ignition');
+  assert.equal(state.nitro.phase, 'ready');
+  assert.ok(state.boost.ignition > 0);
+});
+
+test('wave2 sprint state: combined effects are bounded, comfort and VFX off suppress camera motion', async () => {
+  const mod = await import('../src/vfx-settings.ts');
+  assert.equal(typeof mod.createSprintVfx, 'function');
+  const sprint = mod.createSprintVfx();
+  const base = { phase: 'racing', nitro: true, boost: true, speed: 115, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false };
+  let state = sprint.update(base);
+  for (let i = 0; i < 200; i++) {
+    state = sprint.update({ ...base, nitro: i % 4 !== 0, boost: i % 3 !== 0 });
+    assert.ok(Number.isFinite(state.power) && state.power >= 0 && state.power <= 1, 'never stacks beyond one');
+    assert.ok(Number.isFinite(state.fov) && state.fov >= 0 && state.fov <= 5, 'bounded FOV');
+    assert.ok(Number.isFinite(state.blur) && state.blur >= 0 && state.blur <= 1, 'bounded blur');
+  }
+  state = sprint.update({ ...base, speed: Infinity, dt: Infinity });
+  assert.ok([state.power, state.fov, state.blur].every(Number.isFinite), 'invalid race data cannot reach shaders');
+  const paused = { ...state.nitro };
+  state = sprint.update({ ...base, phase: 'paused', dt: 12 });
+  assert.deepEqual(state.nitro, paused, 'pause freezes phase state');
+  const high = sprint.update(base);
+  const low = sprint.update({ ...base, quality: 'low' });
+  assert.ok(low.fov <= high.fov && low.blur <= high.blur, 'low tier cannot cost more');
+  const comfort = sprint.update({ ...base, reducedMotion: true });
+  assert.equal(comfort.fov, 0);
+  assert.equal(comfort.blur, 0);
+  const disabled = sprint.update({ ...base, enabled: false });
+  assert.equal(disabled.power, 0);
+  assert.equal(disabled.nitro.phase, 'ready');
+  assert.equal(sprint.update({ ...base, phase: 'ready' }).nitro.phase, 'ready');
+  sprint.update(base);
+  sprint.reset();
+  assert.equal(sprint.update({ ...base, phase: 'paused' }).power, 0, 'restart clears visual state');
+});
