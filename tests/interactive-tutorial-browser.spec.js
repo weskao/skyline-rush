@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 const coach = page => page.locator('#tutorial-coach');
 const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name);
@@ -88,7 +89,7 @@ test('NITRO practice recovers after braking and demands a fresh charged sprint',
   await keyboardToNitro(page);
   await page.keyboard.down('s');
   await page.keyboard.down('e');
-  await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', {timeout: 30000});
+  await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', {timeout: ciTimeout(30000)});
   await step(page, 'nitro');
   // The held key never receives another charge while pressed.
   await expect(page.locator('#tutorial-instruction')).toContainText('Release NITRO');
