@@ -62,7 +62,7 @@
 - [ ] **V4 — GREEN / Asset Integration:** During an authorized implementation phase only, produce optimized original SVG/WebP assets if justified, use Vue/CSS for interactive text/HUD and current Three.js for dynamic VFX. Keep visual identity aligned across Low/Medium/High with tiered GPU cost, quality-change cleanup and shader warmup. Re-run focused RED tests to GREEN.
 - [ ] **V5 — Verify:** Capture real-game WebGL before/after screenshot/video and compare FPS/frame-time p50/p95, Draw Calls, Triangles, texture/resource lifecycle. Complete the relevant Task 5 cross-platform gate and exact HEAD CI. Only then consider marking visual work `- [x]` in the complete canonical TODO.
 
-## TDD tasks (not started)
+## TDD implementation tasks (source committed; final verification pending)
 
 ### Task 1: Introduce explicit tutorial event/phase observation for activation, in-progress and landing completion rather than a button-press shortcut
 
@@ -132,13 +132,13 @@
 - [ ] **Step 4:** Update branch from latest `main` only when dependencies are merged; resolve conflicts with both sides' features; rerun all relevant tests and inspect **exact-HEAD** GitHub CI `quality-gate`.
 - [ ] **Step 5:** Only after all BDD and TDD acceptance passes, change completed corresponding requirement(s) to `- [x]` in the approved full `TODO.md`, retaining unchecked partial requirements and recording evidence. **Important:** the planning TODO exists on `feature/ux-ui-combo-mobile-controls`, not base `main`. Coordinate integration before marking; never overwrite newer TODO. Commit progress evidence, request explicit permission before a direct main merge; do not create PR.
 
-## Self-review before implementation
+## Implementation evidence review (final gate pending)
 
 - [ ] Every SDD requirement and BDD scenario maps to a task and deterministic test.
 - [ ] All five review risks have actual negative tests.
 - [ ] All files and contracts were reconfirmed against latest `main` at implementation time.
 - [ ] No user-facing claim of successful tests or CI before observed evidence.
-- [ ] No implementation has occurred in this planning-only commit.
+- [x] This feature branch contains implementation source and regression tests; full exact-HEAD CI and physical-device validation are still pending.
 
 ## 2026-10-31 Implementation / CI checkpoint
 
@@ -146,3 +146,14 @@
 - Expanded tutorial from eight to ten real-engine steps and updated `src/tutorial-ui.ts`, `src/TutorialCoach.vue`, `src/locales/ui.ts`, unit and Playwright test cases.
 - Exact feature HEAD `9184c16afc932d481471b8b59328249ba3507a66` had CI run [41130940770](https://github.com/weskao/skyline-rush/actions/runs/41130940770) **cancelled** before unit/browser/world-tour suites completed. Cloud Save succeeded; quality-gate failed with ENOENT because no browser-generated `render-performance-*` artifact directory existed after cancellation. This is *not* a green test run or proof of code failure.
 - Re-ran the cancelled `unit-tests` job on that SHA; full-suite execution and WebGL/physical-device evidence are not yet confirmed. Do not check off TODO 1/2/8/9, bypass validation, or merge `main` until a successful exact-HEAD quality gate and required acceptance evidence exist.
+
+## 2026-10-31 Additional implementation checkpoint (pre-final-CI)
+
+- Added independent TypeScript engine observer phases: `ready`, `airborne`, `flicked`, `rolling`, `readyToLand`, `sprinting`, `retry`. No change to real race physics, NITRO duration, charged inventory, car reward thresholds or global rendering.
+- A new tutorial step clears stale prior powered-flight credit and trick-flick history without resetting held steering sign. Preserves real input-edge semantics across step changes; new negative tests verify that held steering is not falsely re-pressed.
+- AIR→ROAD CHAIN readiness follows engine-confirmed boosted powered-flight time >= 0.4s; a failed real landing shows bilingual retry coaching rather than synthetic reward.
+- BARREL ROLL uses real opposite-input flicks, completion of the physical roll, real landing and positive trick payout; coaching distinguishes first flick, spinning, finished roll and a failed landing.
+- Final NITRO starts only on real charge consumption, stays controllable for at least 1.6s with actual acceleration, and only the disposable practice race refills its charge after an incomplete sprint has ended and the input is released.
+- Tests added/expanded in `tests/tutorial-maneuver-state.test.js`, `tests/interactive-tutorial.test.js`, `tests/interactive-tutorial-browser.spec.js`, `tests/tutorial-copy.test.js` and `tests/tutorial-ui.test.js`. Checkpoints are code submissions, **not** claims that the full test suite or actual-device/WebGL performance gate passed.
+- Official product checklist remains in the planning branch `feature/ux-ui-combo-mobile-controls` and should not be overwritten by a stale `TODO.md`. Keep TODO items 1, 2, 8, 9 unchecked until full evidence is collected and reviewed.
+- No pull request, main merge or deployment is authorized. Check only the final feature HEAD after this implementation pass, inspect all required test shard results and exact-HEAD `quality-gate`, and record any gap honestly.
