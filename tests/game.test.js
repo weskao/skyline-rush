@@ -329,7 +329,7 @@ test('FLY + BOOST + NITRO keeps the 18/s AIR DASH drain and the MAX_SPEED + 30 c
 });
 
 test('steering input ramps to full over 0.15 s and high-speed lateral speed caps at 9 m/s', () => {
-  const race = racing();
+  const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: MAX_SPEED, x: -7.5 });
   advance(race, 0.05, { throttle: true, steer: 1 });
   assert.ok(Math.abs(race.player.steering - 1 / 3) < 0.01);
@@ -342,12 +342,12 @@ test('steering input ramps to full over 0.15 s and high-speed lateral speed caps
 
 test('lane assist eases a released car to the nearest lane centre only when enabled', () => {
   for (const laneAssist of [true, false]) {
-    const race = racing();
+    const race = racing(); race.rivals = [];
     Object.assign(race.player, { speed: 40, x: 3.6 });
     advance(race, 2, { throttle: true, laneAssist });
     assert.ok(laneAssist ? Math.abs(race.player.x - 2.5) < 0.05 : race.player.x === 3.6);
   }
-  const race = racing();
+  const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: 40, x: 3.6 });
   advance(race, 0.5, { throttle: true, laneAssist: true, steer: 1 });
   assert.ok(race.player.x > 3.6);
@@ -770,7 +770,7 @@ test('the race result records NITRO activations and the longest near-miss combo'
 });
 
 function driftingRace(speed = 80) {
-  const race = racing();
+  const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed, x: 0 });
   return race;
 }
@@ -1628,7 +1628,8 @@ test('rivals and traffic change lane around a Tokyo train instead of driving thr
   race.props = props;
   startRace(race);
   advance(race, 3.1);
-  const rival = race.rivals.find(r => r.x === 7.5), traffic = race.traffic[0];
+  const rival = race.rivals[0], traffic = race.traffic[0];
+  race.rivals = [rival]; rival.x = rival.homeX = 7.5;
   // The player trails both in the far-left lane: close enough that traffic is not recycled ahead.
   const trail = () => Object.assign(race.player, { distance: Math.min(rival.distance, traffic.distance) - 30, x: -7.5, speed: 0 });
   Object.assign(rival, { distance: train.from - 120, speed: 70 });
@@ -1736,8 +1737,8 @@ test('ramming a traffic car knocks it too: it loses speed, is shoved away from t
 
 test('a rival steers around a stopped player instead of driving through the car', () => {
   const race = racing();
-  const rival = race.rivals.find(r => r.x === 7.5);
-  race.rivals = [rival];
+  const rival = race.rivals[0];
+  race.rivals = [rival]; rival.x = rival.homeX = 7.5;
   Object.assign(rival, { distance: race.player.distance - 120, speed: 70 });
   Object.assign(race.player, { x: 7.5, speed: 0, cooldown: 0 });
   let overlaps = 0;

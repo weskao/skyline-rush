@@ -324,8 +324,7 @@ function restart(trackId = race.trackId) {
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   const wipe = $('#race-wipe');
-  const nextGrid = cup && cup.results.length && cup.tracks[cup.results.length] === trackId ? nextCupGrid(cup)
-    : sprintSeries && sprintSeries.results.length ? nextSprintGrid(sprintSeries) : null;
+  const nextGrid = cup && cup.results.length && cup.tracks[cup.results.length] === trackId ? nextCupGrid(cup) : sprintSeries?.results.length ? nextSprintGrid(sprintSeries) : null;
   if (cup) cup = cupRecovery.retry(cup, trackId);
   wipe.getAnimations().forEach(animation => animation.cancel());
   wipe.hidden = calmMotion();

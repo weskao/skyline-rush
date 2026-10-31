@@ -14,7 +14,7 @@ for(const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
     const player=previewPlayer(id,race.player,3,false,false);
     assert.ok(player.altitude>1.4&&player.altitude<1.8);
     assert.equal(player.thrusting,true);
-    const others=race.rivals.map((r,i)=>previewRival(id,i,r,3,false));
+    const others=race.rivals.slice(0,3).map((r,i)=>previewRival(id,i,r,3,false));
     assert.deepEqual(others.map(r=>r.distance-d),[12,27,42]);
     assert.ok(others[0].altitude>4&&others[0].altitude<5);
     assert.equal(others[0].thrusting,true);
