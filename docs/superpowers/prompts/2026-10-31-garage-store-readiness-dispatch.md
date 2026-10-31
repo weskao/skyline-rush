@@ -68,6 +68,8 @@
 
 ### 3D. 3× 素材尺寸與匯入規格（2026-10-31）
 
+**素材逐檔清單：** [RASTER-ASSET-HANDOFF.md](https://github.com/weskao/skyline-rush/blob/feature/garage-store-readiness/docs/designs/garage-store-readiness/RASTER-ASSET-HANDOFF.md)。包含精確檔名、每個圖示應顯示的 1× CSS 寬高、ZIP SHA-256、可靠匯入指令，以及未上傳 GitHub 的限制。請先讀它再套用。
+
 此前 GPT 對話已在本地輸出 `skyline-rush-3x-garage-store-readiness.zip` 與完整 `skyline-rush-3x-ui-assets.zip`；其中 6 個**獨立候選素材**皆有透明 PNG／WebP 版本，分組為 non-transactional shop/collection category artwork candidates; not live prices/buy buttons。
 
 **注意：這些 PNG/WebP 目前只存在於對話 ZIP，尚未上傳到 GitHub，也還沒套用到真實 Vue／Three.js 介面。** 請先實際匯入檔案，並在圖像／透明邊緣驗收後使用。來源是 AI 圖片拼版的精細裁切、去背及 Lanczos 放大，不是原生生成出三倍細節的無瑕高解析素材；不可聲稱原生 3×。
