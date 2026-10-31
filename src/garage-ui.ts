@@ -1,6 +1,6 @@
 import { PAINTS } from './appearance.ts';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
-import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins } from './garage-skin-runtime.ts';
+import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from './garage-skin-runtime.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
 import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit } from './garage-camera.ts';
@@ -29,6 +29,7 @@ interface GarageDependencies {
   getEquippedPaint(): string;
   setEquippedPaint(id: string): void;
   getStars(): number;
+  subscribeAccount(listener: (uid: string | null) => void): void;
 }
 
 export function garagePresentation(
@@ -41,7 +42,7 @@ export function garagePresentation(
 
 // Preserve the existing WebGL canvas, paint entitlement source and race state.
 export function setupGarageUI({
-  getWorld, canOpen, clearControls, getEquippedPaint, setEquippedPaint, getStars,
+  getWorld, canOpen, clearControls, getEquippedPaint, setEquippedPaint, getStars, subscribeAccount,
 }: GarageDependencies) {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
@@ -65,6 +66,7 @@ export function setupGarageUI({
     inspectStudioAfterFrame();
   }
   subscribeGarageSkins(syncSkins);
+  subscribeAccount(setGarageSkinAccount);
   function inspectStudioAfterFrame() {
     if (pendingStudioInspection || garageStudioView.page !== 'studio') return;
     pendingStudioInspection = true;
