@@ -71,7 +71,8 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
 .hud-choice input { accent-color: #8fe5ff; min-width: 19px; min-height: 19px; }
 .hud-default { min-height: 44px; font-size: 11px; text-decoration: underline; }
 .hud-widget-options { border-left: 1px solid rgb(190 215 230 / .3); margin: 6px 0 6px 6px; padding-left: 12px; }
-#settings-panel { max-height: min(70dvh, 620px); overflow-y: auto; }
+/* This scoped id rule outranks .settings-panel, so it carries the viewport cap too. */
+#settings-panel { max-height: min(70dvh, 620px, calc(100dvh - 80px - env(safe-area-inset-bottom, 0px))); overflow-y: auto; }
 </style>
 <style>
 /* Essential position, progress, speed and NITRO remain visible in both modes. */
