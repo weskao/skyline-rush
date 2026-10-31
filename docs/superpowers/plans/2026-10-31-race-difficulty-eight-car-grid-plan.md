@@ -15,7 +15,7 @@
 
 **Repository:** https://github.com/weskao/skyline-rush
 **Target branch:** `feature/race-difficulty-eight-car-grid`
-**Wave:** 2 · **TODO:** 11, 12 · **Status:** PLAN ONLY — NOT IMPLEMENTED
+**Wave:** 2 · **TODO:** 11, 12 · **Status:** CORE IMPLEMENTED — FULL REGRESSION / VISUAL ACCEPTANCE PENDING
 **Dependency:** Tutorial implementation integrated and retested if it touches src/game.js; use newest main and version historic race signatures.
 
 ## Global Constraints
@@ -180,3 +180,17 @@
 - [ ] All files and contracts were reconfirmed against latest `main` at implementation time.
 - [ ] No user-facing claim of successful tests or CI before observed evidence.
 - [ ] No implementation has occurred in this planning-only commit.
+
+
+## Implementation progress and verification receipt — 2026-10-31
+
+**Status: core implementation committed; end-to-end acceptance pending.** The `PLAN ONLY` status above describes the original pre-implementation document, not this subsequent execution. The repository's `develop` integration base is `a021044dff22f8dab3845d182794d7d397b56d06`; [full develop CI 41195915543](https://github.com/weskao/skyline-rush/actions/runs/41195915543) **FAILED** 7 browser shards. User explicitly authorized independent feature implementation while integration validation is pending; this is an outstanding dependency gate and must not be called green.
+
+- **Non-destructive source merge:** new two-parent merge commit `6cbb3e40` includes `develop` and all five original Wave 2 docs; did not move `develop` or `main`.
+- **SDD / BDD / RED:** `tests/eight-car-grid.test.js` at `0600231` observed expected failures in [CI 41199230703](https://github.com/weskao/skyline-rush/actions/runs/41199230703).
+- **GREEN implementations:** `src/race-grid.ts` stable IDs and collision-safe 2–8 grid; `src/race-config.ts` new competitive defaults and preserved old Custom signature; `src/game.js`/ `src/world.js` seven real AI and 3D car models; dynamic `src/race-hud.ts`, `src/route-map.ts`, `src/App.vue` field sizes, responsive 8-car CSS and real minmap positions; `src/championship-cup.ts`/ `src/sprint-series.ts` scored eight places, reverse heats, legacy integrity; `src/circuit-laps.ts`/ `src/effects.js` support eight physical drivers in physics and graphics hot paths.
+- **Regression repairs:** existing 4-car fixtures updated where current fields expand; isolated solo physics tests from newly present AI; kept the original three-rival home showcase shot; module-size ratchet respected. Focused [CI 41201415728](https://github.com/weskao/skyline-rush/actions/runs/41201415728) confirms Typecheck + Unit Tests **SUCCESS** at `28a776c`; Cloud Save succeeded on previous focused CI. Browser/world tour *skipped* there and **do not count as passed**.
+- **Browser/actual game tests added:** `tests/eight-car-grid-browser.spec.js` runs real Playwright/WebGL desktop 8-car, 390×844 phone 8-car and 2-car, solo mode without fake rivals; generates actual `test-results/race-mode-eight-car-grid-*.png` screenshots only when the specs actually run. Not AI concepts.
+- **Still unchecked:** latest-HEAD full Browser/World Tour, Low/Medium/High FPS/draw-call/frame-time evidence, real-device Safari/Android and UI visual signoff, fully green `develop` dependency CI. No PR, deployment, or merge to `develop`/ `main` permitted without user approval.
+
+The TODO #11/#12 named in this Wave 2 are **not** the legacy `TODO.md` headings 11 (world props) and 12 (items). See this branch's dedicated Wave 2 subsection at the end of `TODO.md`; do not mark unrelated requirements finished.
