@@ -79,8 +79,10 @@ export function createGarageStage(environment: THREE.Texture) {
     // The preview repeats real ignition/trail behaviour with a small, bounded motion.
     const dt = Number.isFinite(lastTime) ? Math.max(0, Math.min(0.05, time - lastTime)) : 1 / 60;
     lastTime = time;
+    // Move only the emission sample briefly; keep the rendered car perfectly centred.
     car.position.z = reducedMotion ? 0 : Math.sin(time * 2) * 0.65;
-    aero.update(previewRace, dt, origin, previewSettings, reducedMotion);
+    try { aero.update(previewRace, dt, origin, previewSettings, reducedMotion); }
+    finally { car.position.z = 0; }
   }
 
   function inspectBounds(camera: THREE.PerspectiveCamera) {
