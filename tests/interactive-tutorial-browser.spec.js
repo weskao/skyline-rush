@@ -51,11 +51,7 @@ const keyboardRoll = async page => {
   await step(page, 'nitro');
 };
 
-test('keyboard practice requires real actions, completes all ten steps and preserves career', async ({ page }) => {
-  await begin(page);
-  const before = await career(page);
-  await page.waitForTimeout(800);
-  await step(page, 'throttle');
+const keyboardToNitro = async page => {
   await keyStep(page, 'w', 'left');
   await keyStep(page, 'a', 'right');
   await keyStep(page, 'd', 'brake');
@@ -65,6 +61,14 @@ test('keyboard practice requires real actions, completes all ten steps and prese
   await keyStep(page, 'Shift', 'airChain');
   await keyboardChain(page);
   await keyboardRoll(page);
+};
+
+test('keyboard practice requires real actions, completes all ten steps and preserves career', async ({ page }) => {
+  await begin(page);
+  const before = await career(page);
+  await page.waitForTimeout(800);
+  await step(page, 'throttle');
+  await keyboardToNitro(page);
   await keyStep(page, 'e', 'complete');
   await expect(page.locator('#tutorial-retry')).toBeVisible();
   await expect(page.locator('#tutorial-done')).toHaveText('Back to game');
@@ -77,6 +81,22 @@ test('keyboard practice requires real actions, completes all ten steps and prese
   await page.locator('#controls-button').click();
   await page.locator('#guide-open').click();
   await expect(page.locator('#guide-practice')).toHaveText('Practice again');
+});
+
+test('NITRO practice recovers after braking and demands a fresh charged sprint', async ({ page }) => {
+  await begin(page);
+  await keyboardToNitro(page);
+  await page.keyboard.down('s');
+  await page.keyboard.down('e');
+  await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', {timeout: 30000});
+  await step(page, 'nitro');
+  // The held key never receives another charge while pressed.
+  await expect(page.locator('#tutorial-instruction')).toContainText('Release NITRO');
+  await page.keyboard.up('e');
+  await page.keyboard.up('s');
+  await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
+  await keyStep(page, 'e', 'complete');
+  await expect(page.locator('#tutorial-retry')).toBeVisible();
 });
 
 test('practice restores a paused race and uses the current custom throttle key', async ({ page }) => {
@@ -118,15 +138,7 @@ test.describe('first visit without storage', () => {
     await page.addInitScript(() => Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));
     await page.goto('/');
     await page.locator('#start-button').click();
-    await keyStep(page,'w','left');
-    await keyStep(page,'a','right');
-    await keyStep(page,'d','brake');
-    await keyStep(page,'s','fly');
-    await keyStep(page,'Space','land');
-    await step(page,'boost');
-    await keyStep(page,'Shift','airChain');
-    await keyboardChain(page);
-    await keyboardRoll(page);
+    await keyboardToNitro(page);
     await keyStep(page,'e','complete');
     await expect(page.locator('#tutorial-done')).toHaveText('Start race');
     await page.locator('#tutorial-done').click();
