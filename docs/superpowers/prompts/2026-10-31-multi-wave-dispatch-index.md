@@ -118,6 +118,21 @@ The user's original rich neon/metallic style images have been **located** as rea
 
 **Reference locations per branch:** [Tutorial](https://github.com/weskao/skyline-rush/blob/feature/tutorial-ux-combos/docs/designs/tutorial-ux-combos/VISUAL-FIDELITY.md) · [HUD](https://github.com/weskao/skyline-rush/blob/feature/mobile-controls-hud/docs/designs/mobile-controls-hud/VISUAL-FIDELITY.md) · [Garage](https://github.com/weskao/skyline-rush/blob/feature/garage-preview-studio/docs/designs/garage-preview-studio/VISUAL-FIDELITY.md) · [High-speed VFX](https://github.com/weskao/skyline-rush/blob/feature/high-speed-vfx/docs/designs/high-speed-vfx/VISUAL-FIDELITY.md) · [Garage Skins](https://github.com/weskao/skyline-rush/blob/feature/garage-vfx-skins/docs/designs/garage-vfx-skins/VISUAL-FIDELITY.md) · [Rewards](https://github.com/weskao/skyline-rush/blob/feature/garage-rewards-and-missions/docs/designs/garage-rewards-and-missions/VISUAL-FIDELITY.md) · [Store](https://github.com/weskao/skyline-rush/blob/feature/garage-store-readiness/docs/designs/garage-store-readiness/VISUAL-FIDELITY.md).
 
+## 3× independent raster candidate pack / 1× display CSS contract (2026-10-31)
+
+The originating GPT chat created **59 individual 3× transparent-raster image candidates** extracted from an AI-generated style catalog: 59 `@3x.png`, 59 `@3x.webp`, one `assets.json` map, 1× CSS preview (`PREVIEW.html`), actual alpha/dimension QA and per-feature ZIPs. **The binary files are only delivered as conversation download artifacts, not yet committed to GitHub and not connected to production Vue/Three.js.** This work is a source-reference cutout/upscale pipeline, **not native AI 3× detail**. Some glow fringes or clipping require visual review before adoption.
+
+| Feature branch | Candidate count | 3× physical output / required 1× display |
+| --- | ---: | --- |
+| `feature/garage-vfx-skins` | 27 | 288×288 → 96×96 CSS px for image previews; category SVG remains fallback |
+| `feature/garage-rewards-and-missions` | 8 | 288×288 → 96×96 CSS px; dynamic reward data/locale text remains Vue |
+| `feature/garage-store-readiness` | 6 | 216×216 → 72×72 CSS px; no shop checkout or real prices |
+| `feature/mobile-controls-hud` | 18 | 216×216 → 72×72 CSS px for icons; 432×156 → 144×52 CSS px for button **visual studies only**. Interactive buttons use live DOM text/states |
+
+**Import sequence:** inspect `PREVIEW.html` with light and dark background; reject any black matte/gray grid edges or cutout clipping; user-design approval → upload the actual binary PNG/WebP into corresponding `public/feature-assets/<slug>/raster/` on the owning branch; record file hashes and load-size budget; wire components with constrained `<img width height>` or CSS and `object-fit: contain`; write missing-image fallback/responsive tests and capture real WebGL before/after. A 3× raster must **never be rendered at its natural width in CSS**. Quality tiers may choose optimized assets selectively; never remove essential UI.
+
+**Not done:** no uploaded 3× bitmaps, no live-game visual integration, no exact-HEAD CI. These are all pending design, dependency, TDD and Visual Fidelity gates, so no feature TODO is marked complete.
+
 ## Coordination notes
 
 - UI/UX planning TODO `feature/ux-ui-combo-mobile-controls` has not been merged into `main`. Implementation branches were created from `main` (2026-10-31; `bea47cf61c162b4341021fa6d24ca45850af7796`). Before TDD work begins, reconcile approved requirements without overwriting their history.
