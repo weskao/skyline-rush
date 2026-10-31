@@ -16,7 +16,7 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
-import { createCircuitScene } from './circuit-scene.ts';
+import { createGarageStage } from './garage-stage.ts'; import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
@@ -82,7 +82,7 @@ export function createWorld(canvas) {
   const msaaSamples = quality => quality === 'low' ? 2 : 4;
   const sceneTarget = samples => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples });
   const composer = new EffectComposer(renderer, sceneTarget(4)); // configureVFX re-targets for the saved quality tier
-  composer.addPass(new RenderPass(scene, camera));
+  const renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 1.1);
   // The bloom blur spreads one NaN/Inf scene texel into a screen-sized black rectangle (seen when a nozzle shader hit
   // 0*Inf at an MSAA sliver). Dropping non-finite texels at the high pass caps such a bug at a one-pixel speck.
@@ -110,7 +110,7 @@ export function createWorld(canvas) {
   const room = new RoomEnvironment();
   const environment = env.fromScene(room, 0.04);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0.42;
+  scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null;
   room.dispose();
   env.dispose();
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
@@ -536,7 +536,7 @@ export function createWorld(canvas) {
   let cameraMode = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0;
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let photoView = null, photoCapture = null;
+  let photoView = null, photoCapture = null, garageCamera = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
   let sizeKey = '', warmupPending = true;
@@ -607,8 +607,10 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize,
+    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); if (garagePaint) garageStage.setPaint(garagePaint); } if (!snapshot) renderPass.scene = scene; },
+    inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
+      garagePaint = paint; garageStage?.setPaint(paint);
       player.userData.body.material.color.set(paint.paint);
       player.userData.lightColor.fromArray(paint.light);
     },
@@ -642,6 +644,8 @@ export function createWorld(canvas) {
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
+      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.12; renderer.info.reset(); composer.render(dt); return; }
+      renderPass.scene = scene;
       endlessActive=!!race.endless;
       const preview = race.phase === 'ready';
       const car = race.player;
@@ -975,10 +979,8 @@ export function createWorld(canvas) {
         else lookTarget.set(car.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, car.altitude * 0.85 + 1.5, -25);
       }
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
-      const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
-      const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
-      const landingAge = car.landing ? race.elapsed - car.landing.time : 10;
-      const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
+      const impactAge = car.impact ? race.elapsed - car.impact.time : 10; const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
+      const landingAge = car.landing ? race.elapsed - car.landing.time : 10; const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
       if (!reducedMotion && race.phase === 'racing') {
         desiredCamera.x += Math.sin(time * 61) * impact * 0.27;
         desiredCamera.y += Math.sin(time * 47) * impact * 0.15 - landing * 0.3;
@@ -986,16 +988,14 @@ export function createWorld(canvas) {
         desiredCamera.x += Math.sin(time * 65) * feedback.ignition * visual.shake * 0.12;
         desiredCamera.z += boostStrength * (visual.enabled ? 0.22 : 0);
       }
-      if(preview) {
+      if(preview && !garageCamera) {
         // Preserve scenery clearance, then fit the complete car within the
         // actual viewport, regardless of track and selected camera angle.
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7);
-      if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
-      camera.position.lerp(desiredCamera, smoothing);
-      smoothLook.lerp(lookTarget, smoothing);
+      const smoothing = 1 - Math.exp(-dt * 7); if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
+      camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
       if (photoView && race.phase === 'paused') {
         camera.position.copy(desiredCamera);
@@ -1105,7 +1105,7 @@ export function createWorld(canvas) {
       });
     },
     dispose() {
-      stopLocaleSigns();
+      garageStage?.dispose(); stopLocaleSigns();
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
       circuitScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
