@@ -13,8 +13,13 @@ function tick(session, action = {}, dt = DT) {
 function performDrift(session) {
   const start = session.index;
   const car = session.race.player;
+  // Earlier one-way steering may leave the car on a rail; drive back to centre first.
+  for (let i = 0; i < 300 && Math.abs(car.x) > 1; i++) tick(session, { steer: -Math.sign(car.x) });
+  assert.equal(session.index, start, 'steering alone is not drifting');
   const nitroBefore = car.nitro;
-  // Keep the car away from the guardrail: sustained one-way steering hits the\n  // rail, which correctly cancels a real drift in the physics engine.\n  for (let i = 0; i < 130; i++) tick(session, { brake: true, steer: Math.floor(i / 10) % 2 ? 1 : -1 });
+  // Keep the car away from the guardrail: sustained one-way steering hits the
+  // rail, which correctly cancels a real drift in the physics engine.
+  for (let i = 0; i < 130; i++) tick(session, { brake: true, steer: Math.floor(i / 10) % 2 ? 1 : -1 });
   assert.equal(session.index, start, 'drift is paid only on release');
   tick(session, { throttle: true });
   assert.equal(session.index, start + 1, 'real drift payout advances the lesson');
