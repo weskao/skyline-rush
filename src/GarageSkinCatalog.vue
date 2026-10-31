@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin } from './garage-skin-runtime.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
+import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
 defineProps<{ locale: string }>();
 
@@ -27,10 +28,10 @@ function onImageError(id: string): void {
 
 <template>
   <!-- The trial/equip action passes through the session-only entitlement controller. -->
-  <section id="garage-vfx-catalog" class="garage-vfx-catalog" data-preview-contract="live-shared-aero"
+  <section id="garage-vfx-catalog" class="garage-vfx-catalog" data-preview-contract="live-shared-aero" :data-release-mode="GARAGE_RELEASE_MODE"
     aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
-    <p class="garage-vfx-message">{{ locale === 'zh-TW' ? '預覽不會解鎖外觀。免費試用不會成為永久擁有。' : 'Preview does not unlock skins. Free trials are not permanent ownership.' }}</p>
+    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '預覽不會解鎖外觀。免費試用不會成為永久擁有。' : 'Preview does not unlock skins. Free trials are not permanent ownership.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
     <div v-for="category in SKIN_CATEGORIES" :key="category" class="garage-vfx-category">
       <h4>{{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
       <ul>
@@ -48,7 +49,7 @@ function onImageError(id: string): void {
           <div class="garage-vfx-actions">
             <button type="button" @click="selectGarageSkin(skin.id)">{{ locale === 'zh-TW' ? '預覽' : 'Preview' }}</button>
             <button type="button" :disabled="!view(skin.id)?.canEquip" @click="equipGarageSkin(skin.id)">
-              {{ view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : (locale === 'zh-TW' ? '試用' : 'Try') }}
+              {{ view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '試用' : 'Try') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
             </button>
           </div>
         </li>
