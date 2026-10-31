@@ -572,6 +572,9 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 @media (prefers-reduced-motion: reduce) { input[type="checkbox"], input[type="checkbox"]::before { transition: none; } }
 .airflow-hud { position: fixed; top: 285px; left: max(40px, env(safe-area-inset-left, 0px)); z-index: 3; width: 214px; padding: 16px; background: linear-gradient(120deg,#0b2539e8,#0b25397a); border-left: 2px solid #83e1fa; border-radius: 0 6px 6px 0; display: grid; gap: 9px; opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s; pointer-events: none; }
 .airflow-active .airflow-hud { opacity: 1; transform: translateY(0); }
+@media (min-width: 1100px) and (min-height: 501px) {
+  body:not([data-phase="ready"]) .airflow-hud { top: 405px; }
+}
 /* Airflow showcase hides the start panel but keeps the one standard Start button reachable. */
 .airflow-active[data-phase="ready"] .intro { visibility: hidden; }
 .airflow-active[data-phase="ready"] #start-button { visibility: visible; position: fixed; inset: auto 0 max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)); width: max-content; margin-inline: auto; }
@@ -615,7 +618,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 /* Touch tablets lift the leaderboard to the top bar; the AIRFLOW bar sits under it, above the 292px live map
    (beside it, it covered the centred progress bar on an 820px-wide iPad). */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
-  body:not([data-phase="ready"]) .aero-tools { top: 204px; }
+  body:not([data-phase="ready"]) .aero-tools { top: 242px; }
 }
 /* Phones and short landscape have no free slot for the telemetry panel mid-race: it covered the speed and race info.
    It stays on the ready showcase; while racing the pressed AIRFLOW button and the streamlines show it is on. */
@@ -1218,12 +1221,13 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-driver-comet { fill:#f8c562; }
 .route-driver-rift { fill:#ff7ab9; }
 /* Eight ranks stay legible across short mobile landscape and bilingual HUDs. */
-.leaderboard:has(.racer:nth-child(8)) .racer { min-height: 20px; }
-@media (max-width: 760px), (max-height: 500px) {
-  .leaderboard:has(.racer:nth-child(8)) .racer { height: 23px; }
+/* Show all eight ranks without overlapping the minimap, controls or speedometer. */
+.leaderboard:has(.racer:nth-child(8)) .racer { height: 18px; min-height: 18px; font-size: 8px; }
+@media (max-height: 500px) {
+  .leaderboard:has(.racer:nth-child(8)) .racer { height: 14px; min-height: 14px; font-size: 7px; }
 }
-@media (max-height: 380px) and (pointer: coarse) {
-  .leaderboard:has(.racer:nth-child(8)) .racer { height: 20px; }
+@media (max-width: 760px) and (min-height: 501px) {
+  .leaderboard:has(.racer:nth-child(8)) .racer { height: 19px; min-height: 19px; }
 }
 /* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
 @media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
