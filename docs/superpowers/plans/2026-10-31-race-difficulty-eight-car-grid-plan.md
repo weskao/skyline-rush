@@ -77,6 +77,17 @@
 - [ ] **V4 — GREEN / Asset Integration:** During an authorized implementation phase only, produce optimized original SVG/WebP assets if justified, use Vue/CSS for interactive text/HUD and current Three.js for dynamic VFX. Keep visual identity aligned across Low/Medium/High with tiered GPU cost, quality-change cleanup and shader warmup. Re-run focused RED tests to GREEN.
 - [ ] **V5 — Verify:** Capture real-game WebGL before/after screenshot/video and compare FPS/frame-time p50/p95, Draw Calls, Triangles, texture/resource lifecycle. Complete the relevant Task 5 cross-platform gate and exact HEAD CI. Only then consider marking visual work `- [x]` in the complete canonical TODO.
 
+### Task VF — enforce reference-locked visual fidelity (SDD → BDD → TDD)
+
+**Required design:** [Visual Fidelity design and original reference map](https://github.com/weskao/skyline-rush/blob/feature/race-difficulty-eight-car-grid/docs/designs/race-difficulty-eight-car-grid/VISUAL-FIDELITY.md); shared policy: [Visual Fidelity Gate](https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/docs/superpowers/specs/2026-10-31-visual-fidelity-gate.md).
+**Prerequisite:** candidate AI design imagery is **not approved runtime art**. The original user reference crop ZIP is provided with the conversation but its PNG files are **not yet committed to GitHub**; attach the accepted real image bytes and record Git SHA before visual signoff. Simplified SVG icon/outline/wireframe is not equivalent to high-detail metallic 3D source art.
+
+- [ ] **SDD / reference lock:** inspect real game source, current WebGL screenshots, original AI concept, saved wireframes and art assets. Specify component geometry, hierarchy, type/color/glow, camera/lighting, actual sprite/texture identities, breakpoints, animation timing, fallback, and approval status. Pending approval must block any claim of completed visual fidelity.
+- [ ] **BDD / RED:** write failing real layout and state tests at 390×844, 844×390 and 1440×900 (also small-screen stress) for touch safety, no occlusion, English/Traditional Chinese copy, Low/Medium/High, Reduced Motion and missing art. Capture before screenshot of actual browser state; never screenshot an AI picture and call it game output.
+- [ ] **TDD / GREEN:** implement the **approved** appearance using Vue 3 + strict TypeScript/CSS and shared Three.js renderer (true-alpha images only when needed). Preserve actual gameplay, entitlement, input, animation and GPU lifecycle; no flattened full-screen collages as interactive UI.
+- [ ] **Refactor / Visual Gate:** compare the approved reference to the actual PNG and real 10–20s animation video side by side; log layout, car framing, materials, lights/glow, asset art, controls, motion, perf and accessibility as PASS/FAIL/APPROVED_DEVIATION/BLOCKED. Fix real disparities with new RED→GREEN cycles. **Do not invent a similarity percentage.**
+- [ ] **Release:** only check completed TODO subitems `- [x]` after visual reviewer signoff + tested browser and Android/iOS orientations + full exact-HEAD CI. No auto PR, deployment or main merge.
+
 ## TDD tasks (not started)
 
 ### Task 1: Version a typed race participant contract with 1–7 rivals in competitive requests and stable historic migration
