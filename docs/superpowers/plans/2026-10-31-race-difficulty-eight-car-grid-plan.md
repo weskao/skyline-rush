@@ -1,5 +1,8 @@
 # AI Difficulty, Eight-Car Field and Reverse Grid Implementation Plan
 
+> **Branch integration policy override (2026-10-31):** `develop` is the sole integration target, **not `main`**. Wave 1 Tutorial/Mobile HUD/Garage Studio were integrated at `a021044dff22f8dab3845d182794d7d397b56d06`; its [full develop CI](https://github.com/weskao/skyline-rush/actions/runs/41195915543) was pending when this note was written. Before feature coding, verify the latest actual develop HEAD full-regression CI is green; if it fails, stop and diagnose. Sync latest develop into this existing feature branch **non-destructively**, preserve docs/tests and only start once this branch's specific prerequisites are met. Do not auto-merge this work into develop, main, or open a PR; request user authorization after complete acceptance. Any historical references to `main` in this plan/spec are superseded by this note.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Fixed competitive modes target 8 total racers (1 player+7 unique AI); Custom supports 2–8 total; solo modes exempt; actual reverse-grid subsequent Cup/Sprint heats, last finisher pole and winner rear; fair AI difficulty and legacy 4-car records.
