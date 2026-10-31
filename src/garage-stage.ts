@@ -104,11 +104,21 @@ export function createGarageStage(environment: THREE.Texture) {
   }
 
   function dispose() {
+    // Aero geometry is per-stage, unlike globally shared car-model geometry.
+    const released = new Set<THREE.BufferGeometry>();
+    const releaseVfx = (geometry: THREE.BufferGeometry) => {
+      if (released.has(geometry)) return;
+      released.add(geometry);
+      geometry.dispose();
+    };
+    aero.group.traverse(object => {
+      if (object instanceof THREE.Mesh) releaseVfx(object.geometry);
+    });
     // Scene-owned Aero particles and shock meshes are not children of the car.
     for (const object of scene.children) {
       if (object === car || stageMeshes.includes(object as THREE.Mesh)) continue;
       if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {
-        object.geometry.dispose();
+        releaseVfx(object.geometry);
         const materials = Array.isArray(object.material) ? object.material : [object.material];
         materials.forEach(material => material.dispose());
       }
