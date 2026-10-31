@@ -62,3 +62,13 @@ test('Pages deploy pins a reviewed garage release mode instead of inheriting mut
   assert.match(deploy, /GARAGE_VFX_RELEASE_MODE: (?:coming-soon|trial|released)/);
   assert.match(deploy, /node scripts\/assert-production-locked\.mjs/);
 });
+
+test('unpublished skin IDs must be absent from shared race shader and covered by production leak markers', async () => {
+  const { readFileSync } = await import('node:fs');
+  const shader = readFileSync(new URL('../src/aero-vfx.js', import.meta.url), 'utf8');
+  const gate = readFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url), 'utf8');
+  for (const id of ['thruster-ion', 'airflow-slipstream', 'nitro-trail-cyan', 'launch-flare-blue']) {
+    assert.doesNotMatch(shader, new RegExp(id));
+    assert.ok(gate.includes(id), `missing locked-bundle leak marker: ${id}`);
+  }
+});
