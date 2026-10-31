@@ -4,6 +4,15 @@
 
 ### Shared platform, responsive layout and graphics-quality contract (applies to items 1–12)
 
+#### S0. Mandatory high-fidelity visual signoff (applies to every visually affected item)
+
+- [ ] Review the original high-detail AI reference image(s) rather than substituting generic concept lookups or flat placeholder SVGs. The 14 original-image crops have been exported as `skyline-rush-design-reference-crops.zip` (current-conversation artifact, **not yet committed to GitHub**), and branch-level maps exist under `docs/designs/<feature>/VISUAL-FIDELITY.md`. The shared procedure is `docs/superpowers/specs/2026-10-31-visual-fidelity-gate.md` on this planning branch.
+- [ ] Obtain reviewed/approved immutable image reference bytes in the feature branch and record Git SHA, viewport, component geometry/color/material/camera/light/timing contract, accepted deviations. Initial layout SVGs are only draft geometry and are **not equivalent** to high-fidelity rendered references.
+- [ ] Apply SDD → BDD → TDD with actual Playwright/WebGL screenshots + 10–20s interaction recordings, compare original reference to real implementation side by side on Android/iOS portrait/landscape and desktop; record PASS/FAIL/BLOCKED/APPROVED_DEVIATION for composition, asset detail, glow, lighting, motion, touch, quality tiers and performance. Don't call UI finished or check TODO `- [x]` on passing code tests alone.
+- [ ] For the Economy Foundation, visual gate may be `NOT_APPLICABLE` when no UI/art is changed. Keep current gameplay/economy decisions authoritative; never copy speculative currency, balance, Shop or rewards from visual concepts into production.
+
+
+
 **Mandatory for every future implementation branch / development phase, including P0, P1 and P2.** Before touching source, read the **latest `CLAUDE.md` from the actual implementation branch** and the relevant `.claude/rules/` files (at minimum: `device-quality.md`, `performance-review.md`, `ui-architecture.md`, `touch-input.md` and `ui-phase-interactions.md`; also `world-tour.md` / `vehicle-road-stability.md` when AI, roads or physics change). These project rules are authoritative if they change after this planning commit. This document records *future acceptance requirements*, not code changes or claims that device testing is complete.
 
 #### S1. Platform and adaptive layout matrix
