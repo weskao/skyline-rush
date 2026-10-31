@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { CAR_STYLES, makeCar } from './car-model.js';
+import { createAeroVFX } from './aero-vfx.js';
+import { vfxSettings } from './vfx-settings.ts';
+import type { VfxSettings } from './vfx-settings.ts';
+import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import { garageFittedDistance } from './garage-camera.ts';
 import type { PaintPreset } from './appearance.ts';
@@ -15,6 +19,14 @@ export function createGarageStage(environment: THREE.Texture) {
   const car = makeCar(CAR_STYLES.roadster);
   car.position.y = 0.06;
   scene.add(car);
+  // Studio uses the SAME Aero implementation and shader resources as live racing.
+  const aero = createAeroVFX(scene, car);
+  const origin = new THREE.Vector3();
+  const previewDriver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0,
+    impact: null, altitude: 0, trick: null };
+  const previewRace = { phase: 'racing', player: previewDriver };
+  let previewSettings: VfxSettings = vfxSettings({ airflow: true });
+  let lastTime = NaN;
   const carRadius = new THREE.Box3().setFromObject(car).getBoundingSphere(new THREE.Sphere()).radius;
   const platform = new THREE.Mesh(
     new THREE.CylinderGeometry(5.65, 5.65, 0.18, 64),
@@ -64,6 +76,11 @@ export function createGarageStage(environment: THREE.Texture) {
     camera.lookAt(look);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld(true);
+    // The preview repeats real ignition/trail behaviour with a small, bounded motion.
+    const dt = Number.isFinite(lastTime) ? Math.max(0, Math.min(0.05, time - lastTime)) : 1 / 60;
+    lastTime = time;
+    car.position.z = reducedMotion ? 0 : Math.sin(time * 2) * 0.18;
+    aero.update(previewRace, dt, origin, previewSettings, reducedMotion);
   }
 
   function inspectBounds(camera: THREE.PerspectiveCamera) {
@@ -87,6 +104,15 @@ export function createGarageStage(environment: THREE.Texture) {
   }
 
   function dispose() {
+    // Scene-owned Aero particles and shock meshes are not children of the car.
+    for (const object of scene.children) {
+      if (object === car || stageMeshes.includes(object as THREE.Mesh)) continue;
+      if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {
+        object.geometry.dispose();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach(material => material.dispose());
+      }
+    }
     // The car model borrows global box, lamp, spoke and body geometry from car-model.js.
     // Disposing those would invalidate race meshes sharing the same WebGL context.
     for (const mesh of stageMeshes) {
@@ -101,5 +127,9 @@ export function createGarageStage(environment: THREE.Texture) {
       }
     });
   }
-  return { scene, update, inspectBounds, setPaint, dispose };
+  return {
+    scene, update, inspectBounds, setPaint, dispose,
+    setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
+    configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },
+  };
 }
