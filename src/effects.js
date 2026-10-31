@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { MAGNET_RANGE } from './game.js';
 
 // Shared by the model and its wake, so all four streams start at the actual ports.
@@ -67,14 +68,14 @@ export function createEffects(scene, roadCenter) {
         float envelope=pow(max(0.,1.-downstream),1.6)*smoothstep(0.,.06,downstream);
         gl_FragColor=vec4(.86,.94,1.,power*envelope*breakup*.5);}`,
   });
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < RACE_DRIVER_IDS.length * LIFT_PORTS.length; i++) {
     const jet = new THREE.Mesh(coreGeometry, coreMaterial.clone());
     jet.visible = false; cores.add(jet);
   }
   let flowTime = 0;
   let cursor = 0, lastImpact = null, lastLanding = null, lastShieldBlock = null;
-  const emissions = new Float64Array(4), strengths = new Float64Array(4);
-  const nozzles = new Uint8Array(4);
+  const emissions = new Float64Array(RACE_DRIVER_IDS.length), strengths = new Float64Array(RACE_DRIVER_IDS.length);
+  const nozzles = new Uint8Array(RACE_DRIVER_IDS.length);
   const nozzlePosition = new THREE.Vector3(), nozzleVelocity = new THREE.Vector3();
   const orange = [2.5, 0.85, 0.15], mist = [0.58, 0.64, 0.68], gas = [0.8, 0.87, 0.92];
   const blue = [0.15, 0.8, 2.5], gold = [2.5, 1.8, 0.15], purple = [1.2, 0.3, 2.5], red = [2.5, 0.1, 0.15];
@@ -238,7 +239,7 @@ export function createEffects(scene, roadCenter) {
         const active = enabled && (preview || race.phase === 'racing') && (preview ? source < 2 && (!pose || pose.userData.jets.visible) : driver.thrusting) && pose?.visible !== false;
         strengths[source] = THREE.MathUtils.damp(strengths[source], active ? 1 : 0, active ? 12 : 9, dt);
         for (let port = 0; port < LIFT_PORTS.length; port++) {
-          const jet = cores.children[source * 4 + port];
+          const jet = cores.children[source * LIFT_PORTS.length + port];
           jet.visible = enabled && !!pose && strengths[source] >= 0.01 && pose.visible;
           if (!jet.visible) continue;
           const [x, z] = LIFT_PORTS[port];

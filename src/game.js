@@ -174,7 +174,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
   const race = {
     trackId, modifier: dailyModifier, mode: config.mode, config, grid, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: (themed?.sections.length ? [...track.sections, ...themed.sections].sort((a, b) => a.from - b.from) : track.sections).map(section => ({ ...section })),
     phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? config.mode === 'circuit' ? lapItems(createPickups(track), config.laps, 'pickup') : createPickups(track) : [], rings,
-    circuit: config.mode === 'circuit' ? createCircuit(config.laps) : null,
+    circuit: config.mode === 'circuit' ? createCircuit(config.laps, grid) : null,
     props: [], risk, ...(themed && { ramps: themed.ramps }), // props: solid World Tour scenery parts; main.js fills them from roadObstacles()
     hazards: raceHazards(trackId, track, LANES, config, course),
     checkpoint: config.mode === 'checkpoint' ? createCheckpointRush(track) : null,

@@ -8,14 +8,17 @@ export interface CircuitDriver {
 }
 interface Car { distance: number; x: number; altitude: number; falls?: number; finishTime?: number | null; speed: number }
 export interface CircuitState { laps: number; player: CircuitDriver; rivals: Record<string, CircuitDriver> }
-const createDriver = (x: number): CircuitDriver => ({
-  completed: 0, nextSector: 1, valid: true, previousDistance: 0, previousX: x, previousAltitude: 0,
+const createDriver = (x: number, distance = 0): CircuitDriver => ({
+  completed: 0, nextSector: 1, valid: true, previousDistance: distance, previousX: x, previousAltitude: 0,
   falls: 0, lapStart: 0, splits: [], lapTimes: [], finishTime: null,
 });
-export function createCircuit(laps: number): CircuitState {
+export function createCircuit(laps: number, grid?: readonly { id: string; x: number; distance: number }[]): CircuitState {
   if (![1, 3, 5].includes(laps)) throw new RangeError('Circuit laps must be 1, 3 or 5');
-  return { laps, player: createDriver(2.5), rivals: Object.fromEntries(
-    ['NOVA', 'ORBIT', 'APEX'].map((name, i) => [name, createDriver([-7.5, -2.5, 7.5][i])]),
+  const slots = grid ?? [{ id: 'YOU', x: 2.5, distance: 0 }, ...['NOVA', 'ORBIT', 'APEX'].map((id, i) => ({ id, x: [-7.5, -2.5, 7.5][i]!, distance: 0 }))];
+  const you = slots.find(slot => slot.id === 'YOU');
+  if (!you || new Set(slots.map(slot => slot.id)).size !== slots.length) throw new RangeError('Invalid circuit grid');
+  return { laps, player: createDriver(you.x, you.distance), rivals: Object.fromEntries(
+    slots.filter(slot => slot.id !== 'YOU').map(slot => [slot.id, createDriver(slot.x, slot.distance)]),
   ) };
 }
 
