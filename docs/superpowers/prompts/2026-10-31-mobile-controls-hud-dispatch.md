@@ -45,6 +45,23 @@
 
 使用 **Vue 3 + strict TypeScript + Three.js** 實作真正可操作的 UI/3D；優先保留效果深度（立體車身、真實光影、發光材質與精緻圖示），任何降級均需明列並核准。依 **SDD → BDD → TDD（RED→GREEN→Refactor）** 建立 Layout/State 測試；Playwright 擷取真實執行畫面及互動動畫，逐項與核准圖並排比對：構圖、間距、光影、素材、狀態、動態、操作及 FPS／p95。**原始概念圖不能充當實際 WebGL 證據，CI 綠燈也不能取代美術驗收。** Android/iOS 直橫向、Desktop、Low/Medium/High、Reduced Motion 和 VFX Off 均需記錄結果。未核准/未完成項目保留 `- [ ]`，不得宣稱已符合圖片、不得自動 merge main。
 
+### 3D. 3× 素材尺寸與匯入規格（2026-10-31）
+
+此前 GPT 對話已在本地輸出 `skyline-rush-3x-mobile-controls-hud.zip` 與完整 `skyline-rush-3x-ui-assets.zip`；其中 18 個**獨立候選素材**皆有透明 PNG／WebP 版本，分組為 12 HUD/misc icons and 6 button image references (button text must be rendered with Vue, not baked texture)。
+
+**注意：這些 PNG/WebP 目前只存在於對話 ZIP，尚未上傳到 GitHub，也還沒套用到真實 Vue／Three.js 介面。** 請先實際匯入檔案，並在圖像／透明邊緣驗收後使用。來源是 AI 圖片拼版的精細裁切、去背及 Lanczos 放大，不是原生生成出三倍細節的無瑕高解析素材；不可聲稱原生 3×。
+
+**強制正確顯示尺寸：**
+
+- `288×288 raster px → 96×96 CSS px`（Garage 主要素材、獎勵圖示）。
+- `216×216 raster px → 72×72 CSS px`（HUD／Store 小圖示）。
+- `432×156 raster px → 144×52 CSS px`（僅按鈕設計參考；文字、狀態與點擊由真正 Vue 控制）。
+- Vue `<img>` 或 CSS 必須設定 `width`／`height` 或 `inline-size`／`block-size` 為**1× 預定尺寸**，加 `object-fit: contain`；不能讓 3× 圖片以原始 px 尺寸撐大整個 UI。
+- 不要把 CSS 像素當成實機像素；高 DPI 只決定影像細緻度。盡量採用 WebP、lazy loading 和 Low 畫質 fallback，評估 GPU texture memory。
+- 用真正暗／亮背景檢查透明 Alpha，不要只看名為 `transparent` 的棋盤格。
+
+整合與驗收時先讀 `docs/superpowers/plans/2026-10-31-mobile-controls-hud-plan.md` 的 **Candidate 3× Raster Asset Delivery**，逐項標記已上傳、已整合、TDD、真實截圖及 CI；功能未達 Wave 依賴與 Visual Fidelity Gate 之前**不可勾選 TODO 主項**。
+
 ### 4. 完成、TODO 勾選與合併 Gate
 
 - 實作完畢後執行相關 `npm run typecheck`、`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`、`make verify`，以及受影響的 World Tour、Cloud Save 等測試；確認最後 HEAD 的 GitHub Actions `quality-gate` 完整通過。
