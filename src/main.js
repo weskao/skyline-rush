@@ -154,9 +154,7 @@ const hud = createRaceHud({
   getGoUntil: () => goUntil,
   setFly: on => controls.setFly(on),
   updatePadHint: (phase, elapsed) => touchUI.updatePadHint(phase, elapsed),
-  motionOptions,
-  touchPreference,
-  reducedMotion,
+  motionOptions, touchPreference, reducedMotion,
 });
 function leaveIntro() {
   if (calmMotion()) return;
