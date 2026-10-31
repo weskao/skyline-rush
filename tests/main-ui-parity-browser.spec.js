@@ -26,9 +26,16 @@ test('Vue migration preserves the recorded element order, roles and CSS hooks', 
   }
 });
 
-test('stylesheet matches the reviewed main baseline with FPS, touch and minimap corrections', () => {
-  const css = readFileSync(new URL('../src/style.css', import.meta.url));
-  const header = Buffer.from('blob ' + css.byteLength + '\0');
-  const gitSha = createHash('sha1').update(header).update(css).digest('hex');
+test('main CSS contract remains byte-identical while Wave 1 NITRO appends overrides', () => {
+  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  const wave1 = '\n/* NITRO availability is read from the engine';
+  expect(css).toContain(wave1);
+  const main = Buffer.from(css.slice(0, css.indexOf(wave1)), 'utf8');
+  const header = Buffer.from('blob ' + main.byteLength + '\0');
+  const gitSha = createHash('sha1').update(header).update(main).digest('hex');
   expect(gitSha).toBe(baseline.cssBlob);
+  const nitro = css.slice(css.indexOf(wave1));
+  for (const state of ['charging', 'ready', 'active', 'disabled']) {
+    expect(nitro).toContain(`data-nitro-state="${state}"`);
+  }
 });

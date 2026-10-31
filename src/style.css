@@ -1245,7 +1245,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
    (none of these is above 10px in any layout, so nothing shrinks). !important for the same reason as above: these sizes live in six media blocks. */
 :is(.assist-button span, .aero-tools > button, .aero-tools > details > summary, .vfx-heading > span, .route-label, .track-select small, .start-hint, .intro-controls > div,
   .flight-tip, .bottomline, .stat-label, .progress-labels, .racer.is-player > strong, .racer.is-player > span:last-child, .countdown > span, .event-callout span,
-  .speed-caption, .fuel-caption, #flight-mode, .mode-key, .boost-status, #nitro-status, .aero-eyebrow, #aero-mode, .aero-channels > span, .aero-channels b, .aero-disclaimer,
+  .speed-caption, .fuel-caption, #flight-mode, .mode-key, .boost-status, .aero-eyebrow, #aero-mode, .aero-channels > span, .aero-channels b, .aero-disclaimer,
   .flight-director > span:not(.director-climb), .altitude-ladder > small, .impact-report div > span, .overlay-route, .result-stats span, .history-best, .controls-button, .performance-notice-eyebrow):lang(zh-TW) { font-size: 10px !important; }
 @media (max-width: 760px) { .driving-message:lang(zh-TW) { font-size: 10px; } } /* 11px on wider screens */
 /* The larger label keeps the column's height, so POSITION does not grow into the phone progress bar below it. */
@@ -1722,3 +1722,6 @@ body[data-race-mode="endless"] .progress-track { display: none; }
 .touch-controls .touch-nitro[data-nitro-state="ready"] { color: #ffefc1; border-color: #ffdf8c; box-shadow: inset 0 0 0 1px #ffe1a1, 0 0 9px rgb(255 213 128 / .35); }
 .touch-controls .touch-nitro[data-nitro-state="active"] { color: #fff4d6; border-color: #fff1bd; background: #735b40; }
 .touch-controls .touch-nitro[data-nitro-state="disabled"] { color: #a1aab3; border-color: #697783; opacity: .7; }
+
+/* CJK NITRO availability remains legible during countdown, pause and racing. */
+html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
