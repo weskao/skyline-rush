@@ -1,3 +1,87 @@
+## [0.28.0] - 2026-10-31
+
+### 🚀 Features
+
+- **endless:** Enable every themed track while preserving finite course API
+- **endless:** Enable every themed track while preserving finite course API
+- **endless:** Enable every themed track while preserving finite course API
+- **endless:** Enable every themed track while preserving finite course API
+- **endless:** Enable every themed track while preserving finite course API
+- **endless:** Enable every themed track while preserving finite course API
+- **endless:** Enable every themed track while preserving finite course API
+- **endless:** Stream unbounded three-dimensional scenery without changing finite races
+- **endless:** Stream unbounded three-dimensional scenery without changing finite races
+- **endless:** Stream unbounded three-dimensional scenery without changing finite races
+- **endless:** Stream unbounded three-dimensional scenery without changing finite races
+- **endless:** Stream unbounded three-dimensional scenery without changing finite races
+- **endless:** Stream unbounded three-dimensional scenery without changing finite races
+- **endless:** Stream unbounded three-dimensional scenery without changing finite races
+- **endless:** Repeat smooth Sky Spiral 3D helices after original finish
+- **endless:** Repeat smooth Sky Spiral 3D helices after original finish
+- **endless:** Repeat smooth Sky Spiral 3D helices after original finish
+- **endless:** Repeat smooth Sky Spiral 3D helices after original finish
+- **vfx:** Add quality-aware barrel-roll wake
+- **diag:** Keep the crash log and live input panel in VITE_DIAG builds only
+- **aero-vfx:** Trace the barrel-roll wake in still air
+- **dev:** Add make phone off to stop phone servers
+- **dev:** Add make phone-unlocked for all-unlocked phone server
+
+### 🐛 Bug Fixes
+
+- **endless:** Preserve finite scenery and modularize bounded infinite collisions
+- **endless:** Preserve finite scenery and modularize bounded infinite collisions
+- **endless:** Preserve finite scenery and modularize bounded infinite collisions
+- **endless:** Preserve finite scenery and modularize bounded infinite collisions
+- **endless:** Preserve finite scenery and modularize bounded infinite collisions
+- **endless:** Preserve finite scenery and modularize bounded infinite collisions
+- **endless:** Preserve finite scenery and modularize bounded infinite collisions
+- **endless:** Align spiral frame with 3D helix and stream Alpine/Coastal terrain past finish
+- **endless:** Keep streaming traffic visible beyond authored finish, test real rendering
+- **endless:** Keep Sky Spiral landmarks stable across repeat seams
+- **endless:** Fade streamed Sky Spiral landmarks without visual popping
+- **touch:** Hide touch controls by visibility so iOS releases held fingers
+- **release-notes:** Fade the media viewer and centre the zoom icon
+- **aero-vfx:** Keep wake history in world space when the render origin's height moves
+- **release-notes:** Drop the focus ring that flashed on tapped pictures and clips
+- **ui:** Show focus rings for the keyboard only so closing any dialog never flashes one
+- **dev:** Ignore sibling worktree reloads
+- **endless:** Save and show results on every Endless track
+
+### 🚜 Refactor
+
+- **endless:** Isolate bounded World Tour collision window
+
+### 📚 Documentation
+
+- **release:** Review 0.28.0 notes
+- **claude:** Tier UI changes by visual quality
+- **make:** List off in phone-diag and phone-unlocked help
+- **todo:** Record ci shard timings, gate status
+
+### 🧪 Testing
+
+- **endless:** RED ten-track survival and beyond-finish rendering contracts
+- **endless:** Live WebGL continuation, bounded assets and ten route selections
+- **endless:** RED repeat elevated Sky Spiral curves without changing sprint path
+- **endless:** RED require spiral frame centre to follow generated helix
+- **endless:** Verify Sky and World Tour unbounded GPU windows plus bounded solid scenery
+- **endless:** Reproduce Sky Spiral hero teleport across scenery seams
+- **endless:** Reproduce distant Sky Spiral landmark popping
+- **endless:** Archive ten-track 85km WebGL evidence and document acceptance
+- **endless:** Bound variable streamed scene nodes without masking GPU growth
+- **ui:** Measure media geometry in one frame
+- **ui:** Re-pin stylesheet hash for keyboard-only focus rings
+- **vfx:** Scale the roll wake fade wait for slow CI
+
+### ⚙️ Miscellaneous Tasks
+
+- **endless:** Include responsive layout verification in feature branch quality gate
+- Ignore airflow and barrel-roll wake evidence folders
+- Ignore barrel-roll physics and worktree cleanup evidence folders
+- Ignore main test repair evidence folder
+- Ignore new artifact evidence folders by default, keep README media tracked
+- Drop duplicate layout run and retired jobs
+- Run 16 browser and 8 world tour shards
 ## [0.27.0] - 2026-10-30
 
 ### 🚀 Features
