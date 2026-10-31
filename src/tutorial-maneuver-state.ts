@@ -1,6 +1,6 @@
 /** Observe engine outcomes only. No mutation of the race, controls, or car. */
 export type ManeuverLesson = 'airChain' | 'barrelRoll' | 'nitro';
-export type ManeuverPhase = 'ready' | 'airborne' | 'flicked' | 'rolling' | 'readyToLand' | 'sprinting';
+export type ManeuverPhase = 'ready' | 'airborne' | 'flicked' | 'rolling' | 'readyToLand' | 'sprinting' | 'retry';
 export interface ManeuverSnapshot {
   altitude: number;
   thrusting: boolean;
@@ -86,7 +86,8 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
       }
       if (car.nitroTime <= 0) {
         sprintSeconds = 0;
-        phase = 'ready';
+        // A failed, spent charge requires a new player press, not fake success.
+        phase = 'retry';
         return false;
       }
       peakSpeed = Math.max(peakSpeed, car.speed);

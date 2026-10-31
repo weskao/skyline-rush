@@ -55,6 +55,7 @@ test('NITRO ignores replayed events, invalid frames and interrupted sprint', () 
   state.update({ ...car, nitroUses: 1, nitroTime: 2.48, speed: 46 }, 1 / 60);
   for (let i = 0; i < 200; i++) assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 0, speed: 80 }, 1 / 60), false);
   assert.equal(state.progress, 0);
+  assert.equal(state.phase, 'retry', 'spent but incomplete NITRO must explicitly request another attempt');
   assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 2.2, speed: 85 }, NaN), false);
   assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 2.2, speed: 85 }, 0), false);
 });

@@ -176,6 +176,30 @@ test('NITRO activation alone does not finish practice; sprint and steering stay 
   assert.equal(session.race.phase, 'racing', 'simulation remains live until UI acknowledges completion');
 });
 
+test('an interrupted NITRO lesson refills only after release and remains player-controlled', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [
+    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
+    { fly: true }, { fly: false }, { boost: true },
+  ]) perform(session, action);
+  performAirChain(session);
+  performBarrelRoll(session);
+  const car = session.race.player;
+  const previousUses = car.nitroUses;
+  for (let i = 0; i < 180; i++) tick(session, { nitro: true, brake: true });
+  assert.equal(session.step, 'nitro', 'braking during activation must not fake a sprint');
+  assert.equal(car.nitroUses, previousUses + 1, 'one real charge was spent');
+  assert.ok(car.nitro < 1, 'holding NITRO must not grant another charge');
+  assert.equal(session.coachPhase, 'retry', 'the coach exposes the required release');
+  tick(session);
+  assert.equal(car.nitro, 1, 'practice-only charge refilled after actual release');
+  assert.equal(session.coachPhase, 'ready');
+  tick(session, { nitro: true });
+  for (let i = 0; i < 180 && !session.complete; i++) tick(session);
+  assert.equal(session.complete, true, 'a new real NITRO sprint can finish the lesson');
+  assert.equal(car.nitroUses, previousUses + 2, 'second attempt must consume a real charge');
+});
+
 test('reaching the road end recovers the same lesson without advancing or stranding the car', () => {
   const session = createInteractiveTutorial();
   session.race.player.distance = session.race.length;

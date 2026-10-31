@@ -63,6 +63,7 @@ export function setupTutorialUI({
       }),
       instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' :
         step === 'nitro' && phase === 'sprinting' ? 'tutorial.nitroSprint' :
+        step === 'nitro' && phase === 'retry' ? 'tutorial.nitroRetry' :
         step === 'airChain' && phase === 'airborne' ? 'tutorial.airChainAirborne' :
         step === 'barrelRoll' && phase === 'readyToLand' ? 'tutorial.barrelRollReadyToLand' :
         step === 'barrelRoll' && phase === 'rolling' ? 'tutorial.barrelRollRolling' :

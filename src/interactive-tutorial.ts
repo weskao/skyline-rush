@@ -95,7 +95,15 @@ export function createInteractiveTutorial() {
       else if (step === 'fly') valid = controls.fly === true && car.altitude > 1;
       else if (step === 'land') valid = !controls.fly && car.altitude < .15;
       else if (step === 'boost') valid = controls.boost === true && car.boosting;
-      else if (step === 'airChain' || step === 'barrelRoll' || step === 'nitro') valid = maneuver!.update(snapshot(), dt);
+      else if (step === 'airChain' || step === 'barrelRoll' || step === 'nitro') {
+        valid = maneuver!.update(snapshot(), dt);
+        if (step === 'nitro' && maneuver!.phase === 'retry' && !controls.nitro && car.nitroTime <= 0) {
+          // Practice-only retry after a spent, incomplete sprint: never mint
+          // a charge in normal races or while the NITRO key is still held.
+          car.nitro = 1;
+          maneuver = createTutorialManeuverState('nitro', snapshot());
+        }
+      }
       previousSpeed = car.speed;
       held = valid ? held + Math.min(dt, .05) : 0;
       if (valid && (held >= .4 || step === 'land' || step === 'airChain' || step === 'barrelRoll' || step === 'nitro')) {
