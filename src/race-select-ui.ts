@@ -5,7 +5,7 @@ import { RACE_TRACKS } from './game.js';
 import { RULE_PRESETS } from './race-config.ts';
 import { DEFAULT_RULES, modeEligibility, modeRulesSummary, ruleConflicts } from './mode-setup.ts';
 import { itemRuleValue } from './item-ui.ts';
-import { createCup, type CupState } from './championship-cup.ts';
+import { createCup, nextCupGrid, type CupState } from './championship-cup.ts';
 import { loadRecentCustom } from './recent-custom.ts';
 import { refreshCustomSelects } from './custom-select.ts';
 import { createRouteMap } from './route-map.ts';
@@ -26,7 +26,7 @@ interface RaceSelectOptions {
   /** The Daily Challenge being raced, or null for a normal selection. */
   getDaily(): unknown;
   clearDaily(): void;
-  createRace(trackId?: string, config?: unknown, presentation?: { visualPreset: VisualPreset }): Race;
+  createRace(trackId?: string, config?: unknown, presentation?: { visualPreset: VisualPreset }, nextGrid?: readonly string[]): Race;
   unlockedTracks: Set<string>;
   ghostFor(race: Race): GhostRun | null;
   ghostEnabled(): boolean;
@@ -268,7 +268,8 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     restoreCup(cup: CupState): void {
       selectedMode = 'cup';
       $<HTMLSelectElement>('#cup-length').value = String(cup.tracks.length);
-      setRace(options.createRace(cup.tracks[cup.results.length], { mode: 'cup', cupTracks: cup.tracks }));
+      setRace(options.createRace(cup.tracks[cup.results.length], { mode: 'cup', cupTracks: cup.tracks,
+        ...(cup.results[0]?.order.length === 4 ? { rulesVersion: 1, rivals: 3 } : {}) }, undefined, nextCupGrid(cup) ?? undefined));
       showTracks();
     },
     cupCount,

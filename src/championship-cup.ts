@@ -55,6 +55,7 @@ export function addCupResult(cup: CupState, race: CupRace): CupState {
     typeof raceTime !== 'number' || !Number.isFinite(raceTime) || raceTime <= 0 ||
     !Array.isArray(race.rivals) ||
     new Set(race.rivals.map(r => r.name)).size !== count ||
+    race.rivals.some(r => r.finishTime != null && (!Number.isFinite(r.finishTime) || r.finishTime <= 0)) ||
     names.slice(1).some(name => !race.rivals.some(r => r.name === name)))
     throw new RangeError('Invalid completed Cup heat');
   const drivers = [{ name: 'YOU', time: raceTime }, ...race.rivals.map(r => ({
