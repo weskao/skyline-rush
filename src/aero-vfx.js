@@ -44,14 +44,14 @@ export function createAeroVFX(scene, vehicle) {
   vehicle.add(local);
   const flow = new THREE.Mesh(streamGeometry(), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce'].map(key => [key, { value: 0 }])),
+    uniforms: Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])),
     vertexShader: `attribute float flowType; attribute float lane; varying vec2 vUv; varying float vType; varying float vLane;
       uniform float time; uniform float turbulence; uniform float downforce;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
         float wake=smoothstep(2.5,6.,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13;
         p.y+=wake*downforce*.25;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
     fragmentShader: `varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time,power,speed,density,length,suction,downforce;
+      uniform float time,power,speed,density,length,suction,downforce,nitroMix;
       void main(){if(vLane>density)discard;
         float t=fract(vUv.x*2.-time*speed+vLane*3.);
         float pulse=smoothstep(1.-length,1.-length+.06,t)*(1.-smoothstep(.91,1.,t));
@@ -59,6 +59,7 @@ export function createAeroVFX(scene, vehicle) {
         float ends=smoothstep(0.,.09,vUv.x)*(1.-smoothstep(.85,1.,vUv.x));
         float strength=vType>.5&&vType<1.5?suction*(.55+downforce*.45):vType>1.5?.35+downforce*.55:1.;
         vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4);
+        color=mix(color,vec3(.72,.4,1.),clamp(nitroMix,0.,1.)*.85);
         gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength);}`,
   }));
   local.add(flow);
@@ -77,15 +78,16 @@ export function createAeroVFX(scene, vehicle) {
   jetGeometry.rotateX(-Math.PI / 2); jetGeometry.translate(0, 0, 0.5);
   const jetMaterial = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 } },
+    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme;
+    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme,nitroMix;
       void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
         float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
         float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
         float core=exp(-t*7.);float fade=pow(max(0.,1.-t),1.7)*smoothstep(0.,.025,t);
         vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
+        color=mix(color,vec3(.68,.42,1.),clamp(nitroMix,0.,1.)*.65);
         gl_FragColor=vec4(color*brightness*(1.+core+cells),fade*(.15+core*.55+cells*.35)*breakup*power);}`,
   });
   const jets = REAR_PORTS.map((port, i) => {
@@ -137,7 +139,7 @@ export function createAeroVFX(scene, vehicle) {
   const shockPosition = new THREE.Vector3();
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
-  let hadPosition = false, wasBoosting = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
+  let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
   let quality = 1, settings, delta;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
@@ -161,17 +163,20 @@ export function createAeroVFX(scene, vehicle) {
     segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonGeo.attributes.alpha.needsUpdate = true;
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
     jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = false;
-    hadPosition = wasBoosting = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null;
+    hadPosition = wasBoosting = wasNitro = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null;
   }
   return {
     reset,
     group: local, // effects riding on the vehicle; not part of its silhouette
-    update(race, dt, origin, options, reducedMotion) {
+    update(race, dt, origin, options, reducedMotion, sprintFrame = null) {
       settings = options;
       dt = clamp(Number.isFinite(dt) ? dt : 0, 0, 0.1);
       const car = race.player, active = race.phase === 'racing', preview = race.phase === 'ready';
       const enabled = settings.enabled;
       const boost = active && (car.boosting || car.nitroTime > 0 || car.miniBoost > 0) && enabled;
+      const nitroActive = boost && car.nitroTime > 0;
+      const sprintPower = sprintFrame ? sprintFrame.power : boost ? 1 : 0;
+      const nitroMix = sprintFrame ? sprintFrame.nitroMix : nitroActive ? 1 : 0;
       const calm = reducedMotion || settings.comfortable;
       quality = settings.quality === 'low' ? 0.25 : settings.quality === 'medium' ? 0.5 : 1;
       if (calm) quality = Math.min(quality, 0.5);
@@ -180,25 +185,27 @@ export function createAeroVFX(scene, vehicle) {
       const rolling = active && car.altitude > 0 && car.trick && !car.trick.done && car.trick.time < TRICK_ROLL_TIME;
       rollStrength = rollEnabled ? THREE.MathUtils.damp(rollStrength, rolling ? 1 : 0, rolling ? 35 : 8, dt) : 0;
       let ribbonKindDirty = false;
-      const show = settings.airflow && enabled;
+      const show = (settings.airflow || sprintPower > 0.005) && enabled;
       reveal = THREE.MathUtils.damp(reveal, show ? 1 : 0, show ? 3 : 6, dt);
       const demonstration = show && preview ? 0.32 * THREE.MathUtils.smoothstep(reveal, 0.85, 0.99) : 0;
-      strength = THREE.MathUtils.damp(strength, boost ? 1 : demonstration, boost ? 55 : 7, dt);
+      strength = THREE.MathUtils.damp(strength, boost ? sprintPower : demonstration, boost ? 55 : 7, dt);
       wakeStrength = Math.max(strength, rollStrength * .7);
       vehicle.updateWorldMatrix(true, false);
       current.copy(vehicle.position).add(origin);
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
-      if (boost && !wasBoosting) {
+      if ((boost && !wasBoosting) || (nitroActive && !wasNitro)) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }
-      wasBoosting = boost; lastImpact = car.impact;
+      wasBoosting = boost; wasNitro = nitroActive; lastImpact = car.impact;
+      shock.material.color.set(nitroActive ? '#b98aff' : '#bdeeff');
       shockAge += dt;
       const fu = flow.material.uniforms;
       fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + strength * 0.6);
-      fu.power.value = reveal * settings.airflowOpacity * (1 + strength * 0.35);
-      fu.density.value = settings.airflowDensity * (0.5 + quality * 0.5);
+      fu.nitroMix.value = nitroMix;
+      fu.power.value = Math.max(reveal * settings.airflowOpacity * (1 + strength * 0.35), sprintPower * settings.speedLines * 0.65);
+      fu.density.value = Math.max(settings.airflowDensity * (0.5 + quality * 0.5), sprintPower * settings.speedLines * (0.5 + quality * 0.5));
       fu.length.value = Math.min(0.85, settings.streamlineLength + car.speed / 600);
       fu.suction.value = settings.suction / (1 + Math.max(0, vehicle.position.y) * 2);
       fu.turbulence.value = settings.turbulence * (calm ? 0.3 : 1);
@@ -213,7 +220,7 @@ export function createAeroVFX(scene, vehicle) {
         const u = jet.material.uniforms;
         u.time.value = time + i * 0.13; u.power.value = strength;
         u.brightness.value = Math.min(settings.coreBrightness, calm ? 0.9 : 3);
-        u.diamonds.value = settings.machDiamonds; u.extreme.value = settings.preset === 'extreme' ? 1 : 0;
+        u.diamonds.value = settings.machDiamonds; u.extreme.value = settings.preset === 'extreme' ? 1 : 0; u.nitroMix.value = nitroMix;
       });
       delta = car.speed;
       if (wakeStrength > 0.01 && enabled && dt > 0) {
