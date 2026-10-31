@@ -14,7 +14,7 @@ test('Custom offers cosmetic presets without changing official controls or layou
   await page.locator('#race-mode-rules > summary').click();
   await expect(page.locator('#race-visual-preset + .custom-select')).toBeVisible();
   await expect(page.locator('#race-presentation-summary')).toContainText('Track');
-  await expect(page.locator('#race-setup-summary')).toContainText('3 AI');
+  await expect(page.locator('#race-setup-summary')).toContainText('7 AI');
   const rivals = page.locator('[data-race-rule="rivals"] + .custom-select');
   await rivals.getByRole('combobox').click();
   await rivals.getByRole('option', { name: '0', exact: true }).click();

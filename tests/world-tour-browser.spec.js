@@ -48,7 +48,7 @@ for (const id of ids) test(`course ${id} renders a lit scene and exposes racer H
   await expect(button).toHaveAttribute('aria-pressed','true');
   await expect(page.locator('#track-note')).not.toBeEmpty();
   await page.locator('#start-button').click();
-  await expect(page.locator('#race-route-map [data-racer]')).toHaveCount(4);
+  await expect(page.locator('#race-route-map [data-racer]')).toHaveCount(8);
   await expect(page.locator('#race-status')).toHaveText('RACING');
   expect(await brightness(page), `${id} frame is not black`).toBeGreaterThan(30);
   expect(errors).toEqual([]);
@@ -58,7 +58,7 @@ test('live minimap does not duplicate secret corridors and moves marker position
   await page.locator('#start-button').click();
   const map=page.locator('#race-route-map svg');
   await expect(map.locator('polyline')).toHaveCount(1);
-  await expect(map.locator('[data-racer]')).toHaveCount(4);
+  await expect(map.locator('[data-racer]')).toHaveCount(8);
   const marker=map.locator('[data-racer="YOU"]');
   const start=await marker.getAttribute('cy');
   await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -97,7 +97,7 @@ test('Alpine and Cosmic minimaps expose cached climb and descent cues from the m
    await page.locator('#start-button').click();
    const live=page.locator('#race-route-map svg.route-overview');
    await expect(live.locator('.route-elevation-cue')).toHaveCount(2);
-   await expect(live.locator('[data-racer]')).toHaveCount(4);
+   await expect(live.locator('[data-racer]')).toHaveCount(8);
    await expect(live).toHaveAttribute('aria-label', /.+/);
    // Cached vectors remain static; only moving racer positions are updated.
    const original=await live.evaluate(el=>(window.__worldTourAltMap=el,el.querySelectorAll('*').length));

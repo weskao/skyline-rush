@@ -42,7 +42,7 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     const live = page.locator('#race-route-map svg.route-overview');
     await expect(live).toHaveCount(1);
-    await expect(live.locator('[data-racer]')).toHaveCount(4);
+    await expect(live.locator('[data-racer]')).toHaveCount(8);
     await expect(live.locator('.route-spiral-upper')).toHaveCount(track === 'spiral' ? 1 : 0);
     await expect(live.locator('.route-spiral-direction')).toHaveCount(track === 'spiral' ? 1 : 0);
     const before = await live.evaluate(el => {
