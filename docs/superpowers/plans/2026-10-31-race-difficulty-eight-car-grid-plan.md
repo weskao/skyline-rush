@@ -147,6 +147,18 @@
 - [ ] **Step 4:** Update branch from latest `main` only when dependencies are merged; resolve conflicts with both sides' features; rerun all relevant tests and inspect **exact-HEAD** GitHub CI `quality-gate`.
 - [ ] **Step 5:** Only after all BDD and TDD acceptance passes, change completed corresponding requirement(s) to `- [x]` in the approved full `TODO.md`, retaining unchecked partial requirements and recording evidence. **Important:** the planning TODO exists on `feature/ux-ui-combo-mobile-controls`, not base `main`. Coordinate integration before marking; never overwrite newer TODO. Commit progress evidence, request explicit permission before a direct main merge; do not create PR.
 
+### Independent artwork pre-production handoff — 2026-10-31
+
+**Branch:** `feature/race-difficulty-eight-car-grid` · **Art-only status:** `deferred-no-asset`. This status is distinct from feature implementation and final CI acceptance.
+
+- [x] **Independent asset decision reviewed:** no bitmap/vector files are necessary at this phase; creating any would be premature. No asset completion is claimed.
+
+**Remaining dependency-gated work:** No independent raster artwork is justified: existing rank/star/arrow primitives and data-driven SVG/CSS are preferable. Wait for tutorial/engine integration before grid/sprint rules and physical eight-car spawn implementation. If final HUD review exposes a real icon gap, propose small transparent badge separately; numbers, positions and reversing order must remain live data, not images.
+
+- [ ] **Pending:** renderer/UI integration, missing-asset fallback tests where relevant, genuine BDD/TDD RED→GREEN, en/zh-TW, iOS/Android browser portrait/landscape, desktop, Low/Medium/High and reduced-motion/VFX-off as applicable.
+- [ ] **Pending:** final exact feature-HEAD `quality-gate` evidence, TODO `- [x]` only for fully accepted feature requirements, and user-approved merge gate; **do not mark TODO items as completed from these assets alone**.
+- [ ] **Integration rule:** preserve these existing asset paths when syncing newest `main`; do not regenerate equivalent icons unless the actual GUI or performance review rejects their suitability. Do not overwrite newer branch code/docs from parallel GPT chats.
+
 ## Self-review before implementation
 
 - [ ] Every SDD requirement and BDD scenario maps to a task and deterministic test.
