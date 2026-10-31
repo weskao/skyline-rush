@@ -82,13 +82,13 @@ test.describe('touch controls', () => {
     await expect(page.locator('#layout-toolbar')).toBeHidden();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape);
-    expect(Object.keys(saved.layout)).toHaveLength(7);
+    expect(Object.keys(saved)).toHaveLength(7);
     await page.reload();
     await start(page);
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', 'right');
     const savedAgain = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape);
-    expect(savedAgain.layout).toEqual(saved.layout);
-    for (const [action, point] of Object.entries(saved.layout)) {
+    expect(savedAgain).toEqual(saved);
+    for (const [action, point] of Object.entries(saved)) {
       const rect = await page.locator(`[data-control="${action}"]`).boundingBox();
       expect(rect.x + rect.width / 2).toBeCloseTo((1 - point.x) * 844, 0);
       expect(rect.y + rect.height / 2).toBeCloseTo(point.y * 390, 0);
@@ -104,7 +104,7 @@ test.describe('touch controls', () => {
     await page.locator('[data-controls="hand"][value="left"]').check();
     await page.locator('#layout-edit').click();
     const mirrored = await page.locator('[data-control="right"]').boundingBox();
-    expect(mirrored.x + mirrored.width / 2).toBeCloseTo(saved.layout.right.x * 844, 0);
+    expect(mirrored.x + mirrored.width / 2).toBeCloseTo(saved.right.x * 844, 0);
     await page.locator('#layout-done').click();
     await page.locator('#controls-button').click();
     await page.locator('#layout-reset').click();
