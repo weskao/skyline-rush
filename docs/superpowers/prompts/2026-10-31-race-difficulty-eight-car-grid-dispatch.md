@@ -58,6 +58,14 @@
 
 **強制交接：** 先讀 `docs/superpowers/plans/2026-10-31-race-difficulty-eight-car-grid-plan.md` 的「Independent artwork pre-production handoff」；不能因為檔案已存在就把任何遊戲功能或 `TODO.md` 主項目標記 `- [x]`。既有素材與 `ASSET-MANIFEST.md` 應保留，後續真正 Vue/Three.js 整合、Fallback、BDD/TDD、Android/iOS 直橫向及完整 CI 仍須完成，且遵循原 Wave 前置依賴。
 
+### 3C. 以已核准圖片為基準的 Visual Fidelity Gate
+
+**所屬分支實際參考圖與差異紀錄：** [Visual Fidelity design and original reference map](https://github.com/weskao/skyline-rush/blob/feature/race-difficulty-eight-car-grid/docs/designs/race-difficulty-eight-car-grid/VISUAL-FIDELITY.md)
+
+在實作或驗收畫面前，必須先載入原始 AI 高畫質圖片檔（來源與 SHA-256 記於上述文件；會話另外附 `skyline-rush-design-reference-crops.zip`），確認所選畫面及版本已核准。圖檔目前**尚未放入 GitHub**；不能虛構圖檔路徑或把簡化的 SVG/草稿當成原本高擬真參考圖。針對 390×844、844×390、1440×900 建立 UI/3D 元件位置、比例、材質、光照、色彩、按鈕、動作時間的具體規格，且將核准圖真正以原始檔案提交到 `docs/designs/race-difficulty-eight-car-grid/references/` 並標註 Blob SHA。
+
+使用 **Vue 3 + strict TypeScript + Three.js** 實作真正可操作的 UI/3D；優先保留效果深度（立體車身、真實光影、發光材質與精緻圖示），任何降級均需明列並核准。依 **SDD → BDD → TDD（RED→GREEN→Refactor）** 建立 Layout/State 測試；Playwright 擷取真實執行畫面及互動動畫，逐項與核准圖並排比對：構圖、間距、光影、素材、狀態、動態、操作及 FPS／p95。**原始概念圖不能充當實際 WebGL 證據，CI 綠燈也不能取代美術驗收。** Android/iOS 直橫向、Desktop、Low/Medium/High、Reduced Motion 和 VFX Off 均需記錄結果。未核准/未完成項目保留 `- [ ]`，不得宣稱已符合圖片、不得自動 merge main。
+
 ### 4. 完成、TODO 勾選與合併 Gate
 
 - 實作完畢後執行相關 `npm run typecheck`、`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`、`make verify`，以及受影響的 World Tour、Cloud Save 等測試；確認最後 HEAD 的 GitHub Actions `quality-gate` 完整通過。
