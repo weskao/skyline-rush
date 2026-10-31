@@ -26,7 +26,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
   let rolling = false;
   let nitroActivated = false;
   let sprintSeconds = 0;
-  let peakSpeed = initial.speed;
+  let startSpeed = initial.speed, peakSpeed = initial.speed;
   return {
     get phase() { return phase; },
     get progress() {
@@ -88,6 +88,8 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
         if (car.nitroUses > initial.nitroUses && car.nitroTime > 0) {
           nitroActivated = true;
           phase = 'sprinting';
+          // Measure the sprint from activation: speed gained by driving before the press is not NITRO's.
+          startSpeed = peakSpeed = car.speed;
         } else return false;
       }
       if (car.nitroTime <= 0) {
@@ -97,8 +99,8 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
         return false;
       }
       peakSpeed = Math.max(peakSpeed, car.speed);
-      if (car.speed >= initial.speed && car.speed >= 0) sprintSeconds += Math.min(dt, 0.05);
-      return sprintSeconds >= NITRO_OBSERVE_SECONDS && peakSpeed - initial.speed >= NITRO_SPEED_GAIN;
+      if (car.speed >= startSpeed && car.speed >= 0) sprintSeconds += Math.min(dt, 0.05);
+      return sprintSeconds >= NITRO_OBSERVE_SECONDS && peakSpeed - startSpeed >= NITRO_SPEED_GAIN;
     },
   };
 }
