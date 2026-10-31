@@ -295,7 +295,7 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       const right = effectiveMode === 'slide' ? null : await point(button('right'), 3);
       const pad = effectiveMode === 'slide' ? left : null;
       if (flyMode === 'toggle') await tapTouch(button('fly'));
-      else await touch('touchStart', [fly]);
+      else await touch('touchStart', [await point(button('fly'), 1)]);
       await page.waitForFunction(
         () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
         null, { polling: 'raf' },
