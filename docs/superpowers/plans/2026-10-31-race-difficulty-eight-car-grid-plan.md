@@ -194,3 +194,12 @@
 - **Still unchecked:** latest-HEAD full Browser/World Tour, Low/Medium/High FPS/draw-call/frame-time evidence, real-device Safari/Android and UI visual signoff, fully green `develop` dependency CI. No PR, deployment, or merge to `develop`/ `main` permitted without user approval.
 
 The TODO #11/#12 named in this Wave 2 are **not** the legacy `TODO.md` headings 11 (world props) and 12 (items). See this branch's dedicated Wave 2 subsection at the end of `TODO.md`; do not mark unrelated requirements finished.
+
+## Exact-branch CI remediation (2026-10-31)
+
+- Full regression baseline [41201644635](https://github.com/weskao/skyline-rush/actions/runs/41201644635), commit `9373af2`: unit-tests and cloud-save passed, browser and one World Tour shard failed. The run was later cancelled by concurrent commits and is **not** accepted as a complete passing run.
+- `70acebb`: fixed full eight-row standings height and spacing with on-screen minimap/AIRFLOW, returned the World Tour home showcase evidence to four **visible** cars, tested Custom with its actual visible widget, updated tracked CSS baseline.
+- `a23de27`: updated old marker assertions from four to eight for Classic, Phase 4 and Phase 5, and restored bilingual eight-car setup copy.
+- `e12efdc`: made solo HUD hide the meaningless `/ 01` field, isolated the deterministic barrel-roll fixture from incidental AI interaction, aligned touch/NITRO accessibility tests with actual status labels.
+- `3cb27d6`: gave new racer names correct English-language semantics, recognized proper AI identifiers and technical labels in i18n checks, and lifted Traditional Chinese NITRO status text to 10px.
+- Remaining acceptance: a complete **same-HEAD** Typecheck, Unit, Build, Cloud Save, all Browser shards, all World Tour shards, quality gate, actual gameplay screenshots and physical device/performance proof. On failure inspect individual jobs and fix with another TDD pass. Unchecked TODO #11/#12 remain unchecked, with no PR, deployment or merge.
