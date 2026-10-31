@@ -20,11 +20,12 @@ interface TutorialDependencies {
 }
 
 export function tutorialHintKey(step: string | null, steerMode: string, flyMode: string): string {
-  const action = step === 'land' ? 'fly' : step === 'airChain' ? 'boost' : step === 'barrelRoll' ? 'left' : step;
+  const action = step === 'drift' ? 'brake' : step === 'land' ? 'fly' : step === 'airChain' ? 'boost' : step === 'barrelRoll' ? 'left' : step;
   if (['left', 'right', 'brake'].includes(step ?? '') && steerMode === 'slide') return 'tutorial.slide.' + step;
   if (['left', 'right'].includes(step ?? '') && steerMode === 'tilt') return 'tutorial.tilt.' + step;
   if (step === 'land') return flyMode === 'toggle' ? 'tutorial.touch.landToggle' : 'tutorial.touch.land';
   if (step === 'fly' && flyMode === 'toggle') return 'tutorial.touch.flyToggle';
+  if (step === 'drift') return steerMode === 'slide' ? 'tutorial.slide.drift' : steerMode === 'tilt' ? 'tutorial.tilt.drift' : 'tutorial.touch.drift';
   if (step === 'airChain') return 'tutorial.touch.airChain';
   if (step === 'barrelRoll') return steerMode === 'slide' ? 'tutorial.slide.barrelRoll'
     : steerMode === 'tilt' ? 'tutorial.tilt.barrelRoll' : 'tutorial.touch.barrelRoll';
@@ -53,13 +54,13 @@ export function setupTutorialUI({
     const action = step === 'land' ? 'fly' : step === 'airChain'
       ? phase === 'airborne' ? null : 'fly'
       : step === 'barrelRoll' ? (phase === 'ready' || phase === 'retry') ? 'fly' : null : step;
-    const keys = step === 'airChain' ? 'fly boost' : step === 'barrelRoll' ? 'fly left right' : action;
+    const keys = step === 'drift' ? 'brake left right' : step === 'airChain' ? 'fly boost' : step === 'barrelRoll' ? 'fly left right' : action;
     updateCoachView({
       step: step ?? 'complete',
       title: done ? t('tutorial.complete') : t('tutorial.step', {
         n: tutorial.index + 1,
         total: TUTORIAL_STEPS.length,
-        action: t(step === 'land' ? 'tutorial.landTitle' : step === 'airChain' || step === 'barrelRoll' ? 'tutorial.' + step + 'Title' : 'keymap.' + step),
+        action: t(step === 'land' ? 'tutorial.landTitle' : step === 'airChain' || step === 'barrelRoll' || step === 'drift' ? 'tutorial.' + step + 'Title' : 'keymap.' + step),
       }),
       instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' :
         step === 'nitro' && phase === 'sprinting' ? 'tutorial.nitroSprint' :
@@ -83,7 +84,7 @@ export function setupTutorialUI({
       nextTick(() => showKeyMap());
     } else {
       let target = action ? $('#touch-controls [data-control="' + action + '"]') : null;
-      if ((['left', 'right', 'brake'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked') && inputPrefs.mode === 'slide') target = $('.touch-pad');
+      if ((['left', 'right', 'brake', 'drift'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked') && inputPrefs.mode === 'slide') target = $('.touch-pad');
       target?.classList.add('tutorial-target');
     }
   }
