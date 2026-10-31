@@ -1,6 +1,7 @@
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
+import { ciTimeout } from './helpers/ci.js';
 
 // Capture a REAL running Three.js canvas and a 10-20 second Playwright video,
 // never the design-only SVG storyboard. Hardware comparisons still require physical devices.
@@ -65,7 +66,7 @@ test('Wave 2 real WebGL: NITRO violet, BOOST cyan, simultaneous bounded and reco
   // On software WebGL, ten wall-clock seconds can advance fewer than four game seconds.
   // End the test's NITRO/mini-BOOST fixtures explicitly, then verify the *visual* recovery.
   await page.evaluate(() => Object.assign(window.gameplay.race.player, { nitroTime: 0, miniBoost: 0 }));
-  await expect.poll(async () => (await read()).nitroMix, { timeout: 15_000 }).toBe(0);
+  await expect.poll(async () => (await read()).nitroMix, { timeout: ciTimeout(15_000) }).toBe(0);
   const recovered = await read();
   expect(recovered.programs).toBe(combined.programs);
   expect(recovered.textureCount).toBeLessThanOrEqual(combined.textureCount + 1);
