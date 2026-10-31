@@ -20,19 +20,20 @@ const keyStep = async (page, key, next) => {
 const keyboardChain = async page => {
   await page.keyboard.down('Space');
   await page.keyboard.down('Shift');
-  await page.waitForTimeout(750);
+  await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
   await page.keyboard.up('Shift');
   await page.keyboard.up('Space');
   await step(page, 'barrelRoll');
 };
 const keyboardRoll = async page => {
+  await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
   await page.keyboard.down('Space');
-  await page.waitForTimeout(450);
+  await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeGreaterThan(.5);
   await page.keyboard.down('a');
-  await page.waitForTimeout(90);
+  await expect(page.locator('#tutorial-instruction')).toContainText('First airborne steering press detected');
   await page.keyboard.up('a');
   await page.keyboard.down('d');
-  await page.waitForTimeout(90);
+  await expect(page.locator('#tutorial-instruction')).toContainText('BARREL ROLL in progress');
   await page.keyboard.up('d');
   await page.keyboard.up('Space');
   await step(page, 'nitro');
@@ -203,12 +204,6 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         return { id, x: b.x + b.width / 2, y: b.y + b.height / 2 };
       };
       const touch = (type, points) => session.send('Input.dispatchTouchEvent', { type, touchPoints: points });
-      const hold = async (target, duration) => {
-        const p = await point(target, 1);
-        await touch('touchStart', [p]);
-        await page.waitForTimeout(duration);
-        await touch('touchEnd', []);
-      };
       const button = action => page.locator(`#touch-controls [data-control="${action}"]`);
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
@@ -221,35 +216,41 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
       if (flyMode === 'toggle') {
         await button('fly').tap();
-        await hold(button('boost'), 750);
+        const p = await point(button('boost'), 1);
+        await touch('touchStart', [p]);
+        await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
+        await touch('touchEnd', []);
         await button('fly').tap();
       } else {
         await touch('touchStart', [fly]);
         await touch('touchStart', [fly, boost]);
-        await page.waitForTimeout(750);
+        await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
         await touch('touchEnd', [fly]);
         await touch('touchEnd', []);
       }
       await step(page, 'barrelRoll');
       const steerTarget = effectiveMode === 'slide' ? page.locator('.touch-pad') : button('left');
-      const left = await point(steerTarget, 2), right = await point(button('right'), 3);
-      const pad = effectiveMode === 'slide' ? await point(page.locator('.touch-pad'), 2) : null;
+      const left = await point(steerTarget, 2);
+      // Slide mode intentionally hides left/right buttons; never ask Playwright
+      // for a bounding box of a hidden control.
+      const right = effectiveMode === 'slide' ? null : await point(button('right'), 3);
+      const pad = effectiveMode === 'slide' ? left : null;
       if (flyMode === 'toggle') await button('fly').tap();
       else await touch('touchStart', [fly]);
-      await page.waitForTimeout(450);
+      await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeGreaterThan(.5);
       if (pad) {
         await touch('touchStart', flyMode === 'toggle' ? [pad] : [fly, pad]);
         await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x-55}] : [fly,{...pad,x:pad.x-55}]);
-        await page.waitForTimeout(110);
+        await expect(page.locator('#tutorial-instruction')).toContainText('First airborne steering press detected');
         await touch('touchMove', flyMode === 'toggle' ? [{...pad,x:pad.x+55}] : [fly,{...pad,x:pad.x+55}]);
-        await page.waitForTimeout(110);
+        await expect(page.locator('#tutorial-instruction')).toContainText('BARREL ROLL in progress');
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
       } else {
         await touch('touchStart', flyMode === 'toggle' ? [left] : [fly,left]);
-        await page.waitForTimeout(110);
+        await expect(page.locator('#tutorial-instruction')).toContainText('First airborne steering press detected');
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
         await touch('touchStart', flyMode === 'toggle' ? [right] : [fly,right]);
-        await page.waitForTimeout(110);
+        await expect(page.locator('#tutorial-instruction')).toContainText('BARREL ROLL in progress');
         await touch('touchEnd', flyMode === 'toggle' ? [] : [fly]);
       }
       // Let the spin finish while gliding; holding FLY longer risks a hard landing.

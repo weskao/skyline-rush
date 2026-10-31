@@ -32,6 +32,7 @@ export function createInteractiveTutorial() {
   let maneuver: ReturnType<typeof createTutorialManeuverState> | null = null;
   const snapshot = (): ManeuverSnapshot => ({
     altitude: car.altitude, thrusting: car.thrusting, flightBoosted: car.flightBoosted,
+    poweredFlightTime: car.poweredFlightTime, flick: car.flick,
     landing: car.landing, trick: car.trick, trickPayout: car.trickPayout,
     nitroUses: car.nitroUses, nitroTime: car.nitroTime, speed: car.speed,
   });

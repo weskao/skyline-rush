@@ -62,7 +62,8 @@ export function setupTutorialUI({
       instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' :
         step === 'nitro' && phase === 'sprinting' ? 'tutorial.nitroSprint' :
         step === 'airChain' && phase === 'airborne' ? 'tutorial.airChainAirborne' :
-        step === 'barrelRoll' && phase === 'rolling' ? 'tutorial.barrelRollRolling' : 'tutorial.' + step),
+        step === 'barrelRoll' && phase === 'rolling' ? 'tutorial.barrelRollRolling' :
+        step === 'barrelRoll' && phase === 'flicked' ? 'tutorial.barrelRollFlicked' : 'tutorial.' + step),
       pauseText: t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause'),
       pauseHidden: done,
       completeActionsHidden: !done,

@@ -1,10 +1,12 @@
 /** Observe engine outcomes only. No mutation of the race, controls, or car. */
 export type ManeuverLesson = 'airChain' | 'barrelRoll' | 'nitro';
-export type ManeuverPhase = 'ready' | 'airborne' | 'rolling' | 'sprinting';
+export type ManeuverPhase = 'ready' | 'airborne' | 'flicked' | 'rolling' | 'sprinting';
 export interface ManeuverSnapshot {
   altitude: number;
   thrusting: boolean;
   flightBoosted: boolean;
+  poweredFlightTime: number;
+  flick: { dir: number; time: number } | null;
   landing: { chain?: boolean } | null;
   trick: { done: boolean } | null;
   trickPayout: { nitro: number; hard: boolean } | null;
@@ -18,6 +20,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
   let phase: ManeuverPhase = 'ready';
   let lastLanding = initial.landing;
   let lastPayout = initial.trickPayout;
+  let lastFlick = initial.flick;
   let airborne = false;
   let rolling = false;
   let nitroActivated = false;
@@ -32,7 +35,9 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
     update(car: ManeuverSnapshot, dt: number): boolean {
       if (!Number.isFinite(dt) || dt <= 0 || dt > 0.1) return false;
       if (kind === 'airChain') {
-        if (car.altitude > 0 && car.thrusting && car.flightBoosted) {
+        // The engine awards the chain only after 0.4s of powered flight. Do not tell
+        // the learner to release FLY before that actual engine threshold is met.
+        if (car.altitude > 0 && car.thrusting && car.flightBoosted && car.poweredFlightTime >= 0.4) {
           airborne = true;
           phase = 'airborne';
         }
@@ -50,7 +55,11 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
         if (car.altitude > 0 && car.trick) {
           rolling = true;
           phase = 'rolling';
+        } else if (car.altitude > 0 && car.flick && car.flick !== lastFlick) {
+          // Surface the first real steering press before the opposite flick.
+          phase = 'flicked';
         }
+        lastFlick = car.flick;
         if (car.trickPayout && car.trickPayout !== lastPayout) {
           const earned = rolling && car.landing !== null && car.landing !== lastLanding &&
             car.trickPayout.nitro > 0 && !car.trickPayout.hard;
