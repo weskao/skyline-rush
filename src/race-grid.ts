@@ -14,6 +14,7 @@ export function startingGrid(rivals: readonly string[], nextOrder?: readonly str
   const order = nextOrder ?? baseline;
   if (order.length !== ids.length || new Set(order).size !== ids.length || order.some(id => !ids.includes(id)))
     throw new RangeError('Invalid grid order');
+  if (ids.length === 1) return [{ id: 'YOU', position: 1, x: 2.5, distance: 0 }];
   const rows = Math.ceil(ids.length / 2);
   return order.map((id, index) => ({
     id: id as DriverId,

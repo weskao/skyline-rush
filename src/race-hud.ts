@@ -51,10 +51,10 @@ export function createRaceHud(options: HudOptions) {
   const countdownNumber = $('#countdown-number');
   const countdownLabel = $('#countdown-label');
   const speedTicks = [...document.querySelectorAll<HTMLElement>('.speed-ticks i')];
-  ui.leaderboard!.innerHTML = Array.from({ length: 4 }, () => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
-  const leaderboardRows = [...ui.leaderboard!.children] as HTMLElement[];
+  let leaderboardRows: HTMLElement[] = [];
+  let roster = '';
+  const racerRows = new Map<string, HTMLElement>();
   const touchButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-control]')];
-  const racerRows = new Map<string, HTMLElement>(['YOU', ...getRace().rivals.map((rival: { name: string }) => rival.name)].map((name, i) => [name, leaderboardRows[i]!]));
   const speedNeedle = $('#speed-needle');
   const positionChange = $('#position-change');
   const boostStatus = document.createElement('span');
@@ -268,6 +268,15 @@ export function createRaceHud(options: HudOptions) {
     if (gapWarning) ui['driving-message']!.dataset.tone = 'warning'; else delete ui['driving-message']!.dataset.tone;
   }
   function updateLeaderboard(race: HudRace, car: HudRace, calm: boolean): void {
+    const names = ['YOU', ...race.rivals.map((rival: { name: string }) => rival.name)];
+    if (names.join(',') !== roster) {
+      roster = names.join(',');
+      ui.leaderboard!.innerHTML = names.map(() => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
+      leaderboardRows = [...ui.leaderboard!.children] as HTMLElement[];
+      racerRows.clear();
+      names.forEach((name, i) => racerRows.set(name, leaderboardRows[i]!));
+      leaderboardOrder = '';
+    }
     const racers: { name: string; distance: number; player?: boolean }[] = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
     const order = racers.map(racer => racer.name).join(',');
     if (calm || race.phase !== 'racing') leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
