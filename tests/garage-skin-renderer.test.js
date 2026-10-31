@@ -27,3 +27,27 @@ test('garage cosmetics bind shared Aero shaders without reallocating scene or mu
   assert.equal(jet.geometry, originalGeometry.jet);
   assert.equal(ribbon.geometry, originalGeometry.ribbon);
 });
+
+test('blue launch flare ignites at race start without a BOOST/NITRO input or stat mutation', async () => {
+  const { createRace } = await import('../src/game.js');
+  const { Vector3 } = await import('three');
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  const aero = createAeroVFX(scene, car), race = createRace(), origin = new Vector3();
+  const { vfxSettings } = await import('../src/vfx-settings.ts');
+  const visual = vfxSettings({ enabled: true, airflow: true });
+  race.phase = 'countdown';
+  race.player.boosting = false; race.player.nitroTime = 0; race.player.miniBoost = 0;
+  aero.setSkins({ 'launch-flare': 'launch-flare-blue' });
+  aero.update(race, 0.05, origin, visual, false);
+  race.phase = 'racing';
+  const before = structuredClone(race);
+  aero.update(race, 0.05, origin, visual, false);
+  assert.equal(scene.getObjectByName('Ignition shockwave').visible, true);
+  assert.deepEqual(race, before);
+  aero.reset();
+  aero.setSkins({ 'launch-flare': 'launch-flare-basic' });
+  race.phase = 'countdown'; aero.update(race, 0.05, origin, visual, false);
+  race.phase = 'racing'; aero.update(race, 0.05, origin, visual, false);
+  assert.equal(scene.getObjectByName('Ignition shockwave').visible, false, 'baseline launch remains unchanged');
+});
