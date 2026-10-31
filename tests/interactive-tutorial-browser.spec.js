@@ -299,8 +299,10 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
             if (error.name !== 'TimeoutError') throw error;
           }
         } finally {
+          // Unlatch FLY in the same dispatch as the boost hold: on slow software-WebGL
+          // frames every extra round trip lets the car climb past a soft-landing height.
+          if (flyMode === 'toggle') await touch('touchStart', [boost, fly]);
           await touch('touchEnd', []);
-          if (flyMode === 'toggle') await tapTouch(button('fly'));
         }
         await page.waitForFunction(
           () => Number(document.querySelector('#altitude')?.textContent) <= 0.15,
@@ -340,9 +342,12 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         // Two real steering edges inside the 0.3s trick window, confirmed
         // by the coach before the opposite press.
         await touch('touchStart', [left]);
-        await waitForCoachText('First airborne steering press detected');
-        await touch('touchEnd', []);
-        await touch('touchStart', [right]);
+        // Let the engine sample the first steering edge without waiting for
+        // Vue/DOM text propagation inside the 0.3-second trick window.
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+        // Release LEFT and press RIGHT with no round trip between them: each awaited
+        // CDP call can cost a slow software-WebGL frame, and the window is ~6 frames.
+        await Promise.all([touch('touchEnd', []), touch('touchStart', [right])]);
         await waitForCoachText('BARREL ROLL spinning');
         await touch('touchEnd', []);
       }
