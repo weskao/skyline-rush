@@ -148,14 +148,13 @@ const hud = createRaceHud({
   getControlPrefs: () => touchUI.prefs(),
   flyKeyLabel: () => keyLabel(keymap.getKeyMap().fly[0]),
   getVisual: () => vfx.settings(),
+  onNitroReady: () => sound.cue('item-ready'),
   timeTrialGhost: race => ghosts.mode(race),
   isAutoThrottle: () => autoThrottle,
   getGoUntil: () => goUntil,
   setFly: on => controls.setFly(on),
   updatePadHint: (phase, elapsed) => touchUI.updatePadHint(phase, elapsed),
-  motionOptions,
-  touchPreference,
-  reducedMotion,
+  motionOptions, touchPreference, reducedMotion,
 });
 function leaveIntro() {
   if (calmMotion()) return;
