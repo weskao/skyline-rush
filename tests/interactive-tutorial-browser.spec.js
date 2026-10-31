@@ -296,7 +296,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await touch('touchEnd', []);
       } else {
         await touch('touchStart', [left]);
-        await waitForCoachText('First airborne steering press detected');
+        // Let the engine sample the first steering edge without waiting for
+        // Vue/DOM text propagation inside the 0.3-second trick window.
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
         await touch('touchEnd', []);
         await touch('touchStart', [right]);
         await waitForCoachText('BARREL ROLL spinning');
