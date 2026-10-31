@@ -284,13 +284,15 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         // Read the engine-confirmed flight cue at animation-frame cadence,
         // then unlatch FLY before the car climbs into a hard-landing height.
         await waitForCoachText('Powered flight detected');
+        // Unlatch FLY in the first dispatch: on slow software-WebGL frames every
+        // extra round trip lets the car climb past a soft-landing height.
+        await touch('touchStart', [p, await point(button('fly'), 2)]);
         await touch('touchEnd', []);
-        await tapTouch(button('fly'));
       } else {
         await touch('touchStart', [fly]);
         await touch('touchStart', [fly, boost]);
-        await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
-        await touch('touchEnd', [fly]);
+        await waitForCoachText('Powered flight detected');
+        // One dispatch releases FLY and BOOST together, for the same reason.
         await touch('touchEnd', []);
       }
       await step(page, 'barrelRoll');
