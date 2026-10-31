@@ -146,6 +146,22 @@ The user chose **reuse-ready repository Markdown over exporting images into the 
 
 **Do not infer full integration:** All 59 candidate images (PNG + WebP = 118 binary files) still live only inside source ZIP archives saved in the original GPT conversation. These ZIPs are NOT publicly fetchable from the GitHub repository, and a chat reference alone is not a durable binary source. Future implementers must obtain the source ZIP, validate its stated hash, import appropriate assets to their own branch, and show browser/WebGL acceptance evidence before completing code and TODO items. Existing SVG vector fallbacks remain available where they were already committed.
 
+## Wave 1 → develop integration checkpoint (2026-10-31)
+
+**Branch policy supersedes earlier documents:** Wave work now merges **into `develop`**, not `main`. Keep `main` unchanged until an explicit separate release instruction. Wave1 actual two-parent merge history on `develop`:
+
+| Branch | Target develop merge SHA |
+| --- | --- |
+| `feature/tutorial-ux-combos` | `73d74bd7ee7d8b39b813730eb897aab7d8f530e2` |
+| `feature/mobile-controls-hud` | `bd32c709c46af3a5771d31fe5ff97293787b4f86` |
+| `feature/garage-preview-studio` | `a021044dff22f8dab3845d182794d7d397b56d06` |
+
+All three source heads are ancestors of `develop`; the only overlapping test file `tests/airflow-wake-browser.spec.js` was reconciled to retain the Garage live-render fade polling and Tutorial timeout explanation. Feature-head focused CI was green, **but full Browser + World Tour regression and the Visual Fidelity review were not proven**. [Latest merged `develop` CI started at #41195915543](https://github.com/weskao/skyline-rush/actions/runs/41195915543). Always recheck its **actual latest HEAD** outcome; only a successful full develop run unlocks Wave2 integration.
+
+**Wave 2 dispatch order:** Eight-car AI (`feature/race-difficulty-eight-car-grid`), High-speed VFX (`feature/high-speed-vfx`) and Foldable (`feature/foldable-layout-adaptation`) can run in separate GPT chats **once full develop gate is green**, each first non-destructively merging latest `develop` into its existing feature branch. Garage Skins (`feature/garage-vfx-skins`) has an extra gate: High-speed VFX must be completed, validated and merged into `develop` first. While blocked, Skins may review already committed transparent SVG category icons and documented 3× raster **candidate** packs, but MUST NOT implement dependent renderer/equip flows.
+
+Each Wave2 branch's `dispatch.md`, `plan.md` and `spec.md` include the new `develop` override. Do not automatically merge Wave2 back into develop, open PR, deploy or mark unverified TODO subitems complete.
+
 ## Coordination notes
 
 - UI/UX planning TODO `feature/ux-ui-combo-mobile-controls` has not been merged into `main`. Implementation branches were created from `main` (2026-10-31; `bea47cf61c162b4341021fa6d24ca45850af7796`). Before TDD work begins, reconcile approved requirements without overwriting their history.
