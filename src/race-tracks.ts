@@ -28,7 +28,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   aurora: {
-    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004,
+    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004, ringRows: 0.15, // Hard rivals took its scarce NITRO first (AC1)
     sections: [
       { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
       { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },

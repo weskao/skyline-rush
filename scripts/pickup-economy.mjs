@@ -79,7 +79,7 @@ export function measureEconomy(trackId, options = undefined, cap = 600, { rivals
     trackId, phase: race.phase, time: round(race.elapsed, 1), nitroPerMinute: round(nitroGained / minutes),
     boostShare: round(boostedSteps / steps * 100, 1), fuelEmpty, firstNitro: firstNitro === null ? null : round(firstNitro, 1),
     falls: car.falls, collisions: car.collisions, rings: car.rings, ringsTotal: race.rings.length, pickups: race.pickups.filter(p => p.taken).length, pickupsTotal: race.pickups.length,
-    rivals: race.rivals.length, rivalNitro,
+    rivals: race.rivals.length, rivalNitro, rivalTakes: race.rivals.map(r => r.itemTakes), position: race.result?.position ?? null,
   };
 }
 

@@ -31,7 +31,7 @@ test('median picks the middle value, or the mean of the two middle values', () =
 // re-locked the new layouts here. Stage-1 hashes: aurora ec56f1864017efd7, taipei 77aaec0a53ef7f61, tokyo
 // 67f09fd5ab1b58e7, alpine ab5d30cb554c2674, coastal 2fc2ca94497def2e, cosmic 050634fade732a55.
 const LOCKED_LAYOUTS = {
-  aurora: 'f6999b94363ade2a', taipei: '5a49d8a1b47134c2', tokyo: '5118e29f13296376',
+  aurora: 'd1e3d16dea07414c', taipei: '5a49d8a1b47134c2', tokyo: '5118e29f13296376',
   alpine: '9d8fc5c6cf54335c', coastal: '6a9eabe8195ed8e4', cosmic: '9c897168bf1e1293',
 };
 test('AC3: Aurora and the World Tour keep their (stage-2) ring and pickup layout', () => {

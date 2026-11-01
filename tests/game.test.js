@@ -1215,7 +1215,8 @@ test('slipstream needs the same lane and a draft-range gap', () => {
 });
 
 test('rival nitro fires by personality and respects its charge budget', () => {
-  const fresh = () => { const race = racing(); race.player.effects.ghost = 99; return race; };
+  // No items: rivals collecting NITRO (stage 2, tests/rival-items.test.js) would change the charge counts this checks.
+  const fresh = () => { const race = racing(); race.player.effects.ghost = 99; Object.assign(race, { rings: [], pickups: [] }); return race; };
   const [nova, orbit, apex] = [0, 1, 2];
   const step = race => stepRace(race, {}, 1 / 60);
   const early = fresh();

@@ -84,7 +84,7 @@ export const SLIPSTREAM_MIN_GAP = 4.4; // m behind; closer is a collision
 export const SLIPSTREAM_MAX_GAP = 14; // m behind
 export const SLIPSTREAM_ALTITUDE = 1.8; // m, max altitude difference
 
-import { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_HOP_PERIOD, ITEM_RESPAWN, rivalWantsNitro } from './rival-items.ts';
+import { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_HOP_PERIOD, ITEM_RESPAWN, rivalWantsNitro, rivalCollects, rivalSeek } from './rival-items.ts';
 export { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_NOVA_EVERY, RIVAL_NITRO_ORBIT_ALTITUDE, RIVAL_NITRO_MIN_SPEED, RIVAL_NITRO_APEX_FROM, RIVAL_HOP_PERIOD } from './rival-items.ts';
 export const RIVAL_NITRO_TIME = NITRO_TIME; // seconds one rival charge lasts
 export const RUBBER_BAND_MAX = 0.04; // speed multiplier changes by at most +/- this
@@ -188,7 +188,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
     },
     rivals: driverIds.map((name, i) => ({
       id: name, name, x: slots.get(name).x, homeX: slots.get(name).x, distance: slots.get(name).distance, speed: 0,
-      altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroTime: 0, nitroHop: -1, pace: 0, cooldown: 0,
+      altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroUses: 0, nitroTime: 0, nitroHop: -1, pace: 0, cooldown: 0, itemTakes: 0, lastTake: null,
     })),
     traffic: Array.from({ length: Math.round(36 * density) }, (_, i) => ({
       x: LANES[(i * 7 + 1) % 4], homeX: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / density,
@@ -450,8 +450,8 @@ export function stepRace(race, input, dt) {
     const cycle = ((race.elapsed + i * 3) % period) * (13 / period);
     rival.altitude = cycle > 6 && cycle < 11 ? Math.sin((cycle - 6) / 5 * Math.PI) * (5 + i) : 0;
     rival.thrusting = cycle > 6 && cycle < 9;
-    if (rival.nitro > 0 && rival.nitroTime === 0 && rivalWantsNitro(race, rival, Math.floor((race.elapsed + i * 3) / period))) {
-      rival.nitro--;
+    if (rival.nitro >= 1 && rival.nitroTime === 0 && rivalWantsNitro(race, rival, Math.floor((race.elapsed + i * 3) / period))) {
+      rival.nitro--; rival.nitroUses++;
       rival.nitroTime = RIVAL_NITRO_TIME;
     }
     rival.nitroTime = Math.max(0, rival.nitroTime - dt);
@@ -465,8 +465,8 @@ export function stepRace(race, input, dt) {
     const slow = (car.effects.freeze > 0 || rival.empUntil > race.elapsed ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
     rival.pace = rival.speed * slow;
     rival.distance += rival.pace * dt;
-    avoidObstacles(race, rival, rival.pace, dt);
-    aiImpacts(race, rival, before, rival.pace);
+    rivalSeek(race, rival); avoidObstacles(race, rival, rival.pace, dt);
+    aiImpacts(race, rival, before, rival.pace); rivalCollects(race, rival, before);
     if (!race.circuit && rival.distance >= race.length && rival.finishTime === null) {
       rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / rival.pace;
     }
