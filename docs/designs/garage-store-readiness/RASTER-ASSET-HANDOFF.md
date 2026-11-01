@@ -1,7 +1,18 @@
 # 3× Raster Asset Integration Handoff — garage-store-readiness
 
+## 2026-11-02 — Source WebPs now in shared Git asset branch (newest truth)
+
+The original ZIP has been recovered from the user's ChatGPT File Library, its SHA-256 checked against the value below, and **all 6 transparent 3× WebPs are now real committed Git blobs** in [`feature/3x-ui-materials`](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-store-readiness), pinned asset README commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`.
+
+Files are **216×216 source pixels**, but **72×72 CSS pixels in Vue/CSS**, not 216×216 CSS px. Retain all original 3× pixels on disk. `<img width="72" height="72">`, `object-fit: contain`, `import.meta.env.BASE_URL`, fallback, account/auth/semantic checks and actual device review are required.
+
+**Only the source material is archived.** Assets have **not** been copied into `feature/garage-store-readiness` runtime `public/` and have **not** been approved or wired into gameplay. Old `BINARIES_NOT_IN_GIT` wording below now refers to **this feature branch**, not to the repository-wide shared source archive. Do not regenerate assets before inspecting the real committed WebPs; select only visually suitable files. No payment/soft-currency or mission functionality is authorized by art.
+
+---
+
+
 **Feature branch:** `feature/garage-store-readiness`  
-**Status:** `CANDIDATE_ART_EXPORTED / BINARIES_NOT_IN_GIT / RUNTIME_NOT_INTEGRATED / REVIEW_PENDING`  
+**Status:** `CANDIDATE_3X_WEBPS_IN_SHARED_GIT_ASSET_BRANCH / NOT_COPIED_TO_FEATURE / RUNTIME_NOT_INTEGRATED / REVIEW_PENDING`  
 **Primary existing reference:** [VISUAL-FIDELITY.md](VISUAL-FIDELITY.md) · [Implementation plan](../../superpowers/plans/2026-10-31-garage-store-readiness-plan.md)  
 **Image count:** 6 candidates, each with PNG + transparent WebP. Approx. 72.1 KiB for all WebP candidates **if all were shipped** (do not ship unused art).  
 **Source archive filename:** `skyline-rush-3x-garage-store-readiness.zip`, generated in the original GPT conversation (NOT a GitHub release or committed file).  
