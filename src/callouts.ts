@@ -85,12 +85,13 @@ export function createCallouts() {
       }
       if (current && race.elapsed - current.started >= 0.85) current = null;
       if (!current && pending.length) {
+        // Prioritize before choosing the next badge, not after it has already been shown.
+        pending.sort((a, b) => (priority[b.kind] ?? 1) - (priority[a.kind] ?? 1));
         const queued = pending.shift();
         if (queued) {
           current = { ...queued, started: race.elapsed };
           lastShown.set(queued.kind, race.elapsed);
         }
-        pending.sort((a, b) => (priority[b.kind] ?? 1) - (priority[a.kind] ?? 1));
       }
       return current;
     },
