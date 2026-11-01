@@ -32,6 +32,27 @@ test('R1: the matrix covers every layout-inheriting mode on every track, and Cus
   assert.ok(![...keys].some(k => k.startsWith('endless/') || k.startsWith('eventlab/')), 'own-course modes stay out');
 });
 
+// AC1 (user, 2026-11-02): with seven rivals collecting too, the player's NITRO per minute and BOOST share stay
+// at or above 95% of the rival-free stage 1, on every mode, track and difficulty.
+test('AC1: the player keeps >= 95% of the stage-1 NITRO and BOOST with seven rivals, everywhere', () => {
+  const short = economyMatrix({ rivals: true }).filter(r => r.nitroPerMinute < STAGE1[r.key].nitroPerMinute * 0.95 || r.boostShare < STAGE1[r.key].boostShare * 0.95);
+  assert.deepEqual(short.map(r => `${r.key} nitro ${STAGE1[r.key].nitroPerMinute}->${r.nitroPerMinute} boost ${STAGE1[r.key].boostShare}->${r.boostShare}`), []);
+});
+
+// AC2 (user, 2026-11-02): seven rivals together fire NITRO more per race than before stage 2, averaged over the
+// ten tracks: Normal at least +2 in every mode with rivals, Hard (Custom) at least +4. Elimination knocks rivals
+// out during the race, so fewer are left to fire: the user accepted "more than before" there (+1.7, 2026-11-02).
+test('AC2: rivals fire NITRO at least +2 per race on Normal and +4 on Hard', () => {
+  const rows = economyMatrix({ rivals: true }), mean = (prefix, pick) => {
+    const list = rows.filter(r => r.key.startsWith(prefix));
+    return list.reduce((sum, r) => sum + pick(r), 0) / list.length;
+  };
+  for (const [prefix, more] of [['classic/normal/', 2], ['cup/normal/', 2], ['elimination/normal/', 1.5], ['custom/normal/', 2], ['circuit/normal/', 2], ['custom/hard/', 4]]) {
+    const before = mean(prefix, r => STAGE1[r.key].rivalNitro), after = mean(prefix, r => r.rivalNitro);
+    assert.ok(after >= before + more - 1e-9, `${prefix} ${before} -> ${after}, wants +${more}`);
+  }
+});
+
 test('R1: the frozen stage-1 baseline has a row for every matrix case', () => {
   for (const { key } of ECONOMY_CASES) {
     const row = STAGE1[key];
