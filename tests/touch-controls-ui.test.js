@@ -37,8 +37,11 @@ test('dragging stores a viewport-relative point, clamped 8 px inside and mirrore
   assert.deepEqual(layoutPoint(250, 250, size, 'right', viewport), { x: 0.75, y: 0.5 });
 });
 
-test('browser chrome resize preserves held steering until a real orientation change', () => {
+test('browser toolbar height changes preserve steering, but fold/rotation/width changes release it', () => {
   const source = readFileSync(new URL('../src/touch-controls-ui.ts', import.meta.url), 'utf8');
-  assert.match(source, /if \(orientation !== lastOrientation\) controls\.clear\(\)/);
+  assert.match(source, /orientation !== lastOrientation/);
+  assert.match(source, /Math\.abs\(innerWidth - lastWidth\) > 16/);
+  assert.match(source, /JSON\.stringify\(foldable\) !== previous/);
+  assert.match(source, /controls\.clear\(\); padTouch = null; drawPad\(\)/);
   assert.doesNotMatch(source, /'resize', \(\) => \{ controls\.clear\(\);/);
 });

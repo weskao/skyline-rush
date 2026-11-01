@@ -1724,5 +1724,29 @@ body[data-race-mode="endless"] .progress-track { display: none; }
 .touch-controls .touch-nitro[data-nitro-state="active"] { color: #fff4d6; border-color: #fff1bd; background: #735b40; }
 .touch-controls .touch-nitro[data-nitro-state="disabled"] { color: #a1aab3; border-color: #697783; opacity: .7; }
 
+/* Foldable viewport segments: available only when the browser exposes two real panels.
+   No API = the existing responsive phone/tablet rules above remain the entire fallback. */
+#touch-controls[data-fold-axis="vertical"] .touch-pad {
+  width: min(38%, calc(var(--fold-pane-left-end) - max(40px, env(safe-area-inset-left, 0px))));
+}
+#touch-controls[data-fold-axis="vertical"][data-hand="right"] .touch-pad {
+  width: min(38%, calc(100vw - var(--fold-pane-right-start) - max(40px, env(safe-area-inset-right, 0px))));
+}
+#touch-controls[data-fold-axis="horizontal"] .touch-pad {
+  top: max(55%, calc(var(--fold-pane-bottom-start) + 12px));
+}
+/* Place the competition progress away from the vertical seam, leaving the car sightline clear. */
+body[data-fold-axis="vertical"] .race-progress {
+  left: calc(50vw + var(--fold-pane-right-start) / 2);
+  width: min(250px, calc(100vw - var(--fold-pane-right-start) - 32px));
+}
+body[data-fold-axis="vertical"]:not([data-phase="ready"]) .mode-indicator {
+  left: calc(50vw + var(--fold-pane-right-start) / 2);
+}
+body[data-fold-axis="horizontal"] .race-route-map {
+  top: clamp(80px, 30vh, calc(var(--fold-pane-top-end) - 115px));
+  bottom: auto;
+}
+
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }

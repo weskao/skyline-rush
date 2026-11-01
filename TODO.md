@@ -1,3 +1,17 @@
+## Wave 2 — Foldable / Dual-screen Layout Adaptation · TODO #4 (2026-10-31)
+
+**Branch:** `feature/foldable-layout-adaptation` · **Integration source:** `develop` · **State:** In verification, NOT complete / not merged.
+
+- [x] Sync latest known `develop` into existing branch using a non-destructive two-parent merge (`6ce992f`), preserving Wave 1 Mobile HUD settings and behavior.
+- [x] Add pure typed segment/hinge projection and fallback with isolated RED→GREEN unit evidence; build responsive CSS + touch-controller integration (commits `9c63fde`, `c872370`).
+- [x] Add geometry, state-persistence, cancel/capture, portrait/landscape, stacked/side-by-side hinge and standard viewport Playwright tests.
+- [ ] Exact-feature-HEAD **full** CI: Typecheck, Node Unit, Build, all Browser/Responsive tests, World Tour and Cloud Save, performance evidence `quality-gate`; earlier focused-only CI does not satisfy this item.
+- [ ] Review real DOM/WebGL Playwright screenshots at 320×740, 390×844, 844×390, 568×320, 1440×900 and simulated 600×900 / 844×390 hinge; check visual fidelity and hardware-sourced performance.
+- [ ] Real foldable hardware/split-screen browser viewport + iPhone/Android rotation/input-release and safe-area validation, separate from simulated desktop testing.
+- [ ] Final visual signoff, approved reference source evidence and TODO #4 acceptance. No PR, deploy or merge back to `develop`/`main` without separate authorization.
+
+---
+
 ## Wave 2 — TODO #10: High-speed VFX / NITRO / BOOST (2026-10-31)
 
 **Branch:** `feature/high-speed-vfx`; integration target `develop` (do not merge without approval).
