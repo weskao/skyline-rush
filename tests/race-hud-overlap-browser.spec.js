@@ -31,15 +31,17 @@ const VIEWPORTS = [
  * visible, non-nested HUD blocks. `keep` lists transient overlays the game just raised (asserted visible beforehand): a slow
  * CI frame rate can end their ~1.4s life before this runs, so the same element with its real content is shown for the
  * snapshot and its hidden state restored afterwards. One that still cannot be measured is a failure, never a silent pass.
- * `maxBottom` caps an element's bottom edge (CSS px).
+ * `clearOf` maps a selector to a rectangle (CSS px) it must not intersect.
  */
-function collisions({ hud, pausePanel, pauseClearOf, minGap, keep = [], maxBottom = {} }) {
+function collisions({ hud, pausePanel, pauseClearOf, minGap, keep = [], clearOf = {} }) {
   const restore = keep.map(selector => {
     const element = document.querySelector(selector);
     const wasHidden = element?.hidden;
     if (element) element.hidden = false;
     return () => { if (element) element.hidden = wasHidden; };
   });
+  // Re-run the road-safe placement (src/race-feedback-placement.ts listens to resize) as the game does for each new callout.
+  if (keep.length) dispatchEvent(new Event('resize'));
   const shown = element => {
     for (let node = element; node && node !== document.body; node = node.parentElement) {
       const style = getComputedStyle(node);
@@ -67,9 +69,10 @@ function collisions({ hud, pausePanel, pauseClearOf, minGap, keep = [], maxBotto
     if (gap < minGap) found.push(`${a.label} × ${b.label} (${gap < 0 ? 'overlap' : `gap ${gap.toFixed(1)}px`})`);
   }
   for (const selector of keep) if (!blocks.some(block => block.label === selector)) found.push(`${selector} could not be measured`);
-  for (const [selector, limit] of Object.entries(maxBottom)) {
+  for (const [selector, area] of Object.entries(clearOf)) {
     const block = blocks.find(candidate => candidate.label === selector);
-    if (block && block.rect.bottom > limit) found.push(`${selector} bottom ${block.rect.bottom.toFixed(1)} > ${limit.toFixed(1)}`);
+    if (block && block.rect.left < area.right && block.rect.right > area.left && block.rect.top < area.bottom && block.rect.bottom > area.top)
+      found.push(`${selector} covers the road view (${['left', 'top', 'right', 'bottom'].map(side => block.rect[side].toFixed(0)).join(',')})`);
   }
   restore.forEach(undo => undo());
   return found;
@@ -110,11 +113,12 @@ for (const viewport of VIEWPORTS) {
         await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(20_000) }).toBe('racing');
         // A NITRO activation raises the event callout, the transient overlay most likely to land on other blocks.
         await page.evaluate(() => Object.assign(window.gameplay.race.player, { x: 0, speed: 80, nitroTime: 4 }));
-        await expect(page.locator('#event-callout')).toBeVisible({ timeout: ciTimeout(5_000) });
+        // Polled every frame: a callout lives ~0.85s of race time, shorter than the default poll interval on a slow runner.
+        await page.waitForFunction(() => !document.querySelector('#event-callout').hidden, null, { polling: 'raf', timeout: ciTimeout(5_000) });
         const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
-        // Short landscape keeps the callout out of the centre view (top 45%), as tests/motion-browser.spec.js requires without touch.
-        const calloutArgs = { ...args, keep: ['.event-callout'],
-          maxBottom: viewport.height <= 500 ? { '.event-callout': viewport.height * 0.45 } : {} };
+        // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
+        const road = { left: viewport.width * 0.325, right: viewport.width * 0.675, top: viewport.height * 0.2, bottom: viewport.height * 0.72 };
+        const calloutArgs = { ...args, keep: ['.event-callout'], clearOf: { '.event-callout': road } };
         for (const pair of await page.evaluate(collisions, calloutArgs)) failures.push(`${locale}/${hud}/racing: ${pair}`);
         // A vehicle hit's report: the same record game.js writes in its collision handler.
         await page.evaluate(() => {
@@ -131,3 +135,36 @@ for (const viewport of VIEWPORTS) {
     });
   });
 }
+
+test.describe('callout raised during GO! 390x844', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  // The telemetry stays visibility:hidden while the countdown's GO! is up (0.8s into racing); a NITRO chip placed then must
+  // move off it as soon as the countdown hides, not stay on it for the rest of its life. Driven in one synchronous snapshot
+  // (no frame runs inside it) because GO! and a callout last about as long as each other.
+  test('the callout moves clear of the telemetry when the countdown hides', async ({ gameplayPage: page }) => {
+    await page.locator('#start-button').click();
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(20_000) }).toBe('racing');
+    await expect(page.locator('#countdown')).toBeHidden();
+    const result = await page.evaluate(async () => {
+      const countdown = document.querySelector('#countdown'), callout = document.querySelector('#event-callout');
+      const telemetry = document.querySelector('.flight-telemetry'), report = callout.querySelector('#action-report');
+      const overlaps = () => { const a = callout.getBoundingClientRect(), b = telemetry.getBoundingClientRect();
+        return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top; };
+      countdown.hidden = false;
+      callout.querySelectorAll('[id$="-report"]').forEach(other => { other.hidden = true; });
+      report.hidden = false;
+      report.innerHTML = 'NITRO<span>FULL THROTTLE</span>';
+      callout.dataset.kind = 'nitro';
+      callout.hidden = false;
+      dispatchEvent(new Event('resize')); // placement runs while GO! still hides the telemetry
+      await Promise.resolve(); // flush refreshes the resize's own attribute writes queued, so only the countdown can move it next
+      const telemetryHidden = getComputedStyle(telemetry).visibility === 'hidden', placedOverTelemetry = overlaps();
+      countdown.hidden = true;
+      await Promise.resolve(); // MutationObserver callbacks run in this microtask checkpoint, before any frame
+      return { telemetryHidden, placedOverTelemetry, overlapsAfterGo: overlaps() };
+    });
+    // placedOverTelemetry proves the scenario: while hidden, the telemetry's corner is a legal slot.
+    expect(result).toEqual({ telemetryHidden: true, placedOverTelemetry: true, overlapsAfterGo: false });
+  });
+});

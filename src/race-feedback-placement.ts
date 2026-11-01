@@ -105,6 +105,10 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) 
   // Only structural layout changes invalidate placements; numeric HUD text changes every tick.
   for (const block of blocks.filter(el => el.matches('.race-progress, .leaderboard, .race-route-map, .mode-indicator, .aero-tools')))
     observer?.observe(block);
-  new MutationObserver(refresh).observe(document.body, { attributes: true, attributeFilter: ['data-hud-mode', 'data-fold-axis', 'data-phase'] });
+  const layoutChanges = new MutationObserver(refresh);
+  layoutChanges.observe(document.body, { attributes: true, attributeFilter: ['data-hud-mode', 'data-fold-axis', 'data-phase'] });
+  // The telemetry stays visibility:hidden while "GO!" is up after racing starts; a chip placed then must move once it appears.
+  const countdown = document.getElementById('countdown');
+  if (countdown) layoutChanges.observe(countdown, { attributes: true, attributeFilter: ['hidden'] });
   return { refresh };
 }

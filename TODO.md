@@ -48,6 +48,15 @@
   puts the callout in the top-bar strip between the wordmark and the toolbar. The gap-warning shift and the short-landscape
   flight-director step-aside are no longer needed and were reverted. Motion + overlap + responsive + parity + foldable 111/111,
   `test:layout`, typecheck, `npm test` 1290/0.
+- [x] Integration with `feature/in-race-feedback-visibility` (develop `bf350867`): that branch places the event callout
+  from script (`src/race-feedback-placement.ts`), so the overlap spec's "top 45%" stand-in for the centre view now checks the
+  same road rectangle the placement avoids, and its snapshot re-runs placement for a re-shown callout.
+  RED (merge, before fix): a callout raised during GO! is placed while `body:has(#countdown:not([hidden])) .telemetry` hides
+  the telemetry and stays on it after GO! ends — probe at 390x844 3/3 runs `callout 307,608-378,644` over
+  `telemetry 170,508-367,624` (also 1024x768); new guard test "the callout moves clear of the telemetry when the countdown
+  hides" fails 3/3 (`overlapsAfterGo: true`). GREEN: placement also refreshes when `#countdown` toggles `hidden`; guard 3/3,
+  overlap spec 21/21 (`--repeat-each=3`), motion + overlap + feedback-visibility + responsive + parity + foldable 118/118,
+  `test:layout`, typecheck, `npm test` 1330/0. cssBlob unchanged (`4d817a99`).
 - [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
 - [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
   competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
