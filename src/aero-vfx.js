@@ -247,6 +247,8 @@ export function createAeroVFX(scene, vehicle) {
       wakeStrength = Math.max(strength, rollStrength * .7);
       vehicle.updateWorldMatrix(true, false);
       current.copy(vehicle.position).add(origin);
+      // Home showroom remains stationary: animate an emission sample, not the car or race state.
+      if (studioDemo && preview) current.z += Math.sin(time * 2) * 0.65;
       // Studio (including Garage Home) loops ignition events; live racing never repeats them.
       if (studioDemo && enabled && !calm && (demoPulseClock += dt) >= 2.2) {
         demoPulseClock = 0; shockAge = 0;
@@ -303,7 +305,8 @@ export function createAeroVFX(scene, vehicle) {
           ghostDistance %= 2.4;
         }
       }
-      if ((boost || rollStrength > .1) && dt > 0 && previous.distanceToSquared(current) > 0.0001) {
+      const showcaseRibbon = studioDemo && preview && enabled && !calm;
+      if ((boost || rollStrength > .1 || showcaseRibbon) && dt > 0 && previous.distanceToSquared(current) > 0.0001) {
         const start = Math.max(0, 1 - 60 / previous.distanceTo(current));
         sample.lerpVectors(previous, current, start);
         sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, start);
@@ -311,7 +314,7 @@ export function createAeroVFX(scene, vehicle) {
         ribbonSide.set(0.65, 0, 0).applyQuaternion(sampleRotation);
         dashSamples(previous, current, 0.8 / quality, 16, t => {
           const slot = segmentCursor, s = segments[slot]; segmentCursor = (slot + 1) % segments.length;
-          s.roll = !boost;
+          s.roll = !boost && !showcaseRibbon;
           const kind = s.roll ? 1 : 0;
           if (ribbonKinds[slot * 6] !== kind) { ribbonKinds.fill(kind, slot * 6, slot * 6 + 6); ribbonKindDirty = true; }
           s.a.copy(ribbonFrom); s.left.copy(ribbonSide);
