@@ -5,7 +5,7 @@
 - [x] S0 AC1 economy bot + numbers (`dff62f74`).
 - [x] S1 Coast / Neon / Canyon tuned to the World Tour median (AC2a); other layouts hash-locked; `npm test` 1225/0 (`4d5f3177`, `af00b2d8`).
 - [x] S2 other tracks/modes measured; user decisions (3 rounds): version key (a) for all timed records; no boost tunnel; Canyon floor only, no extra volume; difficulty curve, so Aurora is unchanged and Sky Spiral + Circuit only get an opening-nitro fix; bot extension approved.
-- [ ] **S3 paused:** wait for Eight-Car, Foldable and Garage in `develop` (VFX already in as `bcf9b3f5`), then merge `develop` here and re-measure.
+- [x] S3 merged `origin/develop` `88dce759` (Wave 2 complete) as `119cf2d8`; only `TODO.md` conflicted (both sections kept). `npm test` 1296/0 (3 skipped), typecheck green, economy numbers identical to pre-merge on all ten tracks.
 - [ ] S4 `measureEconomy(trackId, options, cap)` + per-mode layout/number tests.
 - [ ] S5 Sky Spiral `openingNitroRings: 2`, Circuit smallest `openingNitroRings` → first NITRO ≤ 8.9 s, ring positions locked; AC3 lock = World Tour + Aurora.
 - [ ] S6 version key (Coast, Neon, Canyon, Sky Spiral, Circuit; Classic + modes + Circuit lap best + cloud + History tag en/zh-TW) via `src/record-layout.ts`.

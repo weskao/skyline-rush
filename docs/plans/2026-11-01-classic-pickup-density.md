@@ -264,7 +264,7 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
 | S0 | 量測工具與現況（AC1） | ✅ `dff62f74` |
 | S1 | 前三圖調整，AC2a 達標 | ✅ `4d5f3177`、`af00b2d8` |
 | S2 | 其他地圖與模式的量測，以及三輪使用者決定 | ✅ 本文件 |
-| S3 | 合併 `develop`（等 Eight-Car、Foldable、Garage 合入） | ⏸ 暫停中 |
+| S3 | 合併 `develop`（等 Eight-Car、Foldable、Garage 合入） | ✅ `119cf2d8` |
 | S4 | bot 擴充 | 待做 |
 | S5 | Sky Spiral 與 Circuit 的開場 NITRO | 待做 |
 | S6 | 版本鍵 | 待做 |
@@ -277,6 +277,7 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
 - 衝突熱點：Eight-Car 會改 `game.js` 的 `createRace`（7 台對手）和 `race-config.ts`；Garage 可能改歷史紀錄和雲端存檔。
 - 合併後重跑 `npm test`、`npm run typecheck` 和量測。如果因為 Eight-Car 改了 `createRace` 讓數字改變，就重新填寫量測表。bot 會移除對手，所以光圈數字應該不變；若有變化，要把原因寫下來。
 - 驗收：測試全綠，AC2a 與 AC3 仍然通過。
+- **結果（2026-11-01）：** 合併 `origin/develop` `88dce759`（`119cf2d8`），只有 `TODO.md` 衝突（兩邊各自新增段落，兩段都保留）。`npm test` 1296 通過／0 失敗／3 略過，typecheck 通過，`pickup-economy` 8/8 通過。十張圖的量測數字與合併前完全相同；bot 會移除對手，所以 Eight-Car 的 7 台對手不影響光圈數字。
 
 **S4 bot 擴充（RED → GREEN）**
 - `measureEconomy(trackId, options, cap)`，加上 `phase` 欄位。`worldTourBaseline` 要避免把 `map` 的 index 傳進去當 options（暫存腳本踩過這個錯）。
