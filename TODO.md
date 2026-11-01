@@ -59,7 +59,7 @@
   `test:layout`, typecheck, `npm test` 1330/0. cssBlob unchanged (`4d817a99`).
   Develop then landed the same countdown refresh (`19b67ca3`, guarded in `race-feedback-visibility-browser.spec.js` at
   844x390) plus a telemetry re-measure (`eb361bce`); on merge their version of the placement observers is kept and this
-  branch's duplicate guard test is dropped.
+  branch's 390x844 guard test stays as the portrait case (develop's runs at 844x390) and passes 5/5 on their observer.
 - [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
 - [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
   competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
