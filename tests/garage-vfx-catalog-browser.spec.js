@@ -11,11 +11,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await expect(catalog).toBeVisible();
     await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
     await expect(catalog.locator('[data-skin]')).toHaveCount(16);
-    await expect(catalog.getByRole('button')).toHaveCount(16);
+    await expect(catalog.getByRole('button')).toHaveCount(32);
     await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
     await expect(page.locator('#garage-preview #world')).toBeVisible();
     const screenshot = await page.screenshot();
-    await test.info().attach(`garage-skins-phasea-${viewport.width}x${viewport.height}.png`, { body: screenshot, contentType: 'image/png' });
+    await test.info().attach(`garage-skins-phaseb-${viewport.width}x${viewport.height}.png`, { body: screenshot, contentType: 'image/png' });
   });
 }
 
