@@ -66,6 +66,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Wave 2 video recording needs Playwright's FFmpeg binary, not the system binary.
+      - run: npx playwright install ffmpeg
       - run: node scripts/ci-shards.mjs plan playwright.config.js ${{ matrix.shard }} ${{ strategy.job-total }} > "$RUNNER_TEMP/shard-tests.txt"
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
       - run: npm run test:browser -- --test-list "$RUNNER_TEMP/shard-tests.txt"
@@ -81,6 +83,16 @@ jobs:
         with:
           name: browser-failures-${{ matrix.shard }}
           path: test-results
+      - name: Upload Wave 2 actual WebGL sprint VFX frames and animation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: high-speed-vfx-evidence-${{ matrix.shard }}
+          path: |
+            test-results/**/high-speed-vfx-*.png
+            test-results/**/high-speed-vfx-*.webm
+            test-results/**/high-speed-vfx-*.json
+          if-no-files-found: ignore
       - name: Upload actual race-mode game screenshots
         if: always()
         uses: actions/upload-artifact@v4
