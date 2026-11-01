@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { MAGNET_RANGE } from './game.js';
 import { createMarkerPool } from './marker-pool.js';
+import { createRivalCues } from './rival-cues.ts';
 
 // Shared by all car models and their wakes: every thrust stream starts at its actual port.
 export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]];
@@ -102,7 +103,7 @@ export function createEffects(scene, roadCenter) {
   pickupGeometry.setAttribute('color', new THREE.BufferAttribute(pickupRainbow, 3));
   // One instanced pool per material, each warmed by its parked instance (marker-pool.js); capacity covers the densest 900 m view.
   const ringPool = createMarkerPool('Race rings', ringGeometry, ringMaterials, 48), pickupPool = createMarkerPool('Nitro pickups', pickupGeometry, pickupMaterials, 128);
-  const gates = ringPool.group, pickups = pickupPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap();
+  const gates = ringPool.group, pickups = pickupPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap(), rivalCues = createRivalCues();
   scene.add(gates, pickups);
   // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.
   const beamGeometry = new THREE.CylinderGeometry(0.08, 0.08, 14, 8, 1, true);
@@ -201,6 +202,9 @@ export function createEffects(scene, roadCenter) {
         pool.end();
       }
       for (; beam < beams.children.length; beam++) beams.children[beam].visible = false;
+      // A rival taking an item or firing NITRO nearby: a smaller burst than the player's, in the item's colour (rival-cues.ts throttles it).
+      for (const cue of rivalCues.update(race)) if (active) burst(cue, reducedMotion ? 4 : lowQuality ? 8 : 18,
+        cue.kind === 'nitro' ? gold : pickupColors[cue.item] ?? ringColors[cue.item] ?? gold, car.speed);
       beamMaterial.opacity = reducedMotion ? 0.3 : 0.3 + Math.sin(flowTime * 4) * 0.1;
       previousRace = race;
       if (active && !reducedMotion && car.drift && car.altitude < 0.2) {
