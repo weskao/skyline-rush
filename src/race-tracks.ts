@@ -8,18 +8,18 @@ import type { TrackConfig } from './game-types.ts';
 const BOOST_ODDS = [0.4, 0.7, 0.8, 0.9] as const; // charge 40%, nitro 30%, slipstream 10%, risk 10%, mystery 10% (unchanged)
 export const RACE_TRACKS: Record<string, TrackConfig> = {
   coast: { // fixedRings: the original gate grid; every other ring is low enough to take from the road
-    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS,
+    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 2, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS,
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },
   neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, ringGap: [150, 220], ringOdds: BOOST_ODDS,
+    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 2, ringGap: [150, 220], ringOdds: BOOST_ODDS,
     sections: [
       { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
       { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
     ],
   },
   canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, openingNitroRings: 2, // volume was enough; only the first NITRO came late
+    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 2, openingNitroRings: 2, // volume was enough; only the first NITRO came late
     sections: [
       { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
       { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
@@ -36,7 +36,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   spiral: {
-    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005,
+    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005, layoutVersion: 2, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
     sections: [
       { from: 1100, to: 2200, type: 'spiral' },
       { from: 2800, to: 2870, type: 'launch' },

@@ -1,4 +1,4 @@
-# 經典競速前三圖：光圈／道具密度改善計畫
+# 經典競速：光圈／道具密度改善計畫（前三圖，加上 Sky Spiral 與 Circuit 的開場 NITRO）
 
 - 日期：2026-11-01
 - 分支：`feature/classic-pickup-density`（從 `develop` `54de8259` 開出）
@@ -43,8 +43,11 @@
   - 第一次能按 NITRO 的時間（秒）
 
   十張圖都要跑，Coast、Neon、Canyon 的現況寫進本文件的「量測結果」一節。
-- **AC2 前三圖達標**：Coast、Neon、Canyon 的以下指標要達到 World Tour 中位數的 ±15% 以內：每分鐘 NITRO 格數、BOOST 開啟比例，以及第一次能按 NITRO 的時間（不能比基準晚）。
-- **AC3 其他圖不動**：Aurora、Sky Spiral 和 World Tour 五張圖的光圈與道具排列 bit-for-bit 不變，由測試鎖住每張圖的 ring/pickup 序列雜湊。
+- **AC2 經典圖達標**：Coast、Neon、Canyon 的以下指標要達到 World Tour 中位數的 ±15% 以內：每分鐘 NITRO 格數、BOOST 開啟比例，以及第一次能按 NITRO 的時間（不能比基準晚）。
+  - Canyon 的 NITRO 只看下限，而且不增加道具量。
+  - *2026-11-01 第三輪*：改成難度曲線，越後面的圖可以越難，見「完整階段計畫」的 AC2b。
+- **AC3 其他圖不動**：World Tour 五張圖的光圈與道具排列 bit-for-bit 不變，由測試鎖住每張圖的 ring/pickup 序列雜湊。
+  - *第三輪決定*：Aurora 也保持不動並維持鎖定。Sky Spiral 和 Circuit 只調整開場光圈的種類，光圈數量與位置都不變，另外用測試鎖住。
 - **AC4 規則不變**：賽道長度、中心線、捷徑、斷崖與檢查點全部不改。這是道具層級的調整，不是賽道結構變更。
 - **AC5 遮擋與碰撞**：新增的光圈和道具不能放在斷崖洞口上，也不能卡進隧道頂。至少要留兩條車道可以通過，並遵守 CLAUDE.md 的「Solid obstacles」規則。
 
@@ -174,3 +177,208 @@ Bot 規則：經典模式、固定 1/60 s 步長；移除車流與對手，只�
 3. 其他七張圖的紀錄 key 與行為完全不變（有測試鎖住）。
 4. History 對舊版紀錄顯示標籤，中英文都有。
 5. 每一項都先 RED 再 GREEN，然後跑 `npm test`、`npm run typecheck` 和 `npm run test:browser` 的 history／results 相關 spec。
+
+## 其他地圖與模式（計畫，2026-11-01；尚未實作）
+
+量測用的是最終 bot 的同一套規則（車流、對手移除），一律從 `feature/classic-pickup-density` `146828d7` 用暫存腳本量，**沒有改 repo 裡的程式**。基準一樣是 World Tour 中位數：NITRO 15.79 格/分（下限 13.42）、BOOST 87.0%（73.95–100%）、第一次 NITRO 8.9 s。
+
+### 1. Aurora、Sky Spiral：建議併入第一階段（等使用者同意）
+
+| 地圖 | 現況 NITRO／BOOST／第一次 NITRO | 最小可達標調整 | 調整後 | 光圈數 |
+|---|---|---|---|---|
+| Aurora | ❌ 11.99／✅ 75.5%／✅ 4.8 s | `ringGap: [180, 280]` + `openingNitroRings: 1` | 16.50／89.5%／6.8 s | 20 → 23 |
+| Sky Spiral | ❌ 12.82／✅ 86.0%／❌ 9.0 s | `openingNitroRings: 2` | 14.22／85.8%／6.6 s | 22 → 22（位置不變） |
+
+- Aurora 只靠光圈比例（`ringOdds`）沒有任何組合能過。只改間距也不行，因為光圈重新排列後，第一次 NITRO 會變晚，所以要再加 1 個開場 nitro 光圈。
+- Sky Spiral 跟 Canyon 一樣，總量只差一點，主要問題是第一次 NITRO 太晚，所以只轉換開場兩個光圈，不增加數量。
+- **為什麼現在做**：版本鍵還沒寫，五張經典圖可以在**同一次遷移**一起升到 `layoutVersion: 2`，玩家只會看到一次「舊版配置」。如果之後再改這兩張，就要做第二次遷移。
+- 如果同意：AC3 的雜湊鎖會改成只鎖 World Tour 五張圖，AC2 測試會擴大到五張經典圖，What's New 也一併提到。**實作前要使用者明確同意，恢復工作時再問。**
+
+### 2. 用賽道設定的模式：不另外調整
+
+這九個模式在 Coast、Neon、Canyon、Aurora、Sky Spiral 上產生的光圈和道具，跟同一張圖的 Classic **完全相同**（逐一比對位置與種類）：classic、custom、free、time、gauntlet、checkpoint、cup、stunt、elimination。它們都直接用 `createRings(track)` 和 `createPickups(track)`，所以調整會自動帶進去，不需要另外調。
+
+會改動光圈的是模式選項，不是模式本身。這些是刻意的玩法設計，不列入 AC2：
+
+- `layout: 'mixed'`（gauntlet）：加圈並移除附近光圈。量到 14.22／89.5%／8.4 s，有達標。
+- `themes`：加主題圈。
+- `bonusGates`（stunt、checkpoint）：除了 mystery，其他光圈都改成獎勵門，所以 NITRO 很少（Coast checkpoint 加 bonusGates 只有 2.68），這是獎勵門本來的設計。
+- `itemRules: 'active'`：只留 mystery 光圈，NITRO 是 0，同樣是刻意的。
+- `items: false`：沒有地面道具。
+- `riskLines: 'off'`：risk 光圈改成 nitro，位置不變。
+
+bot 的限制：Checkpoint 模式的 bot 不會追檢查點，28 s 就超時結束；Elimination 移除對手後不會淘汰，車停在終點直到時間到。所以這兩個模式的每分鐘數字不能拿來比，但光圈和道具配置跟 Classic 相同。
+
+### 3. 有自己產生器的模式：只量測
+
+| 模式 | 產生方式 | NITRO 格/分 | BOOST | 第一次 NITRO | 結論 |
+|---|---|---|---|---|---|
+| Circuit（`harbor-circuit`，3 圈） | `lapItems(createRings(CIRCUIT_TRACK))` | 13.16（−2%，略低於下限） | 86.9% | **11.7 s（晚 2.8 s）** | 唯一明顯偏低的是第一次 NITRO。可以考慮在 `CIRCUIT_TRACK` 加 `openingNitroRings`，但要先確認 `lapItems` 每圈重複的行為，而且 Circuit 有自己的 `topologyVersion` 與單圈紀錄。**只提案，不調整，要使用者同意。** |
+| Endless（Coast／Neon 量 120 s） | `endless-highway.ts` 每個 chunk 固定 3 個光圈 | 20.5／21.25 | 100% | 6.0 s | 高於基準，不調整。 |
+| Daily `gold-rings` | 把全部光圈改成 nitro | 22.32（Coast）／24.33（Neon） | 68.4%／90% | 6.2／5.8 s | 這是刻意加碼的每日變化。Coast 的 BOOST 68.4% 偏低，原因是 charge 光圈都被換掉了，屬於這個變化本來的取捨。不調整。 |
+| Event Lab | 玩家自己編的關卡（`compileCourse`），光圈固定是 nitro | — | — | — | 配置由玩家決定，沒辦法一般化量測。不調整。 |
+
+建議下一步（也要使用者同意）：把 `measureEconomy` 加上 `options` 與時間上限參數（暫存腳本已經驗證可行，大約只要改三行），讓以上數字由測試記錄，而不是只寫在文件裡。
+
+### 4. World Tour：不調整（明確的非目標）
+
+Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。但 World Tour 五張圖本身就是基準：中位數的定義就是一半在上、一半在下。調整它們會讓基準跟著動，而且 AC3 要求這五張圖 bit-for-bit 不變，所以不調整。
+
+### 使用者決定（2026-11-01，第二輪；第 1、2 項已被第三輪取代）
+
+1. **Aurora、Sky Spiral 併入第一階段**：Aurora 用 `ringGap: [180, 280]` + `openingNitroRings: 1`，Sky Spiral 用 `openingNitroRings: 2`。五張經典圖一起升到 `layoutVersion: 2`，做同一次遷移。AC2 測試擴大到五張圖，AC3 的雜湊鎖改成只鎖 World Tour 五張圖。
+2. **Circuit 一起改**：`CIRCUIT_TRACK` 加開場 nitro 光圈，目標是第一次 NITRO ≤ 8.9 s，NITRO 不低於下限。實作前要先確認：
+   - `lapItems` 是每圈重複，還是只有第一圈有開場光圈？
+   - Circuit 的總時間最佳成績、Ghost 和單圈最佳（`loadCircuitLapBest`）也要納入版本鍵。
+   - 現有的 `topologyVersion: 1` 是賽道結構版本，不能拿來當光圈版本。
+3. **擴充量測 bot**：`measureEconomy(trackId, options, cap)`，並由測試記錄各模式的數字。
+
+實作順序（恢復工作後）：
+
+1. 合併 `develop`。
+2. bot 擴充（RED → GREEN）。
+3. Aurora／Sky Spiral／Circuit 調整（RED → GREEN）。
+4. 版本鍵，涵蓋五張經典圖與 Circuit。
+5. 音效、What's New、畫面與實機驗證、完整 CI。
+
+### 使用者決定（2026-11-01，第三輪：難度曲線）
+
+不是每張圖都要一樣簡單。越後面的圖，拾取可以更分散、難度可以更高，有需要再調整。決定如下：
+
+- **前三圖**（Coast、Neon、Canyon）：維持已完成的寬鬆程度，也就是 World Tour 中位數 ±15%（Canyon 只看下限）。
+- **Aurora、Sky Spiral、Circuit**：只要 NITRO 不低於 World Tour 的最低值 **11.54 格/分**。三張現在都已經達到（11.99、12.82、13.16），所以**不加密度**。
+- **只修太晚的第一次 NITRO**（要在 ≤ 8.9 s）：
+  - Sky Spiral：`openingNitroRings: 2`（9.0 → 6.6 s）。
+  - Circuit：`CIRCUIT_TRACK` 加 `openingNitroRings`（11.7 s → 目標 ≤ 8.9 s）。`lapItems` 會把每圈的光圈複製一份，所以**每一圈**都會有開場 nitro，各圈保持一致，不需要新程式。
+  - 兩張的光圈數量和位置都不變。
+- **Aurora**：完全不動，第一次 NITRO 4.8 s 已經夠早。
+- 取代第二輪的第 1、2 項。bot 擴充（第 3 項）照做。
+- **之後再難一點**：World Tour 和後段地圖如果要刻意更分散，就用同一組欄位（`ringGap` 放大、`ringOdds` 降低 nitro）。那會是另一個工作項目，需要先量測再請使用者同意，不在這次範圍內。
+
+## 完整階段計畫（2026-11-01 定稿）
+
+### 第一階段：經典光圈密度（`feature/classic-pickup-density`）
+
+| 步驟 | 內容 | 狀態 |
+|---|---|---|
+| S0 | 量測工具與現況（AC1） | ✅ `dff62f74` |
+| S1 | 前三圖調整，AC2a 達標 | ✅ `4d5f3177`、`af00b2d8` |
+| S2 | 其他地圖與模式的量測，以及三輪使用者決定 | ✅ 本文件 |
+| S3 | 合併 `develop`（等 Eight-Car、Foldable、Garage 合入） | ✅ `119cf2d8` |
+| S4 | bot 擴充 | ✅ `ee936be0` |
+| S5 | Sky Spiral 與 Circuit 的開場 NITRO | ✅ 見下方結果 |
+| S6 | 版本鍵 | ✅ `48a422f8`、`77ab7d0d`、見下方結果 |
+| S7 | 音效、What's New | ✅ `ea8fed66` |
+| S8 | 畫面、效能與實機驗證 | ✅ 自動化部分；實機待使用者 |
+| S9 | 完整 CI、回報 | ✅ `bc37681e`，run `41319983990` 全綠；實機待使用者 |
+
+**S3 合併 `develop`**
+- 先 `git fetch`，在本分支合併 `origin/develop`。不要反過來合進 `develop`。
+- 衝突熱點：Eight-Car 會改 `game.js` 的 `createRace`（7 台對手）和 `race-config.ts`；Garage 可能改歷史紀錄和雲端存檔。
+- 合併後重跑 `npm test`、`npm run typecheck` 和量測。如果因為 Eight-Car 改了 `createRace` 讓數字改變，就重新填寫量測表。bot 會移除對手，所以光圈數字應該不變；若有變化，要把原因寫下來。
+- 驗收：測試全綠，AC2a 與 AC3 仍然通過。
+- **結果（2026-11-01）：** 合併 `origin/develop` `88dce759`（`119cf2d8`），只有 `TODO.md` 衝突（兩邊各自新增段落，兩段都保留）。`npm test` 1296 通過／0 失敗／3 略過，typecheck 通過，`pickup-economy` 8/8 通過。十張圖的量測數字與合併前完全相同；bot 會移除對手，所以 Eight-Car 的 7 台對手不影響光圈數字。
+
+**S4 bot 擴充（RED → GREEN）**
+- `measureEconomy(trackId, options, cap)`，加上 `phase` 欄位。`worldTourBaseline` 要避免把 `map` 的 index 傳進去當 options（暫存腳本踩過這個錯）。
+- 測試記錄：
+  - 九個模式的光圈與道具配置跟 Classic 完全相同，用五張經典圖比對。
+  - Circuit、Endless、gold-rings 的數字有限且穩定。
+  - Checkpoint 與 Elimination 只比對配置，不比每分鐘數字，原因是前面提到的 bot 限制。
+- 驗收：新測試先 RED 再 GREEN；既有的量測數字不變。
+- **結果：** `measureEconomy(trackId, options, cap)` 不再於未完賽時丟錯，改為回傳 `phase`；AC1 改成斷言十張圖都 `finished`。RED：phase／cap 測試失敗（`phase` 不存在），Circuit／Endless／gold-rings 測試失敗（`RangeError: Circuit mode requires a circuit route`，舊版忽略 options）。GREEN 後 11/11 通過，十張圖數字與 S3 完全相同。「八個沿用模式在五張經典圖上配置與 Classic 相同」是特性鎖，一開始就通過（沒有 RED），用來防止日後的模式改動悄悄改掉配置。
+
+**S5 Sky Spiral、Circuit 開場 NITRO（RED → GREEN）**
+- AC2b 測試：
+  - Sky Spiral、Circuit：第一次 NITRO ≤ 8.9 s，NITRO ≥ 11.54 格/分。
+  - Aurora：數字和配置不變。
+- 位置鎖：Sky Spiral 與 Circuit 的光圈 `[distance, x, altitude, group]` 跟沒設 `openingNitroRings` 時完全相同，只有開場幾個光圈的種類改變。寫法比照 Canyon 的測試。
+- AC3 的雜湊鎖：World Tour 五張加上 Aurora。
+- Circuit 先試 `openingNitroRings` 1，不夠再用 2，選能達標的最小值。要確認 Circuit 的光圈 group 與 PERFECT LINE 在每一圈仍然正確。
+- 驗收：AC2a、AC2b、AC3 都通過，`npm test` 全綠。
+- **結果：** Sky Spiral `openingNitroRings: 2`（設 1 沒有效果，第一個光圈本來就是 nitro），Circuit `openingNitroRings: 1`（設 2 結果一樣，所以取最小值 1）。RED：Spiral／Circuit 位置鎖、Circuit 每圈開場 nitro 與 PERFECT LINE 分組、AC2b 四個測試失敗；GREEN 後 `pickup-economy` 15/15，`npm test` 1303 通過／0 失敗，typecheck 通過。AC3 雜湊鎖改為 Aurora 加 World Tour 五張；Sky Spiral 改由位置鎖保護。
+
+  | 賽道 | NITRO／分 | BOOST | 第一次 NITRO |
+  |---|---|---|---|
+  | Sky Spiral | 12.82 → 14.22 | 86.0 → 85.8% | 9.0 → 6.6 s |
+  | Circuit 1 圈 | 11.02 → 12.05 | 95.1 → 94.8% | 11.7 → 6.8 s |
+  | Circuit 3 圈 | 13.16 → 13.58 | 86.9 → 77.6% | 11.7 → 6.8 s |
+  | Circuit 5 圈 | 13.56 → 13.15 | 85.9 → 72.9% | 11.7 → 6.8 s |
+
+  Circuit 的 BOOST 比例下降：bot 更早、更常放 NITRO，NITRO 期間不算 BOOST。AC2b 只要求第一次 NITRO 和 NITRO 下限，所以不算違反；5 圈的 72.9% 略低於 World Tour ±15% 的下限 73.95%，記錄在此，供使用者實際試玩時參考。
+
+**S6 版本鍵（範圍：Coast、Neon、Canyon、Sky Spiral、Circuit 的所有計時紀錄）**
+- 做法照「版本鍵實作計畫」一節，以 `src/record-layout.ts` 為單一來源，第二階段也會重用它。
+  - `layoutVersion: 2` 設在上述五個賽道設定上。Aurora 與 World Tour 維持 1。
+- 實作項目：
+  - Classic：最佳成績、Ghost、歷史的 `layout` 欄位。
+  - 模式：最佳成績、Ghost、歷史，Cup 取 `cupTracks` 裡最大的版本。
+  - Circuit：總時間、Ghost，以及 `circuit-records.ts` 的單圈最佳。
+  - 雲端：`mergeProgress`、`raceRun`／`modeRun` 保留 `layout`，`validModeKey` 接受版本化 ID。
+  - History：舊版紀錄加上「Old layout／舊版配置」標籤（en + zh-TW），不參與最佳成績和趨勢圖。
+- 驗收：
+  - 照版本鍵一節的 1–5 條。
+  - 另外要有測試證明：舊 localStorage／雲端快照在合併、匯出、匯入、切換帳號後 bit-for-bit 保留；其他六張圖（Aurora 和 World Tour）的紀錄 key 不變。
+  - `npm run test:browser` 的 history／results 相關 spec 要通過。
+- **結果：**
+  - `src/record-layout.ts`：`layoutVersion`、`raceLayout`（Cup 取最大；Endless、Event Lab 不用賽道光圈，固定為 1）、`recordTrackId`、`parseRecordTrackId`、`runLayout`、`layoutField`、`isCurrentLayout`。五個賽道設 `layoutVersion: 2`。
+  - 對應的地方都在最底層的存取函式裡換 ID：`history-ghost.ts`（Classic 與模式 Ghost）、`history-mode.ts`（模式最佳、Stunt 峰值、比較只看同版本的歷史）、`circuit-records.ts`（單圈最佳）、`race-results.ts`（Classic 最佳；`LEGACY_BEST_KEY` 只在版本 1 的 coast 寫入，所以舊 key 從此凍結）、`history-classic.ts`（新紀錄加 `layout`）。
+  - 雲端：`mergeProgress` 的 bests 接受版本化 ID；`raceRun`／`modeRun` 保留 `layout`；`validModeKey` 透過 `parseRecordTrackId` 接受版本化 ID。
+  - **Firestore 規則（計畫外的發現）：** `saves.bests` 的 key 有白名單，`coast@2` 會讓整份雲端存檔被拒絕。`firestore.rules` 加了 `bestIds()`（多出 `coast@2`、`neon@2`、`canyon@2`、`spiral@2`），emulator 測試與一個 node 守門測試（規則清單必須跟用戶端完全一致）。**CI 不會部署 Firestore 規則：發布這個版本前，必須先手動部署規則，否則已登入玩家在新版跑出成績後雲端同步會失敗。** 這一步需要使用者核准。
+  - History：舊版紀錄照常列出，加上「OLD LAYOUT／舊版配置」標籤，不算最佳、不進趨勢圖、模式紀錄不顯示個人最佳與 Ghost。字串放在新的 `src/locales/record-layout.ts`（`ui.ts` 已到行數上限，不能再加）。
+  - RED：把儲存層的改動暫時還原後，`tests/record-layout.test.js` 有 7 個行為測試失敗；History 標籤測試、Firestore 守門測試也各自先 RED。GREEN：`record-layout` 17/17、`npm test` 1317／0、typecheck 通過、`npm run test:cloud`（emulator）Playwright 15/15 與規則測試 3/3。
+  - 既有測試的調整（不是放寬）：五個測試原本拿 Coast／Circuit 當「任意賽道」，存檔資料沒有 `layout` 欄位，依新規則會被當成舊版。改成符合目前版本的資料：`history.test.js` 預期紀錄多 `layout: 2`；`race-results.test.js` 的最佳成績 key 改為 `coast@2`；`ghost.test.js`、`history-ui.test.js` 的模式紀錄加 `layout: 2`；`mode-personal-best-mode00.test.js` 的「舊格式紀錄」測試改用配置沒變過的 Aurora（舊格式紀錄本來就是版本 1）。舊版本行為由 `record-layout.test.js` 涵蓋。
+
+**S7 音效與 What's New**
+- 音效：不新增素材。確認 Neon 光圈變密後，拾取提示音不會疊在一起或一直響（`src/race-audio-events.ts`）。必要時加節流，並在 `tests/race-audio-events.test.js` 先 RED 再 GREEN。暫停／重來後不能殘留聲音。
+- What's New：`src/release-notes-data.ts` 最上方加 `version: UPCOMING`，中英文都寫，從玩家角度描述：前三張經典地圖的光圈更多、更容易拿；Sky Spiral 與環形賽道更早拿到第一個 NITRO；舊成績保留並標示舊版配置。最後跑 `/review-release-notes`。
+- 畫質分級：光圈是 3D 物件，Low／Medium／High 都顯示一樣的數量，不依畫質分級。
+- **音效結果：** 光圈本身沒有音效；跟光圈有關的只有「NITRO 就緒」提示音，由 `nitro-readiness.ts` 控制：只在 NITRO 沒有啟動時、充能從不滿 1 變成滿 1 才響，而且要真的花掉一格才會重新啟用。用真實的 `createNitroReadiness` 跑一場比較：Coast 每場提示 1 → 2 次（間隔 25.2 s），Neon 最短間隔 5.2 → 5.0 s，Canyon、Sky Spiral、Circuit 不變（22.8、9.2、5.7 s）；World Tour 的 Taipei 是 3.0 s。沒有疊音或連響，不需要節流，也不新增音效。
+- **What's New 結果：** 發現已發布的 v0.28.0 那則仍標成 `UPCOMING`（發布後沒有補標版本），新增內容會改到已發布的說明、讓它的審稿失效。改為把那則補標 `version: '0.28.0'`（審稿指紋仍然相符），另開新的 `UPCOMING`：`classic-more-rings`（使用者選用審稿 agent 的改寫：「光圈更多、更豐厚」）與 `old-layout-records`。以 0.29.0 跑完 `/review-release-notes`，使用者核准後記錄指紋。若最後不是以 0.29.0 發布，要用實際版本號重審。
+
+**S8 畫面、效能與實機驗證**
+- 光圈池固定 7 個，只畫前方 900 m 內的光圈，所以 draw call 上限不變。
+- 比較 Coast、Neon、Canyon、Sky Spiral、Circuit 在 1440×900 下，Low／Medium／High 三個畫質的 Draw Calls、Triangles 和 p50／p95，並與 `develop` 對照，填入每張圖的前後對照表。註明這是軟體 WebGL 的數字，不是實機效能。
+- 實際的 WebGL 截圖：1440×900、390×844、844×390，確認光圈清楚可見，也沒有擋到地標。Coast 的低光圈位在路面高度 3 m，要特別確認不會擋住車子。
+- 真實鍵盤和觸控各跑一場上述地圖，確認 BOOST／NITRO 節奏，以及暫停／重來的行為。
+- `npm run test:browser`（桌面與手機）、`npm run test:layout`。
+- **結果（本機 Chrome headless、1440×900、Playwright 鍵盤駕駛 9.5 秒、同一台機器同條件，develop `0d484fc5` 對本分支；這是本機瀏覽器數字，不是實機或手機的效能／發熱量測）：**
+
+| 路線 | 畫質 | Draw Calls 平均（最大）develop → 本分支 | Triangles 平均 develop → 本分支 | p50 ms | p95 ms | FPS |
+|---|---|---|---|---|---|---|
+| Coast | Low | 446.8 (463) → 446.7 (463) | 83824 → 87477 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Neon | Low | 506.9 (536) → 508.1 (537) | 83145 → 84105 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Canyon | Low | 453.2 (472) → 453.5 (472) | 45628 → 45658 | 16.7 → 16.7 | 16.8 → 16.8 | 60 → 60 |
+| Sky Spiral | Low | 251.3 (272) → 251.3 (272) | 43844 → 43866 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Circuit | Low | 162.9 (178) → 162.8 (178) | 33201 → 33194 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Coast | Medium | 459.8 (476) → 459.9 (476) | 84389 → 87992 | 16.7 → 16.7 | 16.7 → 16.7 | 60 → 60 |
+| Neon | Medium | 519.9 (549) → 521.2 (550) | 83537 → 84497 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Canyon | Medium | 466.4 (485) → 466.3 (485) | 46432 → 46425 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Sky Spiral | Medium | 266.3 (287) → 266.3 (287) | 45943 → 45943 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Circuit | Medium | 175.8 (191) → 175.8 (191) | 33207 → 33200 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Coast | High | 459.8 (476) → 459.8 (476) | 85205 → 88829 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Neon | High | 519.9 (549) → 521.1 (550) | 83934 → 84881 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Canyon | High | 466.4 (485) → 466.4 (485) | 47008 → 47008 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Sky Spiral | High | 290.2 (311) → 290.2 (311) | 48332 → 48332 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Circuit | High | 175.8 (191) → 175.9 (191) | 33207 → 33214 | 16.7 → 16.7 | 16.7 → 16.7 | 60 → 60 |
+
+  - Draw Calls 幾乎不變（Neon 平均 +1.3，約 +0.25%；光圈池固定 7 個）。Coast Triangles 約 +4.3%（3 m 高的低光圈更常在畫面內），Neon 約 +1.2%，其他持平。frame time 受 60 Hz vsync 限制，看不出差異，只當輔助證據。沒有拿掉任何景物、沒有降解析度。
+  - 實際 WebGL 截圖：五條路線 × 1440×900、390×844、844×390 共 15 張，沒有 pageerror。Coast 低光圈與高光圈都清楚，車子與大橋地標沒被擋住。另外發現（與本分支無關）：844×390 且沒有觸控時，桌面版 HUD 會互相重疊（POSITION 被時速蓋住），是既有的 HUD 版面問題，本分支沒改 HUD。
+  - 瀏覽器回歸：與紀錄有關的 spec（`browser`、`mode-history`、`circuit`、`result-actions`、`settle-once`、`progression`、`cloud-save`、`challenge-medals-backup`，以及所有會預先寫入紀錄的 spec）全部通過。其中 7 個 spec 原本把目前版本的資料寫在舊 key（`coast`、`harbor-circuit` 的單圈 key、沒有 `layout` 的紀錄），改為寫到 `@2` key 或加 `layout: 2`；Circuit 改用真正的 `circuitLapKey` 產生 key（`bdfd742d`）。
+  - 實機鍵盤、觸控與手機實際遊玩：留給使用者（第二階段開工條件之一）。
+
+**S9 完整 CI 與回報**
+- 推送時 commit 訊息加 `[full-regression]`，最終 HEAD 的 `quality-gate` 要全綠，包含 rendering budget，不能靠調高 budget 過關。
+- 把 run id 回報給 skyline-rush-13。不能合進 `develop`。
+- 完成後請使用者實際玩過，這也是第二階段的開工條件之一。
+
+### 第二階段：對手拾取道具（`feature/rival-item-pickups`，排在第一階段之後）
+
+- 計畫在該 worktree 的 `docs/plans/2026-11-01-rival-item-pickups.md`（`79f45369`，只在本機，沒有推送）。
+- 開工條件，三個都要成立：
+  1. 第一階段完整 CI 全綠。
+  2. 使用者實際玩過第一階段。
+  3. 使用者明確說開始。
+- 開工前先問使用者該計畫「開工前要問使用者的事」一節的問題：道具被拿走後重生，還是每台車各有一份；Hard 要多積極；Easy 怎麼表現；是不是新模式。
+- 接著把第一階段分支和最新的 `develop` 合進去，不能合進 `develop`。
+- 會重用：`scripts/pickup-economy.mjs`（S4 擴充後的版本）、`src/record-layout.ts`（S6）、`ring-layout.ts` 的每圖欄位。

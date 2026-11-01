@@ -2,7 +2,7 @@ export const RACE_PRESENTATION_COPY = {
   en: {
     'mode.conflict.noRivals': 'No AI opponents, so difficulty has no effect',
     'mode.conflict.lapsCircuitOnly': 'Laps run only on Harbor Circuit; sprint tracks use stages',
-    'mode.conflict.eliminationRivals': 'Elimination always races 3 AI opponents',
+    'mode.conflict.eliminationRivals': 'Elimination always races 7 AI opponents',
     'mode.restoreDefaults': 'Restore defaults',
     'mode.editRules': 'Edit rules',
     'mode.setupSolo': 'Solo run',
@@ -41,7 +41,7 @@ export const RACE_PRESENTATION_COPY = {
   'zh-TW': {
     'mode.conflict.noRivals': '沒有 AI 對手，難度設定不會生效',
     'mode.conflict.lapsCircuitOnly': '圈數只適用於港灣環道，衝刺賽道請改用賽段',
-    'mode.conflict.eliminationRivals': '淘汰賽固定與 3 名 AI 對手競速',
+    'mode.conflict.eliminationRivals': '淘汰賽固定與 7 名 AI 對手競速',
     'mode.restoreDefaults': '恢復預設',
     'mode.editRules': '調整規則',
     'mode.setupSolo': '單人挑戰',

@@ -2,6 +2,7 @@ import { test, expect, chromium } from './helpers/test.js';
 import { saveArtifact } from './helpers/artifact.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { slow, ciTimeout } from './helpers/ci.js';
+import { recordTrackId } from '../src/record-layout.ts';
 
 
 // Where autoplay is blocked (CI runners), the music prompt appears after 600ms over the settings buttons.
@@ -197,7 +198,7 @@ const stored = (page, key) => page.evaluate(key => localStorage.getItem(key), ke
 
 test('music and sound effects start on and each remember an off choice in localStorage', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'true');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
   await audioSwitch(page, 'Music').click();
@@ -206,7 +207,7 @@ test('music and sound effects start on and each remember an off choice in localS
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => stored(page, 'skyline-rush-sound')).toBe('off');
   await page.reload();
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await page.locator('#intro-title').click();
@@ -217,7 +218,7 @@ const volumeSlider = (page, name) => page.getByRole('slider', { name: `${name} v
 
 test('each channel has a volume slider; muting keeps its level, unmuting restores it, and both survive a reload', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   const music = volumeSlider(page, 'Music');
   await expect(music).toHaveValue('100');
   await expect(volumeSlider(page, 'Sound effects')).toHaveValue('100');
@@ -234,7 +235,7 @@ test('each channel has a volume slider; muting keeps its level, unmuting restore
   await expect(music).toHaveValue('40');
   await audioSwitch(page, 'Music').click();
   await page.reload();
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await audioSwitch(page, 'Music').click();
   await expect(volumeSlider(page, 'Music')).toHaveValue('40');
@@ -244,7 +245,7 @@ test('each channel has a volume slider; muting keeps its level, unmuting restore
 test('dragging a volume slider to zero mutes it and unmuting returns to the level before the drag', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   const effects = volumeSlider(page, 'Sound effects');
   const box = await effects.boundingBox();
   const y = box.y + box.height / 2;
@@ -263,7 +264,7 @@ test('a volume slider shows its level live while dragging, before release, witho
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   const music = volumeSlider(page, 'Music');
   const box = await music.boundingBox();
   const y = box.y + box.height / 2;
@@ -280,7 +281,7 @@ test('a volume slider shows its level live while dragging, before release, witho
 test('one quick button mutes everything and brings back each saved level', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await volumeSlider(page, 'Sound effects').focus();
   for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowLeft');
   await page.getByRole('button', { name: 'Mute all' }).click();
@@ -297,7 +298,7 @@ test('the audio panel scrolls instead of running off a short landscape phone scr
   await page.setViewportSize({ width: 568, height: 240 });
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   const panel = page.locator('#settings-panel');
   const layout = await panel.evaluate(el => ({ bottom: el.getBoundingClientRect().bottom, overflow: getComputedStyle(el).overflowY, scrolls: el.scrollHeight > el.clientHeight }));
   expect(layout.bottom).toBeLessThanOrEqual(240);
@@ -310,7 +311,7 @@ test('the audio panel scrolls instead of running off a short landscape phone scr
 test('intro music plays after the first interaction and race music replaces it', async ({ page }) => {
   await page.addInitScript(measureAudio);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [50] }).toBeGreaterThan(0.001);
   await audioSwitch(page, 'Music').click();
@@ -324,7 +325,7 @@ test('intro music plays after the first interaction and race music replaces it',
 test('music stops while the page is hidden and comes back when it is shown', async ({ page }) => {
   await page.addInitScript(measureAudio);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await expect.poll(() => page.evaluate(() => window.audioState?.())).toBe('running');
   const setHidden = hidden => page.evaluate(hidden => {
     Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
@@ -381,7 +382,7 @@ test('a saved music-off choice stays silent after the first gesture and keeps so
   await page.keyboard.press('Shift');
   await page.waitForTimeout(500);
   expect(await level(page)).toBeLessThan(0.0001);
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
 });
@@ -432,7 +433,7 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);
   await page.keyboard.press('m');
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
@@ -440,7 +441,7 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeGreaterThan(0.001);
   await page.keyboard.press('p');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await audioSwitch(page, 'Sound effects').click();
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
@@ -457,7 +458,7 @@ test('audio initialization failure leaves the silent game playable and retryable
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(30);
-  await page.getByRole('button', { name: 'Audio and HUD settings' }).click();
+  await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await audioSwitch(page, 'Sound effects').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
@@ -472,7 +473,7 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'The road is just the beginning.' })).toBeVisible();
   await expect(page.locator('canvas#world')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Audio and HUD settings' })).toBeVisible();
+  await expect(page.locator('#settings-button')).toBeVisible();
   await page.getByRole('button', { name: 'Change camera' }).click();
   await expect(page.getByRole('button', { name: 'Change camera' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Change camera' }).click();
@@ -591,13 +592,14 @@ gameplayTest('a complete 5 km sprint reaches results, saves a best time and can 
   await expect(page.locator('#result-stats')).toBeVisible();
   await expect(page.locator('#result-style')).toHaveAttribute('aria-label', /^[1-3] of 3 style stars$/);
   await expect(page.locator('.style-stars svg')).toHaveCount(3);
-  expect(await page.evaluate(() => Number(localStorage.getItem('skyline-rush-best')))).toBeGreaterThan(50);
+  const coastRecord = recordTrackId('coast'); // the current ring layout's best/ghost key
+  expect(await page.evaluate(id => JSON.parse(localStorage.getItem('skyline-rush-best-tracks'))[id], coastRecord)).toBeGreaterThan(50);
   const history = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-history')));
   expect(history).toHaveLength(1);
   expect(history[0]).toMatchObject({ track: 'coast', distance: 5000 });
   expect(history[0].time).toBeGreaterThan(50);
   expect(history[0].score).toBeGreaterThan(0);
-  const saved = await page.evaluate(() => ({ ghost: JSON.parse(localStorage.getItem('skyline-rush-ghosts')).coast, stars: JSON.parse(localStorage.getItem('skyline-rush-stars')).coast }));
+  const saved = await page.evaluate(id => ({ ghost: JSON.parse(localStorage.getItem('skyline-rush-ghosts'))[id], stars: JSON.parse(localStorage.getItem('skyline-rush-stars')).coast }), coastRecord);
   expect(Math.abs(saved.ghost.samples.length - (Math.floor(saved.ghost.time * 10) + 1))).toBeLessThanOrEqual(1);
   expect(saved.ghost.time).toBe(history[0].time);
   expect(saved.stars).toBeGreaterThanOrEqual(1);
@@ -605,8 +607,9 @@ gameplayTest('a complete 5 km sprint reaches results, saves a best time and can 
   await expect(page.locator('.history-run')).toHaveCount(1);
   await expect(page.locator('.history-run')).toContainText('BEST');
   await page.getByRole('button', { name: 'Close history' }).click();
-  const bests = await page.evaluate(() => ({ perTrack: JSON.parse(localStorage.getItem('skyline-rush-best-tracks')).coast, legacy: Number(localStorage.getItem('skyline-rush-best')) }));
-  expect(bests.perTrack).toBe(bests.legacy);
+  const bests = await page.evaluate(id => ({ perTrack: JSON.parse(localStorage.getItem('skyline-rush-best-tracks'))[id], legacy: localStorage.getItem('skyline-rush-best') }), coastRecord);
+  expect(bests.perTrack).toBe(history[0].time);
+  expect(bests.legacy, 'a new-layout time never lands in the old-layout Coast best').toBeNull();
   await saveArtifact(page, { path: 'artifacts/race-results.jpeg', quality: 70 });
   await page.getByRole('button', { name: 'Race again' }).click();
   await expect(page.locator('#distance')).toHaveText('0.00');
@@ -786,7 +789,7 @@ const visibleBounds = page => page.locator('#touch-controls button, .touch-pad, 
   .filter(element => element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden')
   .map(element => {
     const { left, right, top, bottom, width, height } = element.getBoundingClientRect();
-    return { name: element.getAttribute('aria-label') ?? element.className, control: element.dataset.control ?? null, pad: element.classList.contains('touch-pad'), left, right, top, bottom, width, height };
+    return { name: element.getAttribute('aria-label') ?? element.className, pad: element.classList.contains('touch-pad'), left, right, top, bottom, width, height };
   }));
 
 for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
@@ -976,8 +979,8 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
 
     test('right hand in Buttons mode mirrors the steering buttons', async ({ page }) => {
       const centerX = async name => {
-        const target = name === 'nitro' ? page.locator('[data-control="nitro"]') : page.getByRole('button', { name, exact: true });
-        const box = await target.boundingBox();
+        const button = name === 'Nitro button' ? page.locator('[data-control="nitro"]') : page.getByRole('button', { name, exact: true });
+        const box = await button.boundingBox();
         return box.x + box.width / 2;
       };
       for (const hand of ['left', 'right']) {
@@ -988,7 +991,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
         for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${hand} ${name}`).toBe(true);
         // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'nitro'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
+        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Nitro button'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
       }
     });
 
@@ -1073,11 +1076,11 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
           await expect(page.locator('#touch-controls')).toBeVisible();
           const bounds = await visibleBounds(page);
           const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
-          // The NITRO accessibility label intentionally reflects READY/CHARGING/UNAVAILABLE.
-          // Verify stable action identity rather than pinning a transient state string.
-          expect(touchButtons.map(bound => bound.control).filter(Boolean).sort(), `${mode} ${size}`).toEqual(mode === 'slide'
-            ? ['boost', 'fly', 'nitro', 'throttle']
-            : ['boost', 'brake', 'fly', 'left', 'nitro', 'right', 'throttle']);
+          // The HUD owns NITRO's accessible state label; geometry checks should not depend on charge timing.
+          const names = touchButtons.map(bound => bound.name.replace(/^NITRO .+$/, 'NITRO')).sort();
+          expect(names, `${mode} ${size}`).toEqual((mode === 'slide'
+            ? ['Accelerate', 'NITRO', 'Hold to boost', 'Hold to fly']
+            : ['Accelerate', 'NITRO', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']).sort());
           expect(bounds.some(bound => bound.pad)).toBe(mode === 'slide');
           for (const bound of bounds) {
             const label = `${mode} ${size} ${bound.name}`;

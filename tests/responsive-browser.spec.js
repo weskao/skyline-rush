@@ -377,7 +377,7 @@ for (const [width, height] of [[390, 844], [375, 667], [320, 568], [844, 390]]) 
     await expect(page.locator('#event-callout')).toBeVisible();
     // No settle wait: the overlap must be gone from the callout's first frame, not after a fade (CI's i18n check caught one mid-fade).
     const [director, callout] = await Promise.all(['.flight-director', '#event-callout'].map(selector => page.locator(selector).boundingBox()));
-    // Callouts last ~1.4s; on a portrait phone the director may step aside (fade out) for one instead of moving.
+    // Callouts last ~1.4s; on a phone (portrait or short landscape) the director may step aside (fade out) for one instead of moving.
     const directorShown = await page.locator('.flight-director').evaluate(el => Number(getComputedStyle(el).opacity) > 0.05);
     await page.keyboard.up('Space');
     expect(!directorShown || callout.y + callout.height <= director.y + 0.5 || director.y + director.height <= callout.y + 0.5 ||

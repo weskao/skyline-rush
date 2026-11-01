@@ -1,4 +1,5 @@
 import { validGhost, type GhostRun } from './ghost.ts';
+import { recordTrackId } from './record-layout.ts';
 import { readStored as read, writeStored as write, type HistoryStorage } from './history-storage.ts';
 
 const GHOSTS_KEY = 'skyline-rush-ghosts';
@@ -21,14 +22,14 @@ function boundedGhosts(previous: unknown, key: string, ghost: unknown): Record<s
 const loadGhosts = (storage?: HistoryStorage): Record<string, unknown> => asRecord(read(GHOSTS_KEY, storage));
 
 export function loadGhost(trackId: string, storage?: HistoryStorage): GhostRun | null {
-  const ghost = loadGhosts(storage)[trackId];
+  const ghost = loadGhosts(storage)[recordTrackId(trackId)];
   return validGhost(ghost, trackId) ? ghost : null;
 }
 export function saveGhost(trackId: string, ghost: unknown, storage?: HistoryStorage): void {
-  const entries = boundedGhosts(loadGhosts(storage), trackId, ghost);
+  const entries = boundedGhosts(loadGhosts(storage), recordTrackId(trackId), ghost);
   if (entries) write(GHOSTS_KEY, entries, storage);
 }
-const modeGhostId = (trackId: string, config: unknown): string => trackId + ':' + JSON.stringify(config);
+const modeGhostId = (trackId: string, config: unknown): string => recordTrackId(trackId, config) + ':' + JSON.stringify(config);
 export function loadModeGhost(trackId: string, config: unknown, storage?: HistoryStorage): GhostRun | null {
   const ghosts = asRecord(read(MODE_GHOST_KEY, storage));
   const item = ghosts[modeGhostId(trackId, config)];

@@ -37,7 +37,7 @@ test('starting requires a countdown and countdown holds every racer on the grid'
   assert.equal(race.phase, 'countdown');
   assert.equal(race.player.distance, 0);
   assert.equal(race.player.altitude, 0);
-  assert.equal(race.rivals[0].distance, 0);
+  assert.equal(race.rivals[0].distance, race.grid.find(slot => slot.id === race.rivals[0].name).distance);
   advance(race, 1.1);
   assert.equal(race.phase, 'racing');
 });
@@ -117,7 +117,7 @@ test('pause and invalid frame intervals leave race state unchanged', () => {
 test('all rivals race and use flight; position compares distance, finish freezes the result', () => {
   const race = racing();
   advance(race, 8, { throttle: true });
-  assert.equal(race.rivals.length, 3);
+  assert.equal(race.rivals.length, 7);
   assert.ok(race.rivals.every(rival => rival.distance > 100));
   let airborne = false;
   for (let i = 0; i < 600; i++) {
@@ -291,7 +291,7 @@ test('landing emits one touchdown event with the actual descent speed and resets
 });
 
 test('air dash: holding fly and boost together drains fuel at 18 per second and keeps the boost speed cap', () => {
-  const race = racing();
+  const race = racing(); race.rivals = [];
   race.player.speed = 80;
   advance(race, 1, { fly: true, boost: true });
   assert.ok(Math.abs(race.player.fuel - 82) < 0.5);
@@ -329,7 +329,7 @@ test('FLY + BOOST + NITRO keeps the 18/s AIR DASH drain and the MAX_SPEED + 30 c
 });
 
 test('steering input ramps to full over 0.15 s and high-speed lateral speed caps at 9 m/s', () => {
-  const race = racing();
+  const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: MAX_SPEED, x: -7.5 });
   advance(race, 0.05, { throttle: true, steer: 1 });
   assert.ok(Math.abs(race.player.steering - 1 / 3) < 0.01);
@@ -342,12 +342,12 @@ test('steering input ramps to full over 0.15 s and high-speed lateral speed caps
 
 test('lane assist eases a released car to the nearest lane centre only when enabled', () => {
   for (const laneAssist of [true, false]) {
-    const race = racing();
+    const race = racing(); race.rivals = [];
     Object.assign(race.player, { speed: 40, x: 3.6 });
     advance(race, 2, { throttle: true, laneAssist });
     assert.ok(laneAssist ? Math.abs(race.player.x - 2.5) < 0.05 : race.player.x === 3.6);
   }
-  const race = racing();
+  const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: 40, x: 3.6 });
   advance(race, 0.5, { throttle: true, laneAssist: true, steer: 1 });
   assert.ok(race.player.x > 3.6);
@@ -770,7 +770,7 @@ test('the race result records NITRO activations and the longest near-miss combo'
 });
 
 function driftingRace(speed = 80) {
-  const race = racing();
+  const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed, x: 0 });
   return race;
 }
@@ -1201,7 +1201,7 @@ test('rival nitro fires by personality and respects its charge budget', () => {
   const step = race => stepRace(race, {}, 1 / 60);
   const early = fresh();
   step(early);
-  assert.deepEqual(early.rivals.map(rival => rival.nitro), [RIVAL_NITRO_CHARGES, RIVAL_NITRO_CHARGES, RIVAL_NITRO_CHARGES]);
+  assert.ok(early.rivals.every(rival => rival.nitro === RIVAL_NITRO_CHARGES));
   const novaRace = fresh(); // NOVA: steady, fixed schedule
   novaRace.elapsed = RIVAL_NITRO_NOVA_FIRST + 0.1;
   step(novaRace);
@@ -1629,7 +1629,8 @@ test('rivals and traffic change lane around a Tokyo train instead of driving thr
   race.props = props;
   startRace(race);
   advance(race, 3.1);
-  const rival = race.rivals.find(r => r.x === 7.5), traffic = race.traffic[0];
+  const rival = race.rivals[0], traffic = race.traffic[0];
+  race.rivals = [rival]; rival.x = rival.homeX = 7.5;
   // The player trails both in the far-left lane: close enough that traffic is not recycled ahead.
   const trail = () => Object.assign(race.player, { distance: Math.min(rival.distance, traffic.distance) - 30, x: -7.5, speed: 0 });
   Object.assign(rival, { distance: train.from - 120, speed: 70 });
@@ -1737,8 +1738,8 @@ test('ramming a traffic car knocks it too: it loses speed, is shoved away from t
 
 test('a rival steers around a stopped player instead of driving through the car', () => {
   const race = racing();
-  const rival = race.rivals.find(r => r.x === 7.5);
-  race.rivals = [rival];
+  const rival = race.rivals[0];
+  race.rivals = [rival]; rival.x = rival.homeX = 7.5;
   Object.assign(rival, { distance: race.player.distance - 120, speed: 70 });
   Object.assign(race.player, { x: 7.5, speed: 0, cooldown: 0 });
   let overlaps = 0;

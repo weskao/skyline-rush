@@ -1,6 +1,8 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { createRings } from '../src/ring-layout.ts';
+import { RACE_TRACKS } from '../src/race-tracks.ts';
 
 const open = async page => {
   await page.goto('/');
@@ -55,6 +57,7 @@ test.describe('touch controls', () => {
     await open(page);
     await start(page);
     await expect(page.locator('[data-control="nitro"]')).toBeVisible();
+    await expect(page.locator('[data-control="nitro"]')).toHaveAttribute('aria-label', /NITRO/);
     const pad = await page.locator('.touch-pad').boundingBox();
     await touch('touchStart', { id: 1, x: pad.x + 40, y: pad.y + 50 });
     await touch('touchMove', { id: 1, x: pad.x + 100, y: pad.y + 50 });
@@ -160,7 +163,9 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   });
   await start(page);
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
-  const perfectLine = await page.evaluate(budget => new Promise(resolve => {
+  // Coast's first group from the layout the game builds: ring heights vary, so each gate is flown at its own altitude.
+  const gates = createRings(RACE_TRACKS.coast).filter(ring => ring.group === 0).map(({ distance, altitude }) => ({ distance, altitude }));
+  const perfectLine = await page.evaluate(([budget, gates]) => new Promise(resolve => {
     let held = false;
     const deadline = performance.now() + budget;
     const key = type => window.dispatchEvent(new KeyboardEvent(type, { code: 'Space', key: ' ', bubbles: true, cancelable: true }));
@@ -171,13 +176,13 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
       }
       const distance = Number(document.querySelector('#distance').textContent) * 1000;
       const altitude = Number(document.querySelector('#altitude').textContent);
-      const nextGate = Math.ceil(Math.max(1, distance) / 220) * 220;
-      const fly = nextGate <= 1100 && nextGate - distance < 125 && altitude < 8.8;
+      const gate = gates.find(ring => ring.distance >= distance);
+      const fly = !!gate && gate.distance - distance < 125 && altitude < gate.altitude + 0.8;
       if (fly !== held) { key(fly ? 'keydown' : 'keyup'); held = fly; }
       requestAnimationFrame(pilot);
     };
     pilot();
-  }), ciTimeout(65000));
+  }), [ciTimeout(65000), gates]);
   expect(perfectLine, 'The visible first ring group must produce a real PERFECT LINE').toBe(true);
   expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();

@@ -2,7 +2,7 @@
 export function photoFov(value: number): number {
   return Number.isFinite(value) ? Math.max(35, Math.min(85, value)) : 58;
 }
-export function flipRgbaRows(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number): Uint8ClampedArray {
+export function flipRgbaRows(pixels: Uint8Array | Uint8ClampedArray, width: number, height: number): Uint8ClampedArray<ArrayBuffer> {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 ||
     width * height > 16_000_000 || pixels.length !== width * height * 4)
     throw new RangeError('Invalid photo buffer');

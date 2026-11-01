@@ -37,7 +37,7 @@ function eliminationView(race: FinishedRace): ResultView {
   return {
     title: t(result.success ? 'mode.eliminationWon' : 'mode.eliminationLost'),
     copy: t('mode.eliminationSummary', { n: race.elimination.eliminated.length }),
-    stats: `<div><span>${t('mode.eliminationPosition')}</span><strong>${result.position} / 4</strong></div>
+    stats: `<div><span>${t('mode.eliminationPosition')}</span><strong>${result.position} / ${race.grid?.length ?? race.rivals.length + 1}</strong></div>
       <div><span>${t('mode.totalTime')}</span><strong>${timeString(result.time)}</strong></div>`,
     counts: [],
   };

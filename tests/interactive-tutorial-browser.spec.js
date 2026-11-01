@@ -204,8 +204,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
   test.describe(`touch practice ${width}x${height} ${mode} ${flyMode}${custom?' custom layout':''}`, () => {
     test.use({viewport:{width,height},hasTouch:true,isMobile:true});
     test('real touch controls finish practice without the coach blocking actions', async ({ page, context }) => {
-      // Up to three engine-judged attempts per air lesson need more than the default budget on CPU-only WebGL.
-      test.setTimeout(ciTimeout(80000));
+      // Up to five air-chain and three barrel-roll engine-judged attempts need more than
+      // the default budget on CPU-only WebGL.
+      test.setTimeout(ciTimeout(240000));
       const prefs = {version:1,mode,flyMode,...(custom?{layout:{throttle:{x:.15,y:.18}}}:{})};
       await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls',JSON.stringify(prefs)), prefs);
       await begin(page);
@@ -255,9 +256,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await touch('touchStart', [p]);
         await touch('touchEnd', []);
       };
-      const waitForCoachText = text => page.waitForFunction(
+      const waitForCoachText = (text, timeout = ciTimeout(15000)) => page.waitForFunction(
         text => document.querySelector('#tutorial-instruction')?.textContent?.includes(text),
-        text, { polling: 'raf' },
+        text, { polling: 'raf', timeout },
       );
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
@@ -278,41 +279,49 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       if(flyMode==='toggle') await tapTouch(button('fly'));
       await step(page,'boost');
       await gesture(button('boost'),'airChain');
-      const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
-      // Software WebGL can advance several simulation frames between CDP commands.
-      // Repeat a genuine powered takeoff after a missed landing; never credit a lesson
-      // without the engine's chain event.
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (flyMode === 'toggle') {
-          await tapTouch(button('fly'));
-          const p = await point(button('boost'), 1);
-          await touch('touchStart', [p]);
-          await waitForCoachText('Powered flight detected');
-          // Unlatch FLY in the first dispatch: on slow software-WebGL frames every
-          // extra round trip lets the car climb past a soft-landing height.
-          await touch('touchStart', [p, { ...fly, id: 2 }]);
-          await touch('touchEnd', []);
-        } else {
-          await touch('touchStart', [fly]);
-          await touch('touchStart', [fly, boost]);
-          await waitForCoachText('Powered flight detected');
-          // One dispatch releases FLY and BOOST together, for the same reason.
+      // Begin both real touch pointers together: a second touchStart can
+      // cancel the first pointer's capture on Chromium software-WebGL runners.
+      // The coach must still observe powered flight and the engine must award
+      // an actual soft landing before the lesson advances.
+      const chainEvidence = [];
+      const attemptChain = async () => {
+        const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
+        let flightDetected = false;
+        try {
+          if (flyMode === 'toggle') {
+            await tapTouch(button('fly'));
+            await touch('touchStart', [boost]);
+          } else {
+            await touch('touchStart', [fly, boost]);
+          }
+          try {
+            await waitForCoachText('Powered flight detected', ciTimeout(1800));
+            flightDetected = true;
+          } catch (error) {
+            if (error.name !== 'TimeoutError') throw error;
+          }
+        } finally {
+          // Unlatch FLY in the same dispatch as the boost hold: on slow software-WebGL
+          // frames every extra round trip lets the car climb past a soft-landing height.
+          if (flyMode === 'toggle') await touch('touchStart', [boost, fly]);
           await touch('touchEnd', []);
         }
-        await page.waitForFunction(() => {
-          const step = document.querySelector('#tutorial-coach')?.getAttribute('data-step');
-          const instruction = document.querySelector('#tutorial-instruction')?.textContent ?? '';
-          return step === 'barrelRoll' || (step === 'airChain' && instruction.includes('Chain missed'));
-        }, null, { polling: 'raf', timeout: ciTimeout(25000) });
-        if (await coach(page).getAttribute('data-step') === 'barrelRoll') break;
-        if (attempt === 2) throw new Error('AIR→ROAD CHAIN did not earn a real landing after three attempts');
-        await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
+        await page.waitForFunction(
+          () => Number(document.querySelector('#altitude')?.textContent) <= 0.15,
+          null, { polling: 'raf', timeout: ciTimeout(20000) },
+        );
+        chainEvidence.push({ flightDetected, ...(await page.evaluate(() => ({
+          step: document.querySelector('#tutorial-coach')?.dataset.step,
+          instruction: document.querySelector('#tutorial-instruction')?.textContent,
+          altitude: document.querySelector('#altitude')?.textContent,
+        }))) });
+      };
+      for (let retry = 0; retry < 5 && await coach(page).getAttribute('data-step') === 'airChain'; retry++) {
+        await attemptChain();
       }
-      await step(page, 'barrelRoll');
+      await expect(coach(page), JSON.stringify(chainEvidence)).toHaveAttribute('data-step', 'barrelRoll');
       const steerTarget = effectiveMode === 'slide' ? page.locator('.touch-pad') : button('left');
       const left = await point(steerTarget, 2);
-      // Slide mode intentionally hides left/right buttons; never ask Playwright
-      // for a bounding box of a hidden control.
       const right = effectiveMode === 'slide' ? null : await point(button('right'), 3);
       const pad = effectiveMode === 'slide' ? left : null;
       // The 0.3s engine flick window can elapse without a visible "spinning"
@@ -321,7 +330,7 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       for (let attempt = 0; attempt < 3; attempt++) {
         if (attempt) await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
         if (flyMode === 'toggle') await tapTouch(button('fly'));
-        else await touch('touchStart', [fly]);
+        else await touch('touchStart', [await point(button('fly'), 1)]);
         await page.waitForFunction(
           () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
           null, { polling: 'raf' },

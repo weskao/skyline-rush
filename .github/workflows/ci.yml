@@ -46,6 +46,8 @@ jobs:
       # Strict TS + real Vue SFC template semantic check + documented JS islands.
       - run: npm run typecheck
       - run: npm test
+      # Always prove the public (default) artifact excludes unreleased Garage modules and assets.
+      - run: npm run build
 
   # CPU-only WebGL makes the serial suite take about 6.4 runner-hours. Playwright's own --shard cuts equal contiguous
   # slices, so 16 of them ran 14 to 48 min; scripts/ci-shards.mjs packs tests by the durations in
@@ -66,6 +68,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Wave 2 video recording needs Playwright's FFmpeg binary, not the system binary.
+      - run: npx playwright install ffmpeg
       - run: node scripts/ci-shards.mjs plan playwright.config.js ${{ matrix.shard }} ${{ strategy.job-total }} > "$RUNNER_TEMP/shard-tests.txt"
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
       - run: npm run test:browser -- --test-list "$RUNNER_TEMP/shard-tests.txt"
@@ -81,6 +85,16 @@ jobs:
         with:
           name: browser-failures-${{ matrix.shard }}
           path: test-results
+      - name: Upload Wave 2 actual WebGL sprint VFX frames and animation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: high-speed-vfx-evidence-${{ matrix.shard }}
+          path: |
+            test-results/**/high-speed-vfx-*.png
+            test-results/**/high-speed-vfx-*.webm
+            test-results/**/high-speed-vfx-*.json
+          if-no-files-found: ignore
       - name: Upload actual race-mode game screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -102,6 +116,16 @@ jobs:
         with:
           name: world-tour-screenshots-${{ matrix.shard }}
           path: test-results/**/world-tour-*.png
+          if-no-files-found: ignore
+      # Foldable screen evidence: real DOM + active WebGL, not concept-image replacements.
+      - name: Upload foldable and fallback gameplay screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foldable-layout-screenshots-${{ matrix.shard }}
+          path: |
+            test-results/**/foldable-*.png
+            test-results/**/fallback-*.png
           if-no-files-found: ignore
       # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
@@ -240,6 +264,10 @@ jobs:
           echo "$code passed CI on main: $run"
 
   deploy:
+    # Explicit review-controlled mode; repo/environment overrides cannot activate unreleased client code.
+    # Change this one value in an approved deploy commit for a future Trial or Released rollout.
+    env:
+      GARAGE_VFX_RELEASE_MODE: coming-soon
     # A tag run skips browser and cloud suites; a manual run skips release-verified.
     if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.cloud-save.result) && contains(fromJSON('["success", "skipped"]'), needs.world-tour-mid-race.result) && contains(fromJSON('["success", "skipped"]'), needs.quality-gate.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
     needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, quality-gate, release-verified]
