@@ -72,7 +72,8 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
 <style scoped>
 .settings .icon-button { position: relative; isolation: isolate; }
 .settings-art-decor { position: absolute; pointer-events: none; width: 72px; height: 72px;
-  top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: .24; z-index: -1; }
+  top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: .24; z-index: 0; }
+.settings .icon-button > svg { position: relative; z-index: 1; }
 .hud-mode-selector { border: 0; border-top: 1px solid rgb(190 215 230 / .25); margin: 12px 0 0; padding: 12px 0 0; }
 .hud-mode-selector legend { font-size: 12px; font-weight: 700; padding: 0 4px; }
 .hud-choice { display: flex; align-items: center; gap: 9px; min-height: 44px; font-size: 12px; cursor: pointer; }
