@@ -40,6 +40,14 @@
   portrait already did (`responsive-browser.spec.js` › flight director and a mid-flight callout). Spec 7/7.
 - [x] `cssBlob` re-recorded. `npm run typecheck`, `npm test` (1288 pass / 0 fail), `npm run build`, `npm run test:layout`,
   foldable + responsive + handoff + main-ui-parity + new spec: 100/100.
+- [x] **Follow-up `fix/hud-callout-landscape`** (from develop `15bfc16a`): CI 41313050183 failed `motion-browser.spec.js` ›
+  "race callout is a small translucent chip clear of the centre view at 844x390" (chip bottom 313 > 175.5): the short-landscape
+  callout had moved under the mode panel for every pointer, though only touch layouts keep that panel up top. RED also added
+  to the overlap spec (short landscape callout bottom ≤ 45%; failed at 239–244px on touch 844×390 and the vertical fold).
+  GREEN: non-touch short landscape is back to its original top-left slot; touch short landscape (and the fold's left pane)
+  puts the callout in the top-bar strip between the wordmark and the toolbar. The gap-warning shift and the short-landscape
+  flight-director step-aside are no longer needed and were reverted. Motion + overlap + responsive + parity + foldable 111/111,
+  `test:layout`, typecheck, `npm test` 1290/0.
 - [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
 - [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
   competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
