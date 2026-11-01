@@ -17,6 +17,9 @@ export const ROW_ALTITUDE = 2.5; // lanes 5 m apart, radius 4.8: a car anywhere 
 export const TRAIN_LENGTH = 5;
 export const TRAIN_SPACING = 25; // m between the rings of a dense train
 const LOW_ALTITUDE = 1.5; // under a tunnel roof
+export const NITRO_MAX = 3; // charges
+export const NITRO_PICKUPS: Readonly<Record<string, number>> = { cell: 0.25, can: 0.5, tank: 1, overcharge: NITRO_MAX }; // overcharge only tops up to the cap, no fuel
+export const RING_NITRO: Readonly<Record<string, number>> = { nitro: 0.5, risk: 1 }; // charge each NITRO-paying ring type grants
 export const RING_FUEL = 20; // charge ring
 export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
 export { RISK_SCORE } from './risk-lines.ts';

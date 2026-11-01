@@ -1,6 +1,6 @@
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
-import { createRings, passGate, PICKUP_GAP_SCALE, RING_RADIUS, RING_FUEL, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
-export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
+import { createRings, passGate, PICKUP_GAP_SCALE, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
+export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
 import { physicalGap } from './circuit-track.ts';
 import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
@@ -43,13 +43,11 @@ export const GAP_RESPAWN = 5; // m past the gap where the car is put back
 export const CROSSWIND_SPEED = 4; // m/s sideways push
 export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
 
-export const NITRO_MAX = 3; // charges
 export const NITRO_TIME = 2.5; // seconds one charge lasts
 export const NITRO_EXTEND = 2; // seconds added by a press during NITRO
 export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
 export const NITRO_FUEL_BONUS = 20; // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
 export const GLIDE_FUEL_REGEN = 4; // fuel/s while airborne with FLY and boost released (ground is 13)
-export const NITRO_PICKUPS = { cell: 0.25, can: 0.5, tank: 1, overcharge: NITRO_MAX }; // overcharge only tops up to the cap, no fuel
 
 export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
 export const DRIFT_BLEED = 3; // m/s^2 lost while drifting (normal braking is 35)
@@ -206,10 +204,10 @@ function collectRing(race, ring, index) {
   car.rings++;
   car.score += 150;
   if (ring.type === 'charge') car.fuel = Math.min(100, car.fuel + RING_FUEL);
-  else if (ring.type === 'nitro') addNitro(car, 0.5);
+  else if (ring.type === 'nitro') addNitro(car, RING_NITRO.nitro);
   else if (ring.type === 'slipstream') car.miniBoost = Math.max(car.miniBoost, SLIPSTREAM_BOOST);
   else if (ring.type === 'risk') {
-    addNitro(car, 1);
+    addNitro(car, RING_NITRO.risk);
     car.score += race.risk.ringScore;
   } else if (ring.type === 'mystery') {
     const effect = mysteryEffect(race.seed, ring.mysteryIndex ?? index);
