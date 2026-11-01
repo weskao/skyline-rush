@@ -1745,3 +1745,7 @@ body[data-race-mode="endless"] .progress-track { display: none; }
 
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
+
+/* Touch tablets: the live map sits 12px under the AIRFLOW bar (242-276px); the desktop 300px slot reached the
+   lifted flight telemetry on a 1024x768 iPad. */
+@media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) { .race-route-map { top: 288px; } }
