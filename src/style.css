@@ -1804,8 +1804,11 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
    Keep full localized text in DOM/aria-label while narrow chips ellipsize visually. */
 .event-callout[data-peripheral] {
   box-sizing: border-box; width: min(150px, 28vw); max-width: min(150px, 28vw);
-  padding: 5px 7px; border: 1px solid rgb(155 194 222 / .35);
-  border-radius: 6px; background: rgb(7 26 40 / .76); text-align: left;
+  /* Default safe edge slot also covers a callout exposed before the HUD's first placement refresh. */
+  top: max(8px, env(safe-area-inset-top, 0px));
+  left: auto; right: max(12px, env(safe-area-inset-right, 0px));
+  padding: 5px 7px; border: 0;
+  border-radius: 6px; background: rgb(7 26 40 / .45); text-align: left;
   font: 700 12px/1.25 'Barlow Condensed', sans-serif; letter-spacing: .25px;
   white-space: nowrap; margin: 0; margin-top: 0 !important; pointer-events: none;
 }
