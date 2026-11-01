@@ -1,5 +1,18 @@
 # Future Garage Store Coming-Soon UI — Visual Design Prompt & Asset Plan
 
+## Required Wave 3 asset preflight — verified GitHub source (2026-11-02)
+
+**Before UI implementation or image generation, you MUST read the [verified 59-image 3× material archive](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md), source branch `feature/3x-ui-materials`, archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`.** The source WebPs are deliberately committed to a separate archive branch under `docs/designs/3x-asset-library/webp/`; they will **not** be present in this feature checkout until explicitly copied. Never regenerate existing icons just because they are absent here.
+
+**Store's six ready-to-review source images:** `store-cart@3x.webp`, `store-box@3x.webp`, `store-bundle@3x.webp`, `store-tag@3x.webp`, `store-star@3x.webp`, `store-collection@3x.webp`. All stored at **216×216 original pixels, rendered as 72×72 CSS px (1×)**. Preserve original 3× pixel files. The common archive also holds 27 Garage VFX, eight Missions/Rewards, 18 HUD/UI assets; use its complete manifest and SHA list, not assumed links. PNG and original ZIP remain in ChatGPT Library, not Git.
+
+**Required process:** verify source blob and preview alpha/matte, copy only approved WebP icons from `origin/feature/3x-ui-materials:docs/designs/3x-asset-library/webp/garage-store-readiness/` to this feature's `public/feature-assets/garage-store-readiness/raster/`. Use `import.meta.env.BASE_URL` paths, explicit CSS width/height 72 px, `object-fit: contain`, fallback to existing SVG/text, accessible labels and 44 CSS px touch targets; run SDD→BDD→TDD and exact-HEAD CI, plus desktop/mobile real visual checks. **No active storefront, checkout, prices, paid entitlement or fake currency balance may be created from artwork.** Images are source candidates, not completed UI or acceptance.
+
+**Integration target is `develop` (never `main`).** Historical `main` or 'no PNG/WebP exists' statements below are superseded on those points; retain all other prerequisites and no-merge-without-approval rules.
+
+---
+
+
 **Repo:** https://github.com/weskao/skyline-rush
 **Scope:** prepare visuals for a future separately approved feature implementation; this file is a prompt and approval brief, not proof that any image was generated, source modified or asset shipped.
 **Existing game:** Vue 3 + strict TS UI, Three.js rendering, realistic × arcade mixed aesthetic; use the current `CLAUDE.md` and `.claude/rules/{ui-architecture,performance-review,device-quality,ui-phase-interactions}.md` as constraints.

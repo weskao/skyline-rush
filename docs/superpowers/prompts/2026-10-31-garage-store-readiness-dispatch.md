@@ -1,5 +1,18 @@
 # Copy/Paste Implementation Prompt — Wave 3: garage-store-readiness
 
+## Required Wave 3 asset preflight — verified GitHub source (2026-11-02)
+
+**Before UI implementation or image generation, you MUST read the [verified 59-image 3× material archive](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md), source branch `feature/3x-ui-materials`, archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`.** The source WebPs are deliberately committed to a separate archive branch under `docs/designs/3x-asset-library/webp/`; they will **not** be present in this feature checkout until explicitly copied. Never regenerate existing icons just because they are absent here.
+
+**Store's six ready-to-review source images:** `store-cart@3x.webp`, `store-box@3x.webp`, `store-bundle@3x.webp`, `store-tag@3x.webp`, `store-star@3x.webp`, `store-collection@3x.webp`. All stored at **216×216 original pixels, rendered as 72×72 CSS px (1×)**. Preserve original 3× pixel files. The common archive also holds 27 Garage VFX, eight Missions/Rewards, 18 HUD/UI assets; use its complete manifest and SHA list, not assumed links. PNG and original ZIP remain in ChatGPT Library, not Git.
+
+**Required process:** verify source blob and preview alpha/matte, copy only approved WebP icons from `origin/feature/3x-ui-materials:docs/designs/3x-asset-library/webp/garage-store-readiness/` to this feature's `public/feature-assets/garage-store-readiness/raster/`. Use `import.meta.env.BASE_URL` paths, explicit CSS width/height 72 px, `object-fit: contain`, fallback to existing SVG/text, accessible labels and 44 CSS px touch targets; run SDD→BDD→TDD and exact-HEAD CI, plus desktop/mobile real visual checks. **No active storefront, checkout, prices, paid entitlement or fake currency balance may be created from artwork.** Images are source candidates, not completed UI or acceptance.
+
+**Integration target is `develop` (never `main`).** Historical `main` or 'no PNG/WebP exists' statements below are superseded on those points; retain all other prerequisites and no-merge-without-approval rules.
+
+---
+
+
 > This document is an **assignment prompt for a separate GPT chat**, not an authorization to start implementation in the chat that created these plans. Copy the **entire section below** into the assigned GPT chat when its Wave gate is met.
 
 ## Prompt to paste
@@ -11,18 +24,18 @@
 **Wave：** 3  
 **分支的主要檔案所有權：** src/GaragePanel.vue; src/garage-ui.ts; src/garage-view-state.ts; src/appearance.ts。
 
-**前置/平行條件：** WAIT until garage-economy-foundation is verified and merged to main; then may run in parallel with garage-rewards-and-missions. Store remains Coming soon, NO payments/checkout unless separately approved.
+**前置/平行條件：** WAIT until garage-economy-foundation is verified and merged into develop; then may run in parallel with garage-rewards-and-missions. Store remains Coming soon, NO payments/checkout unless separately approved.
 
 ### 1. 正確的 Git 分支與規格
 
-1. 先查驗 `feature/garage-store-readiness` 是否存在、它的 HEAD，以及最新 `main`。**不要另開 PR，也不要誤改 main**。若前置分支尚未真正完成、CI 未綠或尚未獲准合併，**停在審核/規劃，不准先開始依賴性的實作**。
-2. 依序閱讀本分支的下列檔案，並依最新 `main` 實際原始碼進行衝突/差異檢查：
+1. 先查驗 `feature/garage-store-readiness` 是否存在、它的 HEAD，以及最新 `develop`。**不要另開 PR，也不要誤改 main**。若前置分支尚未真正完成、CI 未綠或尚未獲准合併，**停在審核/規劃，不准先開始依賴性的實作**。
+2. 依序閱讀本分支的下列檔案，並依最新 `develop` 實際原始碼進行衝突/差異檢查：
    - `CLAUDE.md` 與適用的 `.claude/rules/`（特別是 `ui-architecture`、`performance-review`、`device-quality`、`touch-input`、`ui-phase-interactions`）
    - `docs/superpowers/specs/2026-10-31-garage-store-readiness-design.md`（SDD + BDD）
    - `docs/superpowers/plans/2026-10-31-garage-store-readiness-plan.md`（Superpowers 實作計畫）
    - `docs/superpowers/prompts/2026-10-31-garage-store-readiness-visual-design.md`（畫面／美術／素材設計 Prompt，按需製作與審核）
    - 原始需求 `https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/TODO.md` 中對應項目與全平台 S1–S3 規範。
-3. 依照實際差異，在**自己的分支**同步最新 `main`，必要時採非破壞式 rebase/merge 並保留已有的規劃文件與成果。絕不能以舊版 TODO 直接覆寫新的 TODO。
+3. 依照實際差異，在**自己的分支**同步最新 `develop`，必要時採非破壞式 rebase/merge 並保留已有的規劃文件與成果。絕不能以舊版 TODO 直接覆寫新的 TODO。
 
 ### 2. SDD → BDD → TDD（使用 Superpowers 實際技能）
 
