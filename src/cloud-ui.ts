@@ -59,6 +59,7 @@ const isCloudDeleting = (uid: string): boolean => {
 export function setupCloudUI({ services, getProgress, applyProgress, getLocalChallengeMedals = loadChallengeMedals }: CloudOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   let cloudUser: CloudUser | null = null;
+  const accountListeners = new Set<(uid: string | null) => void>();
   let cloudStatusKey = 'cloud.local';
   let cloudOwner: string | null = null;
   try { cloudOwner = localStorage.getItem(CLOUD_OWNER_KEY); } catch { /* Gracefully degrade in blocked storage. */ }
@@ -130,6 +131,7 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
   }
   services.watchCloudUser(user => {
     cloudUser = user;
+    for (const listener of accountListeners) listener(user?.uid ?? null);
     const status = user ? readCloudSyncStatus(user.uid) : { pending: false, lastSuccess: null };
     cloudPending = status.pending;
     lastCloudSync = status.lastSuccess ? new Date(status.lastSuccess) : null;
@@ -260,6 +262,11 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
 
   return {
     saveCloudProgress,
+    /** Reuse the single Cloud Save auth observer for Garage account isolation. */
+    subscribeAccount(listener: (uid: string | null) => void): void {
+      accountListeners.add(listener);
+      listener(cloudUser?.uid ?? null);
+    },
     /** Re-render the Vue-owned account name, identity and status after a language switch. */
     relabel(): void { showCloudSession(); announceCloud(cloudStatusKey); },
   };
