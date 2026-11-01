@@ -7,11 +7,12 @@ const profile = (value = {}) => normalizeSkinProfile({ version: 1, accountId: ac
 const session = (value = {}) => ({ accountId: account, now: 1000, trialEnabled: false, trialExpiresAt: 0, ...value });
 
 test('BDD catalog groups all four categories with stable unique IDs and default entries', () => {
-  assert.equal(GARAGE_SKINS.length, 8);
-  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 8);
+  assert.equal(GARAGE_SKINS.length, 16);
+  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 16);
   for (const category of SKIN_CATEGORIES) {
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && s.default).length, 1);
-    assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length, 1);
+    assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length, 3);
+    assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length, 3);
   }
 });
 

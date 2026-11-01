@@ -10,7 +10,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     const catalog = page.locator('#garage-vfx-catalog');
     await expect(catalog).toBeVisible();
     await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
-    await expect(catalog.locator('[data-skin]')).toHaveCount(8);
+    await expect(catalog.locator('[data-skin]')).toHaveCount(16);
     await expect(catalog.getByRole('button')).toHaveCount(16);
     await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
     await expect(page.locator('#garage-preview #world')).toBeVisible();
