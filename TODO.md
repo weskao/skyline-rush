@@ -15,6 +15,7 @@
 - [ ] Render check: ring pool fixed at 7 (`src/effects.js`); measure Draw Calls / Triangles / p50/p95 on Coast/Neon/Canyon at 1440×900 Low/Medium/High; real WebGL screenshots 1440×900 / 390×844 / 844×390.
 - [ ] Real keyboard + touch race on each of the three maps; pause/restart audio.
 - [ ] Merge latest `develop` (Eight-Car touches `createRace` / `race-config.ts`), then `[full-regression]` push; full CI `quality-gate` green on the final HEAD; report run id to skyline-rush-13.
+- [ ] **Queued after this branch, not started:** stage 2, rivals collect items. Branch `feature/rival-item-pickups` (local, `79f45369`); plan in that worktree at `docs/plans/2026-11-01-rival-item-pickups.md`. Start only when (1) this branch has full CI green, (2) the user has played it, and (3) the user explicitly says to start. First ask the plan's 開工前要問使用者的事 questions, then merge this branch and the latest `develop` into it. Never into `develop`. Keep `src/record-layout.ts` (`layoutVersion` / `recordTrackId`) importable for it.
 
 ## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
 
