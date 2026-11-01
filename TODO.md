@@ -25,6 +25,36 @@
 - [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
   competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
 
+## Wave 2 — Garage VFX Skins Phase B expansion: production art + distinct runtime effects (2026-11-02)
+
+**Owner branch:** `feature/garage-vfx-skins` · **Integration target:** `develop` (not `main`) · **Status:** NEW REQUIREMENTS / NOT IMPLEMENTED / NOT ACCEPTED. This extends **Wave 2 Phase B**, not Wave 3 or an already-finished Phase A. Keep existing Phase B trial/equip/stage work; do not interpret the current code or previously exported art as final visual delivery.
+
+**Verified baseline (2026-11-02):** The catalog currently has four categories × two IDs (eight total, default + one alternative each). Alternate VFX primarily multiply existing shader RGB colors; the live shared-aero Studio preview and session-only trial/equip code exist but need final acceptance. Only four `public/feature-assets/garage-vfx-skins/*.svg` category icons are committed; `skinArtwork()` returns `hasRaster: false`. The 3× handoff describes **27 candidate art keys** (16 cosmetic thumbnails + 11 badge/rarity overlays, each with PNG/WebP), but their source ZIP and production raster binaries are **not committed to this repository**. These are candidates, not 27 shipped skins or 27 approved assets. References: [raster handoff](docs/designs/garage-vfx-skins/RASTER-ASSET-HANDOFF.md), [visual fidelity](docs/designs/garage-vfx-skins/VISUAL-FIDELITY.md), [Phase B implementation plan](docs/superpowers/plans/2026-10-31-garage-vfx-skins-plan.md), [release policy](docs/garage-release-policy.md).
+
+### B-Visual-1 — Audit, recover and approve existing game materials (must precede implementation)
+
+- [ ] Locate the original `skyline-rush-3x-garage-vfx-skins.zip` and reference sheets from the Game Materials conversation; verify the handoff SHA-256 `4112ef97f6ec8d0860220a93f95a5b19f77b2a05cc36c1eebf5385d457d73414`. If unavailable, mark **BLOCKED** and request the original bytes; do not claim to have imported them or silently replace approved designs.
+- [ ] Inventory all 27 candidate keys and the existing four SVG fallbacks: classify each **APPROVED / REWORK / REJECTED / DEFERRED**, with asset → Skin ID or UI-state mapping, reason for unused art, source/provenance, alpha/fringe checks and optimized file-size budget. Use only visually reviewed candidates; do **not** ship all assets merely because they exist.
+- [ ] Restore approved selected artwork to `public/feature-assets/garage-vfx-skins/raster/` (optimized true-alpha WebP for runtime; retain PNG/source archive where needed), record checksums/manifest and reference screenshots. The original transparent cutouts are provisional, not native-detail 3× originals; review clipping, matte halos and glow over dark/light/saturated backgrounds.
+
+### B-Visual-2 — Expand the *actual* VFX catalog, not just hue variations
+
+- [ ] Target **at least four selectable skins per category including the default (≥16 total)**: Thruster, Airflow, NITRO Trail and Launch Flare. Preserve current eight IDs and backward compatibility; decide additional IDs using approved art, and document extra candidates not selected. The raster handoff has **no Airflow item-specific thumbnail set**, so design/produce missing Airflow art intentionally rather than falsely mapping unrelated files.
+- [ ] For every added non-default skin, implement a visually distinguishable real-time Three.js **silhouette/emission geometry, particle pattern, motion/timing or shader behavior** — **RGB multiplier alone does not pass**. Keep physics, handling, speed, rewards, original PAINTS and competitive fairness identical for all cosmetics.
+- [ ] Give every selectable skin a truthful, distinct card thumbnail or an explicitly documented generated-from-real-render fallback; use `import.meta.env.BASE_URL`-safe asset paths and 96×96 CSS-pixel cards with up-to-3× source resolution when justified. Keep lightweight 4-category SVG fallback, readable bilingual labels and robust missing/corrupt/late-image fallback.
+- [ ] Connect card selection, Preview/Try/Equipped/Locked states, Garage Studio orbit/replay and real in-race rendering to the **same VFX definitions**. Preview and race must show the same skin identity/animation; selection changes must not allocate unbounded GPU buffers, create stale textures or leak resources on scene re-entry, quality switch or context restore.
+- [ ] Integrate the 11 badge/rarity candidate overlays **only where the corresponding real state exists**; decorative graphics must never grant Owned status, invent rarity/rewards or present an unimplemented shop/payment flow. Keep permanent backend entitlements/Firestore purchase verification as separate approved work, **not** implicit Phase B completion.
+
+### B-Visual-3 — RED → GREEN → Refactor and release/visual acceptance
+
+- [ ] Update the linked Phase B spec/plan, asset manifest and Skin ID → thumbnail → VFX behavior matrix before behavioral changes. Write failing typed/catalog, renderer and Playwright tests proving uniqueness beyond hue-only palettes, correct account isolation, trial expiry/fallback, ownership safety and asset errors; run RED before GREEN and refactor without regressions.
+- [ ] Test actual Garage and in-race WebGL across `en`/`zh-TW`, desktop 1440×900, phone portrait 390×844 and landscape 844×390 (plus 320×740 stress), Low/Medium/High, VFX Off, Reduced Motion and mute. Ensure touch targets ≥44 CSS px, safe areas and camera visibility; capture real screenshots/video, never concept images labeled as gameplay.
+- [ ] Compare approved references with **actual** before/after UI/WebGL screenshots and animation; record per-skin **PASS / FAIL / BLOCKED / APPROVED_DEVIATION** and GPU/CPU evidence (FPS, frame-time p50/p95, Draw Calls, Triangles, shader warm-up, texture memory/bytes, dispose/context restore). Add shader/resource budgets and no-visual-regression assertions.
+- [ ] Preserve `docs/garage-release-policy.md`: production stays `coming-soon` and excludes unpublished candidate assets/trial code; test the separate trial build, ensure no client-side entitlement forgery, no payment, no unapproved permanent grant. Do not change deployment flags just to reveal unfinished art.
+- [ ] After asset integration, run applicable targeted tests, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, Cloud Save / World Tour and `make verify`; inspect **exact-final-HEAD** full GitHub Actions `quality-gate`. Record browser/WebGL evidence and remaining physical iOS/Android verification separately. **Do not mark Phase B or relevant TODO #5.* complete until requirements and visual signoff pass**; do not merge to `develop`, open a PR or deploy without separate authorization.
+
+---
+
 ## Wave 2 — Foldable / Dual-screen Layout Adaptation · TODO #4 (2026-10-31)
 
 **Branch:** `feature/foldable-layout-adaptation` · **Integration source:** `develop` · **State:** In verification, NOT complete / not merged.
