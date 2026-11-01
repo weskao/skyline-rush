@@ -7,11 +7,12 @@ const profile = (value = {}) => normalizeSkinProfile({ version: 1, accountId: ac
 const session = (value = {}) => ({ accountId: account, now: 1000, trialEnabled: false, trialExpiresAt: 0, ...value });
 
 test('BDD catalog groups all four categories with stable unique IDs and default entries', () => {
-  assert.equal(GARAGE_SKINS.length, 16);
-  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 16);
+  assert.equal(GARAGE_SKINS.length, 22);
+  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 22);
   for (const category of SKIN_CATEGORIES) {
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && s.default).length, 1);
-    assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length, 3);
+    assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length,
+      category === 'launch-flare' ? 8 : category === 'nitro-trail' ? 4 : 3);
   }
 });
 
@@ -89,4 +90,24 @@ test('original PAINTS star thresholds remain the sole paint entitlement source',
   assert.equal(ownedPaints(16).includes('obsidian'), false);
   skinCloudPayload(profile({ owned: ['thruster-ion'] }));
   assert.equal(JSON.stringify(PAINTS), snapshot);
+});
+
+// All original VFX candidates with equipment semantics must become real selectable items.
+test('every original 3x VFX equipment image has a distinct genuine catalog entry', async () => {
+  const { existsSync, readFileSync } = await import('node:fs');
+  const files = ['thruster-basic','thruster-ion','thruster-plasma','thruster-void',
+    'trail-cyan','trail-gold','trail-red','trail-purple',
+    'flare-blue','flare-ring','flare-purple','flare-gold','flare-red','flare-cyan',
+    'flare-magenta','flare-white'];
+  assert.equal(files.length, 16);
+  for (const name of files) {
+    const skin = GARAGE_SKINS.find(x => x.candidateRasterId === name);
+    assert.ok(skin, `no selectable Skin for original ${name}`);
+    const file = new URL(`../public/feature-assets/garage-vfx-skins/raster/${name}@3x.webp`, import.meta.url);
+    assert.ok(existsSync(file), `original 3x WebP absent: ${name}`);
+    assert.ok(readFileSync(file).byteLength > 1000, `blank image: ${name}`);
+    const art = skinArtwork(skin.id, '/skyline-rush/');
+    assert.equal(art.cssSize, 96);
+    assert.equal(art.hasRaster, true);
+  }
 });

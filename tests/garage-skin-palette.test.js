@@ -49,3 +49,13 @@ test('four skins per category use independent non-colour VFX pattern modes', () 
     assert.equal(skinVfxPattern({ [category]: ids.thruster[2] })[category], category === 'thruster' ? 2 : 0);
   }
 });
+
+test('all source trail/flare candidates have separate non-colour animation patterns', () => {
+  const trails = ['nitro-trail-basic','nitro-trail-cyan','nitro-trail-gold','nitro-trail-red','nitro-trail-purple'];
+  const flares = ['launch-flare-basic','launch-flare-blue','launch-flare-ring','launch-flare-pulse',
+    'launch-flare-gold','launch-flare-red','launch-flare-cyan','launch-flare-magenta','launch-flare-white'];
+  assert.deepEqual(trails.map(id => skinVfxPattern({ 'nitro-trail': id })['nitro-trail']), [0,1,2,3,4]);
+  assert.deepEqual(flares.map(id => skinVfxPattern({ 'launch-flare': id })['launch-flare']), [0,1,2,3,4,5,6,7,8]);
+  for (const id of trails.slice(1)) assert.notDeepEqual(skinVfxPalette({ 'nitro-trail': id })['nitro-trail'], [1,1,1]);
+  for (const id of flares.slice(1)) assert.notDeepEqual(skinVfxPalette({ 'launch-flare': id })['launch-flare'], [1,1,1]);
+});

@@ -10,8 +10,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     const catalog = page.locator('#garage-vfx-catalog');
     await expect(catalog).toBeVisible();
     await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
-    await expect(catalog.locator('[data-skin]')).toHaveCount(16);
-    await expect(catalog.getByRole('button')).toHaveCount(32);
+    await expect(catalog.locator('[data-skin]')).toHaveCount(22);
+    await expect(catalog.getByRole('button')).toHaveCount(44);
     await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
     await expect(page.locator('#garage-preview #world')).toBeVisible();
     const screenshot = await page.screenshot();
@@ -68,4 +68,18 @@ test('skins catalog copies switch between English and Traditional Chinese', asyn
   await page.locator('#garage-studio-open').click();
   await expect(page.locator('#garage-vfx-catalog-heading')).toHaveText('VFX collection');
   await expect(page.locator('[data-skin="thruster-ion"]')).toContainText('Ion thruster');
+});
+
+test('eleven original 3x badge/rarity artworks appear in a non-entitlement showcase', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const gallery = page.locator('#garage-vfx-art-badges');
+  await expect(gallery).toBeVisible();
+  await expect(gallery.locator('img')).toHaveCount(11);
+  const first = gallery.locator('img').first();
+  await expect(first).toHaveAttribute('width', '72');
+  await expect(first).toHaveAttribute('height', '72');
+  await expect(first).toHaveJSProperty('naturalWidth', 216);
+  await expect(gallery).toContainText(/reference|參考|style|樣式/i);
+  await expect(page.locator('#garage-vfx-catalog')).not.toContainText(/buy now|立即購買/i);
 });
