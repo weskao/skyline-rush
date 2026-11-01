@@ -1,5 +1,16 @@
 # Race Rewards, Missions and Settlement — SDD Design Spec and BDD Acceptance
 
+## 2026-11-02 — VERIFIED 3× SOURCE MATERIALS AVAILABLE (Wave 3 asset handoff)
+
+**Read this before image generation or UI implementation.** The user's original `skyline-rush-3x-garage-rewards-and-missions.zip` was recovered from the ChatGPT File Library (SHA-256 `d526e1570865887924c09909f85d057186477cf189862ae351457847f4754b60`). All **eight original 3× transparent WebP icons** are now verified Git blobs in the **shared asset-only branch** `feature/3x-ui-materials`, pinned reference commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. Source: [asset library and exact Git blobs](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) and [Rewards/Missions WebPs](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-rewards-and-missions).
+
+**8 actual files:** `mission-race@3x.webp`, `mission-time@3x.webp`, `mission-drift@3x.webp`, `mission-combo@3x.webp`, `trophy-bronze@3x.webp`, `trophy-silver@3x.webp`, `trophy-gold@3x.webp`, `trophy-platinum@3x.webp` (all **288×288 physical pixels**; set **96×96 CSS px** on use, e.g. `<img width="96" height="96">` plus `width:96px;height:96px;object-fit:contain`). Use `import.meta.env.BASE_URL` when copying approved assets into `public/feature-assets/garage-rewards-and-missions/raster/` to ensure GitHub Pages subpath support. Do **not** resize the original images to 1×: only the rendered CSS box is 1×. The PNG originals/source archive remain in ChatGPT File Library, not the Git branch.
+
+**Next implementer's mandatory sequence:** (1) Sync latest `develop` only when branch dependencies/gates permit (never treat historical `main` instructions as the current integration target); (2) inspect the actual 8 WebPs and existing icons, reject glow halos / baked fake balances / illegible cutouts and select only suitable files; (3) fetch `origin/feature/3x-ui-materials` and copy approved Git blobs from `docs/designs/3x-asset-library/webp/garage-rewards-and-missions/` to runtime public path; (4) write RED BDD/tests for 1× layout, missing-image text fallback, en/zh-TW, verified-only rewards (no fake/pending payout), account isolation and retry idempotency; (5) implement Vue 3/TS at 96 CSS px and verify build/CI/WebGL and accessibility. Image existence does **not** approve settlement, create credits, make missions functional, or satisfy the rest of Wave 3.
+
+---
+
+
 **Repository:** https://github.com/weskao/skyline-rush
 **Branch:** `feature/garage-rewards-and-missions`
 **Wave:** 3 · **Source TODO:** 5.5, 5.9
