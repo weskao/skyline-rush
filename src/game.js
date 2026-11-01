@@ -86,16 +86,9 @@ export const SLIPSTREAM_MIN_GAP = 4.4; // m behind; closer is a collision
 export const SLIPSTREAM_MAX_GAP = 14; // m behind
 export const SLIPSTREAM_ALTITUDE = 1.8; // m, max altitude difference
 
-// Rival NITRO and rubber-banding (rivals get RIVAL_NITRO_CHARGES charges, fired by personality).
-export const RIVAL_NITRO_CHARGES = 2;
+import { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_HOP_PERIOD, rivalWantsNitro } from './rival-items.ts';
+export { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_NOVA_EVERY, RIVAL_NITRO_ORBIT_ALTITUDE, RIVAL_NITRO_MIN_SPEED, RIVAL_NITRO_APEX_FROM, RIVAL_HOP_PERIOD } from './rival-items.ts';
 export const RIVAL_NITRO_TIME = NITRO_TIME; // seconds one rival charge lasts
-export const RIVAL_NITRO_BONUS = 12; // m/s added to the rival's speed cap during NITRO
-export const RIVAL_NITRO_NOVA_FIRST = 8; // NOVA (steady): first charge at this race second...
-export const RIVAL_NITRO_NOVA_EVERY = 18; // ...then one every this many seconds
-export const RIVAL_NITRO_ORBIT_ALTITUDE = 2; // ORBIT (loves flying): fires in the air, once per hop...
-export const RIVAL_NITRO_MIN_SPEED = 60; // ...and only once up to speed (a charge only lifts the cap)
-export const RIVAL_NITRO_APEX_FROM = 0.75; // APEX (late surge): fires from this fraction of the race
-export const RIVAL_HOP_PERIOD = { NOVA: 13, ORBIT: 9, APEX: 13 }; // seconds per hop cycle; shorter = more hops
 export const RUBBER_BAND_MAX = 0.04; // speed multiplier changes by at most +/- this
 export const RUBBER_BAND_FREE = 50; // m of lead/deficit with no effect
 export const RUBBER_BAND_RANGE = 250; // m beyond the free zone to reach the full effect
@@ -229,18 +222,6 @@ function collectRing(race, ring, index) {
     car.score += 500;
     addNitro(car, PERFECT_LINE_NITRO);
   }
-}
-
-// Personality decides when a rival spends a charge (it must have one and no NITRO running).
-function rivalWantsNitro(race, rival, hop) {
-  if (rival.name === 'NOVA') return race.elapsed >= RIVAL_NITRO_NOVA_FIRST + (RIVAL_NITRO_CHARGES - rival.nitro) * RIVAL_NITRO_NOVA_EVERY;
-  if (rival.name === 'ORBIT') {
-    const fire = rival.altitude > RIVAL_NITRO_ORBIT_ALTITUDE && rival.speed >= RIVAL_NITRO_MIN_SPEED && rival.nitroHop !== hop;
-    if (fire) rival.nitroHop = hop;
-    return fire;
-  }
-  if (rival.name === 'APEX') return rival.distance >= race.length * RIVAL_NITRO_APEX_FROM;
-  return race.elapsed >= 10 + (RIVAL_NITRO_CHARGES - rival.nitro) * (16 + RACE_DRIVER_IDS.indexOf(rival.name));
 }
 
 export function startRace(race) {
