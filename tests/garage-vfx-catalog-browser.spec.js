@@ -77,6 +77,7 @@ test('eleven original 3x badge/rarity artworks appear in a non-entitlement showc
   await expect(gallery).toBeVisible();
   await expect(gallery.locator('img')).toHaveCount(11);
   const first = gallery.locator('img').first();
+  await first.scrollIntoViewIfNeeded();
   await expect(first).toHaveAttribute('width', '72');
   await expect(first).toHaveAttribute('height', '72');
   await expect(first).toHaveJSProperty('naturalWidth', 216);
