@@ -14,6 +14,8 @@ const badgeArt = ['badge-equipped', 'badge-favorite', 'badge-limited', 'badge-lo
   'rarity-legendary', 'rarity-mythic'] as const;
 const badgeSrc = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/raster/${id}@3x.webp`;
+const badgeFailed = ref<ReadonlySet<string>>(new Set());
+const onBadgeError = (id: string) => { badgeFailed.value = new Set([...badgeFailed.value, id]); };
 
 const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   thruster: { en: 'Thruster', 'zh-TW': '推進器' },
@@ -78,7 +80,8 @@ function onImageError(id: string, hasRaster: boolean): void {
       <p class="garage-vfx-message">{{ locale === 'zh-TW' ? '僅展示 3× 原始素材，不代表已擁有、限時活動或已解鎖稀有度。' : 'Artwork reference only. No ownership, time-limited event or rarity entitlement is implied.' }}</p>
       <div class="garage-art-badges">
         <figure v-for="id in badgeArt" :key="id">
-          <img :src="badgeSrc(id)" width="72" height="72" loading="lazy" decoding="async" :alt="id.replaceAll('-', ' ')" />
+          <img v-if="!badgeFailed.has(id)" :src="badgeSrc(id)" width="72" height="72" loading="lazy" decoding="async" :alt="id.replaceAll('-', ' ')" @error="onBadgeError(id)" />
+          <span v-else role="img" :aria-label="id.replaceAll('-', ' ')">{{ id }}</span>
           <figcaption>{{ id.replaceAll('-', ' ') }}</figcaption>
         </figure>
       </div>
