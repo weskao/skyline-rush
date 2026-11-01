@@ -20,6 +20,7 @@ export function selectGarageReleaseBuild(viteMode, explicit = undefined) {
       '#garage-skin-ui': source(locked ? 'GarageSkinComingSoon.vue' : 'GarageSkinCatalog.vue'),
       '#garage-skin-runtime': source(locked ? 'garage-skin-runtime-locked.ts' : 'garage-skin-runtime.ts'),
       '#garage-skin-palette': source(locked ? 'garage-skin-palette-locked.ts' : 'garage-skin-palette.ts'),
+      '#garage-void-beams': source(locked ? 'garage-void-beams-locked.js' : 'garage-void-beams.js'),
       '#garage-release-config': source(`garage-release-${mode}.ts`),
     },
   };

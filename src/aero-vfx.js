@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { skinVfxPalette, skinVfxPattern } from '#garage-skin-palette';
-import { createVoidPulseBeams } from './garage-void-beams.js';
+import { createVoidPulseBeams } from '#garage-void-beams';
 import { TRICK_ROLL_TIME } from './game.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
