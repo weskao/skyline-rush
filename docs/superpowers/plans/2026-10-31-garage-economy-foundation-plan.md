@@ -1,5 +1,16 @@
 # Garage Economy and Entitlement Foundation Implementation Plan
 
+## 2026-11-02 — Wave 3 art-source discovery and 3×→1× runtime sizing
+
+**Asset source is now in GitHub.** Before inventing new icons or assuming no source images exist, read [the shared 59-file WebP/1× CSS manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) at `feature/3x-ui-materials` (verified archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`). The staged binaries are **27 garage VFX/skin icons, 8 rewards/mission icons, 6 store icons and 18 mobile HUD/common UI images**. Physical 3× source assets are **288×288 → 96×96 CSS**, **216×216 → 72×72 CSS**, or **432×156 → 144×52 CSS**; preserve source pixel dimensions and use a 1× display box and `object-fit: contain`. Source PNGs and the original ZIPs remain in the ChatGPT File Library; Git holds optimized WebPs in `docs/designs/3x-asset-library/webp/`.
+
+**Economy boundary:** There is **no approved real currency, paid entitlement, wallet or live store source image/behavior** in this archive. Badge/rarity or trophy art must not grant/represent unauthorized ownership, convert into a fake coin balance, or imply a payment flow. Economy Foundation must keep its account/Cloud Save entitlement truth independently of artwork, and must not mistakenly count reusable decorative images as completed feature functionality. Only copy approved images into a feature public runtime directory during authorized implementation, with `import.meta.env.BASE_URL` URL, 1× CSS display, RED→GREEN tests, en/zh-TW, fallback, accessibility and CI.
+
+**Current integration target is `develop`, not historical `main`.** Shared asset archive is isolated; this Wave 3 branch does not yet contain runtime images from it. Do not mark feature TODO tasks complete solely because materials exist.
+
+---
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Versioned catalog, ownership, trial, equipped preference and future reward/soft currency boundaries; keep future premium/store interfaces conceptual, no checkout. Local UI cannot mint paid items.
