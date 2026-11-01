@@ -26,8 +26,20 @@ const VIEWPORTS = [
     { left: 0, top: 0, width: 600, height: 430 }, { left: 0, top: 460, width: 600, height: 440 }] },
 ];
 
-/** Runs in the page: names every intersecting or touching pair of visible, non-nested HUD blocks. */
-function collisions({ hud, pausePanel, pauseClearOf, minGap }) {
+/**
+ * Runs in the page as one synchronous snapshot (no frame can run inside it): names every intersecting or touching pair of
+ * visible, non-nested HUD blocks. `keep` lists transient overlays the game just raised (asserted visible beforehand): a slow
+ * CI frame rate can end their ~1.4s life before this runs, so the same element with its real content is shown for the
+ * snapshot and its hidden state restored afterwards. One that still cannot be measured is a failure, never a silent pass.
+ * `maxBottom` caps an element's bottom edge (CSS px).
+ */
+function collisions({ hud, pausePanel, pauseClearOf, minGap, keep = [], maxBottom = {} }) {
+  const restore = keep.map(selector => {
+    const element = document.querySelector(selector);
+    const wasHidden = element?.hidden;
+    if (element) element.hidden = false;
+    return () => { if (element) element.hidden = wasHidden; };
+  });
   const shown = element => {
     for (let node = element; node && node !== document.body; node = node.parentElement) {
       const style = getComputedStyle(node);
@@ -54,6 +66,12 @@ function collisions({ hud, pausePanel, pauseClearOf, minGap }) {
     const gap = Math.max(gapX, gapY);
     if (gap < minGap) found.push(`${a.label} × ${b.label} (${gap < 0 ? 'overlap' : `gap ${gap.toFixed(1)}px`})`);
   }
+  for (const selector of keep) if (!blocks.some(block => block.label === selector)) found.push(`${selector} could not be measured`);
+  for (const [selector, limit] of Object.entries(maxBottom)) {
+    const block = blocks.find(candidate => candidate.label === selector);
+    if (block && block.rect.bottom > limit) found.push(`${selector} bottom ${block.rect.bottom.toFixed(1)} > ${limit.toFixed(1)}`);
+  }
+  restore.forEach(undo => undo());
   return found;
 }
 
@@ -94,19 +112,17 @@ for (const viewport of VIEWPORTS) {
         await page.evaluate(() => Object.assign(window.gameplay.race.player, { x: 0, speed: 80, nitroTime: 4 }));
         await expect(page.locator('#event-callout')).toBeVisible({ timeout: ciTimeout(5_000) });
         const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
-        for (const pair of await page.evaluate(collisions, args)) failures.push(`${locale}/${hud}/racing: ${pair}`);
-        // Short landscape keeps the callout out of the centre view, as tests/motion-browser.spec.js requires without touch.
-        if (viewport.height <= 500) {
-          const callout = await page.locator('#event-callout').boundingBox();
-          if (callout.y + callout.height > viewport.height * 0.45) failures.push(`${locale}/${hud}/racing: callout bottom ${callout.y + callout.height} below 45%`);
-        }
+        // Short landscape keeps the callout out of the centre view (top 45%), as tests/motion-browser.spec.js requires without touch.
+        const calloutArgs = { ...args, keep: ['.event-callout'],
+          maxBottom: viewport.height <= 500 ? { '.event-callout': viewport.height * 0.45 } : {} };
+        for (const pair of await page.evaluate(collisions, calloutArgs)) failures.push(`${locale}/${hud}/racing: ${pair}`);
         // A vehicle hit's report: the same record game.js writes in its collision handler.
         await page.evaluate(() => {
           const { race } = window.gameplay, car = race.player;
           car.impact = { kind: 'vehicle', intensity: 1, side: 1, speedLost: 8, x: car.x, altitude: 0, distance: car.distance, time: race.elapsed };
         });
         await expect(page.locator('#impact-report')).toBeVisible({ timeout: ciTimeout(5_000) });
-        for (const pair of await page.evaluate(collisions, args)) failures.push(`${locale}/${hud}/impact: ${pair}`);
+        for (const pair of await page.evaluate(collisions, { ...args, keep: ['.impact-report'] })) failures.push(`${locale}/${hud}/impact: ${pair}`);
         await page.locator('#pause-button').click();
         await expect(page.locator(PAUSE_PANEL)).toBeVisible();
         for (const pair of await page.evaluate(collisions, args)) failures.push(`${locale}/${hud}/paused: ${pair}`);
