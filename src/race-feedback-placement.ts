@@ -16,15 +16,22 @@ export function pickPeripheralSlot(viewport: Size, size: Size, obstacles: Feedba
   const road = { left: viewport.width * .325, right: viewport.width * .675,
     top: viewport.height * .2, bottom: viewport.height * .72 };
   const target = Math.max(minY, Math.min(maxY, options.targetY ?? viewport.height * .43));
-  let best: { left: number; top: number; score: number } | null = null;
-  for (const [side, x] of [['left', left], ['right', right]] as const) {
-    for (let y = minY; y <= maxY; y += 4) {
-      const rect = { left: x, top: y, right: x + size.width, bottom: y + size.height };
-      if (overlap(rect, road, 2) || obstacles.some(block => overlap(rect, block))) continue;
-      const score = Math.abs(y - target) + (side === (options.preferred ?? 'left') ? 0 : 40);
-      if (!best || score < best.score) best = { left: x, top: y, score };
+  let best = null as { left: number; top: number; score: number } | null; // `as`: scan() assigns it, so no null narrowing
+  const scan = (columns: number[]): void => {
+    for (const x of columns) {
+      const side = x + size.width / 2 < viewport.width / 2 ? 'left' : 'right';
+      for (let y = minY; y <= maxY; y += 4) {
+        const rect = { left: x, top: y, right: x + size.width, bottom: y + size.height };
+        if (overlap(rect, road, 2) || obstacles.some(block => overlap(rect, block))) continue;
+        const score = Math.abs(y - target) + (side === (options.preferred ?? 'left') ? 0 : 40);
+        if (!best || score < best.score) best = { left: x, top: y, score };
+      }
     }
-  }
+  };
+  scan([left, right]);
+  // Edge widgets fill both edge columns (short landscape): try the gaps beside them, never a central fallback.
+  if (!best) scan(obstacles.flatMap(block => [block.right + 4, block.left - 4 - size.width])
+    .filter(x => x > left && x < right && (x + size.width <= road.left - 2 || x >= road.right + 2)));
   return best && { left: best.left, top: best.top };
 }
 
