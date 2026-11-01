@@ -1,5 +1,5 @@
 import { test, expect } from './helpers/test.js';
-import { recordTrackId } from '../src/record-layout.ts';
+import { layoutVersion, recordTrackId } from '../src/record-layout.ts';
 
 const config = (mode, extra = {}) => ({
   rulesVersion: 1, mode, rivals: 0, traffic: mode === 'time' ? 'off' : 'normal',
@@ -8,7 +8,7 @@ const config = (mode, extra = {}) => ({
 const raceRun = (mode, time, extra = {}, extras = {}) => {
   const rules = JSON.stringify(config(mode,extra));
   return {date:'2026-10-23T11:00:00.000Z', mode, track:'coast', rules, time,
-    position:1, score:mode==='stunt' ? 9000 : 300, layout:2, ...extras}; // Coast runs since its layout 2
+    position:1, score:mode==='stunt' ? 9000 : 300, layout:layoutVersion('coast'), ...extras}; // Coast runs on today's layout
 };
 
 test('10C RED: challenge History filters modes and shows rule-scoped PBs, eligible Ghosts and personal-only disclaimer',async({page})=>{
