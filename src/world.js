@@ -532,8 +532,7 @@ export function createWorld(canvas) {
   const sprintVisual = createSprintVfx();
   // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
-  let visual = vfxSettings();
-  let garageHomeVisual = { ...visual, airflow: true }; // Recompute on settings event, not in the frame loop.
+  let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true };
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
@@ -613,16 +612,8 @@ export function createWorld(canvas) {
 
   return {
     resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); },
-    setGarageSkinPreview(ids, home = false) {
-      garagePreviewSkins = ids;
-      garageHomePreview = home && !garageCamera;
-      garageStage?.setSkins(ids);
-      if (garageHomePreview) aero.setSkins(ids);
-    },
-    inspectCosmeticPreview() {
-      return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics();
-    },
-    inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
+    setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) aero.setSkins(ids); }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
+        inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint);
       player.userData.body.material.color.set(paint.paint);
