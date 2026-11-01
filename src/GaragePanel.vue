@@ -2,6 +2,7 @@
 import { PAINTS } from './appearance.ts';
 import { garageView } from './garage-view-state.ts';
 import CloseButton from './CloseButton.vue';
+import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
 </script>
 
 <template>
@@ -13,5 +14,6 @@ import CloseButton from './CloseButton.vue';
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
     <button id="garage-equip" class="controls-reset" :disabled="garageView.equipDisabled" aria-label="Equip finish" data-i18n-aria-label="garage.equip">{{ garageView.equipLabel }}</button>
     <p class="collection-note" data-i18n="garage.previewNote">Additional finishes are previews. Cosmetic unlocks are not available yet.</p>
+    <GarageSourceArtGallery />
   </dialog>
 </template>
