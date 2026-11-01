@@ -2,6 +2,7 @@ import { test, expect, chromium } from './helpers/test.js';
 import { saveArtifact } from './helpers/artifact.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { slow, ciTimeout } from './helpers/ci.js';
+import { recordTrackId } from '../src/record-layout.ts';
 
 
 // Where autoplay is blocked (CI runners), the music prompt appears after 600ms over the settings buttons.
@@ -591,13 +592,14 @@ gameplayTest('a complete 5 km sprint reaches results, saves a best time and can 
   await expect(page.locator('#result-stats')).toBeVisible();
   await expect(page.locator('#result-style')).toHaveAttribute('aria-label', /^[1-3] of 3 style stars$/);
   await expect(page.locator('.style-stars svg')).toHaveCount(3);
-  expect(await page.evaluate(() => Number(localStorage.getItem('skyline-rush-best')))).toBeGreaterThan(50);
+  const coastRecord = recordTrackId('coast'); // the current ring layout's best/ghost key
+  expect(await page.evaluate(id => JSON.parse(localStorage.getItem('skyline-rush-best-tracks'))[id], coastRecord)).toBeGreaterThan(50);
   const history = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-history')));
   expect(history).toHaveLength(1);
   expect(history[0]).toMatchObject({ track: 'coast', distance: 5000 });
   expect(history[0].time).toBeGreaterThan(50);
   expect(history[0].score).toBeGreaterThan(0);
-  const saved = await page.evaluate(() => ({ ghost: JSON.parse(localStorage.getItem('skyline-rush-ghosts')).coast, stars: JSON.parse(localStorage.getItem('skyline-rush-stars')).coast }));
+  const saved = await page.evaluate(id => ({ ghost: JSON.parse(localStorage.getItem('skyline-rush-ghosts'))[id], stars: JSON.parse(localStorage.getItem('skyline-rush-stars')).coast }), coastRecord);
   expect(Math.abs(saved.ghost.samples.length - (Math.floor(saved.ghost.time * 10) + 1))).toBeLessThanOrEqual(1);
   expect(saved.ghost.time).toBe(history[0].time);
   expect(saved.stars).toBeGreaterThanOrEqual(1);
@@ -605,8 +607,9 @@ gameplayTest('a complete 5 km sprint reaches results, saves a best time and can 
   await expect(page.locator('.history-run')).toHaveCount(1);
   await expect(page.locator('.history-run')).toContainText('BEST');
   await page.getByRole('button', { name: 'Close history' }).click();
-  const bests = await page.evaluate(() => ({ perTrack: JSON.parse(localStorage.getItem('skyline-rush-best-tracks')).coast, legacy: Number(localStorage.getItem('skyline-rush-best')) }));
-  expect(bests.perTrack).toBe(bests.legacy);
+  const bests = await page.evaluate(id => ({ perTrack: JSON.parse(localStorage.getItem('skyline-rush-best-tracks'))[id], legacy: localStorage.getItem('skyline-rush-best') }), coastRecord);
+  expect(bests.perTrack).toBe(history[0].time);
+  expect(bests.legacy, 'a new-layout time never lands in the old-layout Coast best').toBeNull();
   await saveArtifact(page, { path: 'artifacts/race-results.jpeg', quality: 70 });
   await page.getByRole('button', { name: 'Race again' }).click();
   await expect(page.locator('#distance')).toHaveText('0.00');

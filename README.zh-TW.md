@@ -1,4 +1,4 @@
-<!-- source-sha256: 62ed052c977ab9f703af4508bedd31b4b3e7c947a6279a0480ee1fccf7dc2542 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 5c301b792f97860395a9febecee67b31ceb3d6d3d7dbb1668d67f4e2af8faee6 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -299,6 +299,7 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull requ
 - `src/track-paths.js`、`src/world-tour-scene.js`：每條賽道一份距離對應道路的映射，以及共用的世界巡迴賽道路、景物與地標。
 - `src/route-map.js`、`src/i18n.js`：SVG 完整路線與即時賽車手地圖；語系偵測、已儲存的選擇、`t()` 與英文／繁體中文的賽道名稱；`src/locales/` 存放語系目錄。
 - `scripts/capture-og-images.mjs`：從真實的應用程式擷取英文與 zh-TW 的封面圖片，以及 zh-TW 的 README 截圖。
+- `scripts/pickup-economy.mjs`：用腳本 bot 跑完每張賽道，印出每分鐘 NITRO 格數、BOOST 比例、燃料歸零次數與第一次可用 NITRO 的時間；`tests/pickup-economy.test.js` 鎖住光圈與道具配置。
 - `scripts/ci-shards.mjs`：`plan` 為每個 CI 分片提供其 Playwright 的 `--test-list`，依耗時打包測試，讓每個分片大約在同一時間完成；`refresh <run-id>` 會在測試套件大幅變動後，依 CI 執行的日誌重寫 `tests/ci-durations.json`。
 - `src/App.vue`、`src/icons.js`：Vue 3 的 UI 外殼（開始畫面、HUD、面板、觸控操作）及其共用的 SVG 圖示；僅渲染一次，沒有響應式狀態。
 - `src/main.js`、`src/style.css`：掛載 `App.vue`、串接各畫面控制器，並執行比賽生命週期（開始、暫停、重新開始、結果）與影格迴圈。

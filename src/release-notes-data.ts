@@ -9,7 +9,28 @@ import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-10-31', image: null,
+    version: UPCOMING, date: '2026-11-01', image: null,
+    highlights: [
+      {
+        id: 'classic-more-rings', kind: 'improvement', image: null,
+        title: { en: 'More rings on the first Classic roads', 'zh-TW': '前幾條經典賽道光圈更多' },
+        description: {
+          en: 'Coast and Neon Downtown now have more, richer rings. Canyon Skyway, Sky Spiral and Harbor Circuit hand you your first NITRO sooner.',
+          'zh-TW': '海岸公路、霓虹都會的光圈更多、更豐厚；峽谷天橋、天際螺旋、港灣環道更早拿到第一次 NITRO。'
+        }
+      },
+      {
+        id: 'old-layout-records', kind: 'improvement', image: null,
+        title: { en: 'Your earlier times are kept', 'zh-TW': '之前的成績都會保留' },
+        description: {
+          en: 'Because these five roads changed, best times and ghosts start fresh there. Your earlier runs stay in History, marked Old layout, so nothing is lost.',
+          'zh-TW': '這五條賽道的配置改變了，所以最佳成績和幽靈車會重新開始計算。之前的成績仍保留在歷史紀錄中，並標示「舊版配置」，一筆都不會少。'
+        }
+      }
+    ]
+  },
+  {
+    version: '0.28.0', date: '2026-10-31', image: null,
     highlights: [
       {
         id: 'endless-every-road', kind: 'new', image: null,

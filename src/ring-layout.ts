@@ -4,6 +4,9 @@ import type { TrackConfig } from './game-types.ts';
 export const RING_RADIUS = 4.8;
 export const RISK_RING_RADIUS = 2.4;
 export const RING_SPACING = 220;
+const RING_GAP: readonly [number, number] = [200, 320]; // scattered rings: metres to the next ring
+// Cumulative roll thresholds for charge / nitro / slipstream / risk; the rest is mystery.
+const RING_ODDS: readonly [number, number, number, number] = [0.35, 0.6, 0.78, 0.9];
 export const RING_FUEL = 20; // charge ring
 export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
 export { RISK_SCORE } from './risk-lines.ts';
@@ -15,25 +18,28 @@ export interface RaceRing { distance: number; x: number; altitude: number; radiu
 
 // Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
 // other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
+// Optional per-track ringGap / ringOdds / ringAltitudes / openingNitroRings tune one track; omitted, the defaults keep every layout bit-for-bit.
 export function createRings(track: TrackConfig, riskLines = true): RaceRing[] {
   const random = seededRng(track.seed, RACE_STREAMS.rings);
+  const [gapMin, gapMax] = track.ringGap ?? RING_GAP, [charge, nitro, slip, risk] = track.ringOdds ?? RING_ODDS;
   const rings: RaceRing[] = [];
   const inTunnel = (distance: number) => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
   for (let distance = RING_SPACING; distance < track.length - 100;) {
     const roll = random();
-    let type = roll < 0.35 ? 'charge' : roll < 0.6 ? 'nitro' : roll < 0.78 ? 'slipstream' : roll < 0.9 ? (riskLines ? 'risk' : 'nitro') : 'mystery'; // same roll either way: layout unchanged
+    let type = roll < charge ? 'charge' : roll < nitro ? 'nitro' : roll < slip ? 'slipstream' : roll < risk ? (riskLines ? 'risk' : 'nitro') : 'mystery'; // same roll either way: layout unchanged
     let x = 2.5;
-    let altitude = 8;
+    let altitude = track.ringAltitudes?.[rings.length % track.ringAltitudes.length] ?? 8;
     if (!track.fixedRings) {
       x = Math.round((random() * 2 - 1) * 70) / 10;
       altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
     }
+    if (rings.length < (track.openingNitroRings ?? 0)) type = 'nitro'; // after the rolls: the stream and positions stay the same
     if (inTunnel(distance)) { // the car cannot climb in a tunnel, so a 'risk' ring there would be free
       altitude = 1.5;
       if (type === 'risk') type = 'nitro';
     }
     rings.push({ distance, x, altitude, radius: type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS, type, group: 0 });
-    distance += track.fixedRings ? RING_SPACING : Math.round(200 + random() * 120);
+    distance += track.fixedRings ? track.ringGap?.[0] ?? RING_SPACING : Math.round(gapMin + random() * (gapMax - gapMin));
   }
   for (let i = 0, group = 0; i < rings.length; group++) {
     const left = rings.length - i;

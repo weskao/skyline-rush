@@ -5,6 +5,11 @@ service cloud.firestore {
       'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
   }
 
+  // Classic best ids: every track plus `<track>@<layout>` for re-laid tracks (src/record-layout.ts).
+  function bestIds() {
+    return trackIds().concat(['coast@2', 'neon@2', 'canyon@2', 'spiral@2']);
+  }
+
   function validStar(values, id) {
     return !values.keys().hasAny([id]) ||
       (values[id] is int && values[id] >= 1 && values[id] <= 3);
@@ -24,7 +29,7 @@ service cloud.firestore {
   function validScoreMaps(data) {
     return data.stars is map && data.bests is map && data.medals is map
       && data.stars.keys().hasOnly(trackIds())
-      && data.bests.keys().hasOnly(trackIds())
+      && data.bests.keys().hasOnly(bestIds())
       && data.medals.keys().hasOnly(['first-win', 'clean-run', 'perfect-five', 'nitro-chain'])
       && validStar(data.stars, 'coast') && validBest(data.bests, 'coast')
       && validStar(data.stars, 'neon') && validBest(data.bests, 'neon')
@@ -36,6 +41,8 @@ service cloud.firestore {
       && validStar(data.stars, 'alpine') && validBest(data.bests, 'alpine')
       && validStar(data.stars, 'coastal') && validBest(data.bests, 'coastal')
       && validStar(data.stars, 'cosmic') && validBest(data.bests, 'cosmic')
+      && validBest(data.bests, 'coast@2') && validBest(data.bests, 'neon@2')
+      && validBest(data.bests, 'canyon@2') && validBest(data.bests, 'spiral@2')
       && validMedal(data.medals, 'first-win')
       && validMedal(data.medals, 'clean-run')
       && validMedal(data.medals, 'perfect-five')
