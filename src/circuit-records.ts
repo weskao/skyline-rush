@@ -1,4 +1,5 @@
-import { circuitLaps } from './circuit-track.ts';
+import { circuitLaps, CIRCUIT_ID } from './circuit-track.ts';
+import { recordTrackId } from './record-layout.ts';
 import { MODE_BESTS_KEY, MODE_MAX_SECONDS } from './history-policy.ts';
 import { readStored, type HistoryStorage } from './history-storage.ts';
 import type { LapTime } from './circuit-laps.ts';
@@ -25,7 +26,7 @@ export function validCircuitRecord(run: Record<string, unknown>): boolean {
   } catch { return false; }
 }
 
-export const circuitLapKey = (config: unknown): string => JSON.stringify(['harbor-circuit', config, 'lap']);
+export const circuitLapKey = (config: unknown): string => JSON.stringify([recordTrackId(CIRCUIT_ID, config), config, 'lap']);
 export function loadCircuitLapBest(config: unknown, storage?: HistoryStorage): number | null {
   if (!circuitLaps(config)) return null;
   const stored = readStored(MODE_BESTS_KEY, storage);

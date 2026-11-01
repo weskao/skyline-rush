@@ -22,7 +22,7 @@ test('Circuit history shows its saved ruleset Ghost without awarding Career meda
   globalThis.document = { querySelector: selector => ({ value: selector === '#history-track' ? 'harbor-circuit' : 'circuit' }) };
   try {
     assert.equal(saveModeGhost('harbor-circuit', config, { time: 20, samples: Array.from({ length: 201 }, (_, i) => [i * 10, -2.5, 0]) }), true);
-    const run = { mode: 'circuit', track: 'harbor-circuit', rules: JSON.stringify(config), time: 20 };
+    const run = { mode: 'circuit', track: 'harbor-circuit', rules: JSON.stringify(config), time: 20, layout: 2 }; // runs saved since Circuit's layout 2
     createHistoryView({ getData: () => ({ sessionHistory: [], sessionModeHistory: [run], sessionBests: {}, sessionDaily: [], sessionMedals: {}, world: null }),
       timeString: seconds => String(seconds) }).showHistory();
     assert.equal(historyView.modeRuns.length, 1);

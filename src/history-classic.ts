@@ -1,5 +1,6 @@
 import { RACE_TRACKS } from './game.js';
 import { HISTORY_LIMIT } from './history-policy.ts';
+import { layoutField } from './record-layout.ts';
 import { readStored as read, writeStored as write, type HistoryStorage } from './history-storage.ts';
 
 export const HISTORY_KEY = 'skyline-rush-history';
@@ -10,6 +11,8 @@ export interface ClassicRun {
   collisions: number; nearMisses: number; rings: number; perfectLines: number;
   nitroUses: number; longestCombo: number; score: number; fuelOuts: number;
   gapFalls: number; distance: number;
+  /** Ring layout the run was set on; absent = layout 1 (`src/record-layout.ts`). */
+  layout?: number;
 }
 type ClassicResult = Partial<Omit<ClassicRun, 'date' | 'track' | 'distance'>>;
 export interface CompletedClassicRace {
@@ -47,7 +50,7 @@ export function recordRace(race: CompletedClassicRace, storage?: HistoryStorage,
     rings: result.rings || 0, perfectLines: result.perfectLines || 0,
     nitroUses: result.nitroUses || 0, longestCombo: result.longestCombo || 0,
     score: result.score || 0, fuelOuts: result.fuelOuts || 0,
-    gapFalls: result.gapFalls || 0, distance: race.length || 0,
+    gapFalls: result.gapFalls || 0, distance: race.length || 0, ...layoutField(race.trackId ?? 'coast'),
   };
   const history = [...loadHistory(storage), record];
   // Persist unlocks before trimming records which originally earned them.

@@ -2,6 +2,7 @@ import { isModeTrack } from './race-tracks.ts';
 import { circuitLaps } from './circuit-track.ts';
 import { validCircuitTimes, validCircuitRecord, circuitLapKey } from './circuit-records.ts';
 import { stuntMedal } from './stunt-attack.ts';
+import { recordTrackId, raceLayout, runLayout, layoutField } from './record-layout.ts';
 import { HISTORY_LIMIT, MODE_BESTS_KEY, MODE_MAX_SECONDS } from './history-policy.ts';
 import { readStored as read, writeStored as write, type HistoryStorage } from './history-storage.ts';
 
@@ -59,11 +60,14 @@ const validPeak = (raw: unknown): raw is StuntPeak => {
     numberFinite(peak.maxCombo) && Number.isInteger(peak.maxCombo) && peak.maxCombo >= 0 &&
     numberFinite(peak.airTime) && peak.airTime >= 0;
 };
+// Layout 1 keeps the bare track id, so pre-versioning keys stay where they were.
+const modeBestId = (trackId: string, config: ModeConfig | undefined): string =>
+  JSON.stringify([recordTrackId(trackId, config), config]);
 export function loadStuntBest(trackId: string, config: ModeConfig | undefined, storage?: HistoryStorage) {
-  const id = JSON.stringify([trackId, config]);
+  const id = modeBestId(trackId, config), layout = raceLayout(trackId, config);
   const saved = asRecord(read(STUNT_BESTS_KEY, storage))[id];
   const older: StuntPeak[] = loadModeHistory(storage).filter(run =>
-    run.mode === 'stunt' && run.track === trackId && run.rules === JSON.stringify(config) &&
+    run.mode === 'stunt' && run.track === trackId && run.rules === JSON.stringify(config) && runLayout(run) === layout &&
     numberFinite(run.score) && run.score >= 0
   ).map(run => ({
     score: run.score!,
@@ -80,16 +84,14 @@ export function loadStuntBest(trackId: string, config: ModeConfig | undefined, s
     medal: stuntMedal(score, config?.duration),
   };
 }
-const modeBestId = (trackId: string, config: ModeConfig | undefined): string =>
-  JSON.stringify([trackId, config]);
 const validModeBest = (value: unknown, mode: string): value is number =>
   numberFinite(value) && (mode === 'stunt' ? value >= 0 : value > 0 && value <= (mode === 'endless' ? Number.MAX_SAFE_INTEGER : MODE_MAX_SECONDS));
 export function loadModeBest(trackId: string, config: ModeConfig | undefined, storage?: HistoryStorage): number | null {
   const mode = config?.mode;
   if (!isModeTrack(trackId, mode) || typeof mode !== 'string' || !MODE_TYPES.has(mode) || mode === 'circuit' && !circuitLaps(config)) return null;
-  const signature = JSON.stringify(config);
+  const signature = JSON.stringify(config), layout = raceLayout(trackId, config);
   const values = loadModeHistory(storage)
-    .filter(run => run.track === trackId && run.rules === signature)
+    .filter(run => run.track === trackId && run.rules === signature && runLayout(run) === layout)
     .map(run => mode === 'endless' ? run.distance : mode === 'stunt' ? run.score : run.time)
     .filter((value): value is number => validModeBest(value, mode));
   const saved = asRecord(read(MODE_BESTS_KEY, storage))[modeBestId(trackId, config)];
@@ -117,7 +119,8 @@ export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = n
   if (typeof rules !== 'string' || !rules.length || rules.length > MODE_MAX_RULES_LENGTH)
     throw new TypeError('Invalid practice race rules');
   const previous = loadModeHistory(storage);
-  const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules);
+  const layout = raceLayout(race.trackId, race.config);
+  const comparable = previous.filter(run => run.track === race.trackId && run.rules === rules && runLayout(run) === layout);
   const scoreAttack = race.mode === 'stunt';
   const distanceAttack = race.mode === 'endless', maximize = scoreAttack || distanceAttack;
   const preservedBest = loadModeBest(race.trackId, race.config, storage);
@@ -137,7 +140,7 @@ export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = n
   write(MODE_HISTORY_KEY, [...previous, {
     date: now.toISOString(), mode: race.mode, track: race.trackId, rules,
     modeId: race.mode, trackId: race.trackId, rulesVersion: race.config?.rulesVersion ?? 1,
-    rulesSignature: rules, distance, stageCount, lapCount: race.mode === 'circuit' ? circuitLaps(race.config) : null,
+    rulesSignature: rules, ...layoutField(race.trackId, race.config), distance, stageCount, lapCount: race.mode === 'circuit' ? circuitLaps(race.config) : null,
     ...(race.mode === 'circuit' ? { lapTimes: result.lapTimes } : {}),
     itemsUsed: nonnegativeInt(result.itemUses),
     hazardPasses: hazards.filter(h => h.passed).length,
@@ -150,7 +153,7 @@ export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = n
     } : {}),
   }].slice(-HISTORY_LIMIT), storage);
   if (scoreAttack) {
-    const id = JSON.stringify([race.trackId, race.config]);
+    const id = modeBestId(race.trackId, race.config);
     const entries = asRecord(read(STUNT_BESTS_KEY, storage));
     const peak = loadStuntBest(race.trackId, race.config, storage);
     write(STUNT_BESTS_KEY, { ...entries, [id]: peak }, storage);
