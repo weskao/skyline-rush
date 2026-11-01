@@ -8,6 +8,7 @@
 - [x] AC3: the seven other tracks' ring/pickup layouts locked by sha256 in `tests/pickup-economy.test.js`.
 - [x] AC5: tuned rings below tunnel roofs and above gap holes (test).
 - [x] `npm test` 1225/0, `npm run typecheck` clean after tuning (commits `4d5f3177`, `af00b2d8`); pushed to origin.
+- [ ] **Paused (user, 2026-11-01):** wait until the other Wave 2 branches (Eight-Car, Foldable, Garage; VFX already in `develop` as `bcf9b3f5`) are merged into `develop`, merge `develop` into this branch, then continue from here. No version-key code written yet.
 - [ ] Layout version key (all timed records; see the plan's "版本鍵實作計畫"): RED → GREEN, then cloud merge, History "old layout" tag (en + zh-TW).
 - [ ] Audio: no new sounds; check ring-pickup cue spacing on denser Neon (`tests/race-audio-events.test.js`).
 - [ ] What's New `UPCOMING` entry (en + zh-TW, player-first).
