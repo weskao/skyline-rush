@@ -26,12 +26,10 @@ export const subscribeGarageSkins = (listener: () => void): (() => void) => {
   return () => listeners.delete(listener);
 };
 export function currentGarageSkins(): Record<SkinCategory, SkinId> {
-  return Object.fromEntries(SKIN_CATEGORIES.map(category => [category, session.active(category)]))
-    as Record<SkinCategory, SkinId>;
+  return Object.fromEntries(SKIN_CATEGORIES.map(category => [category, session.active(category)])) as Record<SkinCategory, SkinId>;
 }
 export function selectedGarageSkins(): Record<SkinCategory, SkinId> {
-  return Object.fromEntries(SKIN_CATEGORIES.map(category => [category, session.preview(category)]))
-    as Record<SkinCategory, SkinId>;
+  return Object.fromEntries(SKIN_CATEGORIES.map(category => [category, session.preview(category)])) as Record<SkinCategory, SkinId>;
 }
 export const garageSkinEntry = (id: unknown) => session.view(id);
 export function selectGarageSkin(id: unknown): boolean {
