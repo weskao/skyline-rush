@@ -220,3 +220,20 @@ bot 的限制：Checkpoint 模式的 bot 不會追檢查點，28 s 就超時結�
 ### 4. World Tour：不調整（明確的非目標）
 
 Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。但 World Tour 五張圖本身就是基準：中位數的定義就是一半在上、一半在下。調整它們會讓基準跟著動，而且 AC3 要求這五張圖 bit-for-bit 不變，所以不調整。
+
+### 使用者決定（2026-11-01，第二輪）
+
+1. **Aurora、Sky Spiral 併入第一階段**：Aurora 用 `ringGap: [180, 280]` + `openingNitroRings: 1`，Sky Spiral 用 `openingNitroRings: 2`。五張經典圖一起升到 `layoutVersion: 2`，做同一次遷移。AC2 測試擴大到五張圖，AC3 的雜湊鎖改成只鎖 World Tour 五張圖。
+2. **Circuit 一起改**：`CIRCUIT_TRACK` 加開場 nitro 光圈，目標是第一次 NITRO ≤ 8.9 s，NITRO 不低於下限。實作前要先確認：
+   - `lapItems` 是每圈重複，還是只有第一圈有開場光圈？
+   - Circuit 的總時間最佳成績、Ghost 和單圈最佳（`loadCircuitLapBest`）也要納入版本鍵。
+   - 現有的 `topologyVersion: 1` 是賽道結構版本，不能拿來當光圈版本。
+3. **擴充量測 bot**：`measureEconomy(trackId, options, cap)`，並由測試記錄各模式的數字。
+
+實作順序（恢復工作後）：
+
+1. 合併 `develop`。
+2. bot 擴充（RED → GREEN）。
+3. Aurora／Sky Spiral／Circuit 調整（RED → GREEN）。
+4. 版本鍵，涵蓋五張經典圖與 Circuit。
+5. 音效、What's New、畫面與實機驗證、完整 CI。
