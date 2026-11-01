@@ -84,3 +84,13 @@ test('eleven original 3x badge/rarity artworks appear in a non-entitlement showc
   await expect(gallery).toContainText(/reference|參考|style|樣式/i);
   await expect(page.locator('#garage-vfx-catalog')).not.toContainText(/buy now|立即購買/i);
 });
+
+test('badge reference art falls back to visible accessible label if the 3x image fails', async ({ page }) => {
+  await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.webp', route => route.abort());
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const card = page.locator('#garage-vfx-art-badges figure').first();
+  await card.scrollIntoViewIfNeeded();
+  await expect(card.locator('img')).toHaveCount(0);
+  await expect(card.locator('[role="img"]')).toContainText(/badge-equipped|badge equipped/i);
+});
