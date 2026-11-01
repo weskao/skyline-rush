@@ -78,3 +78,59 @@ test('selected skins switch shape and timing patterns in the shared WebGL render
   aero.setSkins({ thruster: 'airflow-vortex' });
   assert.equal(jet.material.uniforms.skinPattern.value, 0);
 });
+
+
+test('void pulse creates visible car-mounted energy beams, and toggling skins reuses GPU resources', async () => {
+  const { createRace } = await import('../src/game.js');
+  const { vfxSettings } = await import('../src/vfx-settings.ts');
+  const { Vector3 } = await import('three');
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  const aero = createAeroVFX(scene, car), race = createRace();
+  const settings = vfxSettings({ enabled: true, airflow: true, quality: 'high' });
+  race.phase = 'racing'; race.player.boosting = true; race.player.speed = 95;
+  aero.setSkins({ thruster: 'thruster-void' });
+  aero.update(race, 0.12, new Vector3(), settings, false, null, true);
+  const beams = car.getObjectByName('Void pulse beams');
+  assert.ok(beams, 'real car-mounted beam mesh, not just recoloured airflow');
+  assert.ok(beams.visible, 'void pulse beams visible during preview');
+  assert.equal(beams.count, 4, 'one instanced ray per rear nozzle');
+  const geometry = beams.geometry, material = beams.material;
+  aero.setSkins({ thruster: 'thruster-plasma' });
+  aero.update(race, 0.12, new Vector3(), settings, false, null, true);
+  assert.equal(beams.visible, false, 'void beams must not leak into other skins');
+  aero.setSkins({ thruster: 'thruster-void' });
+  aero.update(race, 0.12, new Vector3(), settings, false, null, true);
+  assert.equal(beams.geometry, geometry);
+  assert.equal(beams.material, material);
+  assert.equal(beams.visible, true);
+  aero.update(race, 0.12, new Vector3(), { ...settings, enabled: false }, false, null, true);
+  assert.equal(beams.visible, false, 'VFX Off must hide beams');
+});
+
+test('launch ring and pulse loop visibly in Studio without altering race progress', async () => {
+  const { createRace } = await import('../src/game.js');
+  const { vfxSettings } = await import('../src/vfx-settings.ts');
+  const { Vector3 } = await import('three');
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  const aero = createAeroVFX(scene, car), race = createRace();
+  const settings = vfxSettings({ enabled: true, airflow: true, quality: 'high' });
+  race.phase = 'racing'; race.player.boosting = true;
+  const before = structuredClone(race);
+  const ring = scene.getObjectByName('Ignition shockwave');
+  for (const id of ['launch-flare-ring', 'launch-flare-pulse']) {
+    aero.setSkins({ 'launch-flare': id });
+    aero.update(race, 0.05, new Vector3(), settings, false, null, true);
+    assert.equal(ring.visible, true, `${id} must appear immediately after Preview`);
+    assert.ok(ring.material.opacity > 0, 'visible pulse must have positive opacity');
+    let repetitions = 0, wasVisible = true;
+    for (let n = 0; n < 150; n++) {
+      aero.update(race, 1 / 60, new Vector3(), settings, false, null, true);
+      if (!wasVisible && ring.visible) repetitions++;
+      wasVisible = ring.visible;
+    }
+    assert.ok(repetitions >= 1, `${id} needs repeated studio demo pulses`);
+  }
+  assert.deepEqual(race, before, 'cosmetics do not change acceleration or race state');
+});
