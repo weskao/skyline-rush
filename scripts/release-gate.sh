@@ -10,6 +10,15 @@ fail() { echo "release-gate: $*" >&2; exit 1; }
 # Players read every release in the in-game What's New dialog, so notes come before the tag.
 node scripts/check-release-notes.mjs "${1:-}" || fail "write the What's New notes for ${1:-this version} first (see CLAUDE.md)"
 
+# CI publishes the site but never firestore.rules: changed rules must be live before the tag (/release Phase F).
+# shortcut: trusts the FIRESTORE_RULES_DEPLOYED attestation, not the live ruleset; query the Rules API if one is ever wrong.
+last_tag=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+if [[ -n $last_tag ]] && ! git diff --quiet "$last_tag" HEAD -- firestore.rules; then
+  rules=$(git hash-object firestore.rules)
+  [[ ${FIRESTORE_RULES_DEPLOYED:-} == "$rules" ]] ||
+    fail "firestore.rules changed since $last_tag; deploy them first (/release Phase F), then rerun with FIRESTORE_RULES_DEPLOYED=$rules"
+fi
+
 branch=$(git branch --show-current)
 [[ $branch == main ]] || fail "on '${branch:-detached HEAD}'; release from main"
 [[ -z $(git status --porcelain) ]] || fail "working tree is not clean"
