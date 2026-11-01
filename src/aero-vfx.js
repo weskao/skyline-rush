@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { skinVfxPalette } from '#garage-skin-palette';
+import { skinVfxPalette, skinVfxPattern } from '#garage-skin-palette';
 import { TRICK_ROLL_TIME } from './game.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -45,14 +45,18 @@ export function createAeroVFX(scene, vehicle) {
   vehicle.add(local);
   const flow = new THREE.Mesh(streamGeometry(), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), skinTint: { value: new THREE.Vector3(1, 1, 1) }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
+    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
     vertexShader: `attribute float flowType; attribute float lane; varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time; uniform float turbulence; uniform float downforce;
+      uniform float time; uniform float turbulence; uniform float downforce;uniform float skinPattern;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
         float wake=smoothstep(2.5,6.,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13;
-        p.y+=wake*downforce*.25;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+        p.y+=wake*downforce*.25;
+        float phase=p.z*(2.+skinPattern)+time*(1.+skinPattern*.7)+lane*6.28;
+        if(skinPattern>.5) p.x+=sin(phase)*(.025+skinPattern*.024)*(1.+wake);
+        if(skinPattern>1.5) p.y+=cos(phase)*(.045+skinPattern*.012);
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
     fragmentShader: `varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time,power,speed,density,length,suction,downforce,nitroMix;uniform vec3 skinTint;uniform vec4 trailAccent;
+      uniform float time,power,speed,density,length,suction,downforce,nitroMix,skinPattern;uniform vec3 skinTint;uniform vec4 trailAccent;
       void main(){if(vLane>density)discard;
         float t=fract(vUv.x*2.-time*speed+vLane*3.);
         float pulse=smoothstep(1.-length,1.-length+.06,t)*(1.-smoothstep(.91,1.,t));
@@ -62,7 +66,11 @@ export function createAeroVFX(scene, vehicle) {
         vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4)*skinTint;
         color=mix(color,vec3(.72,.4,1.),clamp(nitroMix,0.,1.)*.85);
         color=mix(color,trailAccent.rgb,trailAccent.a*clamp(nitroMix,0.,1.)*.8*smoothstep(.5,.85,vUv.x)); // trail skin on the tails from ignition; fronts keep the purple cue
-        gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength);}`,
+        float pattern=1.;
+        if(skinPattern>.5) pattern=.6+.4*sin(vUv.y*11.+time*(2.+skinPattern));
+        if(skinPattern>1.5) pattern=.35+.65*abs(sin(vUv.y*(12.+skinPattern*4.)+time*4.+vLane*8.));
+        if(skinPattern>2.5) pattern=step(.4,fract(vUv.y*9.+vLane*4.+time));
+        gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength*pattern);}`,
   }));
   local.add(flow);
   const pressure = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 4.5), new THREE.ShaderMaterial({
@@ -80,9 +88,9 @@ export function createAeroVFX(scene, vehicle) {
   jetGeometry.rotateX(-Math.PI / 2); jetGeometry.translate(0, 0, 0.5);
   const jetMaterial = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) } },
+    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme,nitroMix;uniform vec3 skinTint;
+    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern;uniform vec3 skinTint;
       void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
         float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
         float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
@@ -90,7 +98,11 @@ export function createAeroVFX(scene, vehicle) {
         vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
         color=mix(color*skinTint,vec3(.68,.42,1.),clamp(nitroMix,0.,1.)*.65); // skin tints the base; NITRO purple stays readable on every skin
-        gl_FragColor=vec4(color*brightness*(1.+core+cells),fade*(.15+core*.55+cells*.35)*breakup*power);}`,
+        float shape=1.;
+        if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
+        if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
+        if(skinPattern>2.5) shape=step(.45,fract(t*7.+time*3.+vUv.x*3.));
+        gl_FragColor=vec4(color*brightness*(1.+core+cells),fade*(.15+core*.55+cells*.35)*breakup*power*shape);}`,
   });
   const jets = REAR_PORTS.map((port, i) => {
     const jet = new THREE.Mesh(jetGeometry, jetMaterial.clone());
@@ -125,9 +137,9 @@ export function createAeroVFX(scene, vehicle) {
   ribbonGeo.setAttribute('uv', new THREE.BufferAttribute(ribbonUV, 2));
   const ribbon = new THREE.Mesh(ribbonGeo, new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { skinTint: { value: new THREE.Vector3(1, 1, 1) } },
+    uniforms: { skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 } },
     vertexShader: 'attribute float alpha,rollWake;varying float vAlpha,vRoll;varying vec2 vUv;void main(){vAlpha=alpha;vRoll=rollWake;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: 'varying float vAlpha,vRoll;varying vec2 vUv;uniform vec3 skinTint;void main(){float u=clamp(vUv.x,0.,1.);float edge=vRoll>.5?pow(max(0.,1.-min(u,1.-u)*12.),2.):pow(max(0.,sin(u*3.14159)),3.);gl_FragColor=vec4(vec3(.5,.8,1.)*skinTint,edge*vAlpha);}',
+    fragmentShader: 'varying float vAlpha,vRoll;varying vec2 vUv;uniform vec3 skinTint;uniform float skinPattern;void main(){float u=clamp(vUv.x,0.,1.);float edge=vRoll>.5?pow(max(0.,1.-min(u,1.-u)*12.),2.):pow(max(0.,sin(u*3.14159)),3.);float shape=1.;if(vRoll<.5){if(skinPattern>.5)shape=.65+.35*cos(vUv.x*14.+vUv.y*6.);if(skinPattern>1.5)shape=.3+.7*abs(sin(vUv.x*28.+vUv.y*12.));if(skinPattern>2.5)shape=step(.44,fract(vUv.y*7.+vUv.x*2.));}gl_FragColor=vec4(vec3(.5,.8,1.)*skinTint,edge*vAlpha*shape);}',
   }));
   ribbon.name = 'Continuous dash ribbon'; ribbon.frustumCulled = false; scene.add(ribbon);
   let segmentCursor = 0;
@@ -145,7 +157,7 @@ export function createAeroVFX(scene, vehicle) {
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#b98aff');
   let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  let quality = 1, settings, delta, launchSkinActive = false, lastPhase = 'ready';
+  let quality = 1, settings, delta, launchSkinActive = false, launchPattern = 0, lastPhase = 'ready';
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
@@ -174,12 +186,19 @@ export function createAeroVFX(scene, vehicle) {
     reset,
     setSkins(ids) {
       // Event-driven cosmetic updates reuse existing materials, geometries and GPU buffers.
-      const palette = skinVfxPalette(ids ?? {});
-      launchSkinActive = palette['launch-flare'][2] > 1;
+      const palette = skinVfxPalette(ids ?? {}), patterns = skinVfxPattern(ids ?? {});
+      launchPattern = patterns['launch-flare'];
+      launchSkinActive = launchPattern > 0;
       flow.material.uniforms.skinTint.value.fromArray(palette.airflow);
-      for (const jet of jets) jet.material.uniforms.skinTint.value.fromArray(palette.thruster);
+      flow.material.uniforms.skinPattern.value = patterns.airflow;
+      for (const jet of jets) {
+        jet.material.uniforms.skinTint.value.fromArray(palette.thruster);
+        jet.material.uniforms.skinPattern.value = patterns.thruster;
+      }
       vapor.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
       ribbon.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
+      ribbon.material.uniforms.skinPattern.value = patterns['nitro-trail'];
+      shock.userData.skinPattern = launchPattern;
       const trail = palette['nitro-trail'], skinned = trail.some(v => v !== 1);
       flow.material.uniforms.trailAccent.value.set(.5 * trail[0], .8 * trail[1], trail[2], skinned ? 1 : 0); // the ribbon's colour
       if (launchSkinActive) shockColor.setRGB(...palette['launch-flare']);
@@ -316,6 +335,11 @@ export function createAeroVFX(scene, vehicle) {
       shock.visible = enabled && !calm && shockAge < 0.23;
       shock.position.copy(shockPosition).sub(origin);
       shock.scale.setScalar(0.5 + shockAge * 20);
+      // Shape and timing vary by skin using the existing shock geometry.
+      if (launchPattern === 1) shock.scale.multiplyScalar(1.08);
+      if (launchPattern === 2) shock.scale.y *= .65 + .3 * Math.sin(time * 12);
+      if (launchPattern === 3) { shock.scale.x *= 1.4; shock.scale.y *= .72; }
+      shock.rotation.z = launchPattern === 3 && !calm ? time * 4 : 0;
       shock.material.opacity = Math.max(0, 1 - shockAge / 0.23) ** 2 * settings.shockwave * 0.45;
       previous.copy(current); previousRotation.copy(vehicle.quaternion);
       direction.set(0, 0.64, 3).applyMatrix4(vehicle.matrixWorld);
