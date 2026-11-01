@@ -13,12 +13,13 @@ const CLIMB_ON = 35, CLIMB_OFF = 5; // fuel hysteresis for flying to a ring: no 
 const GAP_HEIGHT = 3; // m: enough to clear a broken bridge without burning fuel to the ceiling
 
 // Like a player, the bot steers around a car it is closing on: it keeps its aim while that line and its own
-// are clear, else takes the nearest lane with no car ahead (within about a second) or alongside.
+// are clear, else takes the nearest lane with no car ahead (within about a second) or alongside. Rivals hop and
+// the bot climbs to rings, so a car blocks its lane at any height.
 const LANES = [-7.5, -2.5, 2.5, 7.5];
 function clearLane(race, aim) {
   const car = race.player, reach = Math.max(30, car.speed);
-  const blocked = x => race.rivals.some(o => o.distance - car.distance > -5 && o.distance - car.distance < reach &&
-    Math.abs(o.x - x) < 2.4 && Math.abs((o.altitude || 0) - car.altitude) < 1.8);
+  const behind = o => 5 + Math.max(0, (o.pace ?? o.speed) - car.speed) * 0.5; // a faster car closing from behind
+  const blocked = x => race.rivals.some(o => o.distance - car.distance > -behind(o) && o.distance - car.distance < reach && Math.abs(o.x - x) < 2.4);
   if (!race.rivals.length || (!blocked(aim) && !blocked(car.x))) return aim;
   const free = LANES.filter(x => !blocked(x));
   return free.length ? free.reduce((a, b) => Math.abs(b - aim) < Math.abs(a - aim) ? b : a) : aim;
@@ -26,9 +27,12 @@ function clearLane(race, aim) {
 
 // The bot chases the next ring (else the next pickup), climbs to it, BOOSTs with fuel to spare and
 // fires NITRO as soon as a full charge is banked. No brake, so no drift or trick rewards.
-function botInput(race, bot) {
+export function botInput(race, bot) {
   const car = race.player, at = car.distance;
-  const ring = race.rings.find(r => !r.hit && r.distance > at + 1 && r.distance < at + 250);
+  const next = race.rings.find(r => !r.hit && r.distance > at + 1 && r.distance < at + 250);
+  // A full-width row is passed by any of its rings: aim at the one in the bot's own lane.
+  const ring = next?.row === undefined ? next : race.rings.filter(r => r.row === next.row && r.lap === next.lap)
+    .reduce((a, b) => Math.abs(b.x - car.x) < Math.abs(a.x - car.x) ? b : a);
   const target = ring ?? race.pickups.find(p => !p.taken && p.tier !== 'overcharge' && p.distance > at + 1 && p.distance < at + 150);
   const tunnelNear = race.sections.some(s => s.type === 'tunnel' && s.to > at && s.from - at < NO_FLY_AHEAD);
   const gapNear = race.sections.some(s => s.type === 'gap' && s.to > at && s.from - at < Math.max(car.speed, 18) * 1.2);

@@ -114,7 +114,7 @@ test('MODE-00: the live ten-track simulation exposes stable session identity and
     assert.deepEqual(race.rings, second.rings);
     assert.deepEqual(race.traffic, second.traffic);
     assert.ok(race.pickups.length < 500);
-    assert.ok(race.rings.length < 100);
+    assert.ok(race.rings.length < 160); // stage 2 (user, 2026-11-02): twice the gates, a full-width row is 4 rings
     assert.ok(race.traffic.length < 200);
     for (const entity of [...race.pickups, ...race.rings, ...race.traffic]) {
       assert.ok([entity.distance, entity.x, ...(entity.altitude === undefined ? [] : [entity.altitude])]

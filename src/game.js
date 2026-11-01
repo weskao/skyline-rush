@@ -1,5 +1,5 @@
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
-import { createRings, RING_RADIUS, RING_FUEL, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
+import { createRings, passGate, PICKUP_GAP_SCALE, RING_RADIUS, RING_FUEL, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
 export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
 import { physicalGap } from './circuit-track.ts';
@@ -102,7 +102,7 @@ function createPickups(track) {
   const blocked = pickup => track.sections.some(s => pickup.distance >= s.from - 10 && pickup.distance < s.to + 10 &&
     (s.type === 'gap' ? pickup.altitude === 0 : s.type === 'tunnel' && pickup.altitude > 0));
   const pickups = [];
-  for (let distance = 300; distance < track.length - 300; distance += Math.round(120 + random() * 160)) {
+  for (let distance = 300; distance < track.length - 300; distance += Math.round((120 + random() * 160) * PICKUP_GAP_SCALE)) {
     const roll = random();
     if (roll < 0.6) {
       const x = pick(LANES); // a row of cells down one lane
@@ -202,7 +202,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
 }
 function collectRing(race, ring, index) {
   const car = race.player;
-  ring.hit = true;
+  passGate(race.rings, ring);
   car.rings++;
   car.score += 150;
   if (ring.type === 'charge') car.fuel = Math.min(100, car.fuel + RING_FUEL);

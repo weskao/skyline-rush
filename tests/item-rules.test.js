@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, stepRace, RACE_TRACKS } from '../src/game.js';
+import { createRace, stepRace, RACE_TRACKS, mysteryEffect } from '../src/game.js';
 import { normalizeRaceConfig, validateRaceRequest, rulesSignature } from '../src/race-config.ts';
 import { loadRecentCustom, saveRecentCustom } from '../src/recent-custom.ts';
 
@@ -62,10 +62,12 @@ test('filtering Active rings preserves authored mystery rewards and does not aut
   for (const itemRules of ['active', 'all']) {
     const race = createRace('coast', { mode: 'free', itemRules });
     race.phase = 'racing';
-    const ring = race.rings.find(ring => ring.distance === 3080);
-    Object.assign(race.player, { distance: 3079.9, speed: 50, x: ring.x, altitude: ring.altitude });
+    // Derived from the layout (stage 2 replaced Coast's hand-checked ring at 3080 m): a lone mystery ring keeps
+    // the reward its source index authored.
+    const index = race.rings.findIndex(ring => ring.type === 'mystery' && ring.row === undefined && (ring.mysteryIndex ?? 1) > 0), ring = race.rings[index];
+    Object.assign(race.player, { distance: ring.distance - 0.1, speed: 50, x: ring.x, altitude: ring.altitude });
     stepRace(race, {}, 1 / 60);
-    assert.equal(race.player.heldItem, 'shield'); // Coast's authored mystery at source index 13.
+    assert.equal(race.player.heldItem, mysteryEffect(race.seed, ring.mysteryIndex ?? index));
     assert.equal(race.player.effects.shield, 0);
     assert.equal(race.player.perfectLines, 0);
     assert.equal(race.player.nitro, 0);
