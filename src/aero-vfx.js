@@ -45,14 +45,14 @@ export function createAeroVFX(scene, vehicle) {
   vehicle.add(local);
   const flow = new THREE.Mesh(streamGeometry(), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), skinTint: { value: new THREE.Vector3(1, 1, 1) } },
+    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), skinTint: { value: new THREE.Vector3(1, 1, 1) }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
     vertexShader: `attribute float flowType; attribute float lane; varying vec2 vUv; varying float vType; varying float vLane;
       uniform float time; uniform float turbulence; uniform float downforce;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
         float wake=smoothstep(2.5,6.,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13;
         p.y+=wake*downforce*.25;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
     fragmentShader: `varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time,power,speed,density,length,suction,downforce,nitroMix;uniform vec3 skinTint;
+      uniform float time,power,speed,density,length,suction,downforce,nitroMix;uniform vec3 skinTint;uniform vec4 trailAccent;
       void main(){if(vLane>density)discard;
         float t=fract(vUv.x*2.-time*speed+vLane*3.);
         float pulse=smoothstep(1.-length,1.-length+.06,t)*(1.-smoothstep(.91,1.,t));
@@ -61,6 +61,7 @@ export function createAeroVFX(scene, vehicle) {
         float strength=vType>.5&&vType<1.5?suction*(.55+downforce*.45):vType>1.5?.35+downforce*.55:1.;
         vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4)*skinTint;
         color=mix(color,vec3(.72,.4,1.),clamp(nitroMix,0.,1.)*.85);
+        color=mix(color,trailAccent.rgb,trailAccent.a*clamp(nitroMix,0.,1.)*.8*smoothstep(.5,.85,vUv.x)); // trail skin on the tails from ignition; fronts keep the purple cue
         gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength);}`,
   }));
   local.add(flow);
@@ -179,6 +180,8 @@ export function createAeroVFX(scene, vehicle) {
       for (const jet of jets) jet.material.uniforms.skinTint.value.fromArray(palette.thruster);
       vapor.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
       ribbon.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
+      const trail = palette['nitro-trail'], skinned = trail.some(v => v !== 1);
+      flow.material.uniforms.trailAccent.value.set(.5 * trail[0], .8 * trail[1], trail[2], skinned ? 1 : 0); // the ribbon's colour
       if (launchSkinActive) shockColor.setRGB(...palette['launch-flare']);
       else shockColor.set('#bdeeff');
       shock.material.color.copy(shockColor);
