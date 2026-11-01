@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, collection, deleteDoc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { normalizeRaceConfig } from '../src/race-config.ts';
+import { CIRCUIT_ID } from '../src/circuit-track.ts';
+import { circuitLapKey } from '../src/circuit-records.ts';
+import { recordTrackId } from '../src/record-layout.ts';
+import { mergeModeBests } from '../src/cloud-mode-bests.ts';
 
 test('cloud saves are private and accept only valid map progress', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
   const env = await initializeTestEnvironment({
@@ -30,6 +35,9 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertFails(setDoc(save, { ...progress, bests: { coast: '60' } }));
   // Re-laid tracks keep their old best and add a `<track>@<layout>` best (src/record-layout.ts).
   await assertSucceeds(setDoc(save, { ...progress, bests: { coast: 60, 'coast@2': 70, 'neon@2': 50, 'canyon@2': 80, 'spiral@2': 75 } }));
+  await assertSucceeds(setDoc(save, { ...progress,
+    history: [{ date: '2026-11-01T00:00:00.000Z', track: 'coast', position: 1, time: 70, layout: 2 }],
+    modeHistory: [{ date: '2026-11-01T00:00:00.000Z', mode: 'circuit', track: CIRCUIT_ID, rules: '{}', time: 100, layout: 2 }] }));
   await assertFails(setDoc(save, { ...progress, bests: { 'coast@2': -1 } }));
   await assertFails(setDoc(save, { ...progress, bests: { 'aurora@2': 60 } }));
   await assertFails(setDoc(save, { ...progress, stars: { 'coast@2': 3 } }));
@@ -81,6 +89,12 @@ test('permanent mode records are private and bounded on Spark Firestore', { skip
   await assertFails(setDoc(doc(other, path), records));
   await assertFails(setDoc(doc(owner, path), { ...records, version: 2 }));
   await assertFails(setDoc(doc(owner, path), { ...records, secret: true }));
+  // Layout 2 tracks keep mode bests under '<track>@2' ids: Circuit total and lap best, Coast Time Trial (src/record-layout.ts).
+  const circuit = normalizeRaceConfig({ mode: 'circuit', laps: 3 }), trial = normalizeRaceConfig({ mode: 'time' });
+  const versioned = mergeModeBests({ bests: { [JSON.stringify([recordTrackId(CIRCUIT_ID, circuit), circuit])]: 100, [circuitLapKey(circuit)]: 30,
+    [JSON.stringify([recordTrackId('coast', trial), trial])]: 70, [JSON.stringify(['coast', trial])]: 40 } });
+  assert.equal(Object.keys(versioned.bests).length, 4, 'the client keeps every versioned and old mode key');
+  await assertSucceeds(setDoc(doc(owner, path), versioned));
   await assertFails(deleteDoc(doc(other, path)));
   await assertSucceeds(deleteDoc(doc(owner, path)));
 });
