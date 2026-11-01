@@ -236,6 +236,14 @@ test('the release script checks the notes before it pulls, commits or tags anyth
   for (const step of ['git fetch', 'gh run list', 'npm test']) assert.ok(notes < gate.indexOf(step), `notes are checked before ${step}`);
 });
 
+test('the release gate refuses changed Firestore rules until their deploy is attested', () => {
+  const gate = fs.readFileSync(new URL('../scripts/release-gate.sh', import.meta.url), 'utf8');
+  const rules = gate.indexOf('-- firestore.rules');
+  assert.ok(rules > 0, 'gate diffs firestore.rules against the last release tag');
+  assert.ok(gate.includes('[[ ${FIRESTORE_RULES_DEPLOYED:-} == "$rules" ]] ||'), 'deploy attestation must match the rules blob');
+  for (const step of ['git fetch', 'gh run list', 'npm test']) assert.ok(rules < gate.indexOf(step), `rules are checked before ${step}`);
+});
+
 // Developer-record lines from CHANGELOG.md that must never reach players, and player copy that must pass.
 const DEVELOPER_ONLY = {
   en: [

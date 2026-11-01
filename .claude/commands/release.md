@@ -65,8 +65,14 @@ Otherwise signed-in players' cloud saves are rejected (example: layout-2 bests s
    ```
 
    Not logged in → hand the user `! npx -y firebase-tools@15.34.1 login` and wait.
-5. Continue to Phase B only after the output reports the rules were released. Put the deploy
-   result in the final report and the Telegram notice.
+5. Continue to Phase B only after the output reports the rules were released. Run Phase B with
+   `FIRESTORE_RULES_DEPLOYED="$(git hash-object firestore.rules)"` in its environment:
+   `scripts/release-gate.sh` refuses to tag changed rules without it. Put the deploy result in the
+   final report and the Telegram notice.
+
+**Rollback:** roll back the site only (revert the release on `main` or re-release the previous
+version) and leave the new rules live. They accept old and new save formats, while the old rules
+would reject every later save from players who already stored new keys (e.g. `coast@2`).
 
 ## Phases T, A and B
 
