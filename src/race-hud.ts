@@ -66,13 +66,14 @@ export function createRaceHud(options: HudOptions) {
   const callouts = createCallouts();
   const haptic = createHaptics();
   const eventCallout = $('#event-callout');
-  const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!);
   const calloutMotion = createAnimationGate(eventCallout);
   const calloutReports = [$('#maneuver-report'), ui['skill-report']!, $('#action-report')];
   const nitroHud = document.createElement('div');
   nitroHud.className = 'nitro-hud';
   nitroHud.innerHTML = `<span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
   $('.fuel-stat').append(nitroHud);
+  // Include the dynamically inserted NITRO status in the initial collision geometry.
+  const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!);
   const nitroSegments = [...nitroHud.querySelectorAll<HTMLElement>('.nitro-segment')];
   const nitroStatus = $('#nitro-status');
   const nitroMeter = $('#nitro-meter');

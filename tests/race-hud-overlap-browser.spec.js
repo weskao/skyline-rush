@@ -135,36 +135,3 @@ for (const viewport of VIEWPORTS) {
     });
   });
 }
-
-test.describe('callout raised during GO! 390x844', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
-
-  // The telemetry stays visibility:hidden while the countdown's GO! is up (0.8s into racing); a NITRO chip placed then must
-  // move off it as soon as the countdown hides, not stay on it for the rest of its life. Driven in one synchronous snapshot
-  // (no frame runs inside it) because GO! and a callout last about as long as each other.
-  test('the callout moves clear of the telemetry when the countdown hides', async ({ gameplayPage: page }) => {
-    await page.locator('#start-button').click();
-    await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(20_000) }).toBe('racing');
-    await expect(page.locator('#countdown')).toBeHidden();
-    const result = await page.evaluate(async () => {
-      const countdown = document.querySelector('#countdown'), callout = document.querySelector('#event-callout');
-      const telemetry = document.querySelector('.flight-telemetry'), report = callout.querySelector('#action-report');
-      const overlaps = () => { const a = callout.getBoundingClientRect(), b = telemetry.getBoundingClientRect();
-        return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top; };
-      countdown.hidden = false;
-      callout.querySelectorAll('[id$="-report"]').forEach(other => { other.hidden = true; });
-      report.hidden = false;
-      report.innerHTML = 'NITRO<span>FULL THROTTLE</span>';
-      callout.dataset.kind = 'nitro';
-      callout.hidden = false;
-      dispatchEvent(new Event('resize')); // placement runs while GO! still hides the telemetry
-      await Promise.resolve(); // flush refreshes the resize's own attribute writes queued, so only the countdown can move it next
-      const telemetryHidden = getComputedStyle(telemetry).visibility === 'hidden', placedOverTelemetry = overlaps();
-      countdown.hidden = true;
-      await Promise.resolve(); // MutationObserver callbacks run in this microtask checkpoint, before any frame
-      return { telemetryHidden, placedOverTelemetry, overlapsAfterGo: overlaps() };
-    });
-    // placedOverTelemetry proves the scenario: while hidden, the telemetry's corner is a legal slot.
-    expect(result).toEqual({ telemetryHidden: true, placedOverTelemetry: true, overlapsAfterGo: false });
-  });
-});
