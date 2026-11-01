@@ -6,6 +6,7 @@ import { timeString } from './time-format.ts';
 import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED } from './game.js';
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
+import { createRoadSafeFeedback } from './race-feedback-placement.ts';
 import { readHudFeedback, type ControlPreferences } from './control-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
@@ -65,6 +66,7 @@ export function createRaceHud(options: HudOptions) {
   const callouts = createCallouts();
   const haptic = createHaptics();
   const eventCallout = $('#event-callout');
+  const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!);
   const calloutMotion = createAnimationGate(eventCallout);
   const calloutReports = [$('#maneuver-report'), ui['skill-report']!, $('#action-report')];
   const nitroHud = document.createElement('div');
@@ -90,6 +92,7 @@ export function createRaceHud(options: HudOptions) {
   let previousFuel = 100, previousNitro = 0, nitroRefillUntil = 0;
   let previousBoost = false;
   let shownCallout: ReturnType<typeof callouts.update> = null;
+  let lastDrivingMessage = '';
   let feedbackCar: unknown, lastImpact: unknown, lastDriftPayout: unknown, lastTrickPayout: unknown, lastNitroTime = 0;
 
   function updateSpeedAndPosition(now: number, race: HudRace, car: HudRace, calm: boolean): void {
@@ -187,15 +190,14 @@ export function createRaceHud(options: HudOptions) {
       report.replaceChildren(document.createTextNode(callout.title), detail);
       report.hidden = false;
       eventCallout.dataset.kind = callout.kind;
+      eventCallout.setAttribute('aria-label', `${callout.title} · ${callout.detail}`);
       calloutMotion.cancel();
       if (!visual.comfortable && !reducedMotion.matches) calloutMotion.animate([
-        { opacity: 0, transform: 'scale(.88)', offset: 0 },
-        { opacity: 1, transform: 'scale(1)', offset: .2 },
-        { opacity: 1, transform: 'scale(1)', offset: .85 },
-        { opacity: 0, transform: 'scale(1)', offset: 1 },
-      ], { ...motionOptions('slow'), duration: motionOptions('slow').duration * 2.5 });
+        { opacity: 0 }, { opacity: 1 },
+      ], { duration: 120, easing: 'ease-out' });
     }
     shownCallout = callout;
+    feedbackPlacement.refresh();
   }
   function updateBoostAndFeedback(race: HudRace, car: HudRace, nitroActive: boolean, flying: boolean, calm: boolean): void {
     const visual = getVisual();
@@ -264,9 +266,11 @@ export function createRaceHud(options: HudOptions) {
     }
     setHudText(ui['race-status']!, status);
     const gapWarning = race.phase === 'racing' ? gapChargeWarning(race) : null;
-    setHudText(ui['driving-message']!, race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff']! : car.exhausted && input.fly ? L['hud.releaseRecharge']!
-      : gapWarning ? interpolate(L['hud.gapCharge']!, { n: Math.ceil(gapWarning.need) }) : '');
+    const message = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff']! : car.exhausted && input.fly ? L['hud.releaseRecharge']!
+      : gapWarning ? interpolate(L['hud.gapCharge']!, { n: Math.ceil(gapWarning.need) }) : '';
+    setHudText(ui['driving-message']!, message);
     if (gapWarning) ui['driving-message']!.dataset.tone = 'warning'; else delete ui['driving-message']!.dataset.tone;
+    if (message !== lastDrivingMessage) { lastDrivingMessage = message; feedbackPlacement.refresh(); }
   }
   function updateLeaderboard(race: HudRace, car: HudRace, calm: boolean): void {
     const names = ['YOU', ...race.rivals.map((rival: { name: string }) => rival.name)];

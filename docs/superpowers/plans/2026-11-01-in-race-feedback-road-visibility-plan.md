@@ -119,3 +119,12 @@
 ## Implementation dispatch (for a dedicated GPT chat)
 
 Using connected GitHub repo `weskao/skyline-rush`, implement the above plan in a new isolated `feature/in-race-feedback-visibility` branch created from latest `develop` (if it doesn't already exist); do not edit parallel Wave2 feature branches. Read `CLAUDE.md`, the linked UX spec and plan, `src/callouts.ts`, `src/race-hud.ts`, `src/style.css`, `src/App.vue`, `TutorialCoach.vue`. Prioritize **road visibility over reward animation**. Implement SDD→BDD→TDD with RED proof; real viewport screenshots and fail-case coverage for event storms, important warnings, HUD layouts, safe areas/hinge, zh-TW/en, iOS/Android/desktop and Reduced Motion. Never claim screenshot parity or CI green without artifacts and an exact-HEAD passing run. Preserve rules, scoring, settings and physics. No PR/deploy/automatic develop/main merge.
+
+
+## Execution notes — 2026-11-01 feature branch
+
+- Branch: `feature/in-race-feedback-visibility`, created from `develop` commit `15bfc16a29a73bc60984ab9a00244e1283cb80dd`. The current base already includes `fix/race-hud-overlaps`; keep `tests/race-hud-overlap-browser.spec.js` in the regression gate.
+- Reward policy keeps the existing `createCallouts().update(race, blocked)` API and all gameplay counters; it bounds pending events to two, raises NITRO over routine rewards, shortens normal chips to 0.85 race seconds and suppresses immediate repeated low-priority kinds.
+- Peripheral positioning is measured only on event/content, viewport, and structural HUD changes. The placement module considers a protected central road rectangle, active HUD widgets, safe-area insets and simulated/real viewport segments. No rendering or physics code is changed.
+- Existing sound and haptics already communicate NITRO and related actions; do not add another repetitive audio cue for the small visual chip. DOM-only feedback remains identical at Low/Medium/High quality.
+- **Pending before acceptance:** verified RED/Green test command output, browser WebGL screenshots with measured rects, the full exact-HEAD CI gate, real iOS Safari / Android Chrome validation and reviewer approval. No merge, deploy, or PR is authorized by these notes.
