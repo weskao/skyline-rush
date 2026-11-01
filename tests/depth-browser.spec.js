@@ -5,7 +5,7 @@ import { ciTimeout } from './helpers/ci.js';
 const records = Array.from({ length: 12 }, (_, i) => ({
   date: `2026-01-${String(i + 1).padStart(2, '0')}T12:00:00Z`, track: 'coast',
   position: i === 11 ? 1 : 3, time: 90 - i, score: i * 100, collisions: 0,
-  nearMisses: i, rings: 2, perfectLines: 0, nitroUses: 1, distance: 5000,
+  nearMisses: i, rings: 2, perfectLines: 0, nitroUses: 1, distance: 5000, layout: 2, // runs on today's ring layout
 }));
 const open = async page => {
   await page.goto('/');
