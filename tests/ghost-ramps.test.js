@@ -15,9 +15,7 @@ beforeEach(() => { globalThis.localStorage = memory(); });
 afterEach(() => { delete globalThis.localStorage; });
 
 const canyonConfig = { mode: 'custom', rivals: 0, traffic: 'off', themes: true };
-// Rings are cleared: a slipstream ring taken mid-arc accelerates the car, and a 10 Hz chord then trails it by
-// a·Δt²/8 (about 3 cm), which is the Ghost sample rate, not the ramp arc this test pins.
-const canyon = () => Object.assign(createRace('canyon', canyonConfig), { rings: [] });
+const canyon = () => createRace('canyon', canyonConfig);
 const access = new Set(['coast']);
 const eventLab = () => compileCourse(createRace('coast', { mode: 'custom', rivals: 0, traffic: 'off' }), validateCourse({
   version: 1, label: 'Jumps', trackId: 'coast', seed: 7, modifier: 'standard',

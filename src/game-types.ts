@@ -23,6 +23,8 @@ export interface TrackConfig {
   ringOdds?: readonly [number, number, number, number];
   /** Fixed-grid ring altitudes, cycled by ring index (default 8). */
   ringAltitudes?: readonly number[];
+  /** The first N rings are nitro rings, so the first NITRO comes early without adding rings. */
+  openingNitroRings?: number;
 }
 export interface PlayerSnapshot {
   speed: number;

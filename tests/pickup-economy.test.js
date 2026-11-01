@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createRace, RACE_TRACKS, CAR_HEIGHT, TUNNEL_CEILING, GAP_CLEARANCE } from '../src/game.js';
+import { createRings } from '../src/ring-layout.ts';
 import { measureEconomy, worldTourBaseline, median, WORLD_TOUR } from '../scripts/pickup-economy.mjs';
 
 const layoutHash = id => {
@@ -33,7 +34,7 @@ test('AC3: Aurora, Sky Spiral and the World Tour keep their ring and pickup layo
 });
 
 // AC2: within 15% of the World Tour median for NITRO and BOOST, and the first NITRO no later than it.
-// Canyon was already above the NITRO median; the user chose a floor only, so no ceiling applies there.
+// Canyon already had enough NITRO; the user chose a floor only for it, so no ceiling applies there.
 test('AC2: Coast, Neon and Canyon reach the World Tour BOOST/NITRO economy', () => {
   const base = worldTourBaseline(), within = (value, target) => value >= target * 0.85 && value <= target * 1.15;
   for (const id of ['coast', 'neon', 'canyon']) {
@@ -53,6 +54,13 @@ test('AC5: tuned rings sit below tunnel roofs and above gap holes', () => {
       if (inside(ring, 'gap')) assert.ok(ring.altitude >= GAP_CLEARANCE, `${id} gap ring @${ring.distance}`);
     }
   }
+});
+
+test('Canyon keeps every ring position and count; only its first two rings turn into nitro', () => {
+  const tuned = createRings(RACE_TRACKS.canyon), original = createRings({ ...RACE_TRACKS.canyon, openingNitroRings: 0 });
+  assert.deepEqual(tuned.map(r => [r.distance, r.x, r.altitude, r.group]), original.map(r => [r.distance, r.x, r.altitude, r.group]));
+  assert.deepEqual(tuned.slice(0, 2).map(r => r.type), ['nitro', 'nitro']);
+  assert.deepEqual(tuned.slice(2).map(r => r.type), original.slice(2).map(r => r.type));
 });
 
 test('Coast keeps its classic gate line and alternates high and road-height rings', () => {

@@ -18,7 +18,7 @@ export interface RaceRing { distance: number; x: number; altitude: number; radiu
 
 // Rings come only from the track's 'rings' stream. Coast keeps its original gate grid (x 2.5, altitude 8);
 // other tracks scatter them. Rings are consecutive groups of 3-5 (the last group absorbs the remainder).
-// Optional per-track ringGap / ringOdds / ringAltitudes tune one track; omitted, the defaults keep every layout bit-for-bit.
+// Optional per-track ringGap / ringOdds / ringAltitudes / openingNitroRings tune one track; omitted, the defaults keep every layout bit-for-bit.
 export function createRings(track: TrackConfig, riskLines = true): RaceRing[] {
   const random = seededRng(track.seed, RACE_STREAMS.rings);
   const [gapMin, gapMax] = track.ringGap ?? RING_GAP, [charge, nitro, slip, risk] = track.ringOdds ?? RING_ODDS;
@@ -33,6 +33,7 @@ export function createRings(track: TrackConfig, riskLines = true): RaceRing[] {
       x = Math.round((random() * 2 - 1) * 70) / 10;
       altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
     }
+    if (rings.length < (track.openingNitroRings ?? 0)) type = 'nitro'; // after the rolls: the stream and positions stay the same
     if (inTunnel(distance)) { // the car cannot climb in a tunnel, so a 'risk' ring there would be free
       altitude = 1.5;
       if (type === 'risk') type = 'nitro';

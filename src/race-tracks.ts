@@ -19,7 +19,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, ringGap: [180, 280],
+    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, openingNitroRings: 2, // volume was enough; only the first NITRO came late
     sections: [
       { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
       { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
