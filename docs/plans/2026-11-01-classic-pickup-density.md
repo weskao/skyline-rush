@@ -1,4 +1,4 @@
-# 經典競速前三圖：光圈／道具密度改善計畫
+# 經典競速：光圈／道具密度改善計畫（前三圖起，擴大至五張經典圖與 Circuit）
 
 - 日期：2026-11-01
 - 分支：`feature/classic-pickup-density`（從 `develop` `54de8259` 開出）
@@ -43,8 +43,11 @@
   - 第一次能按 NITRO 的時間（秒）
 
   十張圖都要跑，Coast、Neon、Canyon 的現況寫進本文件的「量測結果」一節。
-- **AC2 前三圖達標**：Coast、Neon、Canyon 的以下指標要達到 World Tour 中位數的 ±15% 以內：每分鐘 NITRO 格數、BOOST 開啟比例，以及第一次能按 NITRO 的時間（不能比基準晚）。
-- **AC3 其他圖不動**：Aurora、Sky Spiral 和 World Tour 五張圖的光圈與道具排列 bit-for-bit 不變，由測試鎖住每張圖的 ring/pickup 序列雜湊。
+- **AC2 經典圖達標**：Coast、Neon、Canyon 的以下指標要達到 World Tour 中位數的 ±15% 以內：每分鐘 NITRO 格數、BOOST 開啟比例，以及第一次能按 NITRO 的時間（不能比基準晚）。
+  - *2026-11-01 擴大範圍*：Aurora、Sky Spiral 和 Circuit 也要達標。
+  - Canyon 的 NITRO 只看下限，而且不增加道具量（見「使用者決定」兩節）。
+- **AC3 其他圖不動**：World Tour 五張圖的光圈與道具排列 bit-for-bit 不變，由測試鎖住每張圖的 ring/pickup 序列雜湊。
+  - *原本也鎖 Aurora、Sky Spiral；2026-11-01 使用者決定把它們併入調整，恢復工作時改成只鎖 World Tour*。
 - **AC4 規則不變**：賽道長度、中心線、捷徑、斷崖與檢查點全部不改。這是道具層級的調整，不是賽道結構變更。
 - **AC5 遮擋與碰撞**：新增的光圈和道具不能放在斷崖洞口上，也不能卡進隧道頂。至少要留兩條車道可以通過，並遵守 CLAUDE.md 的「Solid obstacles」規則。
 
