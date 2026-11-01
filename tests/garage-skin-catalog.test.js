@@ -65,9 +65,9 @@ test('Raster candidates are not mistaken for committed assets; SVG fallback uses
   assert.deepEqual(missing, { src: '/skyline-rush/feature-assets/garage-vfx-skins/airflow.svg', fallback: '/skyline-rush/feature-assets/garage-vfx-skins/airflow.svg', cssSize: 96, candidateRasterId: undefined, hasRaster: false });
   const blueFlare = skinArtwork('launch-flare-blue', '/skyline-rush/');
   assert.ok(blueFlare.hasRaster);
-  assert.match(blueFlare.src, /flare-blue@3x\\.webp$/);
+  assert.match(blueFlare.src, /flare-blue@3x\.webp$/);
   assert.equal(blueFlare.cssSize, 96);
-  assert.equal(skinArtwork('nitro-trail-cyan', 'https://evil.example/').src, '/feature-assets/garage-vfx-skins/nitro-trail.svg');
+  assert.equal(skinArtwork('nitro-trail-cyan', 'https://evil.example/').src, '/feature-assets/garage-vfx-skins/raster/trail-cyan@3x.webp');
 });
 
 test('Cloud payload never serializes ephemeral trial/equip/preview fields', () => {

@@ -24,7 +24,7 @@ test('selected artwork loads its original 3x WebP at 1x CSS size', async ({ page
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('[data-skin="thruster-ion"] img');
-  await expect(ion).toHaveAttribute('src', /raster\\/thruster-ion@3x\\.webp$/);
+  await expect(ion).toHaveAttribute('src', /raster\/thruster-ion@3x\.webp$/);
   await expect(ion).toHaveAttribute('width', '96');
   await expect(ion).toHaveAttribute('height', '96');
   await expect(ion).toBeVisible();
@@ -38,7 +38,7 @@ test('unavailable original WebP falls back to category SVG, without granting own
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('[data-skin="thruster-ion"]');
-  await expect(ion.locator('img')).toHaveAttribute('src', /thruster\\.svg$/);
+  await expect(ion.locator('img')).toHaveAttribute('src', /thruster\.svg$/);
   await expect(ion).toHaveAttribute('data-state', 'trial');
   await expect(page.locator('#garage-equip')).toBeDisabled();
 });
