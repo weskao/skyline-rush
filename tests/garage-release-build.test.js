@@ -72,3 +72,15 @@ test('unpublished skin IDs must be absent from shared race shader and covered by
     assert.ok(gate.includes(id), `missing locked-bundle leak marker: ${id}`);
   }
 });
+
+// The locked strategy must match the shared shader ABI but reveal no new IDs.
+test('locked release returns neutral color and shape patterns', async () => {
+  const { skinVfxPattern, skinVfxPalette } = await import('../src/garage-skin-palette-locked.ts');
+  const expected = { thruster: 0, airflow: 0, 'nitro-trail': 0, 'launch-flare': 0 };
+  assert.deepEqual(skinVfxPattern({}), expected);
+  assert.deepEqual(skinVfxPattern({ thruster: 'thruster-plasma' }), expected);
+  assert.deepEqual(skinVfxPalette({}), Object.fromEntries(Object.keys(expected).map(k => [k, [1, 1, 1]])));
+  const { readFileSync } = await import('node:fs');
+  const gate = readFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url), 'utf8');
+  for (const id of ['thruster-plasma', 'airflow-vortex', 'nitro-trail-gold', 'launch-flare-pulse']) assert.ok(gate.includes(id));
+});
