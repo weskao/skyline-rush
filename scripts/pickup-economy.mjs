@@ -1,6 +1,7 @@
 // Deterministic Classic pickup economy: a scripted bot drives each track and reports how often
 // it can BOOST and NITRO. Run `node scripts/pickup-economy.mjs` for the table.
 import { pathToFileURL } from 'node:url';
+import { writeFileSync } from 'node:fs';
 import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
 
 export const WORLD_TOUR = ['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
@@ -33,20 +34,24 @@ function botInput(race, bot) {
   };
 }
 
-// Traffic and rivals are removed so the numbers measure the track's layout, not collisions.
+// Traffic is removed so the numbers measure the track's layout, not collisions. Rivals are removed too
+// (the stage-1 measurement) unless `rivals: true`, which keeps the mode's grid and counts their NITRO.
 // `options` goes to createRace (mode config or a daily modifier id); `cap` bounds the run in seconds
 // for modes the bot cannot finish (Checkpoint times out, Elimination never ends without rivals).
-export function measureEconomy(trackId, options = undefined, cap = 600) {
+export function measureEconomy(trackId, options = undefined, cap = 600, { rivals = false } = {}) {
   const race = createRace(trackId, options);
   startRace(race);
   race.phase = 'racing';
-  race.traffic = []; race.rivals = [];
+  race.traffic = [];
+  if (!rivals) race.rivals = [];
   const car = race.player, bot = { boost: false, climb: false };
-  let nitroGained = 0, boostedSteps = 0, steps = 0, fuelEmpty = 0, firstNitro = null;
+  let nitroGained = 0, boostedSteps = 0, steps = 0, fuelEmpty = 0, firstNitro = null, rivalNitro = 0;
   while (race.phase === 'racing' && steps < 60 * cap) {
     const input = botInput(race, bot), nitroBefore = car.nitro, fuelBefore = car.fuel;
     const spent = input.nitro && !car.nitroHeld && car.nitro >= 1 ? 1 : 0;
+    const idle = race.rivals.map(r => r.nitroTime === 0);
     stepRace(race, input, DT);
+    rivalNitro += race.rivals.filter((r, i) => idle[i] && r.nitroTime > 0).length;
     steps++;
     nitroGained += car.nitro - nitroBefore + spent;
     if (car.boosting || car.miniBoost > 0) boostedSteps++;
@@ -58,8 +63,21 @@ export function measureEconomy(trackId, options = undefined, cap = 600) {
     trackId, phase: race.phase, time: round(race.elapsed, 1), nitroPerMinute: round(nitroGained / minutes),
     boostShare: round(boostedSteps / steps * 100, 1), fuelEmpty, firstNitro: firstNitro === null ? null : round(firstNitro, 1),
     falls: car.falls, collisions: car.collisions, rings: car.rings, ringsTotal: race.rings.length, pickups: race.pickups.filter(p => p.taken).length,
+    rivals: race.rivals.length, rivalNitro,
   };
 }
+
+// Every mode that draws its rings and pickups from the track (Endless and Event Lab build their own),
+// keyed `<mode>/<difficulty>/<track>`. Only Custom exposes a difficulty; the others race on Normal.
+const SPRINT_MODES = ['classic', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'];
+const sprintTracks = Object.keys(RACE_TRACKS);
+export const ECONOMY_CASES = [
+  ...SPRINT_MODES.flatMap(mode => sprintTracks.map(trackId => ({ mode, difficulty: 'normal', trackId, options: mode === 'classic' ? undefined : { mode } }))),
+  ...['easy', 'normal', 'hard'].flatMap(difficulty => sprintTracks.map(trackId => ({ mode: 'custom', difficulty, trackId, options: { mode: 'custom', rivals: 7, difficulty } }))),
+  { mode: 'circuit', difficulty: 'normal', trackId: 'harbor-circuit', options: { mode: 'circuit', laps: 3 } },
+].map(c => ({ ...c, key: `${c.mode}/${c.difficulty}/${c.trackId}` }));
+
+export const economyMatrix = ({ rivals }) => ECONOMY_CASES.map(c => ({ key: c.key, ...measureEconomy(c.trackId, c.options, 600, { rivals }) }));
 
 export const median = values => {
   const sorted = [...values].sort((a, b) => a - b), mid = sorted.length >> 1;
@@ -71,7 +89,12 @@ export function worldTourBaseline(results = WORLD_TOUR.map(id => measureEconomy(
   return Object.fromEntries(['nitroPerMinute', 'boostShare', 'firstNitro'].map(key => [key, median(results.map(r => r[key]))]));
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.argv.includes('--freeze-stage1')) {
+  // One-off: the stage-1 baseline (rival-free take, today's rival NITRO) that stage 2 is held against.
+  const withRivals = Object.fromEntries(economyMatrix({ rivals: true }).map(r => [r.key, r.rivalNitro]));
+  const rows = Object.fromEntries(economyMatrix({ rivals: false }).map(r => [r.key, { nitroPerMinute: r.nitroPerMinute, boostShare: r.boostShare, rivalNitro: withRivals[r.key] }]));
+  writeFileSync(new URL('./pickup-economy-stage1.json', import.meta.url), JSON.stringify(rows, null, 1) + '\n');
+} else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const rows = Object.keys(RACE_TRACKS).map(id => measureEconomy(id));
   console.table(rows);
   console.log('World Tour median', worldTourBaseline(rows.filter(r => WORLD_TOUR.includes(r.trackId))));
