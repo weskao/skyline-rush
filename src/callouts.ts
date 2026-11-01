@@ -83,10 +83,11 @@ export function createCallouts() {
         if (current) current.started += elapsed;
         return null;
       }
-      if (current && race.elapsed - current.started >= 0.85) current = null;
+      const advancing = !!current && race.elapsed - current.started >= 0.85;
+      if (advancing) current = null;
       if (!current && pending.length) {
-        // Prioritize before choosing the next badge, not after it has already been shown.
-        pending.sort((a, b) => (priority[b.kind] ?? 1) - (priority[a.kind] ?? 1));
+        // Keep the first earned event immediate; prioritize only later queued events.
+        if (advancing) pending.sort((a, b) => (priority[b.kind] ?? 1) - (priority[a.kind] ?? 1));
         const queued = pending.shift();
         if (queued) {
           current = { ...queued, started: race.elapsed };
