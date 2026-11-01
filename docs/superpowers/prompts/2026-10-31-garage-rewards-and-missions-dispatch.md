@@ -1,5 +1,17 @@
 # Copy/Paste Implementation Prompt — Wave 3: garage-rewards-and-missions
 
+## Required Wave 3 asset preflight — verified GitHub source (2026-11-02)
+
+**MANDATORY before implementing or generating images:** Read the [59-file source catalog](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) on **`feature/3x-ui-materials`**, pinned archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. This is a **separate Git branch**, so no WebP source files automatically exist in this feature checkout; do not mistake that for missing artwork. Confirm the current archive head and exact Git blobs before copying. Original PNGs and ZIPs remain in the ChatGPT file library; Git holds 59 authentic 3× WebPs under `docs/designs/3x-asset-library/webp/`.
+
+**Rewards/Missions source:** eight true-alpha WebPs at `docs/designs/3x-asset-library/webp/garage-rewards-and-missions/` (four mission + four trophy icons, 288×288 source → 96×96 CSS). Do not invent currency or payout values.
+
+**3× pixels → 1× layout:** 288×288 → 96×96 CSS px; 216×216 → 72×72 CSS px; 432×156 → 144×52 CSS px. **Never shrink the stored 3× image file to 1×**, nor render it at 3× CSS size. Prefer existing art over regenerating. Review alpha edges, semantics and accessibility, then copy only approved files into the feature's `public/feature-assets/...` runtime directory; use `import.meta.env.BASE_URL`-compatible URLs, `object-fit: contain`, missing-file/SVG/text fallbacks, actual browser WebGL screenshots and SDD→BDD→TDD with exact-HEAD CI. Source archive existence **does not** mean the feature is implemented, visually approved or shipped.
+
+**Use `develop` as the integration target, not historical `main`.** Do not merge or deploy until prerequisites/CI and explicit user approval. When older text below conflicts about missing raster files or integration target, this 2026-11-02 preflight overrides only those outdated facts.
+
+
+
 > This document is an **assignment prompt for a separate GPT chat**, not an authorization to start implementation in the chat that created these plans. Copy the **entire section below** into the assigned GPT chat when its Wave gate is met.
 
 ## Prompt to paste
@@ -11,18 +23,18 @@
 **Wave：** 3  
 **分支的主要檔案所有權：** src/race-results.ts; src/result-screen.ts; src/history-achievements.ts; src/cloud-progress.ts。
 
-**前置/平行條件：** WAIT until garage-economy-foundation is verified and merged to main; then may run in parallel with garage-store-readiness. Ensure actual reward rates and server authority separately approved before live currency grants.
+**前置/平行條件：** WAIT until garage-economy-foundation is verified and merged into develop; then may run in parallel with garage-store-readiness. Ensure actual reward rates and server authority separately approved before live currency grants.
 
 ### 1. 正確的 Git 分支與規格
 
-1. 先查驗 `feature/garage-rewards-and-missions` 是否存在、它的 HEAD，以及最新 `main`。**不要另開 PR，也不要誤改 main**。若前置分支尚未真正完成、CI 未綠或尚未獲准合併，**停在審核/規劃，不准先開始依賴性的實作**。
-2. 依序閱讀本分支的下列檔案，並依最新 `main` 實際原始碼進行衝突/差異檢查：
+1. 先查驗 `feature/garage-rewards-and-missions` 是否存在、它的 HEAD，以及最新 `develop`。**不要另開 PR，也不要誤改 main**。若前置分支尚未真正完成、CI 未綠或尚未獲准合併，**停在審核/規劃，不准先開始依賴性的實作**。
+2. 依序閱讀本分支的下列檔案，並依最新 `develop` 實際原始碼進行衝突/差異檢查：
    - `CLAUDE.md` 與適用的 `.claude/rules/`（特別是 `ui-architecture`、`performance-review`、`device-quality`、`touch-input`、`ui-phase-interactions`）
    - `docs/superpowers/specs/2026-10-31-garage-rewards-and-missions-design.md`（SDD + BDD）
    - `docs/superpowers/plans/2026-10-31-garage-rewards-and-missions-plan.md`（Superpowers 實作計畫）
    - `docs/superpowers/prompts/2026-10-31-garage-rewards-and-missions-visual-design.md`（畫面／美術／素材設計 Prompt，按需製作與審核）
    - 原始需求 `https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/TODO.md` 中對應項目與全平台 S1–S3 規範。
-3. 依照實際差異，在**自己的分支**同步最新 `main`，必要時採非破壞式 rebase/merge 並保留已有的規劃文件與成果。絕不能以舊版 TODO 直接覆寫新的 TODO。
+3. 依照實際差異，在**自己的分支**同步最新 `develop`，必要時採非破壞式 rebase/merge 並保留已有的規劃文件與成果。絕不能以舊版 TODO 直接覆寫新的 TODO。
 
 ### 2. SDD → BDD → TDD（使用 Superpowers 實際技能）
 
@@ -48,7 +60,7 @@
 4. **格式與整合：** UI 小圖示優先既有 24×24 SVG／Vue icon；若使用產生的點陣圖，原稿優先高解析透明 PNG，測試 Alpha、裁切與不同背景可讀性後轉成壓縮透明 WebP。背景使用經壓縮 WebP/JPEG（不得依賴 JPEG 透明）；依設計需要加入適當 1×/2× 版本與檔案尺寸預算。圖片生成輸出**不等於可編輯向量圖**，不可把 PNG 假稱 SVG。正式採用才放進所屬 `public/` 素材資料夾，設計稿放 `docs/designs/<feature>/`，並附來源／用途／壓縮與格式記錄。
 5. **真實畫面與可操作性：** UI 的文字、名次、分數、狀態與觸控按鈕由 Vue 3 + TS + CSS／SVG 真正控制，3D 車輛和速度 VFX 由共用 Three.js renderer 驅動；**不得**用產生的概念圖或截圖遮蓋實際 WebGL 作為完工畫面。
 6. **SDD → BDD → TDD 與品質：** 先定義資產契約／場景／Alpha 條件，再定義 Given／When／Then，對不存在／載入失敗／低畫質／Reduced Motion／深淺背景與小螢幕寫 RED 測試，製作／整合後執行 GREEN。驗收 Android/iOS 直橫向、桌面、Low／Medium／High、VFX Off，使用實際遊戲截圖對比設計，量測下載大小、FPS／p95 frame time、Draw Calls／Triangles 或 shader/cache 影響，無資產時有正常 Fallback。
-7. **執行與放行：** 本次是規劃文件更新，**不代表已有 PNG/WebP/SVG 或已實作**。後續各分支只在自己的 Wave 依賴完成後開始，完成實作與完整驗證才在正確整合的 `TODO.md` 改成 `- [x]`，不得自行合併 main 或跨分支搶改共用 renderer。
+7. **執行與放行：** 本次是規劃文件更新，**不代表已有 PNG/WebP/SVG 或已實作**。後續各分支只在自己的 Wave 依賴完成後開始，完成實作與完整驗證才在正確整合的 `TODO.md` 改成 `- [x]`，不得自行合併 develop 或 main 或跨分支搶改共用 renderer。
 
 ### 3B. 預先完成的獨立美術資產／待前置完成的工作
 

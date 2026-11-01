@@ -1,5 +1,17 @@
 # Race Rewards and Missions Iconography — Visual Design Prompt & Asset Plan
 
+## Required Wave 3 asset preflight — verified GitHub source (2026-11-02)
+
+**MANDATORY before implementing or generating images:** Read the [59-file source catalog](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) on **`feature/3x-ui-materials`**, pinned archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. This is a **separate Git branch**, so no WebP source files automatically exist in this feature checkout; do not mistake that for missing artwork. Confirm the current archive head and exact Git blobs before copying. Original PNGs and ZIPs remain in the ChatGPT file library; Git holds 59 authentic 3× WebPs under `docs/designs/3x-asset-library/webp/`.
+
+**Rewards/Missions source:** eight true-alpha WebPs at `docs/designs/3x-asset-library/webp/garage-rewards-and-missions/` (four mission + four trophy icons, 288×288 source → 96×96 CSS). Do not invent currency or payout values.
+
+**3× pixels → 1× layout:** 288×288 → 96×96 CSS px; 216×216 → 72×72 CSS px; 432×156 → 144×52 CSS px. **Never shrink the stored 3× image file to 1×**, nor render it at 3× CSS size. Prefer existing art over regenerating. Review alpha edges, semantics and accessibility, then copy only approved files into the feature's `public/feature-assets/...` runtime directory; use `import.meta.env.BASE_URL`-compatible URLs, `object-fit: contain`, missing-file/SVG/text fallbacks, actual browser WebGL screenshots and SDD→BDD→TDD with exact-HEAD CI. Source archive existence **does not** mean the feature is implemented, visually approved or shipped.
+
+**Use `develop` as the integration target, not historical `main`.** Do not merge or deploy until prerequisites/CI and explicit user approval. When older text below conflicts about missing raster files or integration target, this 2026-11-02 preflight overrides only those outdated facts.
+
+
+
 **Repo:** https://github.com/weskao/skyline-rush
 **Scope:** prepare visuals for a future separately approved feature implementation; this file is a prompt and approval brief, not proof that any image was generated, source modified or asset shipped.
 **Existing game:** Vue 3 + strict TS UI, Three.js rendering, realistic × arcade mixed aesthetic; use the current `CLAUDE.md` and `.claude/rules/{ui-architecture,performance-review,device-quality,ui-phase-interactions}.md` as constraints.
