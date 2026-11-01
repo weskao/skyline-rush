@@ -843,6 +843,7 @@ test('drift nitro counts toward the cap and the overflow becomes fuel', () => {
 
 test('the mini boost lifts the speed cap past MAX_SPEED without burning fuel', () => {
   const race = driftingRace();
+  race.rings = []; // Coast's road-height rings pay their own fuel and mini boost on this line
   advance(race, 3.05, DRIFT);
   race.player.fuel = 50;
   advance(race, 0.9, { throttle: true });
@@ -954,12 +955,12 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
   assert.notDeepEqual(createRace('coast').rings, createRace('neon').rings);
 });
 
-test('coast keeps the original gate positions every 220 m at x 2.5 and altitude 8', () => {
+test('coast keeps the original gate positions every 220 m at x 2.5, alternating altitude 8 and road-height 3', () => {
   const { rings } = createRace('coast');
   rings.forEach((ring, i) => {
     assert.equal(ring.distance, (i + 1) * 220);
     assert.equal(ring.x, 2.5);
-    assert.equal(ring.altitude, 8);
+    assert.equal(ring.altitude, i % 2 ? 3 : 8);
   });
 });
 

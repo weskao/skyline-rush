@@ -17,6 +17,12 @@ export interface TrackConfig {
   seed: number;
   sections: TrackSection[];
   fixedRings?: boolean;
+  /** [min, max] metres to the next ring (default [200, 320]); a fixed grid steps by min (default 220). */
+  ringGap?: readonly [number, number];
+  /** Cumulative roll thresholds for charge / nitro / slipstream / risk rings; the rest is mystery. */
+  ringOdds?: readonly [number, number, number, number];
+  /** Fixed-grid ring altitudes, cycled by ring index (default 8). */
+  ringAltitudes?: readonly number[];
 }
 export interface PlayerSnapshot {
   speed: number;

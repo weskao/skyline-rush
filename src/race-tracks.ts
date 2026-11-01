@@ -3,20 +3,23 @@ import type { TrackConfig } from './game-types.ts';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
+// Classic layout v2 (Coast, Neon, Canyon): denser, more rewarding rings, tuned by scripts/pickup-economy.mjs to
+// the World Tour BOOST/NITRO median. Every other track keeps the defaults bit-for-bit.
+const BOOST_ODDS = [0.4, 0.7, 0.8, 0.9] as const; // charge 40%, nitro 30%, slipstream 10%, risk 10%, mystery 10% (unchanged)
 export const RACE_TRACKS: Record<string, TrackConfig> = {
-  coast: { // fixedRings: the original gate grid
-    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, fixedRings: true,
+  coast: { // fixedRings: the original gate grid; every other ring is low enough to take from the road
+    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS,
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },
   neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002,
+    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, ringGap: [150, 220], ringOdds: BOOST_ODDS,
     sections: [
       { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
       { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
     ],
   },
   canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003,
+    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, ringGap: [180, 280],
     sections: [
       { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
       { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
