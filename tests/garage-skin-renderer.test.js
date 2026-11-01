@@ -134,3 +134,22 @@ test('launch ring and pulse loop visibly in Studio without altering race progres
   }
   assert.deepEqual(race, before, 'cosmetics do not change acceleration or race state');
 });
+
+test('Garage Home readied car previews NITRO ribbon and Void beams even without race boost', async () => {
+  const { createRace } = await import('../src/game.js');
+  const { Vector3 } = await import('three');
+  const { vfxSettings } = await import('../src/vfx-settings.ts');
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  const aero = createAeroVFX(scene, car), race = createRace();
+  race.phase = 'ready'; race.player.speed = 0; race.player.boosting = false;
+  race.player.nitroTime = race.player.miniBoost = 0;
+  const original = structuredClone(race);
+  const settings = vfxSettings({ enabled: true, airflow: true });
+  aero.setSkins({ thruster: 'thruster-void', 'nitro-trail': 'nitro-trail-gold' });
+  for (let i = 0; i < 90; i++) aero.update(race, 1 / 60, new Vector3(), settings, false, null, true);
+  assert.equal(car.getObjectByName('Void pulse beams').visible, true);
+  assert.ok(scene.getObjectByName('Continuous dash ribbon').geometry.attributes.alpha.array.some(a => a > 0),
+    'ready-phase Home must preview the real wake, rather than hiding all NITRO skins');
+  assert.deepEqual(race, original);
+});
