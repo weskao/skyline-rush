@@ -127,6 +127,15 @@ jobs:
             test-results/**/foldable-*.png
             test-results/**/fallback-*.png
           if-no-files-found: ignore
+      - name: Upload real Garage VFX Home and Studio WebGL screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: garage-vfx-preview-${{ matrix.shard }}
+          path: |
+            test-results/**/garage-void-home-*.png
+            test-results/**/garage-launch-flare-*.png
+          if-no-files-found: ignore
       # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
 

@@ -87,7 +87,11 @@ export function createGarageStage(environment: THREE.Texture) {
     // Garage orbit views must see the energy ring edge-on and face-on.
     for (const name of ['Ignition shockwave', 'Launch flare echo']) {
       const ring = scene.getObjectByName(name);
-      if (ring?.visible) ring.quaternion.copy(camera.quaternion);
+      if (ring?.visible) {
+        ring.quaternion.copy(camera.quaternion);
+        // Draw the flare in front of the car rather than hiding it inside the body.
+        ring.position.addScaledVector(camera.getWorldDirection(origin).negate(), carRadius * 0.52);
+      }
     }
   }
 

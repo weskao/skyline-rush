@@ -50,3 +50,26 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await expect(preview).toHaveAttribute('data-skin-preview-launch-flare', 'launch-flare-basic');
   });
 }
+
+test('all 16 cosmetics drive distinct GPU patterns in the live Preview Studio', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  const cases = [
+    { category: 'thruster', field: 'data-gpu-thruster-pattern', skins: ['thruster-basic', 'thruster-ion', 'thruster-plasma', 'thruster-void'] },
+    { category: 'airflow', field: 'data-gpu-airflow-pattern', skins: ['airflow-basic', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism'] },
+    { category: 'nitro-trail', field: 'data-gpu-trail-pattern', skins: ['nitro-trail-basic', 'nitro-trail-cyan', 'nitro-trail-gold', 'nitro-trail-red'] },
+    { category: 'launch-flare', field: 'data-gpu-launch-pattern', skins: ['launch-flare-basic', 'launch-flare-blue', 'launch-flare-ring', 'launch-flare-pulse'] },
+  ];
+  const preview = page.locator('#garage-preview');
+  for (const { category, field, skins } of cases) {
+    for (const [mode, skin] of skins.entries()) {
+      const card = page.locator(`#garage-vfx-catalog [data-skin="${skin}"]`);
+      await card.getByRole('button', { name: /preview|預覽/i }).click();
+      await expect(preview).toHaveAttribute(field, String(mode));
+      await expect(preview).toHaveAttribute(`data-skin-preview-${category}`, skin);
+      await expect(card).toHaveAttribute('data-preview-active', 'true');
+      await expect(preview).toHaveAttribute(`data-skin-equipped-${category}`, skins[0]);
+    }
+  }
+});
