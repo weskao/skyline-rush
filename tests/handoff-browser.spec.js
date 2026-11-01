@@ -81,14 +81,17 @@ test.describe('touch controls', () => {
     await page.keyboard.press('p');
     await expect(page.locator('#layout-toolbar')).toBeHidden();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape);
-    expect(Object.keys(saved)).toHaveLength(7);
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')));
+    expect(saved.version).toBe(2);
+    expect(Object.keys(saved.landscape)).toHaveLength(7);
+    expect(saved.portrait).toEqual({});
     await page.reload();
     await start(page);
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', 'right');
-    const savedAgain = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape);
-    expect(savedAgain).toEqual(saved);
-    for (const [action, point] of Object.entries(saved)) {
+    const savedAgain = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')));
+    expect(savedAgain.landscape).toEqual(saved.landscape);
+    expect(savedAgain.portrait).toEqual({});
+    for (const [action, point] of Object.entries(saved.landscape)) {
       const rect = await page.locator(`[data-control="${action}"]`).boundingBox();
       expect(rect.x + rect.width / 2).toBeCloseTo((1 - point.x) * 844, 0);
       expect(rect.y + rect.height / 2).toBeCloseTo(point.y * 390, 0);
@@ -104,7 +107,7 @@ test.describe('touch controls', () => {
     await page.locator('[data-controls="hand"][value="left"]').check();
     await page.locator('#layout-edit').click();
     const mirrored = await page.locator('[data-control="right"]').boundingBox();
-    expect(mirrored.x + mirrored.width / 2).toBeCloseTo(saved.right.x * 844, 0);
+    expect(mirrored.x + mirrored.width / 2).toBeCloseTo(saved.landscape.right.x * 844, 0);
     await page.locator('#layout-done').click();
     await page.locator('#controls-button').click();
     await page.locator('#layout-reset').click();
@@ -179,6 +182,7 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();
   await expect(page.locator('#nitro-status')).toHaveText('NITRO READY');
+  await expect(page.locator('#nitro-meter')).toHaveAttribute('data-nitro-state', 'ready');
   await expect(page.locator('.nitro-segment.is-full')).toHaveCount(3);
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'nitro-max');
   await page.emulateMedia({ reducedMotion: 'reduce' });
