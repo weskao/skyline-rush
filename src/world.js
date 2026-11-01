@@ -533,6 +533,7 @@ export function createWorld(canvas) {
   // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
   let visual = vfxSettings();
+  let garageHomeVisual = { ...visual, airflow: true }; // Recompute on settings event, not in the frame loop.
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
@@ -631,7 +632,7 @@ export function createWorld(canvas) {
       adaptiveScale = scale; this.configureVFX(visual);
     },
     configureVFX(options) {
-      visual=vfxSettings(options); garageStage?.configureVFX(visual);
+      visual=vfxSettings(options); garageHomeVisual = { ...visual, airflow: true }; garageStage?.configureVFX(visual);
       const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
@@ -928,7 +929,7 @@ export function createWorld(canvas) {
         speed: car.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion,
       });
       const sprintFrame = sprintVisual.update(sprintInput);
-      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion, sprintFrame, garageHomePreview);
+      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), garageHomePreview ? garageHomeVisual : visual, reducedMotion, sprintFrame, garageHomePreview);
       const boostStrength = race.phase === 'racing' ? sprintFrame.power : 0;
       const portrait = camera.aspect < 0.8;
       if (photoView && race.phase === 'paused') {
