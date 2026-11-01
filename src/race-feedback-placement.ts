@@ -69,8 +69,12 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) 
           size = el.getBoundingClientRect();
           slot = pickPeripheralSlot(viewport, size, [...obstacles, ...extra], { preferred, targetY, insets });
         }
+        if (!slot && el === warning) {
+          // Actionable warnings still appear when every HUD-safe strip is occupied.
+          slot = pickPeripheralSlot(viewport, size, [], { preferred, targetY, insets });
+        }
         if (!slot) {
-          // No edge slot: never revert to the road-centre banner.
+          // Decorative rewards yield rather than cover the road.
           el.style.visibility = 'hidden';
           return null;
         }
@@ -91,7 +95,9 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) 
   };
   window.addEventListener('resize', refresh, { passive: true });
   const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(refresh);
-  for (const block of blocks) observer?.observe(block);
+  // Only structural layout changes invalidate placements; numeric HUD text changes every tick.
+  for (const block of blocks.filter(el => el.matches('.race-progress, .leaderboard, .race-route-map, .mode-indicator, .aero-tools')))
+    observer?.observe(block);
   new MutationObserver(refresh).observe(document.body, { attributes: true, attributeFilter: ['data-hud-mode', 'data-fold-axis', 'data-phase'] });
   return { refresh };
 }
