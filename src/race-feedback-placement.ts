@@ -106,5 +106,8 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) 
   for (const block of blocks.filter(el => el.matches('.race-progress, .leaderboard, .race-route-map, .mode-indicator, .aero-tools')))
     observer?.observe(block);
   new MutationObserver(refresh).observe(document.body, { attributes: true, attributeFilter: ['data-hud-mode', 'data-fold-axis', 'data-phase'] });
+  // The GO countdown hides the flight telemetry via CSS :has(); when GO clears, that space is taken again.
+  const countdown = document.getElementById('countdown');
+  if (countdown) new MutationObserver(refresh).observe(countdown, { attributes: true, attributeFilter: ['hidden'] });
   return { refresh };
 }

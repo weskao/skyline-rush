@@ -44,3 +44,30 @@ for (const { name, width, height, touch } of [
     });
   });
 }
+
+// The "GO" countdown hides the flight telemetry (style.css: body:has(#countdown:not([hidden])) .telemetry), so a reward
+// placed during GO saw that space as free; when GO cleared under a still-visible chip, the telemetry reappeared under it
+// (develop CI 844x390, race-hud-overlap-browser.spec.js). GO is cleared by hand so slow and fast machines see the same order.
+test.describe('reward placed during GO stays clear once the telemetry returns', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true });
+  test('phone landscape', async ({ gameplayPage: page }) => {
+    test.setTimeout(ciTimeout(120_000));
+    await page.locator('#start-button').click();
+    // rAF polling: an interval poll can land after GO has already cleared.
+    await page.waitForFunction(() => window.gameplay.race.phase === 'racing', null, { polling: 'raf', timeout: ciTimeout(20_000) });
+    const result = await page.evaluate(async () => {
+      const chip = document.getElementById('event-callout'), go = document.getElementById('countdown');
+      const telemetry = document.querySelector('.flight-telemetry');
+      if (go.hidden) return 'GO already cleared';
+      Object.assign(window.gameplay.race.player, { speed: 80, nitroTime: 4, x: 0 });
+      while (chip.hidden) await new Promise(requestAnimationFrame);
+      go.hidden = true; // what the HUD does when GO ends
+      await new Promise(resolve => setTimeout(resolve, 0)); // let observers run, but no new callout frame decides it
+      if (getComputedStyle(telemetry).visibility !== 'visible') return 'telemetry still hidden';
+      const a = chip.getBoundingClientRect(), b = telemetry.getBoundingClientRect();
+      return a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top
+        ? 'clear' : `chip ${JSON.stringify(a)} overlaps telemetry ${JSON.stringify(b)}`;
+    });
+    expect(result).toBe('clear');
+  });
+});
