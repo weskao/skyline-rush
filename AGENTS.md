@@ -1,5 +1,10 @@
 # Agent guidance
 
+## Required 3× HUD asset handoff (2026-11-02)
+
+Read [the 18-image implementation and exact source-use map](docs/designs/mobile-3x-ui-assets.md) before changing HUD art, input geometry, or controls. Original WebP source pixels are kept at 3× with 1× CSS display; this feature branch is for UI art integration only. Never hide functional SVG/accessibility controls beneath art or treat decorative assets as completed game features.
+
+
 Read applicable `CLAUDE.md`, `.claude/CLAUDE.md`, and `.claude/rules/*.md` instructions.
 At conversation startup, also read `$HOME/.claude/CLAUDE.md` and applicable rules under
 `$HOME/.claude/rules/`. Treat these as supplementary guidance, subject to instruction priority.
