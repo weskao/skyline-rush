@@ -5,7 +5,7 @@ import { CIRCUIT_ID } from '../src/circuit-track.ts';
 import { layoutVersion, raceLayout, recordTrackId, runLayout, parseRecordTrackId, isCurrentLayout } from '../src/record-layout.ts';
 import { BEST_KEY, recordBest, loadBests, recordRace, loadModeBest, recordModeRace, loadModeHistory, loadGhost, saveGhost, loadModeGhost, saveModeGhost } from '../src/history.ts';
 import { loadCircuitLapBest, circuitLapKey } from '../src/circuit-records.ts';
-import { mergeProgress, mergeModeBests } from '../src/cloud-progress.ts';
+import { mergeProgress, mergeModeBests, readLocalProgress, saveLocalProgress, parseProgressExport, readLocalModeBests, saveLocalModeBests } from '../src/cloud-progress.ts';
 import { settleRace } from '../src/race-results.ts';
 import { createGhostStore } from '../src/ghost-store.ts';
 import { GHOST_RATE } from '../src/ghost.ts';
@@ -207,4 +207,21 @@ test('firestore.rules accepts exactly the versioned Classic best ids the client 
   const versioned = Object.keys(RACE_TRACKS).map(id => recordTrackId(id)).filter(id => id.includes('@'));
   assert.deepEqual(listed.sort(), [...versioned].sort());
   for (const id of versioned) assert.match(rules, new RegExp(`validBest\\(data\\.bests, '${id}'\\)`), id);
+});
+
+test('AC2 device: export, import and a cloud merge write old and new records back bit-for-bit', () => {
+  const config = createRace('coast', { mode: 'time' }).config, rules = JSON.stringify(config);
+  const device = memory({
+    [BEST_KEY]: JSON.stringify({ coast: 40, 'coast@2': 70, aurora: 50 }),
+    'skyline-rush-history': JSON.stringify([{ date: '2026-01-01T00:00:00.000Z', track: 'coast', position: 1, time: 40, collisions: 0, nearMisses: 0, rings: 0, perfectLines: 0, nitroUses: 0, longestCombo: 0, score: 0, fuelOuts: 0, gapFalls: 0, distance: 5000 },
+      { date: '2026-02-01T00:00:00.000Z', track: 'coast', position: 1, time: 70, collisions: 0, nearMisses: 0, rings: 0, perfectLines: 0, nitroUses: 0, longestCombo: 0, score: 0, fuelOuts: 0, gapFalls: 0, distance: 5000, layout: 2 }]),
+    'skyline-rush-mode-bests-v1': JSON.stringify({ [JSON.stringify(['coast', config])]: 40, [JSON.stringify(['coast@2', config])]: 70 }),
+  });
+  const exported = JSON.stringify({ ...readLocalProgress(device), permanent: readLocalModeBests(device) });
+  const imported = parseProgressExport(exported), fresh = memory();
+  assert.ok(saveLocalProgress(imported.progress, fresh));
+  assert.ok(saveLocalModeBests(imported.permanent, fresh));
+  for (const key of [BEST_KEY, 'skyline-rush-history', 'skyline-rush-mode-bests-v1']) assert.deepEqual(JSON.parse(fresh.data[key]), JSON.parse(device.data[key]), key);
+  const synced = mergeProgress(readLocalProgress(fresh), { version: 2, bests: { 'coast@2': 90 }, history: [] });
+  assert.deepEqual(synced.bests, { coast: 40, 'coast@2': 70, aurora: 50 });
 });
