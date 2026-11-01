@@ -1,4 +1,7 @@
 import { PAINTS } from './appearance.ts';
+import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
+import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
+import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
 import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
@@ -14,8 +17,11 @@ interface GarageWorld {
   previewAppearance(paint: Paint): void;
   resize(): void;
   setGarageCamera(camera: GarageCamera | null): void;
+  setCosmeticSkins?(ids: Record<SkinCategory, SkinId>): void;
+  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>): void;
   inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean } | null;
   inspectRenderLoad?(): { drawCalls: number; triangles: number };
+  inspectPrograms?(): number;
 }
 interface GarageDependencies {
   getWorld(): GarageWorld | null | undefined;
@@ -24,6 +30,7 @@ interface GarageDependencies {
   getEquippedPaint(): string;
   setEquippedPaint(id: string): void;
   getStars(): number;
+  subscribeAccount(listener: (uid: string | null) => void): void;
 }
 
 export function garagePresentation(
@@ -36,7 +43,7 @@ export function garagePresentation(
 
 // Preserve the existing WebGL canvas, paint entitlement source and race state.
 export function setupGarageUI({
-  getWorld, canOpen, clearControls, getEquippedPaint, setEquippedPaint, getStars,
+  getWorld, canOpen, clearControls, getEquippedPaint, setEquippedPaint, getStars, subscribeAccount,
 }: GarageDependencies) {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
@@ -47,6 +54,20 @@ export function setupGarageUI({
   let autoPaused = false;
   const contacts = new Map<number, { x: number; y: number }>();
   let pendingStudioInspection = false;
+  function syncSkins(): void {
+    const equipped = currentGarageSkins();
+    const studio = garageScreen.open && garageStudioView.page === 'studio';
+    const selected = studio ? selectedGarageSkins() : equipped;
+    getWorld()?.setCosmeticSkins?.(equipped);
+    getWorld()?.setGarageSkinPreview?.(selected);
+    for (const category of SKIN_CATEGORIES) {
+      preview.setAttribute(`data-skin-preview-${category}`, selected[category]);
+      preview.setAttribute(`data-skin-equipped-${category}`, equipped[category]);
+    }
+    inspectStudioAfterFrame();
+  }
+  subscribeGarageSkins(syncSkins);
+  subscribeAccount(setGarageSkinAccount);
   function inspectStudioAfterFrame() {
     if (pendingStudioInspection || garageStudioView.page !== 'studio') return;
     pendingStudioInspection = true;
@@ -63,6 +84,8 @@ export function setupGarageUI({
         preview.dataset.drawCalls = String(load.drawCalls);
         preview.dataset.triangles = String(load.triangles);
       }
+      const programs = getWorld()?.inspectPrograms?.();
+      if (programs !== undefined) preview.dataset.shaderPrograms = String(programs);
     }));
   }
 
@@ -102,6 +125,7 @@ export function setupGarageUI({
     delete preview.dataset.carInFrame;
     getWorld()?.setGarageCamera(page === 'studio' ? camera : null);
     getWorld()?.resize();
+    syncSkins();
     inspectStudioAfterFrame();
     queueMicrotask(() => (page === 'studio' ? preview : $('#garage-studio-open')).focus({ preventScroll: true }));
   }
@@ -167,6 +191,7 @@ export function setupGarageUI({
     $('#app').prepend($('#world'));
     getWorld()?.setGarageCamera(null);
     getWorld()?.resize();
+    cancelGarageSkinPreview();
     previewPaint(getEquippedPaint());
     updateGarageStudioView({ page: 'home' });
     clearControls();
@@ -225,5 +250,5 @@ export function setupGarageUI({
     event.preventDefault();
   });
   showGarage();
-  return { showGarage };
+  return { showGarage, syncSkins };
 }

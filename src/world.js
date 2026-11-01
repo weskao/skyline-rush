@@ -111,7 +111,7 @@ export function createWorld(canvas) {
   const room = new RoomEnvironment();
   const environment = env.fromScene(room, 0.04);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null;
+  scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
   room.dispose();
   env.dispose();
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
@@ -543,8 +543,8 @@ export function createWorld(canvas) {
   let photoView = null, photoCapture = null, garageCamera = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
-  let sizeKey = '', warmupPending = true;
-  const restoreWarmup = () => { warmupPending = true; };
+  let sizeKey = '', warmupPending = true, garageWarmupPending = true;
+  const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
   canvas.addEventListener('webglcontextrestored', restoreWarmup);
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
@@ -611,7 +611,7 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); if (garagePaint) garageStage.setPaint(garagePaint); } if (!snapshot) renderPass.scene = scene; },
+    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGarageSkinPreview(ids) { garagePreviewSkins = ids; garageStage?.setSkins(ids); },
     inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint);
@@ -622,7 +622,7 @@ export function createWorld(canvas) {
       adaptiveScale = scale; this.configureVFX(visual);
     },
     configureVFX(options) {
-      visual=vfxSettings(options);
+      visual=vfxSettings(options); garageStage?.configureVFX(visual);
       const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
@@ -648,7 +648,7 @@ export function createWorld(canvas) {
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
-      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.12; renderer.info.reset(); composer.render(dt); return; }
+      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.12; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; }
       renderPass.scene = scene;
       endlessActive=!!race.endless;
       const preview = race.phase === 'ready';

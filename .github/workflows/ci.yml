@@ -46,6 +46,8 @@ jobs:
       # Strict TS + real Vue SFC template semantic check + documented JS islands.
       - run: npm run typecheck
       - run: npm test
+      # Always prove the public (default) artifact excludes unreleased Garage modules and assets.
+      - run: npm run build
 
   # CPU-only WebGL makes the serial suite take about 6.4 runner-hours. Playwright's own --shard cuts equal contiguous
   # slices, so 16 of them ran 14 to 48 min; scripts/ci-shards.mjs packs tests by the durations in
@@ -262,6 +264,10 @@ jobs:
           echo "$code passed CI on main: $run"
 
   deploy:
+    # Explicit review-controlled mode; repo/environment overrides cannot activate unreleased client code.
+    # Change this one value in an approved deploy commit for a future Trial or Released rollout.
+    env:
+      GARAGE_VFX_RELEASE_MODE: coming-soon
     # A tag run skips browser and cloud suites; a manual run skips release-verified.
     if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.cloud-save.result) && contains(fromJSON('["success", "skipped"]'), needs.world-tour-mid-race.result) && contains(fromJSON('["success", "skipped"]'), needs.quality-gate.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
     needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, quality-gate, release-verified]

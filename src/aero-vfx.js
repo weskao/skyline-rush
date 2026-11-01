@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { skinVfxPalette } from '#garage-skin-palette';
 import { TRICK_ROLL_TIME } from './game.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -44,21 +45,21 @@ export function createAeroVFX(scene, vehicle) {
   vehicle.add(local);
   const flow = new THREE.Mesh(streamGeometry(), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])),
+    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), skinTint: { value: new THREE.Vector3(1, 1, 1) } },
     vertexShader: `attribute float flowType; attribute float lane; varying vec2 vUv; varying float vType; varying float vLane;
       uniform float time; uniform float turbulence; uniform float downforce;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
         float wake=smoothstep(2.5,6.,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13;
         p.y+=wake*downforce*.25;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
     fragmentShader: `varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time,power,speed,density,length,suction,downforce,nitroMix;
+      uniform float time,power,speed,density,length,suction,downforce,nitroMix;uniform vec3 skinTint;
       void main(){if(vLane>density)discard;
         float t=fract(vUv.x*2.-time*speed+vLane*3.);
         float pulse=smoothstep(1.-length,1.-length+.06,t)*(1.-smoothstep(.91,1.,t));
         float point=pow(max(0.,1.-abs(t-.88)*22.),3.);
         float ends=smoothstep(0.,.09,vUv.x)*(1.-smoothstep(.85,1.,vUv.x));
         float strength=vType>.5&&vType<1.5?suction*(.55+downforce*.45):vType>1.5?.35+downforce*.55:1.;
-        vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4);
+        vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4)*skinTint;
         color=mix(color,vec3(.72,.4,1.),clamp(nitroMix,0.,1.)*.85);
         gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength);}`,
   }));
@@ -78,16 +79,16 @@ export function createAeroVFX(scene, vehicle) {
   jetGeometry.rotateX(-Math.PI / 2); jetGeometry.translate(0, 0, 0.5);
   const jetMaterial = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 } },
+    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme,nitroMix;
+    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme,nitroMix;uniform vec3 skinTint;
       void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
         float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
         float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
         float core=exp(-t*7.);float fade=pow(max(0.,1.-t),1.7)*smoothstep(0.,.025,t);
         vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
-        color=mix(color,vec3(.68,.42,1.),clamp(nitroMix,0.,1.)*.65);
+        color=mix(color*skinTint,vec3(.68,.42,1.),clamp(nitroMix,0.,1.)*.65); // skin tints the base; NITRO purple stays readable on every skin
         gl_FragColor=vec4(color*brightness*(1.+core+cells),fade*(.15+core*.55+cells*.35)*breakup*power);}`,
   });
   const jets = REAR_PORTS.map((port, i) => {
@@ -106,10 +107,11 @@ export function createAeroVFX(scene, vehicle) {
   for (const [name, array, size] of [['position', positions, 3], ['alpha', alphas, 1], ['size', sizes, 1]]) particleGeo.setAttribute(name, new THREE.BufferAttribute(array, size).setUsage(THREE.DynamicDrawUsage));
   const vapor = new THREE.Points(particleGeo, new THREE.ShaderMaterial({
     transparent: true, depthWrite: false,
+    uniforms: { skinTint: { value: new THREE.Vector3(1, 1, 1) } },
     vertexShader: `attribute float alpha,size;varying float vAlpha;void main(){vAlpha=alpha;vec4 p=modelViewMatrix*vec4(position,1.);
       gl_PointSize=clamp(size*240./max(1.,-p.z),0.,80.);gl_Position=projectionMatrix*p;}`,
-    fragmentShader: `varying float vAlpha;void main(){float r=length(gl_PointCoord*2.-1.);if(r>1.)discard;
-      gl_FragColor=vec4(.8,.9,.98,exp(-r*r*5.)*(1.-smoothstep(.6,1.,r))*vAlpha);}`,
+    fragmentShader: `varying float vAlpha;uniform vec3 skinTint;void main(){float r=length(gl_PointCoord*2.-1.);if(r>1.)discard;
+      gl_FragColor=vec4(vec3(.8,.9,.98)*skinTint,exp(-r*r*5.)*(1.-smoothstep(.6,1.,r))*vAlpha);}`,
   }));
   vapor.name = 'World space gas wake'; vapor.frustumCulled = false; scene.add(vapor);
   const segments = Array.from({ length: 64 }, () => ({ life: 0, roll: false, a: new THREE.Vector3(), b: new THREE.Vector3(), left: new THREE.Vector3(), right: new THREE.Vector3() }));
@@ -122,8 +124,9 @@ export function createAeroVFX(scene, vehicle) {
   ribbonGeo.setAttribute('uv', new THREE.BufferAttribute(ribbonUV, 2));
   const ribbon = new THREE.Mesh(ribbonGeo, new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    uniforms: { skinTint: { value: new THREE.Vector3(1, 1, 1) } },
     vertexShader: 'attribute float alpha,rollWake;varying float vAlpha,vRoll;varying vec2 vUv;void main(){vAlpha=alpha;vRoll=rollWake;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: 'varying float vAlpha,vRoll;varying vec2 vUv;void main(){float u=clamp(vUv.x,0.,1.);float edge=vRoll>.5?pow(max(0.,1.-min(u,1.-u)*12.),2.):pow(max(0.,sin(u*3.14159)),3.);gl_FragColor=vec4(.5,.8,1.,edge*vAlpha);}',
+    fragmentShader: 'varying float vAlpha,vRoll;varying vec2 vUv;uniform vec3 skinTint;void main(){float u=clamp(vUv.x,0.,1.);float edge=vRoll>.5?pow(max(0.,1.-min(u,1.-u)*12.),2.):pow(max(0.,sin(u*3.14159)),3.);gl_FragColor=vec4(vec3(.5,.8,1.)*skinTint,edge*vAlpha);}',
   }));
   ribbon.name = 'Continuous dash ribbon'; ribbon.frustumCulled = false; scene.add(ribbon);
   let segmentCursor = 0;
@@ -139,8 +142,9 @@ export function createAeroVFX(scene, vehicle) {
   const shockPosition = new THREE.Vector3();
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
+  const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#b98aff');
   let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  let quality = 1, settings, delta;
+  let quality = 1, settings, delta, launchSkinActive = false, lastPhase = 'ready';
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
@@ -163,10 +167,22 @@ export function createAeroVFX(scene, vehicle) {
     segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonGeo.attributes.alpha.needsUpdate = true;
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
     jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = false;
-    hadPosition = wasBoosting = wasNitro = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null;
+    hadPosition = wasBoosting = wasNitro = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null; lastPhase = 'ready';
   }
   return {
     reset,
+    setSkins(ids) {
+      // Event-driven cosmetic updates reuse existing materials, geometries and GPU buffers.
+      const palette = skinVfxPalette(ids ?? {});
+      launchSkinActive = palette['launch-flare'][2] > 1;
+      flow.material.uniforms.skinTint.value.fromArray(palette.airflow);
+      for (const jet of jets) jet.material.uniforms.skinTint.value.fromArray(palette.thruster);
+      vapor.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
+      ribbon.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
+      if (launchSkinActive) shockColor.setRGB(...palette['launch-flare']);
+      else shockColor.set('#bdeeff');
+      shock.material.color.copy(shockColor);
+    },
     group: local, // effects riding on the vehicle; not part of its silhouette
     update(race, dt, origin, options, reducedMotion, sprintFrame = null) {
       settings = options;
@@ -195,11 +211,11 @@ export function createAeroVFX(scene, vehicle) {
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
-      if ((boost && !wasBoosting) || (nitroActive && !wasNitro)) {
+      if ((boost && !wasBoosting) || (nitroActive && !wasNitro) || (launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown'))) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }
-      wasBoosting = boost; wasNitro = nitroActive; lastImpact = car.impact;
-      shock.material.color.set(nitroActive ? '#b98aff' : '#bdeeff');
+      wasBoosting = boost; wasNitro = nitroActive; lastPhase = race.phase; lastImpact = car.impact;
+      shock.material.color.copy(nitroActive ? nitroShockColor : shockColor);
       shockAge += dt;
       const fu = flow.material.uniforms;
       fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + strength * 0.6);
