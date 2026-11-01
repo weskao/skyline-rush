@@ -12,7 +12,6 @@ test('BDD catalog groups all four categories with stable unique IDs and default 
   for (const category of SKIN_CATEGORIES) {
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && s.default).length, 1);
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length, 3);
-    assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length, 3);
   }
 });
 

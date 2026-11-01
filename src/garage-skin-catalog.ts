@@ -1,4 +1,4 @@
-// Phase A only: stable cosmetic contracts. No renderer hookup, time-based writes or ownership grants.
+// Wave 2 Phase B: account-scoped cosmetic contracts; variants affect visuals only.
 export const SKIN_CATEGORIES = ['thruster', 'airflow', 'nitro-trail', 'launch-flare'] as const;
 export type SkinCategory = (typeof SKIN_CATEGORIES)[number];
 export const SKIN_SCHEMA_VERSION = 1 as const;
@@ -13,12 +13,20 @@ type SkinDefinition = {
 export const GARAGE_SKINS = [
   { id: 'thruster-basic', category: 'thruster', default: true, name: { en: 'Standard thruster', 'zh-TW': '標準推進器' }, candidateRasterId: 'thruster-basic' },
   { id: 'thruster-ion', category: 'thruster', default: false, name: { en: 'Ion thruster', 'zh-TW': '離子推進器' }, candidateRasterId: 'thruster-ion' },
+  { id: 'thruster-plasma', category: 'thruster', default: false, name: { en: 'Plasma helix', 'zh-TW': '電漿螺旋' }, candidateRasterId: 'thruster-plasma' },
+  { id: 'thruster-void', category: 'thruster', default: false, name: { en: 'Void pulse', 'zh-TW': '虛空脈衝' }, candidateRasterId: 'thruster-void' },
   { id: 'airflow-basic', category: 'airflow', default: true, name: { en: 'Standard airflow', 'zh-TW': '標準氣流' } },
   { id: 'airflow-slipstream', category: 'airflow', default: false, name: { en: 'Slipstream', 'zh-TW': '流線氣流' } },
+  { id: 'airflow-vortex', category: 'airflow', default: false, name: { en: 'Vortex spiral', 'zh-TW': '渦旋氣流' } },
+  { id: 'airflow-prism', category: 'airflow', default: false, name: { en: 'Prism lattice', 'zh-TW': '稜鏡氣流' } },
   { id: 'nitro-trail-basic', category: 'nitro-trail', default: true, name: { en: 'Standard NITRO trail', 'zh-TW': '標準氮氣尾跡' } },
   { id: 'nitro-trail-cyan', category: 'nitro-trail', default: false, name: { en: 'Cyan trail', 'zh-TW': '青色尾跡' }, candidateRasterId: 'trail-cyan' },
+  { id: 'nitro-trail-gold', category: 'nitro-trail', default: false, name: { en: 'Golden pulse trail', 'zh-TW': '金色脈衝尾跡' }, candidateRasterId: 'trail-gold' },
+  { id: 'nitro-trail-red', category: 'nitro-trail', default: false, name: { en: 'Crimson dash trail', 'zh-TW': '赤紅斷續尾跡' }, candidateRasterId: 'trail-red' },
   { id: 'launch-flare-basic', category: 'launch-flare', default: true, name: { en: 'Standard launch flare', 'zh-TW': '標準起跑閃焰' } },
   { id: 'launch-flare-blue', category: 'launch-flare', default: false, name: { en: 'Blue flare', 'zh-TW': '藍色閃焰' }, candidateRasterId: 'flare-blue' },
+  { id: 'launch-flare-ring', category: 'launch-flare', default: false, name: { en: 'Shock ring flare', 'zh-TW': '衝擊環閃焰' }, candidateRasterId: 'flare-ring' },
+  { id: 'launch-flare-pulse', category: 'launch-flare', default: false, name: { en: 'Pulse flare', 'zh-TW': '脈衝閃焰' }, candidateRasterId: 'flare-purple' },
 ] as const satisfies readonly SkinDefinition[];
 export type SkinId = (typeof GARAGE_SKINS)[number]['id'];
 export type SkinState = 'locked' | 'trial' | 'owned' | 'equipped';
@@ -42,7 +50,7 @@ export const DEFAULT_SKINS = {
   'launch-flare': 'launch-flare-basic',
 } as const satisfies Record<SkinCategory, SkinId>;
 export const SKIN_PREVIEW_UI = Object.freeze({
-  mode: 'contract-only', // No live equip or 3D preview until High-speed VFX gate.
+  mode: 'live-shared-aero', // Studio and racing reuse createAeroVFX.
   cardCssSize: 96, badgeCssSize: 72, rasterScale: 3,
   categories: SKIN_CATEGORIES,
   placeholderText: { en: 'VFX preview coming soon', 'zh-TW': '特效預覽即將推出' },
