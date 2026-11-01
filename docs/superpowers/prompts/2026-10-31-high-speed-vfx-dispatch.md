@@ -1,0 +1,96 @@
+# Copy/Paste Implementation Prompt — Wave 2: high-speed-vfx
+
+> This document is an **assignment prompt for a separate GPT chat**, not an authorization to start implementation in the chat that created these plans. Copy the **entire section below** into the assigned GPT chat when its Wave gate is met.
+
+## Prompt to paste
+
+使用已連接的 GitHub（repository **https://github.com/weskao/skyline-rush**），針對**已存在的**分支 `feature/high-speed-vfx` 進行 Skyline Rush 的以下工作：
+
+**工作項目：** E: BOOST/NITRO actual speed-aware VFX, quality presets, measured renderer cost  
+**對應 TODO：** 10  
+**Wave：** 2  
+**分支的主要檔案所有權：** src/world.js; src/effects.js; src/aero-vfx.js; src/vfx-settings.ts。
+
+**前置/平行條件：** WAIT until mobile-controls-hud is verified and merged to develop. It can run in parallel with race-difficulty-eight-car-grid and foldable (avoid their game/input files).
+
+### Wave 2 整合主線與解鎖條件（2026-10-31）
+
+**唯一功能整合目標：`develop`，不是 `main`。** Wave 1 Tutorial、Mobile HUD、Garage Studio 已合併 `develop`，整合點為 `a021044dff22f8dab3845d182794d7d397b56d06`。**整合 CI [#41195915543](https://github.com/weskao/skyline-rush/actions/runs/41195915543) 最後已知為 pending；開始前必須重新讀取最新 develop HEAD 的 GitHub Actions，確認 unit-tests、cloud-save、browser-tests、world-tour-mid-race、quality-gate 全面完成且成功，不能把 focused green 或 skipped 當完整驗收。** 如果失敗：先定位問題，依職責修復，不得假稱 Wave Gate 成立。
+
+**本分支前置判斷：** Mobile Controls HUD 已在 develop，待 develop 最新 full-regression 完整通過後可與 8 車／Foldable 並行；共同 Renderer 資源和 HUD 事件契約先核對。
+
+1. 先比較本分支最新 HEAD 與 `develop`，只在自己的分支非破壞式 merge 最新 `develop`；保留既有 `docs/designs/`、`docs/superpowers/`、SVG、TODO 分工及測試。最新 `develop` 可能高於上述整合點，永遠以 GitHub 實際 HEAD 為準。
+2. 限本分支責任範圍實作；SDD → BDD → TDD RED / GREEN / REFACTOR。Wave 1 的 3D、HUD、Tutorial 功能不得被 W2 舊基底覆寫；如有邏輯衝突，寫出契約並加回歸測試。
+3. 原始視覺圖仍是待核准參考；3× PNG/WebP 候選圖尚未上傳 GitHub，不得指向不存在檔案。已提交的分類 SVG 和設計分鏡可重用，但它們不是實際動態效果。遵循 `VISUAL-FIDELITY.md` 與 `plan.md`，真實 WebGL 截圖對照、手機直橫向、Low/Medium/High 等皆要驗收。
+4. 本分支完成後在**本分支**做全部目標測試／完整 regression（手動 `full_regression=true` 或 `[full-regression]`），確認 exact HEAD CI，僅勾選已驗收的 TODO 子項。最後**回報並請使用者授權才 merge `develop`**；禁止自行 merge `develop`、`main`、開 PR 或部署。
+
+### 1. 正確的 Git 分支與規格
+
+1. 先查驗 `feature/high-speed-vfx` 是否存在、它的 HEAD，以及最新 `develop`。**不要另開 PR，也不要誤改 develop/main**。若前置分支尚未真正完成、CI 未綠或尚未獲准合併，**停在審核/規劃，不准先開始依賴性的實作**。
+2. 依序閱讀本分支的下列檔案，並依最新 `develop` 實際原始碼進行衝突/差異檢查：
+   - `CLAUDE.md` 與適用的 `.claude/rules/`（特別是 `ui-architecture`、`performance-review`、`device-quality`、`touch-input`、`ui-phase-interactions`）
+   - `docs/superpowers/specs/2026-10-31-high-speed-vfx-design.md`（SDD + BDD）
+   - `docs/superpowers/plans/2026-10-31-high-speed-vfx-plan.md`（Superpowers 實作計畫）
+   - `docs/superpowers/prompts/2026-10-31-high-speed-vfx-visual-design.md`（畫面／美術／素材設計 Prompt，按需製作與審核）
+   - 原始需求 `https://github.com/weskao/skyline-rush/blob/feature/ux-ui-combo-mobile-controls/TODO.md` 中對應項目與全平台 S1–S3 規範。
+3. 依照實際差異，在**自己的分支**同步最新 `develop`，必要時採非破壞式 rebase/merge 並保留已有的規劃文件與成果。絕不能以舊版 TODO 直接覆寫新的 TODO。
+
+### 2. SDD → BDD → TDD（使用 Superpowers 實際技能）
+
+- **SDD：** 先對照現存原始碼與規格，修訂設計約束、Typed Interfaces、責任檔案與依賴；如果需要使用 `$superpowers` 的 brainstorming / writing-plans 等能力，應實際載入技能。避免重複實作已完成部分。
+- **BDD：** 用 spec 所列 Given / When / Then 情境撰寫自動化可驗收的 Scenario；包含正常、錯誤、重複輸入、暫停、重啟、裝置切換、狀態遷移與資料相容性。
+- **TDD：** 對每個 Task 按 `RED → GREEN → REFACTOR`：先新增失敗測試並觀察 RED、最少程式碼讓它變 GREEN，重構後確保測試仍通過。每個可驗證的階段獨立 commit；不得宣稱未執行測試已通過。
+
+### 3. 技術／畫面／效能共通要求
+
+- 以 **Vue 3 + strict TypeScript** 為新 UI、控制器與服務的預設架構，Vue SFC 採 `<script setup lang="ts">`；物理／Three.js 即時渲染熱路徑可保留原有 JS，但須有型別邊界，**不可將遊戲 frame loop 改成 Vue 每幀 reactive re-render**。
+- 以效能和實際遊戲可視性為主：減少重複 DOM/Layout、資源配置、GPU draw calls、材質／Shader rebuild；維持 10 張賽道、遊戲邏輯、正常操作與畫質。
+- 驗收 Android Chrome / iOS Safari & Chrome：**直向＋橫向**，Desktop 常用瀏覽器和必要平板尺寸；`en`/`zh-TW`、Low/Medium/High、Reduced Motion、VFX Off、Mute，且 touch/keyboard/mouse、pause/restart/finish 按鈕都有效。
+- **Low/Medium/High** 只對 GPU／高耗能動畫分級，不能改動核心 HUD 資訊、遊戲規則、車輛數或操作。畫面新設計必須以實際 Vue/CSS/Three.js 實作，概念圖片只能做參考，不能替代真正的 UI／動態特效。
+- 對影響畫面的改動執行真實 WebGL 截圖／影片與前後效能比較：Draw Calls、Triangles、FPS、Frame Time p50/p95；如無法操作實機需明確列為未驗證。
+
+### 3A. GPT 圖片生成／透明背景／實際素材整合（Wave 2／3 新增）
+
+**本分支的素材策略：以動態渲染為主，生成圖非預設。** 可以使用 GPT 圖片生成來製作 4 階段 NITRO／BOOST 分鏡、色彩／光感參考。只有效能測試證明需要簡單的粒子／能量環貼圖時，才生成透明背景的原創 sprite；**不要**以一張全螢幕模糊圖取代 `Three.js` 的速度線、FOV、Shader 或真實動態效果。
+
+1. **先讀既有資源：** 檢視 `src/icons.ts`、`public/icons/`、現有 Vue/CSS 與 Three.js 材質／特效；有可複用的 SVG、程序化幾何或 CSS 就不要重複生成圖片。將素材分成「概念稿」、「可直接使用的原創靜態資產」、「須由真實 Three.js 即時繪製的動態特效」。
+2. **必要時實際產圖：** 在被分派的 GPT 對話內，若圖片生成能力可用，使用該功能產出可審核的原創設計稿／素材；**不可以只說會生成或把圖片工具參數貼成文字**。若沒有圖片生成工具，寫明限制與待補素材，不可杜撰完成的 PNG、SVG、預覽 URL。
+3. **透明背景判斷：** 徽章、類別 icon、粒子 sprite、可獨立疊加的 VFX 縮圖預設 **transparent background / true alpha channel / no white or checkerboard baked into pixels**；需要場景燈光、展示間或故事背景時才做不透明版本。要求乾淨 Alpha 邊緣、無裁切主體、無內建多餘文字、無浮水印、無商用競品 Logo。
+4. **格式與整合：** UI 小圖示優先既有 24×24 SVG／Vue icon；若使用產生的點陣圖，原稿優先高解析透明 PNG，測試 Alpha、裁切與不同背景可讀性後轉成壓縮透明 WebP。背景使用經壓縮 WebP/JPEG（不得依賴 JPEG 透明）；依設計需要加入適當 1×/2× 版本與檔案尺寸預算。圖片生成輸出**不等於可編輯向量圖**，不可把 PNG 假稱 SVG。正式採用才放進所屬 `public/` 素材資料夾，設計稿放 `docs/designs/<feature>/`，並附來源／用途／壓縮與格式記錄。
+5. **真實畫面與可操作性：** UI 的文字、名次、分數、狀態與觸控按鈕由 Vue 3 + TS + CSS／SVG 真正控制，3D 車輛和速度 VFX 由共用 Three.js renderer 驅動；**不得**用產生的概念圖或截圖遮蓋實際 WebGL 作為完工畫面。
+6. **SDD → BDD → TDD 與品質：** 先定義資產契約／場景／Alpha 條件，再定義 Given／When／Then，對不存在／載入失敗／低畫質／Reduced Motion／深淺背景與小螢幕寫 RED 測試，製作／整合後執行 GREEN。驗收 Android/iOS 直橫向、桌面、Low／Medium／High、VFX Off，使用實際遊戲截圖對比設計，量測下載大小、FPS／p95 frame time、Draw Calls／Triangles 或 shader/cache 影響，無資產時有正常 Fallback。
+7. **執行與放行：** 本次是規劃文件更新，**不代表已有 PNG/WebP/SVG 或已實作**。後續各分支只在自己的 Wave 依賴完成後開始，完成實作與完整驗證才在正確整合的 `TODO.md` 改成 `- [x]`，不得自行合併 develop 或 main 或跨分支搶改共用 renderer。
+
+### 3B. 預先完成的獨立美術資產／待前置完成的工作
+
+**已提交到本分支的素材（完成範圍僅限素材檔案）：** [Commit `e891bc8`](https://github.com/weskao/skyline-rush/commit/e891bc8069ccc603a0aaeaa626ef0ccd9cdb2316)；路徑 `docs/designs/high-speed-vfx/`；檔案 `sprint-vfx-storyboard.svg`。
+
+NITRO／BOOST 的 READY→IGNITION→SUSTAIN→RECOVERY 分鏡已提交；**僅是概念圖，禁止當 runtime 背景或特效覆蓋圖**。真實 VFX 必須在 HUD 整合後由 Three.js 實作，且要量測效能。
+
+**強制交接：** 先讀 `docs/superpowers/plans/2026-10-31-high-speed-vfx-plan.md` 的「Independent artwork pre-production handoff」；不能因為檔案已存在就把任何遊戲功能或 `TODO.md` 主項目標記 `- [x]`。既有素材與 `ASSET-MANIFEST.md` 應保留，後續真正 Vue/Three.js 整合、Fallback、BDD/TDD、Android/iOS 直橫向及完整 CI 仍須完成，且遵循原 Wave 前置依賴。
+
+### 3C. 以已核准圖片為基準的 Visual Fidelity Gate
+
+**所屬分支實際參考圖與差異紀錄：** [Visual Fidelity design and original reference map](https://github.com/weskao/skyline-rush/blob/feature/high-speed-vfx/docs/designs/high-speed-vfx/VISUAL-FIDELITY.md)
+
+在實作或驗收畫面前，必須先載入原始 AI 高畫質圖片檔（來源與 SHA-256 記於上述文件；會話另外附 `skyline-rush-design-reference-crops.zip`），確認所選畫面及版本已核准。圖檔目前**尚未放入 GitHub**；不能虛構圖檔路徑或把簡化的 SVG/草稿當成原本高擬真參考圖。針對 390×844、844×390、1440×900 建立 UI/3D 元件位置、比例、材質、光照、色彩、按鈕、動作時間的具體規格，且將核准圖真正以原始檔案提交到 `docs/designs/high-speed-vfx/references/` 並標註 Blob SHA。
+
+使用 **Vue 3 + strict TypeScript + Three.js** 實作真正可操作的 UI/3D；優先保留效果深度（立體車身、真實光影、發光材質與精緻圖示），任何降級均需明列並核准。依 **SDD → BDD → TDD（RED→GREEN→Refactor）** 建立 Layout/State 測試；Playwright 擷取真實執行畫面及互動動畫，逐項與核准圖並排比對：構圖、間距、光影、素材、狀態、動態、操作及 FPS／p95。**原始概念圖不能充當實際 WebGL 證據，CI 綠燈也不能取代美術驗收。** Android/iOS 直橫向、Desktop、Low/Medium/High、Reduced Motion 和 VFX Off 均需記錄結果。未核准/未完成項目保留 `- [ ]`，不得宣稱已符合圖片、不得自動 merge main。
+
+### 4. 完成、TODO 勾選與合併 Gate
+
+- 實作完畢後執行相關 `npm run typecheck`、`npm test`、`npm run build`、`npm run test:layout`、`npm run test:browser`、`make verify`，以及受影響的 World Tour、Cloud Save 等測試；確認最後 HEAD 的 GitHub Actions `quality-gate` 完整通過。
+- **確認本分支所負責的每一項需求真正完成、BDD/TDD 與所有驗收通過後，才到 `TODO.md` 把對應子項目從 `- [ ]` 改為 `- [x]`，附上 commit / 測試／CI 證據。** 若 TODO 尚在原規劃分支，先協調將最新版完整需求非破壞式同步進此分支；不可直接拿舊檔覆蓋，也不可把仍待後續分支完成的整個 #5 提前標記完成。未完成項目必須維持 `- [ ]`。
+- 最後回報：實際 root cause／設計變更、修改檔案、commit SHA、BDD/TDD 結果、各裝置與畫質驗收、尚存風險、可否進下一 Wave。
+- **禁止自動建立 PR、部署或合併 develop/main；需使用者明確授權。** 下一 Wave 只在它的所有必要前置分支真正完成、已合併進最新 develop 且最終 CI 綠燈後啟動。獨立分支可以平行開發，但共享檔案與型別契約須協調以降低 Git conflicts。
+
+請依照以上要求對**此指定分支**逐步完成工作；不得將其它分支的內容偷渡進來，也不得宣稱未完成驗收為成功。
+
+## Handoff checks
+
+- [ ] Wave 2 prerequisite satisfied.
+- [ ] Full SDD/BDD/plan read with updated CLAUDE.md.
+- [ ] Feature files only on assigned branch.
+- [ ] TDD RED and GREEN evidenced, full exact HEAD quality gate green.
+- [ ] Canonical TODO subitems are `- [x]` only after real acceptance; remaining tasks stay `- [ ]`.
+- [ ] Branch ready for user-reviewed direct merge before downstream Wave.
