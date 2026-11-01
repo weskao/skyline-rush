@@ -270,7 +270,7 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
 | S6 | 版本鍵 | ✅ `48a422f8`、`77ab7d0d`、見下方結果 |
 | S7 | 音效、What's New | ✅ `ea8fed66` |
 | S8 | 畫面、效能與實機驗證 | ✅ 自動化部分；實機待使用者 |
-| S9 | 完整 CI、回報 | 待做 |
+| S9 | 完整 CI、回報 | ✅ `bc37681e`，run `41319983990` 全綠；實機待使用者 |
 
 **S3 合併 `develop`**
 - 先 `git fetch`，在本分支合併 `origin/develop`。不要反過來合進 `develop`。
