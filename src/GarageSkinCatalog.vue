@@ -7,6 +7,14 @@ import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
 defineProps<{ locale: string }>();
 
+// Source-only cosmetic status and rarity icon gallery. These artworks do not
+// create a badge, inventory entitlement, artificial rarity or monetary offer.
+const badgeArt = ['badge-equipped', 'badge-favorite', 'badge-limited', 'badge-locked',
+  'badge-new', 'badge-trial', 'rarity-common', 'rarity-rare', 'rarity-epic',
+  'rarity-legendary', 'rarity-mythic'] as const;
+const badgeSrc = (id: string) =>
+  `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/raster/${id}@3x.webp`;
+
 const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   thruster: { en: 'Thruster', 'zh-TW': '推進器' },
   airflow: { en: 'Airflow', 'zh-TW': '氣流' },
@@ -65,6 +73,16 @@ function onImageError(id: string, hasRaster: boolean): void {
         </li>
       </ul>
     </div>
+    <section id="garage-vfx-art-badges" class="garage-art-showcase" :aria-label="locale === 'zh-TW' ? '徽章與稀有度素材展示' : 'Badge and rarity art preview'">
+      <h4>{{ locale === 'zh-TW' ? '徽章與稀有度 · 素材展示' : 'Badges and rarity · art reference' }}</h4>
+      <p class="garage-vfx-message">{{ locale === 'zh-TW' ? '僅展示 3× 原始素材，不代表已擁有、限時活動或已解鎖稀有度。' : 'Artwork reference only. No ownership, time-limited event or rarity entitlement is implied.' }}</p>
+      <div class="garage-art-badges">
+        <figure v-for="id in badgeArt" :key="id">
+          <img :src="badgeSrc(id)" width="72" height="72" loading="lazy" decoding="async" :alt="id.replaceAll('-', ' ')" />
+          <figcaption>{{ id.replaceAll('-', ' ') }}</figcaption>
+        </figure>
+      </div>
+    </section>
     <p class="garage-vfx-message" role="status">{{ locale === 'zh-TW' ? '特效僅改變外觀，不影響速度、獎勵或舊有車漆。' : 'Cosmetics only. Speed, rewards and existing paints are unchanged.' }}</p>
   </section>
 </template>
@@ -99,6 +117,12 @@ function onImageError(id: string, hasRaster: boolean): void {
 .garage-vfx-actions button { flex: 1 1 45%; min-height: 44px; border-radius: 6px; border: 1px solid #4f8caa; color: #e8f3fb; background: #143950; font-size: 12px; cursor: pointer; }
 .garage-vfx-actions button:disabled { opacity: .55; cursor: default; }
 .garage-vfx-actions button:focus-visible { outline: 3px solid #67e8ff; outline-offset: 2px; }
+.garage-art-showcase { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid #46688b; }
+.garage-art-showcase h4 { color: #d4ddff; letter-spacing: .04em; }
+.garage-art-badges { display: grid; grid-template-columns: repeat(auto-fill,minmax(76px,1fr)); gap: 9px; }
+.garage-art-badges figure { margin: 0; padding: 6px; text-align: center; border: 1px solid #344f83; border-radius: 10px; background: radial-gradient(circle at 50% 25%, #283760, #101c33 80%); }
+.garage-art-badges img { width: 72px; height: 72px; max-width: 100%; object-fit: contain; }
+.garage-art-badges figcaption { font-size: 10px; overflow-wrap: anywhere; color: #b5cae8; }
 @media (max-height: 420px) and (orientation: landscape) { .garage-vfx-category ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .garage-vfx-catalog * { animation: none !important; transition: none !important; } }
 </style>

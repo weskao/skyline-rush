@@ -73,3 +73,26 @@ test('all 16 cosmetics drive distinct GPU patterns in the live Preview Studio', 
     }
   }
 });
+
+test('new original Gold/Crimson/Cyan/Magenta/White launch flares and Purple trail all preview on vehicle', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  const cases = [
+    ['nitro-trail-purple', 'data-gpu-trail-pattern', '4'],
+    ['launch-flare-gold', 'data-gpu-launch-pattern', '4'],
+    ['launch-flare-red', 'data-gpu-launch-pattern', '5'],
+    ['launch-flare-cyan', 'data-gpu-launch-pattern', '6'],
+    ['launch-flare-magenta', 'data-gpu-launch-pattern', '7'],
+    ['launch-flare-white', 'data-gpu-launch-pattern', '8'],
+  ];
+  const preview = page.locator('#garage-preview');
+  for (const [id, name, mode] of cases) {
+    await page.locator(`[data-skin="${id}"]`).getByRole('button', { name: /preview|預覽/i }).click();
+    await expect(preview).toHaveAttribute(name, mode);
+    await expect(page.locator(`[data-skin="${id}"]`)).toHaveAttribute('data-preview-active', 'true');
+    const img = page.locator(`[data-skin="${id}"] img`);
+    await expect(img).toHaveJSProperty('naturalWidth', 288);
+    if (id.startsWith('launch-flare-')) await expect(preview).toHaveAttribute('data-launch-preview-active', 'true');
+  }
+});
