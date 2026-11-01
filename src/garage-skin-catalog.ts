@@ -109,14 +109,18 @@ export function skinView(id: unknown, profile: SkinProfile, session: SkinSession
   return { id: skin.id, category: skin.category, state, owned, canEquip: !equipped && (owned || trial), canPreview: true };
 }
 
-// No raster candidates are committed. Never return a speculative .webp URL.
+// The 3x WebPs named by candidateRasterId are committed to this feature branch. CSS keeps 1x dimensions.
 export function skinArtwork(id: unknown, baseUrl: string) {
   const skin = findSkin(id);
   if (!skin) return null;
   const base = /^\/(?!\/)(?:[A-Za-z0-9_-]+\/)*$/.test(baseUrl) ? baseUrl : '/';
   const fallback = `${base}feature-assets/garage-vfx-skins/${skin.category}.svg`;
-  return { src: fallback, fallback, cssSize: SKIN_PREVIEW_UI.cardCssSize,
-    candidateRasterId: 'candidateRasterId' in skin ? skin.candidateRasterId : undefined, hasRaster: false };
+  const candidateRasterId = 'candidateRasterId' in skin ? skin.candidateRasterId : undefined;
+  const hasRaster = typeof candidateRasterId === 'string';
+  const src = hasRaster
+    ? `${base}feature-assets/garage-vfx-skins/raster/${candidateRasterId}@3x.webp`
+    : fallback;
+  return { src, fallback, cssSize: SKIN_PREVIEW_UI.cardCssSize, candidateRasterId, hasRaster };
 }
 
 // Serialize only versioned permanent entitlements. Cloud Save integration remains Phase B.

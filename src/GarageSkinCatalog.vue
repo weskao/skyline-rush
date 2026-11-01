@@ -15,14 +15,19 @@ const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
 };
 const entries = GARAGE_SKINS.map(skin => ({ ...skin, artwork: skinArtwork(skin.id, import.meta.env.BASE_URL)! }));
 const unavailable = ref<ReadonlySet<string>>(new Set());
+const rasterFailed = ref<ReadonlySet<string>>(new Set());
 const view = (id: SkinId) => { void garageSkinState.revision; return garageSkinEntry(id); };
 const statusText = (id: SkinId, locale: string) => {
   const state = view(id)?.state ?? 'locked';
   return ({ en: { trial: 'Free trial', equipped: 'Equipped', owned: 'Owned', locked: 'Locked' },
     'zh-TW': { trial: '免費試用', equipped: '已裝備', owned: '已擁有', locked: '未解鎖' } } as const)[locale === 'zh-TW' ? 'zh-TW' : 'en'][state];
 };
-function onImageError(id: string): void {
-  unavailable.value = new Set([...unavailable.value, id]);
+function onImageError(id: string, hasRaster: boolean): void {
+  if (hasRaster && !rasterFailed.value.has(id)) {
+    rasterFailed.value = new Set([...rasterFailed.value, id]);
+  } else {
+    unavailable.value = new Set([...unavailable.value, id]);
+  }
 }
 </script>
 
@@ -38,8 +43,8 @@ function onImageError(id: string): void {
         <li v-for="skin in entries.filter(entry => entry.category === category)" :key="skin.id"
           :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)">
           <span class="garage-vfx-art">
-            <img v-if="!unavailable.has(skin.id)" :src="skin.artwork.src" :width="skin.artwork.cssSize"
-              :height="skin.artwork.cssSize" alt="" decoding="async" @error="onImageError(skin.id)" />
+            <img v-if="!unavailable.has(skin.id)" :src="rasterFailed.has(skin.id) ? skin.artwork.fallback : skin.artwork.src" :width="skin.artwork.cssSize"
+              :height="skin.artwork.cssSize" alt="" decoding="async" @error="onImageError(skin.id, skin.artwork.hasRaster)" />
             <span v-else class="garage-vfx-fallback" aria-hidden="true">
               {{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}
             </span>
