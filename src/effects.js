@@ -169,7 +169,7 @@ export function createEffects(scene, roadCenter) {
             if (previousRace === race && active) burst(item, reducedMotion ? 6 : lowQuality ? 12 : 32,
               source === 0 ? pickupColors[item.tier] : ringColors[ringType], car.speed);
           }
-          if (collected || item.distance <= distance || item.distance > distance + 900) continue;
+          if (collected || item.downUntil > race.elapsed || item.distance <= distance || item.distance > distance + 900) continue; // gone until it respawns
           const mesh = marker;
           if (options.worldPoint) mesh.position.fromArray(options.worldPoint(item.distance, item.x,
             item.altitude + (source === 0 ? 0.85 : 0), distance));

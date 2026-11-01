@@ -32,6 +32,8 @@ export interface RaceRing {
   train?: boolean;
   /** Gates in this ring's group (a row counts once). */
   groupSize?: number;
+  /** Race time until which the ring is gone after a car took it (stage 2 respawn). */
+  downUntil?: number;
 }
 
 /** Whether [distance - before, distance + after] touches a section of this type. */
@@ -115,8 +117,10 @@ export function createRings(track: TrackConfig, riskLines = true): RaceRing[] {
   return rings;
 }
 
-/** The player passes a gate: a full-width row is passed by any one of its rings, so it pays once. */
-export function passGate(rings: readonly RaceRing[], gate: RaceRing & { lap?: number }): void {
+/** The player passes a gate: a full-width row is passed by any one of its rings, so it pays once. The ring
+ * touched is gone until `downUntil` (race seconds), like one any car takes. */
+export function passGate(rings: readonly RaceRing[], gate: RaceRing & { lap?: number }, downUntil?: number): void {
   gate.hit = true;
+  gate.downUntil = downUntil;
   if (gate.row !== undefined) for (const r of rings as (RaceRing & { lap?: number })[]) if (r.row === gate.row && r.lap === gate.lap) r.hit = true;
 }

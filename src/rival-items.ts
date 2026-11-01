@@ -1,5 +1,8 @@
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 
+// Stage 2 (user, 2026-11-02): a ring or pickup taken by any car is gone this long, then back for everyone.
+export const ITEM_RESPAWN = 2.5; // s
+
 // Rival NITRO and rubber-banding (rivals get RIVAL_NITRO_CHARGES charges, fired by personality).
 export const RIVAL_NITRO_CHARGES = 2;
 export const RIVAL_NITRO_BONUS = 12; // m/s added to the rival's speed cap during NITRO

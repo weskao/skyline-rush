@@ -86,7 +86,7 @@ export const SLIPSTREAM_MIN_GAP = 4.4; // m behind; closer is a collision
 export const SLIPSTREAM_MAX_GAP = 14; // m behind
 export const SLIPSTREAM_ALTITUDE = 1.8; // m, max altitude difference
 
-import { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_HOP_PERIOD, rivalWantsNitro } from './rival-items.ts';
+import { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_HOP_PERIOD, ITEM_RESPAWN, rivalWantsNitro } from './rival-items.ts';
 export { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_NOVA_EVERY, RIVAL_NITRO_ORBIT_ALTITUDE, RIVAL_NITRO_MIN_SPEED, RIVAL_NITRO_APEX_FROM, RIVAL_HOP_PERIOD } from './rival-items.ts';
 export const RIVAL_NITRO_TIME = NITRO_TIME; // seconds one rival charge lasts
 export const RUBBER_BAND_MAX = 0.04; // speed multiplier changes by at most +/- this
@@ -202,7 +202,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
 }
 function collectRing(race, ring, index) {
   const car = race.player;
-  passGate(race.rings, ring);
+  passGate(race.rings, ring, race.elapsed + ITEM_RESPAWN);
   car.rings++;
   car.score += 150;
   if (ring.type === 'charge') car.fuel = Math.min(100, car.fuel + RING_FUEL);
@@ -530,13 +530,13 @@ export function stepRace(race, input, dt) {
   }
   for (const pickup of race.pickups) { // sorted by distance
     if (pickup.distance > car.distance + MAGNET_RANGE) break;
-    if (pickup.taken) continue;
+    if (pickup.taken || pickup.downUntil > race.elapsed) continue; // gone: another car took it (respawns)
     const crossed = pickup.distance <= car.distance && pickup.distance > previousDistance &&
       Math.abs(pickup.x - car.x) < 1.7 && Math.abs(pickup.altitude - car.altitude) < 1.8;
     const pulled = car.effects.magnet > 0 &&
       Math.hypot(pickup.distance - car.distance, pickup.x - car.x, pickup.altitude - car.altitude) < MAGNET_RANGE;
     if (crossed || pulled) {
-      pickup.taken = true;
+      pickup.taken = true; pickup.downUntil = race.elapsed + ITEM_RESPAWN;
       if (pickup.tier === 'overcharge') addNitro(car, NITRO_MAX - car.nitro, 0);
       else addNitro(car, NITRO_PICKUPS[pickup.tier]);
     }
@@ -545,7 +545,7 @@ export function stepRace(race, input, dt) {
   for (const ring of race.rings) { // sorted by distance
     if (ring.distance > car.distance) break;
     // shortcut: tests the car's end-of-step x/altitude, not the interpolated crossing (error < 0.7 m at dt 0.1), upgrade if risk rings feel unfair
-    if (fell || ring.hit || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
+    if (fell || ring.hit || ring.downUntil > race.elapsed || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring));
   }
   stepPlayerHazards(race, car, previousDistance, contact);
