@@ -322,3 +322,28 @@ test('sprint FOV: NITRO+BOOST widens the camera by the full FOV setting on every
   assert.equal(sprintFovOffset(settle({ phase: 'racing', nitro: true, boost: true, speed: 130, cap: 110, dt: 0.05,
     enabled: true, quality: 'high', reducedMotion: false }), vfxSettings({ enabled: false })), 0, 'VFX off');
 });
+
+test('cyan NITRO trail differs from the standard trail from the first NITRO frame, purple cue kept on every skin', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const firstFrame = skin => {
+    const { vfx, race, options, vehicle } = fixture();
+    vfx.setSkins(skin ? { 'nitro-trail': skin } : {});
+    race.player.boosting = false; race.player.nitroTime = 1;
+    const state = createSprintVfx().update({ phase: 'racing', nitro: true, boost: false, speed: 82, cap: 110,
+      dt: 0.05, enabled: true, quality: 'high', reducedMotion: false });
+    vfx.update(race, 0.05, new Vector3(), options, false, state);
+    const flow = vehicle.getObjectByName('Airflow showcase').children[0];
+    return { mix: flow.material.uniforms.nitroMix.value, accent: flow.material.uniforms.trailAccent?.value.toArray(),
+      shader: flow.material.fragmentShader };
+  };
+  const standard = firstFrame(null), cyan = firstFrame('nitro-trail-cyan');
+  assert.ok(cyan.accent, 'airflow shader carries the NITRO trail skin');
+  assert.equal(standard.accent[3], 0, 'standard trail look is unchanged');
+  const [r, g, b, weight] = cyan.accent;
+  assert.ok(weight * cyan.mix >= 0.5, 'cyan reads in the first NITRO frame (ignition), not after particles build up');
+  assert.ok(g > r * 3 && b > r * 3, 'accent is cyan');
+  assert.equal(cyan.mix, standard.mix, 'NITRO purple cue does not depend on the skin');
+  assert.ok(cyan.mix > 0.5, 'purple cue from the first frame');
+  assert.ok(cyan.shader.indexOf('trailAccent.a') > cyan.shader.indexOf('vec3(.72,.4,1.)'), 'accent layers over the purple cue');
+  assert.match(cyan.shader, /trailAccent\.a\*[^;]*smoothstep\([^;]*vUv\.x\)/, 'accent stays on streamline tails; fronts stay purple');
+});
