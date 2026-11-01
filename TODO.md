@@ -14,6 +14,37 @@
 - [ ] S9 `[full-regression]` push, `quality-gate` green on final HEAD, report run id to skyline-rush-13; user plays it.
 - [ ] Stage 2 (rival item pickups, `feature/rival-item-pickups` `79f45369`): start only after S9 green + user played + explicit go; ask the plan's questions first.
 
+---
+
+## Wave 2 — Foldable / Dual-screen Layout Adaptation · TODO #4 (2026-10-31)
+
+**Branch:** `feature/foldable-layout-adaptation` · **Integration source:** `develop` · **State:** In verification, NOT complete / not merged.
+
+- [x] Sync latest known `develop` into existing branch using a non-destructive two-parent merge (`6ce992f`), preserving Wave 1 Mobile HUD settings and behavior.
+- [x] Add pure typed segment/hinge projection and fallback with isolated RED→GREEN unit evidence; build responsive CSS + touch-controller integration (commits `9c63fde`, `c872370`).
+- [x] Add geometry, state-persistence, cancel/capture, portrait/landscape, stacked/side-by-side hinge and standard viewport Playwright tests.
+- [ ] Exact-feature-HEAD **full** CI: Typecheck, Node Unit, Build, all Browser/Responsive tests, World Tour and Cloud Save, performance evidence `quality-gate`; earlier focused-only CI does not satisfy this item.
+- [ ] Review real DOM/WebGL Playwright screenshots at 320×740, 390×844, 844×390, 568×320, 1440×900 and simulated 600×900 / 844×390 hinge; check visual fidelity and hardware-sourced performance.
+- [ ] Real foldable hardware/split-screen browser viewport + iPhone/Android rotation/input-release and safe-area validation, separate from simulated desktop testing.
+- [ ] Final visual signoff, approved reference source evidence and TODO #4 acceptance. No PR, deploy or merge back to `develop`/`main` without separate authorization.
+
+---
+
+## Wave 2 — TODO #10: High-speed VFX / NITRO / BOOST (2026-10-31)
+
+**Branch:** `feature/high-speed-vfx`; integration target `develop` (do not merge without approval).
+
+- [x] Non-destructively integrate `develop` into existing feature branch (`3fbe4cb`), preserving Wave 1 Garage/Tutorial/HUD and preexisting VFX design documents.
+- [x] Observe RED for four-phase NITRO/BOOST typed controller: unit run 41201178381 had two expected failures; create reusable controller and observe both tests GREEN at run 41201443420.
+- [x] Observe RED for missing renderer NITRO/BOOST color palette: unit run 41201443420 failed only its new shader uniform test.
+- [x] Add bounded speed-sensitive READY/IGNITION/SUSTAIN/RECOVERY controller, cyan BOOST / violet NITRO reusable shader uniforms, restrained camera FOV/blur, VFX Off and Reduced Motion handling without changing `src/game.js` physics.
+- [x] Add a real WebGL Playwright screenshot/video/10s rAF frame-time/Draw Calls/Triangles/program/texture resource evidence test and CI artifact collection.
+- [ ] Exact-final-HEAD full GitHub Actions green (unit/typecheck/browser/cloud/World Tour/quality-gate); investigate inherited failing `develop` browser shards if necessary.
+- [ ] Inspect actual WebGL screenshots and 10–20s video, verify Low/Medium/High and mobile portrait/landscape; measure matching baseline-versus-new render frame-time p50/p95/FPS/Draw Calls/Triangles/Texture Memory, plus hardware thermal/comfort signoff.
+- [ ] Final wave approval and merge to `develop` (not authorized here).
+
+**Evidence:** [first controller RED](https://github.com/weskao/skyline-rush/actions/runs/41201178381), [controller GREEN / renderer RED](https://github.com/weskao/skyline-rush/actions/runs/41201443420), [develop inherited failures](https://github.com/weskao/skyline-rush/actions/runs/41195915543). Do not treat planning storyboard as a gameplay screenshot or claim complete acceptance until exact-HEAD CI and visual evidence pass.
+
 ## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
 
 **Branch:** `feature/ci-speedup`. Measured on `main` run 41024921317 (`cff7886`): 75 min wall. Browser shard 8 took 72 min; shard 1 took 38 min of suite plus a 30 min `npm run test:layout` rerun of specs the sharded suite already contains; World Tour shards ran 5–40 min (the slow camera views sit at the end of the list); unit 1 min, cloud-save 1.5 min.
@@ -2209,3 +2240,18 @@ Model boundary: these are unsteady streak/history markers in still air, not inst
 - [x] Separate stable-run RED: the desktop video-enlarge check measured its button and icon in different entrance-animation frames (0.506 px apparent offset against the unchanged 0.5 px limit). Measure all three rectangles in one browser evaluation; keep the same centering, touch-target and containment assertions.
 - [x] Video measurement GREEN: fresh production build, then `CI=1 npx playwright test tests/release-media-zoom-browser.spec.js -g 'release clip opens whole' --repeat-each=3 --workers=4` — 15/15 pass across desktop, both tablet orientations and both phone orientations.
 - [ ] Full `CI=1 make verify` and exact-commit GitHub `quality-gate` after the authorized commit/push. Physical-device acceptance is separate; no gameplay/rendering behavior changed.
+
+
+## Wave 2 · Eight-Car Racing / AI Difficulty / Reverse Grid — 2026-10-31
+
+**Branch:** `feature/race-difficulty-eight-car-grid`. **Integration target:** `develop` only, after explicit user approval. This Wave 2's assigned IDs **#11 and #12 are distinct from the legacy ## 11 Interactive scenery and ## 12 Items headings elsewhere in this TODO**; do not change those unrelated completion boxes.
+
+- [ ] **Wave 2 #11 — Eight-car racing and difficulty accepted end-to-end:** new Classic/Cup/Circuit/Elimination support player+7 stable AI, Custom UI offers 1–7 opponents (2–8 total), Easy/Normal/Hard, safe physical start spacing, 3D vehicles and HUD/minimap/position across solo and competing modes. Implementation in `src/race-grid.ts`, `src/race-config.ts`, `src/game.js`, `src/world.js`, `src/race-hud.ts`, `src/route-map.ts`, `src/circuit-laps.ts` and tests; **pending full-browser/visual/performance/hardware acceptance**.
+- [ ] **Wave 2 #12 — Reverse Grid + scoring + compatibility accepted end-to-end:** full previous-heat finish reversal in Cup and multi-stage Sprint/Custom; 8-place Cup standings and Sprint validation, legacy 4-car data, scores, replay and Cloud Save rule signatures, malformed data rejection; unit coverage in `tests/eight-car-grid*.test.js`; **pending full-browser and persistent-data/physical acceptance**.
+- [ ] Full actual Playwright/WebGL screenshot, browser and World Tour regression evidence for 390×844, 844×390, desktop 1440×900, en/zh-TW, Low/Medium/High, reduced motion; measure draw calls and p50/p95. A true image generated by AI is **not** gameplay evidence.
+- [ ] Latest feature HEAD `[full-regression]` GitHub Actions **all required jobs Passed** (Skipped != Passed), quality-gate green, plus latest `develop` integration baseline green. As of authoring, `develop` `a021044` CI [41195915543](https://github.com/weskao/skyline-rush/actions/runs/41195915543) failed 7 browser shards; baseline gate is open.
+- [x] **Eight-car draw budget (user chose: cut per-car draws, keep the budget):** CI [41283305146](https://github.com/weskao/skyline-rush/actions/runs/41283305146) failed `quality-gate` on 1440×900 Medium draws vs the pre-pool baseline (alpine 545 > 447, coastal 605 > 538, cosmic 518 > 438; about 33 draws per added car). `makeCar` now merges each car's static parts that share a material into one mesh, with geometry cached per style; the body, wing, wheels, jets and rear light stay separate. RED → GREEN: `tests/car-model-draws.test.js` (one static mesh per material, recorded triangles/bounds unchanged, shared geometry with per-car materials). Visible draws per car: roadster 37→24, NOVA 26→15, ORBIT 27→15, APEX 32→14, traffic 27→15. Local software WebGL, 1440×900 Medium draws (triangles unchanged): coast 644→467, neon 732→519, canyon 650→473, aurora 647→470, spiral 440→275, tokyo 717→516, alpine 545→380, taipei 811→622, coastal 604→428, cosmic 518→365. All 35 captures drop 26–37%; local p50/p95 sit at the 30 fps pacing cap (33.3/33.4 ms) both before and after, so no frame-time claim. Exact-HEAD CI result pending.
+- [ ] Real-device Android Chrome and iOS Safari portrait/landscape performance, physical touch controls and art signoff; only emulated browsers can be evidenced from GitHub Actions.
+- [ ] User authorizes merge into `develop`. Do not open PR, deploy or merge automatically.
+
+**Verified test-first progress:** RED on commit `0600231` [CI 41199230703](https://github.com/weskao/skyline-rush/actions/runs/41199230703); 48 source/unit regressions found and fixed; focused typecheck and 1217 Unit Tests passed at `28a776c` [CI 41201415728](https://github.com/weskao/skyline-rush/actions/runs/41201415728) (browser/world-tour intentionally skipped, so **not** full acceptance). The subsequent `40785ed` added 2-car real-browser coverage; final full verification and screenshot receipts to be attached after actual success. No high-level Wave 2 item marked complete prematurely.

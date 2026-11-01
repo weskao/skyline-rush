@@ -70,7 +70,7 @@
     // Default to one second of frames so the 50° preview FOV settles; focused
     // viewpoint coverage may explicitly choose fewer frames once warmed up.
     for(let i=0;i<frames;i++)world.render(race,1/60,2+i/60,{});
-    return {id,actors:world.inspectShowcase(),landmarks:world.inspectLandmarks()};
+    return {id,actors:world.inspectShowcase().filter(actor=>actor.visible),landmarks:world.inspectLandmarks()};
   };
     window.worldTourReady = true;
 </script>

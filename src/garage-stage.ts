@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { CAR_STYLES, makeCar } from './car-model.js';
+import { createAeroVFX } from './aero-vfx.js';
+import { vfxSettings } from './vfx-settings.ts';
+import type { VfxSettings } from './vfx-settings.ts';
+import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import { garageFittedDistance } from './garage-camera.ts';
 import type { PaintPreset } from './appearance.ts';
@@ -15,7 +19,16 @@ export function createGarageStage(environment: THREE.Texture) {
   const car = makeCar(CAR_STYLES.roadster);
   car.position.y = 0.06;
   scene.add(car);
+  // Measure the real vehicle before attaching any cosmetic shader/geometry.
   const carRadius = new THREE.Box3().setFromObject(car).getBoundingSphere(new THREE.Sphere()).radius;
+  // Studio uses the SAME Aero implementation and shader resources as live racing.
+  const aero = createAeroVFX(scene, car);
+  const origin = new THREE.Vector3();
+  const previewDriver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0,
+    impact: null, altitude: 0, trick: null };
+  const previewRace = { phase: 'racing', player: previewDriver };
+  let previewSettings: VfxSettings = vfxSettings({ airflow: true });
+  let lastTime = NaN;
   const platform = new THREE.Mesh(
     new THREE.CylinderGeometry(5.65, 5.65, 0.18, 64),
     new THREE.MeshStandardMaterial({ color: '#172a36', metalness: 0.7, roughness: 0.36 }),
@@ -64,10 +77,18 @@ export function createGarageStage(environment: THREE.Texture) {
     camera.lookAt(look);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld(true);
+    // The preview repeats real ignition/trail behaviour with a small, bounded motion.
+    const dt = Number.isFinite(lastTime) ? Math.max(0, Math.min(0.05, time - lastTime)) : 1 / 60;
+    lastTime = time;
+    // Move only the emission sample briefly; keep the rendered car perfectly centred.
+    car.position.z = reducedMotion ? 0 : Math.sin(time * 2) * 0.65;
+    try { aero.update(previewRace, dt, origin, previewSettings, reducedMotion); }
+    finally { car.position.z = 0; }
   }
 
   function inspectBounds(camera: THREE.PerspectiveCamera) {
-    const bounds = new THREE.Box3().setFromObject(car);
+    const bounds = new THREE.Box3().makeEmpty();
+    for (const part of car.children) if (part !== aero.group) bounds.expandByObject(part);
     const point = new THREE.Vector3();
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const x of [bounds.min.x, bounds.max.x])
@@ -87,6 +108,25 @@ export function createGarageStage(environment: THREE.Texture) {
   }
 
   function dispose() {
+    // Aero geometry is per-stage, unlike globally shared car-model geometry.
+    const released = new Set<THREE.BufferGeometry>();
+    const releaseVfx = (geometry: THREE.BufferGeometry) => {
+      if (released.has(geometry)) return;
+      released.add(geometry);
+      geometry.dispose();
+    };
+    aero.group.traverse(object => {
+      if (object instanceof THREE.Mesh) releaseVfx(object.geometry);
+    });
+    // Scene-owned Aero particles and shock meshes are not children of the car.
+    for (const object of scene.children) {
+      if (object === car || stageMeshes.includes(object as THREE.Mesh)) continue;
+      if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {
+        releaseVfx(object.geometry);
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach(material => material.dispose());
+      }
+    }
     // The car model borrows global box, lamp, spoke and body geometry from car-model.js.
     // Disposing those would invalidate race meshes sharing the same WebGL context.
     for (const mesh of stageMeshes) {
@@ -101,5 +141,9 @@ export function createGarageStage(environment: THREE.Texture) {
       }
     });
   }
-  return { scene, update, inspectBounds, setPaint, dispose };
+  return {
+    scene, update, inspectBounds, setPaint, dispose,
+    setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
+    configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },
+  };
 }
