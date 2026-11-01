@@ -286,7 +286,10 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await waitForCoachText('Powered flight detected');
         // Unlatch FLY in the first dispatch: on slow software-WebGL frames every
         // extra round trip lets the car climb past a soft-landing height.
-        await touch('touchStart', [p, await point(button('fly'), 2)]);
+        // Cache the real FLY button coordinates before takeoff: querying its box
+        // after the 0.4s engine cue costs a slow WebGL frame and can turn a
+        // valid AIR→ROAD chain into a hard landing on CPU-only CI runners.
+        await touch('touchStart', [p, { ...fly, id: 2 }]);
         await touch('touchEnd', []);
       } else {
         await touch('touchStart', [fly]);
