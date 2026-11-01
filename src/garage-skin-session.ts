@@ -9,7 +9,7 @@ export function createGarageSkinSession(accountId: string, now: () => number, in
   let profile = normalizeSkinProfile(initial, accountId);
   let trial = { enabled: false, expiresAt: 0 };
   let selected: SkinId | null = null;
-  const temporary: SkinSession['trialEquipped'] = {};
+  const temporary: NonNullable<SkinSession['trialEquipped']> = {};
 
   const context = (): SkinSession => ({
     accountId: profile.accountId, now: now(), trialEnabled: trial.enabled,
