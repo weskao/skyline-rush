@@ -1,5 +1,19 @@
 ## In-race HUD overlaps — foldable, phones, tablet (2026-11-01)
 
+## 2026-11-02 Full original-material UI implementation checkpoint (latest)
+
+**Completed source imports (unmerged feature branches, NOT production release):**
+- `feature/garage-vfx-skins`: original 27/27 source WebPs byte-for-byte; 22 live 3D Skin selectors (4 Thruster / 4 Airflow / 5 NITRO / 9 Launch) with genuine void-beam geometry and studio/home looping flare demos. Original 16 equipped-candidate thumbnails display at 288×288 file pixels → **96×96 CSS px**. Original 11 badge/rarity images are 216×216 → **72×72 CSS px**, displayed as examples only, not ownership/rarity promises. Six Airflow variants still have shared SVG thumbnail fallback until approved unique per-item artwork. Current tests: `tests/garage-skin-renderer.test.js`, `tests/garage-cosmetics-preview-browser.spec.js`, `tests/garage-vfx-catalog-browser.spec.js`.
+- `feature/garage-rewards-and-missions`: all eight authentic 288×288 WebPs committed and displayed at 96×96 CSS px in `GarageSourceArtGallery.vue` (source artwork gallery, NOT functional reward settlement).
+- `feature/garage-store-readiness`: all six authentic 216×216 WebPs committed and displayed at 72×72 CSS px in `GarageSourceArtGallery.vue` (Coming Soon, NOT purchases).
+- `feature/3x-hud-materials-integration`: all 18 authentic source WebPs committed and shown at 1× CSS in `HudSourceArtwork.vue` within Settings. Nine also decorate existing functional buttons without replacing semantics/input; the other nine are only artwork references pending UX approval.
+
+**59/59 Git blob SHA and path integrity checks against `feature/3x-ui-materials`: exact match.** Source archive: [59-image README](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md). This is 3× *pixel resolution*, not a guarantee of threefold unique native visual detail. Original PNG/ZIP sources remain in ChatGPT File Library.
+
+**Open, don't mark Wave 2/3 complete:** latest-HEAD unit/typecheck/production build, all Playwright viewport and Low/Medium/High tests, actual WebGL captured screenshot review, stable p50/p95 frame-time and GPU budgets, physical iOS/Android, visual fidelity signoff, final `develop` integration CI. This checkpoint creates the full browser regression trigger. **Do not merge to `develop` or `main`, create a PR, deploy or enable sales** until gates are explicitly checked.
+
+---
+
 **Branch:** `fix/race-hud-overlaps` from `develop` `88dce759` (Eight-Car included). Not merged; merge needs approval.
 
 - [x] **RED** (`tests/race-hud-overlap-browser.spec.js`: real bounding boxes of every top-level HUD block must not intersect
