@@ -174,3 +174,49 @@ Bot 規則：經典模式、固定 1/60 s 步長；移除車流與對手，只�
 3. 其他七張圖的紀錄 key 與行為完全不變（有測試鎖住）。
 4. History 對舊版紀錄顯示標籤，中英文都有。
 5. 每一項都先 RED 再 GREEN，然後跑 `npm test`、`npm run typecheck` 和 `npm run test:browser` 的 history／results 相關 spec。
+
+## 其他地圖與模式（計畫，2026-11-01；尚未實作）
+
+量測用的是最終 bot 的同一套規則（車流、對手移除），一律從 `feature/classic-pickup-density` `146828d7` 用暫存腳本量，**沒有改 repo 裡的程式**。基準一樣是 World Tour 中位數：NITRO 15.79 格/分（下限 13.42）、BOOST 87.0%（73.95–100%）、第一次 NITRO 8.9 s。
+
+### 1. Aurora、Sky Spiral：建議併入第一階段（等使用者同意）
+
+| 地圖 | 現況 NITRO／BOOST／第一次 NITRO | 最小可達標調整 | 調整後 | 光圈數 |
+|---|---|---|---|---|
+| Aurora | ❌ 11.99／✅ 75.5%／✅ 4.8 s | `ringGap: [180, 280]` + `openingNitroRings: 1` | 16.50／89.5%／6.8 s | 20 → 23 |
+| Sky Spiral | ❌ 12.82／✅ 86.0%／❌ 9.0 s | `openingNitroRings: 2` | 14.22／85.8%／6.6 s | 22 → 22（位置不變） |
+
+- Aurora 只靠光圈比例（`ringOdds`）沒有任何組合能過。只改間距也不行，因為光圈重新排列後，第一次 NITRO 會變晚，所以要再加 1 個開場 nitro 光圈。
+- Sky Spiral 跟 Canyon 一樣，總量只差一點，主要問題是第一次 NITRO 太晚，所以只轉換開場兩個光圈，不增加數量。
+- **為什麼現在做**：版本鍵還沒寫，五張經典圖可以在**同一次遷移**一起升到 `layoutVersion: 2`，玩家只會看到一次「舊版配置」。如果之後再改這兩張，就要做第二次遷移。
+- 如果同意：AC3 的雜湊鎖會改成只鎖 World Tour 五張圖，AC2 測試會擴大到五張經典圖，What's New 也一併提到。**實作前要使用者明確同意，恢復工作時再問。**
+
+### 2. 用賽道設定的模式：不另外調整
+
+這九個模式在 Coast、Neon、Canyon、Aurora、Sky Spiral 上產生的光圈和道具，跟同一張圖的 Classic **完全相同**（逐一比對位置與種類）：classic、custom、free、time、gauntlet、checkpoint、cup、stunt、elimination。它們都直接用 `createRings(track)` 和 `createPickups(track)`，所以調整會自動帶進去，不需要另外調。
+
+會改動光圈的是模式選項，不是模式本身。這些是刻意的玩法設計，不列入 AC2：
+
+- `layout: 'mixed'`（gauntlet）：加圈並移除附近光圈。量到 14.22／89.5%／8.4 s，有達標。
+- `themes`：加主題圈。
+- `bonusGates`（stunt、checkpoint）：除了 mystery，其他光圈都改成獎勵門，所以 NITRO 很少（Coast checkpoint 加 bonusGates 只有 2.68），這是獎勵門本來的設計。
+- `itemRules: 'active'`：只留 mystery 光圈，NITRO 是 0，同樣是刻意的。
+- `items: false`：沒有地面道具。
+- `riskLines: 'off'`：risk 光圈改成 nitro，位置不變。
+
+bot 的限制：Checkpoint 模式的 bot 不會追檢查點，28 s 就超時結束；Elimination 移除對手後不會淘汰，車停在終點直到時間到。所以這兩個模式的每分鐘數字不能拿來比，但光圈和道具配置跟 Classic 相同。
+
+### 3. 有自己產生器的模式：只量測
+
+| 模式 | 產生方式 | NITRO 格/分 | BOOST | 第一次 NITRO | 結論 |
+|---|---|---|---|---|---|
+| Circuit（`harbor-circuit`，3 圈） | `lapItems(createRings(CIRCUIT_TRACK))` | 13.16（−2%，略低於下限） | 86.9% | **11.7 s（晚 2.8 s）** | 唯一明顯偏低的是第一次 NITRO。可以考慮在 `CIRCUIT_TRACK` 加 `openingNitroRings`，但要先確認 `lapItems` 每圈重複的行為，而且 Circuit 有自己的 `topologyVersion` 與單圈紀錄。**只提案，不調整，要使用者同意。** |
+| Endless（Coast／Neon 量 120 s） | `endless-highway.ts` 每個 chunk 固定 3 個光圈 | 20.5／21.25 | 100% | 6.0 s | 高於基準，不調整。 |
+| Daily `gold-rings` | 把全部光圈改成 nitro | 22.32（Coast）／24.33（Neon） | 68.4%／90% | 6.2／5.8 s | 這是刻意加碼的每日變化。Coast 的 BOOST 68.4% 偏低，原因是 charge 光圈都被換掉了，屬於這個變化本來的取捨。不調整。 |
+| Event Lab | 玩家自己編的關卡（`compileCourse`），光圈固定是 nitro | — | — | — | 配置由玩家決定，沒辦法一般化量測。不調整。 |
+
+建議下一步（也要使用者同意）：把 `measureEconomy` 加上 `options` 與時間上限參數（暫存腳本已經驗證可行，大約只要改三行），讓以上數字由測試記錄，而不是只寫在文件裡。
+
+### 4. World Tour：不調整（明確的非目標）
+
+Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。但 World Tour 五張圖本身就是基準：中位數的定義就是一半在上、一半在下。調整它們會讓基準跟著動，而且 AC3 要求這五張圖 bit-for-bit 不變，所以不調整。

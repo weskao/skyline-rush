@@ -10,6 +10,7 @@
 - [x] `npm test` 1225/0, `npm run typecheck` clean after tuning (commits `4d5f3177`, `af00b2d8`); pushed to origin.
 - [ ] **Paused (user, 2026-11-01):** wait until the other Wave 2 branches (Eight-Car, Foldable, Garage; VFX already in `develop` as `bcf9b3f5`) are merged into `develop`, merge `develop` into this branch, then continue from here. No version-key code written yet.
 - [ ] Layout version key (all timed records; see the plan's "版本鍵實作計畫"): RED → GREEN, then cloud merge, History "old layout" tag (en + zh-TW).
+- [ ] **Ask on resume:** bring Aurora (`ringGap [180,280]` + `openingNitroRings: 1`) and Sky Spiral (`openingNitroRings: 2`) into stage 1, so all five Classic tracks move to `layoutVersion: 2` in one migration. Also ask about the Circuit first-NITRO proposal and committing the `measureEconomy(options, cap)` extension. See the plan's 「其他地圖與模式」.
 - [ ] Audio: no new sounds; check ring-pickup cue spacing on denser Neon (`tests/race-audio-events.test.js`).
 - [ ] What's New `UPCOMING` entry (en + zh-TW, player-first).
 - [ ] Render check: ring pool fixed at 7 (`src/effects.js`); measure Draw Calls / Triangles / p50/p95 on Coast/Neon/Canyon at 1440×900 Low/Medium/High; real WebGL screenshots 1440×900 / 390×844 / 844×390.
