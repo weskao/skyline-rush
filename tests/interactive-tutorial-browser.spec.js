@@ -204,6 +204,8 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
   test.describe(`touch practice ${width}x${height} ${mode} ${flyMode}${custom?' custom layout':''}`, () => {
     test.use({viewport:{width,height},hasTouch:true,isMobile:true});
     test('real touch controls finish practice without the coach blocking actions', async ({ page, context }) => {
+      // Up to three engine-judged attempts per air lesson need more than the default budget on CPU-only WebGL.
+      test.setTimeout(ciTimeout(80000));
       const prefs = {version:1,mode,flyMode,...(custom?{layout:{throttle:{x:.15,y:.18}}}:{})};
       await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls',JSON.stringify(prefs)), prefs);
       await begin(page);
@@ -277,26 +279,34 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       await step(page,'boost');
       await gesture(button('boost'),'airChain');
       const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
-      if (flyMode === 'toggle') {
-        await tapTouch(button('fly'));
-        const p = await point(button('boost'), 1);
-        await touch('touchStart', [p]);
-        // Read the engine-confirmed flight cue at animation-frame cadence,
-        // then unlatch FLY before the car climbs into a hard-landing height.
-        await waitForCoachText('Powered flight detected');
-        // Unlatch FLY in the first dispatch: on slow software-WebGL frames every
-        // extra round trip lets the car climb past a soft-landing height.
-        // Cache the real FLY button coordinates before takeoff: querying its box
-        // after the 0.4s engine cue costs a slow WebGL frame and can turn a
-        // valid AIR→ROAD chain into a hard landing on CPU-only CI runners.
-        await touch('touchStart', [p, { ...fly, id: 2 }]);
-        await touch('touchEnd', []);
-      } else {
-        await touch('touchStart', [fly]);
-        await touch('touchStart', [fly, boost]);
-        await waitForCoachText('Powered flight detected');
-        // One dispatch releases FLY and BOOST together, for the same reason.
-        await touch('touchEnd', []);
+      // Software WebGL can advance several simulation frames between CDP commands.
+      // Repeat a genuine powered takeoff after a missed landing; never credit a lesson
+      // without the engine's chain event.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (flyMode === 'toggle') {
+          await tapTouch(button('fly'));
+          const p = await point(button('boost'), 1);
+          await touch('touchStart', [p]);
+          await waitForCoachText('Powered flight detected');
+          // Unlatch FLY in the first dispatch: on slow software-WebGL frames every
+          // extra round trip lets the car climb past a soft-landing height.
+          await touch('touchStart', [p, { ...fly, id: 2 }]);
+          await touch('touchEnd', []);
+        } else {
+          await touch('touchStart', [fly]);
+          await touch('touchStart', [fly, boost]);
+          await waitForCoachText('Powered flight detected');
+          // One dispatch releases FLY and BOOST together, for the same reason.
+          await touch('touchEnd', []);
+        }
+        await page.waitForFunction(() => {
+          const step = document.querySelector('#tutorial-coach')?.getAttribute('data-step');
+          const instruction = document.querySelector('#tutorial-instruction')?.textContent ?? '';
+          return step === 'barrelRoll' || (step === 'airChain' && instruction.includes('Chain missed'));
+        }, null, { polling: 'raf', timeout: ciTimeout(25000) });
+        if (await coach(page).getAttribute('data-step') === 'barrelRoll') break;
+        if (attempt === 2) throw new Error('AIR→ROAD CHAIN did not earn a real landing after three attempts');
+        await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
       }
       await step(page, 'barrelRoll');
       const steerTarget = effectiveMode === 'slide' ? page.locator('.touch-pad') : button('left');
@@ -305,36 +315,45 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       // for a bounding box of a hidden control.
       const right = effectiveMode === 'slide' ? null : await point(button('right'), 3);
       const pad = effectiveMode === 'slide' ? left : null;
-      if (flyMode === 'toggle') await tapTouch(button('fly'));
-      else await touch('touchStart', [fly]);
-      // A genuine takeoff is required, but steering can happen during the
-      // ensuing glide. Unlatch/release FLY before the flick so slow CI frames
-      // cannot leave the car at 12 m with an unavoidable hard landing.
-      await page.waitForFunction(
-        () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
-        null, { polling: 'raf' },
-      );
-      if (flyMode === 'toggle') await tapTouch(button('fly'));
-      else await touch('touchEnd', []);
-      if (pad) {
-        await touch('touchStart', [pad]);
-        await touch('touchMove', [{...pad,x:pad.x-55}]);
-        // The two real steering edges must still fall inside the engine's
-        // 0.3-second trick window; never synthesize a trick or payout.
-        await waitForCoachText('First airborne steering press detected');
-        await touch('touchMove', [{...pad,x:pad.x+55}]);
-        await waitForCoachText('BARREL ROLL spinning');
-        await touch('touchEnd', []);
-      } else {
-        await touch('touchStart', [left]);
-        // Let the engine sample the first steering edge without waiting for
-        // Vue/DOM text propagation inside the 0.3-second trick window.
-        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
-        // Release LEFT and press RIGHT with no round trip between them: each awaited
-        // CDP call can cost a slow software-WebGL frame, and the window is ~6 frames.
-        await Promise.all([touch('touchEnd', []), touch('touchStart', [right])]);
-        await waitForCoachText('BARREL ROLL spinning');
-        await touch('touchEnd', []);
+      // The 0.3s engine flick window can elapse without a visible "spinning"
+      // message on slower renderers. Observe the real payout/landing instead,
+      // and repeat physical steering if the engine reports a missed roll.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt) await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
+        if (flyMode === 'toggle') await tapTouch(button('fly'));
+        else await touch('touchStart', [fly]);
+        await page.waitForFunction(
+          () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
+          null, { polling: 'raf' },
+        );
+        if (flyMode === 'toggle') await tapTouch(button('fly'));
+        else await touch('touchEnd', []);
+        if (pad) {
+          await touch('touchStart', [pad]);
+          await touch('touchMove', [{...pad,x:pad.x-55}]);
+          await waitForCoachText('First airborne steering press detected');
+          await touch('touchMove', [{...pad,x:pad.x+55}]);
+          // Keep the opposite steering input active until a simulation frame
+          // samples it; ending it in the same CDP turn can erase the flick.
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+          await touch('touchEnd', []);
+        } else {
+          await touch('touchStart', [left]);
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+          // Release LEFT and press RIGHT with no round trip between them: each awaited
+          // CDP call can cost a slow software-WebGL frame, and the window is ~6 frames.
+          await Promise.all([touch('touchEnd', []), touch('touchStart', [right])]);
+          // The fixed-step game reads touch state on rAF, not at CDP dispatch.
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+          await touch('touchEnd', []);
+        }
+        await page.waitForFunction(() => {
+          const step = document.querySelector('#tutorial-coach')?.getAttribute('data-step');
+          const instruction = document.querySelector('#tutorial-instruction')?.textContent ?? '';
+          return step === 'nitro' || (step === 'barrelRoll' && instruction.includes('Roll missed'));
+        }, null, { polling: 'raf', timeout: ciTimeout(25000) });
+        if (await coach(page).getAttribute('data-step') === 'nitro') break;
+        if (attempt === 2) throw new Error('BARREL ROLL did not earn a real landing payout after three attempts');
       }
       // The actual engine must finish the roll and pay NITRO on a gentle
       // landing before the coach can advance to the next lesson.
