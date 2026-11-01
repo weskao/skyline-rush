@@ -285,12 +285,15 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       for (let attempt = 0; attempt < 3; attempt++) {
         if (flyMode === 'toggle') {
           await tapTouch(button('fly'));
-          const p = await point(button('boost'), 1);
+          // Reuse positions measured before takeoff. A boundingBox() request after
+          // powered flight can cost multiple software-WebGL frames, turning the
+          // otherwise gentle landing into a hard landing without chain credit.
+          const p = { ...boost, id: 1 };
+          const releaseFly = { ...fly, id: 2 };
           await touch('touchStart', [p]);
           await waitForCoachText('Powered flight detected');
-          // Unlatch FLY in the first dispatch: on slow software-WebGL frames every
-          // extra round trip lets the car climb past a soft-landing height.
-          await touch('touchStart', [p, await point(button('fly'), 2)]);
+          // The next CDP dispatch unlatches FLY while BOOST is still pressed.
+          await touch('touchStart', [p, releaseFly]);
           await touch('touchEnd', []);
         } else {
           await touch('touchStart', [fly]);
