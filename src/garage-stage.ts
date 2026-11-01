@@ -82,8 +82,13 @@ export function createGarageStage(environment: THREE.Texture) {
     lastTime = time;
     // Move only the emission sample briefly; keep the rendered car perfectly centred.
     car.position.z = reducedMotion ? 0 : Math.sin(time * 2) * 0.65;
-    try { aero.update(previewRace, dt, origin, previewSettings, reducedMotion); }
+    try { aero.update(previewRace, dt, origin, previewSettings, reducedMotion, null, true); }
     finally { car.position.z = 0; }
+    // Garage orbit views must see the energy ring edge-on and face-on.
+    for (const name of ['Ignition shockwave', 'Launch flare echo']) {
+      const ring = scene.getObjectByName(name);
+      if (ring?.visible) ring.quaternion.copy(camera.quaternion);
+    }
   }
 
   function inspectBounds(camera: THREE.PerspectiveCamera) {
@@ -143,6 +148,7 @@ export function createGarageStage(environment: THREE.Texture) {
   }
   return {
     scene, update, inspectBounds, setPaint, dispose,
+    inspectCosmetics() { return aero.inspectCosmetics(); },
     setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
     configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },
   };

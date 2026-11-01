@@ -67,7 +67,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
     <button v-show="garageStudioView.page === 'studio'" id="garage-restore-default" type="button" class="garage-restore">{{ copy.restore }}</button>
         <p class="collection-note">{{ copy.unlockNote }}</p>
         <p class="garage-coming">{{ copy.coming }}</p>
-        <GarageSkinCatalog v-show="garageStudioView.page === 'studio'" :locale="locale" />
+        <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
       </aside>
     </div>

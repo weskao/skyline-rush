@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
-import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin } from './garage-skin-runtime.ts';
+import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins } from './garage-skin-runtime.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
@@ -17,6 +17,10 @@ const entries = GARAGE_SKINS.map(skin => ({ ...skin, artwork: skinArtwork(skin.i
 const unavailable = ref<ReadonlySet<string>>(new Set());
 const rasterFailed = ref<ReadonlySet<string>>(new Set());
 const view = (id: SkinId) => { void garageSkinState.revision; return garageSkinEntry(id); };
+const isPreviewActive = (id: SkinId, category: SkinCategory) => {
+  void garageSkinState.revision;
+  return selectedGarageSkins()[category] === id;
+};
 const statusText = (id: SkinId, locale: string) => {
   const state = view(id)?.state ?? 'locked';
   return ({ en: { trial: 'Free trial', equipped: 'Equipped', owned: 'Owned', locked: 'Locked' },
@@ -41,7 +45,8 @@ function onImageError(id: string, hasRaster: boolean): void {
       <h4>{{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
       <ul>
         <li v-for="skin in entries.filter(entry => entry.category === category)" :key="skin.id"
-          :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)">
+          :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)"
+          :data-preview-active="String(isPreviewActive(skin.id, skin.category))">
           <span class="garage-vfx-art">
             <img v-if="!unavailable.has(skin.id)" :src="rasterFailed.has(skin.id) ? skin.artwork.fallback : skin.artwork.src" :width="skin.artwork.cssSize"
               :height="skin.artwork.cssSize" alt="" decoding="async" @error="onImageError(skin.id, skin.artwork.hasRaster)" />
@@ -52,7 +57,7 @@ function onImageError(id: string, hasRaster: boolean): void {
           <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
           <small>{{ statusText(skin.id, locale) }}</small>
           <div class="garage-vfx-actions">
-            <button type="button" @click="selectGarageSkin(skin.id)">{{ locale === 'zh-TW' ? '預覽' : 'Preview' }}</button>
+            <button type="button" :aria-pressed="isPreviewActive(skin.id, skin.category)" @click="selectGarageSkin(skin.id)">{{ locale === 'zh-TW' ? '預覽' : 'Preview' }}</button>
             <button type="button" :disabled="!view(skin.id)?.canEquip" @click="equipGarageSkin(skin.id)">
               {{ view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '試用' : 'Try') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
             </button>
@@ -75,6 +80,19 @@ function onImageError(id: string, hasRaster: boolean): void {
 .garage-vfx-art { width: 96px; height: 96px; max-width: 100%; display: grid; place-items: center; }
 .garage-vfx-art img { width: 100%; height: 100%; object-fit: contain; }
 .garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
+.garage-vfx-category li[data-preview-active="true"] {
+  border-color: #74defe;
+  background: radial-gradient(circle at 50% 12%, #244367 0%, #152b4c 48%, #11192e 100%);
+  box-shadow: 0 0 0 1px #8b4dff66, 0 0 24px #704dff55, inset 0 0 16px #1b59a244;
+}
+.garage-vfx-category li[data-preview-active="true"] .garage-vfx-art {
+  filter: drop-shadow(0 0 12px #8bdfffbb);
+}
+.garage-vfx-actions button[aria-pressed="true"] {
+  background: linear-gradient(120deg, #274b7a, #572ba0);
+  border-color: #a3eafd;
+  box-shadow: 0 0 10px #6847ec88;
+}
 .garage-vfx-category strong { font-size: 12px; overflow-wrap: anywhere; }
 .garage-vfx-category small { font-size: 11px; color: #a1c6d8; }
 .garage-vfx-actions { display: flex; flex-wrap: wrap; width: 100%; gap: 5px; justify-content: center; }

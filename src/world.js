@@ -540,7 +540,7 @@ export function createWorld(canvas) {
   let cameraMode = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0;
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let photoView = null, photoCapture = null, garageCamera = null;
+  let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
   let sizeKey = '', warmupPending = true, garageWarmupPending = true;
@@ -611,7 +611,16 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGarageSkinPreview(ids) { garagePreviewSkins = ids; garageStage?.setSkins(ids); },
+    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); },
+    setGarageSkinPreview(ids, home = false) {
+      garagePreviewSkins = ids;
+      garageHomePreview = home && !garageCamera;
+      garageStage?.setSkins(ids);
+      if (garageHomePreview) aero.setSkins(ids);
+    },
+    inspectCosmeticPreview() {
+      return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics();
+    },
     inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint);
@@ -919,7 +928,7 @@ export function createWorld(canvas) {
         speed: car.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion,
       });
       const sprintFrame = sprintVisual.update(sprintInput);
-      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion, sprintFrame);
+      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion, sprintFrame, garageHomePreview);
       const boostStrength = race.phase === 'racing' ? sprintFrame.power : 0;
       const portrait = camera.aspect < 0.8;
       if (photoView && race.phase === 'paused') {
