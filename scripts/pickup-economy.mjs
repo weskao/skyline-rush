@@ -12,6 +12,18 @@ const BOOST_ON = 40, BOOST_OFF = 20; // fuel hysteresis keeps a reserve for flyi
 const CLIMB_ON = 35, CLIMB_OFF = 5; // fuel hysteresis for flying to a ring: no FLY flicker on the road, which blocks recharge
 const GAP_HEIGHT = 3; // m: enough to clear a broken bridge without burning fuel to the ceiling
 
+// Like a player, the bot steers around a car it is closing on: it keeps its aim while that line and its own
+// are clear, else takes the nearest lane with no car ahead (within about a second) or alongside.
+const LANES = [-7.5, -2.5, 2.5, 7.5];
+function clearLane(race, aim) {
+  const car = race.player, reach = Math.max(30, car.speed);
+  const blocked = x => race.rivals.some(o => o.distance - car.distance > -5 && o.distance - car.distance < reach &&
+    Math.abs(o.x - x) < 2.4 && Math.abs((o.altitude || 0) - car.altitude) < 1.8);
+  if (!race.rivals.length || (!blocked(aim) && !blocked(car.x))) return aim;
+  const free = LANES.filter(x => !blocked(x));
+  return free.length ? free.reduce((a, b) => Math.abs(b - aim) < Math.abs(a - aim) ? b : a) : aim;
+}
+
 // The bot chases the next ring (else the next pickup), climbs to it, BOOSTs with fuel to spare and
 // fires NITRO as soon as a full charge is banked. No brake, so no drift or trick rewards.
 function botInput(race, bot) {
@@ -24,7 +36,7 @@ function botInput(race, bot) {
   const wantAir = !!target && target.altitude > reach && target.distance - at < car.speed * 2.5 && !tunnelNear;
   bot.climb = wantAir && (bot.climb ? car.fuel > CLIMB_OFF : car.fuel >= CLIMB_ON);
   bot.boost = bot.boost ? car.fuel > BOOST_OFF : car.fuel >= BOOST_ON;
-  const dx = target ? target.x - car.x : 0;
+  const dx = clearLane(race, target ? target.x : car.x) - car.x;
   return {
     throttle: true, laneAssist: true,
     steer: Math.abs(dx) < 0.2 ? 0 : Math.max(-1, Math.min(1, dx * 0.6)),
@@ -62,7 +74,7 @@ export function measureEconomy(trackId, options = undefined, cap = 600, { rivals
   return {
     trackId, phase: race.phase, time: round(race.elapsed, 1), nitroPerMinute: round(nitroGained / minutes),
     boostShare: round(boostedSteps / steps * 100, 1), fuelEmpty, firstNitro: firstNitro === null ? null : round(firstNitro, 1),
-    falls: car.falls, collisions: car.collisions, rings: car.rings, ringsTotal: race.rings.length, pickups: race.pickups.filter(p => p.taken).length,
+    falls: car.falls, collisions: car.collisions, rings: car.rings, ringsTotal: race.rings.length, pickups: race.pickups.filter(p => p.taken).length, pickupsTotal: race.pickups.length,
     rivals: race.rivals.length, rivalNitro,
   };
 }
@@ -90,9 +102,11 @@ export function worldTourBaseline(results = WORLD_TOUR.map(id => measureEconomy(
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.argv.includes('--freeze-stage1')) {
-  // One-off: the stage-1 baseline (rival-free take, today's rival NITRO) that stage 2 is held against.
+  // One-off, on the stage-1 layout: the rival-free take, today's rival NITRO (car-avoiding bot) and the ring and
+  // pickup counts that stage 2 is held against.
   const withRivals = Object.fromEntries(economyMatrix({ rivals: true }).map(r => [r.key, r.rivalNitro]));
-  const rows = Object.fromEntries(economyMatrix({ rivals: false }).map(r => [r.key, { nitroPerMinute: r.nitroPerMinute, boostShare: r.boostShare, rivalNitro: withRivals[r.key] }]));
+  const rows = Object.fromEntries(economyMatrix({ rivals: false }).map(r => [r.key, { nitroPerMinute: r.nitroPerMinute, boostShare: r.boostShare,
+    rivalNitro: withRivals[r.key], rings: r.ringsTotal, pickups: r.pickupsTotal }]));
   writeFileSync(new URL('./pickup-economy-stage1.json', import.meta.url), JSON.stringify(rows, null, 1) + '\n');
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const rows = Object.keys(RACE_TRACKS).map(id => measureEconomy(id));

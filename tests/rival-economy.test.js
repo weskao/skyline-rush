@@ -14,6 +14,14 @@ test('R1: the economy bot can race against all seven rivals and counts their NIT
   assert.equal(measureEconomy('coast').rivals, 0, 'the stage-1 measurement stays rival-free');
 });
 
+// User decision 2026-11-02: AC1 holds a bot that steers around cars, as a player would, to the rival-free stage 1.
+test('R1: the bot changes lane around rivals instead of ramming them', () => {
+  for (const id of ['coast', 'alpine', 'aurora']) {
+    const run = measureEconomy(id, undefined, 600, { rivals: true });
+    assert.ok(run.collisions <= 1, `${id} collisions ${run.collisions}`);
+  }
+});
+
 test('R1: the matrix covers every layout-inheriting mode on every track, and Custom on every difficulty', () => {
   const keys = new Set(economyMatrix({ rivals: false }).map(r => r.key));
   for (const { key } of ECONOMY_CASES) assert.ok(keys.has(key), key);
