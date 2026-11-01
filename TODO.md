@@ -1,5 +1,16 @@
 ## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
 
+## 2026-11-02 — VERIFIED 3× SOURCE MATERIALS AVAILABLE (Wave 3 asset handoff)
+
+**Read before making or importing store imagery.** The user's original `skyline-rush-3x-garage-store-readiness.zip` was recovered from ChatGPT File Library (SHA-256 `3f5f37d2c4f417fa1b84c3356ef15ff297825d6b49d602f858f9cd342fa11751`). Its **six original true-alpha 3× WebP images are now committed** in the asset-only `feature/3x-ui-materials` branch at reference commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. Read [full verified asset manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) and [actual 6 Store image blobs](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-store-readiness).
+
+**6 original assets:** `store-cart@3x.webp`, `store-box@3x.webp`, `store-bundle@3x.webp`, `store-tag@3x.webp`, `store-star@3x.webp`, `store-collection@3x.webp`. All are **216×216 source pixels**, displayed at **72×72 CSS px**. Example: `<img width="72" height="72">` plus `width:72px;height:72px;object-fit:contain`. Do not resize source pixels to 1× or enlarge the interactive touch target to 3×. The PNG originals / source ZIP are preserved in ChatGPT File Library; Git stores 3× WebP only.
+
+**Required Wave3 sequence:** (1) After permitted upstream integration, use current `develop` as integration target, not stale `main`; (2) read existing `RASTER-ASSET-HANDOFF.md`, review alpha, matte, cropped highlights, text/meaning, and existing SVG alternatives; (3) selectively copy approved items from `origin/feature/3x-ui-materials:docs/designs/3x-asset-library/webp/garage-store-readiness/` to `public/feature-assets/garage-store-readiness/raster/`; (4) Vue 3 + strict TS + CSS must use `import.meta.env.BASE_URL`-safe URLs, 1× CSS pixels, alt/fallback and 44px touch targets, en/zh-TW and three quality tiers; (5) RED→GREEN→Refactor tests + latest-HEAD CI + real visual signoff. **Images do not authorize purchases, invented prices, balance, payment SDK, premium currency, ownership grants, or an active store.** Continue Coming Soon until separately approved.
+
+---
+
+
 **Branch:** `feature/ci-speedup`. Measured on `main` run 41024921317 (`cff7886`): 75 min wall. Browser shard 8 took 72 min; shard 1 took 38 min of suite plus a 30 min `npm run test:layout` rerun of specs the sharded suite already contains; World Tour shards ran 5–40 min (the slow camera views sit at the end of the list); unit 1 min, cloud-save 1.5 min.
 
 - [x] Drop the layout rerun from the browser matrix (its four spec files are matched by `playwright.config.js`); the pre-push hook keeps it locally. RED → GREEN: `tests/ci-refactor-full-gate.test.js` and `tests/performance-workflow.test.js` now refuse a second layout run inside the matrix.
