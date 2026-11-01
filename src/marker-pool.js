@@ -11,7 +11,6 @@ export function createMarkerPool(name, geometry, materials, capacity) {
   for (const [key, material] of Object.entries(materials)) {
     const mesh = new THREE.InstancedMesh(geometry, material, capacity);
     mesh.name = key; mesh.count = 1; mesh.visible = false;
-    mesh.frustumCulled = false; // markers move every frame; a cached instance bound would cull live ones
     mesh.setMatrixAt(0, PARKED);
     meshes[key] = mesh; used[key] = 0;
     group.add(mesh);
@@ -37,6 +36,9 @@ export function createMarkerPool(name, geometry, materials, capacity) {
         mesh.instanceMatrix.clearUpdateRanges();
         mesh.instanceMatrix.addUpdateRange(0, count * 16); // upload only the markers in use
         mesh.instanceMatrix.needsUpdate = true;
+        // Invalidated every frame the markers move: the bound covers exactly this frame's markers, so a material
+        // with nothing on screen is culled (no draw) and a live one never is. Reuses the mesh's sphere, no allocation.
+        mesh.computeBoundingSphere();
       }
     },
     dispose() { for (const key in meshes) meshes[key].dispose(); },

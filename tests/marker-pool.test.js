@@ -30,6 +30,26 @@ test('D1: every ring and pickup within 900 m is drawn through one instanced draw
   assert.ok([...rings.children, ...pickups.children].every(m => m.isInstancedMesh));
 });
 
+// Every material within 900 m used to draw even when all its markers were off-screen (behind a bend, past
+// the camera), which cancelled the instancing win on winding routes like Tokyo. Each frame's bound covers
+// exactly the markers in use, so the renderer culls a material with nothing on screen and never a live one.
+test('D1: each pool is frustum-culled by a bound recomputed from this frame\'s markers', t => {
+  const { scene, race, effects } = denseScene(t);
+  const meshes = () => [...scene.getObjectByName('Race rings').children, ...scene.getObjectByName('Nitro pickups').children].filter(m => m.visible);
+  const covers = () => {
+    for (const mesh of meshes()) {
+      assert.equal(mesh.frustumCulled, true, mesh.name);
+      for (const marker of drawnMarkers(mesh.parent).filter(m => m.material === mesh.material))
+        assert.ok(mesh.boundingSphere.distanceToPoint(marker.position) <= 0, `${mesh.name} bound holds its marker`);
+    }
+  };
+  covers();
+  for (const pickup of race.pickups) pickup.x += 6;
+  race.player.distance = 50;
+  effects.update(race, 0.016, 50, false, false);
+  covers();
+});
+
 // WebKit builds a pipeline only on a real draw: each pool keeps one parked instance for the first-frame warmup.
 test('D1: a pool with nothing in range still carries one parked instance for shader warmup', t => {
   const { scene, race, effects } = denseScene(t);
