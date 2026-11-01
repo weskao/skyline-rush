@@ -1,3 +1,21 @@
+## Rival item pickups — stage 2 (2026-11-02)
+
+**Branch:** `feature/rival-item-pickups` (merged `develop` `435e4fb8` as `f18cb226`, no conflicts). Plan + inventory + AC: `docs/plans/2026-11-01-rival-item-pickups.md`. `PLAYWRIGHT_PORT=5186`. Never merge into `develop`/`main`, no PR, no deploy.
+
+- [ ] R1 economy bot with 7 rivals, mode × track × difficulty; frozen stage-1 baseline JSON; rival NITRO count.
+- [ ] R2 move rival NITRO timing out of `game.js` (move-only).
+- [ ] R3 shared 2.5 s respawn for rings and pickups.
+- [ ] R4 rivals collect NITRO items; Easy cap (AC3); Normal on-line only.
+- [ ] R5 Hard lane-seeking through `avoidObstacles` (obstacles still win).
+- [ ] R6 full-width rows, dense trains, per-track pickup gap; PERFECT LINE grouping locked.
+- [ ] R7 density + rubber-band balance: AC1 ≥ 95% on every mode × track × difficulty, AC2 Normal +2 / Hard +4; replace stage-1 layout locks (user decision noted).
+- [ ] R8 AC4 layout version bump + rules/sync guard. **Before release (needs user approval): deploy `firestore.rules` with the new keys.**
+- [ ] R9 instanced rings/pickups, rival collect/NITRO cues (throttled, never sound-only); draw calls flat on all ten tracks; shader warmup.
+- [ ] R10 What's New UPCOMING (en + zh-TW) + `/review-release-notes`.
+- [ ] R11 gates + `[full-regression]` push + `quality-gate` green on final HEAD.
+
+---
+
 ## Classic pickup density — stage plan (2026-11-01)
 
 **Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Full stage plan (S0–S9 + stage 2): `docs/plans/2026-11-01-classic-pickup-density.md` → 「完整階段計畫」. `PLAYWRIGHT_PORT=5185`. Never merge into `develop`.
