@@ -267,9 +267,9 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
 | S3 | 合併 `develop`（等 Eight-Car、Foldable、Garage 合入） | ✅ `119cf2d8` |
 | S4 | bot 擴充 | ✅ `ee936be0` |
 | S5 | Sky Spiral 與 Circuit 的開場 NITRO | ✅ 見下方結果 |
-| S6 | 版本鍵 | 待做 |
-| S7 | 音效、What's New | 待做 |
-| S8 | 畫面、效能與實機驗證 | 待做 |
+| S6 | 版本鍵 | ✅ `48a422f8`、`77ab7d0d`、見下方結果 |
+| S7 | 音效、What's New | ✅ `ea8fed66` |
+| S8 | 畫面、效能與實機驗證 | ✅ 自動化部分；實機待使用者 |
 | S9 | 完整 CI、回報 | 待做 |
 
 **S3 合併 `develop`**
@@ -320,11 +320,21 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
   - 照版本鍵一節的 1–5 條。
   - 另外要有測試證明：舊 localStorage／雲端快照在合併、匯出、匯入、切換帳號後 bit-for-bit 保留；其他六張圖（Aurora 和 World Tour）的紀錄 key 不變。
   - `npm run test:browser` 的 history／results 相關 spec 要通過。
+- **結果：**
+  - `src/record-layout.ts`：`layoutVersion`、`raceLayout`（Cup 取最大；Endless、Event Lab 不用賽道光圈，固定為 1）、`recordTrackId`、`parseRecordTrackId`、`runLayout`、`layoutField`、`isCurrentLayout`。五個賽道設 `layoutVersion: 2`。
+  - 對應的地方都在最底層的存取函式裡換 ID：`history-ghost.ts`（Classic 與模式 Ghost）、`history-mode.ts`（模式最佳、Stunt 峰值、比較只看同版本的歷史）、`circuit-records.ts`（單圈最佳）、`race-results.ts`（Classic 最佳；`LEGACY_BEST_KEY` 只在版本 1 的 coast 寫入，所以舊 key 從此凍結）、`history-classic.ts`（新紀錄加 `layout`）。
+  - 雲端：`mergeProgress` 的 bests 接受版本化 ID；`raceRun`／`modeRun` 保留 `layout`；`validModeKey` 透過 `parseRecordTrackId` 接受版本化 ID。
+  - **Firestore 規則（計畫外的發現）：** `saves.bests` 的 key 有白名單，`coast@2` 會讓整份雲端存檔被拒絕。`firestore.rules` 加了 `bestIds()`（多出 `coast@2`、`neon@2`、`canyon@2`、`spiral@2`），emulator 測試與一個 node 守門測試（規則清單必須跟用戶端完全一致）。**CI 不會部署 Firestore 規則：發布這個版本前，必須先手動部署規則，否則已登入玩家在新版跑出成績後雲端同步會失敗。** 這一步需要使用者核准。
+  - History：舊版紀錄照常列出，加上「OLD LAYOUT／舊版配置」標籤，不算最佳、不進趨勢圖、模式紀錄不顯示個人最佳與 Ghost。字串放在新的 `src/locales/record-layout.ts`（`ui.ts` 已到行數上限，不能再加）。
+  - RED：把儲存層的改動暫時還原後，`tests/record-layout.test.js` 有 7 個行為測試失敗；History 標籤測試、Firestore 守門測試也各自先 RED。GREEN：`record-layout` 17/17、`npm test` 1317／0、typecheck 通過、`npm run test:cloud`（emulator）Playwright 15/15 與規則測試 3/3。
+  - 既有測試的調整（不是放寬）：五個測試原本拿 Coast／Circuit 當「任意賽道」，存檔資料沒有 `layout` 欄位，依新規則會被當成舊版。改成符合目前版本的資料：`history.test.js` 預期紀錄多 `layout: 2`；`race-results.test.js` 的最佳成績 key 改為 `coast@2`；`ghost.test.js`、`history-ui.test.js` 的模式紀錄加 `layout: 2`；`mode-personal-best-mode00.test.js` 的「舊格式紀錄」測試改用配置沒變過的 Aurora（舊格式紀錄本來就是版本 1）。舊版本行為由 `record-layout.test.js` 涵蓋。
 
 **S7 音效與 What's New**
 - 音效：不新增素材。確認 Neon 光圈變密後，拾取提示音不會疊在一起或一直響（`src/race-audio-events.ts`）。必要時加節流，並在 `tests/race-audio-events.test.js` 先 RED 再 GREEN。暫停／重來後不能殘留聲音。
 - What's New：`src/release-notes-data.ts` 最上方加 `version: UPCOMING`，中英文都寫，從玩家角度描述：前三張經典地圖的光圈更多、更容易拿；Sky Spiral 與環形賽道更早拿到第一個 NITRO；舊成績保留並標示舊版配置。最後跑 `/review-release-notes`。
 - 畫質分級：光圈是 3D 物件，Low／Medium／High 都顯示一樣的數量，不依畫質分級。
+- **音效結果：** 光圈本身沒有音效；跟光圈有關的只有「NITRO 就緒」提示音，由 `nitro-readiness.ts` 控制：只在 NITRO 沒有啟動時、充能從不滿 1 變成滿 1 才響，而且要真的花掉一格才會重新啟用。用真實的 `createNitroReadiness` 跑一場比較：Coast 每場提示 1 → 2 次（間隔 25.2 s），Neon 最短間隔 5.2 → 5.0 s，Canyon、Sky Spiral、Circuit 不變（22.8、9.2、5.7 s）；World Tour 的 Taipei 是 3.0 s。沒有疊音或連響，不需要節流，也不新增音效。
+- **What's New 結果：** 發現已發布的 v0.28.0 那則仍標成 `UPCOMING`（發布後沒有補標版本），新增內容會改到已發布的說明、讓它的審稿失效。改為把那則補標 `version: '0.28.0'`（審稿指紋仍然相符），另開新的 `UPCOMING`：`classic-more-rings`（使用者選用審稿 agent 的改寫：「光圈更多、更豐厚」）與 `old-layout-records`。以 0.29.0 跑完 `/review-release-notes`，使用者核准後記錄指紋。若最後不是以 0.29.0 發布，要用實際版本號重審。
 
 **S8 畫面、效能與實機驗證**
 - 光圈池固定 7 個，只畫前方 900 m 內的光圈，所以 draw call 上限不變。
@@ -332,6 +342,30 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
 - 實際的 WebGL 截圖：1440×900、390×844、844×390，確認光圈清楚可見，也沒有擋到地標。Coast 的低光圈位在路面高度 3 m，要特別確認不會擋住車子。
 - 真實鍵盤和觸控各跑一場上述地圖，確認 BOOST／NITRO 節奏，以及暫停／重來的行為。
 - `npm run test:browser`（桌面與手機）、`npm run test:layout`。
+- **結果（本機 Chrome headless、1440×900、Playwright 鍵盤駕駛 9.5 秒、同一台機器同條件，develop `0d484fc5` 對本分支；這是本機瀏覽器數字，不是實機或手機的效能／發熱量測）：**
+
+| 路線 | 畫質 | Draw Calls 平均（最大）develop → 本分支 | Triangles 平均 develop → 本分支 | p50 ms | p95 ms | FPS |
+|---|---|---|---|---|---|---|
+| Coast | Low | 446.8 (463) → 446.7 (463) | 83824 → 87477 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Neon | Low | 506.9 (536) → 508.1 (537) | 83145 → 84105 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Canyon | Low | 453.2 (472) → 453.5 (472) | 45628 → 45658 | 16.7 → 16.7 | 16.8 → 16.8 | 60 → 60 |
+| Sky Spiral | Low | 251.3 (272) → 251.3 (272) | 43844 → 43866 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Circuit | Low | 162.9 (178) → 162.8 (178) | 33201 → 33194 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Coast | Medium | 459.8 (476) → 459.9 (476) | 84389 → 87992 | 16.7 → 16.7 | 16.7 → 16.7 | 60 → 60 |
+| Neon | Medium | 519.9 (549) → 521.2 (550) | 83537 → 84497 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Canyon | Medium | 466.4 (485) → 466.3 (485) | 46432 → 46425 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Sky Spiral | Medium | 266.3 (287) → 266.3 (287) | 45943 → 45943 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Circuit | Medium | 175.8 (191) → 175.8 (191) | 33207 → 33200 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Coast | High | 459.8 (476) → 459.8 (476) | 85205 → 88829 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Neon | High | 519.9 (549) → 521.1 (550) | 83934 → 84881 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Canyon | High | 466.4 (485) → 466.4 (485) | 47008 → 47008 | 16.7 → 16.7 | 16.7 → 16.8 | 60 → 60 |
+| Sky Spiral | High | 290.2 (311) → 290.2 (311) | 48332 → 48332 | 16.7 → 16.7 | 16.8 → 16.7 | 60 → 60 |
+| Circuit | High | 175.8 (191) → 175.9 (191) | 33207 → 33214 | 16.7 → 16.7 | 16.7 → 16.7 | 60 → 60 |
+
+  - Draw Calls 幾乎不變（Neon 平均 +1.3，約 +0.25%；光圈池固定 7 個）。Coast Triangles 約 +4.3%（3 m 高的低光圈更常在畫面內），Neon 約 +1.2%，其他持平。frame time 受 60 Hz vsync 限制，看不出差異，只當輔助證據。沒有拿掉任何景物、沒有降解析度。
+  - 實際 WebGL 截圖：五條路線 × 1440×900、390×844、844×390 共 15 張，沒有 pageerror。Coast 低光圈與高光圈都清楚，車子與大橋地標沒被擋住。另外發現（與本分支無關）：844×390 且沒有觸控時，桌面版 HUD 會互相重疊（POSITION 被時速蓋住），是既有的 HUD 版面問題，本分支沒改 HUD。
+  - 瀏覽器回歸：與紀錄有關的 spec（`browser`、`mode-history`、`circuit`、`result-actions`、`settle-once`、`progression`、`cloud-save`、`challenge-medals-backup`，以及所有會預先寫入紀錄的 spec）全部通過。其中 7 個 spec 原本把目前版本的資料寫在舊 key（`coast`、`harbor-circuit` 的單圈 key、沒有 `layout` 的紀錄），改為寫到 `@2` key 或加 `layout: 2`；Circuit 改用真正的 `circuitLapKey` 產生 key（`bdfd742d`）。
+  - 實機鍵盤、觸控與手機實際遊玩：留給使用者（第二階段開工條件之一）。
 
 **S9 完整 CI 與回報**
 - 推送時 commit 訊息加 `[full-regression]`，最終 HEAD 的 `quality-gate` 要全綠，包含 rendering budget，不能靠調高 budget 過關。
