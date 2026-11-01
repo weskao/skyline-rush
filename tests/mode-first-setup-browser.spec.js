@@ -31,7 +31,7 @@ test('rules row summarises, explains eligibility and restores defaults with real
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await expect(page.locator('#mode-rules-summary')).toContainText('3 AI');
+  await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
   await expect(page.locator('#mode-eligibility')).toHaveText('Counts for records, medals and unlocks');
   await page.locator('button[data-race-mode="free"]').click();
   await expect(page.locator('#mode-eligibility')).toHaveText('Practice: no results are saved');
@@ -50,7 +50,7 @@ test('rules row summarises, explains eligibility and restores defaults with real
   await expect(page.locator('[data-race-rule="difficulty"]')).toBeDisabled();
   await page.locator('[data-race-preset="traffic"]').click();
   await page.locator('#rules-restore').click();
-  await expect(page.locator('#mode-rules-summary')).toContainText('3 AI');
+  await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
   await expect(page.locator('#mode-conflicts')).toBeHidden();
   await expect(page.locator('[data-race-rule="difficulty"]')).toBeEnabled();
   expect(await snapshot(page), 'presets and Restore defaults never write progress, history or controls').toEqual(before);
@@ -81,7 +81,7 @@ test('keyboard alone can pick a mode, a track, restore rules and start', async (
   await page.locator('#rules-restore').focus();
   await expect(page.locator('#rules-restore')).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#mode-rules-summary')).toContainText('3 AI');
+  await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
   await page.locator('#start-button').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#intro')).toBeHidden({ timeout: ciTimeout(8000) });
@@ -93,9 +93,9 @@ test('unsupported combinations are explained in the rules row, in English and zh
   await page.locator('button[data-race-mode="circuit"]').click();
   await expect(page.locator('#mode-conflicts')).toContainText('Laps run only on Harbor Circuit');
   await page.locator('button[data-race-mode="elimination"]').click();
-  await expect(page.locator('#mode-conflicts')).toContainText('Elimination always races 3 AI opponents');
+  await expect(page.locator('#mode-conflicts')).toContainText('Elimination always races 7 AI opponents');
   await page.locator('#locale-select').selectOption('zh-TW', { force: true });
-  await expect(page.locator('#mode-conflicts')).toContainText('淘汰賽固定與 3 名 AI 對手競速');
+  await expect(page.locator('#mode-conflicts')).toContainText('淘汰賽固定與 7 名 AI 對手競速');
   await page.locator('button[data-race-mode="circuit"]').click();
   await expect(page.locator('#mode-conflicts')).toContainText('圈數只適用於港灣環道');
   await page.locator('button[data-race-mode="classic"]').click();
@@ -159,7 +159,7 @@ test('reduced motion: the setup flow works with no running intro animation', asy
   await closeMusicPrompt(page);
   await page.locator('button[data-race-mode="custom"]').click();
   await page.locator('#rules-restore').click();
-  await expect(page.locator('#mode-rules-summary')).toContainText('3 AI');
+  await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
   const running = await page.locator('#race-rules-row').evaluate(el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length);
   expect(running).toBe(0);
 });

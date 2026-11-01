@@ -11,7 +11,7 @@ test('MODE-00: strict user config rejects unsupported combinations and malformed
     { mode: 'classic', rivals: 0 },
     { mode: 'time', traffic: 'heavy' },
     { mode: 'free', difficulty: 'hard' },
-    { mode: 'custom', rivals: 4 },
+    { mode: 'custom', rivals: 8 },
     { mode: 'custom', rivals: -1 },
     { mode: 'custom', rivals: 1.5 },
     { mode: 'custom', traffic: 'extremely-heavy' },
@@ -179,8 +179,8 @@ test('9A: every finishing mode, Free Drive included, settles a finite result at 
     const race = drive(trackId, mode, 240);
     race.rivals.forEach(rival => { rival.distance = 100; });
     Object.assign(race.player, { distance: race.length - 1, speed: 80 });
-    // Elimination ends on its 10 s knockout clock, not at the road end; 40 s bounds every mode.
-    for (let i = 0; i < 2400 && race.phase === 'racing'; i++) stepRace(race, { throttle: true }, 1 / 60);
+    // Eight-car Elimination has seven ten-second knockouts; other modes still use the 40-second bound.
+    for (let i = 0; i < (mode === 'elimination' ? 5400 : 2400) && race.phase === 'racing'; i++) stepRace(race, { throttle: true }, 1 / 60);
     assert.equal(race.phase, 'finished', `${trackId} ${mode}`);
     assert.ok(Number.isFinite(race.result.time) && race.result.time > 0, `${trackId} ${mode} time`);
     assert.ok(race.player.distance <= race.length, `${trackId} ${mode} stays on the authored road`);
