@@ -12,6 +12,21 @@ defineProps<{ locale: string }>();
 const badgeArt = ['badge-equipped', 'badge-favorite', 'badge-limited', 'badge-locked',
   'badge-new', 'badge-trial', 'rarity-common', 'rarity-rare', 'rarity-epic',
   'rarity-legendary', 'rarity-mythic'] as const;
+const badgeNames: Record<(typeof badgeArt)[number], readonly [string, string]> = {
+  'badge-equipped': ['Equipped badge', '已裝備徽章'],
+  'badge-favorite': ['Favorite badge', '收藏徽章'],
+  'badge-limited': ['Limited badge', '限定徽章'],
+  'badge-locked': ['Locked badge', '未解鎖徽章'],
+  'badge-new': ['New badge', '新款徽章'],
+  'badge-trial': ['Trial badge', '試用徽章'],
+  'rarity-common': ['Common rarity', '普通稀有度'],
+  'rarity-rare': ['Rare rarity', '稀有等級'],
+  'rarity-epic': ['Epic rarity', '史詩等級'],
+  'rarity-legendary': ['Legendary rarity', '傳說等級'],
+  'rarity-mythic': ['Mythic rarity', '神話等級'],
+};
+const badgeLabel = (id: (typeof badgeArt)[number], locale: string): string =>
+  badgeNames[id][locale === 'zh-TW' ? 1 : 0];
 const badgeSrc = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/raster/${id}@3x.webp`;
 const badgeFailed = ref<ReadonlySet<string>>(new Set());
@@ -80,9 +95,9 @@ function onImageError(id: string, hasRaster: boolean): void {
       <p class="garage-vfx-message">{{ locale === 'zh-TW' ? '僅展示 3× 原始素材，不代表已擁有、限時活動或已解鎖稀有度。' : 'Artwork reference only. No ownership, time-limited event or rarity entitlement is implied.' }}</p>
       <div class="garage-art-badges">
         <figure v-for="id in badgeArt" :key="id">
-          <img v-if="!badgeFailed.has(id)" :src="badgeSrc(id)" width="72" height="72" loading="lazy" decoding="async" :alt="id.replaceAll('-', ' ')" @error="onBadgeError(id)" />
-          <span v-else role="img" :aria-label="id.replaceAll('-', ' ')">{{ id }}</span>
-          <figcaption>{{ id.replaceAll('-', ' ') }}</figcaption>
+          <img v-if="!badgeFailed.has(id)" :src="badgeSrc(id)" width="72" height="72" loading="lazy" decoding="async" :alt="badgeLabel(id, locale)" @error="onBadgeError(id)" />
+          <span v-else role="img" :aria-label="badgeLabel(id, locale)">{{ badgeLabel(id, locale) }}</span>
+          <figcaption>{{ badgeLabel(id, locale) }}</figcaption>
         </figure>
       </div>
     </section>
