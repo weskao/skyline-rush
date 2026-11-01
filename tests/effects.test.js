@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { Scene, Group, Vector3 } from 'three';
 import { createRace, MAGNET_RANGE } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
+import { drawnMarkers } from '../src/marker-pool.js';
 
 test('a nonpositive first frame cannot revive dormant particles with uninitialized data', t => {
   globalThis.devicePixelRatio = 1;
@@ -127,7 +128,7 @@ test('pickup tiers are visible at their seeded positions and taken pickups disap
   update();
   const group = scene.getObjectByName('Nitro pickups');
   assert.ok(group, 'collectible models are attached to the real scene');
-  const visible = group.children.filter(mesh => mesh.visible);
+  const visible = drawnMarkers(group);
   assert.equal(visible.length, 4);
   assert.equal(new Set(visible.map(mesh => mesh.material.color.getHex())).size, 4);
   assert.equal(new Set(visible.map(mesh => mesh.scale.x)).size, 4);
@@ -140,7 +141,7 @@ test('pickup tiers are visible at their seeded positions and taken pickups disap
   assert.ok(visible[2].position.y >= 2);
   assert.deepEqual(race, before, 'rendering must not modify the sim');
   race.pickups[1].taken = true; update(0);
-  assert.equal(group.children.filter(mesh => mesh.visible).length, 3);
+  assert.equal(drawnMarkers(group).length, 3);
 });
 
 test('rings use their collision radius and type color, including a rainbow mystery ring', t => {
@@ -149,9 +150,9 @@ test('rings use their collision radius and type color, including a rainbow myste
   update();
   const group = scene.getObjectByName('Race rings');
   assert.ok(group);
-  const visible = group.children.filter(mesh => mesh.visible);
+  const visible = drawnMarkers(group);
   assert.equal(visible.length, 5);
-  assert.equal(visible[3].scale.x * visible[3].geometry.parameters.radius, 2.4);
+  assert.equal(visible[3].scale.x * visible[3].geometry.parameters.radius, Math.fround(2.4)); // Float32 instance matrix
   assert.equal(new Set(visible.map(mesh => mesh.material.color.getHex())).size, 5);
   assert.ok(visible[0].material.color.g > visible[0].material.color.r * 3 && visible[0].material.color.b > visible[0].material.color.r * 3, 'charge is cyan');
   assert.ok(visible[1].material.color.r > visible[1].material.color.b * 3 && visible[1].material.color.g > visible[1].material.color.b * 3, 'nitro is gold');
@@ -161,7 +162,7 @@ test('rings use their collision radius and type color, including a rainbow myste
   const rainbow = visible[4].geometry.attributes.color.array;
   assert.ok(new Set(rainbow).size > 5, 'mystery is visibly multicolored around its circumference');
   race.player.distance = 130; update(0);
-  assert.equal(group.children.filter(mesh => mesh.visible).length, 3);
+  assert.equal(drawnMarkers(group).length, 3);
 });
 
 for (const kind of ['pickup', 'ring']) test(`${kind} collection bursts once and never replays across pause, disabled VFX or restart`, t => {
@@ -218,7 +219,7 @@ test('disposing marker pools releases every tier material, including types no lo
   race.rings = ['charge', 'nitro', 'slipstream', 'risk', 'mystery'].map((type, i) => ({ type, radius: 4.8, x: 0, altitude: 8, distance: 100 + i * 20 }));
   update();
   const groups = [scene.getObjectByName('Nitro pickups'), scene.getObjectByName('Race rings')];
-  const materials = new Set(groups.flatMap(group => group.children.filter(mesh => mesh.visible).map(mesh => mesh.material)));
+  const materials = new Set(groups.flatMap(group => drawnMarkers(group).map(mesh => mesh.material)));
   const geometries = new Set(groups.flatMap(group => group.children.map(mesh => mesh.geometry)));
   const disposed = new Map();
   for (const resource of [...materials, ...geometries]) resource.addEventListener('dispose', () => disposed.set(resource, (disposed.get(resource) || 0) + 1));
@@ -226,7 +227,7 @@ test('disposing marker pools releases every tier material, including types no lo
   race.pickups = Array.from({ length: 40 }, (_, i) => ({ ...race.pickups[0], distance: 100 + i }));
   race.rings = Array.from({ length: 7 }, (_, i) => ({ ...race.rings[0], distance: 100 + i }));
   update();
-  assert.ok(groups.every(group => new Set(group.children.map(mesh => mesh.material)).size === 1));
+  assert.ok(groups.every(group => new Set(drawnMarkers(group).map(mesh => mesh.material)).size === 1));
   effects.dispose?.();
   assert.equal(disposed.size, 11, 'all nine materials and both shared geometries are released');
   assert.ok([...disposed.values()].every(count => count === 1));
@@ -330,11 +331,12 @@ test('11B: a Sky Spiral hoop sits on the helix road frame and swivels ±0.6 rad 
   const frame = trackFrame('spiral', hoop.distance), up = new Vector3(...frame.up), forward = new Vector3(...frame.forward);
   const pose = (elapsed, reduced = false) => {
     race.elapsed = elapsed; update(0.016, options, reduced);
-    const mesh = scene.getObjectByName('Race rings').children.find(m => m.visible);
+    const mesh = drawnMarkers(scene.getObjectByName('Race rings'))[0];
     const facing = new Vector3(0, 0, -1).applyQuaternion(mesh.quaternion);
     return { mesh, swivel: Math.atan2(facing.clone().cross(forward).dot(up), facing.dot(forward)), tilt: new Vector3(0, 1, 0).applyQuaternion(mesh.quaternion).dot(up) };
   };
-  const a = pose(0.3), expected = new Vector3(...trackLocalPosition('spiral', hoop.distance, hoop.x, hoop.altitude, race.player.distance));
+  // Instance matrices are Float32, the precision the GPU draws with: exact after Math.fround.
+  const a = pose(0.3), expected = new Vector3(...trackLocalPosition('spiral', hoop.distance, hoop.x, hoop.altitude, race.player.distance).map(Math.fround));
   assert.ok(a.mesh.position.distanceTo(expected) < 1e-6, `drawn ${a.mesh.position.toArray()} vs road ${expected.toArray()}`);
   assert.ok(a.tilt > 0.999999, 'the swivel turns about the road up axis, never tipping the hoop');
   for (const elapsed of [0.3, 1.1, 2.6]) {
@@ -342,5 +344,8 @@ test('11B: a Sky Spiral hoop sits on the helix road frame and swivels ±0.6 rad 
     assert.ok(Math.abs(Math.abs(swivel) - Math.abs(0.6 * Math.sin(hoop.spin * elapsed + hoop.spinPhase))) < 1e-6, `swivel @${elapsed}s = ${swivel}`);
   }
   assert.ok(Math.abs(pose(1.1).swivel - pose(2.6).swivel) > 0.05, 'it moves with race time');
-  assert.ok(Math.abs(pose(1.1, true).swivel) < 1e-9, 'reduced motion holds the hoop square to the road');
+  const held = pose(1.1, true).swivel;
+  race.rings = [{ ...hoop, spin: 0 }];
+  assert.equal(held, pose(1.1).swivel, 'reduced motion draws the hoop exactly as an unspun one, square to the road');
+  assert.ok(Math.abs(held) < 1e-6, 'square to the road at Float32 precision');
 });
