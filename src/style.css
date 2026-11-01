@@ -154,7 +154,9 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .event-callout { top: max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); }
   .driving-message[data-tone='warning'] { top: max(324px, calc(var(--race-progress-bottom, 0px) + 62px)); }
 }
-/* Peripheral feedback no longer requires suppressing the flight director. */
+/* Phones (and short landscape, where the callout sits centred under the mode panel) hide the flight director immediately
+   while a callout is visible; no fade may overlap the first frames. */
+@media (max-width: 760px) and (min-height: 501px), (max-height: 500px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; visibility: hidden; transition: none; } }
 @media (max-height: 500px) {
   /* Centred 8px under the mode panel (it sits 8px under the RACING bar, 62px tall): POSITION, the speed readout
      and the eight-row leaderboard fill the left gutter the callout used to borrow. */
