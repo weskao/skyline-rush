@@ -45,7 +45,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 @media (hover: hover) { .icon-button:hover:not(:disabled) { background: rgb(255 255 255 / .15); } }
 /* Icons are re-rendered on audio changes; keep click targets on the stable button. */
 .icon-button svg { pointer-events: none; }
-.settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; max-height: calc(100dvh - 80px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
+.settings-panel { position: absolute; top: calc(100% + 10px); right: 0; width: 220px; max-height: calc(100dvh - 82px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; display: grid; gap: 2px; background: rgb(8 22 38 / .94); border: 1px solid rgb(195 224 244 / .25); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 9 22 / .4); backdrop-filter: blur(8px); }
 #settings-panel { width: min(260px, calc(100vw - 24px)); }
 /* Chrome ignores ::-webkit-scrollbar once scrollbar-color is set, so the standard properties are for Firefox only. */
 @supports not selector(::-webkit-scrollbar) { #settings-panel { scrollbar-width: thin; scrollbar-color: rgb(195 224 244 / .35) transparent; } }
@@ -444,6 +444,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .impact-report { top: 28%; }
 }
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  /* Reserve the left 100px for the speed readout; eight leaderboard rows occupy the next column. */
+  .speedometer { width: 100px; flex: 0 0 100px; }
   .leaderboard { position: fixed; left: 150px; top: 82px; width: clamp(96px, calc(50vw - 284px), 130px); padding: 4px 6px; }
   .racer { gap: 5px; }
   /* POSITION ended flush on the speed readout, so a home-indicator inset (it lifts the gauges) made them overlap */
@@ -572,6 +574,9 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 @media (prefers-reduced-motion: reduce) { input[type="checkbox"], input[type="checkbox"]::before { transition: none; } }
 .airflow-hud { position: fixed; top: 285px; left: max(40px, env(safe-area-inset-left, 0px)); z-index: 3; width: 214px; padding: 16px; background: linear-gradient(120deg,#0b2539e8,#0b25397a); border-left: 2px solid #83e1fa; border-radius: 0 6px 6px 0; display: grid; gap: 9px; opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s; pointer-events: none; }
 .airflow-active .airflow-hud { opacity: 1; transform: translateY(0); }
+@media (min-width: 1100px) and (min-height: 501px) {
+  body:not([data-phase="ready"]) .airflow-hud { top: 405px; }
+}
 /* Airflow showcase hides the start panel but keeps the one standard Start button reachable. */
 .airflow-active[data-phase="ready"] .intro { visibility: hidden; }
 .airflow-active[data-phase="ready"] #start-button { visibility: visible; position: fixed; inset: auto 0 max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)); width: max-content; margin-inline: auto; }
@@ -615,7 +620,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 /* Touch tablets lift the leaderboard to the top bar; the AIRFLOW bar sits under it, above the 292px live map
    (beside it, it covered the centred progress bar on an 820px-wide iPad). */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
-  body:not([data-phase="ready"]) .aero-tools { top: 204px; }
+  body:not([data-phase="ready"]) .aero-tools { top: 242px; }
 }
 /* Phones and short landscape have no free slot for the telemetry panel mid-race: it covered the speed and race info.
    It stays on the ready showcase; while racing the pressed AIRFLOW button and the streamlines show it is on. */
@@ -1207,13 +1212,26 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-spiral-direction { stroke:#fff6d9; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
-.race-route-map { position:fixed; top:292px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
+.race-route-map { position:fixed; top:300px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
 .route-driver-you { fill:#fff; stroke:#09e5ff; stroke-width:2.1; }
 .route-driver-nova { fill:#fc58a1; }
 .route-driver-orbit { fill:#f5c15b; }
 .route-driver-apex { fill:#82df9c; }
+.route-driver-vega { fill:#ad94ff; }
+.route-driver-pulse { fill:#5ce0b7; }
+.route-driver-comet { fill:#f8c562; }
+.route-driver-rift { fill:#ff7ab9; }
+/* Eight ranks stay legible across short mobile landscape and bilingual HUDs. */
+/* Show all eight ranks without overlapping the minimap, controls or speedometer. */
+.leaderboard:has(.racer:nth-child(8)) .racer { height: 18px; min-height: 18px; font-size: 8px; }
+@media (max-height: 500px) {
+  .leaderboard:has(.racer:nth-child(8)) .racer { height: 14px; min-height: 14px; font-size: 7px; }
+}
+@media (max-width: 760px) and (min-height: 501px) {
+  .leaderboard:has(.racer:nth-child(8)) .racer { height: 19px; min-height: 19px; }
+}
 /* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
 @media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
@@ -1750,3 +1768,7 @@ body[data-fold-axis="horizontal"] .race-route-map {
 
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
+
+/* Touch tablets: the live map sits 12px under the AIRFLOW bar (242-276px); the desktop 300px slot reached the
+   lifted flight telemetry on a 1024x768 iPad. */
+@media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) { .race-route-map { top: 288px; } }

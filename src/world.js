@@ -299,7 +299,7 @@ export function createWorld(canvas) {
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
   const rearLight = player.userData.rearLight;
-  const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex].map(style => { const car = makeCar(style); scene.add(car); return car; });
+  const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.nova].map((style, i) => { const paint = [null, null, null, '#9d80e5', '#5cd5ae', '#e9bd64', '#e866a5'][i]; const car = makeCar(style, paint ?? style.color); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   // ×2 covers the double-traffic daily modifier.
@@ -869,7 +869,7 @@ export function createWorld(canvas) {
         updateCar(player, { ...previewPlayer(trackId,car,idleTime,reducedMotion,groundedShowcase), distance },
           distance,center,time,dt,true);
         rivals.forEach((mesh,i) => {
-          mesh.visible = true; // show all three showcase cars even in solo practice
+          mesh.visible = i < 3; if (!mesh.visible) return; // Preserve Wave 1 showcase.
           const standIn = { x: [-7.5, -2.5, 7.5][i], distance: 0, speed: 0, altitude: 0, steering: 0 };
           updateCar(mesh, previewRival(trackId,i,race.rivals[i] ?? standIn,idleTime,reducedMotion),distance,center,time,dt);
         });

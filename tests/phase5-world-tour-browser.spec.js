@@ -44,7 +44,7 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     const route = page.locator('#race-route-map svg.route-overview');
     await expect(route).toHaveCount(1);
-    await expect(route.locator('[data-racer]')).toHaveCount(4);
+    await expect(route.locator('[data-racer]')).toHaveCount(8);
     const before = await route.evaluate(el => { window.__phase5Route = el; return el.querySelectorAll('*').length; });
     await page.waitForTimeout(1700); // Give the software-WebGL rolling sample a nonzero interval.
     expect(await route.evaluate(el => el === window.__phase5Route)).toBe(true);

@@ -31,7 +31,7 @@ test('all five original courses show their complete, curved route outline on the
     await expect(map.locator('polyline')).toHaveCount(id === 'spiral' ? 3 : 1);
   }
 });
-for(const id of ids)test(`${id}: race minimap has a visible main path and all four racer indicators`,async({page})=>{
+for(const id of ids)test(`${id}: race minimap has a visible main path and all eight racer indicators`,async({page})=>{
   await seed(page);
   await page.goto('/');
   await page.locator(`[data-track="${id}"]`).click();
@@ -43,7 +43,7 @@ for(const id of ids)test(`${id}: race minimap has a visible main path and all fo
   await expect(map.locator(`svg ${ROUTE}`)).toHaveCount(1);
   await expect(map.locator(`svg ${EXTRA}`)).toHaveCount(0);
   await expect(map.locator('polyline')).toHaveCount(id === 'spiral' ? 3 : 1);
-  await expect(map.locator('circle[data-racer]')).toHaveCount(4);
+  await expect(map.locator('circle[data-racer]')).toHaveCount(8);
   const shape=await map.locator(ROUTE).evaluate(el=>({w:el.getBBox().width,h:el.getBBox().height}));
   expect(shape.w).toBeGreaterThan(48);
   expect(shape.h).toBeGreaterThan(23);
@@ -62,6 +62,6 @@ for(const [width,height] of [[390,844],[320,568],[844,390]]){
     expect(r.y).toBeGreaterThanOrEqual(0);
     expect(r.x+r.width).toBeLessThanOrEqual(width+1);
     expect(r.y+r.height).toBeLessThanOrEqual(height+1);
-    await expect(map.locator('circle[data-racer]')).toHaveCount(4);
+    await expect(map.locator('circle[data-racer]')).toHaveCount(8);
   });
 }

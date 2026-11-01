@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canopy, carShell } from './geometry.ts';
 import { createRearLight } from './rear-light.ts';
 import { LIFT_PORTS } from './effects.js';
@@ -134,6 +135,30 @@ spokeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(spokeVer
 spokeGeometry.setIndex(spokeIndices);
 spokeGeometry.computeVertexNormals();
 
+// Static parts that share one of a car's materials draw as one mesh (same triangles, transforms baked in).
+// Cached per style: the geometry depends only on that constant style, so it is never invalidated; a world or
+// garage dispose frees its GPU buffers like the shared box geometry, and three.js re-uploads on the next draw.
+const mergedParts = new WeakMap();
+function mergeStaticParts(group, style, moving) {
+  const byMaterial = new Map();
+  for (const child of group.children) if (child.isMesh && !moving.includes(child)) {
+    byMaterial.set(child.material, [...(byMaterial.get(child.material) ?? []), child]);
+  }
+  const parts = [...byMaterial.values()].filter(meshes => meshes.length > 1);
+  if (!mergedParts.has(style)) mergedParts.set(style, parts.map(meshes => {
+    const geometry = mergeGeometries(meshes.map(mesh => {
+      mesh.updateMatrix();
+      return mesh.geometry.clone().applyMatrix4(mesh.matrix);
+    }));
+    geometry.userData.mergedCarParts = true;
+    return geometry;
+  }));
+  mergedParts.get(style).forEach((geometry, i) => {
+    group.remove(...parts[i]);
+    group.add(new THREE.Mesh(geometry, parts[i][0].material));
+  });
+}
+
 export function makeCar(style, color = style.color) {
   const group = new THREE.Group();
   const detailed = !!style.detailed;
@@ -184,6 +209,7 @@ export function makeCar(style, color = style.color) {
   }
   jets.visible = false;
   group.add(jets);
+  mergeStaticParts(group, style, [body, wing]);
   Object.assign(group.userData, { wheels, jets, body, wing, brakeLight: light, lightColor: light.color.clone() });
   return group;
 }
