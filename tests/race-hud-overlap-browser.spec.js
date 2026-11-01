@@ -95,6 +95,11 @@ for (const viewport of VIEWPORTS) {
         await expect(page.locator('#event-callout')).toBeVisible({ timeout: ciTimeout(5_000) });
         const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
         for (const pair of await page.evaluate(collisions, args)) failures.push(`${locale}/${hud}/racing: ${pair}`);
+        // Short landscape keeps the callout out of the centre view, as tests/motion-browser.spec.js requires without touch.
+        if (viewport.height <= 500) {
+          const callout = await page.locator('#event-callout').boundingBox();
+          if (callout.y + callout.height > viewport.height * 0.45) failures.push(`${locale}/${hud}/racing: callout bottom ${callout.y + callout.height} below 45%`);
+        }
         // A vehicle hit's report: the same record game.js writes in its collision handler.
         await page.evaluate(() => {
           const { race } = window.gameplay, car = race.player;
