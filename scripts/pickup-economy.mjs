@@ -34,14 +34,16 @@ function botInput(race, bot) {
 }
 
 // Traffic and rivals are removed so the numbers measure the track's layout, not collisions.
-export function measureEconomy(trackId) {
-  const race = createRace(trackId);
+// `options` goes to createRace (mode config or a daily modifier id); `cap` bounds the run in seconds
+// for modes the bot cannot finish (Checkpoint times out, Elimination never ends without rivals).
+export function measureEconomy(trackId, options = undefined, cap = 600) {
+  const race = createRace(trackId, options);
   startRace(race);
   race.phase = 'racing';
   race.traffic = []; race.rivals = [];
   const car = race.player, bot = { boost: false, climb: false };
   let nitroGained = 0, boostedSteps = 0, steps = 0, fuelEmpty = 0, firstNitro = null;
-  while (race.phase === 'racing' && steps < 60 * 600) {
+  while (race.phase === 'racing' && steps < 60 * cap) {
     const input = botInput(race, bot), nitroBefore = car.nitro, fuelBefore = car.fuel;
     const spent = input.nitro && !car.nitroHeld && car.nitro >= 1 ? 1 : 0;
     stepRace(race, input, DT);
@@ -51,10 +53,9 @@ export function measureEconomy(trackId) {
     if (fuelBefore > 0 && car.fuel === 0) fuelEmpty++;
     if (firstNitro === null && car.nitro >= 1) firstNitro = race.elapsed;
   }
-  if (race.phase !== 'finished') throw new Error(`${trackId}: bot did not finish`);
   const minutes = race.elapsed / 60, round = (v, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
   return {
-    trackId, time: round(race.elapsed, 1), nitroPerMinute: round(nitroGained / minutes),
+    trackId, phase: race.phase, time: round(race.elapsed, 1), nitroPerMinute: round(nitroGained / minutes),
     boostShare: round(boostedSteps / steps * 100, 1), fuelEmpty, firstNitro: firstNitro === null ? null : round(firstNitro, 1),
     falls: car.falls, collisions: car.collisions, rings: car.rings, ringsTotal: race.rings.length, pickups: race.pickups.filter(p => p.taken).length,
   };
@@ -66,12 +67,12 @@ export const median = values => {
 };
 
 // World Tour median per metric: the target the first three Classic maps are tuned toward.
-export function worldTourBaseline(results = WORLD_TOUR.map(measureEconomy)) {
+export function worldTourBaseline(results = WORLD_TOUR.map(id => measureEconomy(id))) {
   return Object.fromEntries(['nitroPerMinute', 'boostShare', 'firstNitro'].map(key => [key, median(results.map(r => r[key]))]));
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const rows = Object.keys(RACE_TRACKS).map(measureEconomy);
+  const rows = Object.keys(RACE_TRACKS).map(id => measureEconomy(id));
   console.table(rows);
   console.log('World Tour median', worldTourBaseline(rows.filter(r => WORLD_TOUR.includes(r.trackId))));
 }

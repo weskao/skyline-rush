@@ -14,6 +14,7 @@ test('AC1: the economy bot finishes all ten tracks with finite, repeatable numbe
   for (const id of Object.keys(RACE_TRACKS)) {
     const result = measureEconomy(id);
     assert.deepEqual(measureEconomy(id), result, id + ' must be deterministic');
+    assert.equal(result.phase, 'finished', id + ' bot finishes');
     for (const key of ['time', 'nitroPerMinute', 'boostShare', 'fuelEmpty']) assert.ok(Number.isFinite(result[key]), `${id} ${key}`);
     assert.ok(result.rings > 0, id + ' bot collects rings');
   }
@@ -70,7 +71,36 @@ test('Coast keeps its classic gate line and alternates high and road-height ring
 });
 
 test('the World Tour baseline is the per-metric median of its five tracks', () => {
-  const rows = WORLD_TOUR.map(measureEconomy), baseline = worldTourBaseline(rows);
+  const rows = WORLD_TOUR.map(id => measureEconomy(id)), baseline = worldTourBaseline(rows);
   assert.equal(baseline.nitroPerMinute, median(rows.map(r => r.nitroPerMinute)));
   assert.ok(baseline.nitroPerMinute > 0 && baseline.boostShare > 0 && baseline.firstNitro > 0);
+});
+
+// S4: modes and other generators. The nine modes below draw rings and pickups straight from the
+// track, so the Classic tuning reaches them unchanged; options that change rings on purpose
+// (gauntlet mixed layout, themes, bonus gates, active item rules) are left out.
+const INHERITING_MODES = ['custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'];
+const CLASSIC_TRACKS = ['coast', 'neon', 'canyon', 'aurora', 'spiral'];
+const layoutOf = race => JSON.stringify({ rings: race.rings.map(r => [r.distance, r.x, r.altitude, r.type, r.group]), pickups: race.pickups.map(p => [p.distance, p.x, p.altitude, p.tier]) });
+
+test('S4: every inheriting mode keeps the Classic ring and pickup layout on the five Classic tracks', () => {
+  for (const id of CLASSIC_TRACKS) {
+    const classic = layoutOf(createRace(id));
+    for (const mode of INHERITING_MODES) assert.equal(layoutOf(createRace(id, { mode })), classic, `${id} ${mode}`);
+  }
+});
+
+test('S4: measureEconomy takes mode options and a time cap, and reports the phase it stopped in', () => {
+  const capped = measureEconomy('coast', { mode: 'checkpoint' }, 120);
+  assert.ok(['finished', 'racing'].includes(capped.phase), capped.phase);
+  assert.ok(capped.time <= 120.1, 'cap ' + capped.time);
+  assert.equal(measureEconomy('coast').phase, 'finished');
+});
+
+test('S4: Circuit, Endless and the gold-rings daily give finite, repeatable numbers', () => {
+  for (const [id, options, cap] of [['harbor-circuit', { mode: 'circuit' }, 300], ['coast', { mode: 'endless' }, 120], ['neon', 'gold-rings', 120]]) {
+    const result = measureEconomy(id, options, cap), label = `${id} ${JSON.stringify(options)}`;
+    assert.deepEqual(measureEconomy(id, options, cap), result, label + ' must be deterministic');
+    for (const key of ['time', 'nitroPerMinute', 'boostShare']) assert.ok(Number.isFinite(result[key]) && result[key] > 0, `${label} ${key}`);
+  }
 });
