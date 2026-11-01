@@ -36,7 +36,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   spiral: {
-    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005,
+    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
     sections: [
       { from: 1100, to: 2200, type: 'spiral' },
       { from: 2800, to: 2870, type: 'launch' },

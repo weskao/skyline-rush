@@ -6,8 +6,8 @@
 - [x] S1 Coast / Neon / Canyon tuned to the World Tour median (AC2a); other layouts hash-locked; `npm test` 1225/0 (`4d5f3177`, `af00b2d8`).
 - [x] S2 other tracks/modes measured; user decisions (3 rounds): version key (a) for all timed records; no boost tunnel; Canyon floor only, no extra volume; difficulty curve, so Aurora is unchanged and Sky Spiral + Circuit only get an opening-nitro fix; bot extension approved.
 - [x] S3 merged `origin/develop` `88dce759` (Wave 2 complete) as `119cf2d8`; only `TODO.md` conflicted (both sections kept). `npm test` 1296/0 (3 skipped), typecheck green, economy numbers identical to pre-merge on all ten tracks.
-- [ ] S4 `measureEconomy(trackId, options, cap)` + per-mode layout/number tests.
-- [ ] S5 Sky Spiral `openingNitroRings: 2`, Circuit smallest `openingNitroRings` → first NITRO ≤ 8.9 s, ring positions locked; AC3 lock = World Tour + Aurora.
+- [x] S4 `measureEconomy(trackId, options, cap)` returns `phase`; mode-layout lock (8 modes × 5 Classic tracks), Circuit/Endless/gold-rings determinism; numbers unchanged (`ee936be0`).
+- [x] S5 Sky Spiral `openingNitroRings: 2` (first NITRO 9.0 → 6.6 s), Circuit `openingNitroRings: 1` (11.7 → 6.8 s, NITRO ≥ 11.54/min on 1/3/5 laps); ring positions + per-lap PERFECT LINE groups locked; AC3 lock = World Tour + Aurora; `npm test` 1303/0. Circuit BOOST share dips (3 laps 77.6%, 5 laps 72.9%) because NITRO fires earlier; noted for the play test.
 - [ ] S6 version key (Coast, Neon, Canyon, Sky Spiral, Circuit; Classic + modes + Circuit lap best + cloud + History tag en/zh-TW) via `src/record-layout.ts`.
 - [ ] S7 audio cue spacing check; What's New `UPCOMING` (en + zh-TW) + `/review-release-notes`.
 - [ ] S8 Draw Calls / Triangles / p50/p95 table vs `develop`; real WebGL screenshots; real keyboard + touch races; `test:browser`, `test:layout`.

@@ -9,7 +9,7 @@ export const CIRCUIT_HALF_WIDTH = 12;
 export const CIRCUIT_BEACON = Object.freeze({ at: 150, offset: 120, scale: 2.5 });
 export const CIRCUIT_TRACK: TrackConfig & { topology: 'circuit'; topologyVersion: 1 } = {
   name: 'Harbor Circuit', length: CIRCUIT_LENGTH, trafficDensity: 0, seed: 11011,
-  sections: [], topology: 'circuit', topologyVersion: 1,
+  sections: [], topology: 'circuit', topologyVersion: 1, openingNitroRings: 1, // every lap opens on a nitro ring: first NITRO came late
 };
 export const circuitDistance = (distance: number): number => Number.isFinite(distance) ? ((distance % CIRCUIT_LENGTH) + CIRCUIT_LENGTH) % CIRCUIT_LENGTH : 0;
 // Signed physical separation, independent of lap count; standings keep unwrapped distance.

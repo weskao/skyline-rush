@@ -265,8 +265,8 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
 | S1 | 前三圖調整，AC2a 達標 | ✅ `4d5f3177`、`af00b2d8` |
 | S2 | 其他地圖與模式的量測，以及三輪使用者決定 | ✅ 本文件 |
 | S3 | 合併 `develop`（等 Eight-Car、Foldable、Garage 合入） | ✅ `119cf2d8` |
-| S4 | bot 擴充 | 待做 |
-| S5 | Sky Spiral 與 Circuit 的開場 NITRO | 待做 |
+| S4 | bot 擴充 | ✅ `ee936be0` |
+| S5 | Sky Spiral 與 Circuit 的開場 NITRO | ✅ 見下方結果 |
 | S6 | 版本鍵 | 待做 |
 | S7 | 音效、What's New | 待做 |
 | S8 | 畫面、效能與實機驗證 | 待做 |
@@ -286,6 +286,7 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
   - Circuit、Endless、gold-rings 的數字有限且穩定。
   - Checkpoint 與 Elimination 只比對配置，不比每分鐘數字，原因是前面提到的 bot 限制。
 - 驗收：新測試先 RED 再 GREEN；既有的量測數字不變。
+- **結果：** `measureEconomy(trackId, options, cap)` 不再於未完賽時丟錯，改為回傳 `phase`；AC1 改成斷言十張圖都 `finished`。RED：phase／cap 測試失敗（`phase` 不存在），Circuit／Endless／gold-rings 測試失敗（`RangeError: Circuit mode requires a circuit route`，舊版忽略 options）。GREEN 後 11/11 通過，十張圖數字與 S3 完全相同。「八個沿用模式在五張經典圖上配置與 Classic 相同」是特性鎖，一開始就通過（沒有 RED），用來防止日後的模式改動悄悄改掉配置。
 
 **S5 Sky Spiral、Circuit 開場 NITRO（RED → GREEN）**
 - AC2b 測試：
@@ -295,6 +296,16 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
 - AC3 的雜湊鎖：World Tour 五張加上 Aurora。
 - Circuit 先試 `openingNitroRings` 1，不夠再用 2，選能達標的最小值。要確認 Circuit 的光圈 group 與 PERFECT LINE 在每一圈仍然正確。
 - 驗收：AC2a、AC2b、AC3 都通過，`npm test` 全綠。
+- **結果：** Sky Spiral `openingNitroRings: 2`（設 1 沒有效果，第一個光圈本來就是 nitro），Circuit `openingNitroRings: 1`（設 2 結果一樣，所以取最小值 1）。RED：Spiral／Circuit 位置鎖、Circuit 每圈開場 nitro 與 PERFECT LINE 分組、AC2b 四個測試失敗；GREEN 後 `pickup-economy` 15/15，`npm test` 1303 通過／0 失敗，typecheck 通過。AC3 雜湊鎖改為 Aurora 加 World Tour 五張；Sky Spiral 改由位置鎖保護。
+
+  | 賽道 | NITRO／分 | BOOST | 第一次 NITRO |
+  |---|---|---|---|
+  | Sky Spiral | 12.82 → 14.22 | 86.0 → 85.8% | 9.0 → 6.6 s |
+  | Circuit 1 圈 | 11.02 → 12.05 | 95.1 → 94.8% | 11.7 → 6.8 s |
+  | Circuit 3 圈 | 13.16 → 13.58 | 86.9 → 77.6% | 11.7 → 6.8 s |
+  | Circuit 5 圈 | 13.56 → 13.15 | 85.9 → 72.9% | 11.7 → 6.8 s |
+
+  Circuit 的 BOOST 比例下降：bot 更早、更常放 NITRO，NITRO 期間不算 BOOST。AC2b 只要求第一次 NITRO 和 NITRO 下限，所以不算違反；5 圈的 72.9% 略低於 World Tour ±15% 的下限 73.95%，記錄在此，供使用者實際試玩時參考。
 
 **S6 版本鍵（範圍：Coast、Neon、Canyon、Sky Spiral、Circuit 的所有計時紀錄）**
 - 做法照「版本鍵實作計畫」一節，以 `src/record-layout.ts` 為單一來源，第二階段也會重用它。
