@@ -1,11 +1,12 @@
 # Wave 2 Phase B — Skin implementation and asset audit matrix
 
-**Branch:** `feature/garage-vfx-skins` · **Status:** SOURCE CODED / REAL ART BLOCKED / CI & VISUAL ACCEPTANCE PENDING · **Updated:** 2026-11-02
+**Branch:** `feature/garage-vfx-skins` · **Status:** 27 WEBPs STORED / 10 TRIAL CARD WEBPs IMPORTED / 6 SKIN CARDS ON SVG / CI & VISUAL ACCEPTANCE PENDING · **Updated:** 2026-11-02
 
 This matrix distinguishes actual Three.js cosmetics from candidate artwork and from unapproved visual references.
-The runtime still ships the four transparent category SVGs for cards; all approved per-item PNG/WebP assets remain absent from GitHub.
-The original `skyline-rush-3x-garage-vfx-skins.zip` is not accessible here. SHA-256 expected:
+The original ZIP was recovered from the ChatGPT File Library; SHA-256 **verified**:
 `4112ef97f6ec8d0860220a93f95a5b19f77b2a05cc36c1eebf5385d457d73414`.
+All 27 WebPs exist as Git blobs in [feature/3x-ui-materials](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-vfx-skins).
+Ten currently mapped Skin thumbnails are imported to `public/feature-assets/garage-vfx-skins/raster/` in this branch, used at 96 CSS px despite 288 source pixels. The remaining 17 WebPs are source-only; original PNGs remain in ChatGPT Library. All visuals require signoff.
 Do not silently reconstruct or fabricate the original ZIP.
 
 ## Planned/implemented IDs
@@ -15,28 +16,28 @@ they are not new GPU allocations per equip. Visual equivalence to original refer
 
 | Category | Skin ID | Style | Visual difference from default | Original candidate thumbnail | Reviewed/imported |
 | --- | --- | ---: | --- | --- | --- |
-| Thruster | `thruster-basic` | 0 | Baseline cold exhaust | `thruster-basic` | BLOCKED |
-| Thruster | `thruster-ion` | 1 | Pulsing nozzle breakup | `thruster-ion` | BLOCKED |
-| Thruster | `thruster-plasma` | 2 | Helical exhaust bands | `thruster-plasma` | BLOCKED |
-| Thruster | `thruster-void` | 3 | Discontinuous pulse exhaust | `thruster-void` | BLOCKED |
+| Thruster | `thruster-basic` | 0 | Baseline cold exhaust | `thruster-basic` | COMMITTED TO TRIAL (QA PENDING) |
+| Thruster | `thruster-ion` | 1 | Pulsing nozzle breakup | `thruster-ion` | COMMITTED TO TRIAL (QA PENDING) |
+| Thruster | `thruster-plasma` | 2 | Helical exhaust bands | `thruster-plasma` | COMMITTED TO TRIAL (QA PENDING) |
+| Thruster | `thruster-void` | 3 | Discontinuous pulse exhaust | `thruster-void` | COMMITTED TO TRIAL (QA PENDING) |
 | Airflow | `airflow-basic` | 0 | Baseline streamlines | none | NEEDS ART |
 | Airflow | `airflow-slipstream` | 1 | Streamline wave displacement | none | NEEDS ART |
 | Airflow | `airflow-vortex` | 2 | Vertical/horizontal oscillation | none | NEEDS ART |
 | Airflow | `airflow-prism` | 3 | Lattice/pulsed stream segments | none | NEEDS ART |
 | NITRO Trail | `nitro-trail-basic` | 0 | Baseline continuous ribbon | none | NEEDS ART |
-| NITRO Trail | `nitro-trail-cyan` | 1 | Rhythmic bright ribbon bands | `trail-cyan` | BLOCKED |
-| NITRO Trail | `nitro-trail-gold` | 2 | Oscillating segmented trail | `trail-gold` | BLOCKED |
-| NITRO Trail | `nitro-trail-red` | 3 | Dash-gap trail sections | `trail-red` | BLOCKED |
+| NITRO Trail | `nitro-trail-cyan` | 1 | Rhythmic bright ribbon bands | `trail-cyan` | COMMITTED TO TRIAL (QA PENDING) |
+| NITRO Trail | `nitro-trail-gold` | 2 | Oscillating segmented trail | `trail-gold` | COMMITTED TO TRIAL (QA PENDING) |
+| NITRO Trail | `nitro-trail-red` | 3 | Dash-gap trail sections | `trail-red` | COMMITTED TO TRIAL (QA PENDING) |
 | Launch Flare | `launch-flare-basic` | 0 | Original shock ring | none | NEEDS ART |
-| Launch Flare | `launch-flare-blue` | 1 | Enlarged cyan/blue ring | `flare-blue` | BLOCKED |
-| Launch Flare | `launch-flare-ring` | 2 | Elliptical pulsing ring | `flare-ring` | BLOCKED |
-| Launch Flare | `launch-flare-pulse` | 3 | Rotating elongated energy pulse | `flare-purple` | BLOCKED |
+| Launch Flare | `launch-flare-blue` | 1 | Enlarged cyan/blue ring | `flare-blue` | COMMITTED TO TRIAL (QA PENDING) |
+| Launch Flare | `launch-flare-ring` | 2 | Elliptical pulsing ring | `flare-ring` | COMMITTED TO TRIAL (QA PENDING) |
+| Launch Flare | `launch-flare-pulse` | 3 | Rotating elongated energy pulse | `flare-purple` | COMMITTED TO TRIAL (QA PENDING) |
 
 The remaining cosmetic thumbnail candidates `trail-purple`, `flare-gold`, `flare-red`, `flare-cyan`,
 `flare-magenta`, `flare-white` are **DEFERRED**, not committed or falsely mapped to duplicate Skin IDs.
 The 11 `badge-*` / `rarity-*` candidates are also **DEFERRED** pending real state/rarity semantics.
 All 27 candidate keys have therefore been accounted for: 10 mapped to current Skin IDs, 6 optional cosmetic
-candidates deferred and 11 state overlays deferred. The remaining six selected Skin IDs lack their own
+candidates deferred and 11 state overlays deferred; these remain available in the asset branch. The remaining six selected Skin IDs lack their own
 candidate thumbnail and require either approved new artwork or a truthful real-render capture.
 
 ## Tests and release gate
