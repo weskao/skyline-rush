@@ -37,6 +37,7 @@ function chooseHudMode(mode: HudDisplayMode): void {
 }
 
 import { icons, ICON_ATTRS } from './icons.ts';
+import HudSourceArtwork from './HudSourceArtwork.vue';
 import { panelsView } from './control-panels-view-state.ts';
 import { audioView } from './audio-view-state.ts';
 const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label: 'Sound effects' }] as const;
@@ -63,6 +64,7 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
             <label class="hud-choice"><input type="checkbox" :checked="feedback.animation" @change="setHudFeedback('animation', !feedback.animation)"><span>{{ tr('hudSettings.readyAnimation') }}</span></label>
             <button type="button" class="hud-default" @click="resetHudDefaults()">{{ tr('hudSettings.reset') }}</button>
           </fieldset>
+          <HudSourceArtwork />
         </div>
       </div>
 </template>
