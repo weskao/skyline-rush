@@ -28,6 +28,11 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertFails(setDoc(save, { ...progress, stars: { coast: '3' } }));
   await assertFails(setDoc(save, { ...progress, bests: { coast: -2 } }));
   await assertFails(setDoc(save, { ...progress, bests: { coast: '60' } }));
+  // Re-laid tracks keep their old best and add a `<track>@<layout>` best (src/record-layout.ts).
+  await assertSucceeds(setDoc(save, { ...progress, bests: { coast: 60, 'coast@2': 70, 'neon@2': 50, 'canyon@2': 80, 'spiral@2': 75 } }));
+  await assertFails(setDoc(save, { ...progress, bests: { 'coast@2': -1 } }));
+  await assertFails(setDoc(save, { ...progress, bests: { 'aurora@2': 60 } }));
+  await assertFails(setDoc(save, { ...progress, stars: { 'coast@2': 3 } }));
   await assertFails(setDoc(save, { ...progress, medals: { 'first-win': 'not-a-date' } }));
   await assertFails(deleteDoc(doc(other, 'saves/owner')));
   await assertFails(deleteDoc(doc(guest, 'saves/owner')));
