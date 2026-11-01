@@ -39,9 +39,39 @@ from the survey. Later phases reuse this answer and do not ask again.
 
 `-y` / `--yes` skips the intro approval only, never a notes question.
 
+## Phase F — Firestore rules (after Phase A, before Phase B)
+
+The tag's CI publishes the site but never deploys `firestore.rules`. If this release changes the
+rules, production Firestore must accept the new save format **before** the new site goes live.
+Otherwise signed-in players' cloud saves are rejected (example: layout-2 bests such as `coast@2`).
+
+1. Compare against the last release tag:
+
+   ```bash
+   git diff --quiet "$(git describe --tags --abbrev=0 --match 'v*')" HEAD -- firestore.rules
+   ```
+
+   Exit 0 means the rules are unchanged: go to Phase B and say "Firestore rules unchanged" in the
+   final report. Exit 1 means they changed: continue.
+2. Show the rules diff. The new rules must still accept every document the currently published
+   site writes, because rules go live before the site does. If they would reject an old-format
+   write, stop and ask the user. `npm run test:cloud` must pass on this commit.
+3. Ask with `AskUserQuestion`; the first option is "Deploy Firestore rules now (Recommended)".
+   `-y` never skips this question. Without approval, stop and do not run Phase B.
+4. Deploy with the same pinned `firebase-tools` that `test:cloud` uses:
+
+   ```bash
+   npx -y firebase-tools@15.34.1 deploy --only firestore:rules --project skyline-rush-weskao
+   ```
+
+   Not logged in → hand the user `! npx -y firebase-tools@15.34.1 login` and wait.
+5. Continue to Phase B only after the output reports the rules were released. Put the deploy
+   result in the final report and the Telegram notice.
+
 ## Phases T, A and B
 
-Follow Phases T, A and B and the final report of `$HOME/.claude/commands/release.md` unchanged.
+Follow Phases T and A, then Phase F above, then Phase B and the final report of
+`$HOME/.claude/commands/release.md` unchanged.
 `RELEASE_SCRIPT` resolves to this project's `scripts/release.sh`, whose `scripts/release-gate.sh`
 re-runs the notes check first, then requires `main` = `origin/main`, a green CI run and
 `npm test` + `npm run build`, before the shared script writes the changelog, commits, tags,

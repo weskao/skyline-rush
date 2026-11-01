@@ -1,3 +1,22 @@
+## Classic pickup density — stage plan (2026-11-01)
+
+**Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Full stage plan (S0–S9 + stage 2): `docs/plans/2026-11-01-classic-pickup-density.md` → 「完整階段計畫」. `PLAYWRIGHT_PORT=5185`. Never merge into `develop`.
+
+- [x] S0 AC1 economy bot + numbers (`dff62f74`).
+- [x] S1 Coast / Neon / Canyon tuned to the World Tour median (AC2a); other layouts hash-locked; `npm test` 1225/0 (`4d5f3177`, `af00b2d8`).
+- [x] S2 other tracks/modes measured; user decisions (3 rounds): version key (a) for all timed records; no boost tunnel; Canyon floor only, no extra volume; difficulty curve, so Aurora is unchanged and Sky Spiral + Circuit only get an opening-nitro fix; bot extension approved.
+- [x] S3 merged `origin/develop` `88dce759` (Wave 2 complete) as `119cf2d8`; only `TODO.md` conflicted (both sections kept). `npm test` 1296/0 (3 skipped), typecheck green, economy numbers identical to pre-merge on all ten tracks.
+- [x] S4 `measureEconomy(trackId, options, cap)` returns `phase`; mode-layout lock (8 modes × 5 Classic tracks), Circuit/Endless/gold-rings determinism; numbers unchanged (`ee936be0`).
+- [x] S5 Sky Spiral `openingNitroRings: 2` (first NITRO 9.0 → 6.6 s), Circuit `openingNitroRings: 1` (11.7 → 6.8 s, NITRO ≥ 11.54/min on 1/3/5 laps); ring positions + per-lap PERFECT LINE groups locked; AC3 lock = World Tour + Aurora; `npm test` 1303/0. Circuit BOOST share dips (3 laps 77.6%, 5 laps 72.9%) because NITRO fires earlier; noted for the play test.
+- [x] S6 version key via `src/record-layout.ts` (`48a422f8`, `77ab7d0d`): Classic/mode bests, ghosts, history, Circuit lap best, cloud merge, History OLD LAYOUT / 舊版配置 tag. RED (7 behaviour tests with storage wiring reverted) → GREEN; `npm test` 1317/0; `test:cloud` 15/15 + rules 3/3.
+- [ ] **Before release (needs user approval):** deploy `firestore.rules` (`saves.bests` now accepts `coast@2`, `neon@2`, `canyon@2`, `spiral@2`). CI never deploys rules; without it, signed-in players' cloud saves fail once they set a new-layout best.
+- [x] S7 audio: no throttle needed (NITRO-ready cue min gap 5.0 s on changed tracks vs Taipei 3.0 s). What's New: shipped `0.28.0` entry was never stamped after the release (UPCOMING still resolved to 0.28.0), so it is now `version: '0.28.0'` (its review fingerprint still matches); new `UPCOMING` entry with `classic-more-rings` (reviewer rewrite, user chose it) + `old-layout-records`, reviewed and approved as 0.29.0 (`ea8fed66`). If the release ships under another number, re-run `/review-release-notes <version>`.
+- [x] S8 per-track Draw Calls/Triangles/p50/p95 table vs `develop` (plan「S8」): draw calls flat, Coast triangles +4.3%, Neon +1.2%; 15 real WebGL captures (5 routes × 3 viewports); all record-seeding browser specs green after moving 7 specs' fixtures to the `@2` ids (`bdfd742d`). Pending: physical keyboard/touch/phone play by the user. Unrelated finding: 844×390 non-touch desktop HUD overlaps (pre-existing).
+- [x] S9 `[full-regression]` push, `quality-gate` green on `bc37681e` (run `41319983990`; run `41313681206` on `1db53ed3` failed 2 stale specs, fixed in `bc37681e`), run id reported to skyline-rush-13. Pending: user plays it.
+- [ ] Stage 2 (rival item pickups, `feature/rival-item-pickups` `79f45369`): start only after S9 green + user played + explicit go; ask the plan's questions first.
+
+---
+
 ## In-race HUD overlaps — foldable, phones, tablet (2026-11-01)
 
 **Branch:** `fix/race-hud-overlaps` from `develop` `88dce759` (Eight-Car included). Not merged; merge needs approval.

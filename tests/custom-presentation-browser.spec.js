@@ -44,7 +44,7 @@ for (const [name, viewport, hasTouch] of [
       const config = window.gameplay.race.config;
       const samples = Array.from({ length: 801 }, (_, i) => [i * 6.25, 0, 0]);
       localStorage.setItem('skyline-rush-mode-ghosts-v1', JSON.stringify({
-        ['coast:' + JSON.stringify(config)]: { time: 80, samples },
+        ['coast@2:' + JSON.stringify(config)]: { time: 80, samples }, // Coast's layout 2 record id
       }));
       localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon']));
     });

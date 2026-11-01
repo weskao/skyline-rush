@@ -72,7 +72,8 @@ test('History shows awarded medals and today’s daily board; the daily run star
 test('a valid saved ghost is offered and its preference persists; a tampered ghost is ignored', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await seed(page, { 'skyline-rush-ghosts': { coast: ghost, neon: { ...ghost, samples: ghost.samples.slice(0, 10) } } });
+  // Coast and Neon ghosts live under their layout 2 record ids (src/record-layout.ts).
+  await seed(page, { 'skyline-rush-ghosts': { 'coast@2': ghost, 'neon@2': { ...ghost, samples: ghost.samples.slice(0, 10) } } });
   await page.goto('/');
   await dismissMusicPrompt(page);
   await page.locator('#controls-button').click();

@@ -7,7 +7,7 @@ const config = (mode, extra = {}) => ({
 const raceRun = (mode, time, extra = {}, extras = {}) => {
   const rules = JSON.stringify(config(mode,extra));
   return {date:'2026-10-23T11:00:00.000Z', mode, track:'coast', rules, time,
-    position:1, score:mode==='stunt' ? 9000 : 300, ...extras};
+    position:1, score:mode==='stunt' ? 9000 : 300, layout:2, ...extras}; // Coast runs since its layout 2
 };
 
 test('10C RED: challenge History filters modes and shows rule-scoped PBs, eligible Ghosts and personal-only disclaimer',async({page})=>{
@@ -21,7 +21,7 @@ test('10C RED: challenge History filters modes and shows rule-scoped PBs, eligib
   await page.addInitScript(data=>{
     localStorage.setItem('skyline-rush-mode-history-v1',JSON.stringify(data.runs));
     localStorage.setItem('skyline-rush-mode-ghosts-v1',JSON.stringify({
-      ['coast:'+JSON.stringify(data.normal)]: data.ghost,
+      ['coast@2:'+JSON.stringify(data.normal)]: data.ghost,
     }));
   }, {runs,normal,clean,ghost:timeGhost});
   await page.goto('/');
