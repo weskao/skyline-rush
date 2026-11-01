@@ -60,6 +60,16 @@
 - [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
 - [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
   competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
+- [x] **develop CI red after the merge (`15bfc16a`, run 41315628196)**: `motion-browser.spec.js:228` callout chip at a
+  mouse 844×390 ended at 313px (limit 175.5). Root cause: the "8px under the 62px mode panel" callout offset sat in the
+  generic `max-height: 500px` block, but only touch landscape has that compact centred mode panel; a mouse short window
+  keeps the full-size panel, so the callout landed over the centre view. RED reproduced locally (315px). GREEN on
+  `fix/race-callout-landscape`: the offset (and the warning under it) moved into a touch-landscape query, mouse short
+  windows get the pre-merge left-gutter `top: 30%` back; `cssBlob` re-recorded. motion + HUD-overlap (7/7) + responsive +
+  parity + foldable 111/111, `npm test` 1290 pass / 0 fail, typecheck, `test:layout` 37 + 42 passed.
+  Merged with `fix/hud-callout-landscape` (same non-touch revert): one rule set kept — mouse short windows use the
+  left-gutter `top: 30%`, touch short landscape the top-bar strip (vertical fold: left pane), so the touch "under the mode
+  panel" slot and its warning shift are dropped; `cssBlob` `4d817a99`.
 
 ## Wave 2 — Foldable / Dual-screen Layout Adaptation · TODO #4 (2026-10-31)
 
