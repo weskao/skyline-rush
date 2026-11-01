@@ -297,3 +297,28 @@ test('wave2 renderer distinguishes purple NITRO from cyan BOOST with shared geom
   vfx.reset();
   assert.equal(scene.children.length, initialObjects, 'reset reuses existing GPU resources');
 });
+
+// Before Wave 2 (54de8259) NITRO+BOOST widened the chase camera by boostStrength 1 × the FOV setting on
+// every tier (+9.7° with the speed term); Wave 2 scaled it by quality (Low +4.0°, Medium +5.6°, High +7.1°).
+test('sprint FOV: NITRO+BOOST widens the camera by the full FOV setting on every tier, Reduced Motion by 0', async () => {
+  const { createSprintVfx, sprintFovOffset } = await import('../src/vfx-settings.ts');
+  const settle = input => {
+    const sprint = createSprintVfx();
+    let frame;
+    for (let i = 0; i < 10; i++) frame = sprint.update(input);
+    return frame;
+  };
+  const offsets = {}, comfort = {};
+  for (const quality of ['low', 'medium', 'high']) {
+    const input = { phase: 'racing', nitro: true, boost: true, speed: 130, cap: 110, dt: 0.05,
+      enabled: true, quality, reducedMotion: false };
+    const visual = vfxSettings({ quality });
+    offsets[quality] = sprintFovOffset(settle(input), visual);
+    comfort[quality] = sprintFovOffset(settle({ ...input, reducedMotion: true }), visual);
+  }
+  assert.equal(vfxSettings().fov, 7, 'default FOV setting');
+  assert.deepEqual(offsets, { low: 7, medium: 7, high: 7 }, 'FOV is camera framing, not GPU cost: never tiered');
+  assert.deepEqual(comfort, { low: 0, medium: 0, high: 0 }, 'Reduced Motion never widens the camera');
+  assert.equal(sprintFovOffset(settle({ phase: 'racing', nitro: true, boost: true, speed: 130, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false }), vfxSettings({ enabled: false })), 0, 'VFX off');
+});
