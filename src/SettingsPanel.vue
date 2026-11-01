@@ -37,6 +37,7 @@ function chooseHudMode(mode: HudDisplayMode): void {
 }
 
 import { icons, ICON_ATTRS } from './icons.ts';
+const settingsArt = `${import.meta.env.BASE_URL}feature-assets/mobile-controls-hud/raster/ui-settings@3x.webp`;
 import HudSourceArtwork from './HudSourceArtwork.vue';
 import { panelsView } from './control-panels-view-state.ts';
 import { audioView } from './audio-view-state.ts';
@@ -44,7 +45,7 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
 </script>
 <template>
       <div class="settings">
-        <button class="icon-button" id="settings-button" :aria-label="tr('hudSettings.panel')" :aria-expanded="panelsView.settingsOpen" aria-controls="settings-panel" :title="tr('hudSettings.panel')"><svg v-bind="ICON_ATTRS" v-html="icons[audioView.settingsIcon]"></svg></button>
+        <button class="icon-button" id="settings-button" :aria-label="tr('hudSettings.panel')" :aria-expanded="panelsView.settingsOpen" aria-controls="settings-panel" :title="tr('hudSettings.panel')"><img class="settings-art-decor" :src="settingsArt" width="72" height="72" alt="" aria-hidden="true" decoding="async" /><svg v-bind="ICON_ATTRS" v-html="icons[audioView.settingsIcon]"></svg></button>
         <div class="settings-panel" id="settings-panel" role="group" :aria-label="tr('hudSettings.panel')" :hidden="!panelsView.settingsOpen">
           <div class="audio-head"><span data-i18n="audio.head">Audio</span><button class="mute-all" id="mute-all" aria-keyshortcuts="M"><span>{{ audioView.muteAllText }}</span><kbd aria-hidden="true">M</kbd></button></div>
           <div class="audio-channel" v-for="{ kind, label } in AUDIO_CHANNELS" :key="kind">
@@ -69,6 +70,9 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
       </div>
 </template>
 <style scoped>
+.settings .icon-button { position: relative; isolation: isolate; }
+.settings-art-decor { position: absolute; pointer-events: none; width: 72px; height: 72px;
+  top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: .24; z-index: -1; }
 .hud-mode-selector { border: 0; border-top: 1px solid rgb(190 215 230 / .25); margin: 12px 0 0; padding: 12px 0 0; }
 .hud-mode-selector legend { font-size: 12px; font-weight: 700; padding: 0 4px; }
 .hud-choice { display: flex; align-items: center; gap: 9px; min-height: 44px; font-size: 12px; cursor: pointer; }
