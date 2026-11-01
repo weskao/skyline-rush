@@ -103,11 +103,16 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) 
   window.addEventListener('resize', refresh, { passive: true });
   const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(refresh);
   // Only structural layout changes invalidate placements; numeric HUD text changes every tick.
-  for (const block of blocks.filter(el => el.matches('.race-progress, .leaderboard, .race-route-map, .mode-indicator, .aero-tools')))
+  for (const block of blocks.filter(el => el.matches('.race-progress, .leaderboard, .race-route-map, .mode-indicator, .aero-tools, .flight-telemetry')))
     observer?.observe(block);
   new MutationObserver(refresh).observe(document.body, { attributes: true, attributeFilter: ['data-hud-mode', 'data-fold-axis', 'data-phase'] });
+  const watch = (id: string, attributeFilter: string[]): void => {
+    const el = document.getElementById(id);
+    if (el) new MutationObserver(refresh).observe(el, { attributes: true, attributeFilter });
+  };
+  // Steering mode can toggle a CSS transform on telemetry without resizing it.
+  watch('touch-controls', ['data-steer-mode', 'data-fold-axis']);
   // The GO countdown hides the flight telemetry via CSS :has(); when GO clears, that space is taken again.
-  const countdown = document.getElementById('countdown');
-  if (countdown) new MutationObserver(refresh).observe(countdown, { attributes: true, attributeFilter: ['hidden'] });
+  watch('countdown', ['hidden']);
   return { refresh };
 }
