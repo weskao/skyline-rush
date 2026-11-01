@@ -24,6 +24,7 @@ export function createGarageStage(environment: THREE.Texture) {
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
+  const towardsCamera = new THREE.Vector3();
   const previewDriver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0,
     impact: null, altitude: 0, trick: null };
   const previewRace = { phase: 'racing', player: previewDriver };
@@ -90,7 +91,7 @@ export function createGarageStage(environment: THREE.Texture) {
       if (ring?.visible) {
         ring.quaternion.copy(camera.quaternion);
         // Draw the flare in front of the car rather than hiding it inside the body.
-        ring.position.addScaledVector(camera.getWorldDirection(origin).negate(), carRadius * 0.52);
+        ring.position.addScaledVector(camera.getWorldDirection(towardsCamera).negate(), carRadius * 0.52);
       }
     }
   }
