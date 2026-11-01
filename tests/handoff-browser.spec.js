@@ -54,7 +54,8 @@ test.describe('touch controls', () => {
     const touch = (type, ...touchPoints) => session.send('Input.dispatchTouchEvent', { type, touchPoints });
     await open(page);
     await start(page);
-    await expect(page.getByRole('button', { name: 'Activate nitro' })).toBeVisible();
+    // NITRO's accessible name is its live READY/CHARGING/UNAVAILABLE state; find it by action.
+    await expect(page.locator('[data-control="nitro"]')).toBeVisible();
     const pad = await page.locator('.touch-pad').boundingBox();
     await touch('touchStart', { id: 1, x: pad.x + 40, y: pad.y + 50 });
     await touch('touchMove', { id: 1, x: pad.x + 100, y: pad.y + 50 });
