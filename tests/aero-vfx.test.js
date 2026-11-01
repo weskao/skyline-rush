@@ -297,3 +297,53 @@ test('wave2 renderer distinguishes purple NITRO from cyan BOOST with shared geom
   vfx.reset();
   assert.equal(scene.children.length, initialObjects, 'reset reuses existing GPU resources');
 });
+
+// Before Wave 2 (54de8259) NITRO+BOOST widened the chase camera by boostStrength 1 × the FOV setting on
+// every tier (+9.7° with the speed term); Wave 2 scaled it by quality (Low +4.0°, Medium +5.6°, High +7.1°).
+test('sprint FOV: NITRO+BOOST widens the camera by the full FOV setting on every tier, Reduced Motion by 0', async () => {
+  const { createSprintVfx, sprintFovOffset } = await import('../src/vfx-settings.ts');
+  const settle = input => {
+    const sprint = createSprintVfx();
+    let frame;
+    for (let i = 0; i < 10; i++) frame = sprint.update(input);
+    return frame;
+  };
+  const offsets = {}, comfort = {};
+  for (const quality of ['low', 'medium', 'high']) {
+    const input = { phase: 'racing', nitro: true, boost: true, speed: 130, cap: 110, dt: 0.05,
+      enabled: true, quality, reducedMotion: false };
+    const visual = vfxSettings({ quality });
+    offsets[quality] = sprintFovOffset(settle(input), visual);
+    comfort[quality] = sprintFovOffset(settle({ ...input, reducedMotion: true }), visual);
+  }
+  assert.equal(vfxSettings().fov, 7, 'default FOV setting');
+  assert.deepEqual(offsets, { low: 7, medium: 7, high: 7 }, 'FOV is camera framing, not GPU cost: never tiered');
+  assert.deepEqual(comfort, { low: 0, medium: 0, high: 0 }, 'Reduced Motion never widens the camera');
+  assert.equal(sprintFovOffset(settle({ phase: 'racing', nitro: true, boost: true, speed: 130, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false }), vfxSettings({ enabled: false })), 0, 'VFX off');
+});
+
+test('cyan NITRO trail differs from the standard trail from the first NITRO frame, purple cue kept on every skin', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const firstFrame = skin => {
+    const { vfx, race, options, vehicle } = fixture();
+    vfx.setSkins(skin ? { 'nitro-trail': skin } : {});
+    race.player.boosting = false; race.player.nitroTime = 1;
+    const state = createSprintVfx().update({ phase: 'racing', nitro: true, boost: false, speed: 82, cap: 110,
+      dt: 0.05, enabled: true, quality: 'high', reducedMotion: false });
+    vfx.update(race, 0.05, new Vector3(), options, false, state);
+    const flow = vehicle.getObjectByName('Airflow showcase').children[0];
+    return { mix: flow.material.uniforms.nitroMix.value, accent: flow.material.uniforms.trailAccent?.value.toArray(),
+      shader: flow.material.fragmentShader };
+  };
+  const standard = firstFrame(null), cyan = firstFrame('nitro-trail-cyan');
+  assert.ok(cyan.accent, 'airflow shader carries the NITRO trail skin');
+  assert.equal(standard.accent[3], 0, 'standard trail look is unchanged');
+  const [r, g, b, weight] = cyan.accent;
+  assert.ok(weight * cyan.mix >= 0.5, 'cyan reads in the first NITRO frame (ignition), not after particles build up');
+  assert.ok(g > r * 3 && b > r * 3, 'accent is cyan');
+  assert.equal(cyan.mix, standard.mix, 'NITRO purple cue does not depend on the skin');
+  assert.ok(cyan.mix > 0.5, 'purple cue from the first frame');
+  assert.ok(cyan.shader.indexOf('trailAccent.a') > cyan.shader.indexOf('vec3(.72,.4,1.)'), 'accent layers over the purple cue');
+  assert.match(cyan.shader, /trailAccent\.a\*[^;]*smoothstep\([^;]*vUv\.x\)/, 'accent stays on streamline tails; fronts stay purple');
+});

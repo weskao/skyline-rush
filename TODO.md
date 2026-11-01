@@ -1,3 +1,30 @@
+## In-race HUD overlaps — foldable, phones, tablet (2026-11-01)
+
+**Branch:** `fix/race-hud-overlaps` from `develop` `88dce759` (Eight-Car included). Not merged; merge needs approval.
+
+- [x] **RED** (`tests/race-hud-overlap-browser.spec.js`: real bounding boxes of every top-level HUD block must not intersect
+  or sit < 2px apart; en + zh-TW × hybrid + competitive; racing with an event callout up, with a collision report up, and
+  paused (pause panel only checked against brand/toolbar/AIRFLOW-VFX)). On `88dce759`'s stylesheet 6 of 7 viewports failed:
+  - 1024×768 tablet: `.mode-indicator × .event-callout` (overlap zh-TW, 0.6px gap en); `.flight-telemetry × .race-route-map` 1px gap (zh-TW).
+  - 390×844 and 600×900 horizontal fold, competitive: `.race-progress × .leaderboard` and `× .position-stat` (eight rows reach 262px; the bar sat at 216–262px).
+  - 320×740: the same two, plus the collision report over the RACING bar, POSITION, leaderboard and route map.
+  - 844×390: NITRO callout over POSITION; collision report over the RACING bar and mode panel.
+  - 844×390 vertical fold: `.race-progress × .aero-tools` and `× .flight-telemetry`, `.mode-indicator × .flight-telemetry`
+    (Foldable merge), plus the callout over POSITION and the collision report over the mode panel.
+  - 1440×900 passed: the reported ROAD MODE / `#nitro-status` touch did not reproduce there in either mode or locale.
+- [x] **GREEN** (`src/style.css` only, nothing hidden or resized): vertical fold moves the RACING bar and mode panel to the
+  left pane's free top-right and the leaderboard to the right pane's free bottom-left; portrait competitive flows the bar
+  under the taller of POSITION and the leaderboard, with map, callout, gap warning and collision report following
+  `--race-progress-bottom`; the short-portrait map slot beside the thumb cluster now covers ≤760px tall; the collision report
+  sizes to its content (half-viewport shrink-to-fit wrapped zh-TW); landscape/tablet callout and collision report sit 8px
+  under the mode panel; tablet map 288 → 284px. Short landscape now lets the flight director step aside for a callout, as
+  portrait already did (`responsive-browser.spec.js` › flight director and a mid-flight callout). Spec 7/7.
+- [x] `cssBlob` re-recorded. `npm run typecheck`, `npm test` (1288 pass / 0 fail), `npm run build`, `npm run test:layout`,
+  foldable + responsive + handoff + main-ui-parity + new spec: 100/100.
+- [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
+- [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
+  competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
+
 ## Wave 2 — Foldable / Dual-screen Layout Adaptation · TODO #4 (2026-10-31)
 
 **Branch:** `feature/foldable-layout-adaptation` · **Integration source:** `develop` · **State:** In verification, NOT complete / not merged.

@@ -149,14 +149,22 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 .event-callout { position: fixed; z-index: 3; top: 206px; left: 16px; right: 16px; margin: auto; width: fit-content; max-width: calc(100vw - 32px); padding: 4px 14px; text-align: center; pointer-events: none; color: #c3f7ff; background: rgb(7 26 40 / .45); border-radius: 999px; text-shadow: 0 2px 10px rgb(5 17 30 / .8); font: 700 clamp(18px, 2.6vw, 28px)/1.1 'Barlow Condensed', sans-serif; }
 .event-callout span { display: block; margin-top: 2px; font: 500 10px/1.5 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 1px; }
 .event-callout[data-kind="perfect"], .event-callout[data-kind="nitro"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
-@media (max-width: 760px) and (min-height: 501px) { .event-callout { top: 272px; } .driving-message[data-tone='warning'] { top: 324px; } } /* warning sits under the callout, clear of the progress bar */
-/* Portrait phones hide the flight director immediately while a callout is visible; no fade may overlap the first frames. */
-@media (max-width: 760px) and (min-height: 501px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; visibility: hidden; transition: none; } }
+/* Portrait: the callout and the warning under it follow the RACING bar, which drops below an eight-row leaderboard. */
+@media (max-width: 760px) and (min-height: 501px) {
+  .event-callout { top: max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); }
+  .driving-message[data-tone='warning'] { top: max(324px, calc(var(--race-progress-bottom, 0px) + 62px)); }
+}
+/* Phones (and short landscape, where the callout sits centred under the mode panel) hide the flight director immediately
+   while a callout is visible; no fade may overlap the first frames. */
+@media (max-width: 760px) and (min-height: 501px), (max-height: 500px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; visibility: hidden; transition: none; } }
 @media (max-height: 500px) {
-  .event-callout { top: 30%; right: auto; margin: 0; max-width: 230px; padding: 2px 10px; font-size: 20px; } /* left gutter: the centre holds the progress and mode panels */
+  /* Centred 8px under the mode panel (it sits 8px under the RACING bar, 62px tall): POSITION, the speed readout
+     and the eight-row leaderboard fill the left gutter the callout used to borrow. */
+  .event-callout { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 70px); max-width: 230px; padding: 2px 10px; font-size: 20px; }
   .event-callout > div { display: flex; align-items: center; gap: 10px; }
   .event-callout span { margin-top: 0; font-size: 9px; }
   .driving-message[data-tone='warning'] { top: 214px; } /* under the mode panel, above the car */
+  body:has(#event-callout:not([hidden])) .driving-message[data-tone='warning'] { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 108px); } /* under the callout */
 }
 @media (max-width: 760px) and (max-height: 500px) { .driving-message[data-tone='warning'] { top: 168px; } } /* small landscape: its mode panel sits higher and the progress panel lower */
 .perf-overlay { position: fixed; z-index: 8; top: max(4px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 4px; color: #c3f7ff; background: rgb(5 17 30 / .7); font: 11px/1.4 ui-monospace, monospace; white-space: nowrap; pointer-events: none; }
@@ -368,7 +376,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .altitude-ladder > b { position: absolute; left: -4px; bottom: -3px; width: 7px; height: 7px; background: #a4eaff; }
 .altitude-ladder > small { position: absolute; left: -6px; bottom: -29px; font-size: 7px; white-space: nowrap; letter-spacing: 1px; }
 @media (min-height: 860px) { .altitude-ladder { top: 430px; } } /* below the live route map (292-418px); shorter screens keep 44% (no room above the right-hand telemetry) */
-.impact-report { position: fixed; left: 50%; top: 27%; z-index: 4; transform: translateX(-50%); display: flex; gap: 15px; align-items: center; padding: 14px 20px; background: rgb(42 25 32 / .94); border: 1px solid #f79a6d; border-radius: 5px; color: #ffd5ba; box-shadow: 0 8px 32px rgb(0 9 22 / .3); pointer-events: none; }
+/* max-content: left 50% caps a shrink-to-fit box at half the viewport, which wrapped the zh-TW detail line on phones. */
+.impact-report { position: fixed; left: 50%; top: 27%; z-index: 4; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); display: flex; gap: 15px; align-items: center; padding: 14px 20px; background: rgb(42 25 32 / .94); border: 1px solid #f79a6d; border-radius: 5px; color: #ffd5ba; box-shadow: 0 8px 32px rgb(0 9 22 / .3); pointer-events: none; }
 .impact-icon { display: flex; }
 .impact-icon svg { width: 26px; height: 26px; }
 .impact-report > div { display: flex; flex-direction: column; gap: 6px; }
@@ -415,7 +424,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .flight-director > span { font-size: 6px; letter-spacing: 2px; }
   .flight-director .director-climb { font-size: 9px; }
   .altitude-ladder { display: none; }
-  .impact-report { padding: 12px 15px; top: 33%; gap: 10px; }
+  .impact-report { padding: 12px 15px; top: max(33%, calc(var(--race-progress-bottom, 0px) + 4px)); gap: 10px; } /* 4px under the RACING bar: on 320x740 eight leaderboard rows leave 76px above the telemetry */
   .impact-report strong { font-size: 21px; }
   .impact-report div > span { font-size: 7px; }
   .touch-controls { left: 12px; right: 12px; gap: 8px; }
@@ -441,7 +450,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .leaderboard { width: 130px; }
   .racer { height: 22px; font-size: 8px; }
   .race-progress { width: 250px; }
-  .impact-report { top: 28%; }
+  .impact-report { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 70px); } /* 8px under the mode panel, like the callout */
 }
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
   /* Reserve the left 100px for the speed readout; eight leaderboard rows occupy the next column. */
@@ -1322,17 +1331,18 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 /* Short screens: telemetry fills the right column, so the map sits on the bottom row beside the 2x2 thumb-action cluster
    (mirrored for a right-hand layout). The slot is that cluster's width: 2 cells x the chosen size (TOUCH_SCALE in main.js)
-   + up to 12px column gap + 8px clearance. */
+   + up to 12px column gap + 8px clearance. Portrait counts as short up to 760px: eight competitive leaderboard rows push
+   the RACING bar to ~321px, leaving the right column above the telemetry 1px short of the map on a 320x740 phone. */
 .race-route-map { --cluster-scale: 1; }
 body:has(#touch-controls[data-size="S"]) .race-route-map { --cluster-scale: .85; }
 body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15; }
-@media (max-height:500px) and (orientation:landscape), (max-width:760px) and (min-height:501px) and (max-height:700px) {
+@media (max-height:500px) and (orientation:landscape), (max-width:760px) and (min-height:501px) and (max-height:760px) {
  .race-route-map { --cluster: calc(2 * var(--touch-cell) * var(--cluster-scale) + 20px); display:block; top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(var(--thumb-edge), var(--safe-right)) + var(--cluster)); }
  body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(var(--thumb-edge), var(--safe-left)) + var(--cluster)); }
 }
 /* Short portrait, Buttons mode: [<][>] fill the bottom row, so the map rises 8px above them into the BRAKE row, right beside
    the 20vw-capped BRAKE (60px is the portrait steering-button height). It shrinks to 70% there so it stays off the player's car. */
-@media (max-width:760px) and (min-height:501px) and (max-height:700px) {
+@media (max-width:760px) and (min-height:501px) and (max-height:760px) {
  body:has(#touch-controls[data-steer-mode="buttons"]) .race-route-map { width:41px; height:50px; bottom:calc(max(var(--thumb-lift), var(--safe-bottom)) + 60px * var(--cluster-scale) + 8px); left:calc(max(var(--thumb-edge), var(--safe-left)) + 20vw + 8px); right:auto; }
  body:has(#touch-controls[data-steer-mode="buttons"][data-hand="right"]) .race-route-map { left:auto; right:calc(max(var(--thumb-edge), var(--safe-right)) + 20vw + 8px); }
 }
@@ -1753,22 +1763,40 @@ body[data-race-mode="endless"] .progress-track { display: none; }
 #touch-controls[data-fold-axis="horizontal"] .touch-pad {
   top: max(55%, calc(var(--fold-pane-bottom-start) + 12px));
 }
-/* Place the competition progress away from the vertical seam, leaving the car sightline clear. */
+/* Vertical fold: the right pane already holds the toolbar, AIRFLOW/VFX, flight telemetry, the thumb cluster and the map.
+   The RACING bar and the mode panel move to the free top-right of the left pane (beside POSITION, above the steering
+   ring), right-aligned 10px short of the seam; the leaderboard takes the right pane's free bottom-left corner. Sizes are
+   unchanged. .race-progress is positioned inside .race-info, which starts 40px in. */
 body[data-fold-axis="vertical"] .race-progress {
-  left: calc(50vw + var(--fold-pane-right-start) / 2);
-  width: min(250px, calc(100vw - var(--fold-pane-right-start) - 32px));
+  left: calc(var(--fold-pane-left-end) - 50px);
+  transform: translateX(-100%);
+  width: min(250px, calc(var(--fold-pane-left-end) - 160px));
 }
 body[data-fold-axis="vertical"]:not([data-phase="ready"]) .mode-indicator {
-  left: calc(50vw + var(--fold-pane-right-start) / 2);
+  left: calc(var(--fold-pane-left-end) - 10px);
+  transform: translateX(-100%);
 }
+body[data-fold-axis="vertical"] .leaderboard { left: calc(var(--fold-pane-right-start) + 10px); top: auto; bottom: 24px; }
+body[data-fold-axis="vertical"] .event-callout { left: auto; right: calc(100vw - var(--fold-pane-left-end) + 10px); margin: 0; }
+body[data-fold-axis="vertical"] .impact-report { left: auto; right: calc(100vw - var(--fold-pane-left-end) + 10px); transform: none; }
 body[data-fold-axis="horizontal"] .race-route-map {
-  top: clamp(80px, 30vh, calc(var(--fold-pane-top-end) - 115px));
+  top: clamp(80px, max(30vh, calc(var(--race-progress-bottom, 0px) + 8px)), calc(var(--fold-pane-top-end) - 96px));
   bottom: auto;
+}
+/* Portrait competitive: eight leaderboard rows reach 262px, so the RACING bar flows on its own row under the taller of
+   POSITION and the leaderboard instead of a fixed 114px offset; the map and callout follow --race-progress-bottom.
+   Hybrid shows fewer rows and keeps the fixed offset (a flowing bar ran into the telemetry on a 320x568 phone). */
+@media (max-width: 760px) and (min-height: 501px) {
+  body[data-hud-mode="competitive"] .race-info { flex-wrap: wrap; row-gap: 8px; }
+  body[data-hud-mode="competitive"] .race-progress { position: static; transform: none; order: 1; flex: 0 0 100%; }
 }
 
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 
-/* Touch tablets: the live map sits 12px under the AIRFLOW bar (242-276px); the desktop 300px slot reached the
-   lifted flight telemetry on a 1024x768 iPad. */
-@media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) { .race-route-map { top: 288px; } }
+/* Touch tablets: the live map sits 8px under the AIRFLOW bar (242-276px); 288px left 1px to the zh-TW flight telemetry
+   on a 1024x768 iPad. The callout drops 8px under the centred mode panel instead of the desktop 206px slot inside it. */
+@media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
+  .race-route-map { top: 284px; }
+  .event-callout { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 70px); }
+}

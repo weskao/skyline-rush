@@ -11,7 +11,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { roadRibbon } from './geometry.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
-import { vfxSettings, createSprintVfx } from './vfx-settings.ts';
+import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
@@ -1014,7 +1014,7 @@ export function createWorld(canvas) {
       camera.lookAt(smoothLook);
       carBank = THREE.MathUtils.damp(carBank, !reducedMotion && car.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt);
       camera.rotation.z += carBank;
-      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + (visual.enabled ? sprintFrame.fov * Math.min(1, visual.fov / 7) : 0) - impact * 4;
+      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + sprintFovOffset(sprintFrame, visual) - impact * 4;
       camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();
       lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : sprintFrame.blur * visual.motionBlur;

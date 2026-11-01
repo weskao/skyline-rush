@@ -120,9 +120,15 @@ export function createSprintVfx() {
       const tier = input.quality === 'high' ? 1 : input.quality === 'medium' ? 0.65 : 0.3;
       const comfort = input.reducedMotion;
       frame.particles = frame.power * (comfort ? 0.2 : tier);
-      frame.fov = comfort ? 0 : Math.min(5, frame.power * tier * 4.5);
+      // FOV is camera framing, not GPU cost: one strength on every tier (pre-Wave 2 behaviour).
+      frame.fov = comfort ? 0 : frame.power;
       frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * 0.6);
       return frame;
     },
   };
+}
+
+/** Degrees the sprint widens the chase camera: sprint strength × the player's FOV setting, 0 with VFX off. */
+export function sprintFovOffset(frame: { fov: number }, visual: { enabled: boolean; fov: number }): number {
+  return visual.enabled ? frame.fov * visual.fov : 0;
 }
