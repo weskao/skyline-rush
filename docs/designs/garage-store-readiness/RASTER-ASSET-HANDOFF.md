@@ -1,5 +1,16 @@
 # 3× Raster Asset Integration Handoff — garage-store-readiness
 
+## 2026-11-02 latest source integration checkpoint (overrides historical source-unavailable wording)
+
+**Images actually present:** All **6 original transparent WebP Git blobs** have been copied without re-encoding from `feature/3x-ui-materials` to this branch's `public/feature-assets/garage-store-readiness/raster/`. They have **216×216 original image pixels, displayed at 72×72 CSS px (1×)**. SHA equality checked against every source file in the 59-item [shared asset manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md).
+
+**UI code now exists:** `src/GarageSourceArtGallery.vue` is mounted from `src/GaragePanel.vue` in an expandable Garage source-preview section. `tests/garage-art-source-browser.spec.js` asserts all 6 images, their original dimensions, 1× layout and no invented commerce/reward claim. Image loading has a text fallback. This is **artwork integration only**, NOT an operational checkout, real currency, store ownership grant; those SDD→BDD→TDD gates remain OPEN. Preview art is not approved for production; latest exact-HEAD CI and phone/browser UI evidence still required.
+
+**Implementation**: read this note and the actual image files; do not regenerate or claim they are unavailable. Keep `develop` as integration branch, avoid changes to `main` or payments.
+
+---
+
+
 ## 2026-11-02 — Source WebPs now in shared Git asset branch (newest truth)
 
 The original ZIP has been recovered from the user's ChatGPT File Library, its SHA-256 checked against the value below, and **all 6 transparent 3× WebPs are now real committed Git blobs** in [`feature/3x-ui-materials`](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-store-readiness), pinned asset README commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`.
