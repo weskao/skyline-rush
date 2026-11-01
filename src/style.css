@@ -787,7 +787,8 @@ body.layout-editing #touch-controls { display: grid; }
 .layout-editing .touch-pad { pointer-events: none; }
 .layout-editing .telemetry { opacity: .35; pointer-events: none; }
 .layout-editing .aero-tools { visibility: hidden; }
-.nitro-hud { margin-top: 10px; font-size: 8px; letter-spacing: 1px; color: #f2d39e; }
+.nitro-hud { margin-top: 10px; font-size: 10px; letter-spacing: .3px; color: #f2d39e; }
+#nitro-status { white-space: nowrap; }
 .nitro-meter { display: flex; gap: 4px; margin-top: 5px; }
 .nitro-segment { flex: 1; height: 7px; overflow: hidden; border: 1px solid #ae946f; border-radius: 8px; background: #233748; }
 .nitro-segment i { display: block; position: relative; height: 100%; background: #f7c576; transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
@@ -796,7 +797,7 @@ body.layout-editing #touch-controls { display: grid; }
 @keyframes nitro-max { to { opacity: .5; } }
 .vfx-comfort .nitro-meter, .vfx-comfort .nitro-segment i { animation: none; transition: none; }
 @media (prefers-reduced-motion: reduce) { .nitro-meter.is-max, .nitro-segment i { animation: none; transition: none; } }
-@media (max-width: 560px) { .nitro-hud { font-size: 7px; letter-spacing: .4px; margin-top: 6px; } .layout-toolbar { top: 64px; font-size: 10px; gap: 8px; } }
+@media (max-width: 560px) { .nitro-hud { font-size: 10px; letter-spacing: 0; margin-top: 6px; } .layout-toolbar { top: 64px; font-size: 10px; gap: 8px; } }
 
 /* Right-thumb cluster: one 2x2 block in the corner, [NITRO][GAS] over [BOOST][FLY]. BOOST and FLY share the bottom row so one thumb
    slides across both (input.js bridges an 8px seam). The steering cluster takes the 1fr column; the slide pad is position:fixed, outside
