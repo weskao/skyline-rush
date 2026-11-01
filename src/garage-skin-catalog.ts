@@ -23,10 +23,16 @@ export const GARAGE_SKINS = [
   { id: 'nitro-trail-cyan', category: 'nitro-trail', default: false, name: { en: 'Cyan trail', 'zh-TW': '青色尾跡' }, candidateRasterId: 'trail-cyan' },
   { id: 'nitro-trail-gold', category: 'nitro-trail', default: false, name: { en: 'Golden pulse trail', 'zh-TW': '金色脈衝尾跡' }, candidateRasterId: 'trail-gold' },
   { id: 'nitro-trail-red', category: 'nitro-trail', default: false, name: { en: 'Crimson dash trail', 'zh-TW': '赤紅斷續尾跡' }, candidateRasterId: 'trail-red' },
+  { id: 'nitro-trail-purple', category: 'nitro-trail', default: false, name: { en: 'Nebula ribbon', 'zh-TW': '星雲紫光尾跡' }, candidateRasterId: 'trail-purple' },
   { id: 'launch-flare-basic', category: 'launch-flare', default: true, name: { en: 'Standard launch flare', 'zh-TW': '標準起跑閃焰' } },
   { id: 'launch-flare-blue', category: 'launch-flare', default: false, name: { en: 'Blue flare', 'zh-TW': '藍色閃焰' }, candidateRasterId: 'flare-blue' },
   { id: 'launch-flare-ring', category: 'launch-flare', default: false, name: { en: 'Shock ring flare', 'zh-TW': '衝擊環閃焰' }, candidateRasterId: 'flare-ring' },
   { id: 'launch-flare-pulse', category: 'launch-flare', default: false, name: { en: 'Pulse flare', 'zh-TW': '脈衝閃焰' }, candidateRasterId: 'flare-purple' },
+  { id: 'launch-flare-gold', category: 'launch-flare', default: false, name: { en: 'Solar corona', 'zh-TW': '日冕金焰' }, candidateRasterId: 'flare-gold' },
+  { id: 'launch-flare-red', category: 'launch-flare', default: false, name: { en: 'Crimson shock', 'zh-TW': '赤紅衝擊' }, candidateRasterId: 'flare-red' },
+  { id: 'launch-flare-cyan', category: 'launch-flare', default: false, name: { en: 'Arctic nova', 'zh-TW': '極光新星' }, candidateRasterId: 'flare-cyan' },
+  { id: 'launch-flare-magenta', category: 'launch-flare', default: false, name: { en: 'Magenta vortex', 'zh-TW': '洋紅旋渦' }, candidateRasterId: 'flare-magenta' },
+  { id: 'launch-flare-white', category: 'launch-flare', default: false, name: { en: 'White supernova', 'zh-TW': '白耀超新星' }, candidateRasterId: 'flare-white' },
 ] as const satisfies readonly SkinDefinition[];
 export type SkinId = (typeof GARAGE_SKINS)[number]['id'];
 export type SkinState = 'locked' | 'trial' | 'owned' | 'equipped';

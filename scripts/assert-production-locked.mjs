@@ -19,7 +19,7 @@ scan('dist');
 // Deployment default: fail closed if any unpublished Garage VFX code or public artwork leaked.
 const locked = !process.env.GARAGE_VFX_RELEASE_MODE || process.env.GARAGE_VFX_RELEASE_MODE === 'coming-soon';
 if (locked) {
-  for (const marker of ['thruster-ion', 'thruster-plasma', 'thruster-void', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism', 'nitro-trail-cyan', 'nitro-trail-gold', 'nitro-trail-red', 'launch-flare-blue', 'launch-flare-ring', 'launch-flare-pulse', 'live-shared-aero', 'Free trial', 'Ion thruster']) {
+  for (const marker of ['thruster-ion', 'thruster-plasma', 'thruster-void', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism', 'nitro-trail-cyan', 'nitro-trail-gold', 'nitro-trail-red', 'launch-flare-blue', 'launch-flare-ring', 'launch-flare-pulse', 'nitro-trail-purple', 'launch-flare-gold', 'launch-flare-red', 'launch-flare-cyan', 'launch-flare-magenta', 'launch-flare-white', 'live-shared-aero', 'Free trial', 'Ion thruster']) {
     RELEASE_LEAK_MARKERS[marker] = 'unreleased garage trial catalog/runtime';
   }
 }
