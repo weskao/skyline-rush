@@ -1,22 +1,18 @@
-## Classic first-three-map pickup density (2026-11-01)
+## Classic pickup density — stage plan (2026-11-01)
 
-**Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Plan, numbers and decisions: `docs/plans/2026-11-01-classic-pickup-density.md`. `PLAYWRIGHT_PORT=5185`. Do not merge into `develop`.
+**Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Full stage plan (S0–S9 + stage 2): `docs/plans/2026-11-01-classic-pickup-density.md` → 「完整階段計畫」. `PLAYWRIGHT_PORT=5185`. Never merge into `develop`.
 
-- [x] AC1 measurement: `scripts/pickup-economy.mjs` (deterministic ring-chasing bot, no traffic/rivals) on all ten tracks; numbers in the plan. `tests/pickup-economy.test.js`.
-- [x] User decisions: (a) layout version key for bests/Ghosts, covering every timed record; skip option 1 (no Classic boost-tunnel visuals); Canyon: NITRO floor only, no extra items, fix only the late first NITRO.
-- [x] RED → GREEN AC2: Coast `ringAltitudes [8,3]` + `ringOdds`; Neon `ringGap [150,220]` + `ringOdds`; Canyon `openingNitroRings: 2` (ring count/positions unchanged). RED observed on the final bot (Coast 9.93 NITRO/min vs floor 13.42).
-- [x] AC3: the seven other tracks' ring/pickup layouts locked by sha256 in `tests/pickup-economy.test.js`.
-- [x] AC5: tuned rings below tunnel roofs and above gap holes (test).
-- [x] `npm test` 1225/0, `npm run typecheck` clean after tuning (commits `4d5f3177`, `af00b2d8`); pushed to origin.
-- [ ] **Paused (user, 2026-11-01):** wait until the other Wave 2 branches (Eight-Car, Foldable, Garage; VFX already in `develop` as `bcf9b3f5`) are merged into `develop`, merge `develop` into this branch, then continue from here. No version-key code written yet.
-- [ ] Layout version key (five Classic tracks + Circuit, all timed records; see the plan's "版本鍵實作計畫"): RED → GREEN, then cloud merge, History "old layout" tag (en + zh-TW).
-- [x] Decided (user, 2026-11-01): Aurora (`ringGap [180,280]` + `openingNitroRings: 1`) and Sky Spiral (`openingNitroRings: 2`) join stage 1; Circuit also gets an opening-nitro fix, with its records (total, Ghost, lap best) under the version key; `measureEconomy(trackId, options, cap)` extension with per-mode numbers in tests. Order after the `develop` merge is in the plan's 「使用者決定（第二輪）」.
-- [ ] Audio: no new sounds; check ring-pickup cue spacing on denser Neon (`tests/race-audio-events.test.js`).
-- [ ] What's New `UPCOMING` entry (en + zh-TW, player-first).
-- [ ] Render check: ring pool fixed at 7 (`src/effects.js`); measure Draw Calls / Triangles / p50/p95 on Coast/Neon/Canyon at 1440×900 Low/Medium/High; real WebGL screenshots 1440×900 / 390×844 / 844×390.
-- [ ] Real keyboard + touch race on each of the three maps; pause/restart audio.
-- [ ] Merge latest `develop` (Eight-Car touches `createRace` / `race-config.ts`), then `[full-regression]` push; full CI `quality-gate` green on the final HEAD; report run id to skyline-rush-13.
-- [ ] **Queued after this branch, not started:** stage 2, rivals collect items. Branch `feature/rival-item-pickups` (local, `79f45369`); plan in that worktree at `docs/plans/2026-11-01-rival-item-pickups.md`. Start only when (1) this branch has full CI green, (2) the user has played it, and (3) the user explicitly says to start. First ask the plan's 開工前要問使用者的事 questions, then merge this branch and the latest `develop` into it. Never into `develop`. Keep `src/record-layout.ts` (`layoutVersion` / `recordTrackId`) importable for it.
+- [x] S0 AC1 economy bot + numbers (`dff62f74`).
+- [x] S1 Coast / Neon / Canyon tuned to the World Tour median (AC2a); other layouts hash-locked; `npm test` 1225/0 (`4d5f3177`, `af00b2d8`).
+- [x] S2 other tracks/modes measured; user decisions (3 rounds): version key (a) for all timed records; no boost tunnel; Canyon floor only, no extra volume; difficulty curve, so Aurora is unchanged and Sky Spiral + Circuit only get an opening-nitro fix; bot extension approved.
+- [ ] **S3 paused:** wait for Eight-Car, Foldable and Garage in `develop` (VFX already in as `bcf9b3f5`), then merge `develop` here and re-measure.
+- [ ] S4 `measureEconomy(trackId, options, cap)` + per-mode layout/number tests.
+- [ ] S5 Sky Spiral `openingNitroRings: 2`, Circuit smallest `openingNitroRings` → first NITRO ≤ 8.9 s, ring positions locked; AC3 lock = World Tour + Aurora.
+- [ ] S6 version key (Coast, Neon, Canyon, Sky Spiral, Circuit; Classic + modes + Circuit lap best + cloud + History tag en/zh-TW) via `src/record-layout.ts`.
+- [ ] S7 audio cue spacing check; What's New `UPCOMING` (en + zh-TW) + `/review-release-notes`.
+- [ ] S8 Draw Calls / Triangles / p50/p95 table vs `develop`; real WebGL screenshots; real keyboard + touch races; `test:browser`, `test:layout`.
+- [ ] S9 `[full-regression]` push, `quality-gate` green on final HEAD, report run id to skyline-rush-13; user plays it.
+- [ ] Stage 2 (rival item pickups, `feature/rival-item-pickups` `79f45369`): start only after S9 green + user played + explicit go; ask the plan's questions first.
 
 ## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
 

@@ -1,4 +1,4 @@
-# 經典競速：光圈／道具密度改善計畫（前三圖起，擴大至五張經典圖與 Circuit）
+# 經典競速：光圈／道具密度改善計畫（前三圖，加上 Sky Spiral 與 Circuit 的開場 NITRO）
 
 - 日期：2026-11-01
 - 分支：`feature/classic-pickup-density`（從 `develop` `54de8259` 開出）
@@ -44,10 +44,10 @@
 
   十張圖都要跑，Coast、Neon、Canyon 的現況寫進本文件的「量測結果」一節。
 - **AC2 經典圖達標**：Coast、Neon、Canyon 的以下指標要達到 World Tour 中位數的 ±15% 以內：每分鐘 NITRO 格數、BOOST 開啟比例，以及第一次能按 NITRO 的時間（不能比基準晚）。
-  - *2026-11-01 擴大範圍*：Aurora、Sky Spiral 和 Circuit 也要達標。
-  - Canyon 的 NITRO 只看下限，而且不增加道具量（見「使用者決定」兩節）。
+  - Canyon 的 NITRO 只看下限，而且不增加道具量。
+  - *2026-11-01 第三輪*：改成難度曲線，越後面的圖可以越難，見「完整階段計畫」的 AC2b。
 - **AC3 其他圖不動**：World Tour 五張圖的光圈與道具排列 bit-for-bit 不變，由測試鎖住每張圖的 ring/pickup 序列雜湊。
-  - *原本也鎖 Aurora、Sky Spiral；2026-11-01 使用者決定把它們併入調整，恢復工作時改成只鎖 World Tour*。
+  - *第三輪決定*：Aurora 也保持不動並維持鎖定。Sky Spiral 和 Circuit 只調整開場光圈的種類，光圈數量與位置都不變，另外用測試鎖住。
 - **AC4 規則不變**：賽道長度、中心線、捷徑、斷崖與檢查點全部不改。這是道具層級的調整，不是賽道結構變更。
 - **AC5 遮擋與碰撞**：新增的光圈和道具不能放在斷崖洞口上，也不能卡進隧道頂。至少要留兩條車道可以通過，並遵守 CLAUDE.md 的「Solid obstacles」規則。
 
@@ -224,7 +224,7 @@ bot 的限制：Checkpoint 模式的 bot 不會追檢查點，28 s 就超時結�
 
 Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。但 World Tour 五張圖本身就是基準：中位數的定義就是一半在上、一半在下。調整它們會讓基準跟著動，而且 AC3 要求這五張圖 bit-for-bit 不變，所以不調整。
 
-### 使用者決定（2026-11-01，第二輪）
+### 使用者決定（2026-11-01，第二輪；第 1、2 項已被第三輪取代）
 
 1. **Aurora、Sky Spiral 併入第一階段**：Aurora 用 `ringGap: [180, 280]` + `openingNitroRings: 1`，Sky Spiral 用 `openingNitroRings: 2`。五張經典圖一起升到 `layoutVersion: 2`，做同一次遷移。AC2 測試擴大到五張圖，AC3 的雜湊鎖改成只鎖 World Tour 五張圖。
 2. **Circuit 一起改**：`CIRCUIT_TRACK` 加開場 nitro 光圈，目標是第一次 NITRO ≤ 8.9 s，NITRO 不低於下限。實作前要先確認：
@@ -240,3 +240,99 @@ Alpine 的 NITRO（11.54）和 Coastal 的 BOOST（67.1%）都低於中位數。
 3. Aurora／Sky Spiral／Circuit 調整（RED → GREEN）。
 4. 版本鍵，涵蓋五張經典圖與 Circuit。
 5. 音效、What's New、畫面與實機驗證、完整 CI。
+
+### 使用者決定（2026-11-01，第三輪：難度曲線）
+
+不是每張圖都要一樣簡單。越後面的圖，拾取可以更分散、難度可以更高，有需要再調整。決定如下：
+
+- **前三圖**（Coast、Neon、Canyon）：維持已完成的寬鬆程度，也就是 World Tour 中位數 ±15%（Canyon 只看下限）。
+- **Aurora、Sky Spiral、Circuit**：只要 NITRO 不低於 World Tour 的最低值 **11.54 格/分**。三張現在都已經達到（11.99、12.82、13.16），所以**不加密度**。
+- **只修太晚的第一次 NITRO**（要在 ≤ 8.9 s）：
+  - Sky Spiral：`openingNitroRings: 2`（9.0 → 6.6 s）。
+  - Circuit：`CIRCUIT_TRACK` 加 `openingNitroRings`（11.7 s → 目標 ≤ 8.9 s）。`lapItems` 會把每圈的光圈複製一份，所以**每一圈**都會有開場 nitro，各圈保持一致，不需要新程式。
+  - 兩張的光圈數量和位置都不變。
+- **Aurora**：完全不動，第一次 NITRO 4.8 s 已經夠早。
+- 取代第二輪的第 1、2 項。bot 擴充（第 3 項）照做。
+- **之後再難一點**：World Tour 和後段地圖如果要刻意更分散，就用同一組欄位（`ringGap` 放大、`ringOdds` 降低 nitro）。那會是另一個工作項目，需要先量測再請使用者同意，不在這次範圍內。
+
+## 完整階段計畫（2026-11-01 定稿）
+
+### 第一階段：經典光圈密度（`feature/classic-pickup-density`）
+
+| 步驟 | 內容 | 狀態 |
+|---|---|---|
+| S0 | 量測工具與現況（AC1） | ✅ `dff62f74` |
+| S1 | 前三圖調整，AC2a 達標 | ✅ `4d5f3177`、`af00b2d8` |
+| S2 | 其他地圖與模式的量測，以及三輪使用者決定 | ✅ 本文件 |
+| S3 | 合併 `develop`（等 Eight-Car、Foldable、Garage 合入） | ⏸ 暫停中 |
+| S4 | bot 擴充 | 待做 |
+| S5 | Sky Spiral 與 Circuit 的開場 NITRO | 待做 |
+| S6 | 版本鍵 | 待做 |
+| S7 | 音效、What's New | 待做 |
+| S8 | 畫面、效能與實機驗證 | 待做 |
+| S9 | 完整 CI、回報 | 待做 |
+
+**S3 合併 `develop`**
+- 先 `git fetch`，在本分支合併 `origin/develop`。不要反過來合進 `develop`。
+- 衝突熱點：Eight-Car 會改 `game.js` 的 `createRace`（7 台對手）和 `race-config.ts`；Garage 可能改歷史紀錄和雲端存檔。
+- 合併後重跑 `npm test`、`npm run typecheck` 和量測。如果因為 Eight-Car 改了 `createRace` 讓數字改變，就重新填寫量測表。bot 會移除對手，所以光圈數字應該不變；若有變化，要把原因寫下來。
+- 驗收：測試全綠，AC2a 與 AC3 仍然通過。
+
+**S4 bot 擴充（RED → GREEN）**
+- `measureEconomy(trackId, options, cap)`，加上 `phase` 欄位。`worldTourBaseline` 要避免把 `map` 的 index 傳進去當 options（暫存腳本踩過這個錯）。
+- 測試記錄：
+  - 九個模式的光圈與道具配置跟 Classic 完全相同，用五張經典圖比對。
+  - Circuit、Endless、gold-rings 的數字有限且穩定。
+  - Checkpoint 與 Elimination 只比對配置，不比每分鐘數字，原因是前面提到的 bot 限制。
+- 驗收：新測試先 RED 再 GREEN；既有的量測數字不變。
+
+**S5 Sky Spiral、Circuit 開場 NITRO（RED → GREEN）**
+- AC2b 測試：
+  - Sky Spiral、Circuit：第一次 NITRO ≤ 8.9 s，NITRO ≥ 11.54 格/分。
+  - Aurora：數字和配置不變。
+- 位置鎖：Sky Spiral 與 Circuit 的光圈 `[distance, x, altitude, group]` 跟沒設 `openingNitroRings` 時完全相同，只有開場幾個光圈的種類改變。寫法比照 Canyon 的測試。
+- AC3 的雜湊鎖：World Tour 五張加上 Aurora。
+- Circuit 先試 `openingNitroRings` 1，不夠再用 2，選能達標的最小值。要確認 Circuit 的光圈 group 與 PERFECT LINE 在每一圈仍然正確。
+- 驗收：AC2a、AC2b、AC3 都通過，`npm test` 全綠。
+
+**S6 版本鍵（範圍：Coast、Neon、Canyon、Sky Spiral、Circuit 的所有計時紀錄）**
+- 做法照「版本鍵實作計畫」一節，以 `src/record-layout.ts` 為單一來源，第二階段也會重用它。
+  - `layoutVersion: 2` 設在上述五個賽道設定上。Aurora 與 World Tour 維持 1。
+- 實作項目：
+  - Classic：最佳成績、Ghost、歷史的 `layout` 欄位。
+  - 模式：最佳成績、Ghost、歷史，Cup 取 `cupTracks` 裡最大的版本。
+  - Circuit：總時間、Ghost，以及 `circuit-records.ts` 的單圈最佳。
+  - 雲端：`mergeProgress`、`raceRun`／`modeRun` 保留 `layout`，`validModeKey` 接受版本化 ID。
+  - History：舊版紀錄加上「Old layout／舊版配置」標籤（en + zh-TW），不參與最佳成績和趨勢圖。
+- 驗收：
+  - 照版本鍵一節的 1–5 條。
+  - 另外要有測試證明：舊 localStorage／雲端快照在合併、匯出、匯入、切換帳號後 bit-for-bit 保留；其他六張圖（Aurora 和 World Tour）的紀錄 key 不變。
+  - `npm run test:browser` 的 history／results 相關 spec 要通過。
+
+**S7 音效與 What's New**
+- 音效：不新增素材。確認 Neon 光圈變密後，拾取提示音不會疊在一起或一直響（`src/race-audio-events.ts`）。必要時加節流，並在 `tests/race-audio-events.test.js` 先 RED 再 GREEN。暫停／重來後不能殘留聲音。
+- What's New：`src/release-notes-data.ts` 最上方加 `version: UPCOMING`，中英文都寫，從玩家角度描述：前三張經典地圖的光圈更多、更容易拿；Sky Spiral 與環形賽道更早拿到第一個 NITRO；舊成績保留並標示舊版配置。最後跑 `/review-release-notes`。
+- 畫質分級：光圈是 3D 物件，Low／Medium／High 都顯示一樣的數量，不依畫質分級。
+
+**S8 畫面、效能與實機驗證**
+- 光圈池固定 7 個，只畫前方 900 m 內的光圈，所以 draw call 上限不變。
+- 比較 Coast、Neon、Canyon、Sky Spiral、Circuit 在 1440×900 下，Low／Medium／High 三個畫質的 Draw Calls、Triangles 和 p50／p95，並與 `develop` 對照，填入每張圖的前後對照表。註明這是軟體 WebGL 的數字，不是實機效能。
+- 實際的 WebGL 截圖：1440×900、390×844、844×390，確認光圈清楚可見，也沒有擋到地標。Coast 的低光圈位在路面高度 3 m，要特別確認不會擋住車子。
+- 真實鍵盤和觸控各跑一場上述地圖，確認 BOOST／NITRO 節奏，以及暫停／重來的行為。
+- `npm run test:browser`（桌面與手機）、`npm run test:layout`。
+
+**S9 完整 CI 與回報**
+- 推送時 commit 訊息加 `[full-regression]`，最終 HEAD 的 `quality-gate` 要全綠，包含 rendering budget，不能靠調高 budget 過關。
+- 把 run id 回報給 skyline-rush-13。不能合進 `develop`。
+- 完成後請使用者實際玩過，這也是第二階段的開工條件之一。
+
+### 第二階段：對手拾取道具（`feature/rival-item-pickups`，排在第一階段之後）
+
+- 計畫在該 worktree 的 `docs/plans/2026-11-01-rival-item-pickups.md`（`79f45369`，只在本機，沒有推送）。
+- 開工條件，三個都要成立：
+  1. 第一階段完整 CI 全綠。
+  2. 使用者實際玩過第一階段。
+  3. 使用者明確說開始。
+- 開工前先問使用者該計畫「開工前要問使用者的事」一節的問題：道具被拿走後重生，還是每台車各有一份；Hard 要多積極；Easy 怎麼表現；是不是新模式。
+- 接著把第一階段分支和最新的 `develop` 合進去，不能合進 `develop`。
+- 會重用：`scripts/pickup-economy.mjs`（S4 擴充後的版本）、`src/record-layout.ts`（S6）、`ring-layout.ts` 的每圖欄位。
