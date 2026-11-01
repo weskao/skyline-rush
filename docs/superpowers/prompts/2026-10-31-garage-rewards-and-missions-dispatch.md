@@ -1,5 +1,16 @@
 # Copy/Paste Implementation Prompt — Wave 3: garage-rewards-and-missions
 
+## 2026-11-02 latest source integration checkpoint (overrides historical source-unavailable wording)
+
+**Images actually present:** All **8 original transparent WebP Git blobs** have been copied without re-encoding from `feature/3x-ui-materials` to this branch's `public/feature-assets/garage-rewards-and-missions/raster/`. They have **288×288 original image pixels, displayed at 96×96 CSS px (1×)**. SHA equality checked against every source file in the 59-item [shared asset manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md).
+
+**UI code now exists:** `src/GarageSourceArtGallery.vue` is mounted from `src/GaragePanel.vue` in an expandable Garage source-preview section. `tests/garage-art-source-browser.spec.js` asserts all 8 images, their original dimensions, 1× layout and no invented commerce/reward claim. Image loading has a text fallback. This is **artwork integration only**, NOT an operational mission validator, payout pipeline, trophy entitlement; those SDD→BDD→TDD gates remain OPEN. Preview art is not approved for production; latest exact-HEAD CI and phone/browser UI evidence still required.
+
+**Implementation**: read this note and the actual image files; do not regenerate or claim they are unavailable. Keep `develop` as integration branch, avoid changes to `main` or payments.
+
+---
+
+
 ## Required Wave 3 asset preflight — verified GitHub source (2026-11-02)
 
 **MANDATORY before implementing or generating images:** Read the [59-file source catalog](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) on **`feature/3x-ui-materials`**, pinned archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. This is a **separate Git branch**, so no WebP source files automatically exist in this feature checkout; do not mistake that for missing artwork. Confirm the current archive head and exact Git blobs before copying. Original PNGs and ZIPs remain in the ChatGPT file library; Git holds 59 authentic 3× WebPs under `docs/designs/3x-asset-library/webp/`.
