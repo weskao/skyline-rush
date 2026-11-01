@@ -1,3 +1,20 @@
+## Classic first-three-map pickup density (2026-11-01)
+
+**Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Plan, numbers and decisions: `docs/plans/2026-11-01-classic-pickup-density.md`. `PLAYWRIGHT_PORT=5185`. Do not merge into `develop`.
+
+- [x] AC1 measurement: `scripts/pickup-economy.mjs` (deterministic ring-chasing bot, no traffic/rivals) on all ten tracks; numbers in the plan. `tests/pickup-economy.test.js`.
+- [x] User decisions: (a) layout version key for bests/Ghosts, covering every timed record; skip option 1 (no Classic boost-tunnel visuals); Canyon: NITRO floor only, no extra items, fix only the late first NITRO.
+- [x] RED → GREEN AC2: Coast `ringAltitudes [8,3]` + `ringOdds`; Neon `ringGap [150,220]` + `ringOdds`; Canyon `openingNitroRings: 2` (ring count/positions unchanged). RED observed on the final bot (Coast 9.93 NITRO/min vs floor 13.42).
+- [x] AC3: the seven other tracks' ring/pickup layouts locked by sha256 in `tests/pickup-economy.test.js`.
+- [x] AC5: tuned rings below tunnel roofs and above gap holes (test).
+- [x] `npm test` 1225/0, `npm run typecheck` clean after tuning (commits `4d5f3177`, `af00b2d8`); pushed to origin.
+- [ ] Layout version key (all timed records; see the plan's "版本鍵實作計畫"): RED → GREEN, then cloud merge, History "old layout" tag (en + zh-TW).
+- [ ] Audio: no new sounds; check ring-pickup cue spacing on denser Neon (`tests/race-audio-events.test.js`).
+- [ ] What's New `UPCOMING` entry (en + zh-TW, player-first).
+- [ ] Render check: ring pool fixed at 7 (`src/effects.js`); measure Draw Calls / Triangles / p50/p95 on Coast/Neon/Canyon at 1440×900 Low/Medium/High; real WebGL screenshots 1440×900 / 390×844 / 844×390.
+- [ ] Real keyboard + touch race on each of the three maps; pause/restart audio.
+- [ ] Merge latest `develop` (Eight-Car touches `createRace` / `race-config.ts`), then `[full-regression]` push; full CI `quality-gate` green on the final HEAD; report run id to skyline-rush-13.
+
 ## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
 
 **Branch:** `feature/ci-speedup`. Measured on `main` run 41024921317 (`cff7886`): 75 min wall. Browser shard 8 took 72 min; shard 1 took 38 min of suite plus a 30 min `npm run test:layout` rerun of specs the sharded suite already contains; World Tour shards ran 5–40 min (the slow camera views sit at the end of the list); unit 1 min, cloud-save 1.5 min.

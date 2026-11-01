@@ -147,3 +147,30 @@ Bot 規則：經典模式、固定 1/60 s 步長；移除車流與對手，只�
 3. 因為版面改變而調整的既有測試（斷言都沒有放寬）：
    - `tests/game.test.js`：Coast 光圈位置測試改成新的高低交替規則。甩尾 mini boost 測試清掉光圈，因為 Coast 的路面高度光圈會自己給 mini boost。
    - Canyon 曾試用 `ringGap` 版面，結果在坡道跳躍中間多出一個 slipstream 光圈，加速讓 10 Hz Ghost 落後約 3 cm（`tests/ghost-ramps.test.js` 的容許值是 2 cm）。改回原本的光圈位置後，這個測試不用修改就通過。
+
+## 版本鍵實作計畫（使用者 2026-11-01 決定：(a)，範圍為所有計時紀錄）
+
+前三圖在所有模式下的光圈都變了（光圈在每個模式都有），所以 Classic、Time Trial、Custom、Cup 和挑戰模式的成績與 Ghost 都要分版本。
+
+**做法：版本化的紀錄 ID。** 版本 1 的 ID 不變，所以舊資料的 key 一個位元都不動。
+
+- `TrackConfig.layoutVersion`：Coast、Neon、Canyon 設成 2，其他圖不設（等於 1）。
+- 新模組 `src/record-layout.ts`：
+  - `layoutVersion(trackId)`
+  - `recordTrackId(trackId)`：版本 2 回傳 `coast@2`，版本 1 回傳原本的 `coast`
+  - `raceLayout(trackId, config)`：Cup 取 `cupTracks` 裡最大的版本
+  - `runLayout(run)`：紀錄裡沒有 `layout` 欄位就是 1
+- **Classic 最佳成績**：`BEST_KEY` 與雲端 `bests` 用 `recordTrackId` 當 key。`mergeProgress` 除了原本的 ID，也接受版本化 ID。舊的 `bests.coast` 保留不動。`LEGACY_BEST_KEY` 只在 ID 是 `coast` 時寫入，避免新版成績混進舊 key。
+- **Classic Ghost**：`skyline-rush-ghosts` 用 `recordTrackId` 當 key。舊的 Ghost 留在原本的 key，不會被拿來比賽。
+- **Classic 歷史**：新的紀錄加 `layout: 2`。雲端 `raceRun` 保留這個欄位，紀錄的識別方式（identity）不變。
+- **模式最佳成績與 Ghost**：key 用 `[recordTrackId, config]`。`validModeKey` 接受版本化 ID。模式歷史紀錄加 `layout`；`loadModeBest` 與 `recordModeRace` 只比較同版本的紀錄。
+- **History 面板**：舊版紀錄照常列出，加上「Old layout／舊版配置」標籤，但不參與最佳成績和趨勢圖。
+- 不改的部分：星數、獎章、解鎖（不是比時間）、每日挑戰（以日期分組）。
+
+**驗收標準：**
+
+1. 新版跑出的成績，不會跟舊版的 `bests.coast`、舊 Ghost 或舊模式紀錄比較。舊版成績再快，新版成績照樣算 NEW RECORD。
+2. 舊資料的 localStorage 與雲端內容 bit-for-bit 保留，匯出／匯入、切換帳號和雲端合併都不會刪掉或改寫舊資料。
+3. 其他七張圖的紀錄 key 與行為完全不變（有測試鎖住）。
+4. History 對舊版紀錄顯示標籤，中英文都有。
+5. 每一項都先 RED 再 GREEN，然後跑 `npm test`、`npm run typecheck` 和 `npm run test:browser` 的 history／results 相關 spec。
