@@ -153,3 +153,22 @@ test('Garage Home readied car previews NITRO ribbon and Void beams even without 
     'ready-phase Home must preview the real wake, rather than hiding all NITRO skins');
   assert.deepEqual(race, original);
 });
+
+test('purple nebula NITRO is a moving shader ribbon, not an RGB-only static decal', async () => {
+  const { createRace } = await import('../src/game.js');
+  const { vfxSettings } = await import('../src/vfx-settings.ts');
+  const { Vector3 } = await import('three');
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  const aero = createAeroVFX(scene, car), race = createRace();
+  race.phase = 'racing'; race.player.boosting = true;
+  const ribbon = scene.getObjectByName('Continuous dash ribbon');
+  const initialMaterial = ribbon.material;
+  aero.setSkins({ 'nitro-trail': 'nitro-trail-purple' });
+  aero.update(race, 0.05, new Vector3(), vfxSettings({ enabled: true }), false);
+  assert.equal(ribbon.material.uniforms.skinPattern.value, 4);
+  const firstTime = ribbon.material.uniforms.time.value;
+  aero.update(race, 0.08, new Vector3(), vfxSettings({ enabled: true }), false);
+  assert.ok(ribbon.material.uniforms.time.value > firstTime);
+  assert.equal(ribbon.material, initialMaterial, 'live uniforms, no per-frame GPU allocation');
+});
