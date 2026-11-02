@@ -317,7 +317,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 /* Original 3x artwork overlays never intercept controls or replace semantic SVG/text. */
 #start-button, #garage-button, #again-button, #pause-button, .touch-controls button { position: relative; isolation: isolate; }
 .hud-3x-decor { position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
-  width: auto; max-width: none; opacity: .27; pointer-events: none; z-index: 0;
+  width: auto; max-width: calc(100% - 4px); max-height: calc(100% - 4px); opacity: .27; pointer-events: none; z-index: 0;
   object-fit: contain; filter: drop-shadow(0 0 8px #57d4ff); }
 #start-button > span, #start-button > svg, #garage-button > span,
 #again-button > span, #again-button > svg, #pause-button > svg, #pause-button > kbd,
