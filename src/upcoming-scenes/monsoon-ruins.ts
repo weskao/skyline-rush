@@ -19,7 +19,7 @@ const random = (seed: number) => {
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const center = (z: number) => 12 * Math.sin(-z / 65) - 6 * Math.sin(-z / 34);
 const roadHeight = (z: number) => -z * 0.009 + 0.28 * Math.sin(-z * 0.026);
-const forkAmount = (z: number) => Math.sin(Math.PI * clamp((-z - 42) / 127, 0, 1));
+const forkAmount = (z: number) => Math.sin(Math.PI * clamp((-z - 42) / 127, 0, 1)) ** 2;
 const terrainHeight = (x: number, z: number) => {
   const fromRoad = Math.max(0, Math.abs(x - center(z)) - 14);
   const hills = Math.min(27, fromRoad * 0.20) * (0.66 + 0.34 * Math.sin(x * 0.035 + z * 0.016) ** 2);
@@ -35,8 +35,9 @@ function ribbon(start: number, end: number, width: number, alternate = false): T
   for (let i = 0; i <= rows; i++) {
     const z = start + (end - start) * i / rows;
     const lift = alternate ? forkAmount(z) : 0;
-    const cx = center(z) + (alternate ? lift * 27 : 0);
-    const slope = ((center(z + .2) - center(z - .2)) / .4);
+    const pathX = (p: number) => center(p) + (alternate ? forkAmount(p) * 27 : 0);
+    const cx = pathX(z);
+    const slope = (pathX(z + .2) - pathX(z - .2)) / .4;
     const inv = 1 / Math.hypot(slope, 1);
     for (const side of [-1, 1]) {
       vertices.push(cx + side * width * .5 * inv,
@@ -45,7 +46,7 @@ function ribbon(start: number, end: number, width: number, alternate = false): T
     }
     if (i < rows) {
       const j = i * 2;
-      indices.push(j, j + 2, j + 1, j + 1, j + 2, j + 3);
+      indices.push(j, j + 1, j + 2, j + 1, j + 3, j + 2);
     }
   }
   const geometry = new THREE.BufferGeometry();
@@ -62,7 +63,7 @@ function sculptTerrain(): THREE.BufferGeometry {
     positions.push(px, terrainHeight(px, pz), pz);
     if (x < columns && z < rows) {
       const i = z * (columns + 1) + x;
-      indices.push(i, i + columns + 1, i + 1, i + 1, i + columns + 1, i + columns + 2);
+      indices.push(i, i + 1, i + columns + 1, i + 1, i + columns + 2, i + columns + 1);
     }
   }
   const geometry = new THREE.BufferGeometry();
@@ -149,9 +150,9 @@ function makeViaduct(root: THREE.Group, stone: THREE.Material, shadow: THREE.Mat
     box(bridge, 'moss bridge cap', [x, 10, 0], [7, 2, 6], shadow);
     if (i < 4) box(bridge, 'arch keystone', [x + 7, 8.1, 0], [9.5, 3, 4.6], stone);
   }
-  box(bridge, 'stone bridge causeway', [1, 12.2, 0], [65, 1.7, 8], stone);
+  box(bridge, 'stone bridge causeway', [1, 10.7, 0], [65, 1.7, 8], stone);
   for (const z of [-3.8, 3.8]) {
-    box(bridge, 'low parapet', [1, 13.2, z], [64, 1.15, .8], shadow);
+    box(bridge, 'low parapet', [1, 12.4, z], [64, 1.15, .8], shadow);
   }
 }
 
@@ -171,6 +172,9 @@ function makeForest(root: THREE.Group, trunkMat: THREE.Material, dark: THREE.Mat
     let x = (random(i * 5 + 7) - .5) * 230;
     const road = center(z), fork = forkAmount(z) * 27;
     if (Math.abs(x - road) < 21 || Math.abs(x - road - fork) < 15) x += x < road ? -28 : 28;
+    // Reserve open sightlines to the guardian and waterfall/viaduct landmarks.
+    if (Math.hypot(x + 58, z + 135) < 36) x = -112;
+    if (Math.hypot(x - 56, z + 124) < 29) x = 105;
     const base = terrainHeight(x, z), h = 9 + 15 * random(i * 17 + 2);
     dummy.position.set(x, base + h / 2, z);
     dummy.scale.set(1 + random(i + 4), h, 1 + random(i + 8));
