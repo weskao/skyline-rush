@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import GarageArtworkImage from './GarageArtworkImage.vue';
+import GarageArtworkTile from './GarageArtworkTile.vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins } from './garage-skin-runtime.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
@@ -29,8 +30,14 @@ const badgeLabel = (id: (typeof badgeArt)[number], locale: string): string =>
   badgeNames[id][locale === 'zh-TW' ? 1 : 0];
 const badgeSrc = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/raster/${id}@3x.webp`;
-const badgeFailed = ref<ReadonlySet<string>>(new Set());
-const onBadgeError = (id: string) => { badgeFailed.value = new Set([...badgeFailed.value, id]); };
+const badgeTone: Record<(typeof badgeArt)[number], 'cyan' | 'magenta' | 'gold' | 'slate' | 'azure' | 'amber' | 'red'> = {
+  'badge-equipped': 'cyan', 'badge-favorite': 'magenta', 'badge-limited': 'gold',
+  'badge-locked': 'slate', 'badge-new': 'amber', 'badge-trial': 'gold',
+  'rarity-common': 'slate', 'rarity-rare': 'azure', 'rarity-epic': 'magenta',
+  'rarity-legendary': 'gold', 'rarity-mythic': 'red',
+};
+const restoredBadge = (id: string): boolean =>
+  id === 'badge-equipped' || id === 'badge-favorite' || id === 'badge-limited';
 
 const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   thruster: { en: 'Thruster', 'zh-TW': '推進器' },
@@ -39,8 +46,6 @@ const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   'launch-flare': { en: 'Launch flare', 'zh-TW': '起跑閃焰' },
 };
 const entries = GARAGE_SKINS.map(skin => ({ ...skin, artwork: skinArtwork(skin.id, import.meta.env.BASE_URL)! }));
-const unavailable = ref<ReadonlySet<string>>(new Set());
-const rasterFailed = ref<ReadonlySet<string>>(new Set());
 const view = (id: SkinId) => { void garageSkinState.revision; return garageSkinEntry(id); };
 const isPreviewActive = (id: SkinId, category: SkinCategory) => {
   void garageSkinState.revision;
@@ -51,13 +56,7 @@ const statusText = (id: SkinId, locale: string) => {
   return ({ en: { trial: 'Free trial', equipped: 'Equipped', owned: 'Owned', locked: 'Locked' },
     'zh-TW': { trial: '免費試用', equipped: '已裝備', owned: '已擁有', locked: '未解鎖' } } as const)[locale === 'zh-TW' ? 'zh-TW' : 'en'][state];
 };
-function onImageError(id: string, hasRaster: boolean): void {
-  if (hasRaster && !rasterFailed.value.has(id)) {
-    rasterFailed.value = new Set([...rasterFailed.value, id]);
-  } else {
-    unavailable.value = new Set([...unavailable.value, id]);
-  }
-}
+
 </script>
 
 <template>
@@ -73,11 +72,9 @@ function onImageError(id: string, hasRaster: boolean): void {
           :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)"
           :data-preview-active="String(isPreviewActive(skin.id, skin.category))">
           <span class="garage-vfx-art">
-            <img v-if="!unavailable.has(skin.id)" :src="rasterFailed.has(skin.id) ? skin.artwork.fallback : skin.artwork.src" :width="skin.artwork.cssSize"
-              :height="skin.artwork.cssSize" alt="" decoding="async" @error="onImageError(skin.id, skin.artwork.hasRaster)" />
-            <span v-else class="garage-vfx-fallback" aria-hidden="true">
-              {{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}
-            </span>
+            <GarageArtworkImage :src="skin.artwork.src" :fallback-src="skin.artwork.hasRaster ? skin.artwork.fallback : ''"
+              :size="skin.artwork.cssSize" alt="" loading="eager" fallback-class="garage-vfx-fallback"
+              :fallback-text="categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en']" />
           </span>
           <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
           <small>{{ statusText(skin.id, locale) }}</small>
@@ -94,11 +91,9 @@ function onImageError(id: string, hasRaster: boolean): void {
       <h4>{{ locale === 'zh-TW' ? '徽章與稀有度 · 素材展示' : 'Badges and rarity · art reference' }}</h4>
       <p class="garage-vfx-message">{{ locale === 'zh-TW' ? '僅展示 3× 原始素材，不代表已擁有、限時活動或已解鎖稀有度。' : 'Artwork reference only. No ownership, time-limited event or rarity entitlement is implied.' }}</p>
       <div class="garage-art-badges">
-        <figure v-for="id in badgeArt" :key="id">
-          <img v-if="!badgeFailed.has(id)" :src="badgeSrc(id)" width="72" height="72" loading="lazy" decoding="async" :alt="badgeLabel(id, locale)" @error="onBadgeError(id)" />
-          <span v-else role="img" :aria-label="badgeLabel(id, locale)">{{ badgeLabel(id, locale) }}</span>
-          <figcaption>{{ badgeLabel(id, locale) }}</figcaption>
-        </figure>
+        <GarageArtworkTile v-for="id in badgeArt" :key="id" :id="id"
+          :label="badgeLabel(id, locale)" :src="badgeSrc(id)"
+          :tone="badgeTone[id]" :restored="restoredBadge(id)" />
       </div>
     </section>
     <p class="garage-vfx-message" role="status">{{ locale === 'zh-TW' ? '特效僅改變外觀，不影響速度、獎勵或舊有車漆。' : 'Cosmetics only. Speed, rewards and existing paints are unchanged.' }}</p>
@@ -113,8 +108,8 @@ function onImageError(id: string, hasRaster: boolean): void {
 .garage-vfx-category h4 { font-size: 13px; margin: 0 0 6px; }
 .garage-vfx-category ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 8px; padding: 0; margin: 0; list-style: none; }
 .garage-vfx-category li { display: flex; flex-direction: column; gap: 3px; min-width: 0; align-items: center; padding: 7px; border-radius: 8px; border: 1px solid #31536a; background: #112638; text-align: center; }
-.garage-vfx-art { width: 96px; height: 96px; max-width: 100%; display: grid; place-items: center; }
-.garage-vfx-art img { width: 100%; height: 100%; object-fit: contain; }
+.garage-vfx-art { width: 96px; height: 96px; max-width: 100%; display: grid; place-items: center; overflow: visible; }
+.garage-vfx-art :deep(.artwork-img) { max-width: 100%; max-height: 100%; object-fit: contain; }
 .garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
 .garage-vfx-category li[data-preview-active="true"] {
   border-color: #74defe;
@@ -137,10 +132,14 @@ function onImageError(id: string, hasRaster: boolean): void {
 .garage-vfx-actions button:focus-visible { outline: 3px solid #67e8ff; outline-offset: 2px; }
 .garage-art-showcase { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid #46688b; }
 .garage-art-showcase h4 { color: #d4ddff; letter-spacing: .04em; }
-.garage-art-badges { display: grid; grid-template-columns: repeat(auto-fill,minmax(76px,1fr)); gap: 9px; }
-.garage-art-badges figure { margin: 0; padding: 6px; text-align: center; border: 1px solid #344f83; border-radius: 10px; background: radial-gradient(circle at 50% 25%, #283760, #101c33 80%); }
-.garage-art-badges img { width: 72px; height: 72px; max-width: 100%; object-fit: contain; }
-.garage-art-badges figcaption { font-size: 10px; overflow-wrap: anywhere; color: #b5cae8; }
+.garage-art-badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 115px), 1fr));
+  gap: clamp(8px, 1.5vw, 13px);
+  align-items: stretch;
+}
+.garage-art-showcase { min-width: 0; }
+.garage-art-showcase h4 { margin-bottom: 10px; }
 @media (max-height: 420px) and (orientation: landscape) { .garage-vfx-category ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .garage-vfx-catalog * { animation: none !important; transition: none !important; } }
 </style>
