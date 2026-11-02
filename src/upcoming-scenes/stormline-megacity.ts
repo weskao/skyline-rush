@@ -56,7 +56,7 @@ function addRail(parent: THREE.Group, points: THREE.Vector3[], width: number, co
 }
 
 function addRoads(group: THREE.Group) {
-  const ground = Array.from({ length: 65 }, (_, i) => {
+  const ground = Array.from({ length: 70 }, (_, i) => {
     const z = 48 - i * 3.75;
     return new THREE.Vector3(roadX(z), 0, z);
   });
