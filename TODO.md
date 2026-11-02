@@ -7,10 +7,11 @@
 
 ### Route topology and concept-art reference clarification (2026-11-02)
 
-- [x] Create [five committed SVG route schematics](docs/designs/new-tracks/route-schematics/../README.md) showing separate START and FINISH and ground/air route choices; these are technical **open-route diagrams**, not the AI scenic screenshots.
-- [ ] **Topology signoff pending:** recommendation is **all five new maps remain point-to-point** to match ten existing sprint maps; finish on one valid traversal. Future 1/3/5-lap circuit content remains a separately labeled mode and later workstream, not an automatic conversion of these five. Never repeat a full 14–15 km course three times when targeting 3–5 minutes.
-- [ ] Commit the **two original AI scenic collage PNGs and 10 track-view crops** to `docs/designs/new-tracks/concept-art/` from the user-provided ZIP / this ChatGPT conversation (not yet on GitHub). Update [visual index](docs/designs/new-tracks/route-schematics/../README.md) with real filenames and hashes after actual upload; do not create dead links.
-- [ ] Once available, perform 2 real WebGL comparisons/map × desktop+mobile, each compared with corresponding concept view; preserve scene weather, key landmarks, sense of scale, flying vs ground reveal, road openness and reduced-motion/performance. Record pass/fail deviations.
+- [x] Store five [committed one-way route schematics](docs/designs/new-tracks/README.md), one per track; technical routes distinguish green START from red FINISH and ground/air forks.
+- [x] **User-confirmed topology (2026-11-02): ALL FIVE are single-finish point-to-point**, matching ten existing sprint tracks. No circuit layouts, no lap counting, no implicit conversion; dedicated circuit gameplay remains separate. Require distinct START != FINISH nodes and world-space positions.
+- [x] Commit **five original two-view SVG design boards** to [concept-art/](docs/designs/new-tracks/README.md), one board per track, with ground driving + aerial branch visuals and START/FINISH route; link exact paths from [visual-fidelity.md](docs/designs/new-tracks/visual-fidelity.md) and [concept-manifest.json](docs/designs/new-tracks/concept-manifest.json).
+- [ ] Upload the **two original AI high-detail PNG overview images and 10 PNG crops** from the chat ZIP under `docs/designs/new-tracks/source-concept-png/` and store their actual SHA-256 checksums. **Original PNGs are not on GitHub yet**; do not mark complete or invent links.
+- [ ] During implementation, capture and compare 2 **actual WebGL** gameplay views/map × desktop and mobile against the committed two-view boards (and original PNGs when uploaded); preserve route openness, weather/landmarks, grounded/flying camera composition, visual fidelity, Low/Medium/High and Reduced Motion. Record PASS/FAIL/APPROVED DEVIATION per view.
 
 ### Shared systems
 - [ ] M1 typed CourseGraph: real hairpins, U-turns, separate ground/air branch edges and convergent joins; arc-length route frames, route-aware AI, progress, finish, minimap, checkpoints, ghost/save versions.
