@@ -1,3 +1,25 @@
+## P0 — Stage 1 LIVE animated Three.js homepage showcases (2026-11-03)
+
+**User requirement supersedes JPEG-only artwork and static home-overlay plans.** At least the homepage must have **the same kind of dynamic 3D preview as the existing tracks**, including the genuine shared player and rival car visuals, hover/jets, view controls, real 3D scenery/landmark depth, animated local weather/props and ground/air visual route fork. **Static JPEG, CSS picture parallax, one flat photo plane or a JPEG over the old playable course is NOT COMPLETE.**
+
+**Canonical spec:** [Stage 1 animated real-time 3D home showrooms](docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) · [TDD execution plan](docs/superpowers/plans/2026-11-03-six-chat-home-preview-integration.md) · [six corrected GPT tasks](docs/superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md).
+**Scope:** ONLY first five Stage 1 tracks (Dune Tempest / Monsoon Ruins / Skyfall Archipelago / Volcanic Crown / Stormline Megacity). Stage 2 five remain planning-only and absent from home. All upcoming tracks are point-to-point, **COMING SOON**, selectable but cannot enter `createRace`.
+
+- [x] Existing first-pass five selectable Coming Soon cards, bilingual button/status and five committed reference JPEGs available; **this is interim UI, NOT real dynamic 3D preview acceptance**.
+- [x] Update project instructions, six chat prompts, scene integration plan and homepage design spec to require **actual Three.js world-space scene**; JPEG becomes art reference/card/fallback only.
+- [ ] **GPT 1** `feature/epic-home-art-dune-tempest`: build `src/upcoming-scenes/dune-tempest.ts` with real dune/canyon road and sandstorm animation; add `tests/upcoming-dune-tempest-scene.test.js` and `docs/designs/new-tracks/home-art/dune-tempest.md`, compare against two reference JPEGs.
+- [ ] **GPT 2** `feature/epic-home-art-monsoon-ruins`: build `src/upcoming-scenes/monsoon-ruins.ts` with jungle/ruins/waterfall/wet mud and live rain/water/mist; own corresponding test and art note.
+- [ ] **GPT 3** `feature/epic-home-art-skyfall-archipelago`: build `src/upcoming-scenes/skyfall-archipelago.ts` with 3D floating islands/stone road/air branch and cloud/waterfall animation; own corresponding test and art note.
+- [ ] **GPT 4** `feature/epic-home-art-volcanic-crown`: build `src/upcoming-scenes/volcanic-crown.ts` with volcanic U curves, lava gorge, flying fork and moving lava/embers; own corresponding test and art note.
+- [ ] **GPT 5** `feature/epic-home-art-stormline-megacity`: build `src/upcoming-scenes/stormline-megacity.ts` with neon storm city/higher roads and animated rain/lights/distant traffic; own corresponding test and art note.
+- [ ] **GPT 6** `feature/epic-multiroute-longform-tracks`: TDD shared `src/upcoming-showcase.ts`, `src/world.js` and `src/main.js` integration. Use **one existing Renderer, camera, composer and frame loop**, shared vehicles/jet VFX, camera/orbit controls, quality/reduced-motion; do not fabricate playable `Race`. Remove or hide current `#upcoming-scene` image overlay when WebGL is healthy.
+- [ ] Integrate all five scene/test/art-note files **by selected blob**, not full old branch merges; avoid common-file collisions and keep genuine player/rivals same scale/effects as existing homepage.
+- [ ] **Real WebGL animation proof:** at least two time-separated screenshots per map, plus desktop 1440×900 and phone 390×844 ground/aerial views; compare to reference JPEGs and record three anchors, road/air split, car framing, weather/animation, Reduced Motion and quality-tier behavior.
+- [ ] Preserve existing 10 real tracks (and modes), all five Coming Soon disabled Start (Enter/gamepad/storage cannot bypass), fixed 236/210/190px bilingual CTA, accessible/keyboard swipes and normal return to playable home.
+- [ ] Run and record RED→GREEN→Refactor, unit/typecheck/build/Playwright, `make verify`, and **exact HEAD full GitHub CI**; no claims of pass without evidence. Do not merge to `develop` / `main`, PR, force or deploy.
+
+---
+
 ## Stage 1 — Homepage Coming Soon five-track selector (2026-11-03)
 
 **Branch:** `feature/epic-multiroute-longform-tracks` (NOT `develop` or `main`).
@@ -6,7 +28,7 @@
 **Strict scope:** **ONLY** Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity appear as coming-soon cards; the next five Stage 2 maps remain design documents only.
 
 - [x] Create preview-only `UPCOMING_TRACKS` metadata and priority status; do **not** register unfinished maps in playable `RACE_TRACKS` or mutate game physics, rewards, ghost, daily or cup.
-- [x] Reuse the five committed Stage 1 JPEGs and route SVGs in `public/track-teasers/` for selectable home cards and a static hero teaser; clearly label them as concept art rather than real WebGL.
+- [x] Reuse five committed Stage 1 JPEGs and route SVGs in `public/track-teasers/` for interim cards; former **static hero** is obsolete and MUST be replaced by live Three.js showcase per P0 above.
 - [x] Set `COMING SOON` / `即將推出` on Stage 1 cards, allow selecting preview-only cards, disable start in any mode and block the Enter/keyboard race path.
 - [x] Change `#start-button` CTA by status (Start race, LOCKED, COMING SOON), bilingual en / zh-TW and fixed width per breakpoint; restore original behavior on playable map select.
 - [x] Add pure Node tests `tests/upcoming-tracks.test.js` and browser tests `tests/upcoming-home-browser.spec.js`; update previous last-track placement test for new carousel order.
