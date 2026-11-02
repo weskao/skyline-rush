@@ -31,7 +31,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'more-rings-everywhere', kind: 'improvement', image: null,
-        title: { en: 'Twice the rings and pickups on every road', 'zh-TW': '每條賽道光圈道具加倍' },
+        title: { en: 'Twice the rings and pickups on every road', 'zh-TW': '每條賽道的光圈和道具加倍' },
         description: {
           en: 'Every road has about twice the rings and NITRO pickups, plus full rows you can\'t miss and quick runs of rings close together.',
           'zh-TW': '每條賽道的光圈和 NITRO 道具都多了約一倍，還有怎麼開都吃得到的整排光圈，和一連串緊密的光圈。'
