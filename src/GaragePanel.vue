@@ -160,10 +160,6 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 
 /* Unified Garage Collection polish: one shared themed surface for paint and VFX cards. */
 #garage-screen .garage-collection {
-  --garage-card-surface:
-    radial-gradient(ellipse at 50% 19%, hsl(var(--card-hue, 195) 72% 39% / .25), transparent 74%),
-    linear-gradient(155deg, #1c2e4a, #0c192c 86%);
-  --garage-card-border: hsl(var(--card-hue, 195) 69% 61% / .48);
   background: linear-gradient(160deg, #102439, #081724 74%);
   border: 1px solid #3b5d74; box-shadow: inset 0 1px #ffffff19, 0 12px 30px #0005;
   scrollbar-color: #52748b #0b1928;
@@ -179,6 +175,10 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
   box-shadow: 0 0 10px #5ddfff8c;
 }
 #garage-screen .garage-collection :is(.paint-options button, .garage-vfx-category .garage-skin-card) {
+  --garage-card-surface:
+    radial-gradient(ellipse at 50% 19%, hsl(var(--card-hue, 195) 72% 39% / .25), transparent 74%),
+    linear-gradient(155deg, #1c2e4a, #0c192c 86%);
+  --garage-card-border: hsl(var(--card-hue, 195) 69% 61% / .48);
   background: var(--garage-card-surface);
   border: 1px solid var(--garage-card-border);
   border-radius: 14px 6px 14px 6px; color: #edf7ff;
