@@ -1,3 +1,14 @@
+## 2026-11-02 — Approved public free-trial release strategy (not yet deployed)
+
+- [x] The user approved a **publicly visible, free-to-try Garage VFX** after Wave 2 release gates.
+- [x] Branch-local Pages deploy mode is pinned to `trial` instead of `coming-soon` (only gated `main` / tag deployments can actually ship it).
+- [x] Keep default local/CI production build **locked**; explicit trial builds verify real bundled trial catalog and artwork.
+- [x] Update en/zh-TW showroom and Try labels to explain temporary equipment resets on page reload/account switch.
+- [ ] Verify latest exact-HEAD unit, TypeScript, browser screenshots and Cloud/World Tour CI; review actual Phone and WebGL visuals. **Do not merge, tag or deploy until green and accepted.**
+- [ ] Merge approved branch to `develop` and then `main` at the separate integration/release gate; only then activate a public version.
+
+See [Garage release policy](docs/garage-release-policy.md).
+
 ## Rival item pickups — stage 2 (2026-11-02)
 
 **Branch:** `feature/rival-item-pickups` (merged `develop` `435e4fb8` as `f18cb226`, no conflicts). Plan + inventory + AC: `docs/plans/2026-11-01-rival-item-pickups.md`. `PLAYWRIGHT_PORT=5186`. Merged `develop` `bf350867` too (clean; `npm test` 1361/0, 3 skipped). User approved (2026-11-02) a local `--no-ff` merge into `develop` once CI is green, then deleting the feature branch; no `main`, no PR, no deploy, no rules deploy.

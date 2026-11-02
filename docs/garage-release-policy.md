@@ -7,7 +7,7 @@ The Garage contains two distinct state machines. **Release mode** decides which 
 | Build mode | Studio section | Trial/equip | Distributable |
 | --- | --- | --- | --- |
 | `coming-soon` | Localized “即將推出 / Coming soon” placeholder | Disabled; preserves PAINTS | Only locked component and neutral palette; no trial controller, selected artwork or private assets |
-| `trial` | Live VFX catalog and safe Preview/Try actions | Session-only, expiring, account-scoped; no permanent ownership grants | Intended for test/staging, not deployed by default |
+| `trial` | Live VFX catalog and safe Preview/Try actions | Session-only, account-scoped; no permanent ownership grants | **Approved for a public free-trial milestone**, after release gates pass |
 | `released` | Live VFX catalog | Only already-owned or default cosmetics can equip; no free trial | Intended only after genuine backend entitlement checking and separate release approval |
 
 ## Architecture (Strategy, Adapter, SOLID)
@@ -22,7 +22,7 @@ The Garage contains two distinct state machines. **Release mode** decides which 
 
 ```bash
 npm run dev                              # development default = trial
-npm run build                            # production default = coming-soon (fail-closed)
+npm run build                            # local/CI production default = coming-soon (fail-closed)
 GARAGE_VFX_RELEASE_MODE=coming-soon npm run build
 GARAGE_VFX_RELEASE_MODE=trial npm run build
 GARAGE_VFX_RELEASE_MODE=released npm run build
@@ -32,9 +32,15 @@ npm run test:browser                     # builds a separate trial artifact for 
 
 Unknown/empty mode strings fail Vite configuration. **Do not use query strings, localStorage, cookies or remote-config flags to unlock unpublished code.** `npm run build` checks compiled JS/CSS and removes the unpublished `public/feature-assets/garage-vfx-skins` directory for the locked build. `scripts/assert-production-locked.mjs` fails if a locked artifact leaks known trial code markers or the asset directory. Unit CI executes the production build audit; browser CI builds and checks the trial variant separately.
 
-## Production rollout
+## Public trial rollout — approved 2026-11-02
 
-`.github/workflows/ci.yml` pins `deploy.env.GARAGE_VFX_RELEASE_MODE: coming-soon` by default. To publish a newer stage, change that one reviewed mode entry in a dedicated release change, run the exact-HEAD full regression and real WebGL/mobile visual tests, verify the intended bundle, then use the existing main/release/deploy gates. **Do not push a test/staging dist directory to GitHub Pages**. Returning to `coming-soon` removes the trial modules from the *newly built* public bundle; it is not a mechanism for erasing assets already cached/downloaded from an earlier deployment. Never ship confidential materials as client assets.
+The approved release direction is **free cosmetic try-on**, not purchase, checkout, permanent unlock or a payment trial. `.github/workflows/ci.yml` now explicitly pins `deploy.env.GARAGE_VFX_RELEASE_MODE: trial` **on this feature branch**, ready to be merged only after verification. Default `npm run build` stays `coming-soon` for fail-closed unit/locked-artifact testing; an explicit `GARAGE_VFX_RELEASE_MODE=trial npm run build` builds the release candidate and the artifact audit checks that the catalog and trial artwork exist. This is a reviewed *build-time* deployment strategy, not a query-string or localStorage unlock.
+
+**User-facing terms:** All 22 cosmetic selections may be previewed; non-default unowned effects can be temporarily equipped with **Try free / 免費試用**. A trial remains active in this **current app page session** (not a 24-hour or seven-day offer), then temporary equipment resets on reload/new session or account switch. It never writes an owned grant, wallet amount, purchase, payment, trial entitlement or automatic persistent upgrade to Cloud Save. Regular star-unlocked PAINTS remain unchanged. A user may open the Garage and try again during a new visit; no pricing, deadline or scarcity is implied.
+
+**Release gates still required:** Full exact-HEAD CI on the feature branch, true 3D WebGL and phone UI sign-off, nontransactional session/account/reload tests, approval of the final feature integration into `develop`, full `develop` and `main` CI, then a separate explicit public release/deploy action. Editing the mode here does **not** publish the live website. No purchase/checkout/payment SDK is enabled. Do not publish the current test/staging bundle. Returning `deploy.env.GARAGE_VFX_RELEASE_MODE` to `coming-soon` is a rollback for a **future newly built** artifact; it cannot erase files that were already downloaded or cached.
+
+ Returning to `coming-soon` removes the trial modules from the *newly built* public bundle; it is not a mechanism for erasing assets already cached/downloaded from an earlier deployment. Never ship confidential materials as client assets.
 
 ## Security boundaries and limitations
 
@@ -46,7 +52,7 @@ Unknown/empty mode strings fail Vite configuration. **Do not use query strings, 
 
 ## Tests
 
-- `tests/garage-release-build.test.js`: mode-selection fallbacks, unsupported build values, module boundaries, Pages pin and deployment audit.
+- `tests/garage-release-build.test.js`: fail-closed local default, opt-in Pages trial pin, mode selection, no diagnostic leaks, trial artifact completeness.
 - `tests/garage-skin-session.test.js` and `tests/garage-skin-runtime.test.js`: trial expiration, account separation and owned-vs-temporary distinction.
 - `tests/garage-vfx-catalog-browser.spec.js` and `tests/garage-skin-trial-browser.spec.js`: actual trial-build UI.
 - Existing original PAINTS, Garage Studio, shader warmup, performance and World Tour regressions must stay green.
