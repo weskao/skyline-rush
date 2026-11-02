@@ -44,6 +44,10 @@ JPEGs are the **converted original AI scene crops** saved in GitHub (different f
 
 **Next phase:** [Stage 2 five additional JPEG-based world concepts](stage-2/README.md) and [Stage 2 visual fidelity](stage-2/visual-fidelity.md).
 
+## Acceptance is evidence, not resemblance by assertion
+
+Use [the binding 10-course ground/aerial visual acceptance gate](visual-acceptance-gate.md), with **two actual JPEG references per Stage 1 map** and the companion route SVG. Do not mark a map visually accepted until real gameplay WebGL screenshots, camera/seed settings, landmark/route/lighting/particles comparisons, and six PASS/FAIL/APPROVED DEVIATION outcomes are recorded. Stage 2 has its own 10 JPEG views and shares the same gate. JPEGs are *concept art*, not real game captures or runtime textures.
+
 ## Per-track art direction and two required cameras
 
 ### 1. 沙暴裂谷 / Dune Tempest
