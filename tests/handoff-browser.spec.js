@@ -161,6 +161,10 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
     });
     observer.observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
   });
+  // Solo Time Trial: rivals ahead on the grid take Coast's first rings (2.5 s respawn), so the player's first charge
+  // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
+  await page.locator('button[data-race-mode="time"]').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   await start(page);
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
   // Coast's first group from the layout the game builds: ring heights vary, so each gate is flown at its own altitude.

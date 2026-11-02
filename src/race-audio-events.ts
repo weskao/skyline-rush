@@ -1,4 +1,5 @@
 import { createModeAudioState, modeAudioCues, type ModeAudioRace } from './mode-audio.ts';
+import { createRivalCues, type RivalCueRace } from './rival-cues.ts';
 
 // Pure race → sound transitions for the Web Audio engine: what to play this frame, never how it sounds.
 interface AudioCar {
@@ -13,6 +14,7 @@ export interface AudioRace extends ModeAudioRace {
   elapsed: number;
   countdown: number;
   pickups: { taken?: boolean }[];
+  rivals: RivalCueRace['rivals'];
 }
 export interface AudioImpulse { intensity: number; landing: boolean; barrier: boolean }
 export interface RaceAudioFrame {
@@ -25,7 +27,7 @@ export interface RaceAudioFrame {
 }
 
 export function createRaceAudioEvents() {
-  const modeAudioState = createModeAudioState();
+  const modeAudioState = createModeAudioState(), rivalCues = createRivalCues();
   let previousRace: AudioRace | undefined, previousPhase: string | null = null, previousCount: number | null = null;
   let lastImpact: AudioCar['impact'] = null, lastLanding: AudioCar['landing'] = null;
   let lastNearMiss: unknown = null, lastTrick: unknown = null, lastShieldBlock: unknown = null;
@@ -80,6 +82,7 @@ export function createRaceAudioEvents() {
         collectedPickups.add(pickup);
         if (enabled && active && !freshRace) sounds.push('pickup');
       }
+      for (const cue of rivalCues.update(race)) if (enabled && active) sounds.push(cue.kind === 'take' ? 'rival-pickup' : 'rival-nitro');
       previousPhase = race.phase;
       previousCount = count;
       lastImpact = car.impact;

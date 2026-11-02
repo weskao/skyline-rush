@@ -1,23 +1,25 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { layoutVersion } from '../src/record-layout.ts';
 
 const records = Array.from({ length: 12 }, (_, i) => ({
   date: `2026-01-${String(i + 1).padStart(2, '0')}T12:00:00Z`, track: 'coast',
   position: i === 11 ? 1 : 3, time: 90 - i, score: i * 100, collisions: 0,
-  nearMisses: i, rings: 2, perfectLines: 0, nitroUses: 1, distance: 5000, layout: 2, // runs on today's ring layout
+  nearMisses: i, rings: 2, perfectLines: 0, nitroUses: 1, distance: 5000, layout: layoutVersion('coast'), // runs on today's layout (a layout bump must not orphan the seed)
 }));
 const open = async page => {
   await page.goto('/');
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 };
-const seed = page => page.addInitScript(records => {
-  localStorage.setItem('skyline-rush-history', JSON.stringify([...records,
-    { ...records[0], track: 'neon', position: 2, time: 66 },
-    { ...records[0], track: 'canyon', position: 3, time: 88 },
-  ]));
-}, records);
+const seeded = [...records,
+  { ...records[0], track: 'neon', layout: layoutVersion('neon'), position: 2, time: 66 },
+  { ...records[0], track: 'canyon', layout: layoutVersion('canyon'), position: 3, time: 88 },
+];
+const seed = page => page.addInitScript(runs => {
+  localStorage.setItem('skyline-rush-history', JSON.stringify(runs));
+}, seeded);
 
 for (const [name, viewport, hasTouch] of [
   ['desktop', { width: 1440, height: 900 }, false],
@@ -143,11 +145,13 @@ test('track changes render four distinct sky palettes in the WebGL framebuffer',
   expect(skies[2][0]).toBeGreaterThan(skies[2][2]); // desert's warm sky
 });
 
-test('fuel warns below 20%, refill feedback appears and comfort disables gauge motion', async ({ page }) => {
-  await open(page);
+gameplayTest('fuel warns below 20%, refill feedback appears and comfort disables gauge motion', async ({ gameplayPage: page }) => {
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('Shift');
+  // Coast's rows and pickups refill a boost drained from full before it reaches 20%, so start the held boost near the
+  // threshold; the real drain still has to cross it. Set after Shift is down: ground regen refills an idle car.
+  await page.evaluate(() => { window.gameplay.race.player.fuel = 30; });
   // CPU-only CI simulates slower than wall-clock (frame gaps are clamped), so draining takes longer there.
   await expect(page.locator('#fuel-meter')).toHaveAttribute('aria-valuetext', /Low charge/, { timeout: process.env.CI ? 48000 : 16000 });
   await page.keyboard.up('Shift');
