@@ -204,7 +204,7 @@ export function createAeroVFX(scene, vehicle) {
       const rolling = active && car.altitude > 0 && car.trick && !car.trick.done && car.trick.time < TRICK_ROLL_TIME;
       rollStrength = rollEnabled ? THREE.MathUtils.damp(rollStrength, rolling ? 1 : 0, rolling ? 35 : 8, dt) : 0;
       let ribbonKindDirty = false;
-      const show = (settings.airflow || (sprintPower > 0.005 && !calm)) && enabled;
+      const show = settings.airflow && enabled; // V/AIRFLOW alone owns the streamlines; sprint keeps jets, ribbon and screen streaks
       reveal = enabled ? THREE.MathUtils.damp(reveal, show ? 1 : 0, show ? 3 : 6, dt) : 0;
       const demonstration = show && preview ? 0.32 * THREE.MathUtils.smoothstep(reveal, 0.85, 0.99) : 0;
       strength = enabled ? THREE.MathUtils.damp(strength, boost ? sprintPower : demonstration, boost ? 55 : 7, dt) : 0;
