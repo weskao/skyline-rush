@@ -325,7 +325,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
   const near = makeClouds(cloudGeo, cloudMat, 112, false);
   const far = makeClouds(cloudGeo, cloudMat, 76, true);
   group.add(far, near);
-  const { drops, sources } = makeWaterfalls(group, water);
+  const { drops, sources, rest } = makeWaterfalls(group, water);
   const { points: motes, rest: moteRest } = createMotes(group);
   let lastWaterTime = Number.NaN, lastMoteTime = Number.NaN, disposed = false;
   function update(timeSeconds: number, quality: Quality, reducedMotion: boolean): void {
@@ -339,9 +339,9 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
       const positions = drops.geometry.getAttribute('position') as THREE.BufferAttribute;
       const data = positions.array as Float32Array;
       for (let i = 0; i < data.length; i += 3) {
-        data[i] = (i / 3 % 36) / 36 * 5 + (sources[i] - 2.5);
-        data[i + 1] = sources[i + 1] - ((i * 0.083 + t * sources[i + 2]) % sources[i + 1]);
-        data[i + 2] = i < 108 ? 19 : i < 216 ? -102 : -70;
+        data[i] = rest[i] + Math.sin(t * 0.7 + i) * 0.18;
+        data[i + 1] = sources[i] - ((i * 0.083 + t * sources[i + 2]) % sources[i + 1]);
+        data[i + 2] = rest[i + 2];
       }
       positions.needsUpdate = true;
       lastWaterTime = t;
