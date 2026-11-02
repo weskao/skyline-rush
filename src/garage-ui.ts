@@ -3,7 +3,7 @@ import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
-import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit } from './garage-camera.ts';
+import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import { t } from './i18n.ts';
 // Keep progression checks locked to the same implementation used in production.
@@ -124,11 +124,12 @@ export function setupGarageUI({
   }
   function setCamera(next: GarageCamera, angle = ''): void {
     camera = next;
+    preview.dataset.garageMode = camera.mode;
     preview.dataset.cameraZoom = camera.zoom.toFixed(3);
     preview.dataset.cameraYaw = camera.yaw.toFixed(3);
     // Never let QA or assistive evidence claim the previous camera's bounds.
     delete preview.dataset.carInFrame;
-    updateGarageStudioView({ angle, autoRotate: camera.autoRotate });
+    updateGarageStudioView({ angle, autoRotate: camera.autoRotate, mode: camera.mode });
     getWorld()?.setGarageCamera(garageStudioView.page === 'studio' ? camera : null);
     inspectStudioAfterFrame();
   }
@@ -212,7 +213,13 @@ export function setupGarageUI({
   });
   garageScreen.addEventListener('keydown', event => event.stopPropagation());
   document.querySelectorAll<HTMLButtonElement>('[data-garage-angle]').forEach(button =>
-    button.addEventListener('click', () => setCamera(garagePreset(button.dataset.garageAngle!), button.dataset.garageAngle ?? '')));
+    button.addEventListener('click', () => setCamera(
+      { ...garagePreset(button.dataset.garageAngle!), mode: camera.mode }, button.dataset.garageAngle ?? '',
+    )));
+  document.querySelectorAll<HTMLButtonElement>('[data-garage-mode]').forEach(button =>
+    button.addEventListener('click', () => setCamera(
+      setGarageMode(camera, button.dataset.garageMode as GarageCamera['mode']), garageStudioView.angle,
+    )));
   $('#garage-rotate-left').addEventListener('click', () => setCamera(dragGarageCamera(camera, -40, 0)));
   $('#garage-rotate-right').addEventListener('click', () => setCamera(dragGarageCamera(camera, 40, 0)));
   $('#garage-zoom-in').addEventListener('click', () => setCamera(zoomGarageCamera(camera, .85)));

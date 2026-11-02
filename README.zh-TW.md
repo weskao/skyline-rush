@@ -1,4 +1,4 @@
-<!-- source-sha256: 86814bdce51e6893577d789d87712e9805cf0ad6c221ecbb8cfcc33bbe767090 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: d9a7d0f946ff7c7fccfaae2a8e82d6310bf04d07d4de868ddd6032c2651a60fb generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -110,7 +110,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 `make dev-diag` 與 `make phone-diag` 會提供相同的建置版本，並編入螢幕上的診斷橫幅（影格計數、頁面生命週期與觸控事件及其點擊目標，另有跨重新載入保留的最後幾個未捕捉錯誤），用於在實體手機上追查當機或按鈕失效。正式版建置絕不包含它：`npm run build` 會拒絕帶有診斷模組的封裝檔。
 
-`make phone` 會開啟終端機選單，用來啟動、檢查或停止一個手機可以開啟的開發伺服器（透過 Tailscale 或同一個 Wi-Fi），並在伺服器回應後印出手機網址。選單會列出此工作目錄、其他 worktree 與最近的分支，也可輸入分支名稱；`make phone <name>` 會直接前往該分支（或 `feature/<name>`），需要時會在 `.claude/worktrees/` 下建立其 worktree，`make phone off` 會停止它啟動的所有伺服器（等同 `/phone-dev off`），而 `y=1`（例如 `make phone y=1 <name>`）會略過選單：每個問題都採用其 Recommended 選項，並印出每項選擇。它提供的是一般鎖定進度的建置版本；`make phone-unlocked [name]` 是相同的選單，但所有賽道與塗裝皆已解鎖，也是手機唯一能連上的全解鎖伺服器（`make dev-unlocked` 與 `make dev-feature` 仍僅限桌機）。它需要個人的 `phone-dev` Claude Code skill（`/phone-dev` 會詢問相同的選單），且不啟動模擬器，因此手機上的雲端存檔登入使用的是真實專案。
+`make phone` 會開啟終端機選單，用來啟動、檢查或停止一個手機可以開啟的開發伺服器（透過 Tailscale 或同一個 Wi-Fi），並在伺服器回應後印出手機網址。選單會列出此工作目錄、其他 worktree 與最近的分支，也可輸入分支名稱；`make phone <name>` 會直接前往該分支（或 `feature/<name>`），需要時會在 `.claude/worktrees/` 下建立其 worktree，`make phone off` 會停止它啟動的所有伺服器（等同 `/phone-dev off`），而 `y=1`（例如 `make phone y=1 <name>`）會略過選單：每個問題都採用其 Recommended 選項，並印出每項選擇。若某個 port 已被本專案自己先前的伺服器（任一 worktree）占用，沿用該 port 就是 Recommended 答案：舊伺服器會被停止、網址維持不變；`make dev`、`make dev-diag`、`make dev-unlocked`（5173）與 `make dev-feature`（5443）不詢問、直接這樣做，且不會動到其他專案的伺服器。它提供的是一般鎖定進度的建置版本；`make phone-unlocked [name]` 是相同的選單，但所有賽道與塗裝皆已解鎖，也是手機唯一能連上的全解鎖伺服器（`make dev-unlocked` 與 `make dev-feature` 仍僅限桌機）。它需要個人的 `phone-dev` Claude Code skill（`/phone-dev` 會詢問相同的選單），且不啟動模擬器，因此手機上的雲端存檔登入使用的是真實專案。
 
 ## 操作方式
 
@@ -147,7 +147,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 場景包含泛光照明、日落水面、懸索橋、推進器蒸氣、碰撞火花與著陸漣漪。鏡頭動態與非必要的速度線會遵循系統的減少動態效果偏好。音效為推力、碰撞與著陸提供各自獨立的回饋。
 
-**VFX**（右上角）可選擇 Realistic、Cinematic 或 Extreme 風格，Low / Medium / High 畫質（Low 會關閉泛光並繪製較少的景物）、Comfort 模式（無閃光、震動、殘影或模糊），以及可選的觸覺回饋；**Fine tuning** 將每個效果以滑桿呈現，**Reset visual settings** 則還原預設值。**AIRFLOW**（或 V）會將場景切換為空氣動力學展示：車身上的流線、遙測面板、Low drag 或 High downforce，以及駕駛、前方、後方、側面或環繞視角。開始面板會為展示讓開，只留下橘色的 **START RACE** 按鈕，固定在車子下方的底部中央；左右滑動場景即可切換賽道。第一次開啟 AIRFLOW 時，會有動畫指尖示範該手勢。流線只會在 AIRFLOW 開啟時出現：關閉時，BOOST 與 NITRO 會顯示推進器噴流、尾跡與速度線，但沒有流線。
+**VFX**（右上角）可選擇 Realistic、Cinematic 或 Extreme 風格，Low / Medium / High 畫質（Low 會關閉泛光並繪製較少的景物）、Comfort 模式（無閃光、震動、殘影或模糊），以及可選的觸覺回饋。其中的 **Race HUD** 區塊可選擇 Immersive 或 Competitive（附排行榜、小地圖與額外統計開關）、開關 NITRO READY 提示音與動畫，**Reset HUD to default** 則還原這些設定。**Fine tuning** 將每個效果以滑桿呈現，**Reset visual settings** 則還原預設值。**AIRFLOW**（或 V）會將場景切換為空氣動力學展示：車身上的流線、遙測面板、Low drag 或 High downforce，以及駕駛、前方、後方、側面或環繞視角。開始面板會為展示讓開，只留下橘色的 **START RACE** 按鈕，固定在車子下方的底部中央；左右滑動場景即可切換賽道。第一次開啟 AIRFLOW 時，會有動畫指尖示範該手勢。流線只會在 AIRFLOW 開啟時出現：關閉時，BOOST 與 NITRO 會顯示推進器噴流、尾跡與速度線，但沒有流線。
 
 三盞琥珀色起跑燈會在 GO 時轉為青色。玩家的車是一輛低矮的楔形敞篷跑車，配有煙燻色的快背式座艙、橫貫全寬的紅色尾燈條、四個後推進器噴口、在 boost、煞車與飛行時升起的青銅色彈出式尾翼、旋轉的五輻輪圈，以及可轉向的前輪。每名對手都有自己的輪廓與燈光特徵：NOVA 是長尾車型，配有雙垂直尾翼與分離式洋紅色燈光；ORBIT 是圓潤的 GT，配有泡泡座艙與圓形青色車燈；APEX 是賽道車款，配有前分流器、車頂進氣口、高聳的端板尾翼與琥珀色 C 形燈。車流使用直立的通勤車造型。轉向會快速緩入，放開 boost 則會讓車子逐漸減速，而不是瞬間切斷速度。所有駕駛與工具列按鈕的觸控目標至少為 44px，即使在 320px 寬度下也一樣。
 
@@ -161,7 +161,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 ### NITRO 與飄移
 
-NITRO 有自己的儲備（`player.nitro`，最多 3 格，每格以浮點數填充）。三段式 HUD 會顯示部分電量，滿格的區段會發光，NITRO 全滿時 NITRO MAX 會閃動（在 comfort／減少動態效果模式下會抑制動態）。沿途的拾取物（藍色電池 +0.25、橘色罐子 +0.5、空中金色油箱 +1、一個可填滿至上限的彩虹過充）依賽道種子配置；每項 NITRO 獎勵（拾取物、飄移、桶滾、光環、氣流跟車）也會回充飛行電量（每存入 0.25 = +5；過充不提供），超過上限的部分則會轉為電量（每 0.25 = +8）。一格可提供 2.5 秒，速度上限提高 30 m/s，並有更強的加速度、排氣與鏡頭回饋；再按一次會延長 2 秒且速度不疊加，因此連按三次會形成 6.5 秒的爆發。NITRO 期間碰到車流時保留 70% 的速度，而非 45%。
+NITRO 有自己的儲備（`player.nitro`，最多 3 格，每格以浮點數填充）。三段式 HUD 會顯示部分電量，滿格的區段會發光，NITRO 全滿時 NITRO MAX 會閃動（在 comfort／減少動態效果模式下會抑制動態）。沿途的拾取物（藍色電池 +0.25、橘色罐子 +0.5、空中金色油箱 +1、一個可填滿至上限的彩虹過充）與光環規則相同：每台參賽車 4 個位置，每個位置是 1 到 4 個的一串（該位置的拾取物，後面接著沿同一條線每 8 m 一個電池），另加過充與每條捷徑的獎勵路線，每場重新隨機配置；每項 NITRO 獎勵（拾取物、飄移、桶滾、光環、氣流跟車）也會回充飛行電量（每存入 0.25 = +5；過充不提供），超過上限的部分則會轉為電量（每 0.25 = +8）。一格可提供 2.5 秒，速度上限提高 30 m/s，並有更強的加速度、排氣與鏡頭回饋；再按一次會延長 2 秒且速度不疊加，因此連按三次會形成 6.5 秒的爆發。NITRO 期間碰到車流時保留 70% 的速度，而非 45%。
 
 在地面上超過 162 km/h 時，煞車 + 轉向會進行飄移而非緊急煞車：只損失 3 m/s²，近距離超車的連擊分數加倍，放開時會依飄移時間給予 NITRO 與迷你 boost（1 秒：+0.15 與 0.5 秒，2 秒：+0.3 與 0.8 秒，3 秒：+0.5 與 1.2 秒）。車身偏擺 25°，煙霧與藍／橘／紫色火花顯示階段，輪胎尖嘯聲逐漸增強，HUD 會標示飄移／迷你 boost 狀態。升空、墜入缺口，或撞上車輛或障礙，都會失去累積的進度。
 
@@ -173,7 +173,7 @@ NITRO 不消耗電量，因此 Fly + NITRO 一律可以同時使用（Fly + Boos
 
 ### Rings
 
-5 公里的 Coast 有 22 個光環，每 220 公尺一個，以 3 到 5 個為一組（依賽道種子配置）。只有當車子穿過光環的可見半徑時才算數；擦到邊緣不算。類型有：青色電量（+20 電量）、金色 nitro（+0.5）、紫色氣流（3 秒迷你 boost）、紅色風險（小型光環，+1 NITRO 與 500 分）以及彩虹神祕（依種子隨機的一種效果：護盾 10 秒或直到第一次撞擊、磁鐵 5 秒、穿越車流的幽靈狀態 3 秒，或將對手凍結為半速 2 秒）。收集過的光環會爆開一次然後消失。通過整組光環會播報 PERFECT LINE 並給予 +1 NITRO；漏掉一個光環會中斷連擊，但保留已經獲得的獎勵。
+每場比賽每台參賽車有 4 個光環位置（單人 4 個、八車滿編 32 個；Circuit 為每圈），從起點到終點平均分散，每段等長路面一個，以 3 到 5 個為一組。在一般路面（避開隧道、斷橋、捷徑與其他特殊路段）約每七個位置有一個變成沿同一車道、間隔 25 m 的 5 個連續光環（地面或空中），自成一組 PERFECT LINE；約每十二個位置有一個變成整排光環，任何在路面上的車經過都必定拿到一個（每台車一個）。風險光環與前兩個位置維持單一光環。Endless 每 500 m 區段另有一串連續光環或一整排。位置每場重新隨機。Coast 保持 x 2.5 的光環線。只有當車子穿過光環的可見半徑時才算數；擦到邊緣不算。類型有：青色電量（+20 電量）、金色 nitro（+0.5）、紫色氣流（3 秒迷你 boost）、紅色風險（小型光環，+1 NITRO 與 500 分）以及彩虹神祕（依種子隨機的一種效果：護盾 10 秒或直到第一次撞擊、磁鐵 5 秒、穿越車流的幽靈狀態 3 秒，或將對手凍結為半速 2 秒）。收集過的光環會爆開一次然後消失。通過整組光環會播報 PERFECT LINE 並給予 +1 NITRO；漏掉一個光環會中斷連擊，但保留已經獲得的獎勵。
 
 ### 對手、氣流跟車與最後衝刺
 
@@ -259,7 +259,7 @@ make deploy                              # Deploy remote main manually through t
 # after scripts/release-gate.sh has seen a green CI run for the commit on main.
 ```
 
-CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull request、版本標籤推送（`v*`）與手動執行時，建置並執行單元測試與 Chrome 瀏覽器測試。瀏覽器測試以 13 個平行分片執行，World Tour 長時間執行則以 5 個分片，依 `tests/ci-durations.json` 中實測的每項測試時間來平衡（`scripts/ci-shards.mjs`），且僅在 `main` 與 `develop` 上執行（其他分支只執行單元與雲端存檔檢查，除非 commit 訊息含有 `[full-regression]` 或手動執行要求），而且對同一分支的較新推送會取消被它取代的執行。在任何分支上，若推送或 pull request 只變更 `src/`、`public/`、`tests/`、`scripts/` 與 `.github/` 以外的 Markdown、文字、圖片或影片，且父 commit 已在該分支通過 CI，就會略過所有測試套件（`scripts/ci-changes.mjs`）。手動執行會在所有檢查通過後發佈；推送版本標籤時會重新執行單元測試，確認（`release-verified`）所標記的程式碼已在 `main` 上通過完整測試，而不是重新執行瀏覽器測試套件，然後發佈並驗證公開網站。若標籤所在的 commit 從未在 `main` 上通過 CI，就不會被部署。一般的分支推送與 pull request 只會執行檢查。當 `main` 的某個合併 commit 合併的不是 `develop` 或 `hotfix/*` 時，推送到 `main` 也會讓 `main-merge-source` 工作失敗（`scripts/check-main-merges.sh`），而該紅燈執行會阻擋發佈。Pages 建置使用 `--base=/skyline-rush/`，讓腳本、樣式與字型從專案網址載入。GitHub Pages 必須使用 **GitHub Actions** 作為發佈來源。手動部署需要已驗證的 GitHub CLI（`gh auth login`）；請先推送你的 commit，因為 `make deploy` 使用遠端的 `main`。部署不再依賴本機的 pre-push hook 或 Netlify 登入。當任何檢查或部署在推送、標籤或手動執行時失敗，`notify-telegram` 工作會將失敗執行的連結傳送到 Telegram；它需要儲存庫的 secrets `TELEGRAM_BOT_TOKEN` 與 `TELEGRAM_CHAT_ID`（各以 `gh secret set <NAME>` 設定，該指令會提示輸入值），缺少時則靜默略過。
+CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull request、版本標籤推送（`v*`）與手動執行時，建置並執行單元測試與 Chrome 瀏覽器測試。瀏覽器測試以 13 個平行分片執行，World Tour 長時間執行則以 5 個分片，依 `tests/ci-durations.json` 中實測的每項測試時間來平衡（`scripts/ci-shards.mjs`），且僅在 `main` 與 `develop` 上執行（其他分支只執行單元與雲端存檔檢查，除非 commit 訊息含有 `[full-regression]` 或手動執行要求），而且對同一分支的較新推送會取消被它取代的執行。在任何分支上，若推送或 pull request 只變更 `src/`、`public/`、`tests/`、`scripts/` 與 `.github/` 以外的 Markdown、文字、圖片、影片或 `Makefile`，且父 commit 已在該分支通過 CI，就會略過所有測試套件（`scripts/ci-changes.mjs`）。手動執行會在所有檢查通過後發佈；推送版本標籤時會重新執行單元測試，確認（`release-verified`）所標記的程式碼已在 `main` 上通過完整測試，而不是重新執行瀏覽器測試套件，然後發佈並驗證公開網站。若標籤所在的 commit 從未在 `main` 上通過 CI，就不會被部署。一般的分支推送與 pull request 只會執行檢查。當 `main` 的某個合併 commit 合併的不是 `develop` 或 `hotfix/*` 時，推送到 `main` 也會讓 `main-merge-source` 工作失敗（`scripts/check-main-merges.sh`），而該紅燈執行會阻擋發佈。Pages 建置使用 `--base=/skyline-rush/`，讓腳本、樣式與字型從專案網址載入。GitHub Pages 必須使用 **GitHub Actions** 作為發佈來源。手動部署需要已驗證的 GitHub CLI（`gh auth login`）；請先推送你的 commit，因為 `make deploy` 使用遠端的 `main`。部署不再依賴本機的 pre-push hook 或 Netlify 登入。當任何檢查或部署在推送、標籤或手動執行時失敗，`notify-telegram` 工作會將失敗執行的連結傳送到 Telegram；它需要儲存庫的 secrets `TELEGRAM_BOT_TOKEN` 與 `TELEGRAM_CHAT_ID`（各以 `gh secret set <NAME>` 設定，該指令會提示輸入值），缺少時則靜默略過。
 
 連結預覽圖片為 `public/og-image.jpeg`，是 `public/og-image.en.jpeg` 的副本；`node scripts/capture-og-images.mjs og` 會擷取兩種語言的封面並更新該副本。爬蟲無法切換語言，因此 `index.html` 只參照英文封面（搭配 `og:locale` `en_US` 與 `og:locale:alternate` `zh_TW`），而 `public/og-image.zh-TW.jpeg` 是它的中文孿生版本，供直接連結使用。更換封面之後，請提高 `index.html` 中 `og:image` 的 `?v=`，讓社群網站抓取新的圖片。
 
@@ -271,7 +271,7 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull requ
 - `src/history.js`：已儲存的遊戲資料：比賽歷史（最近 50 筆）、各賽道最佳成績與舊版遷移、生涯統計、獎牌、星數、已裝備的塗裝、ghost 與每日排行榜。
 - `src/ghost.js`：10 Hz 的 ghost 錄製、各賽道驗證與插值播放。
 - `src/appearance.js`：塗裝目錄與星數解鎖門檻。
-- `src/rng.js`：以種子產生的隨機串流；賽道拾取物與光環來自賽道種子。
+- `src/rng.js`：以種子產生的隨機串流；拾取物與光環來自每場比賽的配置種子（測試與工具使用賽道種子）。
 - `src/world.js`、`src/geometry.js`：Three.js 算圖器、程序生成的車輛、公路、天際線、飛行效果與鏡頭。
 - `src/effects.js`：固定的 480 顆粒子 GPU 池，用於蒸氣、火花與著陸塵土。
 - `src/track-paths.js`、`src/world-tour-scene.js`：每條賽道一份距離到道路的對應，以及共用的 World Tour 道路、景物與地標。

@@ -21,7 +21,7 @@ test('endless is one existing mode and supports all ten tracks without authored 
      stepRace(race,{throttle:true},1/60);
      assert.equal(race.phase,'racing',id+' @ '+d);
      assert.ok(race.player.distance>d,id+' progress must stay absolute');
-     assert.ok(race.traffic.length<=40 && race.pickups.length<=20 && race.rings.length<=15);
+     assert.ok(race.traffic.length<=40 && race.pickups.length<=5*4*4 && race.rings.length<=5*(3+5)); // 5 chunks: 4 runs of up to 4 pickups, 3 rings and a train or row
    }
    assert.equal(JSON.stringify(RACE_TRACKS[id]),original,'original sprint routes must stay identical');
  }

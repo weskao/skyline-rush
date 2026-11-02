@@ -14,13 +14,13 @@ const job = (name) => {
 
 test('docs and media outside shipped paths skip the suites', () => {
   assert.equal(needsCi(['README.md', 'README.zh-TW.md', 'CHANGELOG.md', 'TODO.md', 'docs/a/b.png',
-    'artifacts/clip.mp4', '.claude/rules/x.md', 'notes.txt', 'docs/demo.webm']), false);
+    'artifacts/clip.mp4', '.claude/rules/x.md', 'notes.txt', 'docs/demo.webm', 'Makefile']), false);
 });
 
 test('code, config, shipped assets, test inputs and empty retriggers run the suites', () => {
   for (const path of ['src/App.vue', 'src/assets/logo.png', 'public/whats-new/0.26.0/a.webp', 'public/og-image.jpeg',
     'tests/fixtures/a.txt', 'scripts/notes.md', '.github/workflows/ci.yml', 'package.json', 'index.html',
-    'Makefile', 'docs/garage-release-policy.md']) {
+    'docs/Makefile', 'docs/garage-release-policy.md']) {
     assert.equal(docOnly(path), false, path);
     assert.equal(needsCi(['README.md', path]), true, path);
   }

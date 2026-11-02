@@ -11,3 +11,13 @@ Both `feature/garage-rewards-and-missions` and `feature/garage-store-readiness` 
 **Testing:** `tests/garage-vfx-catalog-browser.spec.js` checks the repaired badge alpha extent, native 216×216 size, the 88×88 safe frame around its 72×72 display, caption clearance and theme reuse across 390×844, 844×390 and 1440×900. Rewards, Store and HUD each have corresponding safe-geometry Playwright tests. These tests and the responsive CSS are code-level measures; only a completed **full exact-HEAD CI** and actual screenshots can validate them. Further manual game screenshots, hardware display check and final visual signoff are still open. Do not infer completed sales/awards/entitlements from decorative assets.
 
 **Integration:** `develop` only after approval. No `main` changes, PR, deployment, unlocks or purchases.
+
+## Follow-up: remaining eight badges regenerated (2026-11-02)
+
+Branch: `fix/garage-vfx-badge-art-unclipped-3x` from `develop` `b3a0c11a`.
+
+After the first three retouched badges, users still observed artwork cropped internally near the bottom in the other eight. Existing `object-fit: contain` and 8px frame inset cannot recover pixels lost during sprite-sheet cutout extraction. All remaining eight have therefore been independently redrawn as editable **native-vector SVG masters** at 216×216 viewBox (`generated-source/`) and rendered to **216×216 transparent WebPs** at `public/feature-assets/garage-vfx-skins/raster/`. No enlargement from the former cutouts. The styles preserve the same semantic subjects: lock, NEW burst, hourglass, and Common/Rare/Epic/Legendary/Mythic shields. The first three corrected WebPs are unchanged.
+
+Each regenerated WebP has visible alpha content comfortably inside its canvas (minimum 12 native pixels from every edge, alpha threshold >16); runtime display remains 72×72 CSS px inside an 88×88 frame. Gallery labels, accessibility, localization, release-mode restrictions and CSS gradient cards are unchanged. Playwright regression checks source dimensions, alpha bounds, image/frame/caption geometry and loaded URLs for all eight across 390×844, 844×390 and 1440×900.
+
+Automated checks cannot rule out subjective shape problems; inspect actual game screenshots on mobile and desktop before considering visual acceptance complete. Do not treat the earlier collage as a pixel-exact reference for the new independent vector artwork. No ownership or rarity entitlement changes.
