@@ -15,7 +15,7 @@ test('every World Tour track has one nonoverlapping boost tunnel in the main roa
 test('entering a boost tunnel once grants speed burst and nitro without draining fuel', () => {
  for(const id of ids){
   const race=createRace(id), t=RACE_TRACKS[id].sections.find(s=>s.type==='boost-tunnel');
-  startRace(race);race.phase='racing';race.traffic=[];race.rivals=[];
+  startRace(race);race.phase='racing';race.traffic=[];race.rivals=[];race.rings=[];race.pickups=[]; // only the portal pays
   Object.assign(race.player,{distance:t.from+5,speed:52,altitude:0,miniBoost:0,nitro:0.3,fuel:72});
   stepRace(race,{throttle:true},1/60);
   assert.equal(race.player.boostTunnelClaimed.length,1,id);

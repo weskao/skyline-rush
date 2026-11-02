@@ -12,9 +12,10 @@ import { GHOST_RATE } from '../src/ghost.ts';
 
 // A layout change makes older times incomparable. Stage 1 moved five tracks to layout 2; stage 2 (user,
 // 2026-11-02: more rings on every map, every timed record gets a new key) moved those five to layout 3 and
-// Aurora and the World Tour to layout 2. Every older id stays readable as an old-layout record.
-const TWICE = ['coast', 'neon', 'canyon', 'spiral', CIRCUIT_ID]; // layout 3
-const ONCE = ['aurora', 'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']; // layout 2
+// Aurora and the World Tour to layout 2. Scaled layouts (user, 2026-11-02: 4 rings and pickups per car, re-rolled
+// every race) bump every track once more. Every older id stays readable as an old-layout record.
+const TWICE = ['coast', 'neon', 'canyon', 'spiral', CIRCUIT_ID]; // layout 4
+const ONCE = ['aurora', 'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']; // layout 3
 const memory = (initial = {}) => {
   const data = { ...initial };
   return { data, getItem: key => data[key] ?? null, setItem: (key, value) => { data[key] = String(value); }, removeItem: key => { delete data[key]; } };
@@ -25,47 +26,51 @@ const ghost = (trackId, time, config) => {
   return { time, samples: Array.from({ length: count }, (_, i) => [length * i / (count - 1), 0, 0]) };
 };
 
-test('layout versions: stage 2 bumps every track; stage-1 tracks reach layout 3, the rest layout 2', () => {
-  for (const id of TWICE) assert.equal(layoutVersion(id), 3, id);
-  for (const id of ONCE) assert.equal(layoutVersion(id), 2, id);
+test('layout versions: the scaled layout bumps every track; stage-1 tracks reach layout 4, the rest layout 3', () => {
+  for (const id of TWICE) assert.equal(layoutVersion(id), 4, id);
+  for (const id of ONCE) assert.equal(layoutVersion(id), 3, id);
   assert.equal(layoutVersion('nowhere'), 1);
-  assert.equal(recordTrackId('coast'), 'coast@3');
-  assert.equal(recordTrackId(CIRCUIT_ID), CIRCUIT_ID + '@3');
-  assert.equal(recordTrackId('aurora'), 'aurora@2');
-  assert.deepEqual(recordTrackIds('coast'), ['coast', 'coast@2', 'coast@3']);
-  assert.deepEqual(recordTrackIds('taipei'), ['taipei', 'taipei@2']);
+  assert.equal(recordTrackId('coast'), 'coast@4');
+  assert.equal(recordTrackId(CIRCUIT_ID), CIRCUIT_ID + '@4');
+  assert.equal(recordTrackId('aurora'), 'aurora@3');
+  assert.deepEqual(recordTrackIds('coast'), ['coast', 'coast@2', 'coast@3', 'coast@4']);
+  assert.deepEqual(recordTrackIds('taipei'), ['taipei', 'taipei@2', 'taipei@3']);
   assert.ok(Object.keys(RACE_TRACKS).every(id => recordTrackId(id).includes('@')), 'every track records under a new id');
 });
 
 test('a Cup takes the newest layout among its tracks; Endless and Event Lab never use the track rings', () => {
-  assert.equal(raceLayout('aurora', { mode: 'cup', cupTracks: ['aurora', 'coast', 'taipei'] }), 3);
-  assert.equal(raceLayout('aurora', { mode: 'cup', cupTracks: ['aurora', 'taipei'] }), 2);
+  assert.equal(raceLayout('aurora', { mode: 'cup', cupTracks: ['aurora', 'coast', 'taipei'] }), 4);
+  assert.equal(raceLayout('aurora', { mode: 'cup', cupTracks: ['aurora', 'taipei'] }), 3);
   assert.equal(recordTrackId('coast', { mode: 'endless' }), 'coast');
   assert.equal(recordTrackId('coast', { mode: 'eventlab' }), 'coast');
-  assert.equal(recordTrackId('coast', { mode: 'time' }), 'coast@3');
+  assert.equal(recordTrackId('coast', { mode: 'time' }), 'coast@4');
 });
 
 test('record ids parse back, older layouts included; a run without a layout field is layout 1', () => {
-  assert.deepEqual(parseRecordTrackId('coast@3'), { trackId: 'coast', layout: 3 });
+  assert.deepEqual(parseRecordTrackId('coast@4'), { trackId: 'coast', layout: 4 });
+  assert.deepEqual(parseRecordTrackId('coast@3'), { trackId: 'coast', layout: 3 }, 'a stage-2 record stays readable');
   assert.deepEqual(parseRecordTrackId('coast@2'), { trackId: 'coast', layout: 2 }, 'a stage-1 record stays readable');
+  assert.deepEqual(parseRecordTrackId('aurora@3'), { trackId: 'aurora', layout: 3 });
   assert.deepEqual(parseRecordTrackId('aurora@2'), { trackId: 'aurora', layout: 2 });
   assert.deepEqual(parseRecordTrackId('aurora'), { trackId: 'aurora', layout: 1 });
-  for (const bad of ['aurora@3', 'coast@1', 'coast@4', 'coast@', '@2', 'coast@2@2', 'coast@02', 5]) assert.equal(parseRecordTrackId(bad), null, String(bad));
+  for (const bad of ['aurora@4', 'coast@1', 'coast@5', 'coast@', '@2', 'coast@2@2', 'coast@02', 5]) assert.equal(parseRecordTrackId(bad), null, String(bad));
   assert.equal(runLayout({}), 1);
   assert.equal(runLayout({ layout: 2 }), 2);
   assert.equal(runLayout({ layout: 'x' }), 1);
   assert.equal(isCurrentLayout({ track: 'coast' }), false);
   assert.equal(isCurrentLayout({ track: 'coast', layout: 2 }), false, 'stage-1 runs are now old');
-  assert.equal(isCurrentLayout({ track: 'coast', layout: 3 }), true);
+  assert.equal(isCurrentLayout({ track: 'coast', layout: 3 }), false, 'stage-2 runs are now old');
+  assert.equal(isCurrentLayout({ track: 'coast', layout: 4 }), true);
   assert.equal(isCurrentLayout({ track: 'aurora' }), false);
-  assert.equal(isCurrentLayout({ track: 'aurora', layout: 2 }), true);
+  assert.equal(isCurrentLayout({ track: 'aurora', layout: 2 }), false);
+  assert.equal(isCurrentLayout({ track: 'aurora', layout: 3 }), true);
 });
 
 test('AC1 Classic: an old-layout best never blocks a NEW RECORD and its saved value is kept', () => {
   const storage = memory({ [BEST_KEY]: JSON.stringify({ coast: 40, 'coast@2': 45, aurora: 50 }) });
   assert.deepEqual(recordBest(recordTrackId('coast'), 70, storage), { best: 70, record: true });
   assert.deepEqual(recordBest(recordTrackId('aurora'), 55, storage), { best: 55, record: true });
-  assert.deepEqual(loadBests(storage), { coast: 40, 'coast@2': 45, aurora: 50, 'coast@3': 70, 'aurora@2': 55 });
+  assert.deepEqual(loadBests(storage), { coast: 40, 'coast@2': 45, aurora: 50, 'coast@4': 70, 'aurora@3': 55 });
   assert.deepEqual(recordBest(recordTrackId('aurora'), 60, storage), { best: 55, record: false });
 });
 
@@ -80,11 +85,11 @@ test('AC1 Classic settlement: a new-layout run is a record against old bests; th
     const settlement = settleRace(race, { series: { sprintSeries: null, cup: null, stunt: null }, progress, ghosts: { saveClassic: (...args) => saved.push(args) }, daily: null, trace: ghost('coast', 70).samples });
     assert.equal(settlement.record, true);
     assert.equal(settlement.best, 70);
-    assert.equal(progress.bests['coast@3'], 70);
+    assert.equal(progress.bests['coast@4'], 70);
     assert.equal(progress.bests['coast@2'], 45);
     assert.equal(progress.bests.coast, 40);
     assert.equal(storage.data['skyline-rush-best'], '40');
-    assert.equal(progress.history.at(-1).layout, 3);
+    assert.equal(progress.history.at(-1).layout, 4);
     assert.deepEqual(saved.map(([id]) => id), ['coast']);
   } finally {
     if (previous) Object.defineProperty(globalThis, 'localStorage', previous); else delete globalThis.localStorage;
@@ -93,8 +98,8 @@ test('AC1 Classic settlement: a new-layout run is a record against old bests; th
 
 test('Classic history: every new run carries its track\'s current layout', () => {
   const storage = memory();
-  assert.equal(recordRace({ trackId: 'neon', length: 4000, result: { position: 1, time: 50 } }, storage).layout, 3);
-  assert.equal(recordRace({ trackId: 'aurora', length: 4000, result: { position: 1, time: 50 } }, storage).layout, 2);
+  assert.equal(recordRace({ trackId: 'neon', length: 4000, result: { position: 1, time: 50 } }, storage).layout, 4);
+  assert.equal(recordRace({ trackId: 'aurora', length: 4000, result: { position: 1, time: 50 } }, storage).layout, 3);
 });
 
 test('Classic ghosts: the new layout gets its own slot and older ghosts stay where they were', () => {
@@ -106,10 +111,10 @@ test('Classic ghosts: the new layout gets its own slot and older ghosts stay whe
   const stored = JSON.parse(storage.data['skyline-rush-ghosts']);
   assert.deepEqual(stored.coast, old);
   assert.deepEqual(stored['coast@2'], stage1);
-  assert.deepEqual(stored['coast@3'], fresh);
+  assert.deepEqual(stored['coast@4'], fresh);
   assert.deepEqual(loadGhost('coast', storage), fresh);
   saveGhost('aurora', ghost('aurora', 60), storage);
-  assert.ok(JSON.parse(storage.data['skyline-rush-ghosts'])['aurora@2']);
+  assert.ok(JSON.parse(storage.data['skyline-rush-ghosts'])['aurora@3']);
 });
 
 test('AC1 modes: best, ghost and history compare only runs of the same layout', () => {
@@ -123,31 +128,31 @@ test('AC1 modes: best, ghost and history compare only runs of the same layout', 
   assert.equal(loadModeGhost('coast', config, storage), null);
   const race = { ...createRace('coast', config), result: { time: 70, position: 1, score: 0, success: true } };
   assert.deepEqual(recordModeRace(race, storage), { best: 70, record: true });
-  assert.equal(loadModeHistory(storage).at(-1).layout, 3);
+  assert.equal(loadModeHistory(storage).at(-1).layout, 4);
   const bests = JSON.parse(storage.data['skyline-rush-mode-bests-v1']);
   assert.equal(bests[JSON.stringify(['coast', config])], 40, 'old permanent best kept');
   assert.equal(bests[JSON.stringify(['coast@2', config])], 45, 'stage-1 permanent best kept');
-  assert.equal(bests[JSON.stringify(['coast@3', config])], 70);
+  assert.equal(bests[JSON.stringify(['coast@4', config])], 70);
   assert.ok(saveModeGhost('coast', config, ghost('coast', 70, config), storage));
   const ghosts = JSON.parse(storage.data['skyline-rush-mode-ghosts-v1']);
   assert.ok(ghosts['coast:' + rules] && ghosts['coast@2:' + rules], 'old mode ghosts kept');
   assert.equal(loadModeGhost('coast', config, storage).time, 70);
 });
 
-test('modes: a track first re-laid in stage 2 moves to its @2 keys and keeps the bare one as layout 1', () => {
+test('modes: a track first re-laid in stage 2 moves to its current keys and keeps the bare one as layout 1', () => {
   const config = createRace('aurora', { mode: 'time' }).config;
   const storage = memory({ 'skyline-rush-mode-bests-v1': JSON.stringify({ [JSON.stringify(['aurora', config])]: 40 }) });
   assert.equal(loadModeBest('aurora', config, storage), null);
   recordModeRace({ ...createRace('aurora', config), result: { time: 70, position: 1, score: 0, success: true } }, storage);
-  assert.deepEqual(Object.keys(JSON.parse(storage.data['skyline-rush-mode-bests-v1'])).sort(), [JSON.stringify(['aurora', config]), JSON.stringify(['aurora@2', config])].sort());
-  assert.equal(loadModeHistory(storage).at(-1).layout, 2);
+  assert.deepEqual(Object.keys(JSON.parse(storage.data['skyline-rush-mode-bests-v1'])).sort(), [JSON.stringify(['aurora', config]), JSON.stringify(['aurora@3', config])].sort());
+  assert.equal(loadModeHistory(storage).at(-1).layout, 3);
 });
 
-test('Circuit: total and lap bests move to the layout 3 keys and ignore older laps', () => {
+test('Circuit: total and lap bests move to the layout 4 keys and ignore older laps', () => {
   const config = createRace(CIRCUIT_ID, { mode: 'circuit', laps: 3 }).config;
-  const older = { [JSON.stringify([CIRCUIT_ID, config, 'lap'])]: 20, [JSON.stringify([CIRCUIT_ID + '@2', config, 'lap'])]: 25 };
+  const older = { [JSON.stringify([CIRCUIT_ID, config, 'lap'])]: 20, [JSON.stringify([CIRCUIT_ID + '@2', config, 'lap'])]: 25, [JSON.stringify([CIRCUIT_ID + '@3', config, 'lap'])]: 27 };
   const storage = memory({ 'skyline-rush-mode-bests-v1': JSON.stringify(older) });
-  assert.equal(circuitLapKey(config), JSON.stringify([CIRCUIT_ID + '@3', config, 'lap']));
+  assert.equal(circuitLapKey(config), JSON.stringify([CIRCUIT_ID + '@4', config, 'lap']));
   assert.equal(loadCircuitLapBest(config, storage), null);
   const race = createRace(CIRCUIT_ID, config);
   recordModeRace({ ...race, result: { time: 100, position: 1, score: 0, success: true, lapTimes: [lap(30), lap(35), lap(35)] } }, storage);
@@ -168,16 +173,16 @@ test('the ghost store races only the current layout\'s ghost', () => {
 
 test('AC2 cloud: old and new Classic bests, versioned mode keys and layout fields survive every merge', () => {
   const config = createRace('coast', { mode: 'time' }).config, rules = JSON.stringify(config);
-  const local = { bests: { coast: 40, 'coast@2': 60, 'coast@3': 70, aurora: 50 },
+  const local = { bests: { coast: 40, 'coast@2': 60, 'coast@3': 70, 'coast@4': 75, aurora: 50 },
     history: [{ date: '2026-01-01T00:00:00.000Z', track: 'coast', position: 1, time: 40 }, { date: '2026-02-01T00:00:00.000Z', track: 'coast', position: 1, time: 70, layout: 3 }],
     modeHistory: [{ date: '2026-02-01T00:00:00.000Z', mode: 'time', track: 'coast', rules, time: 70, layout: 3 }] };
-  const merged = mergeProgress(local, { version: 2, bests: { 'coast@3': 65, 'neon@3': 30, 'aurora@2': 45, 'aurora@3': 1, 'nowhere@2': 1 } });
-  assert.deepEqual(merged.bests, { coast: 40, 'coast@2': 60, 'coast@3': 65, aurora: 50, 'aurora@2': 45, 'neon@3': 30 });
+  const merged = mergeProgress(local, { version: 2, bests: { 'coast@4': 65, 'neon@4': 30, 'aurora@3': 45, 'aurora@4': 1, 'nowhere@2': 1 } });
+  assert.deepEqual(merged.bests, { coast: 40, 'coast@2': 60, 'coast@3': 70, 'coast@4': 65, aurora: 50, 'aurora@3': 45, 'neon@4': 30 });
   assert.deepEqual(merged.history.map(run => run.layout), [undefined, 3]);
   assert.equal(merged.modeHistory[0].layout, 3);
   assert.deepEqual(mergeProgress(merged, null), merged, 'a merged snapshot round-trips unchanged');
-  const current = JSON.stringify(['coast@3', config]), stage1 = JSON.stringify(['coast@2', config]), old = JSON.stringify(['coast', config]);
-  assert.deepEqual(mergeModeBests({ bests: { [current]: 70, [stage1]: 60, [old]: 40, [JSON.stringify(['aurora@3', config])]: 1 } }).bests, { [current]: 70, [stage1]: 60, [old]: 40 });
+  const current = JSON.stringify(['coast@4', config]), stage1 = JSON.stringify(['coast@2', config]), old = JSON.stringify(['coast', config]);
+  assert.deepEqual(mergeModeBests({ bests: { [current]: 70, [stage1]: 60, [old]: 40, [JSON.stringify(['aurora@4', config])]: 1 } }).bests, { [current]: 70, [stage1]: 60, [old]: 40 });
 });
 
 test('every track\'s older record ids stay readable after the stage-2 bump', () => {
@@ -192,8 +197,8 @@ test('AC4 History: old-layout runs stay listed with an Old layout tag and never 
   const { historyView } = await import('../src/history-view-state.ts');
   const { setLocale, t } = await import('../src/i18n.ts');
   const config = { mode: 'time' }, rules = JSON.stringify(config);
-  const sessionHistory = [{ track: 'coast', time: 40, position: 1, date: '2026-01-01T00:00:00Z', layout: 2 }, { track: 'coast', time: 70, position: 1, date: '2026-02-01T00:00:00Z', layout: 3 }];
-  const sessionModeHistory = [{ track: 'coast', mode: 'time', rules, time: 40, date: '2026-01-01T00:00:00Z', layout: 2 }, { track: 'coast', mode: 'time', rules, time: 70, date: '2026-02-01T00:00:00Z', layout: 3 }];
+  const sessionHistory = [{ track: 'coast', time: 40, position: 1, date: '2026-01-01T00:00:00Z', layout: 3 }, { track: 'coast', time: 70, position: 1, date: '2026-02-01T00:00:00Z', layout: 4 }];
+  const sessionModeHistory = [{ track: 'coast', mode: 'time', rules, time: 40, date: '2026-01-01T00:00:00Z', layout: 3 }, { track: 'coast', mode: 'time', rules, time: 70, date: '2026-02-01T00:00:00Z', layout: 4 }];
   const restore = ['localStorage', 'document'].map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)]);
   Object.defineProperty(globalThis, 'localStorage', { value: memory({ 'skyline-rush-mode-history-v1': JSON.stringify(sessionModeHistory) }), configurable: true });
   Object.defineProperty(globalThis, 'document', { value: { querySelector: s => ({ value: s === '#history-track' ? 'coast' : 'all' }) }, configurable: true });
@@ -202,7 +207,7 @@ test('AC4 History: old-layout runs stay listed with an Old layout tag and never 
       setLocale(locale);
       const tag = t('history.oldLayout');
       assert.ok(tag && tag !== 'history.oldLayout', locale + ' has a tag');
-      createHistoryView({ getData: () => ({ sessionHistory, sessionModeHistory, sessionBests: { 'coast@2': 40, 'coast@3': 70 }, sessionDaily: [], sessionMedals: {}, world: null }), timeString: String }).showHistory();
+      createHistoryView({ getData: () => ({ sessionHistory, sessionModeHistory, sessionBests: { 'coast@3': 40, 'coast@4': 70 }, sessionDaily: [], sessionMedals: {}, world: null }), timeString: String }).showHistory();
       const [fresh, old] = historyView.historyRuns;
       assert.deepEqual([fresh.best, old.best], [true, false], locale + ' best is the new-layout run');
       assert.ok(old.fields.includes(tag) && !fresh.fields.includes(tag), locale + ' classic tag');

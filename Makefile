@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy stop-old-dev
+.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy stop-old-dev reclaim-dev-port
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -24,19 +24,36 @@ stop-old-dev:
 	  done; \
 	  echo "Ports 9099/8080 still busy after 15 s; stop the old run by hand"; exit 1; fi
 
-dev: stop-old-dev node_modules ## `make`: Vite + Vue dev server with hot reload and Firebase emulators on http://127.0.0.1:5173
+# This repo's main checkout: every worktree lives under it, so a server started from any of them counts as ours.
+REPO_ROOT := $(patsubst %/.git,%,$(shell git rev-parse --path-format=absolute --git-common-dir 2>/dev/null))
+
+# Free port $(1) when every listener on it was started from this repo (any worktree, e.g. an earlier `make phone`),
+# so the new server keeps the same URL; another project's listener stays and Vite moves to the next port as before.
+reclaim-port = @pids=$$(lsof -nP -tiTCP:$(1) -sTCP:LISTEN 2>/dev/null | sort -u); \
+	[ -n "$$pids" ] || exit 0; \
+	for p in $$pids; do d=$$(lsof -a -p $$p -d cwd -Fn 2>/dev/null | sed -n 's/^n//p'); \
+	  case "$$d/" in "$(REPO_ROOT)"/*) ;; *) exit 0;; esac; done; \
+	echo "Port $(1) is held by this project's earlier server (pid $$(echo $$pids)); stopping it to reuse port $(1)"; \
+	kill $$pids; \
+	for i in $$(seq 30); do [ -z "$$(lsof -nP -tiTCP:$(1) -sTCP:LISTEN 2>/dev/null)" ] && exit 0; sleep 0.5; done; \
+	echo "Port $(1) still busy after 15 s; the new server will take the next free port"
+
+reclaim-dev-port:
+	$(call reclaim-port,5173)
+
+dev: stop-old-dev reclaim-dev-port node_modules ## `make`: Vite + Vue dev server with hot reload and Firebase emulators on http://127.0.0.1:5173
 	$(WITH_EMULATORS) '$(NPM) run dev'
 
 # VITE_DIAG=1 compiles in src/crash-log.ts: a live banner with frame counter, lifecycle and input events plus the
 # stored crash log. Production builds never include it (scripts/assert-production-locked.mjs refuses the marker).
-dev-diag: stop-old-dev node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
+dev-diag: stop-old-dev reclaim-dev-port node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(WITH_EMULATORS) '$(NPM) run dev'
 
-phone-diag: ## `make phone-diag [name|off]`: like `make phone`, with the on-screen diagnostic panel compiled in
-	VITE_DIAG=1 $(MAKE) phone $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
+phone-diag: ## `make phone-diag [name|off] [y=1]`: like `make phone`, with the on-screen diagnostic panel compiled in
+	VITE_DIAG=1 $(MAKE) phone $(if $(y),y=$(y)) $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
-dev-unlocked: stop-old-dev node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
+dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
 	$(WITH_EMULATORS) '$(NPM) run dev -- --config vite.unlocked.config.js'
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
@@ -44,15 +61,16 @@ test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-un
 # Same menu and flags as the personal /phone-dev skill. Serves the normal locked config with no emulators.
 # `make phone <name>` serves that branch (or feature/<name>) from its worktree;
 # `make phone off` stops every server phone-dev started (like `/phone-dev off`), so a branch named `off` can't be served.
+# `y=1` skips the menu: every question takes its Recommended option and each choice is printed (e.g. `make phone y=1 my-feature`).
 PHONE_DEV := $(HOME)/.claude/skills/phone-dev/scripts/phone_dev.py
-phone: node_modules ## `make phone [name|off]`: menu to start, check or stop a phone dev server; `off` stops them all
+phone: node_modules ## `make phone [name|off] [y=1]`: menu (y=1: Recommended answers, no prompts) to start, check or stop a phone dev server; `off` stops them all
 	@test -f "$(PHONE_DEV)" || { echo "make phone needs the phone-dev skill at $(PHONE_DEV)"; exit 1; }
-	@python3 "$(PHONE_DEV)" $(if $(filter off,$(DEV_FEATURE_NAME)),--off,--interactive $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME)) $(PHONE_VITE_ARGS))
+	@python3 "$(PHONE_DEV)" $(if $(filter off,$(DEV_FEATURE_NAME)),--off,--interactive $(if $(y),--yes) $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME)) $(PHONE_VITE_ARGS))
 
 # The unlocked config binds 127.0.0.1 so `make dev-unlocked` stays Mac-only; phone-dev's own `--host 0.0.0.0` CLI
 # flag overrides it, so this is the only phone-reachable all-unlocked server. Still a dev server: never a build.
-phone-unlocked: ## `make phone-unlocked [name|off]`: like `make phone`, with all tracks and paints unlocked
-	$(MAKE) phone PHONE_VITE_ARGS="-- --config vite.unlocked.config.js" $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
+phone-unlocked: ## `make phone-unlocked [name|off] [y=1]`: like `make phone`, with all tracks and paints unlocked
+	$(MAKE) phone PHONE_VITE_ARGS="-- --config vite.unlocked.config.js" $(if $(y),y=$(y)) $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
 # baseline built in .claude/worktrees/perf-<sha>. Desktop throttles Chrome's CPU; phone mode asks like `make phone`
@@ -74,6 +92,7 @@ perf-phone: node_modules ## `make perf-phone [BASE=main] [VIA=tailscale|wifi|aut
 # Fetches origin/feature/<name> into .claude/worktrees/<name> without checking it out here.
 # The branch name is an extra goal; an empty rule stops make from requiring a file by that name.
 dev-feature: ## `make dev-feature <name>`: that feature branch, all-unlocked, https://127.0.0.1:5443
+	$(call reclaim-port,5443)
 	node scripts/dev-feature.mjs $(filter-out $@,$(MAKECMDGOALS))
 
 DEV_FEATURE_ARGS := $(filter-out dev-feature phone phone-diag phone-unlocked,$(MAKECMDGOALS))

@@ -29,10 +29,7 @@ function clearLane(race, aim) {
 // fires NITRO as soon as a full charge is banked. No brake, so no drift or trick rewards.
 export function botInput(race, bot) {
   const car = race.player, at = car.distance;
-  const next = race.rings.find(r => !r.hit && r.distance > at + 1 && r.distance < at + 250);
-  // A full-width row is passed by any of its rings: aim at the one in the bot's own lane.
-  const ring = next?.row === undefined ? next : race.rings.filter(r => r.row === next.row && r.lap === next.lap)
-    .reduce((a, b) => Math.abs(b.x - car.x) < Math.abs(a.x - car.x) ? b : a);
+  const ring = race.rings.find(r => !r.hit && r.distance > at + 1 && r.distance < at + 250);
   const target = ring ?? race.pickups.find(p => !p.taken && p.tier !== 'overcharge' && p.distance > at + 1 && p.distance < at + 150);
   const tunnelNear = race.sections.some(s => s.type === 'tunnel' && s.to > at && s.from - at < NO_FLY_AHEAD);
   const gapNear = race.sections.some(s => s.type === 'gap' && s.to > at && s.from - at < Math.max(car.speed, 18) * 1.2);

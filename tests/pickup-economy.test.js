@@ -26,29 +26,25 @@ test('median picks the middle value, or the mean of the two middle values', () =
   assert.equal(median([4, 1, 3, 2]), 2.5);
 });
 
-// AC3: Aurora and the World Tour layouts stay locked bit-for-bit. Stage 1 locked them unchanged; stage 2 (user
-// decision 2026-11-02: more rings and pickups on all ten maps in every mode) lifted that lock deliberately and
-// re-locked the new layouts here. Stage-1 hashes: aurora ec56f1864017efd7, taipei 77aaec0a53ef7f61, tokyo
-// 67f09fd5ab1b58e7, alpine ab5d30cb554c2674, coastal 2fc2ca94497def2e, cosmic 050634fade732a55.
+// AC3: Aurora and the World Tour layouts (at the default track seed) stay locked bit-for-bit. Stage 1 locked them
+// unchanged; stage 2 (user decision 2026-11-02: more rings and pickups on all ten maps in every mode) and the scaled
+// layout (user, 2026-11-02: 4 rings and pickups per car, re-rolled per race in the app) each lifted that lock
+// deliberately and re-locked the new layouts here. Stage-2 hashes: aurora d1e3d16dea07414c, taipei 5a49d8a1b47134c2,
+// tokyo 5118e29f13296376, alpine 9d8fc5c6cf54335c, coastal 6a9eabe8195ed8e4, cosmic 9c897168bf1e1293.
+// Re-locked again for the user's ring trains, a few full-width rows and pickup runs of 1-4 (2026-11-02), on the same
+// 4 slots per car. 4-per-car hashes: aurora 0556decf5e917770, taipei 92328db2e65aaf02, tokyo 8a0f615c217d6154,
+// alpine b28b3261f4815a4d, coastal d0e7f481e35cd2d6, cosmic a08289e1073ffbfd.
 const LOCKED_LAYOUTS = {
-  aurora: 'd1e3d16dea07414c', taipei: '5a49d8a1b47134c2', tokyo: '5118e29f13296376',
-  alpine: '9d8fc5c6cf54335c', coastal: '6a9eabe8195ed8e4', cosmic: '9c897168bf1e1293',
+  aurora: 'dfbdee2481a1067c', taipei: '7e3e494aeb87c4da', tokyo: '1b414b5f6ef56db9',
+  alpine: '4d9a65bf5d0b8de7', coastal: '1bdfb51a66d090c9', cosmic: '9999583aa5be70d4',
 };
-test('AC3: Aurora and the World Tour keep their (stage-2) ring and pickup layout', () => {
+test('AC3: Aurora and the World Tour keep their (scaled) ring and pickup layout', () => {
   for (const [id, hash] of Object.entries(LOCKED_LAYOUTS)) assert.equal(layoutHash(id), hash, id);
 });
 
-// AC2: within 15% of the World Tour median for NITRO and BOOST, and the first NITRO no later than it.
-// Canyon already had enough NITRO; the user chose a floor only for it, so no ceiling applies there.
-test('AC2: Coast, Neon and Canyon reach the World Tour BOOST/NITRO economy', () => {
-  const base = worldTourBaseline(), within = (value, target) => value >= target * 0.85 && value <= target * 1.15;
-  for (const id of ['coast', 'neon', 'canyon']) {
-    const r = measureEconomy(id), info = `${id} ${JSON.stringify(r)} vs ${JSON.stringify(base)}`;
-    assert.ok(id === 'canyon' ? r.nitroPerMinute >= base.nitroPerMinute * 0.85 : within(r.nitroPerMinute, base.nitroPerMinute), 'NITRO/min ' + info);
-    assert.ok(within(r.boostShare, base.boostShare), 'BOOST share ' + info);
-    assert.ok(r.firstNitro !== null && r.firstNitro <= base.firstNitro, 'first NITRO ' + info);
-  }
-});
+// AC2 (Coast, Neon and Canyon within 15% of the World Tour NITRO/BOOST median) was retired 2026-11-02: the user
+// accepted the scarcity of 4 rings and pickups per car on every track, so the count rule, not per-track parity,
+// sets the economy now.
 
 // AC5: denser rings stay under the tunnel roof and never ask a car on a broken bridge's hole to drive through one.
 test('AC5: tuned rings sit below tunnel roofs and above gap holes', () => {
@@ -99,9 +95,9 @@ test('AC2b: Sky Spiral and Circuit bring the first NITRO forward without droppin
 // Stage 2 adds full-width rows across all lanes; every other Coast gate stays on the classic line
 // (the slot-by-slot alternation is locked in tests/game.test.js).
 test('Coast keeps its classic gate line and alternates high and road-height rings', () => {
-  const lone = createRace('coast').rings.filter(r => r.row === undefined && !r.train);
-  assert.ok(createRace('coast').rings.filter(r => r.row === undefined).every(r => r.x === 2.5));
-  assert.deepEqual(new Set(lone.map(r => r.altitude)), new Set([8, 3]));
+  const rings = createRace('coast').rings.filter(r => !r.row && r.train === undefined); // the gate line, not rows or trains
+  assert.ok(rings.every(r => r.x === 2.5));
+  assert.deepEqual(new Set(rings.map(r => r.altitude)), new Set([8, 3]));
 });
 
 test('the World Tour baseline is the per-metric median of its five tracks', () => {
@@ -110,17 +106,17 @@ test('the World Tour baseline is the per-metric median of its five tracks', () =
   assert.ok(baseline.nitroPerMinute > 0 && baseline.boostShare > 0 && baseline.firstNitro > 0);
 });
 
-// S4: modes and other generators. The nine modes below draw rings and pickups straight from the
-// track, so the Classic tuning reaches them unchanged; options that change rings on purpose
+// S4: modes and other generators. The modes below draw rings and pickups straight from the track, 4 per car, so
+// every mode with the same grid lays out the same rings and pickups; options that change rings on purpose
 // (gauntlet mixed layout, themes, bonus gates, active item rules) are left out.
-const INHERITING_MODES = ['custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination'];
+const SAME_GRID = [['classic', 'cup', 'elimination', { mode: 'custom', rivals: 7 }], ['time', 'free', 'gauntlet', 'checkpoint', 'stunt', { mode: 'custom', rivals: 0 }]];
 const CLASSIC_TRACKS = ['coast', 'neon', 'canyon', 'aurora', 'spiral'];
 const layoutOf = race => JSON.stringify({ rings: race.rings.map(r => [r.distance, r.x, r.altitude, r.type, r.group]), pickups: race.pickups.map(p => [p.distance, p.x, p.altitude, p.tier]) });
 
-test('S4: every inheriting mode keeps the Classic ring and pickup layout on the five Classic tracks', () => {
-  for (const id of CLASSIC_TRACKS) {
-    const classic = layoutOf(createRace(id));
-    for (const mode of INHERITING_MODES) assert.equal(layoutOf(createRace(id, { mode })), classic, `${id} ${mode}`);
+test('S4: every mode with the same grid keeps one ring and pickup layout on the five Classic tracks', () => {
+  for (const id of CLASSIC_TRACKS) for (const [first, ...rest] of SAME_GRID) {
+    const options = mode => typeof mode === 'string' ? { mode } : mode, reference = layoutOf(createRace(id, options(first)));
+    for (const mode of rest) assert.equal(layoutOf(createRace(id, options(mode))), reference, `${id} ${JSON.stringify(mode)}`);
   }
 });
 
