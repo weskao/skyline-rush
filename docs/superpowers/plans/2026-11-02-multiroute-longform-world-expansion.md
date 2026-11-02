@@ -2,14 +2,14 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement the approved six original 3–5-minute graph-based courses without regressions.
+**Goal:** Implement the proposed five original 3–5-minute graph-based courses without regressions.
 **Architecture:** Add an opt-in authored route graph that owns shared world frames, branch-aware game progress and open-terrain recovery. Preserve legacy centreline adapters and introduce weather as seeded, quality-tiered visual zones.
 **Tech Stack:** Vue 3 + strict TypeScript, Three.js, existing JS simulation/render islands as justified, Node unit tests, Playwright, GitHub Actions.
 **Spec:** `docs/superpowers/specs/2026-11-02-multiroute-longform-world-expansion-design.md`.
 
 ## Global Constraints
 
-- The six course layouts and times are initial design targets; performance, median durations and visual acceptance are not verified in this planning branch.
+- The five course layouts and times are initial design targets; performance, median durations and visual acceptance are not verified in this planning branch.
 - Existing 10 sprint routes and circuit must preserve positioning, item economy, bests and game modes.
 - All new UI/controller code typed TS; engine JS exceptions need profiling/rationale. No source module >400 lines; ratchet legacy ceilings down.
 - Source of truth is one route sampling frame for road, physics, props, AI, camera, pickups and minimap.
@@ -72,11 +72,11 @@
 - [ ] Implement shared zone pipeline, material reactions, emission budgets and cleanup; test GREEN and switching presets mid-race.
 - [ ] Record frame-time/draw-call/texture screenshots Low/Medium/High and long race 5-min performance.
 
-## Task 7 — Remaining five course art/layout data (M5/M6)
+## Task 7 — Remaining four course art/layout data (M5/M6)
 
 **Files:** Create one small file under `src/courses/` per track, tests per layout and themed scene; reuse graph/weather/pickup/AI APIs.
 - [ ] RED per map: path reachable both ways, ≥3 safe forks, ≥2 hairpins, a grounded finish and scenic reveal, balanced flight+ground options.
-- [ ] Implement Monsoon, Skyfall, Volcanic, Stormline, Glacier independently and GREEN tests/map, maintaining unique material/biome silhouette.
+- [ ] Implement Monsoon, Skyfall, Volcanic and Stormline independently and GREEN tests/map, maintaining unique material/biome silhouette.
 - [ ] User gameplay sessions: record ≥20 finish times per track/difficulty and compare median to 3–5-minute goal; revise if out of range.
 
 ## Task 8 — UI, metadata, persistence, release gate (M7)
