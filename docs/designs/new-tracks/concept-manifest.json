@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "status": "design-only",
+  "approvedRouting": "five-point-to-point-races",
+  "sourceMode": "develop",
+  "imageIndex": "visual-fidelity.md",
+  "description": "Five committed SVG storyboards each include two vector concept panels; separately AI-generated PNG collage archive is in the ChatGPT conversation and is not included in this repository",
+  "tracks": [
+    {
+      "id": "dune-tempest",
+      "zh": "沙暴裂谷",
+      "en": "Dune Tempest",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/dune-tempest-point-to-point-storyboard.svg",
+          "panel": "01"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/dune-tempest-point-to-point-storyboard.svg",
+          "panel": "02"
+        }
+      ],
+      "routeReference": "route-schematics/dune-tempest.svg",
+      "originalGeneratedPngUploaded": false
+    },
+    {
+      "id": "monsoon-ruins",
+      "zh": "雨林失落神殿",
+      "en": "Monsoon Ruins",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/monsoon-ruins-point-to-point-storyboard.svg",
+          "panel": "01"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/monsoon-ruins-point-to-point-storyboard.svg",
+          "panel": "02"
+        }
+      ],
+      "routeReference": "route-schematics/monsoon-ruins.svg",
+      "originalGeneratedPngUploaded": false
+    },
+    {
+      "id": "skyfall-archipelago",
+      "zh": "浮空群島",
+      "en": "Skyfall Archipelago",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/skyfall-archipelago-point-to-point-storyboard.svg",
+          "panel": "01"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/skyfall-archipelago-point-to-point-storyboard.svg",
+          "panel": "02"
+        }
+      ],
+      "routeReference": "route-schematics/skyfall-archipelago.svg",
+      "originalGeneratedPngUploaded": false
+    },
+    {
+      "id": "volcanic-crown",
+      "zh": "熔火天脊",
+      "en": "Volcanic Crown",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/volcanic-crown-point-to-point-storyboard.svg",
+          "panel": "01"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/volcanic-crown-point-to-point-storyboard.svg",
+          "panel": "02"
+        }
+      ],
+      "routeReference": "route-schematics/volcanic-crown.svg",
+      "originalGeneratedPngUploaded": false
+    },
+    {
+      "id": "stormline-megacity",
+      "zh": "霓虹暴雨都市",
+      "en": "Stormline Megacity",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/stormline-megacity-point-to-point-storyboard.svg",
+          "panel": "01"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/stormline-megacity-point-to-point-storyboard.svg",
+          "panel": "02"
+        }
+      ],
+      "routeReference": "route-schematics/stormline-megacity.svg",
+      "originalGeneratedPngUploaded": false
+    }
+  ]
+}
