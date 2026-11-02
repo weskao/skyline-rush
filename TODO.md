@@ -1,3 +1,16 @@
+## Concept-to-WebGL visual parity gate for proposed ten new tracks (2026-11-02)
+
+**Design authority:** [JPEG → real WebGL visual acceptance gate](docs/designs/new-tracks/visual-acceptance-gate.md) (Stage 1 + Stage 2); invoked from [CLAUDE.md](CLAUDE.md). Existing 10 sprint courses and the circuit are unchanged; **all ten proposed new maps are point-to-point**, never laps.
+
+- [x] Link real Stage 1 & Stage 2 committed JPEGs and their route SVGs through the single visual gate.
+- [ ] For each of 10 proposed courses: confirm exact committed reference images, define 2 locked ground/aerial camera poses, biome palette, 3 visual anchors and safe route split, then approve blockout before full art.
+- [ ] For each course: record actual desktop 1440×900 + phone 390×844 WebGL screenshots, ground and aerial (≥4 captures/course, 40 baseline images), plus actual weather and Low/Medium/High + Reduced Motion reviews.
+- [ ] For each course: compare silhouette, road/terrain, vehicle scale, lighting/particles, split/landing readability and collision/UI visibility; create `artifacts/new-tracks/visual-evidence/<id>/<id>-review.md` with PASS/FAIL/APPROVED DEVIATION and rationale.
+- [ ] For each course: require safe ground-only finish, real split/merge graph, checkpoint ordering, 8-car AI, Ghost parity, variable dt tests, mobile readability, performance p50/p95 and 3–5 minute median evidence before “completed”.
+- [ ] `make verify` and exact-HEAD full GitHub CI, plus separate human visual acceptance, are still pending; this branch remains planning/art-only. Do not merge into `develop` without later authorization.
+
+---
+
 ## Future New Tracks — Stage 2 / Second Set of Five (2026-11-02) [PLANNING ONLY]
 
 **Scope:** five *additional* point-to-point courses beyond Stage 1's five, for ten proposed new maps in total. All ten planned additions use separate START and FINISH; no laps. The existing ten published sprint tracks and Harbor Circuit remain unchanged.
