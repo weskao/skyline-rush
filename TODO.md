@@ -2,7 +2,7 @@
 
 **Branch:** `feature/epic-multiroute-longform-tracks` (NOT `develop` or `main`).
 **Design:** [Stage 1 Coming Soon homepage](docs/superpowers/specs/2026-11-03-stage1-coming-soon-home-preview-design.md).
-**Five separate GPT art briefs:** [parallel owned-art assignments](docs/superpowers/prompts/2026-11-03-stage1-home-teasers-parallel.md).
+**Six separate GPT implementation chats:** [6 copy/paste prompts and file ownership](docs/superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md) · [six-chat SDD/TDD implementation plan](docs/superpowers/plans/2026-11-03-six-chat-home-preview-integration.md). The [five older art-only briefs](docs/superpowers/prompts/2026-11-03-stage1-home-teasers-parallel.md) remain available as detailed references.
 **Strict scope:** **ONLY** Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity appear as coming-soon cards; the next five Stage 2 maps remain design documents only.
 
 - [x] Create preview-only `UPCOMING_TRACKS` metadata and priority status; do **not** register unfinished maps in playable `RACE_TRACKS` or mutate game physics, rewards, ghost, daily or cup.
@@ -10,6 +10,7 @@
 - [x] Set `COMING SOON` / `即將推出` on Stage 1 cards, allow selecting preview-only cards, disable start in any mode and block the Enter/keyboard race path.
 - [x] Change `#start-button` CTA by status (Start race, LOCKED, COMING SOON), bilingual en / zh-TW and fixed width per breakpoint; restore original behavior on playable map select.
 - [x] Add pure Node tests `tests/upcoming-tracks.test.js` and browser tests `tests/upcoming-home-browser.spec.js`; update previous last-track placement test for new carousel order.
+- [x] Define **six-chat ownership**: GPT 1–5 each create one original JPEG and `.md` on their existing isolated art branch; GPT 6 improves, tests and selectively integrates on the shared homepage branch. Docs/prompt creation **does not start separate GPT chats**.
 - [x] Create 5 **independent art branches** `feature/epic-home-art-{dune-tempest,monsoon-ruins,skyfall-archipelago,volcanic-crown,stormline-megacity}` and [five individual GPT chat prompts](docs/superpowers/prompts/2026-11-03-stage1-home-teasers-parallel.md). Only each branch's one JPEG + art note are owned by that chat; the shared branch owns UI.
 - [ ] Five art chats individually produce **native, non-upscaled 2400×900+ original JPEG hero images** on their art branches, report actual GitHub commit SHA and image dimensions; only after review merge one art file per map into this shared branch.
 - [ ] **Run and log RED→GREEN proof** for Node tests; complete `npm test`, Vue/TS typecheck, build, browser home/i18n/responsive, `make verify` and exact-HEAD full CI. This checklist does not assert a pass without actual observed evidence.
