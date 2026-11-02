@@ -1,6 +1,7 @@
 import { t } from './i18n.ts';
-import { controlSettings, CONTROLS_KEY, type ControlPreferences } from './control-settings.ts';
+import { controlSettings, CONTROLS_KEY, normalizeOrientationLayouts, readOrientationLayouts, writeOrientationLayouts, orientationForViewport, type ControlPreferences } from './control-settings.ts';
 import type { createControls } from './input.ts';
+import { resolveFoldableLayout, placeInVisibleSegment, type FoldableLayout } from './foldable-layout.ts';
 
 type Controls = ReturnType<typeof createControls>;
 type Hand = ControlPreferences['hand'];
@@ -29,20 +30,22 @@ export const inputPrefsFor = (prefs: ControlPreferences, { tutorial, tiltGranted
   ({ ...prefs, mode: tutorial && prefs.mode === 'tilt' && !tiltGranted ? 'slide' : prefs.mode, editing });
 
 /** CSS position of a custom-placed touch button, kept 8 px inside the safe area. */
-export function layoutPosition(point: Point, hand: Hand, button: Size, viewport: Size): { left: string; top: string } {
+export function layoutPosition(point: Point, hand: Hand, button: Size, viewport: Size, foldable: FoldableLayout | null = null): { left: string; top: string } {
   const halfWidth = button.width / 2 || 32;
   const halfHeight = button.height / 2 || 35;
-  const x = (hand === 'right' ? 1 - point.x : point.x) * viewport.width;
+  const position = placeInVisibleSegment({ x: (hand === 'right' ? 1 - point.x : point.x) * viewport.width,
+    y: point.y * viewport.height }, button, foldable);
   return {
-    left: `clamp(calc(env(safe-area-inset-left, 0px) + ${halfWidth + 8}px), ${x}px, calc(100vw - env(safe-area-inset-right, 0px) - ${halfWidth + 8}px))`,
-    top: `clamp(calc(env(safe-area-inset-top, 0px) + ${halfHeight + 8}px), ${point.y * viewport.height}px, calc(100dvh - env(safe-area-inset-bottom, 0px) - ${halfHeight + 8}px))`,
+    left: `clamp(calc(env(safe-area-inset-left, 0px) + ${halfWidth + 8}px), ${position.x}px, calc(100vw - env(safe-area-inset-right, 0px) - ${halfWidth + 8}px))`,
+    top: `clamp(calc(env(safe-area-inset-top, 0px) + ${halfHeight + 8}px), ${position.y}px, calc(100dvh - env(safe-area-inset-bottom, 0px) - ${halfHeight + 8}px))`,
   };
 }
 
 /** Viewport-relative point for a button dragged to (centerX, centerY), mirrored for the right hand. */
-export function layoutPoint(centerX: number, centerY: number, button: Size, hand: Hand, viewport: Size): Point {
-  const x = Math.min(viewport.width - button.width / 2 - 8, Math.max(button.width / 2 + 8, centerX));
-  const y = Math.min(viewport.height - button.height / 2 - 8, Math.max(button.height / 2 + 8, centerY));
+export function layoutPoint(centerX: number, centerY: number, button: Size, hand: Hand, viewport: Size, foldable: FoldableLayout | null = null): Point {
+  const projected = placeInVisibleSegment({ x: centerX, y: centerY }, button, foldable);
+  const x = Math.min(viewport.width - button.width / 2 - 8, Math.max(button.width / 2 + 8, projected.x));
+  const y = Math.min(viewport.height - button.height / 2 - 8, Math.max(button.height / 2 + 8, projected.y));
   return { x: hand === 'right' ? 1 - x / viewport.width : x / viewport.width, y: y / viewport.height };
 }
 
@@ -56,6 +59,32 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
   // In-memory source of truth: input.ts reads it on every pointermove, so storage is only touched on load/change.
   let controlPrefs = controlSettings();
   try { controlPrefs = controlSettings(JSON.parse(localStorage.getItem(CONTROLS_KEY)!)); } catch { /* Defaults work without storage. */ }
+  let orientedLayouts = readOrientationLayouts(controlPrefs.layout);
+  const currentOrientation = () => orientationForViewport(innerWidth, innerHeight);
+  const readFoldable = (): FoldableLayout | null => {
+    const provider = (window as Window & { getWindowSegments?: () => unknown }).getWindowSegments;
+    try { return resolveFoldableLayout({ width: innerWidth, height: innerHeight }, typeof provider === 'function' ? provider.call(window) : null); }
+    catch { return null; } // Optional API may throw during a fold transition.
+  };
+  let foldable = readFoldable();
+  function publishFoldable(): void {
+    const axis = foldable?.axis ?? '';
+    touch.dataset.foldAxis = axis;
+    document.body.dataset.foldAxis = axis;
+    const vars = {
+      '--fold-pane-left-end': foldable?.segments[0].left !== undefined && axis === 'vertical'
+        ? `${foldable.segments[0].left + foldable.segments[0].width}px` : '',
+      '--fold-pane-right-start': axis === 'vertical' ? `${foldable!.segments[1].left}px` : '',
+      '--fold-pane-top-end': axis === 'horizontal'
+        ? `${foldable!.segments[0].top + foldable!.segments[0].height}px` : '',
+      '--fold-pane-bottom-start': axis === 'horizontal' ? `${foldable!.segments[1].top}px` : '',
+    };
+    for (const [name, value] of Object.entries(vars)) {
+      if (value) document.body.style.setProperty(name, value);
+      else document.body.style.removeProperty(name);
+    }
+  }
+  publishFoldable();
   let editingLayout = false;
   let inputPrefs: InputPrefs = { ...controlPrefs, editing: false };
   let tiltRequest = 0, tiltGranted = false, tiltSeen = false;
@@ -75,10 +104,10 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     $('#tilt-enable').hidden = controlPrefs.mode !== 'tilt';
     if (controlPrefs.mode !== 'tilt') { controls.setTilt(false); tiltGranted = false; clearTimeout(tiltTimeout); }
     for (const button of touchButtons) {
-      const point = isTutorialActive() ? undefined : controlPrefs.layout[button.dataset.control as keyof ControlPreferences['layout']];
+      const point = isTutorialActive() ? undefined : orientedLayouts[currentOrientation()][button.dataset.control as keyof ControlPreferences['layout']];
       button.classList.toggle('is-positioned', !!point);
       if (point) {
-        const { left, top } = layoutPosition(point, controlPrefs.hand, { width: button.offsetWidth, height: button.offsetHeight }, { width: innerWidth, height: innerHeight });
+        const { left, top } = layoutPosition(point, controlPrefs.hand, { width: button.offsetWidth, height: button.offsetHeight }, { width: innerWidth, height: innerHeight }, foldable);
         button.style.left = left;
         button.style.top = top;
       } else { button.style.removeProperty('left'); button.style.removeProperty('top'); }
@@ -88,7 +117,10 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
       if (input.type === 'radio') input.checked = input.value === String(value);
       else { input.value = String(value); (input.previousElementSibling as HTMLOutputElement).value = `${Math.round(Number(value) * 100)}%`; }
     }
-    if (persist) try { localStorage.setItem(CONTROLS_KEY, JSON.stringify(controlPrefs)); } catch { /* Settings remain usable in memory. */ }
+    if (persist) {
+      try { localStorage.setItem(CONTROLS_KEY, JSON.stringify(controlPrefs)); } catch { /* Settings remain usable in memory. */ }
+      writeOrientationLayouts(orientedLayouts);
+    }
   }
 
   // input.ts keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.ts).
@@ -175,7 +207,7 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     }
   }
   $('#tilt-enable').addEventListener('click', enableTilt);
-  $('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); applyControls(); cueUi(); });
+  $('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); orientedLayouts = normalizeOrientationLayouts(null); applyControls(); cueUi(); });
 
   function editLayout(editing: boolean): void {
     editingLayout = editing;
@@ -188,24 +220,57 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
   }
   $('#layout-edit').addEventListener('click', () => editLayout(true));
   $('#layout-done').addEventListener('click', () => editLayout(false));
-  $('#layout-reset').addEventListener('click', () => { controlPrefs = { ...controlPrefs, layout: {} }; applyControls(); });
+  $('#layout-reset').addEventListener('click', () => { controlPrefs = { ...controlPrefs, layout: {} }; orientedLayouts = normalizeOrientationLayouts(null); applyControls(); });
   for (const button of touchButtons) {
-    let drag: { id: number; dx: number; dy: number } | null = null;
+    let drag: { id: number; x: number; y: number; origins: { action: keyof ControlPreferences['layout']; x: number; y: number; width: number; height: number }[] } | null = null;
     button.addEventListener('pointerdown', event => {
       if (!editingLayout) return;
       event.preventDefault();
-      drag = { id: event.pointerId, dx: event.clientX - (button.getBoundingClientRect().left + button.offsetWidth / 2), dy: event.clientY - (button.getBoundingClientRect().top + button.offsetHeight / 2) };
+      // Moving either member moves its whole thumb cluster; the pad remains input-owned.
+      const steer = ['left', 'right', 'brake'].includes(button.dataset.control!);
+      const peers = touchButtons.filter(peer => steer === ['left', 'right', 'brake'].includes(peer.dataset.control!));
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, origins: peers.map(peer => {
+        const rect = peer.getBoundingClientRect();
+        return { action: peer.dataset.control as keyof ControlPreferences['layout'],
+          x: rect.left + rect.width / 2, y: rect.top + rect.height / 2,
+          width: peer.offsetWidth, height: peer.offsetHeight };
+      }) };
       button.setPointerCapture(event.pointerId);
     });
     button.addEventListener('pointermove', event => {
       if (!editingLayout || event.pointerId !== drag?.id) return;
-      const point = layoutPoint(event.clientX - drag.dx, event.clientY - drag.dy, { width: button.offsetWidth, height: button.offsetHeight }, controlPrefs.hand, { width: innerWidth, height: innerHeight });
-      controlPrefs = { ...controlPrefs, layout: { ...controlPrefs.layout, [button.dataset.control!]: point } };
+      const offsetX = event.clientX - drag.x, offsetY = event.clientY - drag.y;
+      const next = { ...orientedLayouts[currentOrientation()] };
+      for (const origin of drag.origins) {
+        next[origin.action] = layoutPoint(origin.x + offsetX, origin.y + offsetY,
+          { width: origin.width, height: origin.height }, controlPrefs.hand, { width: innerWidth, height: innerHeight }, foldable);
+      }
+      orientedLayouts = { ...orientedLayouts, [currentOrientation()]: next };
       applyControls(false);
     });
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) button.addEventListener(type, event => { if (event.pointerId === drag?.id) { drag = null; applyControls(); } });
   }
-  window.addEventListener('resize', () => applyControls());
+  let lastOrientation = currentOrientation();
+  let lastWidth = innerWidth;
+  const onViewportChange = (): void => {
+    const orientation = currentOrientation();
+    const previous = JSON.stringify(foldable);
+    foldable = readFoldable();
+    publishFoldable();
+    // Browser chrome changes height frequently; only fold/unfold, width change or rotation releases held input.
+    if (orientation !== lastOrientation || Math.abs(innerWidth - lastWidth) > 16 || JSON.stringify(foldable) !== previous) {
+      controls.clear(); padTouch = null; drawPad();
+    }
+    lastOrientation = orientation;
+    lastWidth = innerWidth;
+    applyControls(false); // Never overwrite stored custom coordinates on a resize.
+  };
+  window.addEventListener('resize', onViewportChange);
+  window.visualViewport?.addEventListener('resize', onViewportChange);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { controls.clear(); padTouch = null; drawPad(); }
+  });
+  window.addEventListener('pagehide', () => { controls.clear(); padTouch = null; });
 
   return {
     prefs: (): ControlPreferences => controlPrefs,

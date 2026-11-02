@@ -28,11 +28,16 @@ export function createCallouts() {
   let previousElapsed = 0;
   let current: ActiveCallout | null = null;
   const pending: CalloutEvent[] = [];
+  const lastShown = new Map<string, number>();
+  const priority: Record<string, number> = { nitro: 4, flow: 4, trick: 3, 'trick-payout': 3, perfect: 3, near: 2, drift: 2, shortcut: 2, refill: 1 };
   const enqueue = (kind: string, title: CalloutText, detail: CalloutText): void => {
+    if (['near', 'refill', 'perfect'].includes(kind) && previousElapsed - (lastShown.get(kind) ?? -Infinity) < 2) return;
     const event = { kind, title: text(title), detail: text(detail) };
     const index = pending.findIndex(item => item.kind === kind);
-    if (index < 0) pending.push(event);
-    else pending[index] = event; // Show the latest combo/tier instead of stale repeats.
+    if (index >= 0) { pending[index] = event; return; } // Latest combo/tier.
+    if (pending.length < 2) { pending.push(event); return; }
+    const lowest = pending.reduce((at, item, i) => (priority[item.kind] ?? 1) < (priority[pending[at]!.kind] ?? 1) ? i : at, 0);
+    if ((priority[kind] ?? 1) > (priority[pending[lowest]!.kind] ?? 1)) pending[lowest] = event;
   };
   return {
     update(race: CalloutRace, blocked: boolean = false): ActiveCallout | null {
@@ -47,6 +52,7 @@ export function createCallouts() {
       };
       if (race !== previousRace || race.phase !== 'racing' || !previous) {
         pending.length = 0;
+        lastShown.clear();
         current = null;
         previous = next;
         previousRace = race;
@@ -77,10 +83,16 @@ export function createCallouts() {
         if (current) current.started += elapsed;
         return null;
       }
-      if (current && race.elapsed - current.started >= 1.2) current = null;
+      const advancing = !!current && race.elapsed - current.started >= 0.85;
+      if (advancing) current = null;
       if (!current && pending.length) {
+        // Keep the first earned event immediate; prioritize only later queued events.
+        if (advancing) pending.sort((a, b) => (priority[b.kind] ?? 1) - (priority[a.kind] ?? 1));
         const queued = pending.shift();
-        if (queued) current = { ...queued, started: race.elapsed };
+        if (queued) {
+          current = { ...queued, started: race.elapsed };
+          lastShown.set(queued.kind, race.elapsed);
+        }
       }
       return current;
     },

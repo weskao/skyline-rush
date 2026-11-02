@@ -4,6 +4,7 @@ import { historyTrendPoints, createHistoryView } from '../src/history-ui.ts';
 import { normalizeRaceConfig } from '../src/race-config.ts';
 import { saveModeGhost } from '../src/history.ts';
 import { historyView } from '../src/history-view-state.ts';
+import { layoutVersion } from '../src/record-layout.ts';
 
 test('history trend chart preserves evenly spaced points and time range', () => {
   assert.deepEqual(historyTrendPoints([{ time: 10 }, { time: 20 }, { time: 30 }]), [[10, 70], [250, 40], [490, 10]]);
@@ -22,7 +23,7 @@ test('Circuit history shows its saved ruleset Ghost without awarding Career meda
   globalThis.document = { querySelector: selector => ({ value: selector === '#history-track' ? 'harbor-circuit' : 'circuit' }) };
   try {
     assert.equal(saveModeGhost('harbor-circuit', config, { time: 20, samples: Array.from({ length: 201 }, (_, i) => [i * 10, -2.5, 0]) }), true);
-    const run = { mode: 'circuit', track: 'harbor-circuit', rules: JSON.stringify(config), time: 20 };
+    const run = { mode: 'circuit', track: 'harbor-circuit', rules: JSON.stringify(config), time: 20, layout: layoutVersion('harbor-circuit') }; // a run on Circuit's current layout
     createHistoryView({ getData: () => ({ sessionHistory: [], sessionModeHistory: [run], sessionBests: {}, sessionDaily: [], sessionMedals: {}, world: null }),
       timeString: seconds => String(seconds) }).showHistory();
     assert.equal(historyView.modeRuns.length, 1);

@@ -210,3 +210,140 @@ test('historical wake survives full XYZ floating-origin shifts on elevated and c
     indices.forEach((i, j) => assert.ok(point(g, i).add(b).distanceTo(before[j]) < .0002, track));
   }
 });
+
+
+// Wave 2 RED contracts: the same visual state never writes gameplay physics.
+test('wave2 sprint state: NITRO and BOOST have distinct ignition, sustain, recovery and ready phases', async () => {
+  const mod = await import('../src/vfx-settings.ts');
+  assert.equal(typeof mod.createSprintVfx, 'function', 'four-stage visual controller must exist');
+  const sprint = mod.createSprintVfx();
+  const input = { phase: 'racing', nitro: false, boost: false, speed: 80, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false };
+  assert.equal(sprint.update(input).nitro.phase, 'ready');
+  let state = sprint.update({ ...input, nitro: true });
+  assert.equal(state.nitro.phase, 'ignition');
+  assert.ok(state.nitro.ignition > 0);
+  for (let i = 0; i < 6; i++) state = sprint.update({ ...input, nitro: true });
+  assert.equal(state.nitro.phase, 'sustain');
+  assert.equal(state.boost.phase, 'ready');
+  assert.ok(state.nitro.intensity > 0);
+  state = sprint.update({ ...input, nitro: false });
+  assert.equal(state.nitro.phase, 'recovery');
+  for (let i = 0; i < 12; i++) state = sprint.update(input);
+  assert.equal(state.nitro.phase, 'ready');
+  state = sprint.update({ ...input, boost: true });
+  assert.equal(state.boost.phase, 'ignition');
+  assert.equal(state.nitro.phase, 'ready');
+  assert.ok(state.boost.ignition > 0);
+});
+
+test('wave2 sprint state: combined effects are bounded, comfort and VFX off suppress camera motion', async () => {
+  const mod = await import('../src/vfx-settings.ts');
+  assert.equal(typeof mod.createSprintVfx, 'function');
+  const sprint = mod.createSprintVfx();
+  const base = { phase: 'racing', nitro: true, boost: true, speed: 115, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false };
+  let state = sprint.update(base);
+  for (let i = 0; i < 200; i++) {
+    state = sprint.update({ ...base, nitro: i % 4 !== 0, boost: i % 3 !== 0 });
+    assert.ok(Number.isFinite(state.power) && state.power >= 0 && state.power <= 1, 'never stacks beyond one');
+    assert.ok(Number.isFinite(state.fov) && state.fov >= 0 && state.fov <= 5, 'bounded FOV');
+    assert.ok(Number.isFinite(state.blur) && state.blur >= 0 && state.blur <= 1, 'bounded blur');
+  }
+  state = sprint.update({ ...base, speed: Infinity, dt: Infinity });
+  assert.ok([state.power, state.fov, state.blur].every(Number.isFinite), 'invalid race data cannot reach shaders');
+  const paused = { ...state.nitro };
+  state = sprint.update({ ...base, phase: 'paused', dt: 12 });
+  assert.deepEqual(state.nitro, paused, 'pause freezes phase state');
+  const high = sprint.update(base);
+  const low = sprint.update({ ...base, quality: 'low' });
+  assert.ok(low.fov <= high.fov && low.blur <= high.blur, 'low tier cannot cost more');
+  const comfort = sprint.update({ ...base, reducedMotion: true });
+  assert.equal(comfort.fov, 0);
+  assert.equal(comfort.blur, 0);
+  const disabled = sprint.update({ ...base, enabled: false });
+  assert.equal(disabled.power, 0);
+  assert.equal(disabled.nitro.phase, 'ready');
+  assert.equal(sprint.update({ ...base, phase: 'ready' }).nitro.phase, 'ready');
+  sprint.update(base);
+  sprint.reset();
+  assert.equal(sprint.update({ ...base, phase: 'paused' }).power, 0, 'restart clears visual state');
+});
+
+test('wave2 renderer distinguishes purple NITRO from cyan BOOST with shared geometry and bounded repeated triggers', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const { scene, vfx, race, options, vehicle } = fixture();
+  const sprint = createSprintVfx();
+  const input = { phase: 'racing', nitro: false, boost: true, speed: 82, cap: 110,
+    dt: 0.05, enabled: true, quality: 'high', reducedMotion: false };
+  const flow = vehicle.getObjectByName('Airflow showcase').children[0];
+  const initialObjects = scene.children.length;
+  let state = sprint.update(input);
+  vfx.update(race, 0.05, new Vector3(), options, false, state);
+  assert.ok(flow.material.uniforms.nitroMix, 'shader has a reusable NITRO color uniform');
+  const cyan = flow.material.uniforms.nitroMix.value;
+  race.player.boosting = false; race.player.nitroTime = 1;
+  state = sprint.update({ ...input, nitro: true, boost: false });
+  vfx.update(race, 0.05, new Vector3(), options, false, state);
+  const violet = flow.material.uniforms.nitroMix.value;
+  assert.ok(violet > cyan, 'NITRO must be visually distinguishable from BOOST');
+  race.player.boosting = true;
+  for (let i = 0; i < 60; i++) {
+    state = sprint.update({ ...input, nitro: i % 2 === 0, boost: true });
+    vfx.update(race, 0.05, new Vector3(), options, false, state);
+  }
+  assert.equal(scene.children.length, initialObjects, 'no per-trigger scene object allocations');
+  assert.ok(flow.material.uniforms.nitroMix.value <= 1, 'shader mix remains bounded');
+  vfx.reset();
+  assert.equal(scene.children.length, initialObjects, 'reset reuses existing GPU resources');
+});
+
+// Before Wave 2 (54de8259) NITRO+BOOST widened the chase camera by boostStrength 1 × the FOV setting on
+// every tier (+9.7° with the speed term); Wave 2 scaled it by quality (Low +4.0°, Medium +5.6°, High +7.1°).
+test('sprint FOV: NITRO+BOOST widens the camera by the full FOV setting on every tier, Reduced Motion by 0', async () => {
+  const { createSprintVfx, sprintFovOffset } = await import('../src/vfx-settings.ts');
+  const settle = input => {
+    const sprint = createSprintVfx();
+    let frame;
+    for (let i = 0; i < 10; i++) frame = sprint.update(input);
+    return frame;
+  };
+  const offsets = {}, comfort = {};
+  for (const quality of ['low', 'medium', 'high']) {
+    const input = { phase: 'racing', nitro: true, boost: true, speed: 130, cap: 110, dt: 0.05,
+      enabled: true, quality, reducedMotion: false };
+    const visual = vfxSettings({ quality });
+    offsets[quality] = sprintFovOffset(settle(input), visual);
+    comfort[quality] = sprintFovOffset(settle({ ...input, reducedMotion: true }), visual);
+  }
+  assert.equal(vfxSettings().fov, 7, 'default FOV setting');
+  assert.deepEqual(offsets, { low: 7, medium: 7, high: 7 }, 'FOV is camera framing, not GPU cost: never tiered');
+  assert.deepEqual(comfort, { low: 0, medium: 0, high: 0 }, 'Reduced Motion never widens the camera');
+  assert.equal(sprintFovOffset(settle({ phase: 'racing', nitro: true, boost: true, speed: 130, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false }), vfxSettings({ enabled: false })), 0, 'VFX off');
+});
+
+test('cyan NITRO trail differs from the standard trail from the first NITRO frame, purple cue kept on every skin', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const firstFrame = skin => {
+    const { vfx, race, options, vehicle } = fixture();
+    vfx.setSkins(skin ? { 'nitro-trail': skin } : {});
+    race.player.boosting = false; race.player.nitroTime = 1;
+    const state = createSprintVfx().update({ phase: 'racing', nitro: true, boost: false, speed: 82, cap: 110,
+      dt: 0.05, enabled: true, quality: 'high', reducedMotion: false });
+    vfx.update(race, 0.05, new Vector3(), options, false, state);
+    const flow = vehicle.getObjectByName('Airflow showcase').children[0];
+    return { mix: flow.material.uniforms.nitroMix.value, accent: flow.material.uniforms.trailAccent?.value.toArray(),
+      shader: flow.material.fragmentShader };
+  };
+  const standard = firstFrame(null), cyan = firstFrame('nitro-trail-cyan');
+  assert.ok(cyan.accent, 'airflow shader carries the NITRO trail skin');
+  assert.equal(standard.accent[3], 0, 'standard trail look is unchanged');
+  const [r, g, b, weight] = cyan.accent;
+  assert.ok(weight * cyan.mix >= 0.5, 'cyan reads in the first NITRO frame (ignition), not after particles build up');
+  assert.ok(g > r * 3 && b > r * 3, 'accent is cyan');
+  assert.equal(cyan.mix, standard.mix, 'NITRO purple cue does not depend on the skin');
+  assert.ok(cyan.mix > 0.5, 'purple cue from the first frame');
+  assert.ok(cyan.shader.indexOf('trailAccent.a') > cyan.shader.indexOf('vec3(.72,.4,1.)'), 'accent layers over the purple cue');
+  assert.match(cyan.shader, /trailAccent\.a\*[^;]*smoothstep\([^;]*vUv\.x\)/, 'accent stays on streamline tails; fronts stay purple');
+});

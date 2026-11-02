@@ -1,6 +1,8 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { createRings } from '../src/ring-layout.ts';
+import { RACE_TRACKS } from '../src/race-tracks.ts';
 
 const open = async page => {
   await page.goto('/');
@@ -54,7 +56,8 @@ test.describe('touch controls', () => {
     const touch = (type, ...touchPoints) => session.send('Input.dispatchTouchEvent', { type, touchPoints });
     await open(page);
     await start(page);
-    await expect(page.getByRole('button', { name: 'Activate nitro' })).toBeVisible();
+    await expect(page.locator('[data-control="nitro"]')).toBeVisible();
+    await expect(page.locator('[data-control="nitro"]')).toHaveAttribute('aria-label', /NITRO/);
     const pad = await page.locator('.touch-pad').boundingBox();
     await touch('touchStart', { id: 1, x: pad.x + 40, y: pad.y + 50 });
     await touch('touchMove', { id: 1, x: pad.x + 100, y: pad.y + 50 });
@@ -81,14 +84,17 @@ test.describe('touch controls', () => {
     await page.keyboard.press('p');
     await expect(page.locator('#layout-toolbar')).toBeHidden();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')));
-    expect(Object.keys(saved.layout)).toHaveLength(7);
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')));
+    expect(saved.version).toBe(2);
+    expect(Object.keys(saved.landscape)).toHaveLength(7);
+    expect(saved.portrait).toEqual({});
     await page.reload();
     await start(page);
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', 'right');
-    const savedAgain = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')));
-    expect(savedAgain.layout).toEqual(saved.layout);
-    for (const [action, point] of Object.entries(saved.layout)) {
+    const savedAgain = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')));
+    expect(savedAgain.landscape).toEqual(saved.landscape);
+    expect(savedAgain.portrait).toEqual({});
+    for (const [action, point] of Object.entries(saved.landscape)) {
       const rect = await page.locator(`[data-control="${action}"]`).boundingBox();
       expect(rect.x + rect.width / 2).toBeCloseTo((1 - point.x) * 844, 0);
       expect(rect.y + rect.height / 2).toBeCloseTo(point.y * 390, 0);
@@ -104,11 +110,11 @@ test.describe('touch controls', () => {
     await page.locator('[data-controls="hand"][value="left"]').check();
     await page.locator('#layout-edit').click();
     const mirrored = await page.locator('[data-control="right"]').boundingBox();
-    expect(mirrored.x + mirrored.width / 2).toBeCloseTo(saved.layout.right.x * 844, 0);
+    expect(mirrored.x + mirrored.width / 2).toBeCloseTo(saved.landscape.right.x * 844, 0);
     await page.locator('#layout-done').click();
     await page.locator('#controls-button').click();
     await page.locator('#layout-reset').click();
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).layout)).toEqual({});
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape)).toEqual({});
   });
   test('edited touch buttons remain inside notched-screen safe areas', async ({ page, context }) => {
     await open(page);
@@ -155,9 +161,15 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
     });
     observer.observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
   });
+  // Solo Time Trial: rivals ahead on the grid take Coast's first rings (2.5 s respawn), so the player's first charge
+  // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
+  await page.locator('button[data-race-mode="time"]').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   await start(page);
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
-  const perfectLine = await page.evaluate(budget => new Promise(resolve => {
+  // Coast's first group from the layout the game builds: ring heights vary, so each gate is flown at its own altitude.
+  const gates = createRings(RACE_TRACKS.coast).filter(ring => ring.group === 0).map(({ distance, altitude }) => ({ distance, altitude }));
+  const perfectLine = await page.evaluate(([budget, gates]) => new Promise(resolve => {
     let held = false;
     const deadline = performance.now() + budget;
     const key = type => window.dispatchEvent(new KeyboardEvent(type, { code: 'Space', key: ' ', bubbles: true, cancelable: true }));
@@ -168,17 +180,18 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
       }
       const distance = Number(document.querySelector('#distance').textContent) * 1000;
       const altitude = Number(document.querySelector('#altitude').textContent);
-      const nextGate = Math.ceil(Math.max(1, distance) / 220) * 220;
-      const fly = nextGate <= 1100 && nextGate - distance < 125 && altitude < 8.8;
+      const gate = gates.find(ring => ring.distance >= distance);
+      const fly = !!gate && gate.distance - distance < 125 && altitude < gate.altitude + 0.8;
       if (fly !== held) { key(fly ? 'keydown' : 'keyup'); held = fly; }
       requestAnimationFrame(pilot);
     };
     pilot();
-  }), ciTimeout(65000));
+  }), [ciTimeout(65000), gates]);
   expect(perfectLine, 'The visible first ring group must produce a real PERFECT LINE').toBe(true);
   expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();
-  await expect(page.locator('#nitro-status')).toHaveText('NITRO MAX');
+  await expect(page.locator('#nitro-status')).toHaveText('NITRO READY');
+  await expect(page.locator('#nitro-meter')).toHaveAttribute('data-nitro-state', 'ready');
   await expect(page.locator('.nitro-segment.is-full')).toHaveCount(3);
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'nitro-max');
   await page.emulateMedia({ reducedMotion: 'reduce' });

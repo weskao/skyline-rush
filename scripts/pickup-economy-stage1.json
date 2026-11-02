@@ -1,0 +1,779 @@
+{
+ "classic/normal/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 59
+ },
+ "classic/normal/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 12,
+  "rings": 19,
+  "pickups": 57
+ },
+ "classic/normal/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 89
+ },
+ "classic/normal/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 12,
+  "rings": 20,
+  "pickups": 63
+ },
+ "classic/normal/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 80
+ },
+ "classic/normal/taipei": {
+  "nitroPerMinute": 16.26,
+  "boostShare": 91,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 98
+ },
+ "classic/normal/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 12,
+  "rings": 26,
+  "pickups": 80
+ },
+ "classic/normal/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 12,
+  "rings": 30,
+  "pickups": 106
+ },
+ "classic/normal/coastal": {
+  "nitroPerMinute": 12.04,
+  "boostShare": 67.1,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 96
+ },
+ "classic/normal/cosmic": {
+  "nitroPerMinute": 15.79,
+  "boostShare": 87,
+  "rivalNitro": 12,
+  "rings": 30,
+  "pickups": 107
+ },
+ "free/normal/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 59
+ },
+ "free/normal/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 0,
+  "rings": 19,
+  "pickups": 57
+ },
+ "free/normal/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 89
+ },
+ "free/normal/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 0,
+  "rings": 20,
+  "pickups": 63
+ },
+ "free/normal/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 80
+ },
+ "free/normal/taipei": {
+  "nitroPerMinute": 16.26,
+  "boostShare": 91,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 98
+ },
+ "free/normal/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 0,
+  "rings": 26,
+  "pickups": 80
+ },
+ "free/normal/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 106
+ },
+ "free/normal/coastal": {
+  "nitroPerMinute": 12.04,
+  "boostShare": 67.1,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 96
+ },
+ "free/normal/cosmic": {
+  "nitroPerMinute": 15.79,
+  "boostShare": 87,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 107
+ },
+ "time/normal/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 59
+ },
+ "time/normal/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 0,
+  "rings": 19,
+  "pickups": 57
+ },
+ "time/normal/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 89
+ },
+ "time/normal/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 0,
+  "rings": 20,
+  "pickups": 63
+ },
+ "time/normal/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 80
+ },
+ "time/normal/taipei": {
+  "nitroPerMinute": 16.26,
+  "boostShare": 91,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 98
+ },
+ "time/normal/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 0,
+  "rings": 26,
+  "pickups": 80
+ },
+ "time/normal/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 106
+ },
+ "time/normal/coastal": {
+  "nitroPerMinute": 12.04,
+  "boostShare": 67.1,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 96
+ },
+ "time/normal/cosmic": {
+  "nitroPerMinute": 15.79,
+  "boostShare": 87,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 107
+ },
+ "gauntlet/normal/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 59
+ },
+ "gauntlet/normal/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 0,
+  "rings": 19,
+  "pickups": 57
+ },
+ "gauntlet/normal/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 89
+ },
+ "gauntlet/normal/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 0,
+  "rings": 20,
+  "pickups": 63
+ },
+ "gauntlet/normal/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 80
+ },
+ "gauntlet/normal/taipei": {
+  "nitroPerMinute": 16.22,
+  "boostShare": 91.5,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 98
+ },
+ "gauntlet/normal/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 0,
+  "rings": 26,
+  "pickups": 80
+ },
+ "gauntlet/normal/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 106
+ },
+ "gauntlet/normal/coastal": {
+  "nitroPerMinute": 12.09,
+  "boostShare": 76.9,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 96
+ },
+ "gauntlet/normal/cosmic": {
+  "nitroPerMinute": 14.42,
+  "boostShare": 85.8,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 107
+ },
+ "checkpoint/normal/coast": {
+  "nitroPerMinute": 17.13,
+  "boostShare": 96.3,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 59
+ },
+ "checkpoint/normal/neon": {
+  "nitroPerMinute": 11.78,
+  "boostShare": 100,
+  "rivalNitro": 0,
+  "rings": 19,
+  "pickups": 57
+ },
+ "checkpoint/normal/canyon": {
+  "nitroPerMinute": 14.99,
+  "boostShare": 76.5,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 89
+ },
+ "checkpoint/normal/aurora": {
+  "nitroPerMinute": 10.26,
+  "boostShare": 81.9,
+  "rivalNitro": 0,
+  "rings": 20,
+  "pickups": 63
+ },
+ "checkpoint/normal/spiral": {
+  "nitroPerMinute": 16.06,
+  "boostShare": 86.2,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 80
+ },
+ "checkpoint/normal/taipei": {
+  "nitroPerMinute": 18.74,
+  "boostShare": 85.1,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 98
+ },
+ "checkpoint/normal/tokyo": {
+  "nitroPerMinute": 14.99,
+  "boostShare": 97.9,
+  "rivalNitro": 0,
+  "rings": 26,
+  "pickups": 80
+ },
+ "checkpoint/normal/alpine": {
+  "nitroPerMinute": 10.17,
+  "boostShare": 84.7,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 106
+ },
+ "checkpoint/normal/coastal": {
+  "nitroPerMinute": 9.1,
+  "boostShare": 78.5,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 96
+ },
+ "checkpoint/normal/cosmic": {
+  "nitroPerMinute": 7.5,
+  "boostShare": 89.9,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 107
+ },
+ "cup/normal/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 59
+ },
+ "cup/normal/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 12,
+  "rings": 19,
+  "pickups": 57
+ },
+ "cup/normal/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 89
+ },
+ "cup/normal/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 12,
+  "rings": 20,
+  "pickups": 63
+ },
+ "cup/normal/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 80
+ },
+ "cup/normal/taipei": {
+  "nitroPerMinute": 16.26,
+  "boostShare": 91,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 98
+ },
+ "cup/normal/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 12,
+  "rings": 26,
+  "pickups": 80
+ },
+ "cup/normal/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 12,
+  "rings": 30,
+  "pickups": 106
+ },
+ "cup/normal/coastal": {
+  "nitroPerMinute": 12.04,
+  "boostShare": 67.1,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 96
+ },
+ "cup/normal/cosmic": {
+  "nitroPerMinute": 15.79,
+  "boostShare": 87,
+  "rivalNitro": 12,
+  "rings": 30,
+  "pickups": 107
+ },
+ "stunt/normal/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 59
+ },
+ "stunt/normal/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 0,
+  "rings": 19,
+  "pickups": 57
+ },
+ "stunt/normal/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 89
+ },
+ "stunt/normal/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 0,
+  "rings": 20,
+  "pickups": 63
+ },
+ "stunt/normal/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 80
+ },
+ "stunt/normal/taipei": {
+  "nitroPerMinute": 16.26,
+  "boostShare": 91,
+  "rivalNitro": 0,
+  "rings": 24,
+  "pickups": 98
+ },
+ "stunt/normal/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 0,
+  "rings": 26,
+  "pickups": 80
+ },
+ "stunt/normal/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 106
+ },
+ "stunt/normal/coastal": {
+  "nitroPerMinute": 12.04,
+  "boostShare": 67.1,
+  "rivalNitro": 0,
+  "rings": 22,
+  "pickups": 96
+ },
+ "stunt/normal/cosmic": {
+  "nitroPerMinute": 15.79,
+  "boostShare": 87,
+  "rivalNitro": 0,
+  "rings": 30,
+  "pickups": 107
+ },
+ "elimination/normal/coast": {
+  "nitroPerMinute": 1.2,
+  "boostShare": 58.8,
+  "rivalNitro": 11,
+  "rings": 22,
+  "pickups": 59
+ },
+ "elimination/normal/neon": {
+  "nitroPerMinute": 0.95,
+  "boostShare": 59.3,
+  "rivalNitro": 11,
+  "rings": 19,
+  "pickups": 57
+ },
+ "elimination/normal/canyon": {
+  "nitroPerMinute": 1.43,
+  "boostShare": 58.8,
+  "rivalNitro": 11,
+  "rings": 24,
+  "pickups": 89
+ },
+ "elimination/normal/aurora": {
+  "nitroPerMinute": 1.05,
+  "boostShare": 58.2,
+  "rivalNitro": 11,
+  "rings": 20,
+  "pickups": 63
+ },
+ "elimination/normal/spiral": {
+  "nitroPerMinute": 1.25,
+  "boostShare": 59.2,
+  "rivalNitro": 11,
+  "rings": 22,
+  "pickups": 80
+ },
+ "elimination/normal/taipei": {
+  "nitroPerMinute": 1.55,
+  "boostShare": 59.9,
+  "rivalNitro": 11,
+  "rings": 24,
+  "pickups": 98
+ },
+ "elimination/normal/tokyo": {
+  "nitroPerMinute": 1.9,
+  "boostShare": 60.5,
+  "rivalNitro": 11,
+  "rings": 26,
+  "pickups": 80
+ },
+ "elimination/normal/alpine": {
+  "nitroPerMinute": 1.38,
+  "boostShare": 59.6,
+  "rivalNitro": 11,
+  "rings": 30,
+  "pickups": 106
+ },
+ "elimination/normal/coastal": {
+  "nitroPerMinute": 1.13,
+  "boostShare": 57.6,
+  "rivalNitro": 11,
+  "rings": 22,
+  "pickups": 96
+ },
+ "elimination/normal/cosmic": {
+  "nitroPerMinute": 1.93,
+  "boostShare": 60.3,
+  "rivalNitro": 11,
+  "rings": 30,
+  "pickups": 107
+ },
+ "custom/easy/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 59
+ },
+ "custom/easy/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 12,
+  "rings": 19,
+  "pickups": 57
+ },
+ "custom/easy/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 89
+ },
+ "custom/easy/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 12,
+  "rings": 20,
+  "pickups": 63
+ },
+ "custom/easy/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 80
+ },
+ "custom/easy/taipei": {
+  "nitroPerMinute": 16.26,
+  "boostShare": 91,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 98
+ },
+ "custom/easy/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 12,
+  "rings": 26,
+  "pickups": 80
+ },
+ "custom/easy/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 12,
+  "rings": 30,
+  "pickups": 106
+ },
+ "custom/easy/coastal": {
+  "nitroPerMinute": 12.04,
+  "boostShare": 67.1,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 96
+ },
+ "custom/easy/cosmic": {
+  "nitroPerMinute": 15.79,
+  "boostShare": 87,
+  "rivalNitro": 12,
+  "rings": 30,
+  "pickups": 107
+ },
+ "custom/normal/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 59
+ },
+ "custom/normal/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 12,
+  "rings": 19,
+  "pickups": 57
+ },
+ "custom/normal/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 89
+ },
+ "custom/normal/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 12,
+  "rings": 20,
+  "pickups": 63
+ },
+ "custom/normal/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 80
+ },
+ "custom/normal/taipei": {
+  "nitroPerMinute": 16.26,
+  "boostShare": 91,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 98
+ },
+ "custom/normal/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 12,
+  "rings": 26,
+  "pickups": 80
+ },
+ "custom/normal/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 12,
+  "rings": 30,
+  "pickups": 106
+ },
+ "custom/normal/coastal": {
+  "nitroPerMinute": 12.04,
+  "boostShare": 67.1,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 96
+ },
+ "custom/normal/cosmic": {
+  "nitroPerMinute": 15.79,
+  "boostShare": 87,
+  "rivalNitro": 12,
+  "rings": 30,
+  "pickups": 107
+ },
+ "custom/hard/coast": {
+  "nitroPerMinute": 15.52,
+  "boostShare": 85.6,
+  "rivalNitro": 12,
+  "rings": 22,
+  "pickups": 59
+ },
+ "custom/hard/neon": {
+  "nitroPerMinute": 15.02,
+  "boostShare": 100,
+  "rivalNitro": 12,
+  "rings": 19,
+  "pickups": 57
+ },
+ "custom/hard/canyon": {
+  "nitroPerMinute": 15.3,
+  "boostShare": 80.1,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 89
+ },
+ "custom/hard/aurora": {
+  "nitroPerMinute": 11.99,
+  "boostShare": 75.5,
+  "rivalNitro": 13,
+  "rings": 20,
+  "pickups": 63
+ },
+ "custom/hard/spiral": {
+  "nitroPerMinute": 14.22,
+  "boostShare": 85.8,
+  "rivalNitro": 13,
+  "rings": 22,
+  "pickups": 80
+ },
+ "custom/hard/taipei": {
+  "nitroPerMinute": 16.26,
+  "boostShare": 91,
+  "rivalNitro": 12,
+  "rings": 24,
+  "pickups": 98
+ },
+ "custom/hard/tokyo": {
+  "nitroPerMinute": 18.43,
+  "boostShare": 93.6,
+  "rivalNitro": 12,
+  "rings": 26,
+  "pickups": 80
+ },
+ "custom/hard/alpine": {
+  "nitroPerMinute": 11.54,
+  "boostShare": 81.1,
+  "rivalNitro": 13,
+  "rings": 30,
+  "pickups": 106
+ },
+ "custom/hard/coastal": {
+  "nitroPerMinute": 12.04,
+  "boostShare": 67.1,
+  "rivalNitro": 13,
+  "rings": 22,
+  "pickups": 96
+ },
+ "custom/hard/cosmic": {
+  "nitroPerMinute": 15.79,
+  "boostShare": 87,
+  "rivalNitro": 13,
+  "rings": 30,
+  "pickups": 107
+ },
+ "circuit/normal/harbor-circuit": {
+  "nitroPerMinute": 13.58,
+  "boostShare": 77.6,
+  "rivalNitro": 12,
+  "rings": 21,
+  "pickups": 69
+ }
+}

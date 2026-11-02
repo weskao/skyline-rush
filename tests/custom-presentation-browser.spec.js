@@ -1,6 +1,7 @@
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { selectLocale } from './helpers/locale-browser.js';
+import { recordTrackId } from '../src/record-layout.ts';
 
 async function choosePreset(page, name) {
   const picker = page.locator('#race-visual-preset + .custom-select');
@@ -14,7 +15,7 @@ test('Custom offers cosmetic presets without changing official controls or layou
   await page.locator('#race-mode-rules > summary').click();
   await expect(page.locator('#race-visual-preset + .custom-select')).toBeVisible();
   await expect(page.locator('#race-presentation-summary')).toContainText('Track');
-  await expect(page.locator('#race-setup-summary')).toContainText('3 AI');
+  await expect(page.locator('#race-setup-summary')).toContainText('7 AI');
   const rivals = page.locator('[data-race-rule="rivals"] + .custom-select');
   await rivals.getByRole('combobox').click();
   await rivals.getByRole('option', { name: '0', exact: true }).click();
@@ -40,14 +41,14 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.locator('button[data-race-mode="custom"]').click();
-    await page.evaluate(() => {
+    await page.evaluate(coast => {
       const config = window.gameplay.race.config;
       const samples = Array.from({ length: 801 }, (_, i) => [i * 6.25, 0, 0]);
       localStorage.setItem('skyline-rush-mode-ghosts-v1', JSON.stringify({
-        ['coast:' + JSON.stringify(config)]: { time: 80, samples },
+        [coast + ':' + JSON.stringify(config)]: { time: 80, samples }, // Coast's current layout record id
       }));
       localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon']));
-    });
+    }, recordTrackId('coast'));
     await page.reload();
     await page.locator('button[data-race-mode="custom"]').click();
     await page.locator('#race-mode-rules > summary').click();

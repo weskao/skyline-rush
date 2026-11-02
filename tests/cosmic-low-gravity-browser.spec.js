@@ -30,7 +30,8 @@ for (const [name, viewport, hasTouch] of [
       for (let i = 0; i < 150; i++) await new Promise(requestAnimationFrame); // past the GO banner
       const { scene } = window.gameScene, d = race.player.distance;
       const gates = race.rings.filter(r => r.spin && r.distance > d && r.distance <= d + 900);
-      const drawn = scene.getObjectByName('Race rings').children.filter(m => m.visible);
+      const { drawnMarkers } = await import('/src/marker-pool.js');
+      const drawn = drawnMarkers(scene.getObjectByName('Race rings'));
       const off = Math.max(...gates.map(g => Math.min(...drawn.map(m => {
         const [x, y, z] = trackLocalPosition('cosmic', g.distance, g.x, g.altitude, d);
         return Math.hypot(m.position.x - x, m.position.y - y, m.position.z - z);
