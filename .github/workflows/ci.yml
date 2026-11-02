@@ -135,8 +135,8 @@ jobs:
           path: |
             test-results/**/garage-void-home-*.png
             test-results/**/garage-launch-flare-*.png
-            test-results/**/garage-inspection-*.png
             test-results/**/garage-dense-*.png
+            test-results/**/garage-inspection-*.png
           if-no-files-found: ignore
       # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
@@ -194,6 +194,20 @@ jobs:
           name: world-tour-mid-race-screenshots-${{ matrix.shard }}
           path: test-results/**/world-tour-*-mid-race.png
           if-no-files-found: ignore
+
+  # Server-side twin of .githooks/main-merge-guard: a push to main fails when one of its merge commits merges
+  # anything but develop or hotfix/*. A red run blocks the release, since release-verified needs a green main run.
+  # shortcut: a newer main push cancels this run (concurrency) and only checks its own range, so two quick pushes
+  # can slip one through; disable cancel-in-progress on main if that ever matters.
+  main-merge-source:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: scripts/check-main-merges.sh "${{ github.event.before }}" "${{ github.sha }}"
 
   # A single required status for every branch push: full on main/develop, focused elsewhere.
   # A branch ruleset can require this job; no direct-push protection is implied
@@ -334,7 +348,7 @@ jobs:
   # Failure-only pager: a notification on every push is one nobody reads. Credentials live in repo secrets
   # (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Pull requests are excluded because fork PRs get no secrets.
   notify-telegram:
-    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, release-verified, deploy]
+    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, main-merge-source, release-verified, deploy]
     if: ${{ failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

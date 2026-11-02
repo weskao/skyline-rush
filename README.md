@@ -17,41 +17,19 @@ In Classic Race, Skyline Rush is a short, replayable arcade sprint in the browse
 
 A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
-**Home screen** — pick a track and a camera angle, then start the race.
-
-https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
-
-**Racing** — a full run on one of the tracks.
-
 https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
-![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)
+<p align="center"><img src="artifacts/readme-tracks.jpeg?v=20261102a" width="70%" alt="Four of the ten tracks in flight: Neon Downtown, Aurora Pass, Sky Spiral and Tokyo Afterdark"></p>
 
-![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261024a)
+<p align="center"><img src="artifacts/readme-start.jpeg?v=20261102a" width="49%" alt="Start screen with game modes, tracks and Start race"> <img src="artifacts/race-results.jpeg?v=20261024a" width="49%" alt="Race results with a new personal best"></p>
 
-![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261024a)
+### Play on your phone
 
-![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261024a)
+Portrait or landscape with touch controls; AUTO keeps the accelerator held. [Watch the MP4](artifacts/mobile-demo.mp4)
 
-![Race results with a new personal best](artifacts/race-results.jpeg?v=20261024a)
+<p align="center"><img src="artifacts/mobile-home.jpeg" height="300" alt="Mobile portrait start screen with track selection"> <img src="artifacts/mobile-landscape-flight.jpeg" height="300" alt="Mobile landscape flight with FLY held and the touch controls visible"></p>
 
-### Mobile screenshots and demo
-
-Play in portrait or landscape with touch controls. The clip follows a Coast run from the start screen through countdown, FLY lift-off and landing; AUTO keeps the accelerator held.
-
-**Portrait — ready to race**
-
-![Mobile portrait start screen with track selection and touch-friendly race buttons](artifacts/mobile-home.jpeg)
-
-**Landscape — flying with touch controls**
-
-![Mobile landscape flight with FLY held and the touch controls visible](artifacts/mobile-landscape-flight.jpeg)
-
-**Touch gameplay demo** · [Watch the MP4](artifacts/mobile-demo.mp4)
-
-![Mobile touch gameplay: Coast countdown, FLY lift-off and landing](artifacts/mobile-demo.gif)
-
-Captured from the running game in Chrome mobile emulation at 390×844 (portrait) and 844×390 (landscape), using a fresh demo profile. These captures do not measure physical-phone performance.
+Captured in Chrome mobile emulation (390×844 and 844×390) on a fresh profile; not a physical-phone performance measure.
 
 ## Game modes and replayability (development branch)
 
@@ -131,7 +109,7 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 
 `make dev-diag` and `make phone-diag` serve the same builds with an on-screen diagnostic banner compiled in (frame counter, page lifecycle and touch events with their hit targets, plus the last uncaught errors kept across reloads), for chasing a freeze or dead buttons on a real phone. Production builds never contain it: `npm run build` refuses a bundle that carries the diagnostic module.
 
-`make phone` opens a terminal menu that starts, checks or stops a dev server your phone can open (over Tailscale or the same Wi-Fi) and prints the phone URL once it answers. The menu lists this checkout, other worktrees and recent branches, or takes a typed branch name; `make phone <name>` goes straight to that branch (or `feature/<name>`), creating its worktree under `.claude/worktrees/` when needed, and `make phone off` stops every server it started (like `/phone-dev off`). It serves the normal locked build; `make phone-unlocked [name]` is the same menu with every track and paint unlocked, the only all-unlocked server a phone can reach (`make dev-unlocked` and `make dev-feature` stay desktop-only). It needs the personal `phone-dev` Claude Code skill (`/phone-dev` asks the same menu) and runs without the emulators, so cloud-save sign-in on the phone uses the real project.
+`make phone` opens a terminal menu that starts, checks or stops a dev server your phone can open (over Tailscale or the same Wi-Fi) and prints the phone URL once it answers. The menu lists this checkout, other worktrees and recent branches, or takes a typed branch name; `make phone <name>` goes straight to that branch (or `feature/<name>`), creating its worktree under `.claude/worktrees/` when needed, `make phone off` stops every server it started (like `/phone-dev off`), and `YES=1` (e.g. `make phone YES=1 <name>`) skips the menu: every question takes its Recommended option and each choice is printed. It serves the normal locked build; `make phone-unlocked [name]` is the same menu with every track and paint unlocked, the only all-unlocked server a phone can reach (`make dev-unlocked` and `make dev-feature` stay desktop-only). It needs the personal `phone-dev` Claude Code skill (`/phone-dev` asks the same menu) and runs without the emulators, so cloud-save sign-in on the phone uses the real project.
 
 ## Controls
 
@@ -168,7 +146,7 @@ The flight panel shows ascent, cruise, descent and touchdown, remaining thrust s
 
 The scene includes bloom lighting, sunset water, suspension bridges, thruster vapor, collision sparks and touchdown ripples. Camera motion and nonessential speed streaks respect your system's reduced-motion preference. Sound effects give separate thrust, contact and landing feedback.
 
-**VFX** (top right) picks a Realistic, Cinematic or Extreme look, Low / Medium / High quality (Low turns bloom off and draws less scenery), Comfort mode (no flashes, shake, afterimages or blur) and optional haptics; **Fine tuning** exposes each effect as a slider and **Reset visual settings** restores the defaults. **AIRFLOW** (or V) switches the scene to an aerodynamics showcase: streamlines over the body, a telemetry panel, Low drag or High downforce, and a driving, front, rear, side or orbiting camera. The start panel steps aside for the showcase, leaving only the orange **START RACE** button, docked at the bottom centre below the car; swipe the scene left or right to change track. The first time AIRFLOW is switched on, an animated fingertip shows that gesture.
+**VFX** (top right) picks a Realistic, Cinematic or Extreme look, Low / Medium / High quality (Low turns bloom off and draws less scenery), Comfort mode (no flashes, shake, afterimages or blur) and optional haptics; **Fine tuning** exposes each effect as a slider and **Reset visual settings** restores the defaults. **AIRFLOW** (or V) switches the scene to an aerodynamics showcase: streamlines over the body, a telemetry panel, Low drag or High downforce, and a driving, front, rear, side or orbiting camera. The start panel steps aside for the showcase, leaving only the orange **START RACE** button, docked at the bottom centre below the car; swipe the scene left or right to change track. The first time AIRFLOW is switched on, an animated fingertip shows that gesture. The streamlines appear only while AIRFLOW is on: with it off, BOOST and NITRO show the thruster jets, trail and speed streaks without them.
 
 Three amber start lights turn cyan at GO. The player car is a low wedge roadster with a smoked fastback canopy, a full-width red tail bar, four rear thruster ports, a bronze pop-up wing that rises for boost, braking and flight, spinning five-spoke wheels and steering front wheels. Each rival has its own silhouette and light signature: NOVA is a long-tail with twin fins and split magenta lights, ORBIT a rounded GT with a bubble canopy and round cyan lamps, APEX a track car with a splitter, roof scoop, tall endplate wing and amber C-lights. Traffic uses an upright commuter shape. Steering eases in quickly and releasing boost slows the car progressively instead of instantly cutting speed. All driving and toolbar buttons have at least 44px touch targets, including at 320px width.
 
@@ -280,7 +258,7 @@ make deploy                              # Deploy remote main manually through t
 # after scripts/release-gate.sh has seen a green CI run for the commit on main.
 ```
 
-CI (`.github/workflows/ci.yml`) builds and runs unit and Chrome browser tests on pushes to `main`, `develop`, pull requests, version-tag pushes (`v*`) and manual runs. Browser tests run in 13 parallel shards and the World Tour long-run in 5, balanced by the measured per-test durations in `tests/ci-durations.json` (`scripts/ci-shards.mjs`), only on `main` and `develop` (other branches run unit and cloud-save checks unless the commit message has `[full-regression]` or a manual run asks for it), and a newer push to the same branch cancels the run it supersedes. Manual runs publish after all checks pass; a version-tag push re-runs the unit tests, confirms (`release-verified`) that the tagged code already passed the full suite on `main` instead of re-running the browser suites, then publishes and verifies the public website. A tag on a commit that CI never passed on `main` is not deployed. Ordinary branch pushes and pull requests only run checks. Pages builds use `--base=/skyline-rush/` so scripts, styles and fonts load from the project URL. GitHub Pages must use **GitHub Actions** as its publishing source. Manual deployment requires an authenticated GitHub CLI (`gh auth login`); push your commits first because `make deploy` uses remote `main`. Deployment no longer depends on a local pre-push hook or Netlify login. When any check or the deployment fails on a push, tag or manual run, a `notify-telegram` job sends the failed run's link to Telegram; it needs the repo secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (set each with `gh secret set <NAME>`, which prompts for the value) and skips quietly when they are missing.
+CI (`.github/workflows/ci.yml`) builds and runs unit and Chrome browser tests on pushes to `main`, `develop`, pull requests, version-tag pushes (`v*`) and manual runs. Browser tests run in 13 parallel shards and the World Tour long-run in 5, balanced by the measured per-test durations in `tests/ci-durations.json` (`scripts/ci-shards.mjs`), only on `main` and `develop` (other branches run unit and cloud-save checks unless the commit message has `[full-regression]` or a manual run asks for it), and a newer push to the same branch cancels the run it supersedes. Manual runs publish after all checks pass; a version-tag push re-runs the unit tests, confirms (`release-verified`) that the tagged code already passed the full suite on `main` instead of re-running the browser suites, then publishes and verifies the public website. A tag on a commit that CI never passed on `main` is not deployed. Ordinary branch pushes and pull requests only run checks. A push to `main` also fails the `main-merge-source` job (`scripts/check-main-merges.sh`) when one of its merge commits merges anything but `develop` or `hotfix/*`, and that red run blocks the release. Pages builds use `--base=/skyline-rush/` so scripts, styles and fonts load from the project URL. GitHub Pages must use **GitHub Actions** as its publishing source. Manual deployment requires an authenticated GitHub CLI (`gh auth login`); push your commits first because `make deploy` uses remote `main`. Deployment no longer depends on a local pre-push hook or Netlify login. When any check or the deployment fails on a push, tag or manual run, a `notify-telegram` job sends the failed run's link to Telegram; it needs the repo secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (set each with `gh secret set <NAME>`, which prompts for the value) and skips quietly when they are missing.
 
 The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.jpeg`; `node scripts/capture-og-images.mjs og` captures both language covers and refreshes that copy. Crawlers cannot switch language, so `index.html` references only the English cover (with `og:locale` `en_US` and `og:locale:alternate` `zh_TW`), and `public/og-image.zh-TW.jpeg` is its Chinese twin for direct links. After changing the cover, bump the `?v=` on `og:image` in `index.html` so social sites fetch the new one.
 
@@ -311,7 +289,7 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `src/audio-settings.js`: reads saved music/sound on/off and volume from `localStorage`, and the mute-keeps-level rule for sliders.
 - `tests/`: unit and browser behavior tests. `tests/module-size.test.js` keeps every source module at or below 400 lines (older large files have ceilings that only go down).
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
-- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `npm run test:layout` when pushed commits touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
+- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `npm run test:layout` when pushed commits touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`), and `.githooks/main-merge-guard` (run by `pre-merge-commit` and `pre-commit`) rejects merging any branch other than `develop` or `hotfix/*` into `main` (fast-forwards run no hook, so use `--no-ff`; skip once with `ALLOW_MAIN_MERGE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
 
 All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vue, Vite and Playwright retain their respective package licenses.
 

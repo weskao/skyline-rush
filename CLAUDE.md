@@ -43,6 +43,13 @@ own `setupXxxUI(deps)` TypeScript controller instead of adding to `src/main.js`.
 under ~60 lines. Legacy oversized files have ratcheting ceilings that may only go down.
 `tests/module-size.test.js` enforces it; seams and steps are in `.claude/rules/module-size.md`.
 
+## AI-generated images: always 3x
+
+Any image produced by an AI generator must be rendered at **3x the size it is displayed at in
+the project**: an asset shown at 10 × 20 px is generated at 30 × 60 px. Work out the display
+size first, ask the generator for exactly 3x that size, and keep the 3x original as the
+source file. Never upscale a smaller output to reach 3x.
+
 ## Mandatory regression-first workflow (every feature and bug fix)
 
 **Always follow `docs/regression-first-workflow.md`** before calling work complete:
@@ -88,7 +95,7 @@ server-enforced status protection.
 | `make` / `make dev` | Vite dev server, saved progression respected |
 | `make dev-unlocked` (= `make test-unlocked`) | Local-only all-unlocked server (not a test runner) |
 | `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS localhost |
-| `make phone [name]` | Same menu as `/phone-dev`: start/check/stop a phone-reachable locked dev server for this checkout, a worktree or a branch |
+| `make phone [name] [YES=1]` | Same menu as `/phone-dev`: start/check/stop a phone-reachable locked dev server for this checkout, a worktree or a branch; `YES=1` takes every Recommended option, no prompts, prints each choice |
 | `make dev-diag` / `make phone-diag [name]` | Same servers with the on-screen diagnostic banner compiled in (`VITE_DIAG=1` → `src/crash-log.ts`); production builds never include it |
 | `npm test` | Node unit tests |
 | `npm run build` | Production build + release-bundle lock assertion |
@@ -141,4 +148,7 @@ no deploy unless the user explicitly asks.
   bump, release-notes stamp) reaches it; skipping it makes the next release merge conflict.
   `/release` does this last (`scripts/release-back-merge.sh`, pushed without touching any checkout); on a
   conflict or rejected push it leaves `develop` untouched and prints the manual merge — do it then.
-- **Hotfix:** branch from `main`, merge into `main`, then `/release` (which back-merges into `develop`).
+- **Hotfix:** branch `hotfix/<name>` from `main`, merge into `main`, then `/release` (which back-merges into `develop`).
+- **Only `develop` and `hotfix/*` merge into `main`.** `.githooks/main-merge-guard` (run by `pre-merge-commit`
+  and `pre-commit`) blocks any other merge on `main`; fast-forwards run no hook, so merge with `--no-ff`. CI's `main-merge-source`
+  job (`scripts/check-main-merges.sh`) enforces the same rule on every push to `main`.
