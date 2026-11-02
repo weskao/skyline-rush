@@ -1,0 +1,23 @@
+# Shared 3× artwork clipping audit — 2026-11-02
+
+**Source inspection:** Inspected all 59 transparent WebPs in the user's verified `skyline-rush-3x-ui-assets.zip` at alpha threshold >16/255. No image has visible alpha touching its outermost edge (minimum inset 14 *source* px). This does **not** exclude internally cropped content from an earlier source collage. 24/59 are optically asymmetric by >12 source px, e.g. `ui-tooltip`, `ui-settings`, `ui-info`, `flare-white`, `rarity-common` and the three badge images. Do not confuse transparent padding with a guarantee of perfect original artwork.
+
+**Repaired source images:** `badge-equipped`, `badge-favorite`, `badge-limited` now have retouched **216×216 native 3× transparent PNG masters** under `docs/designs/garage-vfx-skins/restored-source/` and equivalent native 3× WebPs under `public/feature-assets/garage-vfx-skins/raster/`. They display at **72×72 CSS px (1×)**. Repair changes the artwork, so human visual signoff is required. The original ZIP and `feature/3x-ui-materials` archive remain unchanged to preserve provenance.
+
+**Shared widgets / no duplicated backgrounds:** `src/GarageArtworkImage.vue` loads 3× imagery into explicit 1× CSS dimensions, contains it safely, handles optional source→SVG→localized text fallback and supports rectangular HUD images. `src/GarageArtworkTile.vue` gives icons an **8 CSS px inset per side**, caption below the image and **one CSS-only radial/linear gradient** with `--badge-hue`, rather than 11 independent background images. `#garage-vfx-art-badges` uses that tile for all eleven badges, with cyan, magenta, gold, blue, slate, amber and red themes. The Garage Skin cards reuse the image widget for all 22 preview options.
+
+Both `feature/garage-rewards-and-missions` and `feature/garage-store-readiness` reuse **identical component Git blobs** and **identical `GarageSourceArtGallery.vue`**, parameterized by category. HUD `feature/3x-hud-materials-integration` reuses the same two component Git blobs for 18 images, including 432×156→144×52 wide buttons and 216×216→72×72 icons. Real HUD button decoration is constrained to the button box and remains pointer-events:none; the original interaction handlers and semantic SVGs are unchanged. The runtime 3× source dimensions are not changed.
+
+**Testing:** `tests/garage-vfx-catalog-browser.spec.js` checks the repaired badge alpha extent, native 216×216 size, the 88×88 safe frame around its 72×72 display, caption clearance and theme reuse across 390×844, 844×390 and 1440×900. Rewards, Store and HUD each have corresponding safe-geometry Playwright tests. These tests and the responsive CSS are code-level measures; only a completed **full exact-HEAD CI** and actual screenshots can validate them. Further manual game screenshots, hardware display check and final visual signoff are still open. Do not infer completed sales/awards/entitlements from decorative assets.
+
+**Integration:** `develop` only after approval. No `main` changes, PR, deployment, unlocks or purchases.
+
+## Follow-up: remaining eight badges regenerated (2026-11-02)
+
+Branch: `fix/garage-vfx-badge-art-unclipped-3x` from `develop` `b3a0c11a`.
+
+After the first three retouched badges, users still observed artwork cropped internally near the bottom in the other eight. Existing `object-fit: contain` and 8px frame inset cannot recover pixels lost during sprite-sheet cutout extraction. All remaining eight have therefore been independently redrawn as editable **native-vector SVG masters** at 216×216 viewBox (`generated-source/`) and rendered to **216×216 transparent WebPs** at `public/feature-assets/garage-vfx-skins/raster/`. No enlargement from the former cutouts. The styles preserve the same semantic subjects: lock, NEW burst, hourglass, and Common/Rare/Epic/Legendary/Mythic shields. The first three corrected WebPs are unchanged.
+
+Each regenerated WebP has visible alpha content comfortably inside its canvas (minimum 12 native pixels from every edge, alpha threshold >16); runtime display remains 72×72 CSS px inside an 88×88 frame. Gallery labels, accessibility, localization, release-mode restrictions and CSS gradient cards are unchanged. Playwright regression checks source dimensions, alpha bounds, image/frame/caption geometry and loaded URLs for all eight across 390×844, 844×390 and 1440×900.
+
+Automated checks cannot rule out subjective shape problems; inspect actual game screenshots on mobile and desktop before considering visual acceptance complete. Do not treat the earlier collage as a pixel-exact reference for the new independent vector artwork. No ownership or rarity entitlement changes.

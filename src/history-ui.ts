@@ -4,6 +4,7 @@ import { CHALLENGE_MEDALS, loadChallengeMedals, type ChallengeMedalState } from 
 import { dailyChallenge } from './game.js';
 import { updateHistoryView } from './history-view-state.ts';
 import { updateHomeStatusView } from './home-status-view-state.ts';
+import { isCurrentLayout, recordTrackId } from './record-layout.ts';
 
 interface SavedRace {
   track: string;
@@ -18,8 +19,9 @@ interface SavedRace {
   nitroUses?: number;
   distance?: number;
   longestCombo?: number;
+  layout?: number;
 }
-interface SavedModeRace { distance?: number;
+interface SavedModeRace { distance?: number; layout?: number;
   track: string;
   mode: string;
   rules: string;
@@ -105,7 +107,8 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
       .filter(run => modeFilter === 'all' || run.mode === modeFilter).slice(-10).reverse();
     const savedFor = modeRecordLookup(trackId);
     const modeRuns = modes.map(run => {
-      const { best, ghost } = savedFor(run);
+      // Runs set before a track's ring layout changed stay listed, tagged, and never count as records.
+      const old = !isCurrentLayout(run), saved = old ? { best: null, ghost: false } : savedFor(run), { best, ghost } = saved;
       const personalBest = best !== null && (run.mode === 'endless' ? run.distance === best : run.mode === 'stunt' ? run.score === best : run.time === best);
       const details = run.mode === 'stunt'
         ? [t('mode.stunt'), t('mode.stuntPoints') + ': ' + Math.round(run.score || 0),
@@ -113,15 +116,16 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
           t('mode.comboSummary', { combo: run.maxCombo || 0, air: Number(run.airTime || 0).toFixed(1) })]
         : [t('mode.' + run.mode), ...(run.mode === 'endless' ? [(Number(run.distance || 0) / 1000).toFixed(2) + ' km'] : []), timeString(run.time)];
       const text = [...details, personalBest ? t('mode.historyPersonalBest') : null,
-        ghost ? t('mode.historyGhost') : null, shortDate(run.date)].filter(Boolean).join(' · ');
+        ghost ? t('mode.historyGhost') : null, old ? t('history.oldLayout') : null, shortDate(run.date)].filter(Boolean).join(' · ');
       return { mode: run.mode, personalBest, ghost, text };
     });
     updateHistoryView({ modeHistoryEmpty: modes.length === 0, modeRuns });
     const stats = careerStats(sessionHistory);
     const count = (key: string, n: number) => t(n === 1 ? `${key}.one` : key, { n }); // English singular; zh-TW keys read the same
     const careerSummary = t('history.career', { races: count('history.races', stats.races), wins: count('history.wins', stats.wins), km: (stats.totalDistance / 1000).toFixed(1), combo: stats.longestCombo, rings: stats.mostRings });
-    const best = Math.min(sessionBests[trackId] ?? Infinity, ...runs.map(run => run.time));
-    const recent = runs.slice(-10);
+    const current = runs.filter(isCurrentLayout);
+    const best = Math.min(sessionBests[recordTrackId(trackId)] ?? Infinity, ...current.map(run => run.time));
+    const recent = current.slice(-10);
     const points = historyTrendPoints(recent);
     updateHistoryView({
       careerSummary,
@@ -133,16 +137,18 @@ export function createHistoryView({ getData, timeString }: HistoryDependencies) 
     });
     // Vue interpolation keeps all persisted fields escaped, including legacy records.
     const historyRuns = [...runs].reverse().map(run => {
+      const old = !isCurrentLayout(run);
       const fields = [
         shortDate(run.date), timeString(run.time),
         t('history.position', { n: typeof run.position === 'number' && Number.isInteger(run.position) && run.position >= 1 && run.position <= 4 ? run.position : '—' }),
+        ...(old ? [t('history.oldLayout')] : []),
       ];
       const number = (value?: number): number => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
       const detail = t('history.detail', {
         score: number(run.score), contacts: number(run.collisions), near: number(run.nearMisses),
         rings: number(run.rings), perfect: number(run.perfectLines), nitro: number(run.nitroUses),
       });
-      return { fields, best: run.time === best, bestLabel: t('history.best'), detail };
+      return { fields, best: !old && run.time === best, bestLabel: t('history.best'), detail };
     });
     updateHistoryView({ historyRuns });
     const today = dailyChallenge();

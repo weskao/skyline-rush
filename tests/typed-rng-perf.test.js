@@ -11,7 +11,7 @@ test('deterministic random streams and frame statistics have one strict TypeScri
   const { frameStats, PERF_WINDOW } = await import('../src/perf.ts');
   assert.deepEqual(Object.values(RACE_STREAMS), [
     'pickups', 'rings', 'gauntlet-hazards', 'mystery',
-    'traffic', 'checkpoints', 'world-obstacles', 'active-items',
+    'traffic', 'checkpoints', 'world-obstacles', 'active-items', 'ring-shapes', 'pickup-runs',
   ], 'saved course generation must keep existing stream names');
   const draw = (seed, stream) => Array.from({ length: 12 }, seededRng(seed, stream));
   assert.deepEqual(draw(42, RACE_STREAMS.rings), draw(42, RACE_STREAMS.rings));

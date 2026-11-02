@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { releaseView } from './release-view-state.ts';
 import ReleaseMediaViewer from './ReleaseMediaViewer.vue';
+import ReleasePlayBadge from './ReleasePlayBadge.vue';
+import type { ReleaseClipView } from './ui-state-contracts.ts';
 import CloseButton from './CloseButton.vue';
 const viewer = ref<InstanceType<typeof ReleaseMediaViewer> | null>(null);
 function hideBrokenThumbnail(index: number) {
@@ -9,10 +11,9 @@ function hideBrokenThumbnail(index: number) {
   if (entry) entry.image = '';
 }
 const zoomImage = (src: string, label: string, event: Event) => viewer.value?.open({ kind: 'image', src, label }, event.currentTarget as HTMLElement);
-function zoomClip() {
-  const clip = releaseView.heroVideo, from = document.getElementById('release-video-zoom');
-  if (clip && from) viewer.value?.open({ kind: 'video', src: clip.src || clip.source, poster: clip.poster, source: clip.source, label: releaseView.zoom.video }, from);
-}
+// A clip never plays inline: its poster opens the enlarged view, which starts it (or waits with controls under reduced motion).
+const playClip = (clip: ReleaseClipView, label: string, event: Event) =>
+  viewer.value?.open({ kind: 'video', src: clip.src || clip.source, poster: clip.poster, source: clip.source, label }, event.currentTarget as HTMLElement);
 </script>
 <template>
   <dialog id="whats-new-screen" class="history-screen release-screen" aria-labelledby="release-title" aria-describedby="release-intro">
@@ -33,14 +34,11 @@ function zoomClip() {
     </div>
     <section id="release-panel" class="release-panel" role="tabpanel" tabindex="0" :aria-labelledby="releaseView.panelLabel">
       <div v-if="releaseView.heroVideo" class="release-hero-frame">
-      <video :key="releaseView.heroVideo.source" id="release-video" class="release-hero release-video"
-        :data-variant="releaseView.heroVideo.variant" :data-source="releaseView.heroVideo.source" :src="releaseView.heroVideo.src || undefined" :poster="releaseView.heroVideo.poster"
-        muted loop playsinline preload="none" disablepictureinpicture :controls="releaseView.heroVideo.controls"
-        :aria-hidden="releaseView.heroVideo.controls ? undefined : 'true'" @error="releaseView.heroVideo = null"
-        @click="releaseView.heroVideo.controls || zoomClip()"></video>
-      <button id="release-video-zoom" type="button" class="release-zoom-corner" :aria-label="releaseView.zoom.video" @click="zoomClip">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M10 19H5v-5M19 5l-14 14" /></svg>
-      </button>
+        <button id="release-video-zoom" type="button" class="release-poster" :aria-label="releaseView.zoom.video" @click="playClip(releaseView.heroVideo, releaseView.zoom.video, $event)">
+          <img :key="releaseView.heroVideo.source" id="release-video" class="release-hero release-video" alt="" :src="releaseView.heroVideo.poster"
+            :data-variant="releaseView.heroVideo.variant" :data-source="releaseView.heroVideo.source" @error="releaseView.heroVideo = null">
+          <ReleasePlayBadge />
+        </button>
       </div>
       <button id="release-hero-zoom" type="button" class="release-zoom" :aria-label="releaseView.zoom.image" :hidden="!releaseView.heroSrc || !!releaseView.heroVideo"
         @click="zoomImage(releaseView.heroSrc, releaseView.zoom.image, $event)">
@@ -49,7 +47,11 @@ function zoomClip() {
       <div class="release-meta"><span id="release-version">{{ releaseView.version }}</span><span id="release-date">{{ releaseView.date }}</span></div>
       <div id="release-items" class="release-entries">
         <article v-for="(entry, index) in releaseView.entries" :key="index" class="release-entry" :data-kind="entry.kind">
-          <button v-if="entry.image" type="button" class="release-zoom" :aria-label="entry.zoomLabel" @click="zoomImage(entry.image, entry.title, $event)">
+          <button v-if="entry.video" type="button" class="release-zoom release-play" :aria-label="entry.playLabel" @click="playClip(entry.video, entry.title, $event)">
+            <img :src="entry.video.poster" alt="" loading="lazy" @error="entry.video = null">
+            <ReleasePlayBadge />
+          </button>
+          <button v-else-if="entry.image" type="button" class="release-zoom" :aria-label="entry.zoomLabel" @click="zoomImage(entry.image, entry.title, $event)">
             <img :src="entry.image" alt="" loading="lazy" @error="hideBrokenThumbnail(index)">
           </button>
           <div><span class="release-kind">{{ entry.kindLabel }}</span><strong>{{ entry.title }}</strong><p>{{ entry.description }}</p></div>
@@ -65,17 +67,15 @@ function zoomClip() {
 <style scoped>
 .release-zoom { display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: zoom-in; }
 .release-zoom[hidden] { display: none; }
-/* Tapping a picture or clip, or getting focus back when its enlarged view closes, never flashes a focus ring. */
-.release-zoom, .release-zoom-corner, .release-hero-frame video { -webkit-tap-highlight-color: transparent; }
-.release-zoom:focus-visible, .release-zoom-corner:focus-visible, .release-hero-frame video:focus-visible { outline: none; }
-/* Hugs the centered clip so the enlarge button sits on its corner: 480 px wide landscape, height-sized portrait. */
+/* Tapping a picture or poster, or getting focus back when its enlarged view closes, never flashes a focus ring. */
+.release-zoom, .release-poster { -webkit-tap-highlight-color: transparent; }
+.release-zoom:focus-visible, .release-poster:focus-visible { outline: none; }
+/* Hugs the centered poster so the play button covers it: 480 px wide landscape, height-sized portrait. */
 .release-hero-frame { position: relative; width: min(100%, 480px); margin-inline: auto; }
-.release-hero-frame:has(video[data-variant="mobile"]) { width: fit-content; }
-.release-hero-frame video:not([controls]) { cursor: zoom-in; }
-/* Short landscape screens hide the hero clip to save height (style.css); its enlarge button goes with it. */
+.release-hero-frame:has(img[data-variant="mobile"]) { width: fit-content; }
+.release-poster, .release-play { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 14px; background: none; cursor: pointer; }
+.release-play { border-radius: 8px; }
+.release-play :deep(.release-play-badge) { --badge: 36px; }
+/* Short landscape screens hide the hero poster to save height (style.css); its play button goes with it. */
 @media (max-height: 420px) { .release-hero-frame { display: none; } }
-.release-zoom-corner { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; padding: 0; border: 1px solid rgb(150 227 255 / .35); border-radius: 50%;
-  background: rgb(8 16 28 / .78); color: #eefbff; display: grid; place-items: center; }
-/* Drawn, not a "⤢" glyph: fallback fonts (Android) offset the glyph inside the circle. */
-.release-zoom-corner svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 </style>

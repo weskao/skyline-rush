@@ -19,6 +19,8 @@ export interface ReleaseTab {
   unread: boolean;
   unreadLabel: string;
 }
+// `source` is the bundled clip; `src` stays empty until the cached copy is ready, and `poster` is the still shown meanwhile.
+export interface ReleaseClipView { src: string; source: string; poster: string; variant: 'desktop' | 'mobile' }
 export interface ReleaseEntry {
   kind: string;
   kindLabel: string;
@@ -26,6 +28,9 @@ export interface ReleaseEntry {
   description: string;
   image: string;
   zoomLabel: string;
+  // Replaces the picture slot with a poster and play button when set.
+  video: ReleaseClipView | null;
+  playLabel: string;
 }
 export interface ReleaseView {
   openHidden: boolean;
@@ -36,10 +41,9 @@ export interface ReleaseView {
   version: string;
   date: string;
   heroSrc: string;
-  // Takes the hero's place while it loads and plays; null falls back to heroSrc.
-  // `source` is the bundled clip; `src` stays empty (poster only) until the cached copy is ready.
-  heroVideo: { src: string; source: string; poster: string; variant: 'desktop' | 'mobile'; controls: boolean } | null;
-  // Screen-reader names for the hero enlarge buttons and the enlarged view's close button.
+  // The hero's poster and play button; null falls back to heroSrc.
+  heroVideo: ReleaseClipView | null;
+  // Screen-reader names for the hero enlarge and play buttons and the enlarged view's close button.
   zoom: { image: string; video: string; close: string };
 }
 export interface TutorialCoachView {

@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { layoutVersion, recordTrackId } from '../src/record-layout.ts';
 
 const config = (mode, extra = {}) => ({
   rulesVersion: 1, mode, rivals: 0, traffic: mode === 'time' ? 'off' : 'normal',
@@ -7,7 +8,7 @@ const config = (mode, extra = {}) => ({
 const raceRun = (mode, time, extra = {}, extras = {}) => {
   const rules = JSON.stringify(config(mode,extra));
   return {date:'2026-10-23T11:00:00.000Z', mode, track:'coast', rules, time,
-    position:1, score:mode==='stunt' ? 9000 : 300, ...extras};
+    position:1, score:mode==='stunt' ? 9000 : 300, layout:layoutVersion('coast'), ...extras}; // Coast runs on today's layout
 };
 
 test('10C RED: challenge History filters modes and shows rule-scoped PBs, eligible Ghosts and personal-only disclaimer',async({page})=>{
@@ -21,9 +22,9 @@ test('10C RED: challenge History filters modes and shows rule-scoped PBs, eligib
   await page.addInitScript(data=>{
     localStorage.setItem('skyline-rush-mode-history-v1',JSON.stringify(data.runs));
     localStorage.setItem('skyline-rush-mode-ghosts-v1',JSON.stringify({
-      ['coast:'+JSON.stringify(data.normal)]: data.ghost,
+      [data.coast+':'+JSON.stringify(data.normal)]: data.ghost,
     }));
-  }, {runs,normal,clean,ghost:timeGhost});
+  }, {runs,normal,clean,ghost:timeGhost,coast:recordTrackId('coast')}); // Coast's current layout record id
   await page.goto('/');
   await page.waitForTimeout(700);
   if(await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();

@@ -6,10 +6,12 @@ import { timeString } from './time-format.ts';
 import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED } from './game.js';
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
-import type { ControlPreferences } from './control-settings.ts';
+import { createRoadSafeFeedback } from './race-feedback-placement.ts';
+import { readHudFeedback, type ControlPreferences } from './control-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
 import { createHaptics } from './haptics.ts';
+import { createNitroReadiness } from './nitro-readiness.ts';
 
 // The in-race HUD, written every HUD tick (~13 Hz) from the frame loop. It stays imperative:
 // elements are looked up once, text/hidden are written only when they change, no Vue reactivity.
@@ -26,6 +28,7 @@ interface HudOptions extends ModePanelOptions {
   /** Printed label of the first FLY key, e.g. SPACE. */
   flyKeyLabel(): string;
   getVisual(): VfxSettings;
+  onNitroReady(): void;
   timeTrialGhost(race: HudRace): GhostRun | null;
   isAutoThrottle(): boolean;
   /** GO stays on screen until this time after the countdown ends. */
@@ -49,10 +52,11 @@ export function createRaceHud(options: HudOptions) {
   const countdownNumber = $('#countdown-number');
   const countdownLabel = $('#countdown-label');
   const speedTicks = [...document.querySelectorAll<HTMLElement>('.speed-ticks i')];
-  ui.leaderboard!.innerHTML = Array.from({ length: 4 }, () => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
-  const leaderboardRows = [...ui.leaderboard!.children] as HTMLElement[];
+  let leaderboardRows: HTMLElement[] = [];
+  let roster = '';
+  const racerRows = new Map<string, HTMLElement>();
+  const positionFieldSize = document.getElementById('position-field-size');
   const touchButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-control]')];
-  const racerRows = new Map<string, HTMLElement>(['YOU', ...getRace().rivals.map((rival: { name: string }) => rival.name)].map((name, i) => [name, leaderboardRows[i]!]));
   const speedNeedle = $('#speed-needle');
   const positionChange = $('#position-change');
   const boostStatus = document.createElement('span');
@@ -68,9 +72,13 @@ export function createRaceHud(options: HudOptions) {
   nitroHud.className = 'nitro-hud';
   nitroHud.innerHTML = `<span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
   $('.fuel-stat').append(nitroHud);
+  // Include the dynamically inserted NITRO status in the initial collision geometry.
+  const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!);
   const nitroSegments = [...nitroHud.querySelectorAll<HTMLElement>('.nitro-segment')];
   const nitroStatus = $('#nitro-status');
   const nitroMeter = $('#nitro-meter');
+  const nitroButton = touchButtons.find(button => button.dataset.control === 'nitro');
+  const nitroReadiness = createNitroReadiness();
   // HUD text is read every tick: a plain catalog lookup (key parity is unit-tested), swapped on a language switch.
   let L: Record<string, string> = CATALOGS[getLocale() as keyof typeof CATALOGS];
   let flowKey = 'hud.streamlines', floorKey = 'hud.lowDrag', jetKey = 'hud.demo';
@@ -85,6 +93,7 @@ export function createRaceHud(options: HudOptions) {
   let previousFuel = 100, previousNitro = 0, nitroRefillUntil = 0;
   let previousBoost = false;
   let shownCallout: ReturnType<typeof callouts.update> = null;
+  let lastDrivingMessage = '';
   let feedbackCar: unknown, lastImpact: unknown, lastDriftPayout: unknown, lastTrickPayout: unknown, lastNitroTime = 0;
 
   function updateSpeedAndPosition(now: number, race: HudRace, car: HudRace, calm: boolean): void {
@@ -136,12 +145,28 @@ export function createRaceHud(options: HudOptions) {
   }
   function updateNitro(now: number, race: HudRace, car: HudRace, nitroActive: boolean): void {
     const visual = getVisual();
+    const { state, cueReady } = nitroReadiness.update({ charge: car.nitro, phase: race.phase, active: nitroActive });
+    if (cueReady) {
+      const feedback = readHudFeedback();
+      if (feedback.sound) options.onNitroReady();
+      if (nitroButton && feedback.animation && visual.enabled && !visual.comfortable && !reducedMotion.matches) {
+        nitroButton.animate([{ boxShadow: '0 0 0 0 rgb(255 213 128 / .8)' }, { boxShadow: '0 0 0 12px rgb(255 213 128 / 0)' }], { duration: 650 });
+      }
+    }
+    if (nitroMeter.dataset.nitroState !== state) nitroMeter.dataset.nitroState = state;
+    if (nitroButton) {
+      if (nitroButton.dataset.nitroState !== state) nitroButton.dataset.nitroState = state;
+      const label = t(state === 'ready' ? 'hud.nitroReady' : state === 'active' ? 'hud.nitroActive'
+        : state === 'charging' ? 'hud.nitroCharging' : 'hud.nitroUnavailable');
+      if (nitroButton.getAttribute('aria-label') !== label) nitroButton.setAttribute('aria-label', label);
+    }
     nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
     nitroMeter.classList.toggle('is-max', car.nitro >= 3);
     nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
     if (car.nitro > previousNitro && race.phase === 'racing') nitroRefillUntil = now + .6;
     nitroMeter.dataset.refilling = String(race.phase === 'racing' && now < nitroRefillUntil);
-    setHudText(nitroStatus, nitroActive ? L['hud.nitroActive']! : car.nitro >= 3 ? L['hud.nitroMax']! : interpolate(L['hud.nitroCount']!, { n: car.nitro.toFixed(2) }));
+    setHudText(nitroStatus, state === 'ready' ? L['hud.nitroReady']! : state === 'disabled' ? L['hud.nitroUnavailable']!
+      : state === 'active' ? L['hud.nitroActive']! : interpolate(L['hud.nitroCount']!, { n: car.nitro.toFixed(2) }));
     for (const [index, segment] of nitroSegments.entries()) {
       const fill = Math.min(1, Math.max(0, car.nitro - index));
       (segment.firstElementChild as HTMLElement).style.transform = `scaleX(${fill})`;
@@ -166,15 +191,14 @@ export function createRaceHud(options: HudOptions) {
       report.replaceChildren(document.createTextNode(callout.title), detail);
       report.hidden = false;
       eventCallout.dataset.kind = callout.kind;
+      eventCallout.setAttribute('aria-label', `${callout.title} · ${callout.detail}`);
       calloutMotion.cancel();
       if (!visual.comfortable && !reducedMotion.matches) calloutMotion.animate([
-        { opacity: 0, transform: 'scale(.88)', offset: 0 },
-        { opacity: 1, transform: 'scale(1)', offset: .2 },
-        { opacity: 1, transform: 'scale(1)', offset: .85 },
-        { opacity: 0, transform: 'scale(1)', offset: 1 },
-      ], { ...motionOptions('slow'), duration: motionOptions('slow').duration * 2.5 });
+        { opacity: 0 }, { opacity: 1 },
+      ], { duration: 120, easing: 'ease-out' });
     }
     shownCallout = callout;
+    feedbackPlacement.refresh();
   }
   function updateBoostAndFeedback(race: HudRace, car: HudRace, nitroActive: boolean, flying: boolean, calm: boolean): void {
     const visual = getVisual();
@@ -243,11 +267,26 @@ export function createRaceHud(options: HudOptions) {
     }
     setHudText(ui['race-status']!, status);
     const gapWarning = race.phase === 'racing' ? gapChargeWarning(race) : null;
-    setHudText(ui['driving-message']!, race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff']! : car.exhausted && input.fly ? L['hud.releaseRecharge']!
-      : gapWarning ? interpolate(L['hud.gapCharge']!, { n: Math.ceil(gapWarning.need) }) : '');
+    const message = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff']! : car.exhausted && input.fly ? L['hud.releaseRecharge']!
+      : gapWarning ? interpolate(L['hud.gapCharge']!, { n: Math.ceil(gapWarning.need) }) : '';
+    setHudText(ui['driving-message']!, message);
     if (gapWarning) ui['driving-message']!.dataset.tone = 'warning'; else delete ui['driving-message']!.dataset.tone;
+    if (message !== lastDrivingMessage) { lastDrivingMessage = message; feedbackPlacement.refresh(); }
   }
   function updateLeaderboard(race: HudRace, car: HudRace, calm: boolean): void {
+    const names = ['YOU', ...race.rivals.map((rival: { name: string }) => rival.name)];
+    if (names.join(',') !== roster) {
+      roster = names.join(',');
+      if (positionFieldSize) setHudText(positionFieldSize, names.length === 1 ? '' : `/ ${String(names.length).padStart(2, '0')}`);
+      ui.leaderboard!.innerHTML = names.map(() => '<div class="racer"><span></span><i></i><strong></strong><span></span></div>').join('');
+      leaderboardRows = [...ui.leaderboard!.children] as HTMLElement[];
+      racerRows.clear();
+      names.forEach((name, i) => {
+        if (name !== 'YOU') leaderboardRows[i]!.children[2]!.setAttribute('lang', 'en');
+        racerRows.set(name, leaderboardRows[i]!);
+      });
+      leaderboardOrder = '';
+    }
     const racers: { name: string; distance: number; player?: boolean }[] = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
     const order = racers.map(racer => racer.name).join(',');
     if (calm || race.phase !== 'racing') leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
@@ -328,7 +367,7 @@ export function createRaceHud(options: HudOptions) {
   return {
     update,
     /** A new race starts: charge and NITRO refill cues compare against a full tank and empty NITRO. */
-    resetMemory(): void { previousFuel = 100; previousNitro = 0; },
+    resetMemory(): void { previousFuel = 100; previousNitro = 0; nitroReadiness.reset(); },
     memory: (): HudMemory => ({ previousFuel, previousNitro }),
     restoreMemory(memory: HudMemory): void { ({ previousFuel, previousNitro } = memory); },
     /** The flight/road label is change-gated; the next tick rewrites it. */

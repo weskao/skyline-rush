@@ -1,9 +1,11 @@
 # Check main, develop, feature and fix branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
+# Browser and World Tour suites run only on main and develop (or an explicit full regression); other branches get unit + cloud-save.
+# Docs/media-only pushes and PRs skip every suite on any branch (see the changes job).
 name: CI
 
 on:
   push:
-    # Feature and fix branches get the same gate; the retired MODE-00 branch
+    # Feature/fix/refactor pushes get the focused gate; the retired MODE-00 branch
     # remains excluded per its explicit CI-stop request.
     branches:
       - main
@@ -32,8 +34,53 @@ concurrency:
 # release-verified, deploy), so every job skips the main-push run of the same commit; the browser suites also skip
 # tag runs, because release-verified proves the code already passed them on main.
 jobs:
+  # A push or PR whose tree differs from the previous one only in Markdown, text, images or video outside src/, public/,
+  # tests/, scripts/ and .github/ (rules: scripts/ci-changes.mjs) skips every suite. The skip vouches for the new tree
+  # through the old one, so it needs a successful run of this workflow on that parent commit and branch: a first push,
+  # a cancelled or failed parent, an empty retrigger commit, [full-regression], a tag or a manual run gets the suites.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    env:
+      DIFFABLE: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') && !contains(github.event.head_commit.message, '[full-regression]')) }}
+    outputs:
+      code: ${{ steps.diff.outputs.code || 'true' }}
+    steps:
+      # Trees only: a blobless, single-file sparse checkout keeps this job to seconds despite the repo's media.
+      - uses: actions/checkout@v4
+        if: env.DIFFABLE == 'true'
+        with:
+          filter: blob:none
+          sparse-checkout: scripts/ci-changes.mjs
+          sparse-checkout-cone-mode: false
+      - id: diff
+        if: env.DIFFABLE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+        run: |
+          code=true
+          # Any failure below (new branch, unreachable force-pushed parent, API error) keeps code=true.
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ] \
+            && git fetch --quiet --depth=1 --filter=blob:none origin "$BEFORE" \
+            && [ "$(git diff --no-renames --name-only "$BEFORE" HEAD | node scripts/ci-changes.mjs)" = false ]; then
+            passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch "$BRANCH" --event push --commit "$BEFORE" --status success --limit 1 --json databaseId --jq length || true)
+            if [ "$passed" = 1 ]; then
+              code=false
+              echo "::notice::Docs/media-only change on top of $BEFORE, which passed CI on $BRANCH; suites skipped."
+            else
+              echo "::notice::Docs/media-only change, but $BEFORE has no successful CI run on $BRANCH; running the suites."
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
   unit-tests:
-    if: "${{ !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    needs: changes
+    if: "${{ needs.changes.outputs.code == 'true' && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,18 +92,22 @@ jobs:
       # Strict TS + real Vue SFC template semantic check + documented JS islands.
       - run: npm run typecheck
       - run: npm test
+      # Always prove the public (default) artifact excludes unreleased Garage modules and assets.
+      - run: npm run build
 
-  # CPU-only WebGL makes the serial suite take about six runner-hours; shards run it in parallel. Playwright splits
-  # the test list into equal contiguous slices (no duration balancing), so a slice that lands on the heavy i18n,
-  # responsive or track-theme tests sets the wall time: 8 slices peaked at 72 min, 16 at about 45 (measured on main).
-  # Together with world-tour-mid-race this stays near GitHub's 20 concurrent jobs; more shards would mostly queue.
+  # CPU-only WebGL makes the serial suite take about 6.4 runner-hours. Playwright's own --shard cuts equal contiguous
+  # slices, so 16 of them ran 14 to 48 min; scripts/ci-shards.mjs packs tests by the durations in
+  # tests/ci-durations.json instead (13 shards ≈ 30 min each; the longest single test is 12 min).
+  # 13 + 5 world-tour + unit + cloud = GitHub Free's 20 concurrent jobs; a 21st job would queue.
+  # Refresh durations after big suite changes: node scripts/ci-shards.mjs refresh <main run id>.
   browser-tests:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
+    needs: changes
+    if: "${{ needs.changes.outputs.code == 'true' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -64,8 +115,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Wave 2 video recording needs Playwright's FFmpeg binary, not the system binary.
+      - run: npx playwright install ffmpeg
+      - run: node scripts/ci-shards.mjs plan playwright.config.js ${{ matrix.shard }} ${{ strategy.job-total }} > "$RUNNER_TEMP/shard-tests.txt"
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
-      - run: npm run test:browser -- --shard=${{ matrix.shard }}/16
+      - run: npm run test:browser -- --test-list "$RUNNER_TEMP/shard-tests.txt"
       - name: Upload structured WebGL performance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -78,6 +132,16 @@ jobs:
         with:
           name: browser-failures-${{ matrix.shard }}
           path: test-results
+      - name: Upload Wave 2 actual WebGL sprint VFX frames and animation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: high-speed-vfx-evidence-${{ matrix.shard }}
+          path: |
+            test-results/**/high-speed-vfx-*.png
+            test-results/**/high-speed-vfx-*.webm
+            test-results/**/high-speed-vfx-*.json
+          if-no-files-found: ignore
       - name: Upload actual race-mode game screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -100,11 +164,33 @@ jobs:
           name: world-tour-screenshots-${{ matrix.shard }}
           path: test-results/**/world-tour-*.png
           if-no-files-found: ignore
+      # Foldable screen evidence: real DOM + active WebGL, not concept-image replacements.
+      - name: Upload foldable and fallback gameplay screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foldable-layout-screenshots-${{ matrix.shard }}
+          path: |
+            test-results/**/foldable-*.png
+            test-results/**/fallback-*.png
+          if-no-files-found: ignore
+      - name: Upload real Garage VFX Home and Studio WebGL screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: garage-vfx-preview-${{ matrix.shard }}
+          path: |
+            test-results/**/garage-void-home-*.png
+            test-results/**/garage-launch-flare-*.png
+            test-results/**/garage-dense-*.png
+            test-results/**/garage-inspection-*.png
+          if-no-files-found: ignore
       # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
 
   cloud-save:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    needs: changes
+    if: "${{ needs.changes.outputs.code == 'true' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -131,14 +217,16 @@ jobs:
   # the middle of all five long World Tour routes. Test-only Vite fixture:
   # it is not included in the distributable production build.
   world-tour-mid-race:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (!startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')))) }}"
+    needs: changes
+    if: "${{ needs.changes.outputs.code == 'true' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
     runs-on: ubuntu-latest
     # CPU-only WebGL renders the ~250 per-map camera tests (about 150k frames) at ~9 fps, over two hours on one
-    # runner. The slow camera views sit at the end of the list, so 6 contiguous slices ran 5 to 40 min; 8 peak at ~34.
+    # runner. Contiguous slices ran 4 to 36 min because the slow camera views sit together; duration-packed,
+    # 5 shards run ≈ 26 min each (see browser-tests).
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -146,7 +234,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright test --config=playwright.world-tour.config.js --shard=${{ matrix.shard }}/8
+      - run: node scripts/ci-shards.mjs plan playwright.world-tour.config.js ${{ matrix.shard }} ${{ strategy.job-total }} > "$RUNNER_TEMP/shard-tests.txt"
+      - run: npx playwright test --config=playwright.world-tour.config.js --test-list "$RUNNER_TEMP/shard-tests.txt"
       - name: Upload real mid-race WebGL screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -155,11 +244,25 @@ jobs:
           path: test-results/**/world-tour-*-mid-race.png
           if-no-files-found: ignore
 
-  # A single required status for every feature branch and normal main push.
+  # Server-side twin of .githooks/main-merge-guard: a push to main fails when one of its merge commits merges
+  # anything but develop or hotfix/*. A red run blocks the release, since release-verified needs a green main run.
+  # shortcut: a newer main push cancels this run (concurrency) and only checks its own range, so two quick pushes
+  # can slip one through; disable cancel-in-progress on main if that ever matters.
+  main-merge-source:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: scripts/check-main-merges.sh "${{ github.event.before }}" "${{ github.sha }}"
+
+  # A single required status for every branch push: full on main/develop, focused elsewhere.
   # A branch ruleset can require this job; no direct-push protection is implied
   # by the workflow file alone.
   quality-gate:
-    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race]
+    needs: [changes, unit-tests, browser-tests, cloud-save, world-tour-mid-race]
     if: "${{ always() && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
@@ -168,34 +271,38 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: actions/download-artifact@v4
-        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
-        with:
-          pattern: render-performance-*
-          path: ${{ runner.temp }}/render-performance
-          merge-multiple: true
-      - name: Verify software-WebGL evidence coverage and rendering budgets
-        if: "${{ !startsWith(github.ref, 'refs/heads/refactor/') || ((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
-        run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
+      # Surface failed/cancelled suites before relying on browser evidence.
       - name: Require every verification suite to pass
         env:
           UNIT: ${{ needs.unit-tests.result }}
           BROWSER: ${{ needs.browser-tests.result }}
           CLOUD: ${{ needs.cloud-save.result }}
           WORLD_TOUR: ${{ needs.world-tour-mid-race.result }}
-          FOCUSED: ${{ startsWith(github.ref, 'refs/heads/refactor/') && !((github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}
+          # Empty when the changes job itself failed: the suites are then skipped and the full check below fails.
+          CODE: ${{ needs.changes.outputs.code }}
+          FOCUSED: ${{ !(github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}
         run: |
           printf 'unit=%s browser=%s cloud=%s world-tour=%s\\n' "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"
+          if [ "$CODE" = 'false' ]; then
+            for result in "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"; do
+              if [ "$result" != skipped ]; then
+                echo "::error::A docs/media-only change must skip every suite."
+                exit 1
+              fi
+            done
+            echo "::notice::Docs/media-only change on a tree that already passed CI; suites skipped."
+            exit 0
+          fi
           if [ "$FOCUSED" = 'true' ]; then
             for result in "$UNIT" "$CLOUD"; do
               if [ "$result" != success ]; then
-                echo "::error::Focused refactor CI requires typecheck/unit and cloud-save."
+                echo "::error::Focused branch CI requires typecheck/unit and cloud-save."
                 exit 1
               fi
             done
             for result in "$BROWSER" "$WORLD_TOUR"; do
               if [ "$result" != skipped ]; then
-                echo "::error::Browser and World Tour must be skipped in focused refactor CI."
+                echo "::error::Browser and World Tour must be skipped in focused branch CI."
                 exit 1
               fi
             done
@@ -208,6 +315,15 @@ jobs:
               exit 1
             fi
           done
+      - uses: actions/download-artifact@v4
+        if: "${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) && needs.changes.outputs.code == 'true' }}"
+        with:
+          pattern: render-performance-*
+          path: ${{ runner.temp }}/render-performance
+          merge-multiple: true
+      - name: Verify software-WebGL evidence coverage and rendering budgets
+        if: "${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) && needs.changes.outputs.code == 'true' }}"
+        run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
 
   # A release tag sits on `docs: release X`, a notes/version commit above code that already passed the full suite on
   # main. Re-running two runner-hours of CPU WebGL there only adds a chance that a timing flake leaves the tag
@@ -235,6 +351,11 @@ jobs:
           echo "$code passed CI on main: $run"
 
   deploy:
+    # Public Garage VFX FREE TRIAL was approved; stage the reviewed trial artifact for the next release.
+    # This only applies to explicitly gated main dispatch / v* tag deployment, not feature pushes.
+    # The default npm run build remains fail-closed (coming-soon) in unit-tests.
+    env:
+      GARAGE_VFX_RELEASE_MODE: trial
     # A tag run skips browser and cloud suites; a manual run skips release-verified.
     if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.cloud-save.result) && contains(fromJSON('["success", "skipped"]'), needs.world-tour-mid-race.result) && contains(fromJSON('["success", "skipped"]'), needs.quality-gate.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
     needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, quality-gate, release-verified]
@@ -288,7 +409,7 @@ jobs:
   # Failure-only pager: a notification on every push is one nobody reads. Credentials live in repo secrets
   # (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Pull requests are excluded because fork PRs get no secrets.
   notify-telegram:
-    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, release-verified, deploy]
+    needs: [changes, unit-tests, browser-tests, cloud-save, world-tour-mid-race, main-merge-source, release-verified, deploy]
     if: ${{ failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

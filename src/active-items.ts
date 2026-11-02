@@ -2,11 +2,12 @@
 const DURATIONS = { shield: 10, magnet: 5, ghost: 3, freeze: 2, emp: 1.5 };
 export type ActiveItem = keyof typeof DURATIONS;
 
+// Rings are scarce (5 per car), so Active makes every ring an item ring and All every other one (the rest
+// become bonus gates); each keeps its source index, so its reward never depends on the rule.
 export function ringsForItemRule<T extends { type: string; group: number }>(rings: T[], rule?: string): T[] {
   if (rule === 'off') return [];
-  if (rule !== 'active') return rings;
-  return rings.flatMap((ring, index) => ring.type === 'mystery' ? [{ ...ring, mysteryIndex: index,
-    groupSize: rings.filter(other => other.group === ring.group).length }] : []);
+  if (rule !== 'active' && rule !== 'all') return rings;
+  return rings.map((ring, index) => rule === 'all' && index % 2 ? ring : { ...ring, type: 'mystery', mysteryIndex: index });
 }
 
 // The engine owns the mutable car; this typed adapter owns only item-related fields.

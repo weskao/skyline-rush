@@ -163,6 +163,15 @@ test('all static App.vue translation keys and mode History badges exist in both 
     assert.ok(typeof CATALOGS[locale][key] === 'string' && CATALOGS[locale][key].length > 0, `${locale}: ${key}`);
 });
 
+// The Audio-panel artwork gallery once hard-coded bilingual copy, leaking Chinese into the English panel.
+test('HUD source-artwork gallery reads its copy from both locale catalogs', () => {
+  const sfc = readFileSync(new URL('../src/HudSourceArtwork.vue', import.meta.url), 'utf8');
+  assert.doesNotMatch(sfc, /[㐀-鿿豈-﫿　-〿]/);
+  for (const locale of SUPPORTED_LOCALES) for (const key of ['hudArt.summary', 'hudArt.note'])
+    assert.ok(sfc.includes(`'${key}'`) && CATALOGS[locale][key]?.length > 0, `${locale}: ${key}`);
+  assert.doesNotMatch(CATALOGS.en['hudArt.summary'] + CATALOGS.en['hudArt.note'], /[㐀-鿿]/);
+});
+
 // Building an Intl formatter costs ~70x formatting with one; history rows and release tabs format many dates per render.
 test('dates and numbers reuse one formatter per locale and options', () => {
   const real = { DateTimeFormat: Intl.DateTimeFormat, NumberFormat: Intl.NumberFormat };

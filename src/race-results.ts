@@ -3,6 +3,7 @@ import { recordRace, recordBest, recordModeRace, loadModeHistory, recordMedals, 
 import { addSprintStage, sprintTotal, type SprintSeries } from './sprint-series.ts';
 import { addCupResult, cupStandings, cupComplete, cupTotalTime, type CupState } from './championship-cup.ts';
 import { validGhost, type GhostSample } from './ghost.ts';
+import { recordTrackId } from './record-layout.ts';
 import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
 import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
@@ -91,13 +92,15 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     const campaignDone = tracks.every(id => progress.unlocked.has(id));
     if (following && race.result.position <= 3 && !progress.unlocked.has(following)) progress.unlocked.add(following);
     if (following && !campaignDone && progress.unlocked.has(following)) next = following;
-    const saved = recordBest(trackId, race.elapsed);
+    // A re-laid track keeps its best under `<track>@<layout>`: older-layout times never block a record.
+    const recordId = recordTrackId(trackId);
+    const saved = recordBest(recordId, race.elapsed);
     // Session bests keep "personal best" honest when storage is blocked.
-    best = Math.min(saved.best, progress.bests[trackId] ?? Infinity);
-    record = saved.record && !(progress.bests[trackId]! <= race.elapsed);
-    progress.bests[trackId] = best;
-    // The pre-tracks key stays readable for coast (older builds, browser test).
-    if (record && trackId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
+    best = Math.min(saved.best, progress.bests[recordId] ?? Infinity);
+    record = saved.record && !(progress.bests[recordId]! <= race.elapsed);
+    progress.bests[recordId] = best;
+    // The pre-tracks key stays readable for layout-1 coast only (older builds, browser test).
+    if (record && recordId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
     recordStars(trackId, race.result.stars);
     progress.stars[trackId] = Math.max(progress.stars[trackId] ?? 0, race.result.stars);
     const ghost = { time: race.elapsed, samples: trace ?? [] };

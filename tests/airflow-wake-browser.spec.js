@@ -5,7 +5,9 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { ciTimeout } from './helpers/ci.js';
 
 test('airflow renders on every track with bounded resources and no shader errors', async ({ gameplayPage: page }, info) => {
-  test.setTimeout(ciTimeout(60_000));
+  // Ten-plus CPU-rendered tracks, screenshots and 30 live frames per track
+  // need an extended runner timeout, including 11-track software-WebGL quality checks.
+  test.setTimeout(ciTimeout(120_000));
   const errors = [], records = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -41,7 +43,7 @@ test('airflow renders on every track with bounded resources and no shader errors
   const counts = [];
   for (const quality of ['low', 'medium', 'high']) {
     await page.locator('#vfx-panel > summary').click();
-    await page.getByRole('combobox', { name: 'Quality', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Quality', exact: true }).click({ timeout: ciTimeout(15_000) });
     await page.getByRole('option', { name: quality[0].toUpperCase() + quality.slice(1), exact: true }).click();
     await page.locator('#vfx-panel > summary').click();
     await page.waitForTimeout(300);
@@ -64,6 +66,7 @@ test('airflow renders on every track with bounded resources and no shader errors
 for (const mobile of [false, true]) test.describe(mobile ? 'touch barrel roll' : 'keyboard barrel roll', () => {
 test.use({ hasTouch: mobile, isMobile: mobile });
 test('flight flick triggers the roll wake without AIRFLOW preview', async ({ gameplayPage: page }, info) => {
+  test.setTimeout(ciTimeout(45_000)); // Slow software WebGL needs game frames to expire the wake.
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   if (mobile) await page.setViewportSize({ width: 390, height: 844 });
@@ -80,7 +83,8 @@ test('flight flick triggers the roll wake without AIRFLOW preview', async ({ gam
     requestAnimationFrame(sample);
     return info.count;
   });
-  await page.waitForTimeout(1800);
+  // Wait for the real ribbon to fade, not a wall-clock delay (software WebGL advances fewer game frames).
+  await expect.poll(() => page.evaluate(() => window.rollLive()), { timeout: ciTimeout(15_000) }).toBe(baseline);
   let release;
   if (mobile) {
     const session = await page.context().newCDPSession(page);
@@ -107,7 +111,9 @@ test('flight flick triggers the roll wake without AIRFLOW preview', async ({ gam
   await expect.poll(() => page.evaluate(() => window.rollEvidence.max)).toBeGreaterThan(baseline);
   await page.screenshot({ path: info.outputPath('actual-barrel-roll.png') });
   await release();
-  await page.waitForTimeout(ciTimeout(1800)); // game time lags the wall clock on CPU-only CI, so the wake needs longer to fade
+  // RED on CI #41145516089: 24 roll vertices remained after a fixed 1.8 s wait.
+  // Expiration uses clamped game-frame dt, so await the actual rendered fade instead.
+  await expect.poll(() => page.evaluate(() => window.rollLive()), { timeout: ciTimeout(15_000) }).toBe(baseline);
   const result = await page.evaluate(() => {
     return { count: window.rollLive(), boost: window.gameplay.race.player.boosting, programs: window.gameScene.renderer.info.programs.length, beforePrograms: window.rollEvidence.programs };
   });

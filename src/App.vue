@@ -13,6 +13,7 @@ import { releaseView } from './release-view-state.ts';
 import { setupInputModality } from './input-modality.ts';
 import TutorialCoach from './TutorialCoach.vue';
 import SettingsPanel from './SettingsPanel.vue';
+import HudSettings from './HudSettings.vue';
 import ControlsPanel from './ControlsPanel.vue';
 import CircuitSettings from './CircuitSettings.vue';
 import HistoryPanel from './HistoryPanel.vue';
@@ -75,6 +76,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <small class="vfx-note" data-i18n="vfx.comfortNote">Comfort removes flashes, shake, afterimages and blur. System reduced-motion preferences are always respected.</small>
         <label><span data-i18n="vfx.haptics">Haptic feedback</span> <input type="checkbox" data-vfx="haptics"></label>
         <details class="vfx-tuning"><summary data-i18n="vfx.tuning">Fine tuning</summary><label v-for="([label, min, max, step], key) in VFX_RANGES" class="vfx-range"><span :data-i18n="vfxLabelKey(key)">{{ label }}</span><output :for="`vfx-${key}`"></output><input :id="`vfx-${key}`" :aria-label="String(label)" :data-i18n-aria-label="vfxLabelKey(key)" :data-vfx="key" type="range" :min="min" :max="max" :step="step"></label></details>
+        <HudSettings />
         <button id="vfx-reset" data-i18n="vfx.reset">Reset visual settings</button>
       </div>
     </details>
@@ -175,7 +177,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
             <button type="button" data-race-preset="precision" aria-pressed="false" data-i18n="mode.preset.precision">Precision</button>
           </div>
           <div class="race-mode-rule-grid">
-            <label><span data-i18n="mode.rivals">AI opponents</span><select data-race-rule="rivals" aria-label="AI opponents" data-i18n-aria-label="mode.rivals"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></label>
+            <label><span data-i18n="mode.rivals">AI opponents</span><select data-race-rule="rivals" aria-label="AI opponents" data-i18n-aria-label="mode.rivals"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7" selected>7</option></select></label>
             <label><span data-i18n="mode.difficulty">AI difficulty</span><select data-race-rule="difficulty" aria-label="AI difficulty" data-i18n-aria-label="mode.difficulty"><option value="easy" data-i18n="mode.easy">Easy</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="hard" data-i18n="mode.hard">Hard</option></select></label>
             <label><span data-i18n="mode.traffic">Traffic</span><select data-race-rule="traffic" aria-label="Traffic density" data-i18n-aria-label="mode.traffic"><option value="off" data-i18n="mode.off">Off</option><option value="light" data-i18n="mode.light">Light</option><option value="normal" selected data-i18n="mode.normal">Normal</option><option value="heavy" data-i18n="mode.heavy">Heavy</option></select></label>
             <label id="sprint-stages-setting"><span data-i18n="mode.stages">Sprint stages (not laps)</span><select data-race-rule="stages" aria-label="Sprint stages (not laps)" data-i18n-aria-label="mode.stages"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>
@@ -190,9 +192,9 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </section>
       <div class="intro-actions">
         <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button></div>
+        <button type="button" class="text-button garage-button" id="garage-button"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
         <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
-        <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
+        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
       </div>
       <!-- Reserve space for the camera controls in compact layouts. -->
@@ -226,7 +228,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     </section>
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
-      <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">04</strong><span>/ 04</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
+      <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">08</strong><span id="position-field-size">/ 08</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
       <div class="race-progress"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span> KM</span></div><div class="progress-track"><i id="progress-fill"></i><span class="finish-flag"></span></div><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="circuit-hud" class="sprint-stage" role="status" hidden></output><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><ItemSlot /><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"></div>
     </section>

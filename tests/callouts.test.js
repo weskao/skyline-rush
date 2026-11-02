@@ -236,3 +236,65 @@ test('a hazard near-miss without a traffic combo never breaks the callouts', () 
   assert.doesNotThrow(() => callouts.update(race));
   assert.equal(callouts.update(race), null, 'the Obstacle Run HUD already counts dodges; no combo to announce');
 });
+
+
+test('reward chips advance after 850 ms of race time, not the old 1.2 second banner', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.player.perfectLines = 1;
+  race.player.nitroUses = 1;
+  assert.equal(callouts.update(race)?.title, 'PERFECT LINE');
+  race.elapsed = 0.84;
+  assert.equal(callouts.update(race)?.title, 'PERFECT LINE');
+  race.elapsed = 0.86;
+  assert.equal(callouts.update(race)?.title, 'NITRO');
+});
+
+test('repeated low-priority near misses do not spam, but a higher combo refreshes pending text', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.player.nearMisses = 1;
+  race.player.nearMiss = { combo: 1, charge: 0 };
+  assert.equal(callouts.update(race)?.title, 'NEAR MISS ×1');
+  race.elapsed = 0.86;
+  assert.equal(callouts.update(race), null);
+  race.player.nearMisses = 2;
+  race.player.nearMiss = { combo: 2, charge: 0 };
+  assert.equal(callouts.update(race), null, 'near miss cooldown suppresses repeated on-screen text');
+  race.elapsed = 2.1;
+  race.player.nearMisses = 3;
+  race.player.nearMiss = { combo: 3, charge: 0 };
+  assert.equal(callouts.update(race)?.title, 'NEAR MISS ×3');
+});
+
+test('reward storm keeps at most two pending chips and preserves NITRO priority', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.player.perfectLines = 1;
+  assert.equal(callouts.update(race)?.kind, 'perfect');
+  Object.assign(race.player, { drift: { time: 1.1 }, nearMisses: 1, nearMiss: { combo: 1, charge: 0 },
+    inShortcut: true, nitroUses: 1 });
+  callouts.update(race);
+  const kinds = [];
+  for (let t = 0.86; t <= 4; t += 0.86) {
+    race.elapsed = t;
+    const current = callouts.update(race);
+    if (current) kinds.push(current.kind);
+  }
+  assert.equal(kinds[0], 'nitro', 'action feedback must not be evicted by decorative messages');
+  assert.ok(new Set(kinds).size <= 2, 'only two pending rewards may follow an active one');
+});
+
+test('race pause and restart clear pending rewards and their cooldown', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.player.nearMisses = 1;
+  race.player.nearMiss = { combo: 1, charge: 0 };
+  assert.equal(callouts.update(race)?.kind, 'near');
+  race.phase = 'paused'; callouts.update(race);
+  race.phase = 'racing'; callouts.update(race);
+  race.elapsed = 0.2;
+  race.player.nearMisses = 2;
+  race.player.nearMiss = { combo: 2, charge: 0 };
+  assert.equal(callouts.update(race)?.title, 'NEAR MISS ×2');
+});

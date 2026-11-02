@@ -11,12 +11,14 @@ function job(name) {
   return workflow.slice(start, nextJob === -1 ? undefined : start + 3 + nextJob);
 }
 
-test('refactor push uses focused checks, manual dispatch preserves full suite', () => {
+test('only main and develop run the browser suites; other branches opt in via full regression', () => {
   assert.match(workflow, /workflow_dispatch:\s*\n\s+inputs:\s*\n\s+full_regression:/);
   for (const name of ['browser-tests', 'world-tour-mid-race']) {
     const suite = job(name);
-    assert.match(suite, /startsWith\(github\.ref, 'refs\/heads\/refactor\/'\)/, name);
+    assert.match(suite, /github\.ref == 'refs\/heads\/main' \|\| github\.ref == 'refs\/heads\/develop'/, name);
     assert.match(suite, /inputs\.full_regression\s*==\s*true/, name);
+    // A per-prefix rule (refactor/ only) let feature/ and fix/ pushes spend runner-hours on every commit.
+    assert.doesNotMatch(suite, /refs\/heads\/(refactor|feature|fix)\//, `${name} must not branch on a prefix`);
   }
   for (const name of ['unit-tests', 'cloud-save']) {
     assert.doesNotMatch(job(name), /full_regression/, `${name} must always run`);

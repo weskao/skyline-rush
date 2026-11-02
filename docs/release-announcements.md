@@ -84,16 +84,23 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
   release's images. A missing image falls back to text. Formats: png, jpg, webp, avif and animated gif/
   webp. Players tap any picture or the clip to see it whole and uncropped (`ReleaseMediaViewer.vue`), so a
   thumbnail may crop as long as the full file reads well enlarged.
-- **Video** (optional `video` on the entry): a short muted clip that replaces the hero image
-  while the dialog is open. Give both a `desktop` (landscape, 960×600) and a `mobile` (portrait,
-  390×844) clip, each `{ src, poster }` localized like images (`.mp4`/`.webm` + a still), all under
-  `public/whats-new/<theme-slug>/`. Landscape screens get `desktop`, portrait ones `mobile`. It loops
-  inline only while the notes are open and pauses on close. Under reduced motion it shows the
-  poster with controls instead of autoplaying. A clip that fails to load falls back to the hero
-  image or the text. Record the real game (no mockups), keep each clip ≈ 6 s and under 1 MB. When
-  you record a phone viewport with Playwright, crop the video: it pads a small viewport with grey
-  rather than scaling it. The release check refuses a clip or poster that is not bundled, and
-  editing the video voids the review.
+- **Video** (optional `video` on the entry, and optional `video` on any highlight): a short muted clip that never
+  plays inline. The notes show its **poster** (a real-game still) in the hero or picture slot with a play
+  button over it, so readers see it is a video; tapping it opens the enlarged view (`ReleaseMediaViewer.vue`)
+  and the clip starts at once, looping muted. Closing returns to the poster. Under reduced motion the
+  enlarged view waits on the poster with controls instead of autoplaying. A highlight with a `video` shows
+  its poster instead of its `image`; one without keeps its picture or text. Give both a `desktop` (landscape,
+  960×600) and a `mobile` (portrait, 390×844) clip, each `{ src, poster }` localized like images
+  (`.mp4`/`.webm` + a still), all under `public/whats-new/<theme-slug>/`. Landscape screens get `desktop`,
+  portrait ones `mobile`. The notes fetch the clips ahead only while they are open (kept in Cache Storage,
+  so each downloads once). A poster that fails to load falls back to the picture or the text; a clip that
+  fails to load closes the enlarged view. Record the real game (no mockups), keep each clip ≈ 6–10 s at
+  balanced quality. **Quality vs size:** keep `.mp4` (H.264, `-pix_fmt yuv420p`, `-movflags +faststart`, no
+  audio) at a fixed `-crf 20` (typically 1–3 MB, capped at 4 MB) with a high-quality jpg poster (`-q:v 2`), as
+  `scripts/record-whats-new-clip.mjs` does; never coarsen the CRF to save bytes — shorten `--seconds` instead.
+  When you record a phone viewport with Playwright, crop the video: it pads a
+  small viewport with grey rather than scaling it. The release check refuses a clip or poster (hero or
+  highlight) that is not bundled, and editing any video voids the review.
   Bundled now: `public/whats-new/0.24.0/air-road-chain.{desktop,mobile}.{en,zh-TW}.{mp4,jpg}`
   (FLY + NITRO → clean landing → AIR → ROAD CHAIN), ready for the 0.24.0 entry.
 - Text is rendered with `textContent` only.
@@ -129,7 +136,25 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
    optional images under `public/whats-new/<theme-slug>/`. If the previous release's entry is still
    `UPCOMING`, first stamp it with its version and tag date (`git log -1 --format=%cs v<version>`):
    `npm test` refuses two upcoming entries, and editing a shipped entry voids its review.
-2. `/review-release-notes <version>` (`.claude/commands/review-release-notes.md`) reviews the copy:
+2. **Show what players will see.** Every highlight whose point is visible in the game — a new
+   effect, move, scene, car or rival behaviour, screen — gets real-game media before the review;
+   fixes, rule changes and record notes stay text-only. One clip may cover several highlights.
+   **When:** once, right before the release (`/release` Phase N), from the code being released.
+   Do not record or re-shoot for each change that lands on `develop`; notes drafted there leave
+   `video` / `image` out until the release, and adding media then is reviewed with the copy.
+   - A moment in a race: `node scripts/record-whats-new-clip.mjs <theme-slug> --track <id> --from <s>
+     --seconds <s>` records it from the real game at 960×600 and 390×844 in en and zh-TW, with
+     posters, balanced quality (`-crf 20`, ≤ 4 MB each). Find the window first (log `race.elapsed` and the state you want to
+     show) and keep collisions or banners that are not the point out of it. Attach it as the entry's
+     `video`.
+   - A screen or a still moment: a real screenshot (`.webp`) as the highlight's `image`, localized
+     when it shows text (`scripts/capture-og-images.mjs` shows how to open the app as a returning
+     player).
+   - Look at the frames before using them (`ffmpeg -i clip.mp4 -vf "fps=1,scale=320:-1,tile=6x1"
+     -frames:v 1 sheet.jpg`): the effect is on screen, no grey padding, no unrelated pop-ups.
+   v0.29.0's rivals grabbing NITRO among the denser rings: `public/whats-new/rival-nitro/`.
+3. `/review-release-notes <version>` (`.claude/commands/review-release-notes.md`) reviews the copy
+   and checks step 2 (a "Show it" verdict per highlight):
    - **Automatic copy check** (`copyProblems` in `scripts/check-release-notes.mjs`): rejects developer
      terms in en and zh-TW (refactor, shader, backend, database, CI, 重構, 後端, 後台, 資料庫, 架構,
      程式…), links, emails, secret prefixes, file and code names, commit ids, and text over the
@@ -146,15 +171,15 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
    - **Approval**: after the user approves, `node scripts/check-release-notes.mjs --approve <version>`
      stores a fingerprint of the copy in `scripts/release-notes-reviews.json`.
    Every `AskUserQuestion` in the review offers a "(Recommended)" first option.
-3. `/release <version>` (project command `.claude/commands/release.md`) checks the notes before
+4. `/release <version>` (project command `.claude/commands/release.md`) checks the notes before
    anything else and runs the review when they are new or changed, committing the approved
    review; only then do tests, the intro and the release script run. The script runs
    `scripts/release-gate.sh`, which first runs
    `node scripts/check-release-notes.mjs <version>`: it refuses the release when that version has no
    entry, was never reviewed or changed after review, a highlight lacks either language or fails the
    copy check, or an image is not a file in `public/`.
-4. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
-5. The gate then runs `npm test` with `package.json` set to the new version, as the tag's CI will.
+5. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
+6. The gate then runs `npm test` with `package.json` set to the new version, as the tag's CI will.
    `CURRENT_RELEASE` follows that version, so a test about a specific entry's content pins it with
    `releaseForVersion('<version>')` — v0.22.0's tag run failed on an unpinned `CURRENT_RELEASE.image`.
 

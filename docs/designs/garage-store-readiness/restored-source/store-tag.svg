@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="216" height="216" viewBox="0 0 216 216">
+<defs><linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff78d4"/><stop offset="0.52" stop-color="#ffd4f6"/><stop offset="1" stop-color="#ae2e9a"/></linearGradient><linearGradient id="metal" x1="0" y1="0" x2="0.85" y2="1"><stop stop-color="#1c3554"/><stop offset=".6" stop-color="#0a1835"/><stop offset="1" stop-color="#09142d"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ae2e9a" stop-opacity=".92"/><stop offset=".65" stop-color="#ff78d4" stop-opacity=".38"/><stop offset="1" stop-color="#ae2e9a" stop-opacity=".88"/></linearGradient></defs>
+<g stroke-linejoin="round" stroke-linecap="round">
+<path d="M43 70 99 38h61q13 0 13 13v61L111 177q-10 10-20 0L38 127q-9-9-3-20Z" fill="url(#metal)" stroke="url(#edge)" stroke-width="6"/>
+<path d="M48 112 110 163l53-56V51H101L48 82Z" fill="url(#glass)" opacity=".7"/>
+<circle cx="141" cy="74" r="13" fill="#07152d" stroke="#ffc8f4" stroke-width="5"/>
+<path d="M141 74q-8-28 15-41" fill="none" stroke="#ffcbf4" stroke-width="4"/>
+<path d="M77 102h53M77 119h36M91 135h14" stroke="#ffe3fa" stroke-width="5" opacity=".9"/>
+<path d="M52 77 99 46" stroke="#ffd2f4" stroke-width="3"/>
+</g></svg>

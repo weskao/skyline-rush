@@ -55,6 +55,8 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
     $<HTMLButtonElement>('#airflow-toggle').disabled = !visual.enabled;
     document.body.classList.toggle('airflow-active', visual.airflow && visual.enabled);
     document.body.classList.toggle('vfx-comfort', visual.comfortable);
+    document.body.dataset.vfxQuality = visual.quality;
+    document.body.dataset.vfxEnabled = String(visual.enabled);
     stopMotionIfCalm();
     airflowHud.setAttribute('aria-hidden', String(!visual.airflow || !visual.enabled));
     showAeroMode();

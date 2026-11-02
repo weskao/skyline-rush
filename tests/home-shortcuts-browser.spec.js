@@ -7,6 +7,32 @@ const inViewport = async (page, locator) => {
   return box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width + 1 && box.y + box.height <= height + 1;
 };
 
+test('Garage replaces Practice beside Start, advertises NEW and still opens the showroom', async ({ page }) => {
+  await page.goto('/');
+  const primary = page.locator('.intro-primary');
+  expect(await primary.locator('button').evaluateAll(buttons => buttons.map(button => button.id))).toEqual(['start-button', 'garage-button']);
+  expect(await page.locator('.intro-actions > button').evaluateAll(buttons => buttons.map(button => button.id || 'history'))).toEqual(['history', 'practice-button']);
+  const garage = page.locator('#garage-button');
+  await expect(garage.locator('.garage-new-tag')).toHaveText('NEW');
+  await expect(garage).toHaveCSS('animation-name', 'garage-highlight');
+  await garage.click();
+  await expect(page.locator('#garage-screen')).toBeVisible();
+});
+
+test('Garage promotion remains distinct but stops animating with reduced motion and comfort mode', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const garage = page.locator('#garage-button');
+  await expect(garage).toHaveCSS('animation-name', 'none');
+  await expect(garage.locator('.garage-new-tag')).toHaveCSS('animation-name', 'none');
+  await expect(garage.locator('.garage-new-tag')).toBeVisible();
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(garage).toHaveCSS('animation-name', 'garage-highlight');
+  await page.locator('body').evaluate(body => body.classList.add('vfx-comfort'));
+  await expect(garage).toHaveCSS('animation-name', 'none');
+  await expect(garage.locator('.garage-new-tag')).toHaveCSS('animation-name', 'none');
+});
+
 test('home Practice opens the guide on the practice call to action, which starts the lesson', async ({ page }) => {
   await page.goto('/');
   await page.locator('#practice-button').click();
@@ -76,9 +102,9 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [844, 390]])
       }
       expect(startBox.width).toBeGreaterThan(0);
       if (width >= 1001) {
-        // Desktop keeps History on the Start row; Practice joins it.
-        const [practice, history] = [await page.locator('#practice-button').boundingBox(), await page.locator('.history-button').boundingBox()];
-        for (const box of [practice, history]) expect(Math.abs((startBox.y + startBox.height / 2) - (box.y + box.height / 2))).toBeLessThan(2);
+        // Desktop keeps History and the promoted Garage on the Start row.
+        const [garage, history] = [await page.locator('#garage-button').boundingBox(), await page.locator('.history-button').boundingBox()];
+        for (const box of [garage, history]) expect(Math.abs((startBox.y + startBox.height / 2) - (box.y + box.height / 2))).toBeLessThan(2);
       }
       expect(await page.locator('#intro').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     });

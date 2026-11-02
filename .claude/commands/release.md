@@ -22,10 +22,15 @@ from the survey. Later phases reuse this answer and do not ask again.
 即使公告已審核通過，也必須展示全文；不能只回報檢查通過、摘要或檔案路徑。
 若審核修改公告，在最終核准前再次展示最後版本，避免核准的內容與看到的不同。
 
+展示公告時，每項標示附帶的圖片／影片（檔案路徑）或「不需要」。需要展示效果的項目（新特效、
+新動作、畫面或車輛行為改變）若沒有實機截圖或影片，先依 `docs/release-announcements.md` §6 第 2 步
+補上，再進入下面的檢查；修正、規則調整或紀錄說明不需要附圖。影片與截圖只在這裡、正式發佈前
+用要發佈的程式錄一次；平時 `develop` 有改動時不錄、也不重錄。
+
 1. `node scripts/check-release-notes.mjs <version>` — read-only.
    - **Passes** → go to Phase T.
    - **No entry for the version** → stop. The notes are written first, as the `version: UPCOMING`
-     entry (CLAUDE.md "Every release ships its What's New notes"); the check finds it under any
+     entry (`.claude/rules/release-notes.md`); the check finds it under any
      version newer than every released entry; offer to draft them from `node scripts/check-release-notes.mjs --changes` (player-facing
      commits since the last tag), rewritten as player copy, then review them.
    - **Copy problems, not reviewed, or changed since review** → run
@@ -39,9 +44,45 @@ from the survey. Later phases reuse this answer and do not ask again.
 
 `-y` / `--yes` skips the intro approval only, never a notes question.
 
+## Phase F — Firestore rules (after Phase A, before Phase B)
+
+The tag's CI publishes the site but never deploys `firestore.rules`. If this release changes the
+rules, production Firestore must accept the new save format **before** the new site goes live.
+Otherwise signed-in players' cloud saves are rejected (example: layout-2 bests such as `coast@2`).
+
+1. Compare against the last release tag:
+
+   ```bash
+   git diff --quiet "$(git describe --tags --abbrev=0 --match 'v*')" HEAD -- firestore.rules
+   ```
+
+   Exit 0 means the rules are unchanged: go to Phase B and say "Firestore rules unchanged" in the
+   final report. Exit 1 means they changed: continue.
+2. Show the rules diff. The new rules must still accept every document the currently published
+   site writes, because rules go live before the site does. If they would reject an old-format
+   write, stop and ask the user. `npm run test:cloud` must pass on this commit.
+3. Ask with `AskUserQuestion`; the first option is "Deploy Firestore rules now (Recommended)".
+   `-y` never skips this question. Without approval, stop and do not run Phase B.
+4. Deploy with the same pinned `firebase-tools` that `test:cloud` uses:
+
+   ```bash
+   npx -y firebase-tools@15.34.1 deploy --only firestore:rules --project skyline-rush-weskao
+   ```
+
+   Not logged in → hand the user `! npx -y firebase-tools@15.34.1 login` and wait.
+5. Continue to Phase B only after the output reports the rules were released. Run Phase B with
+   `FIRESTORE_RULES_DEPLOYED="$(git hash-object firestore.rules)"` in its environment:
+   `scripts/release-gate.sh` refuses to tag changed rules without it. Put the deploy result in the
+   final report and the Telegram notice.
+
+**Rollback:** roll back the site only (revert the release on `main` or re-release the previous
+version) and leave the new rules live. They accept old and new save formats, while the old rules
+would reject every later save from players who already stored new keys (e.g. `coast@2`).
+
 ## Phases T, A and B
 
-Follow Phases T, A and B and the final report of `$HOME/.claude/commands/release.md` unchanged.
+Follow Phases T and A, then Phase F above, then Phase B and the final report of
+`$HOME/.claude/commands/release.md` unchanged.
 `RELEASE_SCRIPT` resolves to this project's `scripts/release.sh`, whose `scripts/release-gate.sh`
 re-runs the notes check first, then requires `main` = `origin/main`, a green CI run and
 `npm test` + `npm run build`, before the shared script writes the changelog, commits, tags,

@@ -5,41 +5,70 @@ service cloud.firestore {
       'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
   }
 
-  function validStar(values, id) {
-    return !values.keys().hasAny([id]) ||
-      (values[id] is int && values[id] >= 1 && values[id] <= 3);
+  // Classic best ids: every track plus each `<track>@<layout>` it has had (recordTrackIds in src/record-layout.ts).
+  function bestIds() {
+    return trackIds().concat(['coast@2', 'coast@3', 'neon@2', 'neon@3', 'canyon@2', 'canyon@3', 'spiral@2', 'spiral@3',
+      'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2',
+      'coast@4', 'neon@4', 'canyon@4', 'spiral@4',
+      'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3']);
   }
 
+  // Rules stop at 1000 evaluated expressions per write, and each map lookup counts: the old keys().hasAny([id])
+  // form rejected a player holding every star and best (already 10 stars + 14 bests before stage 2). One
+  // A defaulted lookup avoids evaluating a separate presence check for every optional field.
+  // Invalid present values still fail the same bounds. This keeps full saves under the 1000-expression limit.
+  function validStar(values, id) {
+    return values.get(id, 1) in [1, 2, 3];
+  }
+
+  // 0 < best < 604800 s (one week) in a single lookup.
   function validBest(values, id) {
-    return !values.keys().hasAny([id]) ||
-      (values[id] is number && values[id] > 0 && values[id] <= 604800);
+    return math.abs(values.get(id, 302400) - 302400) < 302400;
   }
 
   function validMedal(values, id) {
-    return !values.keys().hasAny([id]) ||
+    return !(id in values) ||
       (values[id] is string &&
         values[id].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$'));
+  }
+
+  function validStars(stars) {
+    return validStar(stars, 'coast') && validStar(stars, 'neon') && validStar(stars, 'canyon')
+      && validStar(stars, 'aurora') && validStar(stars, 'spiral') && validStar(stars, 'taipei')
+      && validStar(stars, 'tokyo') && validStar(stars, 'alpine') && validStar(stars, 'coastal')
+      && validStar(stars, 'cosmic');
+  }
+
+  function validBests(bests) {
+    return validBest(bests, 'coast') && validBest(bests, 'neon') && validBest(bests, 'canyon')
+      && validBest(bests, 'aurora') && validBest(bests, 'spiral') && validBest(bests, 'taipei')
+      && validBest(bests, 'tokyo') && validBest(bests, 'alpine') && validBest(bests, 'coastal')
+      && validBest(bests, 'cosmic')
+      && validBest(bests, 'coast@2') && validBest(bests, 'neon@2')
+      && validBest(bests, 'canyon@2') && validBest(bests, 'spiral@2')
+      && validBest(bests, 'coast@3') && validBest(bests, 'neon@3')
+      && validBest(bests, 'canyon@3') && validBest(bests, 'spiral@3')
+      && validBest(bests, 'aurora@2') && validBest(bests, 'taipei@2')
+      && validBest(bests, 'tokyo@2') && validBest(bests, 'alpine@2')
+      && validBest(bests, 'coastal@2') && validBest(bests, 'cosmic@2')
+      && validBest(bests, 'coast@4') && validBest(bests, 'neon@4')
+      && validBest(bests, 'canyon@4') && validBest(bests, 'spiral@4')
+      && validBest(bests, 'aurora@3') && validBest(bests, 'taipei@3')
+      && validBest(bests, 'tokyo@3') && validBest(bests, 'alpine@3')
+      && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3');
+  }
+
+  function validMedals(medals) {
+    return validMedal(medals, 'first-win') && validMedal(medals, 'clean-run')
+      && validMedal(medals, 'perfect-five') && validMedal(medals, 'nitro-chain');
   }
 
   function validScoreMaps(data) {
     return data.stars is map && data.bests is map && data.medals is map
       && data.stars.keys().hasOnly(trackIds())
-      && data.bests.keys().hasOnly(trackIds())
+      && data.bests.keys().hasOnly(bestIds())
       && data.medals.keys().hasOnly(['first-win', 'clean-run', 'perfect-five', 'nitro-chain'])
-      && validStar(data.stars, 'coast') && validBest(data.bests, 'coast')
-      && validStar(data.stars, 'neon') && validBest(data.bests, 'neon')
-      && validStar(data.stars, 'canyon') && validBest(data.bests, 'canyon')
-      && validStar(data.stars, 'aurora') && validBest(data.bests, 'aurora')
-      && validStar(data.stars, 'spiral') && validBest(data.bests, 'spiral')
-      && validStar(data.stars, 'taipei') && validBest(data.bests, 'taipei')
-      && validStar(data.stars, 'tokyo') && validBest(data.bests, 'tokyo')
-      && validStar(data.stars, 'alpine') && validBest(data.bests, 'alpine')
-      && validStar(data.stars, 'coastal') && validBest(data.bests, 'coastal')
-      && validStar(data.stars, 'cosmic') && validBest(data.bests, 'cosmic')
-      && validMedal(data.medals, 'first-win')
-      && validMedal(data.medals, 'clean-run')
-      && validMedal(data.medals, 'perfect-five')
-      && validMedal(data.medals, 'nitro-chain');
+      && validStars(data.stars) && validBests(data.bests) && validMedals(data.medals);
   }
 
   match /databases/{database}/documents {

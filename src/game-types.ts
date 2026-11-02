@@ -17,6 +17,14 @@ export interface TrackConfig {
   seed: number;
   sections: TrackSection[];
   fixedRings?: boolean;
+  /** Cumulative roll thresholds for charge / nitro / slipstream / risk rings; the rest is mystery. */
+  ringOdds?: readonly [number, number, number, number];
+  /** Fixed gate-line ring altitudes, cycled by ring index (default 8). */
+  ringAltitudes?: readonly number[];
+  /** The first N rings are nitro rings, so the first NITRO comes early without adding rings. */
+  openingNitroRings?: number;
+  /** Ring/pickup layout generation for timed records (`src/record-layout.ts`); omitted = 1. Bump it whenever a layout change makes older times incomparable. */
+  layoutVersion?: number;
 }
 export interface PlayerSnapshot {
   speed: number;

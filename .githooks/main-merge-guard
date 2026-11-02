@@ -1,0 +1,17 @@
+#!/bin/sh
+# Only develop and hotfix/* may be merged into main. Called by pre-merge-commit (clean merges) and
+# pre-commit (committing a resolved conflict). Fast-forward merges run no hook: use --no-ff.
+# Bypass once with ALLOW_MAIN_MERGE=1 git merge|commit ...
+[ "${ALLOW_MAIN_MERGE:-}" = 1 ] && exit 0
+[ "$(git symbolic-ref --short -q HEAD)" = main ] || exit 0
+# A clean merge has no MERGE_HEAD yet when pre-merge-commit runs; git exports GITHEAD_<sha> instead.
+heads=$(cat "$(git rev-parse --git-path MERGE_HEAD)" 2>/dev/null || env | sed -n 's/^GITHEAD_\([0-9a-f]*\)=.*/\1/p')
+for head in $heads; do
+  # Each merged commit must be the tip of develop or a hotfix/* branch (local or origin);
+  # origin/main keeps `git pull` on a diverged main working.
+  git for-each-ref --points-at "$head" --format=x refs/heads/develop refs/remotes/origin/develop \
+    refs/heads/hotfix/ refs/remotes/origin/hotfix/ refs/remotes/origin/main | grep -q . && continue
+  echo "main-merge-guard: only develop or hotfix/* may be merged into main." >&2
+  echo "  Merge your branch into develop instead (skip once: ALLOW_MAIN_MERGE=1)." >&2
+  exit 1
+done

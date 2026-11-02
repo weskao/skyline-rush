@@ -37,7 +37,7 @@ test('starting requires a countdown and countdown holds every racer on the grid'
   assert.equal(race.phase, 'countdown');
   assert.equal(race.player.distance, 0);
   assert.equal(race.player.altitude, 0);
-  assert.equal(race.rivals[0].distance, 0);
+  assert.equal(race.rivals[0].distance, race.grid.find(slot => slot.id === race.rivals[0].name).distance);
   advance(race, 1.1);
   assert.equal(race.phase, 'racing');
 });
@@ -57,6 +57,7 @@ test('accelerating, coasting, braking and steering respect road and speed limits
 
 test('thrusters require speed, lift the car, spend fuel and land on release', () => {
   const race = racing();
+  Object.assign(race, { pickups: [], rings: [] }); // a charge row on the road would refill fuel
   advance(race, 1, { fly: true });
   assert.equal(race.player.altitude, 0);
   assert.equal(race.player.fuel, 100);
@@ -117,7 +118,7 @@ test('pause and invalid frame intervals leave race state unchanged', () => {
 test('all rivals race and use flight; position compares distance, finish freezes the result', () => {
   const race = racing();
   advance(race, 8, { throttle: true });
-  assert.equal(race.rivals.length, 3);
+  assert.equal(race.rivals.length, 7);
   assert.ok(race.rivals.every(rival => rival.distance > 100));
   let airborne = false;
   for (let i = 0; i < 600; i++) {
@@ -150,6 +151,7 @@ test('fresh races reset progress, fuel, collision count and opponents', () => {
 
 test('ground boost spends charge instead of recharging while the accelerator is held', () => {
   const race = racing();
+  Object.assign(race, { pickups: [], rings: [] }); // a charge row on the road would refill fuel
   advance(race, 4, { throttle: true });
   advance(race, 5, { throttle: true, boost: true });
   assert.ok(race.player.fuel < 60, `Boost left ${race.player.fuel}% charge`);
@@ -291,7 +293,7 @@ test('landing emits one touchdown event with the actual descent speed and resets
 });
 
 test('air dash: holding fly and boost together drains fuel at 18 per second and keeps the boost speed cap', () => {
-  const race = racing();
+  const race = racing(); race.rivals = [];
   race.player.speed = 80;
   advance(race, 1, { fly: true, boost: true });
   assert.ok(Math.abs(race.player.fuel - 82) < 0.5);
@@ -305,6 +307,7 @@ test('air dash: holding fly and boost together drains fuel at 18 per second and 
 
 test('FLY + NITRO: nitro burns no fuel, so flight stays up for the whole burst at the nitro cap', () => {
   const race = racing();
+  Object.assign(race, { pickups: [], rings: [] }); // pickups would add fuel along the way
   Object.assign(race.player, { speed: 80, nitro: 1 });
   advance(race, 2, { fly: true, nitro: true });
   const car = race.player;
@@ -329,7 +332,7 @@ test('FLY + BOOST + NITRO keeps the 18/s AIR DASH drain and the MAX_SPEED + 30 c
 });
 
 test('steering input ramps to full over 0.15 s and high-speed lateral speed caps at 9 m/s', () => {
-  const race = racing();
+  const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: MAX_SPEED, x: -7.5 });
   advance(race, 0.05, { throttle: true, steer: 1 });
   assert.ok(Math.abs(race.player.steering - 1 / 3) < 0.01);
@@ -342,12 +345,12 @@ test('steering input ramps to full over 0.15 s and high-speed lateral speed caps
 
 test('lane assist eases a released car to the nearest lane centre only when enabled', () => {
   for (const laneAssist of [true, false]) {
-    const race = racing();
+    const race = racing(); race.rivals = [];
     Object.assign(race.player, { speed: 40, x: 3.6 });
     advance(race, 2, { throttle: true, laneAssist });
     assert.ok(laneAssist ? Math.abs(race.player.x - 2.5) < 0.05 : race.player.x === 3.6);
   }
-  const race = racing();
+  const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: 40, x: 3.6 });
   advance(race, 0.5, { throttle: true, laneAssist: true, steer: 1 });
   assert.ok(race.player.x > 3.6);
@@ -620,12 +623,12 @@ test('pickups come only from the track seed, are reproducible and cover every ti
       assert.deepEqual(new Set(pickups.map(p => p.tier)), new Set(['cell', 'can', 'tank', 'overcharge']), id);
       assert.equal(pickups.filter(p => p.tier === 'overcharge').length, 1, id);
       for (const pickup of pickups) {
-        assert.deepEqual(Object.keys(pickup), ['distance', 'x', 'altitude', 'tier']);
+        assert.deepEqual(Object.keys(pickup), ['distance', 'x', 'altitude', 'tier', ...(pickup.run ? ['run'] : [])]); // run: a cell trailing a pickup slot
         assert.ok(pickup.distance > 0 && pickup.distance < length && Math.abs(pickup.x) < ROAD_LIMIT);
         const section = sections.find(s => pickup.distance >= s.from && pickup.distance < s.to);
-        // Tanks and the overcharge fly; any other air pickup is a cell lining a shortcut corridor.
+        // Tanks and the overcharge fly; any other air pickup is a cell lining a shortcut corridor or trailing an air tank.
         if (pickup.tier === 'tank' || pickup.tier === 'overcharge') assert.ok(pickup.altitude > 0);
-        else assert.ok(pickup.altitude === 0 || section?.type === 'shortcut', `${id} stray air ${pickup.tier}`);
+        else assert.ok(pickup.altitude === 0 || section?.type === 'shortcut' || pickup.run, `${id} stray air ${pickup.tier}`);
         assert.ok(!(section?.type === 'gap' && pickup.altitude === 0), `${id} ground pickup over a gap`);
         assert.ok(!(section?.type === 'tunnel' && pickup.altitude > 0), `${id} air pickup in a tunnel`);
       }
@@ -770,7 +773,8 @@ test('the race result records NITRO activations and the longest near-miss combo'
 });
 
 function driftingRace(speed = 80) {
-  const race = racing();
+  const race = racing(); race.rivals = [];
+  Object.assign(race, { pickups: [], rings: [] }); // full-width rows are on every line: they would pay nitro mid-drift
   Object.assign(race.player, { speed, x: 0 });
   return race;
 }
@@ -843,6 +847,7 @@ test('drift nitro counts toward the cap and the overflow becomes fuel', () => {
 
 test('the mini boost lifts the speed cap past MAX_SPEED without burning fuel', () => {
   const race = driftingRace();
+  race.rings = []; // Coast's road-height rings pay their own fuel and mini boost on this line
   advance(race, 3.05, DRIFT);
   race.player.fuel = 50;
   advance(race, 0.9, { throttle: true });
@@ -936,16 +941,17 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
       const { rings, length } = createRace(id);
       assert.deepEqual(rings, createRace(id).rings);
       assert.ok(rings.length >= 7, id);
-      rings.forEach((ring, i) => {
-        assert.deepEqual(Object.keys(ring), ['distance', 'x', 'altitude', 'radius', 'type', 'group']);
+      rings.filter(ring => !ring.row && ring.train === undefined).forEach((ring, i, singles) => { // rows and trains: tests/ring-rows.test.js
+        assert.deepEqual(Object.keys(ring).slice(0, 6), ['distance', 'x', 'altitude', 'radius', 'type', 'group']);
+        assert.ok(Object.keys(ring).slice(6).every(key => key === 'groupSize'), Object.keys(ring).join());
         assert.ok(ring.distance > 0 && ring.distance < length && Math.abs(ring.x) < ROAD_LIMIT && ring.altitude >= 0 && ring.altitude <= 12);
-        assert.ok(i === 0 || ring.distance > rings[i - 1].distance);
+        assert.ok(i === 0 || ring.distance > singles[i - 1].distance, `${id} @${ring.distance}`); // ordered, one ring per distance
         assert.equal(ring.radius, ring.type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS);
         types.add(ring.type);
       });
-      const sizes = Object.values(Object.groupBy(rings, ring => ring.group)).map(group => group.length);
-      assert.ok(sizes.every(size => size >= 3 && size <= 5), `${id} group sizes ${sizes}`);
-      assert.deepEqual([...new Set(rings.map(ring => ring.group))], sizes.map((_, i) => i)); // consecutive group ids
+      const groups = Object.values(Object.groupBy(rings, ring => ring.group));
+      for (const group of groups) if (!group.some(ring => ring.row || ring.train !== undefined)) assert.ok(group.length >= 3 && group.length <= 5 && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
+      assert.deepEqual([...new Set(rings.map(ring => ring.group))].sort((a, b) => a - b), groups.map((_, i) => i)); // group ids 0..n-1
     }
     assert.deepEqual(types, new Set(['charge', 'nitro', 'slipstream', 'risk', 'mystery']));
   } finally {
@@ -954,12 +960,14 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
   assert.notDeepEqual(createRace('coast').rings, createRace('neon').rings);
 });
 
-test('coast keeps the original gate positions every 220 m at x 2.5 and altitude 8', () => {
-  const { rings } = createRace('coast');
-  rings.forEach((ring, i) => {
-    assert.equal(ring.distance, (i + 1) * 220);
-    assert.equal(ring.x, 2.5);
-    assert.equal(ring.altitude, 8);
+// Coast keeps its gate line: every ring at x 2.5, altitude 8 and road-height 3 alternating by ring.
+test('coast keeps its gate line at x 2.5, alternating altitude 8 and road-height 3', () => {
+  // One ring per slot (a row's first lane, a train's first ring); the single slots keep the gate line, by slot index.
+  const slots = createRace('coast').rings.filter(ring => !(ring.row && ring.x !== -7.5) && !ring.train);
+  slots.forEach((ring, i) => {
+    if (ring.row || ring.train !== undefined) return;
+    assert.equal(ring.x, 2.5, `ring ${i} @${ring.distance}`);
+    assert.equal(ring.altitude, i % 2 ? 3 : 8, `ring ${i} alternates`);
   });
 });
 
@@ -1195,12 +1203,13 @@ test('slipstream needs the same lane and a draft-range gap', () => {
 });
 
 test('rival nitro fires by personality and respects its charge budget', () => {
-  const fresh = () => { const race = racing(); race.player.effects.ghost = 99; return race; };
+  // No items: rivals collecting NITRO (stage 2, tests/rival-items.test.js) would change the charge counts this checks.
+  const fresh = () => { const race = racing(); race.player.effects.ghost = 99; Object.assign(race, { rings: [], pickups: [] }); return race; };
   const [nova, orbit, apex] = [0, 1, 2];
   const step = race => stepRace(race, {}, 1 / 60);
   const early = fresh();
   step(early);
-  assert.deepEqual(early.rivals.map(rival => rival.nitro), [RIVAL_NITRO_CHARGES, RIVAL_NITRO_CHARGES, RIVAL_NITRO_CHARGES]);
+  assert.ok(early.rivals.every(rival => rival.nitro === RIVAL_NITRO_CHARGES));
   const novaRace = fresh(); // NOVA: steady, fixed schedule
   novaRace.elapsed = RIVAL_NITRO_NOVA_FIRST + 0.1;
   step(novaRace);
@@ -1561,6 +1570,7 @@ test('gap charge warning: within range of a broken bridge with too little charge
 
 test('races count charge run-outs and gap falls for tuning', () => {
   const race = racing();
+  Object.assign(race, { rings: [], pickups: [] }); // a charge ring row would refill the flight charge
   advance(race, 3, { throttle: true });
   advance(race, 9, { throttle: true, fly: true });
   assert.equal(race.player.fuelOuts, 1);
@@ -1628,7 +1638,8 @@ test('rivals and traffic change lane around a Tokyo train instead of driving thr
   race.props = props;
   startRace(race);
   advance(race, 3.1);
-  const rival = race.rivals.find(r => r.x === 7.5), traffic = race.traffic[0];
+  const rival = race.rivals[0], traffic = race.traffic[0];
+  race.rivals = [rival]; rival.x = rival.homeX = 7.5;
   // The player trails both in the far-left lane: close enough that traffic is not recycled ahead.
   const trail = () => Object.assign(race.player, { distance: Math.min(rival.distance, traffic.distance) - 30, x: -7.5, speed: 0 });
   Object.assign(rival, { distance: train.from - 120, speed: 70 });
@@ -1736,8 +1747,8 @@ test('ramming a traffic car knocks it too: it loses speed, is shoved away from t
 
 test('a rival steers around a stopped player instead of driving through the car', () => {
   const race = racing();
-  const rival = race.rivals.find(r => r.x === 7.5);
-  race.rivals = [rival];
+  const rival = race.rivals[0];
+  race.rivals = [rival]; rival.x = rival.homeX = 7.5;
   Object.assign(rival, { distance: race.player.distance - 120, speed: 70 });
   Object.assign(race.player, { x: 7.5, speed: 0, cooldown: 0 });
   let overlaps = 0;

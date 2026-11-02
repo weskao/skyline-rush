@@ -17,41 +17,19 @@ In Classic Race, Skyline Rush is a short, replayable arcade sprint in the browse
 
 A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
-**Home screen** — pick a track and a camera angle, then start the race.
-
-https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
-
-**Racing** — a full run on one of the tracks.
-
 https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
-![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)
+<p align="center"><img src="artifacts/readme-tracks.jpeg?v=20261102a" width="70%" alt="Four of the ten tracks in flight: Neon Downtown, Aurora Pass, Sky Spiral and Tokyo Afterdark"></p>
 
-![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261024a)
+<p align="center"><img src="artifacts/readme-start.jpeg?v=20261102a" width="49%" alt="Start screen with game modes, tracks and Start race"> <img src="artifacts/race-results.jpeg?v=20261024a" width="49%" alt="Race results with a new personal best"></p>
 
-![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261024a)
+### Play on your phone
 
-![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261024a)
+Portrait or landscape with touch controls; AUTO keeps the accelerator held. [Watch the MP4](artifacts/mobile-demo.mp4)
 
-![Race results with a new personal best](artifacts/race-results.jpeg?v=20261024a)
+<p align="center"><img src="artifacts/mobile-home.jpeg" height="300" alt="Mobile portrait start screen with track selection"> <img src="artifacts/mobile-landscape-flight.jpeg" height="300" alt="Mobile landscape flight with FLY held and the touch controls visible"></p>
 
-### Mobile screenshots and demo
-
-Play in portrait or landscape with touch controls. The clip follows a Coast run from the start screen through countdown, FLY lift-off and landing; AUTO keeps the accelerator held.
-
-**Portrait — ready to race**
-
-![Mobile portrait start screen with track selection and touch-friendly race buttons](artifacts/mobile-home.jpeg)
-
-**Landscape — flying with touch controls**
-
-![Mobile landscape flight with FLY held and the touch controls visible](artifacts/mobile-landscape-flight.jpeg)
-
-**Touch gameplay demo** · [Watch the MP4](artifacts/mobile-demo.mp4)
-
-![Mobile touch gameplay: Coast countdown, FLY lift-off and landing](artifacts/mobile-demo.gif)
-
-Captured from the running game in Chrome mobile emulation at 390×844 (portrait) and 844×390 (landscape), using a fresh demo profile. These captures do not measure physical-phone performance.
+Captured in Chrome mobile emulation (390×844 and 844×390) on a fresh profile; not a physical-phone performance measure.
 
 ## Game modes and replayability (development branch)
 
@@ -131,7 +109,7 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 
 `make dev-diag` and `make phone-diag` serve the same builds with an on-screen diagnostic banner compiled in (frame counter, page lifecycle and touch events with their hit targets, plus the last uncaught errors kept across reloads), for chasing a freeze or dead buttons on a real phone. Production builds never contain it: `npm run build` refuses a bundle that carries the diagnostic module.
 
-`make phone` opens a terminal menu that starts, checks or stops a dev server your phone can open (over Tailscale or the same Wi-Fi) and prints the phone URL once it answers. The menu lists this checkout, other worktrees and recent branches, or takes a typed branch name; `make phone <name>` goes straight to that branch (or `feature/<name>`), creating its worktree under `.claude/worktrees/` when needed, and `make phone off` stops every server it started (like `/phone-dev off`). It serves the normal locked build; `make phone-unlocked [name]` is the same menu with every track and paint unlocked, the only all-unlocked server a phone can reach (`make dev-unlocked` and `make dev-feature` stay desktop-only). It needs the personal `phone-dev` Claude Code skill (`/phone-dev` asks the same menu) and runs without the emulators, so cloud-save sign-in on the phone uses the real project.
+`make phone` opens a terminal menu that starts, checks or stops a dev server your phone can open (over Tailscale or the same Wi-Fi) and prints the phone URL once it answers. The menu lists this checkout, other worktrees and recent branches, or takes a typed branch name; `make phone <name>` goes straight to that branch (or `feature/<name>`), creating its worktree under `.claude/worktrees/` when needed, `make phone off` stops every server it started (like `/phone-dev off`), and `y=1` (e.g. `make phone y=1 <name>`) skips the menu: every question takes its Recommended option and each choice is printed. When a port is already held by this project's own earlier server (any worktree), reusing that port is the Recommended answer: the old server is stopped and the URL stays the same; `make dev`, `make dev-diag`, `make dev-unlocked` (5173) and `make dev-feature` (5443) do the same without asking, and leave another project's server alone. It serves the normal locked build; `make phone-unlocked [name]` is the same menu with every track and paint unlocked, the only all-unlocked server a phone can reach (`make dev-unlocked` and `make dev-feature` stay desktop-only). It needs the personal `phone-dev` Claude Code skill (`/phone-dev` asks the same menu) and runs without the emulators, so cloud-save sign-in on the phone uses the real project.
 
 ## Controls
 
@@ -168,7 +146,7 @@ The flight panel shows ascent, cruise, descent and touchdown, remaining thrust s
 
 The scene includes bloom lighting, sunset water, suspension bridges, thruster vapor, collision sparks and touchdown ripples. Camera motion and nonessential speed streaks respect your system's reduced-motion preference. Sound effects give separate thrust, contact and landing feedback.
 
-**VFX** (top right) picks a Realistic, Cinematic or Extreme look, Low / Medium / High quality (Low turns bloom off and draws less scenery), Comfort mode (no flashes, shake, afterimages or blur) and optional haptics; **Fine tuning** exposes each effect as a slider and **Reset visual settings** restores the defaults. **AIRFLOW** (or V) switches the scene to an aerodynamics showcase: streamlines over the body, a telemetry panel, Low drag or High downforce, and a driving, front, rear, side or orbiting camera. The start panel steps aside for the showcase, leaving only the orange **START RACE** button, docked at the bottom centre below the car; swipe the scene left or right to change track. The first time AIRFLOW is switched on, an animated fingertip shows that gesture.
+**VFX** (top right) picks a Realistic, Cinematic or Extreme look, Low / Medium / High quality (Low turns bloom off and draws less scenery), Comfort mode (no flashes, shake, afterimages or blur) and optional haptics. Its **Race HUD** section picks Immersive or Competitive (with leaderboard, minimap and secondary-stats switches), turns the NITRO READY sound and animation on or off, and **Reset HUD to default** restores them. **Fine tuning** exposes each effect as a slider and **Reset visual settings** restores the defaults. **AIRFLOW** (or V) switches the scene to an aerodynamics showcase: streamlines over the body, a telemetry panel, Low drag or High downforce, and a driving, front, rear, side or orbiting camera. The start panel steps aside for the showcase, leaving only the orange **START RACE** button, docked at the bottom centre below the car; swipe the scene left or right to change track. The first time AIRFLOW is switched on, an animated fingertip shows that gesture. The streamlines appear only while AIRFLOW is on: with it off, BOOST and NITRO show the thruster jets, trail and speed streaks without them.
 
 Three amber start lights turn cyan at GO. The player car is a low wedge roadster with a smoked fastback canopy, a full-width red tail bar, four rear thruster ports, a bronze pop-up wing that rises for boost, braking and flight, spinning five-spoke wheels and steering front wheels. Each rival has its own silhouette and light signature: NOVA is a long-tail with twin fins and split magenta lights, ORBIT a rounded GT with a bubble canopy and round cyan lamps, APEX a track car with a splitter, roof scoop, tall endplate wing and amber C-lights. Traffic uses an upright commuter shape. Steering eases in quickly and releasing boost slows the car progressively instead of instantly cutting speed. All driving and toolbar buttons have at least 44px touch targets, including at 320px width.
 
@@ -182,7 +160,7 @@ Steering ramps to full over 0.15 s and the lateral speed is capped at 9 m/s at h
 
 ### NITRO and drift
 
-NITRO has its own reserve (`player.nitro`, up to 3 charges, each fills as a float). The three-segment HUD shows partial charge, full segments glow, and NITRO MAX pulses when full (motion is suppressed in comfort/reduced-motion modes). Pickups along the track (blue cell +0.25, orange can +0.5, airborne gold tank +1, one rainbow overcharge that fills to the cap) are placed from the track seed; every NITRO reward (pickups, drifts, barrel rolls, rings, slipstreams) also refills flight charge (each 0.25 banked = +5; the overcharge gives none), and anything above the cap becomes charge (each 0.25 = +8). One charge gives 2.5 s with the speed cap raised by 30 m/s, stronger acceleration, exhaust and lens feedback; pressing again extends it by 2 s without stacking speed, so three presses chain into a 6.5 s burst. Traffic contact during NITRO keeps 70% speed instead of 45%.
+NITRO has its own reserve (`player.nitro`, up to 3 charges, each fills as a float). The three-segment HUD shows partial charge, full segments glow, and NITRO MAX pulses when full (motion is suppressed in comfort/reduced-motion modes). Pickups along the track (blue cell +0.25, orange can +0.5, airborne gold tank +1, one rainbow overcharge that fills to the cap) follow the same rule as rings: 5 slots per car on the grid, each a run of 1 to 4 (the slot's pickup, then cells 8 m apart down its line), plus the overcharge and each shortcut's reward line, re-rolled every race; every NITRO reward (pickups, drifts, barrel rolls, rings, slipstreams) also refills flight charge (each 0.25 banked = +5; the overcharge gives none), and anything above the cap becomes charge (each 0.25 = +8). One charge gives 2.5 s with the speed cap raised by 30 m/s, stronger acceleration, exhaust and lens feedback; pressing again extends it by 2 s without stacking speed, so three presses chain into a 6.5 s burst. Traffic contact during NITRO keeps 70% speed instead of 45%.
 
 Above 162 km/h on the ground, brake + steer drifts instead of hard braking: only 3 m/s² is lost, near-miss combo points double, and releasing pays NITRO plus a mini boost by drift time (1 s: +0.15 and 0.5 s, 2 s: +0.3 and 0.8 s, 3 s: +0.5 and 1.2 s). The body yaws 25°, smoke and blue/orange/purple sparks show the tier, tire screech builds, and the HUD names drift/mini-boost states. Taking off, falling into a gap, or hitting a car or barrier loses the build-up.
 
@@ -194,7 +172,7 @@ NITRO burns no charge, so Fly + NITRO always work together (Fly + Boost + NITRO 
 
 ### Rings
 
-The 5 km coast has 22 rings every 220 m, in groups of 3 to 5 (placed from the track seed). A ring counts only when the car passes through its visible radius; grazing the edge does not. Types: cyan charge (+20 charge), gold nitro (+0.5), purple slipstream (3 s mini boost), red risk (a small ring, +1 NITRO and 500 score) and rainbow mystery (one random-by-seed effect: shield 10 s or until the first hit, magnet 5 s, ghost through traffic 3 s, or freeze rivals at half speed 2 s). Collected rings burst once and disappear. Clearing a whole group announces PERFECT LINE and awards +1 NITRO; missing one ring breaks it but keeps the rewards already earned.
+Every race has 5 ring slots per car on the grid (a solo run 5, a full eight-car grid 40; per lap in Circuit), spread from start to finish, one per equal stretch of road, in groups of 3 to 5. On plain road (clear of tunnels, gaps, shortcuts and other sections) about one slot in five becomes a train of 6 rings 25 m apart down a middle lane (lane 2 or 3, so driving straight down it chains every ring), mostly on the road and one in five in the air, which is its own PERFECT LINE; about one in twelve becomes a full-width row that any car on the road passes, worth one ring per car. Risk rings and the first two slots stay single. Every 500 m chunk of Endless has three single rings, a middle-lane train, a full-width row one chunk in three and five pickup runs. Their positions are re-rolled every race. Coast keeps its gate line at x 2.5. A ring counts only when the car passes through its visible radius; grazing the edge does not. Types: cyan charge (+20 charge), gold nitro (+0.5), purple slipstream (3 s mini boost), red risk (a small ring, +1 NITRO and 500 score) and rainbow mystery (one random-by-seed effect: shield 10 s or until the first hit, magnet 5 s, ghost through traffic 3 s, or freeze rivals at half speed 2 s). Collected rings burst once and disappear. Clearing a whole group announces PERFECT LINE and awards +1 NITRO; missing one ring breaks it but keeps the rewards already earned.
 
 ### Rivals, slipstream and the final sprint
 
@@ -280,7 +258,7 @@ make deploy                              # Deploy remote main manually through t
 # after scripts/release-gate.sh has seen a green CI run for the commit on main.
 ```
 
-CI (`.github/workflows/ci.yml`) builds and runs unit and Chrome browser tests on pushes to `main`, `develop`, pull requests, version-tag pushes (`v*`) and manual runs. Browser tests run in 16 parallel shards (`--shard=N/16`) and the World Tour long-run in 8, and a newer push to the same branch cancels the run it supersedes. Manual runs publish after all checks pass; a version-tag push re-runs the unit tests, confirms (`release-verified`) that the tagged code already passed the full suite on `main` instead of re-running the browser suites, then publishes and verifies the public website. A tag on a commit that CI never passed on `main` is not deployed. Ordinary branch pushes and pull requests only run checks. Pages builds use `--base=/skyline-rush/` so scripts, styles and fonts load from the project URL. GitHub Pages must use **GitHub Actions** as its publishing source. Manual deployment requires an authenticated GitHub CLI (`gh auth login`); push your commits first because `make deploy` uses remote `main`. Deployment no longer depends on a local pre-push hook or Netlify login. When any check or the deployment fails on a push, tag or manual run, a `notify-telegram` job sends the failed run's link to Telegram; it needs the repo secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (set each with `gh secret set <NAME>`, which prompts for the value) and skips quietly when they are missing.
+CI (`.github/workflows/ci.yml`) builds and runs unit and Chrome browser tests on pushes to `main`, `develop`, pull requests, version-tag pushes (`v*`) and manual runs. Browser tests run in 13 parallel shards and the World Tour long-run in 5, balanced by the measured per-test durations in `tests/ci-durations.json` (`scripts/ci-shards.mjs`), only on `main` and `develop` (other branches run unit and cloud-save checks unless the commit message has `[full-regression]` or a manual run asks for it), and a newer push to the same branch cancels the run it supersedes. On any branch, a push or pull request that only changes Markdown, text, images, video or the `Makefile` outside `src/`, `public/`, `tests/`, `scripts/` and `.github/` skips every suite when the parent commit already passed CI on that branch (`scripts/ci-changes.mjs`). Manual runs publish after all checks pass; a version-tag push re-runs the unit tests, confirms (`release-verified`) that the tagged code already passed the full suite on `main` instead of re-running the browser suites, then publishes and verifies the public website. A tag on a commit that CI never passed on `main` is not deployed. Ordinary branch pushes and pull requests only run checks. A push to `main` also fails the `main-merge-source` job (`scripts/check-main-merges.sh`) when one of its merge commits merges anything but `develop` or `hotfix/*`, and that red run blocks the release. Pages builds use `--base=/skyline-rush/` so scripts, styles and fonts load from the project URL. GitHub Pages must use **GitHub Actions** as its publishing source. Manual deployment requires an authenticated GitHub CLI (`gh auth login`); push your commits first because `make deploy` uses remote `main`. Deployment no longer depends on a local pre-push hook or Netlify login. When any check or the deployment fails on a push, tag or manual run, a `notify-telegram` job sends the failed run's link to Telegram; it needs the repo secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (set each with `gh secret set <NAME>`, which prompts for the value) and skips quietly when they are missing.
 
 The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.jpeg`; `node scripts/capture-og-images.mjs og` captures both language covers and refreshes that copy. Crawlers cannot switch language, so `index.html` references only the English cover (with `og:locale` `en_US` and `og:locale:alternate` `zh_TW`), and `public/og-image.zh-TW.jpeg` is its Chinese twin for direct links. After changing the cover, bump the `?v=` on `og:image` in `index.html` so social sites fetch the new one.
 
@@ -292,12 +270,14 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `src/history.js`: saved gameplay data: race history (latest 50), per-track bests and legacy migration, career stats, medals, stars, equipped paint, ghosts and the daily board.
 - `src/ghost.js`: 10 Hz ghost recording, per-track validation and interpolated playback.
 - `src/appearance.js`: paint catalog and star unlock thresholds.
-- `src/rng.js`: seeded random streams; track pickups and rings come from the track seed.
+- `src/rng.js`: seeded random streams; pickups and rings come from a per-race layout seed (the track seed in tests and tools).
 - `src/world.js`, `src/geometry.js`: Three.js renderer, procedural cars, highway, skyline, flight effects and cameras.
 - `src/effects.js`: a fixed 480-particle GPU pool for vapor, sparks and landing dust.
 - `src/track-paths.js`, `src/world-tour-scene.js`: one distance-to-road mapping per track and the shared World Tour road, scenery and landmarks.
 - `src/route-map.js`, `src/i18n.js`: SVG full-route and live racer maps; locale detection, the saved choice, `t()` and the English/繁體中文 track names; `src/locales/` holds the catalogs.
 - `scripts/capture-og-images.mjs`: captures the English and zh-TW cover images and the zh-TW README screenshots from the real app.
+- `scripts/pickup-economy.mjs`: a scripted bot drives every track and prints NITRO per minute, BOOST share, fuel run-outs and the first NITRO time; `tests/pickup-economy.test.js` locks the ring/pickup layouts.
+- `scripts/ci-shards.mjs`: `plan` gives each CI shard its Playwright `--test-list`, packing tests by duration so every shard finishes at about the same time; `refresh <run-id>` rewrites `tests/ci-durations.json` from a CI run's logs after the suites change a lot.
 - `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
 - `src/main.js`, `src/style.css`: mounts `App.vue`, wires the screen controllers and runs the race lifecycle (start, pause, restart, results) and the frame loop.
 - `src/*-ui.ts`: one TypeScript controller per screen area (race selection, cloud save, touch controls, key map, VFX, audio, history dialog, photo mode).
@@ -309,7 +289,7 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `src/audio-settings.js`: reads saved music/sound on/off and volume from `localStorage`, and the mute-keeps-level rule for sliders.
 - `tests/`: unit and browser behavior tests. `tests/module-size.test.js` keeps every source module at or below 400 lines (older large files have ceilings that only go down).
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
-- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `npm run test:layout` when pushed commits touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
+- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `npm run test:layout` when pushed commits touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`), and `.githooks/main-merge-guard` (run by `pre-merge-commit` and `pre-commit`) rejects merging any branch other than `develop` or `hotfix/*` into `main` (fast-forwards run no hook, so use `--no-ff`; skip once with `ALLOW_MAIN_MERGE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
 
 All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vue, Vite and Playwright retain their respective package licenses.
 
