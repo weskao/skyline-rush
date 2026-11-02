@@ -111,3 +111,18 @@ test('every original 3x VFX equipment image has a distinct genuine catalog entry
     assert.equal(art.hasRaster, true);
   }
 });
+
+// Four unique source icons (288x288) rather than one shared category SVG.
+test('all airflow skins resolve to their own native 3x WebP artwork', () => {
+  const ids=['airflow-basic','airflow-slipstream','airflow-vortex','airflow-prism'];
+  const sources=new Set();
+  for(const id of ids){
+    const image=skinArtwork(id,'/skyline-rush/');
+    assert.equal(image.hasRaster,true);
+    assert.equal(image.cssSize,96);
+    assert.equal(image.candidateRasterId,id);
+    assert.match(image.src,/airflow-[a-z]+@3x\.webp$/);
+    sources.add(image.src);
+  }
+  assert.equal(sources.size,4);
+});

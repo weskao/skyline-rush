@@ -208,3 +208,39 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     expect(accents).toEqual(['cyan','magenta','gold']);
   });
 }
+
+// Entire card acts as the non-persistent Preview control; only Equip/Try is a visible action.
+for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:844,height:390}]) {
+  test(`Garage collection cards preview on full surface with keyboard and show game-like hover at ${viewport.width}x${viewport.height}`, async ({page}) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#garage-button').click();
+    for (const [id,category] of [['thruster-void','thruster'],['airflow-vortex','airflow'],['nitro-trail-gold','nitro-trail'],['launch-flare-ring','launch-flare']]) {
+      const card=page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
+      await card.scrollIntoViewIfNeeded();
+      await expect(card.locator('.garage-vfx-actions button')).toHaveCount(1);
+      const preview=card.getByRole('button',{name:/preview|預覽/i});
+      await expect(preview).toHaveAttribute('aria-pressed','false');
+      await card.locator('.garage-vfx-art').click();
+      await expect(card).toHaveAttribute('data-preview-active','true');
+      await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`,id);
+      await expect(preview).toHaveAttribute('aria-pressed','true');
+      await expect(card.locator('.garage-vfx-actions button')).not.toHaveText(/preview|預覽/i);
+      const hue=await card.evaluate(el=>getComputedStyle(el).getPropertyValue('--card-hue').trim());
+      expect(hue).toMatch(/^\d+$/);
+    }
+    const ion=page.locator('#garage-vfx-catalog [data-skin="thruster-ion"]');
+    await ion.getByRole('button',{name:/preview|預覽/i}).focus();
+    await page.keyboard.press('Enter');
+    await expect(ion).toHaveAttribute('data-preview-active','true');
+    const equippedBefore=await page.locator('#garage-preview').getAttribute('data-skin-equipped-thruster');
+    await expect(ion.locator('.garage-vfx-actions button')).toBeEnabled();
+    await ion.locator('.garage-vfx-actions button').click();
+    await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-equipped-thruster','thruster-ion');
+    expect(equippedBefore).toBe('thruster-basic');
+    await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-thruster','thruster-ion');
+    await test.info().attach(`garage-collection-ux-${viewport.width}x${viewport.height}.png`,{
+      body:await page.locator('#garage-vfx-catalog').screenshot(),contentType:'image/png'
+    });
+  });
+}

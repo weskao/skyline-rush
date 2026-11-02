@@ -96,3 +96,20 @@ test('new original Gold/Crimson/Cyan/Magenta/White launch flares and Purple trai
     if (id.startsWith('launch-flare-')) await expect(preview).toHaveAttribute('data-launch-preview-active', 'true');
   }
 });
+
+// 3x artwork replaces the four identical Airflow placeholders.
+test('four airflow appearances have distinct 3x image sources and live car rendering modes', async ({page}) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  for(const [mode,id] of ['airflow-basic','airflow-slipstream','airflow-vortex','airflow-prism'].entries()){
+    const card=page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
+    const img=card.locator('img');
+    await expect(img).toHaveAttribute('src',new RegExp(`raster/${id}@3x\\.webp$`));
+    await expect(img).toHaveJSProperty('naturalWidth',288);
+    await expect(img).toHaveJSProperty('naturalHeight',288);
+    await card.locator('.garage-vfx-art').click();
+    await expect(page.locator('#garage-preview')).toHaveAttribute('data-gpu-airflow-pattern',String(mode));
+    await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-airflow',id);
+  }
+});
