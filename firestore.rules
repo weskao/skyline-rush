@@ -15,14 +15,15 @@ service cloud.firestore {
 
   // Rules stop at 1000 evaluated expressions per write, and each map lookup counts: the old keys().hasAny([id])
   // form rejected a player holding every star and best (already 10 stars + 14 bests before stage 2). One
-  // lookup per held id fits all 10 stars and 34 bests. A non-number raises an error, which denies the write.
+  // A defaulted lookup avoids evaluating a separate presence check for every optional field.
+  // Invalid present values still fail the same bounds. This keeps full saves under the 1000-expression limit.
   function validStar(values, id) {
-    return !(id in values) || values[id] in [1, 2, 3];
+    return values.get(id, 1) in [1, 2, 3];
   }
 
   // 0 < best < 604800 s (one week) in a single lookup.
   function validBest(values, id) {
-    return !(id in values) || math.abs(values[id] - 302400) < 302400;
+    return math.abs(values.get(id, 302400) - 302400) < 302400;
   }
 
   function validMedal(values, id) {
