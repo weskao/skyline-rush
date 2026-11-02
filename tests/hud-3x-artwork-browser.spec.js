@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 test('all 18 3x original HUD/control images are accessible at 1x CSS in Settings', async ({ page }) => {
   await page.goto('/');
   await page.locator('#settings-button').click();
@@ -29,6 +30,7 @@ test('no button carries a decorative 3x image underneath its icon or label', asy
 });
 
 test('all 18 artwork cards preserve native 3x pixels, visible icons and labels on phone and desktop', async ({ page }) => {
+  test.setTimeout(ciTimeout(180000));
   for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1440,height:900}]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
@@ -37,20 +39,25 @@ test('all 18 artwork cards preserve native 3x pixels, visible icons and labels o
     await gallery.locator('summary').click();
     const cards = gallery.locator('.garage-badge-card');
     await expect(cards).toHaveCount(18);
-    for (const card of await cards.all()) {
-      await card.scrollIntoViewIfNeeded();
-      const v = await card.evaluate(figure => {
-        const img = figure.querySelector('img');
-        const f = figure.querySelector('.garage-badge-art-frame').getBoundingClientRect();
-        const i = img.getBoundingClientRect();
-        const c = figure.querySelector('figcaption').getBoundingClientRect();
-        const wide = img.dataset.image.startsWith('button-');
-        return { native: [img.naturalWidth,img.naturalHeight],
-          display: [i.width,i.height], expected: wide ? [144,52] : [72,72],
-          source: wide ? [432,156] : [216,216],
-          inside: f.left<=i.left && i.right<=f.right && f.top<=i.top && i.bottom<=f.bottom,
-          captionSafe: c.top>=f.bottom+4, viewportSafe: figure.getBoundingClientRect().right<=innerWidth };
-      });
+    // One browser round trip per viewport replaces 54 sequential scroll/evaluate calls that
+    // exceeded the CI deadline. Every decoded original, bounding box and caption is still checked.
+    await expect.poll(() => cards.evaluateAll(figures => figures.every(figure => {
+      const img = figure.querySelector('img');
+      return img?.complete && img.naturalWidth > 0;
+    })), { timeout: ciTimeout(30000) }).toBe(true);
+    const values = await cards.evaluateAll(figures => figures.map(figure => {
+      const img = figure.querySelector('img');
+      const f = figure.querySelector('.garage-badge-art-frame').getBoundingClientRect();
+      const i = img.getBoundingClientRect();
+      const c = figure.querySelector('figcaption').getBoundingClientRect();
+      const wide = img.dataset.image.startsWith('button-');
+      return { native: [img.naturalWidth, img.naturalHeight],
+        display: [i.width, i.height], expected: wide ? [144,52] : [72,72],
+        source: wide ? [432,156] : [216,216],
+        inside: f.left<=i.left && i.right<=f.right && f.top<=i.top && i.bottom<=f.bottom,
+        captionSafe: c.top>=f.bottom+4, viewportSafe: figure.getBoundingClientRect().right<=innerWidth };
+    }));
+    for (const v of values) {
       expect(v.native).toEqual(v.source); expect(v.display).toEqual(v.expected);
       expect(v.inside).toBe(true); expect(v.captionSafe).toBe(true);
       expect(v.viewportSafe).toBe(true);

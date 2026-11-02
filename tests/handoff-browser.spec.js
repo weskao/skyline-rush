@@ -191,6 +191,11 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   await expect(page.locator('#maneuver-report')).toBeVisible();
   await expect(page.locator('#nitro-status')).toHaveText('NITRO READY');
   await expect(page.locator('#nitro-meter')).toHaveAttribute('data-nitro-state', 'ready');
+  // Two 0.5-charge opening rings plus one PERFECT LINE award yield 2, not 3.
+  // Verify real earnings first; seed only the HUD full-state boundary to check its animation.
+  await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '2');
+  await expect(page.locator('.nitro-segment.is-full')).toHaveCount(2);
+  await page.evaluate(() => { window.gameplay.race.player.nitro = 3; });
   await expect(page.locator('.nitro-segment.is-full')).toHaveCount(3);
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'nitro-max');
   await page.emulateMedia({ reducedMotion: 'reduce' });

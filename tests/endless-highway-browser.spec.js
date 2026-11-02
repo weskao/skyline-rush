@@ -50,7 +50,8 @@ for (const [label, viewport, locale, touch] of [
           textures: scene.renderer.info.memory.textures, scene: scene.scene.children.length, local };
       });
       expect(after.phase).toBe('racing'); expect(after.traffic).toBeLessThanOrEqual(40);
-      expect(after.pickups).toBeLessThanOrEqual(20); expect(after.rings).toBeLessThanOrEqual(15);
+      // Five live chunks × (five 4-pickup runs; 3 singles + 6-train + 4-row).
+      expect(after.pickups).toBeLessThanOrEqual(5 * 5 * 4); expect(after.rings).toBeLessThanOrEqual(5 * (3 + 6 + 4));
       expect(after.local.every(z => Math.abs(z) < 3000)).toBeTruthy();
       expect({ programs: after.programs, geometries: after.geometries, textures: after.textures, scene: after.scene }).toEqual(before);
       await page.screenshot({ path: `artifacts/endless/${label}-billion.png` });

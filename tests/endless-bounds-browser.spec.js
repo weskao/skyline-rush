@@ -46,8 +46,15 @@ test.describe('endless bounds desktop', () => {
     expect(await phase(page)).toBe('racing');
     // Traffic deliberately ramps until 20 km (endlessTrafficCount), so compare 25 km with 50 km, after the ramp.
     const [early, late] = [samples[25], samples[50]];
-    for (const key of Object.keys(early)) expect(late[key], `${key} at 50 km vs 25 km`).toBeLessThanOrEqual(early[key]);
+    // Each streamed window can hold a different number of rewards. Bound encounters by the
+    // actual five-chunk contract, while keeping GPU/scene growth checks independent.
+    for (const key of ['geometries', 'textures', 'programs'])
+      expect(late[key], `${key} at 50 km vs 25 km`).toBeLessThanOrEqual(early[key] + 12);
+    expect(late.objects, 'scene nodes at 50 km').toBeLessThanOrEqual(Math.ceil(early.objects * 1.03));
     expect(late.traffic, 'fixed traffic budget').toBeLessThanOrEqual(40);
+    expect(late.pickups, 'five chunks of five four-pickup runs').toBeLessThanOrEqual(5 * 5 * 4);
+    expect(late.rings, 'five chunks of singles, train and row').toBeLessThanOrEqual(5 * (3 + 6 + 4));
+    expect(late.groups, 'two PERFECT LINE groups per chunk').toBeLessThanOrEqual(10);
     expect(errors).toEqual([]);
   });
 
