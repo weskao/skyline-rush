@@ -7,6 +7,19 @@
 
 **Separate chat usage:** The user opens **six different ChatGPT conversations**, one block below per conversation. Saving this file does not start chats or background jobs. GPT 1–5 own each 3D environment only; GPT 6 owns the existing renderer/camera/vehicle/UI integration. **No PR, no force push, no deployment, no writes to `main` or `develop`.**
 
+### Preflight: three art branches already have useful previous work — do not reset
+
+**Read the [six-branch change audit](../reviews/2026-11-03-stage1-six-branch-preflight.md) BEFORE executing any of the six prompts.** All previous commits are preserved; **NO** reset, revert, branch deletion or force push is required. Refresh each named art branch's latest HEAD, not its original creation SHA.
+
+- **Dune Tempest** already has `docs/designs/new-tracks/home-art/dune-tempest.md`; keep its detailed landmark/color/route notes, update it for Three.js and add its scene + test.
+- **Monsoon Ruins** already has a real 3072×1152 `public/track-teasers/monsoon-ruins.jpg` and `home-art/monsoon-ruins.md`; **do not overwrite the working JPEG without a reason**. The new P0 is the *animated* scene + test.
+- **Stormline Megacity** has `home-art/stormline-megacity.md` describing a local-only JPEG; **do not claim it is uploaded**. Keep the note and implement 3D scenery/test first.
+- **Skyfall Archipelago** and **Volcanic Crown** have no extra art-branch commits, so start normally.
+- **GPT 6** already has a working first-pass selectable status and disabled, localized CTA; preserve and extend it, but replace/hide the static JPEG full-hero overlay with **actual live Three.js scenery**.
+
+**Where to read new specs from old art branches:** use `https://github.com/weskao/skyline-rush/blob/feature/epic-multiroute-longform-tracks/docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md`. The original art branches are based on a commit that predates the new `.md` files, so attempting to read those paths on an art branch will incorrectly return 404. **Do not merge the integration branch into an art branch just to acquire docs.**
+
+
 ## File ownership — no overlap
 
 | Chat | Existing branch | Permitted new/modified files |
@@ -38,6 +51,8 @@ Common coordinates: ground road under shared showroom car at `(0,0,0)`, forward 
 
 Copy the full block below into a **separate GPT conversation**:
 
+> **PRE-FLIGHT:** Read the latest six-branch audit at `https://github.com/weskao/skyline-rush/blob/feature/epic-multiroute-longform-tracks/docs/superpowers/reviews/2026-11-03-stage1-six-branch-preflight.md`; preserve any existing JPEG and art-note commits on this branch (NO reset or force push). Read the revised 3D spec from the **integration branch**, not from this old art branch. 
+>
 > **IMPLEMENT, not just plan** one animated Three.js Skyline Rush **COMING SOON homepage environment** for **沙暴裂谷 / Dune Tempest**.
 >
 > Repository `weskao/skyline-rush`; **only editable branch** `feature/epic-home-art-dune-tempest` (already exists). Check latest HEAD and read `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, `docs/designs/new-tracks/visual-acceptance-gate.md`, and the [binding dynamic home spec](../specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) from the shared integration branch (not present on initial art branch).
@@ -58,6 +73,8 @@ Copy the full block below into a **separate GPT conversation**:
 
 Copy the full block below into a **separate GPT conversation**:
 
+> **PRE-FLIGHT:** Read the latest six-branch audit at `https://github.com/weskao/skyline-rush/blob/feature/epic-multiroute-longform-tracks/docs/superpowers/reviews/2026-11-03-stage1-six-branch-preflight.md`; preserve any existing JPEG and art-note commits on this branch (NO reset or force push). Read the revised 3D spec from the **integration branch**, not from this old art branch. 
+>
 > **IMPLEMENT, not just plan** one animated Three.js Skyline Rush **COMING SOON homepage environment** for **雨林失落神殿 / Monsoon Ruins**.
 >
 > Repository `weskao/skyline-rush`; **only editable branch** `feature/epic-home-art-monsoon-ruins` (already exists). Check latest HEAD and read `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, `docs/designs/new-tracks/visual-acceptance-gate.md`, and the [binding dynamic home spec](../specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) from the shared integration branch (not present on initial art branch).
@@ -78,6 +95,8 @@ Copy the full block below into a **separate GPT conversation**:
 
 Copy the full block below into a **separate GPT conversation**:
 
+> **PRE-FLIGHT:** Read the latest six-branch audit at `https://github.com/weskao/skyline-rush/blob/feature/epic-multiroute-longform-tracks/docs/superpowers/reviews/2026-11-03-stage1-six-branch-preflight.md`; preserve any existing JPEG and art-note commits on this branch (NO reset or force push). Read the revised 3D spec from the **integration branch**, not from this old art branch. 
+>
 > **IMPLEMENT, not just plan** one animated Three.js Skyline Rush **COMING SOON homepage environment** for **浮空群島 / Skyfall Archipelago**.
 >
 > Repository `weskao/skyline-rush`; **only editable branch** `feature/epic-home-art-skyfall-archipelago` (already exists). Check latest HEAD and read `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, `docs/designs/new-tracks/visual-acceptance-gate.md`, and the [binding dynamic home spec](../specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) from the shared integration branch (not present on initial art branch).
@@ -98,6 +117,8 @@ Copy the full block below into a **separate GPT conversation**:
 
 Copy the full block below into a **separate GPT conversation**:
 
+> **PRE-FLIGHT:** Read the latest six-branch audit at `https://github.com/weskao/skyline-rush/blob/feature/epic-multiroute-longform-tracks/docs/superpowers/reviews/2026-11-03-stage1-six-branch-preflight.md`; preserve any existing JPEG and art-note commits on this branch (NO reset or force push). Read the revised 3D spec from the **integration branch**, not from this old art branch. 
+>
 > **IMPLEMENT, not just plan** one animated Three.js Skyline Rush **COMING SOON homepage environment** for **熔火天脊 / Volcanic Crown**.
 >
 > Repository `weskao/skyline-rush`; **only editable branch** `feature/epic-home-art-volcanic-crown` (already exists). Check latest HEAD and read `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, `docs/designs/new-tracks/visual-acceptance-gate.md`, and the [binding dynamic home spec](../specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) from the shared integration branch (not present on initial art branch).
@@ -118,6 +139,8 @@ Copy the full block below into a **separate GPT conversation**:
 
 Copy the full block below into a **separate GPT conversation**:
 
+> **PRE-FLIGHT:** Read the latest six-branch audit at `https://github.com/weskao/skyline-rush/blob/feature/epic-multiroute-longform-tracks/docs/superpowers/reviews/2026-11-03-stage1-six-branch-preflight.md`; preserve any existing JPEG and art-note commits on this branch (NO reset or force push). Read the revised 3D spec from the **integration branch**, not from this old art branch. 
+>
 > **IMPLEMENT, not just plan** one animated Three.js Skyline Rush **COMING SOON homepage environment** for **霓虹暴雨都市 / Stormline Megacity**.
 >
 > Repository `weskao/skyline-rush`; **only editable branch** `feature/epic-home-art-stormline-megacity` (already exists). Check latest HEAD and read `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, `docs/designs/new-tracks/visual-acceptance-gate.md`, and the [binding dynamic home spec](../specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) from the shared integration branch (not present on initial art branch).
