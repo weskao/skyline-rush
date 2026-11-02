@@ -28,6 +28,8 @@ const watch = page => page.evaluate(() => {
   };
 });
 const expectClean = async (page, phase) => {
+  // Two HDR readbacks per frame drop SwiftShader to a few FPS; wait on frames, not wall-clock, before judging the phase.
+  await expect.poll(() => page.evaluate(() => window.blackFrames.frames), { message: `${phase} rendered`, timeout: ciTimeout(15_000) }).toBeGreaterThan(5);
   const stats = await page.evaluate(() => { const s = { ...window.blackFrames }; Object.assign(window.blackFrames, { frames: 0, scene: 0, bloom: 0 }); return s; });
   expect(stats.frames, `${phase} rendered`).toBeGreaterThan(5);
   expect(stats, phase).toEqual({ frames: stats.frames, scene: 0, bloom: 0 });
