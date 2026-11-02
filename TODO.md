@@ -1,6 +1,6 @@
 ## Proposed Epic — Multi-route Long-form World Expansion (2026-11-02) [PLANNING ONLY]
 
-**Branch:** `feature/epic-multiroute-longform-tracks-planning` (created from `develop` SHA `12264f74f0f6452347d0183937391da620d10343`; DO NOT merge or release yet).
+**Branch:** `feature/epic-multiroute-longform-tracks` (created from `develop` SHA `12264f74f0f6452347d0183937391da620d10343`; DO NOT merge or release yet).
 **Spec:** [2026-11-02-multiroute-longform-world-expansion-design.md](docs/superpowers/specs/2026-11-02-multiroute-longform-world-expansion-design.md)
 **Execution plan:** [2026-11-02-multiroute-longform-world-expansion.md](docs/superpowers/plans/2026-11-02-multiroute-longform-world-expansion.md).
 **Scope:** future implementation only. Current ten sprint tracks and Harbor Circuit unaffected. All estimates unverified.
@@ -12,6 +12,13 @@
 - [x] Commit **five original two-view SVG design boards** to [concept-art/](docs/designs/new-tracks/README.md), one board per track, with ground driving + aerial branch visuals and START/FINISH route; link exact paths from [visual-fidelity.md](docs/designs/new-tracks/visual-fidelity.md) and [concept-manifest.json](docs/designs/new-tracks/concept-manifest.json).
 - [ ] Upload the **two original AI high-detail PNG overview images and 10 PNG crops** from the chat ZIP under `docs/designs/new-tracks/source-concept-png/`. The [12-file SHA-256 import manifest](docs/designs/new-tracks/png-source-import-manifest.md) is already committed, but **original PNG bytes are not on GitHub yet**; do not mark complete or invent links.
 - [ ] During implementation, capture and compare 2 **actual WebGL** gameplay views/map × desktop and mobile against the committed two-view boards (and original PNGs when uploaded); preserve route openness, weather/landmarks, grounded/flying camera composition, visual fidelity, Low/Medium/High and Reduced Motion. Record PASS/FAIL/APPROVED DEVIATION per view.
+
+### Ten standalone concept previews (2026-11-02, planning-only)
+
+- [x] Publish **10 individual SVG conceptual images** (5 point-to-point maps × ground/aerial) on this branch under `docs/designs/new-tracks/concept-art/<track-id>-ground-view.svg` and `<track-id>-aerial-view.svg`. Each is a cropped vector view of its committed combined storyboard, not a runtime screenshot or the original AI-generated PNG.
+- [x] Update [GitHub image gallery](docs/designs/new-tracks/README.md), [visual fidelity and per-camera descriptions](docs/designs/new-tracks/visual-fidelity.md), and [machine-readable ten-image manifest](docs/designs/new-tracks/concept-manifest.json) with working relative paths. All five maps are **single-run point-to-point**; no laps.
+- [ ] **Original cinematic PNG source import remains separate:** 2 overview originals + 10 cropped high-detail PNGs are provided as a chat ZIP and documented with SHA-256 in [PNG import manifest](docs/designs/new-tracks/png-source-import-manifest.md), but the PNG files themselves are not yet committed. Preserve originals, do not claim images are in GitHub until uploaded and hash-verified.
+- [ ] Before implementing each new course, inspect both committed standalone SVG views, the full storyboard and corresponding original PNG source (when uploaded); capture matching actual WebGL ground/aerial screenshots and record scene and camera deviations.
 
 ### Shared systems
 - [ ] M1 typed CourseGraph: real hairpins, U-turns, separate ground/air branch edges and convergent joins; arc-length route frames, route-aware AI, progress, finish, minimap, checkpoints, ghost/save versions.
