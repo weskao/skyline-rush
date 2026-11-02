@@ -1,3 +1,23 @@
+## Future New Tracks — Stage 2 / Second Set of Five (2026-11-02) [PLANNING ONLY]
+
+**Scope:** five *additional* point-to-point courses beyond Stage 1's five, for ten proposed new maps in total. All ten planned additions use separate START and FINISH; no laps. The existing ten published sprint tracks and Harbor Circuit remain unchanged.
+**Branch:** `feature/epic-multiroute-longform-tracks`. **JPEG gallery:** [Stage 2 README](docs/designs/new-tracks/stage-2/README.md) · **spec:** [Stage 2 design](docs/superpowers/specs/2026-11-02-stage2-five-longform-tracks-design.md) · **plan:** [Stage 2 TDD plan](docs/superpowers/plans/2026-11-02-stage2-five-longform-tracks.md).
+
+- [x] **Stage 1 10 original concept scene crops:** converted PNG → JPEG, retained image content/dimensions, and actually committed to [Stage 1 JPEG gallery](docs/designs/new-tracks/source-concept-jpeg/) on this branch. Historical PNG originals are *not* in GitHub and are no longer a prerequisite because JPEG was explicitly requested.
+- [x] **Stage 2 10 JPEG scene concept images:** five maps × ground and aerial view, physically committed to [source-concept-jpeg](docs/designs/new-tracks/stage-2/source-concept-jpeg/). Derived from new AI composite by crop + 3× resampling for viewing; upsampling does not invent original high-detail information.
+- [x] **Stage 2 five non-loop route schematics** at [route-schematics](docs/designs/new-tracks/stage-2/route-schematics/), with different START/FINISH and optional aerial alternative.
+- [x] **Stage 2 documentation:** [Markdown image gallery](docs/designs/new-tracks/stage-2/README.md), [visual-fidelity checklist](docs/designs/new-tracks/stage-2/visual-fidelity.md), [image/track manifest](docs/designs/new-tracks/stage-2/concept-manifest.json), [SDD design](docs/superpowers/specs/2026-11-02-stage2-five-longform-tracks-design.md) and [TDD implementation plan](docs/superpowers/plans/2026-11-02-stage2-five-longform-tracks.md).
+- [ ] **Dependency gate:** Stage 1 core CourseGraph, world-space frames, optional no-clamp natural offroad terrain, multi-branch ranking/checkpoints, AI/Ghost/finish integrity, weather and render tiers must be implemented and passing CI **before Stage 2 code development**.
+- [ ] **S2-P1 極地冰原峽谷 / Frostbite Canyon:** 13.8 km, 3:20–4:40; ice fissure canyon, switchbacks, safe snow valley vs glacial aerial bypass; ice dust / whiteout. TDD, real WebGL visual parity and timing are still pending.
+- [ ] **S2-P1 深海遺跡城 / Abyssal Ruins:** 15.2 km, 3:45–5:00; underwater-looking sealed roads and transparent tunnels, coral ruins, upper-dome alternative, caustics and bubbles. No added swimming physics.
+- [ ] **S2-P1 風之高原 / Windspire Highlands:** 14.5 km, 3:25–4:45; broad grassy terrain and windmills, cliff hairpins and crosswind alternative over bridges; predictable gust cues.
+- [ ] **S2-P2 水晶星塵谷 / Crystal Stardust Valley:** 13.6 km, 3:20–4:40; crystal canyon hairpins, prismatic arches, elevated shard route and restrained bloom/particle budgets.
+- [ ] **S2-P2 時空斷層 / Chrono Rift:** 16 km, 3:50–5:00; fractured sky stone road, glowing ancient rings, optional flight shortcut and timed visual cues only, **no unplanned teleport/time-rewind gameplay**.
+- [ ] **Release validation:** each map ≥2 major hairpins, ≥3 viable branch decisions, safe all-ground finish, ≥1 air/ground split, fair 8-car AI, deterministic weather, old-map parity, 30/60/120 Hz tests, 10 real ground/aerial WebGL captures × desktop/mobile with JPEG comparisons, 20+ timed finishes/map, Low/Medium/High + Reduced Motion, `make verify`, exact-HEAD CI. Do not mark passed without evidence.
+- [ ] Stage 2 development merges into `develop` only on explicit user authorization; this current branch remains documentation/art-only.
+
+---
+
 ## Proposed Epic — Multi-route Long-form World Expansion (2026-11-02) [PLANNING ONLY]
 
 **Branch:** `feature/epic-multiroute-longform-tracks` (created from `develop` SHA `12264f74f0f6452347d0183937391da620d10343`; DO NOT merge or release yet).
@@ -10,7 +30,7 @@
 - [x] Store five [committed one-way route schematics](docs/designs/new-tracks/README.md), one per track; technical routes distinguish green START from red FINISH and ground/air forks.
 - [x] **User-confirmed topology (2026-11-02): ALL FIVE are single-finish point-to-point**, matching ten existing sprint tracks. No circuit layouts, no lap counting, no implicit conversion; dedicated circuit gameplay remains separate. Require distinct START != FINISH nodes and world-space positions.
 - [x] Commit **five original two-view SVG design boards** to [concept-art/](docs/designs/new-tracks/README.md), one board per track, with ground driving + aerial branch visuals and START/FINISH route; link exact paths from [visual-fidelity.md](docs/designs/new-tracks/visual-fidelity.md) and [concept-manifest.json](docs/designs/new-tracks/concept-manifest.json).
-- [ ] Upload the **two original AI high-detail PNG overview images and 10 PNG crops** from the chat ZIP under `docs/designs/new-tracks/source-concept-png/`. The [12-file SHA-256 import manifest](docs/designs/new-tracks/png-source-import-manifest.md) is already committed, but **original PNG bytes are not on GitHub yet**; do not mark complete or invent links.
+- [x] **JPEG import requested instead of PNG:** the original 10 stage-one picture crops are converted and genuinely committed under [source-concept-jpeg](docs/designs/new-tracks/source-concept-jpeg/). Lossless original PNG bytes and the optional two overview PNG originals are not committed; the [PNG historical integrity manifest](docs/designs/new-tracks/png-source-import-manifest.md) remains available, but importing PNG is no longer a required stage gate.
 - [ ] During implementation, capture and compare 2 **actual WebGL** gameplay views/map × desktop and mobile against the committed two-view boards (and original PNGs when uploaded); preserve route openness, weather/landmarks, grounded/flying camera composition, visual fidelity, Low/Medium/High and Reduced Motion. Record PASS/FAIL/APPROVED DEVIATION per view.
 
 ### Ten standalone concept previews (2026-11-02, planning-only)
