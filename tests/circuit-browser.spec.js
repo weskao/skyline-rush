@@ -20,8 +20,9 @@ for (const [name, viewport, hasTouch, locale] of [
     await selectLocale(page, locale);
     await page.evaluate(async lapCount => {
       const { normalizeRaceConfig } = await import('/src/race-config.ts');
+      const { circuitLapKey } = await import('/src/circuit-records.ts'); // the current ring layout's key
       const config = normalizeRaceConfig({ mode: 'circuit', laps: lapCount });
-      localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [JSON.stringify(['harbor-circuit', config, 'lap'])]: 20 }));
+      localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [circuitLapKey(config)]: 20 }));
     }, lapCount);
     await page.locator('button[data-race-mode="circuit"]').click();
     await expect(page.locator('#start-button')).toBeEnabled();

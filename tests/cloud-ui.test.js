@@ -47,10 +47,13 @@ test('account switch snapshots session-only personal medals before the page relo
   const originals = new Map(Object.keys(mocks).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   for (const [key, value] of Object.entries(mocks)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
   try {
-    setupCloudUI({ services: { watchCloudUser(callback) { onUser = callback; } },
+    const cloud = setupCloudUI({ services: { watchCloudUser(callback) { onUser = callback; } },
       getProgress: () => ({ version: 2, unlocked: ['coast'], stars: {}, bests: {}, medals: {}, history: [], modeHistory: [], daily: [] }),
       getLocalChallengeMedals: () => personal, applyProgress() {} });
+    const accounts = [];
+    cloud.subscribeAccount(uid => accounts.push(uid));
     onUser({ uid: 'bob' });
+    assert.deepEqual(accounts, [null, 'bob'], 'Garage observes the same auth stream without creating a second Firebase watcher');
     await handlers.get('#cloud-switch:click')();
     assert.equal(reloads, 1);
     assert.deepEqual(JSON.parse(values.get('skyline-rush-cloud-account:alice')).localChallengeMedals, personal);

@@ -5,6 +5,7 @@ import { isModeTrack } from './race-tracks.ts';
 import { validCircuitRecord } from './circuit-records.ts';
 import type { LapTime } from './circuit-laps.ts';
 import { validStars } from './history-stats.ts';
+import { recordTrackIds, runLayout } from './record-layout.ts';
 
 type RawRecord = Record<string, unknown>;
 type NormalizedRun = { date: string; [key: string]: unknown };
@@ -30,6 +31,9 @@ const date = (v: unknown): string | null =>
   typeof v === 'string' && Number.isFinite(Date.parse(v)) ? new Date(v).toISOString() : null;
 const track = (id: unknown): id is string =>
   typeof id === 'string' && Object.hasOwn(RACE_TRACKS, id);
+// Classic bests: every id each track has had, bare through its current `<track>@<layout>` (old ids stay).
+const bestIds = Object.keys(RACE_TRACKS).flatMap(recordTrackIds);
+const layoutOf = (run: RawRecord) => runLayout(run) > 1 ? { layout: runLayout(run) } : {};
 const raceFields = ['collisions', 'nearMisses', 'rings', 'perfectLines', 'nitroUses', 'longestCombo', 'score', 'fuelOuts', 'gapFalls', 'distance'] as const;
 
 export function mergeUnlocks(local: unknown, remote: unknown): string[] {
@@ -57,7 +61,7 @@ function raceRun(raw: unknown): NormalizedRun | null {
   if (!when || !track(id) || !validTime(time) ||
       typeof pos !== 'number' || !Number.isInteger(pos) || pos < 0 || pos > 4) return null;
   return { date: when, track: id, position: pos, time,
-    ...Object.fromEntries(raceFields.map(field => [field, nonnegative(run[field])])) };
+    ...Object.fromEntries(raceFields.map(field => [field, nonnegative(run[field])])), ...layoutOf(run) };
 }
 
 function modeRun(raw: unknown): NormalizedRun | null {
@@ -83,7 +87,7 @@ function modeRun(raw: unknown): NormalizedRun | null {
   if (run.rulesSignature === rules) telemetry.rulesSignature = rules;
   return { date: when, mode, track: id, rules, time,
     position: typeof run.position === 'number' && Number.isInteger(run.position) ? run.position : 0,
-    score: nonnegative(run.score), ...telemetry,
+    score: nonnegative(run.score), ...telemetry, ...layoutOf(run),
     ...(mode === 'stunt' ? { maxCombo: nonnegative(run.maxCombo), airTime: nonnegative(run.airTime),
       medal: typeof run.medal === 'string' ? run.medal.slice(0, 32) : '' } : {}) };
 }
@@ -124,6 +128,8 @@ export function mergeProgress(local: unknown = {}, cloud: unknown = null): Merge
     const localStar = localStars[id], remoteStar = remoteStars[id];
     const star = Math.max(validStars(localStar) ? localStar : 0, validStars(remoteStar) ? remoteStar : 0);
     if (star) stars[id] = star;
+  }
+  for (const id of bestIds) {
     const localBest = localBests[id], remoteBest = remoteBests[id];
     const best = Math.min(validTime(localBest) ? localBest : Infinity, validTime(remoteBest) ? remoteBest : Infinity);
     if (Number.isFinite(best)) bests[id] = best;

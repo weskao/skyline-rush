@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { layoutVersion } from '../src/record-layout.ts';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, HISTORY_LIMIT, loadHistory, recordRace, loadBests, recordBest, careerStats } from '../src/history.ts';
 
 const memoryStorage = (initial = {}) => {
@@ -23,7 +24,7 @@ test('a finished race is saved as one record with every field', () => {
   const race = finishedRace({ rings: 4, perfectLines: 1, nitroUses: 2, longestCombo: 7, score: 900 });
   const record = recordRace(race, storage, new Date('2026-01-02T03:04:05Z'));
   assert.deepEqual(record, { date: '2026-01-02T03:04:05.000Z', track: 'coast', position: 1, time: 61.5, collisions: 2, nearMisses: 3,
-    rings: 4, perfectLines: 1, nitroUses: 2, longestCombo: 7, score: 900, fuelOuts: 0, gapFalls: 0, distance: 5000 });
+    rings: 4, perfectLines: 1, nitroUses: 2, longestCombo: 7, score: 900, fuelOuts: 0, gapFalls: 0, distance: 5000, layout: layoutVersion('coast') });
   assert.deepEqual(loadHistory(storage), [record]);
 });
 

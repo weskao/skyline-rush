@@ -7,6 +7,7 @@ import { createGhostStore } from '../src/ghost-store.ts';
 import { createSprintSeries } from '../src/sprint-series.ts';
 import { RACE_TRACKS, createRace, stepRace } from '../src/game.js';
 import { CIRCUIT_ID } from '../src/circuit-track.ts';
+import { recordTrackId } from '../src/record-layout.ts';
 import { loadHistory } from '../src/history-classic.ts';
 import { MODE_NAMES, mergeModeBests } from '../src/cloud-mode-bests.ts';
 import { readLocalModeBests } from '../src/cloud-progress.ts';
@@ -39,7 +40,7 @@ test('a podium Classic finish unlocks the next track, offers NEXT and saves the 
   assert.equal(settlement.next, 'neon');
   assert.ok(context.progress.unlocked.has('neon'));
   assert.deepEqual([settlement.best, settlement.record], [61.5, true]);
-  assert.equal(context.progress.bests.coast, 61.5);
+  assert.equal(context.progress.bests[recordTrackId('coast')], 61.5, 'Coast bests live under its current layout record id');
   assert.equal(context.progress.stars.coast, 2);
   assert.equal(context.progress.history.length, 1);
 });
@@ -53,7 +54,7 @@ test('fourth place records the run but neither unlocks nor offers the next track
 
 test('a slower Classic run keeps the session best even when storage forgot it', () => {
   const progress = loadSessionProgress(['coast']);
-  progress.bests.coast = 55;
+  progress.bests[recordTrackId('coast')] = 55;
   const { settlement } = settle(classic({ time: 61.5 }), { progress });
   assert.deepEqual([settlement.best, settlement.record], [55, false]);
 });

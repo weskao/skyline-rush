@@ -53,7 +53,8 @@ test('MODE-00: all ten courses generate finite, bounded and replayable entities'
     assert.deepEqual(one.traffic, two.traffic, trackId);
     assert.deepEqual(checkpoint, createCheckpointRush(track), trackId);
     assert.deepEqual(hazards, createHazards(track, lanes), trackId);
-    assert.ok(one.pickups.length < 500 && one.rings.length < 100 &&
+    // Ring cap 100 -> 160: stage 2 (user, 2026-11-02) doubles the gates and a full-width row is 4 rings (Tokyo 101).
+    assert.ok(one.pickups.length < 500 && one.rings.length < 160 &&
       one.traffic.length < 200 && checkpoint.gates.length < 300 && hazards.length < 500, trackId);
     for (const entity of [...one.pickups, ...one.rings, ...one.traffic, ...checkpoint.gates, ...hazards]) {
       assert.ok(Number.isFinite(entity.distance) && Number.isFinite(entity.x) &&

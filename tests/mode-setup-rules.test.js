@@ -30,7 +30,7 @@ test('every named unsupported combination is explained, in English and Tradition
   // Laps can't be requested for an open sprint, and Elimination can't be started with 0 AI.
   for (const mode of MODES.filter(m => m !== 'circuit')) assert.throws(() => validateRaceRequest({ mode, laps: 3 }), RangeError, mode);
   assert.throws(() => validateRaceRequest({ mode: 'elimination', rivals: 0 }), RangeError);
-  assert.equal(createRace('coast', { mode: 'elimination', rivals: 0 }).rivals.length, 3);
+  assert.equal(createRace('coast', { mode: 'elimination', rivals: 0 }).rivals.length, 7);
 });
 
 test('no rule can switch flight off, so every bridge gap stays crossable', () => {

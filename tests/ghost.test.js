@@ -4,6 +4,7 @@ import { createRace, startRace, stepRace } from '../src/game.js';
 import { recordGhost, validGhost, ghostAt } from '../src/ghost.ts';
 import { loadGhost, saveGhost, loadModeGhost, saveModeGhost } from '../src/history.ts';
 import { controlSettings } from '../src/control-settings.ts';
+import { layoutVersion } from '../src/record-layout.ts';
 
 const memoryStorage = (initial = {}) => {
   const data = { ...initial };
@@ -91,7 +92,7 @@ test('the ghost preference defaults off and only accepts booleans', () => {
 test('the history list parses the stored ghosts and bests once per ruleset, however many runs it lists', async () => {
   const { ghost } = recordedRun();
   const config = { mode: 'time' }, rules = JSON.stringify(config);
-  const modeHistory = Array.from({ length: 10 }, (_, i) => ({ track: 'coast', mode: 'time', rules, time: 50 + i, date: '2026-01-02T00:00:00Z' }));
+  const modeHistory = Array.from({ length: 10 }, (_, i) => ({ track: 'coast', mode: 'time', rules, time: 50 + i, date: '2026-01-02T00:00:00Z', layout: layoutVersion('coast') }));
   const storage = memoryStorage({ 'skyline-rush-mode-history-v1': JSON.stringify(modeHistory) });
   saveModeGhost('coast', config, ghost, storage);
   const reads = {};

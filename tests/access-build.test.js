@@ -24,7 +24,9 @@ test('local-only build exposes every track and paint without writing storage', (
 });
 
 test('normal Vite config resolves the production access module, unlocked config only serves', () => {
-  assert.match(productionConfig.resolve.alias['@progression-access'], /access\/production\.ts$/);
+  const standardConfig = productionConfig({ command: 'build', mode: 'production' });
+  assert.match(standardConfig.resolve.alias['@progression-access'], /access\/production\.ts$/);
+  assert.match(standardConfig.resolve.alias['#garage-skin-runtime'], /garage-skin-runtime-locked\.ts$/);
   assert.throws(() => unlockedConfig({ command: 'build', mode: 'production' }), /development-server only/);
   const cfg = unlockedConfig({ command: 'serve', mode: 'development' });
   assert.match(cfg.resolve.alias['@progression-access'], /access\/dev-unlocked\.ts$/);
