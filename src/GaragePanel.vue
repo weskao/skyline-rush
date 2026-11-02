@@ -5,6 +5,7 @@ import { garageStudioView } from './garage-view-state.ts';
 import { PAINTS } from './appearance.ts';
 import { garageView } from './garage-view-state.ts';
 import CloseButton from './CloseButton.vue';
+import GaragePaintPreview from './GaragePaintPreview.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 const locale = ref(getLocale());
@@ -61,7 +62,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
       <aside class="garage-collection">
         <div v-show="garageStudioView.page === 'studio'" class="garage-tabs"><span class="active">{{ copy.collection }}</span><span aria-disabled="true">{{ copy.equipment }}</span></div>
         <h3>{{ copy.collection }}</h3>
-    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><i :style="{ backgroundColor: paint.paint }" aria-hidden="true"></i><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ paint.name }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></button></div>
+    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><GaragePaintPreview :id="id" :color="paint.paint" /><span class="garage-paint-meta"><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id) }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></span></button></div>
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
     <button id="garage-equip" class="controls-reset" :disabled="garageView.equipDisabled" aria-label="Equip finish" data-i18n-aria-label="garage.equip">{{ garageView.equipLabel }}</button>
     <button v-show="garageStudioView.page === 'studio'" id="garage-restore-default" type="button" class="garage-restore">{{ copy.restore }}</button>
@@ -245,4 +246,27 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
   #garage-screen .paint-options button { min-height: 94px; }
 }
 
+</style>
+
+<style>
+/* Larger car-body previews replace the old 26–43px swatch. */
+#garage-screen .paint-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+#garage-screen .paint-options button { min-width: 0; min-height: 144px; padding: 7px; gap: 8px; }
+#garage-screen .garage-paint-meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 5px; padding: 0 2px 3px; }
+#garage-screen .garage-paint-name { font-size: 12px; line-height: 1.25; text-align: left; }
+#garage-screen .paint-options button .garage-paint-badge { align-self: auto; font-size: 10px; white-space: nowrap; padding: 2px 6px; }
+#garage-screen .paint-options button[data-state="locked"] { filter: none; }
+#garage-screen .paint-options button[data-state="locked"] .garage-paint-preview { filter: saturate(.88); }
+#garage-screen .paint-options button[aria-pressed="true"] .garage-paint-preview { border-color: #91ecff; box-shadow: 0 0 14px #13d7ff3c; }
+@media (max-width: 650px) and (orientation: portrait) {
+  #garage-screen .paint-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #garage-screen .paint-options button { min-height: 135px; }
+  #garage-screen .garage-collection { flex-basis: 43%; }
+}
+@media (max-height: 420px) and (orientation: landscape) {
+  #garage-screen .paint-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #garage-screen .paint-options button { min-height: 128px; }
+  #garage-screen .garage-paint-preview { min-height: 78px; }
+}
 </style>

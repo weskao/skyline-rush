@@ -113,6 +113,8 @@ export function createGarageStage(environment: THREE.Texture) {
 
   function setPaint(paint: PaintPreset) {
     car.userData.body.material.color.set(paint.paint);
+    car.userData.body.material.metalness = paint.metalness;
+    car.userData.body.material.roughness = paint.roughness;
     car.userData.lightColor.fromArray(paint.light);
     car.userData.brakeLight.color.copy(car.userData.lightColor);
   }

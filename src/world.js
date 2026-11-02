@@ -617,6 +617,8 @@ export function createWorld(canvas) {
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint);
       player.userData.body.material.color.set(paint.paint);
+      player.userData.body.material.metalness = paint.metalness;
+      player.userData.body.material.roughness = paint.roughness;
       player.userData.lightColor.fromArray(paint.light);
     },
     setRenderScale(scale) {
