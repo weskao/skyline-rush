@@ -3,7 +3,18 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { HUD_SETTINGS_COPY } from '../src/locales/hud-settings.ts';
 import { strayEnglish } from './helpers/i18n-english.js';
-const view = readFileSync(new URL('../src/SettingsPanel.vue', import.meta.url), 'utf8');
+const read = file => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
+const view = read('HudSettings.vue');
+
+// The speaker button is the audio menu; HUD layout is a display setting, so it lives in the VFX panel.
+test('Race HUD options live in the VFX panel, not in the audio dropdown', () => {
+  const audio = read('SettingsPanel.vue');
+  assert.doesNotMatch(audio, /hud-mode|hudSettings\.|HudFeedback|HudWidgets/);
+  assert.match(audio, /tr\('audio\.settings'\)/);
+  const vfx = read('App.vue').match(/<div class="vfx-settings">[\s\S]*?id="vfx-reset"/)[0];
+  assert.match(vfx, /<HudSettings \/>/);
+  assert.equal(HUD_SETTINGS_COPY.en['hudSettings.panel'], undefined, 'no "Audio and HUD" label is left behind');
+});
 
 test('HUD selector is a real Settings radio input with localized Hybrid/Competitive options and reset', () => {
   assert.match(view, /name="hud-mode"/);
@@ -17,7 +28,7 @@ test('HUD selector is a real Settings radio input with localized Hybrid/Competit
 
 test('HUD settings copy lives in the locale catalog, never in a per-component language branch', () => {
   assert.doesNotMatch(view, /isChinese/);
-  assert.doesNotMatch(view, /[\u3400-\u9fff]/, 'SettingsPanel.vue must read zh-TW text from src/locales/hud-settings.ts');
+  assert.doesNotMatch(view, /[\u3400-\u9fff]/, 'HudSettings.vue must read zh-TW text from src/locales/hud-settings.ts');
   assert.deepEqual(Object.keys(HUD_SETTINGS_COPY['zh-TW']).sort(), Object.keys(HUD_SETTINGS_COPY.en).sort());
   for (const [key, text] of Object.entries(HUD_SETTINGS_COPY['zh-TW'])) assert.deepEqual(strayEnglish(text), [], key);
 });

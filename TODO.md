@@ -44,6 +44,18 @@
 
 ---
 
+## Race HUD options move out of the audio menu (2026-11-02)
+
+**Branch:** `feature/race-hud-vfx-panel` from `develop` `6cbc7511`. User picked the VFX panel over a new top-bar button.
+
+- [x] **RED** `tests/hud-settings-browser.spec.js`: the speaker panel still held 2 `hud-mode` radios (1440×900, 390×844).
+- [x] **GREEN** `src/HudSettings.vue` mounted in `.vfx-settings`; speaker button/panel labelled `audio.settings`; `hudSettings.panel` copy removed.
+- [x] Device matrix (8 viewports × ready/racing, real clicks on every HUD control): unfolded Fold landscape 1104×882 mid-race
+  failed twice (panel foot at 898px > 882) because the touch-tablet rule lowers the tool row to 242px while the cap assumed 98px;
+  fixed with a matching cap in `src/style.css`. The HUD reset rendered as a blank white box (native face, light text);
+  guard asserts a transparent background (RED `rgb(239, 239, 239)`), fixed by sharing `#vfx-reset` styling.
+- [ ] Physical iPhone / Fold check by the user.
+
 ## In-race HUD overlaps — foldable, phones, tablet (2026-11-01)
 
 **Branch:** `fix/race-hud-overlaps` from `develop` `88dce759` (Eight-Car included). Not merged; merge needs approval.

@@ -555,7 +555,7 @@ body:is([data-phase="countdown"], [data-phase="racing"]) .vfx-settings > label:h
 .vfx-settings .vfx-range { display: grid; grid-template-columns: 1fr auto; padding: 9px 0; }
 .vfx-range input { grid-column: 1 / -1; width: 100%; margin: 0; }
 .vfx-range output { color: #a3e8fb; font-variant-numeric: tabular-nums; }
-#vfx-reset { border: 1px solid #779ca8; border-radius: 4px; background: transparent; min-height: 38px; width: 100%; margin-top: 10px; font-size: 11px; }
+:is(#vfx-reset, .hud-default) { border: 1px solid #779ca8; border-radius: 4px; background: transparent; min-height: 38px; width: 100%; margin-top: 10px; font-size: 11px; }
 summary:focus-visible, input:focus-visible, .custom-select > button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 /* Page-drawn controls: no OS select popup, checkbox or slider. */
 .custom-select { position: relative; display: inline-block; min-width: 0; max-width: 100%; }
@@ -626,6 +626,8 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
    (beside it, it covered the centred progress bar on an 820px-wide iPad). */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
   body:not([data-phase="ready"]) .aero-tools { top: 242px; }
+  /* The cap follows the lowered row (242 + 44 + 28px margin), or the panel's foot runs off-screen on an unfolded Fold. */
+  body:not([data-phase="ready"]) .vfx-settings { max-height: calc(100dvh - 314px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 }
 /* Phones and short landscape have no free slot for the telemetry panel mid-race: it covered the speed and race info.
    It stays on the ready showcase; while racing the pressed AIRFLOW button and the streamlines show it is on. */

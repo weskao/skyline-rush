@@ -1,4 +1,4 @@
-<!-- source-sha256: 689f958419afdab36faa3f7a9e2d6f2b89d29af3d398c23f7b858e47afe9a1db generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: e00599851d0f9b93f0a2824b80579742de46c4b19e40eb8676773b322c41c6dd generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -147,7 +147,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 場景包含泛光照明、日落水面、懸索橋、推進器蒸氣、碰撞火花與著陸漣漪。鏡頭動態與非必要的速度線會遵循系統的減少動態效果偏好。音效為推力、碰撞與著陸提供各自獨立的回饋。
 
-**VFX**（右上角）可選擇 Realistic、Cinematic 或 Extreme 風格，Low / Medium / High 畫質（Low 會關閉泛光並繪製較少的景物）、Comfort 模式（無閃光、震動、殘影或模糊），以及可選的觸覺回饋；**Fine tuning** 將每個效果以滑桿呈現，**Reset visual settings** 則還原預設值。**AIRFLOW**（或 V）會將場景切換為空氣動力學展示：車身上的流線、遙測面板、Low drag 或 High downforce，以及駕駛、前方、後方、側面或環繞視角。開始面板會為展示讓開，只留下橘色的 **START RACE** 按鈕，固定在車子下方的底部中央；左右滑動場景即可切換賽道。第一次開啟 AIRFLOW 時，會有動畫指尖示範該手勢。流線只會在 AIRFLOW 開啟時出現：關閉時，BOOST 與 NITRO 會顯示推進器噴流、尾跡與速度線，但沒有流線。
+**VFX**（右上角）可選擇 Realistic、Cinematic 或 Extreme 風格，Low / Medium / High 畫質（Low 會關閉泛光並繪製較少的景物）、Comfort 模式（無閃光、震動、殘影或模糊），以及可選的觸覺回饋。其中的 **Race HUD** 區塊可選擇 Immersive 或 Competitive（附排行榜、小地圖與額外統計開關）、開關 NITRO READY 提示音與動畫，**Reset HUD to default** 則還原這些設定。**Fine tuning** 將每個效果以滑桿呈現，**Reset visual settings** 則還原預設值。**AIRFLOW**（或 V）會將場景切換為空氣動力學展示：車身上的流線、遙測面板、Low drag 或 High downforce，以及駕駛、前方、後方、側面或環繞視角。開始面板會為展示讓開，只留下橘色的 **START RACE** 按鈕，固定在車子下方的底部中央；左右滑動場景即可切換賽道。第一次開啟 AIRFLOW 時，會有動畫指尖示範該手勢。流線只會在 AIRFLOW 開啟時出現：關閉時，BOOST 與 NITRO 會顯示推進器噴流、尾跡與速度線，但沒有流線。
 
 三盞琥珀色起跑燈會在 GO 時轉為青色。玩家的車是一輛低矮的楔形敞篷跑車，配有煙燻色的快背式座艙、橫貫全寬的紅色尾燈條、四個後推進器噴口、在 boost、煞車與飛行時升起的青銅色彈出式尾翼、旋轉的五輻輪圈，以及可轉向的前輪。每名對手都有自己的輪廓與燈光特徵：NOVA 是長尾車型，配有雙垂直尾翼與分離式洋紅色燈光；ORBIT 是圓潤的 GT，配有泡泡座艙與圓形青色車燈；APEX 是賽道車款，配有前分流器、車頂進氣口、高聳的端板尾翼與琥珀色 C 形燈。車流使用直立的通勤車造型。轉向會快速緩入，放開 boost 則會讓車子逐漸減速，而不是瞬間切斷速度。所有駕駛與工具列按鈕的觸控目標至少為 44px，即使在 320px 寬度下也一樣。
 
