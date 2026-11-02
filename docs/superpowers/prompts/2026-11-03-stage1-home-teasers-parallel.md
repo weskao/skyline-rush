@@ -1,4 +1,6 @@
-# Stage 1 Home Preview Artwork — Five Independent GPT Chat Assignments
+# Stage 1 Home Preview Artwork — Five Independent GPT Art Assignments
+
+> **Update 2026-11-03:** For full six-way execution, including the sixth GPT that owns shared homepage selection, bilingual fixed-width `#start-button`, keyboard no-start gates and CI, use [Six-Chat Implementation Prompts](2026-11-03-six-chat-home-preview-implementation.md). The five art-only prompts below remain valid and must not modify shared UI files.
 
 **Canonical shared UI integration branch:** `feature/epic-multiroute-longform-tracks`.
 **Scope:** Only these five first-stage coming-soon maps, never the later five Stage 2 plans. All maps are **point-to-point** (START != FINISH, no laps); they are currently image-only previews, not playable 3D courses.
