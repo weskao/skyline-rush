@@ -62,7 +62,6 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         </nav>
       </section>
       <aside class="garage-collection">
-        <div v-show="garageStudioView.page === 'studio'" class="garage-tabs"><span class="active">{{ copy.collection }}</span><span aria-disabled="true">{{ copy.equipment }}</span></div>
         <h3>{{ copy.collection }}</h3>
         <p class="collection-note garage-intro" v-show="garageStudioView.page === 'home'" data-i18n="garage.intro">Explore paint and tail light combinations. Appearance never changes performance.</p>
     <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><GaragePaintPreview :id="id" :color="paint.paint" /><span class="garage-paint-meta"><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id) }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></span></button></div>
@@ -94,7 +93,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 #garage-screen .garage-camera-controls { display: flex; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; flex: none; gap: 4px; white-space: nowrap; scrollbar-width: thin; }
 #garage-screen .garage-camera-controls button { min-width: 44px; flex: none; }
 #garage-screen .garage-camera-controls button[aria-pressed="true"] { border-color: var(--accent); background: #35485d; }
-#garage-screen .garage-collection { min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+#garage-screen .garage-collection { min-height: 0; overflow-y: auto; scrollbar-gutter: auto; }
 #garage-screen .garage-collection h3 { margin: 2px 0 7px; font-size: 14px; letter-spacing: .1em; }
 #garage-screen .paint-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #garage-screen .garage-collection .controls-reset { margin: 7px 0; }
@@ -137,9 +136,6 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 #garage-screen .garage-mode-controls button[aria-pressed="true"] { color: #041a29; background: linear-gradient(110deg, #83eeff, #49bff9); border-color: #b5f4ff; box-shadow: 0 0 17px #2fbcf258; }
 #garage-screen .garage-mode-controls button[data-garage-mode="flight"][aria-pressed="true"] { background: linear-gradient(110deg, #ffc58b, #f897dc); border-color: #ffdfbd; box-shadow: 0 0 18px #fa9c9d67; }
 #garage-screen .garage-collection { background: #0b1928; border: 1px solid #294455; border-radius: 12px; padding: 9px; }
-#garage-screen .garage-tabs { display: flex; gap: 5px; margin-bottom: 6px; font-size: 11px; }
-#garage-screen .garage-tabs span { flex: 1; padding: 6px 5px; border: 1px solid #284455; border-radius: 6px; text-align: center; color: #9caebb; }
-#garage-screen .garage-tabs span.active { color: #74e8ff; border-color: #19c9f2; background: #0a344b; }
 #garage-screen .paint-options { display: grid; gap: 8px; }
 #garage-screen .paint-options button { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 5px; min-height: 86px; padding: 7px; border-radius: 9px; background: #112436; border: 1px solid #365166; color: #e5f2fb; cursor: pointer; }
 #garage-screen .paint-options button i { display: block; height: 34px; border-radius: 5px; box-shadow: inset -14px -8px 20px #0004, inset 8px 8px 18px #fff3; }
@@ -232,8 +228,6 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
   background: linear-gradient(125deg, #2c3b62, #172d46);
   border-color: #607db3; color: #daebff;
 }
-#garage-screen .garage-tabs span { border-radius: 11px 4px 11px 4px;
-  background: linear-gradient(150deg, #162c46, #0a1a2c); }
 #garage-screen .garage-collection :is(.collection-note, .garage-coming) {
   line-height: 1.55; overflow-wrap: anywhere;
 }
