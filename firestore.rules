@@ -8,12 +8,14 @@ service cloud.firestore {
   // Classic best ids: every track plus each `<track>@<layout>` it has had (recordTrackIds in src/record-layout.ts).
   function bestIds() {
     return trackIds().concat(['coast@2', 'coast@3', 'neon@2', 'neon@3', 'canyon@2', 'canyon@3', 'spiral@2', 'spiral@3',
-      'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2']);
+      'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2',
+      'coast@4', 'neon@4', 'canyon@4', 'spiral@4',
+      'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3']);
   }
 
   // Rules stop at 1000 evaluated expressions per write, and each map lookup counts: the old keys().hasAny([id])
   // form rejected a player holding every star and best (already 10 stars + 14 bests before stage 2). One
-  // lookup per held id fits all 10 stars and 24 bests. A non-number raises an error, which denies the write.
+  // lookup per held id fits all 10 stars and 34 bests. A non-number raises an error, which denies the write.
   function validStar(values, id) {
     return !(id in values) || values[id] in [1, 2, 3];
   }
@@ -47,7 +49,12 @@ service cloud.firestore {
       && validBest(bests, 'canyon@3') && validBest(bests, 'spiral@3')
       && validBest(bests, 'aurora@2') && validBest(bests, 'taipei@2')
       && validBest(bests, 'tokyo@2') && validBest(bests, 'alpine@2')
-      && validBest(bests, 'coastal@2') && validBest(bests, 'cosmic@2');
+      && validBest(bests, 'coastal@2') && validBest(bests, 'cosmic@2')
+      && validBest(bests, 'coast@4') && validBest(bests, 'neon@4')
+      && validBest(bests, 'canyon@4') && validBest(bests, 'spiral@4')
+      && validBest(bests, 'aurora@3') && validBest(bests, 'taipei@3')
+      && validBest(bests, 'tokyo@3') && validBest(bests, 'alpine@3')
+      && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3');
   }
 
   function validMedals(medals) {
