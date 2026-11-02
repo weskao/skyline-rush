@@ -1852,3 +1852,24 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 }
 /* History: the 4th row field is only ever the OLD LAYOUT tag; it wraps as a small label inside the 48px badge column, never into the chevron */
 .history-run summary > span:nth-child(4) { white-space: normal; color: #ccd7e0; font-size: 10px; line-height: 1.2; }
+
+
+/* Preview-only future races: one static concept image, no fake playable 3D scene. */
+.upcoming-scene { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.upcoming-scene img { position: absolute; top: 19%; right: 3.5%; width: min(56vw, 760px); aspect-ratio: 568 / 205; object-fit: cover; border: 1px solid rgb(210 235 255 / .38); border-radius: 12px; box-shadow: 0 24px 90px rgb(0 9 24 / .65); filter: saturate(1.07); }
+.upcoming-scene::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(5 16 30 / .85) 0%, rgb(5 16 30 / .52) 38%, transparent 78%); }
+.intro .track-select button.upcoming-track-card { border-color: rgb(123 215 241 / .42); }
+.intro .track-select button.upcoming-track-card[aria-pressed="true"] { border-color: #a3eaff; box-shadow: inset 0 0 0 1px #a3eaff, 0 7px 27px rgb(71 179 239 / .22); }
+.upcoming-track-card .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.upcoming-track-card .upcoming-route-image { display: block; width: 100%; height: 100%; object-fit: contain; opacity: .9; }
+.intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
+.intro #start-button { width: 236px; min-width: 236px; max-width: 236px; }
+.intro #start-button > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 760px) {
+  .upcoming-scene img { top: 15%; right: 3%; width: 94vw; opacity: .45; }
+  .intro #start-button { width: 210px; min-width: 210px; max-width: 210px; }
+}
+@media (max-height: 500px) {
+  .upcoming-scene img { top: 8%; right: 2%; width: min(51vw, 520px); opacity: .5; }
+  .intro #start-button { width: 190px; min-width: 190px; max-width: 190px; }
+}
