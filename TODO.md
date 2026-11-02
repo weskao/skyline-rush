@@ -11,6 +11,19 @@ The 3x HUD artwork belongs to the future `feature/garage-store-readiness`, `feat
 - [ ] Settings / Pause icon buttons: larger hit area and visible focus ring on the top bar.
 - [ ] Decide by the Garage economy branches' merge: delete unused `@3x.webp` files and the gallery, or wire them in.
 
+## Ring trains, a few full-width rows, pickup runs (2026-11-02)
+
+**Branch:** `feature/ring-rows` from `develop` `01fd1bea`. **Request:** a few more items and rings on every map and mode: consecutive rings on the road or in the air, a few stretches with a full row of rings so passing always takes one, pickups in runs of 1-4; keep the balance (not too easy or hard, keep the thrill). A first try (6 per car + 5-row streaks of 8 rings every 1.2 km) was rejected as "too many, too bunched".
+
+- [x] RED: `tests/ring-rows.test.js` failed before the shapes existed.
+- [x] GREEN: 4 slots per car unchanged; on plain road a slot becomes a 5-ring train (ground 2.5 m or air 7 m; charge/slipstream/nitro/slipstream/charge; own PERFECT LINE) at 15%, or a 4-lane row at 2.5 m (any car on the road passes one) at 8%, on their own `ring-shapes` stream so singles keep their positions. Risk rings and the first two slots stay single. Pickup slots trail 0-3 cells (`pickup-runs` stream). Endless: a train or (1 in 3) a row per chunk, pickup runs.
+- [x] A row pays once per car (player and rivals, same step); Hard rivals do not swerve for a row.
+- [x] Balance, economy bot, 6 seeds x 10 tracks: NITRO/min 15.3 -> 18.5 (+20%), race 56.4 -> 55.3 s, fuel run-outs 0 -> 0; track range 9.2-19.0 -> 15.0-21.4. AC2 rival NITRO: Hard needed `HARD_RIVAL_TAKES` 4 -> 5 (+3.9 -> +4.2).
+- [x] No `layoutVersion` bump: the 4-per-car versions are unreleased (not on `main`), so no new `firestore.rules` ids. AC3 hashes re-locked.
+- [x] Browser: `tests/ring-rows-browser.spec.js` desktop + phone (rows drawn where they score, one ring per row, train 5/5 + PERFECT LINE); WebGL screenshots checked.
+- [ ] Full `npm run test:browser`, then remote `quality-gate` on the final HEAD.
+- [ ] Real-device feel check of the denser runs.
+
 ## AIRFLOW off hides sprint streamlines (2026-11-02)
 
 **Branch:** `fix/airflow-off-hides-sprint-flow` from `develop` `5cc12113`. **Report:** with AIRFLOW (V) off, BOOST/NITRO still revealed the full streamline showcase and underbody pressure plane (`src/aero-vfx.js` `show` OR-ed in `sprintPower`), so the V toggle looked broken while sprinting.
