@@ -22,15 +22,19 @@ test('scene contains a car-level road, recognizable hairpin, volcano and layered
   const road = group.getObjectByName('ground-road');
   const hairpin = group.getObjectByName('hairpin-curve');
   const crater = group.getObjectByName('volcano-crater');
+  const plume = group.getObjectByName('eruption-plume');
+  const shelf = group.getObjectByName('basalt-road-shelf');
   const arch = group.getObjectByName('basalt-arch');
   const chasm = group.getObjectByName('lava-chasm');
   const distantRiver = group.getObjectByName('lava-river');
   const flight = group.getObjectByName('flight-arc');
   const landing = group.getObjectByName('landing-pad');
-  for (const [name, object] of Object.entries({ road, hairpin, crater, arch, chasm, distantRiver, flight, landing })) {
+  for (const [name, object] of Object.entries({ road, hairpin, crater, plume, shelf, arch, chasm, distantRiver, flight, landing })) {
     assert.ok(object, 'missing 3D landmark: ' + name);
   }
   assert.ok(road.isMesh && road.geometry.isBufferGeometry, 'road must have actual geometry');
+  const airBox = new THREE.Box3().setFromObject(flight);
+  assert.ok(airBox.max.y > 12 && airBox.min.y < 3, 'branch rises above the lava to a safe landing');
   const bbox = new THREE.Box3().setFromObject(road);
   assert.ok(bbox.min.z <= -175 && bbox.max.z >= 40, 'road should cover the preview depth');
   assert.ok(bbox.min.x < -25 && bbox.max.x > 15, 'road should bend into a visible U turn');
@@ -63,6 +67,10 @@ test('lava flow and lighting actually animate, deterministically, without rebuil
   const movingLight = light.intensity;
   assert.notEqual(movingTime, 0);
   assert.notEqual(movingLight, initialLight);
+  const eruption = group.getObjectByName('eruption-plume');
+  const eruptionHeight = eruption.scale.y;
+  update(7.3, 'high', false);
+  assert.notEqual(eruption.scale.y, eruptionHeight, 'volcanic vent must animate without extra lights');
   update(3.1, 'high', false);
   assert.equal(lava.material.uniforms.uTime.value, movingTime);
   assert.equal(light.intensity, movingLight);
