@@ -7,13 +7,15 @@
 **Tech Stack:** Vue 3 + strict TypeScript, Three.js, existing JS simulation/render islands as justified, Node unit tests, Playwright, GitHub Actions.
 **Spec:** `docs/superpowers/specs/2026-11-02-multiroute-longform-world-expansion-design.md`.
 
-**Topology decision:** Baseline all five new tracks remain open point-to-point with a single valid finish to match the ten existing sprint maps. Dedicated Circuit maps (1/3/5 laps) remain a separate future mode rather than replacing these layouts. The idea has not been approved for implementation. Five visual route schematics are committed at `docs/designs/new-tracks/route-schematics/`, indexed in `docs/designs/new-tracks/README.md`. Original cinematic AI scene collages remain in ChatGPT as an attachment ZIP and are not committed to GitHub yet.\n\n## Global Constraints
+**User-approved topology:** five brand-new point-to-point single-finish tracks only, same race model as existing ten sprint tracks; distinct START and FINISH; NO circuit closure and NO lap counting. Current GitHub visual references: five two-view SVG storyboards under `docs/designs/new-tracks/concept-art/`, five route schematics, index `docs/designs/new-tracks/README.md`, fidelity checklist `docs/designs/new-tracks/visual-fidelity.md`, and `concept-manifest.json`. Original AI cinematic PNG collages/crops still exist only in the ChatGPT-download ZIP, not in this branch. No implementation work, CI pass or merge implied by these planning documents.
+
+## Global Constraints
 
 - The five course layouts and times are initial design targets; performance, median durations and visual acceptance are not verified in this planning branch.
 - Existing 10 sprint routes and circuit must preserve positioning, item economy, bests and game modes.
 - All new UI/controller code typed TS; engine JS exceptions need profiling/rationale. No source module >400 lines; ratchet legacy ceilings down.
 - Source of truth is one route sampling frame for road, physics, props, AI, camera, pickups and minimap.
-- No bypassing mandatory checkpoints from free flight; no undiscoverable dead-end route; valid safe ground fallback per course.
+- No bypassing mandatory checkpoints from free flight; no undiscoverable dead-end route; valid safe ground fallback per course. Each new course must have separate START and FINISH and complete once, with no lap counters.
 - No new independent weather-quality settings; inherit saved Low/Medium/High and Reduced Motion. Generated in-game raster art has 3× originals.
 - RED→GREEN→Refactor per task, `make verify`, real WebGL screenshots and exact-HEAD full CI; keep human phone QA as pending until performed.
 - No PR or merge without separate authorization.
@@ -30,7 +32,7 @@
 
 **Files:** Create `src/course-graph.ts`, `tests/course-graph.test.ts` (adapt Node runner's existing test convention); leave legacy `src/race-tracks.ts` semantics.
 **Interfaces:** `validateCourseGraph(graph: CourseGraph): CourseGraph`, nodes/edges/checkpoint set, versioned ID.
-- [ ] RED tests: reachable split/merge/finish, invalid cycle/dead end, missing checkpoint on route, edge mismatched endpoint.
+- [ ] RED tests: reachable split/merge/finish, reject invalid cycle/dead end, missing checkpoint, edge mismatch, same-node/same-world-position START and FINISH, and accidental closed-course lap semantics.
 - [ ] Implement types, deterministic validation and test GREEN.
 - [ ] Refactor/minimize, verify typecheck, unit suite, commit on future implementation branch.
 
@@ -75,13 +77,14 @@
 ## Task 7 — Remaining four course art/layout data (M5/M6)
 
 **Files:** Create one small file under `src/courses/` per track, tests per layout and themed scene; reuse graph/weather/pickup/AI APIs.
-- [ ] RED per map: path reachable both ways, ≥3 safe forks, ≥2 hairpins, a grounded finish and scenic reveal, balanced flight+ground options.
+- [ ] RED per map: every optional branch can reach the distinct one-way FINISH, ≥3 safe forks, ≥2 hairpins, no lap completion, a grounded finish and scenic reveal, balanced flight+ground options.
 - [ ] Implement Monsoon, Skyfall, Volcanic and Stormline independently and GREEN tests/map, maintaining unique material/biome silhouette.
+- [ ] Before implementation, read `docs/designs/new-tracks/visual-fidelity.md` and both SVG references for each course; retain intended biome, camera composition and weather without tracing the illustrative path as exact 3D geometry.
 - [ ] User gameplay sessions: record ≥20 finish times per track/difficulty and compare median to 3–5-minute goal; revise if out of range.
 
 ## Task 8 — UI, metadata, persistence, release gate (M7)
 
 **Files:** `src/race-select-ui.ts`, `src/route-map.ts`, `src/i18n.ts`/locales, `src/record-layout.ts` and related cloud rules/tests.
-- [ ] RED: branch overlays, discovered shortcut policy, no central HUD obstruction, all device sizes, cloud/ghost version isolation.
+- [ ] RED: branch overlays, green START + red FINISH, no lap counter, discovered shortcut policy, no central HUD obstruction, all device sizes, cloud/ghost version isolation.
 - [ ] Implement readable future route layers and weather signposts; GREEN browser and storage migration tests.
 - [ ] Run `make verify`, all relevant `npm run test:browser`/World Tour suites, real WebGL evidence, `[full-regression]` on exact HEAD, and manual phone signoff. Only then seek approval to merge into `develop`.
