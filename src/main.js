@@ -54,18 +54,15 @@ import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
 import { focusRace, setupRaceNavigation } from './race-navigation-ui.ts';
-
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
 /** @typedef {import('./game-types.js').RivalSnapshot} RivalSnapshot */
-
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
 createApp(App).mount('#app');
 // Saved choice > system language > English; only a click on the switch persists (saveLocale below).
 setLocale(resolveInitialLocale());
 applyI18n(); applyDocumentLocale(); // before customSelect, so the drawn selects copy translated text
 for (const select of document.querySelectorAll('select')) customSelect(select);
-
 const $ =selector => document.querySelector(selector);
 // Event messages (tilt, key map, errors) remember how to re-render, so a language switch translates the live text.
 const said = new Map();
