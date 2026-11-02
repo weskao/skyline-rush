@@ -1,5 +1,13 @@
 ## Classic pickup density — stage plan (2026-11-01)
 
+## 2026-11-02 Garage collection whole-card UX + four distinct native-3x Airflow icons
+
+- [x] All 22 VFX cards use native full-card Preview and isolated single visible Try/Equip actions with keyboard and hover/focus UX.
+- [x] Paint cards / Garage collection use unified game-like panel, colour/state badges, card glow and action styling without changing paint entitlement.
+- [x] Four unique **288×288 SVG vectors** replace common Airflow placeholders; display **96×96 CSS**; PNG/WebP originals exported separately.
+- [ ] Latest exact-HEAD CI, 22-item visual capture, responsive input and native device checks. See [UX specification](docs/designs/garage-vfx-skins/GARAGE-COLLECTION-UX.md).
+
+
 **Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Full stage plan (S0–S9 + stage 2): `docs/plans/2026-11-01-classic-pickup-density.md` → 「完整階段計畫」. `PLAYWRIGHT_PORT=5185`. Never merge into `develop`.
 
 - [x] S0 AC1 economy bot + numbers (`dff62f74`).
