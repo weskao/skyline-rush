@@ -1,3 +1,16 @@
+## Garage VFX badge clipping / 3× WebP regeneration — 2026-11-02
+
+Branch: `fix/garage-vfx-badge-art-unclipped-3x` (created from `develop` `b3a0c11a`). User reported that all except the first three in `#garage-vfx-art-badges` were cropped near the bottom.
+
+- [x] Identified eight older atlas-derived badge/rarity images; do not confuse transparent padding on a cropped sprite with complete icon content.
+- [x] Recreated Locked/New/Trial and five rarity icons as native 216×216 editable vector originals and transparent `@3x.webp` runtime assets (72×72 CSS), with center alignment and safe alpha margins.
+- [x] Extended Playwright geometry, native-size, alpha-inset and responsive tests for all eight; existing tests keep coverage for the first three.
+- [ ] Run RED/GREEN browser regression on the branch, `make verify`, and full exact-HEAD quality-gate; record observed results.
+- [ ] Review real running-game screenshots and physical touch/browser display at 390×844, 844×390, 1440×900 before claiming visual signoff.
+- [ ] Merge into `develop` **only after explicit approval** and required gates; do not modify `main` or open a PR.
+
+---
+
 ## Button 3x artwork removed — UI/UX follow-ups (2026-11-02)
 
 The 3x HUD artwork belongs to the future `feature/garage-store-readiness`, `feature/garage-rewards-and-missions` and `feature/garage-economy-foundation` work and was merged here by accident. It no longer shows under any button: `#start-button`, `#garage-button`, `#again-button`, `#pause-button`, `#settings-button`, and the touch Left / Right / Brake / NITRO buttons. The semantic SVG icons and labels are untouched.
