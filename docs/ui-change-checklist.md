@@ -54,28 +54,9 @@ tier (Low / Medium / High) and say so in the implementation summary.
   never add a second quality source or fork by device/OS. Changing tier at runtime must apply
   without a reload, following the cache-invalidation rules in `docs/rendering-performance.md`.
 
-## iPhone long-press and game touch behavior
+## Touch and post-race clickability
 
-The iOS magnifier loupe may appear even with `user-select: none`. Install the shared
-`src/ios-touch-guard.ts` from `src/input.ts` to cancel one-finger `touchstart` only
-on **noninteractive, non-scrollable** game surfaces. Do not blanket-cancel document
-touch events: native buttons, links, labels, forms, focusable widgets and scrollable
-Settings/History/Garage/Guide content must retain synthesized clicks and scrolling.
-Leave multi-touch/pinch and accessibility behavior intact. Driving buttons and the
-slide pad keep their existing dedicated touch guard.
-
-Any new mobile surface must be covered by `tests/ios-touch-guard.test.js` and
-`tests/ios-touch-guard-browser.spec.js`; verify actual iPhone Safari/Chrome
-long-press, taps, scroll, and controls in the ready, racing, paused and results
-phases before claiming physical-device acceptance. CSS alone is not sufficient.
-
-## Controls stay clickable after every race
-
-Finish/pause/restart overlays must **never intercept** clicks on the global language
-picker, topbar camera/restart or visible Next/Race Again buttons. A later DOM sibling
-at the same z-index can cover earlier controls even when they still look enabled.
-Check stacking contexts, native modal dialogs, stale inert/pointer capture and
-animation state before touching handlers. Regression-test **real pointer clicks**
-after steering and repeated impacts on Tokyo and the other routes, desktop and
-mobile, and verify both Next and Race Again transition correctly. See
-`.claude/rules/ui-phase-interactions.md`; report runtime errors and unrun tests.
+- iPhone long-press / touch guard on any new mobile surface → Read `.claude/rules/touch-input.md`
+  ("iOS long-press loupe without breaking the UI").
+- Finish/pause/restart overlays and every visible control staying clickable
+  → Read `.claude/rules/ui-phase-interactions.md`.

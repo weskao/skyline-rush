@@ -62,13 +62,8 @@ track-specific cosmetic workaround.
 
 ## No shader compiles or NaN pixels mid-race
 
-Every material a race can show is attached to the scene (hidden is fine) before racing starts, and
-the visible-light count never changes within a track; `src/shader-warmup.js` draws it all once on
-the first frame. A first-draw shader build flashes black on iPhone. One NaN texel in the scene
-becomes a screen-sized black rectangle through the bloom blur: clamp uv-derived scalars before
-`exp()`/`pow()` in every shader (MSAA extrapolates them past their range) and keep the bloom
-high-pass guard. Rules and guard tests are in `.claude/rules/performance-review.md` ("Shaders
-compile at first draw", "One NaN pixel is a black frame").
+→ Read `.claude/rules/performance-review.md` ("Shaders compile at first draw", "One NaN pixel
+is a black frame"): the rules, diagnosis steps and guard tests live there.
 
 ## Repeated work: dedupe first, cache second, prove it with a count
 

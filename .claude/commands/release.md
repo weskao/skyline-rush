@@ -30,7 +30,7 @@ from the survey. Later phases reuse this answer and do not ask again.
 1. `node scripts/check-release-notes.mjs <version>` — read-only.
    - **Passes** → go to Phase T.
    - **No entry for the version** → stop. The notes are written first, as the `version: UPCOMING`
-     entry (`docs/release-process.md` "Every release ships its What's New notes"); the check finds it under any
+     entry (`.claude/rules/release-notes.md`); the check finds it under any
      version newer than every released entry; offer to draft them from `node scripts/check-release-notes.mjs --changes` (player-facing
      commits since the last tag), rewritten as player copy, then review them.
    - **Copy problems, not reviewed, or changed since review** → run

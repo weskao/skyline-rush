@@ -65,13 +65,14 @@ server-enforced status protection.
 - Renderer, scene, effect or shader code; adding a cache, instancing or any per-frame /
   per-row work → Read `docs/rendering-performance.md`.
 - Road geometry, car pose, collision, steering, AI/traffic, or a prop drawn on the road
-  → Read `docs/vehicles-and-collision.md`.
+  → Read `.claude/rules/vehicle-road-stability.md` and `.claude/rules/world-tour.md`
+  ("Solid props", "Shared collision physics").
 - Track centrelines, route previews/markers, Coast scenery, render pacing, or anything that
   changes track length, checkpoints or saved best-time/Ghost data
   → Read `docs/classic-road-minimap.md`.
 - Tutorial steps, lesson transitions or tutorial input → Read `docs/tutorial-driving.md`.
-- Home 3D preview, showcase camera views, camera dock / Start layout, or a new track
-  → Read `docs/home-showcase.md`.
+- Home 3D preview, showcase camera views or a new track → Read `.claude/rules/track-showcase.md`;
+  camera dock / Start button layout → Read `docs/home-showcase.md`.
 - Adding, redesigning or modifying any UI element, screen, overlay, interaction or player
   feedback (audio, quality tiers, iPhone touch, post-race clickability)
   → Read `docs/ui-change-checklist.md`.

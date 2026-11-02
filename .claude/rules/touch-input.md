@@ -38,9 +38,15 @@ per runner (Linux CI made a 40 px nudge a full swipe). Guards: both trackpad tes
 
 ## iOS long-press loupe without breaking the UI
 
-A one-finger `touchstart` may show a magnifier on iPhone despite the root CSS
-selection/callout rules. Use `installGameTouchGuard` for noninteractive game surfaces,
-not a blanket `preventDefault()`: native controls and scrolling panels still need
-WebKit's synthesized click and scroll events. Leave two-finger gestures alone; keep
-existing dedicated touch cancellation for driving controls. Regress with the guard's
-unit and phone-browser specs plus real iPhone testing.
+The iOS magnifier loupe may appear even with `user-select: none`. Install the shared `installGameTouchGuard`
+(`src/ios-touch-guard.ts`) from `src/input.ts` to cancel one-finger `touchstart` only
+on **noninteractive, non-scrollable** game surfaces. Do not blanket-cancel document
+touch events: native buttons, links, labels, forms, focusable widgets and scrollable
+Settings/History/Garage/Guide content must retain synthesized clicks and scrolling.
+Leave multi-touch/pinch and accessibility behavior intact. Driving buttons and the
+slide pad keep their existing dedicated touch guard.
+
+Any new mobile surface must be covered by `tests/ios-touch-guard.test.js` and
+`tests/ios-touch-guard-browser.spec.js`; verify actual iPhone Safari/Chrome
+long-press, taps, scroll, and controls in the ready, racing, paused and results
+phases before claiming physical-device acceptance. CSS alone is not sufficient.

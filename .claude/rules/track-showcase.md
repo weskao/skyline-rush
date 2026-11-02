@@ -86,7 +86,9 @@ override. Apply the shared preview angle before any curated fallback in
 `src/world.js`. Each future track automatically receives drive/front/rear/
 left/right/orbit without adding UI branches. The camera dock is visible in the
 ready phase on desktop and touch, accessible and synchronized with the VFX
-select, without requiring AIRFLOW.
+select, without requiring AIRFLOW. The camera source of truth is `vfxSettings().view`,
+the view ordering `SHOWCASE_VIEWS`, and the geometry-independent camera offsets
+`showcaseCameraPose()`; the dock and the VFX menu stay synchronized and localized.
 
 ## AIRFLOW ground contract (all current and future tracks)
 
