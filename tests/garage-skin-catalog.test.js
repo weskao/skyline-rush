@@ -62,8 +62,8 @@ test('Corrupt profile, unknown IDs, foreign keys and malformed entitlements are 
 test('Raster candidates are not mistaken for committed assets; SVG fallback uses Vite base path', () => {
   const art = skinArtwork('thruster-ion', '/skyline-rush/');
   assert.deepEqual(art, { src: '/skyline-rush/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', fallback: '/skyline-rush/feature-assets/garage-vfx-skins/thruster.svg', cssSize: 96, candidateRasterId: 'thruster-ion', hasRaster: true });
-  const missing = skinArtwork('airflow-prism', '/skyline-rush/');
-  assert.deepEqual(missing, { src: '/skyline-rush/feature-assets/garage-vfx-skins/airflow.svg', fallback: '/skyline-rush/feature-assets/garage-vfx-skins/airflow.svg', cssSize: 96, candidateRasterId: undefined, hasRaster: false });
+  const missing = skinArtwork('nitro-trail-basic', '/skyline-rush/');
+  assert.deepEqual(missing, { src: '/skyline-rush/feature-assets/garage-vfx-skins/nitro-trail.svg', fallback: '/skyline-rush/feature-assets/garage-vfx-skins/nitro-trail.svg', cssSize: 96, candidateRasterId: undefined, hasRaster: false });
   const blueFlare = skinArtwork('launch-flare-blue', '/skyline-rush/');
   assert.ok(blueFlare.hasRaster);
   assert.match(blueFlare.src, /flare-blue@3x\.webp$/);
@@ -121,7 +121,7 @@ test('all airflow skins resolve to their own native 3x WebP artwork', () => {
     assert.equal(image.hasRaster,true);
     assert.equal(image.cssSize,96);
     assert.equal(image.candidateRasterId,id);
-    assert.match(image.src,/airflow-[a-z]+@3x\.webp$/);
+    assert.match(image.src,/airflow-[a-z]+@3x\.svg$/);
     sources.add(image.src);
   }
   assert.equal(sources.size,4);

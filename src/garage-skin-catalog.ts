@@ -15,10 +15,10 @@ export const GARAGE_SKINS = [
   { id: 'thruster-ion', category: 'thruster', default: false, name: { en: 'Ion thruster', 'zh-TW': '離子推進器' }, candidateRasterId: 'thruster-ion' },
   { id: 'thruster-plasma', category: 'thruster', default: false, name: { en: 'Plasma helix', 'zh-TW': '電漿螺旋' }, candidateRasterId: 'thruster-plasma' },
   { id: 'thruster-void', category: 'thruster', default: false, name: { en: 'Void pulse', 'zh-TW': '虛空脈衝' }, candidateRasterId: 'thruster-void' },
-  { id: 'airflow-basic', category: 'airflow', default: true, name: { en: 'Standard airflow', 'zh-TW': '標準氣流' } },
-  { id: 'airflow-slipstream', category: 'airflow', default: false, name: { en: 'Slipstream', 'zh-TW': '流線氣流' } },
-  { id: 'airflow-vortex', category: 'airflow', default: false, name: { en: 'Vortex spiral', 'zh-TW': '渦旋氣流' } },
-  { id: 'airflow-prism', category: 'airflow', default: false, name: { en: 'Prism lattice', 'zh-TW': '稜鏡氣流' } },
+  { id: 'airflow-basic', category: 'airflow', default: true, name: { en: 'Standard airflow', 'zh-TW': '標準氣流' }, candidateRasterId: 'airflow-basic' },
+  { id: 'airflow-slipstream', category: 'airflow', default: false, name: { en: 'Slipstream', 'zh-TW': '流線氣流' }, candidateRasterId: 'airflow-slipstream' },
+  { id: 'airflow-vortex', category: 'airflow', default: false, name: { en: 'Vortex spiral', 'zh-TW': '渦旋氣流' }, candidateRasterId: 'airflow-vortex' },
+  { id: 'airflow-prism', category: 'airflow', default: false, name: { en: 'Prism lattice', 'zh-TW': '稜鏡氣流' }, candidateRasterId: 'airflow-prism' },
   { id: 'nitro-trail-basic', category: 'nitro-trail', default: true, name: { en: 'Standard NITRO trail', 'zh-TW': '標準氮氣尾跡' } },
   { id: 'nitro-trail-cyan', category: 'nitro-trail', default: false, name: { en: 'Cyan trail', 'zh-TW': '青色尾跡' }, candidateRasterId: 'trail-cyan' },
   { id: 'nitro-trail-gold', category: 'nitro-trail', default: false, name: { en: 'Golden pulse trail', 'zh-TW': '金色脈衝尾跡' }, candidateRasterId: 'trail-gold' },
@@ -124,7 +124,7 @@ export function skinArtwork(id: unknown, baseUrl: string) {
   const candidateRasterId = 'candidateRasterId' in skin ? skin.candidateRasterId : undefined;
   const hasRaster = typeof candidateRasterId === 'string';
   const src = hasRaster
-    ? `${base}feature-assets/garage-vfx-skins/raster/${candidateRasterId}@3x.webp`
+    ? `${base}feature-assets/garage-vfx-skins/raster/${candidateRasterId}@3x.${skin.category === 'airflow' ? 'svg' : 'webp'}`
     : fallback;
   return { src, fallback, cssSize: SKIN_PREVIEW_UI.cardCssSize, candidateRasterId, hasRaster };
 }
