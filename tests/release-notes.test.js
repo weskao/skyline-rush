@@ -215,6 +215,17 @@ test('the gate refuses a release video or poster that is not bundled', () => {
   if (shipped) assert.deepEqual(checkReleaseNotes(shipped.version, { reviews: { [shipped.version]: reviewHash(shipped) } }), []);
 });
 
+test('a highlight carries its own video: the gate refuses one that is not bundled and editing it voids the review', () => {
+  const base = entry('Fly longer.', '飛得更久。');
+  const release = entry('Fly longer.', '飛得更久。', { video: clipVideo() });
+  assert.match(checkReleaseNotes('9.9.9', { notes: [release], reviews: { '9.9.9': reviewHash(release) } }).join('\n'), /x desktop video .* is not a file in public\//);
+  assert.notEqual(reviewHash(release), reviewHash(base));
+  const bundled = { desktop: { src: 'whats-new/rival-nitro/rival-nitro.desktop.en.mp4', poster: 'whats-new/rival-nitro/rival-nitro.desktop.en.jpg' },
+    mobile: { src: 'whats-new/rival-nitro/rival-nitro.mobile.en.mp4', poster: 'whats-new/rival-nitro/rival-nitro.mobile.en.jpg' } };
+  const ok = entry('Fly longer.', '飛得更久。', { video: bundled });
+  assert.deepEqual(checkReleaseNotes('9.9.9', { notes: [ok], reviews: { '9.9.9': reviewHash(ok) } }), []);
+});
+
 test('changing a release video voids its review, while entries without one keep their fingerprint', () => {
   const release = entry('Fly longer.', '飛得更久。');
   assert.equal(reviewHash({ ...release, video: undefined }), reviewHash(release));
