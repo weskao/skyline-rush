@@ -46,6 +46,12 @@ const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   'launch-flare': { en: 'Launch flare', 'zh-TW': '起跑閃焰' },
 };
 const entries = GARAGE_SKINS.map(skin => ({ ...skin, artwork: skinArtwork(skin.id, import.meta.env.BASE_URL)! }));
+const categoryHue: Record<SkinCategory, number> = { thruster: 191, airflow: 202, 'nitro-trail': 44, 'launch-flare': 300 };
+const airflowHue: Partial<Record<SkinId, number>> = {
+  'airflow-basic': 192, 'airflow-slipstream': 210, 'airflow-vortex': 280, 'airflow-prism': 312,
+};
+const skinHue = (id: SkinId, category: SkinCategory): number => airflowHue[id] ?? categoryHue[category];
+const skinLabel = (id: SkinId, locale: string): string => GARAGE_SKINS.find(s => s.id === id)!.name[locale === 'zh-TW' ? 'zh-TW' : 'en'];
 const view = (id: SkinId) => { void garageSkinState.revision; return garageSkinEntry(id); };
 const isPreviewActive = (id: SkinId, category: SkinCategory) => {
   void garageSkinState.revision;
@@ -70,18 +76,24 @@ const statusText = (id: SkinId, locale: string) => {
       <ul>
         <li v-for="skin in entries.filter(entry => entry.category === category)" :key="skin.id"
           :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)"
-          :data-preview-active="String(isPreviewActive(skin.id, skin.category))">
+          :data-preview-active="String(isPreviewActive(skin.id, skin.category))"
+          class="garage-skin-card" :style="{ '--card-hue': skinHue(skin.id, skin.category) }">
+          <!-- Full-card native Preview button; action remains a separate sibling, never nested. -->
+          <button class="garage-skin-preview-hitarea" type="button"
+            :aria-label="`${locale === 'zh-TW' ? '預覽' : 'Preview'} ${skinLabel(skin.id, locale)}`"
+            :aria-pressed="isPreviewActive(skin.id, skin.category)"
+            @click="selectGarageSkin(skin.id)"></button>
           <span class="garage-vfx-art">
             <GarageArtworkImage :src="skin.artwork.src" :fallback-src="skin.artwork.hasRaster ? skin.artwork.fallback : ''"
               :size="skin.artwork.cssSize" alt="" loading="eager" fallback-class="garage-vfx-fallback"
               :fallback-text="categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en']" />
           </span>
           <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
-          <small>{{ statusText(skin.id, locale) }}</small>
+          <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
           <div class="garage-vfx-actions">
-            <button type="button" :aria-pressed="isPreviewActive(skin.id, skin.category)" @click="selectGarageSkin(skin.id)">{{ locale === 'zh-TW' ? '預覽' : 'Preview' }}</button>
-            <button type="button" :disabled="!view(skin.id)?.canEquip" @click="equipGarageSkin(skin.id)">
-              {{ view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '試用' : 'Try') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
+            <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
+              @click.stop="equipGarageSkin(skin.id)">
+              {{ view(skin.id)?.state === 'equipped' ? (locale === 'zh-TW' ? '已裝備' : 'Equipped') : view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '試用' : 'Try') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
             </button>
           </div>
         </li>
@@ -106,30 +118,92 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-vfx-message { font-size: 12px; line-height: 1.45; color: #c2d4e3; margin: 6px 0 10px; }
 .garage-vfx-category { margin: 12px 0; }
 .garage-vfx-category h4 { font-size: 13px; margin: 0 0 6px; }
-.garage-vfx-category ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 8px; padding: 0; margin: 0; list-style: none; }
-.garage-vfx-category li { display: flex; flex-direction: column; gap: 3px; min-width: 0; align-items: center; padding: 7px; border-radius: 8px; border: 1px solid #31536a; background: #112638; text-align: center; }
-.garage-vfx-art { width: 96px; height: 96px; max-width: 100%; display: grid; place-items: center; overflow: visible; }
-.garage-vfx-art :deep(.artwork-img) { max-width: 100%; max-height: 100%; object-fit: contain; }
+.garage-vfx-category ul {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 138px), 1fr));
+  gap: 10px; padding: 0; margin: 0; list-style: none;
+}
+.garage-vfx-category li.garage-skin-card {
+  box-sizing: border-box; position: relative; isolation: isolate;
+  min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 8px 10px; text-align: center;
+  border: 1px solid hsl(var(--card-hue) 63% 59% / .5);
+  border-radius: 14px 6px 14px 6px;
+  background: radial-gradient(ellipse at 50% 18%, hsl(var(--card-hue) 64% 38% / .28), transparent 78%),
+    linear-gradient(158deg, #1c2d4a, #0b1729 85%);
+  box-shadow: inset 0 1px #ffffff18, 0 5px 15px #0005;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.garage-skin-card::after {
+  content: ''; position: absolute; inset: 5px 5px auto; height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--card-hue) 89% 74% / .5), transparent);
+  pointer-events: none;
+}
+.garage-skin-preview-hitarea {
+  display: block; position: absolute; inset: 0; width: 100%; height: 100%;
+  z-index: 1; border: 0; border-radius: inherit; padding: 0; background: transparent;
+  cursor: pointer; touch-action: manipulation;
+}
+.garage-skin-preview-hitarea:focus-visible {
+  outline: 3px solid #74ebff; outline-offset: 3px;
+}
+.garage-vfx-art {
+  width: 112px; height: 112px; max-width: 100%; box-sizing: border-box;
+  padding: 8px; display: grid; place-items: center; border-radius: 13px;
+  background: radial-gradient(circle, hsl(var(--card-hue) 74% 44% / .19), transparent 73%);
+  pointer-events: none;
+}
+.garage-vfx-art :deep(.artwork-img) {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+  filter: drop-shadow(0 0 5px hsl(var(--card-hue) 85% 64% / .34));
+}
 .garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
+.garage-skin-card strong {
+  min-height: 35px; font-size: 12px; line-height: 1.5; color: #ecf6ff;
+  font-weight: 750; overflow-wrap: anywhere; pointer-events: none;
+}
+.garage-skin-status {
+  font-size: 11px; min-height: 19px; padding: 1px 7px; border-radius: 999px;
+  background: hsl(var(--card-hue) 82% 54% / .13);
+  color: hsl(var(--card-hue) 91% 80%); border: 1px solid hsl(var(--card-hue) 60% 61% / .28);
+  pointer-events: none;
+}
+.garage-vfx-actions { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; margin-top: auto; }
+.garage-vfx-actions .garage-skin-action {
+  display: block; min-height: 44px; width: 100%; border-radius: 10px 4px 10px 4px;
+  border: 1px solid hsl(var(--card-hue) 82% 67% / .85);
+  background: linear-gradient(125deg, hsl(var(--card-hue) 72% 43%), hsl(var(--card-hue) 71% 27%));
+  color: #f4fdff; font-size: 12px; font-weight: 800; letter-spacing: .04em;
+  text-shadow: 0 1px 2px #0008; box-shadow: inset 0 1px #ffffff45, 0 3px 9px #0005;
+  cursor: pointer; transition: background .18s ease, filter .18s ease, transform .18s ease;
+}
+.garage-vfx-actions .garage-skin-action:disabled {
+  background: linear-gradient(135deg, #223648, #142334); border-color: #456175;
+  color: #b7cbd8; cursor: not-allowed; box-shadow: none;
+}
+.garage-vfx-actions .garage-skin-action:focus-visible { outline: 3px solid #74ebff; outline-offset: 2px; }
+.garage-skin-card[data-state="equipped"] .garage-skin-status { color: #70f3d6; border-color: #37bca286; }
+.garage-skin-card[data-state="locked"] .garage-skin-status { color: #b5c1d3; border-color: #8093ad66; }
 .garage-vfx-category li[data-preview-active="true"] {
-  border-color: #74defe;
-  background: radial-gradient(circle at 50% 12%, #244367 0%, #152b4c 48%, #11192e 100%);
-  box-shadow: 0 0 0 1px #8b4dff66, 0 0 24px #704dff55, inset 0 0 16px #1b59a244;
+  border-color: hsl(var(--card-hue) 94% 77%);
+  box-shadow: 0 0 0 1px hsl(var(--card-hue) 90% 70% / .57),
+    0 0 23px hsl(var(--card-hue) 88% 58% / .32), inset 0 0 20px hsl(var(--card-hue) 80% 48% / .15);
 }
-.garage-vfx-category li[data-preview-active="true"] .garage-vfx-art {
-  filter: drop-shadow(0 0 12px #8bdfffbb);
+.garage-skin-card[data-preview-active="true"]::before {
+  content: '◉'; position: absolute; top: 7px; right: 9px;
+  z-index: 2; font-size: 13px; color: hsl(var(--card-hue) 95% 78%);
+  pointer-events: none;
 }
-.garage-vfx-actions button[aria-pressed="true"] {
-  background: linear-gradient(120deg, #274b7a, #572ba0);
-  border-color: #a3eafd;
-  box-shadow: 0 0 10px #6847ec88;
+@media (hover: hover) and (pointer: fine) {
+  .garage-vfx-category li.garage-skin-card:hover {
+    transform: translateY(-3px);
+    border-color: hsl(var(--card-hue) 92% 72%);
+    box-shadow: 0 9px 24px #0008, 0 0 16px hsl(var(--card-hue) 80% 60% / .25);
+  }
+  .garage-vfx-actions .garage-skin-action:enabled:hover { filter: brightness(1.19) saturate(1.15); transform: translateY(-1px); }
 }
-.garage-vfx-category strong { font-size: 12px; overflow-wrap: anywhere; }
-.garage-vfx-category small { font-size: 11px; color: #a1c6d8; }
-.garage-vfx-actions { display: flex; flex-wrap: wrap; width: 100%; gap: 5px; justify-content: center; }
-.garage-vfx-actions button { flex: 1 1 45%; min-height: 44px; border-radius: 6px; border: 1px solid #4f8caa; color: #e8f3fb; background: #143950; font-size: 12px; cursor: pointer; }
-.garage-vfx-actions button:disabled { opacity: .55; cursor: default; }
-.garage-vfx-actions button:focus-visible { outline: 3px solid #67e8ff; outline-offset: 2px; }
+@media (hover: none) {
+  .garage-vfx-category li.garage-skin-card:active { transform: scale(.99); }
+}
 .garage-art-showcase { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid #46688b; }
 .garage-art-showcase h4 { color: #d4ddff; letter-spacing: .04em; }
 .garage-art-badges {
