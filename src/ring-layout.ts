@@ -8,8 +8,8 @@ const RING_START = 110; // m: the first ring is never on the starting grid
 const RING_ODDS: readonly [number, number, number, number] = [0.35, 0.6, 0.78, 0.9];
 // User, 2026-11-02: rings and pickups each scale with the grid, this many slots per car (per lap in Circuit). A few ring
 // slots become a train or a full-width row and pickup slots trail a short run of cells (user, same day), so the
-// extra items come in readable runs instead of a denser scatter.
-export const ITEMS_PER_CAR = 4;
+// extra items come in readable runs instead of a denser scatter. User, 2026-11-03: a medium step up (4 before).
+export const ITEMS_PER_CAR = 5;
 const LOW_ALTITUDE = 1.5; // under a tunnel roof
 export const NITRO_MAX = 3; // charges
 export const NITRO_PICKUPS: Readonly<Record<string, number>> = { cell: 0.25, can: 0.5, tank: 1, overcharge: NITRO_MAX }; // overcharge only tops up to the cap, no fuel
@@ -53,13 +53,16 @@ function assignGroups(gates: RaceRing[][], trains: RaceRing[][], random: () => n
 // User, 2026-11-02: a few ring slots become a run of consecutive rings (on the road or in the air) or a full-width row
 // any car on the road passes. Shapes roll on their own stream, so every slot keeps its position and type roll.
 const ROW_LANES = [-7.5, -2.5, 2.5, 7.5]; // game.js LANES (this module sits below game.js)
+// User, 2026-11-03: trains run down a middle lane (lane 2 or 3), mostly on the road, so driving straight chains them.
+export const TRAIN_LANES = [-2.5, 2.5];
+const TRAIN_AIR_ODDS = 0.2;
 // Lanes 5 m apart, radius 4.8: anywhere on the road (x ±10.2) from the surface up to about 6.4 m passes one ring.
 export const ROW_ALTITUDE = 2.5;
 const TRAIN_AIR = 7; // an air train asks for flight; a ground train sits at ROW_ALTITUDE
 export const TRAIN_SPACING = 25; // m
 // Balance: a train pays mostly charge and slipstream, one nitro; its PERFECT LINE adds the usual +1 NITRO.
-const TRAIN_TYPES = ['charge', 'slipstream', 'nitro', 'slipstream', 'charge'];
-const ROW_ODDS = 0.08, TRAIN_ODDS = 0.15; // per slot
+const TRAIN_TYPES = ['charge', 'slipstream', 'charge', 'nitro', 'slipstream', 'charge'];
+const ROW_ODDS = 0.08, TRAIN_ODDS = 0.25; // per slot
 const SHAPE_CLEARANCE = 40; // m from any road section or hoop
 const OPENING_SINGLES = 2; // the first slots stay single, so openingNitroRings still opens on a nitro ring
 
@@ -75,12 +78,13 @@ function shapeSlots(slots: RaceRing[], track: TrackConfig, seed: number, avoid: 
     && avoid.every(a => a < from - SHAPE_CLEARANCE || a > to + SHAPE_CLEARANCE);
   const gates: RaceRing[][] = [], trains: RaceRing[][] = [];
   slots.forEach((slot, i) => {
-    const roll = random(), air = random() < 0.5, d = slot.distance; // both drawn every slot: shapes never shift
+    const roll = random(), air = random() < TRAIN_AIR_ODDS, d = slot.distance; // both drawn every slot: shapes never shift
     // Risk lines keep their narrow single rings (and their frequency): only other slots take a shape.
     if (i < OPENING_SINGLES || slot.type === 'risk') gates.push([slot]);
     else if (roll < ROW_ODDS && clear(d, d)) gates.push(ringRow(d, slot.type));
-    else if (roll < ROW_ODDS + TRAIN_ODDS && clear(d, d + span)) {
-      trains.push(ringTrain(d, ROW_LANES.reduce((a, b) => Math.abs(b - slot.x) < Math.abs(a - slot.x) ? b : a), air));
+    // A train also keeps SHAPE_CLEARANCE from the previous one: chains, not a bunch (Circuit has a slot every 45 m).
+    else if (roll < ROW_ODDS + TRAIN_ODDS && clear(d, d + span) && d > (trains.at(-1)?.at(-1)?.distance ?? -Infinity) + SHAPE_CLEARANCE) {
+      trains.push(ringTrain(d, slot.x < 0 ? TRAIN_LANES[0]! : TRAIN_LANES[1]!, air));
     } else gates.push([slot]);
   });
   return { gates, trains };
