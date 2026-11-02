@@ -92,5 +92,21 @@ test('badge reference art falls back to visible accessible label if the 3x image
   const card = page.locator('#garage-vfx-art-badges figure').first();
   await card.scrollIntoViewIfNeeded();
   await expect(card.locator('img')).toHaveCount(0);
-  await expect(card.locator('[role="img"]')).toContainText(/badge-equipped|badge equipped/i);
+  // The fallback must be readable and agree with its accessible name, not leak an internal asset ID.
+  await expect(card.locator('[role="img"]')).toHaveText('Equipped badge');
+  await expect(card.locator('[role="img"]')).toHaveAttribute('aria-label', 'Equipped badge');
+  await expect(card.locator('figcaption')).toHaveText('Equipped badge');
+});
+
+test('failed badge artwork remains accessible and localized in Traditional Chinese', async ({ page }) => {
+  await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.webp', route => route.abort());
+  await page.goto('/');
+  await selectLocale(page, 'zh-TW');
+  await page.locator('#garage-button').click();
+  const card = page.locator('#garage-vfx-art-badges figure').first();
+  await card.scrollIntoViewIfNeeded();
+  await expect(card.locator('img')).toHaveCount(0);
+  await expect(card.locator('[role="img"]')).toHaveText('已裝備徽章');
+  await expect(card.locator('[role="img"]')).toHaveAttribute('aria-label', '已裝備徽章');
+  await expect(card.locator('figcaption')).toHaveText('已裝備徽章');
 });
