@@ -43,7 +43,8 @@ test('blue launch flare ignites at race start without a BOOST/NITRO input or sta
   race.phase = 'racing';
   const before = structuredClone(race);
   aero.update(race, 0.05, origin, visual, false);
-  assert.equal(scene.getObjectByName('Ignition shockwave').visible, true);
+  assert.equal(scene.getObjectByName('Launch flare burst').visible, true);
+  assert.equal(scene.getObjectByName('Ignition shockwave').visible, false, 'the flare replaces the standard ring');
   assert.deepEqual(race, before);
   aero.reset();
   aero.setSkins({ 'launch-flare': 'launch-flare-basic' });
@@ -108,7 +109,7 @@ test('void pulse creates visible car-mounted energy beams, and toggling skins re
   assert.equal(beams.visible, false, 'VFX Off must hide beams');
 });
 
-test('launch ring and pulse loop visibly in Studio without altering race progress', async () => {
+test('ring and pulse flares loop visibly in Studio without altering race progress', async () => {
   const { createRace } = await import('../src/game.js');
   const { vfxSettings } = await import('../src/vfx-settings.ts');
   const { Vector3 } = await import('three');
@@ -118,17 +119,17 @@ test('launch ring and pulse loop visibly in Studio without altering race progres
   const settings = vfxSettings({ enabled: true, airflow: true, quality: 'high' });
   race.phase = 'racing'; race.player.boosting = true;
   const before = structuredClone(race);
-  const ring = scene.getObjectByName('Ignition shockwave');
+  const burst = scene.getObjectByName('Launch flare burst');
   for (const id of ['launch-flare-ring', 'launch-flare-pulse']) {
     aero.setSkins({ 'launch-flare': id });
     aero.update(race, 0.05, new Vector3(), settings, false, null, true);
-    assert.equal(ring.visible, true, `${id} must appear immediately after Preview`);
-    assert.ok(ring.material.opacity > 0, 'visible pulse must have positive opacity');
+    assert.equal(burst.visible, true, `${id} must appear immediately after Preview`);
+    assert.ok(burst.material.uniforms.power.value > 0, 'visible pulse must have positive power');
     let repetitions = 0, wasVisible = true;
     for (let n = 0; n < 150; n++) {
       aero.update(race, 1 / 60, new Vector3(), settings, false, null, true);
-      if (!wasVisible && ring.visible) repetitions++;
-      wasVisible = ring.visible;
+      if (!wasVisible && burst.visible) repetitions++;
+      wasVisible = burst.visible;
     }
     assert.ok(repetitions >= 1, `${id} needs repeated studio demo pulses`);
   }
@@ -171,4 +172,15 @@ test('purple nebula NITRO is a moving shader ribbon, not an RGB-only static deca
   aero.update(race, 0.08, new Vector3(), vfxSettings({ enabled: true }), false);
   assert.ok(ribbon.material.uniforms.time.value > firstTime);
   assert.equal(ribbon.material, initialMaterial, 'live uniforms, no per-frame GPU allocation');
+});
+
+test('void beams are tapered glowing rods, bright along their core, so they keep depth seen from behind', () => {
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  createAeroVFX(scene, car);
+  const beams = car.getObjectByName('Void pulse beams');
+  const { radiusTop, radiusBottom } = beams.geometry.parameters;
+  assert.ok(radiusBottom > radiusTop * 1.8, 'wide at the nozzle, narrowing into the distance');
+  assert.match(beams.material.vertexShader, /vFacing=abs\(dot\(/, 'view-facing term gives the rod volume');
+  assert.match(beams.material.fragmentShader, /vFacing/);
 });

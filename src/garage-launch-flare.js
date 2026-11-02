@@ -1,77 +1,80 @@
 import * as THREE from 'three';
 import { FLARE_SHAPES, LAUNCH_FLARE_STYLES } from './garage-launch-flare-styles.ts';
+import { GLOW_VERTEX, GLOW_FRAGMENT, RAY_VERTEX, RAY_FRAGMENT, RING_VERTEX, RING_FRAGMENT,
+  SHELL_VERTEX, SHELL_FRAGMENT, BODY_VERTEX, BODY_FRAGMENT } from './garage-launch-flare-shaders.js';
 
 const ANCHOR = new THREE.Vector3(0, 0.6, 2.75); // just behind the tail; the car's rear faces +z
+const MAX_RAYS = 24; // the richest style has 20 rays plus the crimson slash
+const UP = new THREE.Vector3(0, 1, 0);
 
-// One burst billboard and one body shell, each a single program for every flare skin: a skin swap writes
-// uniforms only, and both meshes sit in the scene (hidden) from creation so shader warm-up compiles them.
-const BURST_VERTEX = `uniform float size,age,shape;varying vec2 vUv;
-  void main(){vUv=uv;vec4 c=modelViewMatrix*vec4(0.,0.,0.,1.);
-    float grow=size*(.35+.65*(1.-pow(max(0.,1.-clamp(age*3.,0.,1.)),3.)));
-    c.xy+=position.xy*grow;c.y+=grow*(shape>2.5?.7:.55); // lift clear of the road; fans erupt upward from the tail
-    gl_Position=projectionMatrix*c;}`;
-const BURST_FRAGMENT = `varying vec2 vUv;
-  uniform float age,power,time,shape,rays,swirl,pulse,corona,core;uniform vec3 primary,secondary;
-  float hash(float n){return fract(sin(n*12.9898)*43758.5453);}
-  void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;vec2 p=q;
-    if(shape>2.5)p.y+=.7;
-    if(shape>1.5&&shape<2.5)p+=vec2(.18,.2); // crimson shock bursts off-centre
-    float r=length(p);float a=r<1e-4?0.:atan(p.y,p.x);
-    a+=swirl*(r*2.5-time*.8); // magenta vortex twists its rays
-    float k=a/6.28318*rays;float id=floor(k+.5);
-    float reach=.4+.55*hash(id+7.);
-    float spike=pow(max(0.,1.-abs(k-id)*2.2),6.)*smoothstep(reach,0.,r);
-    float fine=pow(max(0.,abs(cos(a*rays*1.5+hash(id)*6.))),24.)*smoothstep(.85,0.,r)*.55;
-    float rayLight=spike+fine;
-    if(shape>2.5)rayLight*=smoothstep(-.2,.35,p.y/(r+.001));
-    float d=dot(p,vec2(.7071));float across=dot(p,vec2(-.7071,.7071));
-    float beam=shape>1.5&&shape<2.5?exp(-abs(across)*24.)*smoothstep(-.1,.15,d)*smoothstep(1.15,.25,d):0.;
-    float R=.42+.42*clamp(age,0.,1.);float wob=.035*sin(a*9.+time*7.);
-    float outer=exp(-abs(r-R-.17+wob)*26.),inner=exp(-abs(r-R+.06-wob)*22.);
-    float hot=exp(-dot(p,p)*26./core);float halo=exp(-length(p)*4.5);
-    float flame=corona*exp(-abs(r-.3-.05*sin(a*12.+time*9.))*16.);
-    float rings=pulse*exp(-abs(fract(r*2.5-time*3.)-.5)*9.)*smoothstep(.95,.15,r);
-    float mist=exp(-abs(r-.78)*7.)*.07;
-    vec3 col=shape>.5&&shape<1.5
-      ?primary*outer*1.7+secondary*inner*1.8+secondary*hot*.35
-      :primary*(rayLight*1.3+halo*.25+flame*1.2+rings*.8)+secondary*beam*1.5+mix(secondary,vec3(1.),.3)*hot*1.3;
-    col+=vec3(.75,.8,.9)*mist;
-    float life=pow(max(0.,1.-age),1.4)*(1.+pulse*.45*sin(age*42.));
-    float edge=smoothstep(1.,.7,length(q)); // round falloff: no square halo
-    gl_FragColor=vec4(col,clamp(life*power*edge,0.,1.));}`;
-const GLOW_VERTEX = `varying vec3 vPos,vN,vView;
-  void main(){vPos=position;vec4 mv=modelViewMatrix*vec4(position+normal*.04,1.);
-    vN=normalMatrix*normal;vView=-mv.xyz;gl_Position=projectionMatrix*mv;}`;
-const GLOW_FRAGMENT = `varying vec3 vPos,vN,vView;
-  uniform float age,power,time,shape,swirl,pulse,corona;uniform vec3 primary,secondary;
-  void main(){float facing=abs(dot(normalize(vN),normalize(vView)));
-    float rim=pow(max(0.,1.-facing),2.);
-    float front=mix(3.,-3.,clamp(age*1.6,0.,1.)); // light sweeps tail to nose
-    float lane=vPos.z;
-    if(shape>1.5&&shape<2.5)lane=vPos.z+vPos.x*1.3; // crimson slash crosses the body
-    if(shape>2.5)lane=3.-(vPos.y-.35)*7.; // fans rise from the sills to the roof
-    vec2 s=vec2(vPos.x,vPos.y-.6);lane+=swirl*.35*sin((dot(s,s)<1e-8?0.:atan(s.y,s.x))*2.+time*6.);
-    float band=exp(-abs(lane-front)*4.);
-    float band2=shape>.5&&shape<1.5?exp(-abs(lane-front-.9)*4.):0.; // second, blue ring
-    float throb=1.+pulse*.6*sin(time*18.);float flick=1.+corona*.35*sin(vPos.z*9.+time*23.);
-    vec3 col=primary*(rim*1.5+band*2.)*throb*flick+secondary*(band2*2.+band*.5);
-    gl_FragColor=vec4(col,clamp((rim*.9+band*1.2+band2)*pow(max(0.,1.-age),1.2)*power,0.,1.));}`;
+const hash = n => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
+// [x, y, z, length, thickness, tone] per ray in the car's frame: spread over a sphere (starburst/streak)
+// or fanned upward with alternating depth (fan), so the burst has volume from every camera angle.
+export function rayLayout(style) {
+  if (style.shape === 'ring') return [];
+  const rays = [];
+  for (let i = 0; i < style.rays; i++) {
+    const reach = (0.45 + 0.5 * hash(i + 7)) * style.size;
+    if (style.shape === 'fan') {
+      const a = -1.35 + 2.7 * i / Math.max(1, style.rays - 1);
+      rays.push([Math.sin(a), Math.cos(a), i % 2 ? 0.45 : -0.45, reach, 0.05, 0]);
+    } else {
+      const y = 1 - 2 * (i + 0.5) / style.rays, r = Math.sqrt(1 - y * y), phi = i * 2.39996; // golden-angle sphere
+      rays.push([Math.cos(phi) * r, y, Math.sin(phi) * r, reach, 0.05, 0]);
+    }
+  }
+  if (style.shape === 'streak') rays.push([1, 1, 0.35, style.size * 1.15, 0.1, 1]); // the crimson slash
+  return rays;
+}
+
+function instanced(geometry, material, count, name) {
+  geometry.setAttribute('tone', new THREE.InstancedBufferAttribute(new Float32Array(count), 1));
+  const mesh = new THREE.InstancedMesh(geometry, material, count);
+  mesh.name = name; mesh.frustumCulled = false; mesh.visible = false;
+  return mesh;
+}
+
+function createParts(uniforms) {
+  const additive = { uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+  const material = (vertexShader, fragmentShader, extra = {}) => new THREE.ShaderMaterial({ ...additive, vertexShader, fragmentShader, ...extra });
+  const burst = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material(GLOW_VERTEX, GLOW_FRAGMENT, { side: THREE.DoubleSide }));
+  burst.name = 'Launch flare burst'; burst.frustumCulled = false; burst.visible = false;
+  const cone = new THREE.ConeGeometry(1, 1, 6, 1, true); cone.translate(0, 0.5, 0); // base at the centre, tip at y=1
+  const rays = instanced(cone, material(RAY_VERTEX, RAY_FRAGMENT, { side: THREE.DoubleSide }), MAX_RAYS, 'Launch flare rays');
+  const rings = instanced(new THREE.TorusGeometry(1, 0.035, 8, 72), material(RING_VERTEX, RING_FRAGMENT), 2, 'Launch flare rings');
+  rings.geometry.attributes.tone.array[1] = 1;
+  rings.setMatrixAt(1, new THREE.Matrix4().makeRotationX(0.6)); // inner ring tilted: a gyroscope, not a target
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), material(SHELL_VERTEX, SHELL_FRAGMENT));
+  shell.name = 'Launch flare shell'; shell.frustumCulled = false; shell.visible = false;
+  return { burst, rays, rings, shell, body: material(BODY_VERTEX, BODY_FRAGMENT) };
+}
+
+function writeRays(rays, layout) {
+  const direction = new THREE.Vector3(), rotation = new THREE.Quaternion(), scale = new THREE.Vector3(), matrix = new THREE.Matrix4();
+  const tone = rays.geometry.attributes.tone;
+  layout.forEach(([x, y, z, length, thickness, shade], i) => {
+    rotation.setFromUnitVectors(UP, direction.set(x, y, z).normalize());
+    rays.setMatrixAt(i, matrix.compose(direction.set(0, 0, 0), rotation, scale.set(thickness, length, thickness)));
+    tone.array[i] = shade;
+  });
+  rays.count = layout.length;
+  rays.instanceMatrix.needsUpdate = tone.needsUpdate = true;
+}
 
 export function createLaunchFlare(scene, vehicle) {
   const uniforms = Object.fromEntries(['age', 'power', 'time', 'shape', 'rays', 'swirl', 'pulse', 'corona', 'core', 'size']
     .map(key => [key, { value: 0 }]));
   uniforms.core.value = uniforms.size.value = 1; // never divide by zero, even in the hidden warm-up draw
   uniforms.primary = { value: new THREE.Vector3(1, 1, 1) }; uniforms.secondary = { value: new THREE.Vector3(1, 1, 1) };
-  const additive = { uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
-  const burst = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
-    ...additive, side: THREE.DoubleSide, vertexShader: BURST_VERTEX, fragmentShader: BURST_FRAGMENT }));
-  burst.name = 'Launch flare burst'; burst.frustumCulled = false; burst.visible = false; scene.add(burst);
-  const body = vehicle.userData.body;
-  const glow = new THREE.Mesh(body.geometry, new THREE.ShaderMaterial({ ...additive, vertexShader: GLOW_VERTEX, fragmentShader: GLOW_FRAGMENT }));
-  glow.name = 'Launch flare body glow'; glow.visible = false; body.add(glow);
+  // All parts sit in the scene (hidden) from creation so shader warm-up compiles them before any race.
+  const { burst, rays, rings, shell, body } = createParts(uniforms);
+  const rig = new THREE.Group(); rig.name = 'Launch flare'; rig.add(burst, rays, rings, shell); scene.add(rig);
+  const glow = new THREE.Mesh(vehicle.userData.body.geometry, body);
+  glow.name = 'Launch flare body glow'; glow.visible = false; vehicle.userData.body.add(glow);
+  const parts = [burst, rays, rings, shell, glow];
   const start = new THREE.Vector3();
   let style = null, age = 1, duration = 1;
-  const hide = () => { age = 1; burst.visible = glow.visible = false; };
+  const hide = () => { age = 1; for (const part of parts) part.visible = false; };
   return {
     get active() { return burst.visible; },
     reset: hide,
@@ -81,19 +84,26 @@ export function createLaunchFlare(scene, vehicle) {
       for (const key of ['rays', 'swirl', 'pulse', 'corona', 'core', 'size']) uniforms[key].value = style[key];
       uniforms.shape.value = FLARE_SHAPES.indexOf(style.shape);
       uniforms.primary.value.fromArray(style.primary); uniforms.secondary.value.fromArray(style.secondary);
+      writeRays(rays, rayLayout(style)); // event-driven: instance matrices never change per frame
+      rays.rotation.z = 0;
     },
-    trigger(position, quaternion, seconds) {
-      if (!style) return;
-      start.copy(ANCHOR).applyQuaternion(quaternion).add(position); age = 0; duration = seconds;
+    trigger(position, quaternion, seconds) { // true when a premium flare fired
+      if (!style) return false;
+      const lift = style.size * (style.shape === 'fan' ? 0.15 : 0.5); // fans erupt upward from the tail
+      start.set(ANCHOR.x, ANCHOR.y + lift, ANCHOR.z).applyQuaternion(quaternion).add(position);
+      rig.quaternion.copy(quaternion); age = 0; duration = seconds;
+      return true;
     },
-    // Low keeps the burst but skips the full-body overdraw; VFX Off / Reduced Motion pass enabled=false.
+    // Low keeps the glow and rays but skips the full-body and shell overdraw; VFX Off / Reduced Motion pass enabled=false.
     update(dt, time, origin, enabled, quality, power) {
       if (age < 1) age = Math.min(1, age + dt / duration);
-      burst.visible = !!style && enabled && age < 1;
-      glow.visible = burst.visible && quality > 0.25;
-      if (!burst.visible) return;
+      const on = !!style && enabled && age < 1;
+      burst.visible = on; glow.visible = shell.visible = on && quality > 0.25;
+      rays.visible = on && rays.count > 0; rings.visible = on && style.shape === 'ring';
+      if (!on) return;
       uniforms.age.value = age; uniforms.time.value = time; uniforms.power.value = power;
-      burst.position.copy(start).sub(origin);
+      rays.rotation.z = style.swirl * time * 0.8; // the magenta vortex turns its rays around the travel axis
+      rig.position.copy(start).sub(origin);
     },
   };
 }
