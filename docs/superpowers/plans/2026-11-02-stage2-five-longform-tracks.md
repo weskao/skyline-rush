@@ -7,6 +7,10 @@
 **Tech Stack:** Vue 3, strict TypeScript, Three.js, current Node tests, Playwright, GitHub Actions.
 **Spec:** `docs/superpowers/specs/2026-11-02-stage2-five-longform-tracks-design.md`
 
+## Visual signoff dependency
+
+For each of the five Stage 2 course slices, before claiming visual completion follow [the shared ten-map JPEG-to-WebGL acceptance gate](../../designs/new-tracks/visual-acceptance-gate.md). Start from the two actual committed Stage 2 JPEG references, route SVG and deterministic camera/world pose; compare two real WebGL camera views on desktop and mobile against scenery composition, weather, road openness and landing/branch readability. Record PASS / FAIL / APPROVED DEVIATION with screenshots; visually appealing concept art is not proof of runnable quality or true native 3× resolution.
+
 ## Global Constraints
 
 - All five maps are **point-to-point**, different START/FINISH, no laps, each has at least 2 hairpins, 3 branching choices, safe ground completion, one optional aerial route and natural broad driving zone.
