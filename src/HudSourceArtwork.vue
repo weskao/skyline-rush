@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { onUnmounted, ref } from 'vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
+import { getLocale, onLocaleChange, t } from './i18n.ts';
+
+const locale = ref(getLocale());
+onUnmounted(onLocaleChange(value => { locale.value = value; }));
+// Reading locale.value makes the copy re-render on a language switch.
+const tr = (key: string): string => t(key, undefined, locale.value);
 
 const names = ['button-back','button-coming-soon','button-garage','button-nitro','button-play','button-retry',
   'hud-brake','hud-combo','hud-drift','hud-nitro','hud-pause','hud-speed',
@@ -11,8 +18,8 @@ const src = (name: string): string =>
 
 <template>
   <details id="hud-3x-source-gallery" class="hud-art-preview">
-    <summary>UI 3× Artwork / 操作圖示素材</summary>
-    <p>Source preview only · 素材展示不改變既有 HUD 配置或按鈕功能。</p>
+    <summary>{{ tr('hudArt.summary') }}</summary>
+    <p>{{ tr('hudArt.note') }}</p>
     <div class="hud-art-grid">
       <GarageArtworkTile v-for="name in names" :key="name" :id="name"
         :label="name.replaceAll('-', ' ')" :src="src(name)"

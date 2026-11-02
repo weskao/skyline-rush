@@ -32,11 +32,22 @@ export function createGarageStage(environment: THREE.Texture) {
   const paintSweep = createGaragePaintSweep(finish);
   car.position.y = 0.06;
   scene.add(car);
+  function poseCar(flying: boolean) {
+    car.userData.jets.visible = flying;
+    car.userData.wing.position.y = car.userData.wing.userData.restY + (flying ? car.userData.wing.userData.lift : 0);
+    for (const wheel of car.userData.wheels)
+      wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
+  }
   // Measure the real vehicle before attaching any cosmetic shader/geometry.
   const carBounds = new THREE.Box3().setFromObject(car);
   const carRadius = carBounds.getBoundingSphere(new THREE.Sphere()).radius;
   const carCenter = carBounds.getCenter(new THREE.Vector3());
   const carHalf = carBounds.getSize(new THREE.Vector3()).multiplyScalar(.5);
+  // Flight folds the wheels out and lifts the wing, so it is framed by its own extent around the same centre.
+  poseCar(true);
+  const flightBounds = new THREE.Box3().setFromObject(car);
+  poseCar(false);
+  const flightHalf = flightBounds.max.clone().sub(carCenter).max(carCenter.clone().sub(flightBounds.min));
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
@@ -91,14 +102,11 @@ export function createGarageStage(environment: THREE.Texture) {
     const hover = flying ? 1.5 + (reducedMotion ? 0 : Math.sin(time * 1.8) * .12) : 0;
     car.position.y = 0.06 + hover;
     car.rotation.z = flying && !reducedMotion ? Math.sin(time * .9) * .035 : 0;
-    car.userData.jets.visible = flying;
-    car.userData.wing.position.y = car.userData.wing.userData.restY + (flying ? car.userData.wing.userData.lift : 0);
-    for (const wheel of car.userData.wheels)
-      wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
+    poseCar(flying);
     previewDriver.altitude = flying ? 2 : 0;
     look.copy(carCenter);
     look.y += hover;
-    const distance = garageFramedDistance(camera.aspect, state.zoom, carHalf, yaw, state.pitch);
+    const distance = garageFramedDistance(camera.aspect, state.zoom, flying ? flightHalf : carHalf, yaw, state.pitch);
     // Zoomed-out views (up to ~44 m, top view) keep the car and trail clear of the fog.
     fog.near = Math.max(24, distance + 8);
     fog.far = fog.near + 30;

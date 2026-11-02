@@ -94,10 +94,13 @@ export function checkReleaseNotes(raw, { notes = RELEASE_NOTES, reviews = loadRe
           problems.push(`${release.version}: ${locale} image ${JSON.stringify(image[locale] ?? image)} is not a file in public/`);
         }
       }
-      for (const variant of release.video ? ['desktop', 'mobile'] : []) {
-        const clip = releaseHeroVideo(release.video, locale, variant === 'mobile');
-        if (!clip || ![clip.src, clip.poster].every(file => fs.existsSync(new URL(`../public/${file}`, import.meta.url)))) {
-          problems.push(`${release.version}: ${locale} ${variant} video ${JSON.stringify(release.video[variant])} is not a file in public/ with a poster`);
+      // The release's hero clip and every highlight's own clip must be bundled, each with its poster.
+      for (const [owner, video] of [['', release.video], ...(release.highlights ?? []).map(item => [`${item.id} `, item.video])].filter(([, v]) => v)) {
+        for (const variant of ['desktop', 'mobile']) {
+          const clip = releaseHeroVideo(video, locale, variant === 'mobile');
+          if (!clip || ![clip.src, clip.poster].every(file => fs.existsSync(new URL(`../public/${file}`, import.meta.url)))) {
+            problems.push(`${release.version}: ${locale} ${owner}${variant} video ${JSON.stringify(video[variant])} is not a file in public/ with a poster`);
+          }
         }
       }
     }

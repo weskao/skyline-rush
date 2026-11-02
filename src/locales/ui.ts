@@ -268,7 +268,7 @@ export const UI = Object.freeze({
     'vfx.tuning': 'Fine tuning',
     'vfx.reset': 'Reset visual settings',
     'intro.drivers': '4 DRIVERS',
-    'intro.title.1': 'The road is just',
+    'intro.title.1': 'The road is just ',
     'intro.title.2': 'the ',
     'intro.title.3': 'beginning.',
     'intro.copy.1': 'Own the highway. Then leave it behind.',

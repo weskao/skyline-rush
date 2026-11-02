@@ -38,6 +38,16 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       {
         id: 'rivals-grab-nitro', kind: 'new',
         image: { en: 'whats-new/rival-nitro/rival-grab.en.webp', 'zh-TW': 'whats-new/rival-nitro/rival-grab.zh-TW.webp' },
+        video: {
+          desktop: {
+            src: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-nitro/rival-grab.en.webp', 'zh-TW': 'whats-new/rival-nitro/rival-grab.zh-TW.webp' }
+          },
+          mobile: {
+            src: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.jpg' }
+          }
+        },
         title: { en: 'Rivals grab NITRO too', 'zh-TW': '對手也會搶 NITRO' },
         description: {
           en: 'Rivals now grab NITRO rings and pickups and fire NITRO more often; on Hard they swerve for them. You\'ll see and hear it when one near you grabs one.',
