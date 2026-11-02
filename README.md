@@ -17,41 +17,19 @@ In Classic Race, Skyline Rush is a short, replayable arcade sprint in the browse
 
 A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound is synthesized in the browser, and progress stays in local storage, so there is no account or backend.
 
-**Home screen** — pick a track and a camera angle, then start the race.
-
-https://github.com/user-attachments/assets/059aba91-65b2-4b0b-9abd-15461fcb1623
-
-**Racing** — a full run on one of the tracks.
-
 https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
-![Gameplay demo: countdown, lift-off over traffic and touchdown on Coast](artifacts/readme-demo.gif)
+<p align="center"><img src="artifacts/readme-tracks.jpeg?v=20261102a" width="70%" alt="Four of the ten tracks in flight: Neon Downtown, Aurora Pass, Sky Spiral and Tokyo Afterdark"></p>
 
-![Start screen with the audio settings open](artifacts/readme-start.jpeg?v=20261024a)
+<p align="center"><img src="artifacts/readme-start.jpeg?v=20261102a" width="49%" alt="Start screen with game modes, tracks and Start race"> <img src="artifacts/race-results.jpeg?v=20261024a" width="49%" alt="Race results with a new personal best"></p>
 
-![Skyline Rush in flight](artifacts/readme-hero.jpeg?v=20261024a)
+### Play on your phone
 
-![Mobile portrait layout while ascending](artifacts/mobile-flight.jpeg?v=20261024a)
+Portrait or landscape with touch controls; AUTO keeps the accelerator held. [Watch the MP4](artifacts/mobile-demo.mp4)
 
-![Race results with a new personal best](artifacts/race-results.jpeg?v=20261024a)
+<p align="center"><img src="artifacts/mobile-home.jpeg" height="300" alt="Mobile portrait start screen with track selection"> <img src="artifacts/mobile-landscape-flight.jpeg" height="300" alt="Mobile landscape flight with FLY held and the touch controls visible"></p>
 
-### Mobile screenshots and demo
-
-Play in portrait or landscape with touch controls. The clip follows a Coast run from the start screen through countdown, FLY lift-off and landing; AUTO keeps the accelerator held.
-
-**Portrait — ready to race**
-
-![Mobile portrait start screen with track selection and touch-friendly race buttons](artifacts/mobile-home.jpeg)
-
-**Landscape — flying with touch controls**
-
-![Mobile landscape flight with FLY held and the touch controls visible](artifacts/mobile-landscape-flight.jpeg)
-
-**Touch gameplay demo** · [Watch the MP4](artifacts/mobile-demo.mp4)
-
-![Mobile touch gameplay: Coast countdown, FLY lift-off and landing](artifacts/mobile-demo.gif)
-
-Captured from the running game in Chrome mobile emulation at 390×844 (portrait) and 844×390 (landscape), using a fresh demo profile. These captures do not measure physical-phone performance.
+Captured in Chrome mobile emulation (390×844 and 844×390) on a fresh profile; not a physical-phone performance measure.
 
 ## Game modes and replayability (development branch)
 
