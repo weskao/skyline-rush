@@ -160,7 +160,7 @@ Steering ramps to full over 0.15 s and the lateral speed is capped at 9 m/s at h
 
 ### NITRO and drift
 
-NITRO has its own reserve (`player.nitro`, up to 3 charges, each fills as a float). The three-segment HUD shows partial charge, full segments glow, and NITRO MAX pulses when full (motion is suppressed in comfort/reduced-motion modes). Pickups along the track (blue cell +0.25, orange can +0.5, airborne gold tank +1, one rainbow overcharge that fills to the cap) are placed from the track seed; every NITRO reward (pickups, drifts, barrel rolls, rings, slipstreams) also refills flight charge (each 0.25 banked = +5; the overcharge gives none), and anything above the cap becomes charge (each 0.25 = +8). One charge gives 2.5 s with the speed cap raised by 30 m/s, stronger acceleration, exhaust and lens feedback; pressing again extends it by 2 s without stacking speed, so three presses chain into a 6.5 s burst. Traffic contact during NITRO keeps 70% speed instead of 45%.
+NITRO has its own reserve (`player.nitro`, up to 3 charges, each fills as a float). The three-segment HUD shows partial charge, full segments glow, and NITRO MAX pulses when full (motion is suppressed in comfort/reduced-motion modes). Pickups along the track (blue cell +0.25, orange can +0.5, airborne gold tank +1, one rainbow overcharge that fills to the cap) follow the same rule as rings: 4 per car on the grid, plus the overcharge and each shortcut's reward line, re-rolled every race; every NITRO reward (pickups, drifts, barrel rolls, rings, slipstreams) also refills flight charge (each 0.25 banked = +5; the overcharge gives none), and anything above the cap becomes charge (each 0.25 = +8). One charge gives 2.5 s with the speed cap raised by 30 m/s, stronger acceleration, exhaust and lens feedback; pressing again extends it by 2 s without stacking speed, so three presses chain into a 6.5 s burst. Traffic contact during NITRO keeps 70% speed instead of 45%.
 
 Above 162 km/h on the ground, brake + steer drifts instead of hard braking: only 3 m/s² is lost, near-miss combo points double, and releasing pays NITRO plus a mini boost by drift time (1 s: +0.15 and 0.5 s, 2 s: +0.3 and 0.8 s, 3 s: +0.5 and 1.2 s). The body yaws 25°, smoke and blue/orange/purple sparks show the tier, tire screech builds, and the HUD names drift/mini-boost states. Taking off, falling into a gap, or hitting a car or barrier loses the build-up.
 
@@ -172,7 +172,7 @@ NITRO burns no charge, so Fly + NITRO always work together (Fly + Boost + NITRO 
 
 ### Rings
 
-The 5 km coast has 22 rings every 220 m, in groups of 3 to 5 (placed from the track seed). A ring counts only when the car passes through its visible radius; grazing the edge does not. Types: cyan charge (+20 charge), gold nitro (+0.5), purple slipstream (3 s mini boost), red risk (a small ring, +1 NITRO and 500 score) and rainbow mystery (one random-by-seed effect: shield 10 s or until the first hit, magnet 5 s, ghost through traffic 3 s, or freeze rivals at half speed 2 s). Collected rings burst once and disappear. Clearing a whole group announces PERFECT LINE and awards +1 NITRO; missing one ring breaks it but keeps the rewards already earned.
+Every race has 4 rings per car on the grid (a solo run 4, a full eight-car grid 32; per lap in Circuit), spread from start to finish, one per equal stretch of road, in groups of 3 to 5. Their positions are re-rolled every race. Coast keeps its gate line at x 2.5. A ring counts only when the car passes through its visible radius; grazing the edge does not. Types: cyan charge (+20 charge), gold nitro (+0.5), purple slipstream (3 s mini boost), red risk (a small ring, +1 NITRO and 500 score) and rainbow mystery (one random-by-seed effect: shield 10 s or until the first hit, magnet 5 s, ghost through traffic 3 s, or freeze rivals at half speed 2 s). Collected rings burst once and disappear. Clearing a whole group announces PERFECT LINE and awards +1 NITRO; missing one ring breaks it but keeps the rewards already earned.
 
 ### Rivals, slipstream and the final sprint
 
@@ -270,7 +270,7 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `src/history.js`: saved gameplay data: race history (latest 50), per-track bests and legacy migration, career stats, medals, stars, equipped paint, ghosts and the daily board.
 - `src/ghost.js`: 10 Hz ghost recording, per-track validation and interpolated playback.
 - `src/appearance.js`: paint catalog and star unlock thresholds.
-- `src/rng.js`: seeded random streams; track pickups and rings come from the track seed.
+- `src/rng.js`: seeded random streams; pickups and rings come from a per-race layout seed (the track seed in tests and tools).
 - `src/world.js`, `src/geometry.js`: Three.js renderer, procedural cars, highway, skyline, flight effects and cameras.
 - `src/effects.js`: a fixed 480-particle GPU pool for vapor, sparks and landing dust.
 - `src/track-paths.js`, `src/world-tour-scene.js`: one distance-to-road mapping per track and the shared World Tour road, scenery and landmarks.

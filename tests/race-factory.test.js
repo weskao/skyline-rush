@@ -15,6 +15,12 @@ test('the app race factory streams solid scenery along Endless', () => {
   assert.equal(typeof race.streamProps, 'function');
 });
 
+test('every app race re-rolls where its rings and pickups sit', () => {
+  const layout = race => [...race.rings, ...race.pickups].map(item => `${item.distance}:${item.x}`).join();
+  const seen = new Set(Array.from({ length: 5 }, () => layout(createRace('coast'))));
+  assert.ok(seen.size > 1, 'five Coast races share one layout');
+});
+
 test('main.js no longer builds races itself', () => {
   assert.doesNotMatch(readFileSync(new URL('../src/main.js', import.meta.url), 'utf8'), /createBareRace|roadObstacles/);
 });

@@ -25,7 +25,7 @@ test('bonus gate positions are bounded deterministic authored locations on all t
     assert.ok(race.rings.some(ring => ring.type === 'recovery-pad'), track);
     assert.ok(race.rings.some(ring => ring.type === 'emp'), track);
     assert.deepEqual(race.rings, all(track).rings);
-    const original = createRace(track).rings;
+    const original = createRace(track, { mode: 'custom', rivals: 3, traffic: 'off' }).rings; // same grid: rings scale with the cars
     for (const [index, ring] of race.rings.entries()) {
       assert.deepEqual([ring.distance, ring.x, ring.altitude, ring.radius],
         [original[index].distance, original[index].x, original[index].altitude, original[index].radius]);
