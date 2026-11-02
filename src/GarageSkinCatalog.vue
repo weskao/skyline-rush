@@ -78,18 +78,19 @@ const statusText = (id: SkinId, locale: string) => {
           :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)"
           :data-preview-active="String(isPreviewActive(skin.id, skin.category))"
           class="garage-skin-card" :style="{ '--card-hue': skinHue(skin.id, skin.category) }">
-          <!-- Full-card native Preview button; action remains a separate sibling, never nested. -->
+          <!-- Native full-surface Preview control; Equip/Try is its sibling, not nested. -->
           <button class="garage-skin-preview-hitarea" type="button"
             :aria-label="`${locale === 'zh-TW' ? '預覽' : 'Preview'} ${skinLabel(skin.id, locale)}`"
             :aria-pressed="isPreviewActive(skin.id, skin.category)"
-            @click="selectGarageSkin(skin.id)"></button>
-          <span class="garage-vfx-art">
-            <GarageArtworkImage :src="skin.artwork.src" :fallback-src="skin.artwork.hasRaster ? skin.artwork.fallback : ''"
-              :size="skin.artwork.cssSize" alt="" loading="eager" fallback-class="garage-vfx-fallback"
-              :fallback-text="categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en']" />
-          </span>
-          <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
-          <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
+            @click="selectGarageSkin(skin.id)">
+            <span class="garage-vfx-art">
+              <GarageArtworkImage :src="skin.artwork.src" :fallback-src="skin.artwork.hasRaster ? skin.artwork.fallback : ''"
+                :size="skin.artwork.cssSize" alt="" loading="eager" fallback-class="garage-vfx-fallback"
+                :fallback-text="categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en']" />
+            </span>
+            <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
+            <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
+          </button>
           <div class="garage-vfx-actions">
             <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
               @click.stop="equipGarageSkin(skin.id)">
@@ -125,7 +126,7 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-vfx-category li.garage-skin-card {
   box-sizing: border-box; position: relative; isolation: isolate;
   min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 12px 8px 10px; text-align: center;
+  padding: 0; text-align: center;
   border: 1px solid hsl(var(--card-hue) 63% 59% / .5);
   border-radius: 14px 6px 14px 6px;
   background: radial-gradient(ellipse at 50% 18%, hsl(var(--card-hue) 64% 38% / .28), transparent 78%),
@@ -139,9 +140,10 @@ const statusText = (id: SkinId, locale: string) => {
   pointer-events: none;
 }
 .garage-skin-preview-hitarea {
-  display: block; position: absolute; inset: 0; width: 100%; height: 100%;
-  z-index: 1; border: 0; border-radius: inherit; padding: 0; background: transparent;
-  cursor: pointer; touch-action: manipulation;
+  position: relative; z-index: 1; flex: 1; width: 100%; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: 0; border-radius: inherit; padding: 12px 8px 8px; color: inherit;
+  text-align: center; background: transparent; cursor: pointer; touch-action: manipulation;
 }
 .garage-skin-preview-hitarea:focus-visible {
   outline: 3px solid #74ebff; outline-offset: 3px;
@@ -167,7 +169,7 @@ const statusText = (id: SkinId, locale: string) => {
   color: hsl(var(--card-hue) 91% 80%); border: 1px solid hsl(var(--card-hue) 60% 61% / .28);
   pointer-events: none;
 }
-.garage-vfx-actions { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; margin-top: auto; }
+.garage-vfx-actions { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; margin-top: auto; padding: 0 8px 10px; box-sizing: border-box; }
 .garage-vfx-actions .garage-skin-action {
   display: block; min-height: 44px; width: 100%; border-radius: 10px 4px 10px 4px;
   border: 1px solid hsl(var(--card-hue) 82% 67% / .85);
