@@ -3,7 +3,7 @@
 **Status:** Shared home UI implementation on `feature/epic-multiroute-longform-tracks`; browser/CI visual evidence is a separate verification gate.
 **Date:** 2026-11-03
 **Parent references:** [Stage 1 five-track image gallery](../../designs/new-tracks/README.md), [Concept → WebGL gate](../../designs/new-tracks/visual-acceptance-gate.md).
-**Parallel art assignments:** [five isolated GPT chat briefs](../prompts/2026-11-03-stage1-home-teasers-parallel.md).
+**Parallel implementation:** [six ready-to-paste GPT prompts](../prompts/2026-11-03-six-chat-home-preview-implementation.md) · [six-chat execution plan](../plans/2026-11-03-six-chat-home-preview-integration.md). Five art-only branches + one shared UI/QA owner. Individual chats must be opened by the user; preparing prompts is not automatic execution.
 
 ## Decision / Product behavior
 
