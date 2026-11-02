@@ -2,6 +2,8 @@
 
 **Integrity manifest only.** The 12 original PNGs listed here are **not committed to this GitHub branch yet**. They are packaged in the ChatGPT-provided `skyline-rush-concept-images-github-ready.zip` archive. This manifest lets the future implementer import exactly the original reference bytes, verify hashes, and add real links without substituting unrelated art.
 
+**Current committed alternatives:** ten individually accessible vector images (`concept-art/<track-id>-ground-view.svg` and `concept-art/<track-id>-aerial-view.svg`), five vector double-view boards, and five distinct point-to-point route schematics. The PNGs inventoried here are visually different source images; these have not been uploaded to GitHub. See [README.md](README.md#ten-standalone-concept-images-five-maps--two-camera-views).
+
 **Confirmed rules:** five new maps are ALL point-to-point (START != FINISH), NO laps. The collage source images are moodboards, not executable layouts; any loop-like infographic line is overridden by the authored one-way route schematics.
 
 | Future repository path (only after import) | Pixel dimensions | SHA-256 |
