@@ -41,3 +41,33 @@ test('original 3x images decorate functional Nitro, Brake, Pause and Play button
   await page.locator('#garage-button').click();
   await expect(page.locator('#garage-screen')).toBeVisible();
 });
+
+test('all 18 artwork cards preserve native 3x pixels, visible icons and labels on phone and desktop', async ({ page }) => {
+  for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1440,height:900}]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#settings-button').click();
+    const gallery = page.locator('#hud-3x-source-gallery');
+    await gallery.locator('summary').click();
+    const cards = gallery.locator('.garage-badge-card');
+    await expect(cards).toHaveCount(18);
+    for (const card of await cards.all()) {
+      await card.scrollIntoViewIfNeeded();
+      const v = await card.evaluate(figure => {
+        const img = figure.querySelector('img');
+        const f = figure.querySelector('.garage-badge-art-frame').getBoundingClientRect();
+        const i = img.getBoundingClientRect();
+        const c = figure.querySelector('figcaption').getBoundingClientRect();
+        const wide = img.dataset.image.startsWith('button-');
+        return { native: [img.naturalWidth,img.naturalHeight],
+          display: [i.width,i.height], expected: wide ? [144,52] : [72,72],
+          source: wide ? [432,156] : [216,216],
+          inside: f.left<=i.left && i.right<=f.right && f.top<=i.top && i.bottom<=f.bottom,
+          captionSafe: c.top>=f.bottom+4, viewportSafe: figure.getBoundingClientRect().right<=innerWidth };
+      });
+      expect(v.native).toEqual(v.source); expect(v.display).toEqual(v.expected);
+      expect(v.inside).toBe(true); expect(v.captionSafe).toBe(true);
+      expect(v.viewportSafe).toBe(true);
+    }
+  }
+});
