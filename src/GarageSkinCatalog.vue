@@ -145,6 +145,9 @@ const statusText = (id: SkinId, locale: string) => {
   border: 0; border-radius: inherit; padding: 12px 8px 8px; color: inherit;
   text-align: center; background: transparent; cursor: pointer; touch-action: manipulation;
 }
+/* Press feedback belongs to the whole card, never a dimmed box around its upper part. */
+.garage-skin-preview-hitarea:active:not(:disabled) { filter: none; }
+.garage-vfx-category li.garage-skin-card:has(> .garage-skin-preview-hitarea:active) { filter: brightness(.86); transform: scale(.985); }
 .garage-skin-preview-hitarea:focus-visible {
   outline: 3px solid #74ebff; outline-offset: 3px;
 }
@@ -185,7 +188,8 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-vfx-actions .garage-skin-action:focus-visible { outline: 3px solid #74ebff; outline-offset: 2px; }
 .garage-skin-card[data-state="equipped"] .garage-skin-status { color: #70f3d6; border-color: #37bca286; }
 .garage-skin-card[data-state="locked"] .garage-skin-status { color: #b5c1d3; border-color: #8093ad66; }
-.garage-vfx-category li[data-preview-active="true"] {
+/* id-qualified so the Garage panel's shared card surface cannot cancel the selected glow */
+#garage-vfx-catalog .garage-vfx-category li.garage-skin-card[data-preview-active="true"] {
   border-color: hsl(var(--card-hue) 94% 77%);
   box-shadow: 0 0 0 1px hsl(var(--card-hue) 90% 70% / .57),
     0 0 23px hsl(var(--card-hue) 88% 58% / .32), inset 0 0 20px hsl(var(--card-hue) 80% 48% / .15);

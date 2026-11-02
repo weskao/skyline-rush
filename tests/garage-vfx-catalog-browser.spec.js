@@ -263,3 +263,32 @@ test('paint swatch card keeps full-surface Preview and one shared game-like acti
   await expect(page.locator('#garage-equip')).toBeVisible();
   await expect(page.locator('#garage-restore-default')).toHaveCount(1);
 });
+
+// A click lights the whole card the same way in every category: no frame or dimmed box around part of it.
+test('clicking a skin card lights the whole card the same way in every category', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const looks = [];
+  for (const id of ['thruster-void', 'airflow-vortex', 'nitro-trail-red', 'launch-flare-red']) {
+    const card = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`), hit = card.locator('.garage-skin-preview-hitarea');
+    await card.scrollIntoViewIfNeeded();
+    const idle = await card.evaluate(el => getComputedStyle(el).boxShadow);
+    const box = await card.locator('.garage-vfx-art').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
+    const pressed = await hit.evaluate(el => ({ filter: getComputedStyle(el).filter, card: getComputedStyle(el.parentElement).filter }));
+    await page.mouse.up(); await page.mouse.move(0, 0);
+    await expect(card).toHaveAttribute('data-preview-active', 'true');
+    await page.waitForTimeout(250);
+    const lit = await card.evaluate(el => {
+      const cs = getComputedStyle(el), hit = getComputedStyle(el.querySelector('.garage-skin-preview-hitarea'));
+      return { shadow: cs.boxShadow, border: cs.borderTopColor, outline: hit.outlineStyle, hitShadow: hit.boxShadow };
+    });
+    expect(pressed.filter, `${id}: press does not dim a box inside the card`).toBe('none');
+    expect(pressed.card, `${id}: press feedback covers the whole card`).not.toBe('none');
+    expect(lit.shadow, `${id}: the selected card glows`).not.toBe(idle);
+    expect([lit.outline, lit.hitShadow], `${id}: no extra frame inside the card`).toEqual(['none', 'none']);
+    looks.push(lit.shadow.replace(/rgba?\([^)]*\)/g, 'c'));
+  }
+  expect(new Set(looks).size, 'one selected look for every category').toBe(1);
+});
