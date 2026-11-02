@@ -7,7 +7,7 @@
 **Tech Stack:** Vue 3 + strict TypeScript, Three.js, existing JS simulation/render islands as justified, Node unit tests, Playwright, GitHub Actions.
 **Spec:** `docs/superpowers/specs/2026-11-02-multiroute-longform-world-expansion-design.md`.
 
-## Global Constraints
+**Topology decision:** Baseline all five tracks are open point-to-point with a single valid finish; discuss optional future loop variants only for Volcanic Crown / Stormline Megacity. The idea has not been approved for implementation. Five visual route schematics are committed at `docs/designs/new-tracks/route-schematics/`, indexed in `docs/designs/new-tracks/README.md`. Original cinematic AI scene collages remain in ChatGPT as an attachment ZIP and are not committed to GitHub yet.\n\n## Global Constraints
 
 - The five course layouts and times are initial design targets; performance, median durations and visual acceptance are not verified in this planning branch.
 - Existing 10 sprint routes and circuit must preserve positioning, item economy, bests and game modes.
