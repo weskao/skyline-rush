@@ -1,6 +1,6 @@
 # Skyline Rush — Five Point-to-Point Expansion Tracks: Concept Art & Routes
 
-**Planning branch:** `feature/epic-multiroute-longform-tracks-planning`  
+**Planning branch:** `feature/epic-multiroute-longform-tracks`  
 **Decision (2026-11-02):** **All five NEW tracks are POINT-TO-POINT, with one START and one separate FINISH.** No lap counting or loop-race variant on these five; existing ten sprint tracks retain the same single-finish mental model. Harbor Circuit remains a distinct mode.
 
 ## GitHub-saved image references
@@ -18,6 +18,81 @@ Each of the five **two-view storyboard SVGs** below is physically committed in t
 - [Per-track composition, landmarks, weather, camera and acceptance criteria](visual-fidelity.md)
 - [Machine-readable art and topology reference manifest](concept-manifest.json)
 - [Original 12 PNG reference file names, sizes and SHA-256 checksums (pending GitHub import)](png-source-import-manifest.md)
+
+## Ten standalone concept images (five maps × two camera views)
+
+**GitHub committed:** The following **10 standalone SVG scene views** are part of this branch and can be opened individually. Each image is a viewport extracted from the original two-view vector storyboard (not a photoreal AI PNG and not a running-game screenshot). Each pair provides ground + aerial visual direction for one **point-to-point** track. Original cinematic PNGs and their checksums remain separately documented in [png-source-import-manifest.md](png-source-import-manifest.md) until binary import is completed.
+
+| Map | 01 · Ground / natural-road view | 02 · Aerial branch / flight view |
+| --- | --- | --- |
+| **沙暴裂谷 / Dune Tempest** | [Ground SVG](concept-art/dune-tempest-ground-view.svg) | [Aerial SVG](concept-art/dune-tempest-aerial-view.svg) |
+| **雨林失落神殿 / Monsoon Ruins** | [Ground SVG](concept-art/monsoon-ruins-ground-view.svg) | [Aerial SVG](concept-art/monsoon-ruins-aerial-view.svg) |
+| **浮空群島 / Skyfall Archipelago** | [Ground SVG](concept-art/skyfall-archipelago-ground-view.svg) | [Aerial SVG](concept-art/skyfall-archipelago-aerial-view.svg) |
+| **熔火天脊 / Volcanic Crown** | [Ground SVG](concept-art/volcanic-crown-ground-view.svg) | [Aerial SVG](concept-art/volcanic-crown-aerial-view.svg) |
+| **霓虹暴雨都市 / Stormline Megacity** | [Ground SVG](concept-art/stormline-megacity-ground-view.svg) | [Aerial SVG](concept-art/stormline-megacity-aerial-view.svg) |
+
+### 1. 沙暴裂谷 / Dune Tempest
+
+**01 · Ground view** — 沙丘與天然峽谷地形，沒有強制馬路線；以髮夾彎、落日逆光和滾動沙塵牆呈現開闊越野感。
+
+![Dune Tempest Ground Concept](concept-art/dune-tempest-ground-view.svg)
+
+**02 · Aerial / fork view** — 由沙丘起跳，飛越斷崖與峽谷；空中分岔必須能看見目的地、安全著陸區與回到主線的匯合點。
+
+![Dune Tempest Aerial Concept](concept-art/dune-tempest-aerial-view.svg)
+
+**Source:** [combined storyboard](concept-art/dune-tempest-point-to-point-storyboard.svg) · [point-to-point route schematic](route-schematics/dune-tempest.svg).
+
+### 2. 雨林失落神殿 / Monsoon Ruins
+
+**01 · Ground view** — 暴雨雨林、積水泥地、寺廟遺跡與水霧中的 S 型彎；保證濕地路面與前方轉彎可辨識。
+
+![Monsoon Ruins Ground Concept](concept-art/monsoon-ruins-ground-view.svg)
+
+**02 · Aerial / fork view** — 瀑布附近起飛，掠過巨型石橋／遺跡上空，呈現落差與快速捷徑，但不以暴雨遮住著陸導引。
+
+![Monsoon Ruins Aerial Concept](concept-art/monsoon-ruins-aerial-view.svg)
+
+**Source:** [combined storyboard](concept-art/monsoon-ruins-point-to-point-storyboard.svg) · [point-to-point route schematic](route-schematics/monsoon-ruins.svg).
+
+### 3. 浮空群島 / Skyfall Archipelago
+
+**01 · Ground view** — 多層浮島石橋與雲海，主路線能在地面連續通行並清楚看到空中巨環及下一個島嶼。
+
+![Skyfall Archipelago Ground Concept](concept-art/skyfall-archipelago-ground-view.svg)
+
+**02 · Aerial / fork view** — 利用島嶼間的高低落差、浮空石環與瀑布實現跳躍／飛行分岔，再回到可辨識的主線。
+
+![Skyfall Archipelago Aerial Concept](concept-art/skyfall-archipelago-aerial-view.svg)
+
+**Source:** [combined storyboard](concept-art/skyfall-archipelago-point-to-point-storyboard.svg) · [point-to-point route schematic](route-schematics/skyfall-archipelago.svg).
+
+### 4. 熔火天脊 / Volcanic Crown
+
+**01 · Ground view** — 火山口外緣的連續髮夾彎、黑色玄武岩與岩漿河，透過橘紅發光裂縫建立地形辨識度。
+
+![Volcanic Crown Ground Concept](concept-art/volcanic-crown-ground-view.svg)
+
+**02 · Aerial / fork view** — 越過熔岩溪谷與火山口分支，展現火山灰、飛散火星與岩壁拱門，保持安全高度與落地視野。
+
+![Volcanic Crown Aerial Concept](concept-art/volcanic-crown-aerial-view.svg)
+
+**Source:** [combined storyboard](concept-art/volcanic-crown-point-to-point-storyboard.svg) · [point-to-point route schematic](route-schematics/volcanic-crown.svg).
+
+### 5. 霓虹暴雨都市 / Stormline Megacity
+
+**01 · Ground view** — 夜間暴雨與濕潤反光柏油，沿街道／高架交流道進入急彎，霓虹看板不應擋住賽道。
+
+![Stormline Megacity Ground Concept](concept-art/stormline-megacity-ground-view.svg)
+
+**02 · Aerial / fork view** — 透過多層交流道、樓宇間高架路與跳躍捷徑呈現垂直分岔，俯瞰城市雨霧和燈海。
+
+![Stormline Megacity Aerial Concept](concept-art/stormline-megacity-aerial-view.svg)
+
+**Source:** [combined storyboard](concept-art/stormline-megacity-point-to-point-storyboard.svg) · [point-to-point route schematic](route-schematics/stormline-megacity.svg).
+
+
+**Non-negotiable gameplay interpretation:** Illustration composition is a *visual target*, not an authority for track graph. Route coordinates and gate placement must follow [route schematics](README.md#github-saved-image-references) plus validated game topology: separate START and FINISH, ordered gates, legal ground/air branches, no lap count. Implementations must compare actual WebGL captures to BOTH scene references and log differences.
 
 ## Original high-detail AI PNG artwork — provenance / status
 
