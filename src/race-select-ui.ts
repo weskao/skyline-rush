@@ -167,7 +167,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const actionLabel = startButton.querySelector<HTMLElement>('span')!;
     actionLabel.dataset.i18n = labelKey;
     actionLabel.textContent = t(labelKey);
-    startButton.setAttribute('aria-label', upcoming ? t('track.comingSoonInfo', { track: name }) : `${t(labelKey)} · ${name}`);
+    startButton.setAttribute('aria-label', upcoming ? t('track.comingSoonInfo', { track: name }) : t(labelKey));
     const teaser = $('#upcoming-scene');
     const live3D = options.showUpcoming3D(upcomingSelection);
     teaser.hidden = !upcoming || live3D;

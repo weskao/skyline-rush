@@ -28,6 +28,7 @@ test('only Stage 1 home concepts are selectable; no fake race can start even by 
   await expect(page.locator('#upcoming-scene')).toBeHidden();
   await expect(page.locator('#start-button')).toBeEnabled();
   await expect(page.locator('#start-button span')).toHaveText('Start race');
+  await expect(page.locator('#start-button')).toHaveAccessibleName('Start race'); // Playable CTA keeps its established accessible name.
   await page.locator('[data-track="neon"]').click();
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('#start-button span')).toHaveText('LOCKED');

@@ -20,7 +20,15 @@ export function decorateBonusGates(rings: RaceRing[], config: BonusConfig): Race
   if (style) types.push('score-pad');
   else if (config.mode === 'custom' && config.rivals > 0) types.push('emp');
   let index = 0;
-  return rings.map(ring => ring.type === 'mystery' ? ring : { ...ring, type: types[index++ % types.length] });
+  const decorated = rings.map(ring => ring.type === 'mystery' ? ring : { ...ring, type: types[index++ % types.length] });
+  // A solo style race has only five authored ring slots. A random layout can contain too many
+  // mystery rings to reach the fourth gate type, leaving the advertised double-score bonus absent.
+  if (style && decorated.length && !decorated.some(ring => ring.type === 'score-pad')) {
+    const eligible = decorated.findLastIndex(ring => ring.type !== 'mystery');
+    const last = eligible < 0 ? decorated.length - 1 : eligible;
+    decorated[last] = { ...decorated[last], type: 'score-pad' };
+  }
+  return decorated;
 }
 
 export function collectBonusGate(race: BonusRace, ring: RaceRing): void {

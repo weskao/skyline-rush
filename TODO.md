@@ -1,3 +1,13 @@
+## Stage 1 exact-HEAD browser CI regressions — 2026-11-03
+
+Branch: `feature/epic-multiroute-longform-tracks`. Run 41512159012 (HEAD `5a2e1024`) browser shards 3/10 failed while other shards were still running.
+
+- [x] RED observed: `tests/depth-browser.spec.js` selects the established exact accessible name `Start race`, but the new upcoming-preview controller appended the playable track name. Keep upcoming `COMING SOON` semantics while restoring the playable CTA's original accessible name; add an explicit browser contract.
+- [x] RED observed: `tests/bonus-gates-browser.spec.js` sometimes finds no `score-pad` after enabling solo Stunt/Checkpoint bonus gates: five slots with mystery rings may never reach the fourth decorated type. Keep authored positions and guarantee a score gate; add a sparse-layout unit regression.
+- [ ] GREEN verification on exact-HEAD GitHub Actions full regression (unit/typecheck/build, cloud, 13 browser shards, 5 World Tour shards, quality gate). Local npm and browser execution unavailable in this automation runtime; do not claim pass until CI proves it.
+
+---
+
 ## Garage VFX remembered skin picks — 2026-11-03
 
 Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial pick survives reload as a preference only (`src/garage-skin-preference.ts`), re-applied through `session.equip`; never ownership.

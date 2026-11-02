@@ -5,6 +5,7 @@ import { Scene } from 'three';
 import { createEffects } from '../src/effects.js';
 import { drawnMarkers } from '../src/marker-pool.js';
 import { validateRaceRequest, rulesSignature } from '../src/race-config.ts';
+import { decorateBonusGates } from '../src/bonus-gates.ts';
 
 function collect(race, type, overrides = {}) {
   const ring = race.rings.find(ring => ring.type === type && !ring.hit && !(ring.row && race.player.distance >= ring.distance));
@@ -87,6 +88,18 @@ test('EMP only disrupts nearby opponents once and solo power is converted safely
   const solo = all('coast', 0); solo.phase = 'racing'; solo.player.heldItem = 'emp';
   assert.equal(useHeldItem(solo), 'magnet');
   assert.equal(solo.player.effects.magnet, 5);
+});
+
+test('solo style races always expose an authored score gate even with sparse random slots', () => {
+  const sparse = ['mystery', 'charge', 'mystery', 'nitro', 'risk'].map(type => ({ type }));
+  for (const mode of ['stunt', 'checkpoint']) {
+    const decorated = decorateBonusGates(sparse, { mode, rivals: 0, bonusGates: true });
+    assert.deepEqual(decorated.map(ring => ring.type), ['mystery', 'speed-pad', 'mystery', 'air-pad', 'score-pad']);
+    assert.deepEqual(sparse.map(ring => ring.type), ['mystery', 'charge', 'mystery', 'nitro', 'risk']);
+    const allMystery = Array.from({ length: 5 }, () => ({ type: 'mystery' }));
+    assert.equal(decorateBonusGates(allMystery, { mode, rivals: 0, bonusGates: true }).at(-1).type, 'score-pad');
+    assert.equal(decorateBonusGates(sparse, { mode, rivals: 0 }).some(ring => ring.type === 'score-pad'), false);
+  }
 });
 
 test('score tokens are opt-in, limited to style modes and use a nonstacking five-second double', () => {
