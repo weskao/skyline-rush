@@ -1,84 +1,95 @@
-# Stage 1 Home Preview Artwork — Five Independent GPT Art Assignments
+# Stage 1 Home Showcase — Five Independent Three.js Scene Assignments (UPDATED 2026-11-03)
 
-> **Update 2026-11-03:** For full six-way execution, including the sixth GPT that owns shared homepage selection, bilingual fixed-width `#start-button`, keyboard no-start gates and CI, use [Six-Chat Implementation Prompts](2026-11-03-six-chat-home-preview-implementation.md). The five art-only prompts below remain valid and must not modify shared UI files.
-
-**Canonical shared UI integration branch:** `feature/epic-multiroute-longform-tracks`.
-**Scope:** Only these five first-stage coming-soon maps, never the later five Stage 2 plans. All maps are **point-to-point** (START != FINISH, no laps); they are currently image-only previews, not playable 3D courses.
-
-## Parallel collaboration rules
-
-- Open **five independent GPT chats yourself**, one brief below per chat. This chat cannot automatically create or operate separate conversations.
-- Each chat uses **only its assigned art branch** `feature/epic-home-art-<track-id>`, created from the shared pre-UI planning commit `f5c411d98d48a1164894dbe3b927b2cc6c60257c`. DO NOT modify `main`, `develop` or any other track's branch. DO NOT create a PR, deploy or force push.
-- One art owner per hero file: `public/track-teasers/<track-id>.jpg`. If the file does not yet exist on the art branch, create it; it already exists on the updated shared UI branch. Only write this assigned JPEG and an assigned design note `docs/designs/new-tracks/home-art/<track-id>.md` (if directory absent, create it).
-- Read this repository's `AGENTS.md`, `CLAUDE.md`, `.claude/rules/track-showcase.md`, `docs/designs/new-tracks/visual-acceptance-gate.md`, and that map's `source-concept-jpeg/<track-id>/concept-view-{01,02}.jpg` and route SVG before drawing. Future-run JPEG references are **inspiration**, not actual engine WebGL screenshots.
-- Generate a **new native** JPEG master at least **2400 × 900 pixels** (roughly 2.7:1; match the current card/hero crop), sRGB, high quality, no watermarks/text/UI mock labels. **Do not upscale the existing small JPEG** and call it a 3× source. Composition must be readable behind left-aligned home UI and preserve important map landmarks on the right / centre-right. Native 2400 × 900 supports 3× display at ~800 × 300 CSS px.
-- Performance: optimize output JPEG (recommend ≤ 1.3 MB) while preserving readable detail; keep fallback semantics if custom art cannot be generated. No new runtime dependencies, no editing shared `src/App.vue`, `src/race-select-ui.ts`, `src/style.css`, `src/locales/*`, `src/upcoming-tracks.ts`, or shared tests.
-- Deliver back the art branch's commit SHA, source/render pixel dimensions, file size, exact path, and a concise visual-parity checklist in the assigned `.md`. After that this integration chat merges the five verified art commits onto the shared UI feature branch sequentially (not into `develop`).
-
-## Individual prompts (copy an entire section into its own GPT chat)
-
-### 1. 沙暴裂谷 Dune Tempest
-
-> **Task:** With connected GitHub repository `weskao/skyline-rush`, create **one original native 2400 × 900+ JPEG homepage artwork** on existing branch `feature/epic-home-art-dune-tempest` only.
+> **This replaces the obsolete JPEG-only brief.** The user requires the *same moving 3D home experience as the existing Skyline Rush tracks*: real car(s), hover/jets, real three-dimensional roads/landmarks, weather, scene motion and camera. Static pictures can be reference thumbnails only. The separate **sixth GPT** owns existing shared 3D renderer, car/camera/UI and final scene integration.
 >
-> - Destination: `public/track-teasers/dune-tempest.jpg`.
-> - Paired art-direction references: `docs/designs/new-tracks/source-concept-jpeg/dune-tempest/concept-view-01.jpg`, `concept-view-02.jpg` and `docs/designs/new-tracks/route-schematics/dune-tempest.svg`. Read `docs/designs/new-tracks/visual-acceptance-gate.md`.
-> - **Ground composition:** 乾燥赭金色沙丘、無標線自然沙路、兩個大髮夾彎、石環和高大峽谷.
-> - **Split/air identity:** 呈現地面路線與遠處橫跨斷崖的空中捷徑；傍晚夕照、沙塵牆與車輪揚塵；不能把整條路渲染成封閉賽車場.
-> - Must be cinematic, legible on desktop/mobile, original assets only, with clear sense of course forward direction; no false circuit-loop map, no gameplay-ready claims, no fake playable UI. Preserve left-side negative space so the existing intro remains readable.
-> - Native artwork at least 2400 × 900 px (do not enlarge the old 568 × 205 crop as a substitute); export optimized sRGB JPEG. Add a concise `docs/designs/new-tracks/home-art/dune-tempest.md` with concept reference paths, image description, palette/landmark/visibility notes, exact pixels and file size.
-> - **Do not edit any shared UI, code, locale or other map's asset files.** Do not merge, PR, deploy or force push. Report the exact commit SHA and preview image in chat, and whether actual GitHub image bytes are verified.
+> Canonical [Six-Chat Full Implementation Prompts](2026-11-03-six-chat-home-preview-implementation.md) · [Binding animated home 3D spec](../specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) · [TDD plan](../plans/2026-11-03-six-chat-home-preview-integration.md).
 
-### 2. 雨林失落神殿 Monsoon Ruins
+Five branches exist from an earlier planning commit and MUST NOT directly modify shared UI: one scene owner per `feature/epic-home-art-<id>`. Source files are the committed `source-concept-jpeg/<id>/concept-view-01.jpg` (ground), `concept-view-02.jpg` (aerial), and `route-schematics/<id>.svg`, all under `docs/designs/new-tracks/`. **All five upcoming maps are point-to-point, selectable but unplayable**. The five Stage 2 maps are out of scope.
 
-> **Task:** With connected GitHub repository `weskao/skyline-rush`, create **one original native 2400 × 900+ JPEG homepage artwork** on existing branch `feature/epic-home-art-monsoon-ruins` only.
+## Five prompts for five separate GPT chats
+
+### 1. 沙暴裂谷 / Dune Tempest
+
+Copy this block into a **separate GPT chat**:
+
+> Implement **ONE real animated Three.js homepage environment** for `weskao/skyline-rush`, **existing only editable branch** `feature/epic-home-art-dune-tempest`.
 >
-> - Destination: `public/track-teasers/monsoon-ruins.jpg`.
-> - Paired art-direction references: `docs/designs/new-tracks/source-concept-jpeg/monsoon-ruins/concept-view-01.jpg`, `concept-view-02.jpg` and `docs/designs/new-tracks/route-schematics/monsoon-ruins.svg`. Read `docs/designs/new-tracks/visual-acceptance-gate.md`.
-> - **Ground composition:** 深綠雨林冠層、濕泥河道、層疊遺跡、可見的寺廟髮夾彎.
-> - **Split/air identity:** 瀑布和古橋構成明確高低分岔；雨滴與濕潤反光但前路必須清晰，避免連續黑暗及大量遮擋.
-> - Must be cinematic, legible on desktop/mobile, original assets only, with clear sense of course forward direction; no false circuit-loop map, no gameplay-ready claims, no fake playable UI. Preserve left-side negative space so the existing intro remains readable.
-> - Native artwork at least 2400 × 900 px (do not enlarge the old 568 × 205 crop as a substitute); export optimized sRGB JPEG. Add a concise `docs/designs/new-tracks/home-art/monsoon-ruins.md` with concept reference paths, image description, palette/landmark/visibility notes, exact pixels and file size.
-> - **Do not edit any shared UI, code, locale or other map's asset files.** Do not merge, PR, deploy or force push. Report the exact commit SHA and preview image in chat, and whether actual GitHub image bytes are verified.
-
-### 3. 浮空群島 Skyfall Archipelago
-
-> **Task:** With connected GitHub repository `weskao/skyline-rush`, create **one original native 2400 × 900+ JPEG homepage artwork** on existing branch `feature/epic-home-art-skyfall-archipelago` only.
+> **Read** `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, the shared-branch `docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md`, and its two source JPEGs / route SVG under `docs/designs/new-tracks/`. Refer to both ground and aerial concept compositions.
 >
-> - Destination: `public/track-teasers/skyfall-archipelago.jpg`.
-> - Paired art-direction references: `docs/designs/new-tracks/source-concept-jpeg/skyfall-archipelago/concept-view-01.jpg`, `concept-view-02.jpg` and `docs/designs/new-tracks/route-schematics/skyfall-archipelago.svg`. Read `docs/designs/new-tracks/visual-acceptance-gate.md`.
-> - **Ground composition:** 白色雲海、浮島石橋、巨大空中石環、流入雲海的瀑布.
-> - **Split/air identity:** 低層地面路與高層飛行捷徑同時可見，清楚呈現分岔與匯合；景深壯觀且不採環狀計圈.
-> - Must be cinematic, legible on desktop/mobile, original assets only, with clear sense of course forward direction; no false circuit-loop map, no gameplay-ready claims, no fake playable UI. Preserve left-side negative space so the existing intro remains readable.
-> - Native artwork at least 2400 × 900 px (do not enlarge the old 568 × 205 crop as a substitute); export optimized sRGB JPEG. Add a concise `docs/designs/new-tracks/home-art/skyfall-archipelago.md` with concept reference paths, image description, palette/landmark/visibility notes, exact pixels and file size.
-> - **Do not edit any shared UI, code, locale or other map's asset files.** Do not merge, PR, deploy or force push. Report the exact commit SHA and preview image in chat, and whether actual GitHub image bytes are verified.
-
-### 4. 熔火天脊 Volcanic Crown
-
-> **Task:** With connected GitHub repository `weskao/skyline-rush`, create **one original native 2400 × 900+ JPEG homepage artwork** on existing branch `feature/epic-home-art-volcanic-crown` only.
+> **3D art direction:** 巨型沙丘、蜿蜒峽谷、沙石自然髮夾彎、巨型石環與沙塵牆. **Real-time motion:** 沙塵移動、粒子霧、光照漸變. Include a clear ground route with a visible elevated/flight alternative branch and map-specific 3D landmarks. Road and objects are real Three.js meshes (not a JPEG/photo plane, CSS parallax, background screenshot or fake game render).
 >
-> - Destination: `public/track-teasers/volcanic-crown.jpg`.
-> - Paired art-direction references: `docs/designs/new-tracks/source-concept-jpeg/volcanic-crown/concept-view-01.jpg`, `concept-view-02.jpg` and `docs/designs/new-tracks/route-schematics/volcanic-crown.svg`. Read `docs/designs/new-tracks/visual-acceptance-gate.md`.
-> - **Ground composition:** 黑色玄武岩、橘紅火山裂縫、火山口大迂迴彎與天然斷崖.
-> - **Split/air identity:** 地面曲折道路和上方跨岩漿路線；煙灰與火星受控，保留可視距離與安全著陸.
-> - Must be cinematic, legible on desktop/mobile, original assets only, with clear sense of course forward direction; no false circuit-loop map, no gameplay-ready claims, no fake playable UI. Preserve left-side negative space so the existing intro remains readable.
-> - Native artwork at least 2400 × 900 px (do not enlarge the old 568 × 205 crop as a substitute); export optimized sRGB JPEG. Add a concise `docs/designs/new-tracks/home-art/volcanic-crown.md` with concept reference paths, image description, palette/landmark/visibility notes, exact pixels and file size.
-> - **Do not edit any shared UI, code, locale or other map's asset files.** Do not merge, PR, deploy or force push. Report the exact commit SHA and preview image in chat, and whether actual GitHub image bytes are verified.
-
-### 5. 霓虹暴雨都市 Stormline Megacity
-
-> **Task:** With connected GitHub repository `weskao/skyline-rush`, create **one original native 2400 × 900+ JPEG homepage artwork** on existing branch `feature/epic-home-art-stormline-megacity` only.
+> **Only owned deliverables:** `src/upcoming-scenes/dune-tempest.ts`, `tests/upcoming-dune-tempest-scene.test.js`, `docs/designs/new-tracks/home-art/dune-tempest.md`; optional actual native-resolution JPEG thumbnail at `public/track-teasers/dune-tempest.jpg`. Export `createUpcomingEnvironment(scene: THREE.Scene)` returning `{group, update(timeSeconds, quality, reducedMotion), dispose()}`; own **only scenery**, NOT vehicles/camera/renderer/RAF/gameplay/controller/UI/locale. Local car anchor ground `(0,0,0)`, forward `-Z`; shared GPT 6 supplies real game car and all cameras.
 >
-> - Destination: `public/track-teasers/stormline-megacity.jpg`.
-> - Paired art-direction references: `docs/designs/new-tracks/source-concept-jpeg/stormline-megacity/concept-view-01.jpg`, `concept-view-02.jpg` and `docs/designs/new-tracks/route-schematics/stormline-megacity.svg`. Read `docs/designs/new-tracks/visual-acceptance-gate.md`.
-> - **Ground composition:** 深藍紫雨夜摩天樓、多層高架路、霓虹招牌、濕潤反射與路口急彎.
-> - **Split/air identity:** 讓低層街道與高層空中捷徑立體交錯；極有速度感但不可用過度模糊/光暈掩蓋道路.
-> - Must be cinematic, legible on desktop/mobile, original assets only, with clear sense of course forward direction; no false circuit-loop map, no gameplay-ready claims, no fake playable UI. Preserve left-side negative space so the existing intro remains readable.
-> - Native artwork at least 2400 × 900 px (do not enlarge the old 568 × 205 crop as a substitute); export optimized sRGB JPEG. Add a concise `docs/designs/new-tracks/home-art/stormline-megacity.md` with concept reference paths, image description, palette/landmark/visibility notes, exact pixels and file size.
-> - **Do not edit any shared UI, code, locale or other map's asset files.** Do not merge, PR, deploy or force push. Report the exact commit SHA and preview image in chat, and whether actual GitHub image bytes are verified.
+> TDD Red→Green→Refactor: test construction, 3 unique anchors, terrain/ground and elevated road branches, deterministic motion, quality/reduced-motion and disposal. Make low-tier light and ensure weather does not hide road. Write map-specific art note referencing exact JPEGs, scene geometry, lighting, animation and visual deviations.
+>
+> Push only this branch, verify actual GitHub code files and report commit/test results. DO NOT edit shared UI, another art branch, `develop`, `main`, create PR, deploy or force push. A static JPEG alone does not complete this task.
 
-## Integration and verification (owned only by shared UI chat)
+### 2. 雨林失落神殿 / Monsoon Ruins
 
-- Collect five unique per-map art branch HEADs and verify each expected `public/track-teasers/<id>.jpg` Git blob. Integrate **one image and one art note per branch only**, never overwrite shared UI files.
-- Compare desktop 1440×900 and phone 390×844 homepage captures, ensure legibility with bilingual names, `COMING SOON`/ `即將推出` statuses, disabled Start, no keyboard bypass, and size-locked start button; Reduced Motion must not animate static concept art.
-- Run focused Node tests, Vue typecheck/build, browser home-layout + i18n/track-picker tests, `make verify`, then exact-HEAD GitHub CI. Image reference visual review is distinct from actual runnable game track acceptance.
+Copy this block into a **separate GPT chat**:
+
+> Implement **ONE real animated Three.js homepage environment** for `weskao/skyline-rush`, **existing only editable branch** `feature/epic-home-art-monsoon-ruins`.
+>
+> **Read** `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, the shared-branch `docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md`, and its two source JPEGs / route SVG under `docs/designs/new-tracks/`. Refer to both ground and aerial concept compositions.
+>
+> **3D art direction:** 雨林樹冠、泥地 S 彎、古神殿、瀑布、石橋. **Real-time motion:** 暴雨、霧氣、落葉、水瀑流動. Include a clear ground route with a visible elevated/flight alternative branch and map-specific 3D landmarks. Road and objects are real Three.js meshes (not a JPEG/photo plane, CSS parallax, background screenshot or fake game render).
+>
+> **Only owned deliverables:** `src/upcoming-scenes/monsoon-ruins.ts`, `tests/upcoming-monsoon-ruins-scene.test.js`, `docs/designs/new-tracks/home-art/monsoon-ruins.md`; optional actual native-resolution JPEG thumbnail at `public/track-teasers/monsoon-ruins.jpg`. Export `createUpcomingEnvironment(scene: THREE.Scene)` returning `{group, update(timeSeconds, quality, reducedMotion), dispose()}`; own **only scenery**, NOT vehicles/camera/renderer/RAF/gameplay/controller/UI/locale. Local car anchor ground `(0,0,0)`, forward `-Z`; shared GPT 6 supplies real game car and all cameras.
+>
+> TDD Red→Green→Refactor: test construction, 3 unique anchors, terrain/ground and elevated road branches, deterministic motion, quality/reduced-motion and disposal. Make low-tier light and ensure weather does not hide road. Write map-specific art note referencing exact JPEGs, scene geometry, lighting, animation and visual deviations.
+>
+> Push only this branch, verify actual GitHub code files and report commit/test results. DO NOT edit shared UI, another art branch, `develop`, `main`, create PR, deploy or force push. A static JPEG alone does not complete this task.
+
+### 3. 浮空群島 / Skyfall Archipelago
+
+Copy this block into a **separate GPT chat**:
+
+> Implement **ONE real animated Three.js homepage environment** for `weskao/skyline-rush`, **existing only editable branch** `feature/epic-home-art-skyfall-archipelago`.
+>
+> **Read** `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, the shared-branch `docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md`, and its two source JPEGs / route SVG under `docs/designs/new-tracks/`. Refer to both ground and aerial concept compositions.
+>
+> **3D art direction:** 浮島、天然石橋、雲海與空中石環、瀑布. **Real-time motion:** 雲層緩移、水瀑與懸浮粒子. Include a clear ground route with a visible elevated/flight alternative branch and map-specific 3D landmarks. Road and objects are real Three.js meshes (not a JPEG/photo plane, CSS parallax, background screenshot or fake game render).
+>
+> **Only owned deliverables:** `src/upcoming-scenes/skyfall-archipelago.ts`, `tests/upcoming-skyfall-archipelago-scene.test.js`, `docs/designs/new-tracks/home-art/skyfall-archipelago.md`; optional actual native-resolution JPEG thumbnail at `public/track-teasers/skyfall-archipelago.jpg`. Export `createUpcomingEnvironment(scene: THREE.Scene)` returning `{group, update(timeSeconds, quality, reducedMotion), dispose()}`; own **only scenery**, NOT vehicles/camera/renderer/RAF/gameplay/controller/UI/locale. Local car anchor ground `(0,0,0)`, forward `-Z`; shared GPT 6 supplies real game car and all cameras.
+>
+> TDD Red→Green→Refactor: test construction, 3 unique anchors, terrain/ground and elevated road branches, deterministic motion, quality/reduced-motion and disposal. Make low-tier light and ensure weather does not hide road. Write map-specific art note referencing exact JPEGs, scene geometry, lighting, animation and visual deviations.
+>
+> Push only this branch, verify actual GitHub code files and report commit/test results. DO NOT edit shared UI, another art branch, `develop`, `main`, create PR, deploy or force push. A static JPEG alone does not complete this task.
+
+### 4. 熔火天脊 / Volcanic Crown
+
+Copy this block into a **separate GPT chat**:
+
+> Implement **ONE real animated Three.js homepage environment** for `weskao/skyline-rush`, **existing only editable branch** `feature/epic-home-art-volcanic-crown`.
+>
+> **Read** `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, the shared-branch `docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md`, and its two source JPEGs / route SVG under `docs/designs/new-tracks/`. Refer to both ground and aerial concept compositions.
+>
+> **3D art direction:** 玄武岩火山口、彎曲地面公路、岩漿峽谷、上層跨谷. **Real-time motion:** 岩漿流、火星與煙灰、熱浪. Include a clear ground route with a visible elevated/flight alternative branch and map-specific 3D landmarks. Road and objects are real Three.js meshes (not a JPEG/photo plane, CSS parallax, background screenshot or fake game render).
+>
+> **Only owned deliverables:** `src/upcoming-scenes/volcanic-crown.ts`, `tests/upcoming-volcanic-crown-scene.test.js`, `docs/designs/new-tracks/home-art/volcanic-crown.md`; optional actual native-resolution JPEG thumbnail at `public/track-teasers/volcanic-crown.jpg`. Export `createUpcomingEnvironment(scene: THREE.Scene)` returning `{group, update(timeSeconds, quality, reducedMotion), dispose()}`; own **only scenery**, NOT vehicles/camera/renderer/RAF/gameplay/controller/UI/locale. Local car anchor ground `(0,0,0)`, forward `-Z`; shared GPT 6 supplies real game car and all cameras.
+>
+> TDD Red→Green→Refactor: test construction, 3 unique anchors, terrain/ground and elevated road branches, deterministic motion, quality/reduced-motion and disposal. Make low-tier light and ensure weather does not hide road. Write map-specific art note referencing exact JPEGs, scene geometry, lighting, animation and visual deviations.
+>
+> Push only this branch, verify actual GitHub code files and report commit/test results. DO NOT edit shared UI, another art branch, `develop`, `main`, create PR, deploy or force push. A static JPEG alone does not complete this task.
+
+### 5. 霓虹暴雨都市 / Stormline Megacity
+
+Copy this block into a **separate GPT chat**:
+
+> Implement **ONE real animated Three.js homepage environment** for `weskao/skyline-rush`, **existing only editable branch** `feature/epic-home-art-stormline-megacity`.
+>
+> **Read** `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, the shared-branch `docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md`, and its two source JPEGs / route SVG under `docs/designs/new-tracks/`. Refer to both ground and aerial concept compositions.
+>
+> **3D art direction:** 密集夜都市、霓虹建築、多層高架、雨夜反光公路. **Real-time motion:** 雨滴、發光廣告、遠景車流燈光. Include a clear ground route with a visible elevated/flight alternative branch and map-specific 3D landmarks. Road and objects are real Three.js meshes (not a JPEG/photo plane, CSS parallax, background screenshot or fake game render).
+>
+> **Only owned deliverables:** `src/upcoming-scenes/stormline-megacity.ts`, `tests/upcoming-stormline-megacity-scene.test.js`, `docs/designs/new-tracks/home-art/stormline-megacity.md`; optional actual native-resolution JPEG thumbnail at `public/track-teasers/stormline-megacity.jpg`. Export `createUpcomingEnvironment(scene: THREE.Scene)` returning `{group, update(timeSeconds, quality, reducedMotion), dispose()}`; own **only scenery**, NOT vehicles/camera/renderer/RAF/gameplay/controller/UI/locale. Local car anchor ground `(0,0,0)`, forward `-Z`; shared GPT 6 supplies real game car and all cameras.
+>
+> TDD Red→Green→Refactor: test construction, 3 unique anchors, terrain/ground and elevated road branches, deterministic motion, quality/reduced-motion and disposal. Make low-tier light and ensure weather does not hide road. Write map-specific art note referencing exact JPEGs, scene geometry, lighting, animation and visual deviations.
+>
+> Push only this branch, verify actual GitHub code files and report commit/test results. DO NOT edit shared UI, another art branch, `develop`, `main`, create PR, deploy or force push. A static JPEG alone does not complete this task.
+
+## Separate GPT 6 integration (never assigned to the five scene branches)
+
+GPT 6 on `feature/epic-multiroute-longform-tracks` builds `src/upcoming-showcase.ts`, integrates the five scene modules with **existing `world.js` WebGL Renderer, player/rival cars, jet/VFX, `track-preview.ts` camera and idle update loop**. It removes/hides the current full-screen static JPEG hero when WebGL is available, preserves clickable Coming Soon cards with disabled localized fixed-width `#start-button`, and performs actual desktop/mobile, normal-motion/reduced-motion WebGL visual checks, TDD and exact-HEAD CI. See [GPT 6 full prompt](2026-11-03-six-chat-home-preview-implementation.md#gpt-6--animated-threejs-home-integration-ux-tdd-and-exact-head-ci).
+
+**No five full race maps are built in this home-only stage.** Showroom scene = 3D animated partial terrain/route/vehicles; full race course graph/checkpoints/AI is a subsequent wave. JPEG remains required as visual reference, not accepted as final frame.
