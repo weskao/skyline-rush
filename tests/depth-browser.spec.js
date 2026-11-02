@@ -145,11 +145,13 @@ test('track changes render four distinct sky palettes in the WebGL framebuffer',
   expect(skies[2][0]).toBeGreaterThan(skies[2][2]); // desert's warm sky
 });
 
-test('fuel warns below 20%, refill feedback appears and comfort disables gauge motion', async ({ page }) => {
-  await open(page);
+gameplayTest('fuel warns below 20%, refill feedback appears and comfort disables gauge motion', async ({ gameplayPage: page }) => {
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('Shift');
+  // Coast's rows and pickups refill a boost drained from full before it reaches 20%, so start the held boost near the
+  // threshold; the real drain still has to cross it. Set after Shift is down: ground regen refills an idle car.
+  await page.evaluate(() => { window.gameplay.race.player.fuel = 30; });
   // CPU-only CI simulates slower than wall-clock (frame gaps are clamped), so draining takes longer there.
   await expect(page.locator('#fuel-meter')).toHaveAttribute('aria-valuetext', /Low charge/, { timeout: process.env.CI ? 48000 : 16000 });
   await page.keyboard.up('Shift');
