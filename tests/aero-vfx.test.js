@@ -347,3 +347,30 @@ test('cyan NITRO trail replaces the standard purple from the first NITRO frame',
   assert.match(cyan.shader, /mix\(vec3\(\.72,\.4,1\.\),trailAccent\.rgb,trailAccent\.a\)/, 'the skin colour takes the purple slot');
   assert.doesNotMatch(cyan.shader, /trailAccent\.a\*[^;]*vUv\.x/, 'whole streamline, not only the tails');
 });
+
+test('AIRFLOW off (V) hides the streamline showcase during BOOST/NITRO; the NITRO trail ribbon and jets stay', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const run = airflow => {
+    const { vfx, race, options, vehicle, scene } = fixture();
+    options.airflow = airflow;
+    race.player.nitroTime = 2;
+    const sprint = createSprintVfx();
+    for (let i = 0; i < 20; i++) {
+      const state = sprint.update({ phase: 'racing', nitro: true, boost: true, speed: 80, cap: 110,
+        dt: 0.05, enabled: true, quality: 'high', reducedMotion: false });
+      vehicle.position.z -= 4;
+      vfx.update(race, 0.05, new Vector3(), options, false, state);
+    }
+    const [flow, pressure] = vehicle.getObjectByName('Airflow showcase').children;
+    const ribbon = scene.getObjectByName('Continuous dash ribbon');
+    const jets = vehicle.getObjectByName('Airflow showcase').children.filter(child => child.material?.uniforms?.diamonds);
+    return { flow: flow.visible, pressure: pressure.visible, ribbon: ribbon.geometry.attributes.alpha.array.some(a => a > 0),
+      jets: jets.some(jet => jet.visible) };
+  };
+  const off = run(false), on = run(true);
+  assert.equal(off.flow, false, 'AIRFLOW off: no streamlines while sprinting');
+  assert.equal(off.pressure, false, 'AIRFLOW off: no underbody pressure plane while sprinting');
+  assert.ok(off.ribbon, 'NITRO trail (and its Garage skin) still shows with AIRFLOW off');
+  assert.ok(off.jets, 'thruster jets still show with AIRFLOW off');
+  assert.ok(on.flow, 'AIRFLOW on: streamlines still show while sprinting');
+});

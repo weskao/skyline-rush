@@ -41,7 +41,7 @@ Design choices: isolate event/state contracts from presentation, use Vue 3 + Typ
 
 **When** car accelerates
 
-**Then** cleaner airflow differs from NITRO but physics unchanged
+**Then** cleaner airflow differs from NITRO but physics unchanged (2026-11-02 amendment: the streamline showcase itself shows only while AIRFLOW / V is on; with it off, sprint feedback is the jets, ribbon, afterimages, screen streaks and FOV)
 
 #### Scenario 3: Comfort
 

@@ -43,6 +43,13 @@ own `setupXxxUI(deps)` TypeScript controller instead of adding to `src/main.js`.
 under ~60 lines. Legacy oversized files have ratcheting ceilings that may only go down.
 `tests/module-size.test.js` enforces it; seams and steps are in `.claude/rules/module-size.md`.
 
+## AI-generated images: always 3x
+
+Any image produced by an AI generator must be rendered at **3x the size it is displayed at in
+the project**: an asset shown at 10 × 20 px is generated at 30 × 60 px. Work out the display
+size first, ask the generator for exactly 3x that size, and keep the 3x original as the
+source file. Never upscale a smaller output to reach 3x.
+
 ## Mandatory regression-first workflow (every feature and bug fix)
 
 **Always follow `docs/regression-first-workflow.md`** before calling work complete:
