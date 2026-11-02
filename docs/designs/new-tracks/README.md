@@ -17,6 +17,7 @@ Each of the five **two-view storyboard SVGs** below is physically committed in t
 
 - [Per-track composition, landmarks, weather, camera and acceptance criteria](visual-fidelity.md)
 - [Machine-readable art and topology reference manifest](concept-manifest.json)
+- [Original 12 PNG reference file names, sizes and SHA-256 checksums (pending GitHub import)](png-source-import-manifest.md)
 
 ## Original high-detail AI PNG artwork — provenance / status
 
