@@ -95,7 +95,7 @@ server-enforced status protection.
 | `make` / `make dev` | Vite dev server, saved progression respected |
 | `make dev-unlocked` (= `make test-unlocked`) | Local-only all-unlocked server (not a test runner) |
 | `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS localhost |
-| `make phone [name]` | Same menu as `/phone-dev`: start/check/stop a phone-reachable locked dev server for this checkout, a worktree or a branch |
+| `make phone [name] [YES=1]` | Same menu as `/phone-dev`: start/check/stop a phone-reachable locked dev server for this checkout, a worktree or a branch; `YES=1` takes every Recommended option, no prompts, prints each choice |
 | `make dev-diag` / `make phone-diag [name]` | Same servers with the on-screen diagnostic banner compiled in (`VITE_DIAG=1` → `src/crash-log.ts`); production builds never include it |
 | `npm test` | Node unit tests |
 | `npm run build` | Production build + release-bundle lock assertion |
