@@ -1,5 +1,16 @@
 # 3× Raster Asset Integration Handoff — garage-vfx-skins
 
+## 2026-11-02 recovered original image bytes / partial runtime integration (newest status)
+
+The original `skyline-rush-3x-garage-vfx-skins.zip` was recovered from ChatGPT File Library; SHA-256 verified as `4112ef97f6ec8d0860220a93f95a5b19f77b2a05cc36c1eebf5385d457d73414`. The **27 genuine 3× transparent WebPs** are now committed to the repository's **asset-only** [`feature/3x-ui-materials`](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-vfx-skins) branch and documented in the [59-file asset manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md).
+
+Of these, **10 selected files** are also committed as **real binary Git blobs** to `feature/garage-vfx-skins:public/feature-assets/garage-vfx-skins/raster/`. Runtime `skinArtwork()` uses 3× image pixel files (288×288) at **96×96 CSS px** for those 10; other cards use the existing SVG fallback. On image load failure, fallback is **WebP → SVG → localized text**. The remaining 17 candidate WebPs are source-only on the asset branch, not automatically deployed or interpreted as real item unlocks. The original PNG source images and original ZIP are preserved in ChatGPT File Library, **not** embedded in Git.
+
+**This replaces earlier assertions below that the source ZIP was unavailable or that no WebPs exist in Git.** Historical records remain as provenance, not current state. **Visual signoff and exact-HEAD CI remain pending**; a committed file is not an approved design. Standard production `coming-soon` still strips this feature-assets folder from the release bundle.
+
+---
+
+
 **Feature branch:** `feature/garage-vfx-skins`  
 **Status:** `CANDIDATE_ART_EXPORTED / BINARIES_NOT_IN_GIT / RUNTIME_NOT_INTEGRATED / REVIEW_PENDING`  
 **Primary existing reference:** [VISUAL-FIDELITY.md](VISUAL-FIDELITY.md) · [Implementation plan](../../superpowers/plans/2026-10-31-garage-vfx-skins-plan.md)  

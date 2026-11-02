@@ -4,6 +4,29 @@
 
 Read [the 18-image implementation and exact source-use map](docs/designs/mobile-3x-ui-assets.md) before changing HUD art, input geometry, or controls. Original WebP source pixels are kept at 3× with 1× CSS display; this feature branch is for UI art integration only. Never hide functional SVG/accessibility controls beneath art or treat decorative assets as completed game features.
 
+## 2026-11-02 latest source integration checkpoint (overrides historical source-unavailable wording)
+
+**Images actually present:** All **6 original transparent WebP Git blobs** have been copied without re-encoding from `feature/3x-ui-materials` to this branch's `public/feature-assets/garage-store-readiness/raster/`. They have **216×216 original image pixels, displayed at 72×72 CSS px (1×)**. SHA equality checked against every source file in the 59-item [shared asset manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md).
+
+**UI code now exists:** `src/GarageSourceArtGallery.vue` is mounted from `src/GaragePanel.vue` in an expandable Garage source-preview section. `tests/garage-art-source-browser.spec.js` asserts all 6 images, their original dimensions, 1× layout and no invented commerce/reward claim. Image loading has a text fallback. This is **artwork integration only**, NOT an operational checkout, real currency, store ownership grant; those SDD→BDD→TDD gates remain OPEN. Preview art is not approved for production; latest exact-HEAD CI and phone/browser UI evidence still required.
+
+**Implementation**: read this note and the actual image files; do not regenerate or claim they are unavailable. Keep `develop` as integration branch, avoid changes to `main` or payments.
+
+---
+
+
+## Required Wave 3 asset preflight — verified GitHub source (2026-11-02)
+
+**Before UI implementation or image generation, you MUST read the [verified 59-image 3× material archive](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md), source branch `feature/3x-ui-materials`, archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`.** The source WebPs are deliberately committed to a separate archive branch under `docs/designs/3x-asset-library/webp/`; they will **not** be present in this feature checkout until explicitly copied. Never regenerate existing icons just because they are absent here.
+
+**Store's six ready-to-review source images:** `store-cart@3x.webp`, `store-box@3x.webp`, `store-bundle@3x.webp`, `store-tag@3x.webp`, `store-star@3x.webp`, `store-collection@3x.webp`. All stored at **216×216 original pixels, rendered as 72×72 CSS px (1×)**. Preserve original 3× pixel files. The common archive also holds 27 Garage VFX, eight Missions/Rewards, 18 HUD/UI assets; use its complete manifest and SHA list, not assumed links. PNG and original ZIP remain in ChatGPT Library, not Git.
+
+**Required process:** verify source blob and preview alpha/matte, copy only approved WebP icons from `origin/feature/3x-ui-materials:docs/designs/3x-asset-library/webp/garage-store-readiness/` to this feature's `public/feature-assets/garage-store-readiness/raster/`. Use `import.meta.env.BASE_URL` paths, explicit CSS width/height 72 px, `object-fit: contain`, fallback to existing SVG/text, accessible labels and 44 CSS px touch targets; run SDD→BDD→TDD and exact-HEAD CI, plus desktop/mobile real visual checks. **No active storefront, checkout, prices, paid entitlement or fake currency balance may be created from artwork.** Images are source candidates, not completed UI or acceptance.
+
+**Integration target is `develop` (never `main`).** Historical `main` or 'no PNG/WebP exists' statements below are superseded on those points; retain all other prerequisites and no-merge-without-approval rules.
+
+---
+
 
 Read applicable `CLAUDE.md`, `.claude/CLAUDE.md`, and `.claude/rules/*.md` instructions.
 At conversation startup, also read `$HOME/.claude/CLAUDE.md` and applicable rules under

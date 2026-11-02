@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, stepRace, RACE_TRACKS } from '../src/game.js';
+import { createRace, stepRace, RACE_TRACKS, mysteryEffect } from '../src/game.js';
 import { normalizeRaceConfig, validateRaceRequest, rulesSignature } from '../src/race-config.ts';
 import { loadRecentCustom, saveRecentCustom } from '../src/recent-custom.ts';
 
@@ -17,12 +17,15 @@ test('explicit item rules distinguish Off, Classic, Active and All on every trac
     assert.equal(active.pickups.length, 0);
     assert.equal(active.config.activeItems, true);
     assert.ok(active.rings.every(ring => ring.type === 'mystery'));
-    assert.deepEqual(active.rings.map(ring => ring.distance), classic.rings.filter(ring => ring.type === 'mystery').map(ring => ring.distance));
+    // 4 rings per car leave too few mystery rolls, so Active makes every classic ring an item ring, in place.
+    assert.deepEqual(active.rings.map(ring => ring.distance), classic.rings.map(ring => ring.distance));
     const all = createRace(trackId, { mode, itemRules: 'all' });
     assert.equal(all.config.activeItems, true);
     assert.deepEqual(all.rings.map(({ distance, x, altitude, radius }) => [distance, x, altitude, radius]),
       classic.rings.map(({ distance, x, altitude, radius }) => [distance, x, altitude, radius]));
     assert.deepEqual(all.pickups, classic.pickups);
+    assert.ok(all.rings.every((ring, i) => i % 2 || ring.type === 'mystery'), `${trackId} ${mode}: every other All ring is an item ring`);
+    assert.ok(all.rings.every((ring, i) => !(i % 2) || ring.type === 'mystery' || classic.rings[i].type !== 'mystery'), `${trackId} ${mode}: authored item rings stay`);
   }
 });
 
@@ -62,10 +65,11 @@ test('filtering Active rings preserves authored mystery rewards and does not aut
   for (const itemRules of ['active', 'all']) {
     const race = createRace('coast', { mode: 'free', itemRules });
     race.phase = 'racing';
-    const ring = race.rings.find(ring => ring.distance === 3080);
-    Object.assign(race.player, { distance: 3079.9, speed: 50, x: ring.x, altitude: ring.altitude });
+    // An item ring keeps the reward its source index authored.
+    const index = race.rings.findIndex(ring => ring.type === 'mystery' && ring.mysteryIndex > 0), ring = race.rings[index];
+    Object.assign(race.player, { distance: ring.distance - 0.1, speed: 50, x: ring.x, altitude: ring.altitude });
     stepRace(race, {}, 1 / 60);
-    assert.equal(race.player.heldItem, 'shield'); // Coast's authored mystery at source index 13.
+    assert.equal(race.player.heldItem, mysteryEffect(race.seed, ring.mysteryIndex ?? index));
     assert.equal(race.player.effects.shield, 0);
     assert.equal(race.player.perfectLines, 0);
     assert.equal(race.player.nitro, 0);

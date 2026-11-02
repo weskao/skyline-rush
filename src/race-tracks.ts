@@ -7,19 +7,19 @@ import type { TrackConfig } from './game-types.ts';
 // the World Tour BOOST/NITRO median. Every other track keeps the defaults bit-for-bit.
 const BOOST_ODDS = [0.4, 0.7, 0.8, 0.9] as const; // charge 40%, nitro 30%, slipstream 10%, risk 10%, mystery 10% (unchanged)
 export const RACE_TRACKS: Record<string, TrackConfig> = {
-  coast: { // fixedRings: the original gate grid; every other ring is low enough to take from the road
-    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 2, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS,
+  coast: { // fixedRings: the original gate line (x 2.5); every other ring is low enough to take from the road
+    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 4, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS, // the first, easiest map
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },
   neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 2, ringGap: [150, 220], ringOdds: BOOST_ODDS,
+    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 4, ringOdds: BOOST_ODDS, // an early, easy map
     sections: [
       { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
       { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
     ],
   },
   canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 2, openingNitroRings: 2, // volume was enough; only the first NITRO came late
+    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 4, openingNitroRings: 2, // volume was enough; only the first NITRO came late
     sections: [
       { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
       { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
@@ -28,7 +28,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   aurora: {
-    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004,
+    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004, layoutVersion: 3,
     sections: [
       { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
       { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
@@ -36,7 +36,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   spiral: {
-    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005, layoutVersion: 2, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
+    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005, layoutVersion: 4, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
     sections: [
       { from: 1100, to: 2200, type: 'spiral' },
       { from: 2800, to: 2870, type: 'launch' },
@@ -48,11 +48,11 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
       { from: 4950, to: 5450, type: 'shortcut', x: -7.5, altitude: 6 },
     ],
   },
-  taipei: {"name":"Taipei Heritage","length":6200,"trafficDensity":1.1,"seed":6006,"sections":[{"from":850,"to":1200,"type":"tunnel"},{"from":1950,"to":2450,"type":"shortcut","x":-7.5,"altitude":6},{"from":3120,"to":3450,"type":"boost-tunnel"},{"from":4100,"to":4450,"type":"tunnel"}]},
-  tokyo: {"name":"Tokyo Afterdark","length":6800,"trafficDensity":1.4,"seed":7007,"sections":[{"from":850,"to":1350,"type":"tunnel"},{"from":2450,"to":2950,"type":"shortcut","x":7.5,"altitude":6},{"from":4150,"to":4650,"type":"tunnel"},{"from":5050,"to":5450,"type":"boost-tunnel"}]},
-  alpine: {"name":"Alpine Rail Pass","length":7600,"trafficDensity":0.8,"seed":8008,"sections":[{"from":900,"to":1420,"type":"uphill"},{"from":1600,"to":2200,"type":"tunnel"},{"from":3100,"to":3600,"type":"shortcut","x":-7.5,"altitude":6},{"from":3850,"to":4200,"type":"boost-tunnel"},{"from":4700,"to":5200,"type":"tunnel"},{"from":5900,"to":6400,"type":"uphill"}]},
-  coastal: {"name":"Coastal Horizon","length":5800,"trafficDensity":1,"seed":9009,"sections":[{"from":850,"to":1300,"type":"crosswind","dir":1},{"from":2100,"to":2600,"type":"shortcut","x":7.5,"altitude":6},{"from":2950,"to":3310,"type":"boost-tunnel"},{"from":3950,"to":4600,"type":"crosswind","dir":-1}]},
-  cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
+  taipei: {"name":"Taipei Heritage","length":6200,"trafficDensity":1.1,"seed":6006,"layoutVersion":3,"sections":[{"from":850,"to":1200,"type":"tunnel"},{"from":1950,"to":2450,"type":"shortcut","x":-7.5,"altitude":6},{"from":3120,"to":3450,"type":"boost-tunnel"},{"from":4100,"to":4450,"type":"tunnel"}]},
+  tokyo: {"name":"Tokyo Afterdark","length":6800,"trafficDensity":1.4,"seed":7007,"layoutVersion":3,"sections":[{"from":850,"to":1350,"type":"tunnel"},{"from":2450,"to":2950,"type":"shortcut","x":7.5,"altitude":6},{"from":4150,"to":4650,"type":"tunnel"},{"from":5050,"to":5450,"type":"boost-tunnel"}]},
+  alpine: {"name":"Alpine Rail Pass","length":7600,"trafficDensity":0.8,"seed":8008,"layoutVersion":3,"sections":[{"from":900,"to":1420,"type":"uphill"},{"from":1600,"to":2200,"type":"tunnel"},{"from":3100,"to":3600,"type":"shortcut","x":-7.5,"altitude":6},{"from":3850,"to":4200,"type":"boost-tunnel"},{"from":4700,"to":5200,"type":"tunnel"},{"from":5900,"to":6400,"type":"uphill"}]},
+  coastal: {"name":"Coastal Horizon","length":5800,"trafficDensity":1,"seed":9009,"layoutVersion":3,"sections":[{"from":850,"to":1300,"type":"crosswind","dir":1},{"from":2100,"to":2600,"type":"shortcut","x":7.5,"altitude":6},{"from":2950,"to":3310,"type":"boost-tunnel"},{"from":3950,"to":4600,"type":"crosswind","dir":-1}]},
+  cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"layoutVersion":3,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
 };
 
 // The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.

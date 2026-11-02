@@ -86,7 +86,7 @@ test('a mixed Gauntlet race uses the course; the default Gauntlet race is byte-i
   const { createRace, startRace, stepRace } = await import('../src/game.js');
   const plain = createRace('coast', { mode: 'gauntlet' });
   assert.deepEqual(plain.hazards, createHazards(RACE_TRACKS.coast, LANES));
-  assert.deepEqual(plain.rings, createRace('coast').rings);
+  assert.deepEqual(plain.rings, createRace('coast', { mode: 'time' }).rings); // a solo grid like Gauntlet's: rings scale with the cars
   const race = createRace('coast', { mode: 'gauntlet', layout: 'mixed' });
   const expected = build('coast');
   assert.deepEqual(race.hazards.map(h => h.id), expected.hazards.map(h => h.id));

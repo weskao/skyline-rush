@@ -10,14 +10,13 @@ import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.ts';
-import { createRace as createBareRace, startRace, stepRace, dailyChallenge, RACE_TRACKS } from './game.js';
+import { startRace, stepRace, dailyChallenge } from './game.js';
+import { createRace } from './race-factory.ts';
 import { createControls } from './input.ts';
 import { createSprintSeries, nextSprintGrid } from './sprint-series.ts';
-import { createCheckpointRush } from './checkpoint-rush.ts';
 import { saveRecentCustom } from './recent-custom.ts';
 import { nextCupGrid, cupComplete } from './championship-cup.ts';
 import { createWorld } from './world.js';
-import { roadObstacles, endlessRoadObstacles } from './world-tour-scene.js';
 import { createSound } from './audio.js';
 import { readAudio } from './audio-settings.ts';
 import { setupVfxUI } from './vfx-ui.ts';
@@ -77,15 +76,6 @@ ui['skill-report'] = $('#skill-report');
 const clearButtonPresses = trackPressedButtons();
 const touchPreference = matchMedia('(pointer: coarse)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-// World Tour scenery that reaches into the road is solid in the simulation too.
-const createRace = (...args) => {
-  const created = createBareRace(...args);
-  created.props = roadObstacles(created.trackId);
-  if(created.endless){created.streamProps=distance=>{created.props=endlessRoadObstacles(created.trackId,distance);};created.streamProps(0);}
-  if (created.checkpoint && created.props.length)
-    created.checkpoint = createCheckpointRush(RACE_TRACKS[created.trackId], created.props);
-  return created;
-};
 let race = createRace();
 let tutorial = null, tutorialReturn = null, raceAfterTutorial = false;
 let world;

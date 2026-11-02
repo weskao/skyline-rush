@@ -39,6 +39,9 @@
     "#garage-skin-ui": "./src/GarageSkinCatalog.vue",
     "#garage-skin-runtime": "./src/garage-skin-runtime.ts",
     "#garage-skin-palette": "./src/garage-skin-palette.ts",
+    "#garage-void-beams": "./src/garage-void-beams.js",
+    "#garage-launch-flare": "./src/garage-launch-flare.js",
+    "#garage-nitro-trail": "./src/garage-nitro-trail.js",
     "#garage-release-config": "./src/garage-release-trial.ts"
   }
 }

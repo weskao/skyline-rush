@@ -3,7 +3,7 @@ import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
-import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit } from './garage-camera.ts';
+import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import { t } from './i18n.ts';
 // Keep progression checks locked to the same implementation used in production.
@@ -18,7 +18,11 @@ interface GarageWorld {
   resize(): void;
   setGarageCamera(camera: GarageCamera | null): void;
   setCosmeticSkins?(ids: Record<SkinCategory, SkinId>): void;
-  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>): void;
+  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>, home?: boolean): void;
+  inspectCosmeticPreview?(): {
+    voidBeams: boolean; launchPattern: number; launchPreviewActive: boolean;
+    thrusterPattern: number; airflowPattern: number; trailPattern: number;
+  };
   inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean } | null;
   inspectRenderLoad?(): { drawCalls: number; triangles: number };
   inspectPrograms?(): number;
@@ -56,10 +60,10 @@ export function setupGarageUI({
   let pendingStudioInspection = false;
   function syncSkins(): void {
     const equipped = currentGarageSkins();
-    const studio = garageScreen.open && garageStudioView.page === 'studio';
-    const selected = studio ? selectedGarageSkins() : equipped;
+    const inGarage = garageScreen.open;
+    const selected = inGarage ? selectedGarageSkins() : equipped;
     getWorld()?.setCosmeticSkins?.(equipped);
-    getWorld()?.setGarageSkinPreview?.(selected);
+    getWorld()?.setGarageSkinPreview?.(selected, inGarage && garageStudioView.page === 'home');
     for (const category of SKIN_CATEGORIES) {
       preview.setAttribute(`data-skin-preview-${category}`, selected[category]);
       preview.setAttribute(`data-skin-equipped-${category}`, equipped[category]);
@@ -69,11 +73,11 @@ export function setupGarageUI({
   subscribeGarageSkins(syncSkins);
   subscribeAccount(setGarageSkinAccount);
   function inspectStudioAfterFrame() {
-    if (pendingStudioInspection || garageStudioView.page !== 'studio') return;
+    if (pendingStudioInspection || !garageScreen.open) return;
     pendingStudioInspection = true;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       pendingStudioInspection = false;
-      if (!garageScreen.open || garageStudioView.page !== 'studio') return;
+      if (!garageScreen.open) return;
       const bounds = getWorld()?.inspectGarageStudio?.();
       if (bounds) {
         preview.dataset.carInFrame = String(bounds.inFrame);
@@ -83,6 +87,15 @@ export function setupGarageUI({
       if (load) {
         preview.dataset.drawCalls = String(load.drawCalls);
         preview.dataset.triangles = String(load.triangles);
+      }
+      const cosmetics = getWorld()?.inspectCosmeticPreview?.();
+      if (cosmetics) {
+        preview.dataset.gpuVoidBeams = String(cosmetics.voidBeams);
+        preview.dataset.gpuLaunchPattern = String(cosmetics.launchPattern);
+        preview.dataset.launchPreviewActive = String(cosmetics.launchPreviewActive);
+        preview.dataset.gpuThrusterPattern = String(cosmetics.thrusterPattern);
+        preview.dataset.gpuAirflowPattern = String(cosmetics.airflowPattern);
+        preview.dataset.gpuTrailPattern = String(cosmetics.trailPattern);
       }
       const programs = getWorld()?.inspectPrograms?.();
       if (programs !== undefined) preview.dataset.shaderPrograms = String(programs);
@@ -111,11 +124,12 @@ export function setupGarageUI({
   }
   function setCamera(next: GarageCamera, angle = ''): void {
     camera = next;
+    preview.dataset.garageMode = camera.mode;
     preview.dataset.cameraZoom = camera.zoom.toFixed(3);
     preview.dataset.cameraYaw = camera.yaw.toFixed(3);
     // Never let QA or assistive evidence claim the previous camera's bounds.
     delete preview.dataset.carInFrame;
-    updateGarageStudioView({ angle, autoRotate: camera.autoRotate });
+    updateGarageStudioView({ angle, autoRotate: camera.autoRotate, mode: camera.mode });
     getWorld()?.setGarageCamera(garageStudioView.page === 'studio' ? camera : null);
     inspectStudioAfterFrame();
   }
@@ -199,7 +213,13 @@ export function setupGarageUI({
   });
   garageScreen.addEventListener('keydown', event => event.stopPropagation());
   document.querySelectorAll<HTMLButtonElement>('[data-garage-angle]').forEach(button =>
-    button.addEventListener('click', () => setCamera(garagePreset(button.dataset.garageAngle!), button.dataset.garageAngle ?? '')));
+    button.addEventListener('click', () => setCamera(
+      { ...garagePreset(button.dataset.garageAngle!), mode: camera.mode }, button.dataset.garageAngle ?? '',
+    )));
+  document.querySelectorAll<HTMLButtonElement>('[data-garage-mode]').forEach(button =>
+    button.addEventListener('click', () => setCamera(
+      setGarageMode(camera, button.dataset.garageMode as GarageCamera['mode']), garageStudioView.angle,
+    )));
   $('#garage-rotate-left').addEventListener('click', () => setCamera(dragGarageCamera(camera, -40, 0)));
   $('#garage-rotate-right').addEventListener('click', () => setCamera(dragGarageCamera(camera, 40, 0)));
   $('#garage-zoom-in').addEventListener('click', () => setCamera(zoomGarageCamera(camera, .85)));

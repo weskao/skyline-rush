@@ -1,6 +1,7 @@
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { selectLocale } from './helpers/locale-browser.js';
+import { recordTrackId } from '../src/record-layout.ts';
 
 async function choosePreset(page, name) {
   const picker = page.locator('#race-visual-preset + .custom-select');
@@ -40,14 +41,14 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.locator('button[data-race-mode="custom"]').click();
-    await page.evaluate(() => {
+    await page.evaluate(coast => {
       const config = window.gameplay.race.config;
       const samples = Array.from({ length: 801 }, (_, i) => [i * 6.25, 0, 0]);
       localStorage.setItem('skyline-rush-mode-ghosts-v1', JSON.stringify({
-        ['coast@2:' + JSON.stringify(config)]: { time: 80, samples }, // Coast's layout 2 record id
+        [coast + ':' + JSON.stringify(config)]: { time: 80, samples }, // Coast's current layout record id
       }));
       localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon']));
-    });
+    }, recordTrackId('coast'));
     await page.reload();
     await page.locator('button[data-race-mode="custom"]').click();
     await page.locator('#race-mode-rules > summary').click();

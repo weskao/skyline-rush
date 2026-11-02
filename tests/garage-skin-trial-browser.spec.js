@@ -28,3 +28,24 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     });
   });
 }
+
+test('public trial is explicitly free, never grants ownership and resets temporary equipment on reload', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const catalog=page.locator('#garage-vfx-catalog');
+  await expect(catalog).toHaveAttribute('data-release-mode','trial');
+  await expect(catalog).toContainText(/free trial|免費試用/i);
+  const ion=catalog.locator('[data-skin="thruster-ion"]');
+  await expect(ion).toHaveAttribute('data-state','trial');
+  await ion.getByRole('button', { name: /try|試用/i }).click();
+  await expect(ion).toHaveAttribute('data-state','equipped');
+  await expect(ion).toHaveAttribute('data-owned','false');
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-equipped-thruster','thruster-ion');
+  await page.reload();
+  await page.locator('#garage-button').click();
+  const after=page.locator('#garage-vfx-catalog [data-skin="thruster-ion"]');
+  await expect(after).toHaveAttribute('data-state','trial');
+  await expect(after).toHaveAttribute('data-owned','false');
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-equipped-thruster','thruster-basic');
+  await expect(page.locator('#garage-vfx-catalog')).not.toContainText(/buy now|purchase|立即購買/i);
+});

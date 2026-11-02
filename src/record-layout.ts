@@ -27,13 +27,18 @@ export function recordTrackId(trackId: string, config?: unknown): string {
   return layout > 1 ? `${trackId}@${layout}` : trackId;
 }
 
-/** Inverse of recordTrackId for the given rules; null for ids no build ever wrote. */
+/** Every record id a track has had: bare (layout 1) through its current layout. Older ones stay readable. */
+export function recordTrackIds(trackId: string): string[] {
+  return Array.from({ length: layoutVersion(trackId) }, (_, i) => i ? `${trackId}@${i + 1}` : trackId);
+}
+
+/** Inverse of recordTrackId for the given rules, older layouts included; null for ids no build ever wrote. */
 export function parseRecordTrackId(id: unknown, config?: unknown): { trackId: string; layout: number } | null {
   if (typeof id !== 'string') return null;
   const [trackId, version, ...rest] = id.split('@');
   if (version === undefined) return trackId ? { trackId, layout: 1 } : null;
   const layout = Number(version);
-  return !rest.length && trackId && layout > 1 && layout === raceLayout(trackId, config) && String(layout) === version ? { trackId, layout } : null;
+  return !rest.length && trackId && layout > 1 && layout <= raceLayout(trackId, config) && String(layout) === version ? { trackId, layout } : null;
 }
 
 /** Runs saved before layout versions existed have no field and are layout 1. */

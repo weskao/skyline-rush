@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 fail() { echo "release-gate: $*" >&2; exit 1; }
 
 # Players read every release in the in-game What's New dialog, so notes come before the tag.
-node scripts/check-release-notes.mjs "${1:-}" || fail "write the What's New notes for ${1:-this version} first (see CLAUDE.md)"
+node scripts/check-release-notes.mjs "${1:-}" || fail "write the What's New notes for ${1:-this version} first (see .claude/rules/release-notes.md)"
 
 # CI publishes the site but never firestore.rules: changed rules must be live before the tag (/release Phase F).
 # shortcut: trusts the FIRESTORE_RULES_DEPLOYED attestation, not the live ruleset; query the Rules API if one is ever wrong.

@@ -32,8 +32,8 @@ dev: stop-old-dev node_modules ## `make`: Vite + Vue dev server with hot reload 
 dev-diag: stop-old-dev node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(WITH_EMULATORS) '$(NPM) run dev'
 
-phone-diag: ## `make phone-diag [name|off]`: like `make phone`, with the on-screen diagnostic panel compiled in
-	VITE_DIAG=1 $(MAKE) phone $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
+phone-diag: ## `make phone-diag [name|off] [y=1]`: like `make phone`, with the on-screen diagnostic panel compiled in
+	VITE_DIAG=1 $(MAKE) phone $(if $(y),y=$(y)) $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
 dev-unlocked: stop-old-dev node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
@@ -44,15 +44,16 @@ test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-un
 # Same menu and flags as the personal /phone-dev skill. Serves the normal locked config with no emulators.
 # `make phone <name>` serves that branch (or feature/<name>) from its worktree;
 # `make phone off` stops every server phone-dev started (like `/phone-dev off`), so a branch named `off` can't be served.
+# `y=1` skips the menu: every question takes its Recommended option and each choice is printed (e.g. `make phone y=1 my-feature`).
 PHONE_DEV := $(HOME)/.claude/skills/phone-dev/scripts/phone_dev.py
-phone: node_modules ## `make phone [name|off]`: menu to start, check or stop a phone dev server; `off` stops them all
+phone: node_modules ## `make phone [name|off] [y=1]`: menu (y=1: Recommended answers, no prompts) to start, check or stop a phone dev server; `off` stops them all
 	@test -f "$(PHONE_DEV)" || { echo "make phone needs the phone-dev skill at $(PHONE_DEV)"; exit 1; }
-	@python3 "$(PHONE_DEV)" $(if $(filter off,$(DEV_FEATURE_NAME)),--off,--interactive $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME)) $(PHONE_VITE_ARGS))
+	@python3 "$(PHONE_DEV)" $(if $(filter off,$(DEV_FEATURE_NAME)),--off,--interactive $(if $(y),--yes) $(if $(DEV_FEATURE_NAME),--branch $(DEV_FEATURE_NAME)) $(PHONE_VITE_ARGS))
 
 # The unlocked config binds 127.0.0.1 so `make dev-unlocked` stays Mac-only; phone-dev's own `--host 0.0.0.0` CLI
 # flag overrides it, so this is the only phone-reachable all-unlocked server. Still a dev server: never a build.
-phone-unlocked: ## `make phone-unlocked [name|off]`: like `make phone`, with all tracks and paints unlocked
-	$(MAKE) phone PHONE_VITE_ARGS="-- --config vite.unlocked.config.js" $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
+phone-unlocked: ## `make phone-unlocked [name|off] [y=1]`: like `make phone`, with all tracks and paints unlocked
+	$(MAKE) phone PHONE_VITE_ARGS="-- --config vite.unlocked.config.js" $(if $(y),y=$(y)) $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
 # baseline built in .claude/worktrees/perf-<sha>. Desktop throttles Chrome's CPU; phone mode asks like `make phone`

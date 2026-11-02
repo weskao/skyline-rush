@@ -1,3 +1,30 @@
+## AIRFLOW off hides sprint streamlines (2026-11-02)
+
+**Branch:** `fix/airflow-off-hides-sprint-flow` from `develop` `5cc12113`. **Report:** with AIRFLOW (V) off, BOOST/NITRO still revealed the full streamline showcase and underbody pressure plane (`src/aero-vfx.js` `show` OR-ed in `sprintPower`), so the V toggle looked broken while sprinting.
+
+- [x] RED: `tests/aero-vfx.test.js` "AIRFLOW off (V) hides the streamline showcase during BOOST/NITRO…" failed on `flow.visible` with AIRFLOW off.
+- [x] GREEN: `show = settings.airflow && enabled`. NITRO trail ribbon (Garage `nitro-trail` skin), jets, afterimages and `--streak-opacity` screen streaks are unaffected; Garage Studio still forces AIRFLOW on (`garage-stage.ts` `configureVFX`), so Airflow skins still preview. In-race Airflow skins now show only with AIRFLOW on, by design.
+- [x] Browser: `tests/high-speed-vfx-browser.spec.js` asserts the streamline mesh stays hidden during BOOST with AIRFLOW off.
+- [ ] Real-device look at BOOST/NITRO with AIRFLOW off and on.
+
+## Rival item pickups — stage 2 (2026-11-02)
+
+**Branch:** `feature/rival-item-pickups` (merged `develop` `435e4fb8` as `f18cb226`, no conflicts). Plan + inventory + AC: `docs/plans/2026-11-01-rival-item-pickups.md`. `PLAYWRIGHT_PORT=5186`. Merged `develop` `bf350867` too (clean; `npm test` 1361/0, 3 skipped). User approved (2026-11-02) a local `--no-ff` merge into `develop` once CI is green, then deleting the feature branch; no `main`, no PR, no deploy, no rules deploy.
+
+- [x] R1 economy bot with 7 rivals, mode × track × difficulty; frozen stage-1 baseline JSON; rival NITRO count.
+- [x] R2 move rival NITRO timing out of `game.js` (move-only).
+- [x] R3 shared 2.5 s respawn for rings and pickups.
+- [x] R4 rivals collect NITRO items; Easy cap (AC3); Normal on-line only.
+- [x] R5 Hard lane-seeking through `avoidObstacles` (obstacles still win).
+- [x] R6 full-width rows, dense trains, per-track pickup gap; PERFECT LINE grouping locked.
+- [x] R7 density + rubber-band balance: AC1 ≥ 95% on every mode × track × difficulty, AC2 Normal +2 / Hard +4; replace stage-1 layout locks (user decision noted).
+- [x] R8 AC4 layout version bump + rules/sync guard. **Before release (needs user approval): deploy `firestore.rules` with the new keys.**
+- [x] R9 instanced rings/pickups, rival collect/NITRO cues (throttled, never sound-only); draw calls flat on all ten tracks; shader warmup.
+- [x] R10 What's New UPCOMING (en + zh-TW) + `/review-release-notes`.
+- [x] R11 gates + `[full-regression]` push + `quality-gate` green on final HEAD `21c06661` (run `41375706816`; includes `origin/develop` `87648454`).
+
+---
+
 ## Classic pickup density — stage plan (2026-11-01)
 
 **Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Full stage plan (S0–S9 + stage 2): `docs/plans/2026-11-01-classic-pickup-density.md` → 「完整階段計畫」. `PLAYWRIGHT_PORT=5185`. Never merge into `develop`.
@@ -13,9 +40,21 @@
 - [x] S7 audio: no throttle needed (NITRO-ready cue min gap 5.0 s on changed tracks vs Taipei 3.0 s). What's New: shipped `0.28.0` entry was never stamped after the release (UPCOMING still resolved to 0.28.0), so it is now `version: '0.28.0'` (its review fingerprint still matches); new `UPCOMING` entry with `classic-more-rings` (reviewer rewrite, user chose it) + `old-layout-records`, reviewed and approved as 0.29.0 (`ea8fed66`). If the release ships under another number, re-run `/review-release-notes <version>`.
 - [x] S8 per-track Draw Calls/Triangles/p50/p95 table vs `develop` (plan「S8」): draw calls flat, Coast triangles +4.3%, Neon +1.2%; 15 real WebGL captures (5 routes × 3 viewports); all record-seeding browser specs green after moving 7 specs' fixtures to the `@2` ids (`bdfd742d`). Pending: physical keyboard/touch/phone play by the user. Unrelated finding: 844×390 non-touch desktop HUD overlaps (pre-existing).
 - [x] S9 `[full-regression]` push, `quality-gate` green on `bc37681e` (run `41319983990`; run `41313681206` on `1db53ed3` failed 2 stale specs, fixed in `bc37681e`), run id reported to skyline-rush-13. Pending: user plays it.
-- [ ] Stage 2 (rival item pickups, `feature/rival-item-pickups` `79f45369`): start only after S9 green + user played + explicit go; ask the plan's questions first.
+- [x] Stage 2 (rival item pickups, `feature/rival-item-pickups`): R1–R11 done, `quality-gate` green on `21c06661` (run `41375706816`), merged into `develop` with user approval.
 
 ---
+
+## Race HUD options move out of the audio menu (2026-11-02)
+
+**Branch:** `feature/race-hud-vfx-panel` from `develop` `6cbc7511`. User picked the VFX panel over a new top-bar button.
+
+- [x] **RED** `tests/hud-settings-browser.spec.js`: the speaker panel still held 2 `hud-mode` radios (1440×900, 390×844).
+- [x] **GREEN** `src/HudSettings.vue` mounted in `.vfx-settings`; speaker button/panel labelled `audio.settings`; `hudSettings.panel` copy removed.
+- [x] Device matrix (8 viewports × ready/racing, real clicks on every HUD control): unfolded Fold landscape 1104×882 mid-race
+  failed twice (panel foot at 898px > 882) because the touch-tablet rule lowers the tool row to 242px while the cap assumed 98px;
+  fixed with a matching cap in `src/style.css`. The HUD reset rendered as a blank white box (native face, light text);
+  guard asserts a transparent background (RED `rgb(239, 239, 239)`), fixed by sharing `#vfx-reset` styling.
+- [ ] Physical iPhone / Fold check by the user.
 
 ## In-race HUD overlaps — foldable, phones, tablet (2026-11-01)
 
@@ -40,6 +79,26 @@
   portrait already did (`responsive-browser.spec.js` › flight director and a mid-flight callout). Spec 7/7.
 - [x] `cssBlob` re-recorded. `npm run typecheck`, `npm test` (1288 pass / 0 fail), `npm run build`, `npm run test:layout`,
   foldable + responsive + handoff + main-ui-parity + new spec: 100/100.
+- [x] **Follow-up `fix/hud-callout-landscape`** (from develop `15bfc16a`): CI 41313050183 failed `motion-browser.spec.js` ›
+  "race callout is a small translucent chip clear of the centre view at 844x390" (chip bottom 313 > 175.5): the short-landscape
+  callout had moved under the mode panel for every pointer, though only touch layouts keep that panel up top. RED also added
+  to the overlap spec (short landscape callout bottom ≤ 45%; failed at 239–244px on touch 844×390 and the vertical fold).
+  GREEN: non-touch short landscape is back to its original top-left slot; touch short landscape (and the fold's left pane)
+  puts the callout in the top-bar strip between the wordmark and the toolbar. The gap-warning shift and the short-landscape
+  flight-director step-aside are no longer needed and were reverted. Motion + overlap + responsive + parity + foldable 111/111,
+  `test:layout`, typecheck, `npm test` 1290/0.
+- [x] Integration with `feature/in-race-feedback-visibility` (develop `bf350867`): that branch places the event callout
+  from script (`src/race-feedback-placement.ts`), so the overlap spec's "top 45%" stand-in for the centre view now checks the
+  same road rectangle the placement avoids, and its snapshot re-runs placement for a re-shown callout.
+  RED (merge, before fix): a callout raised during GO! is placed while `body:has(#countdown:not([hidden])) .telemetry` hides
+  the telemetry and stays on it after GO! ends — probe at 390x844 3/3 runs `callout 307,608-378,644` over
+  `telemetry 170,508-367,624` (also 1024x768); new guard test "the callout moves clear of the telemetry when the countdown
+  hides" fails 3/3 (`overlapsAfterGo: true`). GREEN: placement also refreshes when `#countdown` toggles `hidden`; guard 3/3,
+  overlap spec 21/21 (`--repeat-each=3`), motion + overlap + feedback-visibility + responsive + parity + foldable 118/118,
+  `test:layout`, typecheck, `npm test` 1330/0. cssBlob unchanged (`4d817a99`).
+  Develop then landed the same countdown refresh (`19b67ca3`, guarded in `race-feedback-visibility-browser.spec.js` at
+  844x390) plus a telemetry re-measure (`eb361bce`); on merge their version of the placement observers is kept and this
+  branch's 390x844 guard test stays as the portrait case (develop's runs at 844x390) and passes 5/5 on their observer.
 - [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
 - [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
   competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
@@ -50,6 +109,9 @@
   `fix/race-callout-landscape`: the offset (and the warning under it) moved into a touch-landscape query, mouse short
   windows get the pre-merge left-gutter `top: 30%` back; `cssBlob` re-recorded. motion + HUD-overlap (7/7) + responsive +
   parity + foldable 111/111, `npm test` 1290 pass / 0 fail, typecheck, `test:layout` 37 + 42 passed.
+  Merged with `fix/hud-callout-landscape` (same non-touch revert): one rule set kept — mouse short windows use the
+  left-gutter `top: 30%`, touch short landscape the top-bar strip (vertical fold: left pane), so the touch "under the mode
+  panel" slot and its warning shift are dropped; `cssBlob` `4d817a99`.
 
 ## Wave 2 — Foldable / Dual-screen Layout Adaptation · TODO #4 (2026-10-31)
 
@@ -80,7 +142,389 @@
 
 **Evidence:** [first controller RED](https://github.com/weskao/skyline-rush/actions/runs/41201178381), [controller GREEN / renderer RED](https://github.com/weskao/skyline-rush/actions/runs/41201443420), [develop inherited failures](https://github.com/weskao/skyline-rush/actions/runs/41195915543). Do not treat planning storyboard as a gameplay screenshot or claim complete acceptance until exact-HEAD CI and visual evidence pass.
 
+---
+
+## UX/UI — AIR → ROAD CHAIN, tutorial and mobile controls (2026-10-31)
+
+**Branch:** `feature/ux-ui-combo-mobile-controls` (created from `main`). **Scope of this chat:** requirements/documentation only for items 1–12; no gameplay, UI runtime, rendering, asset, persistence, purchase or CI configuration implementation. Items 4–5 (and the future economy) need separately approved feature branches. **Current step:** design and acceptance planning, not implementation. **Workflow:** trace the existing behavior → write failing regression tests (RED) → minimal implementation (GREEN) → refactor → full regression and exact-HEAD CI. Preserve existing race physics, player control authority, desktop input and en/zh-TW support.
+
+### Shared platform, responsive layout and graphics-quality contract (applies to items 1–12)
+
+#### S0. Mandatory high-fidelity visual signoff (applies to every visually affected item)
+
+- [ ] Review the original high-detail AI reference image(s) rather than substituting generic concept lookups or flat placeholder SVGs. The 14 original-image crops have been exported as `skyline-rush-design-reference-crops.zip` (current-conversation artifact, **not yet committed to GitHub**), and branch-level maps exist under `docs/designs/<feature>/VISUAL-FIDELITY.md`. The shared procedure is `docs/superpowers/specs/2026-10-31-visual-fidelity-gate.md` on this planning branch.
+- [ ] Obtain reviewed/approved immutable image reference bytes in the feature branch and record Git SHA, viewport, component geometry/color/material/camera/light/timing contract, accepted deviations. Initial layout SVGs are only draft geometry and are **not equivalent** to high-fidelity rendered references.
+- [ ] Apply SDD → BDD → TDD with actual Playwright/WebGL screenshots + 10–20s interaction recordings, compare original reference to real implementation side by side on Android/iOS portrait/landscape and desktop; record PASS/FAIL/BLOCKED/APPROVED_DEVIATION for composition, asset detail, glow, lighting, motion, touch, quality tiers and performance. Don't call UI finished or check TODO `- [x]` on passing code tests alone.
+- [ ] For the Economy Foundation, visual gate may be `NOT_APPLICABLE` when no UI/art is changed. Keep current gameplay/economy decisions authoritative; never copy speculative currency, balance, Shop or rewards from visual concepts into production.
+
+
+
+**Mandatory for every future implementation branch / development phase, including P0, P1 and P2.** Before touching source, read the **latest `CLAUDE.md` from the actual implementation branch** and the relevant `.claude/rules/` files (at minimum: `device-quality.md`, `performance-review.md`, `ui-architecture.md`, `touch-input.md` and `ui-phase-interactions.md`; also `world-tour.md` / `vehicle-road-stability.md` when AI, roads or physics change). These project rules are authoritative if they change after this planning commit. This document records *future acceptance requirements*, not code changes or claims that device testing is complete.
+
+#### S1. Platform and adaptive layout matrix
+
+- [ ] **Android mobile browsers:** verify Chrome and any additionally supported mobile browsers on physical devices where available; test **portrait and landscape**, real touch/multi-touch, rotation while racing, browser UI resizing, back navigation, virtual keyboard/settings dialogs, safe areas, device pixel ratio and mid-range GPU/thermal conditions.
+- [ ] **iOS/iPadOS browsers:** verify **Safari and Chrome on iPhone** (both subject to the platform's WebKit behavior), plus iPad Safari/tablet layouts where applicable, in **portrait and landscape**. Check notch/Dynamic Island/home indicator, viewport changes, page visibility, browser gesture zones, audio unlock, pointer capture, touch cancellation and correct button release after changing race phase.
+- [ ] **Desktop browsers:** verify the supported desktop Chrome/Chromium, Safari/WebKit and Firefox coverage as appropriate to the project's browser test matrix, with mouse, keyboard, wheel/trackpad, resizable windows and desktop/tablet layout breakpoints; never show touch-only controls as the only operation method.
+- [ ] **Responsive reference viewports (not an exhaustive device list):** 320×740, 390×844, 412×892 (phones portrait); 844×390, 740×360, 640×360 (phone landscape); **568×320 as a documented small-screen stress case**; 820×1180 and appropriate tablet landscape; 1440×900 desktop. Record unresolved limitations rather than claiming unsupported dimensions pass.
+- [ ] For each relevant screen — onboarding/tutorial, gameplay HUD and controls, NITRO READY/active, high-speed VFX, pause, finish/results, Garage Home/Preview Studio/Inventory, race selection/8-car standings and settings — check safe-area clearance, no widget/button overlap, full vehicle and forward-road visibility, legible en/zh-TW labels, minimum 44×44 CSS px active touch targets (prefer ≥48×48), usable focus/keyboard alternatives, and no blocked taps.
+- [ ] **Hybrid A+B remains default; Competitive C is Settings-selectable.** Their layouts may adapt to screen shape and content density but **not arbitrarily to GPU tier**. Compact/expanded widgets must retain required position/progress/status and avoid central-sightline occlusion at every size. Save/reapply preferences on rotation/reload; visible controls must always remain operable.
+- [ ] **Foldables / dual-screen** are a separately scoped item 4 implementation branch; include cover/unfolded/split-screen/hinge scenarios later, rather than claiming validation here. No OS/UA hard-coded layout or forced Low just because a device is mobile.
+
+#### S2. Low / Medium / High visual presentation (existing Quality setting)
+
+- [ ] **Follow `CLAUDE.md` § “UI changes: Low / Medium / High quality presentation”.** For every changed feature, explicitly classify what is cheap **DOM/text/static icon/layout** (same semantic presentation and accessibility at all tiers) versus **Three.js/animated GPU-adjacent rendering** (tiered resources). Borderline heavy CSS filters, shadows and animations are quality-dependent *only when measured as costly*.
+- [ ] **Low (functional, light):** same controls, HUD modes, full car and track, obstacles/AI count and reward semantics; visible but cheaper NITRO-ready/air-chain/barrel-roll cues, simple thruster/trail glow with fewer particles, shortened/reduced visual accents when acceptable, no costly additional full-screen blur/bloom/afterimage passes. Never hide the notification, action or race requirement solely for performance.
+- [ ] **Medium (balanced):** preserve the identical game/state/readability with moderated airflow, speed lines, exhaust trails and localized bloom/shockwave/afterimages where measured affordable; smooth transitions and no redundant 3D resources.
+- [ ] **High (full visual intent):** allow the richest curated thruster/airflow/Skins effects, more detailed trails and bounded post-processing for NITRO/BOOST/launch and race-speed feedback, without hiding the driving path, reducing accessibility, violating comfort, or introducing shader-stall/black-frame regressions.
+- [ ] **Common invariants across all three tiers:** same AI/grid participants (including planned eight-car mode), physics, car hitboxes, race balance, tutorial success conditions, rankings, Ghost/Cloud Save compatibility, menu content, HUD/controls availability, inventory/trial ownership, SFX semantics and deterministic outcomes. Never reduce competitors or suppress gameplay-critical feedback as a "Low quality optimization".
+- [ ] Use only the **existing saved VFX Quality source** (`src/vfx-settings.ts`, `src/device-quality.ts` in current code), with manual setting taking precedence over device hints; no duplicate graphics-quality state or UA/OS-specific forced preset. Switching Low ↔ Medium ↔ High **during a running session** must take effect without reload and safely invalidate/reuse/dispose VFX caches and shader resources.
+- [ ] **Reduced Motion / comfort / VFX-disabled / muted audio take priority over quality.** All tiers offer non-animated visual/text cues when effects are off; the sound cue is optional, one-shot, volume/mute-aware and not the only completion indicator. Avoid full-screen flashes, excessive blur, dizziness, black frames and first-use shader compilation spikes on Safari/iOS.
+- [ ] **Decision table for every feature:** record whether Low/Medium/High differ, which concrete GPU/animated elements change, which essential presentation is invariant, and how the difference is tested. If a proposed difference has no measurable GPU cost, leave it visually consistent instead of introducing arbitrary per-tier UI branches.
+
+| Area | Low | Medium | High | Must be identical |
+| --- | --- | --- | --- | --- |
+| Tutorials / AIR → ROAD CHAIN / barrel roll | Clear low-cost status and cue | Moderate localized success effect | Richer bounded success effect | Inputs, correct completion, readable hints and rewards |
+| NITRO/BOOST READY and sprint | Static/short ring + lightweight speed cue | Moderate streaks/trails and optional local accents | Full bounded camera/trails/post-processing | Button state, charge, speed, sound preferences and controls |
+| HUD Hybrid A+B / Competitive C | Same readable layout and configurable widgets | Same | Same | Selected mode, rankings, minimap meaning, controls and sightline |
+| Garage Studio / Skins / launch | Full-car preview, simplified VFX | Moderate skin VFX complexity | Rich curated preview and launch VFX | Cosmetic selection, camera input, ownership/trial states |
+| AI challenge / 2–8 car racing | All real participants rendered and simulated | Same | Same | AI/physics/rules/grid order, collisions, points and records |
+
+#### S3. TDD / visual and performance acceptance gates (every future branch)
+
+- [ ] Begin with the latest branch-local `CLAUDE.md` and a **baseline capture** (actual gameplay, not image-generated concept art) for affected routes/modes at each supported viewport and Quality tier. Create a cross-product test matrix: **Android portrait/landscape + iOS portrait/landscape + desktop × Low/Medium/High × en/zh-TW**, then layer HUD Hybrid/C, key game phases and VFX/motion/audio switches. Use representative pairwise coverage for broad CI and focused full combinations for affected critical interactions; document exactly what was covered.
+- [ ] RED → GREEN → refactor with deterministic unit/type tests, real-browser Playwright interaction/layout checks, touch/pointer release and finish/pause controls, quality-switch persistence and VFX lifecycle tests. For visual changes inspect **real WebGL screenshots/video** and verify no road/car/landmark occlusion or hidden clickable UI, not just DOM rectangles. Avoid new Vue reactive writes or repeated DOM queries inside the render loop.
+- [ ] Benchmark on comparable before/after conditions at each tier: Draw Calls, Triangles, CPU/AI work, memory/GPU uploads, FPS and frame-time p50/p95, especially NITRO/BOOST, all eight cars and Garage preview. Document software WebGL vs physical-device evidence separately; **do not claim mobile temperature/battery improvement from CI**. Maintain existing FPS/quality selection and physics determinism.
+- [ ] Run required local gates when implementing (as applicable: `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, World Tour, Cloud Save, `make verify`) followed by the **full exact-feature-HEAD GitHub CI `quality-gate`**. Note any unrun or failed checks explicitly; do not mark any feature complete/merge-ready from documentation or emulation alone.
+- [ ] Store evidence and device limitations in the owning feature's TODO/verification notes; preserve saved settings, localization and legacy results across migrations. **No new feature branch, actual UI/game implementation, PR, deployment or merge is authorized by this planning-only entry.**
+
+
+### 1. 空地連擊 / AIR → ROAD CHAIN — hard to trigger (P0)
+
+- [ ] Reproduce the reported low trigger frequency with real keyboard and mobile-touch play; trace the actual landing/flight state, input timing and clean-landing thresholds before changing any physics or rewards. The current advertised sequence is powered flight (BOOST or NITRO) followed by a smooth landing; compare it with the implementation and existing `tests/phase1-flight-flow.test.js`.
+- [ ] Make the intended maneuver understandable and reliably achievable through normal player input (including an explicit precondition/ready or failure hint if helpful), without accidental triggers, double payouts or an exploit. Preserve the intended distinction between clean and hard landings and avoid changing unrelated modes.
+- [ ] TDD: unit tests for eligible/short/ordinary/hard/collision landings, BOOST/NITRO combinations, single payout, cooldown/reset and race restart; real-browser desktop/mobile touch tests for player-triggered activation and localized on-screen/sound feedback.
+
+### 2. Add 空地連擊 to the tutorial (P0)
+
+- [ ] Add a dedicated AIR → ROAD CHAIN teaching step with concise en/zh-TW instructions: take off → use BOOST or NITRO in the air → land smoothly → observe the chain reward. Only advance after the real game event succeeds; show helpful retry feedback without taking control of the vehicle.
+- [ ] Preserve existing tutorial progress/step transitions, free steering and normal inputs; do not teleport, auto-steer or silently grant a chain to complete the lesson. Check keyboard, touch, pause/resume, retry and accessibility announcements.
+- [ ] TDD: RED → GREEN tests for both locales, genuine success vs failed landing, repeated attempts, no false completion, unaffected previous/next tutorial steps and normal race behavior.
+
+### 3. Mobile in-race controls: ergonomics and optional customization (P1)
+
+- [ ] Audit and improve mobile gameplay button positions, touch sizes and group spacing for comfortable thumbs and one-/two-handed operation (FLY, BOOST, NITRO, steering, accelerator/brake as applicable). Keep actionable hit targets at least 44×44 CSS px, preferably 48×48, without blocking the car, camera, HUD, minimap or results dialogs.
+- [ ] Support narrow/wide phones, portrait/landscape, notches, safe-area insets, home indicators, browser edge-swipe zones and orientation changes; maintain pointer/touch release handling when phase changes or a button becomes hidden.
+- [ ] Evaluate an optional **edit-controls mode** to drag/reposition entire control groups, with safe bounded zones, visible edit/confirm/reset actions, local preference persistence, sensible defaults and orientation-aware layouts. Dragging in edit mode must not steer/accelerate or disrupt normal gameplay; offer a usable non-drag alternative for accessibility. Do not require customization for a good default layout.
+- [ ] TDD and acceptance: unit tests for layout bounds, save/restore/reset and touch cancellation; real-device/browser tests across representative phone sizes, two locales, landscape/portrait, multiple fingers and pause/finish transitions; no overlapping/unclickable UI or performance regression.
+
+**Completion gates for items 1–3:** requirements confirmed against code; RED/GREEN evidence; Vue 3 + strict TypeScript preferred for new UI/controller code; `npm run typecheck`, `npm test`, `npm run build`, browser/layout regressions, `make verify` and full GitHub Actions `quality-gate` on the final branch HEAD. Do not mark implementation done, create a PR or merge to `main` based on this TODO-only commit.
+
+### 4. Foldable and dual-screen layouts — separate future branch (P2; out of scope here)
+
+- [ ] **Future branch only:** plan and later implement in an independently created `feature/foldable-layout-adaptation` branch from then-current `main`; do not implement foldable-specific layout code in the present branch.
+- [ ] Define and verify target form factors, including cover screen, unfolded inner screen, portrait/landscape, split-screen, tabletop/flex posture and hinge/crease occlusion. User-suggested examples include “iPhone Duo” and “Samsung Fold 8”; confirm actual device availability, viewport specifications and browser support before making device-specific claims.
+- [ ] Use responsive viewport/safe-area and progressive enhancement for supported fold/viewport-segment APIs, with graceful fallback in ordinary browsers. Keep HUD, track view, camera, minimap and touch controls reachable and readable without placing critical controls across a hinge.
+- [ ] Set up an emulated viewport/hinge matrix and physical-device acceptance where available, covering layout changes while racing, rotation, taps, pointer release and performance. Use TDD and validate separately in its own branch.
+
+### 5. Garage Skins / Preview Studio / Economy Planning (P2, planning first; implementation in separate branches)
+
+**Current status:** planning and discussion only (2026-10-31). This is a large cross-cutting product area: Garage UI, Preview Studio, VFX cosmetics, inventory, rewards, currency, persistence and future monetization. **No implementation in this branch or conversation.** Finalize requirements and UX before creating smaller dedicated branches from the then-current `main`.
+
+**Decisions accepted in this discussion:**
+- **Confirmed:** Garage becomes an **independent full-screen page / Preview Studio**, not merely an enlarged dialog.
+- **Confirmed:** during the initial rollout **all new Garage Skins may be previewed and temporarily equipped for free**. This is *trial access, not permanent ownership*; it must not be recorded as owned in the player account.
+- **Confirmed:** provide extensibility for currencies, end-of-race rewards, missions and future real-money purchases, **but do not implement a heavy economy or paid checkout now**.
+- **Recommended structure:** Garage Home → Preview Studio → Inventory / Collection. Garage Home shows equipped items and entries to Paint / Skins / Rewards / Missions / Shop (coming soon). Inventory groups Owned / Locked / Trial / Preview Only. Shop, currencies and missions may initially be visibly labeled Coming soon rather than pretending they already work.
+- **Not yet selected:** final currency brand/icon, exact starter-skin quantities or pricing, item rarity and permanent-unlock rules. Proposed names: **Aero Core** or **Flux** (Pit Coin as an alternative); names/prices are *proposals*, not promised rewards.
+
+#### 5.1 Scope and product goal
+
+- [ ] Expand Garage from a simple dialog-based paint preview into a richer cosmetic system:
+  - vehicle finish / paint
+  - thruster / jet exhaust skins
+  - airflow / wake / vapor skins
+  - BOOST / NITRO trails, sparks, shockwaves and glow skins
+  - race-start / launch flare / intro visual effects
+  - future cosmetic categories (wheel glow, underglow, finish celebration, badge/banner, UI cosmetic packs, etc.)
+- [ ] Keep all Garage customizations **cosmetic only**. No effect on car performance, handling, speed, hitboxes, scoring, physics, Ghost determinism or balance.
+- [ ] Preserve compatibility with existing VFX settings, Reduced Motion, quality levels and accessibility constraints. The existing `src/GaragePanel.vue` is a dialog with `PAINTS` (vehicle paints and tail lights); do not break currently owned finishes or confuse existing progression unlocks with new trial cosmetics.
+
+#### 5.2 Garage Preview Studio — independent full-screen page
+
+- [ ] **Implement the decided full-screen Garage page / Preview Studio** rather than relying on only a small modal dialog. Evaluate whether to use an SPA screen or distinct client-side route while retaining browser history, mobile back navigation and clean return to the previous race/home state.
+- [ ] Support:
+  - larger preview canvas and full-car silhouette visibility, including exhaust and rear-light effects
+  - front / rear / side / top / orbit / cinematic preview angles
+  - rotate and inspect from different angles, including hold/long-press + drag to orbit; ordinary drag must also work for pointer/mouse users
+  - release to resume slow auto-rotate, with an option to pause auto-rotate
+  - reset camera and optional pinch / wheel zoom, with bounded distance and car always in frame
+  - preview moving effects: idle thruster, airflow, nitro burst, launch flare, boosted trails, and optional finish effects
+  - preview background options if useful (dark studio / bright stage / simple track-like scene), provided they do not obscure skins
+  - change categories and items without leaving the page, with a stable camera unless the player chooses another angle
+- [ ] Develop mobile and desktop layouts separately where necessary: large central car preview, categories/equipment controls around edges, safe areas, no clipping or interaction traps, and thumb-friendly actions.
+- [ ] Confirm behavior when the player enters/exits Preview Studio during a running/paused game: game input released, preview-only resources isolated, no lingering overlays, WebGL state returned correctly, proper focus and history restoration.
+
+#### 5.3 Cosmetic categories and starter catalog
+
+- [ ] Start with a **small curated catalog** rather than a combinatorial matrix of effects:
+  - Thruster skins
+  - Airflow skins
+  - Nitro / BOOST trail skins
+  - Launch / intro flare skins
+- [ ] Each category must distinguish default, preview, temporary equip, owned, locked, free trial, and future purchasable states; state transitions must be explicit and readable.
+- [ ] Curated presets / bundles are preferred for a consistent "realistic × arcade racing" aesthetic. Plan visual themes (e.g. electric cyan, neon violet, molten orange) as examples, **not** final assets.
+- [ ] Preview animation should be representative of actual gameplay and obey effect/quality constraints; do not ship a preview effect that differs materially from an equipped in-race effect.
+
+#### 5.4 Interaction and controls inside Garage
+
+- [ ] Design interactions for tap/click category selection, tap/click item preview, equip/unequip/restore default, hold+drag orbit, optional swipe browsing, pinch/wheel zoom and explicit VFX demo triggers (NITRO burst, launch flare, airflow loop).
+- [ ] Offer dedicated touch-friendly camera controls and accessible keyboard/button alternatives; long-press should **not be the only** way to rotate the car. Dragging the car must not accidentally swipe categories or launch a race.
+- [ ] Make preview, owned, locked, free trial, equipped and coming soon states distinguishable using both labels/icons and color; announce selection/changes for assistive technologies.
+- [ ] Enforce camera bounds, no clipping of vehicle/trails, predictable close/back handling, and reliable pointer release after interrupted gestures.
+
+#### 5.5 Currency, rewards, missions and acquisition design
+
+- [ ] Design an item acquisition matrix for eventual ownership via end-of-race rewards, missions/quests, daily/weekly tasks, challenge milestones, events and future shop purchase. Decide which items are earnable vs future premium before the shop is implemented.
+- [ ] **Proposed starter acquisition matrix (not final prices/entitlements):** default skins = permanently free; selected Thruster variants = repeatable race rewards; Airflow variants = mission/challenge milestones; NITRO/BOOST trails = clean-driving or AIR → ROAD CHAIN achievements; Launch flares = event rewards or earnable long-term challenges. Keep paths to earn cosmetics without mandatory payment, make the cosmetic-only nature transparent and prevent limited events from permanently removing essential functionality. **During the accepted trial phase, all these new items remain trial-usable regardless of future acquisition path.** Validate difficulty, rewards and availability before committing.
+
+- [ ] Keep a **soft currency** (earnable through play) concept separate from a **future optional premium currency**; do not make the premium balance or purchasing system live yet. Currency name, icons, prices, earning rates, caps and conversion policies remain design choices.
+- [ ] Plan an end-of-race results summary showing earned currency, mission progress, cosmetic unlock progress and optional bonus multipliers **only once those systems genuinely exist**. Distinguish reward preview/projection from committed settlement.
+- [ ] Define mission types in an extensible, event-based manner: race completion, clean landing / AIR → ROAD CHAIN, drifting, distance, challenge milestones, repeatable daily/weekly objectives. Avoid contradictory/duplicate reward grants after restart, reconnect or replay.
+- [ ] Clarify the interface flows: Garage Home balance → Rewards/Missions → post-race settlement → Inventory → optional Shop (coming soon), without implying that payments or balances already work in the current game.
+
+#### 5.6 Temporary free-use phase before the full economy launches
+
+- [ ] **Chosen transitional rollout:** initially, all **new Garage Skins** are free to preview and use temporarily; none of those trial skins is granted as permanent inventory ownership merely by equipping it. Existing legitimately owned paint finishes remain owned and unchanged.
+- [ ] UI must clearly say **Free Trial / Preview Period / Trial Equip Only / Not Permanently Owned** (localized in en/zh-TW), and explain in advance that future access may require earning or buying items.
+- [ ] Keep `access`/`entitlement` separate from `ownership` and `equipped`; a saved trial selection, if needed to preserve UX, is only an appearance preference and never an inventory grant. Do not write trial ownership into Firebase/Firestore or another authoritative player profile.
+- [ ] Define feature/config flags for trial access, item availability and store launch. A flag change must revalidate the selected cosmetic and gracefully fall back to the default if trial access expires; do not remove any legitimate owned items.
+- [ ] During transition, keep existing paint unlock/progression rules and history intact; tests must cover switching accounts/devices, expired trial, offline cache, saved preference from older versions and restoration after reload.
+- [ ] Provide transparent messaging before removing temporary access; do not promise a permanent entitlement or charge players for an item without a separately authorized future purchase flow.
+
+#### 5.7 Future monetization readiness
+
+- [ ] **Future-only architecture**, no real-money/IAP flow in the current implementation scope: soft currency, premium currency, packs/bundles, shop sections, time-limited offers, entitlement checks and server-validated purchases.
+- [ ] Separate catalog metadata, inventory ownership, equipped preference, trial access, pricing, rewards and storefront/presentation logic. Do not bake "everything free" into the ownership schema or game physics.
+- [ ] Plan interfaces/boundaries for catalog, ownership, reward ledger, purchase/store and UI. Prefer no premature external/payment dependencies and avoid engineering a working currency ledger until its feature phase.
+- [ ] Before any real-money launch: verify platform/app-store and local legal requirements for virtual goods, refunds, disclosures, consumer protections and minors; require server-side validation, non-forgeable entitlements, idempotent purchase/reward settlement, account recovery and auditability. Never trust the client for authoritative paid balance/ownership.
+- [ ] Specify migration, refunds, chargeback handling and ownership restoration **when** implementing payments. Do not make live monetization, revenue claims or store buttons without a compliant approved integration.
+
+#### 5.8 UI assets, emoji, icons and visual language
+
+- [ ] Design a coherent set of Garage/economy assets: soft-currency symbol, future premium-currency indicator, mission, unlock/locked, temporary trial, equipped, preview-only, thruster, airflow, NITRO and launch-effect category icons.
+- [ ] Consider drawing custom icons/miniatures and optional preview thumbnails/reward illustrations in the game's **realistic × arcade racing** style, with suitable contrast and 1x/2x sizes. Emoji may be used as temporary planning placeholders but are not a reliable cross-device asset strategy.
+- [ ] Keep labels and icon variants legible on phone-sized screens, in en/zh-TW and at reduced motion/low VFX settings. Use SVG or appropriate optimised raster assets only when justified; reuse existing icon sets where possible.
+- [ ] Evaluate **Aero Core / Flux / Pit Coin** brand concepts and the reward/shop UI visual language before accepting a currency name; no new asset files are to be created in this planning-only change.
+
+#### 5.9 Data model and persistence planning
+
+- [ ] Draft versioned catalog entries for cosmetic ID, category/subcategory, visual preset/preview metadata, compatibility, rarity (if introduced), unlock conditions, optional price/reward metadata and availability.
+- [ ] Model **owned inventory**, **time-limited trial permission**, **equipped selection** and **currency/reward balance** as separate concepts; clarify which are authoritative/server-backed vs local UX preferences. A cosmetic may be previewed without being owned.
+- [ ] Keep backward compatibility with existing Garage `PAINTS`, saved paint choices and user profiles. Treat existing item IDs as stable keys; unavailable or removed SKUs must fall back safely rather than corrupt a saved profile.
+- [ ] Design the entitlement/resolution order for future phases: permanently owned item > currently permitted trial item > default item. Never grant ownership from a local-only feature flag, and do not let account switching leak selections across users.
+- [ ] Reserve extensible fields and migration/version strategy without committing to a speculative or working purchase schema now.
+
+#### 5.10 Branch strategy
+
+- [ ] Keep `feature/ux-ui-combo-mobile-controls` documentation-only for this design phase.
+- [ ] Implement later on *independent* branches from the then-current `main`, in dependency order:
+  - `feature/garage-preview-studio` — full-screen screen/navigation, cameras, interactions and current paints
+  - `feature/garage-vfx-skins` — catalog, preview/apply, cosmetic ownership vs trial selection
+  - `feature/garage-economy-foundation` — future currency/entitlement models, when economics are approved
+  - `feature/garage-rewards-and-missions` — actual race payouts, mission progress and idempotent settlement, after foundation
+  - `feature/garage-store-readiness` — future shop/checkout foundations only when separately authorized
+- [ ] Avoid one enormous branch; each phase should work independently, keep the prior phase intact, have its own RED → GREEN → refactor cycle, and meet project merge gates before integration. No implementation/merge/PR requested now.
+
+#### 5.11 Technical and UX acceptance
+
+- [ ] Preview Studio must show the complete car and selected effect across desktop/mobile portrait+landscape, common notches/safe areas and varied vehicle/camera positions, with no broken back navigation or invisible clickable overlays.
+- [ ] Test all preview interactions including two-finger gestures, short/long presses, keyboard/mouse, focus, repeat selection, pause/finish/race return and reduced-motion behavior in both locales.
+- [ ] TDD coverage for catalog states, preview/equip/reset, trial-vs-owned distinction, trial expiration, invalid-skin fallback, persistence migrations, account switching, and, once built, reward settlement and mission progress.
+- [ ] Check Low/Medium/High VFX and disabled VFX, reduced motion, sound/comfort preferences, render resource cleanup, GPU draw-call/triangle changes and p50/p95 frame-time; do not add unbounded particles or per-frame allocations.
+- [ ] Future implementation branches must pass `npm run typecheck`, `npm test`, `npm run build`, browser/layout regressions, `make verify` and exact-HEAD GitHub CI; validate actual WebGL/physical-device behavior separately from simulated screenshots.
+
+### 6. NITRO/BOOST readiness feedback and mobile control states (P0 usability / P1 visual polish; plan only)
+
+**Goal:** players can tell at a glance whether they have enough NITRO/BOOST charge, whether a button is operable, and when a full charge is ready, without covering the road or depending solely on sound/color. Retain normal race/control rules; do not invent a new charge mechanic.
+
+- [ ] Audit the actual fuel/charge thresholds, charging events, cooldown and toggle/input behavior in all race modes (including tutorial, no-flight restrictions and pause/finish). Decide what "one full NITRO bar" actually means against current code, rather than basing logic on an unverified mockup.
+- [ ] Specify a **four-state UI contract** for NITRO and applicable abilities: **Disabled/Unavailable** (muted icon + short reason), **Charging** (accurate segment/ring progress), **READY** (persistent distinct halo + clear label/icon), **Active** (active outline/energy streak + remaining-use indication). Distinguish cooldown/no charge from globally disabled or mode-locked controls; never show READY when action cannot succeed.
+- [ ] Trigger a **one-shot** distinct ready sound and short celebratory pulse/ring burst **only on the crossing into available/full state**, not on every frame, on repeated rerenders, or after pause/resume. Re-arm after genuine consumption/reset; debounce threshold jitter and prevent overlapping sound spam. Respect music/sound volume and mute, browser gesture restrictions, reduced motion, comfort options and haptics preferences.
+- [ ] Recommend: short (e.g. 0.5–1.0 s) bright ring/shimmer and light outward energy effect when ready, followed by a subtle persistent ready indicator. The effect remains readable in low VFX quality, and any large flashes/rapid flicker can be disabled independently; no aggressive screen-wide flash or camera shake merely for meter completion.
+- [ ] Provide optional settings for **ready sound**, **ability-ready animation**, **haptics** (if already supported), control opacity, scale and tooltip/help; defaults should be informative but non-disruptive, and never disable actual ability input just because feedback is off.
+- [ ] Use existing input ergonomics audit from item 3 for button placement; minimum interactive hit targets of 44×44 CSS px (prefer 48×48), consistent NITRO/BOOST/FLY icon meanings, adequate thumb spacing and obvious pressed/held indication.
+- [ ] Offer default fixed controls plus a separate optional edit mode for draggable **groups**; snap/bound movement to safe zones, save portrait vs landscape layouts, reset to default, and ensure edit gestures cannot accidentally trigger abilities. Do not require customization for usable defaults.
+- [ ] TDD: charging/ready/consume/recharge thresholds, disabled reason, one-shot sound, muted/gesture-locked audio, animation preference, low quality/reduced motion, account/viewport preference changes, multi-touch and cancellation, race restart, menu open/close and tutorial/other race modes.
+
+### 7. Mobile in-race HUD redesign — preserve the playfield (P1; plan only)
+
+**Problem:** distance-to-finish, center hint/toast, telemetry, minimap, position/leaderboard and controls can collectively obscure too much of the game, especially mobile portrait and short landscape. Optimize *real viewport visibility* instead of merely reducing opacity or shuffling overlapping boxes.
+
+#### 7.1 Concept directions to compare (from the visual concepts already discussed)
+
+- [ ] **A — Minimal immersive / preferred baseline:** compact edge-anchored HUD, central racing view as clear as possible, contextual information auto-collapses when safe. Avoid hiding time-critical race requirements.
+- [ ] **B — Balanced standard:** persistent but smaller position, progress, speed and map; optional expanded telemetry/leaderboard on demand; consistent across mobile and desktop.
+- [ ] **C — Competitive custom (player-selectable):** more detailed standings, minimap and telemetry with per-widget visibility controls, but still respect the car/road sightline and button hit-target safety. **This is explicitly selectable from Settings; not the default.**
+- [ ] **Confirmed default design decision (2026-10-31):** **Immersive Hybrid A+B** = A's clear central driving view + B's readable priority information + item 3's optional movable controls + item 6's brief NITRO-ready feedback. This is the **default for new and unset HUD preferences**; players must be able to change to **C — Competitive** in Settings. Concept images are proposals, not real gameplay evidence.
+
+#### 7.2 Placement and disclosure rules
+
+- [ ] Move distance-to-finish/race progress to a compact **top-edge progress strip** or slim side widget; show meaningful remaining distance/checkpoints without a large central panel. Preserve accurate progress for Sprint/Circuit/Endless/other modes, where "finish" may not apply; mode-specific wording required.
+- [ ] Put key facts (position, speed, time/lap and available abilities) near safe outer zones, with a stable layout. Use small icon + number/status rather than a wide text card when localization allows; optionally collapse leaderboard and detailed telemetry.
+- [ ] Keep minimap legible at a reduced size and offer a hide/minimize/expand choice, but never let it overlap steering or the car's rear/approach visibility. Check road/car/obstacle occlusion at realistic camera positions, not only rectangles.
+- [ ] Replace **center-screen hint/toast** with brief edge-anchored chips or compact icon prompts outside the driving sightline, limit simultaneous notices, prioritize critical warnings, deduplicate repeats and allow dismiss/auto-collapse. Tutorial steps requiring attention may use a dedicated accessible panel, without taking steering control.
+- [ ] Use temporary context cues (e.g. unobtrusive READY indicator) near the relevant button rather than stacking huge banners in the center. Avoid losing high-priority collision, objective or accessibility feedback when notifications are condensed.
+- [ ] Rework pause, camera and global tools to remain discoverable/tappable without consuming a permanent large header; keep finish/results buttons above decorative overlays. Respect notch, Dynamic Island, home indicator, viewport resizing and safe-area CSS.
+- [ ] Consider compact **custom SVG/icon/image assets** where they genuinely reduce text and noise. Pair every meaningful icon with an accessible name, and preserve localization and contrast. Do not replace crucial text/quantities with ambiguous art.
+- [ ] Prioritize the lower-left/right **thumb zones** for driving controls, 44×44 CSS px minimum targets (prefer 48×48) and responsive gaps. Keep car/track visible between control groups; adapt landscape/portrait independently and test browser back-swipe edge interactions.
+
+#### 7.3 Visibility preferences and behavior
+
+- [ ] **Settings → HUD / 遊戲介面 → 顯示模式:** expose at least **「沉浸式（Hybrid A+B）／Immersive (Hybrid A+B)」** and **「競技資訊（C）／Competitive (C)」** as a clear en/zh-TW two-option selector; mark Hybrid A+B as **default** and C as an **opt-in choice**. Do not force players to choose during first launch. If additional Compact/Standard presets are later needed, evaluate separately rather than making a third required setting now.
+- [ ] **C mode information hierarchy:** show fuller race standings / position gaps, enlarged or expanded minimap, remaining distance/laps, speed and relevant telemetry as appropriate. Let players independently show/hide optional leaderboard, map and secondary metrics. Preserve vital position, progress, NITRO readiness and critical alerts even when optional widgets are disabled.
+- [ ] **Both modes must prioritize safe driving visibility:** enforce responsive screen bounds, reserved touch-control zones, safe-area/notch/inset clearance and a clear central racing sightline. In C, auto-condense nonessential widgets on narrow phones/landscape instead of allowing HUD overlaps, clipped controls or blocked hazards.
+- [ ] **Switching and persistence:** allow changing modes in Settings (and in-race settings/pause when available) without a full page reload or changing physics/race state. Restore selections after app restart, keep user customization separate from renderer VFX/quality and game rules, provide Reset to Default, and define portrait vs landscape preferences sensibly. Use existing settings/local storage conventions; consider cross-device sync only in a separate future decision.
+- [ ] Keep layout preferences distinct from renderer quality and game rules; store locally unless a future explicit sync design is approved. No change to speed/physics/boost or scoring.
+- [ ] For smaller screens: collapse low-priority widgets before shrinking touch targets or hiding important status; preserve safe zones for oncoming traffic, car and route. Avoid large semi-transparent overlays that still block visibility.
+- [ ] Compare image/icon vs text treatments for: race position, remaining distance, map, speed, AIR → ROAD CHAIN hint, NITRO-ready, and finish notification. Record the chosen hierarchy before converting any widget to art.
+
+#### 7.4 TDD and acceptance matrix
+
+- [ ] Capture **before/after actual running-game screenshots**, not generated artwork, for 320×740, 390×844, 412×892 portrait; 844×390 and short landscape (including known 568×320 limitations); desktop 1440×900 and relevant tablets. Add foldable cover/inner screen variants later in item 4's separate branch.
+- [ ] Test **Hybrid A+B (default) and Settings-selected C mode**, including switching A+B ↔ C during a paused race, persisted selection after reload, Reset to Default, independent optional-widget toggles, locale changes, orientation transitions and safe fallback for invalid/missing saved preferences. Cover both `en` / `zh-TW`, browser safe areas, accessibility font scaling, color contrast, reduced motion, VFX enabled, active AIRFLOW, NITRO-ready/active, long hints, different race modes and results/pause transitions.
+- [ ] Browser assertions: no overlap between critical HUD/controls, no control off-screen, no interaction blocked by translucent overlays, results/topbar controls remain clickable, and an explicit **central racing sightline occlusion check**. Test real touch/gesture paths and pointer cleanup.
+- [ ] Verify layout does not add noticeable main-thread work, frame-time regression or excessive DOM churn; document any tradeoff between information density, visible game area and readability. Keep automated layout/browser/CI checks and physical-device visual acceptance as distinct gates.
+- [ ] This is **documentation/specification only** at present. Any later implementation needs its own RED → GREEN → refactor, user approval, full `make verify`, exact-HEAD CI and real-device acceptance where possible.
+
+### 8. Tutorial — 桶滾 / BARREL ROLL (P0; planning only)
+
+**Goal:** add a dedicated barrel-roll lesson to the existing tutorial. Teach the actual player-input technique without automating steering or creating a tutorial-only fake stunt. This is **a TODO/documentation change, not an implementation**.
+
+- [ ] Audit the current tutorial step flow, lesson-completion events, mobile touch controls, and actual barrel-roll rules in `src/game.js` before implementing. The current engine describes a barrel roll as a **quick opposite-direction steering press while airborne** (existing `TRICK_FLICK_WINDOW = 0.3` seconds and `TRICK_ROLL_TIME = 0.7` seconds); a **clean landing** pays `TRICK_NITRO = 0.25`. Confirm these thresholds and the relevant state transitions against the latest `main` when work starts; do not change them solely to force tutorial completion.
+- [ ] Add a clear en/zh-TW teaching sequence: (1) gain speed and press FLY to take off, (2) quickly steer one way then the opposite way while airborne to initiate **桶滾 / BARREL ROLL**, (3) maintain control and land cleanly, (4) observe the trick feedback and +0.25 NITRO reward. Keep instructions compact and adapt keyboard / mobile-touch hints; distinguish **桶滾** from **空地連擊** (item 2).
+- [ ] Advance the lesson only when the engine has confirmed the intended maneuver **and valid landing/reward**; do not pass on arbitrary steering, an incomplete roll, a failed landing, a collision or unrelated NITRO gain. Offer a short contextual failure/retry hint without flooding center-screen notifications (coordinate with item 7).
+- [ ] Preserve total player control: no auto-steering, injected inputs, snaps, forced teleport, or assist that changes racing physics. Players may keep driving/steering during the lesson; handle retry, step transitions, pause/resume, reset, quick opposite thumb presses and lost/canceled touch pointers safely.
+- [ ] Provide accessible success/failure feedback in both languages, visible with muted sound or Reduced Motion; optional effects and audio must honor existing VFX, sound and comfort settings.
+- [ ] **TDD acceptance:** deterministic RED → GREEN tests for correct reversal timing, airborne-only trigger, valid vs hard landing, no duplicate reward, unsuccessful retry, tutorial-only step completion, normal race parity, en/zh-TW text and real keyboard/mobile multi-touch completion. Run tutorial/browser regression and full project verification/CI on the future implementation branch.
+
+### 9. Tutorial NITRO sprint experience — do not finish on button press (P0, plan only)
+
+**Player report:** in the tutorial, using NITRO ends the lesson immediately; the player cannot actually appreciate the speed, controls or visual effects. The fix must teach and demonstrate a real sustained boost, not merely detect the click.
+
+- [ ] Reproduce with real keyboard/touch gameplay and capture the activation → result/coach overlay timeline. **Source audit evidence:** `src/interactive-tutorial.ts` defines `TUTORIAL_STEPS` ending in `nitro`; it currently treats `controls.nitro === true && car.nitroUses > nitroUses` as success and advances immediately because the completion condition explicitly bypasses the normal 0.4-second hold for `nitro`. Investigate whether the completion overlay, input teardown or camera/phase changes explain the abrupt visual stop instead of assuming that physics itself stops.
+- [ ] **Agreed UX direction:** divide the lesson into **Activate → Experience the sprint → Acknowledge completion**. After pressing NITRO, keep the actual practice race running with working steering and accelerator. Show a small non-blocking localized cue (“NITRO activated — feel the acceleration!”) and visible speed/effect changes; do not instantly show the tutorial-completed panel.
+- [ ] Propose a **minimum hands-on observation window** (initial UX target: about 1.5–2 seconds, to validate against existing NITRO duration and actual visual transitions). Prefer a state transition tied to the real activation/boost lifecycle over an arbitrary UI delay; optionally offer a **Continue** action after the demonstration rather than forcibly interrupting the effect. Do not artificially extend NITRO physics or increase speed merely for the lesson.
+- [ ] Show clear progress for **READY / ACTIVATED / SPRINT IN PROGRESS / COMPLETED**. Explain what the player should watch for (speed increase, appropriate camera/jet trails) and give a retriable hint if the press did not consume a valid charge. Do not mistake an already-active NITRO, an unrelated NITRO gain, or a held/replayed input for a fresh activation.
+- [ ] Keep the intro coach and toast compact per item 7 (do not block the road); retain all driving controls and camera visibility through the entire demonstration. Align this teaching moment with items 2 (AIR → ROAD CHAIN), 6 (NITRO-ready feedback), 8 (BARREL ROLL tutorial) and 10 (high-speed visuals), without forcing the tutorial to exercise unrelated skills.
+- [ ] TDD RED → GREEN: activation alone must **not** immediately complete the lesson; a genuine activation plus an actually observed sprint does; no charge / repeated press / pause-resume / reset / reduced motion / muted audio / invalid frames cannot advance prematurely. Preserve speed/physics determinism, existing steps, tutorial completion controls, both locales, desktop keyboard and mobile touch; verify real gameplay and exact-HEAD CI before checking off.
+- [ ] **Done when:** the player can visibly continue driving and experience a meaningful stretch of the NITRO effect before the lesson ends, without a frozen frame, premature overlay, control loss or fake acceleration.
+
+### 10. High-speed sprint sensation — NITRO, BOOST and top-speed visual language (P1 UX / P2 renderer polish, plan only)
+
+**Goal:** when actually accelerating quickly or approaching each current mode/track's effective top speed, the game should convey exhilarating speed **without obscuring obstacles, the car, controls or the road**. Emphasize the existing “realistic vehicle/environment × arcade effects” visual identity; respect that BOOST and NITRO have different charge and acceleration rules.
+
+#### 10.1 Reference-study notes (inspiration, not a request to imitate copyrighted artwork)
+
+- [ ] **Need for Speed Unbound:** EA describes high-energy visuals/audio and Burst Nitrous; useful pattern = a distinct short **activation punctuation** followed by readable in-motion trails. Official: https://www.ea.com/en/games/need-for-speed/need-for-speed-unbound/features and https://forums.ea.com/discussions/need-for-speed-unbound-discussion-en/under-the-hood-show-up-and-show-off/9398276 .
+- [ ] **Forza Horizon 5 / Hot Wheels:** official accessibility notes cover adjustable camera FOV, motion blur Off/Short/Long, camera movement and HUD options. Useful pattern = convey speed but **keep these effects individually controllable and comfortable**. Official: https://support.forza.net/hc/en-us/articles/4409280058259-Forza-Horizon-5-Accessibility-Support .
+- [ ] **Asphalt Legends:** Gameloft describes Nitro Shockwave as a distinctive full-bar sprint. Useful pattern = unmistakable high-energy feedback at a meaningful ability threshold; **do not** import its double-tap mechanics or new Shockwave gameplay into Skyline Rush without separate approval. Official: https://gameloft.helpshift.com/hc/en/15-asphalt-legends/faq/606-how-do-i-perform-a-nitro-shockwave/?app_id=gameloft_app_20201014112613395-e42368ea99e21cf&faq_id=gameloft_faq_20201209100609272-e07e04f76030b91&is_preview=false&is_sdkx=false&language=zh-hant&p=winpc&platform_id=gameloft_platform_20180706081555519-996996bda0d4606&platform_type=ios .
+- [ ] Collect before/after **real WebGL** screenshots/videos of current chase, front, cockpit/driver and other relevant camera modes, in all ten tracks, and use the references as design patterns, not literal asset or HUD copies.
+
+#### 10.2 Three-phase intensity and speed-aware behavior
+
+- [ ] Define a smooth visual intensity mapping from **real current speed, effective mode-dependent speed cap, acceleration delta and NITRO/BOOST active state**. Normal cruising = subtle; pressing boost = a short anticipation/activation accent; near effective top speed = sustained but restrained high-speed cues; effect eases down naturally on release, collision, braking, pause and finish. Avoid hard-coded fixed speeds across tracks or visually indicating a faster car than the simulation produces.
+- [ ] **Phase A — activation (short):** localized exhaust/jet ignition flash, compact energy ring or shockwave trailing the car, brief audio accent and optional subtle camera impulse. Keep directionally grounded, not a blinding full-screen flash.
+- [ ] **Phase B — sustained sprint:** mild interpolated chase-camera FOV expansion, peripheral speed lines / environment streaking, subtle edge-only radial or velocity-aligned blur, elongated exhaust/fluid trails, restrained bloom/afterimage and coherent wind/engine mix. The car, hazards, driving line, minimap, speed/ability controls and upcoming curves should stay crisp enough for reaction.
+- [ ] **Phase C — easing/recovery:** taper intensity smoothly on deceleration and ability ending, without abrupt FOV snapping, camera jitter, black frames, disorienting repeated flashes or VFX persistence after pause/track switch.
+- [ ] Reuse existing `src/vfx-settings.ts` capabilities (`speedLines`, `motionBlur`, `fov`, `shake`, `bloom`, `trailLength`, `afterimages`, `shockwave`) and current `src/world.js` speed-dependent FOV/lens plus `src/race-hud.ts` speed-line behavior; baseline/profile first to avoid duplicated post-processing or additional unbounded GPU allocations. Never make physics or render loop depend on Vue reactive updates.
+- [ ] Distinguish modes: BOOST = cleaner airflow/thruster acceleration; NITRO = stronger but short-lived stylized burst and sustained streaks; both active = a coherent capped combination rather than additive flashes/blur that reduce readability. Near top-speed driving without abilities may have a lower-intensity natural speed cue. No new physics, speed caps, or NITRO charge behavior in this visual task.
+- [ ] Preserve visual clarity in narrow mobile landscape, phone portrait and the tunnels/road gaps/high-curvature sections; disable or damp effects that hide obstacles or make steering feel disconnected. Assess performance on real devices; screen-wide post-processing is **optional**, not a default requirement.
+
+#### 10.3 Player settings and acceptance
+
+- [ ] Propose a high-speed effects preset: **Off / Subtle (comfort default if needed) / Cinematic / Extreme** while respecting the existing VFX enabled/disabled, Low/Medium/High, comfortable and Reduced Motion preferences. Off should retain accurate numeric speed and gameplay cues; animation intensity and sound remain independently configurable.
+- [ ] For Reduced Motion/comfort: suppress shake, large FOV shifts, rapid flashes, hard blur and heavy streaks. Bound brightness/flicker frequency, avoid motion-sickness triggers, and do not put post-processing over important HUD text.
+- [ ] TDD RED → GREEN for speed/intensity mapping, mode-dependent cap normalization, activation once-only, concurrent BOOST+NITRO bounds, start/stop/reset, race finished/paused/restart, threshold jitter, reduced motion, VFX off and quality switching. Ensure no geometry/resource leaks and stable frame-time.
+- [ ] Visual acceptance matrix: all ten tracks where effects are applicable; driving viewpoints; desktop 1440×900, phone portrait 320×740 / 390×844 / 412×892, mobile landscape 844×390 and shorter screens; en/zh-TW; quality presets; speed cruise / onset / full boost / deceleration / tunnel / curve / collision / landing; no obscured car, road, obstacles, minimap or buttons.
+- [ ] Compare **Draw Calls, Triangles, render uploads, CPU/GPU costs where measurable and frame-time p50/p95** on matching before/after actual WebGL runs, not generated pictures. Maintain current FPS pacing and physics. Require project `make verify`, browser/layout regression, world-tour/cloud-save checks as applicable and exact final-HEAD GitHub Actions; keep hardware visual/thermal acceptance separate.
+- [ ] **Done when:** players can recognize NITRO/BOOST and approaching maximum speed by a distinctive, smooth and optional effect, while still safely reading the race and maintaining measured performance.
+
+### 11. Raise racing challenge and improve AI competitiveness (P1 gameplay balance; specification only)
+
+**Goal:** standard competitive races should feel more challenging and rewarding, especially with an eight-car field, without giving AI impossible speed, teleportation, cheating boosts or unfair contact. This is a planning task only; do **not** change physics, AI, difficulty, records, Ghost or scene geometry in this branch.
+
+#### 11.1 Mode-specific difficulty and progression
+
+- [ ] Audit the baseline `easy / normal / hard` settings and real AI behavior. Current `src/race-config.ts` exposes these only for Custom; other modes default to `normal`. `src/game.js` currently scales rival speed caps from difficulty and uses rival-specific NITRO, cooldown and other AI behavior. Measure actual race finish distributions, gap-to-leader, passing rates, collisions and player win rates before choosing new numbers.
+- [ ] Recommend **easy/onboarding** (fair, recoverable), **normal** (meaningful overtakes and mid-pack pressure), **hard** (better anticipation, cleaner lines, earlier tactical boosts and tighter finishes) and consider **expert** only after validating hard; avoid raising every AI's raw maximum speed as the sole difficulty lever.
+- [ ] Balance separately for Classic, Cup, Sprint Series, Circuit and Elimination. For fixed-rule races, choose and publish the intended difficulty rather than silently changing it mid-season; in Custom allow an explicit player selection. Single-player Tutorial/Free Drive/Time Attack and no-rival challenges must retain their intended practice/objective behavior.
+- [ ] Consider **optional per-series challenge progression** (later heats becoming more competitive) only if players can see the rule before starting; do not dynamically punish the player for winning or make rivals arbitrarily impossible to catch. Rubber-banding, if retained, needs bounded, disclosed and measurable effects.
+- [ ] Prioritize intelligent AI spacing, corner approach/braking, safe overtakes, stable lane choice, collision avoidance, recovery and reasonable use of BOOST/NITRO. Avoid blocking the whole track with eight AI vehicles or producing unpredictable side swipes on narrow bridges, rail tunnels and aerial sections.
+- [ ] Balance source and sink of racing rewards alongside difficulty (points, standings, trophies, future currency/mission rewards from item 5), but **do not implement or promise live currencies** in this phase; higher difficulty cannot silently rewrite historic achievements.
+
+#### 11.2 Racing-game benchmarks / implementation inspiration
+
+- [ ] Official **Forza Motorsport** uses configurable AI difficulty, start placement and race rules in Challenge the Grid; its team discusses clean competitive opponents rather than impossible cheats: https://forza.net/news/forza-motorsport-builders-cup and https://forza.net/news/forza-motorsport-drivatars-tire-physics .
+- [ ] Official **F1 25** describes AI difficulty, adaptive AI in selected modes, and assists that can vary by event: https://www.ea.com/able/resources/f1-25 and https://www.ea.com/en/games/f1/f1-25/news/f1-25-tips-and-tricks .
+- [ ] **Gran Turismo 7** has Easy / Normal / Hard race difficulty: https://www.gran-turismo.com/au/gt7/manual/tips/02 . Use these as design references for fair challenge and optional customization; do not copy their AI or difficulty numbers.
+- [ ] TDD RED → GREEN: reproducible AI skill changes by permitted mode, stable seeds, legal passing/collision envelopes, non-exploitably bounded catch-up, normal/easy/hard progression, tutorial/solo regression and deterministic race results. Use actual controlled human-play/device trials alongside automated simulation; do not call a higher AI speed cap alone a balance improvement.
+
+### 12. Race roster 2–8 cars, fixed-mode eight-car fields and full reverse-grid series (P1/P2, separate gameplay branch; specification only)
+
+**Decision to plan for:** total on-track **race participants include the player** (player + AI). Competitive races generally have a minimum of **2 total** and a maximum of **8 total**. Fixed-field competitive modes, especially **Classic**, should default to **8 total** (1 player + 7 AI). Only selected configurable modes expose the count; intentional solo/practice/objective modes keep explicit exceptions. Multi-heat race series use **full finishing-order reversal** for the next heat, so previous last starts first and previous first starts last.
+
+#### 12.1 Current source audit and migration impact
+
+- [ ] The current `src/race-config.ts` normalizes Classic/Cup/Elimination/Circuit to `rivals = 3` and Custom to `0..3` AI; the current `src/game.js` initializes AI from three named rivals (`NOVA`, `ORBIT`, `APEX`). Audit actual active modes against these defaults before implementing; avoid confusing **7 rivals** with **8 total**.
+- [ ] Remove hard-coded four-person assumptions across the *whole* race system, not only world rendering: `src/sprint-series.ts` currently validates finish position `1..4`, while `src/championship-cup.ts` uses four driver names, four point rewards and asserts exactly three rivals. Audit `src/race-standings.ts`, `src/race-results.ts`, `src/result-screen.ts`, `src/race-hud-modes.ts`, series scoreboards, AI names, timing, Ghost, mode options, race history and browser acceptance.
+- [ ] Propose a shared explicit race-size contract with `totalParticipants = rivals + 1`, stable participant identities and strict validation; a versioned mode/rules identity is mandatory before changing official competition defaults. Define an intentional strategy to preserve **old 4-car best times, history, cups, Ghost and Cloud Save**, including records with zero-rival Custom. Do not reinterpret historic results as 8-car events or silently overwrite records, leaderboards, trophies or scoring signatures.
+- [ ] Plan up to seven stable, distinct AI entrants (names/IDs/personalities), independent of sort order and camera position; support reliable lookup by ID across Cup and consecutive Sprint races. Avoid an extra custom AI roster, server dependency or online multiplayer scope unless separately approved.
+
+#### 12.2 Which modes are fixed, configurable, or intentionally solo
+
+- [ ] **Fixed eight-car competitive target:** Classic **8/8**, and after the mode audit other fixed-grid competitive events such as Cup, Circuit, Elimination and appropriate Sprint Series. Treat 8 as the explicit target, not an assumption that every mode is a grid-based race; retain mode-specific objectives and track rules.
+- [ ] **Player-configurable grid where appropriate:** Custom racing offers a **2–8 total participants** selector (1–7 AI), clear default, validated min/max and localization; UI must distinguish `2 total` from `2 AI`. Consider extra advanced modes only after auditing their race contracts.
+- [ ] **Solo exceptions:** Tutorial, Free Drive, Time Attack/ghost-only races, and distance/survival/objective modes that intentionally do not use a competitor grid should remain playable with one human and zero AI. Preserve legacy solo Custom records; decide explicitly whether its original zero-rival Custom preset remains available as an identified solo practice option or migrates via a non-destructive mode alias, rather than deleting existing player data.
+- [ ] No new count selector for fixed-rule Classic or other fixed championships. Only allow legal options for each selected mode. Do not silently add seven rival cars to endless/off-road/flight challenge contexts.
+- [ ] First heat of a series uses a clear, deterministic initial grid (specified fixed/seeded seeding, or qualifying **only if actually implemented**). Later heats use item 12.3. Do not claim qualifying laps or hidden AI ranking that the game does not generate.
+
+#### 12.3 Consecutive heats: full reverse grid from actual previous results
+
+- [ ] For each applicable multi-stage race/Cup, derive **next heat's physical start grid** from the prior heat's **official finishing order**, not the displayed leaderboard alone. With 8 total cars: previous **8th → pole (1st)**, 7th → 2nd, 6th → 3rd, 5th → 4th, 4th → 5th, 3rd → 6th, 2nd → 7th, previous **1st → rear (8th)**. Reverse the whole classified field, including the human driver, instead of reversing only top N.
+- [ ] Use stable driver IDs, a deterministic tie-break rule and explicit handling for **DNF/non-finishers, disqualifications, dropped entries and legacy 4-car series**. Proposed policy: fully classified finishers reverse first; unclassified drivers go at the back in deterministic order, to avoid rewarding abandoning races with pole position. Finalize and disclose this exception before implementation.
+- [ ] **Actually place** all racers in physical grid slots before countdown; reverse-grid must affect the user's car as well as AI spawn positions, head starts, lane assignments, collision space, visible camera and checkpoint progress. Check grid spacing, stagger, road widths and stoplines on narrow elevated / tunnel / bridge tracks; never spawn cars inside walls, objects or each other.
+- [ ] Show a compact next-race preview: previous finishing rank → next grid slot, with driver names/IDs, race number, championship points and a clear **Reverse Grid** label. Keep the player's current car and camera visible; follow item 7's compact mobile HUD constraints.
+- [ ] Reverse positions affect **start placement only**; do not rewrite previous results, reverse the championship points, alter vehicle performance, carry prior race speed/boost into a new heat or generate artificial teleportation at the moment of green lights. Preserve Cup/Sprint scoring consistency and restart/retry rules.
+- [ ] **Reference — not identical:** Formula 2 Sprint uses a **partial reverse qualifying grid** (top 10, not entire field): https://www.fiaformula2.com/en/latest/article/the-regulations-f2.DyImndAsBNFcqYOOm4yWS . BTCC 2026 Race 3 uses a **randomly selected partial reversed range** after Race 2, not full reversal: https://btcc.net/about/key-rules-and-regulations/ . Skyline Rush's requested *all-position* reversal is its own deliberate, more arcade-oriented series format.
+
+#### 12.4 Balance, UI, performance and quality gates for eight cars
+
+- [ ] Balance grid start fairness, AI race pace/skills (item 11), overtaking windows, NITRO/BOOST charge, contact penalties, slipstream, catch-up bounds and traffic density as participant count grows. More AI should yield exciting competition, not a permanently impassable pack or involuntary pileups. Fair 8-car races must work on all ten tracks and selected modes.
+- [ ] Update positional HUD `1/8..8/8`, standings/leaderboard, minimap icons, position transitions, race end and Cup total standings without obscuring mobile sightlines. Provide compact visibility for all eight cars, stable ordering/tiebreaks and actionable localized feedback in `en`/`zh-TW`. Respect screen-reader announcements and touch targets.
+- [ ] Evaluate performance budgets against the existing four-car baseline: 2, 4 and 8 total cars on all applicable tracks; compare actual WebGL Draw Calls, triangles, CPU/AI time, p50/p95 frame-time, memory and mobile temperature. Reuse existing mesh/material/pool paths, avoid one draw-heavy renderer per rival when possible, and maintain visual quality, collision parity and 30/60/90/120 pacing where supported.
+- [ ] **TDD RED → GREEN:** configuration boundaries (2..8 and solo exceptions), exactly 7 unique AI for fixed eight-car events, deterministic spawn/grid positions, no overlaps, eight-car finishing rank and scoreboards, Cup/Sprint point sums/legacy 4-person migrations, first-heat seeding, full reverse 1↔8 and 2↔7 for stage 2+, restart/retry, tie/DNF/withdrawal rules, save/load and Cloud Save record compatibility.
+- [ ] Acceptance: desktop and touch browser races on representative narrow/wide routes, no crashes or blocked racing controls after 8-car finishes, all 10 tracks as applicable, mobile portrait/landscape, both locales, manual physical-device checks and complete `make verify` + exact-HEAD CI including gameplay, standings, visuals and persistence. Keep this feature in a **separate later gameplay branch** (e.g. `feature/race-difficulty-eight-car-grid`) from the current UX/UI documentation branch; do not implement or merge here.
+
+### Planning-only release order / boundaries (items 1–12)
+
+- [ ] **P0 (first implementation candidate):** make AIR → ROAD CHAIN reasonably learnable/triggerable and add its tutorial (items 1–2); **add the dedicated barrel-roll tutorial lesson (item 8)** and **fix the immediately-ending tutorial NITRO lesson (item 9)**; plan the NITRO-ready state contract/one-shot notification (item 6) before choosing visual intensity.
+- [ ] **P1 (mobile UX / speed feedback):** ergonomic touch controls and optional edit mode (item 3); refine NITRO states and audio/animation (item 6); implement measured and accessible high-speed visuals (item 10) after baseline profiling; then refactor Mobile HUD and hints with **default Hybrid A+B and Settings-selectable Competitive C** (item 7). Avoid simultaneous unrelated rendering/physics rewrites.
+- [ ] **P1/P2 (separate gameplay branch):** validate race difficulty/AI fairness (item 11), then expand configured/fixed competitive fields to 2–8 participants and implement full reverse-grid consecutive races (item 12), including rules-version migration and final-HEAD CI. This work must not be bundled with the Garage or HUD-only feature branches.
+- [ ] **P2 (independent branches):** foldable/dual-screen compatibility (item 4); independent full-screen Garage Studio, Skins and trial access (item 5); **economy foundation/rewards/store only when separately approved**.
+- [ ] Confirm mockups and acceptance conditions before implementation; **the shared S1–S3 mobile/desktop portrait-landscape and Low/Medium/High acceptance contract applies to every item (1–12)**. Future branches start from current `main`, reread latest `CLAUDE.md` and relevant `.claude/rules/`, preserve Vue 3 + strict TypeScript preferences, TDD, visual proof, CI gates and gameplay. **Nothing under items 1–12 is marked complete by this document update.**
+
 ## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
+
+## 2026-11-02 — VERIFIED 3× SOURCE MATERIALS AVAILABLE (Wave 3 asset handoff)
+
+**Read before making or importing store imagery.** The user's original `skyline-rush-3x-garage-store-readiness.zip` was recovered from ChatGPT File Library (SHA-256 `3f5f37d2c4f417fa1b84c3356ef15ff297825d6b49d602f858f9cd342fa11751`). Its **six original true-alpha 3× WebP images are now committed** in the asset-only `feature/3x-ui-materials` branch at reference commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. Read [full verified asset manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) and [actual 6 Store image blobs](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-store-readiness).
+
+**6 original assets:** `store-cart@3x.webp`, `store-box@3x.webp`, `store-bundle@3x.webp`, `store-tag@3x.webp`, `store-star@3x.webp`, `store-collection@3x.webp`. All are **216×216 source pixels**, displayed at **72×72 CSS px**. Example: `<img width="72" height="72">` plus `width:72px;height:72px;object-fit:contain`. Do not resize source pixels to 1× or enlarge the interactive touch target to 3×. The PNG originals / source ZIP are preserved in ChatGPT File Library; Git stores 3× WebP only.
+
+**Required Wave3 sequence:** (1) After permitted upstream integration, use current `develop` as integration target, not stale `main`; (2) read existing `RASTER-ASSET-HANDOFF.md`, review alpha, matte, cropped highlights, text/meaning, and existing SVG alternatives; (3) selectively copy approved items from `origin/feature/3x-ui-materials:docs/designs/3x-asset-library/webp/garage-store-readiness/` to `public/feature-assets/garage-store-readiness/raster/`; (4) Vue 3 + strict TS + CSS must use `import.meta.env.BASE_URL`-safe URLs, 1× CSS pixels, alt/fallback and 44px touch targets, en/zh-TW and three quality tiers; (5) RED→GREEN→Refactor tests + latest-HEAD CI + real visual signoff. **Images do not authorize purchases, invented prices, balance, payment SDK, premium currency, ownership grants, or an active store.** Continue Coming Soon until separately approved.
+
+
 
 **Branch:** `feature/ci-speedup`. Measured on `main` run 41024921317 (`cff7886`): 75 min wall. Browser shard 8 took 72 min; shard 1 took 38 min of suite plus a 30 min `npm run test:layout` rerun of specs the sharded suite already contains; World Tour shards ran 5–40 min (the slow camera views sit at the end of the list); unit 1 min, cloud-save 1.5 min.
 
@@ -2290,3 +2734,159 @@ Model boundary: these are unsteady streak/history markers in still air, not inst
 - [ ] User authorizes merge into `develop`. Do not open PR, deploy or merge automatically.
 
 **Verified test-first progress:** RED on commit `0600231` [CI 41199230703](https://github.com/weskao/skyline-rush/actions/runs/41199230703); 48 source/unit regressions found and fixed; focused typecheck and 1217 Unit Tests passed at `28a776c` [CI 41201415728](https://github.com/weskao/skyline-rush/actions/runs/41201415728) (browser/world-tour intentionally skipped, so **not** full acceptance). The subsequent `40785ed` added 2-car real-browser coverage; final full verification and screenshot receipts to be attached after actual success. No high-level Wave 2 item marked complete prematurely.
+
+## 2026-11-02 — Approved public free-trial release strategy (not yet deployed)
+
+- [x] The user approved a **publicly visible, free-to-try Garage VFX** after Wave 2 release gates.
+- [x] Branch-local Pages deploy mode is pinned to `trial` instead of `coming-soon` (only gated `main` / tag deployments can actually ship it).
+- [x] Keep default local/CI production build **locked**; explicit trial builds verify real bundled trial catalog and artwork.
+- [x] Update en/zh-TW showroom and Try labels to explain temporary equipment resets on page reload/account switch.
+- [ ] Verify latest exact-HEAD unit, TypeScript, browser screenshots and Cloud/World Tour CI; review actual Phone and WebGL visuals. **Do not merge, tag or deploy until green and accepted.**
+- [ ] Merge approved branch to `develop` and then `main` at the separate integration/release gate; only then activate a public version.
+
+See [Garage release policy](docs/garage-release-policy.md).
+
+## 2026-11-02 Garage collection whole-card UX + four distinct native-3x Airflow icons
+
+- [x] All 22 VFX cards use native full-card Preview and isolated single visible Try/Equip actions with keyboard and hover/focus UX.
+- [x] Paint cards / Garage collection use unified game-like panel, colour/state badges, card glow and action styling without changing paint entitlement.
+- [x] Four unique **288×288 SVG vectors** replace common Airflow placeholders; display **96×96 CSS**; PNG/WebP originals exported separately.
+- [ ] Latest exact-HEAD CI, 22-item visual capture, responsive input and native device checks. See [UX specification](docs/designs/garage-vfx-skins/GARAGE-COLLECTION-UX.md).
+
+
+**Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Full stage plan (S0–S9 + stage 2): `docs/plans/2026-11-01-classic-pickup-density.md` → 「完整階段計畫」. `PLAYWRIGHT_PORT=5185`. Never merge into `develop`.
+
+- [x] S0 AC1 economy bot + numbers (`dff62f74`).
+- [x] S1 Coast / Neon / Canyon tuned to the World Tour median (AC2a); other layouts hash-locked; `npm test` 1225/0 (`4d5f3177`, `af00b2d8`).
+- [x] S2 other tracks/modes measured; user decisions (3 rounds): version key (a) for all timed records; no boost tunnel; Canyon floor only, no extra volume; difficulty curve, so Aurora is unchanged and Sky Spiral + Circuit only get an opening-nitro fix; bot extension approved.
+- [x] S3 merged `origin/develop` `88dce759` (Wave 2 complete) as `119cf2d8`; only `TODO.md` conflicted (both sections kept). `npm test` 1296/0 (3 skipped), typecheck green, economy numbers identical to pre-merge on all ten tracks.
+- [x] S4 `measureEconomy(trackId, options, cap)` returns `phase`; mode-layout lock (8 modes × 5 Classic tracks), Circuit/Endless/gold-rings determinism; numbers unchanged (`ee936be0`).
+- [x] S5 Sky Spiral `openingNitroRings: 2` (first NITRO 9.0 → 6.6 s), Circuit `openingNitroRings: 1` (11.7 → 6.8 s, NITRO ≥ 11.54/min on 1/3/5 laps); ring positions + per-lap PERFECT LINE groups locked; AC3 lock = World Tour + Aurora; `npm test` 1303/0. Circuit BOOST share dips (3 laps 77.6%, 5 laps 72.9%) because NITRO fires earlier; noted for the play test.
+- [x] S6 version key via `src/record-layout.ts` (`48a422f8`, `77ab7d0d`): Classic/mode bests, ghosts, history, Circuit lap best, cloud merge, History OLD LAYOUT / 舊版配置 tag. RED (7 behaviour tests with storage wiring reverted) → GREEN; `npm test` 1317/0; `test:cloud` 15/15 + rules 3/3.
+- [ ] **Before release (needs user approval):** deploy `firestore.rules` (`saves.bests` now accepts `coast@2`, `neon@2`, `canyon@2`, `spiral@2`). CI never deploys rules; without it, signed-in players' cloud saves fail once they set a new-layout best.
+- [x] S7 audio: no throttle needed (NITRO-ready cue min gap 5.0 s on changed tracks vs Taipei 3.0 s). What's New: shipped `0.28.0` entry was never stamped after the release (UPCOMING still resolved to 0.28.0), so it is now `version: '0.28.0'` (its review fingerprint still matches); new `UPCOMING` entry with `classic-more-rings` (reviewer rewrite, user chose it) + `old-layout-records`, reviewed and approved as 0.29.0 (`ea8fed66`). If the release ships under another number, re-run `/review-release-notes <version>`.
+- [x] S8 per-track Draw Calls/Triangles/p50/p95 table vs `develop` (plan「S8」): draw calls flat, Coast triangles +4.3%, Neon +1.2%; 15 real WebGL captures (5 routes × 3 viewports); all record-seeding browser specs green after moving 7 specs' fixtures to the `@2` ids (`bdfd742d`). Pending: physical keyboard/touch/phone play by the user. Unrelated finding: 844×390 non-touch desktop HUD overlaps (pre-existing).
+- [x] S9 `[full-regression]` push, `quality-gate` green on `bc37681e` (run `41319983990`; run `41313681206` on `1db53ed3` failed 2 stale specs, fixed in `bc37681e`), run id reported to skyline-rush-13. Pending: user plays it.
+- [x] Stage 2 (rival item pickups, `feature/rival-item-pickups`): R1–R11 done, `quality-gate` green on `21c06661` (run `41375706816`), merged into `develop` with user approval.
+
+---
+
+## 2026-11-02 Full original-material UI implementation checkpoint (latest)
+
+**Completed source imports (unmerged feature branches, NOT production release):**
+- `feature/garage-vfx-skins`: original 27/27 source WebPs byte-for-byte; 22 live 3D Skin selectors (4 Thruster / 4 Airflow / 5 NITRO / 9 Launch) with genuine void-beam geometry and studio/home looping flare demos. Original 16 equipped-candidate thumbnails display at 288×288 file pixels → **96×96 CSS px**. Original 11 badge/rarity images are 216×216 → **72×72 CSS px**, displayed as examples only, not ownership/rarity promises. Six Airflow variants still have shared SVG thumbnail fallback until approved unique per-item artwork. Current tests: `tests/garage-skin-renderer.test.js`, `tests/garage-cosmetics-preview-browser.spec.js`, `tests/garage-vfx-catalog-browser.spec.js`.
+- `feature/garage-rewards-and-missions`: all eight authentic 288×288 WebPs committed and displayed at 96×96 CSS px in `GarageSourceArtGallery.vue` (source artwork gallery, NOT functional reward settlement).
+- `feature/garage-store-readiness`: all six authentic 216×216 WebPs committed and displayed at 72×72 CSS px in `GarageSourceArtGallery.vue` (Coming Soon, NOT purchases).
+- `feature/3x-hud-materials-integration`: all 18 authentic source WebPs committed and shown at 1× CSS in `HudSourceArtwork.vue` within Settings. Nine also decorate existing functional buttons without replacing semantics/input; the other nine are only artwork references pending UX approval.
+
+**59/59 Git blob SHA and path integrity checks against `feature/3x-ui-materials`: exact match.** Source archive: [59-image README](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md). This is 3× *pixel resolution*, not a guarantee of threefold unique native visual detail. Original PNG/ZIP sources remain in ChatGPT File Library.
+
+**Open, don't mark Wave 2/3 complete:** latest-HEAD unit/typecheck/production build, all Playwright viewport and Low/Medium/High tests, actual WebGL captured screenshot review, stable p50/p95 frame-time and GPU budgets, physical iOS/Android, visual fidelity signoff, final `develop` integration CI. This checkpoint creates the full browser regression trigger. **Do not merge to `develop` or `main`, create a PR, deploy or enable sales** until gates are explicitly checked.
+
+---
+
+**Branch:** `fix/race-hud-overlaps` from `develop` `88dce759` (Eight-Car included). Not merged; merge needs approval.
+
+- [x] **RED** (`tests/race-hud-overlap-browser.spec.js`: real bounding boxes of every top-level HUD block must not intersect
+  or sit < 2px apart; en + zh-TW × hybrid + competitive; racing with an event callout up, with a collision report up, and
+  paused (pause panel only checked against brand/toolbar/AIRFLOW-VFX)). On `88dce759`'s stylesheet 6 of 7 viewports failed:
+  - 1024×768 tablet: `.mode-indicator × .event-callout` (overlap zh-TW, 0.6px gap en); `.flight-telemetry × .race-route-map` 1px gap (zh-TW).
+  - 390×844 and 600×900 horizontal fold, competitive: `.race-progress × .leaderboard` and `× .position-stat` (eight rows reach 262px; the bar sat at 216–262px).
+  - 320×740: the same two, plus the collision report over the RACING bar, POSITION, leaderboard and route map.
+  - 844×390: NITRO callout over POSITION; collision report over the RACING bar and mode panel.
+  - 844×390 vertical fold: `.race-progress × .aero-tools` and `× .flight-telemetry`, `.mode-indicator × .flight-telemetry`
+    (Foldable merge), plus the callout over POSITION and the collision report over the mode panel.
+  - 1440×900 passed: the reported ROAD MODE / `#nitro-status` touch did not reproduce there in either mode or locale.
+- [x] **GREEN** (`src/style.css` only, nothing hidden or resized): vertical fold moves the RACING bar and mode panel to the
+  left pane's free top-right and the leaderboard to the right pane's free bottom-left; portrait competitive flows the bar
+  under the taller of POSITION and the leaderboard, with map, callout, gap warning and collision report following
+  `--race-progress-bottom`; the short-portrait map slot beside the thumb cluster now covers ≤760px tall; the collision report
+  sizes to its content (half-viewport shrink-to-fit wrapped zh-TW); landscape/tablet callout and collision report sit 8px
+  under the mode panel; tablet map 288 → 284px. Short landscape now lets the flight director step aside for a callout, as
+  portrait already did (`responsive-browser.spec.js` › flight director and a mid-flight callout). Spec 7/7.
+- [x] `cssBlob` re-recorded. `npm run typecheck`, `npm test` (1288 pass / 0 fail), `npm run build`, `npm run test:layout`,
+  foldable + responsive + handoff + main-ui-parity + new spec: 100/100.
+- [x] **Follow-up `fix/hud-callout-landscape`** (from develop `15bfc16a`): CI 41313050183 failed `motion-browser.spec.js` ›
+  "race callout is a small translucent chip clear of the centre view at 844x390" (chip bottom 313 > 175.5): the short-landscape
+  callout had moved under the mode panel for every pointer, though only touch layouts keep that panel up top. RED also added
+  to the overlap spec (short landscape callout bottom ≤ 45%; failed at 239–244px on touch 844×390 and the vertical fold).
+  GREEN: non-touch short landscape is back to its original top-left slot; touch short landscape (and the fold's left pane)
+  puts the callout in the top-bar strip between the wordmark and the toolbar. The gap-warning shift and the short-landscape
+  flight-director step-aside are no longer needed and were reverted. Motion + overlap + responsive + parity + foldable 111/111,
+  `test:layout`, typecheck, `npm test` 1290/0.
+- [x] Integration with `feature/in-race-feedback-visibility` (develop `bf350867`): that branch places the event callout
+  from script (`src/race-feedback-placement.ts`), so the overlap spec's "top 45%" stand-in for the centre view now checks the
+  same road rectangle the placement avoids, and its snapshot re-runs placement for a re-shown callout.
+  RED (merge, before fix): a callout raised during GO! is placed while `body:has(#countdown:not([hidden])) .telemetry` hides
+  the telemetry and stays on it after GO! ends — probe at 390x844 3/3 runs `callout 307,608-378,644` over
+  `telemetry 170,508-367,624` (also 1024x768); new guard test "the callout moves clear of the telemetry when the countdown
+  hides" fails 3/3 (`overlapsAfterGo: true`). GREEN: placement also refreshes when `#countdown` toggles `hidden`; guard 3/3,
+  overlap spec 21/21 (`--repeat-each=3`), motion + overlap + feedback-visibility + responsive + parity + foldable 118/118,
+  `test:layout`, typecheck, `npm test` 1330/0. cssBlob unchanged (`4d817a99`).
+  Develop then landed the same countdown refresh (`19b67ca3`, guarded in `race-feedback-visibility-browser.spec.js` at
+  844x390) plus a telemetry re-measure (`eb361bce`); on merge their version of the placement observers is kept and this
+  branch's 390x844 guard test stays as the portrait case (develop's runs at 844x390) and passes 5/5 on their observer.
+- [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
+- [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
+  competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
+- [x] **develop CI red after the merge (`15bfc16a`, run 41315628196)**: `motion-browser.spec.js:228` callout chip at a
+  mouse 844×390 ended at 313px (limit 175.5). Root cause: the "8px under the 62px mode panel" callout offset sat in the
+  generic `max-height: 500px` block, but only touch landscape has that compact centred mode panel; a mouse short window
+  keeps the full-size panel, so the callout landed over the centre view. RED reproduced locally (315px). GREEN on
+  `fix/race-callout-landscape`: the offset (and the warning under it) moved into a touch-landscape query, mouse short
+  windows get the pre-merge left-gutter `top: 30%` back; `cssBlob` re-recorded. motion + HUD-overlap (7/7) + responsive +
+  parity + foldable 111/111, `npm test` 1290 pass / 0 fail, typecheck, `test:layout` 37 + 42 passed.
+  Merged with `fix/hud-callout-landscape` (same non-touch revert): one rule set kept — mouse short windows use the
+  left-gutter `top: 30%`, touch short landscape the top-bar strip (vertical fold: left pane), so the touch "under the mode
+  panel" slot and its warning shift are dropped; `cssBlob` `4d817a99`.
+
+## Wave 2 — Garage VFX Skins Phase B expansion: production art + distinct runtime effects (2026-11-02)
+
+**2026-11-02 launch flares refined; skin cards press as one:** The seven launch flares other than the shock ring dropped their solid cone spikes: rays are now slim streaks (0.035 m) whose bright head shoots up from under the sills a beat apart (pulse flares fire again and again), 96 GPU-animated sparks rise from the sills (Low: 48; no per-frame uploads), and a ripple runs out across the road; the shock ring flare is unchanged. Skin cards: pressing dims the whole card instead of a box around its upper part, and the selected card glows in every category (the Garage panel's shared card surface had cancelled the selected border/glow). RED→GREEN: refined-flare test in `tests/garage-launch-flare-3d.test.js`, card click test in `tests/garage-vfx-catalog-browser.spec.js`. **Pending:** frame-time p50/p95, physical devices, exact-HEAD full CI.
+
+**2026-11-02 NITRO plumes fit the nozzles; flare spans the countdown:** NITRO trail streaks were crossed flat quads 0.42 m wide that started as a square block behind the bumper; they are now open round tubes (16 sides) that leave each round exhaust nozzle at its exact radius (`REAR_PORTS[].size` 0.065 = the nozzle disc) and swell behind it, shaded by a view-facing term so they read as round jets; gold pulses bulge the plume as they run back, the nebula's twin ribbons wind around the tube. Premium launch flares now loop through the whole 3-2-1 countdown (`flare.hold`) and burst once more at GO. RED→GREEN: nozzle-fit plume test in `tests/garage-nitro-trail.test.js`, countdown test in `tests/garage-launch-flare-3d.test.js`. **Pending:** WebGL before/after capture review, frame-time p50/p95, physical devices, exact-HEAD full CI.
+
+**2026-11-02 launch flares wrap the car; NITRO trails get their own show:** Launch flares lost the bubble shell and the Studio no longer loops the standard ignition ring (BOOST/NITRO ignition rings in a race stay). Each premium flare now lights a pool on the road under the car, raises 3D rays from under the sills on every side (fans as side wings, crimson adds two roof slashes) and the shock ring flare climbs two horizontal rings up the body; all flare parts sit in the effects group so Studio framing still measures only the car. New `src/garage-nitro-trail.js` (locked stub + `#garage-nitro-trail` alias): per-exhaust crossed-quad light streaks fanning slightly outward plus a road glow, one program for four styles — cyan ice laser, gold pulses racing back with a throbbing flame, crimson tracer dashes with embers, violet-magenta twin helix ribbons; nozzle flames take the trail colour. Gold/crimson trail palette corrected (hue 71 → 38, crimson 0). RED→GREEN: `tests/garage-launch-flare-3d.test.js` (rewritten, 3 RED + silhouette RED), `tests/garage-nitro-trail.test.js` (4 RED + hue RED), release alias RED. Studio peak (software WebGL, 1280×720): flare 55–56 calls / ≤21 093 triangles, trail 56–57 calls / 19 017 triangles. `garage-skin-trial` 390×844 is flaky on clean HEAD too. **Pending:** frame-time p50/p95, physical devices, exact-HEAD full CI.
+
+**2026-11-02 skins replace, not layer; 3D flare and beams:** An equipped skin now replaces the standard effect in its slot: premium launch flares hide the standard ignition ring (BOOST/NITRO ignition rings stay), a NITRO trail skin takes the purple slot on the whole airflow streamline, the nozzles and the NITRO ring, and Void Pulse hides the nozzle flames under its beams. Launch flares are 3D: instanced cone rays spread over a sphere / upward fan (`rayLayout` in `src/garage-launch-flare.js`), two tilted rippling tori for the ring flare and a rim-lit expanding shell; only the radially symmetric hot core stays a billboard (shaders in `src/garage-launch-flare-shaders.js`). Void beams are tapered rods with a view-facing core and helical bolts. Low skips the shell and body glow. RED→GREEN: `tests/garage-skin-replacement.test.js` (3 RED), `tests/garage-launch-flare-3d.test.js` (2 RED), void rod test in `tests/garage-skin-renderer.test.js` (1 RED); the old "purple cue kept on every skin" / "ring shows with a premium flare" assertions were rewritten to the new contract. Studio peak (software WebGL, 1280×720, same camera): draw calls 54/55 → 56/57 with a flare showing, triangles 18 789 → 19 6xx (ring flare 21 813), programs 61 → 67 compiled at warm-up; void beams 52 calls unchanged. Browser: garage cosmetics/studio/quality/trial, shader-warmup, black-frame, high-speed-vfx, showcase-camera green; `garage-vfx-catalog` "all eleven badges" fails identically on clean HEAD (badge `naturalWidth` 0, predates this change). **Pending:** frame-time p50/p95 review, physical devices, exact-HEAD full CI.
+
+**2026-11-02 newer implementation checkpoint (supersedes stale baseline text below):** Original full 27 VFX WebPs are copied from `feature/3x-ui-materials` into `public/feature-assets/garage-vfx-skins/raster/`; 16 images map to **16 selectable non-default/default 3D effects** among **22 Skin IDs** (4 Thruster, 4 Airflow, 5 NITRO Trail, 9 Launch Flare); 11 badge/rarity images appear in a separate non-entitlement illustration gallery. All Skin thumbnail WebPs retain **288×288 original pixels and display at 96×96 CSS px**, badges remain **216×216 → 72×72 CSS px**; no fake ownership or rarity. 4 actual car-mounted Void pulse beams, repeated launch flare ring/echo for Home + Studio, ready-phase showroom Nitro trail, original per-skin preview controls, JS renderer tests and three viewport Playwright tests are committed. Full source/art map: [IMPLEMENTATION-MATRIX.md](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md). **NOT ACCEPTED:** exact HEAD tests/CI, real screenshot/frame-time review, mobile hardware, catalog art vs rendering; keep remaining Phase B checkboxes unchecked. Other 32 sources are integrated into their own branches: `feature/garage-rewards-and-missions` (8), `feature/garage-store-readiness` (6), `feature/3x-hud-materials-integration` (18); they are staged and previewable, **not full mission/commerce rollout**.
+
+
+
+**Verified asset integration checkpoint (2026-11-02):** Recovered the original 27-key 3× ZIP from ChatGPT File Library and verified its SHA-256. All 27 3× WebPs are preserved in `feature/3x-ui-materials` at [source asset library](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md). **Ten selected 288×288 WebPs** are now physically committed to `public/feature-assets/garage-vfx-skins/raster/` on this branch and rendered at **96×96 CSS px** through `skinArtwork()`, with WebP→SVG→text fallback; six other Skin cards remain SVG-only until approved art exists. This is **code/import completed but no final visual approval or CI result**. The other 17 source WebPs are not automatically shipped. [Updated per-asset matrix](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md). All high-level Phase B completion items remain unchecked.
+
+
+
+**Owner branch:** `feature/garage-vfx-skins` · **Integration target:** `develop` (not `main`) · **Status:** NEW REQUIREMENTS / NOT IMPLEMENTED / NOT ACCEPTED. This extends **Wave 2 Phase B**, not Wave 3 or an already-finished Phase A. Keep existing Phase B trial/equip/stage work; do not interpret the current code or previously exported art as final visual delivery.
+
+**Verified baseline (2026-11-02):** The catalog currently has four categories × two IDs (eight total, default + one alternative each). Alternate VFX primarily multiply existing shader RGB colors; the live shared-aero Studio preview and session-only trial/equip code exist but need final acceptance. Only four `public/feature-assets/garage-vfx-skins/*.svg` category icons are committed; `skinArtwork()` returns `hasRaster: false`. The 3× handoff describes **27 candidate art keys** (16 cosmetic thumbnails + 11 badge/rarity overlays, each with PNG/WebP), but their source ZIP and production raster binaries are **not committed to this repository**. These are candidates, not 27 shipped skins or 27 approved assets. References: [raster handoff](docs/designs/garage-vfx-skins/RASTER-ASSET-HANDOFF.md), [visual fidelity](docs/designs/garage-vfx-skins/VISUAL-FIDELITY.md), [Phase B implementation plan](docs/superpowers/plans/2026-10-31-garage-vfx-skins-plan.md), [release policy](docs/garage-release-policy.md).
+
+**Execution checkpoint (2026-11-02):** **Partial implementation, not signoff.**
+Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada935017ac8c24d101dc5cda451d7b13760d), [16 stable Skin IDs / pattern mapping](https://github.com/weskao/skyline-rush/commit/85727fcd08e74e4153eb700802a0c37464fdf300), [shared Aero shader patterns](https://github.com/weskao/skyline-rush/commit/5ea0ca0efd8fd41a9ec165a6cbe49f64bb1a2972), [production lock contract](https://github.com/weskao/skyline-rush/commit/5076685b5ad92eb2034472c9fe9b095d3c87c3e9), [browser 16-card/32-action expectation](https://github.com/weskao/skyline-rush/commit/945eb3b9321cc56a5c6f25a2ff7d094e1e7a0d37).
+[Implementation and candidate-art matrix](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md): 10 cosmetic thumbnail candidates mapped, six candidates deferred, 11 badge/rarity candidates deferred; missing the original source ZIP and item-specific Airflow imagery. **No production raster image has been integrated; no visual, device or CI approval is claimed.** Prior RED CI attempts were superseded/cancelled by later commits, not observed as a clean TDD RED result; rerun focused tests in a proper checkout for auditable RED evidence before final acceptance.
+
+### B-Visual-1 — Audit, recover and approve existing game materials (must precede implementation)
+
+- [x] Locate the original `skyline-rush-3x-garage-vfx-skins.zip` and reference sheets from the Game Materials conversation; verify the handoff SHA-256 `4112ef97f6ec8d0860220a93f95a5b19f77b2a05cc36c1eebf5385d457d73414`. If unavailable, mark **BLOCKED** and request the original bytes; do not claim to have imported them or silently replace approved designs.
+- [ ] Inventory all 27 candidate keys and the existing four SVG fallbacks: classify each **APPROVED / REWORK / REJECTED / DEFERRED**, with asset → Skin ID or UI-state mapping, reason for unused art, source/provenance, alpha/fringe checks and optimized file-size budget. Use only visually reviewed candidates; do **not** ship all assets merely because they exist.
+- [ ] Restore approved selected artwork to `public/feature-assets/garage-vfx-skins/raster/` (optimized true-alpha WebP for runtime; retain PNG/source archive where needed), record checksums/manifest and reference screenshots. The original transparent cutouts are provisional, not native-detail 3× originals; review clipping, matte halos and glow over dark/light/saturated backgrounds.
+
+### B-Visual-2 — Expand the *actual* VFX catalog, not just hue variations
+
+- [ ] Target **at least four selectable skins per category including the default (≥16 total)**: Thruster, Airflow, NITRO Trail and Launch Flare. Preserve current eight IDs and backward compatibility; decide additional IDs using approved art, and document extra candidates not selected. The raster handoff has **no Airflow item-specific thumbnail set**, so design/produce missing Airflow art intentionally rather than falsely mapping unrelated files.
+- [ ] For every added non-default skin, implement a visually distinguishable real-time Three.js **silhouette/emission geometry, particle pattern, motion/timing or shader behavior** — **RGB multiplier alone does not pass**. Keep physics, handling, speed, rewards, original PAINTS and competitive fairness identical for all cosmetics.
+- [ ] **FLY lift-off thrusters (the jets that fire downward to lift the car)** get the same treatment as the NITRO trails: each plume leaves its round under-body nozzle (`LIFT_PORTS` in `src/effects.js`, nozzle cylinder r 0.18→0.22 at y 0.3 in `src/car-model.js`) at exactly the nozzle radius, as a round view-shaded jet, never a flat card or square sheet, and each Thruster skin gives it its own motion/shape (not hue only). Cover the Studio preview, ready-screen AIRFLOW (hover jets off at altitude 0), take-off/hover/landing in a race, rivals sharing the jet pool, Low/Medium/High, VFX Off and Reduced Motion, shader warm-up and draw-call/triangle budget; RED renderer test first (nozzle-fit geometry), then real WebGL capture from the chase and side cameras.
+- [ ] Give every selectable skin a truthful, distinct card thumbnail or an explicitly documented generated-from-real-render fallback; use `import.meta.env.BASE_URL`-safe asset paths and 96×96 CSS-pixel cards with up-to-3× source resolution when justified. Keep lightweight 4-category SVG fallback, readable bilingual labels and robust missing/corrupt/late-image fallback.
+- [ ] Connect card selection, Preview/Try/Equipped/Locked states, Garage Studio orbit/replay and real in-race rendering to the **same VFX definitions**. Preview and race must show the same skin identity/animation; selection changes must not allocate unbounded GPU buffers, create stale textures or leak resources on scene re-entry, quality switch or context restore.
+- [ ] Integrate the 11 badge/rarity candidate overlays **only where the corresponding real state exists**; decorative graphics must never grant Owned status, invent rarity/rewards or present an unimplemented shop/payment flow. Keep permanent backend entitlements/Firestore purchase verification as separate approved work, **not** implicit Phase B completion.
+
+### B-Visual-3 — RED → GREEN → Refactor and release/visual acceptance
+
+- [ ] Update the linked Phase B spec/plan, asset manifest and Skin ID → thumbnail → VFX behavior matrix before behavioral changes. Write failing typed/catalog, renderer and Playwright tests proving uniqueness beyond hue-only palettes, correct account isolation, trial expiry/fallback, ownership safety and asset errors; run RED before GREEN and refactor without regressions.
+- [ ] Test actual Garage and in-race WebGL across `en`/`zh-TW`, desktop 1440×900, phone portrait 390×844 and landscape 844×390 (plus 320×740 stress), Low/Medium/High, VFX Off, Reduced Motion and mute. Ensure touch targets ≥44 CSS px, safe areas and camera visibility; capture real screenshots/video, never concept images labeled as gameplay.
+- [ ] Compare approved references with **actual** before/after UI/WebGL screenshots and animation; record per-skin **PASS / FAIL / BLOCKED / APPROVED_DEVIATION** and GPU/CPU evidence (FPS, frame-time p50/p95, Draw Calls, Triangles, shader warm-up, texture memory/bytes, dispose/context restore). Add shader/resource budgets and no-visual-regression assertions.
+- [ ] Preserve `docs/garage-release-policy.md`: production stays `coming-soon` and excludes unpublished candidate assets/trial code; test the separate trial build, ensure no client-side entitlement forgery, no payment, no unapproved permanent grant. Do not change deployment flags just to reveal unfinished art.
+- [ ] After asset integration, run applicable targeted tests, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, Cloud Save / World Tour and `make verify`; inspect **exact-final-HEAD** full GitHub Actions `quality-gate`. Record browser/WebGL evidence and remaining physical iOS/Android verification separately. **Do not mark Phase B or relevant TODO #5.* complete until requirements and visual signoff pass**; do not merge to `develop`, open a PR or deploy without separate authorization.
+
+---
