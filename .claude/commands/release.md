@@ -24,7 +24,8 @@ from the survey. Later phases reuse this answer and do not ask again.
 
 展示公告時，每項標示附帶的圖片／影片（檔案路徑）或「不需要」。需要展示效果的項目（新特效、
 新動作、畫面或車輛行為改變）若沒有實機截圖或影片，先依 `docs/release-announcements.md` §6 第 2 步
-補上，再進入下面的檢查；修正、規則調整或紀錄說明不需要附圖。
+補上，再進入下面的檢查；修正、規則調整或紀錄說明不需要附圖。影片與截圖只在這裡、正式發佈前
+用要發佈的程式錄一次；平時 `develop` 有改動時不錄、也不重錄。
 
 1. `node scripts/check-release-notes.mjs <version>` — read-only.
    - **Passes** → go to Phase T.

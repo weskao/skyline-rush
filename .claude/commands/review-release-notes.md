@@ -34,7 +34,7 @@ whose notes were never reviewed, or were edited after their review. This command
      note does not. Answer **Media OK / Needs media (say which moment to show) / No media needed**.
 2b. **Media.** Before asking for approval, every "Needs media" highlight has a real-game capture in
    the entry, per `docs/release-announcements.md` §6 step 2 (`scripts/record-whats-new-clip.mjs` for
-   a race moment). Look at frames of each clip or image yourself (a contact sheet via `ffmpeg … tile`)
+   a race moment), recorded once from the code being released, never per `develop` change. Look at frames of each clip or image yourself (a contact sheet via `ffmpeg … tile`)
    and show the user which highlight each one illustrates. If one is still missing, the final
    question's recommended option is `Revise first (Recommended)`.
 3. **Ask the user** about every finding that is not OK, with `AskUserQuestion` (one question per

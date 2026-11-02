@@ -28,4 +28,5 @@ paths:
   Before writing the next notes, stamp the shipped entry with its version and tag date.
 - A highlight players see happen in the game ships with a real-game picture or clip, checked frame by
   frame (`docs/release-announcements.md` §6 step 2); the review's "Show it" verdict and `/release`
-  Phase N both stop a release that lacks one.
+  Phase N both stop a release that lacks one. Record it once, right before the release, from the code
+  being released; never record or re-shoot for each change that lands on `develop`.

@@ -132,6 +132,9 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
 2. **Show what players will see.** Every highlight whose point is visible in the game — a new
    effect, move, scene, car or rival behaviour, screen — gets real-game media before the review;
    fixes, rule changes and record notes stay text-only. One clip may cover several highlights.
+   **When:** once, right before the release (`/release` Phase N), from the code being released.
+   Do not record or re-shoot for each change that lands on `develop`; notes drafted there leave
+   `video` / `image` out until the release, and adding media then is reviewed with the copy.
    - A moment in a race: `node scripts/record-whats-new-clip.mjs <theme-slug> --track <id> --from <s>
      --seconds <s>` records it from the real game at 960×600 and 390×844 in en and zh-TW, with
      posters, under 1 MB each. Find the window first (log `race.elapsed` and the state you want to
