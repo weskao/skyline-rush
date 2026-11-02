@@ -5,6 +5,13 @@
 **Execution plan:** [2026-11-02-multiroute-longform-world-expansion.md](docs/superpowers/plans/2026-11-02-multiroute-longform-world-expansion.md).
 **Scope:** future implementation only. Current ten sprint tracks and Harbor Circuit unaffected. All estimates unverified.
 
+### Route topology and concept-art reference clarification (2026-11-02)
+
+- [x] Create [five committed SVG route schematics](docs/designs/new-tracks/route-schematics/../README.md) showing separate START and FINISH and ground/air route choices; these are technical **open-route diagrams**, not the AI scenic screenshots.
+- [ ] **User decision pending:** default five point-to-point races vs optional dedicated loop variants for Volcanic Crown + Stormline Megacity. Suggested hybrid: three long scenic point-to-point tracks, two maps optionally supporting 1/3/5-lap dedicated circuits; never repeat their full current 14–15 km routes if 3–5-minute default play time is required.
+- [ ] Commit the **two original AI scenic collage PNGs and 10 track-view crops** to `docs/designs/new-tracks/concept-art/` from the user-provided ZIP / this ChatGPT conversation (not yet on GitHub). Update [visual index](docs/designs/new-tracks/route-schematics/../README.md) with real filenames and hashes after actual upload; do not create dead links.
+- [ ] Once available, perform 2 real WebGL comparisons/map × desktop+mobile, each compared with corresponding concept view; preserve scene weather, key landmarks, sense of scale, flying vs ground reveal, road openness and reduced-motion/performance. Record pass/fail deviations.
+
 ### Shared systems
 - [ ] M1 typed CourseGraph: real hairpins, U-turns, separate ground/air branch edges and convergent joins; arc-length route frames, route-aware AI, progress, finish, minimap, checkpoints, ghost/save versions.
 - [ ] M2 natural open terrain and opt-in no-clamp driving/flying, safe recovery and honest collision/landing surfaces; old `ROAD_LIMIT` tracks remain unchanged; anti-finish-skip checks.
