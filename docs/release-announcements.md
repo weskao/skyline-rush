@@ -84,16 +84,23 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
   release's images. A missing image falls back to text. Formats: png, jpg, webp, avif and animated gif/
   webp. Players tap any picture or the clip to see it whole and uncropped (`ReleaseMediaViewer.vue`), so a
   thumbnail may crop as long as the full file reads well enlarged.
-- **Video** (optional `video` on the entry): a short muted clip that replaces the hero image
-  while the dialog is open. Give both a `desktop` (landscape, 960×600) and a `mobile` (portrait,
-  390×844) clip, each `{ src, poster }` localized like images (`.mp4`/`.webm` + a still), all under
-  `public/whats-new/<theme-slug>/`. Landscape screens get `desktop`, portrait ones `mobile`. It loops
-  inline only while the notes are open and pauses on close. Under reduced motion it shows the
-  poster with controls instead of autoplaying. A clip that fails to load falls back to the hero
-  image or the text. Record the real game (no mockups), keep each clip ≈ 6–10 s at balanced quality (`-crf 20`, ~1–3 MB). When
-  you record a phone viewport with Playwright, crop the video: it pads a small viewport with grey
-  rather than scaling it. The release check refuses a clip or poster that is not bundled, and
-  editing the video voids the review.
+- **Video** (optional `video` on the entry, and optional `video` on any highlight): a short muted clip that never
+  plays inline. The notes show its **poster** (a real-game still) in the hero or picture slot with a play
+  button over it, so readers see it is a video; tapping it opens the enlarged view (`ReleaseMediaViewer.vue`)
+  and the clip starts at once, looping muted. Closing returns to the poster. Under reduced motion the
+  enlarged view waits on the poster with controls instead of autoplaying. A highlight with a `video` shows
+  its poster instead of its `image`; one without keeps its picture or text. Give both a `desktop` (landscape,
+  960×600) and a `mobile` (portrait, 390×844) clip, each `{ src, poster }` localized like images
+  (`.mp4`/`.webm` + a still), all under `public/whats-new/<theme-slug>/`. Landscape screens get `desktop`,
+  portrait ones `mobile`. The notes fetch the clips ahead only while they are open (kept in Cache Storage,
+  so each downloads once). A poster that fails to load falls back to the picture or the text; a clip that
+  fails to load closes the enlarged view. Record the real game (no mockups), keep each clip ≈ 6–10 s at
+  balanced quality. **Quality vs size:** keep `.mp4` (H.264, `-pix_fmt yuv420p`, `-movflags +faststart`, no
+  audio) at a fixed `-crf 20` (typically 1–3 MB, capped at 4 MB) with a high-quality jpg poster (`-q:v 2`), as
+  `scripts/record-whats-new-clip.mjs` does; never coarsen the CRF to save bytes — shorten `--seconds` instead.
+  When you record a phone viewport with Playwright, crop the video: it pads a
+  small viewport with grey rather than scaling it. The release check refuses a clip or poster (hero or
+  highlight) that is not bundled, and editing any video voids the review.
   Bundled now: `public/whats-new/0.24.0/air-road-chain.{desktop,mobile}.{en,zh-TW}.{mp4,jpg}`
   (FLY + NITRO → clean landing → AIR → ROAD CHAIN), ready for the 0.24.0 entry.
 - Text is rendered with `textContent` only.
