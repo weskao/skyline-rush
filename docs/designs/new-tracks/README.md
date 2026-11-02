@@ -16,7 +16,7 @@ This directory contains **five ORIGINAL, hand-authored SVG route schematics**, c
 ## Topology decision pending
 
 - **CURRENT SPEC:** All five are **point-to-point / single finish** with visibly separate START and FINISH; all five complete on their first valid finish crossing. A path may zigzag, turn through multiple hairpins, cross above itself, or offer a branch without being a closed circuit.
-- **OPTION UNDER CONSIDERATION ONLY:** preserve Dune, Monsoon and Skyfall as scenic point-to-point; optionally design true circuit variants of Volcanic Crown and Stormline Megacity (new loop layouts, not the current 14–15 km point-to-point route repeated).
+- **RECOMMENDATION FOR CONSISTENCY (not an approved change):** keep all five proposed new maps as point-to-point by default, matching the ten existing sprint maps. A dedicated circuit experience can be added later as a clearly separated mode and purpose-built course; do not silently change new-map victory rules. Optional loop variants of Volcanic Crown and Stormline Megacity remain deferred alternatives, not part of this epic.
 - Existing `harbor-circuit` already supports lap modes. If adopted, size the new circuit lap around 4–5 km with 3 laps as the **initial** 3–5 min race-length hypothesis (subject to measured pace). Offer 1/3/5 lap selections as appropriate to existing modes, with different record/ghost and reward keys per lap count.
 - **Not authorized:** converting the five maps into loops, modifying runtime code, merging to develop or deploying. Ask for a topology decision before implementation.
 
