@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="216" height="216" viewBox="0 0 216 216">
+<defs><linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b17dff"/><stop offset="0.52" stop-color="#eedaff"/><stop offset="1" stop-color="#5c3ad1"/></linearGradient><linearGradient id="metal" x1="0" y1="0" x2="0.85" y2="1"><stop stop-color="#1c3554"/><stop offset=".6" stop-color="#0a1835"/><stop offset="1" stop-color="#09142d"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5c3ad1" stop-opacity=".92"/><stop offset=".65" stop-color="#b17dff" stop-opacity=".38"/><stop offset="1" stop-color="#5c3ad1" stop-opacity=".88"/></linearGradient></defs>
+<g stroke-linejoin="round" stroke-linecap="round">
+<path d="M45 83 107 56l64 28v68l-64 31-62-30Z" fill="url(#metal)" stroke="url(#edge)" stroke-width="6"/>
+<path d="m45 83 63 29 63-28M108 112v71" fill="none" stroke="#e1c6ff" stroke-width="4"/>
+<path d="M97 61 72 78l61 27 24-18-60-26Z" fill="url(#glass)" stroke="#cba1ff" stroke-width="3"/>
+<path d="m79 69 64 31v68M126 63 61 92" stroke="url(#edge)" stroke-width="13" fill="none"/>
+<path d="M91 47c-19-21-33 0-10 13l27 10c-4-19-9-20-17-23ZM126 47c19-21 33 0 10 13l-28 10c4-19 10-20 18-23Z" fill="url(#glass)" stroke="url(#edge)" stroke-width="4"/>
+<path d="M100 138h16m-8-8v16" stroke="#fff3ff" stroke-width="5"/>
+</g></svg>
