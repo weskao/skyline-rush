@@ -24,6 +24,7 @@ export function createGarageStage(environment: THREE.Texture) {
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
+  const towardsCamera = new THREE.Vector3();
   const previewDriver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0,
     impact: null, altitude: 0, trick: null };
   const previewRace = { phase: 'racing', player: previewDriver };
@@ -82,8 +83,17 @@ export function createGarageStage(environment: THREE.Texture) {
     lastTime = time;
     // Move only the emission sample briefly; keep the rendered car perfectly centred.
     car.position.z = reducedMotion ? 0 : Math.sin(time * 2) * 0.65;
-    try { aero.update(previewRace, dt, origin, previewSettings, reducedMotion); }
+    try { aero.update(previewRace, dt, origin, previewSettings, reducedMotion, null, true); }
     finally { car.position.z = 0; }
+    // Garage orbit views must see the energy ring edge-on and face-on.
+    for (const name of ['Ignition shockwave', 'Launch flare echo']) {
+      const ring = scene.getObjectByName(name);
+      if (ring?.visible) {
+        ring.quaternion.copy(camera.quaternion);
+        // Draw the flare in front of the car rather than hiding it inside the body.
+        ring.position.addScaledVector(camera.getWorldDirection(towardsCamera).negate(), carRadius * 0.52);
+      }
+    }
   }
 
   function inspectBounds(camera: THREE.PerspectiveCamera) {
@@ -103,6 +113,8 @@ export function createGarageStage(environment: THREE.Texture) {
 
   function setPaint(paint: PaintPreset) {
     car.userData.body.material.color.set(paint.paint);
+    car.userData.body.material.metalness = paint.metalness;
+    car.userData.body.material.roughness = paint.roughness;
     car.userData.lightColor.fromArray(paint.light);
     car.userData.brakeLight.color.copy(car.userData.lightColor);
   }
@@ -143,6 +155,7 @@ export function createGarageStage(environment: THREE.Texture) {
   }
   return {
     scene, update, inspectBounds, setPaint, dispose,
+    inspectCosmetics() { return aero.inspectCosmetics(); },
     setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
     configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },
   };

@@ -48,3 +48,33 @@ test('short-lived trial expires automatically and notifies subscribers without a
   assert.equal(revoked, true);
   unsubscribe();
 });
+
+test('trial expiry beyond the JS timer limit stays scheduled and does not revoke early', () => {
+  setGarageSkinAccount('long_timer_driver');
+  const realSetTimeout = globalThis.setTimeout;
+  const realClearTimeout = globalThis.clearTimeout;
+  const scheduled = new Map();
+  let nextId = 1;
+  globalThis.setTimeout = (callback, delay) => {
+    const id = nextId++;
+    scheduled.set(id, { callback, delay });
+    return id;
+  };
+  globalThis.clearTimeout = id => { scheduled.delete(id); };
+  try {
+    const expiresAt = Date.now() + 2_147_483_647 + 60_000;
+    setGarageSkinTrial(true, expiresAt);
+    assert.equal(equipGarageSkin('airflow-slipstream'), true);
+    assert.equal(scheduled.size, 1, 'long trials must have a scheduled expiry check');
+    const [id, first] = [...scheduled.entries()][0];
+    assert.equal(first.delay, 2_147_483_647, 'timeout must stay within the platform limit');
+    scheduled.delete(id);
+    first.callback(); // An early/chunked wake-up must not revoke an unexpired trial.
+    assert.equal(currentGarageSkins().airflow, 'airflow-slipstream');
+    assert.equal(scheduled.size, 1, 'the remaining time must be scheduled again');
+  } finally {
+    setGarageSkinAccount('long_timer_cleanup');
+    globalThis.setTimeout = realSetTimeout;
+    globalThis.clearTimeout = realClearTimeout;
+  }
+});
