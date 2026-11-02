@@ -84,17 +84,22 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
   release's images. A missing image falls back to text. Formats: png, jpg, webp, avif and animated gif/
   webp. Players tap any picture or the clip to see it whole and uncropped (`ReleaseMediaViewer.vue`), so a
   thumbnail may crop as long as the full file reads well enlarged.
-- **Video** (optional `video` on the entry, and optional `video` on any highlight): a short muted clip that never
-  plays inline. The notes show its **poster** (a real-game still) in the hero or picture slot with a play
-  button over it, so readers see it is a video; tapping it opens the enlarged view (`ReleaseMediaViewer.vue`)
-  and the clip starts at once, looping muted. Closing returns to the poster. Under reduced motion the
-  enlarged view waits on the poster with controls instead of autoplaying. A highlight with a `video` shows
+- **Video** (optional `video` on the entry, and optional `video` on any highlight): a short muted clip. The
+  entry's **hero** clip autoplays inline, muted and looping, as soon as the notes open; it plays only while the
+  notes are open and its version tab is shown, and a small corner button (or a tap on the clip) opens the
+  enlarged view (`ReleaseMediaViewer.vue`). Under reduced motion the hero shows its poster with controls and
+  does not autoplay. A **highlight** clip never plays inline: the notes show its **poster** (a real-game still)
+  in the picture slot with a play button over it, and a tap opens the enlarged view, where the clip starts at
+  once, looping muted. The enlarged hero carries on from the inline frame and hands its frame back on close.
+  In the enlarged view a tap on the clip pauses and resumes it (a play badge marks the paused frame; Space
+  or Enter do the same), while a tap outside it, the × or Esc closes; reduced motion waits on the poster with
+  controls. A highlight with a `video` shows
   its poster instead of its `image`; one without keeps its picture or text. Give both a `desktop` (landscape,
   960×600) and a `mobile` (portrait, 390×844) clip, each `{ src, poster }` localized like images
   (`.mp4`/`.webm` + a still), all under `public/whats-new/<theme-slug>/`. Landscape screens get `desktop`,
   portrait ones `mobile`. The notes fetch the clips ahead only while they are open (kept in Cache Storage,
   so each downloads once). A poster that fails to load falls back to the picture or the text; a clip that
-  fails to load closes the enlarged view. Record the real game (no mockups), keep each clip ≈ 6–10 s at
+  fails to load closes the enlarged view (a hero clip that fails falls back to its picture or the text). Record the real game (no mockups), keep each clip ≈ 6–10 s at
   balanced quality. **Quality vs size:** keep `.mp4` (H.264, `-pix_fmt yuv420p`, `-movflags +faststart`, no
   audio) at a fixed `-crf 20` (typically 1–3 MB, capped at 4 MB) with a high-quality jpg poster (`-q:v 2`), as
   `scripts/record-whats-new-clip.mjs` does; never coarsen the CRF to save bytes — shorten `--seconds` instead.

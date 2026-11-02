@@ -52,19 +52,19 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   const mediaCache = createReleaseMediaCache(clipSources, {
     caches: globalThis.caches, fetch: url => fetch(url), createObjectURL: blob => URL.createObjectURL(blob),
   });
-  // The still and play button are all the notes draw; the clips download ahead only while the notes are open,
-  // so an enlarged clip starts at once. A reader who moved on meanwhile keeps their view (the stale view just updates unseen).
+  // Clips download ahead only while the notes are open, so the hero and any enlarged clip start at once; highlight clips
+  // draw only their poster and play button. A reader who moved on meanwhile keeps their view (the stale view just updates unseen).
   function loadVisibleClips() {
     if (!releaseDialog.open) return;
     for (const view of [releaseView.heroVideo, ...releaseView.entries.map(entry => entry.video)]) {
-      if (view && !view.src) mediaCache.load(view.source).then(src => { view.src = src; });
+      if (view && !view.src) mediaCache.load(view.source).then(src => { view.src = src; if (view === releaseView.heroVideo) nextTick(syncReleaseVideo); });
     }
   }
   function clipView(video: ReleaseVideo | null | undefined, locale: string): ReleaseClipView | null {
     const clip = releaseHeroVideo(video, locale, portrait.matches);
     if (!clip) return null;
     const source = bundled(clip.src);
-    return { src: mediaCache.peek(source) ?? '', source, poster: import.meta.env.BASE_URL + clip.poster, variant: clip.variant };
+    return { src: mediaCache.peek(source) ?? '', source, poster: import.meta.env.BASE_URL + clip.poster, variant: clip.variant, controls: reducedMotion.matches };
   }
 
   function renderReleaseNotes() {
@@ -88,7 +88,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
       version: versionLabel(release.version),
       date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
       heroSrc: hero ? import.meta.env.BASE_URL + hero : '',
-      zoom: { image: t('release.zoomImage'), video: t('release.zoomVideo'), close: t('release.zoomClose') },
+      zoom: { image: t('release.zoomImage'), video: t('release.zoomVideo'), close: t('release.zoomClose'), pause: t('release.pauseClip'), resume: t('release.resumeClip') },
       heroVideo: clipView(release.video, locale),
       entries: highlightsByKind(release.highlights).map(item => {
         const image = releaseImage(item.image, locale), title = releaseText(item.title, locale);
@@ -105,7 +105,15 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
       }),
     });
     updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()) });
+    nextTick(syncReleaseVideo);
     loadVisibleClips();
+  }
+  // The hero plays only while the notes are open and it is on screen (short landscape hides it); reduced motion keeps its poster and controls.
+  function syncReleaseVideo() {
+    const video = document.querySelector<HTMLVideoElement>('#release-video');
+    if (!video) return;
+    if (releaseDialog.open && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
+    else video.pause();
   }
   function selectRelease(index: number): void {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
@@ -164,6 +172,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   releaseDialog.addEventListener('keydown', event => event.stopPropagation());
   portrait.addEventListener('change', () => { if (releaseDialog.open) renderReleaseNotes(); }); // a turned phone gets the matching clip
   releaseDialog.addEventListener('close', () => {
+    syncReleaseVideo();
     updateReleaseView({ openHasUpdate: false });
     (releaseOpener ?? releaseOpen).focus({ preventScroll: true });
     afterClose();

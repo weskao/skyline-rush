@@ -20,7 +20,8 @@ export interface ReleaseTab {
   unreadLabel: string;
 }
 // `source` is the bundled clip; `src` stays empty until the cached copy is ready, and `poster` is the still shown meanwhile.
-export interface ReleaseClipView { src: string; source: string; poster: string; variant: 'desktop' | 'mobile' }
+// `controls` (reduced motion) keeps the hero on its poster with native controls instead of autoplaying.
+export interface ReleaseClipView { src: string; source: string; poster: string; variant: 'desktop' | 'mobile'; controls: boolean }
 export interface ReleaseEntry {
   kind: string;
   kindLabel: string;
@@ -41,10 +42,10 @@ export interface ReleaseView {
   version: string;
   date: string;
   heroSrc: string;
-  // The hero's poster and play button; null falls back to heroSrc.
+  // The hero clip, played inline while the notes are open; null falls back to heroSrc.
   heroVideo: ReleaseClipView | null;
-  // Screen-reader names for the hero enlarge and play buttons and the enlarged view's close button.
-  zoom: { image: string; video: string; close: string };
+  // Screen-reader names for the hero enlarge buttons and the enlarged view's close button and pause toggle.
+  zoom: { image: string; video: string; close: string; pause: string; resume: string };
 }
 export interface TutorialCoachView {
   visible: boolean;

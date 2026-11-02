@@ -3,7 +3,7 @@ import { test } from './helpers/gameplay-browser.js';
 import { recentReleases } from '../src/release-notes.ts';
 
 // Tapping a What's New picture or clip shows all of it, uncropped and on screen, on desktops, tablets and phones.
-// Escape, the close button or a tap anywhere closes only the enlarged view and hands focus back.
+// Escape, the close button or a tap anywhere on a picture (outside the clip, for a clip) closes only the enlarged view and hands focus back.
 const DEVICES = [['desktop', 1440, 900, false], ['tablet portrait', 820, 1180, true], ['tablet landscape', 1180, 820, true],
   ['phone portrait', 390, 844, true], ['phone landscape', 844, 390, true]];
 // A two-frame 1×1 animated GIF (red, then blue, looping), served in place of a highlight image.
@@ -99,7 +99,7 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
       await press(opener, touch);
       await expect(viewer).toBeVisible();
       expect(await ring(viewer), 'enlarged view').toBe('none');
-      if (touch) await viewer.tap({ position: { x: 20, y: 200 } }); else await page.keyboard.press('Escape');
+      if (touch) await viewer.tap({ position: { x: 5, y: 200 } }); else await page.keyboard.press('Escape');
       await expect(viewer).toBeHidden();
       expect(await ring(opener), 'button that regains focus').toBe('none');
       await panel.focus();
@@ -120,24 +120,25 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     expect(await ring(), 'the keyboard brings the ring back').not.toBe('none');
   });
 
-  test('the release poster shows a play button, and its clip opens whole and playing on a click', async ({ page, gameplayURL }) => {
+  test('the hero clip plays inline with an enlarge button on its corner, and its clip opens whole and carries on playing', async ({ page, gameplayURL }) => {
     const errors = await openNotes(page, gameplayURL);
     const hero = page.locator('#release-video'), zoom = page.locator('#release-video-zoom');
     if (height <= 420) {
-      // Short landscape screens leave the poster out to fit the notes; no play button is left behind.
+      // Short landscape screens leave the hero out to fit the notes; no enlarge button is left behind and nothing plays unseen.
       await expect(hero).toBeHidden();
       await expect(zoom).toBeHidden();
+      await page.waitForTimeout(500);
+      expect(await hero.evaluate(el => el.paused)).toBe(true);
       return;
     }
-    await expect(page.locator('#release-panel video'), 'nothing plays inline').toHaveCount(0);
+    await expect.poll(() => playing(hero), 'the hero autoplays inline').toBe(true);
     // Measure together: the notes entrance animation can move between browser round trips.
-    const [zoomBox, heroBox, iconBox, badgeBox] = await zoom.evaluate(el =>
-      [el, document.getElementById('release-video'), el.querySelector('svg'), el.querySelector('.release-play-badge')].map(node => node.getBoundingClientRect().toJSON()));
-    expect(zoomBox.width >= TOUCH && zoomBox.height >= TOUCH, `play is a full touch target: ${JSON.stringify(zoomBox)}`).toBe(true);
-    expect(zoomBox.x <= heroBox.x + 0.5 && zoomBox.y <= heroBox.y + 0.5 && zoomBox.x + zoomBox.width >= heroBox.x + heroBox.width - 0.5 && zoomBox.y + zoomBox.height >= heroBox.y + heroBox.height - 0.5, 'play covers the poster').toBe(true);
-    // A drawn icon, not a font glyph: Android's fallback font pushed "▶" off the centre of its circle.
-    const centred = (inner, outer) => Math.abs(inner.x + inner.width / 2 - (outer.x + outer.width / 2)) <= 0.5 && Math.abs(inner.y + inner.height / 2 - (outer.y + outer.height / 2)) <= 0.5;
-    expect(centred(iconBox, badgeBox) && centred(badgeBox, heroBox), `play badge centred on the poster: ${JSON.stringify({ iconBox, badgeBox, heroBox })}`).toBe(true);
+    const [zoomBox, heroBox, iconBox] = await zoom.evaluate(el =>
+      [el, document.getElementById('release-video'), el.querySelector('svg')].map(node => node.getBoundingClientRect().toJSON()));
+    expect(zoomBox.width >= TOUCH && zoomBox.height >= TOUCH, `enlarge is a full touch target: ${JSON.stringify(zoomBox)}`).toBe(true);
+    expect(zoomBox.x >= heroBox.x - 0.5 && zoomBox.y >= heroBox.y - 0.5 && zoomBox.x + zoomBox.width <= heroBox.x + heroBox.width + 0.5, 'enlarge sits on the clip corner').toBe(true);
+    // A drawn icon, not a font glyph: Android's fallback font pushed "⤢" off the centre of its circle.
+    expect(Math.abs(iconBox.x + iconBox.width / 2 - (zoomBox.x + zoomBox.width / 2)) <= 0.5 && Math.abs(iconBox.y + iconBox.height / 2 - (zoomBox.y + zoomBox.height / 2)) <= 0.5, 'icon centred in its circle').toBe(true);
     await watchFades(page);
     await press(zoom, touch);
     const viewer = page.locator('#release-media-viewer'), clip = viewer.locator('video');
@@ -158,7 +159,7 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     expect(await fades(page), 'and fade out before closing').toEqual(['view', '::backdrop']);
     await expect(page.locator('#whats-new-screen')).toBeVisible();
     await expect(zoom).toBeFocused();
-    await expect(page.locator('#release-panel video'), 'still nothing inline').toHaveCount(0);
+    await expect.poll(() => playing(hero), 'the hero plays on after the enlarged view closes').toBe(true);
     expect(errors).toEqual([]);
   });
 });
@@ -213,11 +214,11 @@ test.describe('reduced motion and languages', () => {
     const card = page.locator('#release-items .release-entry').filter({ has: page.locator('.release-zoom') }).first();
     const title = await card.locator('strong').textContent();
     await expect(thumb).toHaveAccessibleName(`Enlarge image: ${title}`);
-    await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('Play video');
+    await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('Enlarge video');
     await page.locator('#locale-select').selectOption('zh-TW', { force: true });
     const zhTitle = await card.locator('strong').textContent();
     await expect(thumb).toHaveAccessibleName(`放大圖片：${zhTitle}`);
-    await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('播放影片');
+    await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('放大影片');
     await thumb.click();
     await expect(page.locator('#release-media-viewer .release-viewer-close')).toHaveAccessibleName('關閉放大檢視');
   });

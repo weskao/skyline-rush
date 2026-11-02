@@ -24,7 +24,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       {
         id: 'garage', kind: 'new', image: null,
         title: { en: 'Try car effects free in the Garage', 'zh-TW': '車庫新增免費試用特效' },
-        description: { en: 'Preview launch flares, NITRO trails and airflow, then tap Try free to use one this visit. Spin your car in Ground or Flight view and see glossier paints.', 'zh-TW': '在預覽工作室試看起跑閃焰、氮氣尾跡和氣流，按「免費試用」這次就能用；還能切換平地、起飛展示，車漆也更亮澤。' }
+        description: { en: 'Preview launch flares, NITRO trails and airflow, then tap Try free to use one this visit. Spin your car in Ground or Flight view and see glossier paints.', 'zh-TW': '在車庫預覽起跑閃焰、NITRO 尾跡和氣流，按「免費試用」本次就能用；可切換平地、起飛視角，車漆也更亮澤。' }
       },
       {
         id: 'eight-car-races', kind: 'new',
@@ -76,15 +76,15 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         title: { en: 'Fresh rings and pickups every race', 'zh-TW': '每場比賽的光圈和道具都不同' },
         description: {
           en: 'Rings and NITRO pickups land in new spots every race and grow with the grid, with ring trains down the middle, full-width rows and pickup runs.',
-          'zh-TW': '光圈和 NITRO 道具每場換位置，車越多越多；中間車道有連串光圈，還有整排光圈和成串道具。'
+          'zh-TW': '光圈和 NITRO 道具每場換位置，車數越多，數量也越多；中間車道有連串光圈，還有整排光圈和成串道具。'
         }
       },
       {
         id: 'old-layout-records', kind: 'improvement', image: null,
         title: { en: 'Your earlier times are kept', 'zh-TW': '之前的成績都會保留' },
         description: {
-          en: 'Because every road changed, best times and ghosts start fresh. Your earlier runs stay in History, marked OLD LAYOUT, so nothing is lost.',
-          'zh-TW': '所有賽道的配置都改變了，所以最佳成績和幽靈車會重新計算。之前的成績仍保留在歷史紀錄中，並標示「舊版配置」，一筆都不會少。'
+          en: 'Rings and pickups moved on every track, so best times and ghosts start fresh. Your earlier runs stay in History, marked OLD LAYOUT.',
+          'zh-TW': '每條賽道的光圈和道具位置都變了，所以最佳成績和幽靈車會重新計算。之前的成績仍保留在歷史紀錄，並標示「舊版配置」。'
         }
       },
       {
@@ -95,7 +95,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       {
         id: 'iphone-magnifier', kind: 'fix', image: null,
         title: { en: 'No more magnifier on iPhone long-presses', 'zh-TW': 'iPhone 長按不再跳出放大鏡' },
-        description: { en: 'Holding the screen or a touch button on iPhone no longer pops up the magnifier, so steering, boosting and braking are never interrupted.', 'zh-TW': '在 iPhone 上按住畫面或觸控按鈕時，不會再跳出放大鏡，轉向、加速都不被打斷。' }
+        description: { en: 'Holding the screen or a touch button on iPhone no longer pops up the magnifier, so steering, boosting and braking are never interrupted.', 'zh-TW': '在 iPhone 上按住畫面或觸控按鈕時，不會再跳出放大鏡，轉向、加速和煞車都不會被打斷。' }
       }
     ]
   },
