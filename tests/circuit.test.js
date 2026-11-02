@@ -9,6 +9,7 @@ import { Scene, Vector3 } from 'three';
 import * as circuitRecords from '../src/circuit-records.ts';
 import { createCircuitScene } from '../src/circuit-scene.ts';
 import { createEffects } from '../src/effects.js';
+import { drawnMarkers } from '../src/marker-pool.js';
 import { trackLocalPosition } from '../src/track-paths.ts';
 import { routeMarker } from '../src/route-map.ts';
 import { trackPoint, trackFrame } from '../src/track-paths.ts';
@@ -126,10 +127,11 @@ test('visible circuit rings face the same physical frame as their road and vehic
   effects.update(race, .016, 0, false, true, [], {
     worldPoint: (s, x, y, origin) => trackLocalPosition(id, s, x, y, origin), worldFrame: s => trackFrame(id, s),
   });
-  const mesh = scene.getObjectByName('Race rings').children[0], frame = trackFrame(id, ring.distance);
+  const mesh = drawnMarkers(scene.getObjectByName('Race rings'))[0], frame = trackFrame(id, ring.distance);
   const normal = new Vector3(0, 0, 1).applyQuaternion(mesh.quaternion);
   assert.ok(normal.dot(new Vector3(...frame.forward).negate()) > .999999);
-  assert.deepEqual(mesh.position.toArray(), trackLocalPosition(id, ring.distance, ring.x, ring.altitude, race.player.distance));
+  // Instance matrices are Float32, the precision the GPU draws with: exact after Math.fround.
+  assert.deepEqual(mesh.position.toArray(), trackLocalPosition(id, ring.distance, ring.x, ring.altitude, race.player.distance).map(Math.fround));
 });
 
 

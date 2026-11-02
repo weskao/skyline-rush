@@ -14,7 +14,9 @@ const memory = () => {
 beforeEach(() => { globalThis.localStorage = memory(); });
 afterEach(() => { delete globalThis.localStorage; });
 
-const canyonConfig = { mode: 'custom', rivals: 0, traffic: 'off', themes: true };
+// Items off: stage 2's denser rings would end a slipstream boost mid-arc, and that braking step bends the path
+// faster than a 10 Hz chord follows (the format limit noted at touchdown below). This test is about the ramp arc.
+const canyonConfig = { mode: 'custom', rivals: 0, traffic: 'off', themes: true, itemRules: 'off' };
 const canyon = () => createRace('canyon', canyonConfig);
 const access = new Set(['coast']);
 const eventLab = () => compileCourse(createRace('coast', { mode: 'custom', rivals: 0, traffic: 'off' }), validateCourse({

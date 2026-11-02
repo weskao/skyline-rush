@@ -80,6 +80,8 @@ export function createSound() {
     else if (name === 'lift') tone(260, 900, 0.35, 0, 0.03);
     else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
     else if (name === 'pickup') { tone(1047, 1568, 0.14, 0, 0.03); tone(1568, 2093, 0.18, 0.07, 0.02); }
+    else if (name === 'rival-pickup') { tone(1047, 1568, 0.14, 0, 0.011); tone(1568, 2093, 0.18, 0.07, 0.007); } // the player's pickup, rival volume
+    else if (name === 'rival-nitro') tone(95, 42, 0.23, 0, 0.016); // the boost thump alone, rival volume
     else if (name === 'item-use') { tone(330, 990, .2, 0, .03); tone(660, 1320, .16, .06, .02); }
     else if (name === 'shield-block') { tone(1568, 784, .18, 0, .03); tone(2093, 1047, .14, .03, .02); }
     else if (name === 'item-ready') { tone(1319, 1319, .07, 0, .018); tone(1760, 1760, .09, .08, .018); }

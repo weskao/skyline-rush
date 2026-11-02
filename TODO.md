@@ -1,3 +1,21 @@
+## Rival item pickups — stage 2 (2026-11-02)
+
+**Branch:** `feature/rival-item-pickups` (merged `develop` `435e4fb8` as `f18cb226`, no conflicts). Plan + inventory + AC: `docs/plans/2026-11-01-rival-item-pickups.md`. `PLAYWRIGHT_PORT=5186`. Merged `develop` `bf350867` too (clean; `npm test` 1361/0, 3 skipped). User approved (2026-11-02) a local `--no-ff` merge into `develop` once CI is green, then deleting the feature branch; no `main`, no PR, no deploy, no rules deploy.
+
+- [x] R1 economy bot with 7 rivals, mode × track × difficulty; frozen stage-1 baseline JSON; rival NITRO count.
+- [x] R2 move rival NITRO timing out of `game.js` (move-only).
+- [x] R3 shared 2.5 s respawn for rings and pickups.
+- [x] R4 rivals collect NITRO items; Easy cap (AC3); Normal on-line only.
+- [x] R5 Hard lane-seeking through `avoidObstacles` (obstacles still win).
+- [x] R6 full-width rows, dense trains, per-track pickup gap; PERFECT LINE grouping locked.
+- [x] R7 density + rubber-band balance: AC1 ≥ 95% on every mode × track × difficulty, AC2 Normal +2 / Hard +4; replace stage-1 layout locks (user decision noted).
+- [x] R8 AC4 layout version bump + rules/sync guard. **Before release (needs user approval): deploy `firestore.rules` with the new keys.**
+- [x] R9 instanced rings/pickups, rival collect/NITRO cues (throttled, never sound-only); draw calls flat on all ten tracks; shader warmup.
+- [x] R10 What's New UPCOMING (en + zh-TW) + `/review-release-notes`.
+- [x] R11 gates + `[full-regression]` push + `quality-gate` green on final HEAD `21c06661` (run `41375706816`; includes `origin/develop` `87648454`).
+
+---
+
 ## Classic pickup density — stage plan (2026-11-01)
 
 ## 2026-11-02 Garage collection whole-card UX + four distinct native-3x Airflow icons
@@ -21,7 +39,7 @@
 - [x] S7 audio: no throttle needed (NITRO-ready cue min gap 5.0 s on changed tracks vs Taipei 3.0 s). What's New: shipped `0.28.0` entry was never stamped after the release (UPCOMING still resolved to 0.28.0), so it is now `version: '0.28.0'` (its review fingerprint still matches); new `UPCOMING` entry with `classic-more-rings` (reviewer rewrite, user chose it) + `old-layout-records`, reviewed and approved as 0.29.0 (`ea8fed66`). If the release ships under another number, re-run `/review-release-notes <version>`.
 - [x] S8 per-track Draw Calls/Triangles/p50/p95 table vs `develop` (plan「S8」): draw calls flat, Coast triangles +4.3%, Neon +1.2%; 15 real WebGL captures (5 routes × 3 viewports); all record-seeding browser specs green after moving 7 specs' fixtures to the `@2` ids (`bdfd742d`). Pending: physical keyboard/touch/phone play by the user. Unrelated finding: 844×390 non-touch desktop HUD overlaps (pre-existing).
 - [x] S9 `[full-regression]` push, `quality-gate` green on `bc37681e` (run `41319983990`; run `41313681206` on `1db53ed3` failed 2 stale specs, fixed in `bc37681e`), run id reported to skyline-rush-13. Pending: user plays it.
-- [ ] Stage 2 (rival item pickups, `feature/rival-item-pickups` `79f45369`): start only after S9 green + user played + explicit go; ask the plan's questions first.
+- [x] Stage 2 (rival item pickups, `feature/rival-item-pickups`): R1–R11 done, `quality-gate` green on `21c06661` (run `41375706816`), merged into `develop` with user approval.
 
 ---
 

@@ -25,6 +25,9 @@ export interface TrackConfig {
   ringAltitudes?: readonly number[];
   /** The first N rings are nitro rings, so the first NITRO comes early without adding rings. */
   openingNitroRings?: number;
+  /** Chance per ring slot of a full-width row (default 0.1) / a dense train (default 0.06), `src/ring-layout.ts`. */
+  ringRows?: number;
+  ringTrains?: number;
   /** Ring/pickup layout generation for timed records (`src/record-layout.ts`); omitted = 1. Bump it whenever a layout change makes older times incomparable. */
   layoutVersion?: number;
 }

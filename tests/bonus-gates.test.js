@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createRace, stepRace, useHeldItem, RACE_TRACKS } from '../src/game.js';
 import { Scene } from 'three';
 import { createEffects } from '../src/effects.js';
+import { drawnMarkers } from '../src/marker-pool.js';
 import { validateRaceRequest, rulesSignature } from '../src/race-config.ts';
 
 function collect(race, type, overrides = {}) {
@@ -134,8 +135,8 @@ test('all bonus gates render with existing warmed materials and bounded pools', 
     for (const gate of race.rings.filter(gate => gate.type.endsWith('-pad') || gate.type === 'emp')) {
       race.player.distance = gate.distance - 10;
       effects.update(race, 1 / 60, 0, false, true);
-      const mesh = gates.children[0];
-      assert.ok(mesh.visible);
+      const mesh = drawnMarkers(gates)[0];
+      assert.ok(mesh, 'drawn');
       assert.ok(mesh.material && warmed.has(mesh.material), gate.type + ' uses an existing warmed variant');
       assert.ok(mesh.material.color.toArray().every(Number.isFinite));
       assert.equal(gates.children.length, poolSize);

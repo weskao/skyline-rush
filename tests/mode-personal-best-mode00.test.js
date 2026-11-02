@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace } from '../src/game.js';
+import { layoutVersion } from '../src/record-layout.ts';
 import { recordModeRace, loadModeBest, loadModeHistory, MODE_BESTS_KEY, MODE_HISTORY_KEY,
   loadHistory, loadUnlocks } from '../src/history.ts';
 
@@ -41,11 +42,11 @@ test('RED 10C: stunt lifetime-best query uses the high score rather than the sho
   assert.equal(loadModeBest(champion.trackId,champion.config,store),9000);
 });
 
-// Legacy records predate ring-layout versions (layout 1), so this runs on a track whose layout never changed.
+// A history run on the track's current layout (stage 2 re-laid every track, so none is still layout 1).
 test('RED 10C: legacy challenge history and malformed saved bests never invent records',()=>{
   const race=completed('custom',78,{traffic:'off',rivals:0},'aurora');
   const seed={date:'2026-10-23T00:00:00Z',mode:race.mode,track:race.trackId,
-    rules:JSON.stringify(race.config),time:78};
+    rules:JSON.stringify(race.config),time:78,layout:layoutVersion(race.trackId)};
   const store=memory({[MODE_HISTORY_KEY]:JSON.stringify([seed]),
     [MODE_BESTS_KEY]:JSON.stringify({'nonsense':-300})});
   assert.equal(loadModeBest(race.trackId,race.config,store),78);
