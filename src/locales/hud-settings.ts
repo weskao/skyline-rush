@@ -1,7 +1,6 @@
-// Settings panel: the race HUD layout choice, its optional widgets, NITRO READY cues and reset.
+// VFX panel: the race HUD layout choice, its optional widgets, NITRO READY cues and reset.
 export const HUD_SETTINGS_COPY = {
   en: {
-    'hudSettings.panel': 'Audio and HUD settings',
     'hudSettings.legend': 'Race HUD',
     'hudSettings.hybrid': 'Immersive',
     'hudSettings.competitive': 'Competitive',
@@ -13,7 +12,6 @@ export const HUD_SETTINGS_COPY = {
     'hudSettings.reset': 'Reset HUD to default',
   },
   'zh-TW': {
-    'hudSettings.panel': '音訊與遊戲介面設定',
     'hudSettings.legend': '遊戲介面',
     'hudSettings.hybrid': '沉浸式',
     'hudSettings.competitive': '競技資訊',
