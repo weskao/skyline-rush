@@ -31,6 +31,9 @@ paths:
   frame (`docs/release-announcements.md` §6 step 2); the review's "Show it" verdict and `/release`
   Phase N both stop a release that lacks one. Record it once, right before the release, from the code
   being released; never record or re-shoot for each change that lands on `develop`.
+- Clips never autoplay in the notes: a hero or highlight `video` shows its poster with a play button and plays only
+  in the enlarged view after a tap. Keep clips under 1 MB (CRF stepping in `scripts/record-whats-new-clip.mjs`);
+  never raise the limit to gain quality. `checkReleaseNotes` refuses an unbundled hero or highlight clip.
 - Leave out what players never need: fine tuning details, code structure or refactors, tests and
   tooling, back-office, admin or server setup, and anything sensitive (links, accounts, keys,
   unannounced plans).

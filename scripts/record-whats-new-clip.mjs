@@ -57,10 +57,14 @@ async function record(locale, system, shape, { width, height, mobile }) {
   const length = (Date.now() - opened) / 1000 - start;
   await context.close();
   const raw = await page.video().path(), base = `${outDir}${slug}.${shape}.${locale}`;
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', `${start}`, '-t', `${length}`, '-i', raw, '-an', '-c:v', 'libx264',
-    '-preset', 'slow', '-crf', '30', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', `${base}.mp4`]);
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', `${length / 2}`, '-i', `${base}.mp4`, '-frames:v', '1', '-q:v', '4', `${base}.jpg`]);
-  const bytes = (await stat(`${base}.mp4`)).size;
+  // Best quality that fits the budget: start at CRF 22 and coarsen by 2 until the clip is under 1 MB.
+  let bytes = Infinity;
+  for (let crf = 22; crf <= 34 && bytes > MAX_BYTES; crf += 2) {
+    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', `${start}`, '-t', `${length}`, '-i', raw, '-an', '-c:v', 'libx264',
+      '-preset', 'slow', '-crf', `${crf}`, '-pix_fmt', 'yuv420p', '-movflags', '+faststart', `${base}.mp4`]);
+    bytes = (await stat(`${base}.mp4`)).size;
+  }
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', `${length / 2}`, '-i', `${base}.mp4`, '-frames:v', '1', '-q:v', '2', `${base}.jpg`]);
   if (bytes > MAX_BYTES) throw new Error(`${base}.mp4 is ${bytes} bytes; keep clips under 1 MB (shorter --seconds)`);
   console.log(`${base}.mp4 ${(bytes / 1024).toFixed(0)} KB, ${length.toFixed(1)} s`);
 }
