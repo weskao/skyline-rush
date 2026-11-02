@@ -1,30 +1,44 @@
-# New Track Expansion — Visual Direction Reference Index (2026-11-02)
+# Skyline Rush — Five Point-to-Point Expansion Tracks: Concept Art & Routes
 
-## Status and rights
-This directory contains **five ORIGINAL, hand-authored SVG route schematics**, committed on the `feature/epic-multiroute-longform-tracks-planning` branch and linked below. They are not photorealistic gameplay screenshots, and cannot establish an exact 3D road layout. The earlier two AI-generated scene collages in the ChatGPT conversation **were not uploaded into GitHub** by this operation; a separate ZIP of the original artwork and ten per-track crops is provided to the user in that chat. Do not point to nonexistent GitHub PNGs or claim the ZIP is in this branch.
+**Planning branch:** `feature/epic-multiroute-longform-tracks-planning`  
+**Decision (2026-11-02):** **All five NEW tracks are POINT-TO-POINT, with one START and one separate FINISH.** No lap counting or loop-race variant on these five; existing ten sprint tracks retain the same single-finish mental model. Harbor Circuit remains a distinct mode.
 
-## Curated route schematics
+## GitHub-saved image references
 
-| Course | Route diagram |
-| --- | --- |
-| 沙暴裂谷 / Dune Tempest | [dune-tempest.svg](route-schematics/dune-tempest.svg) |
-| 雨林失落神殿 / Monsoon Ruins | [monsoon-ruins.svg](route-schematics/monsoon-ruins.svg) |
-| 浮空群島 / Skyfall Archipelago | [skyfall-archipelago.svg](route-schematics/skyfall-archipelago.svg) |
-| 熔火天脊 / Volcanic Crown | [volcanic-crown.svg](route-schematics/volcanic-crown.svg) |
-| 霓虹暴雨都市 / Stormline Megacity | [stormline-megacity.svg](route-schematics/stormline-megacity.svg) |
+Each of the five **two-view storyboard SVGs** below is physically committed in this branch; each illustrates a ground driving camera and a separate aerial/branch camera plus explicit green START and red FINISH. The companion SVG is a deliberately simplified technical route sketch, not a copy of a looping minimap.
 
-## Topology decision pending
+| Track | Two-view concept image | Ground/air route diagram |
+| --- | --- | --- |
+| **沙暴裂谷 / Dune Tempest** | [Scene design board](concept-art/dune-tempest-point-to-point-storyboard.svg) | [Single-finish route](route-schematics/dune-tempest.svg) |
+| **雨林失落神殿 / Monsoon Ruins** | [Scene design board](concept-art/monsoon-ruins-point-to-point-storyboard.svg) | [Single-finish route](route-schematics/monsoon-ruins.svg) |
+| **浮空群島 / Skyfall Archipelago** | [Scene design board](concept-art/skyfall-archipelago-point-to-point-storyboard.svg) | [Single-finish route](route-schematics/skyfall-archipelago.svg) |
+| **熔火天脊 / Volcanic Crown** | [Scene design board](concept-art/volcanic-crown-point-to-point-storyboard.svg) | [Single-finish route](route-schematics/volcanic-crown.svg) |
+| **霓虹暴雨都市 / Stormline Megacity** | [Scene design board](concept-art/stormline-megacity-point-to-point-storyboard.svg) | [Single-finish route](route-schematics/stormline-megacity.svg) |
 
-- **CURRENT SPEC:** All five are **point-to-point / single finish** with visibly separate START and FINISH; all five complete on their first valid finish crossing. A path may zigzag, turn through multiple hairpins, cross above itself, or offer a branch without being a closed circuit.
-- **RECOMMENDATION FOR CONSISTENCY (not an approved change):** keep all five proposed new maps as point-to-point by default, matching the ten existing sprint maps. A dedicated circuit experience can be added later as a clearly separated mode and purpose-built course; do not silently change new-map victory rules. Optional loop variants of Volcanic Crown and Stormline Megacity remain deferred alternatives, not part of this epic.
-- Existing `harbor-circuit` already supports lap modes. If adopted, size the new circuit lap around 4–5 km with 3 laps as the **initial** 3–5 min race-length hypothesis (subject to measured pace). Offer 1/3/5 lap selections as appropriate to existing modes, with different record/ghost and reward keys per lap count.
-- **Not authorized:** converting the five maps into loops, modifying runtime code, merging to develop or deploying. Ask for a topology decision before implementation.
+- [Per-track composition, landmarks, weather, camera and acceptance criteria](visual-fidelity.md)
+- [Machine-readable art and topology reference manifest](concept-manifest.json)
 
-## Visual parity / acceptance gates
+## Original high-detail AI PNG artwork — provenance / status
 
-1. Original AI-generated scene art informs palette, biome, weather mood, identifiable landmarks, sense of elevation and ground/flight reveal. Do not interpret the illustrative loop-looking minimaps in those images as route authority.
-2. Our SVG schematic is a **non-scale graph direction reference**: white main course, cyan alternative aerial/branch path, green START, red FINISH. The implementation graph and actual recorded gameplay are the route authority.
-3. For each new map capture 2 true WebGL perspectives (normal ground driving + one elevated flight/branch) at 1440×900 desktop and 390×844 mobile. Compare to inspiration art side by side for contrast, scene depth, vehicle scale, weather visibility, landform identity and safe waypoint readability; document PASS/FAIL/APPROVED DEVIATION.
-4. Required geometry outcomes: ≥2 nontrivial hairpins, ≥3 viable forks/choices, one substantial aerial-ground split, natural nonpainted surfaces where relevant, broad offroad travel, recoverable boundaries, fair checkpoint-gated finish and 8-car AI route choice. One screenshot cannot prove motion, collisions or route validity.
-5. Test/record Low/Medium/High, Reduced Motion, rain/dust/ash, lighting, route signs and performance p50/p95. Real racing screenshot/video + source 3× art assets (only when later deployed) are distinct evidence from concept art.
-6. Once the two original collage PNGs and ten cropped per-track PNGs are added to this branch, commit to `docs/designs/new-tracks/concept-art/` with a hash/manifest and add their real paths to this index. **Until then these are planned paths, NOT linked asset references.**
+Two AI-generated collage originals and **ten cropped scene views (two per track)** are included in the chat-delivered `skyline-rush-five-tracks-concept-reference-pack.zip`. **Those original PNG bytes have NOT been uploaded to GitHub by this session.** The five boards above **are genuine GitHub files**, but they are separate newly authored vector references, **not copies of those previous AI PNGs**.
+
+When the PNGs can be uploaded, use these target paths and verify actual GitHub file existence before changing any status:
+- `source-concept-png/overview-01.png` and `source-concept-png/overview-02.png`.
+- `source-concept-png/<track-id>/concept-view-01.png` (ground) and `concept-view-02.png` (flight), for each of the five track IDs.
+- Commit a SHA-256 manifest and link actual files here. Until then, do not pretend those paths exist.
+
+## Binding design rules for next stage
+
+1. These five are **one-way long-form sprints**: a car reaches ordered checkpoint volumes, then distinct FINISH once; never simply repeat an entire course or show a lap indicator. Start and finish must not coincide physically.
+2. The route may make U-turns, cross itself at different heights, allow broad offroad driving, fork into air and ground alternatives, and converge; that does **not** make it a closed circuit.
+3. Show START / FINISH clearly on map thumbnails and track selection. Show a ground/flight split in 3D without obscuring the road; leave undiscovered secret shortcuts hidden on the in-game minimap.
+4. **Reference fidelity:** visual goal is biome identity, scene scale, skyline silhouette, time-of-day/lighting, roadside detail, weather, car visual prominence and branch readability; never treat an image-generated loop-looking map as exact geometry.
+5. Before claiming any scene finished, record actual WebGL screenshots for both reference views at desktop/mobile, Low/Medium/High and reduced-motion, compare to this design board and original PNGs if available, and record pass/fail/deviations. Benchmarks and manual device testing are separate gates.
+6. Any new AI-generated **in-game raster asset** needs a genuine 3× source file. Reference SVGs are scalable vectors and not gameplay textures.
+7. The future implementation uses SDD→BDD→TDD and must pass the existing full verification gate without changing legacy tracks. **This planning branch has no game implementation and no merge.**
+
+## UI terminology
+
+- Standard race: `單程競速 / Point-to-Point`, display `起點 → 終點`, progress and finish-distance (NOT `Lap 1/3`).
+- Separate optional existing circuit mode: `環道競速 / Circuit`, only here show a 1/3/5-lap selector and lap counter.
+- Do not place these two gameplay concepts in an unlabeled mixed track-selection list.
