@@ -132,6 +132,10 @@ server-enforced status protection.
   message has `[full-regression]` or a manual run sets `full_regression`. The full suite on
   `develop` after the merge is the acceptance gate. A successful run on a previous commit does
   **not** validate the new HEAD.
+- On every branch, a push or PR that only changes Markdown/text/images/video outside `src/`, `public/`,
+  `tests/`, `scripts/` and `.github/` skips all suites (`quality-gate` still reports green), but only when the
+  parent commit's own CI run on that branch passed. Rules: `scripts/ci-changes.mjs`; a test that reads a new
+  doc must add it to `NEEDS_CI` there (`tests/ci-changes.test.js` enforces it).
 - CI runs and optional screenshot artifacts are evidence for review, not substitutes
   for real vehicle/road contact or manual interaction testing on devices.
 
