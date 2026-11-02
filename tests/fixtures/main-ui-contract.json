@@ -1,6 +1,6 @@
 {
-  "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient; mode HUD offset: phone route map and short-landscape mode indicator sit below the race progress block that mode HUD rows grow; every-device race HUD spacing (main 266210c/f83b67e); one-row held-item slot at ≤400 px; Wave 2 eight-car HUD spacing and short-landscape speedometer corrections (feature/race-difficulty-eight-car-grid 1fce652); short-landscape callout in the top-bar strip on touch only, mouse keeps the left gutter (fix/race-callout-landscape, fix/hud-callout-landscape); Race HUD moved into the VFX panel: its reset shares the #vfx-reset style, and touch tablets cap the mid-race VFX panel below the lowered tool row (feature/race-hud-vfx-panel)",
-  "cssBlob": "454b1029b3466eaf35f419030b8ee139f5e65f4a",
+  "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient; mode HUD offset: phone route map and short-landscape mode indicator sit below the race progress block that mode HUD rows grow; every-device race HUD spacing (main 266210c/f83b67e); one-row held-item slot at ≤400 px; Wave 2 eight-car HUD spacing and short-landscape speedometer corrections (feature/race-difficulty-eight-car-grid 1fce652); short-landscape callout in the top-bar strip on touch only, mouse keeps the left gutter (fix/race-callout-landscape, fix/hud-callout-landscape); Race HUD moved into the VFX panel: its reset shares the #vfx-reset style, and touch tablets cap the mid-race VFX panel below the lowered tool row (feature/race-hud-vfx-panel); home Garage button NEW highlight and Start + Garage pinned row with Practice scrolling below on phones, so Garage now precedes Practice in element order (f7691cc1)",
+  "cssBlob": "1ac91fd59e1d42bcdc68a18cbae8026249f71ecc",
   "elements": [
     {
       "id": "whats-new-screen",
@@ -618,19 +618,19 @@
       ]
     },
     {
-      "id": "practice-button",
-      "tag": "button",
-      "classes": [
-        "text-button",
-        "practice-button"
-      ]
-    },
-    {
       "id": "garage-button",
       "tag": "button",
       "classes": [
         "text-button",
         "garage-button"
+      ]
+    },
+    {
+      "id": "practice-button",
+      "tag": "button",
+      "classes": [
+        "text-button",
+        "practice-button"
       ]
     },
     {
