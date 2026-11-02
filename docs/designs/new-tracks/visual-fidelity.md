@@ -4,6 +4,14 @@
 **Branch:** `feature/epic-multiroute-longform-tracks` (from develop).
 **Confirmed topology:** **ALL FIVE ARE POINT-TO-POINT**, from one START to one DISTINCT FINISH. This is the product decision; no circuit conversion is planned for these five. Existing Harbor Circuit remains the separate lap-racing experience.
 
+## Stage 1 animated 3D homepage — P0 before full playable tracks
+
+**User-confirmed requirement (2026-11-03):** The five initial proposed Stage 1 Coming Soon tracks must show **real animated Three.js showrooms on the homepage**, matching existing real 3D vehicle, hover/jets, scenery depth, moving environment and camera conventions. A static JPEG hero overlay or photo plane is not acceptable. Two existing JPEG concept views per map remain **art-direction references** and compact thumbnails only.
+
+**Binding home stage:** [Animated Three.js homepage spec](../../superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) · [six GPT scene/renderer implementation prompts](../../superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md) · [TDD execution plan](../../superpowers/plans/2026-11-03-six-chat-home-preview-integration.md). Homepage showroom **does not make the full track playable**: Coming Soon selection remains preview-only with disabled bilingual Start, and no upcoming ID enters RaceFactory or the unlock/gameplay registry.
+
+**Separate acceptance:** 5 individually animated **true 3D** environments + 5 unique scene landmarks and ground/air branch designs, shared real player/rival models, single existing WebGL renderer/composer, reduced-motion/quality tier support, actual time-separated WebGL screenshots (desktop/phone) vs both JPEG views, old-track regression and exact-HEAD CI. **None of this is marked as verified solely by this document.**
+
 ## Reference images tracked in this branch
 
 Each storyboard is an **original SVG with two stylized concept scenes (ground and aerial)** plus a one-way schematic. The five complementary SVG diagrams show branches and distinct start/finish gates. These files are committed, linkable, and should be compared during implementation.
