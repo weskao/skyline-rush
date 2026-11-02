@@ -59,6 +59,22 @@ Estimated time based on *effective* average speed including hairpins, climbs, re
 
 **Scope decision (2026-11-02):** reduced from six new tracks to five. Glacier Serpentine is removed from this epic because existing Aurora Pass and Alpine Rail Pass already cover related cold/mountain visual themes; all snow-themed work remains outside this five-track plan.
 
+## Visual concept references and circuit alternative (2026-11-02)
+
+**Design baseline:** all five maps are point-to-point, not closed loops. A drawn return-looking line on an AI concept map is a non-authoritative visual, not a gameplay lap. The finish must be topologically distinct from start; one valid traversal ends the race. Geometry is validated in the new route graph rather than copied from a painted schematic.
+
+The user has asked whether lap-based circuits might be preferable; **this is not yet a decision to convert any map.** Recommendation for discussion: keep Dune Tempest, Monsoon Ruins and Skyfall Archipelago as long scenic one-way races; **optional future dedicated circuit variants** of Volcanic Crown and Stormline Megacity could build on the current 2 km Harbor Circuit's 1/3/5 lap infrastructure. For 3–5 minute standard races, a proposed 4–5 km lap × 3 laps would need actual timing and balance verification. Simply looping the current 14–15 km route 3 times makes a 10–15 minute race and fails the requested default target. Lap modes need unique `trackId + topologyVersion + lapCount` time records, AI lap-aware rankings, merge/rival ordering, checkpoints, ghost and cloud schema compatibility and branch-aware minimaps.
+
+**GitHub-committed reference path:** [Visual direction index](../../designs/new-tracks/README.md) and five SVG route diagrams:
+
+- [沙暴裂谷 / Dune Tempest](../../designs/new-tracks/route-schematics/dune-tempest.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
+- [雨林失落神殿 / Monsoon Ruins](../../designs/new-tracks/route-schematics/monsoon-ruins.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
+- [浮空群島 / Skyfall Archipelago](../../designs/new-tracks/route-schematics/skyfall-archipelago.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
+- [熔火天脊 / Volcanic Crown](../../designs/new-tracks/route-schematics/volcanic-crown.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
+- [霓虹暴雨都市 / Stormline Megacity](../../designs/new-tracks/route-schematics/stormline-megacity.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
+
+**IMPORTANT artwork provenance:** the two cinematic AI concept collages and the 10 exact crop previews (2 per course) are in an **upload-ready ZIP supplied as a ChatGPT conversation attachment**, not uploaded to this GitHub branch; do not claim they already exist in the repository. SVG diagrams are newly authored route documentation, not substitutes for the cinematic source images. To guarantee visual fidelity when actual art bytes become available in the repository, store them under `docs/designs/new-tracks/concept-art/`, add checksums and explicit links, capture real WebGL gameplay from each view, and record visible deviations.
+
 ## Race readability and fairness acceptance
 
 - Every split has visual warning 3s in advance at typical approach speed, 2 physically drivable choices, clear join and ground recovery after failed air path.
