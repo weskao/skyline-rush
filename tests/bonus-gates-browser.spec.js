@@ -29,6 +29,12 @@ for (const [name, viewport, hasTouch] of [
     });
     await expect(page.locator('#item-status')).toContainText('EMP');
     await expect(page.locator('#activate-item')).toBeEnabled();
+    // The EMP icon shows only while the effect runs (1.5 s); a slow CI runner polled past it. Stretch it in the same
+    // event that activates the item (this listener runs after the game's own), so the check cannot race the clock.
+    await page.evaluate(() => {
+      const hold = () => { const effects = window.gameplay.race.player.effects; if (effects.emp > 0) effects.emp = 30; };
+      addEventListener('click', hold); addEventListener('keydown', hold);
+    });
     if (hasTouch) await page.locator('#activate-item').tap();
     else await page.keyboard.press('q');
     await expect(page.locator('#item-icon .item-emp')).toBeVisible();
