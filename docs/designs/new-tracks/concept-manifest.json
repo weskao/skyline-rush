@@ -1,10 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "status": "design-only",
   "approvedRouting": "five-point-to-point-races",
   "sourceMode": "develop",
   "imageIndex": "visual-fidelity.md",
-  "description": "Five committed SVG storyboards each include two vector concept panels; separately AI-generated PNG collage archive is in the ChatGPT conversation and is not included in this repository",
+  "description": "Five combined original SVG storyboards and ten independent cropped ground/aerial SVG concept views are committed; original AI PNG source images are still only in the chat ZIP and are not in the GitHub repository.",
   "tracks": [
     {
       "id": "dune-tempest",
@@ -16,17 +16,20 @@
       "cameraReferences": [
         {
           "purpose": "ground",
-          "file": "concept-art/dune-tempest-point-to-point-storyboard.svg",
-          "panel": "01"
+          "file": "concept-art/dune-tempest-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
         },
         {
           "purpose": "air-split",
-          "file": "concept-art/dune-tempest-point-to-point-storyboard.svg",
-          "panel": "02"
+          "file": "concept-art/dune-tempest-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
         }
       ],
       "routeReference": "route-schematics/dune-tempest.svg",
-      "originalGeneratedPngUploaded": false
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/dune-tempest-point-to-point-storyboard.svg"
     },
     {
       "id": "monsoon-ruins",
@@ -38,17 +41,20 @@
       "cameraReferences": [
         {
           "purpose": "ground",
-          "file": "concept-art/monsoon-ruins-point-to-point-storyboard.svg",
-          "panel": "01"
+          "file": "concept-art/monsoon-ruins-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
         },
         {
           "purpose": "air-split",
-          "file": "concept-art/monsoon-ruins-point-to-point-storyboard.svg",
-          "panel": "02"
+          "file": "concept-art/monsoon-ruins-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
         }
       ],
       "routeReference": "route-schematics/monsoon-ruins.svg",
-      "originalGeneratedPngUploaded": false
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/monsoon-ruins-point-to-point-storyboard.svg"
     },
     {
       "id": "skyfall-archipelago",
@@ -60,17 +66,20 @@
       "cameraReferences": [
         {
           "purpose": "ground",
-          "file": "concept-art/skyfall-archipelago-point-to-point-storyboard.svg",
-          "panel": "01"
+          "file": "concept-art/skyfall-archipelago-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
         },
         {
           "purpose": "air-split",
-          "file": "concept-art/skyfall-archipelago-point-to-point-storyboard.svg",
-          "panel": "02"
+          "file": "concept-art/skyfall-archipelago-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
         }
       ],
       "routeReference": "route-schematics/skyfall-archipelago.svg",
-      "originalGeneratedPngUploaded": false
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/skyfall-archipelago-point-to-point-storyboard.svg"
     },
     {
       "id": "volcanic-crown",
@@ -82,17 +91,20 @@
       "cameraReferences": [
         {
           "purpose": "ground",
-          "file": "concept-art/volcanic-crown-point-to-point-storyboard.svg",
-          "panel": "01"
+          "file": "concept-art/volcanic-crown-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
         },
         {
           "purpose": "air-split",
-          "file": "concept-art/volcanic-crown-point-to-point-storyboard.svg",
-          "panel": "02"
+          "file": "concept-art/volcanic-crown-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
         }
       ],
       "routeReference": "route-schematics/volcanic-crown.svg",
-      "originalGeneratedPngUploaded": false
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/volcanic-crown-point-to-point-storyboard.svg"
     },
     {
       "id": "stormline-megacity",
@@ -104,17 +116,21 @@
       "cameraReferences": [
         {
           "purpose": "ground",
-          "file": "concept-art/stormline-megacity-point-to-point-storyboard.svg",
-          "panel": "01"
+          "file": "concept-art/stormline-megacity-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
         },
         {
           "purpose": "air-split",
-          "file": "concept-art/stormline-megacity-point-to-point-storyboard.svg",
-          "panel": "02"
+          "file": "concept-art/stormline-megacity-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
         }
       ],
       "routeReference": "route-schematics/stormline-megacity.svg",
-      "originalGeneratedPngUploaded": false
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/stormline-megacity-point-to-point-storyboard.svg"
     }
-  ]
+  ],
+  "imageCount": 10
 }
