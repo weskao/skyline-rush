@@ -10,6 +10,16 @@ export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
     version: UPCOMING, date: '2026-11-02', image: null,
+    video: {
+      desktop: {
+        src: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.mp4' },
+        poster: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.jpg' }
+      },
+      mobile: {
+        src: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.mp4' },
+        poster: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.jpg' }
+      }
+    },
     highlights: [
       {
         id: 'rivals-grab-nitro', kind: 'new', image: null,

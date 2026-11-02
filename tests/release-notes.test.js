@@ -211,7 +211,7 @@ test('a release video plays the clip for the screen shape and language, with a b
 test('the gate refuses a release video or poster that is not bundled', () => {
   const release = { ...entry('Fly longer.', '飛得更久。'), video: clipVideo() };
   assert.match(checkReleaseNotes('9.9.9', { notes: [release], reviews: { '9.9.9': reviewHash(release) } }).join('\n'), /desktop video .* is not a file in public\//);
-  const shipped = RELEASE_NOTES.find(r => r.video);
+  const shipped = RELEASE_NOTES.find(r => r.video && r.version !== UPCOMING); // the upcoming entry has no version to gate yet
   if (shipped) assert.deepEqual(checkReleaseNotes(shipped.version, { reviews: { [shipped.version]: reviewHash(shipped) } }), []);
 });
 
