@@ -136,6 +136,7 @@ jobs:
             test-results/**/garage-void-home-*.png
             test-results/**/garage-launch-flare-*.png
             test-results/**/garage-inspection-*.png
+            test-results/**/garage-dense-*.png
           if-no-files-found: ignore
       # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
