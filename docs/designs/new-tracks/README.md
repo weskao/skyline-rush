@@ -3,6 +3,10 @@
 **Planning branch:** `feature/epic-multiroute-longform-tracks`  
 **Decision (2026-11-02):** **All five NEW tracks are POINT-TO-POINT, with one START and one separate FINISH.** No lap counting or loop-race variant on these five; existing ten sprint tracks retain the same single-finish mental model. Harbor Circuit remains a distinct mode.
 
+## Mandatory implementation fidelity gate
+
+Before implementing any Stage 1 or Stage 2 track, follow [**Concept JPEG → real WebGL visual acceptance**](visual-acceptance-gate.md). All **20 committed JPEG scene references** (10 Stage 1 and 10 Stage 2) are moodboards and camera/scene anchors, not actual game captures. Review both views using deterministic race/camera settings, document the six visual categories and any approved deviations, and preserve point-to-point START/FINISH. Stage 2 JPEGs are resampled for reference viewing, not true original 3× texture assets.
+
 ## GitHub-saved image references
 
 Each of the five **two-view storyboard SVGs** below is physically committed in this branch; each illustrates a ground driving camera and a separate aerial/branch camera plus explicit green START and red FINISH. The companion SVG is a deliberately simplified technical route sketch, not a copy of a looping minimap.
