@@ -4,7 +4,7 @@
 **Date:** 2026-11-02
 **Source branch:** `develop` @ `12264f74f0f6452347d0183937391da620d10343`
 **Planning branch:** `feature/epic-multiroute-longform-tracks-planning`
-**Goal:** Six original, visually distinct 3–5 minute point-to-point courses featuring real bends/hairpins, ground/air route forks, meaningful shortcuts, natural open terrain, quality-tiered weather, set pieces, and space beyond a fixed road rail.
+**Goal:** Five original, visually distinct 3–5 minute point-to-point courses featuring real bends/hairpins, ground/air route forks, meaningful shortcuts, natural open terrain, quality-tiered weather, set pieces, and space beyond a fixed road rail.
 **Non-goals:** replacing existing ten sprint courses, changing current physics across old tracks without opt-in, copying protected level artwork, making all race modes immediately support an open world, modifying production code in the planning branch.
 
 ## Research and references (design ideas only, no third-party game assets)
@@ -43,7 +43,7 @@
 8. **Modes / persistence**: first prototype in new point-to-point mode only; opt in Cup/Career/Daily after AI, item economy and results tests. Ghost replay, best-time, record layout and cloud rules use a new topology+weather+route version, retaining legacy history. Handle race suspend/resume, rivals at splits, landing and fly/drive transitions.
 9. **Camera/minimap/HUD**: variable camera lookahead based on curvature, hairpin road-preview, arrow signage and split warnings, aerial route arrows using world-space frames; no fake direction changes, flight freedom camera reset, height-aware 2-layer minimap. Weather never buries the turn entry or route selection. Support desktop/mobile/touch, en/zh-TW and foldable safe areas.
 
-## Six proposed tracks (target duration is design hypothesis, not measured)
+## Five proposed tracks (target duration is design hypothesis, not measured)
 
 Estimated time based on *effective* average speed including hairpins, climbs, recovery, stunts and forks; length alone does not guarantee 3–5 minutes. Instrument 20+ completed runs/track across difficulty/modes and revise geometry against observed median.
 
@@ -54,9 +54,10 @@ Estimated time based on *effective* average speed including hairpins, climbs, re
 | P1 | `skyfall-archipelago` / 浮空群島 Skyfall Archipelago | 16 km | 3:50–5:00 | layered floating islands, spiral ramps, disconnected airborne corridors | lower stone road vs flying island-to-island; cloud shear, sky rays, falling waterfalls, giant floating arches |
 | P2 | `volcanic-crown` / 熔火天脊 Volcanic Crown | 15 km | 3:40–5:00 | huge volcanic hairpins, scree terrain, caldera loop and basalt ridge | rim road vs ash plume glider crossing; ash, ember particles, heat haze (bounded) and glowing lava |
 | P2 | `stormline-megacity` / 霓虹暴雨都市 Stormline Megacity | 14 km | 3:20–4:40 | elevated interchanges, wide sharp turns, S-curved rooftops | flood-level street vs upper viaduct flight; rain slicks, wet reflections, safe lightning, towering animated billboards |
-| P2 | `glacier-serpentine` / 冰封千迴山 Glacier Serpentine | 13 km | 3:20–4:50 | alternating exposed switchbacks, glacier shelf, natural snow trail | snowy pass vs ice cave glide; blizzard ribbons, powder spray, aurora glows, avalanche warning |
 
-**Candidate counts:** 6 maps, at least 3 legal navigable forks/map (18 total), 2+ major hairpins/map, at least 1 memorable aerial-ground split/map, and 1 set-piece climax/map. Refine counts during blockout; no impossibly narrow flying corridors.
+**Candidate counts:** 5 maps, at least 3 legal navigable forks/map (15 total), 2+ major hairpins/map, at least 1 memorable aerial-ground split/map, and 1 set-piece climax/map. Refine counts during blockout; no impossibly narrow flying corridors.
+
+**Scope decision (2026-11-02):** reduced from six new tracks to five. Glacier Serpentine is removed from this epic because existing Aurora Pass and Alpine Rail Pass already cover related cold/mountain visual themes; all snow-themed work remains outside this five-track plan.
 
 ## Race readability and fairness acceptance
 
@@ -71,13 +72,13 @@ Estimated time based on *effective* average speed including hairpins, climbs, re
 
 ## Milestones and gates
 
-- **M0 (planning, this branch only):** code audit, reference research, six briefs, concept/storyboard images, implementation task breakdown and TODO; no gameplay change.
+- **M0 (planning, this branch only):** code audit, reference research, five briefs, concept/storyboard images, implementation task breakdown and TODO; no gameplay change.
 - **M1 (topology foundation, future branch):** typed route graph validation, arc-length frames, distinct physical world pose vs ranking progress and legacy adapter. RED→GREEN deterministic tests.
 - **M2 (open-terrain physics):** opt-in lateral unclamping, ground/air drift/flight collision, recovery + gates; no old-map regressions.
 - **M3 (P1 vertical slice):** Dune Tempest playable with a genuine fork, hairpin, natural sand terrain; end-to-end browser screenshot + AI/ghost.
 - **M4 (weather and scene budget):** zone-based sand/rain/ash presets, GPU instancing; Low/Medium/High and Reduced Motion; long-run profiling.
 - **M5 (remaining P1 maps):** Monsoon Ruins then Skyfall Archipelago, AI/finish/player readability QA; 3–5 minute median verified.
-- **M6 (P2 maps):** Volcanic Crown, Stormline Megacity, Glacier Serpentine with art and route distinctiveness signoff.
+- **M6 (P2 maps):** Volcanic Crown and Stormline Megacity with art and route distinctiveness signoff.
 - **M7 (release gate):** update track select, localized names, difficulty/economy, migration, gameplay captures, `make verify`, exact-HEAD full CI, manual device review. Merge to `develop` requires explicit approval.
 
 **Implementation ownership candidates:** `src/race-tracks.ts`, `src/track-paths.ts`, new `src/course-graph.ts`, `src/course-route-frame.ts`, `src/course-progress.ts`, `src/course-weather.ts`, `src/course-terrain.ts`, `src/route-map.ts`, `src/world.js`, `src/world-tour-scene.js`, `src/game.js`, `src/car-collisions.js`; new isolated tests in `tests/course-*.test.*` and Playwright `tests/course-*-browser.spec.*`. Respect module-size ratchet: do not simply grow already large engine modules.
