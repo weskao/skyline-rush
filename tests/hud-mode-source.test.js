@@ -21,6 +21,11 @@ test('HUD settings copy lives in the locale catalog, never in a per-component la
   assert.deepEqual(Object.keys(HUD_SETTINGS_COPY['zh-TW']).sort(), Object.keys(HUD_SETTINGS_COPY.en).sort());
   for (const [key, text] of Object.entries(HUD_SETTINGS_COPY['zh-TW'])) assert.deepEqual(strayEnglish(text), [], key);
 });
+test('HUD mode labels never expose internal design codes (A+B / C) to players', () => {
+  for (const locale of Object.values(HUD_SETTINGS_COPY)) {
+    for (const key of ['hudSettings.hybrid', 'hudSettings.competitive']) assert.doesNotMatch(locale[key], /\(.*\b(A\+B|C)\b.*\)|\(C\)/, key);
+  }
+});
 test('Hybrid and Competitive keep essential progress and yield the center to gameplay', () => {
   assert.match(view, /body\[data-hud-mode="hybrid"\] #leaderboard/);
   assert.match(view, /@media \(max-width: 760px\)/);
