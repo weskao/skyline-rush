@@ -202,12 +202,20 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');
   await page.locator('#vfx-panel > summary').click();
   await expect(page.locator('#maneuver-report')).toBeHidden();
+  // Record every charge change in-page: the race keeps refilling (rings, pickups, slipstream) while slow CI polls,
+  // so "one charge per press" is the first change landing on 2 and the meter never dropping below it.
+  await page.evaluate(() => {
+    const meter = document.querySelector('#nitro-meter');
+    window.nitroValues = [];
+    new MutationObserver(() => window.nitroValues.push(Number(meter.getAttribute('aria-valuenow'))))
+      .observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
+  });
   await page.keyboard.down('e');
-  await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '2');
+  await expect.poll(() => page.evaluate(() => window.nitroValues[0])).toBe(2);
   await expect(page.locator('#nitro-status')).toHaveText('NITRO ACTIVE');
   await expect(page.locator('body')).toHaveClass(/nitro-active/);
   await page.waitForTimeout(450);
-  await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '2');
+  expect(await page.evaluate(() => Math.min(...window.nitroValues)), 'holding NITRO fires one charge, not one per frame').toBe(2);
   await page.keyboard.up('e');
   await expect(page.locator('body')).not.toHaveClass(/nitro-active/);
 });

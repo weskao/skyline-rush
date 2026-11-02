@@ -148,4 +148,6 @@ no deploy unless the user explicitly asks.
   bump, release-notes stamp) reaches it; skipping it makes the next release merge conflict.
   `/release` does this last (`scripts/release-back-merge.sh`, pushed without touching any checkout); on a
   conflict or rejected push it leaves `develop` untouched and prints the manual merge — do it then.
-- **Hotfix:** branch from `main`, merge into `main`, then `/release` (which back-merges into `develop`).
+- **Hotfix:** branch `hotfix/<name>` from `main`, merge into `main`, then `/release` (which back-merges into `develop`).
+- **Only `develop` and `hotfix/*` merge into `main`.** `.githooks/main-merge-guard` (run by `pre-merge-commit`
+  and `pre-commit`) blocks any other merge on `main`; fast-forwards run no hook, so merge with `--no-ff`.
