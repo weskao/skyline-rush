@@ -296,6 +296,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     recreate: eventLab.recreate,
     selectedRace, canRace,
     selectedMode: (): string => selectedMode,
+    isUpcomingSelected: (): boolean => Boolean(upcomingSelection),
     /** The Daily Challenge always races the Classic rules. */
     selectClassic(): void { upcomingSelection = null; selectedMode = 'classic'; },
     restoreCup(cup: CupState): void {
