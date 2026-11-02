@@ -11,7 +11,11 @@
 
 ## Input artwork and ground/flight screenshot acceptance
 
-The branch now contains **10 standalone SVG images**—two distinct source-of-truth *camera composition* references for each of five open-ended races—indexed in `docs/designs/new-tracks/README.md`, `visual-fidelity.md`, and `concept-manifest.json`. They are separate views clipped from five original vector storyboard boards; **AI high-detail PNG files are not yet committed to this branch** and require the archive import process. For every vertical slice, produce a matching true WebGL ground view + aerial branch view (both desktop and phone), retain 3D START/FINISH distinction and no laps, and record visual deviations versus both committed SVG and later-imported PNG inspiration. Treat image references as art-direction evidence, not physics or course graph.
+The branch now contains **10 standalone SVG images**—two distinct source-of-truth *camera composition* references for each of five open-ended races—indexed in `docs/designs/new-tracks/README.md`, `visual-fidelity.md`, and `concept-manifest.json`. They are separate views clipped from five original vector storyboard boards; **AI high-detail PNG files are not yet committed to this branch** and require the archive import process. For every vertical slice, capture a matching true WebGL ground view + aerial branch view on desktop and phone; retain separate START/FINISH and no laps, and record deviations against committed SVG and **actual committed JPEG** references. Treat image references as art-direction evidence, not physics or course graph.
+
+## Visual implementation evidence gate — mandatory per map
+
+Before any Stage 1 course art is declared complete, use [the shared JPEG-to-WebGL visual acceptance gate](../../designs/new-tracks/visual-acceptance-gate.md) and BOTH committed JPEG views under `docs/designs/new-tracks/source-concept-jpeg/<id>/`. Lock camera world pose, weather/seed, scene tier and viewport; review 1440×900 desktop and 390×844 phone ground+air true WebGL frames, six categories and deviation notes. Compare the original JPEG **art direction**, not exact 2D pixels; combine with geometry/finish/AI tests and performance. The original PNG isn't a prerequisite: the original **JPEG crops are already in GitHub**. Stage 2 adds five additional course designs with its own JPEG gallery and same acceptance gate.
 
 ## Global Constraints
 
