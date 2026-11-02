@@ -8,7 +8,7 @@
 ### Route topology and concept-art reference clarification (2026-11-02)
 
 - [x] Create [five committed SVG route schematics](docs/designs/new-tracks/route-schematics/../README.md) showing separate START and FINISH and ground/air route choices; these are technical **open-route diagrams**, not the AI scenic screenshots.
-- [ ] **User decision pending:** default five point-to-point races vs optional dedicated loop variants for Volcanic Crown + Stormline Megacity. Suggested hybrid: three long scenic point-to-point tracks, two maps optionally supporting 1/3/5-lap dedicated circuits; never repeat their full current 14–15 km routes if 3–5-minute default play time is required.
+- [ ] **Topology signoff pending:** recommendation is **all five new maps remain point-to-point** to match ten existing sprint maps; finish on one valid traversal. Future 1/3/5-lap circuit content remains a separately labeled mode and later workstream, not an automatic conversion of these five. Never repeat a full 14–15 km course three times when targeting 3–5 minutes.
 - [ ] Commit the **two original AI scenic collage PNGs and 10 track-view crops** to `docs/designs/new-tracks/concept-art/` from the user-provided ZIP / this ChatGPT conversation (not yet on GitHub). Update [visual index](docs/designs/new-tracks/route-schematics/../README.md) with real filenames and hashes after actual upload; do not create dead links.
 - [ ] Once available, perform 2 real WebGL comparisons/map × desktop+mobile, each compared with corresponding concept view; preserve scene weather, key landmarks, sense of scale, flying vs ground reveal, road openness and reduced-motion/performance. Record pass/fail deviations.
 
