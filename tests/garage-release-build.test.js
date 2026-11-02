@@ -10,6 +10,7 @@ test('production defaults to coming-soon with a safe locked UI and runtime (not 
   assert.match(result.aliases['#garage-skin-palette'], /garage-skin-palette-locked\.ts$/);
   assert.match(result.aliases['#garage-void-beams'], /garage-void-beams-locked\.js$/);
   assert.match(result.aliases['#garage-launch-flare'], /garage-launch-flare-locked\.js$/);
+  assert.match(result.aliases['#garage-nitro-trail'], /garage-nitro-trail-locked\.js$/);
 });
 
 test('development and preview can select trial; release uses a separate strategy with no trial grants', () => {
@@ -21,6 +22,7 @@ test('development and preview can select trial; release uses a separate strategy
     assert.match(config.aliases['#garage-skin-ui'], /GarageSkinCatalog\.vue$/);
     assert.match(config.aliases['#garage-void-beams'], /garage-void-beams\.js$/);
     assert.match(config.aliases['#garage-launch-flare'], /garage-launch-flare\.js$/);
+    assert.match(config.aliases['#garage-nitro-trail'], /garage-nitro-trail\.js$/);
   }
 });
 

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { skinVfxPalette, skinVfxPattern } from '#garage-skin-palette';
 import { createVoidPulseBeams } from '#garage-void-beams';
 import { createLaunchFlare } from '#garage-launch-flare';
+import { createNitroTrail } from '#garage-nitro-trail';
 import { TRICK_ROLL_TIME } from './game.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -98,7 +99,7 @@ export function createAeroVFX(scene, vehicle) {
         float core=exp(-t*7.);float fade=pow(max(0.,1.-t),1.7)*smoothstep(0.,.025,t);
         vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
-        color=mix(color*skinTint,mix(vec3(.68,.42,1.),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*.65); // skin tints the base; NITRO is purple or the trail skin's colour
+        color=mix(color*skinTint,mix(vec3(.68,.42,1.),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*(.65+.27*trailAccent.a)); // skin tints the base; NITRO is purple or the trail skin's colour
         float shape=1.;
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
         if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
@@ -115,6 +116,7 @@ export function createAeroVFX(scene, vehicle) {
   });
   jetMaterial.dispose();
   const voidBeams = createVoidPulseBeams(local, REAR_PORTS);
+  const nitroTrail = createNitroTrail(local, REAR_PORTS);
 
   const particles = Array.from({ length: MAX_PARTICLES }, () => ({ life: 0, roll: false, pos: new THREE.Vector3(), velocity: new THREE.Vector3() }));
   const positions = new Float32Array(MAX_PARTICLES * 3), alphas = new Float32Array(MAX_PARTICLES), sizes = new Float32Array(MAX_PARTICLES);
@@ -154,7 +156,7 @@ export function createAeroVFX(scene, vehicle) {
   });
   const shock = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 64), new THREE.MeshBasicMaterial({ color: '#bdeeff', transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0 }));
   shock.name = 'Ignition shockwave'; shock.visible = false; scene.add(shock);
-  const flare = createLaunchFlare(scene, vehicle); // premium launch flares: badge-matched burst + body glow
+  const flare = createLaunchFlare(local, vehicle); // premium launch flares: badge-matched burst + body glow
   const shockPosition = new THREE.Vector3();
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
@@ -183,7 +185,7 @@ export function createAeroVFX(scene, vehicle) {
     segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonGeo.attributes.alpha.needsUpdate = true;
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
     jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = false;
-    voidBeams.update(time, 0, 0, false); flare.reset(); demoPulseClock = 2.2;
+    voidBeams.update(time, 0, 0, false); nitroTrail.update(time, 0, 0, false); flare.reset(); demoPulseClock = 2.2;
     hadPosition = wasBoosting = wasNitro = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null; lastPhase = 'ready';
   }
   return {
@@ -210,6 +212,7 @@ export function createAeroVFX(scene, vehicle) {
       const trail = palette['nitro-trail'], skinned = trail.some(v => v !== 1);
       flow.material.uniforms.trailAccent.value.set(.5 * trail[0], .8 * trail[1], trail[2], skinned ? 1 : 0); // the ribbon's colour
       for (const jet of jets) jet.material.uniforms.trailAccent.value.copy(flow.material.uniforms.trailAccent.value);
+      nitroTrail.setStyle(patterns['nitro-trail'], [.5 * trail[0], .8 * trail[1], trail[2]]);
       if (skinned) nitroShockColor.setRGB(.5 * trail[0], .8 * trail[1], trail[2]);
       else nitroShockColor.set('#b98aff');
       if (launchSkinActive) shockColor.setRGB(...palette['launch-flare']);
@@ -256,9 +259,7 @@ export function createAeroVFX(scene, vehicle) {
       // Studio (including Garage Home) loops ignition events; live racing never repeats them.
       if (studioDemo && enabled && !calm && (demoPulseClock += dt) >= 2.2) {
         demoPulseClock = 0;
-        if (!flare.trigger(current, vehicle.quaternion, 1.6)) { // a premium flare replaces the standard ring
-          shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
-        }
+        flare.trigger(current, vehicle.quaternion, 1.6); // Studio previews premium flares only: no standard ring loop
       }
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
@@ -285,6 +286,7 @@ export function createAeroVFX(scene, vehicle) {
       pressure.material.uniforms.power.value = reveal * fu.suction.value * (settings.aeroMode === 'downforce' ? 1 : 0.35);
       pressure.material.uniforms.time.value = time;
       voidBeams.update(time, strength, quality, enabled && !calm);
+      nitroTrail.update(time, studioDemo && preview ? 0.85 : strength * nitroMix, quality, enabled && !calm); // Studio previews the trail without NITRO
       ribbon.material.uniforms.time.value = time;
       jets.forEach((jet, i) => {
         jet.visible = enabled && strength > 0.005 && !voidPulse;

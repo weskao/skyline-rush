@@ -39,14 +39,14 @@ test('a premium launch flare replaces the standard shock ring at race start and 
   }
 });
 
-test('the standard launch flare keeps its shock ring; BOOST ignition still rings with a premium flare', () => {
+test('the Studio never loops the standard shock ring; BOOST ignition in a race still rings', () => {
   const { scene, aero, race, origin, settings } = rig();
   const ring = scene.getObjectByName('Ignition shockwave');
   aero.setSkins({ 'launch-flare': 'launch-flare-basic' });
   race.phase = 'ready';
   let ringSeen = false;
   for (let n = 0; n < 200; n++) { aero.update(race, 1 / 60, origin, settings, false, null, true); ringSeen ||= ring.visible; }
-  assert.equal(ringSeen, true, 'standard Studio preview keeps the ring');
+  assert.equal(ringSeen, false, 'no standard ring halo loops in the Studio preview');
   aero.reset(); aero.setSkins({ 'launch-flare': 'launch-flare-gold' });
   race.player.boosting = false; race.player.nitroTime = 0; race.player.miniBoost = 0;
   race.phase = 'racing';

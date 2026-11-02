@@ -3,21 +3,17 @@
 const VIEW = 'normalize(-mv.xyz+vec3(0.,0.,1e-5))'; // never normalize a zero vector at the eye
 const LIFE = 'pow(max(0.,1.-age),1.4)';
 
-// Radially symmetric hot core, halo and corona: the one part that looks the same from every angle.
-export const GLOW_VERTEX = `uniform float size,age;varying vec2 vUv;
-  void main(){vUv=uv;vec4 c=modelViewMatrix*vec4(0.,0.,0.,1.);
-    float grow=size*(.35+.65*(1.-pow(max(0.,1.-clamp(age*3.,0.,1.)),3.)));
-    c.xy+=position.xy*grow;gl_Position=projectionMatrix*c;}`;
-export const GLOW_FRAGMENT = `varying vec2 vUv;uniform float age,power,time,pulse,corona,core;uniform vec3 primary,secondary;
-  void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;float r=length(q);float a=r<1e-4?0.:atan(q.y,q.x);
-    float hot=exp(-dot(q,q)*26./core);float halo=exp(-length(q)*4.5);
-    float flame=corona*exp(-abs(r-.3-.05*sin(a*12.+time*9.))*16.);
-    float mist=exp(-abs(r-.78)*7.)*.07;
-    vec3 col=primary*(halo*.35+flame*1.2)+mix(secondary,vec3(1.),.3)*hot*1.3+vec3(.75,.8,.9)*mist;
-    float life=${LIFE}*(1.+pulse*.45*sin(age*42.));
-    gl_FragColor=vec4(col,clamp(life*power*smoothstep(1.,.7,r),0.,1.));}`;
+// Light pool on the road under the car: the flare erupts from below, so the road lights up first.
+export const POOL_VERTEX = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
+export const POOL_FRAGMENT = `varying vec2 vUv;uniform float age,power,time,pulse,corona;uniform vec3 primary,secondary;
+  void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;
+    float pool=exp(-dot(q,q)*2.6);float hot=exp(-dot(q*vec2(1.,.6),q*vec2(1.,.6))*9.);
+    float flick=1.+corona*.25*sin(time*23.+q.y*7.)+pulse*.35*sin(time*14.);
+    vec3 col=primary*pool*1.4+mix(secondary,vec3(1.),.25)*hot*1.2;
+    float life=${LIFE}*smoothstep(0.,.06,age+.02);
+    gl_FragColor=vec4(col*flick,clamp(pool*life*power*1.5,0.,1.));}`;
 
-// Instanced cones from the flare centre; each instance matrix carries its 3D direction and length.
+// Instanced cones rising from the sills; each instance matrix carries its base, 3D direction and length.
 export const RAY_VERTEX = `attribute float tone;uniform float age;varying float vT,vTone,vFacing;
   void main(){vec3 p=position;p.y*=1.-pow(max(0.,1.-clamp(age*2.5,0.,1.)),3.);
     vT=clamp(position.y,0.,1.);vTone=tone;
@@ -29,27 +25,18 @@ export const RAY_FRAGMENT = `uniform float age,power;uniform vec3 primary,second
     float body=pow(max(0.,1.-vT),1.2)*(.35+.65*vFacing);
     gl_FragColor=vec4(col,clamp(body*${LIFE}*power*1.4,0.,1.));}`;
 
-// Two expanding tori around the car's travel axis; tone 1 is the inner, tilted ring. They ripple out of plane.
-export const RING_VERTEX = `attribute float tone;uniform float size,age,time;varying float vTone,vFacing;
+// Two horizontal rings around the body (instance matrices size them to the car): they climb from the sills
+// to the roof as the flare ages, the inner tone a beat behind, rippling as they rise.
+export const RING_VERTEX = `attribute float tone;uniform float age,time;varying float vTone,vFacing;
   void main(){vec3 p=position;float a=atan(p.y,p.x);
-    p.xy*=size*(.3+.42*(1.-pow(max(0.,1.-clamp(age*2.,0.,1.)),2.)))*(tone>.5?.78:1.);
-    p.z+=.06*size*sin(a*9.+time*7.+tone*3.);
+    float rise=clamp(age*1.6-tone*.25,0.,1.);rise=1.-pow(max(0.,1.-rise),2.);
+    p.xy*=1.+.12*rise;p.z+=.1+rise*1.45+.05*sin(a*9.+time*7.+tone*3.);
     vec4 mv=modelViewMatrix*instanceMatrix*vec4(p,1.);
     vFacing=abs(dot(normalize(normalMatrix*mat3(instanceMatrix)*normal),${VIEW}));
     vTone=tone;gl_Position=projectionMatrix*mv;}`;
 export const RING_FRAGMENT = `uniform float age,power;uniform vec3 primary,secondary;varying float vTone,vFacing;
   void main(){vec3 col=vTone>.5?secondary*1.8:primary*1.7;
     gl_FragColor=vec4(col,clamp((.45+.55*vFacing)*${LIFE}*power,0.,1.));}`;
-
-// Expanding shock shell: bright only at its silhouette, so it reads as a sphere of pressure, not a disc.
-export const SHELL_VERTEX = `uniform float size,age;varying float vRim;
-  void main(){float s=size*(.25+.6*(1.-pow(max(0.,1.-clamp(age*1.8,0.,1.)),3.)));
-    vec4 mv=modelViewMatrix*vec4(position*s,1.);
-    vRim=1.-abs(dot(normalize(normalMatrix*normal),${VIEW}));gl_Position=projectionMatrix*mv;}`;
-export const SHELL_FRAGMENT = `uniform float age,power,pulse;uniform vec3 primary,secondary;varying float vRim;
-  void main(){float rim=pow(clamp(vRim,0.,1.),2.5);
-    float life=pow(max(0.,1.-age),1.6)*(1.+pulse*.5*sin(age*42.));
-    gl_FragColor=vec4(mix(primary,secondary,rim*.4)*(1.+rim),clamp(rim*life*power*.55,0.,1.));}`;
 
 // Light sweeps over the car body (unchanged from the flat flare).
 export const BODY_VERTEX = `varying vec3 vPos,vN,vView;

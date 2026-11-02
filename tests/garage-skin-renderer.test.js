@@ -43,7 +43,7 @@ test('blue launch flare ignites at race start without a BOOST/NITRO input or sta
   race.phase = 'racing';
   const before = structuredClone(race);
   aero.update(race, 0.05, origin, visual, false);
-  assert.equal(scene.getObjectByName('Launch flare burst').visible, true);
+  assert.equal(car.getObjectByName('Launch flare burst').visible, true);
   assert.equal(scene.getObjectByName('Ignition shockwave').visible, false, 'the flare replaces the standard ring');
   assert.deepEqual(race, before);
   aero.reset();
@@ -119,7 +119,7 @@ test('ring and pulse flares loop visibly in Studio without altering race progres
   const settings = vfxSettings({ enabled: true, airflow: true, quality: 'high' });
   race.phase = 'racing'; race.player.boosting = true;
   const before = structuredClone(race);
-  const burst = scene.getObjectByName('Launch flare burst');
+  const burst = car.getObjectByName('Launch flare burst');
   for (const id of ['launch-flare-ring', 'launch-flare-pulse']) {
     aero.setSkins({ 'launch-flare': id });
     aero.update(race, 0.05, new Vector3(), settings, false, null, true);
