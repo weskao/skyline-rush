@@ -71,3 +71,20 @@ test('all 18 artwork cards preserve native 3x pixels, visible icons and labels o
     }
   }
 });
+
+
+test('decorative HUD original 3x images fit button hit regions without image clipping', async ({ page }) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  for (const selector of ['#garage-button', '#start-button', '#pause-button',
+    '[data-control="nitro"]', '[data-control="brake"]', '[data-control="left"]', '[data-control="right"]']) {
+    const btn = page.locator(selector), img = btn.locator('img.hud-3x-decor');
+    const result = await img.evaluate(node => {
+      const a = node.getBoundingClientRect(), b = node.parentElement.getBoundingClientRect();
+      return { within: a.left >= b.left - 1 && a.right <= b.right + 1 &&
+        a.top >= b.top - 1 && a.bottom <= b.bottom + 1, hit: getComputedStyle(node).pointerEvents };
+    });
+    expect(result.within, selector).toBe(true);
+    expect(result.hit).toBe('none');
+  }
+});
