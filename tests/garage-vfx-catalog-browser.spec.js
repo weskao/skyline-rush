@@ -110,3 +110,62 @@ test('failed badge artwork remains accessible and localized in Traditional Chine
   await expect(card.locator('[role="img"]')).toHaveAttribute('aria-label', '已裝備徽章');
   await expect(card.locator('figcaption')).toHaveText('已裝備徽章');
 });
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+  test(`restored Equipped/Favorite/Limited badge artwork has full symmetric alpha silhouettes and separate readable labels at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#garage-button').click();
+    const badges = page.locator('#garage-vfx-art-badges');
+    const names = ['badge-equipped', 'badge-favorite', 'badge-limited'];
+    for (const id of names) {
+      const tile = badges.locator(`figure[data-badge-art="${id}"]`);
+      await tile.scrollIntoViewIfNeeded();
+      await expect(tile).toBeVisible();
+      await expect(tile).toHaveAttribute('data-artwork-restored', 'true');
+      const img = tile.locator('img');
+      await expect(img).toHaveAttribute('width', '72');
+      await expect(img).toHaveAttribute('height', '72');
+      const result = await tile.evaluate(async figure => {
+        const image = figure.querySelector('img');
+        if (!image?.complete) await image?.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d');
+        context.drawImage(image, 0, 0);
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
+        for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+          if (pixels[(y * canvas.width + x) * 4 + 3] <= 16) continue;
+          minX = Math.min(minX, x); minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+        }
+        const imageBox = image.getBoundingClientRect();
+        const frame = figure.querySelector('.garage-badge-art-frame')?.getBoundingClientRect();
+        const caption = figure.querySelector('figcaption')?.getBoundingClientRect();
+        return {
+          size: [canvas.width, canvas.height], minX, minY, maxX, maxY,
+          frameSize: frame ? [frame.width, frame.height] : [],
+          insetLeft: frame ? imageBox.left - frame.left : -1,
+          insetRight: frame ? frame.right - imageBox.right : -1,
+          captionGap: frame && caption ? caption.top - frame.bottom : -1,
+        };
+      });
+      expect(result.size).toEqual([216, 216]); // original 3× image pixels
+      expect(result.minX).toBeGreaterThanOrEqual(10);
+      expect(result.minY).toBeGreaterThanOrEqual(10);
+      expect(result.maxX).toBeLessThanOrEqual(205);
+      expect(result.maxY).toBeLessThanOrEqual(205);
+      expect(Math.abs(result.minX - (215 - result.maxX))).toBeLessThanOrEqual(8);
+      expect(Math.abs(result.minY - (215 - result.maxY))).toBeLessThanOrEqual(8);
+      expect(result.frameSize).toEqual([88, 88]); // 72px badge within 8px safe space
+      expect(result.insetLeft).toBeGreaterThanOrEqual(7);
+      expect(result.insetRight).toBeGreaterThanOrEqual(7);
+      expect(result.captionGap).toBeGreaterThanOrEqual(4);
+      await test.info().attach(`${id}-safe-3x-${viewport.width}x${viewport.height}.png`, {
+        body: await tile.screenshot(), contentType: 'image/png',
+      });
+    }
+  });
+}
