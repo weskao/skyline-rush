@@ -82,3 +82,50 @@ test('flare parts follow quality and comfort settings and never re-upload instan
   assert.equal(rays.instanceMatrix.version, version, 'ray matrices are written on skin change only');
   assert.notEqual(rays.rotation.y, turn, 'the magenta vortex swirls its rays around the car');
 });
+
+test('the launch flare keeps playing through the whole 3-2-1 countdown, then bursts at GO', () => {
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  car.add(car.userData.body); scene.add(car);
+  const aero = createAeroVFX(scene, car), race = createRace(), settings = vfxSettings({ enabled: true, quality: 'high' });
+  aero.setSkins({ 'launch-flare': 'launch-flare-gold' });
+  const pool = scene.getObjectByName('Launch flare burst');
+  race.phase = 'countdown';
+  let dark = 0;
+  for (let i = 0; i < 3 * 60; i++) { aero.update(race, 1 / 60, new Vector3(), settings, false); if (!pool.visible) dark++; }
+  assert.equal(dark, 0, `flare dark for ${dark} countdown frames`);
+  race.phase = 'racing'; aero.update(race, 1 / 60, new Vector3(), settings, false);
+  assert.equal(pool.visible, true, 'GO fires the launch burst');
+  for (let i = 0; i < 3 * 60; i++) aero.update(race, 1 / 60, new Vector3(), settings, false);
+  assert.equal(pool.visible, false, 'the flare ends once the race is under way');
+  race.phase = 'countdown'; aero.setSkins({});
+  aero.update(race, 1 / 60, new Vector3(), settings, false);
+  assert.equal(pool.visible, false, 'no launch flare skin, no countdown flare');
+});
+
+test('flares other than the shock ring are slim shooting streaks with rising sparks and a ground ripple, not solid spikes', () => {
+  for (const [id, style] of Object.entries(LAUNCH_FLARE_STYLES)) {
+    const { scene, rays, pool } = launched(id);
+    const sparks = scene.getObjectByName('Launch flare sparks');
+    assert.ok(sparks?.isPoints, 'a spark cloud rides with every flare');
+    if (style.shape === 'ring') { assert.equal(sparks.visible, false, 'the shock ring stays as it is'); continue; }
+    assert.ok(sparks.visible && sparks.geometry.drawRange.count >= 48, `${id} throws its sparks`);
+    for (let i = 0; i < rays.count; i++) {
+      assert.ok(column(matrixOf(rays, i), 0).length() <= 0.05, `${id} ray ${i} is a slim streak`);
+    }
+  }
+  const { scene, rays, pool } = launched('launch-flare-gold');
+  const sparks = scene.getObjectByName('Launch flare sparks');
+  assert.match(rays.material.fragmentShader, /head/, 'a bright head shoots up each streak');
+  assert.match(sparks.material.vertexShader, /age/, 'sparks rise as the flare ages, on the GPU');
+  assert.match(pool.material.fragmentShader, /ripple/, 'a ripple runs out across the road');
+  const low = launched('launch-flare-gold', vfxSettings({ enabled: true, quality: 'low' }));
+  const lowSparks = low.scene.getObjectByName('Launch flare sparks');
+  assert.ok(lowSparks.visible && lowSparks.geometry.drawRange.count < sparks.geometry.drawRange.count, 'Low throws fewer sparks');
+  const version = sparks.geometry.attributes.position.version;
+  for (let i = 0; i < 10; i++) launchedAero(scene).update(Object.assign(createRace(), { phase: 'racing' }), 1 / 60, new Vector3(), vfxSettings({ enabled: true }), false);
+  assert.equal(sparks.geometry.attributes.position.version, version, 'no per-frame spark uploads');
+  for (const off of [launched('launch-flare-gold', vfxSettings({ enabled: false })), launched('launch-flare-gold', vfxSettings({ enabled: true }), true)]) {
+    assert.equal(off.scene.getObjectByName('Launch flare sparks').visible, false, 'VFX Off and Reduced Motion throw no sparks');
+  }
+});

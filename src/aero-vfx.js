@@ -264,6 +264,9 @@ export function createAeroVFX(scene, vehicle) {
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
+      const countingDown = launchSkinActive && race.phase === 'countdown'; // the flare plays through 3-2-1, then bursts at GO
+      flare.hold(countingDown);
+      if (countingDown && !flare.active) flare.trigger(current, vehicle.quaternion, 1.4);
       const launching = launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown');
       const flared = launching && flare.trigger(current, vehicle.quaternion, 1.1);
       if (!flared && ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching)) {

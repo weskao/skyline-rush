@@ -5,25 +5,47 @@ const LIFE = 'pow(max(0.,1.-age),1.4)';
 
 // Light pool on the road under the car: the flare erupts from below, so the road lights up first.
 export const POOL_VERTEX = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
-export const POOL_FRAGMENT = `varying vec2 vUv;uniform float age,power,time,pulse,corona;uniform vec3 primary,secondary;
+export const POOL_FRAGMENT = `varying vec2 vUv;uniform float age,power,time,pulse,corona,shape;uniform vec3 primary,secondary;
   void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;
     float pool=exp(-dot(q,q)*2.6);float hot=exp(-dot(q*vec2(1.,.6),q*vec2(1.,.6))*9.);
     float flick=1.+corona*.25*sin(time*23.+q.y*7.)+pulse*.35*sin(time*14.);
-    vec3 col=primary*pool*1.4+mix(secondary,vec3(1.),.25)*hot*1.2;
+    float r=length(q),front=age*1.5,ring=shape>.5&&shape<1.5?0.:1.; // the shock ring keeps its own look
+    float ripple=ring*(exp(-abs(r-front)*26.)+pulse*exp(-abs(r-fract(age*3.)*1.2)*30.))*(1.-clamp(age,0.,1.)); // a crisp wave runs out over the road
+    vec3 col=primary*pool*1.4+mix(secondary,vec3(1.),.25)*hot*1.2+mix(primary,vec3(1.),.4)*ripple*1.6;
     float life=${LIFE}*smoothstep(0.,.06,age+.02);
-    gl_FragColor=vec4(col*flick,clamp(pool*life*power*1.5,0.,1.));}`;
+    gl_FragColor=vec4(col*flick,clamp((pool*life*1.5+ripple*.9)*power,0.,1.));}`;
 
 // Instanced cones rising from the sills; each instance matrix carries its base, 3D direction and length.
-export const RAY_VERTEX = `attribute float tone;uniform float age;varying float vT,vTone,vFacing;
-  void main(){vec3 p=position;p.y*=1.-pow(max(0.,1.-clamp(age*2.5,0.,1.)),3.);
-    vT=clamp(position.y,0.,1.);vTone=tone;
+export const RAY_VERTEX = `attribute float tone,delay;varying float vT,vTone,vFacing,vDelay;
+  void main(){vec3 p=position;vT=clamp(position.y,0.,1.);vTone=tone;vDelay=delay;
     vec4 mv=modelViewMatrix*instanceMatrix*vec4(p,1.);
     vFacing=abs(dot(normalize(normalMatrix*mat3(instanceMatrix)*normal),${VIEW}));
     gl_Position=projectionMatrix*mv;}`;
-export const RAY_FRAGMENT = `uniform float age,power;uniform vec3 primary,secondary;varying float vT,vTone,vFacing;
-  void main(){vec3 col=mix(primary,mix(secondary,vec3(1.),.35),vTone)*(1.+2.*pow(max(0.,1.-vT),3.));
-    float body=pow(max(0.,1.-vT),1.2)*(.35+.65*vFacing);
+export const RAY_FRAGMENT = `uniform float age,power,pulse,corona,time;uniform vec3 primary,secondary;varying float vT,vTone,vFacing,vDelay;
+  void main(){float head=age*2.6-vDelay*.6; // each streak fires a beat apart and its head shoots up
+    float behind=head-vT;if(pulse>.5)behind=mod(behind+.6,.6); // pulse flares fire again and again
+    float tip=exp(-abs(behind)*24.);float trail=behind>0.?exp(-clamp(behind,0.,4.)*3.2):0.;
+    float core=pow(max(0.,vFacing),5.); // a thin hot line down the middle, soft at the edge
+    float flick=1.+corona*.4*sin(time*31.+vDelay*20.+vT*9.);
+    vec3 col=mix(primary,mix(secondary,vec3(1.),.35),vTone)*(1.+1.5*tip)+vec3(1.)*tip*core*.8;
+    float body=(trail*.75+tip*1.8)*(.2+.8*core)*flick*pow(max(0.,1.-vT),.6);
     gl_FragColor=vec4(col,clamp(body*${LIFE}*power*1.4,0.,1.));}`;
+
+// Sparks thrown up from under the sills: every spark's path is a function of the flare age, so nothing is uploaded per frame.
+export const SPARK_VERTEX = `attribute vec4 seed;uniform float age,time,swirl,size,shape;varying float vFade,vHot;
+  void main(){float t=clamp((age-seed.z*.3)/.7,0.,1.);
+    vec3 out1=normalize(vec3(position.x,0.,position.z)+vec3(0.,0.,1e-4));
+    float rise=(1.+seed.y*1.4)*size*.42,spread=(.3+seed.x*.8)*size*(shape>1.5&&shape<2.5?.55:.3);
+    vec3 p=position+out1*spread*t+vec3(0.,rise*(t-.55*t*t),0.); // fast out of the sills, slowing as it climbs
+    float a=swirl*t*4.;p.xz=mat2(cos(a),-sin(a),sin(a),cos(a))*p.xz;p.x+=.05*sin(time*11.+seed.w*40.)*t;
+    vec4 mv=modelViewMatrix*vec4(p,1.);
+    vFade=t>0.&&t<1.?pow(1.-t,1.4)*smoothstep(0.,.06,t):0.;vHot=seed.w;
+    gl_PointSize=clamp((1.6+seed.w*2.6)*(1.-.5*t)*80./max(1.,-mv.z),0.,16.);
+    gl_Position=projectionMatrix*mv;}`;
+export const SPARK_FRAGMENT = `uniform float power;uniform vec3 primary,secondary;varying float vFade,vHot;
+  void main(){vec2 c=gl_PointCoord*2.-1.;float d=exp(-dot(c,c)*7.); // a crisp hot point, not a soft blob
+    vec3 col=mix(primary,mix(secondary,vec3(1.),.6),vHot)*(1.+2.*d);
+    gl_FragColor=vec4(col,clamp(d*vFade*power*1.3,0.,1.));}`;
 
 // Two horizontal rings around the body (instance matrices size them to the car): they climb from the sills
 // to the roof as the flare ages, the inner tone a beat behind, rippling as they rise.
