@@ -244,3 +244,22 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:84
     });
   });
 }
+
+
+test('paint swatch card keeps full-surface Preview and one shared game-like action style', async ({page}) => {
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const paint=page.locator('#garage-screen [data-paint="cobalt"]');
+  await expect(paint).toHaveAttribute('type','button');
+  await paint.focus();
+  await page.keyboard.press('Enter');
+  await expect(paint).toHaveAttribute('aria-pressed','true');
+  const before=await paint.evaluate(el=>({border:getComputedStyle(el).borderRadius,background:getComputedStyle(el).backgroundImage}));
+  expect(before.background).toContain('gradient');
+  await paint.hover();
+  const onHover=await paint.evaluate(el=>({shadow:getComputedStyle(el).boxShadow,transform:getComputedStyle(el).transform}));
+  expect(onHover.shadow).not.toBe('none');
+  await expect(page.locator('#garage-equip')).toBeVisible();
+  await expect(page.locator('#garage-restore-default')).toHaveCount(1);
+});
