@@ -55,6 +55,28 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.getByRole('button', { name: 'History', exact: true })).toBeFocused();
   });
 
+  for (const locale of ['en', 'zh-TW']) test(`History old-layout tag ends before the expand chevron (${locale})`, async ({ page }) => {
+    await page.addInitScript(([runs, lang]) => {
+      localStorage.setItem('skyline-rush-history', JSON.stringify(runs));
+      localStorage.setItem('skyline-rush-locale', lang);
+    }, [[{ ...records[0], layout: 1 }, records[1]], locale]); // layout 1 = a run on Coast's retired layout
+    await open(page);
+    await page.locator('.history-button').click();
+    const row = page.locator('.history-run', { hasText: locale === 'en' ? 'OLD LAYOUT' : '舊版配置' });
+    await expect(row).toHaveCount(1);
+    const box = await row.locator('summary').evaluate(summary => {
+      const tag = [...summary.children].find(child => /OLD LAYOUT|舊版配置/.test(child.textContent));
+      const range = document.createRange();
+      range.selectNodeContents(tag);
+      const text = range.getBoundingClientRect(); // the glyphs, even when they overflow the tag's own box
+      const style = getComputedStyle(summary);
+      const chevronLeft = summary.getBoundingClientRect().right - parseFloat(style.paddingRight) - 8; // last grid column is the 8px chevron
+      return { textLeft: text.left, textRight: text.right, chevronLeft, summaryLeft: summary.getBoundingClientRect().left };
+    });
+    expect(box.textRight).toBeLessThanOrEqual(box.chevronLeft - 4);
+    expect(box.textLeft).toBeGreaterThanOrEqual(box.summaryLeft);
+  });
+
   test('track selection changes the real scene and restart retains the chosen track', async ({ page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));

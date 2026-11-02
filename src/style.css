@@ -1003,6 +1003,8 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
 .history-run summary > span:first-child { color: #ccd7e0; }
 .history-run summary > span:nth-child(2) { font-weight: 700; font-size: 15px; }
 .history-run summary > span:nth-child(3) { color: #ccd7e0; }
+/* 4th field is only ever the OLD LAYOUT tag: a small badge that wraps inside the 48px badge column, never into the chevron */
+.history-run summary > span:nth-child(4) { white-space: normal; color: #ccd7e0; font-size: 10px; line-height: 1.2; }
 .history-run summary::after { content: ''; grid-column: 5; width: 6px; height: 6px; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; color: var(--blue); transform: rotate(45deg); }
 .history-run[open] summary::after { transform: rotate(225deg); }
 .history-best { justify-self: start; padding: 4px 6px; border: 1px solid rgb(247 197 118 / .35); border-radius: 4px; color: #f7c576; font-size: 10px; line-height: 1; }
