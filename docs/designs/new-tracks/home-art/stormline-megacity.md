@@ -55,7 +55,7 @@
 
 **Source of truth:** `src/upcoming-scenes/stormline-megacity.ts`; focused contracts in `tests/upcoming-stormline-megacity-scene.test.js`. These are an **isolated environment handoff**, not shared UI integration or a playable track. Existing JPEG art provenance above is retained unchanged.
 
-- **3D street:** a curved 17 m-wide wet-asphalt roadway at Y=0 from local Z≈+48 to Z≈−192, with lane markers, cyan/magenta light rails and thin neon reflection glints. The host car anchor remains `(0,0,0)`.
+- **3D street:** a curved 17 m-wide wet-asphalt roadway at Y=0 from local Z≈+48 to Z≈−211, with lane markers, cyan/magenta light rails and thin neon reflection glints. The host car anchor remains `(0,0,0)`.
 - **Two-level choice:** a 12 m-wide uphill ramp begins near Z=−35, climbs to ≈Y=21 on a branching expressway, and descends to rejoin the main route beyond the showroom's far edge. A separate cross-city interchange spans ≈Y=23–26 with support pillars and a visible underside. These are **display meshes**, not road collision/AI/checkpoint topology.
 - **Landmark anchors:** dense 168-building instanced skyline with mixed heights and façade light seams; curved multilayer elevated expressway; seven large cyan/magenta holo-sign panels. Preview compositions should keep these three recognizable anchors and lower-road/upper-road split in view.
 - **Motion:** absolute-time rain streaks (70 Low / 220 Medium / 520 High), instanced distant paired head/tail lights (3 / 7 / 12), and slow sign luminance variation. Reduced Motion hides rainfall and freezes all moving light positions/pulses at t=0.
