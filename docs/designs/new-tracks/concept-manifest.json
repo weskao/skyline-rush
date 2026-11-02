@@ -1,10 +1,10 @@
 {
-  "version": 2,
+  "version": 3,
   "status": "design-only",
   "approvedRouting": "five-point-to-point-races",
   "sourceMode": "develop",
   "imageIndex": "visual-fidelity.md",
-  "description": "Five combined original SVG storyboards and ten independent cropped ground/aerial SVG concept views are committed; original AI PNG source images are still only in the chat ZIP and are not in the GitHub repository.",
+  "description": "Ten standalone SVGs + five combined storyboards + 10 original Stage 1 AI art crops converted to JPEG are committed; lossless PNG source remains outside GitHub. Stage 2 adds five additional planned maps, ten JPEG views and route schematics in its own directory.",
   "tracks": [
     {
       "id": "dune-tempest",
@@ -29,7 +29,17 @@
       ],
       "routeReference": "route-schematics/dune-tempest.svg",
       "originalGeneratedPngUploaded": false,
-      "storyboard": "concept-art/dune-tempest-point-to-point-storyboard.svg"
+      "storyboard": "concept-art/dune-tempest-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/dune-tempest/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/dune-tempest/concept-view-02.jpg"
+        }
+      ]
     },
     {
       "id": "monsoon-ruins",
@@ -54,7 +64,17 @@
       ],
       "routeReference": "route-schematics/monsoon-ruins.svg",
       "originalGeneratedPngUploaded": false,
-      "storyboard": "concept-art/monsoon-ruins-point-to-point-storyboard.svg"
+      "storyboard": "concept-art/monsoon-ruins-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/monsoon-ruins/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/monsoon-ruins/concept-view-02.jpg"
+        }
+      ]
     },
     {
       "id": "skyfall-archipelago",
@@ -79,7 +99,17 @@
       ],
       "routeReference": "route-schematics/skyfall-archipelago.svg",
       "originalGeneratedPngUploaded": false,
-      "storyboard": "concept-art/skyfall-archipelago-point-to-point-storyboard.svg"
+      "storyboard": "concept-art/skyfall-archipelago-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/skyfall-archipelago/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/skyfall-archipelago/concept-view-02.jpg"
+        }
+      ]
     },
     {
       "id": "volcanic-crown",
@@ -104,7 +134,17 @@
       ],
       "routeReference": "route-schematics/volcanic-crown.svg",
       "originalGeneratedPngUploaded": false,
-      "storyboard": "concept-art/volcanic-crown-point-to-point-storyboard.svg"
+      "storyboard": "concept-art/volcanic-crown-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/volcanic-crown/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/volcanic-crown/concept-view-02.jpg"
+        }
+      ]
     },
     {
       "id": "stormline-megacity",
@@ -129,8 +169,21 @@
       ],
       "routeReference": "route-schematics/stormline-megacity.svg",
       "originalGeneratedPngUploaded": false,
-      "storyboard": "concept-art/stormline-megacity-point-to-point-storyboard.svg"
+      "storyboard": "concept-art/stormline-megacity-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/stormline-megacity/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/stormline-megacity/concept-view-02.jpg"
+        }
+      ]
     }
   ],
-  "imageCount": 10
+  "imageCount": 10,
+  "jpegCropsCommitted": true,
+  "originalPngCommitted": false,
+  "stage2Manifest": "stage-2/concept-manifest.json"
 }
