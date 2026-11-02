@@ -143,8 +143,7 @@ test('camera remains in frame across all preset angles and zoom boundaries', asy
     await page.locator(`[data-garage-angle="${angle}"]`).click();
     for (let i = 0; i < 7; i++) await page.locator('#garage-zoom-in').click();
     await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
-    // From zoom 0.75, nine 1.15× steps reach the 2.4 cap; eight stop at 2.294.
-    for (let i = 0; i < 9; i++) await page.locator('#garage-zoom-out').click();
+    for (let i = 0; i < 9; i++) await page.locator('#garage-zoom-out').click(); // 0.75 × 1.15⁹ ≥ 2.4 (8 clicks stop at 2.294)
     await expect(preview).toHaveAttribute('data-camera-zoom', '2.400'); // far enough for the full exhaust trail
     await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
   }
