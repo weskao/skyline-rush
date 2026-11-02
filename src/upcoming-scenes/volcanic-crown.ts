@@ -62,15 +62,15 @@ function roadCurve(): THREE.CatmullRomCurve3 {
   ], false, 'catmullrom', 0.35);
 }
 
-function roadRibbon(curve: THREE.CatmullRomCurve3): THREE.BufferGeometry {
+function roadRibbon(curve: THREE.CatmullRomCurve3, halfWidth = 7.4, y = 0.10): THREE.BufferGeometry {
   const positions: number[] = [], indices: number[] = [];
-  const count = 144, halfWidth = 7.4;
+  const count = 144;
   for (let i = 0; i <= count; i++) {
     const t = i / count, p = curve.getPoint(t), tangent = curve.getTangent(t);
     const length = Math.hypot(tangent.x, tangent.z) || 1;
     const rightX = -tangent.z / length, rightZ = tangent.x / length;
     for (const side of [-1, 1]) positions.push(
-      p.x + side * halfWidth * rightX, 0.10, p.z + side * halfWidth * rightZ,
+      p.x + side * halfWidth * rightX, y, p.z + side * halfWidth * rightZ,
     );
     if (i < count) {
       const a = i * 2;
@@ -129,6 +129,9 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   const road = new THREE.Mesh(roadRibbon(path), roadMaterial);
   road.name = 'ground-road';
   group.add(road);
+  const shelf = new THREE.Mesh(roadRibbon(path, 16, -0.30), rock);
+  shelf.name = 'basalt-road-shelf';
+  group.add(shelf);
 
   // Solid shoulders give the S bend / U turn a readable silhouette without a bloom pass.
   for (const side of [-1, 1]) {
@@ -203,14 +206,22 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
 
   // Mountain silhouette: a raised and hollow irregular crater with visible red throat.
   const volcano = new THREE.Mesh(craterMesh(), cliff);
-  volcano.position.set(106, -3, -191);
+  volcano.position.set(78, -3, -265);
   volcano.name = 'volcano-crater';
   group.add(volcano);
   const throat = new THREE.Mesh(new THREE.CircleGeometry(20, 48), lavaMaterial);
   throat.rotation.x = -Math.PI / 2;
-  throat.position.set(106, 23, -191);
+  throat.position.set(78, 23, -265);
   throat.name = 'crater-magma';
   group.add(throat);
+  const plume = new THREE.Group();
+  plume.name = 'eruption-plume';
+  plume.position.set(78, 46, -265);
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(9, 27, 9),
+    new THREE.MeshBasicMaterial({ color: '#ff6a21', transparent: true, opacity: 0.75, depthWrite: false }));
+  flame.position.y = 12;
+  plume.add(flame);
+  group.add(plume);
 
   // Layered cliffs are kept behind the ground road's outer edges.
   const boulders = new THREE.InstancedMesh(
@@ -305,7 +316,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   const smokeOrigins: THREE.Vector3[] = [];
   for (let i = 0; i < 7; i++) {
     const blob = new THREE.Mesh(smokeGeo, ashMaterial);
-    const origin = new THREE.Vector3(98 + i * 4, 52 + i * 3.1, -188 - (i % 3) * 4);
+    const origin = new THREE.Vector3(71 + i * 4, 55 + i * 3.1, -265 - (i % 3) * 4);
     blob.position.copy(origin);
     blob.scale.set(9 + i % 3 * 3, 4 + i % 4 * 2, 7 + i % 3 * 4);
     smokeOrigins.push(origin);
@@ -330,6 +341,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
     lavaMaterial.uniforms.uTime.value = t;
     sparkMaterial.uniforms.uTime.value = t;
     lavaLight.intensity = reducedMotion ? 8 : 8 + Math.sin(t * 0.83) * 1.4;
+    plume.scale.y = reducedMotion ? 1 : 1 + Math.sin(t * 0.38) * 0.12;
     sparks.visible = quality !== 'low' && !reducedMotion;
     particleGeo.setDrawRange(0, quality === 'high' ? particleCount : 18);
     smoke.visible = quality !== 'low' && !reducedMotion;
