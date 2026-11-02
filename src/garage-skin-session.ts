@@ -52,11 +52,14 @@ export function createGarageSkinSession(accountId: string, now: () => number, in
     active, view, preview, select, equip,
     cancelPreview() { selected = null; },
     setTrial(next: { enabled: boolean; expiresAt: number }) {
+      const time = now();
+      // Expired trial equipment must not revive when a fresh trial is enabled.
+      const previousExpired = trial.enabled && trial.expiresAt <= time;
       trial = {
         enabled: next.enabled === true,
         expiresAt: Number.isFinite(next.expiresAt) ? next.expiresAt : 0,
       };
-      if (!trial.enabled || trial.expiresAt <= now()) {
+      if (previousExpired || !trial.enabled || trial.expiresAt <= time) {
         selected = null;
         for (const category of Object.keys(temporary) as SkinCategory[]) delete temporary[category];
       }

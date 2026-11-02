@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { skinVfxPalette } from '../src/garage-skin-palette.ts';
+import { skinVfxPalette, skinVfxPattern } from '../src/garage-skin-palette.ts';
 
 test('four default category skins preserve the baseline renderer palette', () => {
   assert.deepEqual(skinVfxPalette({}), {
@@ -30,4 +30,32 @@ test('tampered skin IDs or category swaps fall back to default', () => {
   const baseline = skinVfxPalette({});
   assert.deepEqual(skinVfxPalette({ thruster: 'airflow-slipstream', airflow: '__proto__' }), baseline);
   assert.deepEqual(skinVfxPalette({ thruster: '../../bad.png' }), baseline);
+});
+
+// New variants must have distinct renderer pattern IDs, not just RGB tints.
+test('four skins per category use independent non-colour VFX pattern modes', () => {
+  const modes = skinVfxPattern({});
+  assert.deepEqual(modes, { thruster: 0, airflow: 0, 'nitro-trail': 0, 'launch-flare': 0 });
+  const ids = {
+    thruster: ['thruster-basic', 'thruster-ion', 'thruster-plasma', 'thruster-void'],
+    airflow: ['airflow-basic', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism'],
+    'nitro-trail': ['nitro-trail-basic', 'nitro-trail-cyan', 'nitro-trail-gold', 'nitro-trail-red'],
+    'launch-flare': ['launch-flare-basic', 'launch-flare-blue', 'launch-flare-ring', 'launch-flare-pulse'],
+  };
+  for (const [category, choices] of Object.entries(ids)) {
+    const seen = choices.map(id => skinVfxPattern({ [category]: id })[category]);
+    assert.deepEqual(seen, [0, 1, 2, 3], category);
+    assert.equal(skinVfxPattern({ [category]: '../../invalid' })[category], 0);
+    assert.equal(skinVfxPattern({ [category]: ids.thruster[2] })[category], category === 'thruster' ? 2 : 0);
+  }
+});
+
+test('all source trail/flare candidates have separate non-colour animation patterns', () => {
+  const trails = ['nitro-trail-basic','nitro-trail-cyan','nitro-trail-gold','nitro-trail-red','nitro-trail-purple'];
+  const flares = ['launch-flare-basic','launch-flare-blue','launch-flare-ring','launch-flare-pulse',
+    'launch-flare-gold','launch-flare-red','launch-flare-cyan','launch-flare-magenta','launch-flare-white'];
+  assert.deepEqual(trails.map(id => skinVfxPattern({ 'nitro-trail': id })['nitro-trail']), [0,1,2,3,4]);
+  assert.deepEqual(flares.map(id => skinVfxPattern({ 'launch-flare': id })['launch-flare']), [0,1,2,3,4,5,6,7,8]);
+  for (const id of trails.slice(1)) assert.notDeepEqual(skinVfxPalette({ 'nitro-trail': id })['nitro-trail'], [1,1,1]);
+  for (const id of flares.slice(1)) assert.notDeepEqual(skinVfxPalette({ 'launch-flare': id })['launch-flare'], [1,1,1]);
 });
