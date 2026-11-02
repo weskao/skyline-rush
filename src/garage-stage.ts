@@ -13,7 +13,8 @@ import { createGaragePaintSweep } from './garage-paint-shader.ts';
 export function createGarageStage(environment: THREE.Texture) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#07101b');
-  scene.fog = new THREE.Fog('#07101b', 24, 54);
+  const fog = new THREE.Fog('#07101b', 24, 54);
+  scene.fog = fog;
   scene.environment = environment;
   scene.environmentIntensity = 0.8;
 
@@ -107,6 +108,9 @@ export function createGarageStage(environment: THREE.Texture) {
     look.copy(flying ? flightCenter : carCenter);
     look.y += hover;
     const distance = garageFramedDistance(camera.aspect, state.zoom, flying ? flightHalf : carHalf, yaw, state.pitch);
+    // Zoomed-out views (up to ~44 m, top view) keep the car and trail clear of the fog.
+    fog.near = Math.max(24, distance + 8);
+    fog.far = fog.near + 30;
     camera.fov = 49;
     camera.position.set(look.x + Math.sin(yaw) * Math.cos(state.pitch) * distance,
       look.y + Math.sin(state.pitch) * distance,

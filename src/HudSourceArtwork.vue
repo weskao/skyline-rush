@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import GarageArtworkTile from './GarageArtworkTile.vue';
+import { onMounted, onUnmounted, ref } from 'vue';
+import { getLocale, onLocaleChange } from './i18n.ts';
+const locale = ref(getLocale());
+let stopLocale: (() => void) | undefined;
+onMounted(() => { locale.value = getLocale(); stopLocale = onLocaleChange(next => { locale.value = next; }); });
+onUnmounted(() => stopLocale?.());
 
 const names = ['button-back','button-coming-soon','button-garage','button-nitro','button-play','button-retry',
   'hud-brake','hud-combo','hud-drift','hud-nitro','hud-pause','hud-speed',
@@ -11,8 +17,8 @@ const src = (name: string): string =>
 
 <template>
   <details id="hud-3x-source-gallery" class="hud-art-preview">
-    <summary>UI 3× Artwork / 操作圖示素材</summary>
-    <p>Source preview only · 素材展示不改變既有 HUD 配置或按鈕功能。</p>
+    <summary>{{ locale === 'zh-TW' ? '操作圖示素材（3 倍圖）' : 'UI 3× Artwork' }}</summary>
+    <p>{{ locale === 'zh-TW' ? '僅供素材預覽；不變更既有 HUD 配置或按鈕功能。' : 'Artwork preview only; existing HUD layout and controls are unchanged.' }}</p>
     <div class="hud-art-grid">
       <GarageArtworkTile v-for="name in names" :key="name" :id="name"
         :label="name.replaceAll('-', ' ')" :src="src(name)"
@@ -24,7 +30,10 @@ const src = (name: string): string =>
 
 <style scoped>
 .hud-art-preview { border-top: 1px solid #506887; margin-top: 15px; padding-top: 10px; min-width: 0; }
-.hud-art-preview summary { min-height: 44px; font-size: 12px; font-weight: 700; cursor: pointer; color: #d7ecff; }
+.hud-art-preview summary { display: flex; align-items: center; list-style: none; min-height: 44px; font-size: 12px; font-weight: 700; cursor: pointer; color: #d7ecff; }
+.hud-art-preview summary::-webkit-details-marker { display: none; }
+.hud-art-preview summary::before { content: '▸'; margin-right: 6px; }
+.hud-art-preview[open] summary::before { content: '▾'; }
 .hud-art-preview p { font-size: 12px; line-height: 1.4; color: #a5c4df; }
 .hud-art-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 184px), 1fr));
   gap: 10px; align-items: stretch; }

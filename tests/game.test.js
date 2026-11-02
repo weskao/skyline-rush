@@ -623,12 +623,12 @@ test('pickups come only from the track seed, are reproducible and cover every ti
       assert.deepEqual(new Set(pickups.map(p => p.tier)), new Set(['cell', 'can', 'tank', 'overcharge']), id);
       assert.equal(pickups.filter(p => p.tier === 'overcharge').length, 1, id);
       for (const pickup of pickups) {
-        assert.deepEqual(Object.keys(pickup), ['distance', 'x', 'altitude', 'tier']);
+        assert.deepEqual(Object.keys(pickup), ['distance', 'x', 'altitude', 'tier', ...(pickup.run ? ['run'] : [])]); // run: a cell trailing a pickup slot
         assert.ok(pickup.distance > 0 && pickup.distance < length && Math.abs(pickup.x) < ROAD_LIMIT);
         const section = sections.find(s => pickup.distance >= s.from && pickup.distance < s.to);
-        // Tanks and the overcharge fly; any other air pickup is a cell lining a shortcut corridor.
+        // Tanks and the overcharge fly; any other air pickup is a cell lining a shortcut corridor or trailing an air tank.
         if (pickup.tier === 'tank' || pickup.tier === 'overcharge') assert.ok(pickup.altitude > 0);
-        else assert.ok(pickup.altitude === 0 || section?.type === 'shortcut', `${id} stray air ${pickup.tier}`);
+        else assert.ok(pickup.altitude === 0 || section?.type === 'shortcut' || pickup.run, `${id} stray air ${pickup.tier}`);
         assert.ok(!(section?.type === 'gap' && pickup.altitude === 0), `${id} ground pickup over a gap`);
         assert.ok(!(section?.type === 'tunnel' && pickup.altitude > 0), `${id} air pickup in a tunnel`);
       }
@@ -941,16 +941,16 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
       const { rings, length } = createRace(id);
       assert.deepEqual(rings, createRace(id).rings);
       assert.ok(rings.length >= 7, id);
-      rings.forEach((ring, i) => {
+      rings.filter(ring => !ring.row && ring.train === undefined).forEach((ring, i, singles) => { // rows and trains: tests/ring-rows.test.js
         assert.deepEqual(Object.keys(ring).slice(0, 6), ['distance', 'x', 'altitude', 'radius', 'type', 'group']);
         assert.ok(Object.keys(ring).slice(6).every(key => key === 'groupSize'), Object.keys(ring).join());
         assert.ok(ring.distance > 0 && ring.distance < length && Math.abs(ring.x) < ROAD_LIMIT && ring.altitude >= 0 && ring.altitude <= 12);
-        assert.ok(i === 0 || ring.distance > rings[i - 1].distance, `${id} @${ring.distance}`); // ordered, one ring per distance
+        assert.ok(i === 0 || ring.distance > singles[i - 1].distance, `${id} @${ring.distance}`); // ordered, one ring per distance
         assert.equal(ring.radius, ring.type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS);
         types.add(ring.type);
       });
       const groups = Object.values(Object.groupBy(rings, ring => ring.group));
-      for (const group of groups) assert.ok(group.length >= 3 && group.length <= 5 && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
+      for (const group of groups) if (!group.some(ring => ring.row || ring.train !== undefined)) assert.ok(group.length >= 3 && group.length <= 5 && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
       assert.deepEqual([...new Set(rings.map(ring => ring.group))].sort((a, b) => a - b), groups.map((_, i) => i)); // group ids 0..n-1
     }
     assert.deepEqual(types, new Set(['charge', 'nitro', 'slipstream', 'risk', 'mystery']));
@@ -962,8 +962,10 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
 
 // Coast keeps its gate line: every ring at x 2.5, altitude 8 and road-height 3 alternating by ring.
 test('coast keeps its gate line at x 2.5, alternating altitude 8 and road-height 3', () => {
-  const rings = createRace('coast').rings;
-  rings.forEach((ring, i) => {
+  // One ring per slot (a row's first lane, a train's first ring); the single slots keep the gate line, by slot index.
+  const slots = createRace('coast').rings.filter(ring => !(ring.row && ring.x !== -7.5) && !ring.train);
+  slots.forEach((ring, i) => {
+    if (ring.row || ring.train !== undefined) return;
     assert.equal(ring.x, 2.5, `ring ${i} @${ring.distance}`);
     assert.equal(ring.altitude, i % 2 ? 3 : 8, `ring ${i} alternates`);
   });
@@ -1568,6 +1570,7 @@ test('gap charge warning: within range of a broken bridge with too little charge
 
 test('races count charge run-outs and gap falls for tuning', () => {
   const race = racing();
+  Object.assign(race, { rings: [], pickups: [] }); // a charge ring row would refill the flight charge
   advance(race, 3, { throttle: true });
   advance(race, 9, { throttle: true, fly: true });
   assert.equal(race.player.fuelOuts, 1);

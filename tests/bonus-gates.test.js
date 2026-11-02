@@ -8,7 +8,7 @@ import { validateRaceRequest, rulesSignature } from '../src/race-config.ts';
 import { decorateBonusGates } from '../src/bonus-gates.ts';
 
 function collect(race, type, overrides = {}) {
-  const ring = race.rings.find(ring => ring.type === type && !ring.hit);
+  const ring = race.rings.find(ring => ring.type === type && !ring.hit && !(ring.row && race.player.distance >= ring.distance));
   assert.ok(ring, `${type} has a real authored gate`);
   race.phase = 'racing';
   Object.assign(race.player, { distance: ring.distance - .1, x: ring.x, altitude: ring.altitude, verticalSpeed: 0, speed: 50, ...overrides });
@@ -95,7 +95,7 @@ test('score tokens are opt-in, limited to style modes and use a nonstacking five
     const race = createRace('coast', { mode, bonusGates: true });
     collect(race, 'score-pad');
     assert.equal(race.player.multiplierTime, 5);
-    const another = race.rings.find(ring => ring.type === 'score-pad' && !ring.hit);
+    const another = race.rings.find(ring => ring.type === 'score-pad' && !ring.hit && !(ring.row && ring.distance <= race.player.distance)); // a passed row pays no more
     if (another) { collect(race, 'score-pad', { distance: another.distance - .1 }); assert.ok(race.player.multiplierTime <= 5); }
     assert.ok(rulesSignature({ mode, bonusGates: true }) !== rulesSignature({ mode }));
     assert.equal(createRace('coast', { mode }).rings.some(ring => ring.type === 'score-pad'), false);

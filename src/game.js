@@ -1,5 +1,5 @@
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
-import { createRings, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
+import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
 import { physicalGap } from './circuit-track.ts';
@@ -98,17 +98,17 @@ export function setLayoutSeed(next = track => track.seed) { layoutSeed = next; }
 
 // `count` single pickups from the 'pickups' stream of `seed`, plus one overcharge and each shortcut's reward line.
 function createPickups(track, count, seed) {
-  const random = seededRng(seed, RACE_STREAMS.pickups);
+  const random = seededRng(seed, RACE_STREAMS.pickups), runs = seededRng(seed, RACE_STREAMS.pickupRuns);
   const pick = list => list[Math.floor(random() * list.length)];
   // Ground pickups would sit over a gap's hole; air pickups would be stuck in a tunnel roof.
   const blocked = pickup => track.sections.some(s => s.type === (pickup.altitude === 0 ? 'gap' : 'tunnel') && pickup.distance >= s.from - 10 && pickup.distance < s.to + 10);
-  const pickups = spreadDistances(count, 300, track.length - 300, random).map(distance => {
+  const pickups = spreadDistances(count, 300, track.length - 300, random).flatMap(distance => {
     const roll = random(), air = Math.round(30 + random() * 40) / 10;
     const pickup = roll < 0.6 ? { distance, x: pick(LANES), altitude: 0, tier: 'cell' }
       : roll < 0.85 ? { distance, x: pick([-5, 0, 5]), altitude: 0, tier: 'can' } // between lanes
         : { distance, x: pick(LANES), altitude: air, tier: 'tank' };
     // Blocked: over a gap it flies, in a tunnel it sits on the road.
-    return !blocked(pickup) ? pickup : pickup.altitude === 0 ? { ...pickup, altitude: air, tier: 'tank' } : { ...pickup, altitude: 0, tier: 'can' };
+    return pickupRun(!blocked(pickup) ? pickup : pickup.altitude === 0 ? { ...pickup, altitude: air, tier: 'tank' } : { ...pickup, altitude: 0, tier: 'can' }, runs, blocked);
   });
   let overcharge; // high-risk: near the flight ceiling over an edge lane; bounded retries so a tunnel-heavy track cannot hang
   for (let tries = 0; tries < 50 && (!overcharge || blocked(overcharge)); tries++) {
@@ -160,7 +160,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
   const session = createRaceSessionContract(trackId, track.seed, config, presentation), risk = riskRules(config), themed = themedExtras(trackId, config, risk);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
   const seed = layoutSeed(track), count = ITEMS_PER_CAR * (driverIds.length + 1), perLap = (items, kind) => config.mode === 'circuit' ? lapItems(items, config.laps, kind) : items;
-  const course = mixedCourse(trackId, track, LANES, config), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(perLap(createRings(track, risk.rings, count, seed), 'ring'), course), themed), config.itemRules), config);
+  const course = mixedCourse(trackId, track, LANES, config), hoopsAt = [...(course?.hoops ?? []), ...(themed?.hoops ?? [])].map(hoop => hoop.distance), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(perLap(createRings(track, risk.rings, count, seed, hoopsAt), 'ring'), course), themed), config.itemRules), config);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   const race = {
     trackId, modifier: dailyModifier, mode: config.mode, config, grid, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: (themed?.sections.length ? [...track.sections, ...themed.sections].sort((a, b) => a.from - b.from) : track.sections).map(section => ({ ...section })),
@@ -539,12 +539,12 @@ export function stepRace(race, input, dt) {
       else addNitro(car, NITRO_PICKUPS[pickup.tier]);
     }
   }
-  const fell = car.fall?.time === race.elapsed; // a respawn jump skips the rings it covers
+  let rowTaken = NaN; const fell = car.fall?.time === race.elapsed; // a respawn jump skips the rings it covers; a ring row pays once per car
   for (const ring of race.rings) { // sorted by distance
     if (ring.distance > car.distance) break;
     // shortcut: tests the car's end-of-step x/altitude, not the interpolated crossing (error < 0.7 m at dt 0.1), upgrade if risk rings feel unfair
-    if (fell || ring.hit || ring.downUntil > race.elapsed || ring.distance <= previousDistance || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
-    collectRing(race, ring, race.rings.indexOf(ring));
+    if (fell || ring.hit || ring.downUntil > race.elapsed || ring.distance <= previousDistance || (ring.row && ring.distance === rowTaken) || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
+    collectRing(race, ring, race.rings.indexOf(ring)); if (ring.row) rowTaken = ring.distance;
   }
   stepPlayerHazards(race, car, previousDistance, contact);
   const travelled = (race.endless ? car.distance : Math.min(car.distance, race.length)) - previousDistance;

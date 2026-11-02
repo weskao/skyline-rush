@@ -140,9 +140,8 @@ test.describe('touch controls', () => {
 
 });
 
-test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ page }) => {
+gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ gameplayPage: page }) => {
   test.setTimeout(ciTimeout(90000));
-  await open(page);
   await page.locator('#controls-button').click();
   await page.locator('#controls-sensitivity').focus();
   await page.keyboard.press('Home');

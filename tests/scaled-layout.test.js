@@ -1,28 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, setLayoutSeed, RACE_TRACKS, CAR_HEIGHT, TUNNEL_CEILING, GAP_CLEARANCE } from '../src/game.js';
+import { createRace, startRace, stepRace, setLayoutSeed, RACE_TRACKS, CAR_HEIGHT, TUNNEL_CEILING, GAP_CLEARANCE, ITEMS_PER_CAR } from '../src/game.js';
 
-// User, 2026-11-02: rings and pickups scale with the cars on the grid (4 per car), as single objects
-// spread over the whole track, and their positions are re-rolled every race.
+// User, 2026-11-02: rings and pickups scale with the cars on the grid (4 slots per car), spread over the whole track,
+// and their positions are re-rolled every race. A ring slot may be a train or a full-width row and a pickup slot
+// trails a run of cells (tests/ring-rows.test.js): `slots` counts one ring per slot, `pickupsOf` one pickup.
 const TRACKS = Object.keys(RACE_TRACKS);
-const PER_CAR = 4;
+const PER_CAR = ITEMS_PER_CAR;
+const singles = race => race.rings.filter(ring => !ring.train && !(ring.row && ring.x !== -7.5)); // one ring per slot
 const cars = race => 1 + race.rivals.length;
 const inCorridor = (race, p) => race.sections.some(s => s.type === 'shortcut' && p.distance >= s.from && p.distance < s.to && p.x === s.x && p.altitude === s.altitude);
 // The scattered pickups: not the overcharge, not a shortcut corridor's own reward line.
-const pickupsOf = race => race.pickups.filter(p => p.tier !== 'overcharge' && !inCorridor(race, p));
+const pickupsOf = race => race.pickups.filter(p => p.tier !== 'overcharge' && !p.run && !inCorridor(race, p));
 
-test('L1: a race carries 4 rings per car on the grid, on every track', () => {
+test('L1: a race carries ITEMS_PER_CAR single rings per car on the grid, on every track', () => {
   for (const id of TRACKS) for (const rivals of [0, 1, 2, 7]) {
     const race = createRace(id, { mode: 'custom', rivals });
-    assert.equal(race.rings.length, PER_CAR * (rivals + 1), `${id} with ${rivals + 1} car(s)`);
+    assert.equal(singles(race).length, PER_CAR * (rivals + 1), `${id} with ${rivals + 1} car(s)`);
   }
-  for (const id of TRACKS) assert.equal(createRace(id).rings.length, PER_CAR * 8, `${id} classic grid of 8`);
+  for (const id of TRACKS) assert.equal(singles(createRace(id)).length, PER_CAR * 8, `${id} classic grid of 8`);
 });
 
-test('L2: every ring is a single ring, never a full-width row or a dense train', () => {
+test('L2: a slot is a single ring, a 5-ring train or a 4-ring full-width row', () => {
   for (const id of TRACKS) for (const ring of createRace(id).rings) {
-    assert.equal(ring.row, undefined, `${id} row @${ring.distance}`);
-    assert.ok(!ring.train, `${id} train @${ring.distance}`);
+    if (ring.train !== undefined) assert.ok(ring.train >= 0 && ring.train < 5, `${id} train @${ring.distance}`);
+    if (ring.row) assert.equal(createRace(id).rings.filter(r => r.row && r.distance === ring.distance).length, 4, `${id} row @${ring.distance}`);
   }
 });
 
@@ -31,7 +33,7 @@ test('L3: rings and pickups spread from start to finish, never bunched on one st
   for (const id of TRACKS) for (const rivals of [0, 7]) for (const seed of [1, 2, 3]) {
     setLayoutSeed(() => seed);
     const race = createRace(id, { mode: 'custom', rivals }), length = race.length;
-    for (const items of [race.rings, pickupsOf(race)]) {
+    for (const items of [singles(race), pickupsOf(race)]) {
       const stops = [0, ...items.map(item => item.distance), length];
       const longest = Math.max(...stops.slice(1).map((d, i) => d - stops[i]));
       assert.ok(longest < 2 * length / items.length + 300, `${id} seed ${seed}: ${longest} m empty in ${items.map(i => Math.round(i.distance))}`);
@@ -41,7 +43,7 @@ test('L3: rings and pickups spread from start to finish, never bunched on one st
   setLayoutSeed();
 });
 
-test('L4: a race carries 4 single pickups per car plus the one overcharge', () => {
+test('L4: a race carries ITEMS_PER_CAR single pickups per car plus the one overcharge', () => {
   for (const id of TRACKS) for (const rivals of [0, 2, 7]) {
     const race = createRace(id, { mode: 'custom', rivals });
     assert.equal(pickupsOf(race).length, PER_CAR * (rivals + 1), `${id} with ${rivals + 1} car(s)`);
@@ -62,9 +64,9 @@ test('L5: no pickup sits over a gap hole or inside a tunnel roof', () => {
   setLayoutSeed();
 });
 
-test('L6: Circuit gives every lap 4 rings and 4 pickups per car', () => {
+test('L6: Circuit gives every lap ITEMS_PER_CAR single rings and pickups per car', () => {
   const race = createRace('harbor-circuit', { mode: 'circuit', laps: 3 });
-  assert.equal(race.rings.length, PER_CAR * cars(race) * 3);
+  assert.equal(singles(race).length, PER_CAR * cars(race) * 3);
   assert.equal(pickupsOf(race).length, PER_CAR * cars(race) * 3);
 });
 
@@ -108,7 +110,8 @@ function driveGates(gates, skip = -1) {
 }
 
 test('L9: PERFECT LINE needs every ring of a group; missing one misses it', () => {
-  const group = createRace('coast').rings.filter(r => r.group === 1);
+  const rings = createRace('coast').rings, single = rings.find(r => r.group > 0 && rings.every(o => o.group !== r.group || (!o.row && o.train === undefined)));
+  const group = rings.filter(r => r.group === single.group); // a group of single rings (rows and trains: tests/ring-rows.test.js)
   assert.ok(group.length >= 3 && group.every(r => r.groupSize === group.length));
   const all = driveGates(group);
   assert.equal(all.perfectLines, 1);

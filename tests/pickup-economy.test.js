@@ -31,9 +31,12 @@ test('median picks the middle value, or the mean of the two middle values', () =
 // layout (user, 2026-11-02: 4 rings and pickups per car, re-rolled per race in the app) each lifted that lock
 // deliberately and re-locked the new layouts here. Stage-2 hashes: aurora d1e3d16dea07414c, taipei 5a49d8a1b47134c2,
 // tokyo 5118e29f13296376, alpine 9d8fc5c6cf54335c, coastal 6a9eabe8195ed8e4, cosmic 9c897168bf1e1293.
+// Re-locked again for the user's ring trains, a few full-width rows and pickup runs of 1-4 (2026-11-02), on the same
+// 4 slots per car. 4-per-car hashes: aurora 0556decf5e917770, taipei 92328db2e65aaf02, tokyo 8a0f615c217d6154,
+// alpine b28b3261f4815a4d, coastal d0e7f481e35cd2d6, cosmic a08289e1073ffbfd.
 const LOCKED_LAYOUTS = {
-  aurora: '0556decf5e917770', taipei: '92328db2e65aaf02', tokyo: '8a0f615c217d6154',
-  alpine: 'b28b3261f4815a4d', coastal: 'd0e7f481e35cd2d6', cosmic: 'a08289e1073ffbfd',
+  aurora: 'dfbdee2481a1067c', taipei: '7e3e494aeb87c4da', tokyo: '1b414b5f6ef56db9',
+  alpine: '4d9a65bf5d0b8de7', coastal: '1bdfb51a66d090c9', cosmic: '9999583aa5be70d4',
 };
 test('AC3: Aurora and the World Tour keep their (scaled) ring and pickup layout', () => {
   for (const [id, hash] of Object.entries(LOCKED_LAYOUTS)) assert.equal(layoutHash(id), hash, id);
@@ -92,7 +95,7 @@ test('AC2b: Sky Spiral and Circuit bring the first NITRO forward without droppin
 // Stage 2 adds full-width rows across all lanes; every other Coast gate stays on the classic line
 // (the slot-by-slot alternation is locked in tests/game.test.js).
 test('Coast keeps its classic gate line and alternates high and road-height rings', () => {
-  const rings = createRace('coast').rings;
+  const rings = createRace('coast').rings.filter(r => !r.row && r.train === undefined); // the gate line, not rows or trains
   assert.ok(rings.every(r => r.x === 2.5));
   assert.deepEqual(new Set(rings.map(r => r.altitude)), new Set([8, 3]));
 });

@@ -13,7 +13,7 @@ test('scenario 2 — Orbit: drag rotates within safe pitch and does not affect p
 test('scenario 2 — Orbit: wheel, pinch and button zoom have finite safe bounds', () => {
   assert.equal(zoomGarageCamera(defaultGarageCamera(), Infinity).zoom, 1);
   assert.equal(zoomGarageCamera(defaultGarageCamera(), 0.001).zoom, .75);
-  assert.equal(zoomGarageCamera(defaultGarageCamera(), 100).zoom, 1.6);
+  assert.equal(zoomGarageCamera(defaultGarageCamera(), 100).zoom, 2.4);
 });
 test('scenario 2 — Orbit: view presets, auto rotation and reset are independent', () => {
   const top = garagePreset('top');

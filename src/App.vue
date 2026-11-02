@@ -192,9 +192,9 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </section>
       <div class="intro-actions">
         <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button></div>
+        <button type="button" class="text-button garage-button" id="garage-button"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
         <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
-        <button class="text-button garage-button" id="garage-button"><span data-i18n="nav.garage">Garage</span></button>
+        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
       </div>
       <!-- Reserve space for the camera controls in compact layouts. -->
