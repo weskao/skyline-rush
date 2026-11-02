@@ -2,6 +2,10 @@
 
 **All five are point-to-point, not circuit laps.** This is a planning-only art reference. Ten existing JPEG files under `source-concept-jpeg/` have two camera roles (01 ground, 02 aerial branch). Five independent `route-schematics/*.svg` show distinct START and FINISH.
 
+## Required measurable scene-fidelity workflow
+
+Follow [Concept JPEG → WebGL visual acceptance gate](../visual-acceptance-gate.md). For both frames per map, require staged greybox → real-time scenery → atmosphere → actual gameplay comparisons; lock the camera pose/track location/weather seed and record landmark silhouette, road/terrain shape, vehicle framing, weather, fork/landing readability, and visible UI. Reviews must be **PASS / FAIL / APPROVED DEVIATION** with evidence. The 3× resampled concept JPEGs are not native-resolution textures; no map is accepted from these static images alone.
+
 ## Per-course matching criteria
 
 ### 6 極地冰原峽谷 / Frostbite Canyon
