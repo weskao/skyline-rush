@@ -2983,3 +2983,8 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 ### 2026-11-03 Garage CI RED checkpoint
 - [x] Exact feature 16f2485 CI 41476482401: unit-tests, cloud-save, 5 World Tour passed; browser shards 1,3,4,6,7,8,9,10,11,12,13 failed; quality-gate failed. Logs confirm stale Endless 20/15 budget, Garage zoom click count, desktop intro overflow, HUD art timeout and NITRO reward assumptions. No green claim for the next SHA.
 - [ ] Recheck complete exact-HEAD full CI after upstream sync and fixes. Manual real-WebGL/phone checks remain independent.
+
+### 2026-11-03 Garage exact-HEAD CI #41520208780 observed RED (follow-up pending)
+- [x] Browser shards 2/7/9 failed on exact feature `ef1a94a`: 1440×900 intro overlapped topbar; intro scroll test counted the fixed camera dock as flow content; handoff PERFECT LINE pilot exited in READY phase; release clip handoff assertion compared different instants. Logs inspected, not a full CI pass.
+- [ ] Verify fixes on next exact-SHA full-regression CI: actual Start race before ring collision; exclude fixed dock only from scroll-flow test; preserve 900px intro height with correct header gap; compare release video clocks at dialog close. Do not mark GREEN without CI evidence.
+- [ ] Verify remaining 13 browser, 5 World Tour, cloud-save, unit-tests, quality-gate; after all green and latest develop integrated, no-ff merge to develop only and verify merged SHA. Manual WebGL/device review separate.

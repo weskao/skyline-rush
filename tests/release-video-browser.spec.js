@@ -92,10 +92,19 @@ test.describe('desktop', () => {
     expect(await time(clip), 'no restart: it carries on from the hero\'s frame').toBeGreaterThanOrEqual(heroTime - 0.1);
     expect(await time(clip)).toBeLessThan(heroTime + 0.5);
     await expect.poll(() => time(clip)).toBeGreaterThan(heroTime + 1);
-    const enlargedTime = await time(clip);
+    // CI RED #41520208780: comparing with a pre-Escape timestamp includes the
+    // viewer's fade and slow-runner scheduling. Capture both clocks at close.
+    await page.evaluate(() => {
+      document.querySelector('#release-media-viewer').addEventListener('close', () => {
+        const enlarged = document.querySelector('#release-media-viewer video')?.currentTime;
+        queueMicrotask(() => { window.releaseHandoff = { enlarged, hero: document.querySelector('#release-video')?.currentTime }; });
+      }, { once: true });
+    });
     await page.keyboard.press('Escape');
     await expect(page.locator('#release-media-viewer')).toBeHidden();
-    expect(Math.abs(await time(video) - enlargedTime), 'the hero resumes from the enlarged frame').toBeLessThan(0.5 + 0.1);
+    const handoff = await page.evaluate(() => window.releaseHandoff);
+    expect(handoff?.enlarged).toBeGreaterThan(heroTime + 1);
+    expect(Math.abs(handoff.hero - handoff.enlarged), 'the hero resumes from the enlarged frame').toBeLessThan(0.1);
     await expect.poll(() => playing(video)).toBe(true);
   });
 

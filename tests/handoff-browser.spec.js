@@ -175,6 +175,10 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
     return first.map(({ distance, type }) => ({ distance, type }));
   });
   expect(gates.filter(ring => ring.type === 'nitro')).toHaveLength(2);
+  // CI RED #41520208780: gameplayPage loads the real race but leaves it READY.
+  // The pilot below exits immediately unless the user actually starts driving.
+  await start(page);
+  await page.keyboard.down('w');
   const perfectLine = await page.evaluate(budget => new Promise(resolve => {
     const deadline = performance.now() + budget;
     const pilot = () => {
@@ -224,6 +228,7 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   await page.waitForTimeout(450);
   expect(await page.evaluate(() => Math.min(...window.nitroValues)), 'holding NITRO fires one charge, not one per frame').toBe(2);
   await page.keyboard.up('e');
+  await page.keyboard.up('w');
   await expect(page.locator('body')).not.toHaveClass(/nitro-active/);
 });
 

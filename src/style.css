@@ -1629,10 +1629,10 @@ body.photo-studio #perf-overlay { display: none; }
   .intro h1 br { display: none; }
   .intro .intro-actions { row-gap: 8px; }
 }
-/* Desktop 900px: make room for the full mode/Cup UI without hiding content or reducing tap targets.
-   The header ends at 112px and the footer keeps 30px of breathing room. */
+/* Desktop 900px: the global -6px intro margin shifts its box upward. Offset
+   top/bottom equally to preserve scroll room without overlapping the 112px header. */
 @media (min-width: 1001px) and (min-height: 900px) and (max-height: 966px) {
-  .intro { top: 112px; bottom: 30px; }
+  .intro { top: 118px; bottom: 24px; }
   .intro .route-label { margin-bottom: 8px; }
   .intro .intro-wordmark { font-size: clamp(46px, 4.7vw, 64px); margin-bottom: 4px; }
   .intro .track-preview { height: 12px; margin-bottom: 4px; }
