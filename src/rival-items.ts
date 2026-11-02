@@ -6,9 +6,11 @@ export const ITEM_RESPAWN = 2.5; // s
 // Takes per rival per race, tuned with scripts/pickup-economy.mjs to the user's AC2 (2026-11-02): Easy takes a
 // little, never nothing (AC3, +0.9 NITRO per race over 7 rivals); Normal +2.4; Hard, which also changes lane
 // for items, +4.0 (5 takes since the 2026-11-02 trains, rows and pickup runs: races end sooner, 4 gave +3.9).
+// User's 2026-11-03 medium increase: more pickup-run cells (0.25) spend takes without filling a charge, so Circuit
+// Normal fell to +1.0 on 3 takes (every rival capped); Normal 4 gives +3.8 (Circuit +4.0), Hard 6 gives +5.0 (5: +3.8).
 export const EASY_RIVAL_TAKES = 2;
-export const NORMAL_RIVAL_TAKES = 3;
-export const HARD_RIVAL_TAKES = 5;
+export const NORMAL_RIVAL_TAKES = 4;
+export const HARD_RIVAL_TAKES = 6;
 const TAKE_LIMIT: Readonly<Record<string, number>> = { easy: EASY_RIVAL_TAKES, normal: NORMAL_RIVAL_TAKES, hard: HARD_RIVAL_TAKES };
 
 interface Collectible { distance: number; x: number; altitude: number; downUntil?: number }

@@ -109,6 +109,19 @@ The 3x HUD artwork belongs to the future `feature/garage-store-readiness`, `feat
 - [ ] Remote `quality-gate` on the final HEAD; real-device pinch check.
 - [ ] Cosmetic: at max zoom-out the 44 m floor edges show in top/side views (the corner was already visible at default zoom).
 
+## More rings and pickups: middle-lane ground trains (2026-11-03)
+
+**Branch:** `develop` (user request), worked on `work/ring-trains-develop` from `origin/develop` `9ec7f3df`, pushed as a fast-forward. **Request:** rings and pickups still too few, a medium increase on every map and mode, with consecutive rings down lane 2 or 3, mostly on the ground; keep the balance, no walls, no dense scatter.
+
+- [x] RED: `tests/ring-rows.test.js` (6-ring trains on x ±2.5, ≥ 3 trains a race, < 30% in the air, trains 40 m apart, Endless chunk contents) and `tests/scaled-layout.test.js` (40 singles on a grid of 8) failed on the old layout (e.g. "trains 216/3200 in 100 races", "coast train @712 overlaps the one ending @788").
+- [x] GREEN: `ITEMS_PER_CAR` 4 -> 5; trains 6 rings (charge/slipstream/charge/nitro/slipstream/charge) on the middle lane on the slot's side, 80% on the road, `TRAIN_ODDS` 0.15 -> 0.25, 40 m from the previous train. Endless: a middle-lane train in every chunk plus a row in 1 of 3, 3 singles, 5 pickup runs (was 4). `game.js` unchanged.
+- [x] Balance, economy bot, 6 seeds x 10 tracks, rival-free: rings 42.3 -> 59.0 (+39%), pickups 92.9 -> 112.0 (+21%), ground rings 7.1 -> 19.1, mid-lane rings 11.8 -> 22.8; NITRO/min 18.45 -> 19.98 (+8.3%), race 55.31 -> 54.73 s (-1.0%), fuel run-outs 0 -> 0, boost share 92.7 -> 98.0%; track NITRO/min 15.0-21.4 -> 17.3-21.5. Harbor Circuit 3 laps rings 153 -> 213, pickups 240 -> 276. Densest one-colour 900 m view 17 (pool 48).
+- [x] AC2 rival NITRO: more 0.25 run cells spend takes without filling a charge (Circuit Normal +1.0, every rival capped at 3). `NORMAL_RIVAL_TAKES` 3 -> 4 (Normal +3.8, Circuit +4.0, Elimination +1.8), `HARD_RIVAL_TAKES` 5 -> 6 (+5.0); Easy unchanged (+0.4).
+- [x] No `layoutVersion` bump: `f5f39464` is still not on `origin/main`. AC3 hashes re-locked (old ones kept in the comment).
+- [x] Gates: `npm test` 1441 pass / 0 fail / 3 skipped, `npm run typecheck`, `npm run build`; `tests/ring-rows-browser.spec.js` desktop + phone (row 1 ring, middle-lane train 6/6 + PERFECT LINE), WebGL screenshots checked.
+- [ ] Full `npm run test:browser` / `make verify` not run locally (shared Playwright machine): the `develop` CI `quality-gate` runs the full suite.
+- [ ] Real-device feel check.
+
 ## Ring trains, a few full-width rows, pickup runs (2026-11-02)
 
 **Branch:** `feature/ring-rows` from `develop` `01fd1bea`. **Request:** a few more items and rings on every map and mode: consecutive rings on the road or in the air, a few stretches with a full row of rings so passing always takes one, pickups in runs of 1-4; keep the balance (not too easy or hard, keep the thrill). A first try (6 per car + 5-row streaks of 8 rings every 1.2 km) was rejected as "too many, too bunched".
