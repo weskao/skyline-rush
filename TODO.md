@@ -1,3 +1,23 @@
+## Stage 1 — Homepage Coming Soon five-track selector (2026-11-03)
+
+**Branch:** `feature/epic-multiroute-longform-tracks` (NOT `develop` or `main`).
+**Design:** [Stage 1 Coming Soon homepage](docs/superpowers/specs/2026-11-03-stage1-coming-soon-home-preview-design.md).
+**Five separate GPT art briefs:** [parallel owned-art assignments](docs/superpowers/prompts/2026-11-03-stage1-home-teasers-parallel.md).
+**Strict scope:** **ONLY** Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity appear as coming-soon cards; the next five Stage 2 maps remain design documents only.
+
+- [x] Create preview-only `UPCOMING_TRACKS` metadata and priority status; do **not** register unfinished maps in playable `RACE_TRACKS` or mutate game physics, rewards, ghost, daily or cup.
+- [x] Reuse the five committed Stage 1 JPEGs and route SVGs in `public/track-teasers/` for selectable home cards and a static hero teaser; clearly label them as concept art rather than real WebGL.
+- [x] Set `COMING SOON` / `即將推出` on Stage 1 cards, allow selecting preview-only cards, disable start in any mode and block the Enter/keyboard race path.
+- [x] Change `#start-button` CTA by status (Start race, LOCKED, COMING SOON), bilingual en / zh-TW and fixed width per breakpoint; restore original behavior on playable map select.
+- [x] Add pure Node tests `tests/upcoming-tracks.test.js` and browser tests `tests/upcoming-home-browser.spec.js`; update previous last-track placement test for new carousel order.
+- [x] Create 5 **independent art branches** `feature/epic-home-art-{dune-tempest,monsoon-ruins,skyfall-archipelago,volcanic-crown,stormline-megacity}` and [five individual GPT chat prompts](docs/superpowers/prompts/2026-11-03-stage1-home-teasers-parallel.md). Only each branch's one JPEG + art note are owned by that chat; the shared branch owns UI.
+- [ ] Five art chats individually produce **native, non-upscaled 2400×900+ original JPEG hero images** on their art branches, report actual GitHub commit SHA and image dimensions; only after review merge one art file per map into this shared branch.
+- [ ] **Run and log RED→GREEN proof** for Node tests; complete `npm test`, Vue/TS typecheck, build, browser home/i18n/responsive, `make verify` and exact-HEAD full CI. This checklist does not assert a pass without actual observed evidence.
+- [ ] Desktop 1440×900 and iPhone 390×844 visual review for Start button width, five card states, route/hero image crop, no hidden or fake race entry, en/zh-TW layout, Reduced Motion.
+- [ ] Do not merge into `develop` or deploy until explicit authorization and acceptance.
+
+---
+
 ## Concept-to-WebGL visual parity gate for proposed ten new tracks (2026-11-02)
 
 **Design authority:** [JPEG → real WebGL visual acceptance gate](docs/designs/new-tracks/visual-acceptance-gate.md) (Stage 1 + Stage 2); invoked from [CLAUDE.md](CLAUDE.md). Existing 10 sprint courses and the circuit are unchanged; **all ten proposed new maps are point-to-point**, never laps.
