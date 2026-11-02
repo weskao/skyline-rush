@@ -1,3 +1,14 @@
+## Touch devices: hide keyboard remapping until a physical keyboard is used — 2026-11-03
+
+Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/tablets should not show the Controls panel's "鍵盤 · 先選擇動作，再按下按鍵" section, its rebind buttons, the fixed-shortcut note or Reset keyboard — but a phone/tablet with a Bluetooth keyboard must still be able to remap.
+
+- [x] Rule (`src/keyboard-presence.ts`): show at once on `(hover: hover) and (pointer: fine)`; otherwise hidden until a keydown with a non-empty `code`, not composing and not typed into a text field (on-screen keyboards send an empty code or compose), then remembered in `skyline-rush-keyboard-seen`. Wired in `setupKeyMapUI` → `panelsView.keyboardSettings` → `v-show` in `ControlsPanel.vue`.
+- [x] RED: `tests/keyboard-settings-browser.spec.js` touch case failed (`.keymap-field` visible) on the stub; GREEN after the change, desktop case green throughout. `tests/keyboard-presence.test.js` 6/6.
+- [x] `npm test` 1446 pass / 0 fail; `npm run build`; `npm run typecheck`; handoff/i18n/guide specs: the only 8 failures (handoff PERFECT LINE, i18n flow ×4, intro bottom edge ×3) fail identically on unmodified `origin/develop` `9ec7f3df`.
+- [x] Screenshot 390×844 touch: Controls panel without the keyboard block; after a Shift press, the block appears.
+- [ ] Physical iPad / iPhone with and without a Bluetooth keyboard.
+- [ ] `make verify` and full exact-HEAD CI `quality-gate` after merge into `develop`.
+
 ## Garage VFX badge clipping / 3× WebP regeneration — 2026-11-02
 
 Branch: `fix/garage-vfx-badge-art-unclipped-3x` (created from `develop` `b3a0c11a`). User reported that all except the first three in `#garage-vfx-art-badges` were cropped near the bottom.

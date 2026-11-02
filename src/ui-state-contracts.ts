@@ -57,4 +57,6 @@ export interface TutorialCoachView {
 export interface ControlPanelsView {
   settingsOpen: boolean;
   controlsOpen: boolean;
+  /** Keyboard remapping: desktop, or a touch device once a physical keyboard was used. */
+  keyboardSettings: boolean;
 }
