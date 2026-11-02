@@ -59,21 +59,26 @@ Estimated time based on *effective* average speed including hairpins, climbs, re
 
 **Scope decision (2026-11-02):** reduced from six new tracks to five. Glacier Serpentine is removed from this epic because existing Aurora Pass and Alpine Rail Pass already cover related cold/mountain visual themes; all snow-themed work remains outside this five-track plan.
 
-## Visual concept references and circuit alternative (2026-11-02)
+## Confirmed five-track one-way topology and committed visual references (2026-11-02)
 
-**Design baseline:** all five maps are point-to-point, not closed loops. A drawn return-looking line on an AI concept map is a non-authoritative visual, not a gameplay lap. The finish must be topologically distinct from start; one valid traversal ends the race. Geometry is validated in the new route graph rather than copied from a painted schematic.
+**User-approved routing:** all five courses are **point-to-point / single finish / no laps**, consistent with the ten existing sprint courses. Every new course has a unique START node and a distinct FINISH node in the authoritative `CourseGraph`, physically separated in the world. U-turns, elevation-overlapping roads, forks and joins are welcome; circuit closure and repeated lap completion are not. Only a valid ordered checkpoint-gated passage through the actual finish ends the run. Existing Harbor Circuit remains a separately named Circuit mode and is out of scope here. This removes the previous proposal to give two of these five tracks loop variants.
 
-The user has asked whether lap-based circuits might be preferable; **this is not yet a decision to convert any map.** **Current recommendation after considering player expectations:** preserve **all five** new maps as single-finish point-to-point races, consistent with the ten existing sprint maps. Introduce future lap-based races as a separately labeled Circuit mode using purpose-built loop layouts rather than changing the standard map's finish condition. **Optional later circuit variants** of Volcanic Crown and Stormline Megacity could reuse the Harbor Circuit's 1/3/5-lap infrastructure, but are explicitly outside this epic. For 3–5 minute standard races, a proposed 4–5 km lap × 3 laps would need actual timing and balance verification. Simply looping the current 14–15 km route 3 times makes a 10–15 minute race and fails the requested default target. Lap modes need unique `trackId + topologyVersion + lapCount` time records, AI lap-aware rankings, merge/rival ordering, checkpoints, ghost and cloud schema compatibility and branch-aware minimaps.
+**Live GitHub references:**
+- [Visual directory index](../../designs/new-tracks/README.md) — five saved two-view concept SVG images, five saved point-to-point route diagrams.
+- [Visual fidelity and camera/biome/weather acceptance matrix](../../designs/new-tracks/visual-fidelity.md).
+- [Machine-readable concept manifest](../../designs/new-tracks/concept-manifest.json).
 
-**GitHub-committed reference path:** [Visual direction index](../../designs/new-tracks/README.md) and five SVG route diagrams:
+| Map | Ground + aerial concept image | One-way route diagram |
+| --- | --- | --- |
+| 沙暴裂谷 | [Two-view storyboard](../../designs/new-tracks/concept-art/dune-tempest-point-to-point-storyboard.svg) | [Route](../../designs/new-tracks/route-schematics/dune-tempest.svg) |
+| 雨林失落神殿 | [Two-view storyboard](../../designs/new-tracks/concept-art/monsoon-ruins-point-to-point-storyboard.svg) | [Route](../../designs/new-tracks/route-schematics/monsoon-ruins.svg) |
+| 浮空群島 | [Two-view storyboard](../../designs/new-tracks/concept-art/skyfall-archipelago-point-to-point-storyboard.svg) | [Route](../../designs/new-tracks/route-schematics/skyfall-archipelago.svg) |
+| 熔火天脊 | [Two-view storyboard](../../designs/new-tracks/concept-art/volcanic-crown-point-to-point-storyboard.svg) | [Route](../../designs/new-tracks/route-schematics/volcanic-crown.svg) |
+| 霓虹暴雨都市 | [Two-view storyboard](../../designs/new-tracks/concept-art/stormline-megacity-point-to-point-storyboard.svg) | [Route](../../designs/new-tracks/route-schematics/stormline-megacity.svg) |
 
-- [沙暴裂谷 / Dune Tempest](../../designs/new-tracks/route-schematics/dune-tempest.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
-- [雨林失落神殿 / Monsoon Ruins](../../designs/new-tracks/route-schematics/monsoon-ruins.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
-- [浮空群島 / Skyfall Archipelago](../../designs/new-tracks/route-schematics/skyfall-archipelago.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
-- [熔火天脊 / Volcanic Crown](../../designs/new-tracks/route-schematics/volcanic-crown.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
-- [霓虹暴雨都市 / Stormline Megacity](../../designs/new-tracks/route-schematics/stormline-megacity.svg) — graphical START-to-FINISH schematic with optional flight/shortcut edge.
+**Source-art distinction:** the original 2 AI-generated cinematic overview PNGs and 10 per-track PNG crops remain in the ChatGPT-provided download ZIP, **not in GitHub yet**. Current saved SVG storyboards are newly authored vector concept references. On later PNG import verify SHA-256, retain originals, then add their actual links; do not treat decorative closed-looking image-generated maps as playable circuit topology.
 
-**IMPORTANT artwork provenance:** the two cinematic AI concept collages and the 10 exact crop previews (2 per course) are in an **upload-ready ZIP supplied as a ChatGPT conversation attachment**, not uploaded to this GitHub branch; do not claim they already exist in the repository. SVG diagrams are newly authored route documentation, not substitutes for the cinematic source images. To guarantee visual fidelity when actual art bytes become available in the repository, store them under `docs/designs/new-tracks/concept-art/`, add checksums and explicit links, capture real WebGL gameplay from each view, and record visible deviations.
+**Next-stage image requirement:** all future five reference designs and all true 3D previews must show point-to-point one-way racing. At least 2 real WebGL camera captures per course (ground hairpin and aerial branch); route signage must show different START/FINISH and no lap counter. Compare lighting, landmarks, weather, scale and road openness against committed visual design and record explicit deviations.
 
 ## Race readability and fairness acceptance
 
