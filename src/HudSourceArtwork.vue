@@ -31,7 +31,11 @@ const src = (name: string): string =>
 
 <style scoped>
 .hud-art-preview { border-top: 1px solid #506887; margin-top: 15px; padding-top: 10px; min-width: 0; }
-.hud-art-preview summary { min-height: 44px; font-size: 12px; font-weight: 700; cursor: pointer; color: #d7ecff; }
+/* Drawn by the page like .vfx-tuning (style.css), never the OS disclosure triangle (tests/custom-controls-browser.spec.js). */
+.hud-art-preview summary { display: flex; align-items: center; justify-content: space-between; list-style: none; min-height: 44px; font-size: 12px; font-weight: 700; cursor: pointer; color: #d7ecff; }
+.hud-art-preview summary::-webkit-details-marker { display: none; }
+.hud-art-preview summary::after { content: '＋'; color: #91e0f2; }
+.hud-art-preview[open] summary::after { content: '－'; }
 .hud-art-preview p { font-size: 12px; line-height: 1.4; color: #a5c4df; }
 .hud-art-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 184px), 1fr));
   gap: 10px; align-items: stretch; }
