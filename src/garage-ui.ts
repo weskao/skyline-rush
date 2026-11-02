@@ -18,7 +18,11 @@ interface GarageWorld {
   resize(): void;
   setGarageCamera(camera: GarageCamera | null): void;
   setCosmeticSkins?(ids: Record<SkinCategory, SkinId>): void;
-  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>): void;
+  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>, home?: boolean): void;
+  inspectCosmeticPreview?(): {
+    voidBeams: boolean; launchPattern: number; launchPreviewActive: boolean;
+    thrusterPattern: number; airflowPattern: number; trailPattern: number;
+  };
   inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean } | null;
   inspectRenderLoad?(): { drawCalls: number; triangles: number };
   inspectPrograms?(): number;
@@ -56,10 +60,10 @@ export function setupGarageUI({
   let pendingStudioInspection = false;
   function syncSkins(): void {
     const equipped = currentGarageSkins();
-    const studio = garageScreen.open && garageStudioView.page === 'studio';
-    const selected = studio ? selectedGarageSkins() : equipped;
+    const inGarage = garageScreen.open;
+    const selected = inGarage ? selectedGarageSkins() : equipped;
     getWorld()?.setCosmeticSkins?.(equipped);
-    getWorld()?.setGarageSkinPreview?.(selected);
+    getWorld()?.setGarageSkinPreview?.(selected, inGarage && garageStudioView.page === 'home');
     for (const category of SKIN_CATEGORIES) {
       preview.setAttribute(`data-skin-preview-${category}`, selected[category]);
       preview.setAttribute(`data-skin-equipped-${category}`, equipped[category]);
@@ -69,11 +73,11 @@ export function setupGarageUI({
   subscribeGarageSkins(syncSkins);
   subscribeAccount(setGarageSkinAccount);
   function inspectStudioAfterFrame() {
-    if (pendingStudioInspection || garageStudioView.page !== 'studio') return;
+    if (pendingStudioInspection || !garageScreen.open) return;
     pendingStudioInspection = true;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       pendingStudioInspection = false;
-      if (!garageScreen.open || garageStudioView.page !== 'studio') return;
+      if (!garageScreen.open) return;
       const bounds = getWorld()?.inspectGarageStudio?.();
       if (bounds) {
         preview.dataset.carInFrame = String(bounds.inFrame);
@@ -83,6 +87,15 @@ export function setupGarageUI({
       if (load) {
         preview.dataset.drawCalls = String(load.drawCalls);
         preview.dataset.triangles = String(load.triangles);
+      }
+      const cosmetics = getWorld()?.inspectCosmeticPreview?.();
+      if (cosmetics) {
+        preview.dataset.gpuVoidBeams = String(cosmetics.voidBeams);
+        preview.dataset.gpuLaunchPattern = String(cosmetics.launchPattern);
+        preview.dataset.launchPreviewActive = String(cosmetics.launchPreviewActive);
+        preview.dataset.gpuThrusterPattern = String(cosmetics.thrusterPattern);
+        preview.dataset.gpuAirflowPattern = String(cosmetics.airflowPattern);
+        preview.dataset.gpuTrailPattern = String(cosmetics.trailPattern);
       }
       const programs = getWorld()?.inspectPrograms?.();
       if (programs !== undefined) preview.dataset.shaderPrograms = String(programs);

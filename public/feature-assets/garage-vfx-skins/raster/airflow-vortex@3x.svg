@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="288" height="288" viewBox="0 0 288 288" role="img" aria-label="airflow-vortex">
+ <defs>
+  <linearGradient id="car" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#41587e" stop-opacity=".82"/><stop offset=".52" stop-color="#091d42" stop-opacity=".8"/><stop offset="1" stop-color="#4268a7" stop-opacity=".76"/></linearGradient>
+  <linearGradient id="str" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#c86dff"/><stop offset=".56" stop-color="#46e2ff"/><stop offset="1" stop-color="#9f54e9"/></linearGradient>
+  <radialGradient id="glass"><stop stop-color="#c4e6ff" stop-opacity=".27"/><stop offset="1" stop-color="#18426c" stop-opacity="0"/></radialGradient>
+ </defs>
+ <ellipse cx="144" cy="141" rx="109" ry="110" fill="url(#glass)"/>
+ <g transform="translate(0 -4)"><path d="M32 170 C63 83 177 61 234 102 C277 135 240 203 175 208 C101 214 91 153 140 122 C176 99 225 121 211 157 C199 184 166 183 163 157" fill="none" stroke="#c86dff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><path d="M38 193 C85 239 179 237 233 189 C273 157 249 94 190 84 C130 72 82 109 93 148" fill="none" stroke="#46e2ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><path d="M54 108 C101 61 193 61 241 119" fill="none" stroke="#9f54e9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.78"/><circle cx="186" cy="158" r="11" fill="none" stroke="#defbff" stroke-width="3" stroke-dasharray="13 5"/><circle cx="185" cy="158" r="2.5" fill="#fff"/></g>
+ <g transform="translate(6 15)">
+ <path d="M54 179 Q63 171 90 169 L111 152 Q121 142 155 142 L181 159 Q211 159 233 169 L247 182 L244 197 L52 197 Z" fill="url(#car)" stroke="#a3d9ff" stroke-opacity=".72" stroke-width="2.2" stroke-linejoin="round"/>
+ <path d="M109 154 Q131 146 153 146 L176 163 L102 163 Z" fill="#79b7f5" fill-opacity=".28" stroke="#9be8ff" stroke-opacity=".6" stroke-width="1.7"/>
+ <path d="M64 179 L99 177 M178 173 L221 175" stroke="url(#str)" stroke-width="3.3" stroke-linecap="round"/>
+ <circle cx="92" cy="193" r="13" fill="#07142a" stroke="#83bbed" stroke-width="4"/><circle cx="210" cy="193" r="13" fill="#07142a" stroke="#83bbed" stroke-width="4"/>
+ <circle cx="92" cy="193" r="4" fill="#d6f6ff"/><circle cx="210" cy="193" r="4" fill="#d6f6ff"/>
+ <path d="M227 175 L245 179" stroke="#46e2ff" stroke-width="3" stroke-linecap="round"/>
+ </g>
+ <g fill="#46e2ff"><circle cx="38" cy="77" r="3" opacity=".9"/><circle cx="251" cy="210" r="2.5" opacity=".9"/><circle cx="244" cy="51" r="2.2" opacity=".7"/></g>
+ </svg>

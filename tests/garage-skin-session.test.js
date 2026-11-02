@@ -92,3 +92,18 @@ test('revoking trial drops temporary equips; a later feature flag must not silen
   skins.setTrial(trial);
   assert.equal(skins.active('thruster'), 'thruster-basic');
 });
+
+
+test('expired trial cannot silently re-equip a temporary skin when a new trial starts', () => {
+  let now = 1_000;
+  const skins = createGarageSkinSession(account, () => now);
+  skins.setTrial({ enabled: true, expiresAt: 2_000 });
+  assert.equal(skins.equip('thruster-ion'), true);
+  assert.equal(skins.active('thruster'), 'thruster-ion');
+
+  now = 2_001;
+  assert.equal(skins.active('thruster'), 'thruster-basic', 'expired trial must immediately fall back');
+  skins.setTrial({ enabled: true, expiresAt: 3_000 });
+  assert.equal(skins.active('thruster'), 'thruster-basic', 'new trial must not revive an expired equip');
+  assert.deepEqual(skins.cloudPayload().owned, [], 'temporary access must never persist');
+});

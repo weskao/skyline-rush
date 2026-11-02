@@ -127,6 +127,15 @@ jobs:
             test-results/**/foldable-*.png
             test-results/**/fallback-*.png
           if-no-files-found: ignore
+      - name: Upload real Garage VFX Home and Studio WebGL screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: garage-vfx-preview-${{ matrix.shard }}
+          path: |
+            test-results/**/garage-void-home-*.png
+            test-results/**/garage-launch-flare-*.png
+          if-no-files-found: ignore
       # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
 
@@ -197,7 +206,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # Surface failed/cancelled suites before relying on browser evidence.
+      - uses: actions/download-artifact@v4
+        if: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')) }}"
+        with:
+          pattern: render-performance-*
+          path: ${{ runner.temp }}/render-performance
+          merge-multiple: true
+      - name: Verify software-WebGL evidence coverage and rendering budgets
+        if: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')) }}"
+        run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
       - name: Require every verification suite to pass
         env:
           UNIT: ${{ needs.unit-tests.result }}
@@ -229,15 +246,6 @@ jobs:
               exit 1
             fi
           done
-      - uses: actions/download-artifact@v4
-        if: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')) }}"
-        with:
-          pattern: render-performance-*
-          path: ${{ runner.temp }}/render-performance
-          merge-multiple: true
-      - name: Verify software-WebGL evidence coverage and rendering budgets
-        if: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')) }}"
-        run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
 
   # A release tag sits on `docs: release X`, a notes/version commit above code that already passed the full suite on
   # main. Re-running two runner-hours of CPU WebGL there only adds a chance that a timing flake leaves the tag
@@ -265,10 +273,11 @@ jobs:
           echo "$code passed CI on main: $run"
 
   deploy:
-    # Explicit review-controlled mode; repo/environment overrides cannot activate unreleased client code.
-    # Change this one value in an approved deploy commit for a future Trial or Released rollout.
+    # Public Garage VFX FREE TRIAL was approved; stage the reviewed trial artifact for the next release.
+    # This only applies to explicitly gated main dispatch / v* tag deployment, not feature pushes.
+    # The default npm run build remains fail-closed (coming-soon) in unit-tests.
     env:
-      GARAGE_VFX_RELEASE_MODE: coming-soon
+      GARAGE_VFX_RELEASE_MODE: trial
     # A tag run skips browser and cloud suites; a manual run skips release-verified.
     if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/v')) && needs.unit-tests.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.browser-tests.result) && contains(fromJSON('["success", "skipped"]'), needs.cloud-save.result) && contains(fromJSON('["success", "skipped"]'), needs.world-tour-mid-race.result) && contains(fromJSON('["success", "skipped"]'), needs.quality-gate.result) && contains(fromJSON('["success", "skipped"]'), needs.release-verified.result) }}
     needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, quality-gate, release-verified]
