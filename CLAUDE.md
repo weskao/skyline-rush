@@ -63,6 +63,14 @@ Concept illustrations and upscaled Stage-2 JPEGs are **not** real 3D renders or 
 functional tests, performance review and explicit PASS/FAIL/APPROVED DEVIATION records.
 All ten new maps are point-to-point with distinct START and FINISH; no laps.
 
+## Stage 1 upcoming-map homepage: REAL animated Three.js showcase is mandatory
+
+**Read [the binding animated homepage spec](docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) and [six-chat implementation plan](docs/superpowers/plans/2026-11-03-six-chat-home-preview-integration.md) before changing the five Stage 1 Coming Soon cards or art.** The earlier JPEG-only full-hero `#upcoming-scene` overlay is a temporary implementation **not accepted** as final.
+- Selecting Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown or Stormline Megacity on the homepage must show that track's **real, animated, world-space Three.js landscape** in the existing `#world` renderer: visible ground road and air branch, signature landmarks, scene-specific motion/weather, actual shared player/rival car models, hover/jets and curated camera. JPEG is art-direction reference/card thumbnail/explicit WebGL failure fallback **only**; do not imitate 3D with a photo plane, CSS animation or static screenshot.
+- Reuse `src/world.js` renderer/camera/composer/idle update loop, `src/track-preview.ts` camera/vehicle appearance and `src/car-model.js` / `src/aero-vfx.js` effects; scene switching may mirror `src/garage-stage.ts`. **No second canvas, WebGL context or parallel render loop**. Each map's module must be independent, time-driven, quality/reduced-motion aware and disposable.
+- Keep exactly the Stage 1 five **unplayable**: their `#start-button` is disabled with `COMING SOON / 即將推出`, even for keyboard, saved unlocks or mode change. Do not add them to `RACE_TRACKS`. The Stage 2 five stay hidden. Preserve all existing playable tracks.
+- **TDD+QA:** prove two time-separated *real WebGL frames* with observed animation per new map and original JPEG visual anchors (ground and air), mobile/desktop and Reduced Motion, and full exact-HEAD CI. A JPEG file, scene module that does not render, or unrun test does not complete the homepage.
+
 ## Mandatory regression-first workflow (every feature and bug fix)
 
 **Always follow `docs/regression-first-workflow.md`** before calling work complete:
