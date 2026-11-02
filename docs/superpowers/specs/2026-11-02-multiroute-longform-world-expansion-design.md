@@ -95,6 +95,10 @@ These five point-to-point routes have **10 separate SVG scene images** on this p
 
 Each later implementation must compare actual WebGL snapshots to both camera references plus [visual fidelity requirements](../../designs/new-tracks/visual-fidelity.md). Geometry remains graph-authored point-to-point: no lap count and no closed race despite stylized bends.
 
+## Binding visual-fidelity signoff
+
+**Mandatory gate:** [10-track concept JPEG → real WebGL comparison](../../designs/new-tracks/visual-acceptance-gate.md). Each Stage 1 map has a ground and aerial JPEG saved in `docs/designs/new-tracks/source-concept-jpeg/<id>/`, plus a separate route SVG and vector storyboard. Stage 2 likewise has two JPEG views/map in `docs/designs/new-tracks/stage-2/source-concept-jpeg/<id>/`. The gate requires deterministic camera/weather captures, three signature visual anchors, PASS/FAIL/APPROVED DEVIATION logs, road/terrain and split correctness, visibility and performance. Do not mark actual 3D implementation complete from static mockups, and do not use any resampled JPEG as a genuinely original 3× game texture.
+
 ## Race readability and fairness acceptance
 
 - Every split has visual warning 3s in advance at typical approach speed, 2 physically drivable choices, clear join and ground recovery after failed air path.
