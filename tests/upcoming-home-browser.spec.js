@@ -46,3 +46,25 @@ test('CTA copy is translated without resizing its hit target', async ({ page }) 
   await page.locator('[data-track="coast"]').click();
   await expect(button.locator('span')).toHaveText('開始比賽');
 });
+
+test('selecting an Event Lab course clears a previously selected coming-soon preview', async ({ page }) => {
+  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await expect(page.locator('#upcoming-scene')).toBeVisible();
+  await page.locator('[data-race-mode="eventlab"]').click();
+  await expect(page.locator('#event-lab-dialog')).toBeVisible();
+  await page.locator('#lab-use').click();
+  await expect(page.locator('#event-lab-dialog')).toBeHidden();
+  await expect(page.locator('#upcoming-scene')).toBeHidden();
+  await expect(page.locator('#start-button')).toBeEnabled();
+  await expect(page.locator('#start-button span')).toHaveText('Start race');
+});
+
+test('keyboard arrows can focus the first future card after the last playable map', async ({ page }) => {
+  await page.locator('[data-track="cosmic"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+});
