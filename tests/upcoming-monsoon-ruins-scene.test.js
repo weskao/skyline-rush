@@ -40,6 +40,15 @@ test('a scene-owned group provides actual curved road, sculpted terrain, fork an
   for (let i = 1; i < elevated.length; i += 3) height.push(elevated[i]);
   assert.ok(Math.max(...height) > 8, 'air shortcut must visibly rise above ground');
   assert.ok(Math.min(...height) < 1, 'air shortcut must reconnect to safe near-ground landing');
+  const bridge = group.getObjectByName('monsoon-stone-viaduct');
+  const deck = bridge.getObjectByName('stone bridge causeway');
+  const deckTop = bridge.position.y + deck.position.y + deck.geometry.parameters.height / 2;
+  let routeY = -Infinity, closest = Infinity;
+  for (let i = 0; i < elevated.length; i += 3) {
+    const d = Math.abs(elevated[i + 2] + 115);
+    if (d < closest) { closest = d; routeY = elevated[i + 1]; }
+  }
+  assert.ok(routeY > deckTop + .2, 'stone deck must support, not obscure, the elevated route');
   assert.ok(group.getObjectByName('monsoon-landing-zone'), 'safe landing must be visible');
   const mud = main.material;
   assert.ok(mud.roughness < 0.65, 'wet mud needs highlights instead of a flat painted plane');

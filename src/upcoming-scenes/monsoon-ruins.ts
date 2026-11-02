@@ -147,12 +147,12 @@ function makeViaduct(root: THREE.Group, stone: THREE.Material, shadow: THREE.Mat
   for (let i = 0; i < 5; i++) {
     const x = -27 + i * 14;
     box(bridge, 'ancient bridge pier', [x, 2.8, 0], [3.8, 12, 5], stone);
-    box(bridge, 'moss bridge cap', [x, 10, 0], [7, 2, 6], shadow);
+    box(bridge, 'moss bridge cap', [x, 9.2, 0], [7, 2, 6], shadow);
     if (i < 4) box(bridge, 'arch keystone', [x + 7, 8.1, 0], [9.5, 3, 4.6], stone);
   }
-  box(bridge, 'stone bridge causeway', [1, 10.7, 0], [65, 1.7, 8], stone);
+  box(bridge, 'stone bridge causeway', [1, 9.7, 0], [65, 1.7, 8], stone);
   for (const z of [-3.8, 3.8]) {
-    box(bridge, 'low parapet', [1, 12.4, z], [64, 1.15, .8], shadow);
+    box(bridge, 'low parapet', [1, 11.4, z], [64, 1.15, .8], shadow);
   }
 }
 
