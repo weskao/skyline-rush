@@ -29,7 +29,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   });
 }
 
-test('public trial is explicitly free, never grants ownership and resets temporary equipment on reload', async ({ page }) => {
+test('public trial is explicitly free, never grants ownership and remembers the last pick on reload', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
   const catalog=page.locator('#garage-vfx-catalog');
@@ -44,8 +44,19 @@ test('public trial is explicitly free, never grants ownership and resets tempora
   await page.reload();
   await page.locator('#garage-button').click();
   const after=page.locator('#garage-vfx-catalog [data-skin="thruster-ion"]');
-  await expect(after).toHaveAttribute('data-state','trial');
+  await expect(after).toHaveAttribute('data-state','equipped');
   await expect(after).toHaveAttribute('data-owned','false');
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-equipped-thruster','thruster-ion');
+  const stored = await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith('skyline-rush-garage-skin-picks'))
+    .map(key => localStorage.getItem(key)).join(''));
+  expect(stored).toContain('thruster-ion');
+  expect(stored).not.toMatch(/owned|trial|expires/i);
+  // A forged entitlement in storage must not unlock anything on reload.
+  await page.evaluate(() => localStorage.setItem('skyline-rush-garage-skin-picks:guest',
+    JSON.stringify({ version: 1, accountId: 'guest', owned: ['airflow-vortex'], picks: { airflow: 'airflow-vortex', thruster: 'airflow-prism' } })));
+  await page.reload();
+  await page.locator('#garage-button').click();
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-equipped-thruster','thruster-basic');
+  await expect(page.locator('#garage-vfx-catalog [data-skin="airflow-vortex"]')).toHaveAttribute('data-owned','false');
   await expect(page.locator('#garage-vfx-catalog')).not.toContainText(/buy now|purchase|立即購買/i);
 });
