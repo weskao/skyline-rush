@@ -1,3 +1,14 @@
+## Garage VFX remembered skin picks — 2026-11-03
+
+Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial pick survives reload as a preference only (`src/garage-skin-preference.ts`), re-applied through `session.equip`; never ownership.
+
+- [x] RED observed on old code: `tests/garage-skin-preference.test.js` (runtime reload / wiring), locked-bundle key audit in `tests/garage-release-build.test.js`, browser reload test (`data-state` was `trial`, expected `equipped`).
+- [x] GREEN: `npm test` 1462 pass / 0 fail, `npm run typecheck`, `npm run build` (locked bundle has no `skyline-rush-garage-skin-picks`; trial bundle has it), `tests/garage-skin-trial-browser.spec.js` 4/4 (desktop, 390×844, 844×390).
+- [ ] Pre-existing locally on unchanged `HEAD` source too: `garage-inspection-mode-browser.spec.js:4` (390×844) and `garage-studio-browser.spec.js:136` fail; confirm on CI.
+- [ ] `make verify` and the full exact-HEAD `quality-gate` (`[full-regression]`); then merge into `develop` (approved for this branch).
+
+---
+
 ## P0 — Stage 1 LIVE animated Three.js homepage showcases (2026-11-03)
 
 **User requirement supersedes JPEG-only artwork and static home-overlay plans.** At least the homepage must have **the same kind of dynamic 3D preview as the existing tracks**, including the genuine shared player and rival car visuals, hover/jets, view controls, real 3D scenery/landmark depth, animated local weather/props and ground/air visual route fork. **Static JPEG, CSS picture parallax, one flat photo plane or a JPEG over the old playable course is NOT COMPLETE.**
