@@ -50,6 +50,19 @@ the project**: an asset shown at 10 × 20 px is generated at 30 × 60 px. Work o
 size first, ask the generator for exactly 3x that size, and keep the 3x original as the
 source file. Never upscale a smaller output to reach 3x.
 
+## New long-form tracks: concept art → real WebGL acceptance (Stage 1 and Stage 2)
+
+When implementing any of the ten **proposed** multi-route point-to-point tracks, first
+read [`docs/designs/new-tracks/visual-acceptance-gate.md`](docs/designs/new-tracks/visual-acceptance-gate.md), the two
+actual JPEG references for that map, its route SVG, and the relevant
+`.claude/rules/track-showcase.md` / `.claude/rules/vehicle-road-stability.md` guidance.
+Capture repeatable **real WebGL** ground and aerial route frames, compare landmark,
+terrain, vehicle scale, weather, branch/landing and visibility, and record deviations.
+Concept illustrations and upscaled Stage-2 JPEGs are **not** real 3D renders or true
+3× in-game textures. Do not mark visual acceptance complete without screenshot evidence,
+functional tests, performance review and explicit PASS/FAIL/APPROVED DEVIATION records.
+All ten new maps are point-to-point with distinct START and FINISH; no laps.
+
 ## Mandatory regression-first workflow (every feature and bug fix)
 
 **Always follow `docs/regression-first-workflow.md`** before calling work complete:
