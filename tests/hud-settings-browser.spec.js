@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 // Race HUD options sit in the VFX panel; the speaker button opens audio only.
 // Real clicks fail if another layer covers a control, so each one is clicked on every screen shape.
@@ -35,7 +36,7 @@ for (const [name, viewport, hasTouch] of DEVICES) test.describe(name, () => {
     await page.locator('#settings-button').click();
     if (phase === 'racing') {
       await page.locator('#start-button').click();
-      await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: 10_000 });
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(10_000) });
     }
     await page.locator('#vfx-panel > summary').click();
     const panel = page.locator('#vfx-panel');
