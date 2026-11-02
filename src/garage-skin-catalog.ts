@@ -115,7 +115,7 @@ export function skinView(id: unknown, profile: SkinProfile, session: SkinSession
   return { id: skin.id, category: skin.category, state, owned, canEquip: !equipped && (owned || trial), canPreview: true };
 }
 
-// The 3x WebPs named by candidateRasterId are committed to this feature branch. CSS keeps 1x dimensions.
+// Source artwork is 3x (WebP for existing effects; 288-unit SVG for the four Airflow variants). All cards display at 1x CSS size.
 export function skinArtwork(id: unknown, baseUrl: string) {
   const skin = findSkin(id);
   if (!skin) return null;

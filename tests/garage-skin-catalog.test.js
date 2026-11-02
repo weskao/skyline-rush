@@ -113,7 +113,8 @@ test('every original 3x VFX equipment image has a distinct genuine catalog entry
 });
 
 // Four unique source icons (288x288) rather than one shared category SVG.
-test('all airflow skins resolve to their own native 3x WebP artwork', () => {
+test('all airflow skins resolve to four distinct native 3x SVG artworks', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
   const ids=['airflow-basic','airflow-slipstream','airflow-vortex','airflow-prism'];
   const sources=new Set();
   for(const id of ids){
@@ -123,6 +124,11 @@ test('all airflow skins resolve to their own native 3x WebP artwork', () => {
     assert.equal(image.candidateRasterId,id);
     assert.match(image.src,/airflow-[a-z]+@3x\.svg$/);
     sources.add(image.src);
+    const source = new URL(`../public/feature-assets/garage-vfx-skins/raster/${id}@3x.svg`, import.meta.url);
+    assert.equal(existsSync(source), true, `missing SVG: ${id}`);
+    const svg=readFileSync(source,'utf8');
+    assert.match(svg, /<svg\b[^>]*width="288"[^>]*height="288"[^>]*viewBox="0 0 288 288"/);
+    assert.ok(svg.includes('<path'), `missing custom path shapes: ${id}`);
   }
   assert.equal(sources.size,4);
 });
