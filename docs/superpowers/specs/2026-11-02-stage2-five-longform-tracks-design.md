@@ -7,6 +7,10 @@
 **Visual master:** [Stage 2 JPEG gallery and five route schematics](../../designs/new-tracks/stage-2/README.md).
 **Art acceptance:** [Stage 2 visual-fidelity checklist](../../designs/new-tracks/stage-2/visual-fidelity.md).
 
+## Binding concept-to-engine visual signoff
+
+The 10 actual JPEG scene references and five route SVGs in [Stage 2 gallery](../../designs/new-tracks/stage-2/README.md) are the **art direction input**, not screenshots proving game fidelity. Before approval of any Stage 2 course, use the [shared Stage 1 + Stage 2 visual acceptance gate](../../designs/new-tracks/visual-acceptance-gate.md): real-world/arc-length graph and collision first, deterministic in-app camera captures on desktop and phone, six visual comparison categories, logged deviations, bounded weather/particles, readable branch/landing, and baseline CI. Every new course remains point-to-point; no lap counter.
+
 ## Decision: Five *additional* maps, separate from the existing five proposed in Stage 1
 
 Stage 1 designs Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown and Stormline Megacity. Stage 2 adds **five distinct new maps**, bringing future *planned additions* to ten. These are **not already implemented** in the game; the ten original sprint tracks plus Harbor Circuit remain untouched.
