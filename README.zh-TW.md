@@ -1,4 +1,4 @@
-<!-- source-sha256: e00599851d0f9b93f0a2824b80579742de46c4b19e40eb8676773b322c41c6dd generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 1b2702e9b9d186a9035f148a7805d84bb8f9b1f6a6e66ddc2a20e88356dbbbc7 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -110,7 +110,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 `make dev-diag` 與 `make phone-diag` 會提供相同的建置版本，並編入螢幕上的診斷橫幅（影格計數、頁面生命週期與觸控事件及其點擊目標，另有跨重新載入保留的最後幾個未捕捉錯誤），用於在實體手機上追查當機或按鈕失效。正式版建置絕不包含它：`npm run build` 會拒絕帶有診斷模組的封裝檔。
 
-`make phone` 會開啟終端機選單，用來啟動、檢查或停止一個手機可以開啟的開發伺服器（透過 Tailscale 或同一個 Wi-Fi），並在伺服器回應後印出手機網址。選單會列出此工作目錄、其他 worktree 與最近的分支，也可輸入分支名稱；`make phone <name>` 會直接前往該分支（或 `feature/<name>`），需要時會在 `.claude/worktrees/` 下建立其 worktree，`make phone off` 會停止它啟動的所有伺服器（等同 `/phone-dev off`），而 `y=1`（例如 `make phone y=1 <name>`）會略過選單：每個問題都採用其 Recommended 選項，並印出每項選擇。它提供的是一般鎖定進度的建置版本；`make phone-unlocked [name]` 是相同的選單，但所有賽道與塗裝皆已解鎖，也是手機唯一能連上的全解鎖伺服器（`make dev-unlocked` 與 `make dev-feature` 仍僅限桌機）。它需要個人的 `phone-dev` Claude Code skill（`/phone-dev` 會詢問相同的選單），且不啟動模擬器，因此手機上的雲端存檔登入使用的是真實專案。
+`make phone` 會開啟終端機選單，用來啟動、檢查或停止一個手機可以開啟的開發伺服器（透過 Tailscale 或同一個 Wi-Fi），並在伺服器回應後印出手機網址。選單會列出此工作目錄、其他 worktree 與最近的分支，也可輸入分支名稱；`make phone <name>` 會直接前往該分支（或 `feature/<name>`），需要時會在 `.claude/worktrees/` 下建立其 worktree，`make phone off` 會停止它啟動的所有伺服器（等同 `/phone-dev off`），而 `y=1`（例如 `make phone y=1 <name>`）會略過選單：每個問題都採用其 Recommended 選項，並印出每項選擇。若某個 port 已被本專案自己先前的伺服器（任一 worktree）占用，沿用該 port 就是 Recommended 答案：舊伺服器會被停止、網址維持不變；`make dev`、`make dev-diag`、`make dev-unlocked`（5173）與 `make dev-feature`（5443）不詢問、直接這樣做，且不會動到其他專案的伺服器。它提供的是一般鎖定進度的建置版本；`make phone-unlocked [name]` 是相同的選單，但所有賽道與塗裝皆已解鎖，也是手機唯一能連上的全解鎖伺服器（`make dev-unlocked` 與 `make dev-feature` 仍僅限桌機）。它需要個人的 `phone-dev` Claude Code skill（`/phone-dev` 會詢問相同的選單），且不啟動模擬器，因此手機上的雲端存檔登入使用的是真實專案。
 
 ## 操作方式
 

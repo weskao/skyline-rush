@@ -36,6 +36,15 @@ export function createGarageStage(environment: THREE.Texture) {
   const carRadius = carBounds.getBoundingSphere(new THREE.Sphere()).radius;
   const carCenter = carBounds.getCenter(new THREE.Vector3());
   const carHalf = carBounds.getSize(new THREE.Vector3()).multiplyScalar(.5);
+  // Measure the lifted wing and folded wheels once: the flight silhouette is taller than the ground pose.
+  const wing = car.userData.wing;
+  wing.position.y = wing.userData.restY + wing.userData.lift;
+  for (const wheel of car.userData.wheels) wheel.rotation.z = Math.sign(wheel.position.x) * Math.PI / 2.6;
+  const flightBounds = new THREE.Box3().setFromObject(car);
+  const flightCenter = flightBounds.getCenter(new THREE.Vector3());
+  const flightHalf = flightBounds.getSize(new THREE.Vector3()).multiplyScalar(.53); // 6% roll/hover headroom
+  wing.position.y = wing.userData.restY;
+  for (const wheel of car.userData.wheels) wheel.rotation.z = 0;
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
@@ -95,9 +104,9 @@ export function createGarageStage(environment: THREE.Texture) {
     for (const wheel of car.userData.wheels)
       wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
     previewDriver.altitude = flying ? 2 : 0;
-    look.copy(carCenter);
+    look.copy(flying ? flightCenter : carCenter);
     look.y += hover;
-    const distance = garageFramedDistance(camera.aspect, state.zoom, carHalf, yaw, state.pitch);
+    const distance = garageFramedDistance(camera.aspect, state.zoom, flying ? flightHalf : carHalf, yaw, state.pitch);
     camera.fov = 49;
     camera.position.set(look.x + Math.sin(yaw) * Math.cos(state.pitch) * distance,
       look.y + Math.sin(state.pitch) * distance,

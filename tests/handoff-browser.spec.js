@@ -1,8 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
-import { createRings } from '../src/ring-layout.ts';
-import { RACE_TRACKS } from '../src/race-tracks.ts';
 
 const open = async page => {
   await page.goto('/');
@@ -167,8 +165,10 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   await start(page);
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
-  // Coast's first group from the layout the game builds: ring heights vary, so each gate is flown at its own altitude.
-  const gates = createRings(RACE_TRACKS.coast).filter(ring => ring.group === 0).map(({ distance, altitude }) => ({ distance, altitude }));
+  // Read the actual race's re-rolled ring group: a static track seed no longer matches the runtime layout.
+  const gates = await page.evaluate(() => window.gameplay.race.rings
+    .filter(ring => ring.group === 0).map(({ distance, altitude }) => ({ distance, altitude })));
+  expect(gates.length).toBeGreaterThan(0);
   const perfectLine = await page.evaluate(([budget, gates]) => new Promise(resolve => {
     let held = false;
     const deadline = performance.now() + budget;

@@ -2890,3 +2890,11 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] After asset integration, run applicable targeted tests, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, Cloud Save / World Tour and `make verify`; inspect **exact-final-HEAD** full GitHub Actions `quality-gate`. Record browser/WebGL evidence and remaining physical iOS/Android verification separately. **Do not mark Phase B or relevant TODO #5.* complete until requirements and visual signoff pass**; do not merge to `develop`, open a PR or deploy without separate authorization.
 
 ---
+
+
+### 2026-11-02 Garage VFX CI follow-up (pending exact-HEAD full gate)
+- [x] Old feature `64773e6`: Firestore full-save and Garage button-selector regressions now green (cloud-save, browser shard 12).
+- [ ] Correct 390×844 Flight framing after spoiler/wheel pose; real WebGL browser evidence and unit gate pending on the new commit.
+- [ ] Repair solo Stunt/Checkpoint score-pad availability and re-rolled Time Trial ring test; full browser shards 2/7 and `quality-gate` pending.
+- [ ] Recheck Circuit landscape-zh pause-to-result transition on the exact merged commit; preserve the test until root cause is verified.
+- [ ] Merge only after feature full-regression and verify exact develop merge commit; no `main` change or release.
