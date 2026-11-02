@@ -1,7 +1,7 @@
 # 階段二：對手也能吃道具
 
 - 日期：2026-11-01 規劃；2026-11-02 使用者回答問題並說「開工」。
-- 狀態：**實作中**（`feature/rival-item-pickups`，已 merge `develop` `435e4fb8` → `f18cb226`）。進度記在 `TODO.md`「Rival item pickups — stage 2」。
+- 狀態：**已完成**（R1–R11；`feature/rival-item-pickups` 的 `quality-gate` 在 `21c06661` 全綠（run `41375706816`），2026-11-02 以 `--no-ff` 合入 `develop` `ab7919f7`，develop CI run `41383421860` 全綠，分支已刪除）。證據記在 `TODO.md`「Rival item pickups — stage 2」。
 - 階段一（`feature/classic-pickup-density`）已在 `develop`（`fb86b923`）。
 
 ## 目標

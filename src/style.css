@@ -1835,3 +1835,5 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 @media (prefers-reduced-motion: reduce) {
   .event-callout[data-peripheral], .driving-message[data-peripheral] { animation: none !important; transition: none !important; }
 }
+/* History: the 4th row field is only ever the OLD LAYOUT tag; it wraps as a small label inside the 48px badge column, never into the chevron */
+.history-run summary > span:nth-child(4) { white-space: normal; color: #ccd7e0; font-size: 10px; line-height: 1.2; }
