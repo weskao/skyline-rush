@@ -49,8 +49,9 @@ test('CTA copy is translated without resizing its hit target', async ({ page }) 
 
 test('selecting an Event Lab course clears a previously selected coming-soon preview', async ({ page }) => {
   await page.locator('[data-upcoming-track="dune-tempest"]').click();
-  await expect(page.locator('#upcoming-scene')).toBeVisible();
-  await page.locator('[data-race-mode="eventlab"]').click();
+  await expect(page.locator('#upcoming-scene')).toBeHidden(); // Live WebGL replaces the JPEG hero.
+  await expect(page.locator('#world')).toBeVisible();
+  await page.locator('button[data-race-mode="eventlab"]').click();
   await expect(page.locator('#event-lab-dialog')).toBeVisible();
   await page.locator('#lab-use').click();
   await expect(page.locator('#event-lab-dialog')).toBeHidden();
