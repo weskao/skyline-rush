@@ -95,7 +95,7 @@ server-enforced status protection.
 | `make` / `make dev` | Vite dev server, saved progression respected |
 | `make dev-unlocked` (= `make test-unlocked`) | Local-only all-unlocked server (not a test runner) |
 | `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS localhost |
-| `make phone [name] [YES=1]` | Same menu as `/phone-dev`: start/check/stop a phone-reachable locked dev server for this checkout, a worktree or a branch; `YES=1` takes every Recommended option, no prompts, prints each choice |
+| `make phone [name] [y=1]` | Same menu as `/phone-dev`: start/check/stop a phone-reachable locked dev server for this checkout, a worktree or a branch; `y=1` takes every Recommended option, no prompts, prints each choice |
 | `make dev-diag` / `make phone-diag [name]` | Same servers with the on-screen diagnostic banner compiled in (`VITE_DIAG=1` → `src/crash-log.ts`); production builds never include it |
 | `npm test` | Node unit tests |
 | `npm run build` | Production build + release-bundle lock assertion |
@@ -132,6 +132,10 @@ server-enforced status protection.
   message has `[full-regression]` or a manual run sets `full_regression`. The full suite on
   `develop` after the merge is the acceptance gate. A successful run on a previous commit does
   **not** validate the new HEAD.
+- On every branch, a push or PR that only changes Markdown/text/images/video or the `Makefile` outside `src/`, `public/`,
+  `tests/`, `scripts/` and `.github/` skips all suites (`quality-gate` still reports green), but only when the
+  parent commit's own CI run on that branch passed. Rules: `scripts/ci-changes.mjs`; a test that reads a new
+  doc must add it to `NEEDS_CI` there (`tests/ci-changes.test.js` enforces it).
 - CI runs and optional screenshot artifacts are evidence for review, not substitutes
   for real vehicle/road contact or manual interaction testing on devices.
 

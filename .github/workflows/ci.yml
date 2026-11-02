@@ -1,5 +1,6 @@
 # Check main, develop, feature and fix branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
 # Browser and World Tour suites run only on main and develop (or an explicit full regression); other branches get unit + cloud-save.
+# Docs/media-only pushes and PRs skip every suite on any branch (see the changes job).
 name: CI
 
 on:
@@ -33,8 +34,53 @@ concurrency:
 # release-verified, deploy), so every job skips the main-push run of the same commit; the browser suites also skip
 # tag runs, because release-verified proves the code already passed them on main.
 jobs:
+  # A push or PR whose tree differs from the previous one only in Markdown, text, images or video outside src/, public/,
+  # tests/, scripts/ and .github/ (rules: scripts/ci-changes.mjs) skips every suite. The skip vouches for the new tree
+  # through the old one, so it needs a successful run of this workflow on that parent commit and branch: a first push,
+  # a cancelled or failed parent, an empty retrigger commit, [full-regression], a tag or a manual run gets the suites.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    env:
+      DIFFABLE: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') && !contains(github.event.head_commit.message, '[full-regression]')) }}
+    outputs:
+      code: ${{ steps.diff.outputs.code || 'true' }}
+    steps:
+      # Trees only: a blobless, single-file sparse checkout keeps this job to seconds despite the repo's media.
+      - uses: actions/checkout@v4
+        if: env.DIFFABLE == 'true'
+        with:
+          filter: blob:none
+          sparse-checkout: scripts/ci-changes.mjs
+          sparse-checkout-cone-mode: false
+      - id: diff
+        if: env.DIFFABLE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+        run: |
+          code=true
+          # Any failure below (new branch, unreachable force-pushed parent, API error) keeps code=true.
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ] \
+            && git fetch --quiet --depth=1 --filter=blob:none origin "$BEFORE" \
+            && [ "$(git diff --no-renames --name-only "$BEFORE" HEAD | node scripts/ci-changes.mjs)" = false ]; then
+            passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch "$BRANCH" --event push --commit "$BEFORE" --status success --limit 1 --json databaseId --jq length || true)
+            if [ "$passed" = 1 ]; then
+              code=false
+              echo "::notice::Docs/media-only change on top of $BEFORE, which passed CI on $BRANCH; suites skipped."
+            else
+              echo "::notice::Docs/media-only change, but $BEFORE has no successful CI run on $BRANCH; running the suites."
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
   unit-tests:
-    if: "${{ !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    needs: changes
+    if: "${{ needs.changes.outputs.code == 'true' && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +101,8 @@ jobs:
   # 13 + 5 world-tour + unit + cloud = GitHub Free's 20 concurrent jobs; a 21st job would queue.
   # Refresh durations after big suite changes: node scripts/ci-shards.mjs refresh <main run id>.
   browser-tests:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
+    needs: changes
+    if: "${{ needs.changes.outputs.code == 'true' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -142,7 +189,8 @@ jobs:
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
 
   cloud-save:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
+    needs: changes
+    if: "${{ needs.changes.outputs.code == 'true' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -169,7 +217,8 @@ jobs:
   # the middle of all five long World Tour routes. Test-only Vite fixture:
   # it is not included in the distributable production build.
   world-tour-mid-race:
-    if: "${{ !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
+    needs: changes
+    if: "${{ needs.changes.outputs.code == 'true' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
     runs-on: ubuntu-latest
     # CPU-only WebGL renders the ~250 per-map camera tests (about 150k frames) at ~9 fps, over two hours on one
     # runner. Contiguous slices ran 4 to 36 min because the slow camera views sit together; duration-packed,
@@ -213,7 +262,7 @@ jobs:
   # A branch ruleset can require this job; no direct-push protection is implied
   # by the workflow file alone.
   quality-gate:
-    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race]
+    needs: [changes, unit-tests, browser-tests, cloud-save, world-tour-mid-race]
     if: "${{ always() && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) }}"
     runs-on: ubuntu-latest
     steps:
@@ -229,9 +278,21 @@ jobs:
           BROWSER: ${{ needs.browser-tests.result }}
           CLOUD: ${{ needs.cloud-save.result }}
           WORLD_TOUR: ${{ needs.world-tour-mid-race.result }}
+          # Empty when the changes job itself failed: the suites are then skipped and the full check below fails.
+          CODE: ${{ needs.changes.outputs.code }}
           FOCUSED: ${{ !(github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}
         run: |
           printf 'unit=%s browser=%s cloud=%s world-tour=%s\\n' "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"
+          if [ "$CODE" = 'false' ]; then
+            for result in "$UNIT" "$BROWSER" "$CLOUD" "$WORLD_TOUR"; do
+              if [ "$result" != skipped ]; then
+                echo "::error::A docs/media-only change must skip every suite."
+                exit 1
+              fi
+            done
+            echo "::notice::Docs/media-only change on a tree that already passed CI; suites skipped."
+            exit 0
+          fi
           if [ "$FOCUSED" = 'true' ]; then
             for result in "$UNIT" "$CLOUD"; do
               if [ "$result" != success ]; then
@@ -255,13 +316,13 @@ jobs:
             fi
           done
       - uses: actions/download-artifact@v4
-        if: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')) }}"
+        if: "${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) && needs.changes.outputs.code == 'true' }}"
         with:
           pattern: render-performance-*
           path: ${{ runner.temp }}/render-performance
           merge-multiple: true
       - name: Verify software-WebGL evidence coverage and rendering budgets
-        if: "${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]')) }}"
+        if: "${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) && needs.changes.outputs.code == 'true' }}"
         run: node scripts/verify-performance-evidence.mjs "${{ runner.temp }}/render-performance"
 
   # A release tag sits on `docs: release X`, a notes/version commit above code that already passed the full suite on
@@ -348,7 +409,7 @@ jobs:
   # Failure-only pager: a notification on every push is one nobody reads. Credentials live in repo secrets
   # (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Pull requests are excluded because fork PRs get no secrets.
   notify-telegram:
-    needs: [unit-tests, browser-tests, cloud-save, world-tour-mid-race, main-merge-source, release-verified, deploy]
+    needs: [changes, unit-tests, browser-tests, cloud-save, world-tour-mid-race, main-merge-source, release-verified, deploy]
     if: ${{ failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

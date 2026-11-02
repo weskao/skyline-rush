@@ -1,6 +1,6 @@
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
-import { createRings, passGate, PICKUP_GAP_SCALE, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
-export { RING_RADIUS, RISK_RING_RADIUS, RING_SPACING, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
+import { createRings, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
+export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
 import { physicalGap } from './circuit-track.ts';
 import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
@@ -92,25 +92,24 @@ export const RUBBER_BAND_FREE = 50; // m of lead/deficit with no effect
 export const RUBBER_BAND_RANGE = 250; // m beyond the free zone to reach the full effect
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
-// Pickups come only from the track's 'pickups' stream so every run of a track is identical.
-function createPickups(track) {
-  const random = seededRng(track.seed, RACE_STREAMS.pickups);
+// Rings and pickups sit by the track seed (repeatable: tests, tools) unless the app re-rolls it per race (race-factory.ts).
+let layoutSeed = track => track.seed;
+export function setLayoutSeed(next = track => track.seed) { layoutSeed = next; }
+
+// `count` single pickups from the 'pickups' stream of `seed`, plus one overcharge and each shortcut's reward line.
+function createPickups(track, count, seed) {
+  const random = seededRng(seed, RACE_STREAMS.pickups);
   const pick = list => list[Math.floor(random() * list.length)];
   // Ground pickups would sit over a gap's hole; air pickups would be stuck in a tunnel roof.
-  const blocked = pickup => track.sections.some(s => pickup.distance >= s.from - 10 && pickup.distance < s.to + 10 &&
-    (s.type === 'gap' ? pickup.altitude === 0 : s.type === 'tunnel' && pickup.altitude > 0));
-  const pickups = [];
-  for (let distance = 300; distance < track.length - 300; distance += Math.round((120 + random() * 160) * PICKUP_GAP_SCALE)) {
-    const roll = random();
-    if (roll < 0.6) {
-      const x = pick(LANES); // a row of cells down one lane
-      for (let i = 0; i < 4; i++) pickups.push({ distance: distance + i * 8, x, altitude: 0, tier: 'cell' });
-    } else if (roll < 0.85) {
-      pickups.push({ distance, x: pick([-5, 0, 5]), altitude: 0, tier: 'can' }); // between lanes
-    } else {
-      pickups.push({ distance, x: pick(LANES), altitude: Math.round(30 + random() * 40) / 10, tier: 'tank' });
-    }
-  }
+  const blocked = pickup => track.sections.some(s => s.type === (pickup.altitude === 0 ? 'gap' : 'tunnel') && pickup.distance >= s.from - 10 && pickup.distance < s.to + 10);
+  const pickups = spreadDistances(count, 300, track.length - 300, random).map(distance => {
+    const roll = random(), air = Math.round(30 + random() * 40) / 10;
+    const pickup = roll < 0.6 ? { distance, x: pick(LANES), altitude: 0, tier: 'cell' }
+      : roll < 0.85 ? { distance, x: pick([-5, 0, 5]), altitude: 0, tier: 'can' } // between lanes
+        : { distance, x: pick(LANES), altitude: air, tier: 'tank' };
+    // Blocked: over a gap it flies, in a tunnel it sits on the road.
+    return !blocked(pickup) ? pickup : pickup.altitude === 0 ? { ...pickup, altitude: air, tier: 'tank' } : { ...pickup, altitude: 0, tier: 'can' };
+  });
   let overcharge; // high-risk: near the flight ceiling over an edge lane; bounded retries so a tunnel-heavy track cannot hang
   for (let tries = 0; tries < 50 && (!overcharge || blocked(overcharge)); tries++) {
     overcharge = { distance: Math.round(track.length * (0.5 + random() * 0.3)), x: pick([LANES[0], LANES[3]]), altitude: 10, tier: 'overcharge' };
@@ -119,7 +118,7 @@ function createPickups(track) {
     for (let distance = s.from + 30; distance < s.to; distance += 60) pickups.push({ distance, x: s.x, altitude: s.altitude, tier: 'cell' });
     pickups.push({ distance: (s.from + s.to) / 2, x: s.x, altitude: s.altitude, tier: 'tank' });
   }
-  return [...pickups.filter(pickup => !blocked(pickup)), overcharge].sort((a, b) => a.distance - b.distance);
+  return [...pickups, overcharge].sort((a, b) => a.distance - b.distance);
 }
 
 // The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
@@ -160,11 +159,12 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
   if ((trackId === CIRCUIT_ID) !== (config.mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
   const session = createRaceSessionContract(trackId, track.seed, config, presentation), risk = riskRules(config), themed = themedExtras(trackId, config, risk);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const course = mixedCourse(trackId, track, LANES, config), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(config.mode === 'circuit' ? lapItems(createRings(track, risk.rings), config.laps, 'ring') : createRings(track, risk.rings), course), themed), config.itemRules), config);
+  const seed = layoutSeed(track), count = ITEMS_PER_CAR * (driverIds.length + 1), perLap = (items, kind) => config.mode === 'circuit' ? lapItems(items, config.laps, kind) : items;
+  const course = mixedCourse(trackId, track, LANES, config), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(perLap(createRings(track, risk.rings, count, seed), 'ring'), course), themed), config.itemRules), config);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   const race = {
     trackId, modifier: dailyModifier, mode: config.mode, config, grid, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: (themed?.sections.length ? [...track.sections, ...themed.sections].sort((a, b) => a.from - b.from) : track.sections).map(section => ({ ...section })),
-    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? config.mode === 'circuit' ? lapItems(createPickups(track), config.laps, 'pickup') : createPickups(track) : [], rings,
+    phase: 'ready', countdown: 3, elapsed: 0, result: null, pickups: config.items ? perLap(createPickups(track, count, seed), 'pickup') : [], rings,
     circuit: config.mode === 'circuit' ? createCircuit(config.laps, grid) : null,
     props: [], risk, ...(themed && { ramps: themed.ramps }), // props: solid World Tour scenery parts; main.js fills them from roadObstacles()
     hazards: raceHazards(trackId, track, LANES, config, course),
@@ -200,7 +200,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
 }
 function collectRing(race, ring, index) {
   const car = race.player;
-  passGate(race.rings, ring, race.elapsed + ITEM_RESPAWN);
+  Object.assign(ring, { hit: true, downUntil: race.elapsed + ITEM_RESPAWN }); // gone until it respawns, like one any car takes
   car.rings++;
   car.score += 150;
   if (ring.type === 'charge') car.fuel = Math.min(100, car.fuel + RING_FUEL);

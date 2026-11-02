@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, GAP_WARN_DISTANCE, gapChargeWarning, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
 import { hazardX } from '../src/hazards.ts';
-import { TRAIN_LENGTH, TRAIN_SPACING } from '../src/ring-layout.ts';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -944,19 +943,14 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
       assert.ok(rings.length >= 7, id);
       rings.forEach((ring, i) => {
         assert.deepEqual(Object.keys(ring).slice(0, 6), ['distance', 'x', 'altitude', 'radius', 'type', 'group']);
-        assert.ok(Object.keys(ring).slice(6).every(key => ['row', 'train', 'groupSize'].includes(key)), Object.keys(ring).join());
+        assert.ok(Object.keys(ring).slice(6).every(key => key === 'groupSize'), Object.keys(ring).join());
         assert.ok(ring.distance > 0 && ring.distance < length && Math.abs(ring.x) < ROAD_LIMIT && ring.altitude >= 0 && ring.altitude <= 12);
-        // Ordered; only the rings of one full-width row share a distance (stage 2).
-        assert.ok(i === 0 || ring.distance > rings[i - 1].distance || (ring.row !== undefined && ring.row === rings[i - 1].row), `${id} @${ring.distance}`);
+        assert.ok(i === 0 || ring.distance > rings[i - 1].distance, `${id} @${ring.distance}`); // ordered, one ring per distance
         assert.equal(ring.radius, ring.type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS);
         types.add(ring.type);
       });
-      // Groups of 3 to 5 gates (a full-width row is one gate); a dense train is a group of its own.
       const groups = Object.values(Object.groupBy(rings, ring => ring.group));
-      for (const group of groups) {
-        const gates = new Set(group.map(ring => ring.row ?? ring)).size;
-        assert.ok(group[0].train ? gates === TRAIN_LENGTH : gates >= 3 && gates <= 5, `${id} group ${group[0].group}: ${gates} gates`);
-      }
+      for (const group of groups) assert.ok(group.length >= 3 && group.length <= 5 && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
       assert.deepEqual([...new Set(rings.map(ring => ring.group))].sort((a, b) => a - b), groups.map((_, i) => i)); // group ids 0..n-1
     }
     assert.deepEqual(types, new Set(['charge', 'nitro', 'slipstream', 'risk', 'mystery']));
@@ -966,20 +960,12 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
   assert.notDeepEqual(createRace('coast').rings, createRace('neon').rings);
 });
 
-// Stage 2 (user, 2026-11-02): twice the gates, so Coast's grid now steps 110 m instead of 220 m; a slot may be a
-// full-width row or a dense train, and each slot starts 110 m after the previous slot's last ring.
-test('coast keeps its gate grid at x 2.5 every 110 m, alternating altitude 8 and road-height 3 by slot', () => {
-  const slots = [];
-  for (const ring of createRace('coast').rings) {
-    const last = slots.at(-1)?.at(-1);
-    const sameSlot = last && ((ring.row !== undefined && ring.row === last.row) || (ring.train && last.train && ring.distance - last.distance === TRAIN_SPACING));
-    if (sameSlot) slots.at(-1).push(ring); else slots.push([ring]);
-  }
-  assert.ok(slots.some(slot => slot.length === 1) && slots.some(slot => slot[0].row !== undefined) && slots.some(slot => slot[0].train));
-  slots.forEach((slot, i) => {
-    assert.equal(slot[0].distance - (i ? slots[i - 1].at(-1).distance : 0), 110, `slot ${i} @${slot[0].distance}`);
-    if (slot[0].row === undefined) assert.ok(slot.every(ring => ring.x === 2.5), `slot ${i} on the gate line`);
-    if (slot.length === 1) assert.equal(slot[0].altitude, i % 2 ? 3 : 8, `slot ${i} alternates`);
+// Coast keeps its gate line: every ring at x 2.5, altitude 8 and road-height 3 alternating by ring.
+test('coast keeps its gate line at x 2.5, alternating altitude 8 and road-height 3', () => {
+  const rings = createRace('coast').rings;
+  rings.forEach((ring, i) => {
+    assert.equal(ring.x, 2.5, `ring ${i} @${ring.distance}`);
+    assert.equal(ring.altitude, i % 2 ? 3 : 8, `ring ${i} alternates`);
   });
 });
 
