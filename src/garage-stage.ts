@@ -7,6 +7,7 @@ import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import { garageFittedDistance } from './garage-camera.ts';
 import type { PaintPreset } from './appearance.ts';
+import { createGaragePaintSweep } from './garage-paint-shader.ts';
 
 // Dedicated scene, not a renderer or canvas. Reuse the world's composer, camera and GPU context.
 export function createGarageStage(environment: THREE.Texture) {
@@ -17,6 +18,17 @@ export function createGarageStage(environment: THREE.Texture) {
   scene.environmentIntensity = 0.8;
 
   const car = makeCar(CAR_STYLES.roadster);
+  // Dedicated Garage finish; never change shared racing/traffic materials.
+  const oldPaint = car.userData.body.material as THREE.MeshStandardMaterial;
+  const finish = new THREE.MeshPhysicalMaterial({
+    color: oldPaint.color.clone(), metalness: 0.73, roughness: 0.17,
+    clearcoat: 0.86, clearcoatRoughness: 0.10, envMapIntensity: 1.3,
+  });
+  car.traverse(object => {
+    if (object instanceof THREE.Mesh && object.material === oldPaint) object.material = finish;
+  });
+  oldPaint.dispose();
+  const paintSweep = createGaragePaintSweep(finish);
   car.position.y = 0.06;
   scene.add(car);
   // Measure the real vehicle before attaching any cosmetic shader/geometry.
@@ -68,6 +80,7 @@ export function createGarageStage(environment: THREE.Texture) {
   const look = new THREE.Vector3(0, 0.95, 0);
 
   function update(camera: THREE.PerspectiveCamera, state: GarageCamera, time: number, reducedMotion: boolean) {
+    paintSweep.update(time, previewSettings.quality, previewSettings.enabled, reducedMotion || previewSettings.comfortable);
     const yaw = state.yaw + (state.autoRotate && !reducedMotion ? time * 0.13 : 0);
     // Camera distance is larger on narrow portrait previews; full silhouette wins over filling the frame.
     const distance = garageFittedDistance(camera.aspect, state.zoom, carRadius);
