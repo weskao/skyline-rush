@@ -23,6 +23,7 @@ interface SwipeOptions {
   isTutorialActive(): boolean;
   isEditingLayout(): boolean;
   touchMatches(): boolean;
+  isUpcomingPreviewSelected?(): boolean;
 }
 type SwipeSample = [number, number];
 interface DragState { id: number; x: number; y: number; axis: 'x' | 'y' | null; samples: SwipeSample[] }
@@ -34,7 +35,7 @@ export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dia
     (pointerType === 'mouse' || (clientX >= SWIPE_EDGE_PX && clientX <= width - SWIPE_EDGE_PX));
 }
 
-export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches }: SwipeOptions) {
+export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, isUpcomingPreviewSelected = () => false }: SwipeOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
   const worldCanvas = $<HTMLCanvasElement>('#world');
@@ -60,7 +61,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     if (state !== 'drag') swipeChipTimer = setTimeout(() => { swipeChip.dataset.state = ''; }, state === 'hint' ? 6000 : 1400);
   }
   function showSwipeHint() {
-    if (swipeHintSeen || getRace().phase !== 'ready' || isTutorialActive()) return;
+    if (swipeHintSeen || getRace().phase !== 'ready' || isTutorialActive() || isUpcomingPreviewSelected()) return;
     swipeHintSeen = true; // Per page load, not localStorage: reload makes the gesture discoverable again.
     showSwipeChip('hint', getRace().trackId, t(touchMatches() ? 'swipe.hintTouch' : 'swipe.hintMouse'));
   }
@@ -170,7 +171,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   }
   // The newest finger takes the swipe over, so a touch whose release WebKit withholds cannot hold the preview.
   worldCanvas.addEventListener('pointerdown', event => {
-    if (!canBeginTrackSwipe({ button: event.button, phase: getRace().phase,
+    if (isUpcomingPreviewSelected() || !canBeginTrackSwipe({ button: event.button, phase: getRace().phase,
       tutorial: isTutorialActive(), editing: isEditingLayout(), busy: swipeBusy,
       dialogOpen: !!document.querySelector('dialog[open]'), pointerType: event.pointerType,
       clientX: event.clientX, width: innerWidth })) return;
@@ -192,7 +193,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   worldCanvas.addEventListener('wheel', event => {
     if (wheelSwipe && event.timeStamp - wheelSwipe.stamp >= WHEEL_END_MS) { clearTimeout(wheelSwipe.timer); wheelSwipe = null; }
     if (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
-    if (swipe || getRace().phase !== 'ready' || isTutorialActive() || isEditingLayout() || document.querySelector('dialog[open]')) return;
+    if (swipe || isUpcomingPreviewSelected() || getRace().phase !== 'ready' || isTutorialActive() || isEditingLayout() || document.querySelector('dialog[open]')) return;
     event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
     clearTimeout(wheelSwipe?.timer);
     const gesture = wheelSwipe ?? { dx: 0, spent: swipeBusy, stamp: event.timeStamp };
