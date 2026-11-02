@@ -8,7 +8,7 @@ paths:
 
 # What's New notes are reviewed player copy
 
-- Write each entry for players (CLAUDE.md "Player-facing release announcement writing"): what they
+- Write each entry for players (`docs/release-process.md` "Player-facing release announcement writing"): what they
   can now do or notice, never how it was built, configured or tested, and nothing sensitive.
 - `checkReleaseNotes` (run by `npm test` and the release gate) rejects developer terms in en and
   zh-TW, links, emails, secrets, file and code names, commit ids and over-long text. Extend its

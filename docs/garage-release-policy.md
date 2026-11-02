@@ -52,3 +52,7 @@ Unknown/empty mode strings fail Vite configuration. **Do not use query strings, 
 - Existing original PAINTS, Garage Studio, shader warmup, performance and World Tour regressions must stay green.
 
 **Status:** Work is committed on the feature branch. Passing the branch's latest CI and reviewing real device/WebGL results remain required before calling Phase B complete. Do not check off TODO items or merge/deploy without acceptance.
+
+## Garage VFX build-time release contract
+
+Garage cosmetic **release mode** is independent of owned/trial/equipped inventory and PAINTS progression. Keep `coming-soon`, `trial` and `released` strategies documented in `docs/garage-release-policy.md`. Use Vite `#garage-*` aliases from `scripts/garage-release-build.mjs` and stable port contracts: do not use direct live-module imports from public entrypoints or query/localStorage runtime unlocks. Production `npm run build` defaults to the locked coming-soon UI and must pass the compiled JS/CSS and artwork leakage audit; the Pages deploy job must pin an explicitly reviewed `GARAGE_VFX_RELEASE_MODE`. `npm run test:browser` deliberately builds trial mode, so never deploy its `dist`. A client cannot be an entitlement authority: require server-side account-bound validation and Firestore Security Rules/Cloud Functions before shipping permanent ownership. Keep account-switch, trial-expiry, shader resource and release-mode tests green; do not weaken the release gate to make CI pass.
