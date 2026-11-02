@@ -132,7 +132,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   function renderTrackButtons(race: Race): void {
     // Solo sessions show elapsed time rather than a false "01 / 04" ranking.
     const solo = race.rivals.length === 0;
-    $('.route-drivers').textContent = selectedMode === 'classic' ? t('intro.drivers') : t('mode.driverCount', { n: race.rivals.length + 1 });
+    $('.route-drivers').textContent = upcomingSelection ? t('track.comingSoon') : selectedMode === 'classic' ? t('intro.drivers') : t('mode.driverCount', { n: race.rivals.length + 1 });
     $('.position-stat .stat-label').textContent = t(solo ? 'mode.' + race.mode : 'race.position');
     $('.position-stat > div > span').textContent = solo ? '' : '/ ' + String(race.rivals.length + 1).padStart(2, '0');
     if (race.phase === 'ready') ui.position!.textContent = solo ? '—' : String(race.rivals.length + 1).padStart(2, '0');
@@ -144,7 +144,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       button.disabled = false; // All unlocked tracks are eligible for Endless.
       button.classList.toggle('is-locked', locked);
       button.setAttribute('aria-pressed', String(!upcomingSelection && id === race.trackId));
-      button.querySelector('small')!.textContent = t(locked ? 'track.locked' : id === race.trackId ? 'track.selected' : 'track.open');
+      button.querySelector('small')!.textContent = t(locked ? 'track.locked' : !upcomingSelection && id === race.trackId ? 'track.selected' : 'track.open');
       const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1]!;
       button.title = button.disabled ? t('mode.description.endless') : locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
     }
