@@ -93,6 +93,21 @@ test('sand moves as a deterministic function of time and obeys quality / reduced
   env.dispose();
 });
 
+test('sunset light and distant fog drift slowly but freeze under reduced motion', () => {
+  const { scene, env } = build();
+  const light = env.group.children.find(o => o.isDirectionalLight);
+  assert.ok(light && scene.fog?.isFogExp2);
+  env.update(0, 'high', false);
+  const start = [scene.fog.density, light.intensity];
+  env.update(30, 'high', false);
+  assert.notDeepEqual([scene.fog.density, light.intensity], start);
+  env.update(30, 'medium', true);
+  const calm = [scene.fog.density, light.intensity];
+  env.update(500, 'medium', true);
+  assert.deepEqual([scene.fog.density, light.intensity], calm);
+  env.dispose();
+});
+
 test('dispose removes the environment, restores fog and frees unique GPU objects safely', () => {
   const { scene, env } = build();
   const meshes = [];
