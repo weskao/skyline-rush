@@ -13,7 +13,8 @@ function onError(): void {
 </script>
 <template>
   <img v-if="!failed" class="artwork-img" :src="usingFallback ? fallbackSrc : src"
-    :width="size" :height="size" :alt="alt" :loading="loading" decoding="async" @error="onError" />
+    :width="size" :height="size" :style="{ width: size + 'px', height: size + 'px' }"
+    :alt="alt" :loading="loading" decoding="async" @error="onError" />
   <span v-else class="artwork-fallback" :class="fallbackClass" role="img"
     :aria-label="fallbackText || alt">{{ fallbackText || alt }}</span>
 </template>

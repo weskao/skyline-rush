@@ -199,7 +199,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       expect(info.captionBelow).toBe(true);
       expect(info.widthWithinViewport).toBe(true);
       expect(info.background).toContain('gradient');
-      expect(info.hue).toMatch(/^\\d+$/);
+      expect(info.hue).toMatch(/^\d+$/);
       colors.push(info.hue);
     }
     expect(new Set(colors).size).toBeGreaterThanOrEqual(3);
