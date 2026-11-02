@@ -116,5 +116,25 @@ test('release policy explains opt-in public session trial without permanent owne
   assert.match(policy, /Public trial rollout/);
   assert.match(policy, /session-only/i);
   assert.match(policy, /reload|重新載入/i);
+  assert.match(policy, /remembers the last pick, which is not ownership/i);
+  assert.doesNotMatch(policy, /temporary equipment resets on reload/i);
   assert.match(policy, /no (?:purchase|checkout|payment)/i);
+});
+
+test('locked bundle audit refuses the skin pick storage key, other modes allow it', async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const { SKIN_PICK_STORAGE_KEY } = await import('../src/garage-skin-preference.ts');
+  const script = fileURLToPath(new URL('../scripts/assert-production-locked.mjs', import.meta.url));
+  const root = mkdtempSync(join(tmpdir(), 'garage-pick-leak-'));
+  mkdirSync(join(root, 'dist'));
+  writeFileSync(join(root, 'dist', 'index.js'), `localStorage.getItem("${SKIN_PICK_STORAGE_KEY}:"+id)`);
+  const run = mode => spawnSync(process.execPath, [script], { cwd: root, env: { ...process.env, GARAGE_VFX_RELEASE_MODE: mode }, encoding: 'utf8' });
+  const locked = run('coming-soon');
+  assert.equal(locked.status, 1, locked.stdout);
+  assert.match(locked.stderr, /skin pick/i);
+  assert.equal(run('released').status, 0, 'key is scoped to the locked build only');
 });

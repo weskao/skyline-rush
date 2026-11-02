@@ -14,8 +14,9 @@ test('Garage Wave 3 retains source-art previews while integrating the paint prev
 
   assert.match(panel, /<GaragePaintPreview\b/, 'new 3D paint-card imagery must be kept');
   assert.match(panel, /<GarageSkinCatalog\b/, 'trial catalog must remain accessible');
-  assert.match(panel, /Reload resets temporary equipment/, 'English trial copy must disclose session-only equipment');
-  assert.match(panel, /重新載入後還原/, 'Chinese trial copy must disclose session-only equipment');
+  assert.match(panel, /last pick is remembered on reload for this account; no permanent ownership/, 'English trial copy must disclose the remembered pick is not ownership');
+  assert.match(panel, /重新載入後記住此帳號最後的選擇；不代表永久擁有/, 'Chinese trial copy must disclose the remembered pick is not ownership');
+  assert.doesNotMatch(panel, /Reload resets temporary equipment|重新載入後還原/, 'stale reset-on-reload copy must not return');
   assert.match(workflow, /GARAGE_VFX_RELEASE_MODE:\s*trial\b/, 'reviewed future public deploy should opt into free trial');
   assert.match(policy, /Approved for a public free-trial milestone/, 'release documentation must match approved mode');
   assert.match(policy, /no.*purchase|no purchase/i, 'release policy must describe nontransactional use');
