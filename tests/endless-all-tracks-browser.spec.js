@@ -49,7 +49,9 @@ for(const id of IDS){
         }));
       }
       expect(observations.every(o=>o.phase==='racing'&&o.trackId===id)).toBe(true);
-      expect(observations.every(o=>o.traffic<=40&&o.pickups<=20&&o.rings<=15)).toBe(true);
+      // A 5-chunk window, per chunk at most 5 pickup runs of 4 and 3 rings + a 6-ring train + a 4-ring row (user,
+      // 2026-11-03; same bounds as tests/endless-highway.test.js). The old 20/15 predated the 2026-11-02 trains.
+      expect(observations.map(o=>[o.traffic,o.pickups,o.rings]).filter(([t,p,r])=>t>40||p>5*5*4||r>5*(3+6+4)),`${id} streamed items`).toEqual([]);
       expect(observations.every(o=>o.trafficRendered>0),
         `${id} must draw actual NPC cars past the finite sprint finish`).toBe(true);
       if(TOUR.has(id)){
