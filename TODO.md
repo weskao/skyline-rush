@@ -6,6 +6,11 @@ Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/t
 - [x] RED: `tests/keyboard-settings-browser.spec.js` touch case failed (`.keymap-field` visible) on the stub; GREEN after the change, desktop case green throughout. `tests/keyboard-presence.test.js` 6/6.
 - [x] `npm test` 1446 pass / 0 fail; `npm run build`; `npm run typecheck`; handoff/i18n/guide specs: the only 8 failures (handoff PERFECT LINE, i18n flow ×4, intro bottom edge ×3) fail identically on unmodified `origin/develop` `9ec7f3df`.
 - [x] Screenshot 390×844 touch: Controls panel without the keyboard block; after a Shift press, the block appears.
+- [x] Pre-existing develop reds fixed on this branch (all failed identically on `origin/develop` `9ec7f3df`):
+  home row at 1440×900 wrapped Practice after f7691cc1's NEW Garage tag (layout gate + intro bottom edge ×3) → 12px gap / 16px padding;
+  `main-ui-parity` order + `cssBlob` not updated by f7691cc1; i18n audio panel ×4 from the hard-coded bilingual 3x artwork summary →
+  `HUD_ARTWORK_COPY`; handoff PERFECT LINE broken since `11bc9720` (bisected: rings re-roll per race, test rebuilt the track-seed
+  layout) → `layoutSeed` gameplay fixture option, seed 70, pilot reads live rings, NITRO observer counts real changes (5/5 green).
 - [ ] Physical iPad / iPhone with and without a Bluetooth keyboard.
 - [ ] `make verify` and full exact-HEAD CI `quality-gate` after merge into `develop`.
 
