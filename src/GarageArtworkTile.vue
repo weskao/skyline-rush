@@ -2,18 +2,25 @@
 import { computed } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 type Tone = 'cyan' | 'magenta' | 'gold' | 'slate' | 'azure' | 'amber' | 'red';
-const props = withDefaults(defineProps<{ id: string; label: string; src: string; tone?: Tone; restored?: boolean }>(),
-  { tone: 'cyan', restored: false });
+const props = withDefaults(defineProps<{ id: string; label: string; src: string; tone?: Tone; restored?: boolean; size?: number; imageHeight?: number }>(),
+  { tone: 'cyan', restored: false, size: 72 });
 const hues: Record<Tone, number> = {
   cyan: 189, magenta: 312, gold: 42, slate: 214, azure: 207, amber: 32, red: 354,
 };
-const colors = computed(() => ({ '--badge-hue': String(hues[props.tone]) }));
+const colors = computed(() => ({
+  '--badge-hue': String(hues[props.tone]),
+  '--art-width': props.size + 'px',
+  '--art-height': (props.imageHeight ?? props.size) + 'px',
+  '--frame-width': (props.size + 16) + 'px',
+  '--frame-height': ((props.imageHeight ?? props.size) + 16) + 'px',
+}));
 </script>
 <template>
   <figure class="garage-badge-card" :data-badge-art="id" :data-badge-tone="tone"
-    :data-artwork-restored="String(restored)" :style="colors">
+    :data-artwork-restored="String(restored)" :data-art="id" :style="colors">
     <div class="garage-badge-art-frame">
-      <GarageArtworkImage :src="src" :size="72" :alt="label" :fallback-text="label" />
+      <GarageArtworkImage :src="src" :size="size" :height="imageHeight" :image-id="id"
+        :alt="label" :fallback-text="label" />
     </div>
     <figcaption>{{ label }}</figcaption>
   </figure>
@@ -36,11 +43,11 @@ const colors = computed(() => ({ '--badge-hue': String(hues[props.tone]) }));
 }
 .garage-badge-art-frame {
   box-sizing: border-box; display: grid; place-items: center; flex: 0 0 auto;
-  width: 88px; height: 88px; padding: 8px; border-radius: 13px; overflow: visible;
+  width: var(--frame-width); height: var(--frame-height); padding: 8px; border-radius: 13px; overflow: visible;
   background: radial-gradient(circle, hsl(var(--badge-hue) 70% 49% / .15), transparent 67%);
 }
 .garage-badge-art-frame :deep(.artwork-img) {
-  display: block; width: 72px; height: 72px; object-fit: contain;
+  display: block; width: var(--art-width); height: var(--art-height); object-fit: contain;
   filter: drop-shadow(0 0 5px hsl(var(--badge-hue) 90% 65% / .28));
 }
 .garage-badge-card figcaption {
