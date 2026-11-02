@@ -6,7 +6,9 @@ export const RISK_RING_RADIUS = 2.4;
 const RING_START = 110; // m: the first ring is never on the starting grid
 // Cumulative roll thresholds for charge / nitro / slipstream / risk; the rest is mystery.
 const RING_ODDS: readonly [number, number, number, number] = [0.35, 0.6, 0.78, 0.9];
-// User, 2026-11-02: rings and pickups each scale with the grid, this many single ones per car (per lap in Circuit).
+// User, 2026-11-02: rings and pickups each scale with the grid, this many slots per car (per lap in Circuit). A few ring
+// slots become a train or a full-width row and pickup slots trail a short run of cells (user, same day), so the
+// extra items come in readable runs instead of a denser scatter.
 export const ITEMS_PER_CAR = 4;
 const LOW_ALTITUDE = 1.5; // under a tunnel roof
 export const NITRO_MAX = 3; // charges
@@ -25,21 +27,63 @@ export interface RaceRing {
   groupSize?: number;
   /** Race time until which the ring is gone after a car took it (stage 2 respawn). */
   downUntil?: number;
+  /** Part of a full-width ring row: a car takes at most one ring of the row at this distance. */
+  row?: boolean;
+  /** Index in a ring train (consecutive rings down one lane, its own PERFECT LINE group). */
+  train?: number;
 }
 
 const ring = (distance: number, x: number, altitude: number, type: string): RaceRing =>
   ({ distance, x, altitude, radius: type === 'risk' ? RISK_RING_RADIUS : RING_RADIUS, type, group: 0 });
 
-// Consecutive groups of 3-5 rings (the last group absorbs the remainder; fewer than 3 make one group).
-function assignGroups(rings: RaceRing[], random: () => number): void {
+// Consecutive groups of 3-5 gates (the last group absorbs the remainder; fewer than 3 make one group); a full-width
+// row is one gate, a train its own group.
+function assignGroups(gates: RaceRing[][], trains: RaceRing[][], random: () => number): void {
   let group = 0;
-  for (let i = 0; i < rings.length; group++) {
-    const left = rings.length - i;
+  for (let i = 0; i < gates.length; group++) {
+    const left = gates.length - i;
     let size = 3 + Math.floor(random() * 3);
     if (left - size < 3) size = left <= 5 ? left : left - 3;
-    for (const r of rings.slice(i, i + size)) Object.assign(r, { group, groupSize: size });
+    for (const gate of gates.slice(i, i + size)) for (const r of gate) Object.assign(r, { group, groupSize: size });
     i += size;
   }
+  for (const train of trains) { for (const r of train) Object.assign(r, { group, groupSize: train.length }); group++; }
+}
+
+// User, 2026-11-02: a few ring slots become a run of consecutive rings (on the road or in the air) or a full-width row
+// any car on the road passes. Shapes roll on their own stream, so every slot keeps its position and type roll.
+const ROW_LANES = [-7.5, -2.5, 2.5, 7.5]; // game.js LANES (this module sits below game.js)
+// Lanes 5 m apart, radius 4.8: anywhere on the road (x ±10.2) from the surface up to about 6.4 m passes one ring.
+export const ROW_ALTITUDE = 2.5;
+const TRAIN_AIR = 7; // an air train asks for flight; a ground train sits at ROW_ALTITUDE
+export const TRAIN_SPACING = 25; // m
+// Balance: a train pays mostly charge and slipstream, one nitro; its PERFECT LINE adds the usual +1 NITRO.
+const TRAIN_TYPES = ['charge', 'slipstream', 'nitro', 'slipstream', 'charge'];
+const ROW_ODDS = 0.08, TRAIN_ODDS = 0.15; // per slot
+const SHAPE_CLEARANCE = 40; // m from any road section or hoop
+const OPENING_SINGLES = 2; // the first slots stay single, so openingNitroRings still opens on a nitro ring
+
+export const ringRow = (distance: number, type: string): RaceRing[] =>
+  ROW_LANES.map(x => ({ ...ring(distance, x, ROW_ALTITUDE, type), row: true }));
+export const ringTrain = (distance: number, x: number, air: boolean): RaceRing[] =>
+  TRAIN_TYPES.map((type, i) => ({ ...ring(distance + i * TRAIN_SPACING, x, air ? TRAIN_AIR : ROW_ALTITUDE, type), train: i }));
+
+function shapeSlots(slots: RaceRing[], track: TrackConfig, seed: number, avoid: readonly number[]) {
+  const random = seededRng(seed, RACE_STREAMS.ringShapes), span = (TRAIN_TYPES.length - 1) * TRAIN_SPACING;
+  const clear = (from: number, to: number) => to < track.length - 100
+    && !track.sections.some(s => to >= s.from - SHAPE_CLEARANCE && from <= s.to + SHAPE_CLEARANCE)
+    && avoid.every(a => a < from - SHAPE_CLEARANCE || a > to + SHAPE_CLEARANCE);
+  const gates: RaceRing[][] = [], trains: RaceRing[][] = [];
+  slots.forEach((slot, i) => {
+    const roll = random(), air = random() < 0.5, d = slot.distance; // both drawn every slot: shapes never shift
+    // Risk lines keep their narrow single rings (and their frequency): only other slots take a shape.
+    if (i < OPENING_SINGLES || slot.type === 'risk') gates.push([slot]);
+    else if (roll < ROW_ODDS && clear(d, d)) gates.push(ringRow(d, slot.type));
+    else if (roll < ROW_ODDS + TRAIN_ODDS && clear(d, d + span)) {
+      trains.push(ringTrain(d, ROW_LANES.reduce((a, b) => Math.abs(b - slot.x) < Math.abs(a - slot.x) ? b : a), air));
+    } else gates.push([slot]);
+  });
+  return { gates, trains };
 }
 
 /** `count` random distances, one per equal slice of [from, to): re-rolled per seed, yet spread over the whole track. */
@@ -48,10 +92,10 @@ export function spreadDistances(count: number, from: number, to: number, random:
   return Array.from({ length: count }, (_, i) => Math.round(from + (i + random()) * slice));
 }
 
-// `count` single rings from the 'rings' stream of `seed` (the track seed unless a race re-rolls it). Coast keeps its
-// gate line (x 2.5, altitudes from ringAltitudes); other tracks scatter x and altitude. Optional per-track ringOdds /
-// openingNitroRings tune one track.
-export function createRings(track: TrackConfig, riskLines = true, count = ITEMS_PER_CAR, seed = track.seed): RaceRing[] {
+// `count` ring slots from the 'rings' stream of `seed` (the track seed unless a race re-rolls it), a few shaped into
+// trains or rows clear of sections and the hoops at `avoid`. Coast keeps its gate line (x 2.5, altitudes from
+// ringAltitudes); other tracks scatter x and altitude. Optional per-track ringOdds / openingNitroRings tune one track.
+export function createRings(track: TrackConfig, riskLines = true, count = ITEMS_PER_CAR, seed = track.seed, avoid: readonly number[] = []): RaceRing[] {
   const random = seededRng(seed, RACE_STREAMS.rings);
   const [charge, nitro, slip, risk] = track.ringOdds ?? RING_ODDS;
   const inTunnel = (distance: number) => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
@@ -69,9 +113,19 @@ export function createRings(track: TrackConfig, riskLines = true, count = ITEMS_
       altitude = LOW_ALTITUDE;
       if (type === 'risk') type = 'nitro';
     }
-    if (!riskLines && type === 'risk') type = 'nitro'; // risk lines off: same layout, nitro rings
     return ring(distance, x, altitude, type);
   });
-  assignGroups(rings, random);
-  return rings;
+  const { gates, trains } = shapeSlots(rings, track, seed, avoid);
+  // Risk lines off: the same layout (shapes included), nitro rings.
+  if (!riskLines) for (const r of rings) if (r.type === 'risk') Object.assign(r, { type: 'nitro', radius: RING_RADIUS });
+  assignGroups(gates, trains, random);
+  return [...gates.flat(), ...trains.flat()].sort((a, b) => a.distance - b.distance); // stable: a row keeps its lane order
+}
+
+/** A pickup slot and the 0-3 cells trailing it down its line, 8 m apart (user, 2026-11-02: runs of 1-4); a trailing
+ * cell that would sit over a gap hole or in a tunnel roof is left out. */
+export function pickupRun<T extends { distance: number; tier: string }>(pickup: T, random: () => number, blocked: (p: T) => boolean = () => false): (T & { run?: boolean })[] {
+  const run: (T & { run?: boolean })[] = [pickup];
+  for (let i = 1, n = 1 + Math.floor(random() * 4); i < n; i++) run.push({ ...pickup, distance: pickup.distance + i * 8, tier: 'cell', run: true });
+  return run.filter((p, i) => i === 0 || !blocked(p));
 }

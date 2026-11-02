@@ -1,4 +1,5 @@
 import { seededRng } from './rng.ts';
+import { ringRow, ringTrain, pickupRun } from './ring-layout.ts';
 
 // Endless extends each themed route; finite sprint geometry and rules are unchanged.
 export const ENDLESS_CHUNK = 500;
@@ -7,7 +8,7 @@ export interface EndlessState { chunk: number; milestones: number }
 interface Encounter { chunk?: number; distance: number }
 interface Traffic extends Encounter { x: number; homeX: number; speed: number; cruise: number; altitude: number; cooldown: number; color: number }
 interface Pickup extends Encounter { x: number; altitude: number; tier: string; taken?: boolean }
-interface Ring extends Encounter { x: number; altitude: number; radius: number; type: string; group: number; hit?: boolean }
+interface Ring extends Encounter { x: number; altitude: number; radius: number; type: string; group: number; groupSize?: number; row?: boolean; train?: number; hit?: boolean }
 interface EndlessRace {
   mode: string; trackId: string; seed: number; phase: string; elapsed: number;
   endless?: EndlessState;
@@ -33,10 +34,16 @@ function addChunk(race: EndlessRace, chunk: number): void {
       speed, cruise: speed, altitude: 0, cooldown: 0, color: Math.floor(random() * 5) };
     if (race.traffic.length < 40) race.traffic.push(car);
   }
-  for (let i = 0; i < 4; i++) race.pickups.push({ chunk, distance: start + 90 + i * 110,
-    x: lane(), altitude: random() < .8 ? 0 : 5, tier: random() < .7 ? 'can' : 'tank' });
+  for (let i = 0; i < 4; i++) race.pickups.push(...pickupRun({ chunk, distance: start + 90 + i * 110,
+    x: lane(), altitude: random() < .8 ? 0 : 5, tier: random() < .7 ? 'can' : 'tank' }, random));
   for (let i = 0; i < 3; i++) race.rings.push({ chunk, distance: start + 100 + i * 160,
     x: lane(), altitude: 5 + random() * 3, radius: 4.8, type: i === 1 ? 'nitro' : 'charge', group: chunk });
+  // User, 2026-11-02: each chunk adds a ring train (its own PERFECT LINE group) or, one chunk in three, a full-width
+  // row that joins the chunk's group as one gate.
+  if (random() < 1 / 3) {
+    for (const ring of race.rings) if (ring.chunk === chunk) ring.groupSize = 4;
+    for (const ring of ringRow(start + 300, 'charge')) race.rings.push({ chunk, ...ring, group: chunk, groupSize: 4 });
+  } else for (const ring of ringTrain(start + 300, lane(), random() < .5)) race.rings.push({ chunk, ...ring, group: chunk + .5, groupSize: 5 });
 }
 function retainWindow<T extends Encounter>(items: T[], first: number, last: number): void {
   let count = 0;
