@@ -169,3 +169,42 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     }
   });
 }
+
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+  test(`all eleven badges reuse the same responsive neon card, 3x art and localized caption at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#garage-button').click();
+    const tiles = page.locator('#garage-vfx-art-badges .garage-badge-card');
+    await expect(tiles).toHaveCount(11);
+    const colors = [];
+    for (const tile of await tiles.all()) {
+      await tile.scrollIntoViewIfNeeded();
+      const info = await tile.evaluate(figure => {
+        const img = figure.querySelector('img');
+        const frame = figure.querySelector('.garage-badge-art-frame');
+        const caption = figure.querySelector('figcaption');
+        const a = img.getBoundingClientRect(), b = frame.getBoundingClientRect(), c = caption.getBoundingClientRect();
+        const css = getComputedStyle(figure);
+        return { hue: css.getPropertyValue('--badge-hue').trim(), background: css.backgroundImage,
+          native: [img.naturalWidth,img.naturalHeight], cssSize: [a.width,a.height],
+          frame: [b.width,b.height], imageInside: a.left >= b.left && a.right <= b.right && a.top >= b.top && a.bottom <= b.bottom,
+          captionBelow: c.top >= b.bottom + 4, widthWithinViewport: b.right <= innerWidth };
+      });
+      expect(info.native).toEqual([216,216]);
+      expect(info.cssSize).toEqual([72,72]);
+      expect(info.frame).toEqual([88,88]);
+      expect(info.imageInside).toBe(true);
+      expect(info.captionBelow).toBe(true);
+      expect(info.widthWithinViewport).toBe(true);
+      expect(info.background).toContain('gradient');
+      expect(info.hue).toMatch(/^\\d+$/);
+      colors.push(info.hue);
+    }
+    expect(new Set(colors).size).toBeGreaterThanOrEqual(3);
+    const accents = await Promise.all(['badge-equipped','badge-favorite','badge-limited'].map(async id =>
+      page.locator(`#garage-vfx-art-badges [data-badge-art="${id}"]`).getAttribute('data-badge-tone')));
+    expect(accents).toEqual(['cyan','magenta','gold']);
+  });
+}
