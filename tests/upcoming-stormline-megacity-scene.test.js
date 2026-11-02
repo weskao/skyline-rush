@@ -89,8 +89,11 @@ test('rain and distant traffic animate with absolute time without reallocating o
   assert.equal(rain.geometry.getAttribute('position'), rainBuffer);
   assert.notDeepEqual(Array.from(rainBuffer.array.slice(0, 18)), firstRain);
   assert.notDeepEqual(Array.from(traffic.instanceMatrix.array.slice(0, 32)), Array.from(firstTraffic));
+  const stableRain = Array.from(rainBuffer.array.slice(0, 18));
+  const stableTraffic = Array.from(traffic.instanceMatrix.array.slice(0, 32));
   env.update(2.5, 'high', false);
-  assert.deepEqual(Array.from(rainBuffer.array.slice(0, 18)), Array.from(rainBuffer.array.slice(0, 18)));
+  assert.deepEqual(Array.from(rainBuffer.array.slice(0, 18)), stableRain);
+  assert.deepEqual(Array.from(traffic.instanceMatrix.array.slice(0, 32)), stableTraffic);
   env.dispose();
 });
 
