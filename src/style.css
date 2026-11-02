@@ -154,21 +154,13 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .event-callout { top: max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); }
   .driving-message[data-tone='warning'] { top: max(324px, calc(var(--race-progress-bottom, 0px) + 62px)); }
 }
-/* Phones (and short landscape, where the callout sits centred under the mode panel) hide the flight director immediately
-   while a callout is visible; no fade may overlap the first frames. */
-@media (max-width: 760px) and (min-height: 501px), (max-height: 500px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; visibility: hidden; transition: none; } }
+/* Portrait phones hide the flight director immediately while a callout is visible; no fade may overlap the first frames. */
+@media (max-width: 760px) and (min-height: 501px) { body.airborne:has(#event-callout:not([hidden])) .flight-director { opacity: 0; visibility: hidden; transition: none; } }
 @media (max-height: 500px) {
   .event-callout { top: 30%; right: auto; margin: 0; max-width: 230px; padding: 2px 10px; font-size: 20px; } /* left gutter: the centre holds the progress and mode panels */
   .event-callout > div { display: flex; align-items: center; gap: 10px; }
   .event-callout span { margin-top: 0; font-size: 9px; }
   .driving-message[data-tone='warning'] { top: 214px; } /* under the mode panel, above the car */
-}
-/* Touch landscape only: its mode panel is the compact one centred 8px under the RACING bar (62px tall), so the callout sits
-   centred 8px under it while POSITION, the speed readout and eight leaderboard rows fill the left gutter. A mouse short
-   window keeps the full-size mode panel in the centre, so its callout stays in the left gutter above. */
-@media (hover: none) and (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
-  .event-callout { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 70px); right: 16px; margin: auto; }
-  body:has(#event-callout:not([hidden])) .driving-message[data-tone='warning'] { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 108px); } /* under the callout */
 }
 @media (max-width: 760px) and (max-height: 500px) { .driving-message[data-tone='warning'] { top: 168px; } } /* small landscape: its mode panel sits higher and the progress panel lower */
 .perf-overlay { position: fixed; z-index: 8; top: max(4px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 4px; color: #c3f7ff; background: rgb(5 17 30 / .7); font: 11px/1.4 ui-monospace, monospace; white-space: nowrap; pointer-events: none; }
@@ -1781,7 +1773,15 @@ body[data-fold-axis="vertical"]:not([data-phase="ready"]) .mode-indicator {
   transform: translateX(-100%);
 }
 body[data-fold-axis="vertical"] .leaderboard { left: calc(var(--fold-pane-right-start) + 10px); top: auto; bottom: 24px; }
-body[data-fold-axis="vertical"] .event-callout { left: auto; right: calc(100vw - var(--fold-pane-left-end) + 10px); margin: 0; }
+/* Touch short landscape: POSITION, the speed readout and the eight-row leaderboard fill the left gutter and the centre
+   holds the RACING bar and mode panel, so the callout takes the top-bar strip between the wordmark (ends 229px) and the
+   toolbar (at most 345px wide, 12px in): high in the frame, clear of the centre view. A vertical fold ends it 10px
+   short of the seam. */
+@media (hover: none) and (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  .event-callout { top: max(14px, env(safe-area-inset-top, 0px)); left: calc(239px + env(safe-area-inset-left, 0px));
+    right: calc(367px + env(safe-area-inset-right, 0px)); margin: 0 auto; max-width: none; }
+  body[data-fold-axis="vertical"] .event-callout { right: calc(100vw - var(--fold-pane-left-end) + 10px); }
+}
 body[data-fold-axis="vertical"] .impact-report { left: auto; right: calc(100vw - var(--fold-pane-left-end) + 10px); transform: none; }
 body[data-fold-axis="horizontal"] .race-route-map {
   top: clamp(80px, max(30vh, calc(var(--race-progress-bottom, 0px) + 8px)), calc(var(--fold-pane-top-end) - 96px));

@@ -58,6 +58,26 @@
   portrait already did (`responsive-browser.spec.js` › flight director and a mid-flight callout). Spec 7/7.
 - [x] `cssBlob` re-recorded. `npm run typecheck`, `npm test` (1288 pass / 0 fail), `npm run build`, `npm run test:layout`,
   foldable + responsive + handoff + main-ui-parity + new spec: 100/100.
+- [x] **Follow-up `fix/hud-callout-landscape`** (from develop `15bfc16a`): CI 41313050183 failed `motion-browser.spec.js` ›
+  "race callout is a small translucent chip clear of the centre view at 844x390" (chip bottom 313 > 175.5): the short-landscape
+  callout had moved under the mode panel for every pointer, though only touch layouts keep that panel up top. RED also added
+  to the overlap spec (short landscape callout bottom ≤ 45%; failed at 239–244px on touch 844×390 and the vertical fold).
+  GREEN: non-touch short landscape is back to its original top-left slot; touch short landscape (and the fold's left pane)
+  puts the callout in the top-bar strip between the wordmark and the toolbar. The gap-warning shift and the short-landscape
+  flight-director step-aside are no longer needed and were reverted. Motion + overlap + responsive + parity + foldable 111/111,
+  `test:layout`, typecheck, `npm test` 1290/0.
+- [x] Integration with `feature/in-race-feedback-visibility` (develop `bf350867`): that branch places the event callout
+  from script (`src/race-feedback-placement.ts`), so the overlap spec's "top 45%" stand-in for the centre view now checks the
+  same road rectangle the placement avoids, and its snapshot re-runs placement for a re-shown callout.
+  RED (merge, before fix): a callout raised during GO! is placed while `body:has(#countdown:not([hidden])) .telemetry` hides
+  the telemetry and stays on it after GO! ends — probe at 390x844 3/3 runs `callout 307,608-378,644` over
+  `telemetry 170,508-367,624` (also 1024x768); new guard test "the callout moves clear of the telemetry when the countdown
+  hides" fails 3/3 (`overlapsAfterGo: true`). GREEN: placement also refreshes when `#countdown` toggles `hidden`; guard 3/3,
+  overlap spec 21/21 (`--repeat-each=3`), motion + overlap + feedback-visibility + responsive + parity + foldable 118/118,
+  `test:layout`, typecheck, `npm test` 1330/0. cssBlob unchanged (`4d817a99`).
+  Develop then landed the same countdown refresh (`19b67ca3`, guarded in `race-feedback-visibility-browser.spec.js` at
+  844x390) plus a telemetry re-measure (`eb361bce`); on merge their version of the placement observers is kept and this
+  branch's 390x844 guard test stays as the portrait case (develop's runs at 844x390) and passes 5/5 on their observer.
 - [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
 - [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
   competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
@@ -68,6 +88,9 @@
   `fix/race-callout-landscape`: the offset (and the warning under it) moved into a touch-landscape query, mouse short
   windows get the pre-merge left-gutter `top: 30%` back; `cssBlob` re-recorded. motion + HUD-overlap (7/7) + responsive +
   parity + foldable 111/111, `npm test` 1290 pass / 0 fail, typecheck, `test:layout` 37 + 42 passed.
+  Merged with `fix/hud-callout-landscape` (same non-touch revert): one rule set kept — mouse short windows use the
+  left-gutter `top: 30%`, touch short landscape the top-bar strip (vertical fold: left pane), so the touch "under the mode
+  panel" slot and its warning shift are dropped; `cssBlob` `4d817a99`.
 
 ## Wave 2 — Foldable / Dual-screen Layout Adaptation · TODO #4 (2026-10-31)
 
