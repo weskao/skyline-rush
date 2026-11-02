@@ -1107,6 +1107,11 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
 @keyframes garage-new-pop { 0%, 80%, 100% { transform: scale(1); } 88% { transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .intro .garage-button, .intro .garage-new-tag { animation: none; } }
 .vfx-comfort .intro .garage-button, .vfx-comfort .intro .garage-new-tag { animation: none; }
+/* Desktop: an inline tag widened Garage enough to wrap Practice and make the intro scroll; pin it to the corner instead. */
+@media (min-width: 1001px) {
+  .intro .garage-button { position: relative; }
+  .intro .garage-new-tag { position: absolute; top: -9px; right: -9px; }
+}
 
 .intro .start-hint { vertical-align: middle; letter-spacing: .04em; }
 .intro .start-hint kbd { height: 20px; padding: 0 6px; margin-left: 5px; border: 1px solid rgb(230 236 240 / .3); border-bottom-width: 2px; font-size: 9px; letter-spacing: .1em; }

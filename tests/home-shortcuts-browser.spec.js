@@ -102,6 +102,8 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [844, 390]])
       }
       expect(startBox.width).toBeGreaterThan(0);
       if (width >= 1001) {
+        // A wider Garage once wrapped Practice onto a second row and made the desktop intro scroll.
+        expect(await page.locator('#intro').evaluate(el => el.scrollHeight <= el.clientHeight + 1), 'desktop intro must fit without scrolling').toBe(true);
         // Desktop keeps History and the promoted Garage on the Start row.
         const [garage, history] = [await page.locator('#garage-button').boundingBox(), await page.locator('.history-button').boundingBox()];
         for (const box of [garage, history]) expect(Math.abs((startBox.y + startBox.height / 2) - (box.y + box.height / 2))).toBeLessThan(2);
