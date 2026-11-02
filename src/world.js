@@ -616,8 +616,7 @@ export function createWorld(canvas) {
         inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint);
-      const paintMaterial = player.userData.body.material;
-      paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = paint.roughness;
+      const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = paint.roughness;
       player.userData.lightColor.fromArray(paint.light);
     },
     setRenderScale(scale) {
