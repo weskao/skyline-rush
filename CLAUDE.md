@@ -150,4 +150,5 @@ no deploy unless the user explicitly asks.
   conflict or rejected push it leaves `develop` untouched and prints the manual merge — do it then.
 - **Hotfix:** branch `hotfix/<name>` from `main`, merge into `main`, then `/release` (which back-merges into `develop`).
 - **Only `develop` and `hotfix/*` merge into `main`.** `.githooks/main-merge-guard` (run by `pre-merge-commit`
-  and `pre-commit`) blocks any other merge on `main`; fast-forwards run no hook, so merge with `--no-ff`.
+  and `pre-commit`) blocks any other merge on `main`; fast-forwards run no hook, so merge with `--no-ff`. CI's `main-merge-source`
+  job (`scripts/check-main-merges.sh`) enforces the same rule on every push to `main`.
