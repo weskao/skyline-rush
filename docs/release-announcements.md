@@ -129,7 +129,22 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
    optional images under `public/whats-new/<theme-slug>/`. If the previous release's entry is still
    `UPCOMING`, first stamp it with its version and tag date (`git log -1 --format=%cs v<version>`):
    `npm test` refuses two upcoming entries, and editing a shipped entry voids its review.
-2. `/review-release-notes <version>` (`.claude/commands/review-release-notes.md`) reviews the copy:
+2. **Show what players will see.** Every highlight whose point is visible in the game — a new
+   effect, move, scene, car or rival behaviour, screen — gets real-game media before the review;
+   fixes, rule changes and record notes stay text-only. One clip may cover several highlights.
+   - A moment in a race: `node scripts/record-whats-new-clip.mjs <theme-slug> --track <id> --from <s>
+     --seconds <s>` records it from the real game at 960×600 and 390×844 in en and zh-TW, with
+     posters, under 1 MB each. Find the window first (log `race.elapsed` and the state you want to
+     show) and keep collisions or banners that are not the point out of it. Attach it as the entry's
+     `video`.
+   - A screen or a still moment: a real screenshot (`.webp`) as the highlight's `image`, localized
+     when it shows text (`scripts/capture-og-images.mjs` shows how to open the app as a returning
+     player).
+   - Look at the frames before using them (`ffmpeg -i clip.mp4 -vf "fps=1,scale=320:-1,tile=6x1"
+     -frames:v 1 sheet.jpg`): the effect is on screen, no grey padding, no unrelated pop-ups.
+   v0.29.0's rivals grabbing NITRO among the denser rings: `public/whats-new/rival-nitro/`.
+3. `/review-release-notes <version>` (`.claude/commands/review-release-notes.md`) reviews the copy
+   and checks step 2 (a "Show it" verdict per highlight):
    - **Automatic copy check** (`copyProblems` in `scripts/check-release-notes.mjs`): rejects developer
      terms in en and zh-TW (refactor, shader, backend, database, CI, 重構, 後端, 後台, 資料庫, 架構,
      程式…), links, emails, secret prefixes, file and code names, commit ids, and text over the
@@ -146,15 +161,15 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
    - **Approval**: after the user approves, `node scripts/check-release-notes.mjs --approve <version>`
      stores a fingerprint of the copy in `scripts/release-notes-reviews.json`.
    Every `AskUserQuestion` in the review offers a "(Recommended)" first option.
-3. `/release <version>` (project command `.claude/commands/release.md`) checks the notes before
+4. `/release <version>` (project command `.claude/commands/release.md`) checks the notes before
    anything else and runs the review when they are new or changed, committing the approved
    review; only then do tests, the intro and the release script run. The script runs
    `scripts/release-gate.sh`, which first runs
    `node scripts/check-release-notes.mjs <version>`: it refuses the release when that version has no
    entry, was never reviewed or changed after review, a highlight lacks either language or fails the
    copy check, or an image is not a file in `public/`.
-4. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
-5. The gate then runs `npm test` with `package.json` set to the new version, as the tag's CI will.
+5. `tests/release-notes.test.js` checks every stored entry (shown or archived) on every `npm test`.
+6. The gate then runs `npm test` with `package.json` set to the new version, as the tag's CI will.
    `CURRENT_RELEASE` follows that version, so a test about a specific entry's content pins it with
    `releaseForVersion('<version>')` — v0.22.0's tag run failed on an unpinned `CURRENT_RELEASE.image`.
 

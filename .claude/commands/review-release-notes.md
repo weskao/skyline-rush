@@ -29,6 +29,14 @@ whose notes were never reviewed, or were edited after their review. This command
      from a docs, test, CI, build or tooling commit, a roadmap or a mock-up.
    - **Language:** en and zh-TW say the same thing, each natural (Taiwan wording, not a word-for-word
      translation), plain and inviting.
+   - **Show it:** a highlight whose point is something players *see happen* in the game (a new effect,
+     move, scene, car behaviour, screen) needs a picture or clip; a fix, a rule change or a record
+     note does not. Answer **Media OK / Needs media (say which moment to show) / No media needed**.
+2b. **Media.** Before asking for approval, every "Needs media" highlight has a real-game capture in
+   the entry, per `docs/release-announcements.md` §6 step 2 (`scripts/record-whats-new-clip.mjs` for
+   a race moment). Look at frames of each clip or image yourself (a contact sheet via `ffmpeg … tile`)
+   and show the user which highlight each one illustrates. If one is still missing, the final
+   question's recommended option is `Revise first (Recommended)`.
 3. **Ask the user** about every finding that is not OK, with `AskUserQuestion` (one question per
    highlight, up to four per call). **Every question's first option is your recommendation, its
    label ending in "(Recommended)"**, and its description says why. Typical options: apply the

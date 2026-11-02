@@ -26,3 +26,6 @@ paths:
   under `public/whats-new/<theme-slug>/`. It shows first as "Upcoming" until the release commit bumps
   `package.json`, which names it; the review and the gate find it under the version being released.
   Before writing the next notes, stamp the shipped entry with its version and tag date.
+- A highlight players see happen in the game ships with a real-game picture or clip, checked frame by
+  frame (`docs/release-announcements.md` §6 step 2); the review's "Show it" verdict and `/release`
+  Phase N both stop a release that lacks one.

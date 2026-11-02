@@ -344,8 +344,10 @@ top of `RELEASE_NOTES` in `src/release-notes-data.ts` (en + zh-TW, player-first)
 `version: UPCOMING`, never a version number**: the dialog shows it first, labelled "Upcoming", in dev
 and on `main`, and the release commit's `package.json` bump gives it the released version. Starting
 the next release's notes, first stamp the shipped one with its version and tag date
-(`git log -1 --format=%cs v<version>`); `npm test` refuses two upcoming entries. Add an image only when
-it makes the change easier to grasp; store it under `public/whats-new/<theme-slug>/` (a name for the
+(`git log -1 --format=%cs v<version>`); `npm test` refuses two upcoming entries. A highlight players *see happen*
+(new effect, move, scene, car or rival behaviour, screen) ships with a real-game image or clip
+(`docs/release-announcements.md` §6 step 2, `scripts/record-whats-new-clip.mjs`); fixes, rule changes and
+record notes stay text. Store media under `public/whats-new/<theme-slug>/` (a name for the
 release's content, never a version number) and keep every older release's entry and images in the
 repo — the dialog shows only the newest five versions, the rest stay archived. Leave out what players never need: fine tuning details, code structure or refactors,
 tests and tooling, back-office, admin or server setup, and anything sensitive (links, accounts, keys,

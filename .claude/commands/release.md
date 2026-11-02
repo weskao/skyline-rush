@@ -22,6 +22,10 @@ from the survey. Later phases reuse this answer and do not ask again.
 即使公告已審核通過，也必須展示全文；不能只回報檢查通過、摘要或檔案路徑。
 若審核修改公告，在最終核准前再次展示最後版本，避免核准的內容與看到的不同。
 
+展示公告時，每項標示附帶的圖片／影片（檔案路徑）或「不需要」。需要展示效果的項目（新特效、
+新動作、畫面或車輛行為改變）若沒有實機截圖或影片，先依 `docs/release-announcements.md` §6 第 2 步
+補上，再進入下面的檢查；修正、規則調整或紀錄說明不需要附圖。
+
 1. `node scripts/check-release-notes.mjs <version>` — read-only.
    - **Passes** → go to Phase T.
    - **No entry for the version** → stop. The notes are written first, as the `version: UPCOMING`
