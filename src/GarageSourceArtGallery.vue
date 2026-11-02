@@ -38,7 +38,8 @@ onUnmounted(() => stopListening?.());
         :aria-label="`${locale === 'zh-TW' ? '預覽' : 'Preview'} ${copy(item.name)}`"
         @click="selected = item.id">
         <GarageArtworkTile :id="item.id" :label="copy(item.name)" :src="image(item.id)"
-          :size="config.cssSize" :tone="item.tone" />
+          :size="config.cssSize" :tone="item.tone"
+          :restored="category === 'garage-store-readiness'" />
       </button>
     </div>
     <section v-if="current" class="garage-source-detail" :data-wave3-selected="current.id"
@@ -76,9 +77,10 @@ onUnmounted(() => stopListening?.());
   display: block; box-sizing: border-box; min-width: 0; min-height: 44px; width: 100%;
   padding: 0; color: inherit; background: none; border: 0;
   border-radius: 14px; cursor: pointer; text-align: inherit; touch-action: manipulation;
-  transition: transform .16s ease, box-shadow .16s ease;
+  overflow: visible; transition: transform .16s ease, box-shadow .16s ease;
 }
-.garage-source-choice :deep(.garage-badge-card) { height: 100%; margin: 0; }
+.garage-source-choice :deep(.garage-badge-card) { height: 100%; margin: 0; overflow: visible; }
+.garage-source-choice :deep(.artwork-img) { object-fit: contain; object-position: center; image-rendering: auto; }
 .garage-source-choice[aria-pressed="true"] { outline: 2px solid #8beaff; outline-offset: 1px;
   box-shadow: 0 0 18px #21a5eb66; }
 .garage-source-choice:focus-visible, .garage-source-filters button:focus-visible,
