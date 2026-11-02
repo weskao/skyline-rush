@@ -80,6 +80,9 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 </template>
 
 <style>
+/* The full-screen Garage/Studio covers the home: stop rendering it, or iOS WebKit flashes its animated layers
+   (START sheen, Garage pulse) over the dialog. Descendants too: airflow mode forces #start-button visible. */
+#app:has(> #garage-screen[open]) > :not(dialog), #app:has(> #garage-screen[open]) > :not(dialog) * { visibility: hidden !important; }
 #garage-screen.garage-screen { position: fixed; inset: 0; width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; border-radius: 0; padding: max(7px, env(safe-area-inset-top)) max(7px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)) max(7px, env(safe-area-inset-left)); overflow: hidden; display: none; flex-direction: column; gap: 6px; }
 #garage-screen.garage-screen[open] { display: flex; }
 #garage-screen .garage-heading { display: flex; align-items: center; gap: 6px; flex: none; min-height: 44px; }
