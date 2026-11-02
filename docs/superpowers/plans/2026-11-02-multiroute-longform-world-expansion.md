@@ -9,6 +9,10 @@
 
 **User-approved topology:** five brand-new point-to-point single-finish tracks only, same race model as existing ten sprint tracks; distinct START and FINISH; NO circuit closure and NO lap counting. Current GitHub visual references: five two-view SVG storyboards under `docs/designs/new-tracks/concept-art/`, five route schematics, index `docs/designs/new-tracks/README.md`, fidelity checklist `docs/designs/new-tracks/visual-fidelity.md`, and `concept-manifest.json`. Original AI cinematic PNG collages/crops still exist only in the ChatGPT-download ZIP, not in this branch. No implementation work, CI pass or merge implied by these planning documents.
 
+## Input artwork and ground/flight screenshot acceptance
+
+The branch now contains **10 standalone SVG images**—two distinct source-of-truth *camera composition* references for each of five open-ended races—indexed in `docs/designs/new-tracks/README.md`, `visual-fidelity.md`, and `concept-manifest.json`. They are separate views clipped from five original vector storyboard boards; **AI high-detail PNG files are not yet committed to this branch** and require the archive import process. For every vertical slice, produce a matching true WebGL ground view + aerial branch view (both desktop and phone), retain 3D START/FINISH distinction and no laps, and record visual deviations versus both committed SVG and later-imported PNG inspiration. Treat image references as art-direction evidence, not physics or course graph.
+
 ## Global Constraints
 
 - The five course layouts and times are initial design targets; performance, median durations and visual acceptance are not verified in this planning branch.
