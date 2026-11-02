@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 const coach = page => page.locator('#tutorial-coach');
 const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name);
@@ -17,18 +18,73 @@ const keyStep = async (page, key, next) => {
   await page.keyboard.up(key);
 };
 
-test('keyboard practice requires real actions, completes all eight steps and preserves career', async ({ page }) => {
+// DRIFT needs >= 162 km/h on entry; the brake lesson's held key can slow the car, so wait for auto-throttle.
+const driftReady = page => page.waitForFunction(() => Number(document.querySelector('#speed')?.textContent) >= 170, null, { polling: 'raf' });
+// The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
+const driftCharged = page => page.waitForFunction(() => Number(document.querySelector('#tutorial-progress')?.value) >= 5, null, { polling: 'raf' });
+const keyboardDrift = async page => {
+  await driftReady(page);
+  await page.keyboard.down('a');
+  await page.keyboard.down('s');
+  await driftCharged(page);
+  await page.keyboard.up('s');
+  await page.keyboard.up('a');
+  await step(page, 'fly');
+};
+
+const keyboardChain = async page => {
+  await page.keyboard.down('Space');
+  await page.keyboard.down('Shift');
+  await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
+  await page.keyboard.up('Shift');
+  await page.keyboard.up('Space');
+  await step(page, 'barrelRoll');
+};
+const keyboardRoll = async page => {
+  await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
+  await page.keyboard.down('Space');
+  // Release FLY at a safe height before the steering flick. The real engine
+  // allows a roll while gliding; holding thrust through Playwright assertions
+  // can lift the car too high for a soft landing on slow WebGL runners.
+  await page.waitForFunction(
+    () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
+    null, { polling: 'raf' },
+  );
+  await page.keyboard.up('Space');
+  await page.keyboard.down('a');
+  await page.waitForFunction(
+    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected'),
+    null, { polling: 'raf' },
+  );
+  await page.keyboard.up('a');
+  await page.keyboard.down('d');
+  await page.waitForFunction(
+    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('BARREL ROLL spinning'),
+    null, { polling: 'raf' },
+  );
+  await page.keyboard.up('d');
+  await step(page, 'nitro');
+};
+
+const keyboardToNitro = async page => {
+  await keyStep(page, 'w', 'left');
+  await keyStep(page, 'a', 'right');
+  await keyStep(page, 'd', 'brake');
+  await keyStep(page, 's', 'drift');
+  await keyboardDrift(page);
+  await keyStep(page, 'Space', 'land');
+  await step(page, 'boost');
+  await keyStep(page, 'Shift', 'airChain');
+  await keyboardChain(page);
+  await keyboardRoll(page);
+};
+
+test('keyboard practice requires real actions, completes all ten steps and preserves career', async ({ page }) => {
   await begin(page);
   const before = await career(page);
   await page.waitForTimeout(800);
   await step(page, 'throttle');
-  await keyStep(page, 'w', 'left');
-  await keyStep(page, 'a', 'right');
-  await keyStep(page, 'd', 'brake');
-  await keyStep(page, 's', 'fly');
-  await keyStep(page, 'Space', 'land');
-  await step(page, 'boost');
-  await keyStep(page, 'Shift', 'nitro');
+  await keyboardToNitro(page);
   await keyStep(page, 'e', 'complete');
   await expect(page.locator('#tutorial-retry')).toBeVisible();
   await expect(page.locator('#tutorial-done')).toHaveText('Back to game');
@@ -41,6 +97,22 @@ test('keyboard practice requires real actions, completes all eight steps and pre
   await page.locator('#controls-button').click();
   await page.locator('#guide-open').click();
   await expect(page.locator('#guide-practice')).toHaveText('Practice again');
+});
+
+test('NITRO practice recovers after braking and demands a fresh charged sprint', async ({ page }) => {
+  await begin(page);
+  await keyboardToNitro(page);
+  await page.keyboard.down('s');
+  await page.keyboard.down('e');
+  await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', {timeout: ciTimeout(30000)});
+  await step(page, 'nitro');
+  // The held key never receives another charge while pressed.
+  await expect(page.locator('#tutorial-instruction')).toContainText('Release NITRO');
+  await page.keyboard.up('e');
+  await page.keyboard.up('s');
+  await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
+  await keyStep(page, 'e', 'complete');
+  await expect(page.locator('#tutorial-retry')).toBeVisible();
 });
 
 test('practice restores a paused race and uses the current custom throttle key', async ({ page }) => {
@@ -82,13 +154,7 @@ test.describe('first visit without storage', () => {
     await page.addInitScript(() => Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));
     await page.goto('/');
     await page.locator('#start-button').click();
-    await keyStep(page,'w','left');
-    await keyStep(page,'a','right');
-    await keyStep(page,'d','brake');
-    await keyStep(page,'s','fly');
-    await keyStep(page,'Space','land');
-    await step(page,'boost');
-    await keyStep(page,'Shift','nitro');
+    await keyboardToNitro(page);
     await keyStep(page,'e','complete');
     await expect(page.locator('#tutorial-done')).toHaveText('Start race');
     await page.locator('#tutorial-done').click();
@@ -138,6 +204,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
   test.describe(`touch practice ${width}x${height} ${mode} ${flyMode}${custom?' custom layout':''}`, () => {
     test.use({viewport:{width,height},hasTouch:true,isMobile:true});
     test('real touch controls finish practice without the coach blocking actions', async ({ page, context }) => {
+      // Up to five air-chain and three barrel-roll engine-judged attempts need more than
+      // the default budget on CPU-only WebGL.
+      test.setTimeout(ciTimeout(240000));
       const prefs = {version:1,mode,flyMode,...(custom?{layout:{throttle:{x:.15,y:.18}}}:{})};
       await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls',JSON.stringify(prefs)), prefs);
       await begin(page);
@@ -173,15 +242,131 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         await step(page,next);
         await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       };
+      const point = async (target, id) => {
+        const b = await target.boundingBox();
+        return { id, x: b.x + b.width / 2, y: b.y + b.height / 2 };
+      };
+      const touch = (type, points) => session.send('Input.dispatchTouchEvent', { type, touchPoints: points });
       const button = action => page.locator(`#touch-controls [data-control="${action}"]`);
+      // A CDP touch pair avoids Playwright's actionability delay while FLY is
+      // latched; that delay can turn a clean AIR→ROAD landing into a hard one
+      // on software-WebGL runners. These are real browser pointer events.
+      const tapTouch = async target => {
+        const p = await point(target, 9);
+        await touch('touchStart', [p]);
+        await touch('touchEnd', []);
+      };
+      const waitForCoachText = (text, timeout = ciTimeout(15000)) => page.waitForFunction(
+        text => document.querySelector('#tutorial-instruction')?.textContent?.includes(text),
+        text, { polling: 'raf', timeout },
+      );
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('right'),'brake',effectiveMode==='slide'?55:0);
-      await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'fly',0,effectiveMode==='slide'?55:0);
+      await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'drift',0,effectiveMode==='slide'?55:0);
+      await driftReady(page);
+      if (effectiveMode === 'slide') {
+        // One thumb: slide down (brake) and sideways (steer) on the pad.
+        const b = await page.locator('.touch-pad').boundingBox();
+        const p = { id: 1, x: b.x + b.width / 2, y: b.y + b.height * .25 };
+        await touch('touchStart', [p]);
+        await touch('touchMove', [{ ...p, x: p.x - 55, y: p.y + 55 }]);
+      } else await touch('touchStart', [await point(button('left'), 1), await point(button('brake'), 2)]);
+      await driftCharged(page);
+      await touch('touchEnd', []);
+      await step(page,'fly');
       await gesture(button('fly'),'land');
-      if(flyMode==='toggle') await button('fly').tap();
+      if(flyMode==='toggle') await tapTouch(button('fly'));
       await step(page,'boost');
-      await gesture(button('boost'),'nitro');
+      await gesture(button('boost'),'airChain');
+      // Begin both real touch pointers together: a second touchStart can
+      // cancel the first pointer's capture on Chromium software-WebGL runners.
+      // The coach must still observe powered flight and the engine must award
+      // an actual soft landing before the lesson advances.
+      const chainEvidence = [];
+      const attemptChain = async () => {
+        const fly = await point(button('fly'), 1), boost = await point(button('boost'), 2);
+        let flightDetected = false;
+        try {
+          if (flyMode === 'toggle') {
+            await tapTouch(button('fly'));
+            await touch('touchStart', [boost]);
+          } else {
+            await touch('touchStart', [fly, boost]);
+          }
+          try {
+            await waitForCoachText('Powered flight detected', ciTimeout(1800));
+            flightDetected = true;
+          } catch (error) {
+            if (error.name !== 'TimeoutError') throw error;
+          }
+        } finally {
+          // Unlatch FLY in the same dispatch as the boost hold: on slow software-WebGL
+          // frames every extra round trip lets the car climb past a soft-landing height.
+          if (flyMode === 'toggle') await touch('touchStart', [boost, fly]);
+          await touch('touchEnd', []);
+        }
+        await page.waitForFunction(
+          () => Number(document.querySelector('#altitude')?.textContent) <= 0.15,
+          null, { polling: 'raf', timeout: ciTimeout(20000) },
+        );
+        chainEvidence.push({ flightDetected, ...(await page.evaluate(() => ({
+          step: document.querySelector('#tutorial-coach')?.dataset.step,
+          instruction: document.querySelector('#tutorial-instruction')?.textContent,
+          altitude: document.querySelector('#altitude')?.textContent,
+        }))) });
+      };
+      for (let retry = 0; retry < 5 && await coach(page).getAttribute('data-step') === 'airChain'; retry++) {
+        await attemptChain();
+      }
+      await expect(coach(page), JSON.stringify(chainEvidence)).toHaveAttribute('data-step', 'barrelRoll');
+      const steerTarget = effectiveMode === 'slide' ? page.locator('.touch-pad') : button('left');
+      const left = await point(steerTarget, 2);
+      const right = effectiveMode === 'slide' ? null : await point(button('right'), 3);
+      const pad = effectiveMode === 'slide' ? left : null;
+      // The 0.3s engine flick window can elapse without a visible "spinning"
+      // message on slower renderers. Observe the real payout/landing instead,
+      // and repeat physical steering if the engine reports a missed roll.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt) await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
+        if (flyMode === 'toggle') await tapTouch(button('fly'));
+        else await touch('touchStart', [await point(button('fly'), 1)]);
+        await page.waitForFunction(
+          () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
+          null, { polling: 'raf' },
+        );
+        if (flyMode === 'toggle') await tapTouch(button('fly'));
+        else await touch('touchEnd', []);
+        if (pad) {
+          await touch('touchStart', [pad]);
+          await touch('touchMove', [{...pad,x:pad.x-55}]);
+          await waitForCoachText('First airborne steering press detected');
+          await touch('touchMove', [{...pad,x:pad.x+55}]);
+          // Keep the opposite steering input active until a simulation frame
+          // samples it; ending it in the same CDP turn can erase the flick.
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+          await touch('touchEnd', []);
+        } else {
+          await touch('touchStart', [left]);
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+          // Release LEFT and press RIGHT with no round trip between them: each awaited
+          // CDP call can cost a slow software-WebGL frame, and the window is ~6 frames.
+          await Promise.all([touch('touchEnd', []), touch('touchStart', [right])]);
+          // The fixed-step game reads touch state on rAF, not at CDP dispatch.
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+          await touch('touchEnd', []);
+        }
+        await page.waitForFunction(() => {
+          const step = document.querySelector('#tutorial-coach')?.getAttribute('data-step');
+          const instruction = document.querySelector('#tutorial-instruction')?.textContent ?? '';
+          return step === 'nitro' || (step === 'barrelRoll' && instruction.includes('Roll missed'));
+        }, null, { polling: 'raf', timeout: ciTimeout(25000) });
+        if (await coach(page).getAttribute('data-step') === 'nitro') break;
+        if (attempt === 2) throw new Error('BARREL ROLL did not earn a real landing payout after three attempts');
+      }
+      // The actual engine must finish the roll and pay NITRO on a gentle
+      // landing before the coach can advance to the next lesson.
+      await step(page, 'nitro');
       await gesture(button('nitro'),'complete');
       const box=await page.locator('#tutorial-exit').boundingBox();
       expect(box.width).toBeGreaterThanOrEqual(44);

@@ -1,6 +1,7 @@
 import { updateSkyline } from './skyline-scenery.ts';
 import * as THREE from 'three';
-import { flipRgbaRows, photoFov } from './photo-export.ts';
+import { photoFov } from './photo-export.ts';
+import { capturePhoto } from './photo-capture.ts';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -10,13 +11,13 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { roadRibbon } from './geometry.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
-import { vfxSettings } from './vfx-settings.ts';
+import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
-import { createCircuitScene } from './circuit-scene.ts';
+import { createGarageStage } from './garage-stage.ts'; import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
@@ -82,7 +83,7 @@ export function createWorld(canvas) {
   const msaaSamples = quality => quality === 'low' ? 2 : 4;
   const sceneTarget = samples => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples });
   const composer = new EffectComposer(renderer, sceneTarget(4)); // configureVFX re-targets for the saved quality tier
-  composer.addPass(new RenderPass(scene, camera));
+  const renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 1.1);
   // The bloom blur spreads one NaN/Inf scene texel into a screen-sized black rectangle (seen when a nozzle shader hit
   // 0*Inf at an MSAA sliver). Dropping non-finite texels at the high pass caps such a bug at a one-pixel speck.
@@ -110,7 +111,7 @@ export function createWorld(canvas) {
   const room = new RoomEnvironment();
   const environment = env.fromScene(room, 0.04);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0.42;
+  scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
   room.dispose();
   env.dispose();
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
@@ -298,7 +299,7 @@ export function createWorld(canvas) {
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
   const rearLight = player.userData.rearLight;
-  const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex].map(style => { const car = makeCar(style); scene.add(car); return car; });
+  const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.nova].map((style, i) => { const paint = [null, null, null, '#9d80e5', '#5cd5ae', '#e9bd64', '#e866a5'][i]; const car = makeCar(style, paint ?? style.color); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   // ×2 covers the double-traffic daily modifier.
@@ -528,6 +529,9 @@ export function createWorld(canvas) {
   const circuitScene = createCircuitScene(scene);
   const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : TOUR_IDS.has(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
+  const sprintVisual = createSprintVfx();
+  // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
+  const sprintInput = { phase: 'ready', nitro: false, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
   let visual = vfxSettings();
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
@@ -536,11 +540,11 @@ export function createWorld(canvas) {
   let cameraMode = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0;
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let photoView = null, photoCapture = null;
+  let photoView = null, photoCapture = null, garageCamera = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
-  let sizeKey = '', warmupPending = true;
-  const restoreWarmup = () => { warmupPending = true; };
+  let sizeKey = '', warmupPending = true, garageWarmupPending = true;
+  const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
   canvas.addEventListener('webglcontextrestored', restoreWarmup);
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
@@ -607,8 +611,10 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize,
+    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGarageSkinPreview(ids) { garagePreviewSkins = ids; garageStage?.setSkins(ids); },
+    inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
+      garagePaint = paint; garageStage?.setPaint(paint);
       player.userData.body.material.color.set(paint.paint);
       player.userData.lightColor.fromArray(paint.light);
     },
@@ -616,7 +622,7 @@ export function createWorld(canvas) {
       adaptiveScale = scale; this.configureVFX(visual);
     },
     configureVFX(options) {
-      visual=vfxSettings(options);
+      visual=vfxSettings(options); garageStage?.configureVFX(visual);
       const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
@@ -642,13 +648,16 @@ export function createWorld(canvas) {
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
+      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.12; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; }
+      renderPass.scene = scene;
       endlessActive=!!race.endless;
       const preview = race.phase === 'ready';
       const car = race.player;
       const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
-      if (lastRace !== race) { effects.reset(); aero.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; }
+      if (lastRace !== race) { effects.reset(); aero.reset(); sprintVisual.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; }
       if (trackId !== race.trackId) {
+        sprintVisual.reset();
         raceVisuals.reset();
         trackId = race.trackId;
         const palette = TRACK_PALETTES[trackId];
@@ -860,7 +869,7 @@ export function createWorld(canvas) {
         updateCar(player, { ...previewPlayer(trackId,car,idleTime,reducedMotion,groundedShowcase), distance },
           distance,center,time,dt,true);
         rivals.forEach((mesh,i) => {
-          mesh.visible = true; // show all three showcase cars even in solo practice
+          mesh.visible = i < 3; if (!mesh.visible) return; // Preserve Wave 1 showcase.
           const standIn = { x: [-7.5, -2.5, 7.5][i], distance: 0, speed: 0, altitude: 0, steering: 0 };
           updateCar(mesh, previewRival(trackId,i,race.rivals[i] ?? standIn,idleTime,reducedMotion),distance,center,time,dt);
         });
@@ -905,8 +914,13 @@ export function createWorld(canvas) {
       finish.visible = trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
         framedRoad(trackId) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin), worldFrame: trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
-      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion);
-      const boostStrength = Math.max(feedback.strength, car.nitroTime > 0 ? 1 : car.miniBoost > 0 ? 0.5 : 0);
+      Object.assign(sprintInput, {
+        phase: race.phase, nitro: car.nitroTime > 0, boost: !!(car.boosting || car.miniBoost > 0),
+        speed: car.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion,
+      });
+      const sprintFrame = sprintVisual.update(sprintInput);
+      const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), visual, reducedMotion, sprintFrame);
+      const boostStrength = race.phase === 'racing' ? sprintFrame.power : 0;
       const portrait = camera.aspect < 0.8;
       if (photoView && race.phase === 'paused') {
         desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
@@ -975,10 +989,8 @@ export function createWorld(canvas) {
         else lookTarget.set(car.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, car.altitude * 0.85 + 1.5, -25);
       }
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
-      const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
-      const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
-      const landingAge = car.landing ? race.elapsed - car.landing.time : 10;
-      const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
+      const impactAge = car.impact ? race.elapsed - car.impact.time : 10; const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
+      const landingAge = car.landing ? race.elapsed - car.landing.time : 10; const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
       if (!reducedMotion && race.phase === 'racing') {
         desiredCamera.x += Math.sin(time * 61) * impact * 0.27;
         desiredCamera.y += Math.sin(time * 47) * impact * 0.15 - landing * 0.3;
@@ -986,16 +998,14 @@ export function createWorld(canvas) {
         desiredCamera.x += Math.sin(time * 65) * feedback.ignition * visual.shake * 0.12;
         desiredCamera.z += boostStrength * (visual.enabled ? 0.22 : 0);
       }
-      if(preview) {
+      if(preview && !garageCamera) {
         // Preserve scenery clearance, then fit the complete car within the
         // actual viewport, regardless of track and selected camera angle.
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7);
-      if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
-      camera.position.lerp(desiredCamera, smoothing);
-      smoothLook.lerp(lookTarget, smoothing);
+      const smoothing = 1 - Math.exp(-dt * 7); if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
+      camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
       if (photoView && race.phase === 'paused') {
         camera.position.copy(desiredCamera);
@@ -1004,10 +1014,10 @@ export function createWorld(canvas) {
       camera.lookAt(smoothLook);
       carBank = THREE.MathUtils.damp(carBank, !reducedMotion && car.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt);
       camera.rotation.z += carBank;
-      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + boostStrength * (visual.enabled ? visual.fov : 0) - impact * 4;
+      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + car.speed * 0.115 + sprintFovOffset(sprintFrame, visual) - impact * 4;
       camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();
-      lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : boostStrength * visual.motionBlur;
+      lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : sprintFrame.blur * visual.motionBlur;
       lens.uniforms.impact.value = reducedMotion ? 0 : impact;
       projectedNozzle.copy(feedback.nozzle).project(camera);
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
@@ -1021,21 +1031,10 @@ export function createWorld(canvas) {
       if (photoCapture) {
         const request = photoCapture;
         photoCapture = null;
-        try {
-          const resolution = renderer.getDrawingBufferSize(new THREE.Vector2());
-          const width = resolution.x, height = resolution.y;
-          if (width * height > 16_000_000) throw new RangeError('Screenshot too large');
-          const pixels = new Uint8Array(width * height * 4);
-          renderer.getContext().readPixels(0,0,width,height,
-            renderer.getContext().RGBA,renderer.getContext().UNSIGNED_BYTE,pixels);
-          const output = document.createElement('canvas');
-          output.width = width; output.height = height;
-          output.getContext('2d').putImageData(new ImageData(flipRgbaRows(pixels,width,height),width,height),0,0);
-          output.toBlob(blob => blob ? request.resolve(blob) : request.reject(new Error('PNG export unavailable')),'image/png');
-        } catch (error) { request.reject(error); }
+        void capturePhoto(renderer).then(request.resolve, request.reject);
       }
     },
-    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles}; },
+    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
       // Read-only projection for browser QA: verify the player and all three
@@ -1105,7 +1104,7 @@ export function createWorld(canvas) {
       });
     },
     dispose() {
-      stopLocaleSigns();
+      garageStage?.dispose(); stopLocaleSigns();
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
       circuitScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();

@@ -277,7 +277,9 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await expect(page.locator('#event-callout')).toBeVisible();
       await calloutText(cx, 'callout-near');
       await check(cx, 'callout-near', { hud: true, live: true });
-      await page.waitForTimeout(1400);
+      // Outlast the 2 s race-time near-miss cooldown (src/callouts.ts) so the next pass shows its own chip.
+      const nearAt = await page.evaluate(() => window.gameplay.race.elapsed);
+      await expect.poll(() => page.evaluate(() => window.gameplay.race.elapsed), { timeout: ciTimeout(10_000) }).toBeGreaterThan(nearAt + 2.1);
       await page.evaluate(() => { const car = window.gameplay.race.player; car.nearMisses++; car.nearMiss = { time: window.gameplay.race.elapsed, combo: 4, charge: 37 }; });
       await expect(page.locator('#event-callout')).toBeVisible();
       await calloutText(cx, 'callout-near-charge');

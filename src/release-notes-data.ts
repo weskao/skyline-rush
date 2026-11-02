@@ -9,7 +9,46 @@ import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-10-31', image: null,
+    version: UPCOMING, date: '2026-11-02', image: null,
+    video: {
+      desktop: {
+        src: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.mp4' },
+        poster: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.jpg' }
+      },
+      mobile: {
+        src: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.mp4' },
+        poster: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.jpg' }
+      }
+    },
+    highlights: [
+      {
+        id: 'rivals-grab-nitro', kind: 'new', image: null,
+        title: { en: 'Rivals grab NITRO too', 'zh-TW': '對手也會搶 NITRO' },
+        description: {
+          en: 'Rivals now grab NITRO rings and pickups and fire NITRO more often; on Hard they swerve for them. You\'ll see and hear it when one near you grabs one.',
+          'zh-TW': '對手現在也會吃 NITRO 光圈和道具，也更常放 NITRO；困難難度還會換車道去搶。附近的對手吃到時，看得到也聽得到。'
+        }
+      },
+      {
+        id: 'more-rings-everywhere', kind: 'improvement', image: null,
+        title: { en: 'Twice the rings and pickups on every road', 'zh-TW': '每條賽道的光圈和道具加倍' },
+        description: {
+          en: 'Every road has about twice the rings and NITRO pickups, plus full rows you can\'t miss and quick runs of rings close together.',
+          'zh-TW': '每條賽道的光圈和 NITRO 道具都多了約一倍，還有怎麼開都吃得到的整排光圈，和一連串緊密的光圈。'
+        }
+      },
+      {
+        id: 'old-layout-records', kind: 'improvement', image: null,
+        title: { en: 'Your earlier times are kept', 'zh-TW': '之前的成績都會保留' },
+        description: {
+          en: 'Because every road changed, best times and ghosts start fresh. Your earlier runs stay in History, marked Old layout, so nothing is lost.',
+          'zh-TW': '所有賽道的配置都改變了，所以最佳成績和幽靈車會重新計算。之前的成績仍保留在歷史紀錄中，並標示「舊版配置」，一筆都不會少。'
+        }
+      }
+    ]
+  },
+  {
+    version: '0.28.0', date: '2026-10-31', image: null,
     highlights: [
       {
         id: 'endless-every-road', kind: 'new', image: null,

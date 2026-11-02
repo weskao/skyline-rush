@@ -1,7 +1,10 @@
 import * as THREE from 'three';
+import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { MAGNET_RANGE } from './game.js';
+import { createMarkerPool } from './marker-pool.js';
+import { createRivalCues } from './rival-cues.ts';
 
-// Shared by the model and its wake, so all four streams start at the actual ports.
+// Shared by all car models and their wakes: every thrust stream starts at its actual port.
 export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]];
 
 // One reusable GPU pool keeps airflow, sparks and landing dust bounded.
@@ -67,14 +70,14 @@ export function createEffects(scene, roadCenter) {
         float envelope=pow(max(0.,1.-downstream),1.6)*smoothstep(0.,.06,downstream);
         gl_FragColor=vec4(.86,.94,1.,power*envelope*breakup*.5);}`,
   });
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < RACE_DRIVER_IDS.length * LIFT_PORTS.length; i++) {
     const jet = new THREE.Mesh(coreGeometry, coreMaterial.clone());
     jet.visible = false; cores.add(jet);
   }
   let flowTime = 0;
   let cursor = 0, lastImpact = null, lastLanding = null, lastShieldBlock = null;
-  const emissions = new Float64Array(4), strengths = new Float64Array(4);
-  const nozzles = new Uint8Array(4);
+  const emissions = new Float64Array(RACE_DRIVER_IDS.length), strengths = new Float64Array(RACE_DRIVER_IDS.length);
+  const nozzles = new Uint8Array(RACE_DRIVER_IDS.length);
   const nozzlePosition = new THREE.Vector3(), nozzleVelocity = new THREE.Vector3();
   const orange = [2.5, 0.85, 0.15], mist = [0.58, 0.64, 0.68], gas = [0.8, 0.87, 0.92];
   const blue = [0.15, 0.8, 2.5], gold = [2.5, 1.8, 0.15], purple = [1.2, 0.3, 2.5], red = [2.5, 0.1, 0.15];
@@ -94,17 +97,14 @@ export function createEffects(scene, roadCenter) {
     new THREE.MeshBasicMaterial({ color: new THREE.Color(...(type === 'mystery' ? [1, 1, 1] : color)), vertexColors: type === 'mystery', transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })]));
   const pickupMaterials = Object.fromEntries(Object.entries(pickupColors).map(([tier, color]) => [tier,
     new THREE.MeshBasicMaterial({ color: new THREE.Color(...(tier === 'overcharge' ? [1, 1, 1] : color)), vertexColors: tier === 'overcharge' })]));
-  const gates = new THREE.Group(), pickups = new THREE.Group();
-  gates.name = 'Race rings'; pickups.name = 'Nitro pickups';
-  scene.add(gates, pickups);
   const pickupGeometry = new THREE.OctahedronGeometry(1);
   const pickupRainbow = new Float32Array(pickupGeometry.attributes.position.count * 3);
   for (let i = 0; i < pickupGeometry.attributes.position.count; i++) tint.setHSL(i / pickupGeometry.attributes.position.count, 1, 0.6).toArray(pickupRainbow, i * 3);
   pickupGeometry.setAttribute('color', new THREE.BufferAttribute(pickupRainbow, 3));
-  // Every ring and pickup material variant sits on a pooled mesh at load so the first-frame shader warmup (world.js) draws it.
-  const ringVariants = Object.values(ringMaterials), pickupVariants = Object.values(pickupMaterials);
-  for (let i = 0; i < 7; i++) gates.add(new THREE.Mesh(ringGeometry, ringVariants[i % ringVariants.length]));
-  for (let i = 0; i < 40; i++) pickups.add(new THREE.Mesh(pickupGeometry, pickupVariants[i % pickupVariants.length]));
+  // One instanced pool per material, each warmed by its parked instance (marker-pool.js); capacity covers the densest 900 m view.
+  const ringPool = createMarkerPool('Race rings', ringGeometry, ringMaterials, 48), pickupPool = createMarkerPool('Nitro pickups', pickupGeometry, pickupMaterials, 128);
+  const gates = ringPool.group, pickups = pickupPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap(), rivalCues = createRivalCues();
+  scene.add(gates, pickups);
   // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.
   const beamGeometry = new THREE.CylinderGeometry(0.08, 0.08, 14, 8, 1, true);
   const beamMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(...gold), transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -157,10 +157,11 @@ export function createEffects(scene, roadCenter) {
       const active = enabled && !preview && race.phase === 'racing' && dt > 0;
       const lowQuality = options.quality === 'low';
       points.visible = enabled;
+      let beam = 0;
       for (let source = 0; source < 2; source++) {
         const items = source === 0 ? race.pickups : race.rings;
-        const group = source === 0 ? pickups : gates;
-        let slot = 0;
+        const pool = source === 0 ? pickupPool : ringPool;
+        pool.begin();
         for (const item of items) {
           const collected = source === 0 ? item.taken : item.hit;
           const ringType = bonusStyles[item.type] ?? item.type;
@@ -169,39 +170,41 @@ export function createEffects(scene, roadCenter) {
             if (previousRace === race && active) burst(item, reducedMotion ? 6 : lowQuality ? 12 : 32,
               source === 0 ? pickupColors[item.tier] : ringColors[ringType], car.speed);
           }
-          if (collected || item.distance <= distance || item.distance > distance + 900 || slot >= group.children.length) continue;
-          const mesh = group.children[slot++];
-          mesh.visible = true;
+          if (collected || item.downUntil > race.elapsed || item.distance <= distance || item.distance > distance + 900) continue; // gone until it respawns
+          const mesh = marker;
           if (options.worldPoint) mesh.position.fromArray(options.worldPoint(item.distance, item.x,
             item.altitude + (source === 0 ? 0.85 : 0), distance));
           else mesh.position.set(roadCenter(item.distance) + item.x - center,
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
           if (source === 1 && options.worldFrame) {
-            // Fixed route topology: a new gate identity invalidates this pool slot's orientation.
-            if (mesh.userData.frameItem !== item || item.spin) { // a spinning hoop re-bases before its swivel
+            // Fixed route topology: a gate's road-frame orientation never changes, so it is computed once per gate object
+            // (a new race brings new gate objects; the WeakMap lets old ones go).
+            let facing = gateFrames.get(item);
+            if (!facing || item.spin) { // a spinning hoop re-bases before its swivel
               const frame = options.worldFrame(item.distance);
-              mesh.quaternion.setFromRotationMatrix(gateBasis.makeBasis(gateRight.fromArray(frame.right), gateUp.fromArray(frame.up), gateBack.fromArray(frame.forward).negate()));
-              mesh.userData.frameItem = item;
+              if (!facing) gateFrames.set(item, facing = new THREE.Quaternion());
+              facing.setFromRotationMatrix(gateBasis.makeBasis(gateRight.fromArray(frame.right), gateUp.fromArray(frame.up), gateBack.fromArray(frame.forward).negate()));
             }
+            mesh.quaternion.copy(facing);
           } else {
-            if (mesh.userData.frameItem) mesh.userData.frameItem = null;
             mesh.rotation.set(0, source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2), 0);
           }
           // Themed hoops swivel ±35° on race time (paused with the race) and never turn edge-on to the driver.
           if (source === 1 && item.spin && !reducedMotion) mesh.rotateY(0.6 * Math.sin(item.spin * race.elapsed + item.spinPhase));
           mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
-          mesh.material = source === 0 ? pickupMaterials[item.tier] : ringMaterials[ringType];
-          if (source === 1) {
-            const beam = beams.children[slot - 1];
-            beam.visible = item.type === 'emp' || (item.type === 'mystery' && !!race.config?.activeItems);
-            if (beam.visible) { beam.position.copy(mesh.position); beam.position.y += 7; }
+          mesh.updateMatrix();
+          pool.add(source === 0 ? item.tier : ringType, mesh.matrix);
+          if (source === 1 && beam < beams.children.length && (item.type === 'emp' || (item.type === 'mystery' && !!race.config?.activeItems))) {
+            const light = beams.children[beam++];
+            light.visible = true; light.position.copy(mesh.position); light.position.y += 7;
           }
         }
-        for (; slot < group.children.length; slot++) {
-          group.children[slot].visible = false;
-          if (source === 1) beams.children[slot].visible = false;
-        }
+        pool.end();
       }
+      for (; beam < beams.children.length; beam++) beams.children[beam].visible = false;
+      // A rival taking an item or firing NITRO nearby: a smaller burst than the player's, in the item's colour (rival-cues.ts throttles it).
+      for (const cue of rivalCues.update(race)) if (active) burst(cue, reducedMotion ? 4 : lowQuality ? 8 : 18,
+        cue.kind === 'nitro' ? gold : pickupColors[cue.item] ?? ringColors[cue.item] ?? gold, car.speed);
       beamMaterial.opacity = reducedMotion ? 0.3 : 0.3 + Math.sin(flowTime * 4) * 0.1;
       previousRace = race;
       if (active && !reducedMotion && car.drift && car.altitude < 0.2) {
@@ -238,7 +241,7 @@ export function createEffects(scene, roadCenter) {
         const active = enabled && (preview || race.phase === 'racing') && (preview ? source < 2 && (!pose || pose.userData.jets.visible) : driver.thrusting) && pose?.visible !== false;
         strengths[source] = THREE.MathUtils.damp(strengths[source], active ? 1 : 0, active ? 12 : 9, dt);
         for (let port = 0; port < LIFT_PORTS.length; port++) {
-          const jet = cores.children[source * 4 + port];
+          const jet = cores.children[source * LIFT_PORTS.length + port];
           jet.visible = enabled && !!pose && strengths[source] >= 0.01 && pose.visible;
           if (!jet.visible) continue;
           const [x, z] = LIFT_PORTS[port];
@@ -351,7 +354,7 @@ export function createEffects(scene, roadCenter) {
       }
     },
     dispose() {
-      gates.removeFromParent(); pickups.removeFromParent(); beams.removeFromParent();
+      gates.removeFromParent(); pickups.removeFromParent(); beams.removeFromParent(); ringPool.dispose(); pickupPool.dispose();
       ringGeometry.dispose(); pickupGeometry.dispose(); beamGeometry.dispose(); beamMaterial.dispose();
       for (const mat of Object.values(ringMaterials)) mat.dispose();
       for (const mat of Object.values(pickupMaterials)) mat.dispose();

@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { dailyChallenge } from '../src/game.js';
+import { recordTrackId } from '../src/record-layout.ts';
 import { selectLocale } from './helpers/locale-browser.js';
 
 const dismissMusicPrompt = async page => {
@@ -72,7 +73,8 @@ test('History shows awarded medals and today’s daily board; the daily run star
 test('a valid saved ghost is offered and its preference persists; a tampered ghost is ignored', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await seed(page, { 'skyline-rush-ghosts': { coast: ghost, neon: { ...ghost, samples: ghost.samples.slice(0, 10) } } });
+  // Coast and Neon ghosts live under their current layout record ids (src/record-layout.ts).
+  await seed(page, { 'skyline-rush-ghosts': { [recordTrackId('coast')]: ghost, [recordTrackId('neon')]: { ...ghost, samples: ghost.samples.slice(0, 10) } } });
   await page.goto('/');
   await dismissMusicPrompt(page);
   await page.locator('#controls-button').click();

@@ -10,10 +10,10 @@ const MAX_LINES = 400;
 const LEGACY_CEILINGS = {
   'src/main.js': 687,
   'src/world.js': 1126,
-  'src/game.js': 631,
+  'src/game.js': 609,
   'src/world-tour-scene.js': 453,
   'src/CollectiblesGuide.vue': 477,
-  'src/locales/ui.ts': 1220, // translation catalog: data, not logic
+  'src/locales/ui.ts': 1145, // ratchet down after extracting tutorial strings; never raise this limit
 };
 const SLACK = 25;
 

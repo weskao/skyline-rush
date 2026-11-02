@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import config from '../vite.config.js';
 
 test('Vite ignores sibling worktrees while keeping this checkout live', () => {
-  const ignored = config.server?.watch?.ignored ?? [];
+  const ignored = config({ command: 'serve', mode: 'development' }).server?.watch?.ignored ?? [];
   for (const [path, excluded] of [
     ['.claude/worktrees/sibling/index.html', true],
     ['.claude/worktrees/sibling/tsconfig.json', true],

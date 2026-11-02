@@ -20,12 +20,13 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(10000) });
     const worst = await page.evaluate(async () => {
       const { skyPosition } = await import('/src/sky-track.ts');
+      const { drawnMarkers } = await import('/src/marker-pool.js');
       const frame = () => new Promise(requestAnimationFrame);
       const race = window.gameplay.race;
       for (let i = 0; i < 10; i++) { Object.assign(race.player, { distance: 1250, x: 0, speed: 0, altitude: 0 }); await frame(); }
       const { scene } = window.gameScene, d = race.player.distance;
       const off = (groupName, items, lift) => {
-        const meshes = scene.getObjectByName(groupName).children.filter(m => m.visible);
+        const meshes = drawnMarkers(scene.getObjectByName(groupName));
         const live = items.filter(item => !(item.taken || item.hit) && item.distance > d && item.distance <= d + 900);
         return { count: Math.min(meshes.length, live.length), max: Math.max(0, ...live.slice(0, meshes.length).map((item, i) => {
           const [x, y, z] = skyPosition(item.distance, item.x, item.altitude + lift, d);

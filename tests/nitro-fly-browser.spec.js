@@ -17,7 +17,8 @@ const chargedStart = async page => {
   expect(patched, 'player init text changed in the bundle; update chargedStart').toBe(true);
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
-  await expect(page.locator('#nitro-status')).toHaveText('NITRO MAX');
+  await expect(page.locator('#nitro-status')).toHaveText('NITRO READY');
+  await expect(page.locator('#nitro-meter')).toHaveAttribute('data-nitro-state', 'ready');
 };
 
 test('desktop: FLY + NITRO shows AIR DASH · NITRO and keeps flying', async ({ page }) => {

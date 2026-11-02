@@ -3,15 +3,16 @@ import { CIRCUIT_ID, circuitDistance } from './circuit-track.ts';
 import { trackOverview, trackPoint } from './track-paths.ts';
 import { SKY_SPIRAL } from './sky-track.ts';
 import { t, trackName, getLocale } from './i18n.ts';
+import { RACE_DRIVER_IDS } from './race-grid.ts';
 
 const NS = 'http://www.w3.org/2000/svg';
 interface RoutePoint { x: number; y: number }
 interface RouteSample extends RoutePoint { distance: number }
-interface RouteDriver { id: string; distance: number }
+interface RouteDriver { id: string; distance: number; x?: number }
 const cache = new Map<string, RouteSample[]>();
 const lineCache = new Map<string, string>();
 const overpassCache = new Map<string, string>();
-const racers = ['YOU', 'NOVA', 'ORBIT', 'APEX'];
+const racers = RACE_DRIVER_IDS;
 interface GradeCue extends RoutePoint { distance: number; direction: 'up' | 'down' }
 const gradeCache = new Map<string, GradeCue[]>();
 const clamp = (x: number): number => Math.max(0, Math.min(1, Number.isFinite(x) ? x : 0));
@@ -127,11 +128,20 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
     markers.set(id, marker);
   }
   const updateDrivers = (drivers: readonly RouteDriver[]): void => {
+    const active = new Set(drivers.map(driver => driver.id));
+    for (const [id, marker] of markers) {
+      const visible = active.has(id);
+      if (marker.getAttribute('visibility') !== (visible ? 'visible' : 'hidden')) marker.setAttribute('visibility', visible ? 'visible' : 'hidden');
+    }
     for (const driver of drivers) {
       const marker = markers.get(driver.id);
       if (!marker) continue;
       const point = routeMarker(trackId, driver.distance);
-      const x = point.x.toFixed(2), y = point.y.toFixed(2);
+      const ahead = routeMarker(trackId, driver.distance + 10);
+      const dx = ahead.x - point.x, dy = ahead.y - point.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const side = (driver.x ?? 0) * 0.6;
+      const x = (point.x - dy / length * side).toFixed(2), y = (point.y + dx / length * side).toFixed(2);
       // Avoid forcing SVG layout/style work on frames whose tiny marker
       // movement is still subpixel at the current map size.
       if (marker.getAttribute('cx') !== x) marker.setAttribute('cx', x);

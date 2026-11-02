@@ -12,10 +12,10 @@ import App from './App.vue';
 import { icon } from './icons.ts';
 import { createRace as createBareRace, startRace, stepRace, dailyChallenge, RACE_TRACKS } from './game.js';
 import { createControls } from './input.ts';
-import { createSprintSeries } from './sprint-series.ts';
+import { createSprintSeries, nextSprintGrid } from './sprint-series.ts';
 import { createCheckpointRush } from './checkpoint-rush.ts';
 import { saveRecentCustom } from './recent-custom.ts';
-import { cupComplete } from './championship-cup.ts';
+import { nextCupGrid, cupComplete } from './championship-cup.ts';
 import { createWorld } from './world.js';
 import { roadObstacles, endlessRoadObstacles } from './world-tour-scene.js';
 import { createSound } from './audio.js';
@@ -148,14 +148,13 @@ const hud = createRaceHud({
   getControlPrefs: () => touchUI.prefs(),
   flyKeyLabel: () => keyLabel(keymap.getKeyMap().fly[0]),
   getVisual: () => vfx.settings(),
+  onNitroReady: () => sound.cue('item-ready'),
   timeTrialGhost: race => ghosts.mode(race),
   isAutoThrottle: () => autoThrottle,
   getGoUntil: () => goUntil,
   setFly: on => controls.setFly(on),
   updatePadHint: (phase, elapsed) => touchUI.updatePadHint(phase, elapsed),
-  motionOptions,
-  touchPreference,
-  reducedMotion,
+  motionOptions, touchPreference, reducedMotion,
 });
 function leaveIntro() {
   if (calmMotion()) return;
@@ -266,13 +265,13 @@ const historyDialog = setupHistoryDialog({
   calm: calmMotion,
   motionOptions,
 });
-const { showGarage } = setupGarageUI({
+const { showGarage, syncSkins } = setupGarageUI({
   getWorld: () => world,
   canOpen: () => race.phase === 'ready',
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
   setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
-  getStars: () => starTotal(progress.stars),
+  getStars: () => starTotal(progress.stars), subscribeAccount: cloud.subscribeAccount,
 });
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
@@ -325,6 +324,7 @@ function restart(trackId = race.trackId) {
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   const wipe = $('#race-wipe');
+  const nextGrid = cup && cup.results.length && cup.tracks[cup.results.length] === trackId ? nextCupGrid(cup) : sprintSeries?.results.length ? nextSprintGrid(sprintSeries) : null;
   if (cup) cup = cupRecovery.retry(cup, trackId);
   wipe.getAnimations().forEach(animation => animation.cancel());
   wipe.hidden = calmMotion();
@@ -332,7 +332,7 @@ function restart(trackId = race.trackId) {
     const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
-  race = race.eventCourse ? raceSelect.recreate(race, trackId) : createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config), race.session.presentation);
+  race = race.eventCourse ? raceSelect.recreate(race, trackId) : createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config), race.session.presentation, nextGrid ?? undefined);
   if (stunt && race.mode === 'stunt') race.stuntLimit = stuntHeatLimit(stunt);
   hud.resetMemory();
   goUntil = 0;
@@ -524,7 +524,7 @@ function phaseText() {
 }
 
 function updateUI(now, input) {
-  raceSelect.raceRouteMap().updateDrivers([{ id: 'YOU', distance: race.player.distance, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance }))]);
+  raceSelect.raceRouteMap().updateDrivers([{ id: 'YOU', distance: race.player.distance, x: race.player.x, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance, x: r.x }))]);
   if (previousPhase !== race.phase) {
     if (previousPhase === 'countdown' && race.phase === 'racing') goUntil = now + 0.8;
     phaseUI();
@@ -547,7 +547,7 @@ function updateUI(now, input) {
 }
 
 try {
-  world = createWorld($('#world'));
+  world = createWorld($('#world')); syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(vfx.settings());

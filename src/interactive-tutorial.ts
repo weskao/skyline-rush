@@ -1,6 +1,7 @@
 import { createRace, startRace } from './game.js';
+import { createTutorialManeuverState, type ManeuverSnapshot } from './tutorial-maneuver-state.ts';
 
-export const TUTORIAL_STEPS = Object.freeze(['throttle', 'left', 'right', 'brake', 'fly', 'land', 'boost', 'nitro'] as const);
+export const TUTORIAL_STEPS = Object.freeze(['throttle', 'left', 'right', 'brake', 'drift', 'fly', 'land', 'boost', 'airChain', 'barrelRoll', 'nitro'] as const);
 export type TutorialStep = typeof TUTORIAL_STEPS[number];
 export interface TutorialInput {
   throttle?: boolean; brake?: boolean; laneAssist?: boolean; steer?: number;
@@ -27,23 +28,42 @@ export function createInteractiveTutorial() {
   race.traffic = [];
   startRace(race);
   const car = race.player;
-  let index = 0, held = 0, previousSpeed = 0, previousElapsed = race.elapsed, nitroUses = 0;
+  let index = 0, held = 0, previousSpeed = 0, previousElapsed = race.elapsed;
+  let maneuver: ReturnType<typeof createTutorialManeuverState> | null = null;
+  const snapshot = (): ManeuverSnapshot => ({
+    altitude: car.altitude, thrusting: car.thrusting, flightBoosted: car.flightBoosted,
+    poweredFlightTime: car.poweredFlightTime, flick: car.flick,
+    landing: car.landing, trick: car.trick, trickPayout: car.trickPayout,
+    nitroUses: car.nitroUses, nitroTime: car.nitroTime, speed: car.speed,
+  });
 
   function prepare() {
     const step = TUTORIAL_STEPS[index];
     if (index === 0) car.x = car.steering = 0;
-    car.speed = step === 'throttle' ? 0 : 45;
+    car.speed = step === 'throttle' ? 0 : step === 'drift' ? 65 : 45;
     car.fuel = 100;
     car.exhausted = false;
     car.flyBuffer = 0;
-    car.nitro = step === 'nitro' ? 1 : 0;
+    if (TUTORIAL_STEPS[index - 1] !== 'drift') car.nitro = step === 'nitro' ? 1 : 0;
     car.nitroTime = 0;
     car.nitroHeld = false;
-    car.miniBoost = 0;
+    if (TUTORIAL_STEPS[index - 1] !== 'drift') car.miniBoost = 0;
     car.drift = car.trick = null;
-    if (step !== 'land') car.altitude = car.verticalSpeed = 0;
+    if (step === 'drift') { car.driftPayout = null; car.x = 0; }
+    if (step !== 'land') {
+      car.altitude = car.verticalSpeed = 0;
+      // A fresh exercise must never inherit an earlier flight's chain credit.
+      car.poweredFlightTime = 0;
+      car.flightBoosted = false;
+    }
+    if (step === 'barrelRoll') {
+      // Clear old flick history, but preserve the held steering sign: clearing
+      // it fabricates a new input edge when the key remains pressed.
+      car.flick = null;
+    }
     previousSpeed = car.speed;
-    nitroUses = car.nitroUses;
+    maneuver = step === 'airChain' || step === 'barrelRoll' || step === 'nitro'
+      ? createTutorialManeuverState(step, snapshot()) : null;
     held = 0;
   }
   prepare();
@@ -52,7 +72,8 @@ export function createInteractiveTutorial() {
     race,
     get index() { return index; },
     get step() { return TUTORIAL_STEPS[index] ?? null; },
-    get progress() { return index === TUTORIAL_STEPS.length ? 1 : Math.min(1, held / .4); },
+    get progress() { return index === TUTORIAL_STEPS.length ? 1 : TUTORIAL_STEPS[index] === 'drift' ? Math.min(1, ((car as unknown as { drift: { time: number } | null }).drift?.time ?? 0) / 1) : maneuver?.progress ?? Math.min(1, held / .4); },
+    get coachPhase() { return maneuver?.phase ?? 'ready'; },
     get complete() { return index === TUTORIAL_STEPS.length; },
     update(input: unknown, dt: number): void {
       if (index === TUTORIAL_STEPS.length || race.phase !== 'racing' || !Number.isFinite(dt) || dt <= 0 || race.elapsed <= previousElapsed) return;
@@ -73,13 +94,22 @@ export function createInteractiveTutorial() {
       else if (step === 'left') valid = typeof controls.steer === 'number' && Number.isFinite(controls.steer) && controls.steer < 0 && car.steering < 0;
       else if (step === 'right') valid = typeof controls.steer === 'number' && Number.isFinite(controls.steer) && controls.steer > 0 && car.steering > 0;
       else if (step === 'brake') valid = controls.brake === true && car.braking && car.speed < previousSpeed;
+      else if (step === 'drift') valid = ((car as unknown as { driftPayout: { nitro: number } | null }).driftPayout?.nitro ?? 0) >= 0.15 && car.miniBoost > 0;
       else if (step === 'fly') valid = controls.fly === true && car.altitude > 1;
       else if (step === 'land') valid = !controls.fly && car.altitude < .15;
       else if (step === 'boost') valid = controls.boost === true && car.boosting;
-      else if (step === 'nitro') valid = controls.nitro === true && car.nitroUses > nitroUses;
+      else if (step === 'airChain' || step === 'barrelRoll' || step === 'nitro') {
+        valid = maneuver!.update(snapshot(), dt);
+        if (step === 'nitro' && maneuver!.phase === 'retry' && !controls.nitro && car.nitroTime <= 0) {
+          // Practice-only retry after a spent, incomplete sprint: never mint
+          // a charge in normal races or while the NITRO key is still held.
+          car.nitro = 1;
+          maneuver = createTutorialManeuverState('nitro', snapshot());
+        }
+      }
       previousSpeed = car.speed;
       held = valid ? held + Math.min(dt, .05) : 0;
-      if (valid && (held >= .4 || step === 'land' || step === 'nitro')) {
+      if (valid && (held >= .4 || step === 'drift' || step === 'land' || step === 'airChain' || step === 'barrelRoll' || step === 'nitro')) {
         index++;
         if (index < TUTORIAL_STEPS.length) prepare();
       }

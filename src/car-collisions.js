@@ -59,7 +59,7 @@ export function avoidObstacles(race, other, pace, dt) {
     const reach = hazardReach(h); // covers a moving hazard's whole sweep; 0 = a trigger, never steered around
     if (reach) blockers.push(h.x - reach, h.x + reach);
   }
-  let target = other.homeX ?? other.x;
+  let target = other.seekX ?? other.homeX ?? other.x; // seekX: a Hard rival's item lane (rival-items.ts), only while free
   if (!laneFree(target)) {
     target = other.x; // nowhere free: hold the line rather than swerve into something else
     let best = Infinity;
