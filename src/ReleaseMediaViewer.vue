@@ -13,7 +13,6 @@ const still = ref(false);
 // The media stays transparent until it can draw itself, then fades in: no blank box, no mid-clip poster flash.
 const ready = ref(false);
 let opener: HTMLElement | null = null;
-let heldClip: HTMLVideoElement | null = null;
 let closing = false;
 
 // The view and its backdrop fade together; reduced motion skips it.
@@ -29,10 +28,6 @@ function open(next: ZoomedMedia, from: HTMLElement): void {
   still.value = reducedMotion.matches;
   ready.value = false;
   media.value = next;
-  // One clip plays at a time: the notes' own clip waits behind and resumes on close.
-  const hero = document.querySelector<HTMLVideoElement>('#release-video');
-  heldClip = next.kind === 'video' && hero && !hero.paused ? hero : null;
-  heldClip?.pause();
   const view = dialog.value;
   if (!view) return;
   view.showModal();
@@ -60,8 +55,6 @@ function cancel(event: Event): void {
 function restore(): void {
   closing = false;
   media.value = null;
-  heldClip?.play().catch(() => { /* autoplay refused: the poster stays */ });
-  heldClip = null;
   opener?.focus({ preventScroll: true });
 }
 defineExpose({ open });
@@ -72,7 +65,7 @@ defineExpose({ open });
     <img v-if="media?.kind === 'image'" :src="media.src" :alt="media.label" :class="{ ready }" @load="ready = true" @error="ready = true">
     <!-- The poster is a still from mid-clip, so a playing clip goes without it and shows from its own first frame. -->
     <video v-else-if="media" ref="clip" :src="media.src" :poster="still ? media.poster : undefined" :data-source="media.source" muted loop playsinline disablepictureinpicture
-      :autoplay="!still" :controls="still" :class="{ ready: ready || still }" @loadeddata="ready = true"></video>
+      :autoplay="!still" :controls="still" :class="{ ready: ready || still }" @loadeddata="ready = true" @error="close"></video>
   </dialog>
 </template>
 <style scoped>

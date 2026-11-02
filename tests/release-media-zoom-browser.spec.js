@@ -120,24 +120,24 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     expect(await ring(), 'the keyboard brings the ring back').not.toBe('none');
   });
 
-  test('the release clip opens whole and playing, and the clip behind waits until it closes', async ({ page, gameplayURL }) => {
+  test('the release poster shows a play button, and its clip opens whole and playing on a click', async ({ page, gameplayURL }) => {
     const errors = await openNotes(page, gameplayURL);
     const hero = page.locator('#release-video'), zoom = page.locator('#release-video-zoom');
     if (height <= 420) {
-      // Short landscape screens leave the clip out to fit the notes; no enlarge button is left behind.
+      // Short landscape screens leave the poster out to fit the notes; no play button is left behind.
       await expect(hero).toBeHidden();
       await expect(zoom).toBeHidden();
       return;
     }
-    await expect.poll(() => playing(hero)).toBe(true);
+    await expect(page.locator('#release-panel video'), 'nothing plays inline').toHaveCount(0);
     // Measure together: the notes entrance animation can move between browser round trips.
-    const [zoomBox, heroBox, iconBox] = await zoom.evaluate(el =>
-      [el, document.getElementById('release-video'), el.querySelector('svg')].map(node => node.getBoundingClientRect().toJSON()));
-    expect(zoomBox.width >= TOUCH && zoomBox.height >= TOUCH, `enlarge is a full touch target: ${JSON.stringify(zoomBox)}`).toBe(true);
-    expect(zoomBox.x >= heroBox.x && zoomBox.y >= heroBox.y && zoomBox.x + zoomBox.width <= heroBox.x + heroBox.width && zoomBox.y + zoomBox.height <= heroBox.y + heroBox.height, 'enlarge sits on the clip').toBe(true);
-    // A drawn icon, not a font glyph: Android's fallback font pushed "⤢" toward the lower left of its circle.
-    expect(Math.abs(iconBox.x + iconBox.width / 2 - (zoomBox.x + zoomBox.width / 2)) <= 0.5
-      && Math.abs(iconBox.y + iconBox.height / 2 - (zoomBox.y + zoomBox.height / 2)) <= 0.5, `enlarge icon centred: ${JSON.stringify({ iconBox, zoomBox })}`).toBe(true);
+    const [zoomBox, heroBox, iconBox, badgeBox] = await zoom.evaluate(el =>
+      [el, document.getElementById('release-video'), el.querySelector('svg'), el.querySelector('.release-play-badge')].map(node => node.getBoundingClientRect().toJSON()));
+    expect(zoomBox.width >= TOUCH && zoomBox.height >= TOUCH, `play is a full touch target: ${JSON.stringify(zoomBox)}`).toBe(true);
+    expect(zoomBox.x <= heroBox.x + 0.5 && zoomBox.y <= heroBox.y + 0.5 && zoomBox.x + zoomBox.width >= heroBox.x + heroBox.width - 0.5 && zoomBox.y + zoomBox.height >= heroBox.y + heroBox.height - 0.5, 'play covers the poster').toBe(true);
+    // A drawn icon, not a font glyph: Android's fallback font pushed "▶" off the centre of its circle.
+    const centred = (inner, outer) => Math.abs(inner.x + inner.width / 2 - (outer.x + outer.width / 2)) <= 0.5 && Math.abs(inner.y + inner.height / 2 - (outer.y + outer.height / 2)) <= 0.5;
+    expect(centred(iconBox, badgeBox) && centred(badgeBox, heroBox), `play badge centred on the poster: ${JSON.stringify({ iconBox, badgeBox, heroBox })}`).toBe(true);
     await watchFades(page);
     await press(zoom, touch);
     const viewer = page.locator('#release-media-viewer'), clip = viewer.locator('video');
@@ -149,7 +149,6 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     await expect.poll(() => clip.evaluate(el => el.readyState >= 2 && getComputedStyle(el).opacity === '1')).toBe(true);
     expect(await clip.evaluate(el => el.muted && el.loop && el.playsInline)).toBe(true);
     await expect.poll(() => playing(clip)).toBe(true);
-    await expect.poll(() => hero.evaluate(el => el.paused), 'only one clip plays').toBe(true);
     const box = await clip.boundingBox();
     expect(onScreen(box, width, height), `the whole clip is on screen: ${JSON.stringify(box)}`).toBe(true);
     expect(uncropped(box, await naturalSize(clip)), 'shown uncropped').toBe(true);
@@ -159,7 +158,7 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     expect(await fades(page), 'and fade out before closing').toEqual(['view', '::backdrop']);
     await expect(page.locator('#whats-new-screen')).toBeVisible();
     await expect(zoom).toBeFocused();
-    await expect.poll(() => playing(hero), 'the clip behind plays again').toBe(true);
+    await expect(page.locator('#release-panel video'), 'still nothing inline').toHaveCount(0);
     expect(errors).toEqual([]);
   });
 });
@@ -208,17 +207,17 @@ test.describe('reduced motion and languages', () => {
     expect(errors).toEqual([]);
   });
 
-  test('enlarge and close are named in the reader\'s language', async ({ page, gameplayURL }) => {
+  test('enlarge, play and close are named in the reader\'s language', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);
     const thumb = page.locator('#release-items .release-zoom').first();
     const card = page.locator('#release-items .release-entry').filter({ has: page.locator('.release-zoom') }).first();
     const title = await card.locator('strong').textContent();
     await expect(thumb).toHaveAccessibleName(`Enlarge image: ${title}`);
-    await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('Enlarge video');
+    await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('Play video');
     await page.locator('#locale-select').selectOption('zh-TW', { force: true });
     const zhTitle = await card.locator('strong').textContent();
     await expect(thumb).toHaveAccessibleName(`放大圖片：${zhTitle}`);
-    await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('放大影片');
+    await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('播放影片');
     await thumb.click();
     await expect(page.locator('#release-media-viewer .release-viewer-close')).toHaveAccessibleName('關閉放大檢視');
   });
