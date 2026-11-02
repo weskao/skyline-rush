@@ -4,13 +4,13 @@ import { ciTimeout } from './helpers/ci.js';
 
 // User, 2026-11-02: ring trains and a few full-width rows. In the real WebGL race every ring ahead is drawn where it
 // scores (the pool is not exhausted), a car crossing a row anywhere on the road takes exactly one ring, and driving
-// down a train takes all five and a PERFECT LINE.
+// down a train takes all of it and a PERFECT LINE. User, 2026-11-03: trains are six rings down a middle lane (x ±2.5).
 for (const [name, viewport, hasTouch] of [
   ['desktop', { width: 1440, height: 900 }, false],
   ['phone', { width: 390, height: 844 }, true],
 ]) test.describe(`Ring trains and rows ${name}`, () => {
   test.use({ viewport, hasTouch });
-  test('a full-width row pays one ring and a train pays all five', async ({ gameplayPage: page }, info) => {
+  test('a full-width row pays one ring and a middle-lane train pays all six', async ({ gameplayPage: page }, info) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
@@ -47,13 +47,14 @@ for (const [name, viewport, hasTouch] of [
     expect((await drive(-1, 0, (await page.evaluate(() => window.ringRowAt)) + 5)).rings, 'one ring per row').toBe(1);
     const train = await page.evaluate(() => {
       const race = window.gameplay.race, first = race.rings.find(r => r.train === 0 && r.distance > 200); // layouts re-roll every race
-      for (const r of race.rings) if (r.distance < first.distance + 110 && r !== first && !(r.train !== undefined && r.group === first.group)) r.hit = true;
+      for (const r of race.rings) if (r.distance < first.distance + 135 && r !== first && !(r.train !== undefined && r.group === first.group)) r.hit = true;
       Object.assign(race.player, { distance: first.distance - 40, x: first.x, altitude: first.altitude, verticalSpeed: 0, speed: 0 }); // parked for the screenshot
-      return { x: first.x, altitude: first.altitude, end: first.distance + 105 };
+      return { x: first.x, altitude: first.altitude, end: first.distance + 130 };
     });
     for (let i = 0; i < 20; i++) await page.evaluate(() => new Promise(requestAnimationFrame));
     await page.screenshot({ path: info.outputPath(`ring-train-${name}.png`) });
-    expect(await drive(train.x, train.altitude, train.end)).toEqual({ rings: 5, perfect: 1 });
+    expect([-2.5, 2.5], 'a train runs down a middle lane').toContain(train.x);
+    expect(await drive(train.x, train.altitude, train.end)).toEqual({ rings: 6, perfect: 1 });
     expect(errors).toEqual([]);
   });
 });
