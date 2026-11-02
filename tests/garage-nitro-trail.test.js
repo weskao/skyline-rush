@@ -82,3 +82,21 @@ test('trail colours read as their names: gold is gold, crimson is red, not lime 
   assert.ok(gold >= 32 && gold <= 50, `gold hue ${gold}`);
   assert.ok(red >= 350 || red <= 8, `crimson hue ${red}`);
 });
+
+test('each trail leaves its round exhaust nozzle as a round plume of the nozzle size, not a square sheet', () => {
+  const { streaks } = rig('nitro-trail-gold');
+  const position = streaks.geometry.attributes.position, mouth = new Set();
+  for (let i = 0; i < position.count; i++) {
+    if (Math.abs(position.getZ(i)) > 1e-6) continue;
+    assert.ok(Math.abs(Math.hypot(position.getX(i), position.getY(i)) - 1) < 1e-4, 'the mouth is a unit circle');
+    mouth.add(Math.atan2(position.getY(i), position.getX(i)).toFixed(3));
+  }
+  assert.ok(mouth.size >= 12, `round mouth, ${mouth.size} sides`);
+  assert.equal(streaks.material.uniforms.nozzleRadius.value, REAR_PORTS[0].size, 'mouth scaled to the nozzle disc');
+  assert.match(streaks.material.vertexShader, /nozzleRadius\*\(1\.\+/, 'the plume grows from the nozzle radius');
+  const at = new Vector3(), m = new (streaks.matrixWorld.constructor)();
+  REAR_PORTS.forEach((port, i) => {
+    streaks.getMatrixAt(i, m); at.setFromMatrixPosition(m);
+    assert.ok(at.distanceTo(new Vector3(...port.position)) < 1e-6, `plume ${i} starts in its nozzle`);
+  });
+});
