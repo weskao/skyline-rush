@@ -63,6 +63,17 @@ test('waterfall and particle animation is deterministic, frozen for reduced moti
   const falling = named(group, 'Skyfall waterfall droplets');
   const positions = falling.geometry.getAttribute('position');
   update(2, 'high', false);
+  const xyz = positions.array;
+  for (const [x, top, bottom] of [[31, -2, -44], [-33, -2, -46], [-101, 19, -29]]) {
+    let nearby = false;
+    for (let i = 0; i < xyz.length; i += 3) {
+      if (Math.abs(xyz[i] - x) < 5 && xyz[i + 1] <= top && xyz[i + 1] >= bottom) {
+        nearby = true;
+        break;
+      }
+    }
+    assert.ok(nearby, 'waterfall droplets must fall beneath the actual island at X=' + x);
+  }
   const a = Array.from(positions.array);
   update(14, 'high', false);
   const b = Array.from(positions.array);
