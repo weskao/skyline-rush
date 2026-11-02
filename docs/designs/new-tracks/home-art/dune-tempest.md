@@ -51,7 +51,7 @@
 - **Ground:** a real indexed triangle-strip sandy road (14 m nominal width) plus 20 m sand shoulder; a 56×56 sampled 3D canyon/dune height field with an unbroken road-clearance trough, no canyon cut directly beneath the ground road, eroded highlands, deep ravine and color strata; two distinct hairpin approach/return curves and sculpted outer-corner stone markers.
 - **Three main reference anchors:** the towering segmented-color *monumental stone ring* at `(42, 27, -109)`, *distant stone ring* at `(6, 19, -222)`, and *ancient cliff ruins* around `(103, 20, -183)`; additional escarpments, stone piers and sunset sphere provide spatial silhouettes.
 - **Ground/aerial split:** an actual rising sand/stone takeoff ribbon west of the canyon, a separate raised canyon-crossing flight corridor reaching approximately 23 m above the lower road, and a 15 m wide descending landing ribbon near `(8, 0, -161)`, with a toroidal landmark beacon. This is visual route geometry only; GPS/race checkpoint logic deliberately absent.
-- **Weather & light:** sunset-facing directional and hemispheric lights, peach sky, depth fog, four subtle dust wisps and a deterministic 160-point windblown sand field. Dust density is kept away from the central driving line; no fullscreen storm image or texture plane is used.
+- **Weather & light:** sunset-facing directional and hemispheric lights, peach sky, slowly varying depth fog and golden-hour directional light, four subtle dust wisps and a deterministic 160-point windblown sand field. Dust density is kept away from the central driving line; no fullscreen storm image or texture plane is used.
 - **Quality / access:** particle draw count capped at Low 28 / Medium 86 / High 160; Low hides translucent dust ribbons; Reduced Motion freezes particle positions and hides the moving ribbons. No per-frame mesh rebuilding, dynamic light allocation, new canvas, shaders or network downloads.
 - **Lifecycle:** all geometries and materials owned by the module are disposed once and the module restores the original scene fog when it still owns the active fog.
 
@@ -66,7 +66,7 @@
 
 ### Verification and handoff
 
-- Tests authored for real mesh/landmark presence, road extremes and car anchor, separate raised and landing geometry, deterministic high/low/reduced animation, single-dispose resources and scene fog restoration.
+- Tests authored for real mesh/landmark presence, road extremes and car anchor, separate raised and landing geometry, deterministic high/low/reduced animation, bounded haze and sunlight changes, single-dispose resources and scene fog restoration.
 - **Pending:** confirmed local RED→GREEN test output, `npm test`, TypeScript typecheck, production build, browser/mobile screenshots, two time-separated live WebGL captures, asset/draw-call benchmark and exact-HEAD GitHub Actions quality-gate. Do not mark these PASS merely from code or a queued CI job.
 - The owning integration chat must import this module into its existing shared renderer and provide shared car/hover/jet/rival/camera, visually validate against both references, and keep the future track unplayable.
 - Existing optional `public/track-teasers/dune-tempest.jpg` is not supplied or substituted: the new 3D environment does not depend on it. Historical image-generation limitation above still applies to the separate thumbnail task.
