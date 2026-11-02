@@ -11,8 +11,8 @@ const src = (name: string): string =>
 
 <template>
   <details id="hud-3x-source-gallery" class="hud-art-preview">
-    <summary>UI 3× Artwork / 操作圖示素材</summary>
-    <p>Source preview only · 素材展示不改變既有 HUD 配置或按鈕功能。</p>
+    <summary data-i18n="hudArt.title">UI 3× artwork</summary>
+    <p data-i18n="hudArt.note">Source preview only · it does not change the HUD layout or any button.</p>
     <div class="hud-art-grid">
       <GarageArtworkTile v-for="name in names" :key="name" :id="name"
         :label="name.replaceAll('-', ' ')" :src="src(name)"
