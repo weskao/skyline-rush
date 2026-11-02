@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="216" height="216" viewBox="0 0 216 216">
+<defs><linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#74f5dd"/><stop offset="0.52" stop-color="#d1fff5"/><stop offset="1" stop-color="#188fbb"/></linearGradient><linearGradient id="metal" x1="0" y1="0" x2="0.85" y2="1"><stop stop-color="#1c3554"/><stop offset=".6" stop-color="#0a1835"/><stop offset="1" stop-color="#09142d"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#188fbb" stop-opacity=".92"/><stop offset=".65" stop-color="#74f5dd" stop-opacity=".38"/><stop offset="1" stop-color="#188fbb" stop-opacity=".88"/></linearGradient></defs>
+<g stroke-linejoin="round" stroke-linecap="round">
+<rect x="41" y="49" width="111" height="102" rx="11" transform="rotate(-13 96 100)" fill="url(#metal)" stroke="#237ca4" stroke-width="5"/>
+<rect x="58" y="59" width="112" height="104" rx="11" transform="rotate(7 114 111)" fill="url(#metal)" stroke="url(#edge)" stroke-width="5"/>
+<rect x="70" y="65" width="104" height="102" rx="12" fill="url(#metal)" stroke="url(#edge)" stroke-width="6"/>
+<path d="M89 86h66M89 147h66" stroke="#7cffe9" stroke-width="4" opacity=".55"/>
+<path d="m122 96 8 16 18 3-13 12 3 18-16-8-16 8 3-18-13-12 18-3Z" fill="url(#glass)" stroke="#c9fff1" stroke-width="3"/>
+<circle cx="86" cy="75" r="4" fill="#e5fffb"/>
+</g></svg>

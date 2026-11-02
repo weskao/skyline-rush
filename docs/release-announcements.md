@@ -90,7 +90,7 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
   `public/whats-new/<theme-slug>/`. Landscape screens get `desktop`, portrait ones `mobile`. It loops
   inline only while the notes are open and pauses on close. Under reduced motion it shows the
   poster with controls instead of autoplaying. A clip that fails to load falls back to the hero
-  image or the text. Record the real game (no mockups), keep each clip ≈ 6 s and under 1 MB. When
+  image or the text. Record the real game (no mockups), keep each clip ≈ 6–10 s at balanced quality (`-crf 20`, ~1–3 MB). When
   you record a phone viewport with Playwright, crop the video: it pads a small viewport with grey
   rather than scaling it. The release check refuses a clip or poster that is not bundled, and
   editing the video voids the review.
@@ -137,7 +137,7 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
    `video` / `image` out until the release, and adding media then is reviewed with the copy.
    - A moment in a race: `node scripts/record-whats-new-clip.mjs <theme-slug> --track <id> --from <s>
      --seconds <s>` records it from the real game at 960×600 and 390×844 in en and zh-TW, with
-     posters, under 1 MB each. Find the window first (log `race.elapsed` and the state you want to
+     posters, balanced quality (`-crf 20`, ≤ 4 MB each). Find the window first (log `race.elapsed` and the state you want to
      show) and keep collisions or banners that are not the point out of it. Attach it as the entry's
      `video`.
    - A screen or a still moment: a real screenshot (`.webp`) as the highlight's `image`, localized
