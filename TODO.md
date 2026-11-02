@@ -1,3 +1,31 @@
+## Proposed Epic — Multi-route Long-form World Expansion (2026-11-02) [PLANNING ONLY]
+
+**Branch:** `feature/epic-multiroute-longform-tracks-planning` (created from `develop` SHA `12264f74f0f6452347d0183937391da620d10343`; DO NOT merge or release yet).
+**Spec:** [2026-11-02-multiroute-longform-world-expansion-design.md](docs/superpowers/specs/2026-11-02-multiroute-longform-world-expansion-design.md)
+**Execution plan:** [2026-11-02-multiroute-longform-world-expansion.md](docs/superpowers/plans/2026-11-02-multiroute-longform-world-expansion.md).
+**Scope:** future implementation only. Current ten sprint tracks and Harbor Circuit unaffected. All estimates unverified.
+
+### Shared systems
+- [ ] M1 typed CourseGraph: real hairpins, U-turns, separate ground/air branch edges and convergent joins; arc-length route frames, route-aware AI, progress, finish, minimap, checkpoints, ghost/save versions.
+- [ ] M2 natural open terrain and opt-in no-clamp driving/flying, safe recovery and honest collision/landing surfaces; old `ROAD_LIMIT` tracks remain unchanged; anti-finish-skip checks.
+- [ ] M3 Dune Tempest playable 13.5 km vertical slice: open dunes, switchbacks, sandstorm and sky shortcut.
+- [ ] M4 zone-based seeded sandstorm/rain/ash/snow weather, wet/dry surface variants and event particles; Low/Medium/High, Reduced Motion and performance gates.
+- [ ] M5 remaining P1: Monsoon Ruins and Skyfall Archipelago.
+- [ ] M6 P2: Volcanic Crown, Stormline Megacity and Glacier Serpentine.
+- [ ] M7 median 3–5 min per new course with real timed-play samples, 8-car AI, both route choices, mobile/foldable UI, localization, saves, CI and manual visual QA.
+
+### Six proposed maps (no maps implemented)
+- [ ] **P1 Dune Tempest / 沙暴裂谷:** 13.5 km, target 3:20–4:40, dune/wadi/hairpins, ground vs jump over canyon, gust and sand particles.
+- [ ] **P1 Monsoon Ruins / 雨林失落神殿:** 12.5 km, target 3:10–4:40, wet jungle mud trails and river/temple hairpin, waterfall sky bridge, tropical thunderstorm.
+- [ ] **P1 Skyfall Archipelago / 浮空群島:** 16 km, target 3:50–5:00, floating island loops, ground bridge vs flight chain, cloud shear and waterfall particles.
+- [ ] **P2 Volcanic Crown / 熔火天脊:** 15 km, target 3:40–5:00, volcano caldera switchbacks, basalt offroad path vs ash-glide shortcut, embers/heat haze.
+- [ ] **P2 Stormline Megacity / 霓虹暴雨都市:** 14 km, target 3:20–4:40, multi-level interchanges, flooded street vs elevated flight viaduct, rain and wet neon reflections.
+- [ ] **P2 Glacier Serpentine / 冰封千迴山:** 13 km, target 3:20–4:50, snow mountain hairpins, ice-shelf open terrain vs cave aerial traversal, whiteout/aurora.
+
+**Exit criteria:** no mandatory-roadline visuals on natural surfaces; controlled off-road and side flight; ≥3 legal route choices and ≥2 major hairpins/map; no invisible walls or route-skip exploitation; source artwork 3× for generated in-game rasters; deterministic TDD, `make verify`, real WebGL screenshots and exact-HEAD full CI **all still pending**. User-approved implementation + merger is separate.
+
+---
+
 ## AIRFLOW off hides sprint streamlines (2026-11-02)
 
 **Branch:** `fix/airflow-off-hides-sprint-flow` from `develop` `5cc12113`. **Report:** with AIRFLOW (V) off, BOOST/NITRO still revealed the full streamline showcase and underbody pressure plane (`src/aero-vfx.js` `show` OR-ed in `sprintPower`), so the V toggle looked broken while sprinting.
