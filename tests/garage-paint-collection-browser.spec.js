@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { mkdir } from 'node:fs/promises';
 
 for (const quality of ['low', 'medium', 'high']) {
   test(`Garage paint collection has large true-color car previews at ${quality}`, async ({ page }) => {
@@ -23,7 +24,10 @@ for (const quality of ['low', 'medium', 'high']) {
     await page.locator('[data-paint="obsidian"]').click();
     await expect(page.locator('#garage-equip')).toBeDisabled();
     await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('aria-pressed', 'true');
-    await test.info().attach(`garage-paints-${quality}-390x844.png`, {body: await page.locator('#garage-screen').screenshot(), contentType: 'image/png'});
+    // The existing foldable screenshot upload step preserves real responsive browser evidence.
+    await mkdir('test-results/garage', { recursive: true });
+    const shot = await page.locator('#garage-screen').screenshot({ path: `test-results/garage/foldable-garage-paints-${quality}.png` });
+    await test.info().attach(`garage-paints-${quality}-390x844.png`, {body: shot, contentType: 'image/png'});
   });
 }
 
