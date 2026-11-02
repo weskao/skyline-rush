@@ -33,6 +33,23 @@ test('Garage promotion remains distinct but stops animating with reduced motion 
   await expect(garage.locator('.garage-new-tag')).toHaveCSS('animation-name', 'none');
 });
 
+// The NEW-tagged Garage pushed Practice onto a second desktop row and the 900px intro scrolled by 59px.
+for (const system of ['en-US', 'zh-TW']) for (const width of [1280, 1440]) {
+  test.describe(`promoted Garage fits ${system} ${width}x900`, () => {
+    test.use({ locale: system, viewport: { width, height: 900 } });
+    test('a one-line tagline pays for the Practice row, so the intro does not scroll', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const title = await page.locator('#intro-title').boundingBox();
+      const lineHeight = await page.locator('#intro-title').evaluate(el => parseFloat(getComputedStyle(el).lineHeight));
+      expect(title.height).toBeLessThanOrEqual(lineHeight + 1);
+      expect(await page.locator('#intro').evaluate(el => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(0);
+      for (const selector of ['#start-button', '#garage-button', '.history-button', '#practice-button'])
+        expect((await page.locator(selector).boundingBox()).height, selector).toBeGreaterThanOrEqual(44);
+    });
+  });
+}
+
 test('home Practice opens the guide on the practice call to action, which starts the lesson', async ({ page }) => {
   await page.goto('/');
   await page.locator('#practice-button').click();
