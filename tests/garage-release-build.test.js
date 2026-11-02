@@ -90,3 +90,31 @@ test('locked release returns neutral color and shape patterns', async () => {
   const gate = readFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url), 'utf8');
   for (const id of ['thruster-plasma', 'airflow-vortex', 'nitro-trail-gold', 'launch-flare-pulse']) assert.ok(gate.includes(id));
 });
+
+test('public Pages deploy opts in to free trial, while local production builds remain fail closed', async () => {
+  const { readFileSync } = await import('node:fs');
+  const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url),'utf8');
+  const deploy = workflow.slice(workflow.indexOf('  deploy:'), workflow.indexOf('  # Failure-only pager'));
+  assert.match(deploy, /GARAGE_VFX_RELEASE_MODE:\s*trial(?:\s|$)/m);
+  assert.match(deploy, /node scripts\/assert-production-locked\.mjs/);
+  assert.equal(selectGarageReleaseBuild('production', undefined).mode, 'coming-soon');
+  assert.equal(selectGarageReleaseBuild('production', 'trial').mode, 'trial');
+});
+
+test('free-trial deployment bundle is checked for real published artwork, not just absent debug markers', async () => {
+  const { readFileSync } = await import('node:fs');
+  const audit = readFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url),'utf8');
+  assert.match(audit, /mode === 'trial'/);
+  assert.match(audit, /thruster-ion@3x\.webp/);
+  assert.match(audit, /airflow-vortex@3x\.svg/);
+  assert.match(audit, /GARAGE_VFX_RELEASE_MODE/);
+});
+
+test('release policy explains opt-in public session trial without permanent ownership', async () => {
+  const { readFileSync } = await import('node:fs');
+  const policy=readFileSync(new URL('../docs/garage-release-policy.md', import.meta.url),'utf8');
+  assert.match(policy, /Public trial rollout/);
+  assert.match(policy, /session-only/i);
+  assert.match(policy, /reload|重新載入/i);
+  assert.match(policy, /no (?:purchase|checkout|payment)/i);
+});
