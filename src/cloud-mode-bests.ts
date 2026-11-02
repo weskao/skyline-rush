@@ -1,5 +1,6 @@
 import { isModeTrack } from './race-tracks.ts';
 import { circuitLaps } from './circuit-track.ts';
+import { parseRecordTrackId } from './record-layout.ts';
 
 // Versioned permanent bests are separate from the rolling 50-race history.
 export const MODE_NAMES = ['custom', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'elimination', 'endless', 'circuit'] as const;
@@ -23,7 +24,7 @@ function validModeKey(key: string): Mode | null {
     const config = asRecord(parsed[1]);
     const mode = config?.mode;
     if (parsed.length === 3 && (mode !== 'circuit' || parsed[2] !== 'lap')) return null;
-    return typeof mode === 'string' && MODE_NAMES.includes(mode as Mode) && isModeTrack(parsed[0], mode) &&
+    return typeof mode === 'string' && MODE_NAMES.includes(mode as Mode) && isModeTrack(parseRecordTrackId(parsed[0], config)?.trackId, mode) &&
       (mode !== 'circuit' || circuitLaps(config) !== null) ? mode as Mode : null;
   } catch { return null; }
 }

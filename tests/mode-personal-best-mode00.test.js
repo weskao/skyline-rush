@@ -8,8 +8,8 @@ const memory = seed => {
   const values = new Map(Object.entries(seed ?? {}));
   return {getItem: key => values.get(key) ?? null, setItem: (key, v) => values.set(key, v)};
 };
-const completed = (mode, scoreOrTime, options = {}) => {
-  const race = createRace('coast', {mode, ...options});
+const completed = (mode, scoreOrTime, options = {}, track = 'coast') => {
+  const race = createRace(track, {mode, ...options});
   race.phase='finished';
   race.result={time:mode==='stunt'?120:scoreOrTime,score:mode==='stunt'?scoreOrTime:300,
     position:1,success:true};
@@ -41,15 +41,16 @@ test('RED 10C: stunt lifetime-best query uses the high score rather than the sho
   assert.equal(loadModeBest(champion.trackId,champion.config,store),9000);
 });
 
+// Legacy records predate ring-layout versions (layout 1), so this runs on a track whose layout never changed.
 test('RED 10C: legacy challenge history and malformed saved bests never invent records',()=>{
-  const race=completed('custom',78,{traffic:'off',rivals:0});
+  const race=completed('custom',78,{traffic:'off',rivals:0},'aurora');
   const seed={date:'2026-10-23T00:00:00Z',mode:race.mode,track:race.trackId,
     rules:JSON.stringify(race.config),time:78};
   const store=memory({[MODE_HISTORY_KEY]:JSON.stringify([seed]),
     [MODE_BESTS_KEY]:JSON.stringify({'nonsense':-300})});
   assert.equal(loadModeBest(race.trackId,race.config,store),78);
   assert.equal(loadModeBest('neon',race.config,store),null);
-  assert.deepEqual(recordModeRace(completed('custom',80,{traffic:'off',rivals:0}),store),
+  assert.deepEqual(recordModeRace(completed('custom',80,{traffic:'off',rivals:0},'aurora'),store),
     {best:78,record:false});
   assert.equal(loadModeBest(race.trackId,race.config,store),78);
 });
