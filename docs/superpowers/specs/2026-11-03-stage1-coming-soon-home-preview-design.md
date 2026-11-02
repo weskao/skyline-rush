@@ -1,9 +1,9 @@
 # Stage 1 Coming-Soon Home Preview — Design and Integration Contract
 
-**Status:** Shared home UI implementation on `feature/epic-multiroute-longform-tracks`; browser/CI visual evidence is a separate verification gate.
+**Status:** First-pass selectable/disabled UI already exists; **live per-map Three.js showcase scenes are mandatory and still NOT implemented**. This document and the [binding animated 3D showcase design](2026-11-03-stage1-animated-3d-home-showcase-design.md) jointly govern completion.
 **Date:** 2026-11-03
 **Parent references:** [Stage 1 five-track image gallery](../../designs/new-tracks/README.md), [Concept → WebGL gate](../../designs/new-tracks/visual-acceptance-gate.md).
-**Parallel implementation:** [six ready-to-paste GPT prompts](../prompts/2026-11-03-six-chat-home-preview-implementation.md) · [six-chat execution plan](../plans/2026-11-03-six-chat-home-preview-integration.md). Five art-only branches + one shared UI/QA owner. Individual chats must be opened by the user; preparing prompts is not automatic execution.
+**Parallel implementation:** [six revised 3D implementation prompts](../prompts/2026-11-03-six-chat-home-preview-implementation.md) · [live-3D scene integration TDD plan](../plans/2026-11-03-six-chat-home-preview-integration.md). Five dedicated **Three.js environment scene** branches + one shared renderer/UI/QA owner. Individual chats must be opened by the user; preparing prompts is not automatic execution.
 
 ## Decision / Product behavior
 
@@ -21,31 +21,32 @@ The existing ten sprint tracks keep their unchanged `RACE_TRACKS` gameplay and h
 
 Primary button width stays fixed at each existing responsive breakpoint (236px desktop, 210px mobile, 190px compact landscape), regardless of selected map or language. Text is kept concise rather than forcing a long English map name into the fixed-width CTA. The selected map name appears elsewhere in the heading, card and accessible label.
 
-## Image/layout UX
+## Live Three.js home scene / image layout UX
 
-- One JPEG preview and one route SVG per upcoming track are available in `public/track-teasers/<id>.jpg` and `<id>-route.svg`. These currently reuse already committed reference art, without re-encoding; they are illustrative images, **not a live Three.js track or actual WebGL screenshot**.
+- One JPEG preview and route SVG per future track are already in `public/track-teasers/`, for **thumbnail and fallback only**; these illustrate the live 3D scene's target and do not satisfy real-time rendering acceptance.
 - The selectable card uses the same size/spacing as the playable card and a cool/cyan planned-state treatment. It is not dimmed like a campaign-locked card. Its `aria-pressed` can be true even though `start-button` is disabled.
-- On selection, the hero preview shows a still image over the existing live rendering without recreating `Race`. The user sees a localized planned route length, a clear Coming Soon note and optional route sketch. The main `#world` canvas continues to represent the last playable course underneath, never the unfinished map.
-- Desktop/mobile and portrait/landscape layouts retain accessible 44px tap targets; reduced-motion never forces a teaser image animation. Images are not focus targets, and decorative images have empty alt labels because card names and route notes already supply accessible text.
+- On selection, **replace the interim static JPEG overlay** with this map's own **live Three.js world-space environment** in `#world`: the same shared player vehicle, animated jets/hover, 1–3 animated rivals where reasonable, matched ground/air route props, map-specific weather/particle/landmark animation and proper 50° showroom camera. Do not instantiate a playable `Race`; the last playable race remains unchanged in memory. No second canvas/WebGL renderer or independently running animation loop.
+- Desktop/mobile and portrait/landscape layouts retain accessible 44px tap targets; Reduced Motion stops or simplifies scene animations, Low/Medium/High scale scene detail, and existing view/rotation controls continue to work. JPEGs in cards remain decorative with empty alt labels; the live scene has an accessible description tied to the selected localized map.
 - Switching from an upcoming concept to an existing playable track, changing race mode, or starting a Daily Challenge clears preview-only selection. No preview ID is written to existing best-time/last-raced-track storage or sent to cloud.
 - A localized UI refresh re-renders card names, statuses, track note, route length and primary CTA without creating an unfinished Race.
 
 ## Architecture and ownership (SOLID / minimal)
 
 - `src/upcoming-tracks.ts`: five static IDs, bilingual map names, target lengths, static image/route paths and a pure precedence function `homeTrackStatus`. In particular, a tampered unlock store **cannot** promote a concept map to playable.
-- `src/App.vue`: declarative cards and one still-image overlay, no new custom Vue state or second renderer.
-- `src/race-select-ui.ts`: existing authoritative home selection controller owns `upcomingSelection`, localized rendering and no-start guard.
+- `src/App.vue`: declarative selectable cards only; remove or keep hidden the interim full-screen JPEG hero overlay when WebGL is operational. No duplicate Vue render state.
+- `src/race-select-ui.ts`: authoritative home selection owns `upcomingSelection`, localized rendering and no-start guard, and publishes the selected preview ID to the existing `world` renderer via a narrow interface.
 - `src/locales/ui.ts`: both supported languages for statuses, hints and all five map notes.
-- `src/style.css`: responsive fixed CTA widths and coherent preview card styling. No extra dependency; no `RACE_TRACKS` modification.
-- **One art chat per map:** the five independent branches `feature/epic-home-art-<id>` own only `public/track-teasers/<id>.jpg` and their matching per-track documentation. Do not concurrently modify shared UI/locale code; integrate one verified image at a time.
+- `src/style.css`: responsive fixed CTA widths and coherent selectable card styling. No new runtime dependency or `RACE_TRACKS` modification.
+- `src/upcoming-showcase.ts` + `src/world.js`: GPT 6 owns dedicated live showcase stage using existing renderer, car models, camera, jet/VFX and scene switching like `garage-stage.ts`; it must dispose GPU resources and pause when hidden.
+- **One 3D scene chat per map:** the five independent branches `feature/epic-home-art-<id>` each own `src/upcoming-scenes/<id>.ts`, `tests/upcoming-<id>-scene.test.js`, their map's `docs/designs/new-tracks/home-art/<id>.md`, and optionally their existing one JPEG thumbnail. Shared renderer/vehicle/camera integration belongs solely to GPT 6. Import only the verified scene/test/art blobs; never overwrite shared UI code from an older art branch.
 
 ## Verification / acceptance
 
 1. Node test: five exact planned Stage 1 IDs, Stage 2 excluded, no `raceTrack` registration, saved unlock cannot bypass Coming Soon.
-2. Browser test: choose each card; `aria-pressed=true`, correct preview JPEG, planned length, disabled CTA, fixed phase `ready` even on Enter; select an original playable card and verify Start Race restores.
+2. Browser test: choose each card; `aria-pressed=true`, distinct **actual animated WebGL 3D environment** (not a JPEG overlay), true player/rival car pose, planned length, disabled CTA, fixed phase `ready` even on Enter; select a playable card and verify its original animated race preview returns.
 3. Browser i18n: English and Traditional Chinese status, teaser names and CTA. Width must not change on language switch. Keep font legible and touch target size stable.
 4. Browser home layout: switching and end-of-race return maintain old-course visibility/focus when new cards follow the last existing course.
-5. Run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI, real browser desktop 1440×900 and mobile 390×844 screenshot review. **Do not mark these verified unless actually executed and logged**.
-6. The later production five-map actual 3D implementation must separately satisfy [the concept-to-WebGL visual acceptance contract](../../designs/new-tracks/visual-acceptance-gate.md) before launch. Static JPG previews do not count as playable World Tour stage completion.
+5. Capture at least **two real WebGL frames separated in time per map**, proving map-specific motion and Reduced Motion behavior; compare scene landmarks, road/air split, vehicle scale and camera against both source JPEG views. Run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and real browser desktop 1440×900 / mobile 390×844 review. **Do not mark these verified unless actually executed and logged**.
+6. **The animated 3D homepage showroom is required NOW as Stage 1 home UI acceptance.** Full playable race geometry/physics/AI remains a later phase with separate [concept-to-WebGL acceptance](../../designs/new-tracks/visual-acceptance-gate.md); a JPEG, a screenshot or a picture-plane does not count as an animated homepage scene.
 
 **Scope restriction:** Do not merge into `develop`, `main`, open a PR, deploy or force push without separate authorization.
