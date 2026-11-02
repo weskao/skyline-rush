@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { skinVfxPalette, skinVfxPattern } from '#garage-skin-palette';
 import { createVoidPulseBeams } from '#garage-void-beams';
+import { createLaunchFlare } from '#garage-launch-flare';
 import { TRICK_ROLL_TIME } from './game.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -154,11 +155,7 @@ export function createAeroVFX(scene, vehicle) {
   });
   const shock = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 64), new THREE.MeshBasicMaterial({ color: '#bdeeff', transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0 }));
   shock.name = 'Ignition shockwave'; shock.visible = false; scene.add(shock);
-  // A second, staggered ring gives the premium flare variants a distinct expanding echo.
-  const shockEcho = new THREE.Mesh(new THREE.RingGeometry(.64, .76, 64),
-    new THREE.MeshBasicMaterial({ color: '#c4a7ff', transparent: true, depthWrite: false,
-      side: THREE.DoubleSide, blending: THREE.AdditiveBlending, opacity: 0 }));
-  shockEcho.name = 'Launch flare echo'; shockEcho.visible = false; scene.add(shockEcho);
+  const flare = createLaunchFlare(scene, vehicle); // premium launch flares: badge-matched burst + body glow
   const shockPosition = new THREE.Vector3();
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
@@ -186,8 +183,8 @@ export function createAeroVFX(scene, vehicle) {
     particles.forEach(p => { p.life = 0; }); alphas.fill(0); particleGeo.attributes.alpha.needsUpdate = true;
     segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonGeo.attributes.alpha.needsUpdate = true;
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
-    jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = shockEcho.visible = false;
-    voidBeams.update(time, 0, 0, false); demoPulseClock = 2.2;
+    jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = false;
+    voidBeams.update(time, 0, 0, false); flare.reset(); demoPulseClock = 2.2;
     hadPosition = wasBoosting = wasNitro = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null; lastPhase = 'ready';
   }
   return {
@@ -209,6 +206,7 @@ export function createAeroVFX(scene, vehicle) {
       ribbon.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
       ribbon.material.uniforms.skinPattern.value = patterns['nitro-trail'];
       shock.userData.skinPattern = launchPattern;
+      flare.setSkin(ids?.['launch-flare']);
       const trail = palette['nitro-trail'], skinned = trail.some(v => v !== 1);
       flow.material.uniforms.trailAccent.value.set(.5 * trail[0], .8 * trail[1], trail[2], skinned ? 1 : 0); // the ribbon's colour
       if (launchSkinActive) shockColor.setRGB(...palette['launch-flare']);
@@ -218,7 +216,7 @@ export function createAeroVFX(scene, vehicle) {
     group: local, // effects riding on the vehicle; not part of its silhouette
     inspectCosmetics() {
       return { voidBeams: voidBeams.mesh.visible, launchPattern,
-        launchPreviewActive: shock.visible && shock.material.opacity > 0,
+        launchPreviewActive: flare.active || (shock.visible && shock.material.opacity > 0),
         thrusterPattern: jets[0].material.uniforms.skinPattern.value,
         airflowPattern: flow.material.uniforms.skinPattern.value,
         trailPattern: ribbon.material.uniforms.skinPattern.value };
@@ -256,13 +254,16 @@ export function createAeroVFX(scene, vehicle) {
       if (studioDemo && enabled && !calm && (demoPulseClock += dt) >= 2.2) {
         demoPulseClock = 0; shockAge = 0;
         shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
+        flare.trigger(current, vehicle.quaternion, 1.6);
       }
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
-      if ((boost && !wasBoosting) || (nitroActive && !wasNitro) || (launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown'))) {
+      const launching = launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown');
+      if ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }
+      if (launching) flare.trigger(current, vehicle.quaternion, 1.1);
       wasBoosting = boost; wasNitro = nitroActive; lastPhase = race.phase; lastImpact = car.impact;
       shock.material.color.copy(nitroActive && !studioDemo ? nitroShockColor : shockColor);
       shockAge += dt;
@@ -366,28 +367,9 @@ export function createAeroVFX(scene, vehicle) {
       shock.visible = enabled && !calm && shockAge < shockDuration;
       shock.position.copy(shockPosition).sub(origin);
       shock.scale.setScalar(studioDemo ? 0.7 + shockAge * 4.5 : 0.5 + shockAge * 20);
-      // Shape and timing vary by skin using the existing shock geometry.
-      if (launchPattern === 1) shock.scale.multiplyScalar(1.08);
-      if (launchPattern === 2) shock.scale.y *= .65 + .3 * Math.sin(time * 12);
-      if (launchPattern === 3) { shock.scale.x *= 1.4; shock.scale.y *= .72; }
-      shock.rotation.z = launchPattern === 3 && !calm ? time * 4 : 0;
-      // Unique silhouettes for five additional original 3x flare variants.
-      if (launchPattern >= 4) {
-        const style = launchPattern - 4;
-        const beat = Math.sin(time * (7 + style * 2));
-        shock.scale.x *= [1.35, .75, 1.08, 1.62, 1.2][style];
-        shock.scale.y *= [1.35, 1.5, .68, .58, 1.2][style];
-        shock.rotation.z = (style === 3 ? time * 2.7 : style === 4 ? beat * .15 : time * .5 * style);
-      }
       shock.material.opacity = Math.max(0, 1 - shockAge / shockDuration) ** 2
         * settings.shockwave * (studioDemo ? 0.95 : 0.45);
-      shockEcho.visible = shock.visible && launchPattern >= 2 && shockAge > 0.12;
-      if (shockEcho.visible) {
-        shockEcho.position.copy(shock.position); shockEcho.quaternion.copy(shock.quaternion);
-        shockEcho.scale.copy(shock.scale).multiplyScalar(0.76);
-        shockEcho.material.color.copy(shock.material.color);
-        shockEcho.material.opacity = shock.material.opacity * (launchPattern === 3 ? 0.85 : 0.6);
-      }
+      flare.update(dt, time, origin, enabled && !calm, quality, Math.min(1, settings.shockwave * (studioDemo ? 2 : 1.4))); // default 0.5 → full in Studio, 0.7 racing
       previous.copy(current); previousRotation.copy(vehicle.quaternion);
       direction.set(0, 0.64, 3).applyMatrix4(vehicle.matrixWorld);
       return { strength, ignition: boost ? Math.max(0, 1 - shockAge / 0.25) : 0, nozzle: direction, reveal };

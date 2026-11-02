@@ -1,5 +1,6 @@
 import { GARAGE_SKINS, SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
+import { LAUNCH_FLARE_STYLES } from './garage-launch-flare-styles.ts';
 
 /** Pattern identity: shader geometry/timing varies independently of tint. */
 export type SkinVfxPattern = Record<SkinCategory, number>;
@@ -17,14 +18,13 @@ const colors = {
   thruster: [NEUTRAL, [0.38, 1.1, 1.8], [1.6, 0.82, 0.38], [0.72, 0.52, 1.6]],
   airflow: [NEUTRAL, [0.56, 1.35, 1.2], [0.6, 0.85, 1.8], [1.3, 0.75, 1.6]],
   'nitro-trail': [NEUTRAL, [0.36, 1.4, 1.24], [1.7, 1.2, 0.36], [1.65, 0.35, 0.48], [1.16, 0.44, 1.66]],
-  'launch-flare': [NEUTRAL, [0.35, 0.75, 1.65], [1.25, 0.95, 1.6], [1.6, 0.5, 1.1], [1.85, 1.25, 0.32], [1.85, 0.34, 0.42], [0.24, 1.45, 1.65], [1.75, 0.30, 1.32], [1.65, 1.68, 1.85]],
-} as const satisfies Record<SkinCategory, readonly (readonly [number, number, number])[]>;
+} as const satisfies Record<Exclude<SkinCategory, 'launch-flare'>, readonly (readonly [number, number, number])[]>;
 export function skinVfxPalette(ids: Partial<Record<SkinCategory, SkinId>>): SkinVfxPalette {
   const pattern = skinVfxPattern(ids);
   return {
     thruster: colors.thruster[pattern.thruster] ?? NEUTRAL,
     airflow: colors.airflow[pattern.airflow] ?? NEUTRAL,
     'nitro-trail': colors['nitro-trail'][pattern['nitro-trail']] ?? NEUTRAL,
-    'launch-flare': colors['launch-flare'][pattern['launch-flare']] ?? NEUTRAL,
+    'launch-flare': (ids['launch-flare'] && LAUNCH_FLARE_STYLES[ids['launch-flare']]?.primary) || NEUTRAL,
   };
 }
