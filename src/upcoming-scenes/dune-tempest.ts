@@ -252,6 +252,10 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
     const time = reducedMotion || !Number.isFinite(timeSeconds) ? 0 : timeSeconds;
     const budget = quality === 'high' ? count : quality === 'medium' ? 86 : 28;
     dustGeometry.setDrawRange(0, budget);
+    // A slow, bounded golden-hour shift keeps the distant haze alive without flicker.
+    ownedFog.density = (quality === 'low' ? 0.0014 : 0.00185)
+      + 0.00013 * Math.sin(time * 0.05);
+    light.intensity = 2.35 + 0.15 * Math.sin(time * 0.045);
     const positions = dustGeometry.getAttribute('position') as THREE.BufferAttribute;
     const data = positions.array as Float32Array;
     for (let i = 0; i < budget; i++) {
