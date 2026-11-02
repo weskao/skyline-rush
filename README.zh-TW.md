@@ -1,4 +1,4 @@
-<!-- source-sha256: c3b49a48eb8cce3d16e13fc4926258ff70fa88bdbfe158ac1f758c31be242d1f generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 84987436bbf572927fb33625db4209533c27b0f2b5bf2574bfe3a4dfd41f4bf3 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -281,7 +281,7 @@ make deploy                              # Deploy remote main manually through t
 # after scripts/release-gate.sh has seen a green CI run for the commit on main.
 ```
 
-CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull request、版本標籤推送（`v*`）與手動執行時，建置並執行單元測試與 Chrome 瀏覽器測試。瀏覽器測試以 13 個平行分片執行，世界巡迴賽的長時間測試則以 5 個分片執行，並依 `tests/ci-durations.json` 中實際量測的每項測試耗時來平衡（`scripts/ci-shards.mjs`），僅在 `main` 與 `develop` 上執行（其他分支只執行單元與雲端存檔檢查，除非提交訊息含有 `[full-regression]` 或手動執行時要求），而且對同一分支的較新推送會取消被它取代的執行。手動執行在所有檢查通過後會發佈；版本標籤推送會重新執行單元測試，確認（`release-verified`）被標記的程式碼已在 `main` 上通過完整測試，而不是重新執行瀏覽器測試套件，接著發佈並驗證公開網站。若標籤所指的提交從未在 `main` 上通過 CI，則不會部署。一般分支推送與 pull request 只會執行檢查。Pages 建置使用 `--base=/skyline-rush/`，讓腳本、樣式與字型從專案網址載入。GitHub Pages 必須使用 **GitHub Actions** 作為發佈來源。手動部署需要已驗證的 GitHub CLI（`gh auth login`）；請先推送你的提交，因為 `make deploy` 使用遠端的 `main`。部署不再依賴本機的 pre-push hook 或 Netlify 登入。當推送、標籤或手動執行中的任何檢查或部署失敗時，`notify-telegram` 工作會將失敗執行的連結傳送到 Telegram；它需要儲存庫密鑰 `TELEGRAM_BOT_TOKEN` 與 `TELEGRAM_CHAT_ID`（以 `gh secret set <NAME>` 設定各項，它會提示輸入值），缺少時會靜默略過。
+CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull request、版本標籤推送（`v*`）與手動執行時，建置並執行單元測試與 Chrome 瀏覽器測試。瀏覽器測試以 13 個平行分片執行，世界巡迴賽的長時間測試則以 5 個分片執行，並依 `tests/ci-durations.json` 中實際量測的每項測試耗時來平衡（`scripts/ci-shards.mjs`），僅在 `main` 與 `develop` 上執行（其他分支只執行單元與雲端存檔檢查，除非提交訊息含有 `[full-regression]` 或手動執行時要求），而且對同一分支的較新推送會取消被它取代的執行。手動執行在所有檢查通過後會發佈；版本標籤推送會重新執行單元測試，確認（`release-verified`）被標記的程式碼已在 `main` 上通過完整測試，而不是重新執行瀏覽器測試套件，接著發佈並驗證公開網站。若標籤所指的提交從未在 `main` 上通過 CI，則不會部署。一般分支推送與 pull request 只會執行檢查。推送到 `main` 時，若其中有合併提交併入了 `develop` 或 `hotfix/*` 以外的分支，`main-merge-source` job（`scripts/check-main-merges.sh`）也會失敗，而這次失敗的 run 會擋下發布。Pages 建置使用 `--base=/skyline-rush/`，讓腳本、樣式與字型從專案網址載入。GitHub Pages 必須使用 **GitHub Actions** 作為發佈來源。手動部署需要已驗證的 GitHub CLI（`gh auth login`）；請先推送你的提交，因為 `make deploy` 使用遠端的 `main`。部署不再依賴本機的 pre-push hook 或 Netlify 登入。當推送、標籤或手動執行中的任何檢查或部署失敗時，`notify-telegram` 工作會將失敗執行的連結傳送到 Telegram；它需要儲存庫密鑰 `TELEGRAM_BOT_TOKEN` 與 `TELEGRAM_CHAT_ID`（以 `gh secret set <NAME>` 設定各項，它會提示輸入值），缺少時會靜默略過。
 
 連結預覽圖片是 `public/og-image.jpeg`，為 `public/og-image.en.jpeg` 的副本；`node scripts/capture-og-images.mjs og` 會擷取兩種語言的封面並更新該副本。爬蟲無法切換語言，因此 `index.html` 只參照英文封面（搭配 `og:locale` `en_US` 與 `og:locale:alternate` `zh_TW`），而 `public/og-image.zh-TW.jpeg` 則是供直接連結使用的中文版本。更換封面後，請提高 `index.html` 中 `og:image` 的 `?v=`，讓社群網站抓取新的圖片。
 
