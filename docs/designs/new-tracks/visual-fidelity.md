@@ -32,6 +32,18 @@ The 10 individually openable **vector** scenes below are committed in this branc
 
 Each next-stage vertical slice must save a real engine screenshot matching each of these two camera purposes (10 minimum) and record visual parity/deviation for landscape silhouette, turns and road openness, car proportion, lighting, weather/particles, and legible 3D fork/landing. A concept image is never equivalent to actual WebGL acceptance.
 
+## JPEG high-detail source visual references — 10 actually committed files
+
+JPEGs are the **converted original AI scene crops** saved in GitHub (different from ten standalone vector storyboard SVGs). Use both sources during real-WebGL acceptance. The original lossless PNGs and the two overview PNGs have NOT been committed, and JPEGs are not production textures.
+
+- 沙暴裂谷: [ground JPEG](source-concept-jpeg/dune-tempest/concept-view-01.jpg), [air JPEG](source-concept-jpeg/dune-tempest/concept-view-02.jpg).
+- 雨林失落神殿: [ground JPEG](source-concept-jpeg/monsoon-ruins/concept-view-01.jpg), [air JPEG](source-concept-jpeg/monsoon-ruins/concept-view-02.jpg).
+- 浮空群島: [ground JPEG](source-concept-jpeg/skyfall-archipelago/concept-view-01.jpg), [air JPEG](source-concept-jpeg/skyfall-archipelago/concept-view-02.jpg).
+- 熔火天脊: [ground JPEG](source-concept-jpeg/volcanic-crown/concept-view-01.jpg), [air JPEG](source-concept-jpeg/volcanic-crown/concept-view-02.jpg).
+- 霓虹暴雨都市: [ground JPEG](source-concept-jpeg/stormline-megacity/concept-view-01.jpg), [air JPEG](source-concept-jpeg/stormline-megacity/concept-view-02.jpg).
+
+**Next phase:** [Stage 2 five additional JPEG-based world concepts](stage-2/README.md) and [Stage 2 visual fidelity](stage-2/visual-fidelity.md).
+
 ## Per-track art direction and two required cameras
 
 ### 1. 沙暴裂谷 / Dune Tempest
