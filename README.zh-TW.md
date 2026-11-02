@@ -1,4 +1,4 @@
-<!-- source-sha256: c8d108897e55e2014fa50019f76298d2e4f89dffd26d70d348484e1b72bca449 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: c3b49a48eb8cce3d16e13fc4926258ff70fa88bdbfe158ac1f758c31be242d1f generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -312,7 +312,7 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull requ
 - `src/audio-settings.js`：從 `localStorage` 讀取已儲存的音樂／音效開關與音量，以及滑桿的「靜音保留音量」規則。
 - `tests/`：單元與瀏覽器行為測試。`tests/module-size.test.js` 讓每個原始碼模組維持在 400 行以內（較舊的大型檔案有只減不增的上限）。
 - `docs/design.md`、`docs/verification.md`：範圍與驗證證據。
-- `README.zh-TW.md`：本檔案的繁體中文翻譯，由 `scripts/readme-zh.mjs` 保持最新（`check`、以 `claude -p` 翻譯的 `sync`，以及手動編輯後的 `stamp`）。`.githooks/pre-commit` hook 會在提交變更 README.md 時重新產生它（以 `SKIP_README_ZH=1` 略過一次），而 `.githooks/pre-push` 會在被推送的提交觸及首頁（`index.html`、`src/App.vue`、`src/main.js`、`src/style.css`、`src/locales/`；以 `SKIP_LAYOUT_GATE=1` 略過一次）時執行 `npm run test:layout`；`make` 會以 `git config core.hooksPath .githooks` 啟用這些 hooks。`.claude/settings.json` 中的 Claude Code Stop hook 會在某一輪編輯了 README.md 卻沒有同步更新時，讓 Claude 回頭更新它。
+- `README.zh-TW.md`：本檔案的繁體中文翻譯，由 `scripts/readme-zh.mjs` 保持最新（`check`、以 `claude -p` 翻譯的 `sync`，以及手動編輯後的 `stamp`）。`.githooks/pre-commit` hook 會在提交變更 README.md 時重新產生它（以 `SKIP_README_ZH=1` 略過一次），而 `.githooks/pre-push` 會在被推送的提交觸及首頁（`index.html`、`src/App.vue`、`src/main.js`、`src/style.css`、`src/locales/`；以 `SKIP_LAYOUT_GATE=1` 略過一次）時執行 `npm run test:layout`；`.githooks/main-merge-guard`（由 `pre-merge-commit` 與 `pre-commit` 執行）會拒絕將 `develop` 或 `hotfix/*` 以外的分支合併進 `main`（fast-forward 不會觸發 hook，因此請使用 `--no-ff`；以 `ALLOW_MAIN_MERGE=1` 略過一次）；`make` 會以 `git config core.hooksPath .githooks` 啟用這些 hooks。`.claude/settings.json` 中的 Claude Code Stop hook 會在某一輪編輯了 README.md 卻沒有同步更新時，讓 Claude 回頭更新它。
 
 所有車輛／景物的幾何與特效皆以程式碼生成。Barlow Condensed 以 SIL Open Font License 隨附於 `public/fonts/OFL.txt`。Three.js、Vue、Vite 與 Playwright 各自保有其套件授權。
 
