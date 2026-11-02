@@ -41,7 +41,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   <EventLabPanel />
   <TutorialCoach />
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
-  <div id="upcoming-scene" class="upcoming-scene" hidden aria-hidden="true"><img id="upcoming-scene-image" alt="" /></div>
+  <div id="upcoming-scene" class="upcoming-scene" hidden><img id="upcoming-scene-image" alt="" /><span id="upcoming-scene-fallback" role="status">3D preview unavailable · concept image</span></div>
   <div class="scene-shade"></div>
   <div class="speed-streaks" aria-hidden="true"><i v-for="i in 18" :style="{ '--angle': `${(i - 1) * 20 + 6}deg`, '--delay': `${-(i - 1) * 0.13}s` }"></i></div>
   <div class="flight-director" aria-hidden="true"><span data-i18n="hud.flightVector">FLIGHT VECTOR</span><svg viewBox="0 0 300 100" fill="none"><path d="M5 48h75l12 12h16m84 0h16l12-12h75M150 15v13m0 48v10M135 50h30m-15-8v16"/><path class="director-level" d="M88 20h34m56 0h34M105 80h17m56 0h17"/></svg><span class="director-climb" id="climb-rate">+0.0 M/S</span></div>

@@ -36,6 +36,7 @@ interface RaceSelectOptions {
   clearControls(): void;
   cueUi(): void;
   reducedMotion: MediaQueryList;
+  showUpcoming3D(id: UpcomingTrackId | null): boolean;
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
@@ -168,7 +169,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     actionLabel.textContent = t(labelKey);
     startButton.setAttribute('aria-label', upcoming ? t('track.comingSoonInfo', { track: name }) : `${t(labelKey)} · ${name}`);
     const teaser = $('#upcoming-scene');
-    teaser.hidden = !upcoming;
+    const live3D = options.showUpcoming3D(upcomingSelection);
+    teaser.hidden = !upcoming || live3D;
+    $('#upcoming-scene-fallback').textContent = t('track.previewFallback');
     const sceneImage = document.querySelector<HTMLImageElement>('#upcoming-scene-image')!;
     if (upcoming) sceneImage.src = `${import.meta.env.BASE_URL}${upcoming.image}`;
     else sceneImage.removeAttribute('src');

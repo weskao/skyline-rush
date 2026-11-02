@@ -3071,3 +3071,13 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] After asset integration, run applicable targeted tests, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, Cloud Save / World Tour and `make verify`; inspect **exact-final-HEAD** full GitHub Actions `quality-gate`. Record browser/WebGL evidence and remaining physical iOS/Android verification separately. **Do not mark Phase B or relevant TODO #5.* complete until requirements and visual signoff pass**; do not merge to `develop`, open a PR or deploy without separate authorization.
 
 ---
+
+
+## 2026-11-03 — Stage 1 real-3D homepage integration checkpoint
+
+- [x] Verified latest six branch heads before implementation. At inspection: integration `00ea05de`; Dune `b509ed2f`; Monsoon `bffc2479`; Skyfall `9eddd936`; Volcanic `efcf7a8e`; Stormline `6b28e1f4`. All five independent `src/upcoming-scenes/<id>.ts` and scene tests were absent at that snapshot; no complete art environment was selectively imported.
+- [ ] Shared-stage lifecycle test was committed first (`tests/upcoming-showcase.test.js`, initial RED candidate commit `43727ce`). **RED execution not observed**: this GitHub connector cannot run local npm in the repository; do not label TDD fully verified.
+- [ ] `src/upcoming-showcase.ts` and `src/world.js` wiring added with the single WebGL renderer/composer, shared car model/VFX, camera and quality/reduced-motion inputs. **Not accepted until real browser and CI execute**.
+- [ ] Each of five scene factory modules must arrive from its respective art branch and pass scene-specific tests. Until a factory is registered, show a localized, explicit **concept-image fallback**, never claim that JPEG is rendered 3D.
+- [ ] Run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify` locally, confirm exact-HEAD full CI, desktop 1440×900 / phone 390×844 WebGL screenshots, two timestamps per scene, Reduced Motion, and comparison with both JPEG views. **None of these local or visual checks has been observed in this session**.
+- [ ] Preserve ten existing playable tracks, Coming Soon disabled state, no new race IDs, no main/develop mutations, PR or deployment.

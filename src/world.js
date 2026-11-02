@@ -17,7 +17,9 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
-import { createGarageStage } from './garage-stage.ts'; import { createCircuitScene } from './circuit-scene.ts';
+import { createGarageStage } from './garage-stage.ts';
+import { createUpcomingShowcase } from './upcoming-showcase.ts';
+import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts'; import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
@@ -114,6 +116,7 @@ export function createWorld(canvas) {
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
   room.dispose();
   env.dispose();
+  const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture);
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
   scene.add(ambient);
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
@@ -611,11 +614,11 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); },
+    resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); },
     setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) aero.setSkins(ids); }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
         inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
     previewAppearance(paint) {
-      garagePaint = paint; garageStage?.setPaint(paint);
+      garagePaint = paint; garageStage?.setPaint(paint); upcomingStage.setPaint(paint);
       const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = paint.roughness;
       player.userData.lightColor.fromArray(paint.light);
     },
@@ -650,6 +653,13 @@ export function createWorld(canvas) {
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null) {
       if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.12; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; }
+      if (race.phase === 'ready' && upcomingStage.scene) {
+        renderPass.scene = upcomingStage.scene;
+        upcomingStage.update(camera, idleTime, visual, motionPreference.matches || visual.comfortable);
+        lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0;
+        bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.14;
+        renderer.info.reset(); composer.render(dt); return;
+      }
       renderPass.scene = scene;
       endlessActive=!!race.endless;
       const preview = race.phase === 'ready';
@@ -1105,7 +1115,7 @@ export function createWorld(canvas) {
       });
     },
     dispose() {
-      garageStage?.dispose(); stopLocaleSigns();
+      upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns();
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
       circuitScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
