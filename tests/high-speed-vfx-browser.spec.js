@@ -12,9 +12,8 @@ test('Wave 2 real WebGL: NITRO violet, BOOST cyan, simultaneous bounded and reco
   page.on('pageerror', error => errors.push(error.message));
   const read = () => page.evaluate(() => {
     const { player, renderer, camera } = window.gameScene;
-    const flow = player.getObjectByName('Airflow showcase').children[0], uniforms = flow.material.uniforms;
+    const uniforms = player.getObjectByName('Airflow showcase').children[0].material.uniforms;
     return {
-      flowVisible: flow.visible,
       nitroMix: uniforms.nitroMix.value,
       speedLinePower: uniforms.power.value,
       fov: camera.fov,
@@ -33,7 +32,8 @@ test('Wave 2 real WebGL: NITRO violet, BOOST cyan, simultaneous bounded and reco
   const boost = await read();
   expect(boost.nitroMix).toBe(0);
   expect(boost.speedLinePower).toBeGreaterThan(0);
-  expect(boost.flowVisible, 'AIRFLOW (V) is off: BOOST must not reveal the streamline showcase').toBe(false);
+  expect(await page.evaluate(() => window.gameScene.player.getObjectByName('Airflow showcase').children[0].visible),
+    'AIRFLOW (V) is off: BOOST must not reveal the streamline showcase').toBe(false);
   expect(boost.fov).toBeGreaterThan(40);
   await page.screenshot({ path: info.outputPath('high-speed-vfx-boost.png') });
   await page.evaluate(() => Object.assign(window.gameplay.race.player, { nitroTime: 4, speed: 85 }));
