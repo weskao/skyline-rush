@@ -1,3 +1,12 @@
+## AIRFLOW off hides sprint streamlines (2026-11-02)
+
+**Branch:** `fix/airflow-off-hides-sprint-flow` from `develop` `5cc12113`. **Report:** with AIRFLOW (V) off, BOOST/NITRO still revealed the full streamline showcase and underbody pressure plane (`src/aero-vfx.js` `show` OR-ed in `sprintPower`), so the V toggle looked broken while sprinting.
+
+- [x] RED: `tests/aero-vfx.test.js` "AIRFLOW off (V) hides the streamline showcase during BOOST/NITRO…" failed on `flow.visible` with AIRFLOW off.
+- [x] GREEN: `show = settings.airflow && enabled`. NITRO trail ribbon (Garage `nitro-trail` skin), jets, afterimages and `--streak-opacity` screen streaks are unaffected; Garage Studio still forces AIRFLOW on (`garage-stage.ts` `configureVFX`), so Airflow skins still preview. In-race Airflow skins now show only with AIRFLOW on, by design.
+- [x] Browser: `tests/high-speed-vfx-browser.spec.js` asserts the streamline mesh stays hidden during BOOST with AIRFLOW off.
+- [ ] Real-device look at BOOST/NITRO with AIRFLOW off and on.
+
 ## Rival item pickups — stage 2 (2026-11-02)
 
 **Branch:** `feature/rival-item-pickups` (merged `develop` `435e4fb8` as `f18cb226`, no conflicts). Plan + inventory + AC: `docs/plans/2026-11-01-rival-item-pickups.md`. `PLAYWRIGHT_PORT=5186`. Merged `develop` `bf350867` too (clean; `npm test` 1361/0, 3 skipped). User approved (2026-11-02) a local `--no-ff` merge into `develop` once CI is green, then deleting the feature branch; no `main`, no PR, no deploy, no rules deploy.

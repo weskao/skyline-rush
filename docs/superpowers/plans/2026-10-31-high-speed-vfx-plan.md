@@ -57,7 +57,7 @@
 ## BDD behavioral contracts (source of truth for tests)
 
 1. **Activation:** Given player has real NITRO charge; When NITRO activates once; Then short visual burst occurs, then sustained effect matches speed.
-2. **BOOST vs NITRO:** Given BOOST starts without NITRO; When car accelerates; Then cleaner airflow differs from NITRO but physics unchanged.
+2. **BOOST vs NITRO:** Given BOOST starts without NITRO; When car accelerates; Then cleaner airflow differs from NITRO but physics unchanged (2026-11-02 amendment: the streamline showcase itself shows only while AIRFLOW / V is on; with it off, sprint feedback is the jets, ribbon, afterimages, screen streaks and FOV).
 3. **Comfort:** Given Reduced Motion or Low quality selected; When player sprints; Then readable lower-cost feedback with no heavy shake/blur remains.
 4. **Recovery:** Given car slows, crashes, pauses or switches track; When effect intensity declines; Then camera returns smoothly with no black frame or VFX resource leak.
 
