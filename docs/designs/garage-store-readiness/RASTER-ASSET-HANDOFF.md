@@ -88,3 +88,19 @@ Files are **216×216 source pixels**, but **72×72 CSS pixels in Vue/CSS**, not 
 Coming Soon only, never active checkout, price, fiat/real currency balance or buy CTA. Use Vue text for availability, including zh-TW and English.
 
 **Important:** No PNG/WebP file or live import from this ZIP is claimed to exist in GitHub as of this handoff. This document intentionally makes the exact future import deterministic; it does not pretend GitHub can pull sandbox attachments from a different conversation.
+
+## 2026-11-03 complete 3× store icon repair
+
+The six concept icons in `#garage-art-source-garage-store-readiness` are rebuilt
+from editable native 216×216 SVG masters instead of upscaling clipped originals.
+The new transparent `store-*@3x.webp` renders at 72×72 CSS pixels. Masters:
+`docs/designs/garage-store-readiness/restored-source/`; runtime:
+`public/feature-assets/garage-store-readiness/raster/`. Preserve the archived
+original six WebPs under `docs/designs/3x-asset-library/` for provenance.
+No purchase, currency, inventory, ownership, pricing or rewards logic changed.
+
+At alpha >16/255, every 216×216 image must fit x/y [20,195]. The shared 88×88
+tile frame contains 72×72 art plus 8px internal padding and the caption below.
+Playwright checks all six images at 390×844, 844×390, 1440×900; original
+filter/locale/accessibility checks remain. Real browser screenshots and
+full exact-HEAD CI remain independent acceptance gates.

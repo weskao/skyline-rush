@@ -34,9 +34,12 @@ test('median picks the middle value, or the mean of the two middle values', () =
 // Re-locked again for the user's ring trains, a few full-width rows and pickup runs of 1-4 (2026-11-02), on the same
 // 4 slots per car. 4-per-car hashes: aurora 0556decf5e917770, taipei 92328db2e65aaf02, tokyo 8a0f615c217d6154,
 // alpine b28b3261f4815a4d, coastal d0e7f481e35cd2d6, cosmic a08289e1073ffbfd.
+// Re-locked for the user's 2026-11-03 medium increase (5 slots per car, more 6-ring trains down a middle lane, mostly
+// on the road). Train-layout hashes before it: aurora dfbdee2481a1067c, taipei 7e3e494aeb87c4da, tokyo 1b414b5f6ef56db9,
+// alpine 4d9a65bf5d0b8de7, coastal 1bdfb51a66d090c9, cosmic 9999583aa5be70d4.
 const LOCKED_LAYOUTS = {
-  aurora: 'dfbdee2481a1067c', taipei: '7e3e494aeb87c4da', tokyo: '1b414b5f6ef56db9',
-  alpine: '4d9a65bf5d0b8de7', coastal: '1bdfb51a66d090c9', cosmic: '9999583aa5be70d4',
+  aurora: '4c8e2977913671d9', taipei: 'a1fcaaf6829fc7ab', tokyo: '0e0c60b082ae64d6',
+  alpine: '3baaf86d05a6687d', coastal: '59c8c7f6d245f3b0', cosmic: '95e09bd6901f2a9d',
 };
 test('AC3: Aurora and the World Tour keep their (scaled) ring and pickup layout', () => {
   for (const [id, hash] of Object.entries(LOCKED_LAYOUTS)) assert.equal(layoutHash(id), hash, id);
