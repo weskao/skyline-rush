@@ -17,7 +17,10 @@ for (const quality of ['low', 'medium', 'high']) {
       await expect(preview).toHaveAttribute('data-finish', id);
       const box = await preview.boundingBox();
       expect(box?.height).toBeGreaterThanOrEqual(70);
-      await expect(preview.locator('.paint-car-shell')).toBeVisible();
+      await expect(preview.locator('img.garage-paint-image')).toBeVisible();
+      await expect(preview.locator('img.garage-paint-image')).toHaveAttribute('src', new RegExp(id + '@3x\\.webp'));
+      expect(await preview.locator('img.garage-paint-image').evaluate(img => img.naturalWidth)).toBe(960);
+      expect(await preview.locator('img.garage-paint-image').evaluate(img => img.naturalHeight)).toBe(510);
     }
     const sweep = await page.locator('[data-paint="pearl"] .garage-paint-sheen').evaluate(node => getComputedStyle(node).animationName);
     expect(sweep === 'none').toBe(quality === 'low');
