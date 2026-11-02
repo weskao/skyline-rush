@@ -1,74 +1,99 @@
-# Six-Chat Stage 1 Coming-Soon Home Integration Implementation Plan
+# Stage 1 Animated Three.js Homepage — Six-Chat TDD Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Deliver five visually faithful, selectable but non-playable Stage 1 homepage teaser maps and one fully verified, bilingual, fixed-width shared start button using six isolated GPT chats.
+**Goal:** Make the five first-stage Coming Soon maps each selectable and **visibly alive in real 3D on the homepage**, with the same vehicle/camera/weather standard as existing Skyline Rush courses, while starting any of them stays disabled.
 
-**Architecture:** Five art-only feature branches each supply one high-detail native JPEG and one map note, without touching shared code. One GPT works on `feature/epic-multiroute-longform-tracks`, which already contains the first UX implementation. It applies tests first to any gaps and incorporates artwork selectively by Git blob SHA rather than full branch merges.
+**Architecture:** Five independent environment owner branches build one `src/upcoming-scenes/<id>.ts` apiece. A sixth shared-UI owner on `feature/epic-multiroute-longform-tracks` integrates them into the **existing** Three.js renderer, composer, camera, car/jet models and animation tick, and retains race selection as preview-only state; JPEG is card/fallback/reference only, never a full-screen replacement when WebGL runs.
 
-**Tech Stack:** Vue 3, TypeScript, vanilla CSS, Three.js for existing playable scene, node:test, Playwright, GitHub CI; image output in JPEG.
+**Tech Stack:** Vue 3, TypeScript strict, Three.js, existing Vite app / `src/world.js`, node:test, Playwright, CI.
 
-**Spec:** `docs/superpowers/specs/2026-11-03-stage1-coming-soon-home-preview-design.md`
-**Six self-contained chat prompts:** `docs/superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md`
+**Spec:** `docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md`.
+**Complementary UX spec:** `docs/superpowers/specs/2026-11-03-stage1-coming-soon-home-preview-design.md`.
+**Six independent GPT prompts:** `docs/superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md`.
 
 ## Global Constraints
 
-- Include only `dune-tempest`, `monsoon-ruins`, `skyfall-archipelago`, `volcanic-crown`, `stormline-megacity` as Coming Soon; Stage 2 five **must not** be exposed.
-- Ten original sprint courses remain playable/locked under original progression; five future tracks remain concept-only, distinct START and FINISH and never registered with `createRace`.
-- 5 original native JPEG hero images should be at least 2400×900 pixels if generator supports true native generation; do not relabel upscaling as native detail.
-- Text: en `Start race`, `LOCKED`, `COMING SOON`; zh-TW `開始比賽`, `未解鎖`, `即將推出`. `#start-button` fixed width: desktop 236px / mobile 210px / compact landscape 190px.
-- Never modify `main`, `develop`, create PR, deploy or force push. Full CI and phone/browser visual review must be verified before signoff.
+- P0 delivery is the five **animated live 3D homepage scenes**, not the future full-length playable race physics/AI.
+- **Only** Stage 1 IDs `dune-tempest`, `monsoon-ruins`, `skyfall-archipelago`, `volcanic-crown`, `stormline-megacity`. Stage 2 five must not appear.
+- Five are point-to-point with independent START/FINISH; a partial *home showcase* can be a compact drivable-looking ground/air route slice but must not depict mandatory laps.
+- Existing ten sprint racing maps and the garage/circuit retain all current game logic, records, unlocks, input, VFX and view modes.
+- Never add upcoming IDs to playable `RACE_TRACKS`, `createRace`, Daily, Cup, Ghost, storage or rewards. These five only change selected **presentation** state.
+- Single `#world` renderer, composer and animation loop; no JPEG overlay masking a running existing course, no photograph plane representing environment, no extra WebGL context.
+- Reuse actual `makeCar`, `CAR_STYLES`, `createAeroVFX`, `track-preview.ts` camera conventions and the renderer-scene switch pattern in `garage-stage.ts`. No duplicate vehicle model.
+- Current locales only en and zh-TW, Coming Soon / 即將推出, Start race / 開始比賽, LOCKED / 未解鎖; fixed `#start-button` width 236 / 210 / 190px across breakpoints.
+- No PR, force push, deployment or writes to `main` / `develop`; verify exact HEAD before every non-fast-forward integration and after parallel changes.
 
-## Review Focus
+## Review Focus (tests must cover each)
 
-1. Spoofed unlock storage includes a future ID → cannot start, save race, qualify for cup or create a `Race`.
-2. Change mode / locale with future preview selected → no stale disabled CTA, no wrong race label, no stale hero.
-3. Home drag/swipe and keyboard navigation across last playable → first future card → no accidental gameplay transition or lost focus.
-4. Unusually long translations and 320px/390px screens → fixed CTA hit target with no clipping/unreadable status.
-5. Race exit or Daily challenge after preview focus → old real race resumes and its unlocked/locked state remains accurate.
+1. Returning from selected upcoming map to real playable map and garage must restore the right Three.js scene, vehicle cosmetics and camera with no stale overlay or GPU leak.
+2. If unlocked storage is tampered to contain future IDs, neither Start, Enter, gamepad, Daily, Cup, ghost nor persisted recent-track can activate them.
+3. Switching locale, quality, Reduced Motion, portrait, landscape or browser resize while viewing a new scene must update UI/presentation without switching gameplay race.
+4. Stage 1 scene with heavy dust/rain/ash/bloom must still keep a visible drivable-looking road, foreground player car and target landing area; Low tier must not tank frame time.
+5. Scene missing/unavailable or WebGL context lost should show an explicitly labeled graceful fallback, never silently fake live 3D, never corrupt existing races.
 
 ---
 
-### Task 1: Five Art Branch Owners — Original Native JPEG and Design Note
+### Task 1 — Shared renderer integration contract and failing tests (GPT 6)
 
-**Files:** Each of five art branches `feature/epic-home-art-<id>` owns precisely `public/track-teasers/<id>.jpg` and `docs/designs/new-tracks/home-art/<id>.md`.
+**Files:**
+- Create: `src/upcoming-showcase.ts`, `tests/upcoming-showcase.test.js`.
+- Modify: `src/world.js`, `src/main.js`, `src/race-select-ui.ts`, `src/App.vue` if required; focused browser spec `tests/upcoming-home-browser.spec.js`.
 
-**Interfaces:** `src/upcoming-tracks.ts` on shared branch already resolves image URL `track-teasers/<id>.jpg`. Art chats never change this interface.
+**Interfaces:**
+- Stage host `createUpcomingShowcase(environmentFactories)` must present `setTrack(id: UpcomingTrackId | null)`, `update(time: number, quality, reducedMotion)`, `render(camera, sharedScene)` or equivalent minimal API, and `dispose()`. Implement with existing renderer / composer rather than a second context.
+- Each art module exports `createUpcomingEnvironment(scene: THREE.Scene): {group: THREE.Group;update(timeSeconds:number, quality:'low'|'medium'|'high', reducedMotion:boolean):void;dispose():void}`.
+- `race-select-ui.ts` already has a separate `upcomingSelection`; it must notify the world preview host without creating a `Race`.
 
-- [ ] Read both real source JPEGs and the route SVG; identify three scene anchors and ground+flight differentiation.
-- [ ] Generate source artwork at a truly native landscape resolution; preserve safe space for left home text and avoid misleading circular race topology.
-- [ ] Convert/export sRGB JPEG with sensible compression; inspect dimensions, size, cropping, and resemblance to each JPEG source.
-- [ ] Write the single owned `.md` with exact source paths, three anchors, weather, camera, dimensions, bytes and allowed visual deviations.
-- [ ] Commit only two owned files to that art branch, verify GitHub JPEG blob actually exists, and report commit SHA. If binary upload cannot be done, do not claim completion; share artifact and limitation.
+- [ ] Read `AGENTS.md`, `CLAUDE.md`, `docs/regression-first-workflow.md`, `.claude/rules/track-showcase.md`, `src/world.js`, `src/track-preview.ts`, `src/car-model.js`, `src/aero-vfx.js`, `src/garage-stage.ts`.
+- [ ] Write a failing Node/contract test asserting that choosing upcoming `id` drives the **live scene host**, not `#upcoming-scene` full-screen JPEG; verify RED in CI/local environment.
+- [ ] Write a failing browser test asserting real `#world` WebGL output changes between two *different future track IDs*, whereas the existing playable Race ID stays untouched; verify RED.
+- [ ] Add a lifecycle test for preview → real map → preview, quality toggle, Reduced Motion and context loss; verify RED.
+- [ ] Implement `src/upcoming-showcase.ts` and minimal `src/world.js` / `src/main.js` hookup using existing shared renderer, camera/composer, shared player/rivals/jet VFX. Remove or hide the interim full-hero JPEG overlay when WebGL is healthy.
+- [ ] Verify GREEN on focused tests; refactor repeated scene/camera work into one stage host, not ten track-specific branches in `world.js`.
+- [ ] Commit isolated shared-stage changes and observe CI; if the other five art modules are still missing, provide an honest placeholder/fallback and do **not** mark dynamic-five completed.
 
-### Task 2: GPT 6 — Home Status / Start State TDD
+### Task 2 — Five independent dynamic scene environment implementations (GPT 1–5)
 
-**Files:** `src/upcoming-tracks.ts`, `src/race-select-ui.ts`, `src/App.vue`, `src/locales/ui.ts`; tests `tests/upcoming-tracks.test.js`, `tests/upcoming-home-browser.spec.js`, `tests/home-track-focus-browser.spec.js`.
+**Files per owner branch:** `src/upcoming-scenes/<id>.ts`, `tests/upcoming-<id>-scene.test.js`, `docs/designs/new-tracks/home-art/<id>.md` and optional one `public/track-teasers/<id>.jpg`.
 
-**Interfaces:** `isUpcomingTrack(id: string): id is UpcomingTrackId`, `homeTrackStatus(id: string, unlocked: ReadonlySet<string>): HomeTrackStatus`; `selectedRace(trackId)` MUST NOT be called with a future ID. Preview state is separate.
+**Interfaces:** The exact scene export signature above, with local road around `(0,0,0)`, forward `-Z`, `+Y` up; shared renderer supplies player/rivals/car camera/time/quality and reduced-motion. No scene module controls game race state or owns a Renderer.
 
-- [ ] Run existing focused tests for first implementation, record observed failures and add a targeted failing regression test if necessary.
-- [ ] Fix source of each failure without adding `UPCOMING_TRACKS` to gameplay `RACE_TRACKS`; re-run until passing.
-- [ ] Verify status precedence: planned always Coming Soon, regardless of forged progress; real maps selected/locked/unlocked retain old behavior.
-- [ ] Verify `#start-button` exact localized statuses, fixed sizes, clear `aria-describedby`, keyboard Enter no bypass, no stale ghost/rival/route data on planned selection.
-- [ ] Test mode switching, Daily, home re-entry and swipes; use reduced-motion checks and accessibility naming.
+- [ ] For each Stage 1 ID, inspect BOTH reference JPEGs and route SVG; record 3 unique scenery anchors (foreground road, main landmark, far-field skyline/biome).
+- [ ] Write a failing scene-geometry test asserting 3D road, branch and required landmark/motion group shape; ensure no DOM, external RAF or independent Renderer is created. Verify RED.
+- [ ] Build scene's three-dimensional terrain and forward-looking *ground* road, visible higher *flight/branch* level and 3 unique local landmarks; use scene/instanced geometry where existing scene design supports.
+- [ ] Add weather/prop motion from deterministic time input: dunes = dust; ruins = rain + waterfall + foliage; archipelago = cloud + waterfall; volcanic = lava + embers; megacity = rain + neon + distant traffic.
+- [ ] Verify actual object transforms/material animation differ for different timestamps in normal mode, but Low / Reduced Motion suppress or simplify expensive effects; verify GREEN.
+- [ ] Add art note with three anchors, palette, camera ground/air, screenshot candidate poses, quality/particle budgets, reference paths and deviations.
+- [ ] Commit only your owned files to your existing art branch; provide SHA and actual evidence. No PR and no merge.
 
-### Task 3: GPT 6 — Selective Art Integration and Real Home UI Screenshots
+### Task 3 — Selectively integrate art branches (GPT 6)
 
-**Files:** Shared branch `public/track-teasers/<id>.jpg` and `docs/designs/new-tracks/home-art/<id>.md` only for imported art; `src/style.css` / `src/App.vue` only for directly evidenced UI crop/legibility fixes.
+**Files:** `src/upcoming-scenes/*.ts`, matching tests, and `docs/designs/new-tracks/home-art/*.md`, plus `src/upcoming-showcase.ts` imports/registry.
 
-- [ ] Verify each of the five art commits and corresponding image/native dimension. Work with available art branches; do not claim five complete if only a subset has delivered.
-- [ ] Copy exactly two owned Git blobs from each approved branch to the canonical shared branch without full-history merges, maintaining a checksum/size ledger.
-- [ ] Capture 1440×900 desktop and 390×844 mobile portrait (and compact landscape) real homepage screenshots for each map, check concept fidelity, legible left text, hero crop and card states.
-- [ ] Re-run en/zh-TW, reduced-motion, keyboard and responsive browser checks; document differences and rerender if materially divergent.
-- [ ] Record actual screenshot paths, approval/FAIL outcomes, image SHAs and open tasks in the Stage 1 design spec and `TODO.md`.
+- [ ] Fetch each art branch's latest HEAD and verify actual scene code, scene test, art note and nonconflicting file ownership.
+- [ ] Copy only the approved individual scene/test/note blobs into current shared UI HEAD, not full older branch history. Do not overwrite another art owner's files or common UI.
+- [ ] Register the five scene factory imports in one typed map. Missing scene should produce documented fallback (not count as completed).
+- [ ] Verify real shared car, jets, rivals and camera are in the correct world-space pose for each 3D map, including portrait and aerial view.
+- [ ] Add/adjust tests for transition to existing playable race, garage, return to home, no resource buildup, low/reduced motion and old-course behavior.
 
-### Task 4: GPT 6 — Regressions, Exact-HEAD CI and Handoff
+### Task 4 — Real WebGL visual fidelity and runtime gate (GPT 6)
 
-**Files:** Tests, Stage 1 spec and `TODO.md`. Do not touch other branches.
+**Files:** browser tests and evidence reports under `artifacts/new-tracks/visual-evidence/<id>/` or CI artifact; update `TODO.md` and `docs/designs/new-tracks/visual-acceptance-gate.md` with actual evidence.
 
-- [ ] Run `npm test` and make the focused red/green progression explicit; report actual tests.
-- [ ] Run `npm run typecheck`, `npm run build`, `npm run test:layout`, and `make verify` where local environment supports them; list unavailable commands and blockers.
-- [ ] Trigger/check exact-HEAD GitHub CI with `[full-regression]` on the committed shared branch (avoid repeated identical CI runs).
-- [ ] Validate all 10 existing playable courses, all 5 Coming Soon cards, start label locale parity, photo carousel responsiveness and no new runtime dependency.
-- [ ] Commit final docs + evidence references, report branch/commit/CI run URL/status. Leave `develop` and `main` unchanged; do not present a pending CI as passed.
+- [ ] Capture **two time-separated real WebGL frames** per map proving local environmental movement without drifting terrain/landmarks; capture Reduced Motion state.
+- [ ] Capture each map on desktop 1440×900 and phone 390×844 at Medium, ground and aerial showcase cameras (40 baseline screenshots across all 10 eventual proposed playable tracks is separate; for the **five home scenes**, 20 baseline camera/device screenshots).
+- [ ] Compare actual frames against **both** original JPEG views; record five categories: terrain silhouette/three landmark anchors, car size, foreground road and air branch, weather/lighting/animation, camera framing/occlusion.
+- [ ] Check no JPEG backing/flat-plane illusion, no hidden performance runaway, high scene depth, 1–3 true car models if budget supports, same existing camera/hover quality on old courses.
+- [ ] Run automated Playwright selector/keyboard/locales and accessibility checks, Low/Medium/High, Reduced Motion and phone landscape/portrait.
+- [ ] Mark each map **PASS**, **FAIL** or **APPROVED DEVIATION** with real screenshot links and explanation; **do not** invent numeric similarity score or claim a scene passes with only generated art.
+
+### Task 5 — Exact-HEAD test/CI and signoff (GPT 6)
+
+**Files:** tests, `CLAUDE.md` (if needed), plan/spec and `TODO.md`.
+
+- [ ] Run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, and `make verify` where actual environment allows; record commands and observed PASS/FAIL.
+- [ ] Run/check full exact-HEAD GitHub Actions quality-gate and retain run URL, commit, failed jobs and fixes; do not mark pending as green. No proactive CI spam.
+- [ ] Confirm five home scenes show real 3D animation, five cards show Coming Soon, `start-button` stays fixed and cannot start, original ten maps still work.
+- [ ] Keep Stage 2 five as **planning-only** until authorized and preserve full race graph/AI implementation as **later stage**, not a blocker for the home-only dynamic showroom.
+- [ ] No `develop` / `main` merge, deployment, PR or force push.
