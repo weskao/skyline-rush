@@ -61,7 +61,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
       <aside class="garage-collection">
         <div v-show="garageStudioView.page === 'studio'" class="garage-tabs"><span class="active">{{ copy.collection }}</span><span aria-disabled="true">{{ copy.equipment }}</span></div>
         <h3>{{ copy.collection }}</h3>
-    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><i :style="{ backgroundColor: paint.paint }" aria-hidden="true"></i><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ paint.name }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></button></div>
+    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><i :style="{ backgroundColor: paint.paint }" aria-hidden="true"></i><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ paint.name }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></button></div>
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
     <button id="garage-equip" class="controls-reset" :disabled="garageView.equipDisabled" aria-label="Equip finish" data-i18n-aria-label="garage.equip">{{ garageView.equipLabel }}</button>
     <button v-show="garageStudioView.page === 'studio'" id="garage-restore-default" type="button" class="garage-restore">{{ copy.restore }}</button>
@@ -156,6 +156,93 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
   #garage-screen .garage-camera-controls { max-height: 60px; overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; }
   #garage-screen .garage-camera-controls button { flex: none; min-height: 44px; }
   #garage-screen .garage-paint-badge { font-size: 10px; }
+}
+
+/* Unified Garage Collection polish: one shared themed surface for paint and VFX cards. */
+#garage-screen .garage-collection {
+  --garage-card-surface:
+    radial-gradient(ellipse at 50% 19%, hsl(var(--card-hue, 195) 72% 39% / .25), transparent 74%),
+    linear-gradient(155deg, #1c2e4a, #0c192c 86%);
+  --garage-card-border: hsl(var(--card-hue, 195) 69% 61% / .48);
+  background: linear-gradient(160deg, #102439, #081724 74%);
+  border: 1px solid #3b5d74; box-shadow: inset 0 1px #ffffff19, 0 12px 30px #0005;
+  scrollbar-color: #52748b #0b1928;
+}
+#garage-screen .garage-collection h3 {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 14px; line-height: 1.55; letter-spacing: .07em;
+  color: #e7f7ff; text-shadow: 0 0 16px #60baff42;
+}
+#garage-screen .garage-collection h3::before {
+  content: ''; height: 17px; width: 4px; flex: 0 0 auto; border-radius: 3px;
+  background: linear-gradient(#a0eaff, #8469ff);
+  box-shadow: 0 0 10px #5ddfff8c;
+}
+#garage-screen .garage-collection :is(.paint-options button, .garage-vfx-category .garage-skin-card) {
+  background: var(--garage-card-surface);
+  border: 1px solid var(--garage-card-border);
+  border-radius: 14px 6px 14px 6px; color: #edf7ff;
+  box-shadow: inset 0 1px #ffffff16, 0 5px 15px #0005;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+#garage-screen .paint-options button { --card-hue: 194; min-height: 112px; padding: 9px; gap: 7px; }
+#garage-screen .paint-options button i { height: 43px; border-radius: 11px 3px 11px 3px;
+  border: 1px solid #cee9ff71; box-shadow: inset -14px -8px 20px #0005, inset 8px 8px 16px #fff4,
+  0 0 8px #5abffc33; }
+#garage-screen .paint-options button .garage-paint-name {
+  line-height: 1.5; font-size: 12px; font-weight: 800; overflow-wrap: anywhere;
+}
+#garage-screen .paint-options button .garage-paint-badge {
+  align-self: center; border-radius: 999px; padding: 2px 9px; font-size: 11px;
+  color: #b7e8ff; background: #1c48687a; border: 1px solid #66d9ff3f;
+}
+#garage-screen .paint-options button[aria-pressed="true"] {
+  border-color: #82e9ff; outline: 1px solid #70daffbd;
+  box-shadow: 0 0 0 1px #46d9ff44, 0 0 19px #31a9ff57, inset 0 0 11px #28aaff24;
+}
+#garage-screen .paint-options button[data-state="equipped"] .garage-paint-badge {
+  color: #75f7dc; background: #063e406b; border-color: #32bda48f;
+}
+#garage-screen .paint-options button[data-state="locked"] {
+  --card-hue: 214; border-style: solid; filter: saturate(.7);
+}
+#garage-screen .garage-collection :is(.controls-reset, .garage-restore) {
+  border-radius: 12px 4px 12px 4px; font-weight: 800; letter-spacing: .025em;
+  box-shadow: inset 0 1px #ffffff48, 0 5px 12px #0005;
+  transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
+}
+#garage-screen .garage-collection .controls-reset:not(:disabled) {
+  background: linear-gradient(125deg, #62e9f6, #1b9dcc);
+  color: #082134; border-color: #a1f7ff;
+}
+#garage-screen .garage-collection .garage-restore {
+  background: linear-gradient(125deg, #2c3b62, #172d46);
+  border-color: #607db3; color: #daebff;
+}
+#garage-screen .garage-tabs span { border-radius: 11px 4px 11px 4px;
+  background: linear-gradient(150deg, #162c46, #0a1a2c); }
+#garage-screen .garage-collection :is(.collection-note, .garage-coming) {
+  line-height: 1.55; overflow-wrap: anywhere;
+}
+#garage-screen .garage-collection :is(button, .garage-skin-preview-hitarea):focus-visible {
+  outline: 3px solid #74eaff; outline-offset: 3px;
+}
+@media (hover: hover) and (pointer: fine) {
+  #garage-screen .garage-collection .paint-options button:hover {
+    transform: translateY(-3px); border-color: #85e9ff;
+    box-shadow: 0 8px 19px #0009, 0 0 16px #4dd5ff48;
+  }
+  #garage-screen .garage-collection :is(.controls-reset:not(:disabled), .garage-restore):hover {
+    filter: brightness(1.16); transform: translateY(-1px);
+  }
+}
+@media (hover: none) {
+  #garage-screen .garage-collection :is(.paint-options button, .controls-reset):active {
+    transform: scale(.985);
+  }
+}
+@media (max-height: 420px) and (orientation: landscape) {
+  #garage-screen .paint-options button { min-height: 94px; }
 }
 
 </style>
