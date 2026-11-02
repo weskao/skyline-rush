@@ -94,6 +94,20 @@ Each of the five **two-view storyboard SVGs** below is physically committed in t
 
 **Non-negotiable gameplay interpretation:** Illustration composition is a *visual target*, not an authority for track graph. Route coordinates and gate placement must follow [route schematics](README.md#github-saved-image-references) plus validated game topology: separate START and FINISH, ordered gates, legal ground/air branches, no lap count. Implementations must compare actual WebGL captures to BOTH scene references and log differences.
 
+## JPEG scene references (Stage 1) and Stage 2 expansion
+
+**Stage 1:** ten JPEG files are **committed and linked**, converted from the original AI-generated ten scene PNG crops. The two unconverted overview PNG originals are still only retained in the chat ZIP; the originals themselves are not in GitHub. The JPEG content is the source reference for the Stage 1 real-WebGL visual comparisons.
+
+| Stage 1 track | Ground JPEG | Aerial / shortcut JPEG |
+| --- | --- | --- |
+| 沙暴裂谷 | [Ground](source-concept-jpeg/dune-tempest/concept-view-01.jpg) | [Aerial](source-concept-jpeg/dune-tempest/concept-view-02.jpg) |
+| 雨林失落神殿 | [Ground](source-concept-jpeg/monsoon-ruins/concept-view-01.jpg) | [Aerial](source-concept-jpeg/monsoon-ruins/concept-view-02.jpg) |
+| 浮空群島 | [Ground](source-concept-jpeg/skyfall-archipelago/concept-view-01.jpg) | [Aerial](source-concept-jpeg/skyfall-archipelago/concept-view-02.jpg) |
+| 熔火天脊 | [Ground](source-concept-jpeg/volcanic-crown/concept-view-01.jpg) | [Aerial](source-concept-jpeg/volcanic-crown/concept-view-02.jpg) |
+| 霓虹暴雨都市 | [Ground](source-concept-jpeg/stormline-megacity/concept-view-01.jpg) | [Aerial](source-concept-jpeg/stormline-megacity/concept-view-02.jpg) |
+
+**Stage 2:** [five additional point-to-point tracks, 10 JPEGs + 5 routes](stage-2/README.md), [Stage 2 visual fidelity](stage-2/visual-fidelity.md), [Stage 2 implementation spec](../../superpowers/specs/2026-11-02-stage2-five-longform-tracks-design.md). Ten planned new tracks altogether, none playable yet.
+
 ## Original high-detail AI PNG artwork — provenance / status
 
 Two AI-generated collage originals and **ten cropped scene views (two per track)** are included in the chat-delivered `skyline-rush-five-tracks-concept-reference-pack.zip`. **Those original PNG bytes have NOT been uploaded to GitHub by this session.** The five boards above **are genuine GitHub files**, but they are separate newly authored vector references, **not copies of those previous AI PNGs**.
