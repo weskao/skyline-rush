@@ -34,8 +34,8 @@ function ribbon(curve: THREE.Curve<THREE.Vector3>, width: number, material: THRE
     const length = Math.hypot(tangent.x, tangent.z) || 1;
     const rx = -tangent.z / length, rz = tangent.x / length;
     const half = width * (name === 'Air corridor' ? 0.45 + 0.55 * Math.sin(Math.PI * t) : 0.5);
-    vertices.push(point.x - rx * half, point.y + 0.10, point.z - rz * half,
-      point.x + rx * half, point.y + 0.10, point.z + rz * half);
+    vertices.push(point.x - rx * half, point.y + (name === 'Ground road shoulder' ? -0.08 : 0.10), point.z - rz * half,
+      point.x + rx * half, point.y + (name === 'Ground road shoulder' ? -0.08 : 0.10), point.z + rz * half);
     if (i < segments) {
       const a = i * 2;
       indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
@@ -70,7 +70,7 @@ function terrain(road: THREE.Curve<THREE.Vector3>): THREE.Mesh {
       + 1.8 * Math.sin((px + pz) * 0.093)) * Math.min(1, Math.max(0, (distance - 9) / 24));
     const canyonX = Math.max(0, Math.min(1, (px - 28) / 18, (112 - px) / 20));
     const canyonZ = Math.max(0, Math.min(1, (-pz - 48) / 25));
-    const abyss = 57 * canyonX * canyonZ;
+    const abyss = 57 * canyonX * canyonZ * Math.min(1, Math.max(0, (distance - 15) / 16));
     const height = -0.52 + ridge + wave - abyss;
     positions.push(px, height, pz);
     color.set(height < -19 ? 0x593324 : height > 19 ? 0xc47a42 : SAND);
@@ -159,7 +159,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
     rock.position.set(x, 3, z);
     add(rock);
   }
-  add(stoneRing(42, 27, -109, 23, 'Monumental stone ring'));
+  add(stoneRing(26, 27, -109, 23, 'Monumental stone ring'));
   add(stoneRing(6, 19, -222, 14, 'Distant stone ring'));
   add(ruins());
 
