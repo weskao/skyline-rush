@@ -1,5 +1,7 @@
 # Original AI-generated PNG artwork — import manifest
 
+**JPEG conversion update (2026-11-02):** Ten original view PNGs have been converted to JPEG and are genuinely committed under [source-concept-jpeg](source-concept-jpeg/), with the same captured scene dimensions. The lossless PNG source bytes and two original overview PNGs are **not** in GitHub; preserving them is optional now that the user specified JPEG-only source references. This historical PNG checksum table remains for provenance. The other five new tracks have [their own 10 committed JPEGs](stage-2/README.md).
+
 **Integrity manifest only.** The 12 original PNGs listed here are **not committed to this GitHub branch yet**. They are packaged in the ChatGPT-provided `skyline-rush-concept-images-github-ready.zip` archive. This manifest lets the future implementer import exactly the original reference bytes, verify hashes, and add real links without substituting unrelated art.
 
 **Current committed alternatives:** ten individually accessible vector images (`concept-art/<track-id>-ground-view.svg` and `concept-art/<track-id>-aerial-view.svg`), five vector double-view boards, and five distinct point-to-point route schematics. The PNGs inventoried here are visually different source images; these have not been uploaded to GitHub. See [README.md](README.md#ten-standalone-concept-images-five-maps--two-camera-views).
