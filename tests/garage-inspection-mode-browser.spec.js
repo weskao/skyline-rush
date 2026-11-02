@@ -8,8 +8,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.locator('#garage-studio-open').click();
     const preview = page.locator('#garage-preview');
     for (const mode of ['ground', 'flight']) {
-      await page.locator(`[data-garage-mode="${mode}"]`).click();
-      await expect(page.locator(`[data-garage-mode="${mode}"]`)).toHaveAttribute('aria-pressed', 'true');
+      await page.locator(`button[data-garage-mode="${mode}"]`).click();
+      await expect(page.locator(`button[data-garage-mode="${mode}"]`)).toHaveAttribute('aria-pressed', 'true');
       await expect(preview).toHaveAttribute('data-garage-mode', mode);
       for (const angle of ['side', 'front', 'rear', 'top', 'cinematic']) {
         await page.locator(`[data-garage-angle="${angle}"]`).click();
@@ -22,7 +22,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         }
       }
     }
-    await page.locator('[data-garage-mode="ground"]').click();
+    await page.locator('button[data-garage-mode="ground"]').click();
     await expect(preview).toHaveAttribute('data-garage-mode', 'ground');
   });
 }
