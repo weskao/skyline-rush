@@ -1,5 +1,9 @@
 # Agent guidance
 
+## Required 3× HUD asset handoff (2026-11-02)
+
+Read [the 18-image implementation and exact source-use map](docs/designs/mobile-3x-ui-assets.md) before changing HUD art, input geometry, or controls. Original WebP source pixels are kept at 3× with 1× CSS display; this feature branch is for UI art integration only. Never hide functional SVG/accessibility controls beneath art or treat decorative assets as completed game features.
+
 ## 2026-11-02 latest source integration checkpoint (overrides historical source-unavailable wording)
 
 **Images actually present:** All **6 original transparent WebP Git blobs** have been copied without re-encoding from `feature/3x-ui-materials` to this branch's `public/feature-assets/garage-store-readiness/raster/`. They have **216×216 original image pixels, displayed at 72×72 CSS px (1×)**. SHA equality checked against every source file in the 59-item [shared asset manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md).
