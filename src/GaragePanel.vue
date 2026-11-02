@@ -16,7 +16,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   showroom: '3D 車輛展示間', title: '預覽工作室', open: '開啟全螢幕預覽', back: '返回車庫',
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'],
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
-  auto: '自動旋轉', reset: '重設鏡頭', collection: '車漆收藏',
+  auto: '自動旋轉', reset: '重設鏡頭', viewMode: '展示姿態', ground: '平地展示', flight: '起飛展示', collection: '車漆收藏',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：僅本次開啟有效，重新載入後還原；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆', equipment: GARAGE_RELEASE_MODE === 'coming-soon' ? '即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '特效試用' : '外觀特效',
   titleLine: '自訂外觀 • 探索車漆 • 自由預覽',
@@ -25,7 +25,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'],
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
-  auto: 'Auto rotate', reset: 'Reset camera', collection: 'Paint collection',
+  auto: 'Auto rotate', reset: 'Reset camera', viewMode: 'Display pose', ground: 'Ground', flight: 'Flight', collection: 'Paint collection',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free during this visit. Reload resets temporary equipment; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint', equipment: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'VFX trial' : 'Cosmetic VFX',
   titleLine: 'CUSTOMIZE • INSPECT • PREVIEW',
@@ -49,6 +49,11 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
       <section class="garage-visual" :aria-label="copy.showroom">
         <div id="garage-preview" class="garage-preview" tabindex="0" role="group" :aria-label="copy.hint" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + -"></div>
         <p v-show="garageStudioView.page === 'studio'" class="garage-hint">{{ copy.hint }}</p>
+        <div v-show="garageStudioView.page === 'studio'" class="garage-mode-controls" role="group" :aria-label="copy.viewMode">
+          <span class="garage-mode-label">{{ copy.viewMode }}</span>
+          <button type="button" data-garage-mode="ground" :aria-pressed="garageStudioView.mode === 'ground'">{{ copy.ground }}</button>
+          <button type="button" data-garage-mode="flight" :aria-pressed="garageStudioView.mode === 'flight'">{{ copy.flight }}</button>
+        </div>
         <nav v-show="garageStudioView.page === 'studio'" class="garage-camera-controls" :aria-label="locale === 'zh-TW' ? '鏡頭控制' : 'Camera controls'">
           <button v-for="(angle, index) in angles" :key="angle" type="button" :data-garage-angle="angle" :aria-pressed="garageStudioView.angle === angle">{{ copy.angles[index] }}</button>
           <button type="button" id="garage-rotate-left" :aria-label="copy.left">↶</button>
@@ -104,12 +109,16 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
   #garage-screen .paint-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   #garage-screen .garage-camera-controls { max-height: 118px; overflow-y: auto; }
   #garage-screen .garage-camera-controls button { padding-inline: 8px; font-size: 12px; }
+  #garage-screen .garage-mode-label { display: none; }
+  #garage-screen .garage-mode-controls button { flex: 1; }
 }
 @media (max-height: 420px) and (orientation: landscape) {
   #garage-screen.garage-screen { gap: 5px; padding-block: 5px; }
   #garage-screen .garage-layout { grid-template-columns: minmax(0, 1fr) minmax(180px, 260px); gap: 8px; }
   #garage-screen .garage-hint { display: none; }
   #garage-screen .garage-camera-controls { max-height: 72px; overflow-y: auto; }
+  #garage-screen .garage-mode-label { display: none; }
+  #garage-screen .garage-mode-controls button { min-width: 80px; }
   #garage-screen .garage-camera-controls button { font-size: 11px; min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { #garage-screen, #garage-screen * { animation: none !important; transition: none !important; } }
@@ -124,6 +133,11 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 #garage-screen[data-page="studio"] .garage-camera-controls { background: #0a1724; border: 1px solid #24455a; border-radius: 12px; padding: 8px; }
 #garage-screen .garage-camera-controls button { background: #11283b; border-color: #35536a; color: #dfeef7; cursor: pointer; }
 #garage-screen .garage-camera-controls button[aria-pressed="true"] { background: #063e58; color: #68e4ff; border-color: #19cbf6; box-shadow: inset 0 0 0 1px #0084a5; }
+#garage-screen .garage-mode-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 7px; }
+#garage-screen .garage-mode-label { color: #a7c7db; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin-inline-end: 3px; }
+#garage-screen .garage-mode-controls button { min-height: 44px; min-width: 100px; padding: 8px 15px; border-radius: 999px; border: 1px solid #547188; color: #d5e8f6; background: #172a3e; font-weight: 800; cursor: pointer; }
+#garage-screen .garage-mode-controls button[aria-pressed="true"] { color: #041a29; background: linear-gradient(110deg, #83eeff, #49bff9); border-color: #b5f4ff; box-shadow: 0 0 17px #2fbcf258; }
+#garage-screen .garage-mode-controls button[data-garage-mode="flight"][aria-pressed="true"] { background: linear-gradient(110deg, #ffc58b, #f897dc); border-color: #ffdfbd; box-shadow: 0 0 18px #fa9c9d67; }
 #garage-screen .garage-collection { background: #0b1928; border: 1px solid #294455; border-radius: 12px; padding: 14px; }
 #garage-screen .garage-tabs { display: flex; gap: 8px; margin-bottom: 14px; font-size: 11px; }
 #garage-screen .garage-tabs span { flex: 1; padding: 10px 6px; border: 1px solid #284455; border-radius: 6px; text-align: center; color: #9caebb; }
