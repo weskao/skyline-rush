@@ -30,7 +30,16 @@ test('dune tempest is native 3D environment with anchored sand road and landmark
   assert.ok(verts.some((v, i) => i % 3 === 0 && v < -60), 'western U bend');
   assert.ok(verts.some((v, i) => i % 3 === 0 && v > 20), 'eastern U bend');
   assert.ok(verts.some((v, i) => i % 3 === 1 && Math.abs(v) <= 0.2), 'road supports car at y≈0');
-  assert.ok(positions(find(env.group, 'Canyon terrain')).every(Number.isFinite));
+  const terrainCoords = positions(find(env.group, 'Canyon terrain'));
+  assert.ok(terrainCoords.every(Number.isFinite));
+  const roadbed = [];
+  for (let i = 0; i < terrainCoords.length; i += 3) {
+    if (Math.hypot(terrainCoords[i] - 31, terrainCoords[i + 2] + 132) < 6.5) {
+      roadbed.push(terrainCoords[i + 1]);
+    }
+  }
+  assert.ok(roadbed.length > 0 && roadbed.every(y => y > -5),
+    'the lower driving road cannot float over the canyon cut');
   assert.ok(scene.fog?.isFogExp2, 'distant sand haze belongs to the scene');
   assert.ok(!env.group.children.some(c => c.isCamera), 'no owned camera');
   env.dispose();
