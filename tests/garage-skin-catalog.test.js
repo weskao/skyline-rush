@@ -7,11 +7,12 @@ const profile = (value = {}) => normalizeSkinProfile({ version: 1, accountId: ac
 const session = (value = {}) => ({ accountId: account, now: 1000, trialEnabled: false, trialExpiresAt: 0, ...value });
 
 test('BDD catalog groups all four categories with stable unique IDs and default entries', () => {
-  assert.equal(GARAGE_SKINS.length, 8);
-  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 8);
+  assert.equal(GARAGE_SKINS.length, 22);
+  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 22);
   for (const category of SKIN_CATEGORIES) {
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && s.default).length, 1);
-    assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length, 1);
+    assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length,
+      category === 'launch-flare' ? 8 : category === 'nitro-trail' ? 4 : 3);
   }
 });
 
@@ -60,8 +61,14 @@ test('Corrupt profile, unknown IDs, foreign keys and malformed entitlements are 
 
 test('Raster candidates are not mistaken for committed assets; SVG fallback uses Vite base path', () => {
   const art = skinArtwork('thruster-ion', '/skyline-rush/');
-  assert.deepEqual(art, { src: '/skyline-rush/feature-assets/garage-vfx-skins/thruster.svg', fallback: '/skyline-rush/feature-assets/garage-vfx-skins/thruster.svg', cssSize: 96, candidateRasterId: 'thruster-ion', hasRaster: false });
-  assert.equal(skinArtwork('nitro-trail-cyan', 'https://evil.example/').src, '/feature-assets/garage-vfx-skins/nitro-trail.svg');
+  assert.deepEqual(art, { src: '/skyline-rush/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', fallback: '/skyline-rush/feature-assets/garage-vfx-skins/thruster.svg', cssSize: 96, candidateRasterId: 'thruster-ion', hasRaster: true });
+  const missing = skinArtwork('nitro-trail-basic', '/skyline-rush/');
+  assert.deepEqual(missing, { src: '/skyline-rush/feature-assets/garage-vfx-skins/nitro-trail.svg', fallback: '/skyline-rush/feature-assets/garage-vfx-skins/nitro-trail.svg', cssSize: 96, candidateRasterId: undefined, hasRaster: false });
+  const blueFlare = skinArtwork('launch-flare-blue', '/skyline-rush/');
+  assert.ok(blueFlare.hasRaster);
+  assert.match(blueFlare.src, /flare-blue@3x\.webp$/);
+  assert.equal(blueFlare.cssSize, 96);
+  assert.equal(skinArtwork('nitro-trail-cyan', 'https://evil.example/').src, '/feature-assets/garage-vfx-skins/raster/trail-cyan@3x.webp');
 });
 
 test('Cloud payload never serializes ephemeral trial/equip/preview fields', () => {
@@ -83,4 +90,45 @@ test('original PAINTS star thresholds remain the sole paint entitlement source',
   assert.equal(ownedPaints(16).includes('obsidian'), false);
   skinCloudPayload(profile({ owned: ['thruster-ion'] }));
   assert.equal(JSON.stringify(PAINTS), snapshot);
+});
+
+// All original VFX candidates with equipment semantics must become real selectable items.
+test('every original 3x VFX equipment image has a distinct genuine catalog entry', async () => {
+  const { existsSync, readFileSync } = await import('node:fs');
+  const files = ['thruster-basic','thruster-ion','thruster-plasma','thruster-void',
+    'trail-cyan','trail-gold','trail-red','trail-purple',
+    'flare-blue','flare-ring','flare-purple','flare-gold','flare-red','flare-cyan',
+    'flare-magenta','flare-white'];
+  assert.equal(files.length, 16);
+  for (const name of files) {
+    const skin = GARAGE_SKINS.find(x => x.candidateRasterId === name);
+    assert.ok(skin, `no selectable Skin for original ${name}`);
+    const file = new URL(`../public/feature-assets/garage-vfx-skins/raster/${name}@3x.webp`, import.meta.url);
+    assert.ok(existsSync(file), `original 3x WebP absent: ${name}`);
+    assert.ok(readFileSync(file).byteLength > 1000, `blank image: ${name}`);
+    const art = skinArtwork(skin.id, '/skyline-rush/');
+    assert.equal(art.cssSize, 96);
+    assert.equal(art.hasRaster, true);
+  }
+});
+
+// Four unique source icons (288x288) rather than one shared category SVG.
+test('all airflow skins resolve to four distinct native 3x SVG artworks', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const ids=['airflow-basic','airflow-slipstream','airflow-vortex','airflow-prism'];
+  const sources=new Set();
+  for(const id of ids){
+    const image=skinArtwork(id,'/skyline-rush/');
+    assert.equal(image.hasRaster,true);
+    assert.equal(image.cssSize,96);
+    assert.equal(image.candidateRasterId,id);
+    assert.match(image.src,/airflow-[a-z]+@3x\.svg$/);
+    sources.add(image.src);
+    const source = new URL(`../public/feature-assets/garage-vfx-skins/raster/${id}@3x.svg`, import.meta.url);
+    assert.equal(existsSync(source), true, `missing SVG: ${id}`);
+    const svg=readFileSync(source,'utf8');
+    assert.match(svg, /<svg\b[^>]*width="288"[^>]*height="288"[^>]*viewBox="0 0 288 288"/);
+    assert.ok(svg.includes('<path'), `missing custom path shapes: ${id}`);
+  }
+  assert.equal(sources.size,4);
 });

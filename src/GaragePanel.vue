@@ -5,6 +5,7 @@ import { garageStudioView } from './garage-view-state.ts';
 import { PAINTS } from './appearance.ts';
 import { garageView } from './garage-view-state.ts';
 import CloseButton from './CloseButton.vue';
+import GaragePaintPreview from './GaragePaintPreview.vue';
 import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
@@ -17,7 +18,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'],
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
   auto: '自動旋轉', reset: '重設鏡頭', collection: '車漆收藏',
-  coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '特效可免費試用，試用不等於永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
+  coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：僅本次開啟有效，重新載入後還原；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆', equipment: GARAGE_RELEASE_MODE === 'coming-soon' ? '即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '特效試用' : '外觀特效',
   titleLine: '自訂外觀 • 探索車漆 • 自由預覽',
   preview: '預覽', unlockNote: '累積賽道星數可解鎖車漆；未解鎖車漆僅能試看。',
@@ -26,7 +27,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'],
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
   auto: 'Auto rotate', reset: 'Reset camera', collection: 'Paint collection',
-  coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try cosmetic VFX for free; trial is not ownership' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
+  coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free during this visit. Reload resets temporary equipment; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint', equipment: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'VFX trial' : 'Cosmetic VFX',
   titleLine: 'CUSTOMIZE • INSPECT • PREVIEW',
   preview: 'Preview', unlockNote: 'Earn track stars to unlock paint; locked finishes are preview-only.',
@@ -62,13 +63,13 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
       <aside class="garage-collection">
         <div v-show="garageStudioView.page === 'studio'" class="garage-tabs"><span class="active">{{ copy.collection }}</span><span aria-disabled="true">{{ copy.equipment }}</span></div>
         <h3>{{ copy.collection }}</h3>
-    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><i :style="{ backgroundColor: paint.paint }" aria-hidden="true"></i><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ paint.name }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></button></div>
+    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><GaragePaintPreview :id="id" :color="paint.paint" /><span class="garage-paint-meta"><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id) }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></span></button></div>
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
     <button id="garage-equip" class="controls-reset" :disabled="garageView.equipDisabled" aria-label="Equip finish" data-i18n-aria-label="garage.equip">{{ garageView.equipLabel }}</button>
     <button v-show="garageStudioView.page === 'studio'" id="garage-restore-default" type="button" class="garage-restore">{{ copy.restore }}</button>
         <p class="collection-note">{{ copy.unlockNote }}</p>
         <p class="garage-coming">{{ copy.coming }}</p>
-        <GarageSkinCatalog v-show="garageStudioView.page === 'studio'" :locale="locale" />
+        <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
         <GarageSourceArtGallery category="garage-store-readiness" />
       </aside>
@@ -160,4 +161,114 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
   #garage-screen .garage-paint-badge { font-size: 10px; }
 }
 
+/* Unified Garage Collection polish: one shared themed surface for paint and VFX cards. */
+#garage-screen .garage-collection {
+  background: linear-gradient(160deg, #102439, #081724 74%);
+  border: 1px solid #3b5d74; box-shadow: inset 0 1px #ffffff19, 0 12px 30px #0005;
+  scrollbar-color: #52748b #0b1928;
+}
+#garage-screen .garage-collection h3 {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 14px; line-height: 1.55; letter-spacing: .07em;
+  color: #e7f7ff; text-shadow: 0 0 16px #60baff42;
+}
+#garage-screen .garage-collection h3::before {
+  content: ''; height: 17px; width: 4px; flex: 0 0 auto; border-radius: 3px;
+  background: linear-gradient(#a0eaff, #8469ff);
+  box-shadow: 0 0 10px #5ddfff8c;
+}
+#garage-screen .garage-collection :is(.paint-options button, .garage-vfx-category .garage-skin-card) {
+  --garage-card-surface:
+    radial-gradient(ellipse at 50% 19%, hsl(var(--card-hue, 195) 72% 39% / .25), transparent 74%),
+    linear-gradient(155deg, #1c2e4a, #0c192c 86%);
+  --garage-card-border: hsl(var(--card-hue, 195) 69% 61% / .48);
+  background: var(--garage-card-surface);
+  border: 1px solid var(--garage-card-border);
+  border-radius: 14px 6px 14px 6px; color: #edf7ff;
+  box-shadow: inset 0 1px #ffffff16, 0 5px 15px #0005;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+#garage-screen .paint-options button { --card-hue: 194; min-height: 112px; padding: 9px; gap: 7px; }
+#garage-screen .paint-options button i { height: 43px; border-radius: 11px 3px 11px 3px;
+  border: 1px solid #cee9ff71; box-shadow: inset -14px -8px 20px #0005, inset 8px 8px 16px #fff4,
+  0 0 8px #5abffc33; }
+#garage-screen .paint-options button .garage-paint-name {
+  line-height: 1.5; font-size: 12px; font-weight: 800; overflow-wrap: anywhere;
+}
+#garage-screen .paint-options button .garage-paint-badge {
+  align-self: center; border-radius: 999px; padding: 2px 9px; font-size: 11px;
+  color: #b7e8ff; background: #1c48687a; border: 1px solid #66d9ff3f;
+}
+#garage-screen .paint-options button[aria-pressed="true"] {
+  border-color: #82e9ff; outline: 1px solid #70daffbd;
+  box-shadow: 0 0 0 1px #46d9ff44, 0 0 19px #31a9ff57, inset 0 0 11px #28aaff24;
+}
+#garage-screen .paint-options button[data-state="equipped"] .garage-paint-badge {
+  color: #75f7dc; background: #063e406b; border-color: #32bda48f;
+}
+#garage-screen .paint-options button[data-state="locked"] {
+  --card-hue: 214; border-style: solid; filter: saturate(.7);
+}
+#garage-screen .garage-collection :is(.controls-reset, .garage-restore) {
+  border-radius: 12px 4px 12px 4px; font-weight: 800; letter-spacing: .025em;
+  box-shadow: inset 0 1px #ffffff48, 0 5px 12px #0005;
+  transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
+}
+#garage-screen .garage-collection .controls-reset:not(:disabled) {
+  background: linear-gradient(125deg, #62e9f6, #1b9dcc);
+  color: #082134; border-color: #a1f7ff;
+}
+#garage-screen .garage-collection .garage-restore {
+  background: linear-gradient(125deg, #2c3b62, #172d46);
+  border-color: #607db3; color: #daebff;
+}
+#garage-screen .garage-tabs span { border-radius: 11px 4px 11px 4px;
+  background: linear-gradient(150deg, #162c46, #0a1a2c); }
+#garage-screen .garage-collection :is(.collection-note, .garage-coming) {
+  line-height: 1.55; overflow-wrap: anywhere;
+}
+#garage-screen .garage-collection :is(button, .garage-skin-preview-hitarea):focus-visible {
+  outline: 3px solid #74eaff; outline-offset: 3px;
+}
+@media (hover: hover) and (pointer: fine) {
+  #garage-screen .garage-collection .paint-options button:hover {
+    transform: translateY(-3px); border-color: #85e9ff;
+    box-shadow: 0 8px 19px #0009, 0 0 16px #4dd5ff48;
+  }
+  #garage-screen .garage-collection :is(.controls-reset:not(:disabled), .garage-restore):hover {
+    filter: brightness(1.16); transform: translateY(-1px);
+  }
+}
+@media (hover: none) {
+  #garage-screen .garage-collection :is(.paint-options button, .controls-reset):active {
+    transform: scale(.985);
+  }
+}
+@media (max-height: 420px) and (orientation: landscape) {
+  #garage-screen .paint-options button { min-height: 94px; }
+}
+
+</style>
+
+<style>
+/* Larger car-body previews replace the old 26–43px swatch. */
+#garage-screen .paint-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+#garage-screen .paint-options button { min-width: 0; min-height: 144px; padding: 7px; gap: 8px; }
+#garage-screen .garage-paint-meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 5px; padding: 0 2px 3px; }
+#garage-screen .garage-paint-name { font-size: 12px; line-height: 1.25; text-align: left; }
+#garage-screen .paint-options button .garage-paint-badge { align-self: auto; font-size: 10px; white-space: nowrap; padding: 2px 6px; }
+#garage-screen .paint-options button[data-state="locked"] { filter: none; }
+#garage-screen .paint-options button[data-state="locked"] .garage-paint-preview { filter: saturate(.88); }
+#garage-screen .paint-options button[aria-pressed="true"] .garage-paint-preview { border-color: #91ecff; box-shadow: 0 0 14px #13d7ff3c; }
+@media (max-width: 650px) and (orientation: portrait) {
+  #garage-screen .paint-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #garage-screen .paint-options button { min-height: 135px; }
+  #garage-screen .garage-collection { flex-basis: 43%; }
+}
+@media (max-height: 420px) and (orientation: landscape) {
+  #garage-screen .paint-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #garage-screen .paint-options button { min-height: 128px; }
+  #garage-screen .garage-paint-preview { min-height: 78px; }
+}
 </style>

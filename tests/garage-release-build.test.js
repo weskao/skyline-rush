@@ -8,6 +8,9 @@ test('production defaults to coming-soon with a safe locked UI and runtime (not 
   assert.match(result.aliases['#garage-skin-ui'], /GarageSkinComingSoon\.vue$/);
   assert.match(result.aliases['#garage-skin-runtime'], /garage-skin-runtime-locked\.ts$/);
   assert.match(result.aliases['#garage-skin-palette'], /garage-skin-palette-locked\.ts$/);
+  assert.match(result.aliases['#garage-void-beams'], /garage-void-beams-locked\.js$/);
+  assert.match(result.aliases['#garage-launch-flare'], /garage-launch-flare-locked\.js$/);
+  assert.match(result.aliases['#garage-nitro-trail'], /garage-nitro-trail-locked\.js$/);
 });
 
 test('development and preview can select trial; release uses a separate strategy with no trial grants', () => {
@@ -17,6 +20,9 @@ test('development and preview can select trial; release uses a separate strategy
     assert.equal(config.mode, mode);
     assert.match(config.aliases['#garage-skin-runtime'], /garage-skin-runtime\.ts$/);
     assert.match(config.aliases['#garage-skin-ui'], /GarageSkinCatalog\.vue$/);
+    assert.match(config.aliases['#garage-void-beams'], /garage-void-beams\.js$/);
+    assert.match(config.aliases['#garage-launch-flare'], /garage-launch-flare\.js$/);
+    assert.match(config.aliases['#garage-nitro-trail'], /garage-nitro-trail\.js$/);
   }
 });
 
@@ -71,4 +77,44 @@ test('unpublished skin IDs must be absent from shared race shader and covered by
     assert.doesNotMatch(shader, new RegExp(id));
     assert.ok(gate.includes(id), `missing locked-bundle leak marker: ${id}`);
   }
+});
+
+// The locked strategy must match the shared shader ABI but reveal no new IDs.
+test('locked release returns neutral color and shape patterns', async () => {
+  const { skinVfxPattern, skinVfxPalette } = await import('../src/garage-skin-palette-locked.ts');
+  const expected = { thruster: 0, airflow: 0, 'nitro-trail': 0, 'launch-flare': 0 };
+  assert.deepEqual(skinVfxPattern({}), expected);
+  assert.deepEqual(skinVfxPattern({ thruster: 'thruster-plasma' }), expected);
+  assert.deepEqual(skinVfxPalette({}), Object.fromEntries(Object.keys(expected).map(k => [k, [1, 1, 1]])));
+  const { readFileSync } = await import('node:fs');
+  const gate = readFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url), 'utf8');
+  for (const id of ['thruster-plasma', 'airflow-vortex', 'nitro-trail-gold', 'launch-flare-pulse']) assert.ok(gate.includes(id));
+});
+
+test('public Pages deploy opts in to free trial, while local production builds remain fail closed', async () => {
+  const { readFileSync } = await import('node:fs');
+  const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url),'utf8');
+  const deploy = workflow.slice(workflow.indexOf('  deploy:'), workflow.indexOf('  # Failure-only pager'));
+  assert.match(deploy, /GARAGE_VFX_RELEASE_MODE:\s*trial(?:\s|$)/m);
+  assert.match(deploy, /node scripts\/assert-production-locked\.mjs/);
+  assert.equal(selectGarageReleaseBuild('production', undefined).mode, 'coming-soon');
+  assert.equal(selectGarageReleaseBuild('production', 'trial').mode, 'trial');
+});
+
+test('free-trial deployment bundle is checked for real published artwork, not just absent debug markers', async () => {
+  const { readFileSync } = await import('node:fs');
+  const audit = readFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url),'utf8');
+  assert.match(audit, /mode === 'trial'/);
+  assert.match(audit, /thruster-ion@3x\.webp/);
+  assert.match(audit, /airflow-vortex@3x\.svg/);
+  assert.match(audit, /GARAGE_VFX_RELEASE_MODE/);
+});
+
+test('release policy explains opt-in public session trial without permanent ownership', async () => {
+  const { readFileSync } = await import('node:fs');
+  const policy=readFileSync(new URL('../docs/garage-release-policy.md', import.meta.url),'utf8');
+  assert.match(policy, /Public trial rollout/);
+  assert.match(policy, /session-only/i);
+  assert.match(policy, /reload|重新載入/i);
+  assert.match(policy, /no (?:purchase|checkout|payment)/i);
 });
