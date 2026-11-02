@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 const props = withDefaults(defineProps<{
-  src: string; alt: string; size: number; fallbackSrc?: string;
+  src: string; alt: string; size: number; height?: number; imageId?: string; fallbackSrc?: string;
   fallbackText?: string; fallbackClass?: string; loading?: 'lazy' | 'eager';
 }>(), { fallbackSrc: '', fallbackText: '', fallbackClass: '', loading: 'lazy' });
 const usingFallback = ref(false), failed = ref(false);
@@ -13,7 +13,8 @@ function onError(): void {
 </script>
 <template>
   <img v-if="!failed" class="artwork-img" :src="usingFallback ? fallbackSrc : src"
-    :width="size" :height="size" :style="{ width: size + 'px', height: size + 'px' }"
+    :width="size" :height="height ?? size" :data-image="imageId"
+    :style="{ width: size + 'px', height: (height ?? size) + 'px' }"
     :alt="alt" :loading="loading" decoding="async" @error="onError" />
   <span v-else class="artwork-fallback" :class="fallbackClass" role="img"
     :aria-label="fallbackText || alt">{{ fallbackText || alt }}</span>
