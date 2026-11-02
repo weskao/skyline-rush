@@ -21,23 +21,9 @@ test('all 18 3x original HUD/control images are accessible at 1x CSS in Settings
   await expect(gallery).not.toContainText(/enable purchase|claim reward|立即購買/i);
 });
 
-test('original 3x images decorate functional Nitro, Brake, Pause and Play buttons without stealing input', async ({ page }) => {
+test('no button carries a decorative 3x image underneath its icon or label', async ({ page }) => {
   await page.goto('/');
-  for (const [selector, filename, cssWidth] of [
-    ['#start-button', 'button-play', '144'],
-    ['#garage-button', 'button-garage', '144'],
-    ['#pause-button', 'hud-pause', '72'],
-    ['[data-control="nitro"]', 'button-nitro', '144'],
-    ['[data-control="brake"]', 'hud-brake', '72'],
-    ['[data-control="left"]', 'ui-arrow-left', '72'],
-    ['[data-control="right"]', 'ui-arrow-right', '72'],
-  ]) {
-    const image = page.locator(selector + ' img.hud-3x-decor');
-    await expect(image).toHaveAttribute('src', new RegExp(filename + '@3x\\.webp$'));
-    await expect(image).toHaveAttribute('width', cssWidth);
-    await expect(image).toHaveAttribute('aria-hidden', 'true');
-    await expect(image).toHaveCSS('pointer-events', 'none');
-  }
+  await expect(page.locator('button img.hud-3x-decor, button img.settings-art-decor')).toHaveCount(0);
   await page.locator('#garage-button').click();
   await expect(page.locator('#garage-screen')).toBeVisible();
 });
@@ -72,19 +58,3 @@ test('all 18 artwork cards preserve native 3x pixels, visible icons and labels o
   }
 });
 
-
-test('decorative HUD original 3x images fit button hit regions without image clipping', async ({ page }) => {
-  await page.setViewportSize({width:390,height:844});
-  await page.goto('/');
-  for (const selector of ['#garage-button', '#start-button', '#pause-button',
-    '[data-control="nitro"]', '[data-control="brake"]', '[data-control="left"]', '[data-control="right"]']) {
-    const btn = page.locator(selector), img = btn.locator('img.hud-3x-decor');
-    const result = await img.evaluate(node => {
-      const a = node.getBoundingClientRect(), b = node.parentElement.getBoundingClientRect();
-      return { within: a.left >= b.left - 1 && a.right <= b.right + 1 &&
-        a.top >= b.top - 1 && a.bottom <= b.bottom + 1, hit: getComputedStyle(node).pointerEvents };
-    });
-    expect(result.within, selector).toBe(true);
-    expect(result.hit).toBe('none');
-  }
-});

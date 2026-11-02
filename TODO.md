@@ -1,3 +1,15 @@
+## Button 3x artwork removed — UI/UX follow-ups (2026-11-02)
+
+The 3x HUD artwork belongs to the future `feature/garage-store-readiness`, `feature/garage-rewards-and-missions` and `feature/garage-economy-foundation` work and was merged here by accident. It no longer shows under any button: `#start-button`, `#garage-button`, `#again-button`, `#pause-button`, `#settings-button`, and the touch Left / Right / Brake / NITRO buttons. The semantic SVG icons and labels are untouched.
+
+- [x] Removed every `img.hud-3x-decor` and `img.settings-art-decor` from `src/App.vue` / `src/SettingsPanel.vue`, plus their CSS and the `hudAsset` helper; `tests/hud-3x-artwork-browser.spec.js` asserts none come back.
+- [ ] Image paths kept for later (`public/feature-assets/mobile-controls-hud/raster/`, `@3x.webp`, may be deleted if never used): `button-play`, `button-garage`, `button-retry`, `button-nitro`, `button-back`, `button-coming-soon`, `hud-pause`, `hud-brake`, `ui-arrow-left`, `ui-arrow-right`, `ui-settings`, `ui-close`, `ui-info`, `ui-tooltip`, `hud-combo`, `hud-drift`, `hud-nitro`, `hud-speed`. The Settings source gallery (`#hud-3x-source-gallery`) still lists all 18.
+- [ ] If re-used: swap the button's own background or a real `<svg>` icon instead of an `<img>` layered under the label; keep 44 px touch targets and contrast against the label.
+- [ ] Start / Garage / Race again: one consistent button style across intro, result and pause overlays.
+- [ ] Touch controls: clearer pressed / disabled states for NITRO, Brake and Left / Right.
+- [ ] Settings / Pause icon buttons: larger hit area and visible focus ring on the top bar.
+- [ ] Decide by the Garage economy branches' merge: delete unused `@3x.webp` files and the gallery, or wire them in.
+
 ## AIRFLOW off hides sprint streamlines (2026-11-02)
 
 **Branch:** `fix/airflow-off-hides-sprint-flow` from `develop` `5cc12113`. **Report:** with AIRFLOW (V) off, BOOST/NITRO still revealed the full streamline showcase and underbody pressure plane (`src/aero-vfx.js` `show` OR-ed in `sprintPower`), so the V toggle looked broken while sprinting.
