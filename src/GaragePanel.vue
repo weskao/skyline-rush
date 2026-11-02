@@ -6,6 +6,7 @@ import { PAINTS } from './appearance.ts';
 import { garageView } from './garage-view-state.ts';
 import CloseButton from './CloseButton.vue';
 import GaragePaintPreview from './GaragePaintPreview.vue';
+import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 const locale = ref(getLocale());
@@ -70,6 +71,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         <p class="garage-coming">{{ copy.coming }}</p>
         <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
+        <GarageSourceArtGallery category="garage-store-readiness" />
       </aside>
     </div>
   </dialog>

@@ -7,17 +7,6 @@
 - [x] Browser: `tests/high-speed-vfx-browser.spec.js` asserts the streamline mesh stays hidden during BOOST with AIRFLOW off.
 - [ ] Real-device look at BOOST/NITRO with AIRFLOW off and on.
 
-## 2026-11-02 — Approved public free-trial release strategy (not yet deployed)
-
-- [x] The user approved a **publicly visible, free-to-try Garage VFX** after Wave 2 release gates.
-- [x] Branch-local Pages deploy mode is pinned to `trial` instead of `coming-soon` (only gated `main` / tag deployments can actually ship it).
-- [x] Keep default local/CI production build **locked**; explicit trial builds verify real bundled trial catalog and artwork.
-- [x] Update en/zh-TW showroom and Try labels to explain temporary equipment resets on page reload/account switch.
-- [ ] Verify latest exact-HEAD unit, TypeScript, browser screenshots and Cloud/World Tour CI; review actual Phone and WebGL visuals. **Do not merge, tag or deploy until green and accepted.**
-- [ ] Merge approved branch to `develop` and then `main` at the separate integration/release gate; only then activate a public version.
-
-See [Garage release policy](docs/garage-release-policy.md).
-
 ## Rival item pickups — stage 2 (2026-11-02)
 
 **Branch:** `feature/rival-item-pickups` (merged `develop` `435e4fb8` as `f18cb226`, no conflicts). Plan + inventory + AC: `docs/plans/2026-11-01-rival-item-pickups.md`. `PLAYWRIGHT_PORT=5186`. Merged `develop` `bf350867` too (clean; `npm test` 1361/0, 3 skipped). User approved (2026-11-02) a local `--no-ff` merge into `develop` once CI is green, then deleting the feature branch; no `main`, no PR, no deploy, no rules deploy.
@@ -38,14 +27,6 @@ See [Garage release policy](docs/garage-release-policy.md).
 
 ## Classic pickup density — stage plan (2026-11-01)
 
-## 2026-11-02 Garage collection whole-card UX + four distinct native-3x Airflow icons
-
-- [x] All 22 VFX cards use native full-card Preview and isolated single visible Try/Equip actions with keyboard and hover/focus UX.
-- [x] Paint cards / Garage collection use unified game-like panel, colour/state badges, card glow and action styling without changing paint entitlement.
-- [x] Four unique **288×288 SVG vectors** replace common Airflow placeholders; display **96×96 CSS**; PNG/WebP originals exported separately.
-- [ ] Latest exact-HEAD CI, 22-item visual capture, responsive input and native device checks. See [UX specification](docs/designs/garage-vfx-skins/GARAGE-COLLECTION-UX.md).
-
-
 **Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Full stage plan (S0–S9 + stage 2): `docs/plans/2026-11-01-classic-pickup-density.md` → 「完整階段計畫」. `PLAYWRIGHT_PORT=5185`. Never merge into `develop`.
 
 - [x] S0 AC1 economy bot + numbers (`dff62f74`).
@@ -64,20 +45,6 @@ See [Garage release policy](docs/garage-release-policy.md).
 ---
 
 ## In-race HUD overlaps — foldable, phones, tablet (2026-11-01)
-
-## 2026-11-02 Full original-material UI implementation checkpoint (latest)
-
-**Completed source imports (unmerged feature branches, NOT production release):**
-- `feature/garage-vfx-skins`: original 27/27 source WebPs byte-for-byte; 22 live 3D Skin selectors (4 Thruster / 4 Airflow / 5 NITRO / 9 Launch) with genuine void-beam geometry and studio/home looping flare demos. Original 16 equipped-candidate thumbnails display at 288×288 file pixels → **96×96 CSS px**. Original 11 badge/rarity images are 216×216 → **72×72 CSS px**, displayed as examples only, not ownership/rarity promises. Six Airflow variants still have shared SVG thumbnail fallback until approved unique per-item artwork. Current tests: `tests/garage-skin-renderer.test.js`, `tests/garage-cosmetics-preview-browser.spec.js`, `tests/garage-vfx-catalog-browser.spec.js`.
-- `feature/garage-rewards-and-missions`: all eight authentic 288×288 WebPs committed and displayed at 96×96 CSS px in `GarageSourceArtGallery.vue` (source artwork gallery, NOT functional reward settlement).
-- `feature/garage-store-readiness`: all six authentic 216×216 WebPs committed and displayed at 72×72 CSS px in `GarageSourceArtGallery.vue` (Coming Soon, NOT purchases).
-- `feature/3x-hud-materials-integration`: all 18 authentic source WebPs committed and shown at 1× CSS in `HudSourceArtwork.vue` within Settings. Nine also decorate existing functional buttons without replacing semantics/input; the other nine are only artwork references pending UX approval.
-
-**59/59 Git blob SHA and path integrity checks against `feature/3x-ui-materials`: exact match.** Source archive: [59-image README](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md). This is 3× *pixel resolution*, not a guarantee of threefold unique native visual detail. Original PNG/ZIP sources remain in ChatGPT File Library.
-
-**Open, don't mark Wave 2/3 complete:** latest-HEAD unit/typecheck/production build, all Playwright viewport and Low/Medium/High tests, actual WebGL captured screenshot review, stable p50/p95 frame-time and GPU budgets, physical iOS/Android, visual fidelity signoff, final `develop` integration CI. This checkpoint creates the full browser regression trigger. **Do not merge to `develop` or `main`, create a PR, deploy or enable sales** until gates are explicitly checked.
-
----
 
 **Branch:** `fix/race-hud-overlaps` from `develop` `88dce759` (Eight-Car included). Not merged; merge needs approval.
 
@@ -133,57 +100,6 @@ See [Garage release policy](docs/garage-release-policy.md).
   Merged with `fix/hud-callout-landscape` (same non-touch revert): one rule set kept — mouse short windows use the
   left-gutter `top: 30%`, touch short landscape the top-bar strip (vertical fold: left pane), so the touch "under the mode
   panel" slot and its warning shift are dropped; `cssBlob` `4d817a99`.
-
-## Wave 2 — Garage VFX Skins Phase B expansion: production art + distinct runtime effects (2026-11-02)
-
-**2026-11-02 launch flares refined; skin cards press as one:** The seven launch flares other than the shock ring dropped their solid cone spikes: rays are now slim streaks (0.035 m) whose bright head shoots up from under the sills a beat apart (pulse flares fire again and again), 96 GPU-animated sparks rise from the sills (Low: 48; no per-frame uploads), and a ripple runs out across the road; the shock ring flare is unchanged. Skin cards: pressing dims the whole card instead of a box around its upper part, and the selected card glows in every category (the Garage panel's shared card surface had cancelled the selected border/glow). RED→GREEN: refined-flare test in `tests/garage-launch-flare-3d.test.js`, card click test in `tests/garage-vfx-catalog-browser.spec.js`. **Pending:** frame-time p50/p95, physical devices, exact-HEAD full CI.
-
-**2026-11-02 NITRO plumes fit the nozzles; flare spans the countdown:** NITRO trail streaks were crossed flat quads 0.42 m wide that started as a square block behind the bumper; they are now open round tubes (16 sides) that leave each round exhaust nozzle at its exact radius (`REAR_PORTS[].size` 0.065 = the nozzle disc) and swell behind it, shaded by a view-facing term so they read as round jets; gold pulses bulge the plume as they run back, the nebula's twin ribbons wind around the tube. Premium launch flares now loop through the whole 3-2-1 countdown (`flare.hold`) and burst once more at GO. RED→GREEN: nozzle-fit plume test in `tests/garage-nitro-trail.test.js`, countdown test in `tests/garage-launch-flare-3d.test.js`. **Pending:** WebGL before/after capture review, frame-time p50/p95, physical devices, exact-HEAD full CI.
-
-**2026-11-02 launch flares wrap the car; NITRO trails get their own show:** Launch flares lost the bubble shell and the Studio no longer loops the standard ignition ring (BOOST/NITRO ignition rings in a race stay). Each premium flare now lights a pool on the road under the car, raises 3D rays from under the sills on every side (fans as side wings, crimson adds two roof slashes) and the shock ring flare climbs two horizontal rings up the body; all flare parts sit in the effects group so Studio framing still measures only the car. New `src/garage-nitro-trail.js` (locked stub + `#garage-nitro-trail` alias): per-exhaust crossed-quad light streaks fanning slightly outward plus a road glow, one program for four styles — cyan ice laser, gold pulses racing back with a throbbing flame, crimson tracer dashes with embers, violet-magenta twin helix ribbons; nozzle flames take the trail colour. Gold/crimson trail palette corrected (hue 71 → 38, crimson 0). RED→GREEN: `tests/garage-launch-flare-3d.test.js` (rewritten, 3 RED + silhouette RED), `tests/garage-nitro-trail.test.js` (4 RED + hue RED), release alias RED. Studio peak (software WebGL, 1280×720): flare 55–56 calls / ≤21 093 triangles, trail 56–57 calls / 19 017 triangles. `garage-skin-trial` 390×844 is flaky on clean HEAD too. **Pending:** frame-time p50/p95, physical devices, exact-HEAD full CI.
-
-**2026-11-02 skins replace, not layer; 3D flare and beams:** An equipped skin now replaces the standard effect in its slot: premium launch flares hide the standard ignition ring (BOOST/NITRO ignition rings stay), a NITRO trail skin takes the purple slot on the whole airflow streamline, the nozzles and the NITRO ring, and Void Pulse hides the nozzle flames under its beams. Launch flares are 3D: instanced cone rays spread over a sphere / upward fan (`rayLayout` in `src/garage-launch-flare.js`), two tilted rippling tori for the ring flare and a rim-lit expanding shell; only the radially symmetric hot core stays a billboard (shaders in `src/garage-launch-flare-shaders.js`). Void beams are tapered rods with a view-facing core and helical bolts. Low skips the shell and body glow. RED→GREEN: `tests/garage-skin-replacement.test.js` (3 RED), `tests/garage-launch-flare-3d.test.js` (2 RED), void rod test in `tests/garage-skin-renderer.test.js` (1 RED); the old "purple cue kept on every skin" / "ring shows with a premium flare" assertions were rewritten to the new contract. Studio peak (software WebGL, 1280×720, same camera): draw calls 54/55 → 56/57 with a flare showing, triangles 18 789 → 19 6xx (ring flare 21 813), programs 61 → 67 compiled at warm-up; void beams 52 calls unchanged. Browser: garage cosmetics/studio/quality/trial, shader-warmup, black-frame, high-speed-vfx, showcase-camera green; `garage-vfx-catalog` "all eleven badges" fails identically on clean HEAD (badge `naturalWidth` 0, predates this change). **Pending:** frame-time p50/p95 review, physical devices, exact-HEAD full CI.
-
-**2026-11-02 newer implementation checkpoint (supersedes stale baseline text below):** Original full 27 VFX WebPs are copied from `feature/3x-ui-materials` into `public/feature-assets/garage-vfx-skins/raster/`; 16 images map to **16 selectable non-default/default 3D effects** among **22 Skin IDs** (4 Thruster, 4 Airflow, 5 NITRO Trail, 9 Launch Flare); 11 badge/rarity images appear in a separate non-entitlement illustration gallery. All Skin thumbnail WebPs retain **288×288 original pixels and display at 96×96 CSS px**, badges remain **216×216 → 72×72 CSS px**; no fake ownership or rarity. 4 actual car-mounted Void pulse beams, repeated launch flare ring/echo for Home + Studio, ready-phase showroom Nitro trail, original per-skin preview controls, JS renderer tests and three viewport Playwright tests are committed. Full source/art map: [IMPLEMENTATION-MATRIX.md](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md). **NOT ACCEPTED:** exact HEAD tests/CI, real screenshot/frame-time review, mobile hardware, catalog art vs rendering; keep remaining Phase B checkboxes unchecked. Other 32 sources are integrated into their own branches: `feature/garage-rewards-and-missions` (8), `feature/garage-store-readiness` (6), `feature/3x-hud-materials-integration` (18); they are staged and previewable, **not full mission/commerce rollout**.
-
-
-
-**Verified asset integration checkpoint (2026-11-02):** Recovered the original 27-key 3× ZIP from ChatGPT File Library and verified its SHA-256. All 27 3× WebPs are preserved in `feature/3x-ui-materials` at [source asset library](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md). **Ten selected 288×288 WebPs** are now physically committed to `public/feature-assets/garage-vfx-skins/raster/` on this branch and rendered at **96×96 CSS px** through `skinArtwork()`, with WebP→SVG→text fallback; six other Skin cards remain SVG-only until approved art exists. This is **code/import completed but no final visual approval or CI result**. The other 17 source WebPs are not automatically shipped. [Updated per-asset matrix](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md). All high-level Phase B completion items remain unchecked.
-
-
-
-**Owner branch:** `feature/garage-vfx-skins` · **Integration target:** `develop` (not `main`) · **Status:** NEW REQUIREMENTS / NOT IMPLEMENTED / NOT ACCEPTED. This extends **Wave 2 Phase B**, not Wave 3 or an already-finished Phase A. Keep existing Phase B trial/equip/stage work; do not interpret the current code or previously exported art as final visual delivery.
-
-**Verified baseline (2026-11-02):** The catalog currently has four categories × two IDs (eight total, default + one alternative each). Alternate VFX primarily multiply existing shader RGB colors; the live shared-aero Studio preview and session-only trial/equip code exist but need final acceptance. Only four `public/feature-assets/garage-vfx-skins/*.svg` category icons are committed; `skinArtwork()` returns `hasRaster: false`. The 3× handoff describes **27 candidate art keys** (16 cosmetic thumbnails + 11 badge/rarity overlays, each with PNG/WebP), but their source ZIP and production raster binaries are **not committed to this repository**. These are candidates, not 27 shipped skins or 27 approved assets. References: [raster handoff](docs/designs/garage-vfx-skins/RASTER-ASSET-HANDOFF.md), [visual fidelity](docs/designs/garage-vfx-skins/VISUAL-FIDELITY.md), [Phase B implementation plan](docs/superpowers/plans/2026-10-31-garage-vfx-skins-plan.md), [release policy](docs/garage-release-policy.md).
-
-**Execution checkpoint (2026-11-02):** **Partial implementation, not signoff.**
-Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada935017ac8c24d101dc5cda451d7b13760d), [16 stable Skin IDs / pattern mapping](https://github.com/weskao/skyline-rush/commit/85727fcd08e74e4153eb700802a0c37464fdf300), [shared Aero shader patterns](https://github.com/weskao/skyline-rush/commit/5ea0ca0efd8fd41a9ec165a6cbe49f64bb1a2972), [production lock contract](https://github.com/weskao/skyline-rush/commit/5076685b5ad92eb2034472c9fe9b095d3c87c3e9), [browser 16-card/32-action expectation](https://github.com/weskao/skyline-rush/commit/945eb3b9321cc56a5c6f25a2ff7d094e1e7a0d37).
-[Implementation and candidate-art matrix](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md): 10 cosmetic thumbnail candidates mapped, six candidates deferred, 11 badge/rarity candidates deferred; missing the original source ZIP and item-specific Airflow imagery. **No production raster image has been integrated; no visual, device or CI approval is claimed.** Prior RED CI attempts were superseded/cancelled by later commits, not observed as a clean TDD RED result; rerun focused tests in a proper checkout for auditable RED evidence before final acceptance.
-
-### B-Visual-1 — Audit, recover and approve existing game materials (must precede implementation)
-
-- [x] Locate the original `skyline-rush-3x-garage-vfx-skins.zip` and reference sheets from the Game Materials conversation; verify the handoff SHA-256 `4112ef97f6ec8d0860220a93f95a5b19f77b2a05cc36c1eebf5385d457d73414`. If unavailable, mark **BLOCKED** and request the original bytes; do not claim to have imported them or silently replace approved designs.
-- [ ] Inventory all 27 candidate keys and the existing four SVG fallbacks: classify each **APPROVED / REWORK / REJECTED / DEFERRED**, with asset → Skin ID or UI-state mapping, reason for unused art, source/provenance, alpha/fringe checks and optimized file-size budget. Use only visually reviewed candidates; do **not** ship all assets merely because they exist.
-- [ ] Restore approved selected artwork to `public/feature-assets/garage-vfx-skins/raster/` (optimized true-alpha WebP for runtime; retain PNG/source archive where needed), record checksums/manifest and reference screenshots. The original transparent cutouts are provisional, not native-detail 3× originals; review clipping, matte halos and glow over dark/light/saturated backgrounds.
-
-### B-Visual-2 — Expand the *actual* VFX catalog, not just hue variations
-
-- [ ] Target **at least four selectable skins per category including the default (≥16 total)**: Thruster, Airflow, NITRO Trail and Launch Flare. Preserve current eight IDs and backward compatibility; decide additional IDs using approved art, and document extra candidates not selected. The raster handoff has **no Airflow item-specific thumbnail set**, so design/produce missing Airflow art intentionally rather than falsely mapping unrelated files.
-- [ ] For every added non-default skin, implement a visually distinguishable real-time Three.js **silhouette/emission geometry, particle pattern, motion/timing or shader behavior** — **RGB multiplier alone does not pass**. Keep physics, handling, speed, rewards, original PAINTS and competitive fairness identical for all cosmetics.
-- [ ] **FLY lift-off thrusters (the jets that fire downward to lift the car)** get the same treatment as the NITRO trails: each plume leaves its round under-body nozzle (`LIFT_PORTS` in `src/effects.js`, nozzle cylinder r 0.18→0.22 at y 0.3 in `src/car-model.js`) at exactly the nozzle radius, as a round view-shaded jet, never a flat card or square sheet, and each Thruster skin gives it its own motion/shape (not hue only). Cover the Studio preview, ready-screen AIRFLOW (hover jets off at altitude 0), take-off/hover/landing in a race, rivals sharing the jet pool, Low/Medium/High, VFX Off and Reduced Motion, shader warm-up and draw-call/triangle budget; RED renderer test first (nozzle-fit geometry), then real WebGL capture from the chase and side cameras.
-- [ ] Give every selectable skin a truthful, distinct card thumbnail or an explicitly documented generated-from-real-render fallback; use `import.meta.env.BASE_URL`-safe asset paths and 96×96 CSS-pixel cards with up-to-3× source resolution when justified. Keep lightweight 4-category SVG fallback, readable bilingual labels and robust missing/corrupt/late-image fallback.
-- [ ] Connect card selection, Preview/Try/Equipped/Locked states, Garage Studio orbit/replay and real in-race rendering to the **same VFX definitions**. Preview and race must show the same skin identity/animation; selection changes must not allocate unbounded GPU buffers, create stale textures or leak resources on scene re-entry, quality switch or context restore.
-- [ ] Integrate the 11 badge/rarity candidate overlays **only where the corresponding real state exists**; decorative graphics must never grant Owned status, invent rarity/rewards or present an unimplemented shop/payment flow. Keep permanent backend entitlements/Firestore purchase verification as separate approved work, **not** implicit Phase B completion.
-
-### B-Visual-3 — RED → GREEN → Refactor and release/visual acceptance
-
-- [ ] Update the linked Phase B spec/plan, asset manifest and Skin ID → thumbnail → VFX behavior matrix before behavioral changes. Write failing typed/catalog, renderer and Playwright tests proving uniqueness beyond hue-only palettes, correct account isolation, trial expiry/fallback, ownership safety and asset errors; run RED before GREEN and refactor without regressions.
-- [ ] Test actual Garage and in-race WebGL across `en`/`zh-TW`, desktop 1440×900, phone portrait 390×844 and landscape 844×390 (plus 320×740 stress), Low/Medium/High, VFX Off, Reduced Motion and mute. Ensure touch targets ≥44 CSS px, safe areas and camera visibility; capture real screenshots/video, never concept images labeled as gameplay.
-- [ ] Compare approved references with **actual** before/after UI/WebGL screenshots and animation; record per-skin **PASS / FAIL / BLOCKED / APPROVED_DEVIATION** and GPU/CPU evidence (FPS, frame-time p50/p95, Draw Calls, Triangles, shader warm-up, texture memory/bytes, dispose/context restore). Add shader/resource budgets and no-visual-regression assertions.
-- [ ] Preserve `docs/garage-release-policy.md`: production stays `coming-soon` and excludes unpublished candidate assets/trial code; test the separate trial build, ensure no client-side entitlement forgery, no payment, no unapproved permanent grant. Do not change deployment flags just to reveal unfinished art.
-- [ ] After asset integration, run applicable targeted tests, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, Cloud Save / World Tour and `make verify`; inspect **exact-final-HEAD** full GitHub Actions `quality-gate`. Record browser/WebGL evidence and remaining physical iOS/Android verification separately. **Do not mark Phase B or relevant TODO #5.* complete until requirements and visual signoff pass**; do not merge to `develop`, open a PR or deploy without separate authorization.
-
----
 
 ## Wave 2 — Foldable / Dual-screen Layout Adaptation · TODO #4 (2026-10-31)
 
@@ -587,6 +503,16 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Confirm mockups and acceptance conditions before implementation; **the shared S1–S3 mobile/desktop portrait-landscape and Low/Medium/High acceptance contract applies to every item (1–12)**. Future branches start from current `main`, reread latest `CLAUDE.md` and relevant `.claude/rules/`, preserve Vue 3 + strict TypeScript preferences, TDD, visual proof, CI gates and gameplay. **Nothing under items 1–12 is marked complete by this document update.**
 
 ## CI wall time — duplicate layout run, dead jobs, shard balance (2026-10-31)
+
+## 2026-11-02 — VERIFIED 3× SOURCE MATERIALS AVAILABLE (Wave 3 asset handoff)
+
+**Read before making or importing store imagery.** The user's original `skyline-rush-3x-garage-store-readiness.zip` was recovered from ChatGPT File Library (SHA-256 `3f5f37d2c4f417fa1b84c3356ef15ff297825d6b49d602f858f9cd342fa11751`). Its **six original true-alpha 3× WebP images are now committed** in the asset-only `feature/3x-ui-materials` branch at reference commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. Read [full verified asset manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) and [actual 6 Store image blobs](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-store-readiness).
+
+**6 original assets:** `store-cart@3x.webp`, `store-box@3x.webp`, `store-bundle@3x.webp`, `store-tag@3x.webp`, `store-star@3x.webp`, `store-collection@3x.webp`. All are **216×216 source pixels**, displayed at **72×72 CSS px**. Example: `<img width="72" height="72">` plus `width:72px;height:72px;object-fit:contain`. Do not resize source pixels to 1× or enlarge the interactive touch target to 3×. The PNG originals / source ZIP are preserved in ChatGPT File Library; Git stores 3× WebP only.
+
+**Required Wave3 sequence:** (1) After permitted upstream integration, use current `develop` as integration target, not stale `main`; (2) read existing `RASTER-ASSET-HANDOFF.md`, review alpha, matte, cropped highlights, text/meaning, and existing SVG alternatives; (3) selectively copy approved items from `origin/feature/3x-ui-materials:docs/designs/3x-asset-library/webp/garage-store-readiness/` to `public/feature-assets/garage-store-readiness/raster/`; (4) Vue 3 + strict TS + CSS must use `import.meta.env.BASE_URL`-safe URLs, 1× CSS pixels, alt/fallback and 44px touch targets, en/zh-TW and three quality tiers; (5) RED→GREEN→Refactor tests + latest-HEAD CI + real visual signoff. **Images do not authorize purchases, invented prices, balance, payment SDK, premium currency, ownership grants, or an active store.** Continue Coming Soon until separately approved.
+
+
 
 **Branch:** `feature/ci-speedup`. Measured on `main` run 41024921317 (`cff7886`): 75 min wall. Browser shard 8 took 72 min; shard 1 took 38 min of suite plus a 30 min `npm run test:layout` rerun of specs the sharded suite already contains; World Tour shards ran 5–40 min (the slow camera views sit at the end of the list); unit 1 min, cloud-save 1.5 min.
 
@@ -2796,3 +2722,159 @@ Model boundary: these are unsteady streak/history markers in still air, not inst
 - [ ] User authorizes merge into `develop`. Do not open PR, deploy or merge automatically.
 
 **Verified test-first progress:** RED on commit `0600231` [CI 41199230703](https://github.com/weskao/skyline-rush/actions/runs/41199230703); 48 source/unit regressions found and fixed; focused typecheck and 1217 Unit Tests passed at `28a776c` [CI 41201415728](https://github.com/weskao/skyline-rush/actions/runs/41201415728) (browser/world-tour intentionally skipped, so **not** full acceptance). The subsequent `40785ed` added 2-car real-browser coverage; final full verification and screenshot receipts to be attached after actual success. No high-level Wave 2 item marked complete prematurely.
+
+## 2026-11-02 — Approved public free-trial release strategy (not yet deployed)
+
+- [x] The user approved a **publicly visible, free-to-try Garage VFX** after Wave 2 release gates.
+- [x] Branch-local Pages deploy mode is pinned to `trial` instead of `coming-soon` (only gated `main` / tag deployments can actually ship it).
+- [x] Keep default local/CI production build **locked**; explicit trial builds verify real bundled trial catalog and artwork.
+- [x] Update en/zh-TW showroom and Try labels to explain temporary equipment resets on page reload/account switch.
+- [ ] Verify latest exact-HEAD unit, TypeScript, browser screenshots and Cloud/World Tour CI; review actual Phone and WebGL visuals. **Do not merge, tag or deploy until green and accepted.**
+- [ ] Merge approved branch to `develop` and then `main` at the separate integration/release gate; only then activate a public version.
+
+See [Garage release policy](docs/garage-release-policy.md).
+
+## 2026-11-02 Garage collection whole-card UX + four distinct native-3x Airflow icons
+
+- [x] All 22 VFX cards use native full-card Preview and isolated single visible Try/Equip actions with keyboard and hover/focus UX.
+- [x] Paint cards / Garage collection use unified game-like panel, colour/state badges, card glow and action styling without changing paint entitlement.
+- [x] Four unique **288×288 SVG vectors** replace common Airflow placeholders; display **96×96 CSS**; PNG/WebP originals exported separately.
+- [ ] Latest exact-HEAD CI, 22-item visual capture, responsive input and native device checks. See [UX specification](docs/designs/garage-vfx-skins/GARAGE-COLLECTION-UX.md).
+
+
+**Branch:** `feature/classic-pickup-density` (from `develop` `54de8259`). Full stage plan (S0–S9 + stage 2): `docs/plans/2026-11-01-classic-pickup-density.md` → 「完整階段計畫」. `PLAYWRIGHT_PORT=5185`. Never merge into `develop`.
+
+- [x] S0 AC1 economy bot + numbers (`dff62f74`).
+- [x] S1 Coast / Neon / Canyon tuned to the World Tour median (AC2a); other layouts hash-locked; `npm test` 1225/0 (`4d5f3177`, `af00b2d8`).
+- [x] S2 other tracks/modes measured; user decisions (3 rounds): version key (a) for all timed records; no boost tunnel; Canyon floor only, no extra volume; difficulty curve, so Aurora is unchanged and Sky Spiral + Circuit only get an opening-nitro fix; bot extension approved.
+- [x] S3 merged `origin/develop` `88dce759` (Wave 2 complete) as `119cf2d8`; only `TODO.md` conflicted (both sections kept). `npm test` 1296/0 (3 skipped), typecheck green, economy numbers identical to pre-merge on all ten tracks.
+- [x] S4 `measureEconomy(trackId, options, cap)` returns `phase`; mode-layout lock (8 modes × 5 Classic tracks), Circuit/Endless/gold-rings determinism; numbers unchanged (`ee936be0`).
+- [x] S5 Sky Spiral `openingNitroRings: 2` (first NITRO 9.0 → 6.6 s), Circuit `openingNitroRings: 1` (11.7 → 6.8 s, NITRO ≥ 11.54/min on 1/3/5 laps); ring positions + per-lap PERFECT LINE groups locked; AC3 lock = World Tour + Aurora; `npm test` 1303/0. Circuit BOOST share dips (3 laps 77.6%, 5 laps 72.9%) because NITRO fires earlier; noted for the play test.
+- [x] S6 version key via `src/record-layout.ts` (`48a422f8`, `77ab7d0d`): Classic/mode bests, ghosts, history, Circuit lap best, cloud merge, History OLD LAYOUT / 舊版配置 tag. RED (7 behaviour tests with storage wiring reverted) → GREEN; `npm test` 1317/0; `test:cloud` 15/15 + rules 3/3.
+- [ ] **Before release (needs user approval):** deploy `firestore.rules` (`saves.bests` now accepts `coast@2`, `neon@2`, `canyon@2`, `spiral@2`). CI never deploys rules; without it, signed-in players' cloud saves fail once they set a new-layout best.
+- [x] S7 audio: no throttle needed (NITRO-ready cue min gap 5.0 s on changed tracks vs Taipei 3.0 s). What's New: shipped `0.28.0` entry was never stamped after the release (UPCOMING still resolved to 0.28.0), so it is now `version: '0.28.0'` (its review fingerprint still matches); new `UPCOMING` entry with `classic-more-rings` (reviewer rewrite, user chose it) + `old-layout-records`, reviewed and approved as 0.29.0 (`ea8fed66`). If the release ships under another number, re-run `/review-release-notes <version>`.
+- [x] S8 per-track Draw Calls/Triangles/p50/p95 table vs `develop` (plan「S8」): draw calls flat, Coast triangles +4.3%, Neon +1.2%; 15 real WebGL captures (5 routes × 3 viewports); all record-seeding browser specs green after moving 7 specs' fixtures to the `@2` ids (`bdfd742d`). Pending: physical keyboard/touch/phone play by the user. Unrelated finding: 844×390 non-touch desktop HUD overlaps (pre-existing).
+- [x] S9 `[full-regression]` push, `quality-gate` green on `bc37681e` (run `41319983990`; run `41313681206` on `1db53ed3` failed 2 stale specs, fixed in `bc37681e`), run id reported to skyline-rush-13. Pending: user plays it.
+- [x] Stage 2 (rival item pickups, `feature/rival-item-pickups`): R1–R11 done, `quality-gate` green on `21c06661` (run `41375706816`), merged into `develop` with user approval.
+
+---
+
+## 2026-11-02 Full original-material UI implementation checkpoint (latest)
+
+**Completed source imports (unmerged feature branches, NOT production release):**
+- `feature/garage-vfx-skins`: original 27/27 source WebPs byte-for-byte; 22 live 3D Skin selectors (4 Thruster / 4 Airflow / 5 NITRO / 9 Launch) with genuine void-beam geometry and studio/home looping flare demos. Original 16 equipped-candidate thumbnails display at 288×288 file pixels → **96×96 CSS px**. Original 11 badge/rarity images are 216×216 → **72×72 CSS px**, displayed as examples only, not ownership/rarity promises. Six Airflow variants still have shared SVG thumbnail fallback until approved unique per-item artwork. Current tests: `tests/garage-skin-renderer.test.js`, `tests/garage-cosmetics-preview-browser.spec.js`, `tests/garage-vfx-catalog-browser.spec.js`.
+- `feature/garage-rewards-and-missions`: all eight authentic 288×288 WebPs committed and displayed at 96×96 CSS px in `GarageSourceArtGallery.vue` (source artwork gallery, NOT functional reward settlement).
+- `feature/garage-store-readiness`: all six authentic 216×216 WebPs committed and displayed at 72×72 CSS px in `GarageSourceArtGallery.vue` (Coming Soon, NOT purchases).
+- `feature/3x-hud-materials-integration`: all 18 authentic source WebPs committed and shown at 1× CSS in `HudSourceArtwork.vue` within Settings. Nine also decorate existing functional buttons without replacing semantics/input; the other nine are only artwork references pending UX approval.
+
+**59/59 Git blob SHA and path integrity checks against `feature/3x-ui-materials`: exact match.** Source archive: [59-image README](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md). This is 3× *pixel resolution*, not a guarantee of threefold unique native visual detail. Original PNG/ZIP sources remain in ChatGPT File Library.
+
+**Open, don't mark Wave 2/3 complete:** latest-HEAD unit/typecheck/production build, all Playwright viewport and Low/Medium/High tests, actual WebGL captured screenshot review, stable p50/p95 frame-time and GPU budgets, physical iOS/Android, visual fidelity signoff, final `develop` integration CI. This checkpoint creates the full browser regression trigger. **Do not merge to `develop` or `main`, create a PR, deploy or enable sales** until gates are explicitly checked.
+
+---
+
+**Branch:** `fix/race-hud-overlaps` from `develop` `88dce759` (Eight-Car included). Not merged; merge needs approval.
+
+- [x] **RED** (`tests/race-hud-overlap-browser.spec.js`: real bounding boxes of every top-level HUD block must not intersect
+  or sit < 2px apart; en + zh-TW × hybrid + competitive; racing with an event callout up, with a collision report up, and
+  paused (pause panel only checked against brand/toolbar/AIRFLOW-VFX)). On `88dce759`'s stylesheet 6 of 7 viewports failed:
+  - 1024×768 tablet: `.mode-indicator × .event-callout` (overlap zh-TW, 0.6px gap en); `.flight-telemetry × .race-route-map` 1px gap (zh-TW).
+  - 390×844 and 600×900 horizontal fold, competitive: `.race-progress × .leaderboard` and `× .position-stat` (eight rows reach 262px; the bar sat at 216–262px).
+  - 320×740: the same two, plus the collision report over the RACING bar, POSITION, leaderboard and route map.
+  - 844×390: NITRO callout over POSITION; collision report over the RACING bar and mode panel.
+  - 844×390 vertical fold: `.race-progress × .aero-tools` and `× .flight-telemetry`, `.mode-indicator × .flight-telemetry`
+    (Foldable merge), plus the callout over POSITION and the collision report over the mode panel.
+  - 1440×900 passed: the reported ROAD MODE / `#nitro-status` touch did not reproduce there in either mode or locale.
+- [x] **GREEN** (`src/style.css` only, nothing hidden or resized): vertical fold moves the RACING bar and mode panel to the
+  left pane's free top-right and the leaderboard to the right pane's free bottom-left; portrait competitive flows the bar
+  under the taller of POSITION and the leaderboard, with map, callout, gap warning and collision report following
+  `--race-progress-bottom`; the short-portrait map slot beside the thumb cluster now covers ≤760px tall; the collision report
+  sizes to its content (half-viewport shrink-to-fit wrapped zh-TW); landscape/tablet callout and collision report sit 8px
+  under the mode panel; tablet map 288 → 284px. Short landscape now lets the flight director step aside for a callout, as
+  portrait already did (`responsive-browser.spec.js` › flight director and a mid-flight callout). Spec 7/7.
+- [x] `cssBlob` re-recorded. `npm run typecheck`, `npm test` (1288 pass / 0 fail), `npm run build`, `npm run test:layout`,
+  foldable + responsive + handoff + main-ui-parity + new spec: 100/100.
+- [x] **Follow-up `fix/hud-callout-landscape`** (from develop `15bfc16a`): CI 41313050183 failed `motion-browser.spec.js` ›
+  "race callout is a small translucent chip clear of the centre view at 844x390" (chip bottom 313 > 175.5): the short-landscape
+  callout had moved under the mode panel for every pointer, though only touch layouts keep that panel up top. RED also added
+  to the overlap spec (short landscape callout bottom ≤ 45%; failed at 239–244px on touch 844×390 and the vertical fold).
+  GREEN: non-touch short landscape is back to its original top-left slot; touch short landscape (and the fold's left pane)
+  puts the callout in the top-bar strip between the wordmark and the toolbar. The gap-warning shift and the short-landscape
+  flight-director step-aside are no longer needed and were reverted. Motion + overlap + responsive + parity + foldable 111/111,
+  `test:layout`, typecheck, `npm test` 1290/0.
+- [x] Integration with `feature/in-race-feedback-visibility` (develop `bf350867`): that branch places the event callout
+  from script (`src/race-feedback-placement.ts`), so the overlap spec's "top 45%" stand-in for the centre view now checks the
+  same road rectangle the placement avoids, and its snapshot re-runs placement for a re-shown callout.
+  RED (merge, before fix): a callout raised during GO! is placed while `body:has(#countdown:not([hidden])) .telemetry` hides
+  the telemetry and stays on it after GO! ends — probe at 390x844 3/3 runs `callout 307,608-378,644` over
+  `telemetry 170,508-367,624` (also 1024x768); new guard test "the callout moves clear of the telemetry when the countdown
+  hides" fails 3/3 (`overlapsAfterGo: true`). GREEN: placement also refreshes when `#countdown` toggles `hidden`; guard 3/3,
+  overlap spec 21/21 (`--repeat-each=3`), motion + overlap + feedback-visibility + responsive + parity + foldable 118/118,
+  `test:layout`, typecheck, `npm test` 1330/0. cssBlob unchanged (`4d817a99`).
+  Develop then landed the same countdown refresh (`19b67ca3`, guarded in `race-feedback-visibility-browser.spec.js` at
+  844x390) plus a telemetry re-measure (`eb361bce`); on merge their version of the placement observers is kept and this
+  branch's 390x844 guard test stays as the portrait case (develop's runs at 844x390) and passes 5/5 on their observer.
+- [ ] Exact-HEAD GitHub CI `quality-gate` (`[full-regression]`).
+- [ ] Known, left as is: the slide-pad ring at rest overlaps the speed readout on phone/tablet (identical on `88dce759`);
+  competitive mode is only checked at the seven spec sizes. Real foldable / phone hardware unverified.
+- [x] **develop CI red after the merge (`15bfc16a`, run 41315628196)**: `motion-browser.spec.js:228` callout chip at a
+  mouse 844×390 ended at 313px (limit 175.5). Root cause: the "8px under the 62px mode panel" callout offset sat in the
+  generic `max-height: 500px` block, but only touch landscape has that compact centred mode panel; a mouse short window
+  keeps the full-size panel, so the callout landed over the centre view. RED reproduced locally (315px). GREEN on
+  `fix/race-callout-landscape`: the offset (and the warning under it) moved into a touch-landscape query, mouse short
+  windows get the pre-merge left-gutter `top: 30%` back; `cssBlob` re-recorded. motion + HUD-overlap (7/7) + responsive +
+  parity + foldable 111/111, `npm test` 1290 pass / 0 fail, typecheck, `test:layout` 37 + 42 passed.
+  Merged with `fix/hud-callout-landscape` (same non-touch revert): one rule set kept — mouse short windows use the
+  left-gutter `top: 30%`, touch short landscape the top-bar strip (vertical fold: left pane), so the touch "under the mode
+  panel" slot and its warning shift are dropped; `cssBlob` `4d817a99`.
+
+## Wave 2 — Garage VFX Skins Phase B expansion: production art + distinct runtime effects (2026-11-02)
+
+**2026-11-02 launch flares refined; skin cards press as one:** The seven launch flares other than the shock ring dropped their solid cone spikes: rays are now slim streaks (0.035 m) whose bright head shoots up from under the sills a beat apart (pulse flares fire again and again), 96 GPU-animated sparks rise from the sills (Low: 48; no per-frame uploads), and a ripple runs out across the road; the shock ring flare is unchanged. Skin cards: pressing dims the whole card instead of a box around its upper part, and the selected card glows in every category (the Garage panel's shared card surface had cancelled the selected border/glow). RED→GREEN: refined-flare test in `tests/garage-launch-flare-3d.test.js`, card click test in `tests/garage-vfx-catalog-browser.spec.js`. **Pending:** frame-time p50/p95, physical devices, exact-HEAD full CI.
+
+**2026-11-02 NITRO plumes fit the nozzles; flare spans the countdown:** NITRO trail streaks were crossed flat quads 0.42 m wide that started as a square block behind the bumper; they are now open round tubes (16 sides) that leave each round exhaust nozzle at its exact radius (`REAR_PORTS[].size` 0.065 = the nozzle disc) and swell behind it, shaded by a view-facing term so they read as round jets; gold pulses bulge the plume as they run back, the nebula's twin ribbons wind around the tube. Premium launch flares now loop through the whole 3-2-1 countdown (`flare.hold`) and burst once more at GO. RED→GREEN: nozzle-fit plume test in `tests/garage-nitro-trail.test.js`, countdown test in `tests/garage-launch-flare-3d.test.js`. **Pending:** WebGL before/after capture review, frame-time p50/p95, physical devices, exact-HEAD full CI.
+
+**2026-11-02 launch flares wrap the car; NITRO trails get their own show:** Launch flares lost the bubble shell and the Studio no longer loops the standard ignition ring (BOOST/NITRO ignition rings in a race stay). Each premium flare now lights a pool on the road under the car, raises 3D rays from under the sills on every side (fans as side wings, crimson adds two roof slashes) and the shock ring flare climbs two horizontal rings up the body; all flare parts sit in the effects group so Studio framing still measures only the car. New `src/garage-nitro-trail.js` (locked stub + `#garage-nitro-trail` alias): per-exhaust crossed-quad light streaks fanning slightly outward plus a road glow, one program for four styles — cyan ice laser, gold pulses racing back with a throbbing flame, crimson tracer dashes with embers, violet-magenta twin helix ribbons; nozzle flames take the trail colour. Gold/crimson trail palette corrected (hue 71 → 38, crimson 0). RED→GREEN: `tests/garage-launch-flare-3d.test.js` (rewritten, 3 RED + silhouette RED), `tests/garage-nitro-trail.test.js` (4 RED + hue RED), release alias RED. Studio peak (software WebGL, 1280×720): flare 55–56 calls / ≤21 093 triangles, trail 56–57 calls / 19 017 triangles. `garage-skin-trial` 390×844 is flaky on clean HEAD too. **Pending:** frame-time p50/p95, physical devices, exact-HEAD full CI.
+
+**2026-11-02 skins replace, not layer; 3D flare and beams:** An equipped skin now replaces the standard effect in its slot: premium launch flares hide the standard ignition ring (BOOST/NITRO ignition rings stay), a NITRO trail skin takes the purple slot on the whole airflow streamline, the nozzles and the NITRO ring, and Void Pulse hides the nozzle flames under its beams. Launch flares are 3D: instanced cone rays spread over a sphere / upward fan (`rayLayout` in `src/garage-launch-flare.js`), two tilted rippling tori for the ring flare and a rim-lit expanding shell; only the radially symmetric hot core stays a billboard (shaders in `src/garage-launch-flare-shaders.js`). Void beams are tapered rods with a view-facing core and helical bolts. Low skips the shell and body glow. RED→GREEN: `tests/garage-skin-replacement.test.js` (3 RED), `tests/garage-launch-flare-3d.test.js` (2 RED), void rod test in `tests/garage-skin-renderer.test.js` (1 RED); the old "purple cue kept on every skin" / "ring shows with a premium flare" assertions were rewritten to the new contract. Studio peak (software WebGL, 1280×720, same camera): draw calls 54/55 → 56/57 with a flare showing, triangles 18 789 → 19 6xx (ring flare 21 813), programs 61 → 67 compiled at warm-up; void beams 52 calls unchanged. Browser: garage cosmetics/studio/quality/trial, shader-warmup, black-frame, high-speed-vfx, showcase-camera green; `garage-vfx-catalog` "all eleven badges" fails identically on clean HEAD (badge `naturalWidth` 0, predates this change). **Pending:** frame-time p50/p95 review, physical devices, exact-HEAD full CI.
+
+**2026-11-02 newer implementation checkpoint (supersedes stale baseline text below):** Original full 27 VFX WebPs are copied from `feature/3x-ui-materials` into `public/feature-assets/garage-vfx-skins/raster/`; 16 images map to **16 selectable non-default/default 3D effects** among **22 Skin IDs** (4 Thruster, 4 Airflow, 5 NITRO Trail, 9 Launch Flare); 11 badge/rarity images appear in a separate non-entitlement illustration gallery. All Skin thumbnail WebPs retain **288×288 original pixels and display at 96×96 CSS px**, badges remain **216×216 → 72×72 CSS px**; no fake ownership or rarity. 4 actual car-mounted Void pulse beams, repeated launch flare ring/echo for Home + Studio, ready-phase showroom Nitro trail, original per-skin preview controls, JS renderer tests and three viewport Playwright tests are committed. Full source/art map: [IMPLEMENTATION-MATRIX.md](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md). **NOT ACCEPTED:** exact HEAD tests/CI, real screenshot/frame-time review, mobile hardware, catalog art vs rendering; keep remaining Phase B checkboxes unchecked. Other 32 sources are integrated into their own branches: `feature/garage-rewards-and-missions` (8), `feature/garage-store-readiness` (6), `feature/3x-hud-materials-integration` (18); they are staged and previewable, **not full mission/commerce rollout**.
+
+
+
+**Verified asset integration checkpoint (2026-11-02):** Recovered the original 27-key 3× ZIP from ChatGPT File Library and verified its SHA-256. All 27 3× WebPs are preserved in `feature/3x-ui-materials` at [source asset library](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md). **Ten selected 288×288 WebPs** are now physically committed to `public/feature-assets/garage-vfx-skins/raster/` on this branch and rendered at **96×96 CSS px** through `skinArtwork()`, with WebP→SVG→text fallback; six other Skin cards remain SVG-only until approved art exists. This is **code/import completed but no final visual approval or CI result**. The other 17 source WebPs are not automatically shipped. [Updated per-asset matrix](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md). All high-level Phase B completion items remain unchecked.
+
+
+
+**Owner branch:** `feature/garage-vfx-skins` · **Integration target:** `develop` (not `main`) · **Status:** NEW REQUIREMENTS / NOT IMPLEMENTED / NOT ACCEPTED. This extends **Wave 2 Phase B**, not Wave 3 or an already-finished Phase A. Keep existing Phase B trial/equip/stage work; do not interpret the current code or previously exported art as final visual delivery.
+
+**Verified baseline (2026-11-02):** The catalog currently has four categories × two IDs (eight total, default + one alternative each). Alternate VFX primarily multiply existing shader RGB colors; the live shared-aero Studio preview and session-only trial/equip code exist but need final acceptance. Only four `public/feature-assets/garage-vfx-skins/*.svg` category icons are committed; `skinArtwork()` returns `hasRaster: false`. The 3× handoff describes **27 candidate art keys** (16 cosmetic thumbnails + 11 badge/rarity overlays, each with PNG/WebP), but their source ZIP and production raster binaries are **not committed to this repository**. These are candidates, not 27 shipped skins or 27 approved assets. References: [raster handoff](docs/designs/garage-vfx-skins/RASTER-ASSET-HANDOFF.md), [visual fidelity](docs/designs/garage-vfx-skins/VISUAL-FIDELITY.md), [Phase B implementation plan](docs/superpowers/plans/2026-10-31-garage-vfx-skins-plan.md), [release policy](docs/garage-release-policy.md).
+
+**Execution checkpoint (2026-11-02):** **Partial implementation, not signoff.**
+Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada935017ac8c24d101dc5cda451d7b13760d), [16 stable Skin IDs / pattern mapping](https://github.com/weskao/skyline-rush/commit/85727fcd08e74e4153eb700802a0c37464fdf300), [shared Aero shader patterns](https://github.com/weskao/skyline-rush/commit/5ea0ca0efd8fd41a9ec165a6cbe49f64bb1a2972), [production lock contract](https://github.com/weskao/skyline-rush/commit/5076685b5ad92eb2034472c9fe9b095d3c87c3e9), [browser 16-card/32-action expectation](https://github.com/weskao/skyline-rush/commit/945eb3b9321cc56a5c6f25a2ff7d094e1e7a0d37).
+[Implementation and candidate-art matrix](docs/designs/garage-vfx-skins/IMPLEMENTATION-MATRIX.md): 10 cosmetic thumbnail candidates mapped, six candidates deferred, 11 badge/rarity candidates deferred; missing the original source ZIP and item-specific Airflow imagery. **No production raster image has been integrated; no visual, device or CI approval is claimed.** Prior RED CI attempts were superseded/cancelled by later commits, not observed as a clean TDD RED result; rerun focused tests in a proper checkout for auditable RED evidence before final acceptance.
+
+### B-Visual-1 — Audit, recover and approve existing game materials (must precede implementation)
+
+- [x] Locate the original `skyline-rush-3x-garage-vfx-skins.zip` and reference sheets from the Game Materials conversation; verify the handoff SHA-256 `4112ef97f6ec8d0860220a93f95a5b19f77b2a05cc36c1eebf5385d457d73414`. If unavailable, mark **BLOCKED** and request the original bytes; do not claim to have imported them or silently replace approved designs.
+- [ ] Inventory all 27 candidate keys and the existing four SVG fallbacks: classify each **APPROVED / REWORK / REJECTED / DEFERRED**, with asset → Skin ID or UI-state mapping, reason for unused art, source/provenance, alpha/fringe checks and optimized file-size budget. Use only visually reviewed candidates; do **not** ship all assets merely because they exist.
+- [ ] Restore approved selected artwork to `public/feature-assets/garage-vfx-skins/raster/` (optimized true-alpha WebP for runtime; retain PNG/source archive where needed), record checksums/manifest and reference screenshots. The original transparent cutouts are provisional, not native-detail 3× originals; review clipping, matte halos and glow over dark/light/saturated backgrounds.
+
+### B-Visual-2 — Expand the *actual* VFX catalog, not just hue variations
+
+- [ ] Target **at least four selectable skins per category including the default (≥16 total)**: Thruster, Airflow, NITRO Trail and Launch Flare. Preserve current eight IDs and backward compatibility; decide additional IDs using approved art, and document extra candidates not selected. The raster handoff has **no Airflow item-specific thumbnail set**, so design/produce missing Airflow art intentionally rather than falsely mapping unrelated files.
+- [ ] For every added non-default skin, implement a visually distinguishable real-time Three.js **silhouette/emission geometry, particle pattern, motion/timing or shader behavior** — **RGB multiplier alone does not pass**. Keep physics, handling, speed, rewards, original PAINTS and competitive fairness identical for all cosmetics.
+- [ ] **FLY lift-off thrusters (the jets that fire downward to lift the car)** get the same treatment as the NITRO trails: each plume leaves its round under-body nozzle (`LIFT_PORTS` in `src/effects.js`, nozzle cylinder r 0.18→0.22 at y 0.3 in `src/car-model.js`) at exactly the nozzle radius, as a round view-shaded jet, never a flat card or square sheet, and each Thruster skin gives it its own motion/shape (not hue only). Cover the Studio preview, ready-screen AIRFLOW (hover jets off at altitude 0), take-off/hover/landing in a race, rivals sharing the jet pool, Low/Medium/High, VFX Off and Reduced Motion, shader warm-up and draw-call/triangle budget; RED renderer test first (nozzle-fit geometry), then real WebGL capture from the chase and side cameras.
+- [ ] Give every selectable skin a truthful, distinct card thumbnail or an explicitly documented generated-from-real-render fallback; use `import.meta.env.BASE_URL`-safe asset paths and 96×96 CSS-pixel cards with up-to-3× source resolution when justified. Keep lightweight 4-category SVG fallback, readable bilingual labels and robust missing/corrupt/late-image fallback.
+- [ ] Connect card selection, Preview/Try/Equipped/Locked states, Garage Studio orbit/replay and real in-race rendering to the **same VFX definitions**. Preview and race must show the same skin identity/animation; selection changes must not allocate unbounded GPU buffers, create stale textures or leak resources on scene re-entry, quality switch or context restore.
+- [ ] Integrate the 11 badge/rarity candidate overlays **only where the corresponding real state exists**; decorative graphics must never grant Owned status, invent rarity/rewards or present an unimplemented shop/payment flow. Keep permanent backend entitlements/Firestore purchase verification as separate approved work, **not** implicit Phase B completion.
+
+### B-Visual-3 — RED → GREEN → Refactor and release/visual acceptance
+
+- [ ] Update the linked Phase B spec/plan, asset manifest and Skin ID → thumbnail → VFX behavior matrix before behavioral changes. Write failing typed/catalog, renderer and Playwright tests proving uniqueness beyond hue-only palettes, correct account isolation, trial expiry/fallback, ownership safety and asset errors; run RED before GREEN and refactor without regressions.
+- [ ] Test actual Garage and in-race WebGL across `en`/`zh-TW`, desktop 1440×900, phone portrait 390×844 and landscape 844×390 (plus 320×740 stress), Low/Medium/High, VFX Off, Reduced Motion and mute. Ensure touch targets ≥44 CSS px, safe areas and camera visibility; capture real screenshots/video, never concept images labeled as gameplay.
+- [ ] Compare approved references with **actual** before/after UI/WebGL screenshots and animation; record per-skin **PASS / FAIL / BLOCKED / APPROVED_DEVIATION** and GPU/CPU evidence (FPS, frame-time p50/p95, Draw Calls, Triangles, shader warm-up, texture memory/bytes, dispose/context restore). Add shader/resource budgets and no-visual-regression assertions.
+- [ ] Preserve `docs/garage-release-policy.md`: production stays `coming-soon` and excludes unpublished candidate assets/trial code; test the separate trial build, ensure no client-side entitlement forgery, no payment, no unapproved permanent grant. Do not change deployment flags just to reveal unfinished art.
+- [ ] After asset integration, run applicable targeted tests, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, Cloud Save / World Tour and `make verify`; inspect **exact-final-HEAD** full GitHub Actions `quality-gate`. Record browser/WebGL evidence and remaining physical iOS/Android verification separately. **Do not mark Phase B or relevant TODO #5.* complete until requirements and visual signoff pass**; do not merge to `develop`, open a PR or deploy without separate authorization.
+
+---
