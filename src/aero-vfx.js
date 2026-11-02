@@ -66,8 +66,7 @@ export function createAeroVFX(scene, vehicle) {
         float ends=smoothstep(0.,.09,vUv.x)*(1.-smoothstep(.85,1.,vUv.x));
         float strength=vType>.5&&vType<1.5?suction*(.55+downforce*.45):vType>1.5?.35+downforce*.55:1.;
         vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4)*skinTint;
-        color=mix(color,vec3(.72,.4,1.),clamp(nitroMix,0.,1.)*.85);
-        color=mix(color,trailAccent.rgb,trailAccent.a*clamp(nitroMix,0.,1.)*.8*smoothstep(.5,.85,vUv.x)); // trail skin on the tails from ignition; fronts keep the purple cue
+        color=mix(color,mix(vec3(.72,.4,1.),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*.85); // an equipped trail skin replaces the NITRO purple
         float pattern=1.;
         if(skinPattern>.5) pattern=.6+.4*sin(vUv.y*11.+time*(2.+skinPattern));
         if(skinPattern>1.5) pattern=.35+.65*abs(sin(vUv.y*(12.+skinPattern*4.)+time*4.+vLane*8.));
@@ -90,16 +89,16 @@ export function createAeroVFX(scene, vehicle) {
   jetGeometry.rotateX(-Math.PI / 2); jetGeometry.translate(0, 0, 0.5);
   const jetMaterial = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 } },
+    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern;uniform vec3 skinTint;
+    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern;uniform vec3 skinTint;uniform vec4 trailAccent;
       void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
         float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
         float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
         float core=exp(-t*7.);float fade=pow(max(0.,1.-t),1.7)*smoothstep(0.,.025,t);
         vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
-        color=mix(color*skinTint,vec3(.68,.42,1.),clamp(nitroMix,0.,1.)*.65); // skin tints the base; NITRO purple stays readable on every skin
+        color=mix(color*skinTint,mix(vec3(.68,.42,1.),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*.65); // skin tints the base; NITRO is purple or the trail skin's colour
         float shape=1.;
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
         if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
@@ -161,7 +160,7 @@ export function createAeroVFX(scene, vehicle) {
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#b98aff');
   let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  let quality = 1, settings, delta, launchSkinActive = false, launchPattern = 0, lastPhase = 'ready', demoPulseClock = 2.2;
+  let quality = 1, settings, delta, launchSkinActive = false, launchPattern = 0, voidPulse = false, lastPhase = 'ready', demoPulseClock = 2.2;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
@@ -195,7 +194,8 @@ export function createAeroVFX(scene, vehicle) {
       if (launchPattern !== patterns['launch-flare']) demoPulseClock = 2.2;
       launchPattern = patterns['launch-flare'];
       launchSkinActive = launchPattern > 0;
-      voidBeams.setSelected(patterns.thruster === 3);
+      voidPulse = patterns.thruster === 3; // its beams replace the nozzle flames
+      voidBeams.setSelected(voidPulse);
       flow.material.uniforms.skinTint.value.fromArray(palette.airflow);
       flow.material.uniforms.skinPattern.value = patterns.airflow;
       for (const jet of jets) {
@@ -209,6 +209,9 @@ export function createAeroVFX(scene, vehicle) {
       flare.setSkin(ids?.['launch-flare']);
       const trail = palette['nitro-trail'], skinned = trail.some(v => v !== 1);
       flow.material.uniforms.trailAccent.value.set(.5 * trail[0], .8 * trail[1], trail[2], skinned ? 1 : 0); // the ribbon's colour
+      for (const jet of jets) jet.material.uniforms.trailAccent.value.copy(flow.material.uniforms.trailAccent.value);
+      if (skinned) nitroShockColor.setRGB(.5 * trail[0], .8 * trail[1], trail[2]);
+      else nitroShockColor.set('#b98aff');
       if (launchSkinActive) shockColor.setRGB(...palette['launch-flare']);
       else shockColor.set('#bdeeff');
       shock.material.color.copy(shockColor);
@@ -252,18 +255,19 @@ export function createAeroVFX(scene, vehicle) {
       if (studioDemo && preview) current.z += Math.sin(time * 2) * 0.65;
       // Studio (including Garage Home) loops ignition events; live racing never repeats them.
       if (studioDemo && enabled && !calm && (demoPulseClock += dt) >= 2.2) {
-        demoPulseClock = 0; shockAge = 0;
-        shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
-        flare.trigger(current, vehicle.quaternion, 1.6);
+        demoPulseClock = 0;
+        if (!flare.trigger(current, vehicle.quaternion, 1.6)) { // a premium flare replaces the standard ring
+          shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
+        }
       }
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
       const launching = launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown');
-      if ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching) {
+      const flared = launching && flare.trigger(current, vehicle.quaternion, 1.1);
+      if (!flared && ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching)) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }
-      if (launching) flare.trigger(current, vehicle.quaternion, 1.1);
       wasBoosting = boost; wasNitro = nitroActive; lastPhase = race.phase; lastImpact = car.impact;
       shock.material.color.copy(nitroActive && !studioDemo ? nitroShockColor : shockColor);
       shockAge += dt;
@@ -283,7 +287,7 @@ export function createAeroVFX(scene, vehicle) {
       voidBeams.update(time, strength, quality, enabled && !calm);
       ribbon.material.uniforms.time.value = time;
       jets.forEach((jet, i) => {
-        jet.visible = enabled && strength > 0.005;
+        jet.visible = enabled && strength > 0.005 && !voidPulse;
         jet.scale.set(REAR_PORTS[i].size, REAR_PORTS[i].size, settings.exhaustLength * strength * (0.65 + car.speed / 200));
         const u = jet.material.uniforms;
         u.time.value = time + i * 0.13; u.power.value = strength;
