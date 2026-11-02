@@ -56,6 +56,13 @@ When adding or updating Garage, HUD, Store, Rewards or any other transparent ico
 - Design the complete **uncropped** silhouette first; regenerate the source if any bottom edge,
   glow, shadow or decorative flourish is missing. CSS `object-fit: contain` cannot restore
   missing source pixels. Never present an upscaled crop as a repaired 3× original.
+- When repairing an existing icon, **preserve its established art direction and identity**:
+  original shape, 3D materials, hue, vividness, gradients, specular highlights and glow.
+  Fix completeness and visual sharpness without replacing colorful illustrated source art
+  with a simplified flat/vector icon set unless the user expressly requests that style.
+  Review a side-by-side comparison against the original reference board at native 1×.
+  For rich Store artwork, also regression-check color variety and vivid highlights;
+  geometry/alpha margins alone cannot detect an unwanted style regression.
 - Export true native 3× transparent WebP (or lossless master → WebP), with image dimensions
   exactly 3× the intended 1× CSS display. Keep editable masters in a documented source
   directory. All runtime paths must respect Vite `import.meta.env.BASE_URL`.
