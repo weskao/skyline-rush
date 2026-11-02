@@ -67,6 +67,7 @@ Estimated time based on *effective* average speed including hairpins, climbs, re
 - [Visual directory index](../../designs/new-tracks/README.md) — five saved two-view concept SVG images, five saved point-to-point route diagrams.
 - [Visual fidelity and camera/biome/weather acceptance matrix](../../designs/new-tracks/visual-fidelity.md).
 - [Machine-readable concept manifest](../../designs/new-tracks/concept-manifest.json).
+- [Import manifest for the 12 original high-detail PNG concept images; checksums verified from the chat-provided files](../../designs/new-tracks/png-source-import-manifest.md).
 
 | Map | Ground + aerial concept image | One-way route diagram |
 | --- | --- | --- |
