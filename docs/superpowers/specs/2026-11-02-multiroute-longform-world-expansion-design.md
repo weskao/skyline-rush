@@ -3,7 +3,7 @@
 **Status:** PROPOSAL ONLY — design and code-audit findings, not implemented or playtested.
 **Date:** 2026-11-02
 **Source branch:** `develop` @ `12264f74f0f6452347d0183937391da620d10343`
-**Planning branch:** `feature/epic-multiroute-longform-tracks-planning`
+**Planning branch:** `feature/epic-multiroute-longform-tracks`
 **Goal:** Five original, visually distinct 3–5 minute point-to-point courses featuring real bends/hairpins, ground/air route forks, meaningful shortcuts, natural open terrain, quality-tiered weather, set pieces, and space beyond a fixed road rail.
 **Non-goals:** replacing existing ten sprint courses, changing current physics across old tracks without opt-in, copying protected level artwork, making all race modes immediately support an open world, modifying production code in the planning branch.
 
@@ -80,6 +80,20 @@ Estimated time based on *effective* average speed including hairpins, climbs, re
 **Source-art distinction:** the original 2 AI-generated cinematic overview PNGs and 10 per-track PNG crops remain in the ChatGPT-provided download ZIP, **not in GitHub yet**. Current saved SVG storyboards are newly authored vector concept references. On later PNG import verify SHA-256, retain originals, then add their actual links; do not treat decorative closed-looking image-generated maps as playable circuit topology.
 
 **Next-stage image requirement:** all future five reference designs and all true 3D previews must show point-to-point one-way racing. At least 2 real WebGL camera captures per course (ground hairpin and aerial branch); route signage must show different START/FINISH and no lap counter. Compare lighting, landmarks, weather, scale and road openness against committed visual design and record explicit deviations.
+
+## Ten individually committed concept-camera images
+
+These five point-to-point routes have **10 separate SVG scene images** on this planning branch, plus five combined two-view storyboards and five SVG technical routes. Each is **concept artwork, not rendered gameplay and not the original high-detail AI-generated PNG**. The original PNG collage + ten crop archive remains in the chat; use [PNG source manifest](../../designs/new-tracks/png-source-import-manifest.md) before importing binaries.
+
+| Course | Ground camera concept | Air / route split camera concept |
+| --- | --- | --- |
+| Dune Tempest | [Ground](../../designs/new-tracks/concept-art/dune-tempest-ground-view.svg) | [Air](../../designs/new-tracks/concept-art/dune-tempest-aerial-view.svg) |
+| Monsoon Ruins | [Ground](../../designs/new-tracks/concept-art/monsoon-ruins-ground-view.svg) | [Air](../../designs/new-tracks/concept-art/monsoon-ruins-aerial-view.svg) |
+| Skyfall Archipelago | [Ground](../../designs/new-tracks/concept-art/skyfall-archipelago-ground-view.svg) | [Air](../../designs/new-tracks/concept-art/skyfall-archipelago-aerial-view.svg) |
+| Volcanic Crown | [Ground](../../designs/new-tracks/concept-art/volcanic-crown-ground-view.svg) | [Air](../../designs/new-tracks/concept-art/volcanic-crown-aerial-view.svg) |
+| Stormline Megacity | [Ground](../../designs/new-tracks/concept-art/stormline-megacity-ground-view.svg) | [Air](../../designs/new-tracks/concept-art/stormline-megacity-aerial-view.svg) |
+
+Each later implementation must compare actual WebGL snapshots to both camera references plus [visual fidelity requirements](../../designs/new-tracks/visual-fidelity.md). Geometry remains graph-authored point-to-point: no lap count and no closed race despite stylized bends.
 
 ## Race readability and fairness acceptance
 
