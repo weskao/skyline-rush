@@ -1,14 +1,41 @@
+## Garage VFX badge clipping / 3× WebP regeneration — 2026-11-02
+
+Branch: `fix/garage-vfx-badge-art-unclipped-3x` (created from `develop` `b3a0c11a`). User reported that all except the first three in `#garage-vfx-art-badges` were cropped near the bottom.
+
+- [x] Identified eight older atlas-derived badge/rarity images; do not confuse transparent padding on a cropped sprite with complete icon content.
+- [x] Recreated Locked/New/Trial and five rarity icons as native 216×216 editable vector originals and transparent `@3x.webp` runtime assets (72×72 CSS), with center alignment and safe alpha margins.
+- [x] Extended Playwright geometry, native-size, alpha-inset and responsive tests for all eight; existing tests keep coverage for the first three.
+- [ ] Run RED/GREEN browser regression on the branch, `make verify`, and full exact-HEAD quality-gate; record observed results.
+- [ ] Review real running-game screenshots and physical touch/browser display at 390×844, 844×390, 1440×900 before claiming visual signoff.
+- [ ] Merge into `develop` **only after explicit approval** and required gates; do not modify `main` or open a PR.
+
+---
+
 ## Button 3x artwork removed — UI/UX follow-ups (2026-11-02)
 
 The 3x HUD artwork belongs to the future `feature/garage-store-readiness`, `feature/garage-rewards-and-missions` and `feature/garage-economy-foundation` work and was merged here by accident. It no longer shows under any button: `#start-button`, `#garage-button`, `#again-button`, `#pause-button`, `#settings-button`, and the touch Left / Right / Brake / NITRO buttons. The semantic SVG icons and labels are untouched.
 
 - [x] Removed every `img.hud-3x-decor` and `img.settings-art-decor` from `src/App.vue` / `src/SettingsPanel.vue`, plus their CSS and the `hudAsset` helper; `tests/hud-3x-artwork-browser.spec.js` asserts none come back.
 - [ ] Image paths kept for later (`public/feature-assets/mobile-controls-hud/raster/`, `@3x.webp`, may be deleted if never used): `button-play`, `button-garage`, `button-retry`, `button-nitro`, `button-back`, `button-coming-soon`, `hud-pause`, `hud-brake`, `ui-arrow-left`, `ui-arrow-right`, `ui-settings`, `ui-close`, `ui-info`, `ui-tooltip`, `hud-combo`, `hud-drift`, `hud-nitro`, `hud-speed`. The Settings source gallery (`#hud-3x-source-gallery`) still lists all 18.
+- [ ] **Restore the button artwork when implementing `feature/garage-store-readiness`, `feature/garage-rewards-and-missions` or `feature/garage-economy-foundation`** (the first branch does not exist yet; the other two do not carry the artwork). After merging `develop` into the branch, run `git show b3a0c11a -- src tests | git apply -R` (re-adds the 9 `img.hud-3x-decor` / `img.settings-art-decor` images, their CSS, `hudAsset`/`settingsArt` and the old browser specs; leaves `TODO.md` alone), then tick this item. Original introduction: `83182a7d` on `feature/3x-hud-materials-integration`. If `App.vue` / `SettingsPanel.vue` changed enough that the patch fails, restore by hand from `83182a7d` instead.
 - [ ] If re-used: swap the button's own background or a real `<svg>` icon instead of an `<img>` layered under the label; keep 44 px touch targets and contrast against the label.
 - [ ] Start / Garage / Race again: one consistent button style across intro, result and pause overlays.
 - [ ] Touch controls: clearer pressed / disabled states for NITRO, Brake and Left / Right.
 - [ ] Settings / Pause icon buttons: larger hit area and visible focus ring on the top bar.
 - [ ] Decide by the Garage economy branches' merge: delete unused `@3x.webp` files and the gallery, or wire them in.
+
+## Ring trains, a few full-width rows, pickup runs (2026-11-02)
+
+**Branch:** `feature/ring-rows` from `develop` `01fd1bea`. **Request:** a few more items and rings on every map and mode: consecutive rings on the road or in the air, a few stretches with a full row of rings so passing always takes one, pickups in runs of 1-4; keep the balance (not too easy or hard, keep the thrill). A first try (6 per car + 5-row streaks of 8 rings every 1.2 km) was rejected as "too many, too bunched".
+
+- [x] RED: `tests/ring-rows.test.js` failed before the shapes existed.
+- [x] GREEN: 4 slots per car unchanged; on plain road a slot becomes a 5-ring train (ground 2.5 m or air 7 m; charge/slipstream/nitro/slipstream/charge; own PERFECT LINE) at 15%, or a 4-lane row at 2.5 m (any car on the road passes one) at 8%, on their own `ring-shapes` stream so singles keep their positions. Risk rings and the first two slots stay single. Pickup slots trail 0-3 cells (`pickup-runs` stream). Endless: a train or (1 in 3) a row per chunk, pickup runs.
+- [x] A row pays once per car (player and rivals, same step); Hard rivals do not swerve for a row.
+- [x] Balance, economy bot, 6 seeds x 10 tracks: NITRO/min 15.3 -> 18.5 (+20%), race 56.4 -> 55.3 s, fuel run-outs 0 -> 0; track range 9.2-19.0 -> 15.0-21.4. AC2 rival NITRO: Hard needed `HARD_RIVAL_TAKES` 4 -> 5 (+3.9 -> +4.2).
+- [x] No `layoutVersion` bump: the 4-per-car versions are unreleased (not on `main`), so no new `firestore.rules` ids. AC3 hashes re-locked.
+- [x] Browser: `tests/ring-rows-browser.spec.js` desktop + phone (rows drawn where they score, one ring per row, train 5/5 + PERFECT LINE); WebGL screenshots checked.
+- [ ] Full `npm run test:browser`, then remote `quality-gate` on the final HEAD.
+- [ ] Real-device feel check of the denser runs.
 
 ## AIRFLOW off hides sprint streamlines (2026-11-02)
 

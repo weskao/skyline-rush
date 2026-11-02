@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 216 216" width="216" height="216"><defs>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fcff"/><stop offset=".28" stop-color="#7794af"/><stop offset=".55" stop-color="#32445b"/><stop offset=".78" stop-color="#a2bdd4"/><stop offset="1" stop-color="#f4ffff"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="white" stop-opacity=".88"/><stop offset=".45" stop-color="white" stop-opacity=".12"/><stop offset="1" stop-color="#081529" stop-opacity=".48"/></linearGradient>
+<radialGradient id="center"><stop stop-color="#ffe580"/><stop offset=".6" stop-color="#ffae22"/><stop offset="1" stop-color="#71340d"/></radialGradient>
+<linearGradient id="bright" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe580"/><stop offset=".45" stop-color="#ffae22"/><stop offset="1" stop-color="#71340d"/></linearGradient>
+</defs>
+<circle cx="108" cy="108" r="83" fill="none" stroke="#ffbf45" stroke-width="1" opacity=".23"/>
+ <circle cx="108" cy="108" r="73" fill="#071322" fill-opacity=".5" stroke="#ffbf45" stroke-width="7" opacity=".5"/>
+ <circle cx="108" cy="108" r="76" fill="none" stroke="#d9efff" stroke-opacity=".47" stroke-width="1.5" stroke-dasharray="33 13"/>
+ <path d="M182.2 138.0L187.7 140.2" stroke="#ffbf45" stroke-width="3" opacity=".5"/><path d="M138.0 182.2L140.2 187.7" stroke="#ffbf45" stroke-width="3" opacity=".5"/><path d="M78.0 182.2L75.8 187.7" stroke="#ffbf45" stroke-width="3" opacity=".5"/><path d="M33.8 138.0L28.3 140.2" stroke="#ffbf45" stroke-width="3" opacity=".5"/><path d="M33.8 78.0L28.3 75.8" stroke="#ffbf45" stroke-width="3" opacity=".5"/><path d="M78.0 33.8L75.8 28.3" stroke="#ffbf45" stroke-width="3" opacity=".5"/><path d="M138.0 33.8L140.2 28.3" stroke="#ffbf45" stroke-width="3" opacity=".5"/><path d="M182.2 78.0L187.7 75.8" stroke="#ffbf45" stroke-width="3" opacity=".5"/>
+<path d="M108 25 L126 48 153 34 157 65 182 65 167 91 190 110 164 124 173 157 141 151 124 182 104 162 77 184 72 154 41 155 50 126 27 108 51 91 42 63 73 68 85 36 Z" fill="#fba526" stroke="#ffec97" stroke-width="4"/>
+<path d="M108 41 L123 64 148 51 150 79 170 77 155 99 174 109 153 121 160 147 135 138 123 164 106 147 83 166 81 139 56 140 66 119 46 108 68 98 57 77 84 79 91 52 Z" fill="url(#center)" stroke="#fff2b4" stroke-width="2"/>
+<path d="M65 96H152L146 126H71Z" fill="#3f210c" fill-opacity=".8" stroke="#fff4aa" stroke-width="1.5"/>
+<text x="108" y="118" font-family="DejaVu Sans, Arial, sans-serif" font-weight="900" font-size="29" text-anchor="middle" letter-spacing="-2" fill="#fff3c0" stroke="#7a3100" stroke-width=".5">NEW</text>
+<path d="M166 48 H186 M176 38 V58" stroke="#ffda70" stroke-width="1.5" opacity=".75"/><circle cx="176" cy="48" r="2.5" fill="white" opacity=".8"/></svg>

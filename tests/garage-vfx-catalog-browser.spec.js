@@ -292,3 +292,54 @@ test('clicking a skin card lights the whole card the same way in every category'
   }
   expect(new Set(looks).size, 'one selected look for every category').toBe(1);
 });
+
+// Original collage cutouts could have internal truncation despite having transparent outer pixels.
+// These eight artworks were re-authored at native 216×216, not enlarged from cutouts.
+for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+  test(`all eight regenerated badge/rarity WebPs show complete native 3x silhouettes at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#garage-button').click();
+    const ids = ['badge-locked', 'badge-new', 'badge-trial', 'rarity-common', 'rarity-rare',
+      'rarity-epic', 'rarity-legendary', 'rarity-mythic'];
+    for (const id of ids) {
+      const tile = page.locator(`#garage-vfx-art-badges [data-badge-art="${id}"]`);
+      await tile.scrollIntoViewIfNeeded();
+      await expect(tile).toHaveAttribute('data-artwork-restored', 'true');
+      const image = tile.locator('img');
+      await expect(image).toHaveAttribute('src', new RegExp(`${id}@3x\\.webp$`));
+      const result = await tile.evaluate(async figure => {
+        const img = figure.querySelector('img');
+        await img.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        const bounds = { minX: canvas.width, minY: canvas.height, maxX: -1, maxY: -1 };
+        for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+          if (rgba[(y * canvas.width + x) * 4 + 3] <= 16) continue;
+          bounds.minX = Math.min(bounds.minX, x);
+          bounds.minY = Math.min(bounds.minY, y);
+          bounds.maxX = Math.max(bounds.maxX, x);
+          bounds.maxY = Math.max(bounds.maxY, y);
+        }
+        const frame = figure.querySelector('.garage-badge-art-frame').getBoundingClientRect();
+        const picture = img.getBoundingClientRect();
+        const caption = figure.querySelector('figcaption').getBoundingClientRect();
+        return { natural: [canvas.width, canvas.height], css: [picture.width, picture.height],
+          frame: [frame.width, frame.height],
+          safeMargins: [bounds.minX, bounds.minY, canvas.width - 1 - bounds.maxX, canvas.height - 1 - bounds.maxY],
+          contained: picture.left >= frame.left && picture.top >= frame.top && picture.right <= frame.right && picture.bottom <= frame.bottom,
+          captionClear: caption.top >= frame.bottom + 4 };
+      });
+      expect(result.natural).toEqual([216, 216]);
+      expect(result.css).toEqual([72, 72]);
+      expect(result.frame).toEqual([88, 88]);
+      expect(Math.min(...result.safeMargins), id).toBeGreaterThanOrEqual(12);
+      expect(result.contained).toBe(true);
+      expect(result.captionClear).toBe(true);
+    }
+  });
+}
