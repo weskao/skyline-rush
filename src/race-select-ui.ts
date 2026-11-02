@@ -169,7 +169,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     startButton.setAttribute('aria-label', upcoming ? t('track.comingSoonInfo', { track: name }) : `${t(labelKey)} · ${name}`);
     const teaser = $('#upcoming-scene');
     teaser.hidden = !upcoming;
-    document.querySelector<HTMLImageElement>('#upcoming-scene-image')!.src = upcoming ? `${import.meta.env.BASE_URL}${upcoming.image}` : '';
+    const sceneImage = document.querySelector<HTMLImageElement>('#upcoming-scene-image')!;
+    if (upcoming) sceneImage.src = `${import.meta.env.BASE_URL}${upcoming.image}`;
+    else sceneImage.removeAttribute('src');
     startButton.setAttribute('aria-describedby', 'track-note');
     $('.start-hint').hidden = startButton.disabled;
     $('#track-length').textContent = upcoming ? t('track.previewLength', { km: upcoming.length / 1000 }) : race.endless ? t('mode.endlessRoute') : race.mode === 'circuit' ? t('circuit.length', { laps: race.config.laps, km: race.length / 1000 }) : t('track.sprint', { km: raceTrack(race.trackId)!.length / 1000 });
@@ -177,7 +179,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const next = tracks[tracks.indexOf(race.trackId) + 1];
     const previous = tracks[tracks.indexOf(race.trackId) - 1]!;
     $('#track-note').textContent = upcomingSelection ? t('track.comingSoonInfo', { track: name }) + ' · ' + t(`track.note.${upcomingSelection}`) : (selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', { n: cupCount() }) + ' · ' : '') + (!daily && race.trackId !== CIRCUIT_ID && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
-    const route = (upcoming ? `${t('track.comingSoon')} · ${name}` : race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
+    const route = (upcoming ? name : race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
     $('.route-heading').textContent = route;
     $('.overlay-route').textContent = `SKYLINE RUSH / ${route}`;
     $('#world').setAttribute('aria-label', upcoming ? t('track.comingSoonInfo', { track: name }) : t('world.aria', { track: name }));
