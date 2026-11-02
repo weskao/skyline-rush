@@ -36,8 +36,6 @@ const badgeTone: Record<(typeof badgeArt)[number], 'cyan' | 'magenta' | 'gold' |
   'rarity-common': 'slate', 'rarity-rare': 'azure', 'rarity-epic': 'magenta',
   'rarity-legendary': 'gold', 'rarity-mythic': 'red',
 };
-const restoredBadge = (id: string): boolean =>
-  id === 'badge-equipped' || id === 'badge-favorite' || id === 'badge-limited';
 
 const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   thruster: { en: 'Thruster', 'zh-TW': '推進器' },
@@ -106,7 +104,7 @@ const statusText = (id: SkinId, locale: string) => {
       <div class="garage-art-badges">
         <GarageArtworkTile v-for="id in badgeArt" :key="id" :id="id"
           :label="badgeLabel(id, locale)" :src="badgeSrc(id)"
-          :tone="badgeTone[id]" :restored="restoredBadge(id)" />
+          :tone="badgeTone[id]" :restored="true" />
       </div>
     </section>
     <p class="garage-vfx-message" role="status">{{ locale === 'zh-TW' ? '特效僅改變外觀，不影響速度、獎勵或舊有車漆。' : 'Cosmetics only. Speed, rewards and existing paints are unchanged.' }}</p>

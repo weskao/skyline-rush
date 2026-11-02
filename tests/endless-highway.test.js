@@ -62,9 +62,9 @@ test('encounter arrays and group bookkeeping stay bounded across long sessions a
   for (let distance = 0; distance <= 2_000_000; distance += 997) {
     visit(race, distance);
     assert.ok(race.traffic.length <= 40);
-    assert.ok(race.pickups.length <= 20);
-    assert.ok(race.rings.length <= 15);
-    assert.ok(Object.keys(race.player.groupHits).length <= 5);
+    assert.ok(race.pickups.length <= 5 * 4 * 4); // 5 chunks of 4 runs of up to 4 pickups
+    assert.ok(race.rings.length <= 5 * (3 + 5)); // 3 rings and a 5-ring train or 4-ring row per chunk
+    assert.ok(Object.keys(race.player.groupHits).length <= 10); // two PERFECT LINE groups per chunk
     assert.ok(race.pickups.every(item => Math.abs(item.distance - distance) < 2500));
   }
   const before = JSON.stringify(race);

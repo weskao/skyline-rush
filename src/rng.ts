@@ -27,4 +27,6 @@ export const RACE_STREAMS = Object.freeze({
   checkpoints: 'checkpoints',
   obstacles: 'world-obstacles',
   items: 'active-items',
+  ringShapes: 'ring-shapes',
+  pickupRuns: 'pickup-runs',
 });

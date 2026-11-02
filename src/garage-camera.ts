@@ -4,10 +4,15 @@ export interface GarageCamera {
   pitch: number;
   zoom: number;
   autoRotate: boolean;
+  mode: 'ground' | 'flight';
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-export const defaultGarageCamera = (): GarageCamera => ({ yaw: .7, pitch: .27, zoom: 1, autoRotate: true });
+/** Farthest Studio pull-back: far enough to see the whole exhaust jet and NITRO trail. */
+export const GARAGE_MAX_ZOOM = 2.4;
+/** Longest Studio exhaust past the rear: NITRO trail streaks 6 + 8 × .85 ≈ 12.8 m, max jet ≈ 11.75 m. */
+export const GARAGE_EXHAUST_REACH = 13;
+export const defaultGarageCamera = (): GarageCamera => ({ yaw: .7, pitch: .27, zoom: 1, autoRotate: true, mode: 'ground' });
 
 export function garagePreset(view: string): GarageCamera {
   const angles: Record<string, [number, number]> = {
@@ -15,7 +20,7 @@ export function garagePreset(view: string): GarageCamera {
     top: [0, 1.18], cinematic: [.7, .27],
   };
   const pose = angles[view];
-  return pose ? { yaw: pose[0], pitch: pose[1], zoom: 1, autoRotate: false } : defaultGarageCamera();
+  return pose ? { yaw: pose[0], pitch: pose[1], zoom: 1, autoRotate: false, mode: 'ground' } : defaultGarageCamera();
 }
 
 export function dragGarageCamera(state: GarageCamera, dx: number, dy: number): GarageCamera {
@@ -24,7 +29,7 @@ export function dragGarageCamera(state: GarageCamera, dx: number, dy: number): G
 }
 export function zoomGarageCamera(state: GarageCamera, multiplier: number): GarageCamera {
   return Number.isFinite(multiplier) && multiplier > 0
-    ? { ...state, zoom: clamp(state.zoom * multiplier, .75, 1.6) } : state;
+    ? { ...state, zoom: clamp(state.zoom * multiplier, .75, GARAGE_MAX_ZOOM) } : state;
 }
 export const toggleGarageOrbit = (state: GarageCamera): GarageCamera => ({ ...state, autoRotate: !state.autoRotate });
 
@@ -39,4 +44,27 @@ export function garageFittedDistance(aspect: number, zoom: number, radius: numbe
   const halfFov = Math.atan(Math.tan(49 * Math.PI / 360) * Math.min(1, safeAspect));
   const fitted = safeRadius * 1.1 / Math.sin(halfFov);
   return Math.max(fitted, Math.max(10, 8.5 / Math.max(.65, Math.min(1, safeAspect))) * safeZoom);
+}
+
+
+/** Change display pose without losing the player's selected camera angle. */
+export const setGarageMode = (camera: GarageCamera, mode: GarageCamera['mode']): GarageCamera =>
+  ({ ...camera, mode });
+
+/** Frame projected vehicle bounds, not its oversized bounding sphere. */
+export function garageFramedDistance(
+  aspect: number, zoom: number, half: { x: number; y: number; z: number }, yaw: number, pitch: number,
+): number {
+  const safeAspect = Number.isFinite(aspect) && aspect > 0 ? clamp(aspect, .45, 2.5) : 1;
+  const safeZoom = Number.isFinite(zoom) && zoom > 0 ? clamp(zoom, .75, GARAGE_MAX_ZOOM) : 1;
+  // Past the default view, grow the framed length by the exhaust reach on BOTH ends, so the
+  // car stays centred and front and rear views share one pull-back limit.
+  const z = half.z + GARAGE_EXHAUST_REACH * clamp((safeZoom - 1) / (GARAGE_MAX_ZOOM - 1), 0, 1);
+  const sy = Math.sin(yaw), cy = Math.cos(yaw), sp = Math.sin(pitch), cp = Math.cos(pitch);
+  const width = Math.abs(cy) * half.x + Math.abs(sy) * z;
+  const height = Math.abs(sy * sp) * half.x + Math.abs(cp) * half.y + Math.abs(cy * sp) * z;
+  const depth = Math.abs(sy * cp) * half.x + Math.abs(sp) * half.y + Math.abs(cy * cp) * z;
+  const vTan = Math.tan(49 * Math.PI / 360);
+  const fit = Math.max(width / (vTan * safeAspect), height / vTan);
+  return Math.max(4, depth + fit * (1.12 + (Math.min(safeZoom, 1.6) - .75) * .45));
 }

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 216 216" width="216" height="216"><defs>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fcff"/><stop offset=".28" stop-color="#7794af"/><stop offset=".55" stop-color="#32445b"/><stop offset=".78" stop-color="#a2bdd4"/><stop offset="1" stop-color="#f4ffff"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="white" stop-opacity=".88"/><stop offset=".45" stop-color="white" stop-opacity=".12"/><stop offset="1" stop-color="#081529" stop-opacity=".48"/></linearGradient>
+<radialGradient id="center"><stop stop-color="#ecf4ff"/><stop offset=".6" stop-color="#8ea9c8"/><stop offset="1" stop-color="#39475a"/></radialGradient>
+<linearGradient id="bright" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ecf4ff"/><stop offset=".45" stop-color="#8ea9c8"/><stop offset="1" stop-color="#39475a"/></linearGradient>
+</defs>
+<path d="M108 23 L149 42 L169 62 L160 138 L135 166 L108 187 L81 166 L56 138 L47 62 L67 42 Z" fill="#a9c3dd" opacity=".22" stroke="#a9c3dd" stroke-width="7"/>
+ <path d="M108 28 L148 49 L159 67 L151 134 L129 161 L108 178 L87 161 L65 134 L57 67 L68 49 Z" fill="url(#bright)" stroke="#a9c3dd" stroke-width="3"/>
+ <path d="M108 38 L145 56 L151 69 L144 130 L125 151 L108 166 L91 151 L72 130 L65 69 L72 56 Z" fill="url(#center)" stroke="#f7fcff" stroke-opacity=".5" stroke-width="1.6"/>
+ <path d="M108 38 V166 M65 69 L108 91 L151 69 M72 130 L108 91 L144 130" fill="none" stroke="#f7ffff" stroke-opacity=".33" stroke-width="1.7"/>
+ <path d="M72 56 L108 38 L145 56 L108 91 Z" fill="white" fill-opacity=".18"/>
+ <path d="M65 69 L108 91 L72 130 Z" fill="#041322" fill-opacity=".32"/>
+ <path d="M108 91 L151 69 L144 130 Z" fill="white" fill-opacity=".12"/>
+ <path d="M72 130 L108 91 L108 166 L91 151 Z" fill="#061127" fill-opacity=".25"/>
+ <path d="M108 91 L144 130 L125 151 L108 166 Z" fill="white" fill-opacity=".09"/>
+ 
+<path d="M108 59 L136 88 L124 132 L108 148 L92 132 L80 88 Z" fill="url(#shine)" stroke="#f7ffff" stroke-width="1.5"/>
+<path d="M153 53 H173 M163 43 V63" stroke="#c7deef" stroke-width="1.5" opacity=".75"/><circle cx="163" cy="53" r="2.5" fill="white" opacity=".8"/></svg>
