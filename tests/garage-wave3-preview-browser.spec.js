@@ -29,7 +29,13 @@ test('Wave3 garage-rewards-and-missions filters and locale switch keep all butto
   await gallery.locator('summary').click();
   await gallery.locator('[data-wave3-filter="trophy"]').click();
   await expect(gallery.locator('button[data-wave3-asset]')).toHaveCount(4);
+  // Native modal dialogs block the toolbar; change language through the actual reachable UI.
+  await page.locator('#garage-close').click();
+  await expect(page.locator('#garage-screen')).not.toBeVisible();
   await selectLocale(page,'zh-TW');
-  await expect(gallery.locator('[data-wave3-description]')).toContainText(/[一-龥]/);
-  await expect(gallery.getByRole('button',{name:/購買|領取|buy|claim/i})).toHaveCount(0);
+  await page.locator('#garage-button').click();
+  const localized=page.locator('#garage-art-source-garage-rewards-and-missions');
+  await localized.locator('summary').click();
+  await expect(localized.locator('[data-wave3-description]')).toContainText(/[一-龥]/);
+  await expect(localized.getByRole('button',{name:/購買|領取|buy|claim/i})).toHaveCount(0);
 });
