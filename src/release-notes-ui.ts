@@ -2,7 +2,8 @@ import { nextTick } from 'vue';
 import { releaseView, updateReleaseView } from './release-view-state.ts';
 import { HISTORY_KEY } from './history.ts';
 import { getLocale, t, formatDate, SUPPORTED_LOCALES } from './i18n.ts';
-import { CURRENT_RELEASE, NOTES_SEEN_KEY, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind } from './release-notes.ts';
+import { CURRENT_RELEASE, NOTES_SEEN_KEY, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind, type ReleaseVideo } from './release-notes.ts';
+import type { ReleaseClipView } from './ui-state-contracts.ts';
 import { createReleaseMediaCache } from './release-media-cache.ts';
 
 // Pure keyboard navigation, independently testable without a DOM.
@@ -45,24 +46,25 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   const versionLabel = (version: string): string => version === UPCOMING ? t('release.upcoming') : 'v' + version;
   // Absolute, so the address matches what Cache Storage records for it.
   const bundled = (path: string): string => new URL(import.meta.env.BASE_URL + path, location.href).href;
-  const clipSources = new Set(RECENT_RELEASES.flatMap(release => SUPPORTED_LOCALES.flatMap(locale =>
-    [false, true].map(portrait => releaseHeroVideo(release.video, locale, portrait)?.src)))
+  const clipSources = new Set(RECENT_RELEASES.flatMap(release => [release.video, ...release.highlights.map(item => item.video)]
+    .flatMap(video => SUPPORTED_LOCALES.flatMap(locale => [false, true].map(portrait => releaseHeroVideo(video, locale, portrait)?.src))))
     .filter((src): src is string => !!src).map(bundled));
   const mediaCache = createReleaseMediaCache(clipSources, {
     caches: globalThis.caches, fetch: url => fetch(url), createObjectURL: blob => URL.createObjectURL(blob),
   });
-  // Downloads only while the notes are open; the poster shows until the clip is ready,
-  // and a reader who moved on meanwhile keeps their view.
-  function loadVisibleClip() {
-    const shown = releaseView.heroVideo;
-    if (!shown || shown.src || !releaseDialog.open) return;
-    const { source } = shown;
-    mediaCache.load(source).then(src => {
-      const view = releaseView.heroVideo;
-      if (view?.source !== source) return;
-      view.src = src;
-      nextTick(syncReleaseVideo);
-    });
+  // Clips download ahead only while the notes are open, so the hero and any enlarged clip start at once; highlight clips
+  // draw only their poster and play button. A reader who moved on meanwhile keeps their view (the stale view just updates unseen).
+  function loadVisibleClips() {
+    if (!releaseDialog.open) return;
+    for (const view of [releaseView.heroVideo, ...releaseView.entries.map(entry => entry.video)]) {
+      if (view && !view.src) mediaCache.load(view.source).then(src => { view.src = src; if (view === releaseView.heroVideo) nextTick(syncReleaseVideo); });
+    }
+  }
+  function clipView(video: ReleaseVideo | null | undefined, locale: string): ReleaseClipView | null {
+    const clip = releaseHeroVideo(video, locale, portrait.matches);
+    if (!clip) return null;
+    const source = bundled(clip.src);
+    return { src: mediaCache.peek(source) ?? '', source, poster: import.meta.env.BASE_URL + clip.poster, variant: clip.variant, controls: reducedMotion.matches };
   }
 
   function renderReleaseNotes() {
@@ -80,19 +82,14 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     }));
     const release = RECENT_RELEASES[releaseIndex];
     const hero = releaseImage(release.image, locale);
-    const clip = releaseHeroVideo(release.video, locale, portrait.matches);
-    const source = clip ? bundled(clip.src) : '';
     updateReleaseView({
       tabs,
       panelLabel: 'release-tab-' + releaseIndex,
       version: versionLabel(release.version),
       date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
       heroSrc: hero ? import.meta.env.BASE_URL + hero : '',
-      zoom: { image: t('release.zoomImage'), video: t('release.zoomVideo'), close: t('release.zoomClose') },
-      heroVideo: clip && {
-        src: mediaCache.peek(source) ?? '', source, poster: import.meta.env.BASE_URL + clip.poster,
-        variant: clip.variant, controls: reducedMotion.matches,
-      },
+      zoom: { image: t('release.zoomImage'), video: t('release.zoomVideo'), close: t('release.zoomClose'), pause: t('release.pauseClip'), resume: t('release.resumeClip') },
+      heroVideo: clipView(release.video, locale),
       entries: highlightsByKind(release.highlights).map(item => {
         const image = releaseImage(item.image, locale), title = releaseText(item.title, locale);
         return {
@@ -102,18 +99,20 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
           zoomLabel: t('release.zoomEntry', { title }),
           description: releaseText(item.description, locale),
           image: image ? import.meta.env.BASE_URL + image : '',
+          video: clipView(item.video, locale),
+          playLabel: t('release.playEntry', { title }),
         };
       }),
     });
     updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()) });
     nextTick(syncReleaseVideo);
-    loadVisibleClip();
+    loadVisibleClips();
   }
-  // The clip only plays while the notes are open; reduced motion keeps its still and controls.
+  // The hero plays only while the notes are open and it is on screen (short landscape hides it); reduced motion keeps its poster and controls.
   function syncReleaseVideo() {
     const video = document.querySelector<HTMLVideoElement>('#release-video');
     if (!video) return;
-    if (releaseDialog.open && !reducedMotion.matches) video.play().catch(() => { /* autoplay refused: the poster stays */ });
+    if (releaseDialog.open && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
     else video.pause();
   }
   function selectRelease(index: number): void {
@@ -140,7 +139,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     releaseIndex = 0;
     renderReleaseNotes();
     releaseDialog.showModal();
-    loadVisibleClip();
+    loadVisibleClips();
     $('#release-close').focus({ preventScroll: true });
     return true;
   }

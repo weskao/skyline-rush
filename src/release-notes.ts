@@ -4,10 +4,12 @@ export interface ReleaseHighlight {
   id: string;
   kind: string;
   image?: LocalizedImage;
+  // Optional clip for this item: its still (with a play button) takes the picture's place and the clip plays enlarged.
+  video?: ReleaseVideo | null;
   title: LocalizedText;
   description: LocalizedText;
 }
-// A short muted clip and the still shown before it plays (and instead of it under reduced motion).
+// A short muted clip and the still shown in its place until a reader plays it enlarged.
 export interface ReleaseClip { src: LocalizedImage; poster: LocalizedImage }
 // Landscape screens get the desktop recording, portrait phones the mobile one.
 export interface ReleaseVideo { desktop: ReleaseClip; mobile: ReleaseClip }

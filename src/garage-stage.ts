@@ -32,20 +32,23 @@ export function createGarageStage(environment: THREE.Texture) {
   const paintSweep = createGaragePaintSweep(finish);
   car.position.y = 0.06;
   scene.add(car);
+  function poseCar(flying: boolean) {
+    car.userData.jets.visible = flying;
+    car.userData.wing.position.y = car.userData.wing.userData.restY + (flying ? car.userData.wing.userData.lift : 0);
+    for (const wheel of car.userData.wheels)
+      wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
+  }
   // Measure the real vehicle before attaching any cosmetic shader/geometry.
   const carBounds = new THREE.Box3().setFromObject(car);
   const carRadius = carBounds.getBoundingSphere(new THREE.Sphere()).radius;
   const carCenter = carBounds.getCenter(new THREE.Vector3());
   const carHalf = carBounds.getSize(new THREE.Vector3()).multiplyScalar(.5);
-  // Measure the lifted wing and folded wheels once: the flight silhouette is taller than the ground pose.
-  const wing = car.userData.wing;
-  wing.position.y = wing.userData.restY + wing.userData.lift;
-  for (const wheel of car.userData.wheels) wheel.rotation.z = Math.sign(wheel.position.x) * Math.PI / 2.6;
+  // Flight folds the wheels out and lifts the wing, so it is framed by its own extent around the same centre.
+  poseCar(true);
   const flightBounds = new THREE.Box3().setFromObject(car);
+  poseCar(false);
   const flightCenter = flightBounds.getCenter(new THREE.Vector3());
   const flightHalf = flightBounds.getSize(new THREE.Vector3()).multiplyScalar(.53); // 6% roll/hover headroom
-  wing.position.y = wing.userData.restY;
-  for (const wheel of car.userData.wheels) wheel.rotation.z = 0;
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
@@ -100,10 +103,7 @@ export function createGarageStage(environment: THREE.Texture) {
     const hover = flying ? 1.5 + (reducedMotion ? 0 : Math.sin(time * 1.8) * .12) : 0;
     car.position.y = 0.06 + hover;
     car.rotation.z = flying && !reducedMotion ? Math.sin(time * .9) * .035 : 0;
-    car.userData.jets.visible = flying;
-    car.userData.wing.position.y = car.userData.wing.userData.restY + (flying ? car.userData.wing.userData.lift : 0);
-    for (const wheel of car.userData.wheels)
-      wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
+    poseCar(flying);
     previewDriver.altitude = flying ? 2 : 0;
     look.copy(flying ? flightCenter : carCenter);
     look.y += hover;

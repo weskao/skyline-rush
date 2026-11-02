@@ -1107,6 +1107,11 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
 @keyframes garage-new-pop { 0%, 80%, 100% { transform: scale(1); } 88% { transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .intro .garage-button, .intro .garage-new-tag { animation: none; } }
 .vfx-comfort .intro .garage-button, .vfx-comfort .intro .garage-new-tag { animation: none; }
+/* Desktop: an inline tag widened Garage enough to wrap Practice and make the intro scroll; pin it to the corner instead. */
+@media (min-width: 1001px) {
+  .intro .garage-button { position: relative; }
+  .intro .garage-new-tag { position: absolute; top: -9px; right: -9px; }
+}
 
 .intro .start-hint { vertical-align: middle; letter-spacing: .04em; }
 .intro .start-hint kbd { height: 20px; padding: 0 6px; margin-left: 5px; border: 1px solid rgb(230 236 240 / .3); border-bottom-width: 2px; font-size: 9px; letter-spacing: .1em; }
@@ -1617,13 +1622,19 @@ body.photo-studio #perf-overlay { display: none; }
   .daily-card-copy { grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; align-items: baseline; }
   .daily-card small { grid-column: 1 / -1; }
 }
+/* The promoted Garage (NEW tag) pushes Practice onto a second action row; a one-line tagline pays for that row,
+   so the intro still fits without scrolling from 900px tall. */
+@media (min-width: 1001px) and (min-height: 501px) and (max-height: 966px) {
+  .intro h1 { font-size: 32px; line-height: 1; margin-bottom: 6px; }
+  .intro h1 br { display: none; }
+  .intro .intro-actions { row-gap: 8px; }
+}
 /* Desktop 900px: make room for the full mode/Cup UI without hiding content or reducing tap targets.
    The header ends at 112px and the footer keeps 30px of breathing room. */
 @media (min-width: 1001px) and (min-height: 900px) and (max-height: 966px) {
   .intro { top: 112px; bottom: 30px; }
   .intro .route-label { margin-bottom: 8px; }
   .intro .intro-wordmark { font-size: clamp(46px, 4.7vw, 64px); margin-bottom: 4px; }
-  .intro h1 { font-size: 34px; line-height: 1.04; margin-bottom: 6px; }
   .intro .track-preview { height: 12px; margin-bottom: 4px; }
   .intro .track-select button > span.track-route-map { height: 34px; }
   .intro .track-note { margin: 3px 0 5px; }
