@@ -267,6 +267,11 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   air.name = 'monsoon-elevated-shortcut';
   air.receiveShadow = true;
   group.add(air);
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(760, 18, 12),
+    new THREE.MeshBasicMaterial({ color: '#3e5e61', side: THREE.BackSide, depthWrite: false,
+      fog: false }));
+  sky.name = 'monsoon-overcast-sky';
+  group.add(sky);
   const terrain = new THREE.Mesh(sculptTerrain(),
     new THREE.MeshStandardMaterial({ color: color.jungle, flatShading: true, roughness: .96,
       side: THREE.DoubleSide }));
@@ -349,6 +354,8 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
     disposed = true;
     const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
     group.traverse(object => {
+      // Instance GPU attributes have an independent lifecycle from shared shape geometry.
+      if (object instanceof THREE.InstancedMesh) object.dispose();
       if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments) {
         geometries.add(object.geometry);
         const owned = Array.isArray(object.material) ? object.material : [object.material];

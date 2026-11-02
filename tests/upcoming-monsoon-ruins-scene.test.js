@@ -30,6 +30,7 @@ test('a scene-owned group provides actual curved road, sculpted terrain, fork an
   assert.ok(main?.isMesh && aerial?.isMesh && terrain?.isMesh);
   assert.ok(main.geometry.attributes.position.count > 100, 'ground road must be a curved ribbon');
   assert.ok(terrain.geometry.attributes.position.count > 2000, 'terrain must have spatial elevation');
+  assert.ok(group.getObjectByName('monsoon-overcast-sky')?.isMesh, 'overcast sky surrounds the 3D canyon');
   const points = main.geometry.attributes.position.array;
   assert.ok([...points].every(Number.isFinite), 'all road vertices must be finite');
   const roadXs = Array.from({ length: Math.floor(points.length / 6) }, (_, i) => points[i * 6]);
@@ -110,6 +111,9 @@ test('dispose removes the group and releases owned geometry and materials exactl
     if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) material.add(m);
   });
   assert.ok(geometry.size > 8 && material.size > 5);
+  const instances = collect(group, object => object instanceof THREE.InstancedMesh);
+  let releasedInstances = 0;
+  instances.forEach(instance => instance.addEventListener('dispose', () => releasedInstances++));
   let released = 0;
   for (const resource of [...geometry, ...material]) resource.addEventListener('dispose', () => released++);
   update(2, 'medium', false);
@@ -117,4 +121,5 @@ test('dispose removes the group and releases owned geometry and materials exactl
   dispose();
   assert.ok(!scene.children.includes(group));
   assert.equal(released, geometry.size + material.size, 'no leaks or duplicate GPU disposal');
+  assert.equal(releasedInstances, instances.length, 'instanced GPU buffers must be released');
 });
