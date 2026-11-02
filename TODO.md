@@ -11,6 +11,16 @@ The 3x HUD artwork belongs to the future `feature/garage-store-readiness`, `feat
 - [ ] Settings / Pause icon buttons: larger hit area and visible focus ring on the top bar.
 - [ ] Decide by the Garage economy branches' merge: delete unused `@3x.webp` files and the gallery, or wire them in.
 
+## Preview Studio: zoom out far enough for the full exhaust (2026-11-02)
+
+**Branch:** `feature/studio-exhaust-zoom` from `develop` `58a20daf`. **Request:** 預覽工作室 could not pull back far enough to see the whole exhaust/NITRO trail; raise the limit, same max for front and rear views.
+
+- [x] RED: `tests/garage-inspection-mode.test.js` (max zoom frames car + 13 m trail at every yaw/pitch/aspect; yaw and yaw + π give the same distance; zoom ≤ 1 unchanged) failed before the change.
+- [x] GREEN: `src/garage-camera.ts` max zoom 1.6 → 2.4 (`GARAGE_MAX_ZOOM`); past zoom 1 the framed length grows by `GARAGE_EXHAUST_REACH` (13 m = NITRO streak 6 + 8 × .85) on both ends, so the car stays centred and front/rear share one limit (27.4 m at 1440 px). Zoom-in limit and default framing unchanged. `src/garage-stage.ts` pushes the fog back with the camera so the far views are not fogged.
+- [x] Real WebGL screenshots at max zoom: front/rear/side/top/3/4, 1440 × 900 and 390 × 844; car in frame, trail fully visible.
+- [ ] Remote `quality-gate` on the final HEAD; real-device pinch check.
+- [ ] Cosmetic: at max zoom-out the 44 m floor edges show in top/side views (the corner was already visible at default zoom).
+
 ## Ring trains, a few full-width rows, pickup runs (2026-11-02)
 
 **Branch:** `feature/ring-rows` from `develop` `01fd1bea`. **Request:** a few more items and rings on every map and mode: consecutive rings on the road or in the air, a few stretches with a full row of rings so passing always takes one, pickups in runs of 1-4; keep the balance (not too easy or hard, keep the thrill). A first try (6 per car + 5-row streaks of 8 rings every 1.2 km) was rejected as "too many, too bunched".
