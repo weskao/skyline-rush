@@ -50,6 +50,31 @@ the project**: an asset shown at 10 × 20 px is generated at 30 × 60 px. Work o
 size first, ask the generator for exactly 3x that size, and keep the 3x original as the
 source file. Never upscale a smaller output to reach 3x.
 
+## Mandatory raster icon completeness / anti-clipping gate
+
+When adding or updating Garage, HUD, Store, Rewards or any other transparent icon artwork:
+- Design the complete **uncropped** silhouette first; regenerate the source if any bottom edge,
+  glow, shadow or decorative flourish is missing. CSS `object-fit: contain` cannot restore
+  missing source pixels. Never present an upscaled crop as a repaired 3× original.
+- Export true native 3× transparent WebP (or lossless master → WebP), with image dimensions
+  exactly 3× the intended 1× CSS display. Keep editable masters in a documented source
+  directory. All runtime paths must respect Vite `import.meta.env.BASE_URL`.
+- Audit real alpha bounds, not just image dimensions. For newly drawn 216×216 store icons,
+  preserve at least 20 pixels of transparent safety margin on **each** edge at alpha >16/255;
+  adjust the threshold for other image types if the design requires more space. Preserve
+  the full glow, shadows, and lower tips in the source. Review on dark and light backgrounds.
+- Use shared `GarageArtworkImage` / `GarageArtworkTile` where applicable, native 1× CSS
+  sizes, `object-fit: contain`, a frame with at least 8 CSS px internal padding and the
+  caption *below* the image. No `object-fit: cover`, fixed-height clipping, cropped filter
+  shadows or overlapping captions.
+- For **every** new/revised gallery icon, add a Playwright test verifying decoded natural
+  dimensions, alpha pixel bounds using Canvas, image/frame/caption rectangles and no clipping
+  at portrait 390×844, landscape 844×390 and desktop 1440×900. Preserve keyboard/touch,
+  locale, fallback and store-preview-only controls. Capture actual browser screenshots.
+- Follow RED → GREEN → `make verify` → full exact-HEAD CI and actual visual review;
+  programmatic alpha insets do not prove that the original silhouette is artistically complete.
+  Do not call it accepted while any required test or manual review remains pending.
+
 ## Mandatory regression-first workflow (every feature and bug fix)
 
 **Always follow `docs/regression-first-workflow.md`** before calling work complete:

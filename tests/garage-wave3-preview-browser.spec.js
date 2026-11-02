@@ -74,7 +74,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
           display:[a.width,a.height], imageInside:a.left>=b.left&&a.right<=b.right&&a.top>=b.top&&a.bottom<=b.bottom,
           captionBelow:c.top>=b.bottom+4, frameInside:b.left>=button.getBoundingClientRect().left&&b.right<=button.getBoundingClientRect().right};
       });
-      expect(metrics.type).toMatch(/@3x\\.webp$/);
+      expect(metrics.type).toMatch(/@3x\.webp$/);
       expect(metrics.size).toEqual([216,216]);
       expect(metrics.display).toEqual([72,72]);
       expect(metrics.bounds[0]).toBeGreaterThanOrEqual(20);
