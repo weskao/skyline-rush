@@ -2,7 +2,7 @@
 // Vue shell owns event-driven panels; main.js keeps the legacy racing HUD and simulation loop.
 // Static text carries data-i18n / data-i18n-title / data-i18n-aria-label keys; applyI18n() (src/i18n.js) fills them per locale.
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.
-import { version } from '../package.json';
+import packageMeta from '../package.json' with { type: 'json' };
 import { RACE_TRACKS } from './game.js';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
@@ -25,6 +25,7 @@ import RacePresentation from './RacePresentation.vue';
 import ItemRules from './ItemRules.vue';
 import ItemSlot from './ItemSlot.vue';
 
+const { version } = packageMeta;
 setupInputModality();
 
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
