@@ -229,20 +229,22 @@ export function poseRoadsterWing(wing, travel) {
   rams.scale.y = Math.hypot(dy, dz);
 }
 
+// One spin node so world.js's wheel.children[2] rotation turns disc, star blades and hub together.
 export function addRoadsterWheelDetail(wheel, side) {
+  const spin = new THREE.Group();
+  spin.name = 'Roadster wheel spin';
   const inset = new THREE.Mesh(wheelInset, paleDisc);
   inset.rotation.z = Math.PI / 2;
   inset.position.x = side * .151;
   inset.name = 'Roadster aero inset';
-  wheel.add(inset);
   const spokes = new THREE.Mesh(wheelSpokeShape, darkBlade);
   spokes.position.x = side * .172;
   spokes.name = 'Roadster aero spoke assembly';
-  wheel.add(spokes);
   const hub = new THREE.Mesh(wheelHub,bronze);
   hub.rotation.z = Math.PI/2;
   hub.position.x=side*.18;
-  wheel.add(hub);
+  spin.add(inset, spokes, hub);
+  wheel.add(spin);
 }
 
 export function addRoadsterTrim(group, m) {

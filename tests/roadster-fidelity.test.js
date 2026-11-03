@@ -365,6 +365,21 @@ test('photo 02/03/15 wheels: pale aero disc behind five dark pointed star blades
   assert.equal(tips, 5, 'each blade ends in one sharp tip at the rim');
 });
 
+test('star spokes, pale disc and hub all spin with car speed via the wheel spin node', () => {
+  const car = roadster();
+  for (const wheel of car.userData.wheels) {
+    const [spokes] = named(wheel, 'Roadster aero spoke assembly');
+    const [inset] = named(wheel, 'Roadster aero inset');
+    const tip = () => { spokes.updateWorldMatrix(true, false); return new THREE.Vector3(0, .318, .06).applyMatrix4(spokes.matrixWorld); };
+    const before = tip();
+    const insetBefore = inset.getWorldQuaternion(new THREE.Quaternion());
+    wheel.children[2].rotation.x -= 30 * (1 / 60) / 0.44; // world.js spin step, 30 m/s for one frame
+    assert.ok(tip().distanceTo(before) > .05, 'the star blades rotate, not just the disc behind them');
+    assert.ok(inset.getWorldQuaternion(new THREE.Quaternion()).angleTo(insetBefore) > .5, 'the disc keeps spinning');
+    assert.ok(Math.abs(tip().x - before.x) < 1e-9, 'spin stays about the axle');
+  }
+});
+
 test('four arched diffuser tunnels open under the port bar, separated by the vane webs', () => {
   const detail = rawTrim();
   const [valance] = named(detail, 'Roadster curved rear valance');
