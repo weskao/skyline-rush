@@ -7,7 +7,10 @@ import { REAR_PORTS } from '../src/aero-vfx.js';
 const roadster = () => makeCar(CAR_STYLES.roadster);
 const named = (root, name) => {
   const matches = [];
-  root.traverse(node => { if (node.name === name) matches.push(node); });
+  root.traverse(node => {
+    if (node.name === name) matches.push(node);
+    for (const label of node.userData.mergedPartNames ?? []) if (label === name) matches.push(node);
+  });
   return matches;
 };
 
