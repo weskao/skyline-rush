@@ -151,3 +151,18 @@ test('four recessed NITRO ports and diffuser form the lower rear without changin
   assert.equal(named(car, 'Roadster aerofoil').length, 1);
   assert.equal(car.userData.wing.userData.lift, 0.34);
 });
+
+test('rear diffuser valance has real cutouts so all four recessed nozzle barrels remain visible', () => {
+  const detail = rawTrim();
+  const valance = named(detail, 'Roadster curved rear valance')[0];
+  assert.ok(valance, 'rear lower valance exists');
+  valance.updateMatrixWorld(true);
+  for (const port of REAR_PORTS) {
+    const [x, y] = port.position;
+    const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 3), new THREE.Vector3(0, 0, -1));
+    assert.equal(ray.intersectObject(valance, false).length, 0,
+      `valance must be cut away at x=${x} for the physical thruster recess`);
+  }
+  const intact = new THREE.Raycaster(new THREE.Vector3(0, .42, 3), new THREE.Vector3(0, 0, -1));
+  assert.ok(intact.intersectObject(valance, false).length > 0, 'structural valance remains between and below ports');
+});
