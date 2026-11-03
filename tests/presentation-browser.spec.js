@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
+import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 
 const open = async page => {
   await page.goto('/');
@@ -17,7 +18,8 @@ for (const [name, viewport, hasTouch] of [
   test.use({ viewport, hasTouch });
   test('track previews, countdown, pause and restart have interruptible motion', async ({ page }) => {
     await open(page);
-    await expect(page.locator('.track-preview')).toHaveCount(Object.keys(RACE_TRACKS).length);
+    // All playable and Stage 1 upcoming cards have a preview; only playable cards start races.
+    await expect(page.locator('.track-preview')).toHaveCount(Object.keys(RACE_TRACKS).length + Object.keys(UPCOMING_TRACKS).length);
     await expect(page.locator('.track-preview').first()).toHaveCSS('animation-play-state', 'running');
     await page.evaluate(() => {
       window.uiMotion = [];
