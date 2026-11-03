@@ -172,7 +172,7 @@ export function makeCar(style, color = style.color) {
     : material(style.glass, 0.85, 0.16);
   const light = new THREE.MeshBasicMaterial({ color: new THREE.Color(...style.light) });
   const white = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 2.1, 2.6) });
-  block(group, black, 0, 0.48, 0, 2.08, 0.26, 4.38);
+  block(group, black, 0, 0.48, 0, 2.08, 0.26, style.chassisLength ?? 4.38);
   const body = new THREE.Mesh(style.body, paint);
   group.add(body, new THREE.Mesh(style.cabin, glass));
   const wing = style.trim(group, { paint, black, light, white });
