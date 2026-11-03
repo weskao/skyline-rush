@@ -2,7 +2,7 @@ import { loadCircuitLapBest } from './circuit-records.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { icon } from './icons.ts';
 import { timeString } from './time-format.ts';
-import { presentationPlacementBadge } from './finish-placement-badge.ts';
+import { presentationPlacementBadge, placementBadgeArtwork } from './finish-placement-badge.ts';
 import { stuntMedal, stuntHeatContinues } from './stunt-attack.ts';
 import { sprintTotal, type SprintSeries } from './sprint-series.ts';
 import { cupStandings, cupComplete, cupTotalTime, type CupState } from './championship-cup.ts';
@@ -113,7 +113,8 @@ function standardView(race: FinishedRace, { best, record, medals, series, next }
     ...(next ? { nextTrack: trackName(next, getLocale()) } : {}),
     stats: `<div><span>${t('race.position')}</span><strong>${race.rivals.length ? result.position : t('mode.solo')}<small> / ${race.rivals.length + 1}</small></strong></div>`
       + row(t('result.yourTime'), timeString(displayedTime)) + row(t('result.best'), timeString(best))
-      + (finishBadge ? row(getLocale() === 'zh-TW' ? '完賽名次徽章（僅展示）' : 'Placement badge (display only)', finishBadge.name) : ''),
+      + (finishBadge ? row(getLocale() === 'zh-TW' ? '完賽名次徽章（僅展示）' : 'Placement badge (display only)',
+        `<img class="result-trophy-art" src="${placementBadgeArtwork(finishBadge.tier, import.meta.env?.BASE_URL ?? '/').src}" width="48" height="48" alt="" aria-hidden="true" style="vertical-align:middle;object-fit:contain;margin-right:8px">${finishBadge.name}`) : ''),
     style: {
       aria: t('result.starsAria', { n: result.stars }),
       html: `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${t('result.style', { score: result.score })}</strong><small>${t('result.styleHelp')}<br>${t('result.styleStars', { two: race.length * 0.25, three: race.length * 0.5 })}</small>`,

@@ -13,3 +13,10 @@ export function presentationPlacementBadge(position: number, players: number, lo
   const tier = TIERS[position - 1];
   return { tier, name: LABELS[tier][locale === 'zh-TW' ? locale : 'en'], displayOnly: true };
 }
+
+/** Bundled source image remains 288px; the compact result row uses 48 CSS pixels. */
+export function placementBadgeArtwork(tier: PlacementTier, baseUrl: string): Readonly<{ src: string; cssSize: 48; sourcePixels: 288 }> {
+  const base = /^\/(?!\/)(?:[A-Za-z0-9_-]+\/)*$/.test(baseUrl) ? baseUrl : '/';
+  return { src: `${base}feature-assets/garage-rewards-and-missions/raster/trophy-${tier}@3x.webp`,
+    cssSize: 48, sourcePixels: 288 };
+}
