@@ -32,7 +32,10 @@ paths:
   Phase N both stop a release that lacks one. Record it once, right before the release, from the code
   being released; never record or re-shoot for each change that lands on `develop`.
 - The hero clip (the entry's `video`) autoplays inline, muted and looping, while the notes are open and its
-  version is shown (poster + controls, no autoplay, under reduced motion). Highlight clips stay a poster with a
+  version is shown (poster + controls, no autoplay, under reduced motion). iPhone in Low Power Mode refuses even
+  muted autoplay until a touch, so a refused hero starts inline on the first tap or key anywhere on the notes
+  (`onUserActivation`, shared with the music unlock), never only through a tap on the clip, which enlarges it;
+  guard: the "refused autoplay" tests in `tests/release-video-browser.spec.js`. Highlight clips stay a poster with a
   play button and play only in the enlarged view after a tap. In the enlarged view a tap on the clip pauses and
   resumes it, a tap outside it, the × or Esc closes. Encode at balanced quality: fixed CRF 20, capped at
   4 MB (`scripts/record-whats-new-clip.mjs`); never coarsen the CRF to save bytes, shorten the clip instead. `checkReleaseNotes` refuses an unbundled hero or highlight clip.
