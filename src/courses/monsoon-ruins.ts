@@ -164,6 +164,52 @@ export function sampleMonsoonRoute(edgeId: MonsoonEdgeId | string, distance: num
   };
   return frameFor(branchPoint, distance, branch.from, branch.to, branch.id);
 }
+// Shared CourseGraph will use physical distance on each edge for car movement.
+// Route progress stays separate and is only for checkpoint/standings calculations.
+interface ArcTable { progress: number[]; cumulative: number[]; length: number }
+const branchArcTables = new Map<string, ArcTable>();
+for (const edge of branches) {
+  const segments = Math.ceil((edge.to - edge.from) / 4);
+  const progress = [edge.from], cumulative = [0];
+  let last = sampleMonsoonRoute(edge.id, edge.from).point;
+  for (let i = 1; i <= segments; i++) {
+    const s = edge.from + (edge.to - edge.from) * i / segments;
+    const point = sampleMonsoonRoute(edge.id, s).point;
+    progress.push(s);
+    cumulative.push(cumulative[i - 1] + len(subtract(point, last)));
+    last = point;
+  }
+  branchArcTables.set(edge.id, { progress, cumulative, length: cumulative[cumulative.length - 1] });
+}
+export function monsoonEdgeLength(edgeId: MonsoonEdgeId | string): number {
+  if (edgeId === 'ground') return totalMetres;
+  const branch = branchArcTables.get(edgeId);
+  if (!branch) throw new Error('Unknown Monsoon edge: ' + edgeId);
+  return branch.length;
+}
+export function sampleMonsoonEdge(edgeId: MonsoonEdgeId | string, localDistance: number) {
+  const max = monsoonEdgeLength(edgeId);
+  if (!Number.isFinite(localDistance) || localDistance < 0 || localDistance > max) {
+    throw new RangeError('Monsoon edge local distance outside physical arc length');
+  }
+  if (edgeId === 'ground') {
+    return { ...sampleMonsoonRoute(edgeId, localDistance / totalMetres * LENGTH), localDistance };
+  }
+  const table = branchArcTables.get(edgeId);
+  if (!table) throw new Error('Unknown Monsoon edge: ' + edgeId);
+  let lo = 0, hi = table.cumulative.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (table.cumulative[mid] < localDistance) lo = mid + 1;
+    else hi = mid;
+  }
+  const start = Math.max(0, lo - 1);
+  const fraction = lo === 0 ? 0 : (localDistance - table.cumulative[start]) /
+    Math.max(1e-8, table.cumulative[lo] - table.cumulative[start]);
+  const progress = lerp(table.progress[start], table.progress[lo], fraction);
+  return { ...sampleMonsoonRoute(edgeId, progress), localDistance };
+}
+
 // These are material hints for the shared vehicle contact solver, not a competing physics model.
 export function monsoonWetContact(edgeId: MonsoonEdgeId, distance: number) {
   sampleMonsoonRoute(edgeId, distance); // Validate edge and range.
