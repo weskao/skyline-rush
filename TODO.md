@@ -1,3 +1,21 @@
+## Fix — What's New hero clip stays a still on iPhone Home Screen app until tapped (2026-11-03)
+
+**Branch:** `develop`. **Repro (user, iPhone 16, iOS 26.3, Home Screen app):** notes auto-open on launch, hero clip shows its
+poster, no music; only a tap on the clip (which enlarges it) starts the clip and the music.
+**Root cause:** where the browser refuses autoplay (iPhone Low Power Mode refuses even a muted clip; Web Audio never starts
+before a touch on iOS), `syncReleaseVideo` gave up on the first refusal and never retried. The music already retried on any
+touch; the hero did not.
+
+- [x] RED: `tests/release-video-browser.spec.js` "refused autoplay" desktop click + phone tap: play() refused without a real
+  input event, notes opened without one; first touch on the notes left the hero paused (both failed, 10 s poll).
+- [x] GREEN: `onUserActivation` (`src/user-activation.ts`, shared with the music unlock in `audio-ui.ts`) retries a paused hero
+  on the first tap/key while the notes are open; the enlarged view keeps it waiting (mutation: removing that guard fails
+  "waits behind its enlarged view"). Spec 13/13 green.
+- [x] iOS 27.0 simulator, Home Screen web app, production build: hero autoplays on launch with the fix (frames differ 2 s
+  apart); first tap creates a running AudioContext (music on).
+- [ ] Real iPhone 16 / iOS 26.3 retest by the user (Low Power Mode on and off). Not reproducible in the simulator, which has
+  no Low Power Mode; music before the first touch is impossible on iOS (platform rule).
+
 ## Proposed Epic — Multi-route Long-form World Expansion (2026-11-02) [PLANNING ONLY]
 
 **Branch:** `feature/epic-multiroute-longform-tracks-planning` (created from `develop` SHA `12264f74f0f6452347d0183937391da620d10343`; DO NOT merge or release yet).
