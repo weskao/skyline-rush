@@ -56,3 +56,22 @@ test('zero-length stream windows allocate no road meshes or GPU geometry', () =>
     empty.dispose(); reversed.dispose();
   }
 });
+
+test('tunnel stream contains a real overhead shell and side walls without city towers inside', () => {
+  const tunnel = createStormlineChunk('tunnel-cut', 120, 330, sample, 'medium');
+  try {
+    assert.ok(tunnel.group.getObjectByName('stormline:road:tunnel-cut') instanceof THREE.Mesh);
+    assert.equal(tunnel.group.getObjectByName('stormline:buildings:tunnel-cut'), undefined);
+    for (const side of ['roof', 'left', 'right']) {
+      const shell = tunnel.group.getObjectByName(`stormline:tunnel:${side}:tunnel-cut`);
+      assert.ok(shell instanceof THREE.Mesh, `Missing tunnel ${side}`);
+      assert.ok(shell.geometry.getAttribute('position').count >= 6);
+      if (side === 'roof') {
+        const positions = shell.geometry.getAttribute('position');
+        for (let i = 0; i < positions.count; i++) assert.ok(positions.getY(i) >= 29);
+      }
+    }
+  } finally {
+    tunnel.dispose();
+  }
+});
