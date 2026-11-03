@@ -24,7 +24,7 @@ export interface StormlineObstacle {
   readonly radius: number;
   readonly height: number;
   readonly kind: 'construction' | 'slow-car' | 'traffic' | 'puddle';
-  readonly solid: true;
+  readonly solid: boolean;
 }
 export interface StormlineCourse {
   readonly id: 'stormline-megacity';
@@ -103,7 +103,7 @@ export const STORMLINE_MEGACITY: StormlineCourse = {
   ],
   obstacles: [
     { id: 'lane-work-01', edge: 'night-start', s: 460, lateral: 9, radius: 2, height: 2, kind: 'construction', solid: true },
-    { id: 'puddle-02', edge: 'flood-street', s: 480, lateral: -8, radius: 3, height: 0.1, kind: 'puddle', solid: true },
+    { id: 'puddle-02', edge: 'flood-street', s: 480, lateral: -8, radius: 3, height: 0.1, kind: 'puddle', solid: false },
     { id: 'rush-traffic-03', edge: 'north-arterial', s: 420, lateral: -7, radius: 2.6, height: 1.7, kind: 'traffic', solid: true },
     { id: 'tunnel-maintenance', edge: 'tunnel-cut', s: 250, lateral: 8, radius: 2.1, height: 2, kind: 'construction', solid: true },
     { id: 'downtown-slow-04', edge: 'downcity-s', s: 550, lateral: 7, radius: 2, height: 1.7, kind: 'slow-car', solid: true },
