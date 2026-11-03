@@ -44,8 +44,8 @@ paths:
   unannounced plans).
 - The dialog shows only the newest five versions; keep every older release's entry and images in
   the repo, archived.
-- Inside a release the dialog lists highlights NEW → improvement → fix (unknown kinds last, written
-  order kept within a kind) via `highlightsByKind` in `src/release-notes.ts`; write the data in any
+- Inside a release the dialog lists highlights NEW → improvement → fix (unknown kinds last); within
+  a kind, clip + text → picture + text → text only, written order kept among equals, via `highlightsByKind` in `src/release-notes.ts`; write the data in any
   order and never re-sort it by hand.
 - `scripts/release-gate.sh` runs `scripts/check-release-notes.mjs <version>` and refuses a release
   whose entry is incomplete, fails the copy check, was never reviewed or changed after review;
