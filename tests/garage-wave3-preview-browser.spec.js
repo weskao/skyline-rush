@@ -9,6 +9,10 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');
     await gallery.locator('summary').click();
+    const entryIcon = gallery.locator('summary [data-wave3-entry-icon] img');
+    await expect(entryIcon).toBeVisible();
+    expect(await entryIcon.evaluate(img => ({ width: img.naturalWidth, height: img.naturalHeight }))).toEqual({ width: 216, height: 216 });
+    await expect(entryIcon).toHaveAttribute('src', /store-cart@3x\\.webp$/);
     await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
     const cards=gallery.locator('button[data-wave3-asset]');
     await expect(cards).toHaveCount(6);
@@ -106,3 +110,15 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
     });
   });
 }
+
+test('Store preview keeps readable Coming Soon when the real 3x entrance icon fails', async ({ page }) => {
+  await page.route('**/feature-assets/garage-store-readiness/raster/store-cart@3x.webp', route => route.abort());
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const gallery = page.locator('#garage-art-source-garage-store-readiness');
+  await expect(gallery.locator('summary')).toBeVisible();
+  await expect(gallery.locator('summary [data-wave3-entry-icon] .artwork-fallback')).toBeVisible();
+  await gallery.locator('summary').click();
+  await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
+  await expect(gallery.getByRole('button', {name: /buy|claim|purchase|pay/i})).toHaveCount(0);
+});

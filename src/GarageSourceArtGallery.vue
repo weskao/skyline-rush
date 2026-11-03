@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
+import GarageArtworkImage from './GarageArtworkImage.vue';
 import { storeReadiness, storeReadinessText } from './garage-store-readiness.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
@@ -28,7 +29,14 @@ onUnmounted(() => stopListening?.());
 
 <template>
   <details :id="'garage-art-source-' + category" class="garage-source-art" :data-wave3-category="category">
-    <summary>{{ copy(config.heading) }} <span class="garage-source-soon">{{ locale === 'zh-TW' ? '概念預覽' : 'Preview' }}</span></summary>
+    <summary>
+      <span data-wave3-entry-icon class="garage-source-entry-icon">
+        <GarageArtworkImage :src="image(category === 'garage-store-readiness' ? 'store-cart' : 'mission-race')"
+          :size="40" :alt="''" :fallback-text="copy(config.heading)" loading="eager" />
+      </span>
+      {{ copy(config.heading) }}
+      <span class="garage-source-soon">{{ locale === 'zh-TW' ? '概念預覽' : 'Preview' }}</span>
+    </summary>
     <p v-if="category === 'garage-store-readiness'" class="garage-source-hint" role="status"
       :data-store-phase="storeState.phase">{{ storeReadinessText(locale) }}</p>
     <p class="garage-source-hint">{{ copy(config.notice) }}</p>
@@ -67,6 +75,8 @@ onUnmounted(() => stopListening?.());
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   min-height: 44px; cursor: pointer; font-weight: 750;
 }
+.garage-source-entry-icon { flex: none; width: 40px; height: 40px; display: grid; place-items: center; }
+.garage-source-entry-icon :deep(img) { object-fit: contain; }
 .garage-source-soon { margin-inline-start: auto; border-radius: 100px; padding: 3px 8px;
   background: #5d456b88; color: #e5caff; font-size: 11px; letter-spacing: .02em; }
 .garage-source-hint { font-size: 12px; line-height: 1.5; color: #abc8dd; margin: 8px 0; }
