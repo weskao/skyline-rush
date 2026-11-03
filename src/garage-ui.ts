@@ -52,6 +52,9 @@ export function setupGarageUI({
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
   const preview = $('#garage-preview');
+  // One dock (unique id), borrowed from the home screen while the Garage is open, like #world.
+  const dock = $('#showcase-camera-dock');
+  const dockParent = dock.parentElement!, dockNext = dock.nextSibling;
   const historyKey = '__skylineGaragePage';
   let previewing = getEquippedPaint();
   let camera = defaultGarageCamera();
@@ -181,6 +184,7 @@ export function setupGarageUI({
     clearControls();
     garageScreen.showModal();
     preview.append($('#world'));
+    preview.after(dock);
     world.resize();
     previewPaint(getEquippedPaint());
     autoPaused = false;
@@ -203,6 +207,7 @@ export function setupGarageUI({
   garageScreen.addEventListener('close', () => {
     contacts.clear();
     $('#app').prepend($('#world'));
+    dockParent.insertBefore(dock, dockNext);
     getWorld()?.setGarageCamera(null);
     getWorld()?.resize();
     cancelGarageSkinPreview();
