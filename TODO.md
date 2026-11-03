@@ -3,7 +3,8 @@
 **Branch:** `feature/roadster2-high-fidelity-body`. Four new user-supplied photographic views: overhead front, rear three-quarter, rear-wheel/diffuser detail, straight-on rear fascia. Keep recognizable fictional race styling and **no manufacturer logos**. Visual approximation, not an OEM CAD replica.
 
 - [x] Replace inaccurate full-width **front illuminated blade** with two compact corner slit markers, narrow body-painted wedge front and thin black recessed central mouth; retain dark headlamp pockets and two hood creases.
-- [x] Layer a broad inset black rear lamp slot, 17 mm-equivalent slim LED strip on top of a sculpted pearl-white rear shelf, blank rear plate, carbon lower valance and deep diffuser fins.
+- [x] Layer a broad inset black rear lamp slot, slim LED strip on top of a sculpted pearl-white rear shelf, blank rear plate, carbon lower valance and deep diffuser fins.
+- [x] Cut four real circular apertures around the immutable rear thruster anchors and sculpt two black carbon rear-quarter tapers behind the rear arches; test nozzle visibility with ray casting against the valance.
 - [x] Preserve all four `REAR_PORTS` simulation/VFX anchors and visible recessed bronze-edged nozzles; move adjustable wing toward trailing deck edge without changing `lift=0.34` or Garage/flight controller contracts.
 - [x] Introduce `src/roadster-reference-fascias.js` to share non-animated source geometries and stay within the 400-line-per-source-module rule; add structural regression tests to `tests/roadster-fidelity.test.js`.
 - [ ] New photo-specific regression test RED → GREEN verification: test-first commits have been created, but local dependencies/repo checkout are not available in this execution environment; GitHub CI on the exact final HEAD must verify the result. Do not claim historical RED was executed.
