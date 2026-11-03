@@ -81,6 +81,21 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
     }
     buildings.instanceMatrix.needsUpdate = true; group.add(buildings);
   }
+  // Neon billboard volumes reuse the same world frame and remain outside the sightline.
+  const billboardMat = new THREE.MeshStandardMaterial({
+    color: 0x201339, emissive: 0xb65def, emissiveIntensity: 0.72, metalness: 0.22,
+  });
+  ownedMaterials.push(billboardMat);
+  if (edge.layer !== 'tunnel' && quality !== 'low') {
+    for (let s = from + 170; s < to; s += 380) {
+      const pose = sample(edgeId, s);
+      const sign = new THREE.Mesh(new THREE.BoxGeometry(12, 7, 0.8), billboardMat);
+      sign.position.copy(v3(pose.point).addScaledVector(v3(pose.right), edge.width / 2 + 27)
+        .addScaledVector(v3(pose.up), 18));
+      sign.name = `stormline:billboard:${edgeId}`;
+      group.add(sign);
+    }
+  }
   if (edge.layer === 'viaduct' && edge.mode === 'drive') {
     const pillarGeo = new THREE.CylinderGeometry(1.4, 2, 1, 8);
     for (let s = from + 65; s < to; s += 140) {
@@ -93,17 +108,25 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
   }
   // Visual hazards reflect authored physics data; traffic entities are left to existing AI host.
   const barrierMat = new THREE.MeshStandardMaterial({ color: 0xeb9136, roughness: 0.68 });
-  ownedMaterials.push(barrierMat);
+  const waterMat = new THREE.MeshStandardMaterial({
+    color: 0x296e9a, metalness: 0.8, roughness: 0.17, transparent: true, opacity: 0.67,
+  });
+  ownedMaterials.push(barrierMat, waterMat);
   for (const hazard of STORMLINE_MEGACITY.obstacles.filter(item => item.edge === edgeId && item.s >= from && item.s < to)) {
     if (hazard.kind === 'traffic' || hazard.kind === 'slow-car') continue;
     const pose = sample(edgeId, hazard.s);
     const position = v3(pose.point).addScaledVector(v3(pose.right), hazard.lateral);
     position.addScaledVector(v3(pose.up), hazard.height / 2);
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(hazard.radius * 2, hazard.height, hazard.radius * 1.25), barrierMat);
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(hazard.radius * 2, hazard.height, hazard.radius * 1.25),
+      hazard.kind === 'puddle' ? waterMat : barrierMat,
+    );
     mesh.position.copy(position); mesh.name = `stormline:hazard:${hazard.id}`; group.add(mesh);
   }
   let disposed = false;
-  return { group, dispose() {
+  return { group, update(timeSeconds: number, reducedMotion: boolean) {
+    billboardMat.emissiveIntensity = reducedMotion ? 0.72 : 0.72 + 0.14 * Math.sin(timeSeconds * 1.5);
+  }, dispose() {
     if (disposed) return;
     disposed = true; group.removeFromParent();
     const geometries = new Set<THREE.BufferGeometry>();
