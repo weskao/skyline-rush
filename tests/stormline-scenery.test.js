@@ -45,3 +45,14 @@ test('neon signs retain identical world positions across arbitrary stream chunk 
     whole.dispose(); first.dispose(); second.dispose();
   }
 });
+
+test('zero-length stream windows allocate no road meshes or GPU geometry', () => {
+  const empty = createStormlineChunk('night-start', 300, 300, sample, 'high');
+  const reversed = createStormlineChunk('night-start', 400, 200, sample, 'low');
+  try {
+    assert.equal(empty.group.children.length, 0);
+    assert.equal(reversed.group.children.length, 0);
+  } finally {
+    empty.dispose(); reversed.dispose();
+  }
+});
