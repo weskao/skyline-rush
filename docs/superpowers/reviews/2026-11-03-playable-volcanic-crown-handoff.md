@@ -1,0 +1,45 @@
+# Playable Volcanic Crown — map-specific delivery and integration contract
+
+**Branch:** `feature/playable-volcanic-crown` (from `347f17940498275fd94152c0ed6005dae59ba323`)
+**Scope:** Local map source, scene chunks, collision proxies, AI steering hints, focused tests.
+**Current state:** Standalone map-specific implementation. **NOT a playable race in the app** until the shared CourseGraph/Race/AI/World integration branch connects these exports. No change to `RACE_TRACKS`, `src/game.js`, `src/world.js`, `src/App.vue`, the homepage scroll/swipe system or other branches.
+
+## Asset interpretation
+
+- Ground: `docs/designs/new-tracks/source-concept-jpeg/volcanic-crown/concept-view-01.jpg`: rough black basalt, erupting volcano silhouette, ember-lit road bends.
+- Flight: `docs/designs/new-tracks/source-concept-jpeg/volcanic-crown/concept-view-02.jpg`: rock arch, lava curtain/rift, elevated crossing with conspicuous landing path.
+- Layout: `docs/designs/new-tracks/route-schematics/volcanic-crown.svg`; layout is *not* to scale and may not override world coordinates.
+- True WebGL review policy: `docs/designs/new-tracks/visual-acceptance-gate.md`. The existing home showroom (`src/upcoming-scenes/volcanic-crown.ts`) is preserved and is not gameplay.
+
+## Authored topology
+
+- `src/courses/volcanic-crown.ts`: roughly 15–16 km authored **ground** route; START and distinct FINISH; two serpentine rim hairpins, steep climb/drop, ten connected ground edges, three distinct split/merge alternatives (`rift-flight`, `vent-risk`, `gorge-flight`), three ordered checkpoint nodes.
+- `sampleVolcanicRoute(edgeId, localS)`: arc-distance interpolation returns local road `point / forward / right / up` with elevation; `volcanicWorldPosition` adds offset in that same frame. This is *map-local*, not permission to create another shared coordinate system. The GPT 6 integration owner should adapt the source controls to shared `CourseGraph` and replace duplicate sampler logic with shared `sampleRoute` when available.
+- `advanceVolcanicGate`: **state transition only**. The caller must pass *trusted physically signed crossings* of checkpoint/finish volumes and enforce approach, altitude and edge mode; arbitrary string inputs from clients are not authoritative.
+- `volcanicRecovery`: safe ground-edge hint based on last validated checkpoint; shared runtime must choose a collision-safe pose, route heading and recovery penalty. It is **not** a complete recovery controller.
+- `src/courses/volcanic-crown-obstacles.ts`: seeded/absolute-time 12-second falling-rock event, physical proxy coordinates reused by visible meshes and AI avoidance guidance. Shared collision callback owns damage/knockback, and AI must use the actual tested blocker paths on active edge only.
+- `src/courses/volcanic-crown-scene.ts`: `createVolcanicCrownChunk(edgeId, chunkIndex, quality, reducedMotion)` builds **world-space Three.js BufferGeometry** road, surrounding 3D basalt terrain, glowing lava, genuine crater and arch, bounded embers, flight guidance and landing pad. `update(timeSeconds, reducedMotion)` only updates existing objects. `dispose()` detaches and releases chunk-owned resources. Host retains one renderer and decides chunk streaming/quality.
+
+## Request to GPT 6 — shared, testable integration contract
+
+Only the integration owner should provide and test these **shared** capabilities, then wire these exports:
+
+1. `CourseGraph`, `validateCourseGraph`, `sampleRoute(graph, edgeId, localS)`: use exactly one world-frame source for car pose, the road mesh, obstacles, AI and minimap; verify metre-accurate arc length, bank/height joins and independent layered edges.
+2. `RouteRaceState` with `edgeId / localS / lateral / altitude / monotonicProgress / checkpointIndex`; crossings are signed, swept and physically guarded so direct flights to FINISH cannot bypass a checkpoint. No lap counter.
+3. `CollisionProvider` reads the same `volcanicObstaclePose` geometry/time shown by the chunk, checks edge-layer separation, routes physical hits through shared knockback. AI consults the blocker lookahead and reserves a viable lane on narrow passes.
+4. `RecoveryProvider` chooses a non-hazardous spot on the *validated* ground path and preserves required checkpoint order.
+5. `WorldChunkProvider` mounts/dismounts `createVolcanicCrownChunk` in the **existing** renderer; flight branch uses world-space aerial trajectory, visible landing and shared flight rules; no second canvas or frame loop.
+6. Shared result timer, minimap (no undiscovered shortcut spoilers), ghost/topology-versioned records, 8-car AI, 30/60/120 Hz deterministic simulation, existing HUD, desktop/mobile input and protected old-track behavior.
+
+## Verification ledger (do not conflate separate gates)
+
+- [ ] Test-first RED reproduced with actual failure output.
+- [ ] Map-specific unit tests GREEN on the exact final commit (`npm test`).
+- [ ] `npm run typecheck`, `npm run build`, Playwright and `make verify` observed.
+- [ ] Latest exact-HEAD FULL GitHub `quality-gate` (not focused feature CI) observed green.
+- [ ] Drive the entire ground mainline and optional branches with actual 8-car AI/physics and safe recovery; no checkpoint bypass.
+- [ ] Measure 20+ completed races (median target 3–5 minutes); **length alone is not timing evidence**.
+- [ ] Capture actual 1440×900 and 390×844 game WebGL images: Ground, Aerial, Crater Hairpin, Lava Gorge, Landing, Obstacle; compare against both JPEGs and document six visual criteria per view.
+- [ ] Verify Low/Medium/High, Reduced Motion, 30/60/120 FPS, GPU dispose, draw calls, triangles, frame p50/p95, and touch-device geometry clearance.
+
+Until these are evidenced, the branch is **not merge-ready or playable**, regardless of unit compilation or standalone mesh tests.
