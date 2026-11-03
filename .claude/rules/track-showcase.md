@@ -136,3 +136,5 @@ adjustment before dolly) while preserving the intended landmark composition,
 model scale and scenery. Never hide walls, crop geometry, or add per-map UI.
 Keep regression tests for 1440×900, 1777×863 and 390×844 with AIRFLOW on
 and off; validate real screenshots for all camera modes on World Tour.
+
+→ Read `docs/home-showcase.md` for the camera dock / Start button layout.

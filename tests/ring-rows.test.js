@@ -8,6 +8,9 @@ import { TRAIN_SPACING } from '../src/ring-layout.ts';
 // User, 2026-11-02: a few ring slots become trains (consecutive rings on the road or in the air) or a full-width row
 // that every car on the road passes; pickups come in runs of 1-4. Not a wall of rows: the earlier 5-row streaks were
 // "too many, too bunched".
+// User, 2026-11-03: more rings and pickups (a medium step), most of the new rings as trains on the road down a middle
+// lane (x -2.5 / 2.5), so driving straight collects ring after ring; still no walls and no dense scatter.
+const MID_LANES = [-2.5, 2.5];
 const rowsOf = rings => {
   const rows = new Map();
   for (const ring of rings) if (ring.row) rows.set(ring.distance, [...(rows.get(ring.distance) ?? []), ring]);
@@ -32,24 +35,26 @@ test('a full-width row is passed by any car on the road, from the surface to 6 m
 });
 
 test('rows are few, trains more common, across many re-rolled layouts on every track', () => {
-  let rows = 0, trains = 0, slots = 0, air = 0;
+  let rows = 0, trains = 0, slots = 0, air = 0, layouts = 0;
   for (const id of Object.keys(RACE_TRACKS)) for (let seed = 1; seed <= 10; seed++) {
     setLayoutSeed(() => seed);
     const { rings } = createRace(id);
-    rows += rowsOf(rings).length; trains += trainsOf(rings).length; slots += ITEMS_PER_CAR * 8;
+    rows += rowsOf(rings).length; trains += trainsOf(rings).length; slots += ITEMS_PER_CAR * 8; layouts++;
     air += trainsOf(rings).filter(t => t[0].altitude > 3).length;
   }
   setLayoutSeed();
   assert.ok(rows > 0 && rows / slots < 0.1, `rows ${rows}/${slots}`);
-  assert.ok(trains > rows && trains / slots < 0.2, `trains ${trains}/${slots}`);
-  assert.ok(air > 0 && air < trains, `air trains ${air}/${trains}`);
+  // Sections keep shapes 40 m away, so many rolled trains stay single: 2.2 trains a race before 2026-11-03, 3+ now.
+  assert.ok(trains > 2 * rows && trains / layouts >= 3 && trains / slots < 0.2, `trains ${trains}/${slots} in ${layouts} races`);
+  assert.ok(air > 0 && air < 0.3 * trains, `air trains ${air}/${trains}: most trains sit on the road`);
 });
 
 test('a train is consecutive rings down one lane, its own PERFECT LINE group, clear of road sections', () => {
   for (const [id, race] of RACES) {
     for (const train of trainsOf(race.rings)) {
-      assert.equal(train.length, 5, id);
-      assert.ok(train.every((r, i) => r.x === train[0].x && r.altitude === train[0].altitude && r.groupSize === 5 &&
+      assert.equal(train.length, 6, id);
+      assert.ok(MID_LANES.includes(train[0].x), `${id} train @${train[0].distance} on lane x ${train[0].x}`);
+      assert.ok(train.every((r, i) => r.x === train[0].x && r.altitude === train[0].altitude && r.groupSize === 6 &&
         r.distance === train[0].distance + i * TRAIN_SPACING), `${id} train @${train[0].distance}`);
     }
     if (race.mode === 'endless') continue;
@@ -58,6 +63,9 @@ test('a train is consecutive rings down one lane, its own PERFECT LINE group, cl
       assert.ok(!race.sections.some(s => d >= s.from - 40 && d <= s.to + 40), `${id} shaped ring @${d} inside a section`);
     }
     assert.deepEqual(race.rings.map(r => r.distance), race.rings.map(r => r.distance).sort((a, b) => a - b), `${id} sorted`);
+    // User, 2026-11-03: chains, not a bunch: a train ends 40 m before the next one starts (Circuit packs a slot every 45 m).
+    const starts = trainsOf(race.rings).map(t => [t[0].distance, t.at(-1).distance]).sort((a, b) => a[0] - b[0]);
+    starts.slice(1).forEach(([from], i) => assert.ok(from >= starts[i][1] + 40, `${id} train @${from} overlaps the one ending @${starts[i][1]}`));
   }
 });
 
@@ -84,7 +92,7 @@ test('driving a train collects every ring and a PERFECT LINE', () => {
   Object.assign(race.player, { distance: train[0].distance - 20, x: train[0].x, speed: 50 });
   startRace(race); race.phase = 'racing';
   for (let i = 0; i < 120; i++) { stepRace(race, { throttle: true }, 1 / 30); race.player.x = train[0].x; }
-  assert.equal(race.player.rings, 5);
+  assert.equal(race.player.rings, 6);
   assert.equal(race.player.perfectLines, 1);
 });
 
@@ -98,6 +106,19 @@ test('Hard rivals do not change lane for a ring row: it is already on their lane
   race.rings = [{ ...row[0], row: undefined }]; // a single nitro ring still draws them over
   rivalSeek(race, rival);
   assert.equal(rival.seekX, row[0].x);
+});
+
+test('Endless: every 500 m chunk has a middle-lane train, 3 single rings and 5 pickup runs', () => {
+  const race = createRace('coast', { mode: 'endless' });
+  const chunks = Object.groupBy(race.rings, r => r.chunk);
+  assert.ok(Object.keys(chunks).length >= 4);
+  for (const [chunk, rings] of Object.entries(chunks)) {
+    const trains = trainsOf(rings);
+    assert.equal(trains.length, 1, `chunk ${chunk}`);
+    assert.ok(MID_LANES.includes(trains[0][0].x) && trains[0].length === 6, `chunk ${chunk}`);
+    assert.equal(rings.filter(r => !r.row && r.train === undefined).length, 3, `chunk ${chunk} singles`);
+    assert.equal(race.pickups.filter(p => p.chunk === +chunk && !p.run).length, 5, `chunk ${chunk} pickups`);
+  }
 });
 
 test('pickups come in runs of 1-4: the slot pickup, then cells 8 m apart down its line', () => {

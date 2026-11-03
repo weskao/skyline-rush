@@ -69,10 +69,22 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
           if (pixels[(y*canvas.width+x)*4+3] <= 16) continue;
           left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);
         }
+        // Protect the original vivid, detailed Store art direction, not only safe padding.
+        let visible = 0, vivid = 0;
+        const palette = new Set();
+        for (let p = 0; p < pixels.length; p += 4) {
+          if (pixels[p + 3] <= 25) continue;
+          const r = pixels[p], g = pixels[p + 1], blue = pixels[p + 2];
+          const peak = Math.max(r, g, blue), floor = Math.min(r, g, blue);
+          visible++;
+          if (peak > 127 && (peak - floor) / Math.max(1, peak) > 0.55) vivid++;
+          palette.add(`${r >> 4}-${g >> 4}-${blue >> 4}`);
+        }
         const a=image.getBoundingClientRect(), b=frame.getBoundingClientRect(), c=caption.getBoundingClientRect();
         return {type:image.currentSrc, size:[canvas.width,canvas.height], bounds:[left,top,right,bottom],
           display:[a.width,a.height], imageInside:a.left>=b.left&&a.right<=b.right&&a.top>=b.top&&a.bottom<=b.bottom,
-          captionBelow:c.top>=b.bottom+4, frameInside:b.left>=button.getBoundingClientRect().left&&b.right<=button.getBoundingClientRect().right};
+          captionBelow:c.top>=b.bottom+4, frameInside:b.left>=button.getBoundingClientRect().left&&b.right<=button.getBoundingClientRect().right,
+          vividFraction: vivid / Math.max(visible, 1), paletteBins: palette.size};
       });
       expect(metrics.type).toMatch(/@3x\.webp$/);
       expect(metrics.size).toEqual([216,216]);
@@ -84,6 +96,8 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
       expect(metrics.imageInside).toBe(true);
       expect(metrics.captionBelow).toBe(true);
       expect(metrics.frameInside).toBe(true);
+      expect(metrics.vividFraction, `${id}: retain bright, saturated illustrated artwork`).toBeGreaterThan(0.30);
+      expect(metrics.paletteBins, `${id}: keep rich 3D materials and lighting`).toBeGreaterThan(450);
     }
     await test.info().attach(`store-icons-safe-3x-${viewport.width}x${viewport.height}.png`, {
       body: await gallery.screenshot(), contentType: 'image/png',

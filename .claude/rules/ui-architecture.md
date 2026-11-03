@@ -30,6 +30,12 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
   `tests/close-button.test.js`, `tests/close-button-browser.spec.js`.
 - **`src/main.js` does not grow.** A new feature lands in its own module; a fix inside `main.js`
   is fine. Splitting existing code out is move-only with no behavior change in the same commit.
+  It shrinks toward bootstrap and the frame loop; event-driven panels move into Vue SFCs.
+- **Plain-JS engine exceptions** cross the boundary via typed adapters and stable snapshots, never
+  import Vue or couple the game loop to reactive state. A new exception is justified in code review
+  and documented in `TODO.md`. Existing UI/business `.js` is migration debt: convert in small
+  TDD-verified slices (RED → GREEN → browser regressions) that preserve desktop/mobile input,
+  locales, audio, cloud save, accessibility and finish/pause clickability.
 
 ## In-race HUD (per frame)
 
@@ -42,7 +48,8 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
 ## Types
 
 - **Strict `tsconfig.json` is authoritative** for TypeScript sources and Vue scripts.
-  `jsconfig.json` is a *temporary, narrow legacy-JS check*, not proof of TypeScript migration.
+  `jsconfig.json` is a *temporary, narrow legacy-JS check* for explicitly listed JS islands, not
+  proof of TypeScript migration (neither is JSDoc `checkJs`). `make verify` runs `npm run typecheck`.
 - Define shared interfaces in `src/game-types.ts`; use `import type`, typed Vue props/emits,
   typed state, and typed engine snapshots/adapters. New/changed TypeScript APIs cannot use
   unexamined `any` or `// @ts-ignore` to bypass type checking.
@@ -55,3 +62,7 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
 - Panel moved to Vue → `npm run test:browser` desktop and mobile, plus the overlay clickability
   checks in `ui-phase-interactions.md`; home-screen files → `npm run test:layout`.
 - Panels that show sound/music controls keep their `src/audio.js` behavior unchanged.
+
+→ Read `docs/ui-change-checklist.md` before adding, redesigning or modifying any UI element,
+screen, overlay, interaction or player feedback (audio, quality tiers, iPhone touch, post-race
+clickability).
