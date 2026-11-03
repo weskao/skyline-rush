@@ -63,3 +63,22 @@ test('new personal awards are announced in both languages separately from Career
   }
   setLocale('en');
 });
+
+
+test('Wave 3 Classic podium shows a bilingual placement badge without creating an award', () => {
+  setLocale('en');
+  const first = resultView(race({ rivals: Array.from({ length: 7 }, () => ({})) }), finished());
+  assert.match(first.stats, /Placement badge \(display only\)/);
+  assert.match(first.stats, />Gold</);
+  const third = resultView(race({ result: { ...race().result, position: 3 } }), finished());
+  assert.match(third.stats, />Bronze</);
+  const missed = resultView(race({ result: { ...race().result, position: 4 } }), finished());
+  assert.doesNotMatch(missed.stats, /Placement badge/);
+  const timed = resultView(race({ mode: 'time' }), finished());
+  assert.doesNotMatch(timed.stats, /Placement badge/);
+  setLocale('zh-TW');
+  const chinese = resultView(race(), finished());
+  assert.match(chinese.stats, /完賽名次徽章（僅展示）/);
+  assert.match(chinese.stats, />金牌</);
+  setLocale('en');
+});
