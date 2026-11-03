@@ -44,6 +44,7 @@ export const EXTRA_RACE_STYLES = {
   },
   // PULSE: rounded, short-wheelbase EV sprint, twin chevron light cuts and ducktail.
   pulse: {
+    chassisLength: 4.0,
     color: '#37b6c1', glass: '#13353f', light: [.25,3.0,2.4],
     body: carShell([
       [-2.10,.83,.47,.71],[-1.70,1.08,.44,.83],[-1.12,1.10,.44,.98],
@@ -118,6 +119,7 @@ export const TRAFFIC_STYLES = {
   },
   // Compact city hatchback with short bonnet and upright tailgate.
   hatch: {
+    chassisLength: 3.65,
     color: '#98a9a6', glass: '#26373c', light: [2,.16,.16],
     body: carShell([
       [-1.94,.76,.51,.78],[-1.56,.98,.47,.91],[-.99,1.04,.46,1.10],
