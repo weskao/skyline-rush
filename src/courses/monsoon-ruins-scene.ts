@@ -166,14 +166,14 @@ function makeLandmarks(group: THREE.Group, from: number, to: number,
         new THREE.Vector3(x, height + 4, -7), stone);
       const fall = new THREE.Mesh(new THREE.PlaneGeometry(16, height), water);
       fall.name = 'animated-waterfall-cascade';
-      fall.position.set(x, height / 2, 2);
+      fall.position.copy(root.position).add(new THREE.Vector3(x, height / 2, 2));
       flow.add(fall);
       box(root, 'misty-waterfall-plunge-basin', [22, .25, 14],
         new THREE.Vector3(x, .1, 5), water);
       const fog = new THREE.Mesh(new THREE.PlaneGeometry(26, 7),
         new THREE.MeshBasicMaterial({ color: palette.falls, transparent: true,
           opacity: .16, depthWrite: false, side: THREE.DoubleSide }));
-      fog.position.set(x, 5, 6);
+      fog.position.copy(root.position).add(new THREE.Vector3(x, 5, 6));
       mist.add(fog);
     }
   }
