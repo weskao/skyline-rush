@@ -6,12 +6,14 @@ import { addRoadsterRearNozzles } from './roadster-rear-nozzles.js';
 
 // Visual-only Roadster 2 interpretation: negative Z is the nose, positive Z the tail.
 // Keep dimensions inside the shared arcade collision envelope; no physics data changes.
+// [z, half-width, bottom, deck, shoulder, crest x / half-width (default .88)]
 const BODY_STATIONS = [
-  // Blunt nose cap, then fender towers rising well above a flat, lower hood (photos 05/15).
-  [-2.50, .90, .34, .61, .80],
-  [-2.33, 1.00, .34, .64, .90],
-  [-1.91, 1.10, .35, .69, .97],
-  [-1.41, 1.19, .81, .74, 1.03],
+  // Blunt nose cap, then fender towers rising well above a flat, lower hood (photos 05/15):
+  // a near-vertical inner wall up to an inboard crest, then a broad top sloping outward.
+  [-2.50, .90, .34, .60, .86, .66],
+  [-2.33, 1.00, .34, .62, .95, .68],
+  [-1.91, 1.10, .35, .66, 1.01, .74],
+  [-1.41, 1.19, .81, .72, 1.04, .84],
   [-.72, 1.16, .36, .76, 1.04],
   [.44, 1.15, .36, .77, 1.04],
   [1.27, 1.19, .83, .78, 1.08],
@@ -55,33 +57,35 @@ function loft(rings, close = true) {
 }
 
 export function roadsterBody() {
-  const rings = BODY_STATIONS.map(([z, w, bottom, deck, shoulder]) => {
+  const rings = BODY_STATIONS.map(([z, w, bottom, deck, shoulder, crest = .88]) => {
     const lowerFloor = Math.min(bottom, .39);
     const sideRise = Math.min(.12, (shoulder - bottom) * .26);
     const cornerDrop = Math.min(.16, (shoulder - bottom) * .26);
     return [
     -.83*w, lowerFloor, z, -w, bottom+sideRise, z,
-    -w, shoulder-cornerDrop, z, -.88*w, shoulder, z,
+    -w, shoulder-cornerDrop, z, -crest*w, shoulder, z,
     -.57*w, deck, z, .57*w, deck, z,
-    .88*w, shoulder, z, w, shoulder-cornerDrop, z,
+    crest*w, shoulder, z, w, shoulder-cornerDrop, z,
     w, bottom+sideRise, z, .83*w, lowerFloor, z,
     ];
   });
   return loft(rings);
 }
 
+// [z, base half-width, base y, roof half-width, roof y]: one low glasshouse (photo 14) whose
+// windscreen starts at the hood cowl between the fender towers, then a long fastback.
+const CANOPY_STATIONS = [
+  [-1.32, .68, .745, .62, .76],
+  [-.55, 1.00, 1.035, .62, 1.29],
+  [.15, 1.00, 1.04, .66, 1.335],
+  [.75, .99, 1.045, .66, 1.31],
+  [1.30, .98, 1.075, .68, 1.22],
+  [1.84, .83, 1.07, .72, 1.10],
+  [2.02, .70, .995, .62, 1.015],
+];
+
 export function roadsterCanopy() {
-  // One continuous tapering glasshouse: raked windscreen, short roof, long fastback.
-  const stations = [
-    [-1.16, .84, 1.04, .62, 1.055],
-    [-.72, .96, 1.07, .72, 1.35],
-    [.08, .98, 1.075, .72, 1.48],
-    [.65, .96, 1.075, .70, 1.46],
-    [1.24, .91, 1.075, .75, 1.30],
-    [1.84, .83, 1.07, .77, 1.11],
-    [2.02, .70, .995, .62, 1.015],
-  ];
-  const rings = stations.map(([z, base, baseY, roof, roofY]) => [
+  const rings = CANOPY_STATIONS.map(([z, base, baseY, roof, roofY]) => [
     -base, baseY, z, -roof, roofY, z, roof, roofY, z, base, baseY, z,
   ]);
   return loft(rings, false);
@@ -90,6 +94,7 @@ export function roadsterCanopy() {
 const graphite = new THREE.MeshStandardMaterial({ color: '#0a1116', metalness: .35, roughness: .3 });
 const satinCarbon = new THREE.MeshStandardMaterial({ color: '#222b31', metalness: .2, roughness: .37 });
 const bronze = new THREE.MeshStandardMaterial({ color: '#8d8578', metalness: .92, roughness: .24 });
+// Photos 02/03/15: five swept dark blades, wide at the hub and pointed at the rim.
 const wheelSpokeShape = (() => {
   const verts = [], indices = [];
   for (let i = 0; i < 5; i++) {
@@ -98,7 +103,7 @@ const wheelSpokeShape = (() => {
       const angle = a + offset;
       return [radius * Math.cos(angle), radius * Math.sin(angle)];
     };
-    const corners = [point(.065,-.39),point(.31,-.15),point(.31,.21),point(.065,.45)];
+    const corners = [point(.07,-.42),point(.19,-.20),point(.318,.06),point(.07,.30)];
     const index = verts.length / 3;
     corners.forEach(([y,z]) => verts.push(0,y,z));
     indices.push(index,index+1,index+2,index,index+2,index+3);
@@ -149,6 +154,9 @@ function rocker(side) {
   return mesh;
 }
 
+const paleDisc = new THREE.MeshStandardMaterial({ color: '#d6dadb', metalness: .7, roughness: .28 });
+const darkBlade = new THREE.MeshStandardMaterial({ color: '#15191c', metalness: .55, roughness: .3, side: THREE.DoubleSide });
+
 // Plan outline (x, -z) extruded into a thin painted panel.
 function wingPanel(outline) {
   const geo = new THREE.ExtrudeGeometry(new THREE.Shape(outline.map(([x,y]) => new THREE.Vector2(x,y))), {
@@ -163,44 +171,71 @@ const wingMain = wingPanel([[-.80,-.22],[.80,-.22],[.80,.20],[-.80,.20]]);
 const wingTip = wingPanel([[0,-.22],[.30,-.20],[.30,.06],[0,.20]]);
 const mirroredTubes = (points, radius, segments) => mergeGeometries([-1,1].map(side => new THREE.TubeGeometry(
   new THREE.CatmullRomCurve3(points.map(([x,y,z]) => new THREE.Vector3(side*x,y,z))), segments, radius, 5, false)));
-// Swan necks hang from the wing's underside; stowed, they sink below the deck out of sight.
-const swanNecks = mirroredTubes([[.42,0,.02],[.42,-.07,.09],[.42,-.20,.05],[.42,-.46,-.03]], .022, 12);
-const actuators = mirroredTubes([[.48,-.01,-.12],[.48,-.46,-.14]], .009, 1);
+// The blade hinges on its leading edge, .20 ahead of the wing's centre.
+const HINGE = .20;
+// Photos 04/13: deployed, the blade stands as a 52-degree airbrake, trailing edge up and back.
+const TILT = THREE.MathUtils.degToRad(52);
+// Swan necks carry the hinge line; stowed, they sink below the deck out of sight.
+const swanNecks = mirroredTubes([[.42,0,-.18],[.42,-.07,-.12],[.42,-.20,-.15],[.42,-.46,-.20]], .022, 12);
+// Unit-length rams (y 0..1); poseRoadsterWing stretches them from the bay to the blade underside.
+const actuators = mergeGeometries([-1,1].map(side => new THREE.CylinderGeometry(.013,.013,1,6,1).translate(side*.30,.5,0)));
+// Ram ends: fixed bay mount (wing space at rest) and the blade underside (blade space).
+const RAM_BASE_Y = -.08, RAM_BASE_Z = .05, RAM_TOP_Y = -.012, RAM_TOP_Z = .26;
 const wingBay = new THREE.PlaneGeometry(1.2,.36).rotateX(-Math.PI/2);
 
 function activeWing(paint) {
   const wing = new THREE.Group();
   wing.name = 'Roadster active wing';
-  const part = (geometry, material, name) => {
+  const part = (parent, geometry, material, name) => {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = name;
-    wing.add(mesh);
+    parent.add(mesh);
     return mesh;
   };
-  part(wingMain, paint, 'Roadster aerofoil');
+  const blade = new THREE.Group();
+  blade.name = 'Roadster wing blade';
+  blade.position.z = -HINGE;
+  wing.add(blade);
+  part(blade, wingMain, paint, 'Roadster aerofoil').position.z = HINGE;
   for (const side of [-1,1]) {
-    const tip = part(wingTip, paint, 'Roadster wing tip');
-    tip.position.x = side*.80;
+    const tip = part(blade, wingTip, paint, 'Roadster wing tip');
+    tip.position.set(side*.80, 0, HINGE);
     tip.scale.x = side;
     tip.userData.fold = -side*1.05;
   }
-  part(swanNecks, graphite, 'Roadster wing swan-neck struts');
-  part(actuators, satinCarbon, 'Roadster wing actuators');
-  // Stowed, the wing is the deck lid overhanging the light slot; poseWing raises and opens it.
+  part(wing, swanNecks, graphite, 'Roadster wing swan-neck struts');
+  const rams = part(wing, actuators, satinCarbon, 'Roadster wing actuators');
+  // Stowed, the wing is the deck lid overhanging the light slot; poseWing raises and tilts it.
   wing.position.set(0,1.08,2.25);
-  wing.userData = { restY: 1.08, lift: .34 };
+  wing.userData = { restY: 1.08, lift: .34, blade, rams };
+  poseRoadsterWing(wing, 0);
   return wing;
 }
 
+// `travel` 0..1 of the lift. The blade pitches from the first moment, so the lid swings up
+// diagonally while the carriage rises; tips fold into endplates after 35%. Closing reverses.
+// Per frame: scalar math only, no allocation.
+export function poseRoadsterWing(wing, travel) {
+  const { blade, rams, lift } = wing.userData;
+  const angle = TILT * THREE.MathUtils.smoothstep(travel, 0, 1);
+  blade.rotation.x = -angle;
+  const fold = THREE.MathUtils.smoothstep(travel, .35, 1);
+  for (const part of blade.children) if (part.userData.fold) part.rotation.z = part.userData.fold * fold;
+  const sin = Math.sin(angle), cos = Math.cos(angle);
+  const dy = RAM_TOP_Y*cos + RAM_TOP_Z*sin - RAM_BASE_Y + travel*lift;
+  const dz = RAM_TOP_Y*sin + RAM_TOP_Z*cos - HINGE - RAM_BASE_Z;
+  rams.position.set(0, RAM_BASE_Y - travel*lift, RAM_BASE_Z);
+  rams.rotation.x = Math.atan2(dz, dy);
+  rams.scale.y = Math.hypot(dy, dz);
+}
+
 export function addRoadsterWheelDetail(wheel, side) {
-  const inset = new THREE.Mesh(wheelInset, graphite);
+  const inset = new THREE.Mesh(wheelInset, paleDisc);
   inset.rotation.z = Math.PI / 2;
   inset.position.x = side * .151;
   inset.name = 'Roadster aero inset';
   wheel.add(inset);
-  const spokes = new THREE.Mesh(wheelSpokeShape, new THREE.MeshStandardMaterial({
-    color: '#ced4d5', metalness: .86, roughness: .22, side: THREE.DoubleSide,
-  }));
+  const spokes = new THREE.Mesh(wheelSpokeShape, darkBlade);
   spokes.position.x = side * .172;
   spokes.name = 'Roadster aero spoke assembly';
   wheel.add(spokes);
@@ -214,11 +249,9 @@ export function addRoadsterTrim(group, m) {
   addReferenceFront(group,m,line);
   for (const side of [-1,1]) {
     group.add(rocker(side));
-    line(group,[
-      [side*.89,1.065,-1.12],[side*.82,1.35,-.72],
-      [side*.74,1.49,.08],[side*.76,1.46,.65],
-      [side*.77,1.11,1.84],[side*.64,1.02,2.02],
-    ],.017,graphite,'Roadster glass surround');
+    // Dark A-pillar and roof edge, traced along the canopy's own roof line.
+    line(group, CANOPY_STATIONS.map(([z,,, roof, roofY]) => [side*roof, roofY+.004, z]),
+      .017, graphite, 'Roadster glass surround');
   }
 
   const rearLight = createRearLight();

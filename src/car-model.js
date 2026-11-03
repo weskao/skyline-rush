@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canopy, carShell } from './geometry.ts';
 import { LIFT_PORTS } from './effects.js';
-import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail } from './roadster-fidelity.js';
+import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail, poseRoadsterWing } from './roadster-fidelity.js';
 import { EXTRA_RACE_STYLES, TRAFFIC_STYLES } from './vehicle-fleet-styles.js';
 const box = new THREE.BoxGeometry(1, 1, 1);
 
@@ -32,19 +32,18 @@ function mirrors(parent, mat, y) {
   for (const side of [-1, 1]) block(parent, mat, side * 1.15, y, -0.4, 0.2, 0.12, 0.32);
 }
 
-// Each style returns its wing; a wing with userData.lift rises on boost, braking and flight.
-// Parts tagged userData.fold (Roadster tips) swing open once the wing is past a third of its travel,
-// so opening reads as rise-then-unfold and closing as fold-then-sink. Per frame: no allocation.
+// Each style returns its wing; a wing with userData.lift (Roadster) rises on boost, braking and
+// flight while poseRoadsterWing tilts its blade into an airbrake, so world.js skips the whole-wing
+// pitch for it (the two would stack past 60 degrees). Per frame: no allocation.
 export function poseWing(wing, y) {
   wing.position.y = y;
-  const open = THREE.MathUtils.smoothstep((y - wing.userData.restY) / wing.userData.lift, .35, 1);
-  for (const part of wing.children) if (part.userData.fold) part.rotation.z = part.userData.fold * open;
+  poseRoadsterWing(wing, (y - wing.userData.restY) / wing.userData.lift);
 }
 
 export const CAR_STYLES = {
   // Player: low wedge, smoked fastback canopy, full-width tail bar, quad thruster ports, pop-up wing.
   roadster: {
-    color: '#e6e9e7', glass: '#292823', light: [2.2, 0.02, 0.05], detailed: true,
+    color: '#e6e9e7', glass: '#2c2118', light: [2.2, 0.02, 0.05], detailed: true,
     body: roadsterBody(),
     cabin: roadsterCanopy(),
     trim(group, m) { return addRoadsterTrim(group, m); },

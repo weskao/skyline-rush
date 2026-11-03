@@ -1,3 +1,25 @@
+## Roadster 2 sharper body + 45-60 degree airbrake wing — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Request: match photos for roof, sides, hood, ports and below,
+front/rear curves, lights, wheels; sharper supercar line; wing opens diagonally to 45-60 degrees, not parallel.
+
+- [x] Wing: blade hinges on its leading edge and tilts to 52 degrees (trailing edge up/back) while the carriage rises;
+  tips fold after 35%; rams track bay → blade underside per frame (scalar math). `world.js` no longer stacks the
+  generic ±20 degree pitch on lifting wings. `lift=.34` / `restY` contract kept.
+- [x] Canopy: roof 1.48 → 1.335, windscreen starts at the hood cowl (old gap under it visible from the front); glass
+  surround traced from the canopy stations; bronze glazing.
+- [x] Front: inboard fender crest (near-vertical inner wall, broad top sloping out), blade/carbon band/intake narrowed to
+  ~70% of the nose, broad inverted triangular lamps at the blade ends (photo 05).
+- [x] Wheels: pale aero disc + five dark pointed star blades (photos 02/03/15).
+- [x] Rear: four arched tunnel mouths under the port bar, lighter satin carbon so tunnels/vanes read, dark counterbore
+  socket per port, bronze bore walls (photo 01). `REAR_PORTS` / NITRO anchors unchanged.
+- [x] RED observed: 7 assertion failures on the old model (wing 0 degrees at half travel, roof 1.48, dark disc, square
+  tunnel, no socket, fender test was vacuous `-Infinity` hood and now measures .26 < .30, blade 1.6 wide).
+- [x] GREEN: `npm test` 1519 pass / 0 fail / 3 skipped; `npm run typecheck`; `npm run build`; Playwright shader-warmup,
+  black-frame, Garage studio/inspection/quality 21/21 (headless SwiftShader).
+- [x] Cost: +4 draw calls (port sockets), ~7.2k triangles per Roadster; frame time not measured.
+- [ ] Full `make verify`, exact-HEAD `[full-regression]` CI, human visual approval, physical phone check.
+
 ## Roadster 2 front/rear photo match + folding wing — 2026-11-03
 
 **Branch:** `feature/roadster2-high-fidelity-body`. Request: match photos 01/04/05/06/13/15 front and rear (curves, lights),

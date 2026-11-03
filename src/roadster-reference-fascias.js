@@ -5,7 +5,8 @@ import { REAR_PORTS } from './aero-vfx.js';
 // Shared cross-car surfaces sculpt the nose and layered tail of photos 01/05/06 without
 // touching the collision hull or the NITRO emitter's four immutable anchors.
 const dark = new THREE.MeshStandardMaterial({ color: '#090d11', metalness: .25, roughness: .29 });
-const carbon = new THREE.MeshStandardMaterial({ color: '#172026', metalness: .3, roughness: .37 });
+// Lighter satin carbon, so the near-black tunnel mouths and vanes read against it (photo 01).
+const carbon = new THREE.MeshStandardMaterial({ color: '#2b343a', metalness: .32, roughness: .42 });
 const headlampMaterial = new THREE.MeshStandardMaterial({ color: '#d1eff3', emissive: '#9abfc8', emissiveIntensity: .9, roughness: .2, side: THREE.DoubleSide });
 const bankDark = new THREE.MeshStandardMaterial({ color: '#080b0e', metalness: .31, roughness: .42 });
 const edgeCarbon = new THREE.MeshStandardMaterial({ color: '#363b3b', metalness: .38, roughness: .36 });
@@ -45,26 +46,28 @@ function slab(plan, top, height) {
 }
 
 // Photo 05 front: painted hood lip, hairline blade, tall carbon band, low intake, splitter.
-// The centre stands proud and the ends tuck back toward the flat -2.50 nose cap.
-const frontXs = [-.80,-.72,-.56,-.30,0,.30,.56,.72,.80];
+// They span ~70% of the nose; white fender faces flank them. The centre stands proud and
+// the ends tuck back toward the flat -2.50 nose cap.
+const frontXs = [-.64,-.58,-.46,-.24,0,.24,.46,.58,.64];
 const noseZ = edge => -2.545 + .035*edge*edge;
-const hoodLip = curvedSheet(frontXs.slice(2,-2), .80, () => .618, () => .586,
+const hoodLip = curvedSheet(frontXs.slice(2,-2), .64, () => .618, () => .586,
   edge => noseZ(edge) + .012, true, edge => noseZ(edge) - .006);
-const lightBlade = curvedSheet(frontXs, .80, () => .586, () => .570, edge => noseZ(edge) - .004, true);
-const carbonBand = curvedSheet(frontXs, .80, () => .570, () => .455, noseZ, true);
-const lowerMouth = curvedSheet(frontXs.slice(1,-1), .80, () => .455, () => .365, edge => noseZ(edge) + .006, true);
+const lightBlade = curvedSheet(frontXs, .64, () => .586, () => .570, edge => noseZ(edge) - .004, true);
+const carbonBand = curvedSheet(frontXs, .64, () => .570, () => .455, noseZ, true);
+const lowerMouth = curvedSheet(frontXs.slice(1,-1), .64, () => .455, () => .365, edge => noseZ(edge) + .006, true);
 const splitter = slab([[-.88,-2.46],[.88,-2.46],[.84,-2.60],[.60,-2.655],[-.60,-2.655],[-.84,-2.60]], .345, .025);
 
 // Mirrored triangle/quad: `side` picks the winding that faces the viewer on that side.
 const sideGeometry = (vertices, side) => indexed(vertices, vertices.length === 9
   ? (side < 0 ? [0,2,1] : [0,1,2])
   : (side < 0 ? [0,1,2,0,2,3] : [0,2,1,0,3,2]));
-// Inverted triangular lamps sit high on each fender face, just above the blade's ends.
+// Inverted triangular lamps sit at the foot of each fender tower, right above the blade's
+// ends; their top edge follows the tower's sloped crest.
 const lampPockets = [-1,1].map(side => sideGeometry([
-  side*.66,.698,-2.507, side*.86,.70,-2.507, side*.785,.595,-2.507,
+  side*.575,.715,-2.507, side*.815,.77,-2.507, side*.67,.598,-2.507,
 ], side));
 const lampLenses = [-1,1].map(side => sideGeometry([
-  side*.685,.688,-2.512, side*.842,.69,-2.512, side*.785,.612,-2.512,
+  side*.597,.702,-2.512, side*.79,.748,-2.512, side*.672,.618,-2.512,
 ], side));
 // Dark lower corners fill the chamfered nose like the carbon feet in photo 05.
 const cornerIntakes = [-1,1].map(side => sideGeometry([
@@ -79,7 +82,19 @@ const rearShelf = slab([[-1.0,2.38],[1.0,2.38],[.98,2.47],[.6,2.50],[-.6,2.50],[
 const whiteScoop = curvedSheet(rearXs.slice(1,-1), .92, () => .835, edge => .715 + .085*edge**3,
   edge => 2.445 - .04*edge*edge, false, edge => 2.475 - .05*edge*edge);
 
-function perforatedRear(width, low, high, radius, frontZ, curvature, opening) {
+// Photos 01/04: one round-crowned tunnel mouth under each port, webs left for the vanes.
+const TUNNEL_SPRING = .44, TUNNEL_CROWN = .108;
+function tunnelMouth(cx) {
+  const half = .18, mouth = new THREE.Path();
+  mouth.moveTo(cx-half,.33);
+  mouth.lineTo(cx+half,.33);
+  mouth.lineTo(cx+half,TUNNEL_SPRING);
+  mouth.absellipse(cx,TUNNEL_SPRING,half,TUNNEL_CROWN,0,Math.PI,false);
+  mouth.closePath();
+  return mouth;
+}
+
+function perforatedRear(width, low, high, radius, frontZ, curvature, tunnels) {
   const outline = new THREE.Shape();
   outline.moveTo(-width,low);
   outline.lineTo(width,low);
@@ -91,10 +106,7 @@ function perforatedRear(width, low, high, radius, frontZ, curvature, opening) {
     hole.absarc(port.position[0],port.position[1],radius,0,Math.PI*2,true);
     outline.holes.push(hole);
   }
-  if (opening) {
-    const [w, bottom, top] = opening;
-    outline.holes.push(new THREE.Path([[-w,bottom],[-w,top],[w,top],[w,bottom]].map(([x,y]) => new THREE.Vector2(x,y))));
-  }
+  if (tunnels) outline.holes.push(...REAR_PORTS.map(port => tunnelMouth(port.position[0])));
   const geometry = new THREE.ShapeGeometry(outline,16);
   const points = geometry.getAttribute('position');
   for (let i=0; i<points.count; i++) {
@@ -104,7 +116,7 @@ function perforatedRear(width, low, high, radius, frontZ, curvature, opening) {
   geometry.computeVertexNormals();
   return geometry;
 }
-const lowerValance = perforatedRear(1.04,.30,.735,.076,2.455,.045,[.80,.33,.555]);
+const lowerValance = perforatedRear(1.04,.30,.735,.076,2.455,.045,true);
 const portBank = perforatedRear(.80,.565,.722,.076,2.478,.03);
 // Five shared swept fences frame four tunnels, one under each port.
 const rearVaneGeometry = (() => {
@@ -154,8 +166,8 @@ export function addReferenceFront(group, materials, trace) {
     add(group, lampLenses[i], headlampMaterial, 'Roadster triangular headlamp');
     // Highlight the fold where the flat hood meets each raised fender.
     trace(group, [
-      [side*.547,.632,-2.40], [side*.616,.694,-1.98],
-      [side*.667,.736,-1.55], [side*.673,.756,-1.20],
+      [side*.547,.622,-2.40], [side*.616,.665,-1.98],
+      [side*.667,.715,-1.55], [side*.675,.74,-1.32],
     ], .006, materials.paint, 'Roadster hood crease');
   });
 }

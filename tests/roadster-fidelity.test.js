@@ -105,8 +105,9 @@ test('Roadster reference front stacks hood lip, hairline blade, carbon band, low
   assert.ok(blade.material.isMeshBasicMaterial, 'the blade is a lit strip, not painted trim');
   const [b, c, i, s] = [blade, band, intake, splitter].map(box);
   assert.ok(b.max.y - b.min.y <= .02, 'blade is a hairline');
-  assert.ok(b.max.x - b.min.x >= 1.5, 'blade spans the nose between the fenders');
-  assert.ok(i.max.x - i.min.x >= 1.4 && i.max.y - i.min.y <= .2, 'intake is wide and low');
+  assert.ok(b.max.x - b.min.x >= 1.15 && b.max.x - b.min.x <= 1.4,
+    'photo 05: the blade spans ~70% of the nose, white fender faces flank it');
+  assert.ok(i.max.x - i.min.x >= 1.1 && i.max.x - i.min.x <= 1.4 && i.max.y - i.min.y <= .2, 'intake is as wide as the blade and low');
   assert.ok(box(lip).min.y >= b.max.y - .005 && b.min.y >= c.max.y - .005 && c.min.y >= i.max.y - .005,
     'top to bottom: painted lip, blade, carbon band, intake');
   assert.ok(s.max.y <= i.min.y && s.min.z < i.min.z - .08, 'splitter sits lowest and protrudes ahead');
@@ -114,6 +115,8 @@ test('Roadster reference front stacks hood lip, hairline blade, carbon band, low
   for (const layer of [lip, blade, band, intake]) assert.ok(box(layer).max.z < noseZ, `${layer.name} stays in front of the nose cap`);
   const lamps = named(detail, 'Roadster triangular headlamp').map(box);
   assert.ok(lamps.every(l => l.max.x - l.min.x >= .15 && l.min.y > b.max.y), 'readable triangles above the blade');
+  assert.ok(lamps.every(l => l.min.x < (l.min.x > 0 ? b.max.x : b.min.x) && (l.min.x > 0 ? b.max.x : b.min.x) < l.max.x),
+    'each lamp sits right above a blade end, at the fender tower foot');
   const body = car.userData.body.geometry.attributes.position;
   const frontRings = [];
   for (let n = 0; n < body.count; n++)
@@ -126,9 +129,12 @@ test('Roadster front fenders rise as towers above a lower flat hood', () => {
   const body = roadster().userData.body.geometry.attributes.position;
   const ring = [];
   for (let n = 0; n < body.count; n++) if (Math.abs(body.getZ(n) + 2.33) < .01) ring.push([body.getX(n), body.getY(n)]);
-  const hood = Math.max(...ring.filter(([x]) => Math.abs(x) < .3).map(([, y]) => y));
+  // The hood's own edge vertices sit near |x| .57; a narrower window found none and passed vacuously.
+  const hoodPoints = ring.filter(([x]) => Math.abs(x) < .6).map(([, y]) => y);
+  assert.ok(hoodPoints.length > 0, 'the ring has hood vertices to compare against');
+  const hood = Math.max(...hoodPoints);
   const fender = Math.max(...ring.map(([, y]) => y));
-  assert.ok(fender - hood >= .18, `fender crest ${fender} must stand clear of the hood ${hood}`);
+  assert.ok(fender - hood >= .30, `fender crest ${fender} must stand clear of the hood ${hood}`);
 });
 
 test('Roadster rear reference layers an inset black lamp recess above a curved painted panel', () => {
@@ -222,31 +228,52 @@ test('rear reads top to bottom as wing lip, light slot, white shelf, white scoop
   assert.ok(markers.every(m => m.material.color.r > m.material.color.g * 4));
 });
 
-test('stowed wing lies on the deck; deploying lifts it on swan-neck struts and folds the tips down', () => {
+// Leading and trailing edge of the aerofoil's top surface, in car space.
+const wingEdges = (car, aerofoil) => {
+  car.updateMatrixWorld(true);
+  const local = new THREE.Box3().setFromBufferAttribute(aerofoil.geometry.getAttribute('position'));
+  const [lead, trail] = [local.min.z, local.max.z].map(z => aerofoil.localToWorld(new THREE.Vector3(0, local.max.y, z)));
+  return { lead, trail, degrees: THREE.MathUtils.radToDeg(Math.atan2(trail.y - lead.y, trail.z - lead.z)) };
+};
+
+test('deploying swings the wing diagonally up to a 45-60 degree airbrake, not a parallel lift', () => {
   const car = roadster();
   const { wing } = car.userData;
-  const tips = wing.children.filter(part => part.name === 'Roadster wing tip');
+  const [aerofoil] = named(wing, 'Roadster aerofoil');
+  const tips = named(wing, 'Roadster wing tip');
   assert.equal(tips.length, 2);
-  assert.equal(wing.children.filter(part => part.name === 'Roadster wing swan-neck struts').length, 1);
+  assert.equal(named(wing, 'Roadster wing swan-neck struts').length, 1);
   assert.equal(named(car, 'Roadster wing bay').length, 1, 'black bay is revealed under the raised wing');
-  const outerY = tip => { car.updateMatrixWorld(true); return box(tip).min.y; };
-  poseWing(wing, wing.userData.restY);
+  const restY = wing.userData.restY, lift = wing.userData.lift;
+  poseWing(wing, restY);
+  const stowed = wingEdges(car, aerofoil);
+  assert.ok(Math.abs(stowed.degrees) < 2, `stowed wing is the flat deck lid, got ${stowed.degrees}`);
   assert.ok(tips.every(tip => tip.rotation.z === 0), 'stowed tips stay flat as the deck lid');
-  const flat = tips.map(outerY);
-  poseWing(wing, wing.userData.restY + wing.userData.lift * .25);
+  const flat = tips.map(tip => box(tip).min.y);
+  poseWing(wing, restY + lift * .5);
+  const half = wingEdges(car, aerofoil);
+  assert.ok(half.degrees > 10 && half.degrees < 45, `half-way the wing is already tilting, got ${half.degrees}`);
+  assert.ok(half.trail.y - stowed.trail.y > half.lead.y - stowed.lead.y + .05, 'the trailing edge climbs faster than the hinge: diagonal, not parallel');
+  poseWing(wing, restY + lift * .25);
   assert.ok(tips.every(tip => Math.abs(tip.rotation.z) < .05), 'tips wait until the wing clears the fenders');
-  poseWing(wing, wing.userData.restY + wing.userData.lift);
-  assert.equal(wing.position.y, wing.userData.restY + wing.userData.lift);
+  poseWing(wing, restY + lift);
+  assert.equal(wing.position.y, restY + lift);
+  const open = wingEdges(car, aerofoil);
+  assert.ok(open.degrees >= 45 && open.degrees <= 60, `deployed airbrake angle ${open.degrees} must be 45-60 degrees`);
+  assert.ok(open.trail.y > open.lead.y && open.trail.z > open.lead.z, 'trailing edge up and back (photos 04/13)');
+  assert.ok(open.lead.y >= stowed.lead.y, 'the hinge never dips into the deck');
   assert.ok(tips.every(tip => Math.abs(tip.rotation.z) > .9), 'deployed tips fold into endplates');
   assert.equal(Math.sign(tips[0].rotation.z), -Math.sign(tips[1].rotation.z), 'tips fold symmetrically');
-  tips.forEach((tip, n) => assert.ok(outerY(tip) < flat[n] + wing.userData.lift - .15, 'folded tips hang down'));
-  const struts = box(wing.children.find(part => part.name === 'Roadster wing swan-neck struts'));
-  const bay = box(named(car, 'Roadster wing bay')[0]);
-  assert.ok(struts.min.y < bay.min.y, 'deployed struts still reach into the bay');
-  poseWing(wing, wing.userData.restY);
-  car.updateMatrixWorld(true);
-  const stowed = box(wing.children.find(part => part.name === 'Roadster wing swan-neck struts'));
-  assert.ok(stowed.max.y < box(wing.children[0]).min.y + .05 && stowed.min.y < .8, 'stowed struts hide in the body');
+  tips.forEach((tip, n) => assert.ok(box(tip).min.y < flat[n] + lift + .25, 'folded tips hang below the raised blade'));
+  // Unmerged trim: in the car the bay shares one batched mesh with the glass surround.
+  const bay = box(named(rawTrim(), 'Roadster wing bay')[0]);
+  assert.ok(box(named(wing, 'Roadster wing swan-neck struts')[0]).min.y < bay.min.y, 'deployed struts still reach into the bay');
+  const rams = box(named(wing, 'Roadster wing actuators')[0]);
+  assert.ok(rams.min.y < bay.max.y + .03, 'actuator rams rise out of the bay');
+  assert.ok(rams.max.y > open.lead.y + .12, 'actuator rams push the tilted blade up, not hang under the hinge');
+  poseWing(wing, restY);
+  const struts = box(named(wing, 'Roadster wing swan-neck struts')[0]);
+  assert.ok(struts.max.y < box(aerofoil).min.y + .05 && struts.min.y < .8, 'stowed struts hide in the body');
 });
 
 test('painted trim shares the car body paint so Garage colours reach every painted part', () => {
@@ -255,7 +282,7 @@ test('painted trim shares the car body paint so Garage colours reach every paint
   const painted = car.children.filter(c => c.isMesh && (c.userData.mergedPartNames ?? []).includes('Roadster curved rear fascia'));
   assert.equal(painted.length, 1);
   assert.equal(painted[0].material, paint, 'rear fascia, shelf, plate and lip follow previewAppearance');
-  assert.ok(car.userData.wing.children.filter(c => c.name === 'Roadster wing tip').every(t => t.material === paint));
+  assert.ok(named(car.userData.wing, 'Roadster wing tip').every(t => t.material === paint));
 });
 
 test('four photo-reference rear thrusters are machined rings with dark recessed bores, not flat discs', () => {
@@ -310,4 +337,54 @@ test('rear diffuser guides are sculpted swept fins, not five rectangular bricks'
   const box = new THREE.Box3().setFromBufferAttribute(sharedGeometry.getAttribute('position'));
   assert.ok(box.max.z - box.min.z >= .42, 'fins reach toward the diffuser trailing edge');
   assert.ok(box.max.y - box.min.y >= .24, 'fins have visible lower channel depth');
+});
+
+test('a low fastback canopy starts at the hood cowl, so the nose shows no gap under the windscreen', () => {
+  const glass = new THREE.Box3().setFromBufferAttribute(CAR_STYLES.roadster.cabin.getAttribute('position'));
+  assert.ok(glass.max.y <= 1.36, `photo 14: roof stays low and sleek, got ${glass.max.y}`);
+  const canopy = CAR_STYLES.roadster.cabin.getAttribute('position');
+  const front = [];
+  for (let n = 0; n < canopy.count; n++) if (canopy.getZ(n) <= glass.min.z + .001) front.push(canopy.getY(n));
+  assert.ok(Math.max(...front) <= .85, `windscreen base meets the hood at the cowl, got ${Math.max(...front)}`);
+  const car = roadster();
+  car.updateMatrixWorld(true);
+  const [hit] = new THREE.Raycaster(new THREE.Vector3(0, .9, -4), new THREE.Vector3(0, 0, 1)).intersectObject(car, true);
+  assert.ok(hit && hit.object.material.roughness < .2 && hit.point.z < -.9, `looking at the cowl from ahead hits the windscreen, got ${hit?.object.name}`);
+});
+
+test('photo 02/03/15 wheels: pale aero disc behind five dark pointed star blades', () => {
+  const [wheel] = roadster().userData.wheels;
+  const [inset] = named(wheel, 'Roadster aero inset');
+  const [spokes] = named(wheel, 'Roadster aero spoke assembly');
+  const luminance = ({ r, g, b }) => .2126 * r + .7152 * g + .0722 * b;
+  assert.ok(luminance(inset.material.color) > .55, 'the disc face reads white/silver');
+  assert.ok(luminance(spokes.material.color) < .15, 'the blades read dark graphite');
+  const points = spokes.geometry.getAttribute('position');
+  let tips = 0;
+  for (let n = 0; n < points.count; n++) if (Math.hypot(points.getY(n), points.getZ(n)) > .3) tips++;
+  assert.equal(tips, 5, 'each blade ends in one sharp tip at the rim');
+});
+
+test('four arched diffuser tunnels open under the port bar, separated by the vane webs', () => {
+  const detail = rawTrim();
+  const [valance] = named(detail, 'Roadster curved rear valance');
+  detail.updateMatrixWorld(true);
+  const hits = (x, y) => new THREE.Raycaster(new THREE.Vector3(x, y, 3), new THREE.Vector3(0, 0, -1)).intersectObject(valance, false).length;
+  for (const x of [-.61, -.21, .21, .61]) {
+    assert.equal(hits(x, .42), 0, `tunnel at ${x} is open`);
+    assert.equal(hits(x, .535), 0, `tunnel at ${x} keeps its rounded crown`);
+    assert.ok(hits(x + Math.sign(x) * .165, .535) > 0, `tunnel at ${x} has rounded shoulders, not a square cut`);
+  }
+  for (const x of [-.42, 0, .42]) assert.ok(hits(x, .42) > 0, `a web stands behind the vane at ${x}`);
+});
+
+test('each bronze port sits in a dark recessed socket wider than its rim', () => {
+  for (const port of named(rawTrim(), 'Roadster recessed thruster')) {
+    const socket = port.getObjectByName('Roadster nozzle socket');
+    const lip = port.getObjectByName('Roadster nozzle satin lip');
+    assert.ok(socket, 'photo 01: a dark ring frames every port');
+    const radius = geometry => new THREE.Box3().setFromBufferAttribute(geometry.getAttribute('position')).max.x;
+    assert.ok(radius(socket.geometry) > radius(lip.geometry) + .012);
+    assert.ok(socket.material.color.r < .1 && socket.position.z < lip.position.z);
+  }
 });
