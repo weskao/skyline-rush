@@ -4,6 +4,9 @@ paths:
   - "src/main.js"
   - "src/access/**"
   - "scripts/assert-production-locked.mjs"
+  - "scripts/*garage*.mjs"
+  - "src/garage-release-*.ts"
+  - ".github/workflows/ci.yml"
   - "scripts/dev-feature.mjs"
   - "Makefile"
   - "tests/access-build.test.js"
@@ -35,3 +38,6 @@ a guardrail, not payment enforcement. Monetized content needs server-side entitl
 purchase verification.
 
 Details: `docs/local-unlocked-testing.md`.
+
+Garage cosmetics release mode, `GARAGE_VFX_RELEASE_MODE` or the Pages deploy pin
+→ Read `docs/garage-release-policy.md`.

@@ -121,9 +121,9 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
 - **Auto-show** when the newest released entry is **newer** (numeric `major.minor.patch`) than the
   stored version. A stored version that is equal or newer stays silent; an unreadable value counts
   as older.
-- **No stored version**: a returning player (finished guide or saved race history) gets the notes;
-  a first-time player is not greeted with old news, and the current version is recorded silently
-  so the next release is announced to them.
+- **No stored version** (first visit, incognito window, cleared storage): the notes open on load,
+  exactly as for an older stored version; showing them records the version. Blocked storage and
+  unreleased (`UPCOMING`) notes stay silent.
 - The check runs on the ready/home screen once the 3D world is up, and again whenever another
   dialog closes. It defers behind dialogs, the tutorial and a hidden page.
 - **Showing the dialog records it**: the stored version moves to the newest release and the unread
@@ -192,7 +192,7 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
 
 ## 7. Tests
 
-- Unit (`tests/release-notes.test.js`): seen-version contract, first-time vs returning player,
+- Unit (`tests/release-notes.test.js`): seen-version contract, no record (first visit, incognito) is announced,
   blocked storage stays silent, numeric version order, newest-five window with future versions hidden, every
   entry complete with bundled images, release gate refuses a missing version, player copy check
 - Browser (`tests/release-announcements-browser.spec.js`): read/dismiss/reopen, no external link,
