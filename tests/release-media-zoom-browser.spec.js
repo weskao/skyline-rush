@@ -20,8 +20,10 @@ async function openNotes(page, gameplayURL, patch = '') {
   page.on('pageerror', error => errors.push(String(error)));
   await page.goto(gameplayURL);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('#whats-new-open').click();
-  await expect(page.locator('#whats-new-screen')).toBeVisible();
+  const notes = page.locator('#whats-new-screen');
+  // First visits already open the release dialog; never click through that modal backdrop.
+  if (!(await notes.isVisible())) await page.locator('#whats-new-open').click();
+  await expect(notes).toBeVisible();
   // Upcoming notes lead the tabs without pictures or a clip: read the newest release that has both.
   const [newest] = recentReleases(), media = recentReleases().find(release => release.video && release.highlights.some(item => item.image));
   if (!patch && media && media !== newest) await page.locator(`#whats-new-screen [role="tab"][data-version="${media.version}"]`).click();
