@@ -1,10 +1,14 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createRearLight } from './rear-light.ts';
-import { REAR_PORTS } from './aero-vfx.js';
+import { addReferenceFront, addReferenceRear } from './roadster-reference-fascias.js';
+import { addRoadsterRearNozzles } from './roadster-rear-nozzles.js';
 
 // Visual-only Roadster 2 interpretation: negative Z is the nose, positive Z the tail.
 // Keep dimensions inside the shared arcade collision envelope; no physics data changes.
+// [z, half-width, bottom, deck, shoulder, crest x / half-width (default .88)]
 const BODY_STATIONS = [
+  // Low wedge nose (cfe958e3): the hood stays near the blade and rises gently to the cowl.
   [-2.48, .92, .40, .60, .61],
   [-2.31, 1.03, .37, .62, .73],
   [-1.91, 1.13, .35, .66, .93],
@@ -12,9 +16,10 @@ const BODY_STATIONS = [
   [-.72, 1.16, .36, .76, 1.04],
   [.44, 1.15, .36, .77, 1.04],
   [1.27, 1.19, .83, .78, 1.08],
-  [1.79, 1.18, .39, .78, 1.08],
-  [2.21, 1.1, .42, .73, .99],
-  [2.37, 1.04, .43, .67, .92],
+  // Flat rear deck just under the shoulders, so the stowed wing reads as its lid.
+  [1.79, 1.18, .39, .96, 1.08],
+  [2.21, 1.1, .42, .99, 1.05],
+  [2.37, 1.04, .43, .98, 1.02],
 ];
 
 function loft(rings, close = true) {
@@ -51,42 +56,44 @@ function loft(rings, close = true) {
 }
 
 export function roadsterBody() {
-  const rings = BODY_STATIONS.map(([z, w, bottom, deck, shoulder]) => {
+  const rings = BODY_STATIONS.map(([z, w, bottom, deck, shoulder, crest = .88]) => {
     const lowerFloor = Math.min(bottom, .39);
     const sideRise = Math.min(.12, (shoulder - bottom) * .26);
     const cornerDrop = Math.min(.16, (shoulder - bottom) * .26);
     return [
     -.83*w, lowerFloor, z, -w, bottom+sideRise, z,
-    -w, shoulder-cornerDrop, z, -.88*w, shoulder, z,
+    -w, shoulder-cornerDrop, z, -crest*w, shoulder, z,
     -.57*w, deck, z, .57*w, deck, z,
-    .88*w, shoulder, z, w, shoulder-cornerDrop, z,
+    crest*w, shoulder, z, w, shoulder-cornerDrop, z,
     w, bottom+sideRise, z, .83*w, lowerFloor, z,
     ];
   });
   return loft(rings);
 }
 
+// [z, base half-width, base y, roof half-width, roof y]: one low glasshouse (photo 14) whose
+// windscreen starts at the hood cowl between the fender towers, then a long fastback.
+const CANOPY_STATIONS = [
+  [-1.32, .68, .745, .62, .75],
+  [-.55, 1.00, 1.035, .62, 1.29],
+  [.15, 1.00, 1.04, .66, 1.335],
+  [.75, .99, 1.045, .66, 1.31],
+  [1.30, .98, 1.075, .68, 1.22],
+  [1.84, .83, 1.07, .72, 1.10],
+  [2.02, .70, .995, .62, 1.015],
+];
+
 export function roadsterCanopy() {
-  // One continuous tapering glasshouse: raked windscreen, short roof, long fastback.
-  const stations = [
-    [-1.16, .93, 1.04, .86, 1.055],
-    [-.72, .98, 1.07, .75, 1.35],
-    [.08, .98, 1.075, .72, 1.48],
-    [.65, .96, 1.075, .70, 1.46],
-    [1.24, .91, 1.075, .75, 1.30],
-    [1.84, .83, 1.07, .77, 1.11],
-  ];
-  const rings = stations.map(([z, base, baseY, roof, roofY]) => [
+  const rings = CANOPY_STATIONS.map(([z, base, baseY, roof, roofY]) => [
     -base, baseY, z, -roof, roofY, z, roof, roofY, z, base, baseY, z,
   ]);
   return loft(rings, false);
 }
 
-const silver = new THREE.MeshStandardMaterial({ color: '#adb6ba', metalness: .88, roughness: .25 });
 const graphite = new THREE.MeshStandardMaterial({ color: '#0a1116', metalness: .35, roughness: .3 });
 const satinCarbon = new THREE.MeshStandardMaterial({ color: '#222b31', metalness: .2, roughness: .37 });
-const headlampMaterial = new THREE.MeshStandardMaterial({ color: '#d1eff3', emissive: '#9abfc8', emissiveIntensity: .9, roughness: .2, side: THREE.DoubleSide });
 const bronze = new THREE.MeshStandardMaterial({ color: '#8d8578', metalness: .92, roughness: .24 });
+// Photos 02/03/15: five swept dark blades, wide at the hub and pointed at the rim.
 const wheelSpokeShape = (() => {
   const verts = [], indices = [];
   for (let i = 0; i < 5; i++) {
@@ -95,7 +102,7 @@ const wheelSpokeShape = (() => {
       const angle = a + offset;
       return [radius * Math.cos(angle), radius * Math.sin(angle)];
     };
-    const corners = [point(.065,-.39),point(.31,-.15),point(.31,.21),point(.065,.45)];
+    const corners = [point(.07,-.42),point(.19,-.20),point(.318,.06),point(.07,.30)];
     const index = verts.length / 3;
     corners.forEach(([y,z]) => verts.push(0,y,z));
     indices.push(index,index+1,index+2,index,index+2,index+3);
@@ -108,12 +115,6 @@ const wheelSpokeShape = (() => {
 })();
 const wheelInset = new THREE.CylinderGeometry(.327, .327, .017, 40);
 const wheelHub = new THREE.CylinderGeometry(.075, .075, .027, 24);
-const nozzleCavityGeometry = new THREE.CylinderGeometry(.103,.115,.16,20,1,true);
-const nozzleBackGeometry = new THREE.CircleGeometry(.098,20);
-const nozzleRimGeometry = new THREE.TorusGeometry(.13,.025,8,24);
-const diffuserVaneGeometry = new THREE.BoxGeometry(.035,.28,.39);
-const wingStrutGeometry = new THREE.BoxGeometry(.052,.34,.09);
-const wingEndplateGeometry = new THREE.BoxGeometry(.065,.18,.49);
 const pathGeometry = new Map();
 const rockerGeometry = new Map();
 
@@ -152,196 +153,140 @@ function rocker(side) {
   return mesh;
 }
 
-function aerofoil() {
-  const outline = new THREE.Shape();
-  outline.moveTo(-1.16,-.22);
-  outline.lineTo(1.16,-.22);
-  outline.lineTo(1.19,.17);
-  outline.lineTo(.88,.27);
-  outline.lineTo(-.88,.27);
-  outline.lineTo(-1.19,.17);
-  outline.closePath();
-  const geo = new THREE.ExtrudeGeometry(outline, {
-    depth: .05, bevelEnabled: true, bevelThickness: .012, bevelSize: .012,
+const paleDisc = new THREE.MeshStandardMaterial({ color: '#d6dadb', metalness: .7, roughness: .28 });
+const darkBlade = new THREE.MeshStandardMaterial({ color: '#15191c', metalness: .55, roughness: .3, side: THREE.DoubleSide });
+
+// Plan outline (x, -z) extruded into a thin painted panel.
+function wingPanel(outline) {
+  const geo = new THREE.ExtrudeGeometry(new THREE.Shape(outline.map(([x,y]) => new THREE.Vector2(x,y))), {
+    depth: .04, bevelEnabled: true, bevelThickness: .01, bevelSize: .01,
     bevelSegments: 1, steps: 1, curveSegments: 1,
   });
   geo.rotateX(-Math.PI/2);
-  const mesh = new THREE.Mesh(geo,silver);
-  mesh.name = 'Roadster aerofoil';
-  return mesh;
+  return geo;
+}
+const wingMain = wingPanel([[-.80,-.22],[.80,-.22],[.80,.20],[-.80,.20]]);
+// Each tip hinges at the main plane's edge and folds down into a swept endplate (photos 04/06/13).
+const wingTip = wingPanel([[0,-.22],[.30,-.20],[.30,.06],[0,.20]]);
+const mirroredTubes = (points, radius, segments) => mergeGeometries([-1,1].map(side => new THREE.TubeGeometry(
+  new THREE.CatmullRomCurve3(points.map(([x,y,z]) => new THREE.Vector3(side*x,y,z))), segments, radius, 5, false)));
+// The blade hinges on its leading edge, .20 ahead of the wing's centre.
+const HINGE = .20;
+// Photo 04: opened, the leading edge stays on the deck and only the rear swings up to 35 degrees.
+const TILT = THREE.MathUtils.degToRad(35);
+// Rear reference photo: raised on short struts, the blade keeps a shallow angle of attack.
+const RAISE = .16, RAISE_TILT = THREE.MathUtils.degToRad(12);
+// Swan necks carry the hinge line; stowed, they sink below the deck out of sight.
+const swanNecks = mirroredTubes([[.42,0,-.18],[.42,-.06,-.12],[.42,-.16,-.14],[.42,-.30,-.18]], .022, 12);
+// Unit-length rams (y 0..1); poseRoadsterWing stretches them from the bay to the blade underside.
+const actuators = mergeGeometries([-1,1].map(side => new THREE.CylinderGeometry(.013,.013,1,6,1).translate(side*.30,.5,0)));
+// Ram ends: fixed bay mount (wing space at rest) and the blade underside (blade space).
+const RAM_BASE_Y = -.08, RAM_BASE_Z = .05, RAM_TOP_Y = -.012, RAM_TOP_Z = .26;
+const wingBay = new THREE.PlaneGeometry(1.2,.36).rotateX(-Math.PI/2);
+
+function activeWing(paint) {
+  const wing = new THREE.Group();
+  wing.name = 'Roadster active wing';
+  const part = (parent, geometry, material, name) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = name;
+    parent.add(mesh);
+    return mesh;
+  };
+  const blade = new THREE.Group();
+  blade.name = 'Roadster wing blade';
+  blade.position.z = -HINGE;
+  wing.add(blade);
+  part(blade, wingMain, paint, 'Roadster aerofoil').position.z = HINGE;
+  for (const side of [-1,1]) {
+    const tip = part(blade, wingTip, paint, 'Roadster wing tip');
+    tip.position.set(side*.80, 0, HINGE);
+    tip.scale.x = side;
+    tip.userData.fold = -side*1.05;
+  }
+  part(wing, swanNecks, graphite, 'Roadster wing swan-neck struts');
+  const rams = part(wing, actuators, satinCarbon, 'Roadster wing actuators');
+  // Stowed, the wing is the deck lid overhanging the light slot; stepRoadsterWing opens and raises it.
+  wing.position.set(0,1.08,2.25);
+  // `lift` marks a lifting wing for world.js; tilt/raise are the 0..1 travel of each motion.
+  wing.userData = { restY: 1.08, lift: RAISE, blade, rams, tilt: 0, raise: 0, hold: 0 };
+  poseRoadsterWing(wing, 0, 0);
+  return wing;
 }
 
-// A curved cross-car sheet preserves the white/graphite wedge line instead of
-// reading as a flat bumper box. Front faces -Z; rear faces +Z.
-// Front: the whole nose face under the light blade is dark (reference 05/07); it stops
-// at x=±.80 so the white corner pillars stay, and its shallow curve stays ahead of the
-// body's flat front cap (z=-2.48), which would otherwise show through as white paint.
-const sculptedPanel = (front) => {
-  const xs = [-1.05,-.86,-.65,-.32,0,.32,.65,.86,1.05];
-  const vertices = [], faces = [];
-  for (const x0 of xs) {
-    const x = front ? x0 * .762 : x0, edge = Math.abs(x0) / 1.05;
-    const z = front ? -2.497 + .012 * edge * edge : 2.41 - .12 * edge * edge;
-    const high = front ? .6 - .012 * edge : .88 + .035 * (1-edge);
-    const low = front ? .385 + .03 * edge : .64 + .025 * edge;
-    vertices.push(x, high, z, x, low, z);
-  }
-  for (let i = 0; i < xs.length - 1; i++) {
-    const a = i * 2, b = a + 1, d = a + 2, e = a + 3;
-    faces.push(...(front ? [a,d,b,b,d,e] : [a,b,d,b,e,d]));
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices,3));
-  geometry.setIndex(faces);
-  geometry.computeVertexNormals();
-  return geometry;
-};
-const frontFascia = sculptedPanel(true);
-const rearFascia = sculptedPanel(false);
-const cornerIntakes = new Map();
-function cornerIntake(side) {
-  if (!cornerIntakes.has(side)) {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute([
-      side*.74,.535,-2.435, side*1.00,.545,-2.315,
-      side*.945,.465,-2.285, side*.76,.455,-2.435,
-    ], 3));
-    geometry.setIndex(side < 0 ? [0,1,2,0,2,3] : [0,2,1,0,3,2]);
-    geometry.computeVertexNormals();
-    cornerIntakes.set(side, geometry);
-  }
-  return cornerIntakes.get(side);
+// `tilt` 0..1 swings the blade about its leading edge (airbrake); `raise` 0..1 lifts the carriage
+// on the struts. Both ease in and out; tips fold into endplates after 35% of either.
+// Per frame: scalar math only, no allocation.
+export function poseRoadsterWing(wing, tilt, raise = 0) {
+  const { blade, rams, restY } = wing.userData;
+  wing.userData.tilt = tilt;
+  wing.userData.raise = raise;
+  const up = RAISE * THREE.MathUtils.smoothstep(raise, 0, 1);
+  const angle = Math.max(TILT * THREE.MathUtils.smoothstep(tilt, 0, 1), RAISE_TILT * THREE.MathUtils.smoothstep(raise, 0, 1));
+  wing.position.y = restY + up;
+  blade.rotation.x = -angle;
+  const fold = THREE.MathUtils.smoothstep(Math.max(tilt, raise), .35, 1);
+  for (const part of blade.children) if (part.userData.fold) part.rotation.z = part.userData.fold * fold;
+  const sin = Math.sin(angle), cos = Math.cos(angle);
+  const dy = RAM_TOP_Y*cos + RAM_TOP_Z*sin - RAM_BASE_Y + up;
+  const dz = RAM_TOP_Y*sin + RAM_TOP_Z*cos - HINGE - RAM_BASE_Z;
+  rams.position.set(0, RAM_BASE_Y - up, RAM_BASE_Z);
+  rams.rotation.x = Math.atan2(dz, dy);
+  rams.scale.y = Math.hypot(dy, dz);
 }
 
-const cornerLamps = new Map();
-function lampGeometry(side, lens) {
-  const key = `${side}:${lens ? 'light' : 'pocket'}`;
-  if (!cornerLamps.has(key)) {
-    const vertices = lens ? [
-      side*.878,.689,-2.253, side*.993,.686,-2.195,
-      side*.949,.633,-2.323,
-    ] : [
-      side*.840,.750,-2.170, side*1.035,.760,-2.080,
-      side*.950,.560,-2.370,
-    ];
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-    geometry.setIndex(side < 0 ? [0,2,1] : [0,1,2]);
-    geometry.computeVertexNormals();
-    cornerLamps.set(key,geometry);
-  }
-  return cornerLamps.get(key);
+// Constant-rate travel, eased by poseRoadsterWing: a re-trigger mid-way reverses from the current
+// pose instead of snapping, and HOLD bridges the gaps between chained boosts so the wing never flaps.
+const OPEN_TIME = .45, CLOSE_TIME = .7, HOLD = .6;
+const toward = (value, target, dt) => target > value
+  ? Math.min(target, value + dt / OPEN_TIME) : Math.max(target, value - dt / CLOSE_TIME);
+
+export function stepRoadsterWing(wing, open, raise, dt) {
+  const state = wing.userData;
+  state.hold = open ? HOLD : Math.max(0, state.hold - dt);
+  poseRoadsterWing(wing, toward(state.tilt, state.hold > 0 ? 1 : 0, dt), toward(state.raise, raise ? 1 : 0, dt));
 }
 
+// One spin node so world.js's wheel.children[2] rotation turns disc, star blades and hub together.
 export function addRoadsterWheelDetail(wheel, side) {
-  const inset = new THREE.Mesh(wheelInset, graphite);
+  const spin = new THREE.Group();
+  spin.name = 'Roadster wheel spin';
+  const inset = new THREE.Mesh(wheelInset, paleDisc);
   inset.rotation.z = Math.PI / 2;
   inset.position.x = side * .151;
   inset.name = 'Roadster aero inset';
-  wheel.add(inset);
-  const spokes = new THREE.Mesh(wheelSpokeShape, new THREE.MeshStandardMaterial({
-    color: '#ced4d5', metalness: .86, roughness: .22, side: THREE.DoubleSide,
-  }));
+  const spokes = new THREE.Mesh(wheelSpokeShape, darkBlade);
   spokes.position.x = side * .172;
   spokes.name = 'Roadster aero spoke assembly';
-  wheel.add(spokes);
   const hub = new THREE.Mesh(wheelHub,bronze);
   hub.rotation.z = Math.PI/2;
   hub.position.x=side*.18;
-  wheel.add(hub);
+  spin.add(inset, spokes, hub);
+  wheel.add(spin);
 }
 
 export function addRoadsterTrim(group, m) {
-  // Nose: white hood down to the hairline DRL; below it a satin-carbon band, a black
-  // lower intake and a thin splitter. Plus two subtle hood break lines.
-  const noseSurface = new THREE.Mesh(frontFascia, satinCarbon);
-  noseSurface.name = 'Roadster sculpted front fascia';
-  group.add(noseSurface);
-  const intakeSlot = new THREE.Mesh(new THREE.BoxGeometry(1.1,.07,.03),graphite);
-  intakeSlot.position.set(0,.45,-2.505);
-  intakeSlot.name = 'Roadster lower intake';
-  group.add(intakeSlot);
-  const splitter = new THREE.Mesh(new THREE.BoxGeometry(1.84,.028,.16),graphite);
-  splitter.position.set(0,.392,-2.5);
-  splitter.name = 'Roadster front splitter';
-  group.add(splitter);
-  line(group, [
-    [-.87,.625,-2.470],[-.44,.622,-2.522],[0,.625,-2.534],
-    [.44,.622,-2.522],[.87,.625,-2.470],
-  ],.011,m.white,'Roadster front light blade');
+  addReferenceFront(group,m,line);
   for (const side of [-1,1]) {
-    line(group,[
-      [side*.51,.625,-2.38], [side*.69,.70,-1.98],
-      [side*.83,.81,-1.54], [side*.88,.94,-1.20],
-    ],.008,m.paint,'Roadster hood crease');
     group.add(rocker(side));
-    const intake = new THREE.Mesh(cornerIntake(side), satinCarbon);
-    intake.name = 'Roadster corner intake';
-    group.add(intake);
-    // Recessed triangular corner lamps echo the angled nose of the reference prototype.
-    const pocket = new THREE.Mesh(lampGeometry(side,false), graphite);
-    pocket.name = 'Roadster headlamp pocket';
-    group.add(pocket);
-    const headlamp = new THREE.Mesh(lampGeometry(side,true), headlampMaterial);
-    headlamp.name = 'Roadster triangular headlamp';
-    group.add(headlamp);
-    line(group,[
-      [side*.89,1.065,-1.12],[side*.82,1.35,-.72],
-      [side*.74,1.49,.08],[side*.76,1.46,.65],
-      [side*.77,1.11,1.84],
-    ],.017,graphite,'Roadster glass surround');
+    // Dark A-pillar and roof edge, traced along the canopy's own roof line.
+    line(group, CANOPY_STATIONS.map(([z,,, roof, roofY]) => [side*roof, roofY+.004, z]),
+      .017, graphite, 'Roadster glass surround');
   }
 
   const rearLight = createRearLight();
   group.add(rearLight.group);
   group.userData.rearLight = rearLight;
 
-  const fascia = new THREE.Mesh(rearFascia, graphite);
-  fascia.name = 'Roadster curved rear fascia';
-  group.add(fascia);
-  line(group, [
-    [-1.02,1.061,2.305],[-.58,1.063,2.366],[0,1.064,2.394],
-    [.58,1.063,2.366],[1.02,1.061,2.305],
-  ],.013,silver,'Roadster rear light edge');
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(.40,.14,.035),silver);
-  plate.position.set(0,.79,2.443);
-  group.add(plate);
-  const diffuser = new THREE.Mesh(new THREE.BoxGeometry(1.91,.055,.45),graphite);
-  diffuser.position.set(0,.22,2.20);
-  group.add(diffuser);
-  for (const x of [-.84,-.47,0,.47,.84]) {
-    const vane = new THREE.Mesh(diffuserVaneGeometry,satinCarbon);
-    vane.position.set(x,.18,2.19);
-    vane.name='Roadster diffuser vane';
-    group.add(vane);
-  }
-  for (const port of REAR_PORTS) {
-    const assembly = new THREE.Group();
-    assembly.position.set(port.position[0],port.position[1],2.43);
-    assembly.name='Roadster recessed thruster';
-    const cavity=new THREE.Mesh(nozzleCavityGeometry,graphite);
-    cavity.rotation.x=Math.PI/2; cavity.position.z=.01;
-    const dark=new THREE.Mesh(nozzleBackGeometry,graphite);
-    dark.position.z=-.074;
-    const ring=new THREE.Mesh(nozzleRimGeometry,bronze);
-    ring.position.z=.095;
-    assembly.add(cavity,dark,ring);
-    group.add(assembly);
-  }
+  addReferenceRear(group,m,line);
+  addRoadsterRearNozzles(group);
+  // Black bay revealed under the raised wing.
+  const bay = new THREE.Mesh(wingBay, graphite);
+  bay.name = 'Roadster wing bay';
+  bay.position.set(0,1.012,2.24);
+  group.add(bay);
 
-  const wing = new THREE.Group();
-  wing.name='Roadster active wing';
-  wing.add(aerofoil());
-  for (const side of [-1,1]) {
-    const strut=new THREE.Mesh(wingStrutGeometry,graphite);
-    strut.position.set(side*.71,-.19,-.015);
-    wing.add(strut);
-    const endplate=new THREE.Mesh(wingEndplateGeometry,satinCarbon);
-    endplate.position.set(side*1.13,.005,-.006);
-    wing.add(endplate);
-  }
-  wing.position.set(0,1.08,1.98);
-  wing.userData={restY:1.08,lift:.34};
+  const wing = activeWing(m.paint);
   group.add(wing);
   return wing;
 }

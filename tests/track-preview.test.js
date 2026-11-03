@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace,RACE_TRACKS } from '../src/game.js';
-import { previewDistance,previewRival,previewPlayer,HERO_PREVIEWS } from '../src/track-preview.ts';
+import { previewDistance,previewRival,previewPlayer,HERO_PREVIEWS,showcaseCameraPose } from '../src/track-preview.ts';
 import { WORLD_THEMES } from '../src/world-tour-scene.js';
 
 for(const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
@@ -72,4 +72,28 @@ test('all original tracks retain their original player/rival animation and home 
   assert.equal(rival.distance,375);
   assert.equal(rival.altitude,5);
   assert.equal(rival.thrusting,true);
+});
+
+// The full WebGL camera regression exposed near misses at 1777x863 Alpine
+// (car edge at NDC .036–.039, must exceed .04) and 390x844 Coastal AIRFLOW
+// (car top .352, must be >= .36). Preserve the shared six-angle contract.
+test('fixed-angle showroom camera gives the landscape panel a safe gap on every map', () => {
+  for (const id of [...Object.keys(RACE_TRACKS), 'harbor-circuit']) {
+    for (const view of ['rear','right','front','left']) {
+      const pose = showcaseCameraPose(id, view, 0, false);
+      assert.ok(Math.hypot(pose.lookSide,pose.lookAhead) >= 4.25,
+        `${id}/${view}: enough landscape aim offset for the complete Roadster silhouette`);
+    }
+  }
+});
+test('portrait fixed showroom angles leave extra AIRFLOW telemetry headroom', () => {
+  for (const id of [...Object.keys(RACE_TRACKS), 'harbor-circuit']) {
+    for (const view of ['rear','right','front','left']) {
+      const pose = showcaseCameraPose(id,view,0,true);
+      assert.ok(pose.cameraHeight >= 3.9,
+        `${id}/${view}: raised camera keeps the enlarged Roadster beneath telemetry`);
+      assert.equal(pose.lookSide,0);
+      assert.equal(pose.lookAhead,0);
+    }
+  }
 });

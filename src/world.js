@@ -21,7 +21,7 @@ import { createGarageStage } from './garage-stage.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts'; import { createCircuitScene } from './circuit-scene.ts'; import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { FROSTBITE_ID } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar } from './car-model.js';
+import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -593,8 +593,8 @@ export function createWorld(canvas) {
     const { wing } = mesh.userData;
     const downforce = isPlayer && visual.enabled && visual.airflow && visual.aeroMode === 'downforce';
     const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
-    wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : boosting ? 0.08 : 0, 8, dt);
-    if (wing.userData.lift) wing.position.y = THREE.MathUtils.damp(wing.position.y, wing.userData.restY + (boosting || car.braking || car.altitude > 0.8 ? wing.userData.lift : 0), 8, dt);
+    if (wing.userData.lift) stepWing(wing, boosting || car.braking, downforce || car.altitude > 0.8, dt);
+    else wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : boosting ? 0.08 : 0, 8, dt);
     mesh.userData.wheels.forEach(wheel => {
       const target = (car.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);
       wheel.rotation.z = THREE.MathUtils.damp(wheel.rotation.z, target, 7, dt);
@@ -928,9 +928,9 @@ export function createWorld(canvas) {
       } else if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
-      } else if ((preview || visual.enabled && visual.airflow) && visual.view !== 'drive') {
-        // The selected view wins over curated showcase framing on every map, and drives the AIRFLOW race camera.
-        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||!preview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
+      } else if (preview && visual.view !== 'drive') {
+        // The selected view wins over curated showcase framing on every map, but only on the ready screen: it never moves the race camera.
+        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
         const frame = framedRoad(trackId) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
         if (frame) {

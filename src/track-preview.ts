@@ -82,7 +82,7 @@ export function showcaseCameraPose(id: string, view = 'drive', time = 0, portrai
   const angle = view === 'orbit' ? time * .18 : ({front:Math.PI,rear:0,left:-Math.PI/2,right:Math.PI/2} as Partial<Record<string, number>>)[view];
   if (angle === undefined) return drive;
   // Landscape aims 4 m to the camera's left, so the car sits right of the home panel as in the drive shot.
-  const aim = portrait ? 0 : 4;
+  const aim = portrait ? 0 : 4.25;
   return { cameraSide:Math.sin(angle)*9, cameraBack:Math.cos(angle)*9,
-    cameraHeight:3.6, lookSide:-Math.cos(angle)*aim, lookAhead:-Math.sin(angle)*aim, lookHeight:2.4 };
+    cameraHeight:portrait ? 3.9 : 3.6, lookSide:-Math.cos(angle)*aim, lookAhead:-Math.sin(angle)*aim, lookHeight:2.4 };
 }

@@ -3,7 +3,7 @@ import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
-import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode } from './garage-camera.ts';
+import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode, toggleGarageWing } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import { t } from './i18n.ts';
 // Keep progression checks locked to the same implementation used in production.
@@ -52,6 +52,9 @@ export function setupGarageUI({
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
   const preview = $('#garage-preview');
+  // One dock (unique id), borrowed from the home screen while the Garage is open, like #world.
+  const dock = $('#showcase-camera-dock');
+  const dockParent = dock.parentElement!, dockNext = dock.nextSibling;
   const historyKey = '__skylineGaragePage';
   let previewing = getEquippedPaint();
   let camera = defaultGarageCamera();
@@ -125,11 +128,12 @@ export function setupGarageUI({
   function setCamera(next: GarageCamera, angle = ''): void {
     camera = next;
     preview.dataset.garageMode = camera.mode;
+    preview.dataset.garageWing = String(camera.wing);
     preview.dataset.cameraZoom = camera.zoom.toFixed(3);
     preview.dataset.cameraYaw = camera.yaw.toFixed(3);
     // Never let QA or assistive evidence claim the previous camera's bounds.
     delete preview.dataset.carInFrame;
-    updateGarageStudioView({ angle, autoRotate: camera.autoRotate, mode: camera.mode });
+    updateGarageStudioView({ angle, autoRotate: camera.autoRotate, mode: camera.mode, wing: camera.wing });
     getWorld()?.setGarageCamera(garageStudioView.page === 'studio' ? camera : null);
     inspectStudioAfterFrame();
   }
@@ -181,6 +185,7 @@ export function setupGarageUI({
     clearControls();
     garageScreen.showModal();
     preview.append($('#world'));
+    preview.after(dock);
     world.resize();
     previewPaint(getEquippedPaint());
     autoPaused = false;
@@ -203,6 +208,7 @@ export function setupGarageUI({
   garageScreen.addEventListener('close', () => {
     contacts.clear();
     $('#app').prepend($('#world'));
+    dockParent.insertBefore(dock, dockNext);
     getWorld()?.setGarageCamera(null);
     getWorld()?.resize();
     cancelGarageSkinPreview();
@@ -214,12 +220,13 @@ export function setupGarageUI({
   garageScreen.addEventListener('keydown', event => event.stopPropagation());
   document.querySelectorAll<HTMLButtonElement>('[data-garage-angle]').forEach(button =>
     button.addEventListener('click', () => setCamera(
-      { ...garagePreset(button.dataset.garageAngle!), mode: camera.mode }, button.dataset.garageAngle ?? '',
+      { ...garagePreset(button.dataset.garageAngle!), mode: camera.mode, wing: camera.wing }, button.dataset.garageAngle ?? '',
     )));
   document.querySelectorAll<HTMLButtonElement>('[data-garage-mode]').forEach(button =>
     button.addEventListener('click', () => setCamera(
       setGarageMode(camera, button.dataset.garageMode as GarageCamera['mode']), garageStudioView.angle,
     )));
+  $('#garage-wing').addEventListener('click', () => setCamera(toggleGarageWing(camera), garageStudioView.angle));
   $('#garage-rotate-left').addEventListener('click', () => setCamera(dragGarageCamera(camera, -40, 0)));
   $('#garage-rotate-right').addEventListener('click', () => setCamera(dragGarageCamera(camera, 40, 0)));
   $('#garage-zoom-in').addEventListener('click', () => setCamera(zoomGarageCamera(camera, .85)));
