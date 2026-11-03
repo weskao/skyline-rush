@@ -65,6 +65,38 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
       group.add(new THREE.Line(geo, points[1]));
     }
   }
+  // Tunnel enclosure follows the identical canonical 3D frame as the asphalt.
+  // Collision boundaries belong to shared course physics; these meshes are visuals only.
+  if (edge.layer === 'tunnel' && edge.mode === 'drive') {
+    const tunnelMat = new THREE.MeshStandardMaterial({ color: 0x26324c,
+      emissive: 0x050913, metalness: 0.24, roughness: 0.78, side: THREE.DoubleSide });
+    ownedMaterials.push(tunnelMat);
+    const halfWidth = edge.width / 2 + 1.2;
+    const strip = (name: string, a: [number, number], b: [number, number]) => {
+      const vertices: number[] = [], faces: number[] = [];
+      for (let i = 0; i <= steps; i++) {
+        const pose = frame(i);
+        for (const [lateral, height] of [a, b]) {
+          const p = v3(pose.point).addScaledVector(v3(pose.right), lateral)
+            .addScaledVector(v3(pose.up), height);
+          vertices.push(p.x, p.y, p.z);
+        }
+        if (i < steps) {
+          const n = i * 2;
+          faces.push(n, n + 1, n + 2, n + 1, n + 3, n + 2);
+        }
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      geometry.setIndex(faces); geometry.computeVertexNormals();
+      const mesh = new THREE.Mesh(geometry, tunnelMat);
+      mesh.name = `stormline:tunnel:${name}:${edgeId}`;
+      group.add(mesh);
+    };
+    strip('left', [-halfWidth, 0], [-halfWidth, 7]);
+    strip('right', [halfWidth, 0], [halfWidth, 7]);
+    strip('roof', [-halfWidth, 7], [halfWidth, 7]);
+  }
   // Repeated real 3D building volumes remain clear of the road, not JPEG planes.
   const count = Math.min(quality === 'high' ? 44 : quality === 'medium' ? 26 : 12,
     Math.ceil((to - from) / (quality === 'low' ? 75 : 42)));
