@@ -930,9 +930,9 @@ export function createWorld(canvas) {
       } else if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
-      } else if ((preview || visual.enabled && visual.airflow) && visual.view !== 'drive') {
-        // The selected view wins over curated showcase framing on every map, and drives the AIRFLOW race camera.
-        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||!preview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
+      } else if (preview && visual.view !== 'drive') {
+        // The selected view wins over curated showcase framing on every map, but only on the ready screen: it never moves the race camera.
+        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
         const frame = framedRoad(trackId) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
         if (frame) {
