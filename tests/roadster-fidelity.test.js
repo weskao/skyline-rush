@@ -129,6 +129,13 @@ test('Roadster rear reference layers an inset black lamp recess above a curved p
   assert.equal(fascia.length, 1);
   assert.equal(fascia[0].material.color.getHexString(), 'e6e9e7', 'lower rear panel must be pearl paint');
   assert.equal(named(detail, 'Roadster curved rear valance').length, 1);
+  const quarters = named(detail, 'Roadster rear quarter carbon cut');
+  assert.equal(quarters.length, 2, 'rear-quarter reference shows black cutaway on both flanks');
+  for (const panel of quarters) {
+    const bounds = new THREE.Box3().setFromObject(panel);
+    assert.ok(bounds.min.z >= 1.78, 'carbon taper starts behind the rear wheel arch');
+    assert.ok(bounds.max.x <= 1.3 && bounds.min.x >= -1.3);
+  }
   const led = car.userData.rearLight.group;
   const black = led.getObjectByName('Rear LED black panel');
   const core = led.getObjectByName('Rear LED core');
