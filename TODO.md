@@ -1,3 +1,24 @@
+## Drift trail marks + Shop trail-style items — 2026-11-04
+
+Status: planned, not started. No branch yet (branch from `develop`: `feature/drift-trail`).
+
+1. **Drift trail marks (local-player only)**
+   - [ ] While the player car is drifting (brake + steer), leave a fading skid/trail mark on the road behind the rear wheels.
+   - [ ] Visible only to the local player: rivals and traffic never leave marks, and nothing is sent to Cloud Save or any other viewer.
+   - [ ] No change to physics, scoring or the DRIFT → NITRO → FLY → clean-landing chain.
+   - [ ] Performance budget: pooled/instanced geometry with a fixed cap, fade-out and recycling; no per-frame allocation; reduced count/length on Low quality and mobile. Record draw calls, triangles and median/p95 frame time before/after.
+   - [ ] Works on all tracks, every vehicle, airborne (no marks while FLY) and on the road-frame of Sky Spiral / World Tour.
+2. **Shop: drift-trail style items (UI style products)**
+   - [ ] Add a "Drift trail" cosmetic category to the Shop/Garage catalog, with a default (free) style plus purchasable styles (e.g. neon, flame, ice, rainbow, sparkle) as UI/visual styles only, no gameplay effect.
+   - [ ] Shop card UI: preview of the trail style, price, owned/equipped state; locked-bundle vs trial-bundle behavior follows the existing Garage skins contract.
+   - [ ] Equipped style is persisted as a preference and applied to the local player's marks; unowned styles can be previewed in the Preview Studio without ownership.
+   - [ ] Localize item names/descriptions in all supported locales; no real-user data in fixtures.
+3. **Tests / gates**
+   - [ ] RED-first: deterministic unit tests (mark spawns only while drifting, only for the local player, cap + recycle, style lookup/persistence) and a browser regression (desktop + 390×844 + 844×390) with a real WebGL screenshot.
+   - [ ] `make verify` and exact-HEAD `quality-gate` GREEN; human touch/device QA. No merge, PR or deploy without explicit approval.
+
+---
+
 ## Roadster front/rear & eight-car visual identity — 2026-11-03
 
 **Branch:** `feature/roadster2-high-fidelity-body`. Reference: user-provided 15 images of Roadster 2 front, rear, side, raised aerofoil, wheel details and flight. This is a recognizable *game model*, not an OEM CAD replica.
