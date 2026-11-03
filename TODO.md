@@ -1,3 +1,15 @@
+## Tutorial complete no longer freezes the screen — 2026-11-04
+
+**Branch:** `fix/tutorial-complete-alive` (from `develop` 4450a274). Repro: finish the last practice lesson (NITRO) → `main.js` set `race.phase = 'paused'`, so the car, road and HUD froze and the game looked broken.
+
+- [x] Completion keeps the race live as a free cruise: the player keeps steering/flying/boosting, the road still loops at its end, no race result or career change (`src/main.js`, `src/interactive-tutorial.ts`).
+- [x] Completion UI: centred "Practice complete · Free drive" banner (check pop + confetti burst, auto-fades after ~3.4 s, reduced-motion safe), gold glowing coach card, primary "Back to game", stale lesson key chips hidden; en + zh-TW copy.
+- [x] RED: new unit test failed (car stranded at road end); browser assertion failed on old `main.js` (`data-phase` received `paused`). GREEN: `npm test` 1504 pass / 0 fail; `npm run build`; Playwright tutorial + guide + mobile-guide + main-ui-parity 30/30, rerun after CSS tweaks 21/21.
+- [x] Real WebGL screenshots at 1280×800, 390×844, 844×390 (banner + post-fade cruise).
+- [ ] `make verify` (World Tour long-run not run) and exact-HEAD `quality-gate`; human touch/device QA. No merge, PR or deploy without explicit approval.
+
+---
+
 ## Drift trail marks + Shop trail-style items — 2026-11-04
 
 Status: planned, not started. No branch yet (branch from `develop`: `feature/drift-trail`).

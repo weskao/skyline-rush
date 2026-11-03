@@ -1866,3 +1866,29 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .intro #start-button > span { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; line-height: 1.1; }
 .intro #start-button > svg { flex: none; }
 .airflow-active[data-phase="ready"] #start-button { max-width: calc(100vw - 80px); }
+
+/* Tutorial complete: the race stays live as a free cruise; a banner and glowing coach make the finish unmistakable. */
+.tutorial-celebration { position: fixed; z-index: 13; top: 34%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: grid; justify-items: center; gap: 6px; padding: 18px 28px 16px; border: 1px solid #ffd27a; border-radius: 16px; background: rgb(20 35 52 / .9); color: #fff4dc; text-align: center; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 6px rgb(255 210 122 / .12), 0 12px 40px rgb(0 9 22 / .45); animation: celebrate-in .5s var(--ease-spring) both, celebrate-out .6s ease-in 3.4s forwards; }
+.tutorial-celebration strong { font-size: 24px; letter-spacing: .4px; }
+.tutorial-celebration small { color: #96e3ff; font-size: 13px; font-weight: 700; }
+.tutorial-celebration-badge { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #ffd27a; animation: celebrate-pop .6s var(--ease-spring) .15s both; }
+.tutorial-celebration-badge svg { width: 32px; height: 32px; fill: none; stroke: #142333; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; animation: celebrate-check .45s ease-out .45s both; }
+.tutorial-celebration i { position: absolute; top: 46px; left: 50%; width: 7px; height: 12px; margin-left: -3px; border-radius: 2px; background: hsl(calc(var(--n) * 47deg) 90% 66%); opacity: 0; transform: rotate(calc(var(--n) * 22.5deg)); animation: celebrate-burst 1.3s var(--ease-out) .3s; }
+.tutorial-coach[data-step="complete"] { border-color: #ffd27a; animation: coach-glow 2.4s ease-in-out infinite; }
+.tutorial-coach[data-step="complete"] #tutorial-title::before { content: '✓'; display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; border-radius: 50%; background: #ffd27a; color: #142333; font-size: 13px; }
+.tutorial-coach[data-step="complete"] progress { accent-color: #ffd27a; }
+.tutorial-coach[data-step="complete"] #tutorial-input { display: none; } /* the last lesson's key chips are stale once practice ends */
+.tutorial-coach[data-step="complete"] #tutorial-done { border-color: var(--accent); background: var(--accent); color: #142333; font-weight: 700; }
+@keyframes celebrate-in { from { opacity: 0; transform: translate(-50%, -50%) scale(.7); } }
+@keyframes celebrate-out { to { opacity: 0; transform: translate(-50%, -62%) scale(.96); visibility: hidden; } }
+@keyframes celebrate-pop { from { transform: scale(0); } }
+@keyframes celebrate-check { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+@keyframes celebrate-burst { 0% { opacity: 1; transform: rotate(calc(var(--n) * 22.5deg)) translateY(0); } 100% { opacity: 0; transform: rotate(calc(var(--n) * 22.5deg + 90deg)) translateY(-120px); } }
+@keyframes coach-glow { 50% { box-shadow: 0 0 0 4px rgb(255 210 122 / .18), 0 8px 28px rgb(255 210 122 / .25); } }
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-celebration { top: 58%; } } /* below the phone coach card */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-celebration { top: 46%; left: 72%; padding: 12px 18px; } .tutorial-celebration strong { font-size: 18px; } }
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-celebration { animation: celebrate-out .01s 3.4s forwards; }
+  .tutorial-celebration-badge, .tutorial-celebration-badge svg, .tutorial-coach[data-step="complete"] { animation: none; }
+  .tutorial-celebration i { display: none; }
+}
