@@ -76,6 +76,8 @@ test('ordered checkpoints gate the finish and cannot be skipped by flying', () =
   assert.deepEqual(passed, gates);
   assert.equal(monsoonCanFinish(course.length, passed), true);
   assert.equal(monsoonCanFinish(course.length, passed.slice(0, -1)), false);
+  assert.equal(monsoonCanFinish(course.length, [passed[1], passed[0], ...passed.slice(2)]), false);
+  assert.equal(monsoonCanFinish(course.length, [...passed, passed[0]]), false);
   assert.equal(monsoonCanFinish(course.length - 1, passed), false);
   for (const edge of course.branches) {
     assert.ok(gates.some(n => n > edge.to), edge.id + ' must rejoin before checkpoint');
