@@ -16,8 +16,7 @@ const storage = () => {
 test('a release newer than the version the player last saw shows once and records it', () => {
   const store = storage();
   const release = { version: '9.9.9', highlights: [{ id: 'new-track' }] };
-  assert.equal(shouldAnnounce(release, store), false, 'a first-time player has nothing new to catch up on');
-  assert.equal(shouldAnnounce(release, store, true), true, 'a returning player from before the record existed');
+  assert.equal(shouldAnnounce(release, store), true, 'no record (first visit, incognito, cleared storage) is always announced');
   markAnnouncementSeen(release, store);
   assert.equal(store.getItem(NOTES_SEEN_KEY), '9.9.9');
   assert.equal(shouldAnnounce(release, store), false, 'same version');
@@ -38,7 +37,8 @@ test('blocked localStorage never crashes and never reopens the notes on every lo
   const blocked = { getItem: () => { throw Error('blocked'); }, setItem: () => { throw Error('blocked'); } };
   const release = { version: '3.0.0', highlights: [{}] };
   assert.equal(shouldAnnounce(release, blocked), false);
-  assert.equal(shouldAnnounce(release, blocked, true), false);
+  assert.equal(shouldAnnounce(release, null), false, 'no storage at all cannot remember the visit either');
+  assert.equal(shouldAnnounce({ version: UPCOMING, highlights: [{}] }, storage()), false, 'unreleased notes never pop up, even with no record');
   assert.doesNotThrow(() => markAnnouncementSeen(release, blocked));
 });
 
