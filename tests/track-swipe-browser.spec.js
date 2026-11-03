@@ -280,3 +280,39 @@ test('desktop: a short drag snaps the joined previews back without changing trac
   await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
   expect(await selected(page)).toBe(first);
 });
+
+test('desktop: existing preview wheel scroll enters and leaves live Coming Soon scenes', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-track="cosmic"]').click();
+  await trackpadSwipe(page, 30, 6);
+  await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#world')).toBeVisible();
+  await expect(page.locator('#upcoming-scene')).toBeHidden();
+  await page.waitForTimeout(450);
+  await trackpadSwipe(page, 30, 6);
+  await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(450);
+  await trackpadSwipe(page, -30, 6);
+  await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(450);
+  await trackpadSwipe(page, -30, 6);
+  await expect(page.locator('[data-track="cosmic"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-upcoming-track][aria-pressed="true"]')).toHaveCount(0);
+});
+
+test.describe('phone upcoming preview swipe', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('uses existing canvas drag to switch between future and playable scenes', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-upcoming-track="dune-tempest"]').click();
+    await touchSwipe(page, 320, 90, 560);
+    await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#start-button')).toBeDisabled();
+    await touchSwipe(page, 70, 300, 560);
+    await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
+    await touchSwipe(page, 70, 300, 560);
+    await expect(page.locator('[data-track="cosmic"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#upcoming-scene')).toBeHidden();
+  });
+});
