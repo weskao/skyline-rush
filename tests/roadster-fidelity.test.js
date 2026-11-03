@@ -17,7 +17,7 @@ const named = (root, name) => {
 test('Roadster 2 body has a sculpted multi-section shell and physical pearl finish', () => {
   const car = roadster();
   const body = car.userData.body;
-  assert.ok(body.geometry.attributes.position.count >= 80, 'flat four-corner stations cannot reproduce the wedge or shoulders');
+  assert.ok(body.geometry.attributes.position.count >= 200, 'flat four-corner stations cannot reproduce the wedge or shoulders');
   assert.ok(body.material instanceof THREE.MeshPhysicalMaterial);
   assert.ok(body.material.clearcoat >= 0.7);
   assert.ok(body.material.roughness <= 0.28);
@@ -41,6 +41,7 @@ test('Roadster has tapered gold-glazed canopy, restrained hood creases and facet
   assert.equal(named(car, 'Roadster hood crease').length, 2);
   assert.equal(named(car, 'Roadster sculpted rocker').length, 2);
   assert.equal(named(car, 'Roadster front light blade').length, 1);
+  assert.equal(named(car, 'Roadster triangular headlamp').length, 2, 'both tucked-away triangular corner lights');
 });
 
 test('Roadster rear fascia has a moving wide aerofoil, quad recessed thrusters and real diffuser vanes', () => {
