@@ -128,7 +128,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 /* Actual 3D car and studio lighting are rendered by Three.js; CSS owns controls only. */
 #garage-screen.garage-screen { color: #e8f3fb; background: radial-gradient(ellipse at 32% 22%, #193549 0, #0a1624 56%, #060e1b 100%); }
 #garage-screen[data-page="studio"] .garage-heading { border-bottom: 1px solid #28475b; padding-bottom: 3px; }
-#garage-screen[data-page="studio"] .garage-heading h2 { font-style: italic; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+#garage-screen[data-page="studio"] .garage-heading h2 { margin-left: 5px; font-style: italic; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 #garage-screen .garage-kicker { margin: 0; color: #71c8dd; letter-spacing: .2em; font-size: 10px; }
 #garage-screen[data-page="studio"] .garage-visual { background: #091827; border: 1px solid #294858; border-radius: 10px; padding: 4px; }
 #garage-screen[data-page="studio"] .garage-preview { border-color: #31576c; background: #08121f; box-shadow: inset 0 0 50px #06101b; }
