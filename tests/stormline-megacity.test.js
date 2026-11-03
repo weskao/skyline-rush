@@ -56,7 +56,7 @@ test('solid roadside blockers and traffic are visible on Low and avoid the cente
     assert.ok(obstacle.s >= 0 && obstacle.s < edgeLength(byId.get(obstacle.edge)));
     assert.ok(obstacle.lateral > 5 || obstacle.lateral < -5, `${obstacle.id} blocks center line`);
     assert.ok(obstacle.radius > 0);
-    assert.equal(obstacle.solid, true);
+    assert.equal(obstacle.solid, obstacle.kind !== 'puddle');
   }
   assert.deepEqual(Object.keys(course.qualityBudgets), ['low', 'medium', 'high']);
   assert.ok(weatherBudget(course, 'high', true).rain === 0);
