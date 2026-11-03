@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
+import { storeReadiness, storeReadinessText } from './garage-store-readiness.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
 import type { Wave3PreviewCategory, Wave3PreviewGroup, Wave3Text } from './garage-wave3-preview-catalog.ts';
@@ -8,6 +9,7 @@ import type { Wave3PreviewCategory, Wave3PreviewGroup, Wave3Text } from './garag
 const props = defineProps<{ category: Wave3PreviewCategory }>();
 const locale = ref(getLocale());
 const config = computed(() => WAVE3_PREVIEW_CATALOG[props.category]);
+const storeState = storeReadiness();
 const filter = ref<Wave3PreviewGroup>('all');
 const visible = computed(() => filterWave3PreviewItems(props.category, filter.value));
 const selected = ref(config.value.items[0].id);
@@ -27,6 +29,8 @@ onUnmounted(() => stopListening?.());
 <template>
   <details :id="'garage-art-source-' + category" class="garage-source-art" :data-wave3-category="category">
     <summary>{{ copy(config.heading) }} <span class="garage-source-soon">{{ locale === 'zh-TW' ? '概念預覽' : 'Preview' }}</span></summary>
+    <p v-if="category === 'garage-store-readiness'" class="garage-source-hint" role="status"
+      :data-store-phase="storeState.phase">{{ storeReadinessText(locale) }}</p>
     <p class="garage-source-hint">{{ copy(config.notice) }}</p>
     <div class="garage-source-filters" role="group" :aria-label="locale === 'zh-TW' ? '篩選收藏類型' : 'Filter catalog category'">
       <button v-for="item in config.filters" :key="item.id" type="button" :data-wave3-filter="item.id"
