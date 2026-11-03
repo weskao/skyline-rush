@@ -14,7 +14,7 @@
 
 ## Branch-local deliverables
 
-- `src/courses/stormline-megacity.ts`: versioned authored graph, 12 safe-route edges, 3 optional branches (upper viaduct / tunnel / rooftop flight), 2 reverse-direction hairpins, 6 ordered node gates including FINISH, start != finish, layered road modes and authored traffic/construction/water annotations. Mainline first-pass polyline length ~15.15 km; **the requested ~14 km and 3–5 min median are not yet performance-balanced**.
+- `src/courses/stormline-megacity.ts`: versioned authored graph, 12 safe-route edges, 3 optional branches (upper viaduct / tunnel / rooftop flight), 2 reverse-direction hairpins, 6 ordered node gates including FINISH, start != finish, layered road modes and authored traffic/construction/water annotations. Mainline first-pass polyline length ~14.24 km (planar calibrated); **the requested 3–5 min median is not yet empirically balanced**.
 - `src/courses/stormline-scenery.ts`: opt-in streaming 3D city/road/guardrail/support-pillars/reflective-water/billboard builder, with `createStormlineChunk(edgeId,startS,endS,sample,quality)`; its `sample` callback **must use the shared CourseGraph sampleRoute frame** used by simulation and collision. The caller adds the returned `group` to the existing World Renderer, calls `update(timeSeconds,reducedMotion)`, and calls `dispose()` on eviction. No canvas, camera, renderer, parallel loop or duplicated input handler.
 - `tests/stormline-megacity.test.js`: local graph/fork/hairpin/obstacle/weather tests.
 - `tests/stormline-scenery.test.js`: renderer chunk shape, flight-gap truth, geometry cleanup; requires installed `three` in the repo to run.
