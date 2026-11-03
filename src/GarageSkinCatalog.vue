@@ -28,8 +28,9 @@ const badgeNames: Record<(typeof badgeArt)[number], readonly [string, string]> =
 };
 const badgeLabel = (id: (typeof badgeArt)[number], locale: string): string =>
   badgeNames[id][locale === 'zh-TW' ? 1 : 0];
+const nativePngBadges = new Set(['badge-equipped', 'badge-favorite', 'badge-limited']);
 const badgeSrc = (id: string) =>
-  `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/raster/${id}@3x.webp`;
+  `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/raster/${id}@3x.${nativePngBadges.has(id) ? 'png' : 'webp'}`;
 const badgeTone: Record<(typeof badgeArt)[number], 'cyan' | 'magenta' | 'gold' | 'slate' | 'azure' | 'amber' | 'red'> = {
   'badge-equipped': 'cyan', 'badge-favorite': 'magenta', 'badge-limited': 'gold',
   'badge-locked': 'slate', 'badge-new': 'amber', 'badge-trial': 'gold',
