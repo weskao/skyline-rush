@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DUNE_TEMPEST_COURSE as course } from '../src/courses/dune-tempest.ts';
+import { DUNE_TEMPEST_COURSE as course, DUNE_TEMPEST_GATES } from '../src/courses/dune-tempest.ts';
 
 const distance = (a, b) => Math.hypot(...a.map((v, i) => v - b[i]));
 const edgeLength = edge => edge.controlPoints.slice(1).reduce((n, p, i) => n + distance(p, edge.controlPoints[i]), 0);
@@ -129,5 +129,19 @@ test('all three alternate paths are physically distinct shortcuts with explicit 
     assert.ok(edgeLength(safe) - edgeLength(fast) > 150, fastId + ' must save measurable travel');
     const mid = e => e.controlPoints[Math.floor(e.controlPoints.length / 2)];
     assert.ok(distance(mid(safe), mid(fast)) > 80, fastId + ' is a truly separate physical path');
+  }
+});
+
+test('Dune directional gates bind every ordered checkpoint and finish to its real approach', () => {
+  const ids = [...course.checkpoints, 'finish'];
+  assert.deepEqual(DUNE_TEMPEST_GATES.map(g => g.id), ids);
+  for (const [index, gate] of DUNE_TEMPEST_GATES.entries()) {
+    assert.equal(gate.order, index + 1);
+    assert.deepEqual(gate.center, course.nodes[gate.nodeId].position);
+    const incoming = byId(gate.approachEdgeId);
+    assert.equal(incoming.role, 'main');
+    assert.equal(incoming.to, gate.nodeId);
+    assert.ok(Math.abs(Math.hypot(...gate.forwardXZ) - 1) < 1e-10);
+    assert.ok(gate.maxRelativeAltitudeMeters < 95, 'cannot count a high aerial bypass');
   }
 });
