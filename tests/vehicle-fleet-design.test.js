@@ -54,6 +54,13 @@ test('commuter sedan, crossover and hatch use distinct low-key traffic silhouett
   }
 });
 
+test('the compact hatch really has a short chassis rather than a full-size underbody', () => {
+  const hatch = makeCar(CAR_STYLES.hatch);
+  const bounds = new THREE.Box3().setFromObject(hatch);
+  assert.ok(bounds.min.z > -2.05, `front overhang ${bounds.min.z}`);
+  assert.ok(bounds.max.z < 2.05, `rear overhang ${bounds.max.z}`);
+});
+
 test('new race/traffic models do not hardcode a manufacturer badge', () => {
   for (const style of [...RIVAL_CAR_STYLES, CAR_STYLES.commuter, CAR_STYLES.crossover, CAR_STYLES.hatch]) {
     const car = makeCar(style);
