@@ -37,14 +37,14 @@ const box = (group: THREE.Group, name: string, size: [number, number, number],
   return mesh;
 };
 function roadMesh(from: number, to: number, edgeId: MonsoonEdgeId,
-  width: number, material: THREE.Material): THREE.Mesh {
+  width: number, material: THREE.Material, lift = .07): THREE.Mesh {
   const steps = Math.ceil((to - from) / 7), positions: number[] = [], indices: number[] = [];
   for (let i = 0; i <= steps; i++) {
     const s = from + (to - from) * i / steps;
     const { point, right } = sampleMonsoonRoute(edgeId, s);
     for (const side of [-1, 1]) {
       positions.push(point[0] + right[0] * side * width / 2,
-        point[1] + .07, point[2] + right[2] * side * width / 2);
+        point[1] + lift, point[2] + right[2] * side * width / 2);
     }
     if (i < steps) {
       const j = i * 2;
@@ -218,6 +218,11 @@ function makeVisibleObstacles(group: THREE.Group, from: number, to: number,
 function makeRain(group: THREE.Group, from: number, to: number, tier: Quality) {
   const max = tier === 'low' ? 120 : tier === 'medium' ? 210 : 320;
   const data = new Float32Array(max * 6);
+  // Preserve the rain's world-space spawn points across frames; only falling Y animates.
+  const origins = Array.from({ length: max }, (_, i) => {
+    const s = from + (to - from) * seed(i * 7 + from);
+    return location(s, (seed(i * 11 + to) - .5) * 90);
+  });
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(data, 3));
   const mesh = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
@@ -230,8 +235,7 @@ function makeRain(group: THREE.Group, from: number, to: number, tier: Quality) {
     mesh.visible = !reducedMotion;
     if (reducedMotion) return;
     for (let i = 0; i < max; i++) {
-      const s = from + (to - from) * seed(i * 7 + from);
-      const pos = location(s, (seed(i * 11 + to) - .5) * 90);
+      const pos = origins[i];
       const y = (seed(i + from) * 28 - t * 14) % 28;
       const h = 7 + (y + 28) % 28;
       const index = i * 6;
@@ -261,11 +265,28 @@ export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
     new THREE.MeshStandardMaterial({ color: palette.shadow, roughness: 1 }),
     new THREE.MeshStandardMaterial({ color: palette.jungle, roughness: .98 }),
     new THREE.MeshStandardMaterial({ color: palette.moss, roughness: .94 }),
-    new THREE.MeshBasicMaterial({ color: palette.water, transparent: true, opacity: .68,
+    new THREE.MeshPhysicalMaterial({ color: palette.water, roughness: .12, metalness: .18,
+      clearcoat: .85, clearcoatRoughness: .1, transparent: true, opacity: .68,
       depthWrite: false, side: THREE.DoubleSide }),
   ];
   const [mud, stone, terrain, bark, shadow, foliage, crown, water] = owned;
-  root.add(roadMesh(from, to, edgeId, branch?.width ?? 27, edgeId === 'ground' ? mud : stone));
+  root.add(roadMesh(from, to, edgeId, branch?.width ?? 27,
+    edgeId === 'ground' || edgeId === 'river-ford' ? mud : stone));
+  if (edgeId === 'river-ford') {
+    const river = roadMesh(from, to, edgeId, (branch?.width ?? 24) * .92, water, .13);
+    river.name = 'monsoon-shallow-river-ford';
+    root.add(river);
+  }
+  if (edgeId === 'waterfall-skybridge') {
+    for (let s = Math.ceil(from / 48) * 48; s < to; s += 48) {
+      const bridge = sampleMonsoonRoute(edgeId, s).point;
+      const baseY = sampleMonsoonRoute('ground', s).point[1] - 13;
+      const height = bridge[1] - baseY;
+      if (height <= 5) continue;
+      box(root, 'monsoon-bridge-support-pier', [4, height, 4],
+        new THREE.Vector3(bridge[0], baseY + height / 2, bridge[2]), stone);
+    }
+  }
   if (edgeId === 'ground') {
     root.add(terrainMesh(from, to, -1, terrain), terrainMesh(from, to, 1, terrain));
     makeForest(root, from, to, quality, bark, foliage, crown);
