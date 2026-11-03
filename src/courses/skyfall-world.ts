@@ -13,11 +13,13 @@ const framePoint = (f: SkyfallFrame, lateral = 0, height = 0) => new THREE.Vecto
 );
 
 /** Real, banked road triangles, with physically matching optional flight gaps. */
-function makeRoad(edgeId: string): THREE.BufferGeometry {
+function makeRoad(edgeId: string, start: number, end: number): THREE.BufferGeometry {
   const e = SKYFALL_COURSE.edges.find(item => item.id === edgeId)!;
-  const length = getSkyfallEdgeLength(edgeId);
-  const marks = [0, length, ...e.gaps.flatMap(g => [g.from,g.to])];
-  for (let s = 24; s < length; s += 24) marks.push(s);
+  const marks = [start, end, ...e.gaps.flatMap(g => [g.from,g.to])
+    .filter(s => s > start && s < end)];
+  for (let s = Math.ceil(start / 24) * 24; s < end; s += 24) {
+    if (s > start) marks.push(s);
+  }
   marks.sort((a,b) => a-b);
   const xyz: number[] = [];
   for (let i=1;i<marks.length;i++) {
@@ -35,27 +37,32 @@ function makeRoad(edgeId: string): THREE.BufferGeometry {
   return geometry;
 }
 
-function addFloatingIslands(group: THREE.Group, quality: Tier): void {
-  const samples: THREE.Vector3[] = [];
+function addFloatingIslands(group: THREE.Group, quality: Tier,
+  edgeId: string, start: number, end: number): void {
+  if (!SKYFALL_GROUND_PATH.some(id => id === edgeId)) return;
+  const samples: { point: THREE.Vector3; index: number }[] = [];
   const spacing = quality === 'low' ? 930 : quality === 'medium' ? 670 : 490;
-  for (const id of SKYFALL_GROUND_PATH) {
-    const len=getSkyfallEdgeLength(id);
-    for(let s=100;s<len-80;s+=spacing) {
-      const f=sampleSkyfallRoad(id,s);
-      samples.push(framePoint(f, ((samples.length%3)-1)*95,-22));
+  const len = getSkyfallEdgeLength(edgeId);
+  let index = 0;
+  for (let s = 100; s < len - 80; s += spacing) {
+    if (s >= start && s < end) {
+      const f = sampleSkyfallRoad(edgeId, s);
+      samples.push({ point: framePoint(f, ((index % 3) - 1) * 95, -22), index });
     }
+    index++;
   }
+  if (!samples.length) return;
   const rock = new THREE.InstancedMesh(new THREE.ConeGeometry(1,1.7,11,3),
     new THREE.MeshStandardMaterial({color:0x73818d,roughness:.96,flatShading:true}),samples.length);
   const grass = new THREE.InstancedMesh(new THREE.CylinderGeometry(1,1.04,.065,13),
     new THREE.MeshStandardMaterial({color:0x70a797,roughness:.98,flatShading:true}),samples.length);
   const m=new THREE.Object3D();
-  samples.forEach((point,i)=>{
-    const radius=quality==='low'?120:145+(i%5)*25;
-    m.position.copy(point); m.position.y-=25+(i%4)*8;
-    m.rotation.set(Math.PI,0,0); m.scale.set(radius,80+(i%3)*30,radius);
+  samples.forEach(({point,index},i)=>{
+    const radius=quality==='low'?120:145+(index%5)*25;
+    m.position.copy(point); m.position.y-=25+(index%4)*8;
+    m.rotation.set(Math.PI,0,0); m.scale.set(radius,80+(index%3)*30,radius);
     m.updateMatrix();rock.setMatrixAt(i,m.matrix);
-    m.position.copy(point);m.position.y+=46+(i%3)*15;
+    m.position.copy(point);m.position.y+=46+(index%3)*15;
     m.rotation.set(0,0,0);m.scale.set(radius*.94,1,radius*.94);
     m.updateMatrix();grass.setMatrixAt(i,m.matrix);
   });
@@ -65,7 +72,8 @@ function addFloatingIslands(group: THREE.Group, quality: Tier): void {
   group.add(rock,grass);
 }
 
-function addLandmarks(group: THREE.Group): void {
+function addLandmarks(group: THREE.Group): THREE.Mesh[] {
+  const waterfalls: THREE.Mesh[] = [];
   const stone=new THREE.MeshStandardMaterial({color:0x9aadaf,roughness:1,flatShading:true});
   const glow=new THREE.MeshBasicMaterial({color:0xa7ecff,transparent:true,opacity:.48,depthWrite:false});
   for(const [id,ratio,radius] of [
@@ -86,6 +94,8 @@ function addLandmarks(group: THREE.Group): void {
       new THREE.MeshBasicMaterial({color:0x91ddff,transparent:true,opacity:.52,side:THREE.DoubleSide,depthWrite:false}));
     waterfall.name='Skyfall hanging waterfall';
     waterfall.position.copy(framePoint(f,125,-95));
+    waterfall.userData.baseY = waterfall.position.y;
+    waterfalls.push(waterfall);
     group.add(waterfall);
   }
   const beamMat=new THREE.MeshBasicMaterial({color:0xe3f6ff,transparent:true,opacity:.10,
@@ -96,12 +106,17 @@ function addLandmarks(group: THREE.Group): void {
     beam.name='Skyfall volumetric sky beam';
     beam.position.copy(framePoint(f,200+i%2*140,220));group.add(beam);
   }
+  return waterfalls;
 }
 
-function addRealObstacles(group: THREE.Group): void {
+function addRealObstacles(group: THREE.Group, edgeId: string,
+  start: number, end: number): void {
+  const obstacles = SKYFALL_OBSTACLES.filter(o =>
+    o.edgeId === edgeId && o.distance >= start && o.distance < end);
+  if (!obstacles.length) return;
   const stone=new THREE.MeshStandardMaterial({color:0x596f83,roughness:.93,flatShading:true});
   const warning=new THREE.MeshStandardMaterial({color:0xe4b46a,roughness:.7});
-  for(const o of SKYFALL_OBSTACLES) {
+  for(const o of obstacles) {
     const f=sampleSkyfallRoad(o.edgeId,o.distance);
     const geo=o.kind==='column'?new THREE.CylinderGeometry(o.radius*.7,o.radius,12,7):
       new THREE.DodecahedronGeometry(o.radius,0);
@@ -132,37 +147,122 @@ function addCloudOcean(group: THREE.Group, quality: Tier): THREE.InstancedMesh {
 }
 
 /** Scene-only assembly. Never creates a renderer, starts a loop, or owns race physics. */
+const CHUNK_METERS = 420;
+type Focus = { edgeId: string; localS: number };
+
 export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium') {
-  const group=new THREE.Group();group.name='Skyfall playable world';scene.add(group);
-  const ground=new THREE.MeshStandardMaterial({color:0xc1c7c1,roughness:.96,side:THREE.DoubleSide});
-  const air=new THREE.MeshStandardMaterial({color:0x86c4cf,roughness:.87,side:THREE.DoubleSide});
-  for(const e of SKYFALL_COURSE.edges){
-    const road=new THREE.Mesh(makeRoad(e.id),e.mode==='air'?air:ground);
-    road.name=`Skyfall ${e.id} banked playable road`;group.add(road);
+  const group = new THREE.Group();
+  group.name = 'Skyfall playable world';
+  scene.add(group);
+  const ground = new THREE.MeshStandardMaterial({
+    color: 0xc1c7c1, roughness: .96, side: THREE.DoubleSide,
+  });
+  const air = new THREE.MeshStandardMaterial({
+    color: 0x86c4cf, roughness: .87, side: THREE.DoubleSide,
+  });
+  const chunks = new Map<string, THREE.Group>();
+  const waterfalls = addLandmarks(group);
+  const clouds = addCloudOcean(group, quality);
+  let disposed = false;
+
+  function unload(key: string): void {
+    const chunk = chunks.get(key);
+    if (!chunk) return;
+    chunk.traverse(obj => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      obj.geometry.dispose();
+      for (const material of Array.isArray(obj.material) ? obj.material : [obj.material]) {
+        if (material !== ground && material !== air) material.dispose();
+      }
+    });
+    group.remove(chunk);
+    chunk.clear();
+    chunks.delete(key);
   }
-  addFloatingIslands(group,quality);
-  addLandmarks(group);
-  addRealObstacles(group);
-  const clouds=addCloudOcean(group,quality);
-  let disposed=false;
+
+  /** Pass camera and all rival positions; off-screen edges release their GPU data. */
+  function setFocus(foci: readonly Focus[]): void {
+    if (disposed) return;
+    const wanted = new Set<string>();
+    const include = (edgeId: string, index: number): void => {
+      const count = Math.ceil(getSkyfallEdgeLength(edgeId) / CHUNK_METERS);
+      if (index >= 0 && index < count) wanted.add(`${edgeId}:${index}`);
+    };
+    for (const focus of foci) {
+      const edge = SKYFALL_COURSE.edges.find(e => e.id === focus.edgeId);
+      if (!edge || !Number.isFinite(focus.localS)) continue;
+      const length = getSkyfallEdgeLength(edge.id);
+      const localS = Math.max(0, Math.min(length, focus.localS));
+      const index = Math.min(Math.ceil(length / CHUNK_METERS) - 1,
+        Math.floor(localS / CHUNK_METERS));
+      for (const step of [-1, 0, 1]) include(edge.id, index + step);
+      if (localS < CHUNK_METERS / 2) {
+        for (const previous of SKYFALL_COURSE.edges.filter(e => e.to === edge.from)) {
+          include(previous.id, Math.ceil(getSkyfallEdgeLength(previous.id) / CHUNK_METERS) - 1);
+        }
+      }
+      if (length - localS < CHUNK_METERS / 2) {
+        for (const next of SKYFALL_COURSE.edges.filter(e => e.from === edge.to)) {
+          include(next.id, 0);
+        }
+      }
+    }
+    for (const key of chunks.keys()) if (!wanted.has(key)) unload(key);
+    for (const key of wanted) {
+      if (chunks.has(key)) continue;
+      const separator = key.lastIndexOf(':');
+      const edgeId = key.slice(0, separator);
+      const index = Number(key.slice(separator + 1));
+      const edge = SKYFALL_COURSE.edges.find(e => e.id === edgeId)!;
+      const start = index * CHUNK_METERS;
+      const end = Math.min(start + CHUNK_METERS, getSkyfallEdgeLength(edgeId));
+      const chunk = new THREE.Group();
+      chunk.name = `Skyfall streamed chunk ${key}`;
+      const road = new THREE.Mesh(makeRoad(edgeId, start, end),
+        edge.mode === 'air' ? air : ground);
+      road.name = `Skyfall ${edgeId} banked playable road`;
+      chunk.add(road);
+      addFloatingIslands(chunk, quality, edgeId, start, end);
+      addRealObstacles(chunk, edgeId, start, end);
+      group.add(chunk);
+      chunks.set(key, chunk);
+    }
+  }
+
+  setFocus([{ edgeId: 'approach', localS: 0 }]);
   return {
     group,
+    setFocus,
     update(seconds: number, reducedMotion = false) {
-      if(disposed)return;
-      clouds.position.x=reducedMotion?0:Math.sin((Number.isFinite(seconds)?seconds:0)*.035)*18;
+      if (disposed) return;
+      const time = Number.isFinite(seconds) ? seconds : 0;
+      const amplitude = reducedMotion || quality === 'low' ? 0
+        : quality === 'medium' ? 3 : 5;
+      clouds.position.x = reducedMotion ? 0 : Math.sin(time * .035) * 18;
+      waterfalls.forEach((waterfall, i) => {
+        waterfall.position.y = Number(waterfall.userData.baseY)
+          + Math.sin(time * .7 + i) * amplitude;
+      });
     },
     dispose() {
-      if(disposed)return;
-      disposed=true;scene.remove(group);
-      const geometries=new Set<THREE.BufferGeometry>();
-      const materials=new Set<THREE.Material>();
-      group.traverse(o=>{
-        if(o instanceof THREE.Mesh || o instanceof THREE.InstancedMesh){
-          geometries.add(o.geometry);
-          for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);
+      if (disposed) return;
+      disposed = true;
+      for (const key of Array.from(chunks.keys())) unload(key);
+      scene.remove(group);
+      const geometries = new Set<THREE.BufferGeometry>();
+      const materials = new Set<THREE.Material>();
+      group.traverse(obj => {
+        if (obj instanceof THREE.Mesh) {
+          geometries.add(obj.geometry);
+          for (const material of Array.isArray(obj.material) ? obj.material : [obj.material]) {
+            materials.add(material);
+          }
         }
       });
-      geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
+      geometries.forEach(geometry => geometry.dispose());
+      materials.forEach(material => material.dispose());
+      ground.dispose();
+      air.dispose();
       group.clear();
     },
   };
