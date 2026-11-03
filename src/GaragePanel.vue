@@ -93,6 +93,11 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 #garage-screen .garage-layout { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) clamp(260px, 27vw, 400px); gap: 8px; }
 #garage-screen .garage-visual { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
 #garage-screen .garage-preview { flex: 1; position: relative; min-height: 110px; height: auto; margin: 0; border: 1px solid #42596c; border-radius: 12px; overflow: hidden; touch-action: none; background: #081c2e; }
+/* The home camera dock sits under the showroom on the Garage page (Studio has its own camera controls). */
+#garage-screen #showcase-camera-dock { position: static; inset: auto; flex: none; width: auto; margin: 0; padding: 4px 10px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 12px; visibility: visible; }
+#garage-screen[data-page="studio"] #showcase-camera-dock { display: none; }
+#garage-screen #showcase-camera-dock .showcase-camera-actions { width: auto; gap: 10px; }
+#garage-screen #showcase-camera-name { min-width: 64px; }
 #garage-screen #world { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 #garage-screen .garage-hint { position: absolute; z-index: 2; bottom: 8px; left: 8px; max-width: calc(100% - 16px); margin: 0; padding: 4px 8px; border-radius: 6px; background: #071725b8; color: #c2d4e3; font-size: 11px; pointer-events: none; }
 #garage-screen .garage-camera-controls { display: flex; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; flex: none; gap: 4px; white-space: nowrap; scrollbar-width: thin; }
