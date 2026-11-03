@@ -30,7 +30,7 @@ test('point-to-point course owns one distinct start and finish with validated br
 });
 
 test('ground road frames are finite and continuous on both large hairpins', () => {
-  let strongTurns = 0;
+  const strongTurns = [];
   for (let s = 0; s <= course.length; s += 40) {
     const frame = main(s);
     for (const vector of [frame.point, frame.forward, frame.right, frame.up]) {
@@ -40,12 +40,12 @@ test('ground road frames are finite and continuous on both large hairpins', () =
     near(dot(frame.forward, frame.right), 0, 1e-5);
     near(dot(frame.forward, frame.up), 0, 1e-5);
     near(dot(frame.right, frame.up), 0, 1e-5);
-    if (s < course.length - 200) {
+    if (s < course.length - 280) {
       assert.ok(separation(frame.point, main(s + 40).point) < 48, `road seam near ${s}`);
-      if (dot(frame.forward, main(s + 200).forward) < -0.35) strongTurns++;
+      if (dot(frame.forward, main(s + 280).forward) < -0.35) strongTurns.push(s);
     }
   }
-  assert.ok(strongTurns >= 2, 'course needs distinct real U-turns');
+  assert.ok(strongTurns.some(a => strongTurns.some(b => b - a > 2000)), 'two separate U-turns are required');
 });
 
 test('three genuine split/merge alternatives share their ground endpoints', () => {
