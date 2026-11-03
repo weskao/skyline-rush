@@ -19,7 +19,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage } from './garage-stage.ts'; import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
+import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -299,12 +299,12 @@ export function createWorld(canvas) {
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
   const rearLight = player.userData.rearLight;
-  const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.nova].map((style, i) => { const paint = [null, null, null, '#9d80e5', '#5cd5ae', '#e9bd64', '#e866a5'][i]; const car = makeCar(style, paint ?? style.color); scene.add(car); return car; });
+  const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   // ×2 covers the double-traffic daily modifier.
   const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2))) }, (_, i) => {
-    const car = makeCar(CAR_STYLES.commuter, trafficColors[i % 5]);
+    const car = makeCar(TRAFFIC_CAR_STYLES[i % TRAFFIC_CAR_STYLES.length], trafficColors[i % trafficColors.length]);
     car.scale.setScalar(0.96);
     scene.add(car);
     return car;
@@ -930,9 +930,9 @@ export function createWorld(canvas) {
       } else if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
-      } else if ((preview || visual.enabled && visual.airflow) && visual.view !== 'drive') {
-        // The selected view wins over curated showcase framing on every map, and drives the AIRFLOW race camera.
-        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||!preview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
+      } else if (preview && visual.view !== 'drive') {
+        // The selected view wins over curated showcase framing on every map, but only on the ready screen: it never moves the race camera.
+        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
         const frame = framedRoad(trackId) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
         if (frame) {

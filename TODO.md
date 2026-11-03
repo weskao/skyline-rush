@@ -10,11 +10,62 @@
 
 ---
 
+## Tutorial complete no longer freezes the screen — 2026-11-04
+
+**Branch:** `fix/tutorial-complete-alive` (from `develop` 4450a274). Repro: finish the last practice lesson (NITRO) → `main.js` set `race.phase = 'paused'`, so the car, road and HUD froze and the game looked broken.
+
+- [x] Completion keeps the race live as a free cruise: the player keeps steering/flying/boosting, the road still loops at its end, no race result or career change (`src/main.js`, `src/interactive-tutorial.ts`).
+- [x] Completion UI: centred "Practice complete · Free drive" banner (check pop + confetti burst, auto-fades after ~3.4 s, reduced-motion safe), gold glowing coach card, primary "Back to game", stale lesson key chips hidden; en + zh-TW copy.
+- [x] RED: new unit test failed (car stranded at road end); browser assertion failed on old `main.js` (`data-phase` received `paused`). GREEN: `npm test` 1504 pass / 0 fail; `npm run build`; Playwright tutorial + guide + mobile-guide + main-ui-parity 30/30, rerun after CSS tweaks 21/21.
+- [x] Real WebGL screenshots at 1280×800, 390×844, 844×390 (banner + post-fade cruise).
+- [ ] `make verify` (World Tour long-run not run) and exact-HEAD `quality-gate`; human touch/device QA. No merge, PR or deploy without explicit approval.
+
+---
+
+## Drift trail marks + Shop trail-style items — 2026-11-04
+
+Status: planned, not started. No branch yet (branch from `develop`: `feature/drift-trail`).
+
+1. **Drift trail marks (local-player only)**
+   - [ ] While the player car is drifting (brake + steer), leave a fading skid/trail mark on the road behind the rear wheels.
+   - [ ] Visible only to the local player: rivals and traffic never leave marks, and nothing is sent to Cloud Save or any other viewer.
+   - [ ] No change to physics, scoring or the DRIFT → NITRO → FLY → clean-landing chain.
+   - [ ] Performance budget: pooled/instanced geometry with a fixed cap, fade-out and recycling; no per-frame allocation; reduced count/length on Low quality and mobile. Record draw calls, triangles and median/p95 frame time before/after.
+   - [ ] Works on all tracks, every vehicle, airborne (no marks while FLY) and on the road-frame of Sky Spiral / World Tour.
+2. **Shop: drift-trail style items (UI style products)**
+   - [ ] Add a "Drift trail" cosmetic category to the Shop/Garage catalog, with a default (free) style plus purchasable styles (e.g. neon, flame, ice, rainbow, sparkle) as UI/visual styles only, no gameplay effect.
+   - [ ] Shop card UI: preview of the trail style, price, owned/equipped state; locked-bundle vs trial-bundle behavior follows the existing Garage skins contract.
+   - [ ] Equipped style is persisted as a preference and applied to the local player's marks; unowned styles can be previewed in the Preview Studio without ownership.
+   - [ ] Localize item names/descriptions in all supported locales; no real-user data in fixtures.
+3. **Tests / gates**
+   - [ ] RED-first: deterministic unit tests (mark spawns only while drifting, only for the local player, cap + recycle, style lookup/persistence) and a browser regression (desktop + 390×844 + 844×390) with a real WebGL screenshot.
+   - [ ] `make verify` and exact-HEAD `quality-gate` GREEN; human touch/device QA. No merge, PR or deploy without explicit approval.
+
+---
+
+## Roadster front/rear & eight-car visual identity — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Reference: user-provided 15 images of Roadster 2 front, rear, side, raised aerofoil, wheel details and flight. This is a recognizable *game model*, not an OEM CAD replica.
+
+- [x] Model-specific curved Roadster front and rear fascia, hairline nose light, recessed corner light pockets, black corner ducts, continuous rear light and curved edge; retain the original 4 rear thruster ports, diffuser, five-spoke wheels and moving aerofoil.
+- [x] Map the **actual** `YOU, NOVA, ORBIT, APEX, VEGA, PULSE, COMET, RIFT` grid to 8 distinct racing models, not seven paint swaps of three rivals. VEGA/PULSE/COMET/RIFT get unique sculpted shell and front/rear light signatures; existing original racers retain their established visual languages.
+- [x] Mix commuter sedan / crossover / hatch geometries for traffic, preserving traffic simulation and independent racer identity. Shortened Pulse and hatch visual chassis length; no physics or collision rules changed.
+- [x] No manufacturer or fixed brand logos are baked into meshes; future equipable vehicle badges remain a separate feature.
+- [x] Add deterministic fleet, light, material, bounds, vehicle-pose contracts and module-size-friendly changes; preserve previous exact geometry snapshots for all untouched vehicles.
+- [ ] Historical RED observation for test-first commits: GitHub cancelled superseded runs while commits advanced. Don't claim verified RED until a specific failing test log is recorded.
+- [ ] **Exact-HEAD** `npm test`, `npm run build`, `npm run typecheck`, `make verify`, all Browser / World Tour and Cloud Save shards plus `quality-gate` GREEN (via `[full-regression]` commit); identify any failures by name, never equate focused CI with full CI.
+- [ ] Real WebGL Garage/Home/Race screenshots: front, rear, side, 45-degree, lowered/raised wing, road/airborne; 390×844, 844×390 and desktop. Compare 8 drivers at distance under High/Medium/Low, and compare before/after draw calls, triangles, median/p95 frame time, visual wheel clearance.
+- [ ] Human touch/device QA and user's aesthetic approval. Do not merge to `develop`/`main`, open PR, force push, or deploy.
+
+---
+
+---
+
 ## Roadster 2-inspired player vehicle fidelity — 2026-11-03
 
 **Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
 
-**Integration checkpoint:** `develop` `00ae95f8` was merged via `6cdd909f` (two parents, no force-push). Previous HEAD CI `41584935239` failed unit/browser/World Tour; unit failure identified a shared Roadster merged-material instance. Fix commit `5a11df0` is included. Verify the full CI on the exact new HEAD (not only feature-focused tests); visual WebGL and physical-device review remain separate gates. Visual reference: user-supplied front/side/rear/wing/flight images; spec and plan in `docs/superpowers/`.
+**Integration checkpoint:** `develop` `00ae95f8` was merged via `6cdd909f` (two parents, no force-push). Previous HEAD CI `41584935239` failed unit/browser/World Tour; unit failure identified a shared Roadster merged-material instance. Fix commit `5a11df0` is included. Verify the full CI on the exact new HEAD (not only feature-focused tests); visual WebGL and physical-device review remain separate gates. Visual reference: front/side/rear/wing/flight images in `docs/designs/roadster2-reference/`; spec and plan in `docs/superpowers/`.
 
 - [x] Preserve current race physics, VFX port coordinates, Garage body-paint API, wing lift and independent wheels.
 - [x] Replace roadster-only six-box-section shell with a multi-station faceted wedge and fastback glazing, add realistic side detail, aero rims, rear wing, nozzles and diffuser.
