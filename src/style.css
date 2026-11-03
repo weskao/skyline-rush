@@ -1883,3 +1883,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
   .upcoming-scene img { top: 8%; right: 2%; width: min(51vw, 520px); opacity: .5; }
   .intro #start-button { width: 190px; min-width: 190px; max-width: 190px; }
 }
+/* Frostbite Canyon (gated race runtime): night-ice minimap, appended below the main-UI contract slice. */
+.track-route-map[data-theme="frostbite-canyon"],.race-route-map[data-theme="frostbite-canyon"]{
+ --map-line:#b9dcf2;--map-bg:#16294a;--map-edge:#4f86b3;--map-player:#effaff;
+}

@@ -7,12 +7,12 @@ import { routeLength, sampleRoute } from '../course-route-frame.ts';
 export interface HeroEdge { id: string; from?: number; to?: number; carve: boolean }
 interface RoadSample { x: number; y: number; z: number; half: number; carve: boolean }
 
-const smooth = (a: number, b: number, x: number): number => {
+export const smooth = (a: number, b: number, x: number): number => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
 };
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
-const ridgeNoise = (x: number, z: number): number =>
+export const ridgeNoise = (x: number, z: number): number =>
   Math.sin(x * .021 + Math.sin(z * .013) * 2.1) * .5 + Math.sin(z * .029 - x * .011) * .3 + Math.sin((x + z) * .061) * .2;
 
 export const BOUNDS = { minX: 780, maxX: 2020, minZ: -2620, maxZ: -1700, cell: 8 } as const;
@@ -86,7 +86,7 @@ const SNOW = new THREE.Color('#bcd4ee'), ICE = new THREE.Color('#4a9fd8'), DEEP_
 const ROCK = new THREE.Color('#121a30'), VOID = new THREE.Color('#06122c');
 
 /** Snow on flats, translucent-looking blue ice on steep faces, dark bedrock streaks, cobalt depth. */
-function paintGlacier(geometry: THREE.BufferGeometry): void {
+export function paintGlacier(geometry: THREE.BufferGeometry): void {
   const position = geometry.getAttribute('position'), normal = geometry.getAttribute('normal');
   const colors = new Float32Array(position.count * 3), color = new THREE.Color();
   for (let i = 0; i < position.count; i++) {

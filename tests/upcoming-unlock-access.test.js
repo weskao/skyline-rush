@@ -5,16 +5,18 @@ import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { isUpcomingEnterable as released } from '../src/access/production.ts';
 import { isUpcomingEnterable as unlocked } from '../src/access/dev-unlocked.ts';
 
+// Frostbite Canyon has a gated race runtime (`raceTrack`); the Stage 1 five do not.
+const RUNTIME = new Set(['frostbite-canyon']);
+
 test('make dev-unlocked enters a Coming Soon card only when its race runtime exists', () => {
   for (const id of Object.keys(UPCOMING_TRACKS)) {
-    assert.equal(RACE_TRACKS[id], undefined, `${id} has no runtime yet`);
-    assert.equal(unlocked(id), false, `${id} stays Coming Soon even when unlocked`);
+    assert.equal(RACE_TRACKS[id], undefined, `${id} stays out of the sprint catalog`);
+    assert.equal(unlocked(id), RUNTIME.has(id), id);
   }
-  RACE_TRACKS['frostbite-canyon'] = RACE_TRACKS.coast; // stand-in for a finished runtime
-  try { assert.equal(unlocked('frostbite-canyon'), true); } finally { delete RACE_TRACKS['frostbite-canyon']; }
+  RACE_TRACKS['dune-tempest'] = RACE_TRACKS.coast; // stand-in for a finished runtime
+  try { assert.equal(unlocked('dune-tempest'), true); } finally { delete RACE_TRACKS['dune-tempest']; }
 });
 
 test('release builds never enter a Coming Soon card, finished or not', () => {
-  RACE_TRACKS['frostbite-canyon'] = RACE_TRACKS.coast;
-  try { for (const id of Object.keys(UPCOMING_TRACKS)) assert.equal(released(id), false); } finally { delete RACE_TRACKS['frostbite-canyon']; }
+  for (const id of Object.keys(UPCOMING_TRACKS)) assert.equal(released(id), false);
 });

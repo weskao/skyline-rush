@@ -29,6 +29,9 @@ export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freez
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
   cosmic: { distance: 3700, landmark: 'cosmic-gate', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
+  // Cyan crystal sentinels stand 350 m ahead on the left (frozen-basin 1150 m), on the open basin floor.
+  'frostbite-canyon': { distance: 800, landmark: 'crystal-sentinels', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
 });
 export const previewDistance = (id: string): number => HERO_PREVIEWS[id]?.distance ?? 340;
 export const isCuratedPreview = (id: string): boolean => !!HERO_PREVIEWS[id];

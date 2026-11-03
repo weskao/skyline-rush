@@ -1,5 +1,5 @@
 import { CIRCUIT_ID } from './circuit-track.ts';
-import { homeTrackStatus, upcomingTrackInfo, upcomingTrackName, type PreviewTrackId, type UpcomingTrackId } from './upcoming-tracks.ts';
+import { homeTrackStatus, isUpcomingTrack, upcomingTrackInfo, upcomingTrackName, type PreviewTrackId, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { stage2PreviewRequest } from './stage2-tracks.ts';
 import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
@@ -61,7 +61,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     selectedMode = 'eventlab'; upcomingSelection = null; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
   } });
   const selectedRace = (trackId: string): Race => selectedMode === 'circuit' ? options.createRace(CIRCUIT_ID, { mode: 'circuit', laps: Number($<HTMLSelectElement>('#circuit-laps').value) }) : selectSprint(trackId === CIRCUIT_ID ? 'coast' : trackId);
-  const selectSprint = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
+  const selectSprint = (trackId: string): Race => isUpcomingTrack(trackId) ? options.createRace(trackId) /* gated runtimes race Classic only */ : selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
     ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value, layout: $<HTMLSelectElement>('#gauntlet-layout').value } : {}),
@@ -160,7 +160,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       button.title = t('track.comingSoonInfo', { track: upcomingTrackName(id, getLocale()) });
     }
   }
-  const canRace = (trackId: string): boolean => !upcomingSelection && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId));
+  const canRace = (trackId: string): boolean => !upcomingSelection && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || playable(trackId));
+  // An enterable Coming Soon card (dev-unlocked only) is raceable without joining the unlock catalog.
+  function playable(id: string): boolean { return unlockedTracks.has(id) || options.isUpcomingEnterable(id); }
   function renderRouteInfo(race: Race): void {
     const daily = options.getDaily();
     const startButton = ui['start-button'] as HTMLButtonElement;
@@ -181,11 +183,11 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     else sceneImage.removeAttribute('src');
     startButton.setAttribute('aria-describedby', 'track-note');
     $('.start-hint').hidden = startButton.disabled;
-    $('#track-length').textContent = upcoming ? t('track.previewLength', { km: upcoming.length / 1000 }) : race.endless ? t('mode.endlessRoute') : race.mode === 'circuit' ? t('circuit.length', { laps: race.config.laps, km: race.length / 1000 }) : t('track.sprint', { km: raceTrack(race.trackId)!.length / 1000 });
+    $('#track-length').textContent = upcoming ? t('track.previewLength', { km: upcoming.length / 1000 }) : race.endless ? t('mode.endlessRoute') : race.mode === 'circuit' ? t('circuit.length', { laps: race.config.laps, km: race.length / 1000 }) : t('track.sprint', { km: Math.round(raceTrack(race.trackId)!.length / 100) / 10 });
     const tracks = Object.keys(RACE_TRACKS);
     const next = tracks[tracks.indexOf(race.trackId) + 1];
     const previous = tracks[tracks.indexOf(race.trackId) - 1]!;
-    $('#track-note').textContent = upcomingSelection ? t('track.comingSoonInfo', { track: name }) + ' · ' + t(`track.note.${upcomingSelection}`) : (selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', { n: cupCount() }) + ' · ' : '') + (!daily && race.trackId !== CIRCUIT_ID && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+    $('#track-note').textContent = upcomingSelection ? t('track.comingSoonInfo', { track: name }) + ' · ' + t(`track.note.${upcomingSelection}`) : (selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', { n: cupCount() }) + ' · ' : '') + (!daily && race.trackId !== CIRCUIT_ID && !playable(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
     const route = (upcoming ? name : race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
     $('.route-heading').textContent = route;
     $('.overlay-route').textContent = `SKYLINE RUSH / ${route}`;
@@ -300,7 +302,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   try {
     const mode = sessionStorage.getItem(LAST_MODE_KEY), last = sessionStorage.getItem(LAST_TRACK_KEY);
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
-    setRace(selectedRace(last && unlockedTracks.has(last) ? last : getRace().trackId));
+    setRace(selectedRace(last && playable(last) ? last : getRace().trackId));
   } catch { /* Classic on Coast stays the default without storage. */ }
   upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
   if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap

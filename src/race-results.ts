@@ -4,6 +4,7 @@ import { addSprintStage, sprintTotal, type SprintSeries } from './sprint-series.
 import { addCupResult, cupStandings, cupComplete, cupTotalTime, type CupState } from './championship-cup.ts';
 import { validGhost, type GhostSample } from './ghost.ts';
 import { recordTrackId } from './record-layout.ts';
+import { isUpcomingTrack } from './upcoming-tracks.ts';
 import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
 import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
@@ -52,7 +53,9 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
   if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
   if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
   if (stunt && race.mode === 'stunt') addStuntHeat(stunt, race);
-  const medals = (race.mode === 'classic' ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
+  // A gated Coming Soon runtime (Frostbite, dev-unlocked only) saves nothing until its release adds save keys.
+  const gated = isUpcomingTrack(race.trackId ?? 'coast');
+  const medals = (race.mode === 'classic' && !gated ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
   progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
   const trackId: string = race.trackId ?? 'coast';
   let best: number, record: boolean, next: string | null = null;
@@ -60,6 +63,8 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     (stunt && stuntHeatContinues(stunt, race.result.endReason)));
   if (intermediateStage) {
     best = 0; record = false; // A partial series never writes a misleading individual best.
+  } else if (gated) {
+    best = race.elapsed; record = false;
   } else if (race.result.success === false && race.mode !== 'classic') {
     best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
   } else if (race.mode === 'free') {

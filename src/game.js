@@ -21,8 +21,7 @@ import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
-import { RACE_TRACKS, raceTrack } from './race-tracks.ts';
-import { CIRCUIT_ID } from './circuit-track.ts';
+import { RACE_TRACKS, raceTrack, assertTrackMode } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
 export const MAX_SPEED = 88;
@@ -156,7 +155,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
   const grid = startingGrid(driverIds, nextGrid);
   const slots = new Map(grid.map(slot => [slot.id, slot]));
   const playerSlot = slots.get('YOU');
-  if ((trackId === CIRCUIT_ID) !== (config.mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
+  assertTrackMode(trackId, config.mode);
   const session = createRaceSessionContract(trackId, track.seed, config, presentation), risk = riskRules(config), themed = themedExtras(trackId, config, risk);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
   const seed = layoutSeed(track), count = ITEMS_PER_CAR * (driverIds.length + 1), perLap = (items, kind) => config.mode === 'circuit' ? lapItems(items, config.laps, kind) : items;

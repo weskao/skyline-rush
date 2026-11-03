@@ -158,11 +158,12 @@ export function bridgeStructure(graph: CourseGraph, height: Height, edgeId: stri
 }
 
 /** Low cyan delineators along road edges: night readability without lane paint. */
-export function edgeReflectors(graph: CourseGraph, slices: readonly { id: string; from: number; to: number }[]): THREE.InstancedMesh {
+/** `halfWidth` overrides the graph width where a race draws its own (narrower) drivable road. */
+export function edgeReflectors(graph: CourseGraph, slices: readonly { id: string; from: number; to: number }[], halfWidth?: number, spacing = 16): THREE.InstancedMesh {
   const spots: THREE.Vector3[] = [];
   for (const slice of slices) {
-    const width = graph.edges.find(e => e.id === slice.id)!.width;
-    for (let s = slice.from; s < slice.to; s += 16) for (const side of [-1, 1]) spots.push(routeOffset(graph, slice.id, s, side * (width / 2 + 1.2), .45));
+    const half = halfWidth ?? graph.edges.find(e => e.id === slice.id)!.width / 2;
+    for (let s = slice.from; s < slice.to; s += spacing) for (const side of [-1, 1]) spots.push(routeOffset(graph, slice.id, s, side * (half + 1.2), .45));
   }
   const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(.25, .9, .25),
     new THREE.MeshStandardMaterial({ color: '#d8f6ff', emissive: '#3fd8ff', emissiveIntensity: 1.1 }), spots.length);
