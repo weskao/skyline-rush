@@ -117,6 +117,7 @@ test('shallow water affects contact without exceeding the safe flooding cap', ()
 test('solid ruin debris has swept collision and visible AI bypass space', () => {
   assert.ok(course.obstacles.some(obstacle => obstacle.kind === 'collapsed-column'));
   assert.ok(course.obstacles.some(obstacle => obstacle.kind === 'fallen-tree'));
+  assert.equal(monsoonObstacleHit('ground', 3210, 3230, 6), null, 'a river-only rock must not collide across disconnected edges');
   for (const obstacle of course.obstacles) {
     assert.ok(obstacle.radius > 0 && obstacle.height > 0);
     const hit = monsoonObstacleHit(obstacle.edgeId, obstacle.at - 10, obstacle.at + 10, obstacle.lateral);
