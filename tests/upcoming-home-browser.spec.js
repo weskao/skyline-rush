@@ -78,3 +78,27 @@ test('keyboard arrows can focus the first future card after the last playable ma
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
 });
+
+test('Start and Coming Soon labels fit after locale switching on phones', async ({ page }) => {
+  const start = page.locator('#start-button');
+  const label = start.locator('span');
+  for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
+    await page.setViewportSize(viewport);
+    for (const upcoming of [false, true]) {
+      await page.locator(upcoming ? '[data-upcoming-track="dune-tempest"]' : '[data-track="coast"]').click();
+      for (const locale of ['zh-TW', 'en']) {
+        await page.locator('#locale-select').selectOption(locale);
+        await expect(label).toHaveText(upcoming
+          ? (locale === 'en' ? 'COMING SOON' : '即將推出')
+          : (locale === 'en' ? 'Start race' : '開始比賽'));
+        const sizing = await start.evaluate(button => {
+          const span = button.querySelector('span');
+          return { button: button.getBoundingClientRect().width, text: span.scrollWidth, available: span.clientWidth };
+        });
+        expect(sizing.button).toBe(viewport.height < 500 ? 190 : 210);
+        expect(sizing.text, `${locale} ${upcoming ? 'Coming Soon' : 'Start'} must not be clipped`)
+          .toBeLessThanOrEqual(sizing.available + 1);
+      }
+    }
+  }
+});
