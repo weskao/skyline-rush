@@ -1,3 +1,17 @@
+## Roadster 2 photo-reference fascia revision — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Four new user-supplied photographic views: overhead front, rear three-quarter, rear-wheel/diffuser detail, straight-on rear fascia. Keep recognizable fictional race styling and **no manufacturer logos**. Visual approximation, not an OEM CAD replica.
+
+- [x] Replace inaccurate full-width **front illuminated blade** with two compact corner slit markers, narrow body-painted wedge front and thin black recessed central mouth; retain dark headlamp pockets and two hood creases.
+- [x] Layer a broad inset black rear lamp slot, 17 mm-equivalent slim LED strip on top of a sculpted pearl-white rear shelf, blank rear plate, carbon lower valance and deep diffuser fins.
+- [x] Preserve all four `REAR_PORTS` simulation/VFX anchors and visible recessed bronze-edged nozzles; move adjustable wing toward trailing deck edge without changing `lift=0.34` or Garage/flight controller contracts.
+- [x] Introduce `src/roadster-reference-fascias.js` to share non-animated source geometries and stay within the 400-line-per-source-module rule; add structural regression tests to `tests/roadster-fidelity.test.js`.
+- [ ] New photo-specific regression test RED → GREEN verification: test-first commits have been created, but local dependencies/repo checkout are not available in this execution environment; GitHub CI on the exact final HEAD must verify the result. Do not claim historical RED was executed.
+- [ ] Full exact-HEAD `[full-regression]` CI: Unit, Build, Typecheck, Cloud Save, Browser matrix, World Tour matrix and `quality-gate`; do not accept previous-HEAD results or skipped required jobs.
+- [ ] Capture and review **real rendered-game** front/top, straight rear, rear quarter and flight/Garage screenshots at desktop/phone viewports; compare nose/grille/lamp slot/white tail shelf/nozzle depth to the four photos. Human visual review remains outstanding.
+
+---
+
 ## Roadster front/rear & eight-car visual identity — 2026-11-03
 
 **Branch:** `feature/roadster2-high-fidelity-body`. Reference: user-provided 15 images of Roadster 2 front, rear, side, raised aerofoil, wheel details and flight. This is a recognizable *game model*, not an OEM CAD replica.
