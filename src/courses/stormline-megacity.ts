@@ -42,17 +42,22 @@ export interface StormlineCourse {
 }
 
 // Metres, Y up, negative Z ahead. All route choices share identical node endpoints.
-const nodes: StormlineCourse['nodes'] = {
+const authoredNodes: StormlineCourse['nodes'] = {
   start: [0, 0, 0], a: [100, 0, -1200], b: [900, 0, -1600],
   c: [1000, 0, -2900], d: [180, 0, -2450], e: [180, 0, -1400],
   f: [-500, 0, -1120], g: [-500, 0, -2550], h: [-1000, 0, -2200],
   i: [-1000, 0, -1050], j: [-1750, 0, -1180],
   k: [-1750, 20, -2600], finish: [-2050, 20, -3450],
 };
+// Planar calibration keeps the primary authored route near 14 km without flattening bridge height.
+const PLANAR_SCALE = 0.94;
+const nodes: StormlineCourse['nodes'] = Object.fromEntries(
+  Object.entries(authoredNodes).map(([id, [x, y, z]]) => [id, [x * PLANAR_SCALE, y, z * PLANAR_SCALE] as Point3]),
+);
 const edge = (id: string, from: string, to: string, via: Point3[],
   layer: RoadLayer = 'street', surface: RoadSurface = 'wet-asphalt',
   mode: 'drive' | 'flight' = 'drive', width = 26, risk = 1, rewardSeconds = 0,
-): StormlineEdge => ({ id, from, to, points: [nodes[from], ...via, nodes[to]], layer, surface, mode, width, risk, rewardSeconds });
+): StormlineEdge => ({ id, from, to, points: [nodes[from], ...via.map(([x, y, z]) => [x * PLANAR_SCALE, y, z * PLANAR_SCALE] as Point3), nodes[to]], layer, surface, mode, width, risk, rewardSeconds });
 
 export const STORMLINE_MEGACITY: StormlineCourse = {
   id: 'stormline-megacity', graphVersion: 1, seed: 11032026,
