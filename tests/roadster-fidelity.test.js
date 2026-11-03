@@ -173,3 +173,45 @@ test('rear diffuser valance has real cutouts so all four recessed nozzle barrels
   const intact = new THREE.Raycaster(new THREE.Vector3(0, .42, 3), new THREE.Vector3(0, 0, -1));
   assert.ok(intact.intersectObject(valance, false).length > 0, 'structural valance remains between and below ports');
 });
+
+test('four photo-reference rear thrusters are machined rings with dark recessed bores, not flat discs', () => {
+  const detail = rawTrim();
+  const ports = named(detail, 'Roadster recessed thruster');
+  assert.equal(ports.length, 4);
+  ports.forEach((port, i) => {
+    assert.equal(port.position.x, REAR_PORTS[i].position[0]);
+    assert.equal(port.position.y, REAR_PORTS[i].position[1]);
+    const collar = port.getObjectByName('Roadster nozzle bevel collar');
+    const lip = port.getObjectByName('Roadster nozzle satin lip');
+    const throat = port.getObjectByName('Roadster nozzle recessed throat');
+    const back = port.getObjectByName('Roadster nozzle shadow back');
+    assert.ok(collar && lip && throat && back, `port ${i} must have physical layers`);
+    assert.ok(lip.geometry.parameters.radius + lip.geometry.parameters.tube <= .11,
+      'photo ports use restrained small rings rather than oversized exhaust openings');
+    assert.ok(lip.material.metalness > .65, 'lip should read as muted machined metal');
+    assert.ok(lip.position.z > throat.position.z && throat.position.z > back.position.z,
+      'front metal lip, deep dark bore, rear shadow form actual depth');
+    assert.ok(back.material.color.r < .12 && back.material.color.g < .12,
+      'the bore has a dark base rather than a flat silver disc');
+  });
+  assert.equal(new Set(ports.map(p => p.children.find(c => c.name === 'Roadster nozzle satin lip').geometry)).size, 1,
+    'four rims share cached GPU geometry');
+});
+
+test('a continuous dark four-port surround stays open at each jet, with curved top and lower lips', () => {
+  const detail = rawTrim();
+  const frame = named(detail, 'Roadster machined four-port surround');
+  assert.equal(frame.length, 1);
+  assert.equal(named(detail, 'Roadster port bank upper lip').length, 1);
+  assert.equal(named(detail, 'Roadster port bank lower lip').length, 1);
+  frame[0].updateMatrixWorld(true);
+  for (const port of REAR_PORTS) {
+    const [x, y] = port.position;
+    const hits = new THREE.Raycaster(new THREE.Vector3(x,y,3),new THREE.Vector3(0,0,-1))
+      .intersectObject(frame[0], false);
+    assert.equal(hits.length, 0, `port ${x} must not be painted over by a flat panel`);
+  }
+  const between = new THREE.Raycaster(new THREE.Vector3(0,.64,3),new THREE.Vector3(0,0,-1));
+  assert.ok(between.intersectObject(frame[0],false).length > 0,
+    'continuous black frame must exist between the two central holes');
+});
