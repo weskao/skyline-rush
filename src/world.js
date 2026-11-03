@@ -304,8 +304,7 @@ export function createWorld(canvas) {
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   // ×2 covers the double-traffic daily modifier.
   const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2))) }, (_, i) => {
-    const style = TRAFFIC_CAR_STYLES[i % TRAFFIC_CAR_STYLES.length];
-    const car = makeCar(style, trafficColors[i % trafficColors.length]);
+    const car = makeCar(TRAFFIC_CAR_STYLES[i % TRAFFIC_CAR_STYLES.length], trafficColors[i % trafficColors.length]);
     car.scale.setScalar(0.96);
     scene.add(car);
     return car;
