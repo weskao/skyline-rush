@@ -56,11 +56,20 @@ test('waterfall visuals occupy the actual river location and animate without new
   chunk.dispose();
 });
 
+
+test('ford has a physical visible water layer separate from the mud driving surface', () => {
+  const { chunk } = mount(3150, 3300, 'river-ford');
+  assert.ok(find(chunk.group, 'monsoon-course-river-ford'));
+  assert.ok(find(chunk.group, 'monsoon-shallow-river-ford'));
+  chunk.dispose();
+});
+
 test('flight stone bridge has physical vertical deck and visible obstacles', () => {
   const edge = MONSOON_RUINS_COURSE.branches.find(e => e.id === 'waterfall-skybridge');
   const { chunk } = mount(6810, 7070, edge.id);
   assert.ok(find(chunk.group, 'monsoon-course-waterfall-skybridge'));
   assert.ok(find(chunk.group, 'solid-fallen-pier'));
+  assert.ok(find(chunk.group, 'monsoon-bridge-support-pier'));
   chunk.dispose();
 });
 
