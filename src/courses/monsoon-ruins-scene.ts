@@ -37,14 +37,14 @@ const box = (group: THREE.Group, name: string, size: [number, number, number],
   return mesh;
 };
 function roadMesh(from: number, to: number, edgeId: MonsoonEdgeId,
-  width: number, material: THREE.Material, lift = .07): THREE.Mesh {
+  width: number, material: THREE.Material, lift = .07, lateralOffset = 0): THREE.Mesh {
   const steps = Math.ceil((to - from) / 7), positions: number[] = [], indices: number[] = [];
   for (let i = 0; i <= steps; i++) {
     const s = from + (to - from) * i / steps;
     const { point, right } = sampleMonsoonRoute(edgeId, s);
     for (const side of [-1, 1]) {
-      positions.push(point[0] + right[0] * side * width / 2,
-        point[1] + lift, point[2] + right[2] * side * width / 2);
+      positions.push(point[0] + right[0] * (lateralOffset + side * width / 2),
+        point[1] + lift, point[2] + right[2] * (lateralOffset + side * width / 2));
     }
     if (i < steps) {
       const j = i * 2;
@@ -153,6 +153,16 @@ function makeLandmarks(group: THREE.Group, from: number, to: number,
     for (const x of [-7, 7]) {
       box(root, 'guardian eye socket', [5, 2, 2], new THREE.Vector3(x, 70, 9), dark);
       box(root, 'guardian cheek', [8, 2, 3], new THREE.Vector3(x, 62, 9), stone);
+      box(root, 'guardian-brow', [9, 3, 4], new THREE.Vector3(x, 75, 9), shadow);
+    }
+    box(root, 'guardian-nose', [5, 12, 6], new THREE.Vector3(0, 63, 11), stone);
+    box(root, 'guardian-mouth', [13, 2, 4], new THREE.Vector3(0, 55, 10), shadow);
+    for (let i = -3; i <= 3; i++) {
+      const crown = new THREE.Mesh(new THREE.ConeGeometry(3.7, 15 + (3 - Math.abs(i)) * 2, 5), stone);
+      crown.name = 'guardian-stone-headdress';
+      crown.position.set(i * 7.7, 89 + (3 - Math.abs(i)) * 1.5, -1);
+      crown.rotation.z = i * -.08;
+      root.add(crown);
     }
   }
   if (inRange(6740)) {
@@ -272,6 +282,14 @@ export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
   const [mud, stone, terrain, bark, shadow, foliage, crown, water] = owned;
   root.add(roadMesh(from, to, edgeId, branch?.width ?? 27,
     edgeId === 'ground' || edgeId === 'river-ford' ? mud : stone));
+  if (edgeId === 'ground' && from < 4850 && to > 2850) {
+    const a = Math.max(from, 2850), b = Math.min(to, 4850);
+    if (b - a > 3) {
+      const river = roadMesh(a, b, 'ground', 34, water, -5, 104);
+      river.name = 'monsoon-running-river';
+      root.add(river);
+    }
+  }
   if (edgeId === 'river-ford') {
     const river = roadMesh(from, to, edgeId, (branch?.width ?? 24) * .92, water, .13);
     river.name = 'monsoon-shallow-river-ford';
