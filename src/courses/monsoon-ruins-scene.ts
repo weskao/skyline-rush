@@ -153,10 +153,10 @@ function makeLandmarks(group: THREE.Group, from: number, to: number,
     for (const x of [-7, 7]) {
       box(root, 'guardian eye socket', [5, 2, 2], new THREE.Vector3(x, 70, 9), dark);
       box(root, 'guardian cheek', [8, 2, 3], new THREE.Vector3(x, 62, 9), stone);
-      box(root, 'guardian-brow', [9, 3, 4], new THREE.Vector3(x, 75, 9), shadow);
+      box(root, 'guardian-brow', [9, 3, 4], new THREE.Vector3(x, 75, 9), dark);
     }
     box(root, 'guardian-nose', [5, 12, 6], new THREE.Vector3(0, 63, 11), stone);
-    box(root, 'guardian-mouth', [13, 2, 4], new THREE.Vector3(0, 55, 10), shadow);
+    box(root, 'guardian-mouth', [13, 2, 4], new THREE.Vector3(0, 55, 10), dark);
     for (let i = -3; i <= 3; i++) {
       const crown = new THREE.Mesh(new THREE.ConeGeometry(3.7, 15 + (3 - Math.abs(i)) * 2, 5), stone);
       crown.name = 'guardian-stone-headdress';
