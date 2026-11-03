@@ -1,3 +1,23 @@
+## Monsoon Ruins full-course module — 2026-11-03
+
+Branch: `feature/playable-monsoon-ruins`; integration owner: `feature/epic-multiroute-longform-tracks`. Source references: two real Monsoon JPEGs, route SVG and visual acceptance gate. Separate start/finish; homepage remains Coming Soon.
+
+- [x] Read AGENTS/CLAUDE, regression-first rules, World Tour, vehicle contact, showcase and CI guidance. Inspect both concept JPEGs and route schematic.
+- [x] Add map-specific 12.5 km geometry and three genuine ground/air route edges, terrain/props, mutable weather visuals, surface hints, physical arc-length edge samples, checkpoints and recovery helpers.
+- [x] Add focused route/obstacle/scene tests before and during implementation. The first RED Actions runs were cancelled by branch concurrency; **RED execution evidence remains pending**.
+- [x] Keep shared Registry/World/Game/AI/HUD untouched; keep Coming Soon and no PR/merge/deploy.
+- [ ] Focused `node --test tests/monsoon-ruins-*.test.js` observed GREEN for exact HEAD.
+- [ ] `npm test`, `npm run typecheck`, `npm run build`, browser + World Tour + `make verify` observed GREEN; record actual output.
+- [ ] Exact-HEAD **full** GitHub Actions `quality-gate` passed (focused feature CI is insufficient).
+- [ ] Integration branch: signed world-space gate crossings, physically consistent road/car/AI/props, start/finish and 8-car full-play races.
+- [ ] Repeatable actual WebGL screenshots: guardian temple, two hairpins, river valley, waterfall, airborne stone bridge, visible solid obstacles at desktop 1440×900 and phone 390×844.
+- [ ] Visual comparison against both JPEGs: six acceptance categories, Low/Medium/High, Reduced Motion, mobile/desktop visibility and GPU cleanup; measured 3–5-minute target.
+- [ ] Explicit human visual and device acceptance.
+
+Integration contract and precise pending gates: `docs/designs/new-tracks/monsoon-ruins-playable-handoff.md`.
+
+---
+
 ## Fix — What's New hero clip stays a still on iPhone Home Screen app until tapped (2026-11-03)
 
 **Branch:** `develop`. **Repro (user, iPhone 16, iOS 26.3, Home Screen app):** notes auto-open on launch, hero clip shows its
