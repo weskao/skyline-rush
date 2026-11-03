@@ -1,3 +1,28 @@
+## Roadster 2 front/rear photo match + folding wing — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Request: match photos 01/04/05/06/13/15 front and rear (curves, lights),
+the quad-port area, and redesign the wing open/close. User chose to **restore the hairline front light blade** (photo 05),
+reversing the earlier "two corner slits" decision.
+
+- [x] Front: blunter nose, fender towers ≥ .18 above a flat hood, painted hood lip → hairline lit blade → carbon band →
+  low intake → protruding matte splitter; larger inverted triangular headlamps above the blade ends; dark lower corners.
+- [x] Rear: wing lip over the slot, white shelf, recessed white scoop with plate, black port bar, four open tunnels with a
+  matte back wall (the flat body cap used to show white through them), white tail blades, red corner markers.
+- [x] Ports: one bronze lathe (barrel + rolled lip) protruding from the bar, warm dark bore; bore back moved ahead of the
+  body cap (z 2.37), which every port used to show as a white disc. `REAR_PORTS` / VFX anchors unchanged.
+- [x] Wing: stowed it is the deck lid; `poseWing` (`src/car-model.js`) raises it on hidden swan-neck struts out of a black
+  bay, tips fold into endplates after 35% travel (close reverses). Same triggers plus the downforce pitch; `lift=.34` kept.
+- [x] Root-cause fix: merged painted trim used a cloned paint, so Garage / race paint never reached it; it now shares the
+  car's paint (`mergeStaticParts`).
+- [x] RED observed: 9 assertion failures in `tests/roadster-fidelity.test.js` on the old model (bores end on paint, paint
+  not shared, no blade/tunnels/fold, oversize rings). Tunnel test mutation-checked (fails without the back wall).
+- [x] GREEN: roadster suite 17/17; `npm test` 1515 pass / 0 fail / 3 skipped; `npm run typecheck`; `npm run build`.
+- [x] Cost: 60 → 62 draw calls, 6,650 → 7,008 triangles per Roadster; `poseWing` loops 5 wing children per frame, no
+  allocation. Frame time not measured.
+- [ ] Targeted WebGL specs (shader warmup, black frame, eight-car grid, Garage studio/inspection/quality); full
+  `make verify` and exact-HEAD `[full-regression]` CI.
+- [ ] Human visual approval against the photos; physical phone check (Low/Medium/High).
+
 ## Roadster 2 photo-reference fascia revision — 2026-11-03
 
 **Branch:** `feature/roadster2-high-fidelity-body`. Four new user-supplied photographic views: overhead front, rear three-quarter, rear-wheel/diffuser detail, straight-on rear fascia. Keep recognizable fictional race styling and **no manufacturer logos**. Visual approximation, not an OEM CAD replica.

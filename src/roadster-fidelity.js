@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createRearLight } from './rear-light.ts';
 import { addReferenceFront, addReferenceRear } from './roadster-reference-fascias.js';
 import { addRoadsterRearNozzles } from './roadster-rear-nozzles.js';
@@ -6,16 +7,18 @@ import { addRoadsterRearNozzles } from './roadster-rear-nozzles.js';
 // Visual-only Roadster 2 interpretation: negative Z is the nose, positive Z the tail.
 // Keep dimensions inside the shared arcade collision envelope; no physics data changes.
 const BODY_STATIONS = [
-  [-2.48, .84, .40, .55, .61],
-  [-2.31, .98, .37, .59, .73],
-  [-1.91, 1.10, .35, .66, .93],
+  // Blunt nose cap, then fender towers rising well above a flat, lower hood (photos 05/15).
+  [-2.50, .90, .34, .61, .80],
+  [-2.33, 1.00, .34, .64, .90],
+  [-1.91, 1.10, .35, .69, .97],
   [-1.41, 1.19, .81, .74, 1.03],
   [-.72, 1.16, .36, .76, 1.04],
   [.44, 1.15, .36, .77, 1.04],
   [1.27, 1.19, .83, .78, 1.08],
-  [1.79, 1.18, .39, .78, 1.08],
-  [2.21, 1.1, .42, .73, .99],
-  [2.37, 1.04, .43, .67, .92],
+  // Flat rear deck just under the shoulders, so the stowed wing reads as its lid.
+  [1.79, 1.18, .39, .96, 1.08],
+  [2.21, 1.1, .42, .99, 1.05],
+  [2.37, 1.04, .43, .98, 1.02],
 ];
 
 function loft(rings, close = true) {
@@ -76,6 +79,7 @@ export function roadsterCanopy() {
     [.65, .96, 1.075, .70, 1.46],
     [1.24, .91, 1.075, .75, 1.30],
     [1.84, .83, 1.07, .77, 1.11],
+    [2.02, .70, .995, .62, 1.015],
   ];
   const rings = stations.map(([z, base, baseY, roof, roofY]) => [
     -base, baseY, z, -roof, roofY, z, roof, roofY, z, base, baseY, z,
@@ -85,7 +89,6 @@ export function roadsterCanopy() {
 
 const graphite = new THREE.MeshStandardMaterial({ color: '#0a1116', metalness: .35, roughness: .3 });
 const satinCarbon = new THREE.MeshStandardMaterial({ color: '#222b31', metalness: .2, roughness: .37 });
-const headlampMaterial = new THREE.MeshStandardMaterial({ color: '#d1eff3', emissive: '#9abfc8', emissiveIntensity: .9, roughness: .2, side: THREE.DoubleSide });
 const bronze = new THREE.MeshStandardMaterial({ color: '#8d8578', metalness: .92, roughness: .24 });
 const wheelSpokeShape = (() => {
   const verts = [], indices = [];
@@ -108,8 +111,6 @@ const wheelSpokeShape = (() => {
 })();
 const wheelInset = new THREE.CylinderGeometry(.327, .327, .017, 40);
 const wheelHub = new THREE.CylinderGeometry(.075, .075, .027, 24);
-const wingStrutGeometry = new THREE.BoxGeometry(.052,.34,.09);
-const wingEndplateGeometry = new THREE.BoxGeometry(.038,.10,.32);
 const pathGeometry = new Map();
 const rockerGeometry = new Map();
 
@@ -148,58 +149,47 @@ function rocker(side) {
   return mesh;
 }
 
-function aerofoil(paint) {
-  const outline = new THREE.Shape();
-  outline.moveTo(-1.16,-.22);
-  outline.lineTo(1.16,-.22);
-  outline.lineTo(1.19,.17);
-  outline.lineTo(.88,.27);
-  outline.lineTo(-.88,.27);
-  outline.lineTo(-1.19,.17);
-  outline.closePath();
-  const geo = new THREE.ExtrudeGeometry(outline, {
-    depth: .05, bevelEnabled: true, bevelThickness: .012, bevelSize: .012,
+// Plan outline (x, -z) extruded into a thin painted panel.
+function wingPanel(outline) {
+  const geo = new THREE.ExtrudeGeometry(new THREE.Shape(outline.map(([x,y]) => new THREE.Vector2(x,y))), {
+    depth: .04, bevelEnabled: true, bevelThickness: .01, bevelSize: .01,
     bevelSegments: 1, steps: 1, curveSegments: 1,
   });
   geo.rotateX(-Math.PI/2);
-  const mesh = new THREE.Mesh(geo,paint);
-  mesh.name = 'Roadster aerofoil';
-  return mesh;
+  return geo;
 }
+const wingMain = wingPanel([[-.80,-.22],[.80,-.22],[.80,.20],[-.80,.20]]);
+// Each tip hinges at the main plane's edge and folds down into a swept endplate (photos 04/06/13).
+const wingTip = wingPanel([[0,-.22],[.30,-.20],[.30,.06],[0,.20]]);
+const mirroredTubes = (points, radius, segments) => mergeGeometries([-1,1].map(side => new THREE.TubeGeometry(
+  new THREE.CatmullRomCurve3(points.map(([x,y,z]) => new THREE.Vector3(side*x,y,z))), segments, radius, 5, false)));
+// Swan necks hang from the wing's underside; stowed, they sink below the deck out of sight.
+const swanNecks = mirroredTubes([[.42,0,.02],[.42,-.07,.09],[.42,-.20,.05],[.42,-.46,-.03]], .022, 12);
+const actuators = mirroredTubes([[.48,-.01,-.12],[.48,-.46,-.14]], .009, 1);
+const wingBay = new THREE.PlaneGeometry(1.2,.36).rotateX(-Math.PI/2);
 
-const cornerIntakes = new Map();
-function cornerIntake(side) {
-  if (!cornerIntakes.has(side)) {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute([
-      side*.74,.535,-2.435, side*1.00,.545,-2.315,
-      side*.945,.465,-2.285, side*.76,.455,-2.435,
-    ], 3));
-    geometry.setIndex(side < 0 ? [0,1,2,0,2,3] : [0,2,1,0,3,2]);
-    geometry.computeVertexNormals();
-    cornerIntakes.set(side, geometry);
+function activeWing(paint) {
+  const wing = new THREE.Group();
+  wing.name = 'Roadster active wing';
+  const part = (geometry, material, name) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = name;
+    wing.add(mesh);
+    return mesh;
+  };
+  part(wingMain, paint, 'Roadster aerofoil');
+  for (const side of [-1,1]) {
+    const tip = part(wingTip, paint, 'Roadster wing tip');
+    tip.position.x = side*.80;
+    tip.scale.x = side;
+    tip.userData.fold = -side*1.05;
   }
-  return cornerIntakes.get(side);
-}
-
-const cornerLamps = new Map();
-function lampGeometry(side, lens) {
-  const key = `${side}:${lens ? 'light' : 'pocket'}`;
-  if (!cornerLamps.has(key)) {
-    const vertices = lens ? [
-      side*.855,.699,-2.288, side*.942,.698,-2.247,
-      side*.918,.671,-2.318,
-    ] : [
-      side*.828,.722,-2.269, side*.959,.721,-2.224,
-      side*.918,.650,-2.336,
-    ];
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-    geometry.setIndex(side < 0 ? [0,2,1] : [0,1,2]);
-    geometry.computeVertexNormals();
-    cornerLamps.set(key,geometry);
-  }
-  return cornerLamps.get(key);
+  part(swanNecks, graphite, 'Roadster wing swan-neck struts');
+  part(actuators, satinCarbon, 'Roadster wing actuators');
+  // Stowed, the wing is the deck lid overhanging the light slot; poseWing raises and opens it.
+  wing.position.set(0,1.08,2.25);
+  wing.userData = { restY: 1.08, lift: .34 };
+  return wing;
 }
 
 export function addRoadsterWheelDetail(wheel, side) {
@@ -221,28 +211,13 @@ export function addRoadsterWheelDetail(wheel, side) {
 }
 
 export function addRoadsterTrim(group, m) {
-  // Photo reference: painted wedge, thin black lower mouth, only two tiny front slits.
-  addReferenceFront(group,m);
+  addReferenceFront(group,m,line);
   for (const side of [-1,1]) {
-    line(group,[
-      [side*.51,.595,-2.38], [side*.69,.70,-1.98],
-      [side*.83,.81,-1.54], [side*.88,.94,-1.20],
-    ],.008,m.paint,'Roadster hood crease');
     group.add(rocker(side));
-    const intake = new THREE.Mesh(cornerIntake(side), satinCarbon);
-    intake.name = 'Roadster corner intake';
-    group.add(intake);
-    // Recessed triangular corner lamps echo the angled nose of the reference prototype.
-    const pocket = new THREE.Mesh(lampGeometry(side,false), graphite);
-    pocket.name = 'Roadster headlamp pocket';
-    group.add(pocket);
-    const headlamp = new THREE.Mesh(lampGeometry(side,true), headlampMaterial);
-    headlamp.name = 'Roadster triangular headlamp';
-    group.add(headlamp);
     line(group,[
       [side*.89,1.065,-1.12],[side*.82,1.35,-.72],
       [side*.74,1.49,.08],[side*.76,1.46,.65],
-      [side*.77,1.11,1.84],
+      [side*.77,1.11,1.84],[side*.64,1.02,2.02],
     ],.017,graphite,'Roadster glass surround');
   }
 
@@ -252,20 +227,13 @@ export function addRoadsterTrim(group, m) {
 
   addReferenceRear(group,m,line);
   addRoadsterRearNozzles(group);
+  // Black bay revealed under the raised wing.
+  const bay = new THREE.Mesh(wingBay, graphite);
+  bay.name = 'Roadster wing bay';
+  bay.position.set(0,1.012,2.24);
+  group.add(bay);
 
-  const wing = new THREE.Group();
-  wing.name='Roadster active wing';
-  wing.add(aerofoil(m.paint));
-  for (const side of [-1,1]) {
-    const strut=new THREE.Mesh(wingStrutGeometry,graphite);
-    strut.position.set(side*.71,-.19,-.015);
-    wing.add(strut);
-    const endplate=new THREE.Mesh(wingEndplateGeometry,satinCarbon);
-    endplate.position.set(side*1.13,.005,-.006);
-    wing.add(endplate);
-  }
-  wing.position.set(0,1.08,2.14);
-  wing.userData={restY:1.08,lift:.34};
+  const wing = activeWing(m.paint);
   group.add(wing);
   return wing;
 }

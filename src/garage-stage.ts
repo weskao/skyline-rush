@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CAR_STYLES, makeCar } from './car-model.js';
+import { CAR_STYLES, makeCar, poseWing } from './car-model.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
@@ -34,7 +34,7 @@ export function createGarageStage(environment: THREE.Texture) {
   scene.add(car);
   function poseCar(flying: boolean) {
     car.userData.jets.visible = flying;
-    car.userData.wing.position.y = car.userData.wing.userData.restY + (flying ? car.userData.wing.userData.lift : 0);
+    poseWing(car.userData.wing, car.userData.wing.userData.restY + (flying ? car.userData.wing.userData.lift : 0));
     for (const wheel of car.userData.wheels)
       wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
   }

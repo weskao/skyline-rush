@@ -33,6 +33,14 @@ function mirrors(parent, mat, y) {
 }
 
 // Each style returns its wing; a wing with userData.lift rises on boost, braking and flight.
+// Parts tagged userData.fold (Roadster tips) swing open once the wing is past a third of its travel,
+// so opening reads as rise-then-unfold and closing as fold-then-sink. Per frame: no allocation.
+export function poseWing(wing, y) {
+  wing.position.y = y;
+  const open = THREE.MathUtils.smoothstep((y - wing.userData.restY) / wing.userData.lift, .35, 1);
+  for (const part of wing.children) if (part.userData.fold) part.rotation.z = part.userData.fold * open;
+}
+
 export const CAR_STYLES = {
   // Player: low wedge, smoked fastback canopy, full-width tail bar, quad thruster ports, pop-up wing.
   roadster: {
@@ -122,7 +130,7 @@ const detailedRimGeometry = new THREE.CylinderGeometry(0.32, 0.32, 0.285, 32);
 // Cached per style: the geometry depends only on that constant style, so it is never invalidated; a world or
 // garage dispose frees its GPU buffers like the shared box geometry, and three.js re-uploads on the next draw.
 const mergedParts = new WeakMap();
-function mergeStaticParts(group, style, moving) {
+function mergeStaticParts(group, style, moving, paint) {
   const byMaterial = new Map();
   for (const child of group.children) if (child.isMesh && !moving.includes(child)) {
     byMaterial.set(child.material, [...(byMaterial.get(child.material) ?? []), child]);
@@ -150,8 +158,10 @@ function mergeStaticParts(group, style, moving) {
   mergedParts.get(style).forEach((geometry, i) => {
     group.remove(...parts[i]);
     // Roadster trim uses module-scoped materials; each car must own its material
-    // instance even while sharing the cached, immutable merged geometry.
-    const merged = new THREE.Mesh(geometry, parts[i][0].material.clone());
+    // instance even while sharing the cached, immutable merged geometry. Painted trim keeps
+    // the car's own paint so Garage and race paint changes reach it.
+    const material = parts[i][0].material;
+    const merged = new THREE.Mesh(geometry, material === paint ? paint : material.clone());
     // Retain semantic detail labels even when draw-call batching collapses multiple meshes.
     merged.userData.mergedPartNames = parts[i].map(part => part.name).filter(Boolean);
     group.add(merged);
@@ -209,7 +219,7 @@ export function makeCar(style, color = style.color) {
   }
   jets.visible = false;
   group.add(jets);
-  mergeStaticParts(group, style, [body, wing]);
+  mergeStaticParts(group, style, [body, wing], paint);
   Object.assign(group.userData, { wheels, jets, body, wing, brakeLight: light, lightColor: light.color.clone() });
   return group;
 }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { CAR_STYLES, makeCar } from '../src/car-model.js';
+import { CAR_STYLES, makeCar, poseWing } from '../src/car-model.js';
 import { REAR_PORTS } from '../src/aero-vfx.js';
 import { addRoadsterTrim } from '../src/roadster-fidelity.js';
 
@@ -52,8 +52,8 @@ test('Roadster has tapered gold-glazed canopy, restrained hood creases and facet
   assert.ok(canopy.geometry.attributes.position.count >= 16, 'continuous fastback glazing');
   assert.equal(named(car, 'Roadster hood crease').length, 2);
   assert.equal(named(car, 'Roadster sculpted rocker').length, 2);
-  assert.equal(named(car, 'Roadster front slit lamp').length, 2, 'the reference has two tiny lamps, not a full-width white front LED');
-  assert.equal(named(car, 'Roadster front light blade').length, 0, 'remove the inaccurate full-width illuminated nose');
+  assert.equal(named(car, 'Roadster front light blade').length, 1, 'photo 05: one hairline light blade across the nose');
+  assert.equal(named(car, 'Roadster front slit lamp').length, 0, 'the blade replaces the two corner slits');
   assert.equal(named(car, 'Roadster triangular headlamp').length, 2, 'both tucked-away triangular corner lights');
 });
 
@@ -90,35 +90,45 @@ test('Other vehicle styles preserve their original model material and geometry c
   }
 });
 
-test('Roadster reference front has a white wedge, tiny symmetric lamps, and a low recessed black mouth', () => {
+const box = mesh => { mesh.updateWorldMatrix(true, true); return new THREE.Box3().setFromObject(mesh); };
+
+test('Roadster reference front stacks hood lip, hairline blade, carbon band, low intake and splitter', () => {
   const car = roadster();
   const detail = rawTrim();
-  const front = named(detail, 'Roadster sculpted front fascia');
-  assert.equal(front.length, 1);
-  assert.equal(front[0].material.color.getHexString(), 'e6e9e7', 'nose remains body-painted, not graphite');
-  const lamps = named(detail, 'Roadster front slit lamp');
-  assert.equal(lamps.length, 2);
-  const aperture = named(detail, 'Roadster black lower intake');
-  assert.equal(aperture.length, 1);
-  const bounds = new THREE.Box3().setFromObject(aperture[0]);
-  assert.ok(bounds.max.x - bounds.min.x >= 1.4, 'front intake is wide and low');
-  assert.ok(bounds.max.y - bounds.min.y <= 0.20, 'the grille is a thin lower mouth, not a tall smiling opening');
-  const skinPositions = front[0].geometry.getAttribute('position');
-  const grillePositions = aperture[0].geometry.getAttribute('position');
-  const faceZ = new Map();
-  for (let i = 0; i < skinPositions.count; i++)
-    faceZ.set(skinPositions.getX(i).toFixed(3), skinPositions.getZ(i));
-  for (let i = 0; i < grillePositions.count; i++) {
-    const x = grillePositions.getX(i).toFixed(3);
-    assert.ok(grillePositions.getZ(i) < faceZ.get(x) - .01,
-      'lower intake must remain visible in front of the painted nose even at the outer corners');
-  }
+  const [lip] = named(detail, 'Roadster sculpted front fascia');
+  assert.equal(lip.material.color.getHexString(), 'e6e9e7', 'hood leading edge stays body-painted');
+  const [blade] = named(detail, 'Roadster front light blade');
+  const [band] = named(detail, 'Roadster front carbon band');
+  const [intake] = named(detail, 'Roadster black lower intake');
+  const [splitter] = named(detail, 'Roadster carbon splitter');
+  assert.ok(blade && band && intake && splitter, 'photo 05 front layers all exist');
+  assert.ok(blade.material.isMeshBasicMaterial, 'the blade is a lit strip, not painted trim');
+  const [b, c, i, s] = [blade, band, intake, splitter].map(box);
+  assert.ok(b.max.y - b.min.y <= .02, 'blade is a hairline');
+  assert.ok(b.max.x - b.min.x >= 1.5, 'blade spans the nose between the fenders');
+  assert.ok(i.max.x - i.min.x >= 1.4 && i.max.y - i.min.y <= .2, 'intake is wide and low');
+  assert.ok(box(lip).min.y >= b.max.y - .005 && b.min.y >= c.max.y - .005 && c.min.y >= i.max.y - .005,
+    'top to bottom: painted lip, blade, carbon band, intake');
+  assert.ok(s.max.y <= i.min.y && s.min.z < i.min.z - .08, 'splitter sits lowest and protrudes ahead');
+  const noseZ = new THREE.Box3().setFromBufferAttribute(car.userData.body.geometry.getAttribute('position')).min.z;
+  for (const layer of [lip, blade, band, intake]) assert.ok(box(layer).max.z < noseZ, `${layer.name} stays in front of the nose cap`);
+  const lamps = named(detail, 'Roadster triangular headlamp').map(box);
+  assert.ok(lamps.every(l => l.max.x - l.min.x >= .15 && l.min.y > b.max.y), 'readable triangles above the blade');
   const body = car.userData.body.geometry.attributes.position;
   const frontRings = [];
-  for (let i = 0; i < body.count; i++)
-    if (body.getZ(i) < -2.42) frontRings.push(Math.abs(body.getX(i)));
+  for (let n = 0; n < body.count; n++)
+    if (body.getZ(n) < -2.42) frontRings.push(Math.abs(body.getX(n)));
   assert.ok(frontRings.length > 0);
   assert.ok(Math.max(...frontRings) < 1.0, 'the nose narrows noticeably ahead of the wheel arches');
+});
+
+test('Roadster front fenders rise as towers above a lower flat hood', () => {
+  const body = roadster().userData.body.geometry.attributes.position;
+  const ring = [];
+  for (let n = 0; n < body.count; n++) if (Math.abs(body.getZ(n) + 2.33) < .01) ring.push([body.getX(n), body.getY(n)]);
+  const hood = Math.max(...ring.filter(([x]) => Math.abs(x) < .3).map(([, y]) => y));
+  const fender = Math.max(...ring.map(([, y]) => y));
+  assert.ok(fender - hood >= .18, `fender crest ${fender} must stand clear of the hood ${hood}`);
 });
 
 test('Roadster rear reference layers an inset black lamp recess above a curved painted panel', () => {
@@ -163,15 +173,89 @@ test('rear diffuser valance has real cutouts so all four recessed nozzle barrels
   const detail = rawTrim();
   const valance = named(detail, 'Roadster curved rear valance')[0];
   assert.ok(valance, 'rear lower valance exists');
-  valance.updateMatrixWorld(true);
+  detail.updateMatrixWorld(true);
   for (const port of REAR_PORTS) {
     const [x, y] = port.position;
     const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 3), new THREE.Vector3(0, 0, -1));
     assert.equal(ray.intersectObject(valance, false).length, 0,
       `valance must be cut away at x=${x} for the physical thruster recess`);
   }
-  const intact = new THREE.Raycaster(new THREE.Vector3(0, .42, 3), new THREE.Vector3(0, 0, -1));
-  assert.ok(intact.intersectObject(valance, false).length > 0, 'structural valance remains between and below ports');
+  const intact = new THREE.Raycaster(new THREE.Vector3(0, .64, 3), new THREE.Vector3(0, 0, -1));
+  assert.ok(intact.intersectObject(valance, false).length > 0, 'structural valance remains between ports');
+  const tunnel = new THREE.Raycaster(new THREE.Vector3(.21, .45, 3), new THREE.Vector3(0, 0, -1));
+  assert.equal(tunnel.intersectObject(valance, false).length, 0, 'photo 06/13: diffuser tunnels open below the port bar');
+  const car = roadster();
+  car.updateMatrixWorld(true);
+  const [behind] = tunnel.intersectObject(car, true);
+  assert.ok(behind && behind.object.material !== car.userData.body.material && behind.object.material.color.r < .1,
+    'a dark tunnel back closes the opening instead of showing the white body cap');
+});
+
+test('looking straight into each rear port shows a dark bore, never the white body behind it', () => {
+  const car = roadster();
+  car.updateMatrixWorld(true);
+  for (const port of REAR_PORTS) {
+    const [x, y] = port.position;
+    const [first] = new THREE.Raycaster(new THREE.Vector3(x, y, 4), new THREE.Vector3(0, 0, -1)).intersectObject(car, true);
+    assert.ok(first, `port ${x} hits something`);
+    assert.notEqual(first.object.material, car.userData.body.material, `port ${x} bore must not end on paint`);
+    assert.ok(first.object.material.color.r < .2, `port ${x} bore reads dark, got ${first.object.name}`);
+  }
+});
+
+test('rear reads top to bottom as wing lip, light slot, white shelf, white scoop with plate, then black port bar', () => {
+  const detail = rawTrim();
+  const [shelf] = named(detail, 'Roadster rear shelf');
+  const [scoop] = named(detail, 'Roadster curved rear fascia');
+  const [plate] = named(detail, 'Roadster blank rear plate');
+  const [bank] = named(detail, 'Roadster machined four-port surround');
+  assert.ok(shelf && scoop && plate && bank);
+  const [sh, sc, pl, bk] = [shelf, scoop, plate, bank].map(box);
+  const slot = box(detail.userData.rearLight.group.getObjectByName('Rear LED black panel'));
+  assert.ok(slot.min.y >= sh.max.y - .005 && sh.min.y >= sc.max.y - .005, 'shelf sits directly under the slot, scoop under the shelf');
+  assert.ok(pl.max.y <= sh.min.y + .005 && pl.min.y >= bk.max.y - .01, 'plate hangs in the scoop above the port bar');
+  assert.ok(sh.max.z > sc.max.z, 'the shelf protrudes past the recessed scoop');
+  assert.ok(Math.max(...REAR_PORTS.map(p => p.position[1])) < sc.min.y, 'ports sit below the white scoop, in black');
+  assert.equal(named(detail, 'Roadster tail blade').length, 2, 'white fins close both slot ends');
+  const markers = named(detail, 'Roadster rear corner marker');
+  assert.equal(markers.length, 2, 'red markers on top of both carbon corner pods');
+  assert.ok(markers.every(m => m.material.color.r > m.material.color.g * 4));
+});
+
+test('stowed wing lies on the deck; deploying lifts it on swan-neck struts and folds the tips down', () => {
+  const car = roadster();
+  const { wing } = car.userData;
+  const tips = wing.children.filter(part => part.name === 'Roadster wing tip');
+  assert.equal(tips.length, 2);
+  assert.equal(wing.children.filter(part => part.name === 'Roadster wing swan-neck struts').length, 1);
+  assert.equal(named(car, 'Roadster wing bay').length, 1, 'black bay is revealed under the raised wing');
+  const outerY = tip => { car.updateMatrixWorld(true); return box(tip).min.y; };
+  poseWing(wing, wing.userData.restY);
+  assert.ok(tips.every(tip => tip.rotation.z === 0), 'stowed tips stay flat as the deck lid');
+  const flat = tips.map(outerY);
+  poseWing(wing, wing.userData.restY + wing.userData.lift * .25);
+  assert.ok(tips.every(tip => Math.abs(tip.rotation.z) < .05), 'tips wait until the wing clears the fenders');
+  poseWing(wing, wing.userData.restY + wing.userData.lift);
+  assert.equal(wing.position.y, wing.userData.restY + wing.userData.lift);
+  assert.ok(tips.every(tip => Math.abs(tip.rotation.z) > .9), 'deployed tips fold into endplates');
+  assert.equal(Math.sign(tips[0].rotation.z), -Math.sign(tips[1].rotation.z), 'tips fold symmetrically');
+  tips.forEach((tip, n) => assert.ok(outerY(tip) < flat[n] + wing.userData.lift - .15, 'folded tips hang down'));
+  const struts = box(wing.children.find(part => part.name === 'Roadster wing swan-neck struts'));
+  const bay = box(named(car, 'Roadster wing bay')[0]);
+  assert.ok(struts.min.y < bay.min.y, 'deployed struts still reach into the bay');
+  poseWing(wing, wing.userData.restY);
+  car.updateMatrixWorld(true);
+  const stowed = box(wing.children.find(part => part.name === 'Roadster wing swan-neck struts'));
+  assert.ok(stowed.max.y < box(wing.children[0]).min.y + .05 && stowed.min.y < .8, 'stowed struts hide in the body');
+});
+
+test('painted trim shares the car body paint so Garage colours reach every painted part', () => {
+  const car = makeCar(CAR_STYLES.roadster, '#ff0000');
+  const paint = car.userData.body.material;
+  const painted = car.children.filter(c => c.isMesh && (c.userData.mergedPartNames ?? []).includes('Roadster curved rear fascia'));
+  assert.equal(painted.length, 1);
+  assert.equal(painted[0].material, paint, 'rear fascia, shelf, plate and lip follow previewAppearance');
+  assert.ok(car.userData.wing.children.filter(c => c.name === 'Roadster wing tip').every(t => t.material === paint));
 });
 
 test('four photo-reference rear thrusters are machined rings with dark recessed bores, not flat discs', () => {
@@ -186,7 +270,7 @@ test('four photo-reference rear thrusters are machined rings with dark recessed 
     const throat = port.getObjectByName('Roadster nozzle recessed throat');
     const back = port.getObjectByName('Roadster nozzle shadow back');
     assert.ok(collar && lip && throat && back, `port ${i} must have physical layers`);
-    assert.ok(lip.geometry.parameters.radius + lip.geometry.parameters.tube <= .11,
+    assert.ok(new THREE.Box3().setFromBufferAttribute(lip.geometry.getAttribute('position')).max.x <= .08,
       'photo ports use restrained small rings rather than oversized exhaust openings');
     assert.ok(lip.material.metalness > .65, 'lip should read as muted machined metal');
     assert.ok(lip.position.z > throat.position.z && throat.position.z > back.position.z,
