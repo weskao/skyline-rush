@@ -222,12 +222,16 @@ export function monsoonWetContact(edgeId: MonsoonEdgeId, distance: number) {
   return { depth, wetness, gripScale: Math.max(.72, 1 - depth * .8 - wetness * .08) };
 }
 export function monsoonObstacleHit(edgeId: MonsoonEdgeId, from: number, to: number,
-  lateral: number, altitude = 0): Obstacle | null {
-  return obstacles.find(obstacle => obstacle.edgeId === edgeId
-    && obstacle.at + obstacle.radius >= Math.min(from, to)
-    && obstacle.at - obstacle.radius <= Math.max(from, to)
-    && Math.abs(obstacle.lateral - lateral) <= obstacle.radius + 1.1
-    && altitude < obstacle.height + .7) ?? null;
+  lateral: number, altitude = 0, previousLateral = lateral): Obstacle | null {
+  if (![from, to, lateral, altitude, previousLateral].every(Number.isFinite)) return null;
+  return obstacles.find(obstacle => {
+    if (obstacle.edgeId !== edgeId || obstacle.at + obstacle.radius < Math.min(from, to)
+      || obstacle.at - obstacle.radius > Math.max(from, to)
+      || altitude >= obstacle.height + .7) return false;
+    const atObstacle = from === to ? 1 : clamp((obstacle.at - from) / (to - from), 0, 1);
+    const sweptLateral = lerp(previousLateral, lateral, atObstacle);
+    return Math.abs(obstacle.lateral - sweptLateral) <= obstacle.radius + 1.1;
+  }) ?? null;
 }
 // AI chooses a legal lane before reaching a solid prop; collisions remain owned by the shared game.
 export function monsoonAvoidance(edgeId: MonsoonEdgeId, distance: number, preferredLateral: number): number {
@@ -239,6 +243,32 @@ export function monsoonAvoidance(edgeId: MonsoonEdgeId, distance: number, prefer
   return candidates.filter(x => imminent.every(o => Math.abs(x - o.lateral) > o.radius + 1.5))
     .sort((a, b) => Math.abs(a - preferredLateral) - Math.abs(b - preferredLateral))[0] ?? preferredLateral;
 }
+// Integrator must validate gate crossings in world space, in ordered sequence.
+// Checkpoints are on ground *after* each branch has rejoined the main course.
+export function monsoonCrossedCheckpoint(gate: number, previous: Vec3,
+  next: Vec3, edgeId: MonsoonEdgeId): boolean {
+  if (edgeId !== 'ground' || !MONSOON_RUINS_COURSE.checkpoints.some(d => d === gate)
+    || !previous.every(Number.isFinite) || !next.every(Number.isFinite)) return false;
+  const delta = subtract(next, previous);
+  if (len(delta) > 60 || len(delta) < 1e-6) return false;
+  const frame = sampleMonsoonRoute('ground', gate);
+  const start = subtract(previous, frame.point);
+  const end = subtract(next, frame.point);
+  const front = (p: Vec3) => dot(p, frame.forward);
+  const before = front(start), after = front(end);
+  if (before >= 0 || after < 0) return false;
+  const fraction = -before / (after - before);
+  const atGate: Vec3 = [
+    lerp(start[0], end[0], fraction),
+    lerp(start[1], end[1], fraction),
+    lerp(start[2], end[2], fraction),
+  ];
+  const lateral = dot(atGate, frame.right), height = dot(atGate, frame.up);
+  return Math.abs(lateral) <= MONSOON_RUINS_COURSE.roadWidth / 2
+    && height >= -2 && height <= 7;
+}
+const dot = (a: Vec3, b: Vec3) => a.reduce((sum, x, i) => sum + x * b[i], 0);
+
 export function monsoonPassedCheckpoints(from: number, to: number): number[] {
   if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) return [];
   return MONSOON_RUINS_COURSE.checkpoints.filter(gate => gate > from && gate <= to);
