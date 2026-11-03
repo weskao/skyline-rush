@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canopy, carShell } from './geometry.ts';
 import { LIFT_PORTS } from './effects.js';
-import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail } from './roadster-fidelity.js';
+import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail, poseRoadsterWing, stepRoadsterWing } from './roadster-fidelity.js';
 import { EXTRA_RACE_STYLES, TRAFFIC_STYLES } from './vehicle-fleet-styles.js';
 const box = new THREE.BoxGeometry(1, 1, 1);
 
@@ -32,11 +32,15 @@ function mirrors(parent, mat, y) {
   for (const side of [-1, 1]) block(parent, mat, side * 1.15, y, -0.4, 0.2, 0.12, 0.32);
 }
 
-// Each style returns its wing; a wing with userData.lift rises on boost, braking and flight.
+// Each style returns its wing; a wing with userData.lift (Roadster) opens into a 35-degree airbrake
+// on boost/NITRO/braking and rises on its struts in flight, so world.js skips the whole-wing pitch
+// for it (the two would stack). Per frame: no allocation.
+export { poseRoadsterWing as poseWing, stepRoadsterWing as stepWing };
+
 export const CAR_STYLES = {
   // Player: low wedge, smoked fastback canopy, full-width tail bar, quad thruster ports, pop-up wing.
   roadster: {
-    color: '#e6e9e7', glass: '#292823', light: [2.2, 0.02, 0.05], detailed: true,
+    color: '#e6e9e7', glass: '#2c2118', light: [2.2, 0.02, 0.05], detailed: true,
     body: roadsterBody(),
     cabin: roadsterCanopy(),
     trim(group, m) { return addRoadsterTrim(group, m); },
@@ -122,7 +126,7 @@ const detailedRimGeometry = new THREE.CylinderGeometry(0.32, 0.32, 0.285, 32);
 // Cached per style: the geometry depends only on that constant style, so it is never invalidated; a world or
 // garage dispose frees its GPU buffers like the shared box geometry, and three.js re-uploads on the next draw.
 const mergedParts = new WeakMap();
-function mergeStaticParts(group, style, moving) {
+function mergeStaticParts(group, style, moving, paint) {
   const byMaterial = new Map();
   for (const child of group.children) if (child.isMesh && !moving.includes(child)) {
     byMaterial.set(child.material, [...(byMaterial.get(child.material) ?? []), child]);
@@ -150,8 +154,10 @@ function mergeStaticParts(group, style, moving) {
   mergedParts.get(style).forEach((geometry, i) => {
     group.remove(...parts[i]);
     // Roadster trim uses module-scoped materials; each car must own its material
-    // instance even while sharing the cached, immutable merged geometry.
-    const merged = new THREE.Mesh(geometry, parts[i][0].material.clone());
+    // instance even while sharing the cached, immutable merged geometry. Painted trim keeps
+    // the car's own paint so Garage and race paint changes reach it.
+    const material = parts[i][0].material;
+    const merged = new THREE.Mesh(geometry, material === paint ? paint : material.clone());
     // Retain semantic detail labels even when draw-call batching collapses multiple meshes.
     merged.userData.mergedPartNames = parts[i].map(part => part.name).filter(Boolean);
     group.add(merged);
@@ -209,7 +215,7 @@ export function makeCar(style, color = style.color) {
   }
   jets.visible = false;
   group.add(jets);
-  mergeStaticParts(group, style, [body, wing]);
+  mergeStaticParts(group, style, [body, wing], paint);
   Object.assign(group.userData, { wheels, jets, body, wing, brakeLight: light, lightColor: light.color.clone() });
   return group;
 }
