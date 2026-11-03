@@ -16,8 +16,7 @@ const storage = () => {
 test('a release newer than the version the player last saw shows once and records it', () => {
   const store = storage();
   const release = { version: '9.9.9', highlights: [{ id: 'new-track' }] };
-  assert.equal(shouldAnnounce(release, store), false, 'a first-time player has nothing new to catch up on');
-  assert.equal(shouldAnnounce(release, store, true), true, 'a returning player from before the record existed');
+  assert.equal(shouldAnnounce(release, store), true, 'no record (first visit, incognito, cleared storage) is always announced');
   markAnnouncementSeen(release, store);
   assert.equal(store.getItem(NOTES_SEEN_KEY), '9.9.9');
   assert.equal(shouldAnnounce(release, store), false, 'same version');
@@ -28,17 +27,23 @@ test('a release newer than the version the player last saw shows once and record
   assert.equal(shouldAnnounce(release, store), true, 'unreadable record counts as older');
 });
 
-test('no announcement without notes', () => {
+test('no announcement without a release; a release with no highlights follows the same seen-version rules', () => {
   const store = storage();
   assert.equal(shouldAnnounce(null, store), false);
-  assert.equal(shouldAnnounce({ version: '1.0.0', highlights: [] }, store), false);
+  const empty = { version: '1.0.0', highlights: [] };
+  assert.equal(shouldAnnounce(empty, store), true, 'no record');
+  store.setItem(NOTES_SEEN_KEY, '0.9.0');
+  assert.equal(shouldAnnounce(empty, store), true, 'older record');
+  store.setItem(NOTES_SEEN_KEY, '1.0.0');
+  assert.equal(shouldAnnounce(empty, store), false, 'same version');
 });
 
 test('blocked localStorage never crashes and never reopens the notes on every load', () => {
   const blocked = { getItem: () => { throw Error('blocked'); }, setItem: () => { throw Error('blocked'); } };
   const release = { version: '3.0.0', highlights: [{}] };
   assert.equal(shouldAnnounce(release, blocked), false);
-  assert.equal(shouldAnnounce(release, blocked, true), false);
+  assert.equal(shouldAnnounce(release, null), false, 'no storage at all cannot remember the visit either');
+  assert.equal(shouldAnnounce({ version: UPCOMING, highlights: [{}] }, storage()), false, 'unreleased notes never pop up, even with no record');
   assert.doesNotThrow(() => markAnnouncementSeen(release, blocked));
 });
 
