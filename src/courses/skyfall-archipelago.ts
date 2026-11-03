@@ -153,8 +153,9 @@ for (const item of edges) {
 }
 export function hasSkyfallRoadContact(edgeId: string, localS: number): boolean {
   const selected = selectedEdge(edgeId);
-  const s = clamp(localS, 0, getSkyfallEdgeLength(edgeId));
-  return !selected.gaps.some(g => s > g.from && s < g.to);
+  const length = getSkyfallEdgeLength(edgeId);
+  if (!Number.isFinite(localS) || localS < 0 || localS > length) return false;
+  return !selected.gaps.some(g => localS > g.from && localS < g.to);
 }
 const normalize = ([x,y,z]: [number,number,number]): [number,number,number] => {
   const m = Math.hypot(x,y,z);
