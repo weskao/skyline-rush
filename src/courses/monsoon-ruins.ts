@@ -244,8 +244,9 @@ export function monsoonPassedCheckpoints(from: number, to: number): number[] {
   return MONSOON_RUINS_COURSE.checkpoints.filter(gate => gate > from && gate <= to);
 }
 export function monsoonCanFinish(distance: number, passed: readonly number[]): boolean {
-  const eligible = new Set(passed);
-  return distance >= LENGTH && MONSOON_RUINS_COURSE.checkpoints.every(gate => eligible.has(gate));
+  const required = MONSOON_RUINS_COURSE.checkpoints;
+  return distance >= LENGTH && passed.length === required.length &&
+    required.every((gate, index) => passed[index] === gate);
 }
 export function monsoonRecovery(distance: number, passed: readonly number[]) {
   const safe = [0, ...MONSOON_RUINS_COURSE.checkpoints.filter(g => passed.includes(g) && g <= distance)];
