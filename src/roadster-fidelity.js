@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createRearLight } from './rear-light.ts';
-import { REAR_PORTS } from './aero-vfx.js';
 import { addReferenceFront, addReferenceRear } from './roadster-reference-fascias.js';
+import { addRoadsterRearNozzles } from './roadster-rear-nozzles.js';
 
 // Visual-only Roadster 2 interpretation: negative Z is the nose, positive Z the tail.
 // Keep dimensions inside the shared arcade collision envelope; no physics data changes.
@@ -108,9 +108,6 @@ const wheelSpokeShape = (() => {
 })();
 const wheelInset = new THREE.CylinderGeometry(.327, .327, .017, 40);
 const wheelHub = new THREE.CylinderGeometry(.075, .075, .027, 24);
-const nozzleCavityGeometry = new THREE.CylinderGeometry(.103,.115,.16,20,1,true);
-const nozzleBackGeometry = new THREE.CircleGeometry(.098,20);
-const nozzleRimGeometry = new THREE.TorusGeometry(.13,.025,8,24);
 const wingStrutGeometry = new THREE.BoxGeometry(.052,.34,.09);
 const wingEndplateGeometry = new THREE.BoxGeometry(.038,.10,.32);
 const pathGeometry = new Map();
@@ -254,19 +251,7 @@ export function addRoadsterTrim(group, m) {
   group.userData.rearLight = rearLight;
 
   addReferenceRear(group,m,line);
-  for (const port of REAR_PORTS) {
-    const assembly = new THREE.Group();
-    assembly.position.set(port.position[0],port.position[1],2.43);
-    assembly.name='Roadster recessed thruster';
-    const cavity=new THREE.Mesh(nozzleCavityGeometry,graphite);
-    cavity.rotation.x=Math.PI/2; cavity.position.z=.01;
-    const dark=new THREE.Mesh(nozzleBackGeometry,graphite);
-    dark.position.z=-.074;
-    const ring=new THREE.Mesh(nozzleRimGeometry,bronze);
-    ring.position.z=.095;
-    assembly.add(cavity,dark,ring);
-    group.add(assembly);
-  }
+  addRoadsterRearNozzles(group);
 
   const wing = new THREE.Group();
   wing.name='Roadster active wing';
