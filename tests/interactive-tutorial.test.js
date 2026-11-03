@@ -214,6 +214,31 @@ test('NITRO activation alone does not finish practice; sprint and steering stay 
   assert.equal(session.race.phase, 'racing', 'simulation remains live until UI acknowledges completion');
 });
 
+test('a completed practice keeps a live, player-steered free cruise that loops the road', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [
+    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
+  ]) perform(session, action);
+  performDrift(session);
+  for (const action of [{ fly: true }, { fly: false }, { boost: true }]) perform(session, action);
+  performAirChain(session);
+  performBarrelRoll(session);
+  perform(session, { nitro: true });
+  assert.equal(session.complete, true);
+  const car = session.race.player;
+  const distance = car.distance;
+  for (let i = 0; i < 60; i++) tick(session);
+  assert.ok(car.distance > distance + 5, 'the car keeps cruising after the last lesson');
+  for (let i = 0; i < 20; i++) tick(session, { steer: 1 });
+  assert.ok(car.steering > 0, 'the player still steers during the free cruise');
+  car.distance = session.race.length - 50;
+  tick(session);
+  assert.ok(car.distance < 100, 'the free cruise loops the road instead of stranding at its end');
+  assert.equal(session.race.phase, 'racing');
+  assert.equal(session.race.result, null);
+  assert.equal(session.complete, true);
+});
+
 test('an interrupted NITRO lesson refills only after release and remains player-controlled', () => {
   const session = createInteractiveTutorial();
   for (const action of [
