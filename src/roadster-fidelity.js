@@ -18,14 +18,29 @@ const BODY_STATIONS = [
 ];
 
 function loft(rings, close = true) {
-  const vertices = rings.flat();
+  // Separate longitudinal strips preserve the deliberate folded shoulder/roof normals.
+  // Stations still blend along Z instead of showing a hard edge at every cross-section.
+  const vertices = [], faces = [];
   const count = rings[0].length / 3;
-  const faces = [];
-  for (let i = 0; i < rings.length - 1; i++) {
-    for (let j = 0; j < (close ? count : count - 1); j++) {
-      const a = i * count + j, b = i * count + (j + 1) % count;
-      const c = (i + 1) * count + j, d = (i + 1) * count + (j + 1) % count;
+  for (let j = 0; j < (close ? count : count - 1); j++) {
+    const next = (j + 1) % count, offset = vertices.length / 3;
+    for (const ring of rings) {
+      vertices.push(...ring.slice(j * 3, j * 3 + 3), ...ring.slice(next * 3, next * 3 + 3));
+    }
+    for (let i = 0; i < rings.length - 1; i++) {
+      const a = offset + i * 2, b = a + 1, c = a + 2, d = a + 3;
       faces.push(a, c, b, b, c, d);
+    }
+  }
+  if (close) {
+    // Real closed front/rear surfaces, not a hollow tube visible through the headlamps.
+    const front = vertices.length / 3;
+    vertices.push(...rings[0]);
+    const rear = vertices.length / 3;
+    vertices.push(...rings[rings.length - 1]);
+    for (let j = 1; j < count - 1; j++) {
+      faces.push(front, front + j, front + j + 1);
+      faces.push(rear, rear + j + 1, rear + j);
     }
   }
   const geo = new THREE.BufferGeometry();
@@ -37,14 +52,15 @@ function loft(rings, close = true) {
 
 export function roadsterBody() {
   const rings = BODY_STATIONS.map(([z, w, bottom, deck, shoulder]) => {
+    const lowerFloor = Math.min(bottom, .39);
     const sideRise = Math.min(.12, (shoulder - bottom) * .26);
     const cornerDrop = Math.min(.16, (shoulder - bottom) * .26);
     return [
-    -.83*w, bottom, z, -w, bottom+sideRise, z,
+    -.83*w, lowerFloor, z, -w, bottom+sideRise, z,
     -w, shoulder-cornerDrop, z, -.88*w, shoulder, z,
     -.57*w, deck, z, .57*w, deck, z,
     .88*w, shoulder, z, w, shoulder-cornerDrop, z,
-    w, bottom+sideRise, z, .83*w, bottom, z,
+    w, bottom+sideRise, z, .83*w, lowerFloor, z,
     ];
   });
   return loft(rings);
@@ -69,6 +85,7 @@ export function roadsterCanopy() {
 const silver = new THREE.MeshStandardMaterial({ color: '#adb6ba', metalness: .88, roughness: .25 });
 const graphite = new THREE.MeshStandardMaterial({ color: '#0a1116', metalness: .35, roughness: .3 });
 const satinCarbon = new THREE.MeshStandardMaterial({ color: '#222b31', metalness: .2, roughness: .37 });
+const headlampMaterial = new THREE.MeshStandardMaterial({ color: '#d1eff3', emissive: '#9abfc8', emissiveIntensity: .9, roughness: .2, side: THREE.DoubleSide });
 const bronze = new THREE.MeshStandardMaterial({ color: '#8d8578', metalness: .92, roughness: .24 });
 const wheelSpokeShape = (() => {
   const verts = [], indices = [];
@@ -188,6 +205,16 @@ export function addRoadsterTrim(group, m) {
       [side*.83,.81,-1.54], [side*.88,.94,-1.20],
     ],.008,m.paint,'Roadster hood crease');
     group.add(rocker(side));
+    // Recessed triangular corner lamps echo the angled nose of the reference prototype.
+    const triangle = new THREE.BufferGeometry();
+    triangle.setAttribute('position', new THREE.Float32BufferAttribute([
+      side * .84, .75, -2.17, side * 1.035, .76, -2.08,
+      side * .95, .56, -2.37,
+    ], 3));
+    triangle.computeVertexNormals();
+    const headlamp = new THREE.Mesh(triangle, headlampMaterial);
+    headlamp.name = 'Roadster triangular headlamp';
+    group.add(headlamp);
     line(group,[
       [side*.89,1.065,-1.12],[side*.82,1.35,-.72],
       [side*.74,1.49,.08],[side*.76,1.46,.65],
