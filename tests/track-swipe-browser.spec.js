@@ -321,6 +321,10 @@ test.describe('phone upcoming preview swipe', () => {
   test('uses existing canvas drag to switch between future and playable scenes', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-upcoming-track="dune-tempest"]').click();
+    // The visible intro is a scrollable overlay; touch gestures there belong to the
+    // form, not the WebGL canvas. Airflow exposes the same preview swipe surface.
+    await page.locator('#airflow-toggle').tap();
+    await expect.poll(() => page.evaluate(() => document.elementFromPoint(320, 560)?.id)).toBe('world');
     await touchSwipe(page, 320, 90, 560);
     await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#start-button')).toBeDisabled();
