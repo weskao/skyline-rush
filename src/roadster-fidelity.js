@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { createRearLight } from './rear-light.ts';
 import { REAR_PORTS } from './aero-vfx.js';
+import { addReferenceFront, addReferenceRear } from './roadster-reference-fascias.js';
 
 // Visual-only Roadster 2 interpretation: negative Z is the nose, positive Z the tail.
 // Keep dimensions inside the shared arcade collision envelope; no physics data changes.
 const BODY_STATIONS = [
-  [-2.48, .92, .40, .55, .61],
-  [-2.31, 1.03, .37, .59, .73],
-  [-1.91, 1.13, .35, .66, .93],
+  [-2.48, .84, .40, .55, .61],
+  [-2.31, .98, .37, .59, .73],
+  [-1.91, 1.10, .35, .66, .93],
   [-1.41, 1.19, .81, .74, 1.03],
   [-.72, 1.16, .36, .76, 1.04],
   [.44, 1.15, .36, .77, 1.04],
@@ -69,8 +70,8 @@ export function roadsterBody() {
 export function roadsterCanopy() {
   // One continuous tapering glasshouse: raked windscreen, short roof, long fastback.
   const stations = [
-    [-1.16, .93, 1.04, .86, 1.055],
-    [-.72, .98, 1.07, .75, 1.35],
+    [-1.16, .84, 1.04, .62, 1.055],
+    [-.72, .96, 1.07, .72, 1.35],
     [.08, .98, 1.075, .72, 1.48],
     [.65, .96, 1.075, .70, 1.46],
     [1.24, .91, 1.075, .75, 1.30],
@@ -111,9 +112,8 @@ const wheelHub = new THREE.CylinderGeometry(.075, .075, .027, 24);
 const nozzleCavityGeometry = new THREE.CylinderGeometry(.103,.115,.16,20,1,true);
 const nozzleBackGeometry = new THREE.CircleGeometry(.098,20);
 const nozzleRimGeometry = new THREE.TorusGeometry(.13,.025,8,24);
-const diffuserVaneGeometry = new THREE.BoxGeometry(.035,.28,.39);
 const wingStrutGeometry = new THREE.BoxGeometry(.052,.34,.09);
-const wingEndplateGeometry = new THREE.BoxGeometry(.065,.18,.49);
+const wingEndplateGeometry = new THREE.BoxGeometry(.038,.10,.32);
 const pathGeometry = new Map();
 const rockerGeometry = new Map();
 
@@ -152,7 +152,7 @@ function rocker(side) {
   return mesh;
 }
 
-function aerofoil() {
+function aerofoil(paint) {
   const outline = new THREE.Shape();
   outline.moveTo(-1.16,-.22);
   outline.lineTo(1.16,-.22);
@@ -166,35 +166,11 @@ function aerofoil() {
     bevelSegments: 1, steps: 1, curveSegments: 1,
   });
   geo.rotateX(-Math.PI/2);
-  const mesh = new THREE.Mesh(geo,silver);
+  const mesh = new THREE.Mesh(geo,paint);
   mesh.name = 'Roadster aerofoil';
   return mesh;
 }
 
-// A curved cross-car sheet preserves the white/graphite wedge line instead of
-// reading as a flat bumper box. Front faces -Z; rear faces +Z.
-const sculptedPanel = (front) => {
-  const xs = [-1.05,-.86,-.65,-.32,0,.32,.65,.86,1.05];
-  const vertices = [], faces = [];
-  for (const x of xs) {
-    const edge = Math.abs(x) / 1.05;
-    const z = front ? -2.49 + .19 * edge * edge : 2.41 - .12 * edge * edge;
-    const high = front ? .66 + .035 * edge : .88 + .035 * (1-edge);
-    const low = front ? .46 + .045 * edge : .64 + .025 * edge;
-    vertices.push(x, high, z, x, low, z);
-  }
-  for (let i = 0; i < xs.length - 1; i++) {
-    const a = i * 2, b = a + 1, d = a + 2, e = a + 3;
-    faces.push(...(front ? [a,d,b,b,d,e] : [a,b,d,b,e,d]));
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices,3));
-  geometry.setIndex(faces);
-  geometry.computeVertexNormals();
-  return geometry;
-};
-const frontFascia = sculptedPanel(true);
-const rearFascia = sculptedPanel(false);
 const cornerIntakes = new Map();
 function cornerIntake(side) {
   if (!cornerIntakes.has(side)) {
@@ -215,11 +191,11 @@ function lampGeometry(side, lens) {
   const key = `${side}:${lens ? 'light' : 'pocket'}`;
   if (!cornerLamps.has(key)) {
     const vertices = lens ? [
-      side*.878,.689,-2.253, side*.993,.686,-2.195,
-      side*.949,.633,-2.323,
+      side*.855,.699,-2.288, side*.942,.698,-2.247,
+      side*.918,.671,-2.318,
     ] : [
-      side*.840,.750,-2.170, side*1.035,.760,-2.080,
-      side*.950,.560,-2.370,
+      side*.828,.722,-2.269, side*.959,.721,-2.224,
+      side*.918,.650,-2.336,
     ];
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
@@ -249,17 +225,8 @@ export function addRoadsterWheelDetail(wheel, side) {
 }
 
 export function addRoadsterTrim(group, m) {
-  // Nose: hairline DRL in a dark horizontal blade, plus two subtle hood break lines.
-  const nose = new THREE.Mesh(new THREE.BoxGeometry(1.86,.095,.055),graphite);
-  nose.position.set(0,.57,-2.47);
-  group.add(nose);
-  const noseSurface = new THREE.Mesh(frontFascia, graphite);
-  noseSurface.name = 'Roadster sculpted front fascia';
-  group.add(noseSurface);
-  line(group, [
-    [-.87,.625,-2.470],[-.44,.622,-2.522],[0,.625,-2.534],
-    [.44,.622,-2.522],[.87,.625,-2.470],
-  ],.011,m.white,'Roadster front light blade');
+  // Photo reference: painted wedge, thin black lower mouth, only two tiny front slits.
+  addReferenceFront(group,m);
   for (const side of [-1,1]) {
     line(group,[
       [side*.51,.595,-2.38], [side*.69,.70,-1.98],
@@ -287,25 +254,7 @@ export function addRoadsterTrim(group, m) {
   group.add(rearLight.group);
   group.userData.rearLight = rearLight;
 
-  const fascia = new THREE.Mesh(rearFascia, graphite);
-  fascia.name = 'Roadster curved rear fascia';
-  group.add(fascia);
-  line(group, [
-    [-1.02,1.061,2.305],[-.58,1.063,2.366],[0,1.064,2.394],
-    [.58,1.063,2.366],[1.02,1.061,2.305],
-  ],.013,silver,'Roadster rear light edge');
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(.40,.14,.035),silver);
-  plate.position.set(0,.79,2.443);
-  group.add(plate);
-  const diffuser = new THREE.Mesh(new THREE.BoxGeometry(1.91,.055,.45),graphite);
-  diffuser.position.set(0,.22,2.20);
-  group.add(diffuser);
-  for (const x of [-.84,-.47,0,.47,.84]) {
-    const vane = new THREE.Mesh(diffuserVaneGeometry,satinCarbon);
-    vane.position.set(x,.18,2.19);
-    vane.name='Roadster diffuser vane';
-    group.add(vane);
-  }
+  addReferenceRear(group,m,line);
   for (const port of REAR_PORTS) {
     const assembly = new THREE.Group();
     assembly.position.set(port.position[0],port.position[1],2.43);
@@ -322,7 +271,7 @@ export function addRoadsterTrim(group, m) {
 
   const wing = new THREE.Group();
   wing.name='Roadster active wing';
-  wing.add(aerofoil());
+  wing.add(aerofoil(m.paint));
   for (const side of [-1,1]) {
     const strut=new THREE.Mesh(wingStrutGeometry,graphite);
     strut.position.set(side*.71,-.19,-.015);
