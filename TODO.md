@@ -1,6 +1,8 @@
 ## Roadster 2-inspired player vehicle fidelity — 2026-11-03
 
-**Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`. Visual reference: user-supplied front/side/rear/wing/flight images; spec and plan in `docs/superpowers/`.
+**Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
+
+**Integration checkpoint:** `develop` `00ae95f8` was merged via `6cdd909f` (two parents, no force-push). Previous HEAD CI `41584935239` failed unit/browser/World Tour; unit failure identified a shared Roadster merged-material instance. Fix commit `5a11df0` is included. Verify the full CI on the exact new HEAD (not only feature-focused tests); visual WebGL and physical-device review remain separate gates. Visual reference: user-supplied front/side/rear/wing/flight images; spec and plan in `docs/superpowers/`.
 
 - [x] Preserve current race physics, VFX port coordinates, Garage body-paint API, wing lift and independent wheels.
 - [x] Replace roadster-only six-box-section shell with a multi-station faceted wedge and fastback glazing, add realistic side detail, aero rims, rear wing, nozzles and diffuser.
