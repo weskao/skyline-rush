@@ -1,3 +1,19 @@
+## Roadster front/rear & eight-car visual identity — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Reference: user-provided 15 images of Roadster 2 front, rear, side, raised aerofoil, wheel details and flight. This is a recognizable *game model*, not an OEM CAD replica.
+
+- [x] Model-specific curved Roadster front and rear fascia, hairline nose light, recessed corner light pockets, black corner ducts, continuous rear light and curved edge; retain the original 4 rear thruster ports, diffuser, five-spoke wheels and moving aerofoil.
+- [x] Map the **actual** `YOU, NOVA, ORBIT, APEX, VEGA, PULSE, COMET, RIFT` grid to 8 distinct racing models, not seven paint swaps of three rivals. VEGA/PULSE/COMET/RIFT get unique sculpted shell and front/rear light signatures; existing original racers retain their established visual languages.
+- [x] Mix commuter sedan / crossover / hatch geometries for traffic, preserving traffic simulation and independent racer identity. Shortened Pulse and hatch visual chassis length; no physics or collision rules changed.
+- [x] No manufacturer or fixed brand logos are baked into meshes; future equipable vehicle badges remain a separate feature.
+- [x] Add deterministic fleet, light, material, bounds, vehicle-pose contracts and module-size-friendly changes; preserve previous exact geometry snapshots for all untouched vehicles.
+- [ ] Historical RED observation for test-first commits: GitHub cancelled superseded runs while commits advanced. Don't claim verified RED until a specific failing test log is recorded.
+- [ ] **Exact-HEAD** `npm test`, `npm run build`, `npm run typecheck`, `make verify`, all Browser / World Tour and Cloud Save shards plus `quality-gate` GREEN (via `[full-regression]` commit); identify any failures by name, never equate focused CI with full CI.
+- [ ] Real WebGL Garage/Home/Race screenshots: front, rear, side, 45-degree, lowered/raised wing, road/airborne; 390×844, 844×390 and desktop. Compare 8 drivers at distance under High/Medium/Low, and compare before/after draw calls, triangles, median/p95 frame time, visual wheel clearance.
+- [ ] Human touch/device QA and user's aesthetic approval. Do not merge to `develop`/`main`, open PR, force push, or deploy.
+
+---
+
 ## Roadster 2-inspired player vehicle fidelity — 2026-11-03
 
 **Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
