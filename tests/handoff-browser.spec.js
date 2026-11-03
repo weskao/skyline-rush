@@ -1,8 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
-import { createRings } from '../src/ring-layout.ts';
-import { RACE_TRACKS } from '../src/race-tracks.ts';
 
 const open = async page => {
   await page.goto('/');
@@ -142,9 +140,9 @@ test.describe('touch controls', () => {
 
 });
 
-test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ page }) => {
-  test.setTimeout(ciTimeout(90000));
-  await open(page);
+// The app re-rolls rings per race (race-factory.ts setLayoutSeed): the dev build lets the test pin and read the live layout.
+gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ gameplayPage: page }) => {
+  gameplayTest.setTimeout(ciTimeout(90000));
   await page.locator('#controls-button').click();
   await page.locator('#controls-sensitivity').focus();
   await page.keyboard.press('Home');
@@ -165,10 +163,28 @@ test('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire onc
   // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
   await page.locator('button[data-race-mode="time"]').click();
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
-  await start(page);
+  // Ring types re-roll every race, so pin Coast's own layout seed (as tests/ring-rows-browser.spec.js does): its first
+  // group is four gates, the last a full-width row.
+  const { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO } = await page.evaluate(async () => {
+    (await import('/src/game.js')).setLayoutSeed();
+    const { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO } = await import('/src/ring-layout.ts');
+    return { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO };
+  });
+  await page.getByRole('button', { name: 'Start race', exact: true }).click();
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
-  // Coast's first group from the layout the game builds: ring heights vary, so each gate is flown at its own altitude.
-  const gates = createRings(RACE_TRACKS.coast).filter(ring => ring.group === 0).map(({ distance, altitude }) => ({ distance, altitude }));
+  // Coast's first group from this race's layout: ring heights vary, so each gate is flown at its own altitude (a row is
+  // four rings at one distance and altitude, one gate). The group is made nitro rings so the rewards are known: 0.5 per
+  // gate (a row pays once) plus PERFECT LINE's 1 fills the 3-charge meter from four gates. Set during the countdown, so
+  // the pilot is flying before the first gate even on a slow runner.
+  await expect.poll(() => page.evaluate(() => window.gameplay.race.mode)).toBe('time');
+  const gates = await page.evaluate(([RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO]) => {
+    const group = window.gameplay.race.rings.filter(ring => ring.group === 0);
+    for (const ring of group) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
+    const at = [...new Set(group.map(ring => ring.distance))];
+    if (at.length * RING_NITRO.nitro + PERFECT_LINE_NITRO < 3) throw new Error(`first group has only ${at.length} gates`);
+    return at.map(distance => ({ distance, altitude: group.find(ring => ring.distance === distance).altitude }));
+  }, [RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO]);
+  await expect(page.locator('#race-status')).toHaveText('RACING');
   const perfectLine = await page.evaluate(([budget, gates]) => new Promise(resolve => {
     let held = false;
     const deadline = performance.now() + budget;
