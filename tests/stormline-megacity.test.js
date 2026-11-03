@@ -15,7 +15,7 @@ test('one-way 14 km road survives every optional fork and finishes once', () => 
   for (let i = 1; i < route.length; i++) assert.equal(route[i - 1].to, route[i].from);
   assert.ok(route.every(edge => edge.mode === 'drive' && edge.surface !== 'gap'));
   const length = route.reduce((sum, edge) => sum + edgeLength(edge), 0);
-  assert.ok(length >= 12_600 && length <= 15_400, `mainline length ${length.toFixed(1)} m`);
+  assert.ok(length >= 13_500 && length <= 14_800, `mainline length ${length.toFixed(1)} m`);
   assert.deepEqual(validateStormlineCourse(course), []);
 });
 
