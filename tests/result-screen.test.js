@@ -70,11 +70,11 @@ test('Wave 3 Classic podium shows a bilingual placement badge without creating a
   const first = resultView(race({ rivals: Array.from({ length: 7 }, () => ({})) }), finished());
   assert.match(first.stats, /Placement badge \(display only\)/);
   assert.match(first.stats, />Gold</);
-  assert.match(first.stats, /trophy-gold@3x\\.webp/);
+  assert.match(first.stats, /trophy-gold@3x\.webp/);
   assert.match(first.stats, /width="48" height="48" alt=""/);
   const third = resultView(race({ result: { ...race().result, position: 3 } }), finished());
   assert.match(third.stats, />Bronze</);
-  assert.match(third.stats, /trophy-bronze@3x\\.webp/);
+  assert.match(third.stats, /trophy-bronze@3x\.webp/);
   const missed = resultView(race({ result: { ...race().result, position: 4 } }), finished());
   assert.doesNotMatch(missed.stats, /Placement badge/);
   assert.doesNotMatch(missed.stats, /result-trophy-art/);
