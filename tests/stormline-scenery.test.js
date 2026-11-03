@@ -31,3 +31,17 @@ test('flight gap never gains fake collision road; chunk resources are disposed e
   assert.equal(releases, 1);
   assert.equal(street.group.parent, null);
 });
+
+test('neon signs retain identical world positions across arbitrary stream chunk boundaries', () => {
+  const signs = chunk => chunk.group.children
+    .filter(object => object.name === 'stormline:billboard:night-start')
+    .map(object => Math.round(-object.position.z));
+  const whole = createStormlineChunk('night-start', 0, 700, sample, 'high');
+  const first = createStormlineChunk('night-start', 0, 230, sample, 'high');
+  const second = createStormlineChunk('night-start', 230, 700, sample, 'high');
+  try {
+    assert.deepEqual([...signs(first), ...signs(second)], signs(whole));
+  } finally {
+    whole.dispose(); first.dispose(); second.dispose();
+  }
+});
