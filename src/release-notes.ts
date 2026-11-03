@@ -51,13 +51,13 @@ export const recentReleases = (current: string = version, notes: readonly Releas
 export const releaseForVersion = (v: string = version): ReleaseEntry | null => RELEASE_NOTES.find(release => release.version === v) ?? null;
 export const CURRENT_RELEASE = recentReleases()[0] ?? null;
 
-// Shows when the player last saw an older version; with no record only a returning player is told.
-// Blocked storage cannot remember the visit, so it stays silent rather than reopening on every load.
-export function shouldAnnounce(release: Pick<ReleaseEntry, 'version' | 'highlights'> | null, storage?: ReleaseStore | null, returningPlayer = false): boolean {
-  if (!release?.highlights?.length) return false;
+// Shows when the player last saw an older version, or has no record at all (first visit, incognito, cleared storage).
+// Blocked storage cannot remember the visit, so it stays silent rather than reopening on every load; unreleased notes never pop up.
+export function shouldAnnounce(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): boolean {
+  if (!release || release.version === UPCOMING || !storage) return false;
   let seen;
-  try { seen = storage?.getItem(NOTES_SEEN_KEY); } catch { return false; }
-  return seen == null ? returningPlayer : compareVersions(release.version, seen) > 0;
+  try { seen = storage.getItem(NOTES_SEEN_KEY); } catch { return false; }
+  return seen == null || compareVersions(release.version, seen) > 0;
 }
 export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): void {
   if (!release || release.version === UPCOMING) return;

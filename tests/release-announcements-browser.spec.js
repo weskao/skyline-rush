@@ -196,12 +196,17 @@ test('a player already on the latest notes is not interrupted', async ({ page })
 
 test.describe('first visit', () => {
   test.use({ guideSeen: false });
-  test('a first-time player is not greeted with old news, but the version is recorded', async ({ page }) => {
+  test('a first-time or incognito visit gets the notes on load, and the version is recorded', async ({ page }) => {
     await seedSeen(page, null);
     await page.goto('/');
-    await settle(page);
-    await expect(page.locator('#whats-new-screen')).toBeHidden();
-    await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBe(hasUpcoming ? null : version);
+    if (hasUpcoming) { // Upcoming notes never open by themselves and never replace the record
+      await settle(page);
+      await expect(page.locator('#whats-new-screen')).toBeHidden();
+      expect(await page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBeNull();
+      return;
+    }
+    await expect(page.locator('#whats-new-screen')).toBeVisible();
+    await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBe(version);
   });
 });
 
