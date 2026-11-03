@@ -56,6 +56,7 @@ test('selecting an Event Lab course clears a previously selected coming-soon pre
   await expect(page.locator('#event-lab-dialog')).toBeVisible();
   await page.locator('#lab-use').click();
   await expect(page.locator('#event-lab-dialog')).toBeHidden();
+  await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#upcoming-scene')).toBeHidden();
   await expect(page.locator('#start-button')).toBeEnabled();
   await expect(page.locator('#start-button span')).toHaveText('Start race');
