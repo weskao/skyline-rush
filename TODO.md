@@ -3161,3 +3161,18 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 
 - [ ] **2026-11-03 source integration update:** Five independent art branches subsequently delivered actual native Three.js scene modules, corresponding focused unit tests and art notes. Their exports, geometry, absolute-time updates, quality/reduced-motion arguments and disposal methods were source-reviewed. The exact 15 committed Git blobs were selectively imported without merging old histories. Heads: `dune-tempest` `fa9573b4bddd`; `monsoon-ruins` `32411c88c702`; `skyfall-archipelago` `9707c5132dab`; `volcanic-crown` `d7ad8b01f57f`; `stormline-megacity` `84e9569a2d4c`. Source branch CI was still queued when checked; this is **not** verified visual acceptance.
 - [ ] Register all five in the shared renderer and run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and 2 real WebGL frames per map desktop/mobile. Pending; do not label scenes visually accepted before screenshots and checks.
+
+---
+
+## 2026-11-04 — Skyfall playable map-owned streaming / contact
+
+**Only writable branch:** `feature/playable-skyfall-archipelago`. The shared source `feature/epic-multiroute-longform-tracks` at `679dd6b8` had Browser and World Tour failures and no exact-HEAD green FULL gate at inspection. **No merge or map activation.**
+
+- [x] Add deterministic road-contact boundary regression for all ten edges (`dbcf8f35`); extracted original function produced RED for negative progress.
+- [x] Reject non-finite, before-start and after-end arc-length contact without synthesizing road outside an edge (`1f7702a8`). Eight extracted-function boundary cases produced GREEN, **not** full repository verification.
+- [x] Author world regression assertions for all-edge streamed scene, eight simultaneous car foci, geometry release and deterministic Reduced Motion waterfall (`822c9076`).
+- [x] Implement map-owned 420 m, disposable per-edge road/island/obstacle rendering with `setFocus([{ edgeId, localS }, ...])`, junction lookahead, deterministic island placement, bounded cloud ocean and waterfall animation (`c5b5836`). **Not yet wired to shared runtime.**
+- [x] Update `docs/designs/new-tracks/skyfall-playable-handoff.md` with the new API and honest pending gates.
+- [ ] Confirm exact-HEAD `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, Playwright and `make verify`. Full remote CI requested with this documentation commit; results are pending and may include pre-existing non-Skyfall Browser / World Tour failures.
+- [ ] Integrate shared CourseGraph simulation, signed ordered checkpoint crossing, physical flight/landing/recovery, 8-car edge/altitude-aware AI and actual player/camera/rival focus updates. Preserve legacy races and disabled Coming Soon start.
+- [ ] Record actual desktop 1440×900 and mobile 390×844 ground and flight WebGL screenshots against both JPEGs, quality-tier/Reduced Motion checks, GPU cleanup and performance evidence. No art similarity or gameplay acceptance claimed before evidence.
