@@ -302,6 +302,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     selectedRace, canRace,
     selectedMode: (): string => selectedMode,
     isUpcomingSelected: (): boolean => Boolean(upcomingSelection),
+    currentTrackId: (): string => upcomingSelection ?? getRace().trackId,
     /** The Daily Challenge always races the Classic rules. */
     selectClassic(): void { upcomingSelection = null; selectedMode = 'classic'; },
     restoreCup(cup: CupState): void {

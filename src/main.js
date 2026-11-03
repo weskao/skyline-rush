@@ -275,7 +275,7 @@ const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   getRace: () => race,
   getWorld: () => world,
   selectedRace,
-  isUpcomingPreviewSelected: () => raceSelect.isUpcomingSelected(),
+  getSelectedTrackId: () => raceSelect.currentTrackId(),
   calmMotion,
   motionOptions,
   isTutorialActive: () => !!tutorial,
