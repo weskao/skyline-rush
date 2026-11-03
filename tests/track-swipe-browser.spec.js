@@ -167,6 +167,7 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
     return { left: box.left, right: box.right, width: box.width, height: box.height, alpha: pixels[3] };
   }));
   expect(Math.abs(geometry[0].right - geometry[1].left)).toBeLessThan(1);
+  expect(Math.abs(geometry[0].right - (1440 - 130)), 'the scenes move the full 130px drag, not a damped half').toBeLessThan(1);
   expect(geometry[0].left).toBeLessThanOrEqual(0);
   expect(geometry[1].right).toBeGreaterThanOrEqual(1440);
   expect(geometry.every(part => part.width === 1440 && part.height > 0 && part.alpha === 255), 'both actual scenes remain fully opaque').toBe(true);

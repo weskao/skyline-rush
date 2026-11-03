@@ -15,9 +15,11 @@ export function swipeAxis(dx: number, dy: number): 'x' | 'y' | null {
 // Distance that changes track without a flick: a fifth of the screen, capped for wide desktops.
 export const swipeDistance = (width: number): number => Math.min(width * 0.2, 96);
 
-// How far the preview follows the finger: an iOS-style rubber band, stiff where there is no track to reveal.
+// How far the preview follows the finger: 1:1 up to one page when a track waits there (iOS paging),
+// else a stiff rubber band. Damping the free case hid the 96px commit on wide desktops.
 export function swipeOffset(dx: number, width: number, hasNeighbour: boolean): number {
-  const reach = width * (hasNeighbour ? 0.6 : 0.12);
+  if (hasNeighbour) return Math.max(-width, Math.min(width, dx));
+  const reach = width * 0.12;
   return Math.sign(dx) * (1 - 1 / (Math.abs(dx) * 0.55 / reach + 1)) * reach;
 }
 
