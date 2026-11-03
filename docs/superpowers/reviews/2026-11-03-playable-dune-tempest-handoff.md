@@ -45,3 +45,12 @@ The files exist at the shared baseline, but the connector could not decode the J
 - [ ] Measured 3–5 min race, 8-car AI, 30/60/120 FPS, quality and Reduced Motion.
 - [ ] Real desktop/mobile WebGL visual evidence, GPU disposal, frame timing and draw calls.
 - [ ] Full local verification and exact-HEAD remote FULL CI green (required jobs not skipped).
+
+## 2026-11-04 source merge safety gate — blocked
+
+- Source (read-only): `feature/epic-multiroute-longform-tracks` exact HEAD `679dd6b8ea7da331afb57d9dc04be830a1dcedb5`.
+- Destination at inspection: `feature/playable-dune-tempest` HEAD `9974fd491d39124525fd620eb778d21d4ea13cc2`. The branches diverged (source 34 commits ahead, 4 behind, relative to destination); a safe merge needs a reviewed non-fast-forward merge with conflict preservation.
+- Source exact-HEAD FULL CI: [run 41664995763](https://github.com/weskao/skyline-rush/actions/runs/41664995763) had unit-tests SUCCESS, World Tour shard 5 FAILURE, multiple browser shards FAILURE, and an unfinished browser shard at inspection. Thus the required FULL CI / quality-gate has **not** passed. Do not merge this source HEAD until all required checks (including Browser and World Tour) have completed successfully for that exact SHA.
+- Actual source-run failures inspected: World Tour shard 5, `tests/showcase-camera-views-browser.spec.js`, Taipei 390×844 orbit at 105 degrees reported car body occlusion; Browser shards 3 and 13, `tests/track-swipe-browser...`, reported old-track reappearance after snap. These defects belong to the read-only source/shared UI and were **not** patched on another branch.
+- This update documents inspection only; no Dune gameplay/renderer/runtime code was changed, no test rerun was performed, and no WebGL screenshots or 3–5-minute/eight-car measurements are available. Earlier focused RED/GREEN evidence remains historical and does not validate this HEAD.
+- Next safe Dune-owned work: maintain existing 13.5-km draft and route/split/hazard invariants, prepare fixture-backed render acceptance once the integrator supplies its shared CourseGraph arc-length runtime, and then test checkpoint/AI/landing/recovery in the real renderer. Do not mark playable, register in RACE_TRACKS, or remove Coming Soon protection without runtime and acceptance evidence.
