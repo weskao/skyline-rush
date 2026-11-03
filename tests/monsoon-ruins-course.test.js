@@ -5,6 +5,8 @@ import {
   sampleMonsoonRoute,
   sampleMonsoonEdge,
   monsoonEdgeLength,
+  monsoonGraphEdgeLength,
+  sampleMonsoonGraphEdge,
   monsoonWetContact,
   monsoonObstacleHit,
   monsoonAvoidance,
@@ -123,6 +125,33 @@ test('checkpoint requires an actual forward world-space gate crossing on the gro
     farOutside(before, 0, 22), farOutside(after, 0, 22), 'ground'), false);
   assert.equal(monsoonCrossedCheckpoint(gate,
     main(gate - 200).point, main(gate + 200).point, 'ground'), false, 'no teleport across a gate');
+});
+
+
+test('shared CourseGraph can sample each authored main segment and fork by graph edge ID', () => {
+  const authored = [...course.mainEdges, ...course.branches];
+  assert.equal(course.mainEdges.length, course.nodes.length - 1);
+  for (const edge of authored) {
+    const total = monsoonGraphEdgeLength(edge.id);
+    assert.ok(total > 50, edge.id);
+    const start = sampleMonsoonGraphEdge(edge.id, 0);
+    const end = sampleMonsoonGraphEdge(edge.id, total);
+    assert.equal(start.graphEdgeId, edge.id);
+    assert.equal(end.graphEdgeId, edge.id);
+    near(start.distance, edge.from, 1e-5);
+    near(end.distance, edge.to, 1e-5);
+    assert.ok(separation(start.point, main(edge.from).point) < 0.1);
+    assert.ok(separation(end.point, main(edge.to).point) < 0.1);
+    assert.throws(() => sampleMonsoonGraphEdge(edge.id, -1), /distance/i);
+  }
+  for (let i = 1; i < course.mainEdges.length; i++) {
+    const previous = course.mainEdges[i - 1], next = course.mainEdges[i];
+    assert.ok(separation(
+      sampleMonsoonGraphEdge(previous.id, monsoonGraphEdgeLength(previous.id)).point,
+      sampleMonsoonGraphEdge(next.id, 0).point,
+    ) < 0.01, 'main segment joins must be watertight');
+  }
+  assert.throws(() => sampleMonsoonGraphEdge('ground-nope', 100), /edge/i);
 });
 
 test('shallow water affects contact without exceeding the safe flooding cap', () => {
