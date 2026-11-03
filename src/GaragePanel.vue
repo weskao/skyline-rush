@@ -18,7 +18,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'],
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
   auto: '自動旋轉', reset: '重設鏡頭', viewMode: '展示姿態', ground: '平地展示', flight: '起飛展示', collection: '車漆收藏',
-  coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：僅本次開啟有效，重新載入後還原；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
+  coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：重新載入後記住此帳號最後的選擇；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆', equipment: GARAGE_RELEASE_MODE === 'coming-soon' ? '即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '特效試用' : '外觀特效',
   preview: '預覽', unlockNote: '累積賽道星數可解鎖車漆；未解鎖車漆僅能試看。',
 } : {
@@ -26,7 +26,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'],
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
   auto: 'Auto rotate', reset: 'Reset camera', viewMode: 'Display pose', ground: 'Ground', flight: 'Flight', collection: 'Paint collection',
-  coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free during this visit. Reload resets temporary equipment; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
+  coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free. Your last pick is remembered on reload for this account; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint', equipment: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'VFX trial' : 'Cosmetic VFX',
   preview: 'Preview', unlockNote: 'Earn track stars to unlock paint; locked finishes are preview-only.',
 });
@@ -80,6 +80,9 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 </template>
 
 <style>
+/* The full-screen Garage/Studio covers the home: stop rendering it, or iOS WebKit flashes its animated layers
+   (START sheen, Garage pulse) over the dialog. Descendants too: airflow mode forces #start-button visible. */
+#app:has(> #garage-screen[open]) > :not(dialog), #app:has(> #garage-screen[open]) > :not(dialog) * { visibility: hidden !important; }
 #garage-screen.garage-screen { position: fixed; inset: 0; width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; border-radius: 0; padding: max(7px, env(safe-area-inset-top)) max(7px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)) max(7px, env(safe-area-inset-left)); overflow: hidden; display: none; flex-direction: column; gap: 6px; }
 #garage-screen.garage-screen[open] { display: flex; }
 #garage-screen .garage-heading { display: flex; align-items: center; gap: 6px; flex: none; min-height: 44px; }

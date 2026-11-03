@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, setLayoutSeed, RACE_TRACKS, CAR_HEIGHT, TUNNEL_CEILING, GAP_CLEARANCE, ITEMS_PER_CAR } from '../src/game.js';
 
-// User, 2026-11-02: rings and pickups scale with the cars on the grid (4 slots per car), spread over the whole track,
+// User, 2026-11-02: rings and pickups scale with the cars on the grid (5 slots per car since the user's 2026-11-03
+// "medium increase"; 4 before), spread over the whole track,
 // and their positions are re-rolled every race. A ring slot may be a train or a full-width row and a pickup slot
 // trails a run of cells (tests/ring-rows.test.js): `slots` counts one ring per slot, `pickupsOf` one pickup.
 const TRACKS = Object.keys(RACE_TRACKS);
@@ -18,12 +19,12 @@ test('L1: a race carries ITEMS_PER_CAR single rings per car on the grid, on ever
     const race = createRace(id, { mode: 'custom', rivals });
     assert.equal(singles(race).length, PER_CAR * (rivals + 1), `${id} with ${rivals + 1} car(s)`);
   }
-  for (const id of TRACKS) assert.equal(singles(createRace(id)).length, PER_CAR * 8, `${id} classic grid of 8`);
+  for (const id of TRACKS) assert.equal(singles(createRace(id)).length, 40, `${id} classic grid of 8: 5 per car`);
 });
 
-test('L2: a slot is a single ring, a 5-ring train or a 4-ring full-width row', () => {
+test('L2: a slot is a single ring, a 6-ring train or a 4-ring full-width row', () => {
   for (const id of TRACKS) for (const ring of createRace(id).rings) {
-    if (ring.train !== undefined) assert.ok(ring.train >= 0 && ring.train < 5, `${id} train @${ring.distance}`);
+    if (ring.train !== undefined) assert.ok(ring.train >= 0 && ring.train < 6, `${id} train @${ring.distance}`);
     if (ring.row) assert.equal(createRace(id).rings.filter(r => r.row && r.distance === ring.distance).length, 4, `${id} row @${ring.distance}`);
   }
 });

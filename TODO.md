@@ -10,6 +10,67 @@
 
 ---
 
+## Roadster 2-inspired player vehicle fidelity — 2026-11-03
+
+**Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
+
+**Integration checkpoint:** `develop` `00ae95f8` was merged via `6cdd909f` (two parents, no force-push). Previous HEAD CI `41584935239` failed unit/browser/World Tour; unit failure identified a shared Roadster merged-material instance. Fix commit `5a11df0` is included. Verify the full CI on the exact new HEAD (not only feature-focused tests); visual WebGL and physical-device review remain separate gates. Visual reference: user-supplied front/side/rear/wing/flight images; spec and plan in `docs/superpowers/`.
+
+- [x] Preserve current race physics, VFX port coordinates, Garage body-paint API, wing lift and independent wheels.
+- [x] Replace roadster-only six-box-section shell with a multi-station faceted wedge and fastback glazing, add realistic side detail, aero rims, rear wing, nozzles and diffuser.
+- [x] Introduce physical pearl paint and glazed windows without changing rival/traffic styles; add targeted structural regression tests.
+- [ ] Verify the expected historical RED state on the pre-implementation commit: first GitHub test run was cancelled before unit jobs completed; do **not** claim TDD RED observed.
+- [ ] Obtain GREEN for `node --test tests/roadster-fidelity.test.js tests/car-model-draws.test.js`, complete `npm test`, `npm run build`, `npm run typecheck`, `make verify`.
+- [ ] Inspect real WebGL pictures for all major angles in Garage and race, at desktop and mobile viewport; compare frame time, triangles and draw calls before/after.
+- [ ] Verify exact-HEAD full CI quality-gate and manually test road/flight/transitions on real devices. No PR, merge, deployment or modification to `main`/`develop` without explicit user approval.
+
+---
+
+## Fix — What's New hero clip stays a still on iPhone Home Screen app until tapped (2026-11-03)
+
+**Branch:** `develop`. **Repro (user, iPhone 16, iOS 26.3, Home Screen app):** notes auto-open on launch, hero clip shows its
+poster, no music; only a tap on the clip (which enlarges it) starts the clip and the music.
+**Root cause:** where the browser refuses autoplay (iPhone Low Power Mode refuses even a muted clip; Web Audio never starts
+before a touch on iOS), `syncReleaseVideo` gave up on the first refusal and never retried. The music already retried on any
+touch; the hero did not.
+
+- [x] RED: `tests/release-video-browser.spec.js` "refused autoplay" desktop click + phone tap: play() refused without a real
+  input event, notes opened without one; first touch on the notes left the hero paused (both failed, 10 s poll).
+- [x] GREEN: `onUserActivation` (`src/user-activation.ts`, shared with the music unlock in `audio-ui.ts`) retries a paused hero
+  on the first tap/key while the notes are open; the enlarged view keeps it waiting (mutation: removing that guard fails
+  "waits behind its enlarged view"). Spec 13/13 green.
+- [x] iOS 27.0 simulator, Home Screen web app, production build: hero autoplays on launch with the fix (frames differ 2 s
+  apart); first tap creates a running AudioContext (music on).
+- [ ] Real iPhone 16 / iOS 26.3 retest by the user (Low Power Mode on and off). Not reproducible in the simulator, which has
+  no Low Power Mode; music before the first touch is impossible on iOS (platform rule).
+
+## Touch devices: hide keyboard remapping until a physical keyboard is used — 2026-11-03
+
+Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/tablets should not show the Controls panel's "鍵盤 · 先選擇動作，再按下按鍵" section, its rebind buttons, the fixed-shortcut note or Reset keyboard — but a phone/tablet with a Bluetooth keyboard must still be able to remap.
+
+- [x] Rule (`src/keyboard-presence.ts`): show at once on `(hover: hover) and (pointer: fine)`; otherwise hidden until a keydown with a non-empty `code`, not composing and not typed into a text field (on-screen keyboards send an empty code or compose), then remembered in `skyline-rush-keyboard-seen`. Wired in `setupKeyMapUI` → `panelsView.keyboardSettings` → `v-show` in `ControlsPanel.vue`.
+- [x] RED: `tests/keyboard-settings-browser.spec.js` touch case failed (`.keymap-field` visible) on the stub; GREEN after the change, desktop case green throughout. `tests/keyboard-presence.test.js` 6/6.
+- [x] `npm test` 1446 pass / 0 fail; `npm run build`; `npm run typecheck`; handoff/i18n/guide specs: the only 8 failures (handoff PERFECT LINE, i18n flow ×4, intro bottom edge ×3) fail identically on unmodified `origin/develop` `9ec7f3df`.
+- [x] Screenshot 390×844 touch: Controls panel without the keyboard block; after a Shift press, the block appears.
+- [x] Pre-existing develop reds (home row at 1440×900, `main-ui-parity`, i18n 3x artwork summary, handoff PERFECT LINE) were fixed
+  here, then superseded by develop's own fixes in 0.29.0; on merging `develop` `b34b1bfc` this branch took develop's versions and
+  dropped its duplicates (`hud-artwork.ts`, `layoutSeed` fixture, 12px/16px home row).
+- [ ] Physical iPad / iPhone with and without a Bluetooth keyboard.
+- [ ] `make verify` and full exact-HEAD CI `quality-gate` after merge into `develop`.
+
+---
+
+## Garage VFX remembered skin picks — 2026-11-03
+
+Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial pick survives reload as a preference only (`src/garage-skin-preference.ts`), re-applied through `session.equip`; never ownership.
+
+- [x] RED observed on old code: `tests/garage-skin-preference.test.js` (runtime reload / wiring), locked-bundle key audit in `tests/garage-release-build.test.js`, browser reload test (`data-state` was `trial`, expected `equipped`).
+- [x] GREEN: `npm test` 1462 pass / 0 fail, `npm run typecheck`, `npm run build` (locked bundle has no `skyline-rush-garage-skin-picks`; trial bundle has it), `tests/garage-skin-trial-browser.spec.js` 4/4 (desktop, 390×844, 844×390).
+- [ ] Pre-existing locally on unchanged `HEAD` source too: `garage-inspection-mode-browser.spec.js:4` (390×844) and `garage-studio-browser.spec.js:136` fail; confirm on CI.
+- [ ] `make verify` and the full exact-HEAD `quality-gate` (`[full-regression]`); then merge into `develop` (approved for this branch).
+
+---
+
 ## Garage VFX badge clipping / 3× WebP regeneration — 2026-11-02
 
 Branch: `fix/garage-vfx-badge-art-unclipped-3x` (created from `develop` `b3a0c11a`). User reported that all except the first three in `#garage-vfx-art-badges` were cropped near the bottom.
@@ -45,6 +106,19 @@ The 3x HUD artwork belongs to the future `feature/garage-store-readiness`, `feat
 - [x] Real WebGL screenshots at max zoom: front/rear/side/top/3/4, 1440 × 900 and 390 × 844; car in frame, trail fully visible.
 - [ ] Remote `quality-gate` on the final HEAD; real-device pinch check.
 - [ ] Cosmetic: at max zoom-out the 44 m floor edges show in top/side views (the corner was already visible at default zoom).
+
+## More rings and pickups: middle-lane ground trains (2026-11-03)
+
+**Branch:** `develop` (user request), worked on `work/ring-trains-develop` from `origin/develop` `9ec7f3df`, pushed as a fast-forward. **Request:** rings and pickups still too few, a medium increase on every map and mode, with consecutive rings down lane 2 or 3, mostly on the ground; keep the balance, no walls, no dense scatter.
+
+- [x] RED: `tests/ring-rows.test.js` (6-ring trains on x ±2.5, ≥ 3 trains a race, < 30% in the air, trains 40 m apart, Endless chunk contents) and `tests/scaled-layout.test.js` (40 singles on a grid of 8) failed on the old layout (e.g. "trains 216/3200 in 100 races", "coast train @712 overlaps the one ending @788").
+- [x] GREEN: `ITEMS_PER_CAR` 4 -> 5; trains 6 rings (charge/slipstream/charge/nitro/slipstream/charge) on the middle lane on the slot's side, 80% on the road, `TRAIN_ODDS` 0.15 -> 0.25, 40 m from the previous train. Endless: a middle-lane train in every chunk plus a row in 1 of 3, 3 singles, 5 pickup runs (was 4). `game.js` unchanged.
+- [x] Balance, economy bot, 6 seeds x 10 tracks, rival-free: rings 42.3 -> 59.0 (+39%), pickups 92.9 -> 112.0 (+21%), ground rings 7.1 -> 19.1, mid-lane rings 11.8 -> 22.8; NITRO/min 18.45 -> 19.98 (+8.3%), race 55.31 -> 54.73 s (-1.0%), fuel run-outs 0 -> 0, boost share 92.7 -> 98.0%; track NITRO/min 15.0-21.4 -> 17.3-21.5. Harbor Circuit 3 laps rings 153 -> 213, pickups 240 -> 276. Densest one-colour 900 m view 17 (pool 48).
+- [x] AC2 rival NITRO: more 0.25 run cells spend takes without filling a charge (Circuit Normal +1.0, every rival capped at 3). `NORMAL_RIVAL_TAKES` 3 -> 4 (Normal +3.8, Circuit +4.0, Elimination +1.8), `HARD_RIVAL_TAKES` 5 -> 6 (+5.0); Easy unchanged (+0.4).
+- [x] No `layoutVersion` bump: `f5f39464` is still not on `origin/main`. AC3 hashes re-locked (old ones kept in the comment).
+- [x] Gates: `npm test` 1441 pass / 0 fail / 3 skipped, `npm run typecheck`, `npm run build`; `tests/ring-rows-browser.spec.js` desktop + phone (row 1 ring, middle-lane train 6/6 + PERFECT LINE), WebGL screenshots checked.
+- [ ] Full `npm run test:browser` / `make verify` not run locally (shared Playwright machine): the `develop` CI `quality-gate` runs the full suite.
+- [ ] Real-device feel check.
 
 ## Ring trains, a few full-width rows, pickup runs (2026-11-02)
 

@@ -1,6 +1,7 @@
 import { updateAudioView, type AudioChannelView } from './audio-view-state.ts';
 import { t } from './i18n.ts';
 import { AUDIO_KEYS, setVolume } from './audio-settings.ts';
+import { onUserActivation } from './user-activation.ts';
 
 type Channel = 'music' | 'sfx';
 type AudioSettings = Record<Channel, boolean>;
@@ -83,8 +84,8 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
     });
   }
   document.querySelector('#mute-all')!.addEventListener('click', toggleSound);
-  // Every event that grants user activation (a tap, drag, click or key) starts audio, so blocked autoplay never waits on a prompt.
-  for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(type, unlockAudio, { capture: true });
+  // Any tap, drag, click or key starts audio, so blocked autoplay never waits on a prompt.
+  onUserActivation(unlockAudio);
   showAudio();
   unlockAudio(); // plays at once where the browser allows autoplay
   return { showAudio, toggleSound };

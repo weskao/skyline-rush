@@ -1,5 +1,7 @@
 import { t } from './i18n.ts';
 import { loadKeyMap, rebind, resetKeyMap, saveKeyMap, type KeyMap, type DriveAction } from './key-map.ts';
+import { trackKeyboard } from './keyboard-presence.ts';
+import { updatePanelsView } from './control-panels-view-state.ts';
 
 type Say = (element: HTMLElement, text: () => string) => void;
 interface KeyMapOptions {
@@ -69,6 +71,7 @@ export function setupKeyMapUI({ clearControls, say }: KeyMapOptions) {
     return true;
   }
   showKeyMap();
+  trackKeyboard(keyboardSettings => updatePanelsView({ keyboardSettings }));
   return {
     getKeyMap: (): KeyMap => keyMap,
     showKeyMap,
