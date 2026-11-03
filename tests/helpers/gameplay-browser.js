@@ -14,18 +14,14 @@ export const test = base.extend({
       await use(server.resolvedUrls.local[0]);
     } finally { await server.close(); }
   }, { scope: 'worker' }],
-  // A number pins every app race's ring/pickup layout to that seed instead of re-rolling it (race-factory.ts).
-  layoutSeed: [null, { option: true }],
-  gameplayPage: async ({ page, gameplayURL, layoutSeed }, use) => {
+  gameplayPage: async ({ page, gameplayURL }, use) => {
     for (const [file, anchor, replacement] of [
       ['main.js', 'let race = createRace();', 'let race = createRace(); window.gameplay = { get race() { return race; } };'],
       ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer };'],
-      // A regex: Vite's TypeScript transform reprints the call.
-      ...(Number.isInteger(layoutSeed) ? [['race-factory.ts', /setLayoutSeed\(\(\) =>[^;\n]*\);/, `setLayoutSeed(() => ${layoutSeed});`]] : []),
     ]) await page.route(`**/src/${file}`, async route => {
       const response = await route.fetch();
       const source = await response.text();
-      if (typeof anchor === 'string' ? !source.includes(anchor) : !anchor.test(source)) throw new Error(`Missing capture anchor in ${file}`);
+      if (!source.includes(anchor)) throw new Error(`Missing capture anchor in ${file}`);
       await route.fulfill({ response, body: source.replace(anchor, replacement) });
     });
     await page.goto(gameplayURL);

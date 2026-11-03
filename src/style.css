@@ -1093,7 +1093,7 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
 .race-overlay .next-button { display: flex; margin: 0 auto 12px; animation: next-beacon 1.4s var(--ease-out) infinite; }
 .race-overlay .next-button::after { animation-delay: .6s; }
 @keyframes next-beacon { from { box-shadow: 0 0 0 0 rgb(255 118 84 / .7), 0 12px 34px rgb(255 118 84 / .34); } to { box-shadow: 0 0 0 18px rgb(255 118 84 / 0), 0 12px 34px rgb(255 118 84 / .34); } }
-.intro :is(.history-button, .garage-button, .practice-button) { height: 48px; min-height: 0; margin: 0 0 0 12px; padding: 0 16px; vertical-align: middle; border: 1px solid rgb(225 235 242 / .3); border-radius: 4px; background: rgb(10 24 40 / .5); backdrop-filter: blur(8px); color: #e8edf1; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+.intro :is(.history-button, .garage-button, .practice-button) { height: 48px; min-height: 0; margin: 0 0 0 12px; padding: 0 20px; vertical-align: middle; border: 1px solid rgb(225 235 242 / .3); border-radius: 4px; background: rgb(10 24 40 / .5); backdrop-filter: blur(8px); color: #e8edf1; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
 .intro :is(.history-button, .garage-button, .practice-button):hover { border-color: var(--accent); color: var(--accent); background: rgb(30 34 46 / .7); }
 
 /* Garage update: promote the showroom beside Start without shifting the button's hit area. */
@@ -1107,6 +1107,11 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
 @keyframes garage-new-pop { 0%, 80%, 100% { transform: scale(1); } 88% { transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .intro .garage-button, .intro .garage-new-tag { animation: none; } }
 .vfx-comfort .intro .garage-button, .vfx-comfort .intro .garage-new-tag { animation: none; }
+/* Desktop: an inline tag widened Garage enough to wrap Practice and make the intro scroll; pin it to the corner instead. */
+@media (min-width: 1001px) {
+  .intro .garage-button { position: relative; }
+  .intro .garage-new-tag { position: absolute; top: -9px; right: -9px; }
+}
 
 .intro .start-hint { vertical-align: middle; letter-spacing: .04em; }
 .intro .start-hint kbd { height: 20px; padding: 0 6px; margin-left: 5px; border: 1px solid rgb(230 236 240 / .3); border-bottom-width: 2px; font-size: 9px; letter-spacing: .1em; }
@@ -1147,7 +1152,7 @@ body[data-phase="ready"] .telemetry { display: none; }
   scrollbar-width: thin;
   scrollbar-color: var(--accent) #263849;
 }
-.intro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; } /* Start + Garage (NEW) + History + Practice fit one 608px desktop row */
+.intro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
 .intro-actions > *, .intro-primary > * { flex-shrink: 0; }
 .intro-primary { display: contents; } /* Start + Garage: pinned on phones, plain flex items elsewhere */
 .intro :is(.history-button, .garage-button, .practice-button), .intro .start-hint { margin: 0; }
@@ -1616,6 +1621,13 @@ body.photo-studio #perf-overlay { display: none; }
   .daily-card { margin-top: 10px; padding-block: 3px; }
   .daily-card-copy { grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; align-items: baseline; }
   .daily-card small { grid-column: 1 / -1; }
+}
+/* The promoted Garage (NEW tag) pushes Practice onto a second action row; a one-line tagline pays for that row,
+   so the intro still fits without scrolling from 900px tall. */
+@media (min-width: 1001px) and (min-height: 501px) and (max-height: 966px) {
+  .intro h1 { font-size: 32px; line-height: 1; margin-bottom: 6px; }
+  .intro h1 br { display: none; }
+  .intro .intro-actions { row-gap: 8px; }
 }
 @media (max-width: 370px), (max-height: 500px) {
   .daily-card { grid-template-columns: minmax(0, 1fr) auto; margin-top: 10px; padding: 8px 8px 8px 12px; }

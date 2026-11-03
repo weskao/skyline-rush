@@ -12,17 +12,42 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
     version: UPCOMING, date: '2026-11-02', image: null,
     video: {
       desktop: {
-        src: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.mp4' },
-        poster: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.jpg' }
+        src: { en: 'whats-new/garage/garage.desktop.en.mp4', 'zh-TW': 'whats-new/garage/garage.desktop.zh-TW.mp4' },
+        poster: { en: 'whats-new/garage/garage.desktop.en.jpg', 'zh-TW': 'whats-new/garage/garage.desktop.zh-TW.jpg' }
       },
       mobile: {
-        src: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.mp4' },
-        poster: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.jpg' }
+        src: { en: 'whats-new/garage/garage.mobile.en.mp4', 'zh-TW': 'whats-new/garage/garage.mobile.zh-TW.mp4' },
+        poster: { en: 'whats-new/garage/garage.mobile.en.jpg', 'zh-TW': 'whats-new/garage/garage.mobile.zh-TW.jpg' }
       }
     },
     highlights: [
       {
-        id: 'rivals-grab-nitro', kind: 'new', image: null,
+        id: 'garage', kind: 'new', image: null,
+        title: { en: 'Try car effects free in the Garage', 'zh-TW': '車庫新增免費試用特效' },
+        description: { en: 'Preview launch flares, NITRO trails and airflow, then tap Try free to use one this visit. Spin your car in Ground or Flight view and see glossier paints.', 'zh-TW': '在車庫預覽起跑閃焰、NITRO 尾跡和氣流，按「免費試用」本次就能用；可切換平地、起飛視角，車漆也更亮澤。' }
+      },
+      {
+        id: 'eight-car-races', kind: 'new',
+        image: { en: 'whats-new/eight-car-races/eight-car-races.en.webp', 'zh-TW': 'whats-new/eight-car-races/eight-car-races.zh-TW.webp' },
+        title: { en: 'Eight-car races', 'zh-TW': '八車同場競速' },
+        description: {
+          en: 'Classic, Cup, Elimination and Circuit races now field eight cars. In the Cup, points run 10 down to 1 and later heats start in reverse finish order.',
+          'zh-TW': '經典競速、錦標賽、最後倖存競速和環道競速現在都是八輛車同場。錦標賽依名次給 10 到 1 分，下一站會倒著排起跑。'
+        }
+      },
+      {
+        id: 'rivals-grab-nitro', kind: 'new',
+        image: { en: 'whats-new/rival-nitro/rival-grab.en.webp', 'zh-TW': 'whats-new/rival-nitro/rival-grab.zh-TW.webp' },
+        video: {
+          desktop: {
+            src: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-nitro/rival-grab.en.webp', 'zh-TW': 'whats-new/rival-nitro/rival-grab.zh-TW.webp' }
+          },
+          mobile: {
+            src: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.jpg' }
+          }
+        },
         title: { en: 'Rivals grab NITRO too', 'zh-TW': '對手也會搶 NITRO' },
         description: {
           en: 'Rivals now grab NITRO rings and pickups and fire NITRO more often; on Hard they swerve for them. You\'ll see and hear it when one near you grabs one.',
@@ -30,20 +55,47 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
-        id: 'more-rings-everywhere', kind: 'improvement', image: null,
-        title: { en: 'Twice the rings and pickups on every road', 'zh-TW': '每條賽道的光圈和道具加倍' },
+        id: 'tutorial-lessons', kind: 'new', image: null,
+        title: { en: 'Three new practice lessons', 'zh-TW': '練習新增三堂課' },
         description: {
-          en: 'Every road has about twice the rings and NITRO pickups, plus full rows you can\'t miss and quick runs of rings close together.',
-          'zh-TW': '每條賽道的光圈和 NITRO 道具都多了約一倍，還有怎麼開都吃得到的整排光圈，和一連串緊密的光圈。'
+          en: 'Practice now teaches DRIFT + MINI BOOST, AIR → ROAD CHAIN and BARREL ROLL, and coaches you through a miss. Find it under Practice on Home.',
+          'zh-TW': '「練習」新增甩尾與短暫加速、空地連擊、桶滾三堂課，沒成功還會教你怎麼重試。從首頁的「練習」進入。'
+        }
+      },
+      {
+        id: 'hud-styles', kind: 'new',
+        image: { en: 'whats-new/hud-styles/hud-styles.en.webp', 'zh-TW': 'whats-new/hud-styles/hud-styles.zh-TW.webp' },
+        title: { en: 'Pick your race HUD style', 'zh-TW': '選擇你的賽車介面' },
+        description: {
+          en: 'Switch between Immersive and Competitive in the VFX panel, choose which info to show, and turn NITRO READY sound or animation off.',
+          'zh-TW': '在「特效」面板選擇沉浸式或競技資訊介面，自由開關排行榜、小地圖等資訊，還能關掉 NITRO 就緒提示音和動畫。'
+        }
+      },
+      {
+        id: 'more-rings-everywhere', kind: 'improvement', image: null,
+        title: { en: 'Fresh rings and pickups every race', 'zh-TW': '每場比賽的光圈和道具都不同' },
+        description: {
+          en: 'Rings and NITRO pickups land in new spots every race and grow with the grid, with ring trains down the middle, full-width rows and pickup runs.',
+          'zh-TW': '光圈和 NITRO 道具每場換位置，車數越多，數量也越多；中間車道有連串光圈，還有整排光圈和成串道具。'
         }
       },
       {
         id: 'old-layout-records', kind: 'improvement', image: null,
         title: { en: 'Your earlier times are kept', 'zh-TW': '之前的成績都會保留' },
         description: {
-          en: 'Because every road changed, best times and ghosts start fresh. Your earlier runs stay in History, marked Old layout, so nothing is lost.',
-          'zh-TW': '所有賽道的配置都改變了，所以最佳成績和幽靈車會重新計算。之前的成績仍保留在歷史紀錄中，並標示「舊版配置」，一筆都不會少。'
+          en: 'Rings and pickups moved on every track, so best times and ghosts start fresh. Your earlier runs stay in History, marked OLD LAYOUT.',
+          'zh-TW': '每條賽道的光圈和道具位置都變了，所以最佳成績和幽靈車會重新計算。之前的成績仍保留在歷史紀錄，並標示「舊版配置」。'
         }
+      },
+      {
+        id: 'touch-and-layout', kind: 'improvement', image: null,
+        title: { en: 'Touch layouts that fit your phone', 'zh-TW': '觸控配置更貼合手機' },
+        description: { en: 'Portrait and landscape remember their own touch layouts, and each thumb cluster moves as one. Pop-ups stay off the road, and folding phones avoid the hinge.', 'zh-TW': '直式、橫式各自記住觸控配置，拇指按鈕成組移動；提示不擋路面，摺疊手機的按鈕也會避開轉軸。' }
+      },
+      {
+        id: 'iphone-magnifier', kind: 'fix', image: null,
+        title: { en: 'No more magnifier on iPhone long-presses', 'zh-TW': 'iPhone 長按不再跳出放大鏡' },
+        description: { en: 'Holding the screen or a touch button on iPhone no longer pops up the magnifier, so steering, boosting and braking are never interrupted.', 'zh-TW': '在 iPhone 上按住畫面或觸控按鈕時，不會再跳出放大鏡，轉向、加速和煞車都不會被打斷。' }
       }
     ]
   },

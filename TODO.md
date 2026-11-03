@@ -6,13 +6,24 @@ Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/t
 - [x] RED: `tests/keyboard-settings-browser.spec.js` touch case failed (`.keymap-field` visible) on the stub; GREEN after the change, desktop case green throughout. `tests/keyboard-presence.test.js` 6/6.
 - [x] `npm test` 1446 pass / 0 fail; `npm run build`; `npm run typecheck`; handoff/i18n/guide specs: the only 8 failures (handoff PERFECT LINE, i18n flow ×4, intro bottom edge ×3) fail identically on unmodified `origin/develop` `9ec7f3df`.
 - [x] Screenshot 390×844 touch: Controls panel without the keyboard block; after a Shift press, the block appears.
-- [x] Pre-existing develop reds fixed on this branch (all failed identically on `origin/develop` `9ec7f3df`):
-  home row at 1440×900 wrapped Practice after f7691cc1's NEW Garage tag (layout gate + intro bottom edge ×3) → 12px gap / 16px padding;
-  `main-ui-parity` order + `cssBlob` not updated by f7691cc1; i18n audio panel ×4 from the hard-coded bilingual 3x artwork summary →
-  `HUD_ARTWORK_COPY`; handoff PERFECT LINE broken since `11bc9720` (bisected: rings re-roll per race, test rebuilt the track-seed
-  layout) → `layoutSeed` gameplay fixture option, seed 70, pilot reads live rings, NITRO observer counts real changes (5/5 green).
+- [x] Pre-existing develop reds (home row at 1440×900, `main-ui-parity`, i18n 3x artwork summary, handoff PERFECT LINE) were fixed
+  here, then superseded by develop's own fixes in 0.29.0; on merging `develop` `b34b1bfc` this branch took develop's versions and
+  dropped its duplicates (`hud-artwork.ts`, `layoutSeed` fixture, 12px/16px home row).
 - [ ] Physical iPad / iPhone with and without a Bluetooth keyboard.
 - [ ] `make verify` and full exact-HEAD CI `quality-gate` after merge into `develop`.
+
+---
+
+## Garage VFX remembered skin picks — 2026-11-03
+
+Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial pick survives reload as a preference only (`src/garage-skin-preference.ts`), re-applied through `session.equip`; never ownership.
+
+- [x] RED observed on old code: `tests/garage-skin-preference.test.js` (runtime reload / wiring), locked-bundle key audit in `tests/garage-release-build.test.js`, browser reload test (`data-state` was `trial`, expected `equipped`).
+- [x] GREEN: `npm test` 1462 pass / 0 fail, `npm run typecheck`, `npm run build` (locked bundle has no `skyline-rush-garage-skin-picks`; trial bundle has it), `tests/garage-skin-trial-browser.spec.js` 4/4 (desktop, 390×844, 844×390).
+- [ ] Pre-existing locally on unchanged `HEAD` source too: `garage-inspection-mode-browser.spec.js:4` (390×844) and `garage-studio-browser.spec.js:136` fail; confirm on CI.
+- [ ] `make verify` and the full exact-HEAD `quality-gate` (`[full-regression]`); then merge into `develop` (approved for this branch).
+
+---
 
 ## Garage VFX badge clipping / 3× WebP regeneration — 2026-11-02
 
