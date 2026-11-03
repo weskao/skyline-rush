@@ -52,7 +52,7 @@ const frontXs = [-.64,-.58,-.46,-.24,0,.24,.46,.58,.64];
 const noseZ = edge => -2.545 + .035*edge*edge;
 // The painted face fills the gap between the towers from the blade up to the hood edge,
 // raked back so its top meets the hood just ahead of the nose cap.
-const hoodLip = curvedSheet(frontXs.slice(1,-1), .64, () => .74, () => .586,
+const hoodLip = curvedSheet(frontXs.slice(1,-1), .64, () => .78, () => .586,
   () => -2.503, true, edge => noseZ(edge) - .006);
 const lightBlade = curvedSheet(frontXs, .64, () => .586, () => .570, edge => noseZ(edge) - .004, true);
 const carbonBand = curvedSheet(frontXs, .64, () => .570, () => .455, noseZ, true);
@@ -168,8 +168,8 @@ export function addReferenceFront(group, materials, trace) {
     add(group, lampLenses[i], headlampMaterial, 'Roadster triangular headlamp');
     // Highlight the fold where the flat hood meets each raised fender.
     trace(group, [
-      [side*.547,.75,-2.40], [side*.617,.757,-1.98],
-      [side*.664,.762,-1.55], [side*.678,.764,-1.32],
+      [side*.547,.794,-2.40], [side*.617,.819,-1.98],
+      [side*.664,.837,-1.55], [side*.678,.833,-1.32],
     ], .006, materials.paint, 'Roadster hood crease');
   });
 }

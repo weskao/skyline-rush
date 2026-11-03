@@ -9,12 +9,13 @@ import { addRoadsterRearNozzles } from './roadster-rear-nozzles.js';
 // [z, half-width, bottom, deck, shoulder, crest x / half-width (default .88)]
 const BODY_STATIONS = [
   // Blunt nose cap with a high, nearly level hood: the towers stand just above it at the nose
-  // and grow toward the windscreen (front reference photo), so the centre never reads sunken.
+  // and grow toward the windscreen (front reference photo), so the centre never reads sunken;
+  // the deck rises in one even sweep from the nose edge into the windscreen base.
   // A near-vertical inner wall rises to an inboard crest, then a broad top slopes outward.
-  [-2.50, .90, .34, .74, .82, .66],
-  [-2.33, 1.00, .34, .745, .90, .68],
-  [-1.91, 1.10, .35, .75, 1.01, .74],
-  [-1.41, 1.19, .81, .755, 1.04, .84],
+  [-2.50, .90, .34, .78, .825, .66],
+  [-2.33, 1.00, .34, .79, .90, .68],
+  [-1.91, 1.10, .35, .815, 1.01, .74],
+  [-1.41, 1.19, .81, .835, 1.04, .84],
   [-.72, 1.16, .36, .76, 1.04],
   [.44, 1.15, .36, .77, 1.04],
   [1.27, 1.19, .83, .78, 1.08],
@@ -76,7 +77,7 @@ export function roadsterBody() {
 // [z, base half-width, base y, roof half-width, roof y]: one low glasshouse (photo 14) whose
 // windscreen starts at the hood cowl between the fender towers, then a long fastback.
 const CANOPY_STATIONS = [
-  [-1.32, .68, .745, .62, .76],
+  [-1.32, .68, .84, .62, .845],
   [-.55, 1.00, 1.035, .62, 1.29],
   [.15, 1.00, 1.04, .66, 1.335],
   [.75, .99, 1.045, .66, 1.31],

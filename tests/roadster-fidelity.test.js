@@ -148,6 +148,28 @@ test('front reference: the nose centre is a full-height painted face, not a notc
   assert.ok(box(face).max.x - box(face).min.x >= 1.1, 'the face spans the gap between the towers');
 });
 
+test('front reference: a high hood sweeps up from the nose into the windscreen base with no dip or step', () => {
+  const blade = box(named(rawTrim(), 'Roadster front light blade')[0]).max.y;
+  // Front photo: the hood edge stands ~85% of the way from the blade to the tower crests.
+  const nose = hoodAndFender(-2.50, .55);
+  assert.ok((nose.hood - blade) / (nose.fender - blade) >= .8,
+    `hood edge ${nose.hood} sits nearly level with the tower crest ${nose.fender}, not sunk below it`);
+  const stations = [[-2.50, .55], [-2.33, .6], [-1.91, .66], [-1.41, .7]];
+  const decks = stations.map(([z, half]) => hoodAndFender(z, half).hood);
+  const slopes = decks.slice(1).map((y, i) => (y - decks[i]) / (stations[i + 1][0] - stations[i][0]));
+  const mean = (decks.at(-1) - decks[0]) / (stations.at(-1)[0] - stations[0][0]);
+  assert.ok(decks.at(-1) - decks[0] >= .04, `side photo: the hood visibly rises toward the cowl, decks ${decks}`);
+  for (const s of slopes) assert.ok(s >= 0 && s <= 1.5 * mean, `one smooth sweep, no dip or step, slopes ${slopes}`);
+  const car = roadster();
+  car.updateMatrixWorld(true);
+  const [cowl] = new THREE.Raycaster(new THREE.Vector3(0, 3, -1.32), new THREE.Vector3(0, -1, 0)).intersectObject(car.userData.body);
+  const canopy = CAR_STYLES.roadster.cabin.getAttribute('position');
+  let base = -Infinity;
+  for (let n = 0; n < canopy.count; n++) if (Math.abs(canopy.getZ(n) + 1.32) < .001) base = Math.max(base, canopy.getY(n));
+  assert.ok(base - cowl.point.y >= 0 && base - cowl.point.y <= .025,
+    `windscreen base ${base} sits just on the hood ${cowl.point.y}, neither buried nor stepped`);
+});
+
 test('front reference: triangular headlamps sit inside the fender face behind a hairline bezel', () => {
   const car = roadster();
   car.updateMatrixWorld(true);

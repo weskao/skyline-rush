@@ -1,3 +1,20 @@
+## Roadster 2 higher, streamlined hood sweep into the windscreen — 2026-11-04
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Request: the front hood still read sunken; raise it and adjust the
+nose/hood slope and curve to the front reference (hood edge almost level with the tower crests, one smooth rise into
+the windscreen base). TDD only, browser checks waived by the user for this pass.
+
+- [x] RED: new test 'a high hood sweeps up from the nose into the windscreen base with no dip or step' failed on
+  6ac4d1e8 — `node --test tests/roadster-fidelity.test.js` → "hood edge 0.74 sits nearly level with the tower
+  crest 0.82" (ratio .66 < .80; rise .015 < .04).
+- [x] GREEN: hood deck .74/.745/.75/.755 → .78/.79/.815/.835 (z -2.50/-2.33/-1.91/-1.41, slopes .06/.06/.04);
+  nose tower crest .82 → .825 (ratio .81, gap .045); windscreen base .745/.76 → .84/.845, .015 above the hood at
+  the cowl; painted face top .74 → .78; hood creases follow the deck +.008.
+- [x] `node --test tests/roadster-fidelity.test.js` 27/27; `npm test` 1526 pass / 1 fail / 3 skipped — the only
+  failure is the pre-existing `track-preview.test.js` AIRFLOW headroom `-0` vs `0` (from 31b88524);
+  `npm run typecheck` exit 0; `npm run build` built + bundle lock check passed.
+- [ ] Real WebGL front/side/front-quarter screenshots against references 05/07/14/15 (waived this pass).
+
 ## Roadster 2 flush 45-degree wing, short struts, boost animation, fuller nose — 2026-11-04
 
 **Branch:** `feature/roadster2-high-fidelity-body`. Request: opened wing keeps its leading edge on the deck and only
