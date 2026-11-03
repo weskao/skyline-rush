@@ -1,3 +1,58 @@
+## Security hardening — required before releasing 1.0.0 and every later version (2026-11-03)
+
+**Context:** the repo is public and `src/cloud-save.ts` hard-codes the Firebase Web config (`apiKey`, `projectId`,
+`appId`). That is the normal Firebase Web pattern: the key identifies the project and ships in the JS bundle anyway.
+Data access is enforced by `firestore.rules` (owner-only `get`/`delete`, no `list`, validated writes on `accounts`,
+`modeBests`, `saves`). The risks are an **unrestricted key** (quota/billing abuse, use from other origins) and
+**deployed rules drifting** from the file in the repo. Nothing below is verified yet.
+
+**Release gate:** 1.0.0 is not tagged until every P0 item is checked. Each later release re-runs the "Every release" list.
+
+### P0 — before 1.0.0
+
+- [ ] **Restrict the Web API key** (Google Cloud Console → APIs & Services → Credentials):
+  - Application restriction: HTTP referrers = the GitHub Pages origin, `http://localhost:*`, `http://127.0.0.1:*`.
+  - API restriction: only the APIs the app calls (Identity Toolkit, Token Service, Cloud Firestore; add Firebase
+    Installations / App Check only if used).
+  - Evidence: screenshot of the key's restriction page; a request from an unlisted origin is rejected.
+- [ ] **Regenerate (rotate) the API key** so 1.0.0 starts on a restricted key that never had an unrestricted history:
+  create the new restricted key → replace `apiKey` in `src/cloud-save.ts` → deploy → verify sign-in and cloud save on
+  desktop and iPhone → **delete the old key** in Google Cloud. (The old key stays in git history; deleting it in Google
+  Cloud is what disables it. A history rewrite is not needed.)
+- [ ] **Verify the deployed Firestore rules match `firestore.rules`** (Firebase Console → Firestore → Rules, or
+  `firebase firestore:rules:get`). No test-mode rule (`allow read, write: if true` / time-limited open rules) may remain.
+  Deploy with `firebase deploy --only firestore:rules` if they differ.
+- [ ] **Firebase Auth authorized domains**: only the production Pages domain, `localhost` and `127.0.0.1`; remove
+  leftovers (e.g. preview or old domains). Enable only the Google sign-in provider.
+- [ ] **Billing safety**: budget alert on the Firebase/Google Cloud project; review Firestore and Identity Toolkit quotas
+  so abuse can't run up a bill.
+- [ ] **Run the Firestore rules tests in CI**: `tests/firestore-rules.test.js` runs only locally through `npm run
+  test:cloud` (emulators); add it to the `quality-gate` workflow so a rules regression blocks the merge.
+- [ ] **Secret scan of the full git history** (e.g. `gitleaks detect` over all commits): confirm no service-account JSON,
+  private key, admin token or `.env` was ever committed. Rotate anything found.
+- [ ] **Enable GitHub secret scanning + push protection** on the repo (Settings → Code security).
+- [ ] **Privacy**: `accounts/{uid}` stores the Google display name and email. Add a short privacy note (what is stored,
+  why, how to delete it via the existing cloud-delete action) before 1.0.0.
+
+### P1 — recommended for 1.0.x
+
+- [ ] **Firebase App Check** (reCAPTCHA Enterprise / v3) for Firestore and Auth: monitor first, then enforce, so only
+  the real site can call the backend.
+- [ ] **Dependency hygiene**: add `.github/dependabot.yml` (npm + GitHub Actions) and an `npm audit --omit=dev` check
+  for high/critical advisories.
+- [ ] **Content Security Policy** via `<meta http-equiv="Content-Security-Policy">` (GitHub Pages can't set headers),
+  allowing only the Firebase/Google auth origins the app uses; verify Google sign-in popup still works.
+- [ ] **Pin GitHub Actions to commit SHAs** and keep workflow `permissions:` minimal.
+
+### Every release (1.0.0 and later)
+
+- [ ] Deployed Firestore rules = `firestore.rules` at the release commit; rules tests green in CI.
+- [ ] API key still restricted (no restriction removed during debugging); no new keys or secrets in the diff.
+- [ ] Any new Firestore collection ships with owner-only rules, write validation and a rules test.
+- [ ] No high/critical `npm audit` advisories in production dependencies.
+
+---
+
 ## Fix — What's New hero clip stays a still on iPhone Home Screen app until tapped (2026-11-03)
 
 **Branch:** `develop`. **Repro (user, iPhone 16, iOS 26.3, Home Screen app):** notes auto-open on launch, hero clip shows its
