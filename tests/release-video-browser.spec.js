@@ -7,7 +7,8 @@ const VIDEO = {
   desktop: { src: { en: `${CLIPS}.desktop.en.mp4`, 'zh-TW': `${CLIPS}.desktop.zh-TW.mp4` }, poster: { en: `${CLIPS}.desktop.en.jpg`, 'zh-TW': `${CLIPS}.desktop.zh-TW.jpg` } },
   mobile: { src: { en: `${CLIPS}.mobile.en.mp4`, 'zh-TW': `${CLIPS}.mobile.zh-TW.mp4` }, poster: { en: `${CLIPS}.mobile.en.jpg`, 'zh-TW': `${CLIPS}.mobile.zh-TW.jpg` } },
 };
-async function openNotes(page, gameplayURL, onHighlight = false) {
+// `launch` opens the notes with no user activation, as their automatic opening on launch does.
+async function openNotes(page, gameplayURL, onHighlight = false, launch = false) {
   await page.route('**/src/release-notes.ts', async route => {
     const response = await route.fetch();
     const source = await response.text();
@@ -18,9 +19,34 @@ async function openNotes(page, gameplayURL, onHighlight = false) {
   page.on('pageerror', error => errors.push(String(error)));
   await page.goto(gameplayURL);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('#whats-new-open').click();
+  if (launch) {
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+    await page.evaluate(() => document.querySelector('#whats-new-open').click()); // a scripted click grants no activation
+  } else await page.locator('#whats-new-open').click();
   await expect(page.locator('#whats-new-screen')).toBeVisible();
   return errors;
+}
+// iOS refuses even muted autoplay in Low Power Mode (or while the phone runs hot) until the player touches the page.
+const refuseAutoplayWithoutActivation = page => page.addInitScript(() => {
+  const play = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function () {
+    if (navigator.userActivation.isActive) return play.call(this);
+    window.refusedSrc = this.getAttribute('src');
+    return Promise.reject(new DOMException('The request is not allowed by the user agent', 'NotAllowedError'));
+  };
+});
+// The first touch anywhere on the notes (not only on the clip, which enlarges it) starts the refused hero where it is.
+async function refusedHeroStartsOnFirstTouch(page, gameplayURL, touch) {
+  await refuseAutoplayWithoutActivation(page);
+  const errors = await openNotes(page, gameplayURL, false, true);
+  const video = page.locator('#release-video');
+  await expect(video).toHaveAttribute('src', /^blob:/);
+  await expect.poll(() => page.evaluate(() => window.refusedSrc), 'the downloaded clip was refused').toMatch(/^blob:/);
+  expect(await paused(video)).toBe(true);
+  await touch(page.locator('#release-intro'));
+  await expect.poll(() => playing(video), 'the first touch starts the hero inline').toBe(true);
+  await expect(page.locator('#release-media-viewer')).toBeHidden();
+  expect(errors).toEqual([]);
 }
 
 const playing = video => video.evaluate(element => !element.paused && element.currentTime > 0);
@@ -62,6 +88,9 @@ test.describe('desktop', () => {
     await expect.poll(() => playing(video)).toBe(true); // and plays on once it closes
     expect(errors).toEqual([]);
   });
+
+  test('a hero refused autoplay starts inline on the first click anywhere on the notes', ({ page, gameplayURL }) =>
+    refusedHeroStartsOnFirstTouch(page, gameplayURL, target => target.click()));
 
   test('the hero plays only while the notes are open and its version is shown', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);
@@ -288,4 +317,7 @@ test.describe('phone portrait', () => {
     await expect(page.locator('#whats-new-screen')).toBeHidden();
     expect(errors).toEqual([]);
   });
+
+  test('a hero refused autoplay (iPhone Low Power Mode) starts inline on the first tap anywhere on the notes', ({ page, gameplayURL }) =>
+    refusedHeroStartsOnFirstTouch(page, gameplayURL, target => target.tap()));
 });
