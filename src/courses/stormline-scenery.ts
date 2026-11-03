@@ -87,7 +87,8 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
   });
   ownedMaterials.push(billboardMat);
   if (edge.layer !== 'tunnel' && quality !== 'low') {
-    for (let s = from + 170; s < to; s += 380) {
+    // Anchor neon signs to the edge's absolute distance, independent of stream chunk size.
+    for (let s = 170 + Math.max(0, Math.ceil((from - 170) / 380)) * 380; s < to; s += 380) {
       const pose = sample(edgeId, s);
       const sign = new THREE.Mesh(new THREE.BoxGeometry(12, 7, 0.8), billboardMat);
       sign.position.copy(v3(pose.point).addScaledVector(v3(pose.right), edge.width / 2 + 27)
