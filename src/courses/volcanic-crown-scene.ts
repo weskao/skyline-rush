@@ -74,6 +74,11 @@ function addCrater(group:THREE.Group,frame:RouteFrame,rock:THREE.Material,lava:T
   const light=new THREE.PointLight('#ff5b24',3.2,310,2);
   light.position.copy(center).add(new THREE.Vector3(0,85,0));light.name='crater-glow';
   group.add(light);
+  const plume=new THREE.Group();plume.name='eruption-plume';plume.position.copy(center);
+  const hot=new THREE.Mesh(new THREE.ConeGeometry(18,88,10),
+    new THREE.MeshBasicMaterial({color:'#ff6926',transparent:true,opacity:.32,depthWrite:false}));
+  hot.position.y=145;plume.add(hot);
+  group.add(plume);
 }
 function addArch(group:THREE.Group,frame:RouteFrame,rock:THREE.Material):void {
   const arch=new THREE.Group();arch.name='basalt-arch';
@@ -119,7 +124,9 @@ export function createVolcanicCrownChunk(
   const rows=quality==='high'?28:quality==='medium'?20:12;
   const group=new THREE.Group();group.name=`volcanic-${edgeId}-${chunkIndex}`;
   let disposed=false;
-  const roadMat=material('#29282c'),rock=material('#1b1b20');
+  const roadMat=new THREE.MeshStandardMaterial({
+    color:'#29252a',roughness:.54,metalness:.19,side:THREE.DoubleSide,flatShading:true,
+  }),rock=material('#1b1b20');
   const lavaMat=new THREE.ShaderMaterial({
     uniforms:{uTime:{value:0}},vertexShader:LAVA_VERTEX,fragmentShader:LAVA_FRAGMENT,
     side:THREE.DoubleSide,
@@ -140,6 +147,36 @@ export function createVolcanicCrownChunk(
     addCrater(group,sampleVolcanicRoute(edgeId,volcanicEdgeLength(edgeId)*.75),rock,lavaMat);
   if(edgeId==='ground-7'&&from<=volcanicEdgeLength(edgeId)*.55&&to>volcanicEdgeLength(edgeId)*.55)
     addArch(group,sampleVolcanicRoute(edgeId,volcanicEdgeLength(edgeId)*.55),rock);
+  // Ash/heat are off the road decision corridor. Quality changes their
+  // cost only, never whether a collision mesh is drawn.
+  const ashCount=quality==='high'?32:quality==='medium'?12:0;
+  const ash=ashCount?new THREE.Points(
+    new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(
+      Array.from({length:ashCount},(_,i)=>{
+        const f=sampleVolcanicRoute(edgeId,from+(to-from)*(i+.5)/ashCount);
+        return [f.point[0]+f.right[0]*(edge.width/2+62),f.point[1]+28+i%9,
+          f.point[2]+f.right[2]*(edge.width/2+62)];
+      }).flat(),3)),
+    new THREE.PointsMaterial({color:'#998a81',size:quality==='high'?12:8,
+      transparent:true,opacity:.23,depthWrite:false})):null;
+  if(ash){ash.name='volcanic-ash';group.add(ash);}
+  const shimmer=quality==='low'?null:new THREE.Mesh(
+    new THREE.PlaneGeometry(14,8),new THREE.MeshBasicMaterial({
+      color:'#ee7c38',transparent:true,opacity:.08,depthWrite:false,side:THREE.DoubleSide,
+    }));
+  if(shimmer){
+    const f=sampleVolcanicRoute(edgeId,(from+to)/2);
+    shimmer.position.copy(to3(f.point)).addScaledVector(to3(f.right),edge.width/2+25)
+      .addScaledVector(to3(f.up),5);
+    shimmer.name='heat-shimmer';group.add(shimmer);
+  }
+  const lavaLight=edge.mode==='flight'?null:new THREE.PointLight('#ff743b',quality==='low'?.8:1.5,95,2);
+  if(lavaLight){
+    const f=sampleVolcanicRoute(edgeId,(from+to)/2);
+    lavaLight.position.copy(to3(f.point)).addScaledVector(to3(f.right),edge.width/2+23)
+      .addScaledVector(to3(f.up),6);
+    lavaLight.name='lava-reflection-light';group.add(lavaLight);
+  }
   const obstacleMeshes: {item:typeof VOLCANIC_OBSTACLES[number],mesh:THREE.Mesh}[]=[];
   for(const item of VOLCANIC_OBSTACLES.filter(o=>o.edgeId===edgeId&&o.s>=from&&o.s<to)){
     const geometry=item.kind==='boulder'||item.kind==='rockfall'
@@ -148,12 +185,12 @@ export function createVolcanicCrownChunk(
     const solid=item.kind==='fissure'||item.kind==='vent'?lavaMat:rock;
     const mesh=new THREE.Mesh(geometry,solid);
     mesh.name=item.id;group.add(mesh);obstacleMeshes.push({item,mesh});
-    if(item.kind==='rockfall'){
+    if(item.kind==='rockfall'||item.kind==='vent'){
       const warning=new THREE.Mesh(new THREE.RingGeometry(item.radius+1,item.radius+2,28),
         new THREE.MeshBasicMaterial({color:'#ffaa39',side:THREE.DoubleSide}));
       warning.name=`${item.id}-warning`;warning.rotation.x=-Math.PI/2;
       const baseline=volcanicObstaclePose(item,0).point;
-      warning.position.set(baseline[0],baseline[1]-45+.12,baseline[2]);
+      warning.position.set(baseline[0],baseline[1]-(item.kind==='rockfall'?45:0)+.12,baseline[2]);
       group.add(warning);
     }
   }
@@ -171,6 +208,11 @@ export function createVolcanicCrownChunk(
     const time=Number.isFinite(timeSeconds)?timeSeconds:0;
     lavaMat.uniforms.uTime.value=reduce?0:time;
     if(sparks)sparks.visible=!reduce;
+    if(ash){ash.visible=!reduce;ash.position.y=reduce?0:Math.sin(time*.2)*1.3;}
+    if(shimmer){shimmer.visible=!reduce;shimmer.scale.y=reduce?1:1+Math.sin(time*.7)*.09;}
+    if(lavaLight)lavaLight.intensity=reduce?1.1:1.1+Math.sin(time*.9)*.22;
+    const plume=group.getObjectByName('eruption-plume');
+    if(plume)plume.scale.y=reduce?1:1+Math.sin(time*.47)*.12;
     for(const {item,mesh} of obstacleMeshes){
       const pose=volcanicObstaclePose(item,time);
       mesh.position.copy(to3(pose.point));

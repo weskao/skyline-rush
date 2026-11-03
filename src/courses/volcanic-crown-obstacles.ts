@@ -31,13 +31,15 @@ export const VOLCANIC_OBSTACLES: readonly VolcanicObstacle[] = [
 
 export function volcanicObstaclePose(obstacle: VolcanicObstacle, timeSeconds: number): ObstaclePose {
   const base=volcanicWorldPosition(obstacle.edgeId,obstacle.s,obstacle.lateral);
-  if(obstacle.kind!=='rockfall')return {point:base,active:true,warning:false,radius:obstacle.radius};
-  // 12-second cycle: 3s visual/audio warning, 2s falling, 1s on track,
-  // 6s safe window. Absolute time => deterministic at all frame rates.
+  if(obstacle.kind!=='rockfall'&&obstacle.kind!=='vent')
+    return {point:base,active:true,warning:false,radius:obstacle.radius};
+  // Both eruptions and falling rocks warn for 3 seconds. The 12s event
+  // clock is absolute and independent of renderer frame rate.
   const phase=((Number.isFinite(timeSeconds)?timeSeconds:0)%12+12)%12;
   const warning=phase<3;
   const active=phase>=3 && phase<6;
-  const height=phase<3?45:phase<5?45*(1-(phase-3)/2):0;
+  const height=obstacle.kind==='rockfall'
+    ?phase<3?45:phase<5?45*(1-(phase-3)/2):0:0;
   const point: Vec3=[base[0],base[1]+height,base[2]];
   return {point,active,warning,radius:obstacle.radius};
 }

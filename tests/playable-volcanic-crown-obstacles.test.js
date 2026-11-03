@@ -28,6 +28,15 @@ test('falling rock has deterministic warned, falling, impact and cleared phases'
   assert.equal(volcanicObstaclePose(rock,9).active,false);
   assert.deepEqual(volcanicObstaclePose(rock,5.5),volcanicObstaclePose(rock,17.5));
 });
+test('steam vents signal before physically active eruption and stay deterministic',()=>{
+  const vent=VOLCANIC_OBSTACLES.find(o=>o.kind==='vent');
+  assert.equal(volcanicObstaclePose(vent,1).warning,true);
+  assert.equal(volcanicObstaclePose(vent,1).active,false);
+  assert.equal(volcanicObstacleContact(vent.edgeId,vent.s,vent.lateral,0,1),null);
+  assert.equal(volcanicObstacleContact(vent.edgeId,vent.s,vent.lateral,0,5)?.id,vent.id);
+  assert.equal(volcanicObstaclePose(vent,8).active,false);
+  assert.deepEqual(volcanicObstaclePose(vent,5),volcanicObstaclePose(vent,17));
+});
 test('AI picks a lane that avoids upcoming physical rock/fissure, never a hidden collider',()=>{
   for(const rock of VOLCANIC_OBSTACLES.filter(o=>o.kind==='rockfall')){
     const lane=volcanicAIChooseLateral(rock.edgeId,rock.s-42,rock.lateral,5.5);

@@ -32,6 +32,22 @@ test('actual falling-rock meshes share their physics pose and warning cycle',()=
   assert.ok(mesh.position.distanceTo(new THREE.Vector3(...truth))<1e-6);
   dispose();
 });
+test('weather detail and real lava lighting respect Low/High and Reduced Motion',()=>{
+  const low=createVolcanicCrownChunk('ground-5',0,'low');
+  assert.equal(low.group.getObjectByName('volcanic-ash'),undefined);
+  assert.equal(low.group.getObjectByName('heat-shimmer'),undefined);
+  assert.ok(low.group.getObjectByName('lava-reflection-light').isPointLight);
+  low.dispose();
+  const high=createVolcanicCrownChunk('ground-5',0,'high');
+  const ash=high.group.getObjectByName('volcanic-ash');
+  const shimmer=high.group.getObjectByName('heat-shimmer');
+  assert.ok(ash.isPoints&&shimmer.isMesh);
+  high.update(3,true);
+  assert.equal(ash.visible,false);assert.equal(shimmer.visible,false);
+  high.update(3,false);
+  assert.equal(ash.visible,true);assert.equal(shimmer.visible,true);
+  high.dispose();
+});
 test('flight gap uses a guided world-space arc, not a fictional solid road',()=>{
   const {group,dispose}=createVolcanicCrownChunk('rift-flight',0,'medium');
   assert.ok(group.getObjectByName('aerial-route-guide').isMesh);
