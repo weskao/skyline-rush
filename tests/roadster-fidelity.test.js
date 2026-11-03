@@ -92,6 +92,20 @@ test('Other vehicle styles preserve their original model material and geometry c
 
 const box = mesh => { mesh.updateWorldMatrix(true, true); return new THREE.Box3().setFromObject(mesh); };
 
+test('Roadster nose below the carbon band is dark up to the corner intakes, never white paint', () => {
+  // Photo 05: between the white fender pillars, everything under the band is dark.
+  const car = roadster();
+  car.updateMatrixWorld(true);
+  const paint = car.userData.body.material;
+  const ray = new THREE.Raycaster();
+  for (const x of [-.68, -.62, -.4, 0, .4, .62, .68]) for (const y of [.38, .42]) {
+    ray.set(new THREE.Vector3(x, y, -4), new THREE.Vector3(0, 0, 1));
+    const hit = ray.intersectObject(car, true)[0];
+    assert.ok(hit, `nose face at x=${x} y=${y}`);
+    assert.notEqual(hit.object.material, paint, `white paint shows under the band at x=${x} y=${y}`);
+  }
+});
+
 test('Roadster reference front stacks hood lip, hairline blade, carbon band, low intake and splitter', () => {
   const car = roadster();
   const detail = rawTrim();

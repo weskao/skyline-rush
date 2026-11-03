@@ -56,7 +56,7 @@ const hoodLip = curvedSheet(frontXs.slice(1,-1), .64, () => .78, () => .586,
   () => -2.503, true, edge => noseZ(edge) - .006);
 const lightBlade = curvedSheet(frontXs, .64, () => .586, () => .570, edge => noseZ(edge) - .004, true);
 const carbonBand = curvedSheet(frontXs, .64, () => .570, () => .455, noseZ, true);
-const lowerMouth = curvedSheet(frontXs.slice(1,-1), .64, () => .455, () => .365, edge => noseZ(edge) + .006, true);
+const lowerMouth = curvedSheet(frontXs, .64, () => .455, () => .365, edge => noseZ(edge) + .006, true);
 const splitter = slab([[-.88,-2.46],[.88,-2.46],[.84,-2.60],[.60,-2.655],[-.60,-2.655],[-.84,-2.60]], .345, .025);
 
 // Mirrored triangle/quad: `side` picks the winding that faces the viewer on that side.
@@ -73,7 +73,7 @@ const lampLenses = [-1,1].map(side => sideGeometry([
 ], side));
 // Dark lower corners fill the chamfered nose like the carbon feet in photo 05.
 const cornerIntakes = [-1,1].map(side => sideGeometry([
-  side*.70,.355,-2.506, side*.76,.355,-2.506, side*.895,.455,-2.506, side*.70,.455,-2.506,
+  side*.64,.355,-2.506, side*.76,.355,-2.506, side*.895,.455,-2.506, side*.64,.455,-2.506,
 ], side));
 
 // Photo 01 rear: slot recess, protruding white shelf, recessed white scoop with plate,
