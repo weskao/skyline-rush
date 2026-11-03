@@ -62,6 +62,7 @@ test('Roadster rear fascia has a moving wide aerofoil, quad recessed thrusters a
   const wing = car.userData.wing;
   assert.equal(named(car, 'Roadster aerofoil').length, 1);
   assert.equal(wing.userData.lift, 0.34, 'existing boost and flight animation contract');
+  assert.ok(wing.position.z >= 2.08, 'wing rests as a deck lip near the photographed tail edge');
   assert.ok(wing.parent === car);
   const ports = named(car, 'Roadster recessed thruster');
   assert.equal(ports.length, REAR_PORTS.length);
