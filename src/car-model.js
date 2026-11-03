@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canopy, carShell } from './geometry.ts';
-import { createRearLight } from './rear-light.ts';
 import { LIFT_PORTS } from './effects.js';
-import { REAR_PORTS } from './aero-vfx.js';
+import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail } from './roadster-fidelity.js';
 const box = new THREE.BoxGeometry(1, 1, 1);
 
 export function material(color, metalness = 0, roughness = 0.7) {
@@ -36,27 +35,10 @@ function mirrors(parent, mat, y) {
 export const CAR_STYLES = {
   // Player: low wedge, smoked fastback canopy, full-width tail bar, quad thruster ports, pop-up wing.
   roadster: {
-    color: '#e6e9e7', glass: '#3b2c24', light: [2.2, 0.02, 0.05], detailed: true,
-    body: carShell([[-2.45, 0.86, 0.4, 0.6], [-1.95, 1.06, 0.36, 0.74], [-1.2, 1.13, 0.38, 0.86], [0.5, 1.1, 0.38, 0.96], [1.55, 1.16, 0.42, 1.04], [2.32, 1.05, 0.5, 1.02]]),
-    cabin: canopy(0.92, -0.95, 0.86, 1.75, 1.02, 0.66, -0.15, 0.7, 1.4),
-    trim(group, m) {
-      const bronze = material('#7a5f4c', 0.8, 0.28);
-      const nozzleMetal = material('#71818a', 0.7, 0.35);
-      block(group, m.white, 0, 0.53, -2.46, 1.56, 0.035, 0.04);
-      const rearLight = createRearLight();
-      group.add(rearLight.group);
-      group.userData.rearLight = rearLight;
-      block(group, m.black, 0, 0.7, 2.33, 1.86, 0.36, 0.04);
-      block(group, material('#c9ccd0', 0.2, 0.5), 0, 0.84, 2.36, 0.4, 0.12, 0.02);
-      for (const port of REAR_PORTS) lamp(group, nozzleMetal, port.position[0], 0.64, 2.36, 0.65);
-      const wing = new THREE.Group();
-      block(wing, bronze, 0, 0, 0, 2.2, 0.05, 0.44);
-      for (const side of [-1, 1]) block(wing, m.black, side * 0.62, -0.2, 0.05, 0.05, 0.4, 0.1);
-      wing.position.set(0, 1.07, 1.95);
-      wing.userData = { restY: 1.07, lift: 0.34 };
-      group.add(wing);
-      return wing;
-    },
+    color: '#e6e9e7', glass: '#292823', light: [2.2, 0.02, 0.05], detailed: true,
+    body: roadsterBody(),
+    cabin: roadsterCanopy(),
+    trim(group, m) { return addRoadsterTrim(group, m); },
   },
   // NOVA: long-tail hypercar, twin tail fins bridged by a blade, split magenta tail lights.
   nova: {
@@ -123,17 +105,8 @@ export const CAR_STYLES = {
   },
 };
 
-const spokeGeometry = new THREE.BufferGeometry();
-const spokeVertices = [0, 0, 0];
-const spokeIndices = [];
-for (let i = 0; i < 10; i++) {
-  const radius = i % 2 ? 0.09 : 0.28;
-  spokeVertices.push(Math.cos(i * Math.PI / 5) * radius, Math.sin(i * Math.PI / 5) * radius, 0);
-  spokeIndices.push(0, i + 1, (i + 1) % 10 + 1);
-}
-spokeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(spokeVertices, 3));
-spokeGeometry.setIndex(spokeIndices);
-spokeGeometry.computeVertexNormals();
+const detailedTireGeometry = new THREE.CylinderGeometry(0.44, 0.44, 0.27, 32);
+const detailedRimGeometry = new THREE.CylinderGeometry(0.32, 0.32, 0.285, 32);
 
 // Static parts that share one of a car's materials draw as one mesh (same triangles, transforms baked in).
 // Cached per style: the geometry depends only on that constant style, so it is never invalidated; a world or
@@ -146,25 +119,47 @@ function mergeStaticParts(group, style, moving) {
   }
   const parts = [...byMaterial.values()].filter(meshes => meshes.length > 1);
   if (!mergedParts.has(style)) mergedParts.set(style, parts.map(meshes => {
+    // GeometryUtils requires identical attributes; procedural detail meshes
+    // may lack UVs while primitives have them. UVs are unused by these solid
+    // materials, so give only the missing meshes a matching zero UV stream.
+    const needsUv = meshes.some(mesh => mesh.geometry.hasAttribute('uv'));
     const geometry = mergeGeometries(meshes.map(mesh => {
       mesh.updateMatrix();
-      return mesh.geometry.clone().applyMatrix4(mesh.matrix);
+      const transformed = mesh.geometry.clone().applyMatrix4(mesh.matrix);
+      if (needsUv && !transformed.hasAttribute('uv')) {
+        transformed.setAttribute('uv', new THREE.Float32BufferAttribute(
+          new Float32Array(transformed.attributes.position.count * 2), 2,
+        ));
+      }
+      return transformed;
     }));
+    if (!geometry) throw new Error('Incompatible static car mesh attributes');
     geometry.userData.mergedCarParts = true;
     return geometry;
   }));
   mergedParts.get(style).forEach((geometry, i) => {
     group.remove(...parts[i]);
-    group.add(new THREE.Mesh(geometry, parts[i][0].material));
+    // Roadster trim uses module-scoped materials; each car must own its material
+    // instance even while sharing the cached, immutable merged geometry.
+    const merged = new THREE.Mesh(geometry, parts[i][0].material.clone());
+    // Retain semantic detail labels even when draw-call batching collapses multiple meshes.
+    merged.userData.mergedPartNames = parts[i].map(part => part.name).filter(Boolean);
+    group.add(merged);
   });
 }
 
 export function makeCar(style, color = style.color) {
   const group = new THREE.Group();
   const detailed = !!style.detailed;
-  const paint = material(color, 0.55, 0.25);
+  const paint = detailed
+    ? new THREE.MeshPhysicalMaterial({ color, metalness: 0.13, roughness: 0.19,
+      clearcoat: 0.88, clearcoatRoughness: 0.10, envMapIntensity: 1.4 })
+    : material(color, 0.55, 0.25);
   const black = material('#101923', 0.4, 0.4);
-  const glass = material(style.glass, 0.85, 0.16);
+  const glass = detailed
+    ? new THREE.MeshPhysicalMaterial({ color: style.glass, metalness: 0.04, roughness: 0.075,
+      clearcoat: 0.96, clearcoatRoughness: 0.065, envMapIntensity: 1.6 })
+    : material(style.glass, 0.85, 0.16);
   const light = new THREE.MeshBasicMaterial({ color: new THREE.Color(...style.light) });
   const white = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 2.1, 2.6) });
   block(group, black, 0, 0.48, 0, 2.08, 0.26, 4.38);
@@ -178,20 +173,15 @@ export function makeCar(style, color = style.color) {
   const wheels = [];
   const tires = material('#101114');
   const rims = material('#8a96a0', 0.85, 0.22);
-  const tireGeometry = new THREE.CylinderGeometry(0.44, 0.44, 0.27, 16);
-  const rimGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.285, 10);
+  const tireGeometry = detailed ? detailedTireGeometry : new THREE.CylinderGeometry(0.44, 0.44, 0.27, 16);
+  const rimGeometry = detailed ? detailedRimGeometry : new THREE.CylinderGeometry(0.3, 0.3, 0.285, 10);
   for (const x of [-1.05, 1.05]) for (const z of [-1.35, 1.42]) {
     const wheel = new THREE.Group();
     const tire = new THREE.Mesh(tireGeometry, tires);
     const rim = new THREE.Mesh(rimGeometry, rims);
     tire.rotation.z = rim.rotation.z = Math.PI / 2;
     wheel.add(tire, rim);
-    if (detailed) {
-      const spokes = new THREE.Mesh(spokeGeometry, black);
-      spokes.rotation.y = Math.sign(x) * Math.PI / 2;
-      spokes.position.x = Math.sign(x) * 0.15;
-      wheel.add(spokes);
-    }
+    if (detailed) addRoadsterWheelDetail(wheel, Math.sign(x));
     wheel.position.set(x, 0.46, z);
     group.add(wheel);
     wheels.push(wheel);

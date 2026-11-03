@@ -1,10 +1,10 @@
 import { nextTick } from 'vue';
 import { releaseView, updateReleaseView } from './release-view-state.ts';
-import { HISTORY_KEY } from './history.ts';
 import { getLocale, t, formatDate, SUPPORTED_LOCALES } from './i18n.ts';
-import { CURRENT_RELEASE, NOTES_SEEN_KEY, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind, type ReleaseVideo } from './release-notes.ts';
+import { CURRENT_RELEASE, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind, type ReleaseVideo } from './release-notes.ts';
 import type { ReleaseClipView } from './ui-state-contracts.ts';
 import { createReleaseMediaCache } from './release-media-cache.ts';
+import { onUserActivation } from './user-activation.ts';
 
 // Pure keyboard navigation, independently testable without a DOM.
 export function releaseTabIndex(index: number, count: number, key: string): number | null {
@@ -37,11 +37,6 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   let releaseShownHere = false;
   let releaseUnread = new Set<string>();
   const releaseStorage = (): Storage | null => { try { return localStorage; } catch { return null; } };
-  // Someone who finished the guide or saved a race played before the notes were recorded.
-  const returningPlayer = () => {
-    try { return localStorage.getItem('skyline-rush-guide-seen') !== null || localStorage.getItem(HISTORY_KEY) !== null; }
-    catch { return false; }
-  };
   const releaseDay = (date: string, options: Intl.DateTimeFormatOptions): string => formatDate(new Date(date + 'T00:00:00'), options);
   const versionLabel = (version: string): string => version === UPCOMING ? t('release.upcoming') : 'v' + version;
   // Absolute, so the address matches what Cache Storage records for it.
@@ -104,7 +99,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
         };
       }),
     });
-    updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()) });
+    updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage()) });
     nextTick(syncReleaseVideo);
     loadVisibleClips();
   }
@@ -115,6 +110,12 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     if (releaseDialog.open && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
     else video.pause();
   }
+  // iPhone refuses even a muted clip in Low Power Mode until the player touches the page: the first tap or key anywhere starts
+  // the hero where it is (as it starts the music), not only a tap on the clip, which enlarges it. An enlarged view keeps it waiting.
+  onUserActivation(() => {
+    if (releaseDialog.open && !reducedMotion.matches && !releaseDialog.querySelector('dialog[open]')
+      && document.querySelector<HTMLVideoElement>('#release-video')?.paused) syncReleaseVideo();
+  });
   function selectRelease(index: number): void {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
     renderReleaseNotes();
@@ -132,8 +133,8 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     beforeOpen();
     // Showing the notes is what counts as read: record it now so a reload or crash never repeats them.
     // Everything newer than the previous record stays marked for this visit only.
-    const storage = releaseStorage(), returning = returningPlayer();
-    releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, storage, returning)).map(release => release.version));
+    const storage = releaseStorage();
+    releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, storage)).map(release => release.version));
     markAnnouncementSeen(CURRENT_RELEASE, storage);
     releaseShownHere = true;
     releaseIndex = 0;
@@ -145,12 +146,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   }
   function maybeShowReleaseNotes() {
     if (releaseShownHere || !CURRENT_RELEASE) return;
-    const storage = releaseStorage(), returning = returningPlayer();
-    if (!shouldAnnounce(CURRENT_RELEASE, storage, returning)) {
-      // A first-time player starts from today's notes; the next release is the first one announced to them.
-      if (!returning) try { if (storage?.getItem(NOTES_SEEN_KEY) == null) markAnnouncementSeen(CURRENT_RELEASE, storage); } catch { /* nothing to record */ }
-      return;
-    }
+    if (!shouldAnnounce(CURRENT_RELEASE, releaseStorage())) return;
     if (!canAutoOpen() || !canOpen() || document.querySelector('dialog[open]')) return;
     openReleaseNotes();
   }

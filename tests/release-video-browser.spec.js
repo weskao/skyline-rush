@@ -7,7 +7,8 @@ const VIDEO = {
   desktop: { src: { en: `${CLIPS}.desktop.en.mp4`, 'zh-TW': `${CLIPS}.desktop.zh-TW.mp4` }, poster: { en: `${CLIPS}.desktop.en.jpg`, 'zh-TW': `${CLIPS}.desktop.zh-TW.jpg` } },
   mobile: { src: { en: `${CLIPS}.mobile.en.mp4`, 'zh-TW': `${CLIPS}.mobile.zh-TW.mp4` }, poster: { en: `${CLIPS}.mobile.en.jpg`, 'zh-TW': `${CLIPS}.mobile.zh-TW.jpg` } },
 };
-async function openNotes(page, gameplayURL, onHighlight = false) {
+// `launch` opens the notes with no user activation, as their automatic opening on launch does.
+async function openNotes(page, gameplayURL, onHighlight = false, launch = false) {
   await page.route('**/src/release-notes.ts', async route => {
     const response = await route.fetch();
     const source = await response.text();
@@ -18,9 +19,41 @@ async function openNotes(page, gameplayURL, onHighlight = false) {
   page.on('pageerror', error => errors.push(String(error)));
   await page.goto(gameplayURL);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('#whats-new-open').click();
+  if (launch) {
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+    await page.evaluate(() => document.querySelector('#whats-new-open').click()); // an untrusted click: no touch yet
+  } else await page.locator('#whats-new-open').click();
   await expect(page.locator('#whats-new-screen')).toBeVisible();
   return errors;
+}
+// iOS refuses even muted autoplay in Low Power Mode (or while the phone runs hot) until the player touches the page.
+// Judged by real input events: Playwright runs its own evaluate calls as user gestures, so userActivation would leak.
+const refuseAutoplayWithoutActivation = page => page.addInitScript(() => {
+  let touching = false;
+  for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) addEventListener(type, event => {
+    if (!event.isTrusted) return;
+    touching = true;
+    setTimeout(() => { touching = false; });
+  }, true);
+  const play = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function () {
+    if (touching) return play.call(this);
+    window.refusedSrc = this.getAttribute('src');
+    return Promise.reject(new DOMException('The request is not allowed by the user agent', 'NotAllowedError'));
+  };
+});
+// The first touch anywhere on the notes (not only on the clip, which enlarges it) starts the refused hero where it is.
+async function refusedHeroStartsOnFirstTouch(page, gameplayURL, touch) {
+  await refuseAutoplayWithoutActivation(page);
+  const errors = await openNotes(page, gameplayURL, false, true);
+  const video = page.locator('#release-video');
+  await expect(video).toHaveAttribute('src', /^blob:/);
+  await expect.poll(() => page.evaluate(() => window.refusedSrc), 'the downloaded clip was refused').toMatch(/^blob:/);
+  expect(await paused(video)).toBe(true);
+  await touch(page.locator('#release-intro'));
+  await expect.poll(() => playing(video), 'the first touch starts the hero inline').toBe(true);
+  await expect(page.locator('#release-media-viewer')).toBeHidden();
+  expect(errors).toEqual([]);
 }
 
 const playing = video => video.evaluate(element => !element.paused && element.currentTime > 0);
@@ -63,6 +96,26 @@ test.describe('desktop', () => {
     expect(errors).toEqual([]);
   });
 
+  test('a hero refused autoplay starts inline on the first click anywhere on the notes', ({ page, gameplayURL }) =>
+    refusedHeroStartsOnFirstTouch(page, gameplayURL, target => target.click()));
+
+  test('a refused hero waits behind its enlarged view, and once that closes the next click starts it', async ({ page, gameplayURL }) => {
+    await refuseAutoplayWithoutActivation(page);
+    await openNotes(page, gameplayURL, false, true);
+    const video = page.locator('#release-video'), clip = page.locator('#release-media-viewer video');
+    await expect.poll(() => page.evaluate(() => window.refusedSrc)).toMatch(/^blob:/);
+    await page.locator('#release-video-zoom').click();
+    await expect.poll(() => playing(clip)).toBe(true);
+    await clip.click(); // pauses the enlarged clip
+    await expect.poll(() => paused(clip)).toBe(true);
+    expect(await paused(video), 'the hero never plays behind the enlarged view').toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#release-media-viewer')).toBeHidden();
+    // Its resume after the fade comes too late for the key that closed it, so it is refused too.
+    await page.locator('#release-intro').click();
+    await expect.poll(() => playing(video)).toBe(true);
+  });
+
   test('the hero plays only while the notes are open and its version is shown', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);
     const video = page.locator('#release-video');
@@ -75,7 +128,8 @@ test.describe('desktop', () => {
     const again = await page.locator('#release-video').elementHandle();
     await page.locator('#release-continue').click();
     await expect(page.locator('#whats-new-screen')).toBeHidden();
-    expect(await again.evaluate(element => element.paused)).toBe(true);
+    // The dialog's close event, which pauses the hero, is dispatched a task after it hides.
+    await expect.poll(() => again.evaluate(element => element.paused)).toBe(true);
     await page.locator('#whats-new-open').click();
     await expect.poll(() => playing(page.locator('#release-video'))).toBe(true);
   });
@@ -83,29 +137,45 @@ test.describe('desktop', () => {
   test('the enlarged view continues from the hero\'s frame and hands its frame back on close', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);
     const video = page.locator('#release-video'), clip = page.locator('#release-media-viewer video');
+    // Frames are read in-page when playback starts and stops: each round trip from a slow runner lets the clips play on.
+    await page.evaluate(() => {
+      window.handOver = {};
+      document.addEventListener('playing', ({ target }) => {
+        if (target.closest('#release-media-viewer')) window.handOver.clipStart ??= target.currentTime;
+        else if (window.handOver.clipEnd !== undefined) window.handOver.heroResume ??= target.currentTime;
+      }, true);
+      document.addEventListener('close', ({ target }) => {
+        if (target.id === 'release-media-viewer') window.handOver.clipEnd = target.querySelector('video').currentTime;
+      }, true);
+    });
     await expect.poll(() => time(video)).toBeGreaterThan(1.2);
     await video.click(); // tapping the clip itself enlarges it too
     await expect(clip).toBeVisible();
     await expect.poll(() => playing(clip)).toBe(true);
     const heroTime = await time(video); // frozen at the hand-over
     expect(await paused(video)).toBe(true);
-    expect(await time(clip), 'no restart: it carries on from the hero\'s frame').toBeGreaterThanOrEqual(heroTime - 0.1);
-    expect(await time(clip)).toBeLessThan(heroTime + 0.5);
+    const { clipStart } = await page.evaluate(() => window.handOver);
+    expect(clipStart, 'no restart: it carries on from the hero\'s frame').toBeGreaterThanOrEqual(heroTime - 0.1);
+    expect(clipStart).toBeLessThan(heroTime + 0.5);
     await expect.poll(() => time(clip)).toBeGreaterThan(heroTime + 1);
-    // CI RED #41520208780: comparing with a pre-Escape timestamp includes the
-    // viewer's fade and slow-runner scheduling. Capture both clocks at close.
+    // Capture hero and enlarged clocks at the actual close event, without slow-runner test round trips.
     await page.evaluate(() => {
       document.querySelector('#release-media-viewer').addEventListener('close', () => {
         const enlarged = document.querySelector('#release-media-viewer video')?.currentTime;
-        queueMicrotask(() => { window.releaseHandoff = { enlarged, hero: document.querySelector('#release-video')?.currentTime }; });
+        queueMicrotask(() => {
+          window.releaseHandoff = { enlarged, hero: document.querySelector('#release-video')?.currentTime };
+        });
       }, { once: true });
     });
     await page.keyboard.press('Escape');
     await expect(page.locator('#release-media-viewer')).toBeHidden();
     const handoff = await page.evaluate(() => window.releaseHandoff);
     expect(handoff?.enlarged).toBeGreaterThan(heroTime + 1);
-    expect(Math.abs(handoff.hero - handoff.enlarged), 'the hero resumes from the enlarged frame').toBeLessThan(0.1);
+    expect(Math.abs(handoff.hero - handoff.enlarged), 'the hero resumes from the enlarged frame on close').toBeLessThan(0.1);
     await expect.poll(() => playing(video)).toBe(true);
+    const { clipEnd, heroResume } = await page.evaluate(() => window.handOver);
+    expect(clipEnd).toBeGreaterThan(heroTime + 1);
+    expect(Math.abs(heroResume - clipEnd), 'the hero resumes from the enlarged frame').toBeLessThan(0.5 + 0.1);
   });
 
   test('a tap on the enlarged clip pauses and resumes it, a tap outside or the close button closes it', async ({ page, gameplayURL }) => {
@@ -170,6 +240,8 @@ test.describe('desktop', () => {
     page.on('request', request => { if (request.url().endsWith(`${CLIPS}.desktop.en.mp4`)) downloads.push(request.url()); });
     await openNotes(page, gameplayURL);
     const watch = async () => {
+      // The notes fetch the clip ahead; once kept, the hero plays it from the copy, and so must the enlarged view.
+      await expect(page.locator('#release-video')).toHaveAttribute('src', /^blob:/);
       await page.locator('#release-video-zoom').click();
       const clip = page.locator('#release-media-viewer video');
       await expect(clip).toHaveAttribute('src', /^blob:/); // played from the kept copy, never streamed again
@@ -281,4 +353,7 @@ test.describe('phone portrait', () => {
     await expect(page.locator('#whats-new-screen')).toBeHidden();
     expect(errors).toEqual([]);
   });
+
+  test('a hero refused autoplay (iPhone Low Power Mode) starts inline on the first tap anywhere on the notes', ({ page, gameplayURL }) =>
+    refusedHeroStartsOnFirstTouch(page, gameplayURL, target => target.tap()));
 });

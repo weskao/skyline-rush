@@ -1,3 +1,53 @@
+## Roadster 2-inspired player vehicle fidelity — 2026-11-03
+
+**Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
+
+**Integration checkpoint:** `develop` `00ae95f8` was merged via `6cdd909f` (two parents, no force-push). Previous HEAD CI `41584935239` failed unit/browser/World Tour; unit failure identified a shared Roadster merged-material instance. Fix commit `5a11df0` is included. Verify the full CI on the exact new HEAD (not only feature-focused tests); visual WebGL and physical-device review remain separate gates. Visual reference: user-supplied front/side/rear/wing/flight images; spec and plan in `docs/superpowers/`.
+
+- [x] Preserve current race physics, VFX port coordinates, Garage body-paint API, wing lift and independent wheels.
+- [x] Replace roadster-only six-box-section shell with a multi-station faceted wedge and fastback glazing, add realistic side detail, aero rims, rear wing, nozzles and diffuser.
+- [x] Introduce physical pearl paint and glazed windows without changing rival/traffic styles; add targeted structural regression tests.
+- [ ] Verify the expected historical RED state on the pre-implementation commit: first GitHub test run was cancelled before unit jobs completed; do **not** claim TDD RED observed.
+- [ ] Obtain GREEN for `node --test tests/roadster-fidelity.test.js tests/car-model-draws.test.js`, complete `npm test`, `npm run build`, `npm run typecheck`, `make verify`.
+- [ ] Inspect real WebGL pictures for all major angles in Garage and race, at desktop and mobile viewport; compare frame time, triangles and draw calls before/after.
+- [ ] Verify exact-HEAD full CI quality-gate and manually test road/flight/transitions on real devices. No PR, merge, deployment or modification to `main`/`develop` without explicit user approval.
+
+---
+
+## Fix — What's New hero clip stays a still on iPhone Home Screen app until tapped (2026-11-03)
+
+**Branch:** `develop`. **Repro (user, iPhone 16, iOS 26.3, Home Screen app):** notes auto-open on launch, hero clip shows its
+poster, no music; only a tap on the clip (which enlarges it) starts the clip and the music.
+**Root cause:** where the browser refuses autoplay (iPhone Low Power Mode refuses even a muted clip; Web Audio never starts
+before a touch on iOS), `syncReleaseVideo` gave up on the first refusal and never retried. The music already retried on any
+touch; the hero did not.
+
+- [x] RED: `tests/release-video-browser.spec.js` "refused autoplay" desktop click + phone tap: play() refused without a real
+  input event, notes opened without one; first touch on the notes left the hero paused (both failed, 10 s poll).
+- [x] GREEN: `onUserActivation` (`src/user-activation.ts`, shared with the music unlock in `audio-ui.ts`) retries a paused hero
+  on the first tap/key while the notes are open; the enlarged view keeps it waiting (mutation: removing that guard fails
+  "waits behind its enlarged view"). Spec 13/13 green.
+- [x] iOS 27.0 simulator, Home Screen web app, production build: hero autoplays on launch with the fix (frames differ 2 s
+  apart); first tap creates a running AudioContext (music on).
+- [ ] Real iPhone 16 / iOS 26.3 retest by the user (Low Power Mode on and off). Not reproducible in the simulator, which has
+  no Low Power Mode; music before the first touch is impossible on iOS (platform rule).
+
+## Touch devices: hide keyboard remapping until a physical keyboard is used — 2026-11-03
+
+Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/tablets should not show the Controls panel's "鍵盤 · 先選擇動作，再按下按鍵" section, its rebind buttons, the fixed-shortcut note or Reset keyboard — but a phone/tablet with a Bluetooth keyboard must still be able to remap.
+
+- [x] Rule (`src/keyboard-presence.ts`): show at once on `(hover: hover) and (pointer: fine)`; otherwise hidden until a keydown with a non-empty `code`, not composing and not typed into a text field (on-screen keyboards send an empty code or compose), then remembered in `skyline-rush-keyboard-seen`. Wired in `setupKeyMapUI` → `panelsView.keyboardSettings` → `v-show` in `ControlsPanel.vue`.
+- [x] RED: `tests/keyboard-settings-browser.spec.js` touch case failed (`.keymap-field` visible) on the stub; GREEN after the change, desktop case green throughout. `tests/keyboard-presence.test.js` 6/6.
+- [x] `npm test` 1446 pass / 0 fail; `npm run build`; `npm run typecheck`; handoff/i18n/guide specs: the only 8 failures (handoff PERFECT LINE, i18n flow ×4, intro bottom edge ×3) fail identically on unmodified `origin/develop` `9ec7f3df`.
+- [x] Screenshot 390×844 touch: Controls panel without the keyboard block; after a Shift press, the block appears.
+- [x] Pre-existing develop reds (home row at 1440×900, `main-ui-parity`, i18n 3x artwork summary, handoff PERFECT LINE) were fixed
+  here, then superseded by develop's own fixes in 0.29.0; on merging `develop` `b34b1bfc` this branch took develop's versions and
+  dropped its duplicates (`hud-artwork.ts`, `layoutSeed` fixture, 12px/16px home row).
+- [ ] Physical iPad / iPhone with and without a Bluetooth keyboard.
+- [ ] `make verify` and full exact-HEAD CI `quality-gate` after merge into `develop`.
+
+---
+
 ## Garage VFX remembered skin picks — 2026-11-03
 
 Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial pick survives reload as a preference only (`src/garage-skin-preference.ts`), re-applied through `session.equip`; never ownership.
