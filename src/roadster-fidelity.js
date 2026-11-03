@@ -8,10 +8,10 @@ const BODY_STATIONS = [
   [-2.48, .92, .40, .55, .61],
   [-2.31, 1.03, .37, .59, .73],
   [-1.91, 1.13, .35, .66, .93],
-  [-1.41, 1.19, .35, .74, 1.03],
+  [-1.41, 1.19, .81, .74, 1.03],
   [-.72, 1.16, .36, .76, 1.04],
   [.44, 1.15, .36, .77, 1.04],
-  [1.27, 1.19, .37, .78, 1.08],
+  [1.27, 1.19, .83, .78, 1.08],
   [1.79, 1.18, .39, .78, 1.08],
   [2.21, 1.1, .42, .73, .99],
   [2.37, 1.04, .43, .67, .92],
@@ -36,13 +36,17 @@ function loft(rings, close = true) {
 }
 
 export function roadsterBody() {
-  const rings = BODY_STATIONS.map(([z, w, bottom, deck, shoulder]) => [
-    -.83*w, bottom, z, -w, bottom+.12, z,
-    -w, shoulder-.16, z, -.88*w, shoulder, z,
+  const rings = BODY_STATIONS.map(([z, w, bottom, deck, shoulder]) => {
+    const sideRise = Math.min(.12, (shoulder - bottom) * .26);
+    const cornerDrop = Math.min(.16, (shoulder - bottom) * .26);
+    return [
+    -.83*w, bottom, z, -w, bottom+sideRise, z,
+    -w, shoulder-cornerDrop, z, -.88*w, shoulder, z,
     -.57*w, deck, z, .57*w, deck, z,
-    .88*w, shoulder, z, w, shoulder-.16, z,
-    w, bottom+.12, z, .83*w, bottom, z,
-  ]);
+    .88*w, shoulder, z, w, shoulder-cornerDrop, z,
+    w, bottom+sideRise, z, .83*w, bottom, z,
+    ];
+  });
   return loft(rings);
 }
 
@@ -100,7 +104,7 @@ function line(parent, points, radius, mat, name) {
 function rocker(side) {
   const w = side * 1.15, thickness = -.085 * side;
   const outline = [
-    [w,.29,-2.12], [w,.275,1.91], [w,.58,1.74], [w,.56,-1.80],
+    [w,.29,-.86], [w,.275,.91], [w,.58,.88], [w,.56,-.83],
   ];
   const vertices = outline.flat().concat(outline.map(([x,y,z]) => [x+thickness,y,z]).flat());
   const faces = [0,1,2,0,2,3,4,6,5,4,7,6];
