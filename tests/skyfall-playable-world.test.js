@@ -4,11 +4,12 @@ import * as THREE from 'three';
 import { createSkyfallWorld } from '../src/courses/skyfall-world.ts';
 import { SKYFALL_COURSE, getSkyfallEdgeLength, sampleSkyfallRoad } from '../src/courses/skyfall-archipelago.ts';
 
-test('Skyfall renders ten real geometry-backed roads, islands, cloud ocean and sky rings',()=>{
+test('Skyfall streams geometry-backed roads, islands, cloud ocean and sky rings',()=>{
   const scene=new THREE.Scene();
   const env=createSkyfallWorld(scene,'medium');
   assert.ok(scene.children.includes(env.group));
   for(const e of SKYFALL_COURSE.edges){
+    env.setFocus([{edgeId:e.id,localS:0}]);
     const road=env.group.getObjectByName(`Skyfall ${e.id} banked playable road`);
     assert.ok(road?.isMesh && road.geometry.getAttribute('position').count>20,e.id);
   }
@@ -48,4 +49,43 @@ test('landing roads reconnect at the same authoritative end pose and remain broa
     assert.ok(landing.width>=34);
     assert.ok(Math.hypot(landing.point.x-grounded.point.x,landing.point.y-grounded.point.y,landing.point.z-grounded.point.z)<1e-5);
   }
+});
+
+test('Skyfall unloads distant chunks and follows positions of eight graph-aware vehicles', () => {
+  const scene = new THREE.Scene();
+  const env = createSkyfallWorld(scene, 'low');
+  const initial = env.group.getObjectByName('Skyfall approach banked playable road');
+  assert.ok(initial?.isMesh);
+  assert.equal(env.group.getObjectByName('Skyfall c-air banked playable road'), undefined);
+  let released = false;
+  const originalDispose = initial.geometry.dispose.bind(initial.geometry);
+  initial.geometry.dispose = () => { released = true; originalDispose(); };
+
+  env.setFocus([{ edgeId: 'c-air', localS: getSkyfallEdgeLength('c-air') / 2 }]);
+  assert.equal(released, true, 'obsolete GPU road geometry must be released');
+  assert.equal(env.group.getObjectByName('Skyfall approach banked playable road'), undefined);
+  const eightEdges = ['approach', 'a-ground', 'a-air', 'b-ground',
+    'b-air', 'c-ground', 'c-air', 'descent'];
+  env.setFocus(eightEdges.map(edgeId => ({ edgeId, localS: getSkyfallEdgeLength(edgeId) / 2 })));
+  for (const edgeId of eightEdges) {
+    assert.ok(env.group.getObjectByName(`Skyfall ${edgeId} banked playable road`),
+      `eight-car streaming failed on ${edgeId}`);
+  }
+  env.dispose();
+});
+
+test('Skyfall waterfalls animate deterministically and freeze under Reduced Motion', () => {
+  const scene = new THREE.Scene();
+  const env = createSkyfallWorld(scene, 'medium');
+  const waterfall = env.group.getObjectByName('Skyfall hanging waterfall');
+  assert.ok(waterfall);
+  const baseY = waterfall.position.y;
+  env.update(20, false);
+  assert.notEqual(waterfall.position.y, baseY);
+  const movedY = waterfall.position.y;
+  env.update(20, false);
+  assert.equal(waterfall.position.y, movedY);
+  env.update(20, true);
+  assert.equal(waterfall.position.y, baseY);
+  env.dispose();
 });
