@@ -115,6 +115,20 @@ test('desktop: dragging the preview with the mouse changes track from the regula
   await expect(page.locator(`[data-track="${second}"]`)).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('desktop: a mouse drag past 20% of a wide screen switches track before the button is released', async ({ page }) => {
+  await page.setViewportSize({ width: 2560, height: 1440 });
+  await page.goto('/');
+  const [, second] = await trackOrder(page);
+  await page.mouse.move(1900, 800);
+  await page.mouse.down();
+  for (let x = 1860; x >= 1360; x -= 50) { await page.mouse.move(x, 800); await page.waitForTimeout(16); } // 540px > 512px
+  await expect.poll(() => selected(page)).toBe(second);
+  await page.mouse.move(1300, 800); // the rest of the held drag must not start a second switch
+  await page.mouse.up();
+  await page.waitForTimeout(600);
+  expect(await selected(page)).toBe(second);
+});
+
 test('desktop: a two-finger trackpad swipe changes one track per gesture, momentum included', async ({ page }) => {
   await page.goto('/');
   const [first, second, third] = await trackOrder(page);

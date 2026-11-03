@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { swipeAxis, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from '../src/track-swipe.ts';
+import { swipeAxis, swipeOffset, swipeStep, liveSwipeStep, addSwipeSample, releaseVelocity } from '../src/track-swipe.ts';
+
+test('a mouse drag past a fifth of the screen switches without waiting for the release', () => {
+  assert.equal(liveSwipeStep(-511, 2560), 0);
+  assert.equal(liveSwipeStep(-512, 2560), 1, 'leftward drag brings the next track');
+  assert.equal(liveSwipeStep(288, 1440), -1);
+  assert.equal(liveSwipeStep(287, 1440), 0);
+});
 
 test('the drag locks to the axis it first moves along', () => {
   assert.equal(swipeAxis(3, 4), null);

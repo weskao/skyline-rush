@@ -1,4 +1,4 @@
-import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.ts';
+import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, liveSwipeStep, addSwipeSample, releaseVelocity } from './track-swipe.ts';
 import { trackName, getLocale, t } from './i18n.ts';
 
 interface SwipeStart {
@@ -184,6 +184,10 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     if (swipe.axis !== 'x') return;
     addSwipeSample(swipe.samples, event.timeStamp, event.clientX);
     dragSwipe(dx);
+    // Touch keeps carousel release semantics; a mouse switches mid-drag (commitSwipe clears swipe, so one drag = one track).
+    const step = event.pointerType === 'mouse' ? liveSwipeStep(dx, innerWidth) : 0;
+    const button = step && swipeNeighbour(step);
+    if (button) void commitSwipe(button, step);
   });
   // Trackpad two-finger swipe (horizontal wheel): the preview follows the scroll and changes track once it travels the swipe
   // distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it,
