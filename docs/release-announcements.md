@@ -88,7 +88,9 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
   entry's **hero** clip autoplays inline, muted and looping, as soon as the notes open; it plays only while the
   notes are open and its version tab is shown, and a small corner button (or a tap on the clip) opens the
   enlarged view (`ReleaseMediaViewer.vue`). Under reduced motion the hero shows its poster with controls and
-  does not autoplay. A **highlight** clip never plays inline: the notes show its **poster** (a real-game still)
+  does not autoplay. Where the browser refuses autoplay (iPhone in Low Power Mode refuses even a muted clip),
+  the hero waits on its poster and starts inline on the player's first tap or key anywhere, the same touch that
+  starts the music. A **highlight** clip never plays inline: the notes show its **poster** (a real-game still)
   in the picture slot with a play button over it, and a tap opens the enlarged view, where the clip starts at
   once, looping muted. The enlarged hero carries on from the inline frame and hands its frame back on close.
   In the enlarged view a tap on the clip pauses and resumes it (a play badge marks the paused frame; Space

@@ -21,16 +21,23 @@ async function openNotes(page, gameplayURL, onHighlight = false, launch = false)
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   if (launch) {
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-    await page.evaluate(() => document.querySelector('#whats-new-open').click()); // a scripted click grants no activation
+    await page.evaluate(() => document.querySelector('#whats-new-open').click()); // an untrusted click: no touch yet
   } else await page.locator('#whats-new-open').click();
   await expect(page.locator('#whats-new-screen')).toBeVisible();
   return errors;
 }
 // iOS refuses even muted autoplay in Low Power Mode (or while the phone runs hot) until the player touches the page.
+// Judged by real input events: Playwright runs its own evaluate calls as user gestures, so userActivation would leak.
 const refuseAutoplayWithoutActivation = page => page.addInitScript(() => {
+  let touching = false;
+  for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) addEventListener(type, event => {
+    if (!event.isTrusted) return;
+    touching = true;
+    setTimeout(() => { touching = false; });
+  }, true);
   const play = HTMLMediaElement.prototype.play;
   HTMLMediaElement.prototype.play = function () {
-    if (navigator.userActivation.isActive) return play.call(this);
+    if (touching) return play.call(this);
     window.refusedSrc = this.getAttribute('src');
     return Promise.reject(new DOMException('The request is not allowed by the user agent', 'NotAllowedError'));
   };
@@ -91,6 +98,23 @@ test.describe('desktop', () => {
 
   test('a hero refused autoplay starts inline on the first click anywhere on the notes', ({ page, gameplayURL }) =>
     refusedHeroStartsOnFirstTouch(page, gameplayURL, target => target.click()));
+
+  test('a refused hero waits behind its enlarged view, and once that closes the next click starts it', async ({ page, gameplayURL }) => {
+    await refuseAutoplayWithoutActivation(page);
+    await openNotes(page, gameplayURL, false, true);
+    const video = page.locator('#release-video'), clip = page.locator('#release-media-viewer video');
+    await expect.poll(() => page.evaluate(() => window.refusedSrc)).toMatch(/^blob:/);
+    await page.locator('#release-video-zoom').click();
+    await expect.poll(() => playing(clip)).toBe(true);
+    await clip.click(); // pauses the enlarged clip
+    await expect.poll(() => paused(clip)).toBe(true);
+    expect(await paused(video), 'the hero never plays behind the enlarged view').toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#release-media-viewer')).toBeHidden();
+    // Its resume after the fade comes too late for the key that closed it, so it is refused too.
+    await page.locator('#release-intro').click();
+    await expect.poll(() => playing(video)).toBe(true);
+  });
 
   test('the hero plays only while the notes are open and its version is shown', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);

@@ -1,3 +1,21 @@
+## Fix — What's New hero clip stays a still on iPhone Home Screen app until tapped (2026-11-03)
+
+**Branch:** `develop`. **Repro (user, iPhone 16, iOS 26.3, Home Screen app):** notes auto-open on launch, hero clip shows its
+poster, no music; only a tap on the clip (which enlarges it) starts the clip and the music.
+**Root cause:** where the browser refuses autoplay (iPhone Low Power Mode refuses even a muted clip; Web Audio never starts
+before a touch on iOS), `syncReleaseVideo` gave up on the first refusal and never retried. The music already retried on any
+touch; the hero did not.
+
+- [x] RED: `tests/release-video-browser.spec.js` "refused autoplay" desktop click + phone tap: play() refused without a real
+  input event, notes opened without one; first touch on the notes left the hero paused (both failed, 10 s poll).
+- [x] GREEN: `onUserActivation` (`src/user-activation.ts`, shared with the music unlock in `audio-ui.ts`) retries a paused hero
+  on the first tap/key while the notes are open; the enlarged view keeps it waiting (mutation: removing that guard fails
+  "waits behind its enlarged view"). Spec 13/13 green.
+- [x] iOS 27.0 simulator, Home Screen web app, production build: hero autoplays on launch with the fix (frames differ 2 s
+  apart); first tap creates a running AudioContext (music on).
+- [ ] Real iPhone 16 / iOS 26.3 retest by the user (Low Power Mode on and off). Not reproducible in the simulator, which has
+  no Low Power Mode; music before the first touch is impossible on iOS (platform rule).
+
 ## Touch devices: hide keyboard remapping until a physical keyboard is used — 2026-11-03
 
 Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/tablets should not show the Controls panel's "鍵盤 · 先選擇動作，再按下按鍵" section, its rebind buttons, the fixed-shortcut note or Reset keyboard — but a phone/tablet with a Bluetooth keyboard must still be able to remap.
