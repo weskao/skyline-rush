@@ -9,6 +9,7 @@ import {
   monsoonObstacleHit,
   monsoonAvoidance,
   monsoonPassedCheckpoints,
+  monsoonCrossedCheckpoint,
   monsoonCanFinish,
   monsoonRecovery,
   validateMonsoonCourse,
@@ -106,6 +107,24 @@ test('each edge has a physical arc-length coordinate distinct from course progre
   }
 });
 
+
+test('checkpoint requires an actual forward world-space gate crossing on the ground', () => {
+  const gate = course.checkpoints[2];
+  const before = main(gate - 6);
+  const after = main(gate + 6);
+  assert.equal(monsoonCrossedCheckpoint(gate, before.point, after.point, 'ground'), true);
+  assert.equal(monsoonCrossedCheckpoint(gate, after.point, before.point, 'ground'), false);
+  assert.equal(monsoonCrossedCheckpoint(gate, before.point, after.point, 'waterfall-skybridge'), false);
+  const farOutside = (p, offset, altitude = 0) =>
+    p.point.map((v, i) => v + p.right[i] * offset + p.up[i] * altitude);
+  assert.equal(monsoonCrossedCheckpoint(gate,
+    farOutside(before, 32), farOutside(after, 32), 'ground'), false);
+  assert.equal(monsoonCrossedCheckpoint(gate,
+    farOutside(before, 0, 22), farOutside(after, 0, 22), 'ground'), false);
+  assert.equal(monsoonCrossedCheckpoint(gate,
+    main(gate - 200).point, main(gate + 200).point, 'ground'), false, 'no teleport across a gate');
+});
+
 test('shallow water affects contact without exceeding the safe flooding cap', () => {
   const ford = course.branches.find(e => e.id === 'river-ford');
   const water = monsoonWetContact(ford.id, (ford.from + ford.to) / 2);
@@ -129,6 +148,16 @@ test('solid ruin debris has swept collision and visible AI bypass space', () => 
     const steer = monsoonAvoidance(obstacle.edgeId, obstacle.at - 45, obstacle.lateral);
     assert.ok(Math.abs(steer - obstacle.lateral) > obstacle.radius + 1.5, obstacle.id + ' should be avoided');
   }
+});
+
+
+test('swept lateral obstacle query catches diagonal crosses but not adjacent routes', () => {
+  const column = course.obstacles.find(o => o.id === 'collapsed-column-1');
+  assert.ok(column);
+  const hit = monsoonObstacleHit('ground', column.at - 10, column.at + 10, 8, 0, -20);
+  assert.equal(hit?.id, column.id, 'diagonal crossing hits column even when final lane is clear');
+  assert.equal(monsoonObstacleHit('waterfall-skybridge', column.at - 10,
+    column.at + 10, 8, 0, -20), null, 'separate edge never collides');
 });
 
 test('recovery selects passed safe checkpoint on the real ground and never teleports to finish', () => {
