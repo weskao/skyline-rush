@@ -61,6 +61,19 @@ for (let i=0; i<valancePoints.count; i++) {
 }
 lowerValance.computeVertexNormals();
 
+// A black rear quarter flows out of the white rear wheel shoulder into the
+// deeper diffuser. Keep its leading edge behind the animated rear wheel.
+const rearQuarterCuts = [-1,1].map(side => {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute([
+    side*1.174,.605,1.84, side*1.09,.78,2.35,
+    side*1.09,.34,2.35, side*1.174,.30,1.84,
+  ],3));
+  geo.setIndex(side < 0 ? [0,2,1,0,3,2] : [0,1,2,0,2,3]);
+  geo.computeVertexNormals();
+  return geo;
+});
+
 const add = (group, geometry, material, name) => {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = name;
@@ -82,6 +95,7 @@ export function addReferenceRear(group, materials, trace) {
   add(group, upperTailSlot, dark, 'Roadster black rear light recess');
   add(group, whiteTail, materials.paint, 'Roadster curved rear fascia');
   add(group, lowerValance, carbon, 'Roadster curved rear valance');
+  for (const panel of rearQuarterCuts) add(group,panel,carbon,'Roadster rear quarter carbon cut');
   trace(group, [
     [-1.02,1.074,2.318],[-.58,1.083,2.38],[0,1.086,2.424],
     [.58,1.083,2.38],[1.02,1.074,2.318],
