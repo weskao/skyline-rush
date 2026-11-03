@@ -9,6 +9,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');
     await gallery.locator('summary').click();
+    await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
     const cards=gallery.locator('button[data-wave3-asset]');
     await expect(cards).toHaveCount(6);
     const picked=cards.nth(1), id=await picked.getAttribute('data-wave3-asset');
@@ -36,6 +37,7 @@ test('Wave3 garage-store-readiness filters and locale switch keep all buttons no
   await page.locator('#garage-button').click();
   const localized=page.locator('#garage-art-source-garage-store-readiness');
   await localized.locator('summary').click();
+  await expect(localized.locator('[data-store-phase="coming-soon"]')).toHaveText('商店 · 即將推出 — 僅供預覽');
   await expect(localized.locator('[data-wave3-description]')).toContainText(/[一-龥]/);
   await expect(localized.getByRole('button',{name:/購買|領取|buy|claim/i})).toHaveCount(0);
 });
