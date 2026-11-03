@@ -1,7 +1,6 @@
 /**
- * Stage 2 concept tracks. Hidden from the home card list and from RACE_TRACKS; only dev or
- * `VITE_STAGE2_PREVIEW=1` builds may open one via `?stage2-preview=<id>[&shot=p01|p02]`, and then
- * only as a preview-only Coming Soon selection with Start disabled.
+ * Stage 2 concept tracks. A Coming Soon home card (spread into UPCOMING_TRACKS), never in RACE_TRACKS.
+ * `?stage2-preview=<id>[&shot=p01|p02]` opens the card's showroom, Start disabled.
  */
 export const STAGE2_TRACKS = Object.freeze({
   'frostbite-canyon': {

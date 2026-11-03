@@ -120,12 +120,12 @@ test('dispose releases every owned geometry and material and clears scene fog', 
   assert.equal(freedM, materials.size);
 });
 
-test('Frostbite stays out of the Stage 1 registries and RACE_TRACKS', async () => {
+test('Frostbite is a Coming Soon card and scene but stays out of RACE_TRACKS', async () => {
   const { UPCOMING_TRACKS } = await import('../src/upcoming-tracks.ts');
   const { UPCOMING_ENVIRONMENTS } = await import('../src/upcoming-scenes/index.ts');
   const { RACE_TRACKS } = await import('../src/race-tracks.ts');
-  assert.ok(!('frostbite-canyon' in UPCOMING_TRACKS));
-  assert.ok(!('frostbite-canyon' in UPCOMING_ENVIRONMENTS));
+  assert.ok('frostbite-canyon' in UPCOMING_TRACKS);
+  assert.ok('frostbite-canyon' in UPCOMING_ENVIRONMENTS);
   assert.ok(!('frostbite-canyon' in RACE_TRACKS));
 });
 

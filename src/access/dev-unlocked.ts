@@ -7,4 +7,6 @@ import { PAINTS } from '../appearance.ts';
 console.info('SKYLINE_RUSH_DEV_UNLOCK_ALL_ONLY: local development preview; never distribute.');
 
 export const availableTracks = () => Object.keys(RACE_TRACKS);
+// A Coming Soon card is enterable here only once its race runtime exists (a RACE_TRACKS entry).
+export const isUpcomingEnterable = (id: string): boolean => Object.hasOwn(RACE_TRACKS, id);
 export const availablePaints = () => Object.keys(PAINTS);

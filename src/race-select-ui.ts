@@ -38,6 +38,8 @@ interface RaceSelectOptions {
   cueUi(): void;
   reducedMotion: MediaQueryList;
   showUpcoming3D(id: PreviewTrackId | null): boolean;
+  /** Local all-unlocked server only: a Coming Soon card whose race runtime is finished starts like a playable track. */
+  isUpcomingEnterable(id: string): boolean;
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
@@ -152,8 +154,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     }
     for (const button of upcomingButtons()) {
       const id = button.dataset.upcomingTrack as UpcomingTrackId;
-      button.setAttribute('aria-pressed', String(id === upcomingSelection));
-      button.querySelector('small')!.textContent = t('track.comingSoon');
+      const entered = options.isUpcomingEnterable(id);
+      button.setAttribute('aria-pressed', String(entered && !upcomingSelection ? id === race.trackId : id === upcomingSelection));
+      button.querySelector('small')!.textContent = t(entered ? 'track.open' : 'track.comingSoon');
       button.title = t('track.comingSoonInfo', { track: upcomingTrackName(id, getLocale()) });
     }
   }
@@ -242,8 +245,10 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   });
   for (const button of upcomingButtons()) button.addEventListener('click', () => {
     if (getRace().phase !== 'ready') return;
-    upcomingSelection = button.dataset.upcomingTrack as UpcomingTrackId;
+    const id = button.dataset.upcomingTrack as UpcomingTrackId;
+    upcomingSelection = options.isUpcomingEnterable(id) ? null : id;
     options.clearControls(); options.clearDaily();
+    if (!upcomingSelection) setRace(selectedRace(id));
     showTracks(); options.refreshPhase();
     button.focus({ preventScroll: true });
     centerSelectedTrack(true);
@@ -297,11 +302,8 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
     setRace(selectedRace(last && unlockedTracks.has(last) ? last : getRace().trackId));
   } catch { /* Classic on Coast stays the default without storage. */ }
-  // Gated Stage 2 showroom: dev / VITE_STAGE2_PREVIEW builds only; production compiles this to null.
-  if (import.meta.env.DEV || import.meta.env.VITE_STAGE2_PREVIEW) {
-    upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
-    if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
-  }
+  upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
+  if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
 
   return {
     recreate: eventLab.recreate,

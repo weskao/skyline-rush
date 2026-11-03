@@ -1,6 +1,6 @@
 import { test, expect } from './helpers/test.js';
 
-const stage1 = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcanic-crown', 'stormline-megacity'];
+const stage1 = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcanic-crown', 'stormline-megacity', 'frostbite-canyon'];
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast']));
@@ -10,9 +10,8 @@ test.beforeEach(async ({ page }) => {
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 });
 
-test('only Stage 1 home concepts are selectable; no fake race can start even by keyboard', async ({ page }) => {
-  await expect(page.locator('[data-upcoming-track]')).toHaveCount(5);
-  await expect(page.locator('[data-upcoming-track="frostbite-canyon"]')).toHaveCount(0);
+test('only the Coming Soon home concepts are selectable; no fake race can start even by keyboard', async ({ page }) => {
+  await expect(page.locator('[data-upcoming-track]')).toHaveCount(6);
   for (const id of stage1) {
     await page.locator(`[data-upcoming-track="${id}"]`).click();
     await expect(page.locator(`[data-upcoming-track="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
@@ -34,13 +33,12 @@ test('only Stage 1 home concepts are selectable; no fake race can start even by 
   await expect(page.locator('#start-button span')).toHaveText('LOCKED');
 });
 
-test('production ignores the Stage 2 preview URL: no Frostbite scene, Start stays playable', async ({ page }) => {
+test('the Stage 2 preview URL opens the Frostbite card as Coming Soon with Start disabled', async ({ page }) => {
   await page.goto('/?stage2-preview=frostbite-canyon&shot=p02');
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await expect(page.locator('#start-button')).toBeEnabled();
-  await expect(page.locator('#start-button span')).toHaveText('Start race');
-  await expect(page.locator('#track-length')).not.toContainText('PLANNED');
-  await expect(page.locator('[data-upcoming-track="frostbite-canyon"]')).toHaveCount(0);
+  await expect(page.locator('[data-upcoming-track="frostbite-canyon"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
 });
 
 test('CTA copy is translated without resizing its hit target', async ({ page }) => {

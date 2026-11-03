@@ -5,9 +5,9 @@ import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { UI } from '../src/locales/ui.ts';
 import { UPCOMING_TRACKS, isUpcomingTrack, homeTrackStatus } from '../src/upcoming-tracks.ts';
 
-const ids = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcanic-crown', 'stormline-megacity'];
+const ids = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcanic-crown', 'stormline-megacity', 'frostbite-canyon'];
 
-test('only the five Stage 1 planning tracks appear as selectable coming-soon home cards', () => {
+test('only the six planning tracks (Stage 1 five + Frostbite Canyon) appear as selectable coming-soon home cards', () => {
   assert.deepEqual(Object.keys(UPCOMING_TRACKS), ids);
   for (const id of ids) {
     assert.equal(isUpcomingTrack(id), true);
@@ -17,7 +17,6 @@ test('only the five Stage 1 planning tracks appear as selectable coming-soon hom
     assert.ok(item.names.en.length > 0 && item.names['zh-TW'].length > 0);
     assert.ok(item.image.endsWith('.jpg'));
   }
-  assert.equal(isUpcomingTrack('frostbite-canyon'), false, 'Stage 2 stays out of home');
 });
 
 test('coming-soon never becomes playable through an unlock save or another game mode', () => {

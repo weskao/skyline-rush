@@ -4,4 +4,6 @@ import { loadUnlocks } from '../history.ts';
 import { ownedPaints } from '../appearance.ts';
 
 export const availableTracks = () => loadUnlocks();
+/** Release builds keep every Coming Soon card preview-only until it is removed from UPCOMING_TRACKS. */
+export const isUpcomingEnterable = (_id: string): boolean => false;
 export const availablePaints = (totalStars: number): string[] => ownedPaints(totalStars);

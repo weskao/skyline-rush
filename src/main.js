@@ -37,7 +37,7 @@ import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
 import { setupPhotoUI } from './photo-ui.ts';
 import { saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, formatDate } from './i18n.ts';
-import { availableTracks, availablePaints } from '@progression-access';
+import { availableTracks, availablePaints, isUpcomingEnterable } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.ts';
 import { trackDropdown } from './dropdown.ts';
 import { setupTrackSwipeUI } from './track-swipe-ui.ts';
@@ -197,6 +197,7 @@ const raceSelect = setupRaceSelectUI({
   cueUi: () => sound.cue('ui'),
   reducedMotion,
   showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
+  isUpcomingEnterable,
 });
 const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),

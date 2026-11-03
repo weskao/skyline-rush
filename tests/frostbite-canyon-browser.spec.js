@@ -2,8 +2,7 @@ import { test, expect } from './helpers/test.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-// Real WebGL Stage 2 showroom, served by the dev server (the only build where the gate is compiled in;
-// see playwright.world-tour.config.js). Set FROSTBITE_CAPTURE_DIR to keep the evidence frames.
+// Real WebGL Frostbite Canyon showroom (a Coming Soon home card in every build). Set FROSTBITE_CAPTURE_DIR to keep the evidence frames.
 const VIEWPORTS = [{ width: 1440, height: 900 }, { width: 390, height: 844 }];
 const captureDir = process.env.FROSTBITE_CAPTURE_DIR;
 

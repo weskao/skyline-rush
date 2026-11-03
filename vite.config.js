@@ -9,8 +9,6 @@ import { selectGarageReleaseBuild } from './scripts/garage-release-build.mjs';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'GARAGE_VFX_');
   const release = selectGarageReleaseBuild(mode, env.GARAGE_VFX_RELEASE_MODE);
-  // Stage 2 showroom scenes ship only to the dev server or an explicit VITE_STAGE2_PREVIEW=1 QA build.
-  const stage2 = mode === 'development' || loadEnv(mode, process.cwd(), 'VITE_STAGE2_').VITE_STAGE2_PREVIEW ? 'stage2' : 'stage2-none';
   let outputDir = '';
   return {
     plugins: [
@@ -29,7 +27,6 @@ export default defineConfig(({ mode }) => {
     server: { watch: { ignored: [fileURLToPath(new URL('./.claude/worktrees/**', import.meta.url))] } },
     resolve: { alias: {
       '@progression-access': fileURLToPath(new URL('./src/access/production.ts', import.meta.url)),
-      '@stage2-environments': fileURLToPath(new URL(`./src/upcoming-scenes/${stage2}.ts`, import.meta.url)),
       ...release.aliases,
     } },
   };
