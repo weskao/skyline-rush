@@ -44,6 +44,21 @@ test('Roadster has tapered gold-glazed canopy, restrained hood creases and facet
   assert.equal(named(car, 'Roadster triangular headlamp').length, 2, 'both tucked-away triangular corner lights');
 });
 
+test('Roadster nose face below the light blade is dark fascia, never flat white paint', () => {
+  // Reference 05/07: white hood above the blade; carbon band, black intake and splitter below it.
+  const car = roadster();
+  car.updateMatrixWorld(true);
+  const paint = car.userData.body.material;
+  const ray = new THREE.Raycaster();
+  for (const x of [-.7, -.35, 0, .35, .7]) for (const y of [.42, .5, .58]) {
+    ray.set(new THREE.Vector3(x, y, -4), new THREE.Vector3(0, 0, 1));
+    const hit = ray.intersectObject(car, true)[0];
+    assert.ok(hit, `nose face at x=${x} y=${y}`);
+    assert.notEqual(hit.object.material, paint, `white paint shows on the nose face at x=${x} y=${y}`);
+  }
+  assert.equal(named(car, 'Roadster front splitter').length, 1);
+});
+
 test('Roadster rear fascia has a moving wide aerofoil, quad recessed thrusters and real diffuser vanes', () => {
   const car = roadster();
   const wing = car.userData.wing;

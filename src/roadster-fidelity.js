@@ -5,8 +5,8 @@ import { REAR_PORTS } from './aero-vfx.js';
 // Visual-only Roadster 2 interpretation: negative Z is the nose, positive Z the tail.
 // Keep dimensions inside the shared arcade collision envelope; no physics data changes.
 const BODY_STATIONS = [
-  [-2.48, .92, .40, .55, .61],
-  [-2.31, 1.03, .37, .59, .73],
+  [-2.48, .92, .40, .60, .61],
+  [-2.31, 1.03, .37, .62, .73],
   [-1.91, 1.13, .35, .66, .93],
   [-1.41, 1.19, .81, .74, 1.03],
   [-.72, 1.16, .36, .76, 1.04],
@@ -173,14 +173,17 @@ function aerofoil() {
 
 // A curved cross-car sheet preserves the white/graphite wedge line instead of
 // reading as a flat bumper box. Front faces -Z; rear faces +Z.
+// Front: the whole nose face under the light blade is dark (reference 05/07); it stops
+// at x=±.80 so the white corner pillars stay, and its shallow curve stays ahead of the
+// body's flat front cap (z=-2.48), which would otherwise show through as white paint.
 const sculptedPanel = (front) => {
   const xs = [-1.05,-.86,-.65,-.32,0,.32,.65,.86,1.05];
   const vertices = [], faces = [];
-  for (const x of xs) {
-    const edge = Math.abs(x) / 1.05;
-    const z = front ? -2.49 + .19 * edge * edge : 2.41 - .12 * edge * edge;
-    const high = front ? .66 + .035 * edge : .88 + .035 * (1-edge);
-    const low = front ? .46 + .045 * edge : .64 + .025 * edge;
+  for (const x0 of xs) {
+    const x = front ? x0 * .762 : x0, edge = Math.abs(x0) / 1.05;
+    const z = front ? -2.497 + .012 * edge * edge : 2.41 - .12 * edge * edge;
+    const high = front ? .6 - .012 * edge : .88 + .035 * (1-edge);
+    const low = front ? .385 + .03 * edge : .64 + .025 * edge;
     vertices.push(x, high, z, x, low, z);
   }
   for (let i = 0; i < xs.length - 1; i++) {
@@ -249,20 +252,26 @@ export function addRoadsterWheelDetail(wheel, side) {
 }
 
 export function addRoadsterTrim(group, m) {
-  // Nose: hairline DRL in a dark horizontal blade, plus two subtle hood break lines.
-  const nose = new THREE.Mesh(new THREE.BoxGeometry(1.86,.095,.055),graphite);
-  nose.position.set(0,.57,-2.47);
-  group.add(nose);
-  const noseSurface = new THREE.Mesh(frontFascia, graphite);
+  // Nose: white hood down to the hairline DRL; below it a satin-carbon band, a black
+  // lower intake and a thin splitter. Plus two subtle hood break lines.
+  const noseSurface = new THREE.Mesh(frontFascia, satinCarbon);
   noseSurface.name = 'Roadster sculpted front fascia';
   group.add(noseSurface);
+  const intakeSlot = new THREE.Mesh(new THREE.BoxGeometry(1.1,.07,.03),graphite);
+  intakeSlot.position.set(0,.45,-2.505);
+  intakeSlot.name = 'Roadster lower intake';
+  group.add(intakeSlot);
+  const splitter = new THREE.Mesh(new THREE.BoxGeometry(1.84,.028,.16),graphite);
+  splitter.position.set(0,.392,-2.5);
+  splitter.name = 'Roadster front splitter';
+  group.add(splitter);
   line(group, [
     [-.87,.625,-2.470],[-.44,.622,-2.522],[0,.625,-2.534],
     [.44,.622,-2.522],[.87,.625,-2.470],
   ],.011,m.white,'Roadster front light blade');
   for (const side of [-1,1]) {
     line(group,[
-      [side*.51,.595,-2.38], [side*.69,.70,-1.98],
+      [side*.51,.625,-2.38], [side*.69,.70,-1.98],
       [side*.83,.81,-1.54], [side*.88,.94,-1.20],
     ],.008,m.paint,'Roadster hood crease');
     group.add(rocker(side));
