@@ -135,3 +135,15 @@ test('wind and clouds use authored deterministic cues, not random forced impulse
     assert.ok(w.seed>0);
   }
 });
+
+test('Skyfall contact rejects out-of-edge and non-finite distances', () => {
+  for (const edge of SKYFALL_COURSE.edges) {
+    const length = getSkyfallEdgeLength(edge.id);
+    assert.equal(hasSkyfallRoadContact(edge.id, 0), true, edge.id);
+    assert.equal(hasSkyfallRoadContact(edge.id, length), true, edge.id);
+    for (const distance of [-0.001, length + 0.001, NaN, Infinity, -Infinity]) {
+      assert.equal(hasSkyfallRoadContact(edge.id, distance), false,
+        `${edge.id} must not invent contact at ${String(distance)}`);
+    }
+  }
+});
