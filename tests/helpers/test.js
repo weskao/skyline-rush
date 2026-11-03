@@ -8,7 +8,7 @@ export const CI_DEVICE = Object.freeze({ cores: 4, memoryGiB: 8 });
 
 export const test = base.extend({
   guideSeen: [true, { option: true }],
-  // A seeded guide marks a returning player, who would get the What's New notes on load; mark them read.
+  // A player with no What's New record gets the notes on load; mark them read so other specs start clean.
   whatsNewSeen: ['999.0.0', { option: true }],
   context: async ({ context, guideSeen, whatsNewSeen }, use) => {
     if (guideSeen) await context.addInitScript(() => localStorage.setItem('skyline-rush-guide-seen', '1'));
