@@ -159,17 +159,17 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
     });
     observer.observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
   });
-  // Solo Time Trial: rivals ahead on the grid take Coast's first rings (2.5 s respawn), so the player's first charge
-  // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
-  await page.locator('button[data-race-mode="time"]').click();
-  await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   // Ring types re-roll every race, so pin Coast's own layout seed (as tests/ring-rows-browser.spec.js does): its first
-  // group is four gates, the last a full-width row.
+  // group is four gates, the last a full-width row. Pinned before the mode tab, which builds the race.
   const { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO } = await page.evaluate(async () => {
     (await import('/src/game.js')).setLayoutSeed();
     const { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO } = await import('/src/ring-layout.ts');
     return { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO };
   });
+  // Solo Time Trial: rivals ahead on the grid take Coast's first rings (2.5 s respawn), so the player's first charge
+  // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
+  await page.locator('button[data-race-mode="time"]').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
   // Coast's first group from this race's layout: ring heights vary, so each gate is flown at its own altitude (a row is
