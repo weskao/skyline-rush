@@ -7,7 +7,10 @@ import { RACE_DRIVER_IDS } from '../src/race-grid.ts';
 const named = (root, name) => {
   const matches = [];
   root.traverse(node => {
-    if (node.name === name || node.userData.mergedPartNames?.includes(name)) matches.push(node);
+    if (node.name === name) matches.push(node);
+    for (const label of node.userData.mergedPartNames ?? []) {
+      if (label === name) matches.push(node);
+    }
   });
   return matches;
 };
