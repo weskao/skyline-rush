@@ -175,8 +175,8 @@ const mirroredTubes = (points, radius, segments) => mergeGeometries([-1,1].map(s
   new THREE.CatmullRomCurve3(points.map(([x,y,z]) => new THREE.Vector3(side*x,y,z))), segments, radius, 5, false)));
 // The blade hinges on its leading edge, .20 ahead of the wing's centre.
 const HINGE = .20;
-// Photo 04: opened, the leading edge stays on the deck and only the rear swings up to 45 degrees.
-const TILT = THREE.MathUtils.degToRad(45);
+// Photo 04: opened, the leading edge stays on the deck and only the rear swings up to 35 degrees.
+const TILT = THREE.MathUtils.degToRad(35);
 // Rear reference photo: raised on short struts, the blade keeps a shallow angle of attack.
 const RAISE = .16, RAISE_TILT = THREE.MathUtils.degToRad(12);
 // Swan necks carry the hinge line; stowed, they sink below the deck out of sight.

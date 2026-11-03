@@ -32,7 +32,7 @@ function mirrors(parent, mat, y) {
   for (const side of [-1, 1]) block(parent, mat, side * 1.15, y, -0.4, 0.2, 0.12, 0.32);
 }
 
-// Each style returns its wing; a wing with userData.lift (Roadster) opens into a 45-degree airbrake
+// Each style returns its wing; a wing with userData.lift (Roadster) opens into a 35-degree airbrake
 // on boost/NITRO/braking and rises on its struts in flight, so world.js skips the whole-wing pitch
 // for it (the two would stack). Per frame: no allocation.
 export { poseRoadsterWing as poseWing, stepRoadsterWing as stepWing };

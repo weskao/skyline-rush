@@ -312,7 +312,7 @@ const wingParts = car => {
   return { wing, aerofoil: named(wing, 'Roadster aerofoil')[0], tips: named(wing, 'Roadster wing tip') };
 };
 
-test('opening keeps the leading edge on the deck and tilts only the rear up to about 45 degrees (photo 04)', () => {
+test('opening keeps the leading edge on the deck and tilts only the rear up to about 35 degrees (photo 04)', () => {
   const car = roadster();
   const { wing, aerofoil, tips } = wingParts(car);
   assert.equal(tips.length, 2);
@@ -330,10 +330,10 @@ test('opening keeps the leading edge on the deck and tilts only the rear up to a
   assert.ok(tips.every(tip => Math.abs(tip.rotation.z) < .05), 'tips wait until the blade clears the fenders');
   poseWing(wing, 1, 0);
   const open = wingEdges(car, aerofoil);
-  assert.ok(open.degrees >= 42 && open.degrees <= 48, `opened airbrake angle ${open.degrees} must be about 45 degrees`);
+  assert.ok(open.degrees >= 32 && open.degrees <= 38, `opened airbrake angle ${open.degrees} must be about 35 degrees`);
   assert.ok(Math.abs(open.lead.y - stowed.lead.y) < .03 && Math.abs(open.lead.z - stowed.lead.z) < .05,
     'the leading edge stays almost on the deck');
-  assert.ok(open.trail.y - stowed.trail.y > .25 && open.trail.z > open.lead.z, 'only the rear of the blade swings up and back');
+  assert.ok(open.trail.y - stowed.trail.y > .2 && open.trail.z > open.lead.z, 'only the rear of the blade swings up and back');
   assert.ok(box(aerofoil).min.y >= floor - .005, 'the blade never dips into the deck');
   assert.ok(tips.every(tip => Math.abs(tip.rotation.z) > .9), 'opened tips fold into endplates');
   assert.equal(Math.sign(tips[0].rotation.z), -Math.sign(tips[1].rotation.z), 'tips fold symmetrically');
@@ -341,7 +341,7 @@ test('opening keeps the leading edge on the deck and tilts only the rear up to a
   const bay = box(named(rawTrim(), 'Roadster wing bay')[0]);
   const rams = box(named(wing, 'Roadster wing actuators')[0]);
   assert.ok(rams.min.y < bay.max.y + .03, 'actuator rams rise out of the bay');
-  assert.ok(rams.max.y > open.lead.y + .12, 'actuator rams push the tilted blade up, not hang under the hinge');
+  assert.ok(rams.max.y > open.lead.y + .08, 'actuator rams push the tilted blade up, not hang under the hinge');
   poseWing(wing, 0, 0);
   const struts = box(named(wing, 'Roadster wing swan-neck struts')[0]);
   assert.ok(struts.max.y < box(aerofoil).min.y + .05 && struts.min.y < .8, 'stowed struts hide in the body');
@@ -362,7 +362,7 @@ test('raised on short struts, the wing lifts only a little at a shallow angle (r
   assert.ok(box(named(wing, 'Roadster wing swan-neck struts')[0]).min.y < bay.min.y, 'raised struts still reach into the bay');
   poseWing(wing, 1, 1);
   const both = wingEdges(car, aerofoil);
-  assert.ok(both.degrees >= 42 && both.degrees <= 48 && both.lead.y - stowed.lead.y >= .08, 'boost in flight: raised and opened');
+  assert.ok(both.degrees >= 32 && both.degrees <= 38 && both.lead.y - stowed.lead.y >= .08, 'boost in flight: raised and opened');
 });
 
 // world.js's per-frame wing update at 60 fps; each entry is the blade angle in degrees.
@@ -376,14 +376,14 @@ test('boost and NITRO open the wing smoothly, hold it between chained boosts and
   const car = roadster();
   const { aerofoil } = wingParts(car);
   const opening = [wingEdges(car, aerofoil).degrees, ...run(car, aerofoil, .8, true)];
-  assert.ok(opening.at(-1) >= 42, `boost opens the wing within .8 s, got ${opening.at(-1)}`);
+  assert.ok(opening.at(-1) >= 32, `boost opens the wing within .8 s, got ${opening.at(-1)}`);
   assert.ok(Math.max(...steps(opening)) <= 3, 'no frame jumps more than 3 degrees');
   assert.ok(steps(opening)[0] < Math.max(...steps(opening)) / 4, 'eases in instead of snapping open');
   opening.forEach((a, n) => assert.ok(n === 0 || a >= opening[n - 1] - 1e-9, 'opening never stutters back'));
   // Chained boosts (NITRO chain, mini boosts): short gaps between bursts must not flap the wing shut.
   for (let burst = 0; burst < 4; burst++) {
     const gap = run(car, aerofoil, .3, false);
-    assert.ok(Math.min(...gap) >= 42, `wing stays open between chained boosts, dipped to ${Math.min(...gap)}`);
+    assert.ok(Math.min(...gap) >= 32, `wing stays open between chained boosts, dipped to ${Math.min(...gap)}`);
     run(car, aerofoil, .4, true);
   }
   const closing = [wingEdges(car, aerofoil).degrees, ...run(car, aerofoil, 1.6, false)];
@@ -393,9 +393,9 @@ test('boost and NITRO open the wing smoothly, hold it between chained boosts and
   // A new boost while the wing is closing reverses from the current pose instead of snapping.
   run(car, aerofoil, 1, true);
   const mid = run(car, aerofoil, .95, false).at(-1);
-  assert.ok(mid > 5 && mid < 40, `caught mid-close at ${mid}`);
+  assert.ok(mid > 5 && mid < 32, `caught mid-close at ${mid}`);
   const reopen = [mid, ...run(car, aerofoil, .8, true)];
-  assert.ok(Math.max(...steps(reopen)) <= 3 && reopen.at(-1) >= 42, 'reopens smoothly from where it was');
+  assert.ok(Math.max(...steps(reopen)) <= 3 && reopen.at(-1) >= 32, 'reopens smoothly from where it was');
 });
 
 test('flight raises the wing on its short struts and lowers it smoothly on landing', () => {
