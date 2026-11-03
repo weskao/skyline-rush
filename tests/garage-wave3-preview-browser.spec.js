@@ -11,8 +11,9 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
     await gallery.locator('summary').click();
     const entryIcon = gallery.locator('summary [data-wave3-entry-icon] img');
     await expect(entryIcon).toBeVisible();
-    expect(await entryIcon.evaluate(img => ({ width: img.naturalWidth, height: img.naturalHeight }))).toEqual({ width: 216, height: 216 });
-    await expect(entryIcon).toHaveAttribute('src', /store-cart@3x\\.webp$/);
+    await expect(entryIcon).toHaveJSProperty('naturalWidth', 216);
+    await expect(entryIcon).toHaveJSProperty('naturalHeight', 216);
+    await expect(entryIcon).toHaveAttribute('src', /store-cart@3x\.webp$/);
     await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
     const cards=gallery.locator('button[data-wave3-asset]');
     await expect(cards).toHaveCount(6);
