@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { REAR_PORTS } from './aero-vfx.js';
 
 // Shared cross-car surfaces sculpt the wedge nose and layered tail without
 // touching the collision hull or the NITRO emitter's four immutable anchors.
@@ -39,9 +40,26 @@ const upperTailSlot = curvedSheet(rearXs,
 const whiteTail = curvedSheet(rearXs,
   edge => .875 + .018*edge, edge => .724 + .045*edge,
   edge => 2.464 - .145*edge*edge);
-const lowerValance = curvedSheet(rearXs,
-  edge => .718 + .035*edge, edge => .39 + .040*edge,
-  edge => 2.44 - .155*edge*edge);
+// A triangulated bumper with actual circular holes prevents the black shell
+// from hiding the four recessed dark nozzle backs. Rim rings cap each hole.
+const valanceOutline = new THREE.Shape();
+valanceOutline.moveTo(-1.05,.38);
+valanceOutline.lineTo(1.05,.38);
+valanceOutline.lineTo(1.05,.80);
+valanceOutline.lineTo(-1.05,.80);
+valanceOutline.closePath();
+for (const port of REAR_PORTS) {
+  const hole = new THREE.Path();
+  hole.absarc(port.position[0], port.position[1], .135, 0, Math.PI*2, true);
+  valanceOutline.holes.push(hole);
+}
+const lowerValance = new THREE.ShapeGeometry(valanceOutline,14);
+const valancePoints = lowerValance.getAttribute('position');
+for (let i=0; i<valancePoints.count; i++) {
+  const edge = valancePoints.getX(i) / 1.05;
+  valancePoints.setZ(i, 2.44 - .155*edge*edge);
+}
+lowerValance.computeVertexNormals();
 
 const add = (group, geometry, material, name) => {
   const mesh = new THREE.Mesh(geometry, material);
