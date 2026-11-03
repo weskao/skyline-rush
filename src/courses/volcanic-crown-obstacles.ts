@@ -86,3 +86,39 @@ export function validateVolcanicObstacles(): boolean {
   }
   return true;
 }
+
+// Map-local continuous contact adapter. The shared collision provider decides
+// damage, recovery and route validity; this uses the SAME pose as scene and AI.
+export type VolcanicSweepSample = {
+  readonly s: number;
+  readonly lateral: number;
+  readonly altitude: number;
+  readonly timeSeconds: number;
+};
+export function volcanicObstacleSweptContact(
+  edgeId: string, from: VolcanicSweepSample, to: VolcanicSweepSample,
+  vehicleRadius = 1.65,
+): VolcanicObstacle | null {
+  const length = volcanicEdgeLength(edgeId);
+  const values = [from.s, from.lateral, from.altitude, from.timeSeconds,
+    to.s, to.lateral, to.altitude, to.timeSeconds, vehicleRadius];
+  if (!values.every(Number.isFinite) || vehicleRadius < 0 ||
+      from.s < 0 || to.s < 0 || from.s > length || to.s > length ||
+      to.timeSeconds < from.timeSeconds) {
+    throw new RangeError('Invalid Volcanic Crown swept contact samples');
+  }
+  // At most 2 m or 1/60 s between samples: a fast single-frame crossing
+  // cannot tunnel through a small obstacle or a short active eruption.
+  const steps = Math.max(1, Math.ceil(Math.abs(to.s - from.s) / 2),
+    Math.ceil((to.timeSeconds - from.timeSeconds) * 60));
+  for (let i = 0; i <= steps; i++) {
+    const fraction = i / steps;
+    const lerp = (a: number, b: number) => a + (b - a) * fraction;
+    const hit = volcanicObstacleContact(edgeId,
+      lerp(from.s, to.s), lerp(from.lateral, to.lateral),
+      lerp(from.altitude, to.altitude), lerp(from.timeSeconds, to.timeSeconds),
+      vehicleRadius);
+    if (hit) return hit;
+  }
+  return null;
+}

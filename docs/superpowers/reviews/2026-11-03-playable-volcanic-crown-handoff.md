@@ -31,6 +31,15 @@ Only the integration owner should provide and test these **shared** capabilities
 5. `WorldChunkProvider` mounts/dismounts `createVolcanicCrownChunk` in the **existing** renderer; flight branch uses world-space aerial trajectory, visible landing and shared flight rules; no second canvas or frame loop.
 6. Shared result timer, minimap (no undiscovered shortcut spoilers), ghost/topology-versioned records, 8-car AI, 30/60/120 Hz deterministic simulation, existing HUD, desktop/mobile input and protected old-track behavior.
 
+## 2026-11-04 scoped sweep follow-up (unverified runtime)
+
+- Branch-only change: `volcanicObstacleSweptContact(edgeId, from, to)` samples the same `volcanicObstacleContact` and `volcanicObstaclePose` as scene geometry and AI, at ≤2 m / ≤1/60 s increments to catch frame-endpoint tunneling.
+- Added `tests/playable-volcanic-crown-sweep.test.js`: static boulder crossing, time-dependent rockfall warning/impact/clear, other-edge and altitude exclusion, and 30/60/120 Hz slices.
+- **TDD evidence boundary:** missing exported function verified structurally on the preceding test-only SHA `d8018084`. Its actual GitHub unit RED remained queued at the time of this change; do **not** claim observed runtime RED or GREEN until logs prove it.
+- The new helper is a map-local adapter, **not a separate collision engine**. Runtime wiring, authoritative swept gate crossing, eight-car AI, landing, recovery and end-to-end race are still owned by the shared integration layer.
+- Source `feature/epic-multiroute-longform-tracks` HEAD `679dd6b8` did **not** have successful exact-HEAD full CI at inspection; merge was correctly blocked. Volcanic previous HEAD `68d8131a` full CI failed Browser / World Tour / Quality Gate, despite Unit/Cloud Save success. Do not claim the map playable or merge-ready.
+- Pending: focused test output, `npm test`, Typecheck, Build, `make verify`, exact final-HEAD FULL CI, actual desktop/mobile WebGL visuals, 20 races/performance evidence and shared-runtime acceptance.
+
 ## Verification ledger (do not conflate separate gates)
 
 - [ ] Test-first RED reproduced with actual failure output.

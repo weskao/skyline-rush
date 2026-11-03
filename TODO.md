@@ -1,3 +1,10 @@
+## 2026-11-04 — Playable Volcanic Crown scoped sweep validation (feature branch only)
+
+- [x] Source `679dd6b8` exact-HEAD FULL CI gate checked: Browser/World Tour failures or pending => **no merge into Volcanic**.
+- [x] TDD test committed first (`d8018084`) for endpoint tunneling, timed rockfall and 30/60/120 Hz; missing API confirmed by source inspection. **Runtime RED log still pending**.
+- [ ] Verify `volcanicObstacleSweptContact` against its new test with runtime RED→GREEN evidence and run `npm test`, typecheck, build, `make verify`.
+- [ ] Verify final exact-HEAD full CI (including Browser/World Tour/Quality Gate), actual WebGL desktop/mobile frames and shared runtime integration. Keep Volcanic `COMING SOON` until all gameplay and visual gates pass.
+
 ## Roadster 2-inspired player vehicle fidelity — 2026-11-03
 
 **Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
