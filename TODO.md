@@ -1,3 +1,26 @@
+## Roadster 2 flush 45-degree wing, short struts, boost animation, fuller nose — 2026-11-04
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Request: opened wing keeps its leading edge on the deck and only
+the rear lifts ~45 degrees (photo 04); a raised pose with much shorter struts (rear reference); boost/NITRO clearly
+opens it with smooth open/close, robust to chained boosts; nose centre too sunken; headlamp frame too heavy. TDD only,
+browser checks waived by the user for this pass.
+
+- [x] Wing: two motions in `poseRoadsterWing(wing, tilt, raise)` — tilt swings the blade about its leading edge to 45
+  degrees with no carriage lift; raise lifts the carriage `.16` (was `.34`) at 12 degrees; together they stay 45.
+  Swan necks shortened to match. Boost/NITRO/mini boost/braking open it; flight and downforce mode raise it.
+- [x] Animation: `stepRoadsterWing` moves each motion at a constant rate (open .45 s, close .7 s) eased by smoothstep,
+  so a re-trigger reverses from the current pose; a .6 s hold bridges chained boosts. Replaces the exponential
+  damp in `world.js` (same line count). Garage flight pose now uses the raised pose.
+- [x] Nose: hood front .60 → .74 and tower crest .86 → .82 at the nose; the painted face fills blade → hood edge
+  across the towers. The earlier "towers ≥ .30 above the hood" test was reversed on request.
+- [x] Headlamps: hairline bezel (≤ .012, was .025), apex toward the outer edge, lens .008 ahead of the nose cap,
+  every vertex below the tower top.
+- [x] RED observed: 8 assertion failures (lift .34, hood .60, bezel .025, wing 0 degrees with `stepWing` stubbed).
+- [x] GREEN: `tests/roadster-fidelity.test.js` 26/26; `npm test` 1525 pass / 1 fail / 3 skipped — the failure
+  (`track-preview.test.js` portrait AIRFLOW headroom, `-0` vs `0`) also fails on a clean HEAD 31b88524 export;
+  `npm run typecheck`; `npm run build`. `world.js` stays 1126 lines.
+- [ ] Browser regression, real WebGL screenshots, exact-HEAD CI, human visual approval.
+
 ## Roadster 2 sharper body + 45-60 degree airbrake wing — 2026-11-03
 
 **Branch:** `feature/roadster2-high-fidelity-body`. Request: match photos for roof, sides, hood, ports and below,
@@ -19,6 +42,9 @@ front/rear curves, lights, wheels; sharper supercar line; wing opens diagonally 
   black-frame, Garage studio/inspection/quality 21/21 (headless SwiftShader).
 - [x] Cost: +4 draw calls (port sockets), ~7.2k triangles per Roadster; frame time not measured.
 - [ ] Full `make verify`, exact-HEAD `[full-regression]` CI, human visual approval, physical phone check.
+  `make verify` on 00c05140 failed 1 unit test (wheel star blades did not spin), fixed in 5203b019; the re-run on
+  5203b019 was terminated mid-browser-suite (84 specs green so far). CI 41669003901 on 00c05140 was cancelled
+  (superseded push). Superseded by the 2026-11-04 wing/nose pass.
 
 ## Roadster 2 front/rear photo match + folding wing — 2026-11-03
 

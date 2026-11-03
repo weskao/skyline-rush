@@ -34,7 +34,7 @@ export function createGarageStage(environment: THREE.Texture) {
   scene.add(car);
   function poseCar(flying: boolean) {
     car.userData.jets.visible = flying;
-    poseWing(car.userData.wing, car.userData.wing.userData.restY + (flying ? car.userData.wing.userData.lift : 0));
+    poseWing(car.userData.wing, 0, flying ? 1 : 0);
     for (const wheel of car.userData.wheels)
       wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
   }

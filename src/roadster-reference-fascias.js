@@ -45,13 +45,15 @@ function slab(plan, top, height) {
   return mergeVertices(geo);
 }
 
-// Photo 05 front: painted hood lip, hairline blade, tall carbon band, low intake, splitter.
+// Photo 05 front: tall painted face, hairline blade, tall carbon band, low intake, splitter.
 // They span ~70% of the nose; white fender faces flank them. The centre stands proud and
 // the ends tuck back toward the flat -2.50 nose cap.
 const frontXs = [-.64,-.58,-.46,-.24,0,.24,.46,.58,.64];
 const noseZ = edge => -2.545 + .035*edge*edge;
-const hoodLip = curvedSheet(frontXs.slice(2,-2), .64, () => .618, () => .586,
-  edge => noseZ(edge) + .012, true, edge => noseZ(edge) - .006);
+// The painted face fills the gap between the towers from the blade up to the hood edge,
+// raked back so its top meets the hood just ahead of the nose cap.
+const hoodLip = curvedSheet(frontXs.slice(1,-1), .64, () => .74, () => .586,
+  () => -2.503, true, edge => noseZ(edge) - .006);
 const lightBlade = curvedSheet(frontXs, .64, () => .586, () => .570, edge => noseZ(edge) - .004, true);
 const carbonBand = curvedSheet(frontXs, .64, () => .570, () => .455, noseZ, true);
 const lowerMouth = curvedSheet(frontXs.slice(1,-1), .64, () => .455, () => .365, edge => noseZ(edge) + .006, true);
@@ -61,13 +63,13 @@ const splitter = slab([[-.88,-2.46],[.88,-2.46],[.84,-2.60],[.60,-2.655],[-.60,-
 const sideGeometry = (vertices, side) => indexed(vertices, vertices.length === 9
   ? (side < 0 ? [0,2,1] : [0,1,2])
   : (side < 0 ? [0,1,2,0,2,3] : [0,2,1,0,3,2]));
-// Inverted triangular lamps sit at the foot of each fender tower, right above the blade's
-// ends; their top edge follows the tower's sloped crest.
+// Inverted triangular lamps sit in each fender face right above the blade's ends, under the
+// tower top, apex toward the outer edge; a hairline dark bezel instead of a heavy frame.
 const lampPockets = [-1,1].map(side => sideGeometry([
-  side*.575,.715,-2.507, side*.815,.77,-2.507, side*.67,.598,-2.507,
+  side*.592,.712,-2.504, side*.80,.733,-2.504, side*.731,.594,-2.504,
 ], side));
 const lampLenses = [-1,1].map(side => sideGeometry([
-  side*.597,.702,-2.512, side*.79,.748,-2.512, side*.672,.618,-2.512,
+  side*.60,.705,-2.508, side*.79,.725,-2.508, side*.73,.605,-2.508,
 ], side));
 // Dark lower corners fill the chamfered nose like the carbon feet in photo 05.
 const cornerIntakes = [-1,1].map(side => sideGeometry([
@@ -166,8 +168,8 @@ export function addReferenceFront(group, materials, trace) {
     add(group, lampLenses[i], headlampMaterial, 'Roadster triangular headlamp');
     // Highlight the fold where the flat hood meets each raised fender.
     trace(group, [
-      [side*.547,.622,-2.40], [side*.616,.665,-1.98],
-      [side*.667,.715,-1.55], [side*.675,.74,-1.32],
+      [side*.547,.75,-2.40], [side*.617,.757,-1.98],
+      [side*.664,.762,-1.55], [side*.678,.764,-1.32],
     ], .006, materials.paint, 'Roadster hood crease');
   });
 }

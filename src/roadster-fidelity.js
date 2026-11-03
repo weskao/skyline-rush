@@ -8,12 +8,13 @@ import { addRoadsterRearNozzles } from './roadster-rear-nozzles.js';
 // Keep dimensions inside the shared arcade collision envelope; no physics data changes.
 // [z, half-width, bottom, deck, shoulder, crest x / half-width (default .88)]
 const BODY_STATIONS = [
-  // Blunt nose cap, then fender towers rising well above a flat, lower hood (photos 05/15):
-  // a near-vertical inner wall up to an inboard crest, then a broad top sloping outward.
-  [-2.50, .90, .34, .60, .86, .66],
-  [-2.33, 1.00, .34, .62, .95, .68],
-  [-1.91, 1.10, .35, .66, 1.01, .74],
-  [-1.41, 1.19, .81, .72, 1.04, .84],
+  // Blunt nose cap with a high, nearly level hood: the towers stand just above it at the nose
+  // and grow toward the windscreen (front reference photo), so the centre never reads sunken.
+  // A near-vertical inner wall rises to an inboard crest, then a broad top slopes outward.
+  [-2.50, .90, .34, .74, .82, .66],
+  [-2.33, 1.00, .34, .745, .90, .68],
+  [-1.91, 1.10, .35, .75, 1.01, .74],
+  [-1.41, 1.19, .81, .755, 1.04, .84],
   [-.72, 1.16, .36, .76, 1.04],
   [.44, 1.15, .36, .77, 1.04],
   [1.27, 1.19, .83, .78, 1.08],
@@ -173,10 +174,12 @@ const mirroredTubes = (points, radius, segments) => mergeGeometries([-1,1].map(s
   new THREE.CatmullRomCurve3(points.map(([x,y,z]) => new THREE.Vector3(side*x,y,z))), segments, radius, 5, false)));
 // The blade hinges on its leading edge, .20 ahead of the wing's centre.
 const HINGE = .20;
-// Photos 04/13: deployed, the blade stands as a 52-degree airbrake, trailing edge up and back.
-const TILT = THREE.MathUtils.degToRad(52);
+// Photo 04: opened, the leading edge stays on the deck and only the rear swings up to 45 degrees.
+const TILT = THREE.MathUtils.degToRad(45);
+// Rear reference photo: raised on short struts, the blade keeps a shallow angle of attack.
+const RAISE = .16, RAISE_TILT = THREE.MathUtils.degToRad(12);
 // Swan necks carry the hinge line; stowed, they sink below the deck out of sight.
-const swanNecks = mirroredTubes([[.42,0,-.18],[.42,-.07,-.12],[.42,-.20,-.15],[.42,-.46,-.20]], .022, 12);
+const swanNecks = mirroredTubes([[.42,0,-.18],[.42,-.06,-.12],[.42,-.16,-.14],[.42,-.30,-.18]], .022, 12);
 // Unit-length rams (y 0..1); poseRoadsterWing stretches them from the bay to the blade underside.
 const actuators = mergeGeometries([-1,1].map(side => new THREE.CylinderGeometry(.013,.013,1,6,1).translate(side*.30,.5,0)));
 // Ram ends: fixed bay mount (wing space at rest) and the blade underside (blade space).
@@ -205,28 +208,45 @@ function activeWing(paint) {
   }
   part(wing, swanNecks, graphite, 'Roadster wing swan-neck struts');
   const rams = part(wing, actuators, satinCarbon, 'Roadster wing actuators');
-  // Stowed, the wing is the deck lid overhanging the light slot; poseWing raises and tilts it.
+  // Stowed, the wing is the deck lid overhanging the light slot; stepRoadsterWing opens and raises it.
   wing.position.set(0,1.08,2.25);
-  wing.userData = { restY: 1.08, lift: .34, blade, rams };
-  poseRoadsterWing(wing, 0);
+  // `lift` marks a lifting wing for world.js; tilt/raise are the 0..1 travel of each motion.
+  wing.userData = { restY: 1.08, lift: RAISE, blade, rams, tilt: 0, raise: 0, hold: 0 };
+  poseRoadsterWing(wing, 0, 0);
   return wing;
 }
 
-// `travel` 0..1 of the lift. The blade pitches from the first moment, so the lid swings up
-// diagonally while the carriage rises; tips fold into endplates after 35%. Closing reverses.
+// `tilt` 0..1 swings the blade about its leading edge (airbrake); `raise` 0..1 lifts the carriage
+// on the struts. Both ease in and out; tips fold into endplates after 35% of either.
 // Per frame: scalar math only, no allocation.
-export function poseRoadsterWing(wing, travel) {
-  const { blade, rams, lift } = wing.userData;
-  const angle = TILT * THREE.MathUtils.smoothstep(travel, 0, 1);
+export function poseRoadsterWing(wing, tilt, raise = 0) {
+  const { blade, rams, restY } = wing.userData;
+  wing.userData.tilt = tilt;
+  wing.userData.raise = raise;
+  const up = RAISE * THREE.MathUtils.smoothstep(raise, 0, 1);
+  const angle = Math.max(TILT * THREE.MathUtils.smoothstep(tilt, 0, 1), RAISE_TILT * THREE.MathUtils.smoothstep(raise, 0, 1));
+  wing.position.y = restY + up;
   blade.rotation.x = -angle;
-  const fold = THREE.MathUtils.smoothstep(travel, .35, 1);
+  const fold = THREE.MathUtils.smoothstep(Math.max(tilt, raise), .35, 1);
   for (const part of blade.children) if (part.userData.fold) part.rotation.z = part.userData.fold * fold;
   const sin = Math.sin(angle), cos = Math.cos(angle);
-  const dy = RAM_TOP_Y*cos + RAM_TOP_Z*sin - RAM_BASE_Y + travel*lift;
+  const dy = RAM_TOP_Y*cos + RAM_TOP_Z*sin - RAM_BASE_Y + up;
   const dz = RAM_TOP_Y*sin + RAM_TOP_Z*cos - HINGE - RAM_BASE_Z;
-  rams.position.set(0, RAM_BASE_Y - travel*lift, RAM_BASE_Z);
+  rams.position.set(0, RAM_BASE_Y - up, RAM_BASE_Z);
   rams.rotation.x = Math.atan2(dz, dy);
   rams.scale.y = Math.hypot(dy, dz);
+}
+
+// Constant-rate travel, eased by poseRoadsterWing: a re-trigger mid-way reverses from the current
+// pose instead of snapping, and HOLD bridges the gaps between chained boosts so the wing never flaps.
+const OPEN_TIME = .45, CLOSE_TIME = .7, HOLD = .6;
+const toward = (value, target, dt) => target > value
+  ? Math.min(target, value + dt / OPEN_TIME) : Math.max(target, value - dt / CLOSE_TIME);
+
+export function stepRoadsterWing(wing, open, raise, dt) {
+  const state = wing.userData;
+  state.hold = open ? HOLD : Math.max(0, state.hold - dt);
+  poseRoadsterWing(wing, toward(state.tilt, state.hold > 0 ? 1 : 0, dt), toward(state.raise, raise ? 1 : 0, dt));
 }
 
 // One spin node so world.js's wheel.children[2] rotation turns disc, star blades and hub together.

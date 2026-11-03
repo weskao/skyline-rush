@@ -19,7 +19,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage } from './garage-stage.ts'; import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, poseWing } from './car-model.js';
+import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -600,7 +600,7 @@ export function createWorld(canvas) {
     const { wing } = mesh.userData;
     const downforce = isPlayer && visual.enabled && visual.airflow && visual.aeroMode === 'downforce';
     const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
-    if (wing.userData.lift) poseWing(wing, THREE.MathUtils.damp(wing.position.y, wing.userData.restY + (boosting || car.braking || downforce || car.altitude > 0.8 ? wing.userData.lift : 0), 8, dt));
+    if (wing.userData.lift) stepWing(wing, boosting || car.braking, downforce || car.altitude > 0.8, dt);
     else wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : boosting ? 0.08 : 0, 8, dt);
     mesh.userData.wheels.forEach(wheel => {
       const target = (car.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);

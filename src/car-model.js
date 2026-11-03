@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canopy, carShell } from './geometry.ts';
 import { LIFT_PORTS } from './effects.js';
-import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail, poseRoadsterWing } from './roadster-fidelity.js';
+import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail, poseRoadsterWing, stepRoadsterWing } from './roadster-fidelity.js';
 import { EXTRA_RACE_STYLES, TRAFFIC_STYLES } from './vehicle-fleet-styles.js';
 const box = new THREE.BoxGeometry(1, 1, 1);
 
@@ -32,13 +32,10 @@ function mirrors(parent, mat, y) {
   for (const side of [-1, 1]) block(parent, mat, side * 1.15, y, -0.4, 0.2, 0.12, 0.32);
 }
 
-// Each style returns its wing; a wing with userData.lift (Roadster) rises on boost, braking and
-// flight while poseRoadsterWing tilts its blade into an airbrake, so world.js skips the whole-wing
-// pitch for it (the two would stack past 60 degrees). Per frame: no allocation.
-export function poseWing(wing, y) {
-  wing.position.y = y;
-  poseRoadsterWing(wing, (y - wing.userData.restY) / wing.userData.lift);
-}
+// Each style returns its wing; a wing with userData.lift (Roadster) opens into a 45-degree airbrake
+// on boost/NITRO/braking and rises on its struts in flight, so world.js skips the whole-wing pitch
+// for it (the two would stack). Per frame: no allocation.
+export { poseRoadsterWing as poseWing, stepRoadsterWing as stepWing };
 
 export const CAR_STYLES = {
   // Player: low wedge, smoked fastback canopy, full-width tail bar, quad thruster ports, pop-up wing.
