@@ -1,3 +1,21 @@
+## Stage 2 Track 06 — Frostbite Canyon graph, gated live preview and cover — 2026-11-03
+
+**Branch:** `feature/playable-frostbite-canyon`, created from `feature/epic-multiroute-longform-tracks` `a47c9cae`.
+**Spec / plan:** `docs/superpowers/specs/2026-11-03-frostbite-canyon-visual-and-gameplay-design.md`, `docs/superpowers/plans/2026-11-03-frostbite-canyon-implementation.md`.
+**Runtime gate (Task 1):** CourseGraph helpers are still NOT wired into `game.js`/RaceFactory/collision/AI/save, and no sibling Stage 1 branch has done it either, so race activation stays gated (spec §8). Evidence/review: `docs/designs/new-tracks/stage-2/evidence/frostbite-canyon/frostbite-canyon-review.md`.
+
+- [x] M1 graph (`src/courses/frostbite-canyon.ts`): ground route 13,799 m measured, START/FINISH ~9 km apart, hairpins at ~2.2 km and ~4.9 km, three split/merge decisions (glacier ridge, Rift Spine ice bridge + flight, aurora span), bridge 28 m above the lower road, junction kink ≤30°. RED observed: missing module, then 119° junction kinks; GREEN `tests/frostbite-canyon-course.test.js` 12/12.
+- [x] Shared `courseRoadGeometry` (visible ribbon = `sampleRoute` contact, raycast-checked at straight/hairpin/bridge/split/merge/landing) and `recoveryNode` (last validated checkpoint).
+- [x] Live Three.js showroom (`src/upcoming-scenes/frostbite-*.ts`) built from the real graph; scene tests 6/6 (burial RED 243/3035 → 0); shader-safety lint extended (caught non-unit crystal normals and an unclamped `pow`).
+- [x] Gate: `@stage2-environments` → scene only on dev / `VITE_STAGE2_PREVIEW=1`; production bundle checked for no scene code or preview param; `?stage2-preview=frostbite-canyon[&shot=p02]` shows Coming Soon with Start disabled. Browser spec (dev-server config) 5/5 incl. Reduced Motion.
+- [x] Cover `public/track-teasers/frostbite-canyon.jpg` 2280×822 = native 3× of the 760×274 CSS fallback hero, captured from the live scene; route SVG generated from the graph.
+- [ ] Human visual sign-off; open deviations: phone portrait hides the player car, P02 has no portrait pose and assumes AIRFLOW off, weak magenta aurora, arch lacks its ice crust, no chasm mist.
+- [ ] Shared aero exhaust still shimmers under Reduced Motion (all Stage 1 scenes too) — follow-up in `aero-vfx.js`.
+- [ ] Task 4/7 race runtime: graph physics/collision layers, 8-car AI on edges, checkpoints in play, HUD/minimap, results, Ghost topology key, failed-jump recovery in play; then 20+ timed finishes.
+- [ ] Low-end/iPhone/Android performance and device QA; exact-HEAD full CI on `develop` integration.
+
+---
+
 ## Roadster 2-inspired player vehicle fidelity — 2026-11-03
 
 **Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
