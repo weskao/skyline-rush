@@ -50,3 +50,6 @@ paths:
 - `scripts/release-gate.sh` runs `scripts/check-release-notes.mjs <version>` and refuses a release
   whose entry is incomplete, fails the copy check, was never reviewed or changed after review;
   never bypass it.
+
+→ Read `docs/release-process.md` before writing or editing What's New / release notes or running
+`/release`.
