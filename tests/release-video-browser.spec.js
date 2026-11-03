@@ -75,7 +75,8 @@ test.describe('desktop', () => {
     const again = await page.locator('#release-video').elementHandle();
     await page.locator('#release-continue').click();
     await expect(page.locator('#whats-new-screen')).toBeHidden();
-    expect(await again.evaluate(element => element.paused)).toBe(true);
+    // The dialog's close event, which pauses the hero, is dispatched a task after it hides.
+    await expect.poll(() => again.evaluate(element => element.paused)).toBe(true);
     await page.locator('#whats-new-open').click();
     await expect.poll(() => playing(page.locator('#release-video'))).toBe(true);
   });
@@ -83,20 +84,33 @@ test.describe('desktop', () => {
   test('the enlarged view continues from the hero\'s frame and hands its frame back on close', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);
     const video = page.locator('#release-video'), clip = page.locator('#release-media-viewer video');
+    // Frames are read in-page when playback starts and stops: each round trip from a slow runner lets the clips play on.
+    await page.evaluate(() => {
+      window.handOver = {};
+      document.addEventListener('playing', ({ target }) => {
+        if (target.closest('#release-media-viewer')) window.handOver.clipStart ??= target.currentTime;
+        else if (window.handOver.clipEnd !== undefined) window.handOver.heroResume ??= target.currentTime;
+      }, true);
+      document.addEventListener('close', ({ target }) => {
+        if (target.id === 'release-media-viewer') window.handOver.clipEnd = target.querySelector('video').currentTime;
+      }, true);
+    });
     await expect.poll(() => time(video)).toBeGreaterThan(1.2);
     await video.click(); // tapping the clip itself enlarges it too
     await expect(clip).toBeVisible();
     await expect.poll(() => playing(clip)).toBe(true);
     const heroTime = await time(video); // frozen at the hand-over
     expect(await paused(video)).toBe(true);
-    expect(await time(clip), 'no restart: it carries on from the hero\'s frame').toBeGreaterThanOrEqual(heroTime - 0.1);
-    expect(await time(clip)).toBeLessThan(heroTime + 0.5);
+    const { clipStart } = await page.evaluate(() => window.handOver);
+    expect(clipStart, 'no restart: it carries on from the hero\'s frame').toBeGreaterThanOrEqual(heroTime - 0.1);
+    expect(clipStart).toBeLessThan(heroTime + 0.5);
     await expect.poll(() => time(clip)).toBeGreaterThan(heroTime + 1);
-    const enlargedTime = await time(clip);
     await page.keyboard.press('Escape');
     await expect(page.locator('#release-media-viewer')).toBeHidden();
-    expect(Math.abs(await time(video) - enlargedTime), 'the hero resumes from the enlarged frame').toBeLessThan(0.5 + 0.1);
     await expect.poll(() => playing(video)).toBe(true);
+    const { clipEnd, heroResume } = await page.evaluate(() => window.handOver);
+    expect(clipEnd).toBeGreaterThan(heroTime + 1);
+    expect(Math.abs(heroResume - clipEnd), 'the hero resumes from the enlarged frame').toBeLessThan(0.5 + 0.1);
   });
 
   test('a tap on the enlarged clip pauses and resumes it, a tap outside or the close button closes it', async ({ page, gameplayURL }) => {
@@ -161,6 +175,8 @@ test.describe('desktop', () => {
     page.on('request', request => { if (request.url().endsWith(`${CLIPS}.desktop.en.mp4`)) downloads.push(request.url()); });
     await openNotes(page, gameplayURL);
     const watch = async () => {
+      // The notes fetch the clip ahead; once kept, the hero plays it from the copy, and so must the enlarged view.
+      await expect(page.locator('#release-video')).toHaveAttribute('src', /^blob:/);
       await page.locator('#release-video-zoom').click();
       const clip = page.locator('#release-media-viewer video');
       await expect(clip).toHaveAttribute('src', /^blob:/); // played from the kept copy, never streamed again
