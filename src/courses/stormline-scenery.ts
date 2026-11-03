@@ -22,6 +22,11 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
   const to = Math.max(from, Math.min(endS, limit));
   const group = new THREE.Group();
   group.name = `stormline:chunk:${edgeId}:${from}`;
+  // Adjacent stream windows may collapse to one point; never allocate degenerate road GPU buffers.
+  if (from === to) return {
+    group, update(_timeSeconds: number, _reducedMotion: boolean) {},
+    dispose() { group.removeFromParent(); },
+  };
   const roadMat = new THREE.MeshStandardMaterial({ color: edge.surface === 'tunnel' ? 0x10172a : 0x171d35,
     metalness: 0.54, roughness: quality === 'low' ? 0.45 : 0.24, side: THREE.DoubleSide });
   const railMat = new THREE.MeshBasicMaterial({ color: 0x39d6ed });
