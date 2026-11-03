@@ -1,0 +1,33 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import { createStormlineChunk } from '../src/courses/stormline-scenery.ts';
+
+// Fixture stands in for the SHARED CourseGraph sampler; it never runs independent physics.
+const sample = (_edge, s) => ({ point: [0, 24, -s], right: [1, 0, 0], up: [0, 1, 0] });
+test('streamed road chunk contains real 3D road, rails and instanced city architecture', () => {
+  const high = createStormlineChunk('skyway-cut', 180, 450, sample, 'high');
+  const low = createStormlineChunk('skyway-cut', 180, 450, sample, 'low');
+  const road = high.group.getObjectByName('stormline:road:skyway-cut');
+  const buildings = high.group.getObjectByName('stormline:buildings:skyway-cut');
+  assert.ok(road instanceof THREE.Mesh);
+  assert.ok(road.geometry.getAttribute('position').count > 40);
+  assert.ok(buildings instanceof THREE.InstancedMesh);
+  assert.ok(buildings.count > low.group.getObjectByName('stormline:buildings:skyway-cut').count);
+  assert.ok(high.group.children.some(child => child instanceof THREE.Mesh && child.geometry instanceof THREE.CylinderGeometry));
+  high.dispose(); low.dispose();
+});
+test('flight gap never gains fake collision road; chunk resources are disposed exactly once', () => {
+  const gap = createStormlineChunk('roof-flight', 60, 310, sample, 'medium');
+  assert.equal(gap.group.getObjectByName('stormline:road:roof-flight'), undefined);
+  gap.dispose();
+  const street = createStormlineChunk('night-start', 0, 160, sample, 'low');
+  const road = street.group.getObjectByName('stormline:road:night-start');
+  let releases = 0;
+  road.geometry.addEventListener('dispose', () => { releases++; });
+  const scene = new THREE.Scene();
+  scene.add(street.group);
+  street.dispose(); street.dispose();
+  assert.equal(releases, 1);
+  assert.equal(street.group.parent, null);
+});
