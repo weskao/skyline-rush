@@ -6,7 +6,11 @@ test('Garage source artwork is available at native 3x resolution with 1x CSS dis
   const source = page.locator('#garage-art-source-garage-store-readiness');
   await expect(source).toBeVisible();
   await source.locator('summary').click();
-  const thumbnails = source.locator('img');
+  // The header has its own 3x entrance icon; only the six catalog cards are thumbnails.
+  const entranceIcon = source.locator('summary [data-wave3-entry-icon] img');
+  await expect(entranceIcon).toHaveCount(1);
+  await expect(entranceIcon).toHaveJSProperty('naturalWidth', 216);
+  const thumbnails = source.locator('button[data-wave3-asset] img');
   await expect(thumbnails).toHaveCount(6);
   const first = thumbnails.first();
   await first.scrollIntoViewIfNeeded();
