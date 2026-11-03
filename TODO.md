@@ -1,3 +1,21 @@
+## Roadster 2-inspired player vehicle fidelity — 2026-11-03
+
+**Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
+
+**Integration checkpoint:** `develop` `00ae95f8` was merged via `6cdd909f` (two parents, no force-push). Previous HEAD CI `41584935239` failed unit/browser/World Tour; unit failure identified a shared Roadster merged-material instance. Fix commit `5a11df0` is included. Verify the full CI on the exact new HEAD (not only feature-focused tests); visual WebGL and physical-device review remain separate gates. Visual reference: user-supplied front/side/rear/wing/flight images; spec and plan in `docs/superpowers/`.
+
+- [x] Preserve current race physics, VFX port coordinates, Garage body-paint API, wing lift and independent wheels.
+- [x] Replace roadster-only six-box-section shell with a multi-station faceted wedge and fastback glazing, add realistic side detail, aero rims, rear wing, nozzles and diffuser.
+- [x] Introduce physical pearl paint and glazed windows without changing rival/traffic styles; add targeted structural regression tests.
+- [ ] Verify the expected historical RED state on the pre-implementation commit: first GitHub test run was cancelled before unit jobs completed; do **not** claim TDD RED observed.
+- [ ] Obtain GREEN for `node --test tests/roadster-fidelity.test.js tests/car-model-draws.test.js`, complete `npm test`, `npm run build`, `npm run typecheck`, `make verify`.
+- [ ] Inspect real WebGL pictures for all major angles in Garage and race, at desktop and mobile viewport; compare frame time, triangles and draw calls before/after.
+- [ ] Verify exact-HEAD full CI quality-gate and manually test road/flight/transitions on real devices. No PR, merge, deployment or modification to `main`/`develop` without explicit user approval.
+
+---
+
+---
+
 ## Security hardening — required before releasing 1.0.0 and every later version (2026-11-03)
 
 **Context:** the repo is public and `src/cloud-save.ts` hard-codes the Firebase Web config (`apiKey`, `projectId`,
