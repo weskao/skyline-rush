@@ -79,3 +79,6 @@ and never let the NaN happen:
   A new shader or effect keeps both green. Diagnose by wrapping `composer.render`, reading the targets
   back with `readRenderTargetPixels` (half-float NaN/Inf: `(h & 0x7c00) === 0x7c00`) and, on a bad
   frame, re-rendering the frozen scene into an MSAA clone one leaf object at a time to name the source.
+
+→ Read `docs/rendering-performance.md` before touching renderer, scene, effect or shader code, or
+adding a cache, instancing or any per-frame / per-row work.

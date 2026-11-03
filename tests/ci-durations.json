@@ -547,7 +547,7 @@
  "release-announcements-browser.spec.js › a player already on the latest notes is not interrupted": 11.8,
  "release-announcements-browser.spec.js › a returning player on an older version gets the notes once, and the record moves forward": 10,
  "release-announcements-browser.spec.js › every release lists its NEW highlights first, then improvements, then fixes": 24.3,
- "release-announcements-browser.spec.js › first visit › a first-time player is not greeted with old news, but the version is recorded": 12.5,
+ "release-announcements-browser.spec.js › first visit › a first-time or incognito visit gets the notes on load, and the version is recorded": 12.5,
  "release-announcements-browser.spec.js › players can read bilingual release notes, dismiss and reopen them": 18.4,
  "release-announcements-browser.spec.js › players switch between the latest releases by click and keyboard": 22.8,
  "release-announcements-browser.spec.js › release dialog 1440x900 › dialog fits safe viewport and primary controls are clickable": 32.1,
