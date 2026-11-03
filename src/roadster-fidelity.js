@@ -210,6 +210,26 @@ function cornerIntake(side) {
   return cornerIntakes.get(side);
 }
 
+const cornerLamps = new Map();
+function lampGeometry(side, lens) {
+  const key = `${side}:${lens ? 'light' : 'pocket'}`;
+  if (!cornerLamps.has(key)) {
+    const vertices = lens ? [
+      side*.878,.689,-2.253, side*.993,.686,-2.195,
+      side*.949,.633,-2.323,
+    ] : [
+      side*.840,.750,-2.170, side*1.035,.760,-2.080,
+      side*.950,.560,-2.370,
+    ];
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    geometry.setIndex(side < 0 ? [0,2,1] : [0,1,2]);
+    geometry.computeVertexNormals();
+    cornerLamps.set(key,geometry);
+  }
+  return cornerLamps.get(key);
+}
+
 export function addRoadsterWheelDetail(wheel, side) {
   const inset = new THREE.Mesh(wheelInset, graphite);
   inset.rotation.z = Math.PI / 2;
@@ -250,13 +270,10 @@ export function addRoadsterTrim(group, m) {
     intake.name = 'Roadster corner intake';
     group.add(intake);
     // Recessed triangular corner lamps echo the angled nose of the reference prototype.
-    const triangle = new THREE.BufferGeometry();
-    triangle.setAttribute('position', new THREE.Float32BufferAttribute([
-      side * .84, .75, -2.17, side * 1.035, .76, -2.08,
-      side * .95, .56, -2.37,
-    ], 3));
-    triangle.computeVertexNormals();
-    const headlamp = new THREE.Mesh(triangle, headlampMaterial);
+    const pocket = new THREE.Mesh(lampGeometry(side,false), graphite);
+    pocket.name = 'Roadster headlamp pocket';
+    group.add(pocket);
+    const headlamp = new THREE.Mesh(lampGeometry(side,true), headlampMaterial);
     headlamp.name = 'Roadster triangular headlamp';
     group.add(headlamp);
     line(group,[
