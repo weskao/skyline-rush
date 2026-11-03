@@ -36,6 +36,18 @@ test('guardian face and temple have authored three-dimensional meshes', () => {
     'moss-covered stepped sanctuary', 'carved temple pillar']) {
     assert.ok(find(chunk.group, key), key);
   }
+  for (const key of ['guardian-brow', 'guardian-nose', 'guardian-mouth', 'guardian-stone-headdress']) {
+    assert.ok(find(chunk.group, key), key + ' should articulate the face silhouette');
+  }
+  chunk.dispose();
+});
+
+test('river valley has an actual visible watercourse and not only colored terrain', () => {
+  const { chunk } = mount(3100, 3300);
+  const river = find(chunk.group, 'monsoon-running-river');
+  assert.ok(river);
+  assert.ok(river.geometry.getAttribute('position').count > 20);
+  assert.ok(river.material.transparent);
   chunk.dispose();
 });
 
