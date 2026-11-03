@@ -70,6 +70,7 @@ test('Roadster nose and rear fascia retain distinct curved structural pieces wit
   assert.equal(named(car, 'Roadster curved rear fascia').length, 1);
   assert.equal(named(car, 'Roadster rear light edge').length, 1);
   assert.equal(named(car, 'Roadster triangular headlamp').length, 2);
+  assert.equal(named(car, 'Roadster headlamp pocket').length, 2, 'lamps remain recessed in dark body corners');
   assert.ok(car.userData.rearLight?.group?.parent === car);
   assert.equal(named(car, 'Roadster recessed thruster').length, 4);
 });
