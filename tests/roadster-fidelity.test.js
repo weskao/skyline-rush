@@ -3,6 +3,18 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { CAR_STYLES, makeCar } from '../src/car-model.js';
 import { REAR_PORTS } from '../src/aero-vfx.js';
+import { addRoadsterTrim } from '../src/roadster-fidelity.js';
+
+const rawTrim = () => {
+  const group = new THREE.Group();
+  addRoadsterTrim(group, {
+    paint: new THREE.MeshPhysicalMaterial({ color: '#e6e9e7' }),
+    black: new THREE.MeshStandardMaterial({ color: '#101923' }),
+    white: new THREE.MeshBasicMaterial({ color: '#ffffff' }),
+    light: new THREE.MeshBasicMaterial({ color: '#ff1616' }),
+  });
+  return group;
+};
 
 const roadster = () => makeCar(CAR_STYLES.roadster);
 const named = (root, name) => {
@@ -79,15 +91,15 @@ test('Other vehicle styles preserve their original model material and geometry c
 
 test('Roadster reference front has a white wedge, tiny symmetric lamps, and a low recessed black mouth', () => {
   const car = roadster();
-  const front = named(car, 'Roadster sculpted front fascia');
+  const detail = rawTrim();
+  const front = named(detail, 'Roadster sculpted front fascia');
   assert.equal(front.length, 1);
   assert.equal(front[0].material.color.getHexString(), 'e6e9e7', 'nose remains body-painted, not graphite');
-  const lamps = named(car, 'Roadster front slit lamp');
+  const lamps = named(detail, 'Roadster front slit lamp');
   assert.equal(lamps.length, 2);
-  const aperture = named(car, 'Roadster black lower intake');
+  const aperture = named(detail, 'Roadster black lower intake');
   assert.equal(aperture.length, 1);
-  const geometry = aperture[0].geometry;
-  const bounds = new THREE.Box3().setFromBufferAttribute(geometry.getAttribute('position'));
+  const bounds = new THREE.Box3().setFromObject(aperture[0]);
   assert.ok(bounds.max.x - bounds.min.x >= 1.4, 'front intake is wide and low');
   assert.ok(bounds.max.y - bounds.min.y <= 0.20, 'the grille is a thin lower mouth, not a tall smiling opening');
   const body = car.userData.body.geometry.attributes.position;
@@ -100,11 +112,12 @@ test('Roadster reference front has a white wedge, tiny symmetric lamps, and a lo
 
 test('Roadster rear reference layers an inset black lamp recess above a curved painted panel', () => {
   const car = roadster();
-  assert.equal(named(car, 'Roadster black rear light recess').length, 1);
-  const fascia = named(car, 'Roadster curved rear fascia');
+  const detail = rawTrim();
+  assert.equal(named(detail, 'Roadster black rear light recess').length, 1);
+  const fascia = named(detail, 'Roadster curved rear fascia');
   assert.equal(fascia.length, 1);
   assert.equal(fascia[0].material.color.getHexString(), 'e6e9e7', 'lower rear panel must be pearl paint');
-  assert.equal(named(car, 'Roadster curved rear valance').length, 1);
+  assert.equal(named(detail, 'Roadster curved rear valance').length, 1);
   const led = car.userData.rearLight.group;
   const black = led.getObjectByName('Rear LED black panel');
   const core = led.getObjectByName('Rear LED core');
@@ -122,7 +135,7 @@ test('four recessed NITRO ports and diffuser form the lower rear without changin
     assert.deepEqual(port.position.toArray().slice(0, 2), REAR_PORTS[i].position.slice(0, 2));
     assert.equal(port.name, 'Roadster recessed thruster');
   });
-  assert.equal(named(car, 'Roadster deep rear diffuser').length, 1);
+  assert.equal(named(rawTrim(), 'Roadster deep rear diffuser').length, 1);
   assert.ok(named(car, 'Roadster diffuser vane').length >= 5);
   assert.equal(named(car, 'Roadster aerofoil').length, 1);
   assert.equal(car.userData.wing.userData.lift, 0.34);
