@@ -210,6 +210,25 @@ export function sampleMonsoonEdge(edgeId: MonsoonEdgeId | string, localDistance:
   return { ...sampleMonsoonRoute(edgeId, progress), localDistance };
 }
 
+// Adapter for the integration branch's node-to-node CourseGraph edge IDs.
+// A node-to-node ground segment uses a slice of the same physical main arc table.
+export function monsoonGraphEdgeLength(edgeId: string): number {
+  const ground = MONSOON_RUINS_COURSE.mainEdges.find(edge => edge.id === edgeId);
+  return ground ? (ground.to - ground.from) / LENGTH * totalMetres : monsoonEdgeLength(edgeId);
+}
+export function sampleMonsoonGraphEdge(edgeId: string, localDistance: number) {
+  const ground = MONSOON_RUINS_COURSE.mainEdges.find(edge => edge.id === edgeId);
+  const length = monsoonGraphEdgeLength(edgeId);
+  if (!Number.isFinite(localDistance) || localDistance < 0 || localDistance > length) {
+    throw new RangeError('Monsoon graph edge local distance outside arc length');
+  }
+  const origin = ground ? ground.from / LENGTH * totalMetres : 0;
+  const sample = sampleMonsoonEdge(ground ? 'ground' : edgeId, Math.min(
+    monsoonEdgeLength(ground ? 'ground' : edgeId), origin + localDistance,
+  ));
+  return { ...sample, graphEdgeId: edgeId, localDistance };
+}
+
 // These are material hints for the shared vehicle contact solver, not a competing physics model.
 export function monsoonWetContact(edgeId: MonsoonEdgeId, distance: number) {
   sampleMonsoonRoute(edgeId, distance); // Validate edge and range.
