@@ -139,7 +139,9 @@ function mergeStaticParts(group, style, moving) {
   }));
   mergedParts.get(style).forEach((geometry, i) => {
     group.remove(...parts[i]);
-    const merged = new THREE.Mesh(geometry, parts[i][0].material);
+    // Roadster trim uses module-scoped materials; each car must own its material
+    // instance even while sharing the cached, immutable merged geometry.
+    const merged = new THREE.Mesh(geometry, parts[i][0].material.clone());
     // Retain semantic detail labels even when draw-call batching collapses multiple meshes.
     merged.userData.mergedPartNames = parts[i].map(part => part.name).filter(Boolean);
     group.add(merged);
