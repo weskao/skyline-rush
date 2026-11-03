@@ -33,6 +33,95 @@
 
 ---
 
+## Touch devices: hide keyboard remapping until a physical keyboard is used — 2026-11-03
+
+Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/tablets should not show the Controls panel's "鍵盤 · 先選擇動作，再按下按鍵" section, its rebind buttons, the fixed-shortcut note or Reset keyboard — but a phone/tablet with a Bluetooth keyboard must still be able to remap.
+
+- [x] Rule (`src/keyboard-presence.ts`): show at once on `(hover: hover) and (pointer: fine)`; otherwise hidden until a keydown with a non-empty `code`, not composing and not typed into a text field (on-screen keyboards send an empty code or compose), then remembered in `skyline-rush-keyboard-seen`. Wired in `setupKeyMapUI` → `panelsView.keyboardSettings` → `v-show` in `ControlsPanel.vue`.
+- [x] RED: `tests/keyboard-settings-browser.spec.js` touch case failed (`.keymap-field` visible) on the stub; GREEN after the change, desktop case green throughout. `tests/keyboard-presence.test.js` 6/6.
+- [x] `npm test` 1446 pass / 0 fail; `npm run build`; `npm run typecheck`; handoff/i18n/guide specs: the only 8 failures (handoff PERFECT LINE, i18n flow ×4, intro bottom edge ×3) fail identically on unmodified `origin/develop` `9ec7f3df`.
+- [x] Screenshot 390×844 touch: Controls panel without the keyboard block; after a Shift press, the block appears.
+- [x] Pre-existing develop reds (home row at 1440×900, `main-ui-parity`, i18n 3x artwork summary, handoff PERFECT LINE) were fixed
+  here, then superseded by develop's own fixes in 0.29.0; on merging `develop` `b34b1bfc` this branch took develop's versions and
+  dropped its duplicates (`hud-artwork.ts`, `layoutSeed` fixture, 12px/16px home row).
+- [ ] Physical iPad / iPhone with and without a Bluetooth keyboard.
+- [ ] `make verify` and full exact-HEAD CI `quality-gate` after merge into `develop`.
+
+---
+
+## Garage VFX remembered skin picks — 2026-11-03
+
+Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial pick survives reload as a preference only (`src/garage-skin-preference.ts`), re-applied through `session.equip`; never ownership.
+
+- [x] RED observed on old code: `tests/garage-skin-preference.test.js` (runtime reload / wiring), locked-bundle key audit in `tests/garage-release-build.test.js`, browser reload test (`data-state` was `trial`, expected `equipped`).
+- [x] GREEN: `npm test` 1462 pass / 0 fail, `npm run typecheck`, `npm run build` (locked bundle has no `skyline-rush-garage-skin-picks`; trial bundle has it), `tests/garage-skin-trial-browser.spec.js` 4/4 (desktop, 390×844, 844×390).
+- [ ] Pre-existing locally on unchanged `HEAD` source too: `garage-inspection-mode-browser.spec.js:4` (390×844) and `garage-studio-browser.spec.js:136` fail; confirm on CI.
+- [ ] `make verify` and the full exact-HEAD `quality-gate` (`[full-regression]`); then merge into `develop` (approved for this branch).
+
+---
+
+## Garage VFX badge clipping / 3× WebP regeneration — 2026-11-02
+
+Branch: `fix/garage-vfx-badge-art-unclipped-3x` (created from `develop` `b3a0c11a`). User reported that all except the first three in `#garage-vfx-art-badges` were cropped near the bottom.
+
+- [x] Identified eight older atlas-derived badge/rarity images; do not confuse transparent padding on a cropped sprite with complete icon content.
+- [x] Recreated Locked/New/Trial and five rarity icons as native 216×216 editable vector originals and transparent `@3x.webp` runtime assets (72×72 CSS), with center alignment and safe alpha margins.
+- [x] Extended Playwright geometry, native-size, alpha-inset and responsive tests for all eight; existing tests keep coverage for the first three.
+- [ ] Run RED/GREEN browser regression on the branch, `make verify`, and full exact-HEAD quality-gate; record observed results.
+- [ ] Review real running-game screenshots and physical touch/browser display at 390×844, 844×390, 1440×900 before claiming visual signoff.
+- [ ] Merge into `develop` **only after explicit approval** and required gates; do not modify `main` or open a PR.
+
+---
+
+## Button 3x artwork removed — UI/UX follow-ups (2026-11-02)
+
+The 3x HUD artwork belongs to the future `feature/garage-store-readiness`, `feature/garage-rewards-and-missions` and `feature/garage-economy-foundation` work and was merged here by accident. It no longer shows under any button: `#start-button`, `#garage-button`, `#again-button`, `#pause-button`, `#settings-button`, and the touch Left / Right / Brake / NITRO buttons. The semantic SVG icons and labels are untouched.
+
+- [x] Removed every `img.hud-3x-decor` and `img.settings-art-decor` from `src/App.vue` / `src/SettingsPanel.vue`, plus their CSS and the `hudAsset` helper; `tests/hud-3x-artwork-browser.spec.js` asserts none come back.
+- [ ] Image paths kept for later (`public/feature-assets/mobile-controls-hud/raster/`, `@3x.webp`, may be deleted if never used): `button-play`, `button-garage`, `button-retry`, `button-nitro`, `button-back`, `button-coming-soon`, `hud-pause`, `hud-brake`, `ui-arrow-left`, `ui-arrow-right`, `ui-settings`, `ui-close`, `ui-info`, `ui-tooltip`, `hud-combo`, `hud-drift`, `hud-nitro`, `hud-speed`. The Settings source gallery (`#hud-3x-source-gallery`) still lists all 18.
+- [ ] **Restore the button artwork when implementing `feature/garage-store-readiness`, `feature/garage-rewards-and-missions` or `feature/garage-economy-foundation`** (the first branch does not exist yet; the other two do not carry the artwork). After merging `develop` into the branch, run `git show b3a0c11a -- src tests | git apply -R` (re-adds the 9 `img.hud-3x-decor` / `img.settings-art-decor` images, their CSS, `hudAsset`/`settingsArt` and the old browser specs; leaves `TODO.md` alone), then tick this item. Original introduction: `83182a7d` on `feature/3x-hud-materials-integration`. If `App.vue` / `SettingsPanel.vue` changed enough that the patch fails, restore by hand from `83182a7d` instead.
+- [ ] If re-used: swap the button's own background or a real `<svg>` icon instead of an `<img>` layered under the label; keep 44 px touch targets and contrast against the label.
+- [ ] Start / Garage / Race again: one consistent button style across intro, result and pause overlays.
+- [ ] Touch controls: clearer pressed / disabled states for NITRO, Brake and Left / Right.
+- [ ] Settings / Pause icon buttons: larger hit area and visible focus ring on the top bar.
+- [ ] Decide by the Garage economy branches' merge: delete unused `@3x.webp` files and the gallery, or wire them in.
+
+## Preview Studio: zoom out far enough for the full exhaust (2026-11-02)
+
+**Branch:** `feature/studio-exhaust-zoom` from `develop` `58a20daf`. **Request:** 預覽工作室 could not pull back far enough to see the whole exhaust/NITRO trail; raise the limit, same max for front and rear views.
+
+- [x] RED: `tests/garage-inspection-mode.test.js` (max zoom frames car + 13 m trail at every yaw/pitch/aspect; yaw and yaw + π give the same distance; zoom ≤ 1 unchanged) failed before the change.
+- [x] GREEN: `src/garage-camera.ts` max zoom 1.6 → 2.4 (`GARAGE_MAX_ZOOM`); past zoom 1 the framed length grows by `GARAGE_EXHAUST_REACH` (13 m = NITRO streak 6 + 8 × .85) on both ends, so the car stays centred and front/rear share one limit (27.4 m at 1440 px). Zoom-in limit and default framing unchanged. `src/garage-stage.ts` pushes the fog back with the camera so the far views are not fogged.
+- [x] Real WebGL screenshots at max zoom: front/rear/side/top/3/4, 1440 × 900 and 390 × 844; car in frame, trail fully visible.
+- [ ] Remote `quality-gate` on the final HEAD; real-device pinch check.
+- [ ] Cosmetic: at max zoom-out the 44 m floor edges show in top/side views (the corner was already visible at default zoom).
+
+## More rings and pickups: middle-lane ground trains (2026-11-03)
+
+**Branch:** `develop` (user request), worked on `work/ring-trains-develop` from `origin/develop` `9ec7f3df`, pushed as a fast-forward. **Request:** rings and pickups still too few, a medium increase on every map and mode, with consecutive rings down lane 2 or 3, mostly on the ground; keep the balance, no walls, no dense scatter.
+
+- [x] RED: `tests/ring-rows.test.js` (6-ring trains on x ±2.5, ≥ 3 trains a race, < 30% in the air, trains 40 m apart, Endless chunk contents) and `tests/scaled-layout.test.js` (40 singles on a grid of 8) failed on the old layout (e.g. "trains 216/3200 in 100 races", "coast train @712 overlaps the one ending @788").
+- [x] GREEN: `ITEMS_PER_CAR` 4 -> 5; trains 6 rings (charge/slipstream/charge/nitro/slipstream/charge) on the middle lane on the slot's side, 80% on the road, `TRAIN_ODDS` 0.15 -> 0.25, 40 m from the previous train. Endless: a middle-lane train in every chunk plus a row in 1 of 3, 3 singles, 5 pickup runs (was 4). `game.js` unchanged.
+- [x] Balance, economy bot, 6 seeds x 10 tracks, rival-free: rings 42.3 -> 59.0 (+39%), pickups 92.9 -> 112.0 (+21%), ground rings 7.1 -> 19.1, mid-lane rings 11.8 -> 22.8; NITRO/min 18.45 -> 19.98 (+8.3%), race 55.31 -> 54.73 s (-1.0%), fuel run-outs 0 -> 0, boost share 92.7 -> 98.0%; track NITRO/min 15.0-21.4 -> 17.3-21.5. Harbor Circuit 3 laps rings 153 -> 213, pickups 240 -> 276. Densest one-colour 900 m view 17 (pool 48).
+- [x] AC2 rival NITRO: more 0.25 run cells spend takes without filling a charge (Circuit Normal +1.0, every rival capped at 3). `NORMAL_RIVAL_TAKES` 3 -> 4 (Normal +3.8, Circuit +4.0, Elimination +1.8), `HARD_RIVAL_TAKES` 5 -> 6 (+5.0); Easy unchanged (+0.4).
+- [x] No `layoutVersion` bump: `f5f39464` is still not on `origin/main`. AC3 hashes re-locked (old ones kept in the comment).
+- [x] Gates: `npm test` 1441 pass / 0 fail / 3 skipped, `npm run typecheck`, `npm run build`; `tests/ring-rows-browser.spec.js` desktop + phone (row 1 ring, middle-lane train 6/6 + PERFECT LINE), WebGL screenshots checked.
+- [ ] Full `npm run test:browser` / `make verify` not run locally (shared Playwright machine): the `develop` CI `quality-gate` runs the full suite.
+- [ ] Real-device feel check.
+
+## Ring trains, a few full-width rows, pickup runs (2026-11-02)
+
+**Branch:** `feature/ring-rows` from `develop` `01fd1bea`. **Request:** a few more items and rings on every map and mode: consecutive rings on the road or in the air, a few stretches with a full row of rings so passing always takes one, pickups in runs of 1-4; keep the balance (not too easy or hard, keep the thrill). A first try (6 per car + 5-row streaks of 8 rings every 1.2 km) was rejected as "too many, too bunched".
+
+- [x] RED: `tests/ring-rows.test.js` failed before the shapes existed.
+- [x] GREEN: 4 slots per car unchanged; on plain road a slot becomes a 5-ring train (ground 2.5 m or air 7 m; charge/slipstream/nitro/slipstream/charge; own PERFECT LINE) at 15%, or a 4-lane row at 2.5 m (any car on the road passes one) at 8%, on their own `ring-shapes` stream so singles keep their positions. Risk rings and the first two slots stay single. Pickup slots trail 0-3 cells (`pickup-runs` stream). Endless: a train or (1 in 3) a row per chunk, pickup runs.
+- [x] A row pays once per car (player and rivals, same step); Hard rivals do not swerve for a row.
+- [x] Balance, economy bot, 6 seeds x 10 tracks: NITRO/min 15.3 -> 18.5 (+20%), race 56.4 -> 55.3 s, fuel run-outs 0 -> 0; track range 9.2-19.0 -> 15.0-21.4. AC2 rival NITRO: Hard needed `HARD_RIVAL_TAKES` 4 -> 5 (+3.9 -> +4.2).
+- [x] No `layoutVersion` bump: the 4-per-car versions are unreleased (not on `main`), so no new `firestore.rules` ids. AC3 hashes re-locked.
+- [x] Browser: `tests/ring-rows-browser.spec.js` desktop + phone (rows drawn where they score, one ring per row, train 5/5 + PERFECT LINE); WebGL screenshots checked.
+- [ ] Full `npm run test:browser`, then remote `quality-gate` on the final HEAD.
+- [ ] Real-device feel check of the denser runs.
+
 ## AIRFLOW off hides sprint streamlines (2026-11-02)
 
 **Branch:** `fix/airflow-off-hides-sprint-flow` from `develop` `5cc12113`. **Report:** with AIRFLOW (V) off, BOOST/NITRO still revealed the full streamline showcase and underbody pressure plane (`src/aero-vfx.js` `show` OR-ed in `sprintPower`), so the V toggle looked broken while sprinting.
@@ -78,6 +167,18 @@
 - [x] Stage 2 (rival item pickups, `feature/rival-item-pickups`): R1–R11 done, `quality-gate` green on `21c06661` (run `41375706816`), merged into `develop` with user approval.
 
 ---
+
+## Race HUD options move out of the audio menu (2026-11-02)
+
+**Branch:** `feature/race-hud-vfx-panel` from `develop` `6cbc7511`. User picked the VFX panel over a new top-bar button.
+
+- [x] **RED** `tests/hud-settings-browser.spec.js`: the speaker panel still held 2 `hud-mode` radios (1440×900, 390×844).
+- [x] **GREEN** `src/HudSettings.vue` mounted in `.vfx-settings`; speaker button/panel labelled `audio.settings`; `hudSettings.panel` copy removed.
+- [x] Device matrix (8 viewports × ready/racing, real clicks on every HUD control): unfolded Fold landscape 1104×882 mid-race
+  failed twice (panel foot at 898px > 882) because the touch-tablet rule lowers the tool row to 242px while the cap assumed 98px;
+  fixed with a matching cap in `src/style.css`. The HUD reset rendered as a blank white box (native face, light text);
+  guard asserts a transparent background (RED `rgb(239, 239, 239)`), fixed by sharing `#vfx-reset` styling.
+- [ ] Physical iPhone / Fold check by the user.
 
 ## In-race HUD overlaps — foldable, phones, tablet (2026-11-01)
 

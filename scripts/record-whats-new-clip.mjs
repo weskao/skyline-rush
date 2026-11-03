@@ -19,7 +19,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const outDir = `${root}public/whats-new/${slug}/`, rawDir = `${root}artifacts/whats-new-raw/`;
 const LOCALES = [['en', 'en-US'], ['zh-TW', 'zh-TW']];
 const SHAPES = { desktop: { width: 960, height: 600, mobile: false }, mobile: { width: 390, height: 844, mobile: true } };
-const MAX_BYTES = 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
 
 const server = await createServer({ root, server: { host: '127.0.0.1', port: 0 }, logLevel: 'error' });
 await server.listen();
@@ -57,11 +57,12 @@ async function record(locale, system, shape, { width, height, mobile }) {
   const length = (Date.now() - opened) / 1000 - start;
   await context.close();
   const raw = await page.video().path(), base = `${outDir}${slug}.${shape}.${locale}`;
+  // Balanced quality, never coarsened to fit: CRF 20 with a 4 MB cap; shorten --seconds instead.
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', `${start}`, '-t', `${length}`, '-i', raw, '-an', '-c:v', 'libx264',
-    '-preset', 'slow', '-crf', '30', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', `${base}.mp4`]);
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', `${length / 2}`, '-i', `${base}.mp4`, '-frames:v', '1', '-q:v', '4', `${base}.jpg`]);
+    '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', `${base}.mp4`]);
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', `${length / 2}`, '-i', `${base}.mp4`, '-frames:v', '1', '-q:v', '2', `${base}.jpg`]);
   const bytes = (await stat(`${base}.mp4`)).size;
-  if (bytes > MAX_BYTES) throw new Error(`${base}.mp4 is ${bytes} bytes; keep clips under 1 MB (shorter --seconds)`);
+  if (bytes > MAX_BYTES) throw new Error(`${base}.mp4 is ${bytes} bytes; keep clips under 4 MB (shorter --seconds)`);
   console.log(`${base}.mp4 ${(bytes / 1024).toFixed(0)} KB, ${length.toFixed(1)} s`);
 }
 

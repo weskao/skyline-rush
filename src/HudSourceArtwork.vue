@@ -1,0 +1,42 @@
+<script setup lang="ts">
+import { onUnmounted, ref } from 'vue';
+import GarageArtworkTile from './GarageArtworkTile.vue';
+import { getLocale, onLocaleChange, t } from './i18n.ts';
+
+const locale = ref(getLocale());
+onUnmounted(onLocaleChange(value => { locale.value = value; }));
+// Reading locale.value makes the copy re-render on a language switch.
+const tr = (key: string): string => t(key, undefined, locale.value);
+
+const names = ['button-back','button-coming-soon','button-garage','button-nitro','button-play','button-retry',
+  'hud-brake','hud-combo','hud-drift','hud-nitro','hud-pause','hud-speed',
+  'ui-arrow-left','ui-arrow-right','ui-close','ui-info','ui-settings','ui-tooltip'];
+const wide = (name: string): boolean => name.startsWith('button-');
+const src = (name: string): string =>
+  `${import.meta.env.BASE_URL}feature-assets/mobile-controls-hud/raster/${name}@3x.webp`;
+</script>
+
+<template>
+  <details id="hud-3x-source-gallery" class="hud-art-preview">
+    <summary>{{ tr('hudArt.summary') }}</summary>
+    <p>{{ tr('hudArt.note') }}</p>
+    <div class="hud-art-grid">
+      <GarageArtworkTile v-for="name in names" :key="name" :id="name"
+        :label="name.replaceAll('-', ' ')" :src="src(name)"
+        :size="wide(name) ? 144 : 72" :image-height="wide(name) ? 52 : 72"
+        :tone="wide(name) ? 'gold' : 'cyan'" />
+    </div>
+  </details>
+</template>
+
+<style scoped>
+.hud-art-preview { border-top: 1px solid #506887; margin-top: 15px; padding-top: 10px; min-width: 0; }
+/* Drawn by the page like .vfx-tuning (style.css), never the OS disclosure triangle (tests/custom-controls-browser.spec.js). */
+.hud-art-preview summary { display: flex; align-items: center; justify-content: space-between; list-style: none; min-height: 44px; font-size: 12px; font-weight: 700; cursor: pointer; color: #d7ecff; }
+.hud-art-preview summary::-webkit-details-marker { display: none; }
+.hud-art-preview summary::after { content: '＋'; color: #91e0f2; }
+.hud-art-preview[open] summary::after { content: '－'; }
+.hud-art-preview p { font-size: 12px; line-height: 1.4; color: #a5c4df; }
+.hud-art-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 184px), 1fr));
+  gap: 10px; align-items: stretch; }
+</style>

@@ -17,17 +17,12 @@ export interface TrackConfig {
   seed: number;
   sections: TrackSection[];
   fixedRings?: boolean;
-  /** [min, max] metres to the next ring (default [200, 320]); a fixed grid steps by min (default 220). */
-  ringGap?: readonly [number, number];
   /** Cumulative roll thresholds for charge / nitro / slipstream / risk rings; the rest is mystery. */
   ringOdds?: readonly [number, number, number, number];
-  /** Fixed-grid ring altitudes, cycled by ring index (default 8). */
+  /** Fixed gate-line ring altitudes, cycled by ring index (default 8). */
   ringAltitudes?: readonly number[];
   /** The first N rings are nitro rings, so the first NITRO comes early without adding rings. */
   openingNitroRings?: number;
-  /** Chance per ring slot of a full-width row (default 0.1) / a dense train (default 0.06), `src/ring-layout.ts`. */
-  ringRows?: number;
-  ringTrains?: number;
   /** Ring/pickup layout generation for timed records (`src/record-layout.ts`); omitted = 1. Bump it whenever a layout change makes older times incomparable. */
   layoutVersion?: number;
 }

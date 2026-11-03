@@ -36,8 +36,6 @@ const badgeTone: Record<(typeof badgeArt)[number], 'cyan' | 'magenta' | 'gold' |
   'rarity-common': 'slate', 'rarity-rare': 'azure', 'rarity-epic': 'magenta',
   'rarity-legendary': 'gold', 'rarity-mythic': 'red',
 };
-const restoredBadge = (id: string): boolean =>
-  id === 'badge-equipped' || id === 'badge-favorite' || id === 'badge-limited';
 
 const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   thruster: { en: 'Thruster', 'zh-TW': '推進器' },
@@ -70,7 +68,7 @@ const statusText = (id: SkinId, locale: string) => {
   <section id="garage-vfx-catalog" class="garage-vfx-catalog" data-preview-contract="live-shared-aero" :data-release-mode="GARAGE_RELEASE_MODE"
     aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
-    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入或切換帳號會還原，並非永久擁有。' : 'Select a card to preview, then Try to equip temporarily. Reloading or changing accounts resets trials; no ownership is granted.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
+    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入後仍會記住你在此帳號最後的選擇，但這不是擁有權；試用結束後會還原為預設。' : 'Select a card to preview, then Try to equip temporarily. Your last pick is remembered on reload for this account, but it is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
     <div v-for="category in SKIN_CATEGORIES" :key="category" class="garage-vfx-category">
       <h4>{{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
       <ul>
@@ -106,7 +104,7 @@ const statusText = (id: SkinId, locale: string) => {
       <div class="garage-art-badges">
         <GarageArtworkTile v-for="id in badgeArt" :key="id" :id="id"
           :label="badgeLabel(id, locale)" :src="badgeSrc(id)"
-          :tone="badgeTone[id]" :restored="restoredBadge(id)" />
+          :tone="badgeTone[id]" :restored="true" />
       </div>
     </section>
     <p class="garage-vfx-message" role="status">{{ locale === 'zh-TW' ? '特效僅改變外觀，不影響速度、獎勵或舊有車漆。' : 'Cosmetics only. Speed, rewards and existing paints are unchanged.' }}</p>

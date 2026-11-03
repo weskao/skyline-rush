@@ -9,6 +9,7 @@ export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.
 
 // One reusable GPU pool keeps airflow, sparks and landing dust bounded.
 const COUNT = 480;
+export const RING_POOL_CAPACITY = 48; // densest 900 m view of one colour: 18 with trains and rows (tests/ring-rows.test.js)
 
 export function createEffects(scene, roadCenter) {
   const particles = Array.from({ length: COUNT }, () => ({ life: 0 }));
@@ -102,7 +103,7 @@ export function createEffects(scene, roadCenter) {
   for (let i = 0; i < pickupGeometry.attributes.position.count; i++) tint.setHSL(i / pickupGeometry.attributes.position.count, 1, 0.6).toArray(pickupRainbow, i * 3);
   pickupGeometry.setAttribute('color', new THREE.BufferAttribute(pickupRainbow, 3));
   // One instanced pool per material, each warmed by its parked instance (marker-pool.js); capacity covers the densest 900 m view.
-  const ringPool = createMarkerPool('Race rings', ringGeometry, ringMaterials, 48), pickupPool = createMarkerPool('Nitro pickups', pickupGeometry, pickupMaterials, 128);
+  const ringPool = createMarkerPool('Race rings', ringGeometry, ringMaterials, RING_POOL_CAPACITY), pickupPool = createMarkerPool('Nitro pickups', pickupGeometry, pickupMaterials, 128);
   const gates = ringPool.group, pickups = pickupPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap(), rivalCues = createRivalCues();
   scene.add(gates, pickups);
   // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.

@@ -47,7 +47,8 @@ const colors = computed(() => ({
   background: radial-gradient(circle, hsl(var(--badge-hue) 70% 49% / .15), transparent 67%);
 }
 .garage-badge-art-frame :deep(.artwork-img) {
-  display: block; width: var(--art-width); height: var(--art-height); object-fit: contain;
+  display: block; width: var(--art-width); height: var(--art-height); max-width: 100%; max-height: 100%;
+  object-fit: contain; object-position: center; image-rendering: auto;
   filter: drop-shadow(0 0 5px hsl(var(--badge-hue) 90% 65% / .28));
 }
 .garage-badge-card figcaption {

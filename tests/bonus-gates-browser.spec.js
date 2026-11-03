@@ -29,9 +29,23 @@ for (const [name, viewport, hasTouch] of [
     });
     await expect(page.locator('#item-status')).toContainText('EMP');
     await expect(page.locator('#activate-item')).toBeEnabled();
+    // The EMP runs 1.5 s and the car drives on, banking the next mystery ring, whose held icon replaces the EMP's (CI
+    // showed "ITEM READY · GHOST"). In the activating event (this listener runs after the game's own) stretch the
+    // effect for the screenshot and judge the icon in-page on the next frame, instead of polling from the test.
+    await page.evaluate(() => {
+      const slot = document.querySelector('#item-slot'), icon = slot.querySelector('.item-emp');
+      const hold = () => {
+        const car = window.gameplay.race.player;
+        if (!(car.effects.emp > 0) || window.empIconShown !== undefined) return;
+        car.effects.emp = 30;
+        // Queued after the game's own next frame, so its HUD update has run.
+        requestAnimationFrame(() => { window.empIconShown = !car.heldItem && slot.dataset.item === 'emp' && getComputedStyle(icon).display !== 'none'; });
+      };
+      addEventListener('click', hold); addEventListener('keydown', hold);
+    });
     if (hasTouch) await page.locator('#activate-item').tap();
     else await page.keyboard.press('q');
-    await expect(page.locator('#item-icon .item-emp')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.empIconShown), 'the EMP icon is drawn while it runs').toBe(true);
     await page.screenshot({ path: `artifacts/item-rules/${name}-emp.png` });
     expect(await page.evaluate(() => window.gameScene.renderer.info.programs.length)).toBe(before);
     await page.locator('#pause-button').click();

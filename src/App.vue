@@ -13,6 +13,7 @@ import { releaseView } from './release-view-state.ts';
 import { setupInputModality } from './input-modality.ts';
 import TutorialCoach from './TutorialCoach.vue';
 import SettingsPanel from './SettingsPanel.vue';
+import HudSettings from './HudSettings.vue';
 import ControlsPanel from './ControlsPanel.vue';
 import CircuitSettings from './CircuitSettings.vue';
 import HistoryPanel from './HistoryPanel.vue';
@@ -75,6 +76,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <small class="vfx-note" data-i18n="vfx.comfortNote">Comfort removes flashes, shake, afterimages and blur. System reduced-motion preferences are always respected.</small>
         <label><span data-i18n="vfx.haptics">Haptic feedback</span> <input type="checkbox" data-vfx="haptics"></label>
         <details class="vfx-tuning"><summary data-i18n="vfx.tuning">Fine tuning</summary><label v-for="([label, min, max, step], key) in VFX_RANGES" class="vfx-range"><span :data-i18n="vfxLabelKey(key)">{{ label }}</span><output :for="`vfx-${key}`"></output><input :id="`vfx-${key}`" :aria-label="String(label)" :data-i18n-aria-label="vfxLabelKey(key)" :data-vfx="key" type="range" :min="min" :max="max" :step="step"></label></details>
+        <HudSettings />
         <button id="vfx-reset" data-i18n="vfx.reset">Reset visual settings</button>
       </div>
     </details>
@@ -98,7 +100,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <section class="intro" id="intro" aria-labelledby="intro-title">
       <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
-      <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just</span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
+      <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just </span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
       <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
       <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
         <div class="race-mode-heading"><span data-i18n="mode.step.mode">1 · Mode</span><small id="mode-description"></small></div>
@@ -190,9 +192,9 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </section>
       <div class="intro-actions">
         <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button></div>
+        <button type="button" class="text-button garage-button" id="garage-button"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
         <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
-        <button class="text-button garage-button" id="garage-button" data-i18n="nav.garage">Garage</button>
+        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
       </div>
       <!-- Reserve space for the camera controls in compact layouts. -->
