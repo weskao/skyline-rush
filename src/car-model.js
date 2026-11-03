@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canopy, carShell } from './geometry.ts';
 import { LIFT_PORTS } from './effects.js';
 import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail } from './roadster-fidelity.js';
+import { EXTRA_RACE_STYLES, TRAFFIC_STYLES } from './vehicle-fleet-styles.js';
 const box = new THREE.BoxGeometry(1, 1, 1);
 
 export function material(color, metalness = 0, roughness = 0.7) {
@@ -87,6 +88,7 @@ export const CAR_STYLES = {
       return block(group, m.black, 0, 1.66, 2, 2.3, 0.07, 0.46);
     },
   },
+  ...EXTRA_RACE_STYLES,
   // Traffic: upright commuter shape so racers stand out.
   commuter: {
     color: '#8c99a4', glass: '#172e40', light: [3.5, 0.08, 0.12],
@@ -103,7 +105,15 @@ export const CAR_STYLES = {
       return block(group, m.black, 0, 1.18, 1.99, 2.3, 0.07, 0.34);
     },
   },
+  ...TRAFFIC_STYLES,
 };
+
+// Explicit race-grid order: YOU uses roadster, the seven opponents each have a unique body.
+export const RIVAL_CAR_STYLES = [
+  CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.vega,
+  CAR_STYLES.pulse, CAR_STYLES.comet, CAR_STYLES.rift,
+];
+export const TRAFFIC_CAR_STYLES = [CAR_STYLES.commuter, CAR_STYLES.crossover, CAR_STYLES.hatch];
 
 const detailedTireGeometry = new THREE.CylinderGeometry(0.44, 0.44, 0.27, 32);
 const detailedRimGeometry = new THREE.CylinderGeometry(0.32, 0.32, 0.285, 32);
@@ -162,7 +172,7 @@ export function makeCar(style, color = style.color) {
     : material(style.glass, 0.85, 0.16);
   const light = new THREE.MeshBasicMaterial({ color: new THREE.Color(...style.light) });
   const white = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 2.1, 2.6) });
-  block(group, black, 0, 0.48, 0, 2.08, 0.26, 4.38);
+  block(group, black, 0, 0.48, 0, 2.08, 0.26, style.chassisLength ?? 4.38);
   const body = new THREE.Mesh(style.body, paint);
   group.add(body, new THREE.Mesh(style.cabin, glass));
   const wing = style.trim(group, { paint, black, light, white });

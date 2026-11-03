@@ -3,7 +3,7 @@
 Spec: [2026-11-03-roadster2-vehicle-fidelity-design.md](../specs/2026-11-03-roadster2-vehicle-fidelity-design.md)
 
 ## Constraints
-Feature branch only, created at `develop` b34b1bfc; no PR / merge / deploy. Do not change simulation, collision or VFX ports. Use the existing Three.js model factory and share geometric resources. Treat reference photos as artistic reference only, not exact engineering CAD.
+Feature branch only, created at `develop` b34b1bfc; no PR / merge / deploy. Do not change simulation, collision or VFX ports. Use the existing Three.js model factory and share geometric resources. Treat reference photos (`docs/designs/roadster2-reference/`) as artistic reference only, not exact engineering CAD.
 
 ## Tasks
 1. **Characterization and RED** — `tests/roadster-fidelity.test.js` exercises 2026 silhouette, physical paint/glass, nose and side details, aerofoil travel, recessed exhaust at `REAR_PORTS`, four animatable wheels and non-Roadster regression. Run `node --test tests/roadster-fidelity.test.js` before implementation and record failure as evidence.

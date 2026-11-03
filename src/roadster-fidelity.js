@@ -108,7 +108,6 @@ const wheelSpokeShape = (() => {
 })();
 const wheelInset = new THREE.CylinderGeometry(.327, .327, .017, 40);
 const wheelHub = new THREE.CylinderGeometry(.075, .075, .027, 24);
-const frontBlade = new THREE.BoxGeometry(1.77, .028, .046);
 const nozzleCavityGeometry = new THREE.CylinderGeometry(.103,.115,.16,20,1,true);
 const nozzleBackGeometry = new THREE.CircleGeometry(.098,20);
 const nozzleRimGeometry = new THREE.TorusGeometry(.13,.025,8,24);
@@ -172,6 +171,65 @@ function aerofoil() {
   return mesh;
 }
 
+// A curved cross-car sheet preserves the white/graphite wedge line instead of
+// reading as a flat bumper box. Front faces -Z; rear faces +Z.
+const sculptedPanel = (front) => {
+  const xs = [-1.05,-.86,-.65,-.32,0,.32,.65,.86,1.05];
+  const vertices = [], faces = [];
+  for (const x of xs) {
+    const edge = Math.abs(x) / 1.05;
+    const z = front ? -2.49 + .19 * edge * edge : 2.41 - .12 * edge * edge;
+    const high = front ? .66 + .035 * edge : .88 + .035 * (1-edge);
+    const low = front ? .46 + .045 * edge : .64 + .025 * edge;
+    vertices.push(x, high, z, x, low, z);
+  }
+  for (let i = 0; i < xs.length - 1; i++) {
+    const a = i * 2, b = a + 1, d = a + 2, e = a + 3;
+    faces.push(...(front ? [a,d,b,b,d,e] : [a,b,d,b,e,d]));
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices,3));
+  geometry.setIndex(faces);
+  geometry.computeVertexNormals();
+  return geometry;
+};
+const frontFascia = sculptedPanel(true);
+const rearFascia = sculptedPanel(false);
+const cornerIntakes = new Map();
+function cornerIntake(side) {
+  if (!cornerIntakes.has(side)) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute([
+      side*.74,.535,-2.435, side*1.00,.545,-2.315,
+      side*.945,.465,-2.285, side*.76,.455,-2.435,
+    ], 3));
+    geometry.setIndex(side < 0 ? [0,1,2,0,2,3] : [0,2,1,0,3,2]);
+    geometry.computeVertexNormals();
+    cornerIntakes.set(side, geometry);
+  }
+  return cornerIntakes.get(side);
+}
+
+const cornerLamps = new Map();
+function lampGeometry(side, lens) {
+  const key = `${side}:${lens ? 'light' : 'pocket'}`;
+  if (!cornerLamps.has(key)) {
+    const vertices = lens ? [
+      side*.878,.689,-2.253, side*.993,.686,-2.195,
+      side*.949,.633,-2.323,
+    ] : [
+      side*.840,.750,-2.170, side*1.035,.760,-2.080,
+      side*.950,.560,-2.370,
+    ];
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    geometry.setIndex(side < 0 ? [0,2,1] : [0,1,2]);
+    geometry.computeVertexNormals();
+    cornerLamps.set(key,geometry);
+  }
+  return cornerLamps.get(key);
+}
+
 export function addRoadsterWheelDetail(wheel, side) {
   const inset = new THREE.Mesh(wheelInset, graphite);
   inset.rotation.z = Math.PI / 2;
@@ -195,24 +253,27 @@ export function addRoadsterTrim(group, m) {
   const nose = new THREE.Mesh(new THREE.BoxGeometry(1.86,.095,.055),graphite);
   nose.position.set(0,.57,-2.47);
   group.add(nose);
-  const blade = new THREE.Mesh(frontBlade,m.white);
-  blade.position.set(0,.616,-2.51);
-  blade.name = 'Roadster front light blade';
-  group.add(blade);
+  const noseSurface = new THREE.Mesh(frontFascia, graphite);
+  noseSurface.name = 'Roadster sculpted front fascia';
+  group.add(noseSurface);
+  line(group, [
+    [-.87,.625,-2.470],[-.44,.622,-2.522],[0,.625,-2.534],
+    [.44,.622,-2.522],[.87,.625,-2.470],
+  ],.011,m.white,'Roadster front light blade');
   for (const side of [-1,1]) {
     line(group,[
       [side*.51,.595,-2.38], [side*.69,.70,-1.98],
       [side*.83,.81,-1.54], [side*.88,.94,-1.20],
     ],.008,m.paint,'Roadster hood crease');
     group.add(rocker(side));
+    const intake = new THREE.Mesh(cornerIntake(side), satinCarbon);
+    intake.name = 'Roadster corner intake';
+    group.add(intake);
     // Recessed triangular corner lamps echo the angled nose of the reference prototype.
-    const triangle = new THREE.BufferGeometry();
-    triangle.setAttribute('position', new THREE.Float32BufferAttribute([
-      side * .84, .75, -2.17, side * 1.035, .76, -2.08,
-      side * .95, .56, -2.37,
-    ], 3));
-    triangle.computeVertexNormals();
-    const headlamp = new THREE.Mesh(triangle, headlampMaterial);
+    const pocket = new THREE.Mesh(lampGeometry(side,false), graphite);
+    pocket.name = 'Roadster headlamp pocket';
+    group.add(pocket);
+    const headlamp = new THREE.Mesh(lampGeometry(side,true), headlampMaterial);
     headlamp.name = 'Roadster triangular headlamp';
     group.add(headlamp);
     line(group,[
@@ -226,9 +287,13 @@ export function addRoadsterTrim(group, m) {
   group.add(rearLight.group);
   group.userData.rearLight = rearLight;
 
-  const fascia = new THREE.Mesh(new THREE.BoxGeometry(2.07,.26,.052),graphite);
-  fascia.position.set(0,.75,2.395);
+  const fascia = new THREE.Mesh(rearFascia, graphite);
+  fascia.name = 'Roadster curved rear fascia';
   group.add(fascia);
+  line(group, [
+    [-1.02,1.061,2.305],[-.58,1.063,2.366],[0,1.064,2.394],
+    [.58,1.063,2.366],[1.02,1.061,2.305],
+  ],.013,silver,'Roadster rear light edge');
   const plate = new THREE.Mesh(new THREE.BoxGeometry(.40,.14,.035),silver);
   plate.position.set(0,.79,2.443);
   group.add(plate);

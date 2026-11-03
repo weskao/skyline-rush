@@ -12,6 +12,12 @@ const SHAPES = {
   commuter: { triangles: 978, box: [-1.25, 0.02, -2.38, 1.25, 1.6225, 2.28] },
 };
 
+// New models have structural budgets rather than the exact old triangle snapshot.
+// Baseline styles remain pinned to their original exact counts and envelopes.
+const NEW_FLEET = new Set(['vega', 'pulse', 'comet', 'rift', 'crossover', 'hatch']);
+const FLEET_TRIANGLES = [400, 2800];
+const FLEET_ENVELOPE = [-1.4, 0, -2.8, 1.4, 2, 2.8];
+
 const triangles = car => {
   let count = 0;
   car.traverse(o => { if (o.isMesh) count += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
@@ -33,14 +39,14 @@ for (const [name, style] of Object.entries(CAR_STYLES)) {
     const count = triangles(car);
     const box = new THREE.Box3().setFromObject(car);
     const actualBounds = [...box.min.toArray(), ...box.max.toArray()];
-    if (name === 'roadster') {
-      const [minTriangles, maxTriangles] = SHAPES[name].triangles;
+    if (name === 'roadster' || NEW_FLEET.has(name)) {
+      const [minTriangles, maxTriangles] = name === 'roadster' ? SHAPES[name].triangles : FLEET_TRIANGLES;
       assert.ok(count >= minTriangles && count <= maxTriangles,
-        `sculpted Roadster must stay within its triangle budget, got ${count}`);
-      const [minX,minY,minZ,maxX,maxY,maxZ] = SHAPES[name].box;
+        `${name} must stay within its triangle budget, got ${count}`);
+      const [minX,minY,minZ,maxX,maxY,maxZ] = name === 'roadster' ? SHAPES[name].box : FLEET_ENVELOPE;
       assert.ok(actualBounds[0] >= minX && actualBounds[1] >= minY && actualBounds[2] >= minZ);
       assert.ok(actualBounds[3] <= maxX && actualBounds[4] <= maxY && actualBounds[5] <= maxZ,
-        'new visual geometry must stay within shared vehicle envelope');
+        `${name} must remain in the existing collision-envelope space`);
     } else {
       assert.equal(count, SHAPES[name].triangles);
       actualBounds.forEach((v, i) => assert.ok(Math.abs(v - SHAPES[name].box[i]) < 1e-4, `bounds[${i}]`));
