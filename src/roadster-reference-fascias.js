@@ -40,26 +40,33 @@ const upperTailSlot = curvedSheet(rearXs,
 const whiteTail = curvedSheet(rearXs,
   edge => .875 + .018*edge, edge => .724 + .045*edge,
   edge => 2.464 - .145*edge*edge);
-// A triangulated bumper with actual circular holes prevents the black shell
-// from hiding the four recessed dark nozzle backs. Rim rings cap each hole.
-const valanceOutline = new THREE.Shape();
-valanceOutline.moveTo(-1.05,.38);
-valanceOutline.lineTo(1.05,.38);
-valanceOutline.lineTo(1.05,.80);
-valanceOutline.lineTo(-1.05,.80);
-valanceOutline.closePath();
-for (const port of REAR_PORTS) {
-  const hole = new THREE.Path();
-  hole.absarc(port.position[0], port.position[1], .135, 0, Math.PI*2, true);
-  valanceOutline.holes.push(hole);
+// The carbon lower valance and slightly proud black port bank use genuine
+// cutouts. The NITRO mount coordinates are shared with the game VFX.
+function perforatedRear(width, low, high, radius, frontZ, curvature) {
+  const outline = new THREE.Shape();
+  outline.moveTo(-width,low);
+  outline.lineTo(width,low);
+  outline.lineTo(width,high);
+  outline.lineTo(-width,high);
+  outline.closePath();
+  for (const port of REAR_PORTS) {
+    const hole = new THREE.Path();
+    hole.absarc(port.position[0],port.position[1],radius,0,Math.PI*2,true);
+    outline.holes.push(hole);
+  }
+  const geometry = new THREE.ShapeGeometry(outline,16);
+  const points = geometry.getAttribute('position');
+  for (let i=0; i<points.count; i++) {
+    const edge = points.getX(i)/width;
+    points.setZ(i,frontZ-curvature*edge*edge);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
 }
-const lowerValance = new THREE.ShapeGeometry(valanceOutline,14);
-const valancePoints = lowerValance.getAttribute('position');
-for (let i=0; i<valancePoints.count; i++) {
-  const edge = valancePoints.getX(i) / 1.05;
-  valancePoints.setZ(i, 2.44 - .155*edge*edge);
-}
-lowerValance.computeVertexNormals();
+const lowerValance = perforatedRear(1.05,.38,.80,.119,2.44,.155);
+const portBank = perforatedRear(.85,.508,.785,.115,2.474,.083);
+const bankDark = new THREE.MeshStandardMaterial({ color: '#080b0e', metalness: .31, roughness: .42 });
+const edgeCarbon = new THREE.MeshStandardMaterial({ color: '#363b3b', metalness: .38, roughness: .36 });
 
 // A black rear quarter flows out of the white rear wheel shoulder into the
 // deeper diffuser. Keep its leading edge behind the animated rear wheel.
@@ -95,6 +102,15 @@ export function addReferenceRear(group, materials, trace) {
   add(group, upperTailSlot, dark, 'Roadster black rear light recess');
   add(group, whiteTail, materials.paint, 'Roadster curved rear fascia');
   add(group, lowerValance, carbon, 'Roadster curved rear valance');
+  add(group, portBank, bankDark, 'Roadster machined four-port surround');
+  trace(group, [
+    [-.85,.797,2.39],[-.48,.809,2.458],[0,.814,2.486],
+    [.48,.809,2.458],[.85,.797,2.39],
+  ],.009,edgeCarbon,'Roadster port bank upper lip');
+  trace(group, [
+    [-.84,.485,2.39],[-.45,.492,2.459],[0,.494,2.486],
+    [.45,.492,2.459],[.84,.485,2.39],
+  ],.009,edgeCarbon,'Roadster port bank lower lip');
   for (const panel of rearQuarterCuts) add(group,panel,carbon,'Roadster rear quarter carbon cut');
   trace(group, [
     [-1.02,1.074,2.318],[-.58,1.083,2.38],[0,1.086,2.424],
