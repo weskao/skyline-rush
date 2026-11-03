@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   MONSOON_RUINS_COURSE as course,
   sampleMonsoonRoute,
+  sampleMonsoonEdge,
+  monsoonEdgeLength,
   monsoonWetContact,
   monsoonObstacleHit,
   monsoonAvoidance,
@@ -77,6 +79,28 @@ test('ordered checkpoints gate the finish and cannot be skipped by flying', () =
   assert.equal(monsoonCanFinish(course.length - 1, passed), false);
   for (const edge of course.branches) {
     assert.ok(gates.some(n => n > edge.to), edge.id + ' must rejoin before checkpoint');
+  }
+});
+
+
+test('each edge has a physical arc-length coordinate distinct from course progress', () => {
+  for (const edgeId of ['ground', ...course.branches.map(edge => edge.id)]) {
+    const length = monsoonEdgeLength(edgeId);
+    const branch = course.branches.find(edge => edge.id === edgeId);
+    const first = sampleMonsoonEdge(edgeId, 0);
+    const last = sampleMonsoonEdge(edgeId, length);
+    assert.ok(length > 100 && Number.isFinite(length));
+    const from = branch?.from ?? 0;
+    const to = branch?.to ?? course.length;
+    assert.ok(separation(first.point, sampleMonsoonRoute(edgeId, from).point) < 0.1);
+    assert.ok(separation(last.point, sampleMonsoonRoute(edgeId, to).point) < 0.1);
+    for (let s = 0; s < length - 30; s += 30) {
+      const next = sampleMonsoonEdge(edgeId, s + 20);
+      const current = sampleMonsoonEdge(edgeId, s);
+      const displacement = separation(next.point, current.point);
+      assert.ok(displacement > 14 && displacement <= 20.5,
+        edgeId + ' needs physical metres, not a fake distance axis');
+    }
   }
 });
 
