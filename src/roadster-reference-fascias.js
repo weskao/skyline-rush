@@ -32,7 +32,7 @@ const wedgeSkin = curvedSheet(frontXs,
   edge => -2.535 + .205*edge*edge, true);
 const lowerMouth = curvedSheet(frontXs.slice(1,-1),
   edge => .495 + .045*edge, edge => .392 + .06*edge,
-  edge => -2.55 + .20*edge*edge, true);
+  edge => -2.57 + .14*edge*edge, true);
 const upperTailSlot = curvedSheet(rearXs,
   edge => 1.073 - .015*edge, edge => .884 + .013*edge,
   edge => 2.426 - .115*edge*edge);
