@@ -102,6 +102,16 @@ test('Roadster reference front has a white wedge, tiny symmetric lamps, and a lo
   const bounds = new THREE.Box3().setFromObject(aperture[0]);
   assert.ok(bounds.max.x - bounds.min.x >= 1.4, 'front intake is wide and low');
   assert.ok(bounds.max.y - bounds.min.y <= 0.20, 'the grille is a thin lower mouth, not a tall smiling opening');
+  const skinPositions = front[0].geometry.getAttribute('position');
+  const grillePositions = aperture[0].geometry.getAttribute('position');
+  const faceZ = new Map();
+  for (let i = 0; i < skinPositions.count; i++)
+    faceZ.set(skinPositions.getX(i).toFixed(3), skinPositions.getZ(i));
+  for (let i = 0; i < grillePositions.count; i++) {
+    const x = grillePositions.getX(i).toFixed(3);
+    assert.ok(grillePositions.getZ(i) < faceZ.get(x) - .01,
+      'lower intake must remain visible in front of the painted nose even at the outer corners');
+  }
   const body = car.userData.body.geometry.attributes.position;
   const frontRings = [];
   for (let i = 0; i < body.count; i++)
