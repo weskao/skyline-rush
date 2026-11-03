@@ -11,8 +11,11 @@ test('a newer served build reloads the intro once, never in a loop', async ({ pa
     const body = (await response.text()).replace(/assets\/index-[^"]+\.js/, 'assets/index-NEWBUILD.js');
     return route.fulfill({ response, body });
   });
+  // Register before navigation: the update check can reload before page.goto() resolves.
+  let mainFrameNavigations = 0;
+  page.on('framenavigated', frame => { if (frame === page.mainFrame()) mainFrameNavigations++; });
   await page.goto('/');
-  await page.waitForEvent('load'); // the reload the stale check triggers
+  await expect.poll(() => mainFrameNavigations).toBeGreaterThanOrEqual(2); // initial load + actual reload
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await expect.poll(() => fetches).toBeGreaterThanOrEqual(2); // the reloaded page checked again…
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
