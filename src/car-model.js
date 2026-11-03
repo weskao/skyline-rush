@@ -128,7 +128,10 @@ function mergeStaticParts(group, style, moving) {
   }));
   mergedParts.get(style).forEach((geometry, i) => {
     group.remove(...parts[i]);
-    group.add(new THREE.Mesh(geometry, parts[i][0].material));
+    const merged = new THREE.Mesh(geometry, parts[i][0].material);
+    // Retain semantic detail labels even when draw-call batching collapses multiple meshes.
+    merged.userData.mergedPartNames = parts[i].map(part => part.name).filter(Boolean);
+    group.add(merged);
   });
 }
 
