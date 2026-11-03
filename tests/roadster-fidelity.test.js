@@ -215,3 +215,15 @@ test('a continuous dark four-port surround stays open at each jet, with curved t
   assert.ok(between.intersectObject(frame[0],false).length > 0,
     'continuous black frame must exist between the two central holes');
 });
+
+test('rear diffuser guides are sculpted swept fins, not five rectangular bricks', () => {
+  const detail = rawTrim();
+  const fins = named(detail, 'Roadster diffuser vane');
+  assert.equal(fins.length, 5, 'preserve five evenly spaced aerodynamic channels');
+  const sharedGeometry = fins[0].geometry;
+  assert.ok(fins.every(fin => fin.geometry === sharedGeometry), 'share immutable vane geometry');
+  assert.notEqual(sharedGeometry.type, 'BoxGeometry', 'rear reference fins have a tapered swept profile');
+  const box = new THREE.Box3().setFromBufferAttribute(sharedGeometry.getAttribute('position'));
+  assert.ok(box.max.z - box.min.z >= .42, 'fins reach toward the diffuser trailing edge');
+  assert.ok(box.max.y - box.min.y >= .24, 'fins have visible lower channel depth');
+});
