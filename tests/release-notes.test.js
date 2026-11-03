@@ -27,10 +27,15 @@ test('a release newer than the version the player last saw shows once and record
   assert.equal(shouldAnnounce(release, store), true, 'unreadable record counts as older');
 });
 
-test('no announcement without notes', () => {
+test('no announcement without a release; a release with no highlights follows the same seen-version rules', () => {
   const store = storage();
   assert.equal(shouldAnnounce(null, store), false);
-  assert.equal(shouldAnnounce({ version: '1.0.0', highlights: [] }, store), false);
+  const empty = { version: '1.0.0', highlights: [] };
+  assert.equal(shouldAnnounce(empty, store), true, 'no record');
+  store.setItem(NOTES_SEEN_KEY, '0.9.0');
+  assert.equal(shouldAnnounce(empty, store), true, 'older record');
+  store.setItem(NOTES_SEEN_KEY, '1.0.0');
+  assert.equal(shouldAnnounce(empty, store), false, 'same version');
 });
 
 test('blocked localStorage never crashes and never reopens the notes on every load', () => {

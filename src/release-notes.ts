@@ -53,8 +53,8 @@ export const CURRENT_RELEASE = recentReleases()[0] ?? null;
 
 // Shows when the player last saw an older version, or has no record at all (first visit, incognito, cleared storage).
 // Blocked storage cannot remember the visit, so it stays silent rather than reopening on every load; unreleased notes never pop up.
-export function shouldAnnounce(release: Pick<ReleaseEntry, 'version' | 'highlights'> | null, storage?: ReleaseStore | null): boolean {
-  if (!release?.highlights?.length || release.version === UPCOMING || !storage) return false;
+export function shouldAnnounce(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): boolean {
+  if (!release || release.version === UPCOMING || !storage) return false;
   let seen;
   try { seen = storage.getItem(NOTES_SEEN_KEY); } catch { return false; }
   return seen == null || compareVersions(release.version, seen) > 0;
