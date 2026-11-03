@@ -119,10 +119,21 @@ function mergeStaticParts(group, style, moving) {
   }
   const parts = [...byMaterial.values()].filter(meshes => meshes.length > 1);
   if (!mergedParts.has(style)) mergedParts.set(style, parts.map(meshes => {
+    // GeometryUtils requires identical attributes; procedural detail meshes
+    // may lack UVs while primitives have them. UVs are unused by these solid
+    // materials, so give only the missing meshes a matching zero UV stream.
+    const needsUv = meshes.some(mesh => mesh.geometry.hasAttribute('uv'));
     const geometry = mergeGeometries(meshes.map(mesh => {
       mesh.updateMatrix();
-      return mesh.geometry.clone().applyMatrix4(mesh.matrix);
+      const transformed = mesh.geometry.clone().applyMatrix4(mesh.matrix);
+      if (needsUv && !transformed.hasAttribute('uv')) {
+        transformed.setAttribute('uv', new THREE.Float32BufferAttribute(
+          new Float32Array(transformed.attributes.position.count * 2), 2,
+        ));
+      }
+      return transformed;
     }));
+    if (!geometry) throw new Error('Incompatible static car mesh attributes');
     geometry.userData.mergedCarParts = true;
     return geometry;
   }));
