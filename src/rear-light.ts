@@ -15,7 +15,8 @@ interface RearLightRace {
 export function createRearLight() {
   const group = new THREE.Group();
   group.name = 'Continuous rear LED';
-  group.position.set(0, 0.95, 2.38);
+  group.position.set(0, 0.986, 2.477);
+  // A broad black inset and hairline LED sit ahead of the sculpted white rear shelf.
   // Keep the bar level while its depth follows the rear fascia's shallow curve.
   function strip(height: number) {
     const geometry = new THREE.PlaneGeometry(2.08, height, 32, 1);
@@ -24,17 +25,17 @@ export function createRearLight() {
     geometry.computeVertexNormals();
     return geometry;
   }
-  const panel = new THREE.Mesh(strip(0.14), new THREE.MeshStandardMaterial({ color: '#030405', metalness: 0.65, roughness: 0.12 }));
+  const panel = new THREE.Mesh(strip(0.195), new THREE.MeshStandardMaterial({ color: '#030405', metalness: 0.65, roughness: 0.12 }));
   panel.name = 'Rear LED black panel';
   panel.position.z = -0.03;
   group.add(panel);
   const lights = new THREE.Group();
   group.add(lights);
-  const core = new THREE.Mesh(strip(0.026), new THREE.MeshStandardMaterial({
+  const core = new THREE.Mesh(strip(0.017), new THREE.MeshStandardMaterial({
     color: '#c63b31', emissive: '#ff3030', emissiveIntensity: 1, metalness: 0.15, roughness: 0.22,
   }));
   core.name = 'Rear LED core';
-  const glow = new THREE.Mesh(strip(0.22), new THREE.ShaderMaterial({
+  const glow = new THREE.Mesh(strip(0.19), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     uniforms: { power: { value: 1 } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
