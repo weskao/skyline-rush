@@ -83,3 +83,9 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
 
 Review this checklist whenever adding tracks, changing road geometry, car models,
 collision handling, camera-follow behavior or vehicle visual effects.
+
+→ Read `docs/classic-road-minimap.md` before changing track centrelines, route previews/markers,
+Coast scenery, render pacing, or anything that changes track length, checkpoints or saved
+best-time/Ghost data. Road geometry, car pose, collision, steering, AI/traffic or a prop drawn on
+the road → also `world-tour.md` ("Solid props", "Shared collision physics"). Record unrun checks
+as pending.
