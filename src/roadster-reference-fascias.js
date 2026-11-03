@@ -6,7 +6,25 @@ import { REAR_PORTS } from './aero-vfx.js';
 const dark = new THREE.MeshStandardMaterial({ color: '#090d11', metalness: .25, roughness: .29 });
 const carbon = new THREE.MeshStandardMaterial({ color: '#172026', metalness: .3, roughness: .37 });
 const slitGeometry = new THREE.BoxGeometry(.105, .014, .018);
-const rearVaneGeometry = new THREE.BoxGeometry(.035, .29, .42);
+// Five shared swept fences sculpt the deep diffuser channels visible from
+// straight behind and from the rear quarter, without adding new draw calls.
+const rearVaneGeometry = (() => {
+  const profile = [[-.155,-.24],[-.035,-.24],[.145,-.07],[.12,.20],[-.155,.25]];
+  const vertices = [], indices = [];
+  for (const x of [-.0175,.0175]) for (const [y,z] of profile) vertices.push(x,y,z);
+  for (let i = 1; i < profile.length-1; i++) {
+    indices.push(0,i+1,i,profile.length,profile.length+i,profile.length+i+1);
+  }
+  for (let i = 0; i < profile.length; i++) {
+    const j = (i+1)%profile.length;
+    indices.push(i,j,profile.length+i,j,profile.length+j,profile.length+i);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+})();
 const frontXs = [-.88,-.72,-.52,-.24,0,.24,.52,.72,.88];
 const rearXs = [-1.05,-.90,-.67,-.34,0,.34,.67,.90,1.05];
 
