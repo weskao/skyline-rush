@@ -2,7 +2,7 @@
 // Vue shell owns event-driven panels; main.js keeps the legacy racing HUD and simulation loop.
 // Static text carries data-i18n / data-i18n-title / data-i18n-aria-label keys; applyI18n() (src/i18n.js) fills them per locale.
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.
-import { version } from '../package.json';
+import packageMeta from '../package.json' with { type: 'json' };
 import { RACE_TRACKS } from './game.js';
 import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
@@ -26,6 +26,7 @@ import RacePresentation from './RacePresentation.vue';
 import ItemRules from './ItemRules.vue';
 import ItemSlot from './ItemSlot.vue';
 
+const { version } = packageMeta;
 setupInputModality();
 
 const BASE_URL = import.meta.env.BASE_URL;

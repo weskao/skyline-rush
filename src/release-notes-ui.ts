@@ -5,6 +5,7 @@ import { getLocale, t, formatDate, SUPPORTED_LOCALES } from './i18n.ts';
 import { CURRENT_RELEASE, NOTES_SEEN_KEY, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind, type ReleaseVideo } from './release-notes.ts';
 import type { ReleaseClipView } from './ui-state-contracts.ts';
 import { createReleaseMediaCache } from './release-media-cache.ts';
+import { onUserActivation } from './user-activation.ts';
 
 // Pure keyboard navigation, independently testable without a DOM.
 export function releaseTabIndex(index: number, count: number, key: string): number | null {
@@ -115,6 +116,12 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     if (releaseDialog.open && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
     else video.pause();
   }
+  // iPhone refuses even a muted clip in Low Power Mode until the player touches the page: the first tap or key anywhere starts
+  // the hero where it is (as it starts the music), not only a tap on the clip, which enlarges it. An enlarged view keeps it waiting.
+  onUserActivation(() => {
+    if (releaseDialog.open && !reducedMotion.matches && !releaseDialog.querySelector('dialog[open]')
+      && document.querySelector<HTMLVideoElement>('#release-video')?.paused) syncReleaseVideo();
+  });
   function selectRelease(index: number): void {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
     renderReleaseNotes();
