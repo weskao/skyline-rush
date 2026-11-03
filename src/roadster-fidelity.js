@@ -92,16 +92,31 @@ const wheelSpokeShape = (() => {
 const wheelInset = new THREE.CylinderGeometry(.327, .327, .017, 40);
 const wheelHub = new THREE.CylinderGeometry(.075, .075, .027, 24);
 const frontBlade = new THREE.BoxGeometry(1.77, .028, .046);
+const nozzleCavityGeometry = new THREE.CylinderGeometry(.103,.115,.16,20,1,true);
+const nozzleBackGeometry = new THREE.CircleGeometry(.098,20);
+const nozzleRimGeometry = new THREE.TorusGeometry(.13,.025,8,24);
+const diffuserVaneGeometry = new THREE.BoxGeometry(.035,.28,.39);
+const wingStrutGeometry = new THREE.BoxGeometry(.052,.34,.09);
+const wingEndplateGeometry = new THREE.BoxGeometry(.065,.18,.49);
+const pathGeometry = new Map();
+const rockerGeometry = new Map();
 
 function line(parent, points, radius, mat, name) {
   const path = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)));
-  const mesh = new THREE.Mesh(new THREE.TubeGeometry(path, 14, radius, 5, false), mat);
+  const key = points.flat().join(',') + ':' + radius;
+  if (!pathGeometry.has(key)) pathGeometry.set(key, new THREE.TubeGeometry(path, 14, radius, 5, false));
+  const mesh = new THREE.Mesh(pathGeometry.get(key), mat);
   mesh.name = name;
   parent.add(mesh);
   return mesh;
 }
 
 function rocker(side) {
+  if (rockerGeometry.has(side)) {
+    const saved = new THREE.Mesh(rockerGeometry.get(side), satinCarbon);
+    saved.name = 'Roadster sculpted rocker';
+    return saved;
+  }
   const w = side * 1.15, thickness = -.085 * side;
   const outline = [
     [w,.29,-.86], [w,.275,.91], [w,.58,.88], [w,.56,-.83],
@@ -115,6 +130,7 @@ function rocker(side) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
   geo.setIndex(faces);geo.computeVertexNormals();
+  rockerGeometry.set(side, geo);
   const mesh = new THREE.Mesh(geo,satinCarbon);
   mesh.name='Roadster sculpted rocker';
   return mesh;
@@ -193,7 +209,7 @@ export function addRoadsterTrim(group, m) {
   diffuser.position.set(0,.22,2.20);
   group.add(diffuser);
   for (const x of [-.84,-.47,0,.47,.84]) {
-    const vane = new THREE.Mesh(new THREE.BoxGeometry(.035,.28,.39),satinCarbon);
+    const vane = new THREE.Mesh(diffuserVaneGeometry,satinCarbon);
     vane.position.set(x,.18,2.19);
     vane.name='Roadster diffuser vane';
     group.add(vane);
@@ -202,11 +218,11 @@ export function addRoadsterTrim(group, m) {
     const assembly = new THREE.Group();
     assembly.position.set(port.position[0],port.position[1],2.43);
     assembly.name='Roadster recessed thruster';
-    const cavity=new THREE.Mesh(new THREE.CylinderGeometry(.103,.115,.16,20,1,true),graphite);
+    const cavity=new THREE.Mesh(nozzleCavityGeometry,graphite);
     cavity.rotation.x=Math.PI/2; cavity.position.z=.01;
-    const dark=new THREE.Mesh(new THREE.CircleGeometry(.098,20),graphite);
+    const dark=new THREE.Mesh(nozzleBackGeometry,graphite);
     dark.position.z=-.074;
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(.13,.025,8,24),bronze);
+    const ring=new THREE.Mesh(nozzleRimGeometry,bronze);
     ring.position.z=.095;
     assembly.add(cavity,dark,ring);
     group.add(assembly);
@@ -216,10 +232,10 @@ export function addRoadsterTrim(group, m) {
   wing.name='Roadster active wing';
   wing.add(aerofoil());
   for (const side of [-1,1]) {
-    const strut=new THREE.Mesh(new THREE.BoxGeometry(.052,.34,.09),graphite);
+    const strut=new THREE.Mesh(wingStrutGeometry,graphite);
     strut.position.set(side*.71,-.19,-.015);
     wing.add(strut);
-    const endplate=new THREE.Mesh(new THREE.BoxGeometry(.065,.18,.49),satinCarbon);
+    const endplate=new THREE.Mesh(wingEndplateGeometry,satinCarbon);
     endplate.position.set(side*1.13,.005,-.006);
     wing.add(endplate);
   }
