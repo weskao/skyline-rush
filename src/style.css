@@ -1874,7 +1874,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .upcoming-track-card .upcoming-route-image { display: block; width: 100%; height: 100%; object-fit: contain; opacity: .9; }
 .intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
 .intro #start-button { width: 236px; min-width: 236px; max-width: 236px; gap: 8px; }
-.intro #start-button > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .06em; }
+.intro #start-button > span { letter-spacing: .06em; }
 @media (max-width: 760px) {
   .upcoming-scene img { top: 15%; right: 3%; width: 94vw; opacity: .45; }
   .intro #start-button { width: 210px; min-width: 210px; max-width: 210px; }
@@ -1887,3 +1887,8 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .track-route-map[data-theme="frostbite-canyon"],.race-route-map[data-theme="frostbite-canyon"]{
  --map-line:#b9dcf2;--map-bg:#16294a;--map-edge:#4f86b3;--map-player:#effaff;
 }
+/* Start keeps its size: a label wider than the panel wraps to at most two lines inside the button instead of widening it into the panel's clip. */
+.intro #start-button { max-width: 100%; }
+.intro #start-button > span { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; line-height: 1.1; }
+.intro #start-button > svg { flex: none; }
+.airflow-active[data-phase="ready"] #start-button { max-width: calc(100vw - 80px); }
