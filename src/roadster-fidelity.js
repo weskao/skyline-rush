@@ -83,7 +83,6 @@ export function roadsterCanopy() {
   return loft(rings, false);
 }
 
-const silver = new THREE.MeshStandardMaterial({ color: '#adb6ba', metalness: .88, roughness: .25 });
 const graphite = new THREE.MeshStandardMaterial({ color: '#0a1116', metalness: .35, roughness: .3 });
 const satinCarbon = new THREE.MeshStandardMaterial({ color: '#222b31', metalness: .2, roughness: .37 });
 const headlampMaterial = new THREE.MeshStandardMaterial({ color: '#d1eff3', emissive: '#9abfc8', emissiveIntensity: .9, roughness: .2, side: THREE.DoubleSide });
@@ -280,7 +279,7 @@ export function addRoadsterTrim(group, m) {
     endplate.position.set(side*1.13,.005,-.006);
     wing.add(endplate);
   }
-  wing.position.set(0,1.08,1.98);
+  wing.position.set(0,1.08,2.14);
   wing.userData={restY:1.08,lift:.34};
   group.add(wing);
   return wing;
