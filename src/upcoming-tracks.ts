@@ -1,3 +1,5 @@
+import { STAGE2_TRACKS, isStage2Track, type Stage2TrackId } from './stage2-tracks.ts';
+
 /** Stage 1 concept-only tracks. Do not add these IDs to the simulation race registry. */
 export const UPCOMING_TRACKS = Object.freeze({
   'dune-tempest': {
@@ -23,10 +25,14 @@ export const UPCOMING_TRACKS = Object.freeze({
 } as const);
 
 export type UpcomingTrackId = keyof typeof UPCOMING_TRACKS;
+/** Any preview-only Coming Soon id: a Stage 1 card or a gated Stage 2 preview. */
+export type PreviewTrackId = UpcomingTrackId | Stage2TrackId;
 export type HomeTrackStatus = 'coming-soon' | 'locked' | 'unlocked';
 export const isUpcomingTrack = (id: string): id is UpcomingTrackId => Object.hasOwn(UPCOMING_TRACKS, id);
-export const upcomingTrackName = (id: UpcomingTrackId, locale: string): string =>
-  UPCOMING_TRACKS[id].names[locale === 'zh-TW' ? 'zh-TW' : 'en'];
+export const upcomingTrackInfo = (id: PreviewTrackId) =>
+  isStage2Track(id) ? STAGE2_TRACKS[id] : UPCOMING_TRACKS[id];
+export const upcomingTrackName = (id: PreviewTrackId, locale: string): string =>
+  upcomingTrackInfo(id).names[locale === 'zh-TW' ? 'zh-TW' : 'en'];
 export function homeTrackStatus(id: string, unlocked: ReadonlySet<string>): HomeTrackStatus {
   return isUpcomingTrack(id) ? 'coming-soon' : unlocked.has(id) ? 'unlocked' : 'locked';
 }

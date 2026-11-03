@@ -1,19 +1,21 @@
 import * as THREE from 'three';
 import { makeCar, CAR_STYLES } from './car-model.js';
 import { createAeroVFX } from './aero-vfx.js';
-import { showcaseCameraPose } from './track-preview.ts';
+import { showcaseCameraPose, type CameraPose } from './track-preview.ts';
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
 import type { PaintPreset } from './appearance.ts';
-import type { UpcomingTrackId } from './upcoming-tracks.ts';
+import type { PreviewTrackId } from './upcoming-tracks.ts';
 
 export type UpcomingEnvironment = {
   group: THREE.Group;
   update(timeSeconds: number, quality: 'low' | 'medium' | 'high', reducedMotion: boolean): void;
   dispose(): void;
+  /** Optional authored drive-view pose (e.g. an airborne shot); FOV stays 50°, other views unchanged. */
+  readonly cameraPose?: CameraPose | null;
 };
 export type UpcomingEnvironmentFactory = (scene: THREE.Scene) => UpcomingEnvironment;
 type Stage = {
-  id: UpcomingTrackId;
+  id: PreviewTrackId;
   scene: THREE.Scene;
   environment: UpcomingEnvironment;
   cars: THREE.Group[];
@@ -22,7 +24,7 @@ type Stage = {
 
 /** A scene host, not a renderer: uses the game's camera, composer and frame clock. */
 export function createUpcomingShowcase(
-  factories: Partial<Record<UpcomingTrackId, UpcomingEnvironmentFactory>>,
+  factories: Partial<Record<PreviewTrackId, UpcomingEnvironmentFactory>>,
   environmentTexture: THREE.Texture,
 ) {
   let stage: Stage | null = null;
@@ -69,7 +71,7 @@ export function createUpcomingShowcase(
     car.userData.lightColor.fromArray(next.light);
   }
 
-  function setTrack(id: UpcomingTrackId | null): boolean {
+  function setTrack(id: PreviewTrackId | null): boolean {
     if (stage?.id === id) return true;
     disposeStage();
     const factory = id && factories[id];
@@ -118,7 +120,8 @@ export function createUpcomingShowcase(
       rival.position.set((i - 2) * 4.5, i === 1 ? 4.5 : .06, -16 - i * 10);
       rival.userData.jets.visible = i === 1 && !calm;
     }
-    const pose = showcaseCameraPose(stage.id, settings.view, calm ? 0 : time, camera.aspect < .78);
+    const pose = settings.view === 'drive' && stage.environment.cameraPose
+      || showcaseCameraPose(stage.id, settings.view, calm ? 0 : time, camera.aspect < .78);
     camera.fov = 50;
     camera.position.set(pose.cameraSide, player.position.y + pose.cameraHeight, pose.cameraBack);
     camera.lookAt(pose.lookSide, pose.lookHeight, -pose.lookAhead);
@@ -132,7 +135,7 @@ export function createUpcomingShowcase(
 
   return {
     get scene(): THREE.Scene | null { return stage?.scene ?? null; },
-    get activeTrack(): UpcomingTrackId | null { return stage?.id ?? null; },
+    get activeTrack(): PreviewTrackId | null { return stage?.id ?? null; },
     setTrack, setPaint, update,
     dispose(): void { disposeStage(); },
   };

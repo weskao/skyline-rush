@@ -19,8 +19,8 @@ export const BOUNDS = { minX: 780, maxX: 2020, minZ: -2620, maxZ: -1700, cell: 8
 
 /**
  * Glacier heightfield around the Rift Spine. Roads are carved from the same `sampleRoute` frames as
- * contact; the chasm axis is perpendicular to the ice bridge with a narrow ice saddle under the
- * lower road and deep crevasse (≈ -70 m) to either side. Walls rise with distance from any road.
+ * contact; the chasm axis is perpendicular to the ice bridge, ≈145 m below the deck, and the lower
+ * road crosses it on its own narrow carved ice causeway. Walls rise with distance from any road.
  */
 export function createGlacierField(graph: CourseGraph, edges: readonly HeroEdge[], chasm: { center: THREE.Vector3; along: THREE.Vector3 }) {
   const samples: RoadSample[] = [];
@@ -44,10 +44,10 @@ export function createGlacierField(graph: CourseGraph, edges: readonly HeroEdge[
   function natural(x: number, z: number, roadDistance: number): number {
     const dx = x - chasm.center.x, dz = z - chasm.center.z;
     const d = Math.abs(dx * across.x + dz * across.z), t = Math.abs(dx * chasm.along.x + dz * chasm.along.z);
-    const floor = lerp(38, -70, smooth(55, 210, t)) + ridgeNoise(x * 2, z * 2) * 3;
-    const rise = Math.min(185, Math.max(0, roadDistance - 55) * 1.25) * (0.8 + .2 * ridgeNoise(x, z));
+    const floor = -75 + ridgeNoise(x * 2, z * 2) * 6 + smooth(200, 420, t) * 20;
+    const rise = Math.min(120, Math.max(0, roadDistance - 70) * 1.0) * (0.8 + .2 * ridgeNoise(x, z));
     const rim = 70 + rise + Math.max(0, roadDistance - 30) * .02 * ridgeNoise(z, x) * 30;
-    return lerp(floor, rim, smooth(62 + ridgeNoise(z, x) * 8, 140, d));
+    return lerp(floor, rim, smooth(150 + ridgeNoise(z, x) * 12, 232, d));
   }
 
   function height(x: number, z: number): number {
@@ -60,8 +60,11 @@ export function createGlacierField(graph: CourseGraph, edges: readonly HeroEdge[
       if (e < carveDistance) { carveDistance = e; carve = p; }
     }
     nearest = Math.min(nearest, carveDistance + (carve?.half ?? 0));
-    const k = carve ? smooth(5, 30, carveDistance) : 1;
-    return lerp(carve ? carve.y - .9 : 0, natural(x, z, nearest), k);
+    const ground = natural(x, z, nearest);
+    if (!carve) return ground;
+    const roadBed = carve.y - .9;
+    // Cuts blend over 30 m (canyon walls); fills drop within 12 m so a ledge never fills the chasm.
+    return lerp(roadBed, ground, ground < roadBed ? smooth(3, 12, carveDistance) : smooth(5, 30, carveDistance));
   }
 
   function geometry(): THREE.BufferGeometry {
@@ -79,8 +82,8 @@ export function createGlacierField(graph: CourseGraph, edges: readonly HeroEdge[
   return { height, geometry, samples };
 }
 
-const SNOW = new THREE.Color('#eef6ff'), ICE = new THREE.Color('#6cc4ef'), DEEP_ICE = new THREE.Color('#1f6fb8');
-const ROCK = new THREE.Color('#1a2440'), VOID = new THREE.Color('#0a1d3f');
+const SNOW = new THREE.Color('#bcd4ee'), ICE = new THREE.Color('#4a9fd8'), DEEP_ICE = new THREE.Color('#164b8c');
+const ROCK = new THREE.Color('#121a30'), VOID = new THREE.Color('#06122c');
 
 /** Snow on flats, translucent-looking blue ice on steep faces, dark bedrock streaks, cobalt depth. */
 function paintGlacier(geometry: THREE.BufferGeometry): void {

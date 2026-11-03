@@ -30,8 +30,25 @@ test('P01 hero: car-level CourseGraph road, glacier walls, ice arch, cyan crysta
   assert.equal(down(group, 0, -40)[0]?.object, road, 'road continues ahead of the car');
   const crystals = group.getObjectByName('cyan-crystals');
   assert.ok(crystals.isInstancedMesh && crystals.count >= 24 && crystals.material.transparent, 'translucent crystal field');
-  const arch = new THREE.Box3().setFromObject(group.getObjectByName('ice-arch'));
-  assert.ok(arch.max.y > 25 && arch.min.x > 6, 'monumental arch stands right of the road, off the driving line');
+  const archGroup = group.getObjectByName('ice-arch'), arch = new THREE.Box3().setFromObject(archGroup);
+  assert.ok(arch.max.y - arch.min.y > 40, 'monumental arch');
+  const { routeLength, sampleRoute } = await import('../src/course-route-frame.ts');
+  const world = group.getObjectByName('frostbite-world'), feet = [], v = new THREE.Vector3();
+  const centre = arch.getCenter(new THREE.Vector3()).applyMatrix4(world.matrixWorld.clone().invert());
+  let nearest = null;
+  for (let s = 0; s < routeLength(FROSTBITE_CANYON_GRAPH, 'riverbed-hairpin'); s += 4) {
+    const f = sampleRoute(FROSTBITE_CANYON_GRAPH, 'riverbed-hairpin', s), d = Math.hypot(f.point[0] - centre.x, f.point[2] - centre.z);
+    if (!nearest || d < nearest.d) nearest = { d, f };
+  }
+  const lateral = (centre.x - nearest.f.point[0]) * nearest.f.right[0] + (centre.z - nearest.f.point[2]) * nearest.f.right[2];
+  assert.ok(lateral > 15, `arch stands on the right of the road (outside of the bend), lateral ${lateral.toFixed(0)} m`);
+  archGroup.traverse(o => { if (!o.isMesh) return; const p = o.geometry.getAttribute('position');
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); if (v.y < 8) feet.push(v.clone()); } });
+  const edge = FROSTBITE_CANYON_GRAPH.edges.find(e => e.id === 'riverbed-hairpin');
+  for (let s = 0; s < routeLength(FROSTBITE_CANYON_GRAPH, edge.id); s += 4) {
+    const c = new THREE.Vector3(...sampleRoute(FROSTBITE_CANYON_GRAPH, edge.id, s).point).applyMatrix4(world.matrixWorld);
+    for (const f of feet) assert.ok(Math.hypot(f.x - c.x, f.z - c.z) > edge.width / 2 + 2, 'arch legs stay off the driving line');
+  }
   const terrain = new THREE.Box3().setFromObject(group.getObjectByName('glacier-terrain'));
   assert.ok(terrain.max.y > 60 && terrain.min.y < -40, 'towering walls and a deep glacial chasm');
   const aurora = group.getObjectByName('aurora');
@@ -40,16 +57,19 @@ test('P01 hero: car-level CourseGraph road, glacier walls, ice arch, cyan crysta
   dispose();
 });
 
-test('P02 shot puts the car on the ice-bridge deck above the chasm, with rails and the lower road beneath', async () => {
+test('P02 shot flies the car on the authored rift-flight edge over the chasm, bridge below-right, landing ahead', async () => {
   const { group, setShot, dispose } = await makeEnvironment();
   setShot('p02');
-  const bridge = group.getObjectByName('ice-bridge');
-  assert.equal(down(group, 0, 0)[0]?.object, bridge, 'car rests on the bridge deck');
-  const width = FROSTBITE_CANYON_GRAPH.edges.find(e => e.id === 'rift-ice-bridge').width;
-  const beside = down(group, width / 2 + 12, 0, 10);
-  assert.ok(beside.length && beside[0].point.y < -20, 'deep void beside the deck');
+  const below = down(group, 0, 0, -1);
+  assert.ok(!below.length || below[0].point.y < -25, `airborne: open void beneath the car, got ${below[0]?.point.y}`);
+  const bridge = new THREE.Box3().setFromObject(group.getObjectByName('ice-bridge'));
+  assert.ok(bridge.max.y < -8 && bridge.max.x > 10, 'ice bridge spans below and to the right of the flight line');
   const rails = new THREE.Box3().setFromObject(group.getObjectByName('bridge-rails'));
-  assert.ok(rails.max.y > 0.6, 'visible rails, never invisible walls');
+  assert.ok(rails.max.y - bridge.max.y > .6, 'visible rails, never invisible walls');
+  const landing = new THREE.Box3().setFromObject(group.getObjectByName('landing-merge'));
+  assert.ok(landing.max.z < -40 && landing.max.y < 0, 'readable landing target ahead and below');
+  const terrain = down(group, 0, -60, -1)[0];
+  assert.ok(!terrain || terrain.point.y < -60, 'deep glacial chasm under the flight path');
   setShot('p01');
   assert.equal(down(group, 0, 0)[0]?.object, group.getObjectByName('ground-road'));
   assert.throws(() => setShot('nope'), /Unknown Frostbite shot/);

@@ -23,7 +23,7 @@ const AURORA_FRAGMENT = `
   varying vec2 vUv;
   void main() {
     float rays = 0.55 + 0.45 * sin(vUv.x * 140.0 + sin(vUv.x * 13.0 + uTime * 0.31 + uPhase) * 5.0);
-    float base = smoothstep(0.0, 0.12, vUv.y) * pow(1.0 - vUv.y, 1.6);
+    float base = smoothstep(0.0, 0.12, vUv.y) * pow(clamp(1.0 - vUv.y, 0.0, 1.0), 1.6);
     float edge = smoothstep(0.0, 0.08, vUv.x) * smoothstep(1.0, 0.92, vUv.x);
     vec3 color = mix(uLow, uHigh, smoothstep(0.25, 0.95, vUv.y));
     float alpha = clamp(base * edge * rays * uStrength, 0.0, 1.0);

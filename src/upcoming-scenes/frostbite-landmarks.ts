@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CourseGraph } from '../course-graph.ts';
 import { routeLength, sampleRoute } from '../course-route-frame.ts';
 
@@ -13,13 +14,17 @@ export function routeOffset(graph: CourseGraph, edgeId: string, s: number, later
 
 /** Hexagonal prism with a pointed tip: the faceted crystal silhouette from View 01. */
 function crystalGeometry(): THREE.BufferGeometry {
-  const profile = [new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(.92, .72), new THREE.Vector2(0, 1)];
-  return new THREE.LatheGeometry(profile, 6);
+  // Open hex prism + hex tip (base is sunk into the snow); analytic unit normals, no axis-degenerate faces.
+  const prism = new THREE.CylinderGeometry(.92, 1, .72, 6, 1, true).translate(0, .36, 0);
+  const tip = new THREE.ConeGeometry(.92, .28, 6, 1, true).translate(0, .86, 0);
+  const geometry = mergeGeometries([prism, tip])!;
+  prism.dispose(); tip.dispose();
+  return geometry;
 }
 
 export function crystalMaterial(emissiveIntensity: number): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({
-    color: '#86ecff', emissive: '#16a6d0', emissiveIntensity, roughness: .1, metalness: .05,
+    color: '#45d4ff', emissive: '#0896cf', emissiveIntensity, roughness: .1, metalness: .05,
     transparent: true, opacity: .8, flatShading: true, envMapIntensity: 1.6,
   });
 }
@@ -63,7 +68,7 @@ export function crystalSentinels(graph: CourseGraph, height: Height, edgeId: str
 export function iceArch(graph: CourseGraph, height: Height, edgeId: string, s: number, lateral: number): THREE.Group {
   const group = new THREE.Group();
   group.name = 'ice-arch';
-  const a = routeOffset(graph, edgeId, s, lateral), b = routeOffset(graph, edgeId, s + 90, lateral + 8);
+  const a = routeOffset(graph, edgeId, s, lateral), b = routeOffset(graph, edgeId, s + 75, lateral + 6);
   const span = a.distanceTo(b), center = a.clone().add(b).multiplyScalar(.5);
   const base = Math.min(height(a.x, a.z), height(b.x, b.z)) - 2;
   const arc = new THREE.TorusGeometry(span / 2, 8.5, 9, 30, Math.PI);
@@ -85,7 +90,7 @@ export function iceArch(graph: CourseGraph, height: Height, edgeId: string, s: n
   group.add(rock, crust, snowCap);
   group.position.set(center.x, base, center.z);
   group.rotation.y = Math.atan2(-(b.z - a.z), b.x - a.x);
-  group.scale.y = 1.35;
+  group.scale.y = 1.15;
   return group;
 }
 
@@ -170,8 +175,8 @@ export function edgeReflectors(graph: CourseGraph, slices: readonly { id: string
 export function flightGuide(graph: CourseGraph, flightId: string, landingEdgeId: string): { arc: THREE.Mesh; landing: THREE.InstancedMesh } {
   const length = routeLength(graph, flightId), points: THREE.Vector3[] = [];
   for (let i = 0; i <= 40; i++) points.push(routeOffset(graph, flightId, length * i / 40, 0, 1.2));
-  const cyan = new THREE.MeshBasicMaterial({ color: '#50fcff', transparent: true, opacity: .55, depthWrite: false });
-  const arc = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 120, .35, 5, false), cyan);
+  const cyan = new THREE.MeshBasicMaterial({ color: '#50fcff', transparent: true, opacity: .4, depthWrite: false });
+  const arc = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 120, .14, 5, false), cyan);
   arc.name = 'flight-arc';
   const landing = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, .06, 4.2), cyan, 6);
   for (let i = 0; i < 6; i++) {

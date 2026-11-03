@@ -19,7 +19,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage } from './garage-stage.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
-import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts'; import { createCircuitScene } from './circuit-scene.ts';
+import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts'; import { STAGE2_ENVIRONMENTS } from '@stage2-environments'; import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
@@ -116,7 +116,7 @@ export function createWorld(canvas) {
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
   room.dispose();
   env.dispose();
-  const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture);
+  const upcomingStage = createUpcomingShowcase({ ...UPCOMING_ENVIRONMENTS, ...STAGE2_ENVIRONMENTS }, environment.texture);
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
   scene.add(ambient);
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);

@@ -1,5 +1,6 @@
 import { CIRCUIT_ID } from './circuit-track.ts';
-import { UPCOMING_TRACKS, homeTrackStatus, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
+import { homeTrackStatus, upcomingTrackInfo, upcomingTrackName, type PreviewTrackId, type UpcomingTrackId } from './upcoming-tracks.ts';
+import { stage2PreviewRequest } from './stage2-tracks.ts';
 import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
@@ -36,7 +37,7 @@ interface RaceSelectOptions {
   clearControls(): void;
   cueUi(): void;
   reducedMotion: MediaQueryList;
-  showUpcoming3D(id: UpcomingTrackId | null): boolean;
+  showUpcoming3D(id: PreviewTrackId | null): boolean;
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
 const LAST_TRACK_KEY = 'skyline-rush-last-track';
@@ -51,7 +52,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const ruleInputs = (): HTMLInputElement[] => [...document.querySelectorAll<HTMLInputElement>('[data-race-rule]')];
   let selectedMode = 'classic';
   // Preview-only selection is deliberately separate from the playable Race state.
-  let upcomingSelection: UpcomingTrackId | null = null;
+  let upcomingSelection: PreviewTrackId | null = null;
   const raceRules: Record<RuleKey, unknown> = { ...DEFAULT_RULES };
   const cupCount = (): number => Number($<HTMLSelectElement>('#cup-length').value);
   const eventLab = setupEventLabUI({ ...options, select: next => {
@@ -160,7 +161,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   function renderRouteInfo(race: Race): void {
     const daily = options.getDaily();
     const startButton = ui['start-button'] as HTMLButtonElement;
-    const upcoming = upcomingSelection ? UPCOMING_TRACKS[upcomingSelection] : null;
+    const upcoming = upcomingSelection ? upcomingTrackInfo(upcomingSelection) : null;
     const name = upcomingSelection ? upcomingTrackName(upcomingSelection, getLocale()) : trackName(race.trackId, getLocale());
     startButton.disabled = Boolean(upcoming) || (!daily && (!canRace(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount())));
     const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.unavailable' : 'start.race';
@@ -296,6 +297,11 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
     setRace(selectedRace(last && unlockedTracks.has(last) ? last : getRace().trackId));
   } catch { /* Classic on Coast stays the default without storage. */ }
+  // Gated Stage 2 showroom: dev / VITE_STAGE2_PREVIEW builds only; production compiles this to null.
+  if (import.meta.env.DEV || import.meta.env.VITE_STAGE2_PREVIEW) {
+    upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
+    if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
+  }
 
   return {
     recreate: eventLab.recreate,

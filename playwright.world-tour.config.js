@@ -3,7 +3,7 @@ const port = process.env.PLAYWRIGHT_PORT || '5183';
 if (!/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error('Invalid Playwright port');
 const baseURL = `http://127.0.0.1:${port}`;
 export default defineConfig({
- testDir:'./tests',testMatch:['**/world-tour-mid-race-browser.spec.js','**/world-tour-showcase-browser.spec.js','**/showcase-camera-views-browser.spec.js'],
+ testDir:'./tests',testMatch:['**/world-tour-mid-race-browser.spec.js','**/world-tour-showcase-browser.spec.js','**/showcase-camera-views-browser.spec.js','**/frostbite-canyon-browser.spec.js'],
  fullyParallel:true,workers:1, // one worker, but CI --shard splits by test instead of by file
  timeout:process.env.CI?180000:90000,
  expect:{timeout:20000},

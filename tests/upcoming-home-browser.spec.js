@@ -34,6 +34,15 @@ test('only Stage 1 home concepts are selectable; no fake race can start even by 
   await expect(page.locator('#start-button span')).toHaveText('LOCKED');
 });
 
+test('production ignores the Stage 2 preview URL: no Frostbite scene, Start stays playable', async ({ page }) => {
+  await page.goto('/?stage2-preview=frostbite-canyon&shot=p02');
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await expect(page.locator('#start-button')).toBeEnabled();
+  await expect(page.locator('#start-button span')).toHaveText('Start race');
+  await expect(page.locator('#track-length')).not.toContainText('PLANNED');
+  await expect(page.locator('[data-upcoming-track="frostbite-canyon"]')).toHaveCount(0);
+});
+
 test('CTA copy is translated without resizing its hit target', async ({ page }) => {
   await page.locator('[data-upcoming-track="dune-tempest"]').click();
   const button = page.locator('#start-button');

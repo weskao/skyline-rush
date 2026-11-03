@@ -1,6 +1,6 @@
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.ts';
 import { trackName, getLocale, t } from './i18n.ts';
-import { isUpcomingTrack, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
+import { isUpcomingTrack, upcomingTrackName, type PreviewTrackId } from './upcoming-tracks.ts';
 
 interface SwipeStart {
   button: number;
@@ -14,7 +14,7 @@ interface SwipeStart {
   width: number;
 }
 interface SwipeRace { phase: string; trackId: string }
-interface SwipeWorld { render(race: object, interpolation: number, time: number): void; setUpcomingTrack(id: UpcomingTrackId | null): boolean }
+interface SwipeWorld { render(race: object, interpolation: number, time: number): void; setUpcomingTrack(id: PreviewTrackId | null): boolean }
 interface SwipeOptions {
   getRace(): SwipeRace;
   getWorld(): SwipeWorld | null | undefined;
