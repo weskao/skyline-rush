@@ -45,35 +45,29 @@ function slab(plan, top, height) {
   return mergeVertices(geo);
 }
 
-// Photo 05 front: tall painted face, hairline blade, tall carbon band, low intake, splitter.
-// They span ~70% of the nose; white fender faces flank them. The centre stands proud and
-// the ends tuck back toward the flat -2.50 nose cap.
-const frontXs = [-.64,-.58,-.46,-.24,0,.24,.46,.58,.64];
-const noseZ = edge => -2.545 + .035*edge*edge;
-// The painted face fills the gap between the towers from the blade up to the hood edge,
-// raked back so its top meets the hood just ahead of the nose cap.
-const hoodLip = curvedSheet(frontXs.slice(1,-1), .64, () => .78, () => .586,
-  () => -2.503, true, edge => noseZ(edge) - .006);
-const lightBlade = curvedSheet(frontXs, .64, () => .586, () => .570, edge => noseZ(edge) - .004, true);
-const carbonBand = curvedSheet(frontXs, .64, () => .570, () => .455, noseZ, true);
-const lowerMouth = curvedSheet(frontXs, .64, () => .455, () => .365, edge => noseZ(edge) + .006, true);
-const splitter = slab([[-.88,-2.46],[.88,-2.46],[.84,-2.60],[.60,-2.655],[-.60,-2.655],[-.84,-2.60]], .345, .025);
+// Front (cfe958e3): white hood down to the hairline DRL; below it a satin-carbon band, a black
+// lower intake and a thin splitter. The band stops at x=±.80 so the white corner pillars stay,
+// and its shallow curve stays ahead of the body's flat front cap (z=-2.48).
+const satinCarbon = new THREE.MeshStandardMaterial({ color: '#222b31', metalness: .2, roughness: .37 });
+const frontXs = [-1.05,-.86,-.65,-.32,0,.32,.65,.86,1.05].map(x => x * .762);
+const frontFascia = curvedSheet(frontXs, .8, edge => .6 - .012*edge, edge => .385 + .03*edge,
+  edge => -2.497 + .012*edge*edge, true);
+const intakeSlot = new THREE.BoxGeometry(1.1,.07,.03).translate(0,.45,-2.505);
+const splitter = new THREE.BoxGeometry(1.84,.028,.16).translate(0,.392,-2.5);
 
 // Mirrored triangle/quad: `side` picks the winding that faces the viewer on that side.
 const sideGeometry = (vertices, side) => indexed(vertices, vertices.length === 9
   ? (side < 0 ? [0,2,1] : [0,1,2])
   : (side < 0 ? [0,1,2,0,2,3] : [0,2,1,0,3,2]));
-// Inverted triangular lamps sit in each fender face right above the blade's ends, under the
-// tower top, apex toward the outer edge; a hairline dark bezel instead of a heavy frame.
+// Recessed triangular corner lamps echo the angled nose of the reference prototype.
 const lampPockets = [-1,1].map(side => sideGeometry([
-  side*.592,.712,-2.504, side*.80,.733,-2.504, side*.731,.594,-2.504,
+  side*.840,.750,-2.170, side*1.035,.760,-2.080, side*.950,.560,-2.370,
 ], side));
 const lampLenses = [-1,1].map(side => sideGeometry([
-  side*.60,.705,-2.508, side*.79,.725,-2.508, side*.73,.605,-2.508,
+  side*.878,.689,-2.253, side*.993,.686,-2.195, side*.949,.633,-2.323,
 ], side));
-// Dark lower corners fill the chamfered nose like the carbon feet in photo 05.
 const cornerIntakes = [-1,1].map(side => sideGeometry([
-  side*.64,.355,-2.506, side*.76,.355,-2.506, side*.895,.455,-2.506, side*.64,.455,-2.506,
+  side*.74,.535,-2.435, side*1.00,.545,-2.315, side*.945,.465,-2.285, side*.76,.455,-2.435,
 ], side));
 
 // Photo 01 rear: slot recess, protruding white shelf, recessed white scoop with plate,
@@ -157,20 +151,21 @@ const add = (group, geometry, material, name) => {
 };
 
 export function addReferenceFront(group, materials, trace) {
-  add(group, hoodLip, materials.paint, 'Roadster sculpted front fascia');
-  add(group, lightBlade, materials.white, 'Roadster front light blade');
-  add(group, carbonBand, edgeCarbon, 'Roadster front carbon band');
-  add(group, lowerMouth, dark, 'Roadster black lower intake');
-  add(group, splitter, matteCarbon, 'Roadster carbon splitter');
+  add(group, frontFascia, satinCarbon, 'Roadster sculpted front fascia');
+  add(group, intakeSlot, dark, 'Roadster lower intake');
+  add(group, splitter, dark, 'Roadster front splitter');
+  trace(group, [
+    [-.87,.625,-2.470],[-.44,.622,-2.522],[0,.625,-2.534],
+    [.44,.622,-2.522],[.87,.625,-2.470],
+  ], .011, materials.white, 'Roadster front light blade');
   [-1,1].forEach((side, i) => {
-    add(group, cornerIntakes[i], dark, 'Roadster corner intake');
+    trace(group, [
+      [side*.51,.625,-2.38], [side*.69,.70,-1.98],
+      [side*.83,.81,-1.54], [side*.88,.94,-1.20],
+    ], .008, materials.paint, 'Roadster hood crease');
+    add(group, cornerIntakes[i], satinCarbon, 'Roadster corner intake');
     add(group, lampPockets[i], dark, 'Roadster headlamp pocket');
     add(group, lampLenses[i], headlampMaterial, 'Roadster triangular headlamp');
-    // Highlight the fold where the flat hood meets each raised fender.
-    trace(group, [
-      [side*.547,.794,-2.40], [side*.617,.819,-1.98],
-      [side*.664,.837,-1.55], [side*.678,.833,-1.32],
-    ], .006, materials.paint, 'Roadster hood crease');
   });
 }
 

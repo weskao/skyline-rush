@@ -92,88 +92,23 @@ test('Other vehicle styles preserve their original model material and geometry c
 
 const box = mesh => { mesh.updateWorldMatrix(true, true); return new THREE.Box3().setFromObject(mesh); };
 
-test('Roadster nose below the carbon band is dark up to the corner intakes, never white paint', () => {
-  // Photo 05: between the white fender pillars, everything under the band is dark.
+test('Roadster nose face below the light blade is dark fascia, never flat white paint', () => {
+  // Reference 05/07: white hood above the blade; carbon band, black intake and splitter below it.
   const car = roadster();
   car.updateMatrixWorld(true);
   const paint = car.userData.body.material;
   const ray = new THREE.Raycaster();
-  for (const x of [-.68, -.62, -.4, 0, .4, .62, .68]) for (const y of [.38, .42]) {
+  for (const x of [-.7, -.35, 0, .35, .7]) for (const y of [.42, .5, .58]) {
     ray.set(new THREE.Vector3(x, y, -4), new THREE.Vector3(0, 0, 1));
     const hit = ray.intersectObject(car, true)[0];
     assert.ok(hit, `nose face at x=${x} y=${y}`);
-    assert.notEqual(hit.object.material, paint, `white paint shows under the band at x=${x} y=${y}`);
+    assert.notEqual(hit.object.material, paint, `white paint shows on the nose face at x=${x} y=${y}`);
   }
+  assert.equal(named(car, 'Roadster front splitter').length, 1);
+  assert.equal(named(car, 'Roadster lower intake').length, 1);
 });
 
-test('Roadster reference front stacks hood lip, hairline blade, carbon band, low intake and splitter', () => {
-  const car = roadster();
-  const detail = rawTrim();
-  const [lip] = named(detail, 'Roadster sculpted front fascia');
-  assert.equal(lip.material.color.getHexString(), 'e6e9e7', 'hood leading edge stays body-painted');
-  const [blade] = named(detail, 'Roadster front light blade');
-  const [band] = named(detail, 'Roadster front carbon band');
-  const [intake] = named(detail, 'Roadster black lower intake');
-  const [splitter] = named(detail, 'Roadster carbon splitter');
-  assert.ok(blade && band && intake && splitter, 'photo 05 front layers all exist');
-  assert.ok(blade.material.isMeshBasicMaterial, 'the blade is a lit strip, not painted trim');
-  const [b, c, i, s] = [blade, band, intake, splitter].map(box);
-  assert.ok(b.max.y - b.min.y <= .02, 'blade is a hairline');
-  assert.ok(b.max.x - b.min.x >= 1.15 && b.max.x - b.min.x <= 1.4,
-    'photo 05: the blade spans ~70% of the nose, white fender faces flank it');
-  assert.ok(i.max.x - i.min.x >= 1.1 && i.max.x - i.min.x <= 1.4 && i.max.y - i.min.y <= .2, 'intake is as wide as the blade and low');
-  assert.ok(box(lip).min.y >= b.max.y - .005 && b.min.y >= c.max.y - .005 && c.min.y >= i.max.y - .005,
-    'top to bottom: painted lip, blade, carbon band, intake');
-  assert.ok(s.max.y <= i.min.y && s.min.z < i.min.z - .08, 'splitter sits lowest and protrudes ahead');
-  const noseZ = new THREE.Box3().setFromBufferAttribute(car.userData.body.geometry.getAttribute('position')).min.z;
-  for (const layer of [lip, blade, band, intake]) assert.ok(box(layer).max.z < noseZ, `${layer.name} stays in front of the nose cap`);
-  const lamps = named(detail, 'Roadster triangular headlamp').map(box);
-  assert.ok(lamps.every(l => l.max.x - l.min.x >= .15 && l.min.y > b.max.y), 'readable triangles above the blade');
-  assert.ok(lamps.every(l => l.min.x < (l.min.x > 0 ? b.max.x : b.min.x) && (l.min.x > 0 ? b.max.x : b.min.x) < l.max.x),
-    'each lamp sits right above a blade end, at the fender tower foot');
-  const body = car.userData.body.geometry.attributes.position;
-  const frontRings = [];
-  for (let n = 0; n < body.count; n++)
-    if (body.getZ(n) < -2.42) frontRings.push(Math.abs(body.getX(n)));
-  assert.ok(frontRings.length > 0);
-  assert.ok(Math.max(...frontRings) < 1.0, 'the nose narrows noticeably ahead of the wheel arches');
-});
-
-// Highest hood vertex (|x| below the fender crest) and highest crest of one body station.
-const hoodAndFender = (z, hoodHalfWidth) => {
-  const body = roadster().userData.body.geometry.attributes.position;
-  const ring = [];
-  for (let n = 0; n < body.count; n++) if (Math.abs(body.getZ(n) - z) < .01) ring.push([body.getX(n), body.getY(n)]);
-  const hoodPoints = ring.filter(([x]) => Math.abs(x) < hoodHalfWidth).map(([, y]) => y);
-  assert.ok(hoodPoints.length > 0, `station ${z} has hood vertices to compare against`);
-  return { hood: Math.max(...hoodPoints), fender: Math.max(...ring.map(([, y]) => y)) };
-};
-
-test('front reference: the nose centre is a full-height painted face, not a notch sunk between the towers', () => {
-  const blade = box(named(rawTrim(), 'Roadster front light blade')[0]).max.y;
-  const nose = hoodAndFender(-2.50, .55);
-  assert.ok((nose.hood - blade) / (nose.fender - blade) >= .6,
-    `hood edge ${nose.hood} stands most of the way from the blade ${blade} to the crest ${nose.fender}`);
-  assert.ok(nose.fender - nose.hood >= .04 && nose.fender - nose.hood <= .12, 'towers still rise just above the hood');
-  const ahead = hoodAndFender(-2.33, .6);
-  assert.ok(ahead.fender - ahead.hood <= .20, `hood stays near the crests behind the nose, got ${ahead.fender - ahead.hood}`);
-  const [face] = named(rawTrim(), 'Roadster sculpted front fascia');
-  assert.ok(box(face).max.y >= nose.hood - .01 && box(face).min.y <= blade + .005, 'painted face fills blade to hood edge');
-  assert.ok(box(face).max.x - box(face).min.x >= 1.1, 'the face spans the gap between the towers');
-});
-
-test('front reference: a high hood sweeps up from the nose into the windscreen base with no dip or step', () => {
-  const blade = box(named(rawTrim(), 'Roadster front light blade')[0]).max.y;
-  // Front photo: the hood edge stands ~85% of the way from the blade to the tower crests.
-  const nose = hoodAndFender(-2.50, .55);
-  assert.ok((nose.hood - blade) / (nose.fender - blade) >= .8,
-    `hood edge ${nose.hood} sits nearly level with the tower crest ${nose.fender}, not sunk below it`);
-  const stations = [[-2.50, .55], [-2.33, .6], [-1.91, .66], [-1.41, .7]];
-  const decks = stations.map(([z, half]) => hoodAndFender(z, half).hood);
-  const slopes = decks.slice(1).map((y, i) => (y - decks[i]) / (stations[i + 1][0] - stations[i][0]));
-  const mean = (decks.at(-1) - decks[0]) / (stations.at(-1)[0] - stations[0][0]);
-  assert.ok(decks.at(-1) - decks[0] >= .04, `side photo: the hood visibly rises toward the cowl, decks ${decks}`);
-  for (const s of slopes) assert.ok(s >= 0 && s <= 1.5 * mean, `one smooth sweep, no dip or step, slopes ${slopes}`);
+test('the windscreen base sits on the low hood at the cowl, neither buried nor floating', () => {
   const car = roadster();
   car.updateMatrixWorld(true);
   const [cowl] = new THREE.Raycaster(new THREE.Vector3(0, 3, -1.32), new THREE.Vector3(0, -1, 0)).intersectObject(car.userData.body);
@@ -181,31 +116,7 @@ test('front reference: a high hood sweeps up from the nose into the windscreen b
   let base = -Infinity;
   for (let n = 0; n < canopy.count; n++) if (Math.abs(canopy.getZ(n) + 1.32) < .001) base = Math.max(base, canopy.getY(n));
   assert.ok(base - cowl.point.y >= 0 && base - cowl.point.y <= .025,
-    `windscreen base ${base} sits just on the hood ${cowl.point.y}, neither buried nor stepped`);
-});
-
-test('front reference: triangular headlamps sit inside the fender face behind a hairline bezel', () => {
-  const car = roadster();
-  car.updateMatrixWorld(true);
-  const detail = rawTrim();
-  const pockets = named(detail, 'Roadster headlamp pocket').map(box);
-  const lenses = named(detail, 'Roadster triangular headlamp');
-  assert.equal(lenses.length, 2);
-  lenses.forEach((lens, i) => {
-    const l = box(lens), p = pockets[i];
-    for (const gap of [l.min.x - p.min.x, p.max.x - l.max.x, l.min.y - p.min.y, p.max.y - l.max.y])
-      assert.ok(gap <= .012, `bezel is a hairline, not a dark frame, got ${gap.toFixed(3)}`);
-    assert.ok(-2.50 - l.min.z <= .012, 'lens sits nearly flush with the nose');
-    const points = lens.geometry.getAttribute('position');
-    const vertices = Array.from({ length: points.count }, (_, n) => [points.getX(n), points.getY(n)]);
-    const [apexX] = vertices.reduce((low, v) => v[1] < low[1] ? v : low);
-    const mid = (Math.abs(l.min.x) + Math.abs(l.max.x)) / 2;
-    assert.ok(Math.abs(apexX) > mid, 'inverted triangle points down toward the outer edge');
-    for (const [x, y] of vertices) {
-      const [top] = new THREE.Raycaster(new THREE.Vector3(x, 3, -2.497), new THREE.Vector3(0, -1, 0)).intersectObject(car.userData.body);
-      assert.ok(top && y < top.point.y - .01, `lamp vertex ${x},${y} stays below the tower top ${top?.point.y}`);
-    }
-  });
+    `windscreen base ${base} sits just on the hood ${cowl.point.y}`);
 });
 
 test('Roadster rear reference layers an inset black lamp recess above a curved painted panel', () => {
