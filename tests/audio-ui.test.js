@@ -16,6 +16,6 @@ test('audio switches, sliders, Mute all and the autoplay unlock are wired by the
   for (const moved of [/audioSwitches/, /#mute-all/, /previewChannel/, /addEventListener\(type, unlockAudio/])
     assert.doesNotMatch(main, moved);
   const controller = readFileSync(new URL('../src/audio-ui.ts', import.meta.url), 'utf8');
-  for (const owned of [/\[data-audio\]/, /#mute-all/, /unlockAudio, \{ capture: true \}/])
+  for (const owned of [/\[data-audio\]/, /#mute-all/, /onUserActivation\(unlockAudio\)/])
     assert.match(controller, owned);
 });

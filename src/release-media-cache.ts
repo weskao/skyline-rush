@@ -10,7 +10,7 @@ interface ReleaseMediaCacheDeps {
 }
 
 export function createReleaseMediaCache(keep: ReadonlySet<string>, { caches, fetch, createObjectURL }: ReleaseMediaCacheDeps) {
-  // Object URLs live for the page lifetime: at most one per clip actually viewed (< 1 MB each).
+  // Object URLs live for the page lifetime: at most one per clip actually viewed (≤ 4 MB each).
   const urls = new Map<string, string>();
   const pending = new Map<string, Promise<string>>();
   let store: Promise<Cache | null> | null = null;

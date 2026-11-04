@@ -27,6 +27,8 @@ if (locked) {
   for (const marker of ['thruster-ion', 'thruster-plasma', 'thruster-void', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism', 'nitro-trail-cyan', 'nitro-trail-gold', 'nitro-trail-red', 'launch-flare-blue', 'launch-flare-ring', 'launch-flare-pulse', 'nitro-trail-purple', 'launch-flare-gold', 'launch-flare-red', 'launch-flare-cyan', 'launch-flare-magenta', 'launch-flare-white', 'live-shared-aero', 'Free trial', 'Ion thruster']) {
     RELEASE_LEAK_MARKERS[marker] = 'unreleased garage trial catalog/runtime';
   }
+  // Must equal SKIN_PICK_STORAGE_KEY in src/garage-skin-preference.ts (trial runtime only).
+  RELEASE_LEAK_MARKERS['skyline-rush-garage-skin-picks'] = 'garage skin pick storage (trial runtime)';
 }
 const assetLeak = locked && existsSync('dist/feature-assets/garage-vfx-skins')
   ? ['unreleased garage asset directory in dist/feature-assets/garage-vfx-skins'] : [];

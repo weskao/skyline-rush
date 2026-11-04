@@ -562,10 +562,10 @@ try {
     for (let step = 0; step < due.steps; step++) {
       stepRace(race, input, SIM_STEP);
       if (tutorial) {
-        tutorial.update(input, SIM_STEP);
-        if (tutorial.complete && race.phase === 'racing') {
-          race.phase = 'paused'; controls.clear();
-          try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
+        // Completion keeps the race live as a free cruise: pausing it froze the world and read as a crash.
+        const wasComplete = tutorial.complete; tutorial.update(input, SIM_STEP);
+        if (!wasComplete && tutorial.complete) {
+          phaseUI(); try { localStorage.setItem('skyline-rush-tutorial-completed', '1'); } catch { /* Practice works without storage. */ }
         }
       }
       if (!race.modifier && (['classic', 'time', 'custom', 'circuit'].includes(race.mode))) recordGhost(trace, race);

@@ -76,7 +76,7 @@ export function createInteractiveTutorial() {
     get coachPhase() { return maneuver?.phase ?? 'ready'; },
     get complete() { return index === TUTORIAL_STEPS.length; },
     update(input: unknown, dt: number): void {
-      if (index === TUTORIAL_STEPS.length || race.phase !== 'racing' || !Number.isFinite(dt) || dt <= 0 || race.elapsed <= previousElapsed) return;
+      if (race.phase !== 'racing' || !Number.isFinite(dt) || dt <= 0 || race.elapsed <= previousElapsed) return;
       previousElapsed = race.elapsed;
       const controls: TutorialInput = input && typeof input === 'object' ? input as TutorialInput : {};
       const step = TUTORIAL_STEPS[index];
@@ -87,6 +87,7 @@ export function createInteractiveTutorial() {
         held = 0;
         return;
       }
+      if (index === TUTORIAL_STEPS.length) return; // finished: a free cruise that only loops the road
       // Keep the braking exercise rolling while the learner reads its instructions.
       if (step === 'brake' && !car.braking && car.speed < 20) car.speed = 45;
       let valid = false;
