@@ -88,7 +88,9 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
   entry's **hero** clip autoplays inline, muted and looping, as soon as the notes open; it plays only while the
   notes are open and its version tab is shown, and a small corner button (or a tap on the clip) opens the
   enlarged view (`ReleaseMediaViewer.vue`). Under reduced motion the hero shows its poster with controls and
-  does not autoplay. A **highlight** clip never plays inline: the notes show its **poster** (a real-game still)
+  does not autoplay. Where the browser refuses autoplay (iPhone in Low Power Mode refuses even a muted clip),
+  the hero waits on its poster and starts inline on the player's first tap or key anywhere, the same touch that
+  starts the music. A **highlight** clip never plays inline: the notes show its **poster** (a real-game still)
   in the picture slot with a play button over it, and a tap opens the enlarged view, where the clip starts at
   once, looping muted. The enlarged hero carries on from the inline frame and hands its frame back on close.
   In the enlarged view a tap on the clip pauses and resumes it (a play badge marks the paused frame; Space
@@ -119,9 +121,9 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
 - **Auto-show** when the newest released entry is **newer** (numeric `major.minor.patch`) than the
   stored version. A stored version that is equal or newer stays silent; an unreadable value counts
   as older.
-- **No stored version**: a returning player (finished guide or saved race history) gets the notes;
-  a first-time player is not greeted with old news, and the current version is recorded silently
-  so the next release is announced to them.
+- **No stored version** (first visit, incognito window, cleared storage): the notes open on load,
+  exactly as for an older stored version; showing them records the version. Blocked storage and
+  unreleased (`UPCOMING`) notes stay silent.
 - The check runs on the ready/home screen once the 3D world is up, and again whenever another
   dialog closes. It defers behind dialogs, the tutorial and a hidden page.
 - **Showing the dialog records it**: the stored version moves to the newest release and the unread
@@ -190,7 +192,7 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
 
 ## 7. Tests
 
-- Unit (`tests/release-notes.test.js`): seen-version contract, first-time vs returning player,
+- Unit (`tests/release-notes.test.js`): seen-version contract, no record (first visit, incognito) is announced,
   blocked storage stays silent, numeric version order, newest-five window with future versions hidden, every
   entry complete with bundled images, release gate refuses a missing version, player copy check
 - Browser (`tests/release-announcements-browser.spec.js`): read/dismiss/reopen, no external link,

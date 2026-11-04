@@ -29,19 +29,30 @@ export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freez
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
   cosmic: { distance: 3700, landmark: 'cosmic-gate', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
+  // Stage 2 Frostbite home art direction (the playable registry remains unchanged).
+  'frostbite-canyon': { distance: 800, landmark: 'crystal-sentinels', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
 });
+/** Showcase dolly-out candidates (metres behind the base chase pose), nearest first: the first that fits wins. */
+export const SHOWCASE_BACKS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 20, 26, 32, 40];
 export const previewDistance = (id: string): number => HERO_PREVIEWS[id]?.distance ?? 340;
 export const isCuratedPreview = (id: string): boolean => !!HERO_PREVIEWS[id];
 
+/** Garage home pose buttons: ground / flight display pose and the opened airbrake wing. */
+export interface GaragePose { mode: 'ground' | 'flight'; wing: boolean }
+
 export function previewPlayer<T extends object>(
-  id: string, car: T, idleTime = 0, reducedMotion = false, groundedShowcase = false,
+  id: string, car: T, idleTime = 0, reducedMotion = false, groundedShowcase = false, pose: GaragePose | null = null,
 ) {
   // Curated World Tour views differ in landmark framing, never in AIRFLOW pose:
   // every existing or future track rests on its own road when AIRFLOW is on.
+  // An explicit Garage pose outranks AIRFLOW; the wing opens through the car's own airbrake state.
+  const grounded = pose ? pose.mode === 'ground' : groundedShowcase;
   return { ...car,
-    altitude:groundedShowcase ? 0
+    altitude:grounded ? 0
       : 1.6+(reducedMotion?0:Math.sin(idleTime*1.1)*.12),
-    thrusting:!groundedShowcase&&!reducedMotion,
+    thrusting:!grounded&&!reducedMotion,
+    ...(pose?.wing ? { braking: true } : null),
   };
 }
 
@@ -79,7 +90,7 @@ export function showcaseCameraPose(id: string, view = 'drive', time = 0, portrai
   const angle = view === 'orbit' ? time * .18 : ({front:Math.PI,rear:0,left:-Math.PI/2,right:Math.PI/2} as Partial<Record<string, number>>)[view];
   if (angle === undefined) return drive;
   // Landscape aims 4 m to the camera's left, so the car sits right of the home panel as in the drive shot.
-  const aim = portrait ? 0 : 4;
-  return { cameraSide:Math.sin(angle)*9, cameraBack:Math.cos(angle)*9,
-    cameraHeight:3.6, lookSide:-Math.cos(angle)*aim, lookAhead:-Math.sin(angle)*aim, lookHeight:2.4 };
+  // Portrait aims at the car itself: a literal 0, since -cos(angle)*0 is -0.
+  return { cameraSide:Math.sin(angle)*9, cameraBack:Math.cos(angle)*9, cameraHeight:portrait ? 3.9 : 3.6,
+    lookSide:portrait ? 0 : -Math.cos(angle)*4.25, lookAhead:portrait ? 0 : -Math.sin(angle)*4.25, lookHeight:2.4 };
 }

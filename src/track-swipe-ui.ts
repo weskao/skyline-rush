@@ -1,5 +1,6 @@
-import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from './track-swipe.ts';
+import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, liveSwipeStep, addSwipeSample, releaseVelocity } from './track-swipe.ts';
 import { trackName, getLocale, t } from './i18n.ts';
+import { isUpcomingTrack, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
 
 interface SwipeStart {
   button: number;
@@ -13,7 +14,7 @@ interface SwipeStart {
   width: number;
 }
 interface SwipeRace { phase: string; trackId: string }
-interface SwipeWorld { render(race: object, interpolation: number, time: number): void }
+interface SwipeWorld { render(race: object, interpolation: number, time: number): void; setUpcomingTrack(id: UpcomingTrackId | null): boolean }
 interface SwipeOptions {
   getRace(): SwipeRace;
   getWorld(): SwipeWorld | null | undefined;
@@ -23,10 +24,14 @@ interface SwipeOptions {
   isTutorialActive(): boolean;
   isEditingLayout(): boolean;
   touchMatches(): boolean;
+  getSelectedTrackId(): string;
 }
 type SwipeSample = [number, number];
 interface DragState { id: number; x: number; y: number; axis: 'x' | 'y' | null; samples: SwipeSample[] }
 interface WheelState { dx: number; spent: boolean; stamp: number; timer?: ReturnType<typeof setTimeout> }
+
+/** The existing carousel handles playable and preview-only cards with one ordering. */
+export const swipeTrackId = (button: Pick<HTMLButtonElement, 'dataset'>): string => button.dataset.track ?? button.dataset.upcomingTrack ?? '';
 
 /** Keep swipe initiation rules testable; edge gestures belong to the OS on touch screens. */
 export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dialogOpen, pointerType, clientX, width }: SwipeStart): boolean {
@@ -34,7 +39,7 @@ export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dia
     (pointerType === 'mouse' || (clientX >= SWIPE_EDGE_PX && clientX <= width - SWIPE_EDGE_PX));
 }
 
-export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches }: SwipeOptions) {
+export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
   const worldCanvas = $<HTMLCanvasElement>('#world');
@@ -45,16 +50,19 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   let swipeBusy = false;
   let swipeChipTimer: ReturnType<typeof setTimeout> | undefined;
   let swipeHintSeen = false;
-  const swipeTracks = (): HTMLButtonElement[] => Array.from(document.querySelectorAll<HTMLButtonElement>('[data-track]:not(:disabled)'));
-  const swipeNeighbour = (step: number): HTMLButtonElement | undefined => { const tracks = swipeTracks(); return tracks[tracks.findIndex(button => button.dataset.track === getRace().trackId) + step]; };
+  const swipeTracks = (): HTMLButtonElement[] => Array.from(document.querySelectorAll<HTMLButtonElement>('[data-track]:not(:disabled), [data-upcoming-track]:not(:disabled)'));
+  const swipeNeighbour = (step: number): HTMLButtonElement | undefined => {
+    const tracks = swipeTracks();
+    return tracks[tracks.findIndex(button => swipeTrackId(button) === getSelectedTrackId()) + step];
+  };
   function showSwipeChip(state: string, id: string, note = ''): void {
     clearTimeout(swipeChipTimer);
     swipeChip.dataset.state = state;
-    $('#track-swipe-name').textContent = trackName(id, getLocale()).toUpperCase();
+    $('#track-swipe-name').textContent = (isUpcomingTrack(id) ? upcomingTrackName(id, getLocale()) : trackName(id, getLocale())).toUpperCase();
     $('#track-swipe-note').textContent = note;
     swipeChip.querySelector('.swipe-dots')!.replaceChildren(...swipeTracks().map(button => {
       const dot = document.createElement('i');
-      dot.classList.toggle('is-current', button.dataset.track === id);
+      dot.classList.toggle('is-current', swipeTrackId(button) === id);
       return dot;
     }));
     if (state !== 'drag') swipeChipTimer = setTimeout(() => { swipeChip.dataset.state = ''; }, state === 'hint' ? 6000 : 1400);
@@ -62,7 +70,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   function showSwipeHint() {
     if (swipeHintSeen || getRace().phase !== 'ready' || isTutorialActive()) return;
     swipeHintSeen = true; // Per page load, not localStorage: reload makes the gesture discoverable again.
-    showSwipeChip('hint', getRace().trackId, t(touchMatches() ? 'swipe.hintTouch' : 'swipe.hintMouse'));
+    showSwipeChip('hint', getSelectedTrackId(), t(touchMatches() ? 'swipe.hintTouch' : 'swipe.hintMouse'));
   }
   // Keep both 3D scenes edge-to-edge while swiping. Only the active scene renders each frame;
   // the neighbor is drawn once into a temporary 2D snapshot (no second WebGL context).
@@ -103,7 +111,9 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
       // explicitly render both frames immediately before copying their pixels.
       world.render(getRace(), 0, time);
       const current = captureSwipeFrame();
-      world.render(selectedRace(button.dataset.track ?? ''), 0, time);
+      const nextId = swipeTrackId(button);
+      world.setUpcomingTrack(isUpcomingTrack(nextId) ? nextId : null);
+      world.render(isUpcomingTrack(nextId) ? getRace() : selectedRace(nextId), 0, time);
       const neighbor = captureSwipeFrame();
       swipeScenes.replaceChildren(...(step > 0 ? [current, neighbor] : [neighbor, current]));
       swipeSceneStep = step;
@@ -115,6 +125,8 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
       console.warn('Preview snapshot unavailable:', error);
       return false;
     } finally {
+      const selectedId = getSelectedTrackId();
+      world.setUpcomingTrack(isUpcomingTrack(selectedId) ? selectedId : null);
       world.render(getRace(), 0, performance.now() / 1000);
     }
   }
@@ -140,6 +152,9 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   async function commitSwipe(button: HTMLButtonElement, step: number): Promise<void> {
     swipe = null; swipeTarget = null; swipeBusy = true;
     const prepared = prepareSwipeScenes(step);
+    // Commit the choice before the transition: software WebGL can delay animation frames in CI.
+    button.click();
+    showSwipeChip('done', getSelectedTrackId());
     if (prepared && !calmMotion()) {
       const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
       const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';
@@ -150,8 +165,6 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
       swipeScenes.style.transform = to;
       animation.cancel();
     }
-    button.click();
-    showSwipeChip('done', getRace().trackId);
     // Wait for the live WebGL scene to reflect the new track before uncovering it.
     if (prepared) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     clearSwipeScenes();
@@ -164,8 +177,8 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     if (!calmMotion() && neighbour && prepareSwipeScenes(step)) {
       positionSwipeScenes(swipeOffset(dx, innerWidth, true));
     } else if (swipeScenes.childElementCount) clearSwipeScenes();
-    const target = neighbour?.dataset.track ?? getRace().trackId;
-    if (target !== swipeTarget) { swipeTarget = target; showSwipeChip('drag', target, neighbour?.classList.contains('is-locked') ? t('track.locked') : ''); }
+    const target = neighbour ? swipeTrackId(neighbour) : getSelectedTrackId();
+    if (target !== swipeTarget) { swipeTarget = target; showSwipeChip('drag', target, isUpcomingTrack(target) ? t('track.comingSoon') : neighbour?.classList.contains('is-locked') ? t('track.locked') : ''); }
     swipeChip.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / swipeDistance(innerWidth)).toFixed(3));
   }
   // The newest finger takes the swipe over, so a touch whose release WebKit withholds cannot hold the preview.
@@ -184,6 +197,10 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     if (swipe.axis !== 'x') return;
     addSwipeSample(swipe.samples, event.timeStamp, event.clientX);
     dragSwipe(dx);
+    // Touch keeps carousel release semantics; a mouse switches mid-drag (commitSwipe clears swipe, so one drag = one track).
+    const step = event.pointerType === 'mouse' ? liveSwipeStep(dx, innerWidth) : 0;
+    const button = step && swipeNeighbour(step);
+    if (button) void commitSwipe(button, step);
   });
   // Trackpad two-finger swipe (horizontal wheel): the preview follows the scroll and changes track once it travels the swipe
   // distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it,

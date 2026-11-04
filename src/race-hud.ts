@@ -160,7 +160,9 @@ export function createRaceHud(options: HudOptions) {
         : state === 'charging' ? 'hud.nitroCharging' : 'hud.nitroUnavailable');
       if (nitroButton.getAttribute('aria-label') !== label) nitroButton.setAttribute('aria-label', label);
     }
-    nitroMeter.setAttribute('aria-valuenow', String(Math.round(car.nitro * 100) / 100));
+    // Only on change: a same-value rewrite every frame still fires attribute observers (tests/handoff-browser.spec.js).
+    const charge = String(Math.round(car.nitro * 100) / 100);
+    if (nitroMeter.getAttribute('aria-valuenow') !== charge) nitroMeter.setAttribute('aria-valuenow', charge);
     nitroMeter.classList.toggle('is-max', car.nitro >= 3);
     nitroMeter.classList.toggle('is-low', car.nitro > 0 && car.nitro < .6);
     if (car.nitro > previousNitro && race.phase === 'racing') nitroRefillUntil = now + .6;

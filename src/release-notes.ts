@@ -51,13 +51,13 @@ export const recentReleases = (current: string = version, notes: readonly Releas
 export const releaseForVersion = (v: string = version): ReleaseEntry | null => RELEASE_NOTES.find(release => release.version === v) ?? null;
 export const CURRENT_RELEASE = recentReleases()[0] ?? null;
 
-// Shows when the player last saw an older version; with no record only a returning player is told.
-// Blocked storage cannot remember the visit, so it stays silent rather than reopening on every load.
-export function shouldAnnounce(release: Pick<ReleaseEntry, 'version' | 'highlights'> | null, storage?: ReleaseStore | null, returningPlayer = false): boolean {
-  if (!release?.highlights?.length) return false;
+// Shows when the player last saw an older version, or has no record at all (first visit, incognito, cleared storage).
+// Blocked storage cannot remember the visit, so it stays silent rather than reopening on every load; unreleased notes never pop up.
+export function shouldAnnounce(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): boolean {
+  if (!release || release.version === UPCOMING || !storage) return false;
   let seen;
-  try { seen = storage?.getItem(NOTES_SEEN_KEY); } catch { return false; }
-  return seen == null ? returningPlayer : compareVersions(release.version, seen) > 0;
+  try { seen = storage.getItem(NOTES_SEEN_KEY); } catch { return false; }
+  return seen == null || compareVersions(release.version, seen) > 0;
 }
 export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): void {
   if (!release || release.version === UPCOMING) return;
@@ -66,9 +66,11 @@ export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | nu
 // Display order inside a release: NEW first, then improvements, then fixes; unknown kinds last.
 const KIND_ORDER: readonly string[] = ['new', 'improvement', 'fix'];
 const kindRank = (kind: string): number => { const rank = KIND_ORDER.indexOf(kind); return rank < 0 ? KIND_ORDER.length : rank; };
-// A stable sorted copy, so the written order holds within a kind and the shipped data stays untouched.
-export const highlightsByKind = <T extends Pick<ReleaseHighlight, 'kind'>>(highlights: readonly T[]): T[] =>
-  [...highlights].sort((a, b) => kindRank(a.kind) - kindRank(b.kind));
+// Inside a kind: clip + text, then picture + text, then text only.
+const mediaRank = ({ video, image }: Pick<ReleaseHighlight, 'video' | 'image'>): number => video ? 0 : image ? 1 : 2;
+// A stable sorted copy, so the written order holds among equals and the shipped data stays untouched.
+export const highlightsByKind = <T extends Pick<ReleaseHighlight, 'kind'> & Partial<Pick<ReleaseHighlight, 'video' | 'image'>>>(highlights: readonly T[]): T[] =>
+  [...highlights].sort((a, b) => kindRank(a.kind) - kindRank(b.kind) || mediaRank(a) - mediaRank(b));
 export const releaseText =(value: LocalizedText | LocalizedImage | null | undefined, locale: string): string =>
   typeof value === 'string' ? value : (value?.[locale as 'en' | 'zh-TW'] ?? value?.en ?? '');
 
