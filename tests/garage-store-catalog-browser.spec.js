@@ -51,7 +51,7 @@ test('Store falls back to original source artwork when independent PNG is unavai
   const catalog = page.locator('#garage-art-source-garage-store-readiness');
   await catalog.locator('summary').click();
   const img = catalog.locator('[data-wave3-asset="store-tag"] img');
-  await expect(img).toHaveAttribute('src', /store-tag@3x\\.webp$/);
+  await expect(img).toHaveAttribute('src', /store-tag@3x\.webp$/);
   await expect(img).toHaveJSProperty('naturalWidth', 216);
   await expect(catalog.locator('[data-store-purchase-disabled]')).toBeDisabled();
 });
