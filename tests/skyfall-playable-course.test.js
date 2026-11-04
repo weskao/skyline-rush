@@ -147,3 +147,17 @@ test('Skyfall contact rejects out-of-edge and non-finite distances', () => {
     }
   }
 });
+
+test('Skyfall ground and air junction tangents meet without a sharp landing snap', () => {
+  // Each split and merge is a real physical road/landing connection; position alone
+  // is insufficient if the next edge starts with an unrelated heading.
+  for (const incoming of SKYFALL_COURSE.edges) {
+    for (const outgoing of SKYFALL_COURSE.edges.filter(edge => edge.from === incoming.to)) {
+      const before = sampleSkyfallRoad(incoming.id, getSkyfallEdgeLength(incoming.id));
+      const after = sampleSkyfallRoad(outgoing.id, 0);
+      const cosine = dot(before.forward, after.forward);
+      assert.ok(cosine > Math.cos(48 * Math.PI / 180),
+        `${incoming.id} -> ${outgoing.id} snaps by ${(Math.acos(Math.max(-1, Math.min(1, cosine))) * 180 / Math.PI).toFixed(1)} degrees`);
+    }
+  }
+});
