@@ -162,7 +162,8 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   }
   const canRace = (trackId: string): boolean => !upcomingSelection && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || playable(trackId));
   // An enterable Coming Soon card (dev-unlocked only) is raceable without joining the unlock catalog.
-  function playable(id: string): boolean { return unlockedTracks.has(id) || options.isUpcomingEnterable(id); }
+  // A stale saved unlock never makes a Coming Soon card playable in a release.
+  function playable(id: string): boolean { return isUpcomingTrack(id) ? options.isUpcomingEnterable(id) : unlockedTracks.has(id); }
   function renderRouteInfo(race: Race): void {
     const daily = options.getDaily();
     const startButton = ui['start-button'] as HTMLButtonElement;
