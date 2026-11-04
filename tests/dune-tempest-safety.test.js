@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { duneAvoidanceHint, duneRecoveryAdvice, duneLandingEnvelope } from '../src/courses/dune-tempest-safety.ts';
-import { DUNE_TEMPEST_COURSE } from '../src/courses/dune-tempest.ts';
+import { DUNE_TEMPEST_COURSE, DUNE_TEMPEST_AI_HINTS } from '../src/courses/dune-tempest.ts';
 
 const rock={id:'rock-c',edgeId:'canyon-switchbacks',kind:'rock',
   atFraction:.17,lateralMeters:-8,collisionRadiusMeters:4,visualRadiusMeters:5.5,
@@ -46,5 +46,14 @@ test('all authored Dune hazards produce an actionable avoidance or braking hint'
     assert.ok(hint.previewMeters >= 80);
     if (hint.action === 'dodge')
       assert.ok(Math.abs(hint.targetLateralMeters) <= edge.widthMeters/2 - 3.5);
+  }
+});
+
+test('all nine map-owned AI hazards export an opt-in hint on their actual edge', () => {
+  assert.equal(DUNE_TEMPEST_AI_HINTS.length, 9);
+  for (const [index, hint] of DUNE_TEMPEST_AI_HINTS.entries()) {
+    assert.equal(hint.edgeId, DUNE_TEMPEST_COURSE.hazards[index].edgeId);
+    assert.ok(hint.action === 'dodge' || hint.action === 'brake');
+    assert.equal(hint.previewMeters, 120);
   }
 });

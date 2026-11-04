@@ -3328,3 +3328,13 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Connect ordered crossing progression through shared CourseGraph runtime with per-car edge/localS and valid movement substeps; prove aerial/landing/recovery in real game.
 - [ ] Complete 8-car, 3–5 minute, 30/60/120 Hz, Low/Medium/High/Reduced Motion and streaming/disposal acceptance with actual desktop/mobile WebGL captures.
 - [ ] Complete local npm test/typecheck/build/make verify plus full exact-HEAD CI; historical focused results are not equivalent to all Browser/World Tour shards.
+
+### Dune Tempest playable course — 2026-11-04 additional TDD / code checkpoint
+- [x] Export the original 12 nodes/14 edges/11 main edges, three independent splits and all four checkpoints through `DUNE_TEMPEST_GRAPH` in the shared CourseGraph field contract; keep Stage 1 Coming Soon protection.
+- [x] Map-owned geometry from *injected shared arc-length frames*: seam-safe ground road/shoulder mesh, deterministic dune mesh, flight takeoff/landing pads with no fake bridge, footprint-aware hazard positions, bounded weather budgets.
+- [x] Native Three.js chunk factory with real native terrain, hazard footprints, giant stone arches, deterministic dust, Low/Medium/High geometry budgets, Reduced Motion updates and explicit GPU resource disposal; **factory exists but not yet connected to the playable game runtime**.
+- [x] Map-owned 120 m AI avoidance/braking hints, off-road warning/recovery candidate (shared collision must validate), directional gates and landing envelope metadata.
+- [x] Local isolated TDD evidence: 14/14 graph/geometry/safety assertions passed after observed semantic RED runs; standalone strict TypeScript 5.8.3 passed for three pure helpers, Three.js chunk syntax parsed. Do not confuse isolated tests with whole-project verification.
+- [ ] Shared integration of `sampleRoute`, `advanceSignedGate`, eight-car fleet/AI, flight physics, terrain/obstacle collision, safe recovery, standing, results, records and UI into the existing `game.js`, `world.js`, RaceFactory.
+- [ ] Actual drivable road/landing and 3–5-minute full-race trials with 30/60/120 FPS, mobile/desktop WebGL screenshots vs two concept JPEGs, real draw-call/triangle/p50-p95 frame measurements, and disposal/context restoration.
+- [ ] Exact-final-HEAD FULL CI success including Browser/World Tour shards and Cloud-save; local full `npm test`, typecheck, build, `make verify` still unavailable without a repository clone and Node modules.

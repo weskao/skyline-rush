@@ -1,5 +1,6 @@
 import { buildDuneGates } from './dune-tempest-gates.ts';
 import { createDuneCourseGraph } from './dune-tempest-graph.ts';
+import { duneAvoidanceHint } from './dune-tempest-safety.ts';
 
 /** Authored, data-only Dune Tempest CourseGraph draft (metres).
  * The current race engine only supports a single distance-axis centreline.
@@ -145,3 +146,11 @@ export const DUNE_TEMPEST_GATES = buildDuneGates(DUNE_TEMPEST_COURSE);
 // Integration consumes this through the shared CourseGraph validator/arc-length sampler.
 // No new race engine or independent vehicle pose calculations are introduced.
 export const DUNE_TEMPEST_GRAPH = createDuneCourseGraph(DUNE_TEMPEST_COURSE);
+
+/** Map-specific braking/lane advice consumed by the shared eight-car AI, not a new controller. */
+export const DUNE_TEMPEST_AI_HINTS = DUNE_TEMPEST_COURSE.hazards.map(hazard => {
+  const edge = DUNE_TEMPEST_COURSE.edges.find(e => e.id === hazard.edgeId);
+  if (!edge) throw new Error('Unknown Dune hazard edge: ' + hazard.edgeId);
+  return { edgeId: hazard.edgeId, atFraction: hazard.atFraction,
+    ...duneAvoidanceHint(hazard, edge.widthMeters) };
+});
