@@ -3231,3 +3231,17 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [x] Production build passed. No new GPU resources, per-frame work, sound or quality-tier branches: this restores camera placement only. Existing Low/Medium/High rendering and audio remain applicable.
 - [ ] Full local `make verify` and exact-final-commit GitHub CI `quality-gate`: pending. Initial gate caught a literal timeout in the new test; removed the unnecessary override and timeout-policy suite passed 7/7. Rerun typecheck passed, units 1630 passed / 3 skipped, build passed. Full browser run interrupted for safe remote integration; full local gate remains incomplete. Final integrated-tree checks and exact-HEAD full CI pending.
 - [ ] Physical iOS/Android and GPU/performance/thermal measurements remain open; browser viewport screenshots do not certify hardware. No PR, merge or deployment authorized.
+
+## 2026-11-04 — Six Coming Soon original home UI and Frostbite 3D showroom
+
+**Branch:** `feature/release-coming-soon-six-previews`. Source branches are read-only:
+`feature/epic-multiroute-longform-tracks` for the five original card/3D flows and
+`feature/playable-frostbite-canyon` for Frostbite's P01/P02 scene and camera.
+
+- [x] Restore original clickable `upcoming-track-card` layout, mini route SVG, track kilometres, translated labels, keyboard + track swipe, dynamic START→COMING SOON and select-to-preview behavior.
+- [x] Port the Frostbite original HOME-only real 3D showroom (glacier/bridge/aurora, P01/P02, mobile portrait and AIRFLOW camera) plus required immutable CourseGraph geometry data; do **not** add Frostbite or the five future tracks to `RACE_TRACKS`.
+- [x] Preserve original `?stage2-preview=frostbite-canyon&shot=p01|p02` showroom URL and Stage 2 track metadata, add six-scene, route-thumbnail, locale, disabled-START and Frostbite browser tests.
+- [x] Add fail-closed guards for the preview selection itself (not only the backing Race track), including Daily/keyboard/direct START/Restart and stale development unlocks.
+- [ ] Run Typecheck, all Unit tests, Build, `make verify`, complete Browser/World Tour suites and exact-HEAD FULL CI; no PASS claim until observed.
+- [ ] Desktop/mobile manual QA: all six original home previews, 13.8 KM Frostbite card, both P01/P02 scenes, reduced motion/airflow, title/CTA translations, no race entry.
+- [ ] Only after successful pre-merge full CI and review, normal `--no-ff` merge of this preview-only branch to latest `develop`; verify develop exact-HEAD FULL CI. Do not merge playable-course runtimes or modify `main`/release tags without separate approval.
