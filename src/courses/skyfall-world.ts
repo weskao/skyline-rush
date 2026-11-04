@@ -196,12 +196,12 @@ export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium')
       const index = Math.min(Math.ceil(length / CHUNK_METERS) - 1,
         Math.floor(localS / CHUNK_METERS));
       for (const step of [-1, 0, 1]) include(edge.id, index + step);
-      if (localS < CHUNK_METERS / 2) {
+      if (localS < CHUNK_METERS) {
         for (const previous of SKYFALL_COURSE.edges.filter(e => e.to === edge.from)) {
           include(previous.id, Math.ceil(getSkyfallEdgeLength(previous.id) / CHUNK_METERS) - 1);
         }
       }
-      if (length - localS < CHUNK_METERS / 2) {
+      if (length - localS < CHUNK_METERS) {
         for (const next of SKYFALL_COURSE.edges.filter(e => e.from === edge.to)) {
           include(next.id, 0);
         }
