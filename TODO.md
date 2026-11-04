@@ -3340,3 +3340,9 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Verify final code HEAD: `npm test`, typecheck, build, full Browser/World Tour, `make verify`, full CI and real desktop/mobile WebGL.
 - [ ] Compare actual WebGL with the original volcanic ground/air JPEGs; note the original JPEGs themselves show a narrow lower strip of unrelated adjoining artwork, which must NOT become terrain/track content.
 - [ ] Shared CourseGraph/Race runtime and 8-car playable integration, 20 measured races and phone GPU/FPS evidence remain owned by later integration gates.
+
+## 2026-11-04 — Volcanic Crown shared route-mode compatibility
+- [x] Added test first: `vent-risk` has a physical basalt road and must use canonical `ground` mode; `CourseGraph` accepts only `ground | flight`. Initial test-only SHA `7c115982492242902b65d07ab289a48b43e20ee1`.
+- [x] Isolated data-contract RED observed: authored `vent-risk` mode was `risk`; expected `ground`. **GitHub unit RED pending; this was not `npm test`.**
+- [x] Retain the same alternate edge ID, control points, road mesh, hazardous fissure and split/rejoin. Rename only the semantic mode to `ground` and keep distinct geometry assertion in the existing topology test.
+- [ ] Exact-final-HEAD full regression, browser/World Tour, physical road drive and shared CourseGraph adapter remain separate gates.

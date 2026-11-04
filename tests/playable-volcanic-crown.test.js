@@ -31,7 +31,8 @@ test('three distinct ground / flight-or-risk alternatives reconnect to the same 
     const ground=VOLCANIC_CROWN_EDGES.find(edge=>edge.mode==='ground'&&edge.from===option.from);
     assert.ok(ground);
     assert.equal(option.to,ground.to);
-    assert.notEqual(option.mode,ground.mode);
+    assert.notDeepEqual(option.points,ground.points,'distinct branch geometry');
+    if(option.id!=='vent-risk')assert.notEqual(option.mode,ground.mode);
     assert.ok(volcanicEdgeLength(option.id)>300);
   }
 });

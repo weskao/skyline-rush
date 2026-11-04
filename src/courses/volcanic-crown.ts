@@ -1,7 +1,7 @@
 // Volcanic Crown: independent authored graph data and world-space route sampling.
 // The integration host owns race state, camera, physics and rendering.
 export type Vec3 = readonly [number, number, number];
-export type RouteMode = 'ground' | 'flight' | 'risk';
+export type RouteMode = 'ground' | 'flight';
 export type RouteNode = { readonly id: string; readonly kind: 'start' | 'split' | 'merge' | 'checkpoint' | 'finish'; readonly at: Vec3 };
 export type RouteEdge = {
   readonly id: string; readonly from: string; readonly to: string;
@@ -48,7 +48,7 @@ const mainEdges: RouteEdge[] = ground.map((points, i) => ({
 const alternativeEdges: readonly RouteEdge[] = [
   { id: 'rift-flight', from: 'rim', to: 'rift-landing', mode: 'flight', width: 27,
     points: [stations[1], [370, 73, -1750], [295, 200, -2030], [-125, 167, -2410], stations[2]] },
-  { id: 'vent-risk', from: 'basalt-pass', to: 'vent-landing', mode: 'risk', width: 25,
+  { id: 'vent-risk', from: 'basalt-pass', to: 'vent-landing', mode: 'ground', width: 25,
     points: [stations[4], [530, 38, -5450], [70, 34, -5750], [-170, 84, -6110], stations[5]] },
   { id: 'gorge-flight', from: 'gorge-landing', to: 'eruption-zone', mode: 'flight', width: 28,
     points: [stations[7], [330, 100, -9210], [510, 190, -9590], [570, 135, -9900], stations[8]] },
