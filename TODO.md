@@ -3361,3 +3361,8 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 
 - [x] RED source inspection: guardian temple base 11.14 m below raised terrain, waterfall basin 12.80 m below, representative forest tree roots 8.72 m below authored ground. Introduce a map-owned deterministic height sampler, reuse it for mesh vertices and prop placement, add scene tests.
 - [ ] Run exact-HEAD unit/Typecheck/build, WebGL visuals for elevated valley and real landing, complete shared-course integration and 8-car race evidence before marking terrain contacts physically accepted.
+
+## Monsoon Ruins — wet-ground and valley seam regression (2026-11-04)
+
+- [x] TDD RED: at 2 m sampling across 2900/4900 m the valley terrain jumps ~16m; six ground wet-zone endpoints jump 0.055m water depth. Keep the same authored plateau/depth values but apply smooth entry/exit ramps using the common terrain/contact APIs.
+- [ ] Verify new seam and contact tests, full Unit/Browser/World Tour/Quality Gate at exact final HEAD. Capture real rendered Ford and valley screenshots; no visual acceptance until actual WebGL evidence exists.

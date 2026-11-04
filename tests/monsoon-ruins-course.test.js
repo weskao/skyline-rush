@@ -8,6 +8,7 @@ import {
   monsoonGraphEdgeLength,
   sampleMonsoonGraphEdge,
   monsoonWetContact,
+  monsoonTerrainHeight,
   monsoonObstacleHit,
   monsoonAvoidance,
   monsoonPassedCheckpoints,
@@ -162,6 +163,23 @@ test('shallow water affects contact without exceeding the safe flooding cap', ()
   assert.ok(water.wetness > dry.wetness);
   assert.ok(water.gripScale < dry.gripScale && water.gripScale >= 0.7);
   assert.deepEqual(monsoonWetContact('ground', 100), dry, 'environment deterministic');
+});
+
+test('valley edges and puddles enter without terrain steps or instantaneous tyre-grip changes', () => {
+  for (const at of [2900, 4900]) {
+    const before = monsoonTerrainHeight(at - 1, 110);
+    const after = monsoonTerrainHeight(at + 1, 110);
+    assert.ok(Math.abs(after - before) < 1.5,
+      `rainforest valley must not have a vertical cliff at ${at}`);
+  }
+  for (const at of [2100, 2480, 5450, 5640, 11000, 11200]) {
+    const before = monsoonWetContact('ground', at - 1);
+    const after = monsoonWetContact('ground', at + 1);
+    assert.ok(Math.abs(after.depth - before.depth) < .015,
+      `water contact must be continuous at ${at}`);
+    assert.ok(Math.abs(after.gripScale - before.gripScale) < .02,
+      `wet grip cannot jump at ${at}`);
+  }
 });
 
 test('solid ruin debris has swept collision and visible AI bypass space', () => {

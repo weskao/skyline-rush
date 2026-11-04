@@ -95,6 +95,7 @@ const points: Vec3[] = rawXZ.map(([x, z], i) => [
 ]);
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const smooth01 = (v: number) => { const t = clamp(v, 0, 1); return t * t * (3 - 2 * t); };
 const mix = (a: Vec3, b: Vec3, t: number): Vec3 =>
   [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const len = (v: Vec3) => Math.hypot(...v);
@@ -149,7 +150,9 @@ export function monsoonTerrainOffset(distance: number, lateral: number): number 
     const radius = 13.5 + column * 19;
     const waves = Math.sin(distance / 145 + column * .9 + side) * 2
       + Math.cos(distance / 85 - column * 1.7) * 1.5;
-    const valley = distance > 2900 && distance < 4900 && side === 1 ? -16 : 0;
+    const valley = side === 1
+      ? -16 * smooth01((distance - 2700) / 220) * smooth01((4900 - distance) / 220)
+      : 0;
     const factor = Math.min(1, column / 3);
     return -.65 + (radius / 180) ** 1.5 * (20 + 12 * Math.sin(distance / 240))
       + (waves + valley) * factor;
@@ -262,8 +265,11 @@ export function monsoonWetContact(edgeId: MonsoonEdgeId, distance: number) {
   const ford = branches[0];
   const inFord = edgeId === ford.id;
   const t = inFord ? (distance - ford.from) / (ford.to - ford.from) : 0;
-  const depth = inFord ? .17 * Math.sin(Math.PI * t) ** 2 :
-    [[2100, 2480], [5450, 5640], [11000, 11200]].some(([a, b]) => distance >= a && distance <= b) ? .055 : 0;
+  // Smooth wet contact in/out of puddle zones so the tyre solver never receives a traction step.
+  const puddles = [[2100, 2480], [5450, 5640], [11000, 11200]];
+  const puddleDepth = puddles.reduce((depth, [a, b]) =>
+    Math.max(depth, .055 * smooth01((distance - a) / 24) * smooth01((b - distance) / 24)), 0);
+  const depth = inFord ? .17 * Math.sin(Math.PI * t) ** 2 : puddleDepth;
   const wetness = clamp(.5 + depth * 2.7, 0, 1);
   return { depth, wetness, gripScale: Math.max(.72, 1 - depth * .8 - wetness * .08) };
 }
