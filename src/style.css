@@ -1908,3 +1908,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
   .upcoming-scene img { top: 15%; right: 3%; width: 94vw; opacity: .45; }
   .intro #start-button { width: 210px; min-width: 210px; max-width: 210px; }
 }
+@media (max-height: 500px) {
+  .upcoming-scene img { top: 8%; right: 2%; width: min(51vw, 520px); opacity: .5; }
+  .intro #start-button { width: 190px; min-width: 190px; max-width: 190px; }
+}
