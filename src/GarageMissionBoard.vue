@@ -10,7 +10,13 @@ const missions = [
   { id: 'mission-drift', en: 'Drift challenge', zh: '甩尾挑戰' },
   { id: 'mission-combo', en: 'Combo challenge', zh: '連擊挑戰' },
 ] as const;
-const title = (item: typeof missions[number]) => locale.value === 'zh-TW' ? item.zh : item.en;
+const trophies = [
+  { id: 'trophy-bronze', en: 'Bronze trophy', zh: '銅級獎盃' },
+  { id: 'trophy-silver', en: 'Silver trophy', zh: '銀級獎盃' },
+  { id: 'trophy-gold', en: 'Gold trophy', zh: '金級獎盃' },
+  { id: 'trophy-platinum', en: 'Platinum trophy', zh: '白金獎盃' },
+] as const;
+const title = (item: { readonly en: string; readonly zh: string }) => locale.value === 'zh-TW' ? item.zh : item.en;
 const asset = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-rewards-and-missions/raster/${id}@3x.png`;
 let stopListening: (() => void) | undefined;
@@ -42,6 +48,19 @@ onUnmounted(() => stopListening?.());
         </div>
       </article>
     </div>
+    <div class="garage-mission-heading garage-trophy-heading">
+      <h4 id="garage-trophies-title">{{ locale === 'zh-TW' ? '獎盃展示' : 'Trophy showcase' }}</h4>
+      <span class="garage-mission-coming">{{ locale === 'zh-TW' ? '僅供展示' : 'Preview only' }}</span>
+    </div>
+    <div class="garage-trophy-grid" role="list" aria-labelledby="garage-trophies-title">
+      <figure v-for="item in trophies" :key="item.id" class="garage-trophy-card"
+        :data-trophy-id="item.id" data-trophy-state="display-only" role="listitem">
+        <GarageArtworkImage :src="asset(item.id)" :size="96" :image-id="item.id"
+          :alt="title(item)" :fallback-text="title(item)" />
+        <figcaption><strong>{{ title(item) }}</strong>
+          <small>{{ locale === 'zh-TW' ? '僅展示' : 'Display only' }}</small></figcaption>
+      </figure>
+    </div>
   </section>
 </template>
 
@@ -59,7 +78,16 @@ onUnmounted(() => stopListening?.());
 .garage-mission-meta { flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
 .garage-mission-meta h4 { margin:0; font-size:13px; overflow-wrap:anywhere; }
 .garage-mission-status, .garage-mission-meta small { color:#abbfd5; font-size:11px; }
-.garage-mission-progress { height:7px; border:1px dashed #60718b; border-radius:8px; background:#213047; }
+ .garage-mission-progress { height:7px; border:1px dashed #60718b; border-radius:8px; background:#213047; }
+.garage-trophy-heading { margin-top:16px; }
+.garage-trophy-heading h4 { margin:0; font-size:15px; }
+.garage-trophy-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
+.garage-trophy-card { min-width:0; margin:0; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:8px;
+  border:1px solid #536184; border-radius:12px; background:radial-gradient(circle at 50% 30%,#33476b,#121f37 74%); }
+.garage-trophy-card :deep(.artwork-img) { object-fit:contain; max-width:100%; }
+.garage-trophy-card figcaption { display:grid; gap:3px; min-width:0; text-align:center; overflow-wrap:anywhere; }
+.garage-trophy-card strong { font-size:12px; }
+.garage-trophy-card small { font-size:11px; color:#afc5dc; }
 @media (max-width:420px) { .garage-mission-grid { grid-template-columns:1fr; } }
 @media (prefers-reduced-motion:reduce) { .garage-mission-card, .garage-mission-card * { animation:none!important; transition:none!important; } }
 </style>
