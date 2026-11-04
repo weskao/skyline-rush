@@ -11,6 +11,8 @@ export interface TrackSection {
   dir?: number;
   /** Shortcut drawn high over a chasm (Frostbite Rift): sinking or steering out of it mid-span is a fall. */
   span?: boolean;
+  /** Shortcut over a road with a solid deck (Frostbite): cars can neither rise nor sink through its slab. */
+  deck?: boolean;
 }
 export interface TrackConfig {
   name: string;

@@ -3,6 +3,7 @@ import { FROSTBITE_CANYON_GRAPH as graph, FROSTBITE_SEED } from './courses/frost
 import { FROSTBITE_SPAN, FROSTBITE_TRACK, frostbiteFrame, frostbiteLeg } from './courses/frostbite-race.ts';
 import { routeLength } from './course-route-frame.ts';
 import { SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
+import { DECK_DEPTH } from './road-falls.ts';
 import type { TrackSection } from './game-types.ts';
 import { seededRng } from './rng.ts';
 import { chasmMist, crystalField, crystalSentinels, edgeReflectors, iceArch } from './upcoming-scenes/frostbite-landmarks.ts';
@@ -92,7 +93,7 @@ function extrude(out: Mesh, from: number, to: number, outline: Outline, rise: (s
   });
 }
 const box = (l: number, r: number, bottom: number, top: number): Outline => [[l, top], [r, top], [r, bottom], [l, bottom]];
-const DECK_DEPTH = .45, SUPPORT_LATERAL = ROAD_HALF + 3;
+const SUPPORT_LATERAL = ROAD_HALF + 3; // DECK_DEPTH comes from the physics so the drawn slab is the solid one
 type Style = 'glacier-ridge' | 'rift-ice-bridge' | 'aurora-span';
 const STYLES: Record<string, Style> = { 'glacier-valley': 'glacier-ridge', 'rift-lower-canyon': 'rift-ice-bridge', 'aurora-basin': 'aurora-span' };
 // Ridge: squat stone buttresses; bridge: tapering ice piers with icicles; span: tall glowing towers carrying a cable.

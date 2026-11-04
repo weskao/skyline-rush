@@ -76,12 +76,12 @@ const span = (edgeId: string, inset: number, rest: Omit<TrackSection, 'from' | '
 // Decisions: glacier ridge (left of the valley), Rift Spine ice bridge (right of the lower canyon), aurora span (left).
 // Ice sits only on hard-ice edges; the observatory climb is the long uphill.
 const sections: TrackSection[] = [
-  span('glacier-valley', 30, { type: 'shortcut', x: -7.5, altitude: 6 }),
+  span('glacier-valley', 30, { type: 'shortcut', x: -7.5, altitude: 6, deck: true }),
   along('glacier-gate', 40, 380, { type: 'ice' }),
   along('riverbed-hairpin', 200, 900, { type: 'ice' }),
   span('rift-lower-canyon', 30, { type: 'shortcut', x: 7.5, altitude: 6, span: true }),
   along('observatory-climb', 150, 1250, { type: 'uphill' }),
-  span('aurora-basin', 30, { type: 'shortcut', x: -7.5, altitude: 6 }),
+  span('aurora-basin', 30, { type: 'shortcut', x: -7.5, altitude: 6, deck: true }),
   along('glacial-outlet', 900, 1700, { type: 'ice' }),
 ].sort((a, b) => a.from - b.from);
 

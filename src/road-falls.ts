@@ -4,6 +4,7 @@ import type { TrackSection } from './game-types.ts';
 
 export const SHORTCUT_HALF_WIDTH = 3; // m either side of the corridor centre
 export const SHORTCUT_TOLERANCE = 2.5; // m above or below the corridor altitude (also the pylon height)
+export const DECK_DEPTH = .45; // m: a solid shortcut deck's slab under its top (the corridor floor)
 export const SPAN_LANDING = 60; // m: a span's last stretch eases down to its corridor; sinking there rests on the deck
 
 /** On a span corridor's deck or above it, inside its sides: where a span car stays and span objects are drawn. */
@@ -44,4 +45,17 @@ export function stepSpan(car: FallingCar, section: TrackSection | undefined, tim
   if (car.span && ramp && !over && Math.abs(car.x - (section.x ?? 0)) < SHORTCUT_HALF_WIDTH) { car.altitude = floor; car.verticalSpeed = Math.max(0, car.verticalSpeed); }
   else if (car.span && !over) dropCar(car, section.from, section.from, time, slowdown);
   else if (over && car.altitude < (section.altitude ?? 0) + SHORTCUT_TOLERANCE) car.span = true;
+}
+
+const CAR_HALF_WIDTH = .85; // m: half the car-vs-car box (|Δx| < 1.7)
+/**
+ * Solid deck (`section.deck`): a car body never sits inside the slab. Whichever side the car came from wins:
+ * from below its roof stops at the underside, from above it rests on the top and drops off past the end or a side.
+ */
+export function stepDeck(car: FallingCar, section: TrackSection | undefined, previousAltitude: number, carHeight: number): void {
+  if (!section?.deck || car.distance >= section.to || Math.abs(car.x - (section.x ?? 0)) >= SHORTCUT_HALF_WIDTH + CAR_HALF_WIDTH) return;
+  const top = (section.altitude ?? 0) - SHORTCUT_TOLERANCE, under = top - DECK_DEPTH;
+  if (car.altitude + carHeight <= under || car.altitude >= top) return;
+  if (previousAltitude + carHeight / 2 < (top + under) / 2) { car.altitude = under - carHeight; car.verticalSpeed = Math.min(0, car.verticalSpeed); }
+  else { car.altitude = top; car.verticalSpeed = Math.max(0, car.verticalSpeed); }
 }
