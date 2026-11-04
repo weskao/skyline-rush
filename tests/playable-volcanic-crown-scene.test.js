@@ -109,3 +109,27 @@ test('every flight pad has safe world-frame placement and visible edge markings 
     }
   }
 });
+
+test('fissure discs and warning rings follow the actual sloped road normal',()=>{
+  for(const item of VOLCANIC_OBSTACLES.filter(o=>o.kind==='fissure'||o.kind==='vent'||o.kind==='rockfall')){
+    const chunk=createVolcanicCrownChunk(item.edgeId,Math.floor(item.s/VOLCANIC_CHUNK_METERS),'low');
+    chunk.update(5.5);
+    const frame=sampleVolcanicRoute(item.edgeId,item.s);
+    const up=new THREE.Vector3(...frame.up);
+    const mesh=chunk.group.getObjectByName(item.id);
+    if(item.kind==='fissure'||item.kind==='vent'){
+      const discNormal=new THREE.Vector3(0,1,0).applyQuaternion(mesh.quaternion);
+      assert.ok(discNormal.distanceTo(up)<1e-4,`${item.id} disc must follow its road plane`);
+    }
+    if(item.kind==='vent'||item.kind==='rockfall'){
+      const ring=chunk.group.getObjectByName(item.id+'-warning');
+      const ringNormal=new THREE.Vector3(0,0,1).applyQuaternion(ring.quaternion);
+      assert.ok(ringNormal.distanceTo(up)<1e-4,`${item.id} warning ring tilt`);
+      const ground=new THREE.Vector3(...sampleVolcanicRoute(item.edgeId,item.s).point)
+        .addScaledVector(new THREE.Vector3(...frame.right),item.lateral)
+        .addScaledVector(up,.12);
+      assert.ok(ring.position.distanceTo(ground)<1e-3,`${item.id} warning ring alignment`);
+    }
+    chunk.dispose();
+  }
+});

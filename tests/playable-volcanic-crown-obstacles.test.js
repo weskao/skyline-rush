@@ -60,3 +60,12 @@ test('physically nearby other branch is not an obstacle hit; sampling stable at 
   }
   assert.ok(sampleVolcanicRoute('ground-6',600).point.every(Number.isFinite));
 });
+
+test('surface vents use local road clearance on rising slopes, not world Y',()=>{
+  const vent=VOLCANIC_OBSTACLES.find(o=>o.id==='heat-vent');
+  assert.equal(volcanicObstacleContact(vent.edgeId,vent.s+3,vent.lateral,1.6,5)?.id,
+    vent.id,'near-surface car must contact the visible sloped vent');
+  const crack=VOLCANIC_OBSTACLES.find(o=>o.id==='crack-01');
+  assert.equal(volcanicObstacleContact(crack.edgeId,crack.s+3,crack.lateral,1.75,5),null,
+    'car above the sloped crack must clear it despite world-Y proximity');
+});
