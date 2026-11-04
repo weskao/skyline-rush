@@ -23,3 +23,15 @@ test('Garage NEW treatment keeps a static highlight when animations are disabled
   assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{ \.intro \.garage-button, \.intro \.garage-new-tag \{ animation: none; \} \}/);
   assert.match(css, /\.vfx-comfort \.intro \.garage-button, \.vfx-comfort \.intro \.garage-new-tag \{ animation: none; \}/);
 });
+
+test('Garage NEW tag is a corner overlay on every device, above the rules row, below an open dropdown', () => {
+  assert.doesNotMatch(css, /@media \(min-width: 1001px\) \{\s*\.intro \.garage-button \{ position: relative; \}/, 'corner pinning must not be desktop-only');
+  assert.match(css, /\.intro \.garage-button \{[^}]*position: relative;/);
+  const tag = css.match(/\.intro \.garage-new-tag \{([^}]*)\}/)?.[1] ?? '';
+  assert.match(tag, /position: absolute; top: -9px; right: -9px;/);
+  const z = Number(tag.match(/z-index: (\d+)/)?.[1]);
+  const rowZ = Number(css.match(/\.race-mode-picker\.race-rules-row \{[^}]*z-index: (\d+)/)?.[1]);
+  const openZ = Number(css.match(/^\.intro \.race-rules-row:has\(\[aria-expanded="true"\]\) \{ z-index: (\d+)/m)?.[1]);
+  assert.ok(z > rowZ, 'tag above the rules row');
+  assert.ok(openZ > z, 'open dropdown (any viewport) still covers the tag');
+});

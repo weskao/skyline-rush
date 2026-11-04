@@ -19,9 +19,11 @@ const resources = page => page.evaluate(() => {
   const { scene, renderer } = window.gameScene, race = window.gameplay.race;
   let objects = 0;
   scene.traverse(() => { objects++; });
+  const chunk = race.endless?.chunk ?? 0, outside = item => item.chunk < chunk - 1 || item.chunk > chunk + 3;
   return { objects, ...renderer.info.memory, programs: renderer.info.programs.length,
     traffic: race.traffic.length, pickups: race.pickups.length, rings: race.rings.length,
-    groups: Object.keys(race.player.groupHits).length };
+    groups: Object.keys(race.player.groupHits).length,
+    stray: race.pickups.filter(outside).length + race.rings.filter(outside).length }; // items kept past the window
 });
 
 test.describe('endless bounds desktop', () => {
@@ -46,8 +48,17 @@ test.describe('endless bounds desktop', () => {
     expect(await phase(page)).toBe('racing');
     // Traffic deliberately ramps until 20 km (endlessTrafficCount), so compare 25 km with 50 km, after the ramp.
     const [early, late] = [samples[25], samples[50]];
-    for (const key of Object.keys(early)) expect(late[key], `${key} at 50 km vs 25 km`).toBeLessThanOrEqual(early[key]);
+    // User, 2026-11-02/03: more rings and pickups, rolled per chunk (run lengths, a row one chunk in three), so two windows
+    // differ; each stays within the exact window maximum. streamEndless keeps 5 chunks (chunk - 1 .. chunk + 3); addChunk
+    // adds 5 pickup runs of at most 4 (pickupRun), 3 singles + a 4-ring row (ringRow) + a 6-ring train (ringTrain), and
+    // two PERFECT LINE groups (the chunk's and its train's).
+    const windowMax = { pickups: 5 * 5 * 4, rings: 5 * (3 + 4 + 6), groups: 5 * 2 };
+    for (const key of Object.keys(early)) {
+      if (key in windowMax) for (const [km, sample] of Object.entries(samples)) expect(sample[key], `${key} at ${km} km`).toBeLessThanOrEqual(windowMax[key]);
+      else expect(late[key], `${key} at 50 km vs 25 km`).toBeLessThanOrEqual(early[key]);
+    }
     expect(late.traffic, 'fixed traffic budget').toBeLessThanOrEqual(40);
+    expect([early.stray, late.stray], 'pickups and rings outside the streaming window').toEqual([0, 0]);
     expect(errors).toEqual([]);
   });
 

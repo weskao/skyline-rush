@@ -62,3 +62,7 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
 - Panel moved to Vue → `npm run test:browser` desktop and mobile, plus the overlay clickability
   checks in `ui-phase-interactions.md`; home-screen files → `npm run test:layout`.
 - Panels that show sound/music controls keep their `src/audio.js` behavior unchanged.
+
+→ Read `docs/ui-change-checklist.md` before adding, redesigning or modifying any UI element,
+screen, overlay, interaction or player feedback (audio, quality tiers, iPhone touch, post-race
+clickability).
