@@ -65,3 +65,35 @@ test('Store motion is disabled when the OS requests reduced motion', async ({ pa
   const transition = await catalog.locator('[data-wave3-asset="store-star"]').evaluate(el => getComputedStyle(el).transitionDuration);
   expect(transition).toBe('0s');
 });
+
+test('all six standalone Store PNGs preserve the restored WebP source pixels exactly', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const catalog = page.locator('#garage-art-source-garage-store-readiness');
+  await catalog.locator('summary').click();
+  const ids = ['store-cart','store-box','store-bundle','store-tag','store-star','store-collection'];
+  for (const id of ids) {
+    const picture = catalog.locator(`[data-wave3-asset="${id}"] img`);
+    const metrics = await picture.evaluate(async img => {
+      await img.decode();
+      const original = new Image();
+      original.src = img.src.replace(/\\.png$/, '.webp');
+      await original.decode();
+      const source = document.createElement('canvas');
+      const target = document.createElement('canvas');
+      source.width = target.width = 216;
+      source.height = target.height = 216;
+      const lhs = source.getContext('2d');
+      const rhs = target.getContext('2d');
+      lhs.drawImage(original, 0, 0);
+      rhs.drawImage(img, 0, 0);
+      const a = lhs.getImageData(0, 0, 216, 216).data;
+      const b = rhs.getImageData(0, 0, 216, 216).data;
+      let mismatches = 0;
+      for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) mismatches++;
+      return { mismatches, size: [img.naturalWidth, img.naturalHeight] };
+    });
+    expect(metrics.size, id).toEqual([216, 216]);
+    expect(metrics.mismatches, id + ': avoid altered/composited PNG or truncated icon').toBe(0);
+  }
+});
