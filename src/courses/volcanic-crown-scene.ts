@@ -105,11 +105,22 @@ function addFlightGuide(group:THREE.Group,edgeId:string,from:number,to:number,
   for(const [name,s] of [['launch-pad',0],['landing-pad',len]] as const){
     if((s===0&&!isStart)||(s===len&&!isEnd))continue;
     const f=sampleVolcanicRoute(edgeId,s);
-    const pad=new THREE.Mesh(new THREE.BoxGeometry(26,.9,32),rock);
+    // Permanent, static landing cues remain legible at Low and Reduced Motion.
+    const pad=new THREE.Mesh(new THREE.BoxGeometry(26,.9,32),
+      new THREE.MeshStandardMaterial({
+        color:'#343d40',roughness:.8,emissive:'#319cb0',emissiveIntensity:.35,
+      }));
     pad.position.copy(to3(f.point)).addScaledVector(to3(f.up),-.5);
     pad.quaternion.setFromRotationMatrix(
       new THREE.Matrix4().makeBasis(to3(f.right),to3(f.up),to3(f.forward).negate()));
-    pad.name=name;group.add(pad);
+    pad.name=name;
+    for(const side of [-1,1]){
+      const marker=new THREE.Mesh(new THREE.BoxGeometry(1.1,.12,28),
+        new THREE.MeshBasicMaterial({color:'#8ff4ff',toneMapped:false}));
+      marker.name='pad-edge-light';marker.position.set(side*11.6,.48,0);
+      pad.add(marker);
+    }
+    group.add(pad);
   }
 }
 export function createVolcanicCrownChunk(

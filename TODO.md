@@ -3346,3 +3346,8 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [x] Isolated data-contract RED observed: authored `vent-risk` mode was `risk`; expected `ground`. **GitHub unit RED pending; this was not `npm test`.**
 - [x] Retain the same alternate edge ID, control points, road mesh, hazardous fissure and split/rejoin. Rename only the semantic mode to `ground` and keep distinct geometry assertion in the existing topology test.
 - [ ] Exact-final-HEAD full regression, browser/World Tour, physical road drive and shared CourseGraph adapter remain separate gates.
+
+## 2026-11-04 — Volcanic Crown visible launch / landing pads
+- [x] Added test first at `6d951b7feac130ac99a14c8d97b316e745b86dcf` for ground-truth pad position and permanent emissive edge markings on two flight alternatives × Low/Medium/High with Reduced Motion.
+- [x] Added a restrained emissive basalt landing material and two geometry-based cyan edge strips per pad; all are oriented by `sampleVolcanicRoute` world frame and disposable with their chunk. No second renderer, loop or visual-only physics pose.
+- [ ] Observed `npm test` RED/GREEN, exact final-HEAD FULL CI, desktop/mobile rendered WebGL review, GPU/draw-call budgets and game landing acceptance remain required. The structural no-marking check was RED, but is not equivalent to a full test execution.
