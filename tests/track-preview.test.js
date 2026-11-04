@@ -97,3 +97,19 @@ test('portrait fixed showroom angles leave extra AIRFLOW telemetry headroom', ()
     }
   }
 });
+
+// Garage home pose buttons (ground / flight / open wing) drive the showcase car on every route.
+test('Garage pose overrides the AIRFLOW pose and opens the wing on every route',()=>{
+  const sample = createRace('coast').player;
+  for (const id of [...Object.keys(RACE_TRACKS), 'future-road']) {
+    const ground=previewPlayer(id,sample,3,false,false,{ mode:'ground', wing:false });
+    assert.equal(ground.altitude,0);
+    assert.equal(ground.thrusting,false);
+    assert.ok(!ground.braking);
+    const flight=previewPlayer(id,sample,3,false,true,{ mode:'flight', wing:true });
+    assert.ok(flight.altitude>1.4&&flight.altitude<1.8);
+    assert.equal(flight.thrusting,true);
+    assert.equal(flight.braking,true); // the wing blade opens as an airbrake
+    assert.equal(previewPlayer(id,sample,1,true,false,{ mode:'flight', wing:false }).thrusting,false); // reduced motion
+  }
+});
