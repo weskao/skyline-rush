@@ -93,3 +93,25 @@ test('map-local AI descriptors share visible physics poses and safe passing corr
     .some(item=>item.id===rock.id),false,'cleared rock must not block AI');
   assert.throws(()=>hazards.volcanicAIAvoidanceHints('bad-edge',0,0),/Unknown/);
 });
+
+test('AI obstacle hints never advertise zero-width passing corridors',()=>{
+  const leftEdge=VOLCANIC_OBSTACLES.find(o=>o.id==='basalt-02');
+  const rightEdge=VOLCANIC_OBSTACLES.find(o=>o.id==='basalt-01');
+  const leftHint=hazards.volcanicAIAvoidanceHints(leftEdge.edgeId,leftEdge.s-30,5)
+    .find(item=>item.id===leftEdge.id);
+  const rightHint=hazards.volcanicAIAvoidanceHints(rightEdge.edgeId,rightEdge.s-30,5)
+    .find(item=>item.id===rightEdge.id);
+  assert.equal(leftHint.passLeft,null,'rock at left edge leaves no safe left corridor');
+  assert.equal(rightHint.passRight,null,'rock at right edge leaves no safe right corridor');
+  assert.ok(leftHint.passRight[0]<leftHint.passRight[1]);
+  assert.ok(rightHint.passLeft[0]<rightHint.passLeft[1]);
+  for(const obstacle of VOLCANIC_OBSTACLES){
+    const hint=hazards.volcanicAIAvoidanceHints(obstacle.edgeId,obstacle.s,5)
+      .find(item=>item.id===obstacle.id);
+    if(!hint)continue;
+    for(const bounds of [hint.passLeft,hint.passRight]){
+      if(bounds)assert.ok(bounds[1]-bounds[0]>0.001,
+        `${obstacle.id} must not expose a zero-width corridor`);
+    }
+  }
+});
