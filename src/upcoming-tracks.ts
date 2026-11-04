@@ -1,3 +1,5 @@
+import { STAGE2_TRACKS } from './stage2-tracks.ts';
+
 /** Six concept-only Coming Soon tracks; keep out of the simulation race registry. */
 export const UPCOMING_TRACKS = Object.freeze({
   'dune-tempest': {
@@ -20,10 +22,7 @@ export const UPCOMING_TRACKS = Object.freeze({
     names: { en: 'Stormline Megacity', 'zh-TW': '霓虹暴雨都市' }, length: 14000,
     image: 'track-teasers/stormline-megacity.jpg', route: 'track-teasers/stormline-megacity-route.svg',
   },
-  'frostbite-canyon': {
-    names: { en: 'Frostbite Canyon', 'zh-TW': '極地冰原峽谷' }, length: 13800,
-    image: 'track-teasers/frostbite-canyon.jpg', route: 'track-teasers/frostbite-canyon-route.svg',
-  },
+  'frostbite-canyon': STAGE2_TRACKS['frostbite-canyon'],
 } as const);
 
 // Covers are not race runtimes. Release promotion is separate from branch integration.
