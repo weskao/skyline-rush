@@ -3198,5 +3198,5 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 
 ## Economy Foundation — 2026-11-04 existing Store art in live Garage
 - [ ] Visual acceptance: real desktop/iOS/Android screenshots and exact-HEAD full CI still required for Garage store-entry art.
-- [x] Source integration: existing 216×216 store-collection WebP appears at 72×72 CSS in the real Garage summary, and the existing six 3× Store artworks remain selectable via the native details/gallery controls. No PNG regeneration was needed; no checkout, currency, price or permanent entitlement is implied.
+- [ ] Source integration acceptance: existing 216×216 store-collection WebP is wired for 72×72 CSS in the Garage summary and the six 3× Store artworks remain selectable via native details/gallery controls. Await exact-HEAD CI, browser screenshots and manual visual sign-off before marking complete. No checkout, currency, price or permanent entitlement is implied.
 - [ ] Run full browser/WebGL interaction checks after CI runner availability, including keyboard, touch, 390×844, 844×390 and 1440×900; compare alpha safety and caption clipping. New browser assertions are in tests/garage-art-source-browser.spec.js.
