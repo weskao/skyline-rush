@@ -1,5 +1,6 @@
 import test from 'node:test';
 import * as volcanic from '../src/courses/volcanic-crown.ts';
+import { sampleRoute, routeLength } from '../src/course-route-frame.ts';
 import assert from 'node:assert/strict';
 import {
   VOLCANIC_CROWN, VOLCANIC_CROWN_EDGES, VOLCANIC_CROWN_CHECKPOINTS,
@@ -134,6 +135,26 @@ test('ordered directional gate frames match real physical road and finish nodes'
       near(gate.point[axis],node.at[axis],.01);
       near(gate.forward[axis],sampled.forward[axis]);
       near(gate.up[axis],sampled.up[axis]);
+    }
+  }
+});
+
+test('Volcanic map frames agree with shared CourseGraph sampling at every route layer',()=>{
+  const graph=volcanic.VOLCANIC_CROWN_COURSE_GRAPH;
+  for(const edge of graph.edges){
+    const length=routeLength(graph,edge.id);
+    near(volcanicEdgeLength(edge.id),length,1e-7);
+    for(const fraction of [0,.125,.33,.5,.75,.95,1]){
+      const s=length*fraction;
+      const local=sampleVolcanicRoute(edge.id,s);
+      const shared=sampleRoute(graph,edge.id,s);
+      for(const axis of ['point','forward','right','up']){
+        for(let index=0;index<3;index++)
+          near(local[axis][index],shared[axis][index],1e-7);
+      }
+      const offset=volcanicWorldPosition(edge.id,s,3,2);
+      for(let index=0;index<3;index++)
+        near(offset[index],shared.point[index]+shared.right[index]*3+shared.up[index]*2,1e-7);
     }
   }
 });
