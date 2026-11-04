@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { swipeAxis, swipeOffset, swipeStep, addSwipeSample, releaseVelocity } from '../src/track-swipe.ts';
+import { swipeAxis, swipeOffset, swipeStep, liveSwipeStep, addSwipeSample, releaseVelocity } from '../src/track-swipe.ts';
+
+test('a mouse drag past a fifth of the screen switches without waiting for the release', () => {
+  assert.equal(liveSwipeStep(-511, 2560), 0);
+  assert.equal(liveSwipeStep(-512, 2560), 1, 'leftward drag brings the next track');
+  assert.equal(liveSwipeStep(288, 1440), -1);
+  assert.equal(liveSwipeStep(287, 1440), 0);
+});
 
 test('the drag locks to the axis it first moves along', () => {
   assert.equal(swipeAxis(3, 4), null);
@@ -23,8 +30,14 @@ test('the preview follows the finger with a rubber band, stiffer at the ends of 
   const free = swipeOffset(-200, 390, true), edge = swipeOffset(-200, 390, false);
   assert.ok(free < 0 && edge < 0);
   assert.ok(Math.abs(free) > Math.abs(edge) * 2);
-  assert.ok(Math.abs(swipeOffset(10000, 390, true)) < 390 * 0.6, 'never leaves the screen');
+  assert.equal(swipeOffset(10000, 390, true), 390, 'never slides past the neighbouring page');
+  assert.ok(Math.abs(swipeOffset(10000, 390, false)) < 390 * 0.12, 'list ends stay stiff');
   assert.equal(swipeOffset(0, 390, true), 0);
+});
+
+test('with a track to reveal, the preview follows the pointer 1:1 on any width', () => {
+  // A damped preview on a 2560px desktop moved 63px for a 120px drag: users kept dragging, unaware it would switch.
+  for (const width of [390, 1440, 2560]) assert.equal(swipeOffset(-120, width, true), -120);
 });
 
 test('release velocity only counts the final 100ms', () => {

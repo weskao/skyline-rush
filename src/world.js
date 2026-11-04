@@ -19,7 +19,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage } from './garage-stage.ts'; import { createCircuitScene } from './circuit-scene.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, makeCar } from './car-model.js';
+import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -27,7 +27,7 @@ import { createSkyScene } from './sky-scene.js';
 import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
 import { classicRoadCenter, trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition } from './track-paths.ts';
-import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
+import { GARAGE_FILL_BACKS,HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
@@ -299,12 +299,12 @@ export function createWorld(canvas) {
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
   const rearLight = player.userData.rearLight;
-  const rivals = [CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex, CAR_STYLES.nova].map((style, i) => { const paint = [null, null, null, '#9d80e5', '#5cd5ae', '#e9bd64', '#e866a5'][i]; const car = makeCar(style, paint ?? style.color); scene.add(car); return car; });
+  const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   // ×2 covers the double-traffic daily modifier.
   const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2))) }, (_, i) => {
-    const car = makeCar(CAR_STYLES.commuter, trafficColors[i % 5]);
+    const car = makeCar(TRAFFIC_CAR_STYLES[i % TRAFFIC_CAR_STYLES.length], trafficColors[i % trafficColors.length]);
     car.scale.setScalar(0.96);
     scene.add(car);
     return car;
@@ -389,7 +389,7 @@ export function createWorld(canvas) {
 
   function frameShowcaseCar(distance) {
     // Hover wheels fold out over ~0.5 s and widen the car: reframe as they move, not once from the first frame.
-    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),
+    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),garageHomePreview,
       Math.round(player.userData.wheels[0].rotation.z*4)].join(':');
     // Dolly straight away from the car for the chosen angle (re-aimed each frame as orbit turns); only drive follows the road's chase axis.
     if(visual.view!=='drive') framingAxis.copy(desiredCamera).sub(player.position).setY(0).normalize();
@@ -410,11 +410,11 @@ export function createWorld(canvas) {
       projectedCarBounds(originalEye,originalLook); // measure the car once; candidates only re-project it
       // The drive shot also owns the signature landmark: tilting down to catch the wheels
       // must not push its top out of frame, so that top is a fit constraint too.
-      const landmark=visual.view==='drive'&&TOUR_IDS.has(trackId)?landmarkBounds(originalLook):null;
+      const landmark=!garageHomePreview&&visual.view==='drive'&&TOUR_IDS.has(trackId)?landmarkBounds(originalLook):null;
       // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
       const clearLeft=camera.aspect>1;
       // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
-      search: for(const back of [0,1,2,3,4,5,6,7,8,9,10,12,14,16,20,26,32,40]) {
+      search: for(const back of garageHomePreview?GARAGE_FILL_BACKS:SHOWCASE_BACKS) {
         const eye=originalEye.clone().addScaledVector(framingAxis,back);
         for(const down of [0,.25,.5,.75,1,1.5,2,3,4,5,6,8,10,12]) {
           const look=originalLook.clone();look.y-=down;
@@ -540,7 +540,7 @@ export function createWorld(canvas) {
   let cameraMode = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0;
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false;
+  let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
 
   let sizeKey = '', warmupPending = true, garageWarmupPending = true;
@@ -600,8 +600,8 @@ export function createWorld(canvas) {
     const { wing } = mesh.userData;
     const downforce = isPlayer && visual.enabled && visual.airflow && visual.aeroMode === 'downforce';
     const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
-    wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : boosting ? 0.08 : 0, 8, dt);
-    if (wing.userData.lift) wing.position.y = THREE.MathUtils.damp(wing.position.y, wing.userData.restY + (boosting || car.braking || car.altitude > 0.8 ? wing.userData.lift : 0), 8, dt);
+    if (wing.userData.lift) stepWing(wing, boosting || car.braking, downforce || car.altitude > 0.8, dt);
+    else wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : boosting ? 0.08 : 0, 8, dt);
     mesh.userData.wheels.forEach(wheel => {
       const target = (car.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);
       wheel.rotation.z = THREE.MathUtils.damp(wheel.rotation.z, target, 7, dt);
@@ -611,9 +611,9 @@ export function createWorld(canvas) {
   }
 
   return {
-    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); },
+    resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGaragePose(pose) { garagePose = pose; },
     setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) aero.setSkins(ids); }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
-        inspectGarageStudio() { return garageStage && garageCamera ? garageStage.inspectBounds(camera) : null; },
+        inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint);
       const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = paint.roughness;
@@ -867,7 +867,7 @@ export function createWorld(canvas) {
       if (preview) {
         const groundedShowcase = visual.enabled && visual.airflow;
         const curated=!!HERO_PREVIEWS[trackId];
-        updateCar(player, { ...previewPlayer(trackId,car,idleTime,reducedMotion,groundedShowcase), distance },
+        updateCar(player, { ...previewPlayer(trackId,car,idleTime,reducedMotion,groundedShowcase,garagePose), distance },
           distance,center,time,dt,true);
         rivals.forEach((mesh,i) => {
           mesh.visible = i < 3; if (!mesh.visible) return; // Preserve Wave 1 showcase.
@@ -930,9 +930,9 @@ export function createWorld(canvas) {
       } else if (race.phase === 'finished' && !reducedMotion) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
-      } else if ((preview || visual.enabled && visual.airflow) && visual.view !== 'drive') {
-        // The selected view wins over curated showcase framing on every map, and drives the AIRFLOW race camera.
-        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||!preview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
+      } else if (preview && visual.view !== 'drive') {
+        // The selected view wins over curated showcase framing on every map, but only on the ready screen: it never moves the race camera.
+        const pose = showcaseCameraPose(trackId,visual.view,time,portrait||garageHomePreview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
         const frame = framedRoad(trackId) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
         if (frame) {

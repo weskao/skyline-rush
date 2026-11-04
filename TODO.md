@@ -71,6 +71,226 @@
 
 **Exit criteria:** no mandatory-roadline visuals on natural surfaces; controlled off-road and side flight; ≥3 legal route choices and ≥2 major hairpins/map; no invisible walls or route-skip exploitation; source artwork 3× for generated in-game rasters; deterministic TDD, `make verify`, real WebGL screenshots and exact-HEAD full CI **all still pending**. User-approved implementation + merger is separate.
 
+## Tutorial complete no longer freezes the screen — 2026-11-04
+
+**Branch:** `fix/tutorial-complete-alive` (from `develop` 4450a274). Repro: finish the last practice lesson (NITRO) → `main.js` set `race.phase = 'paused'`, so the car, road and HUD froze and the game looked broken.
+
+- [x] Completion keeps the race live as a free cruise: the player keeps steering/flying/boosting, the road still loops at its end, no race result or career change (`src/main.js`, `src/interactive-tutorial.ts`).
+- [x] Completion UI: centred "Practice complete · Free drive" banner (check pop + confetti burst, auto-fades after ~3.4 s, reduced-motion safe), gold glowing coach card, primary "Back to game", stale lesson key chips hidden; en + zh-TW copy.
+- [x] RED: new unit test failed (car stranded at road end); browser assertion failed on old `main.js` (`data-phase` received `paused`). GREEN: `npm test` 1504 pass / 0 fail; `npm run build`; Playwright tutorial + guide + mobile-guide + main-ui-parity 30/30, rerun after CSS tweaks 21/21.
+- [x] Real WebGL screenshots at 1280×800, 390×844, 844×390 (banner + post-fade cruise).
+- [ ] `make verify` (World Tour long-run not run) and exact-HEAD `quality-gate`; human touch/device QA. No merge, PR or deploy without explicit approval.
+
+---
+
+## Drift trail marks + Shop trail-style items — 2026-11-04
+
+Status: planned, not started. No branch yet (branch from `develop`: `feature/drift-trail`).
+
+1. **Drift trail marks (local-player only)**
+   - [ ] While the player car is drifting (brake + steer), leave a fading skid/trail mark on the road behind the rear wheels.
+   - [ ] Visible only to the local player: rivals and traffic never leave marks, and nothing is sent to Cloud Save or any other viewer.
+   - [ ] No change to physics, scoring or the DRIFT → NITRO → FLY → clean-landing chain.
+   - [ ] Performance budget: pooled/instanced geometry with a fixed cap, fade-out and recycling; no per-frame allocation; reduced count/length on Low quality and mobile. Record draw calls, triangles and median/p95 frame time before/after.
+   - [ ] Works on all tracks, every vehicle, airborne (no marks while FLY) and on the road-frame of Sky Spiral / World Tour.
+2. **Shop: drift-trail style items (UI style products)**
+   - [ ] Add a "Drift trail" cosmetic category to the Shop/Garage catalog, with a default (free) style plus purchasable styles (e.g. neon, flame, ice, rainbow, sparkle) as UI/visual styles only, no gameplay effect.
+   - [ ] Shop card UI: preview of the trail style, price, owned/equipped state; locked-bundle vs trial-bundle behavior follows the existing Garage skins contract.
+   - [ ] Equipped style is persisted as a preference and applied to the local player's marks; unowned styles can be previewed in the Preview Studio without ownership.
+   - [ ] Localize item names/descriptions in all supported locales; no real-user data in fixtures.
+3. **Tests / gates**
+   - [ ] RED-first: deterministic unit tests (mark spawns only while drifting, only for the local player, cap + recycle, style lookup/persistence) and a browser regression (desktop + 390×844 + 844×390) with a real WebGL screenshot.
+   - [ ] `make verify` and exact-HEAD `quality-gate` GREEN; human touch/device QA. No merge, PR or deploy without explicit approval.
+
+---
+
+## Roadster 2 higher, streamlined hood sweep into the windscreen — 2026-11-04
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Request: the front hood still read sunken; raise it and adjust the
+nose/hood slope and curve to the front reference (hood edge almost level with the tower crests, one smooth rise into
+the windscreen base). TDD only, browser checks waived by the user for this pass.
+
+- [x] RED: new test 'a high hood sweeps up from the nose into the windscreen base with no dip or step' failed on
+  6ac4d1e8 — `node --test tests/roadster-fidelity.test.js` → "hood edge 0.74 sits nearly level with the tower
+  crest 0.82" (ratio .66 < .80; rise .015 < .04).
+- [x] GREEN: hood deck .74/.745/.75/.755 → .78/.79/.815/.835 (z -2.50/-2.33/-1.91/-1.41, slopes .06/.06/.04);
+  nose tower crest .82 → .825 (ratio .81, gap .045); windscreen base .745/.76 → .84/.845, .015 above the hood at
+  the cowl; painted face top .74 → .78; hood creases follow the deck +.008.
+- [x] `node --test tests/roadster-fidelity.test.js` 27/27; `npm test` 1526 pass / 1 fail / 3 skipped — the only
+  failure is the pre-existing `track-preview.test.js` AIRFLOW headroom `-0` vs `0` (from 31b88524);
+  `npm run typecheck` exit 0; `npm run build` built + bundle lock check passed.
+- [ ] Real WebGL front/side/front-quarter screenshots against references 05/07/14/15 (waived this pass).
+
+## Roadster 2 flush 45-degree wing, short struts, boost animation, fuller nose — 2026-11-04
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Request: opened wing keeps its leading edge on the deck and only
+the rear lifts ~45 degrees (photo 04); a raised pose with much shorter struts (rear reference); boost/NITRO clearly
+opens it with smooth open/close, robust to chained boosts; nose centre too sunken; headlamp frame too heavy. TDD only,
+browser checks waived by the user for this pass.
+
+- [x] Wing: two motions in `poseRoadsterWing(wing, tilt, raise)` — tilt swings the blade about its leading edge to 45
+  degrees with no carriage lift; raise lifts the carriage `.16` (was `.34`) at 12 degrees; together they stay 45.
+  Swan necks shortened to match. Boost/NITRO/mini boost/braking open it; flight and downforce mode raise it.
+- [x] Animation: `stepRoadsterWing` moves each motion at a constant rate (open .45 s, close .7 s) eased by smoothstep,
+  so a re-trigger reverses from the current pose; a .6 s hold bridges chained boosts. Replaces the exponential
+  damp in `world.js` (same line count). Garage flight pose now uses the raised pose.
+- [x] Nose: hood front .60 → .74 and tower crest .86 → .82 at the nose; the painted face fills blade → hood edge
+  across the towers. The earlier "towers ≥ .30 above the hood" test was reversed on request.
+- [x] Headlamps: hairline bezel (≤ .012, was .025), apex toward the outer edge, lens .008 ahead of the nose cap,
+  every vertex below the tower top.
+- [x] RED observed: 8 assertion failures (lift .34, hood .60, bezel .025, wing 0 degrees with `stepWing` stubbed).
+- [x] GREEN: `tests/roadster-fidelity.test.js` 26/26; `npm test` 1525 pass / 1 fail / 3 skipped — the failure
+  (`track-preview.test.js` portrait AIRFLOW headroom, `-0` vs `0`) also fails on a clean HEAD 31b88524 export;
+  `npm run typecheck`; `npm run build`. `world.js` stays 1126 lines.
+- [ ] Browser regression, real WebGL screenshots, exact-HEAD CI, human visual approval.
+
+## Roadster 2 sharper body + 45-60 degree airbrake wing — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Request: match photos for roof, sides, hood, ports and below,
+front/rear curves, lights, wheels; sharper supercar line; wing opens diagonally to 45-60 degrees, not parallel.
+
+- [x] Wing: blade hinges on its leading edge and tilts to 52 degrees (trailing edge up/back) while the carriage rises;
+  tips fold after 35%; rams track bay → blade underside per frame (scalar math). `world.js` no longer stacks the
+  generic ±20 degree pitch on lifting wings. `lift=.34` / `restY` contract kept.
+- [x] Canopy: roof 1.48 → 1.335, windscreen starts at the hood cowl (old gap under it visible from the front); glass
+  surround traced from the canopy stations; bronze glazing.
+- [x] Front: inboard fender crest (near-vertical inner wall, broad top sloping out), blade/carbon band/intake narrowed to
+  ~70% of the nose, broad inverted triangular lamps at the blade ends (photo 05).
+- [x] Wheels: pale aero disc + five dark pointed star blades (photos 02/03/15).
+- [x] Rear: four arched tunnel mouths under the port bar, lighter satin carbon so tunnels/vanes read, dark counterbore
+  socket per port, bronze bore walls (photo 01). `REAR_PORTS` / NITRO anchors unchanged.
+- [x] RED observed: 7 assertion failures on the old model (wing 0 degrees at half travel, roof 1.48, dark disc, square
+  tunnel, no socket, fender test was vacuous `-Infinity` hood and now measures .26 < .30, blade 1.6 wide).
+- [x] GREEN: `npm test` 1519 pass / 0 fail / 3 skipped; `npm run typecheck`; `npm run build`; Playwright shader-warmup,
+  black-frame, Garage studio/inspection/quality 21/21 (headless SwiftShader).
+- [x] Cost: +4 draw calls (port sockets), ~7.2k triangles per Roadster; frame time not measured.
+- [ ] Full `make verify`, exact-HEAD `[full-regression]` CI, human visual approval, physical phone check.
+  `make verify` on 00c05140 failed 1 unit test (wheel star blades did not spin), fixed in 5203b019; the re-run on
+  5203b019 was terminated mid-browser-suite (84 specs green so far). CI 41669003901 on 00c05140 was cancelled
+  (superseded push). Superseded by the 2026-11-04 wing/nose pass.
+
+## Roadster 2 front/rear photo match + folding wing — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Request: match photos 01/04/05/06/13/15 front and rear (curves, lights),
+the quad-port area, and redesign the wing open/close. User chose to **restore the hairline front light blade** (photo 05),
+reversing the earlier "two corner slits" decision.
+
+- [x] Front: blunter nose, fender towers ≥ .18 above a flat hood, painted hood lip → hairline lit blade → carbon band →
+  low intake → protruding matte splitter; larger inverted triangular headlamps above the blade ends; dark lower corners.
+- [x] Rear: wing lip over the slot, white shelf, recessed white scoop with plate, black port bar, four open tunnels with a
+  matte back wall (the flat body cap used to show white through them), white tail blades, red corner markers.
+- [x] Ports: one bronze lathe (barrel + rolled lip) protruding from the bar, warm dark bore; bore back moved ahead of the
+  body cap (z 2.37), which every port used to show as a white disc. `REAR_PORTS` / VFX anchors unchanged.
+- [x] Wing: stowed it is the deck lid; `poseWing` (`src/car-model.js`) raises it on hidden swan-neck struts out of a black
+  bay, tips fold into endplates after 35% travel (close reverses). Same triggers plus the downforce pitch; `lift=.34` kept.
+- [x] Root-cause fix: merged painted trim used a cloned paint, so Garage / race paint never reached it; it now shares the
+  car's paint (`mergeStaticParts`).
+- [x] RED observed: 9 assertion failures in `tests/roadster-fidelity.test.js` on the old model (bores end on paint, paint
+  not shared, no blade/tunnels/fold, oversize rings). Tunnel test mutation-checked (fails without the back wall).
+- [x] GREEN: roadster suite 17/17; `npm test` 1515 pass / 0 fail / 3 skipped; `npm run typecheck`; `npm run build`.
+- [x] Cost: 60 → 62 draw calls, 6,650 → 7,008 triangles per Roadster; `poseWing` loops 5 wing children per frame, no
+  allocation. Frame time not measured.
+- [ ] Targeted WebGL specs (shader warmup, black frame, eight-car grid, Garage studio/inspection/quality); full
+  `make verify` and exact-HEAD `[full-regression]` CI.
+- [ ] Human visual approval against the photos; physical phone check (Low/Medium/High).
+
+## Roadster 2 photo-reference fascia revision — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Four new user-supplied photographic views: overhead front, rear three-quarter, rear-wheel/diffuser detail, straight-on rear fascia. Keep recognizable fictional race styling and **no manufacturer logos**. Visual approximation, not an OEM CAD replica.
+
+- [x] Replace inaccurate full-width **front illuminated blade** with two compact corner slit markers, narrow body-painted wedge front and thin black recessed central mouth; retain dark headlamp pockets and two hood creases.
+- [x] Layer a broad inset black rear lamp slot, slim LED strip on top of a sculpted pearl-white rear shelf, blank rear plate, carbon lower valance and deep diffuser fins.
+- [x] Cut four real circular apertures around the immutable rear thruster anchors and sculpt two black carbon rear-quarter tapers behind the rear arches; test nozzle visibility with ray casting against the valance.
+- [x] New reference-close quad-port pass: smaller muted bronze rims with separate black beveled mount rings, double-sided deep barrel walls, recessed shadow backs, shared geometry; a raised perforated four-hole bank, upper/lower swept dark lips and five non-rectangular diffuser fins. `src/roadster-rear-nozzles.js` owns port internals; `src/roadster-reference-fascias.js` owns the carbon surround. **No logo, no VFX emitter offset.**
+- [x] Tests added for four exact `REAR_PORTS` positions, front-to-back nozzle layer order, material contrast, shared geometry, photo-sized lips, unblocked bank apertures and swept diffuser geometry.
+- [ ] Confirm the new tests' true RED/GREEN observation: GitHub CI on intermediate commits was cancelled by subsequent feature pushes; do not claim execution proof until the exact HEAD suite runs.
+- [ ] Capture real WebGL rear and rear-quarter screenshots and compare socket scale, dark bores, brass glints and carbon diffuser to the user's two close-up rear images; also test Mobile High/Medium/Low performance and NITRO/FLY with devices.
+
+- [x] Preserve all four `REAR_PORTS` simulation/VFX anchors and visible recessed bronze-edged nozzles; move adjustable wing toward trailing deck edge without changing `lift=0.34` or Garage/flight controller contracts.
+- [x] Introduce `src/roadster-reference-fascias.js` to share non-animated source geometries and stay within the 400-line-per-source-module rule; add structural regression tests to `tests/roadster-fidelity.test.js`.
+- [ ] New photo-specific regression test RED → GREEN verification: test-first commits have been created, but local dependencies/repo checkout are not available in this execution environment; GitHub CI on the exact final HEAD must verify the result. Do not claim historical RED was executed.
+- [ ] Full exact-HEAD `[full-regression]` CI: Unit, Build, Typecheck, Cloud Save, Browser matrix, World Tour matrix and `quality-gate`; do not accept previous-HEAD results or skipped required jobs.
+- [ ] Capture and review **real rendered-game** front/top, straight rear, rear quarter and flight/Garage screenshots at desktop/phone viewports; compare nose/grille/lamp slot/white tail shelf/nozzle depth to the four photos. Human visual review remains outstanding.
+
+---
+
+## Roadster front/rear & eight-car visual identity — 2026-11-03
+
+**Branch:** `feature/roadster2-high-fidelity-body`. Reference: user-provided 15 images of Roadster 2 front, rear, side, raised aerofoil, wheel details and flight. This is a recognizable *game model*, not an OEM CAD replica.
+
+- [x] Model-specific curved Roadster front and rear fascia, hairline nose light, recessed corner light pockets, black corner ducts, continuous rear light and curved edge; retain the original 4 rear thruster ports, diffuser, five-spoke wheels and moving aerofoil.
+- [x] Map the **actual** `YOU, NOVA, ORBIT, APEX, VEGA, PULSE, COMET, RIFT` grid to 8 distinct racing models, not seven paint swaps of three rivals. VEGA/PULSE/COMET/RIFT get unique sculpted shell and front/rear light signatures; existing original racers retain their established visual languages.
+- [x] Mix commuter sedan / crossover / hatch geometries for traffic, preserving traffic simulation and independent racer identity. Shortened Pulse and hatch visual chassis length; no physics or collision rules changed.
+- [x] No manufacturer or fixed brand logos are baked into meshes; future equipable vehicle badges remain a separate feature.
+- [x] Add deterministic fleet, light, material, bounds, vehicle-pose contracts and module-size-friendly changes; preserve previous exact geometry snapshots for all untouched vehicles.
+- [ ] Historical RED observation for test-first commits: GitHub cancelled superseded runs while commits advanced. Don't claim verified RED until a specific failing test log is recorded.
+- [ ] **Exact-HEAD** `npm test`, `npm run build`, `npm run typecheck`, `make verify`, all Browser / World Tour and Cloud Save shards plus `quality-gate` GREEN (via `[full-regression]` commit); identify any failures by name, never equate focused CI with full CI.
+- [ ] Real WebGL Garage/Home/Race screenshots: front, rear, side, 45-degree, lowered/raised wing, road/airborne; 390×844, 844×390 and desktop. Compare 8 drivers at distance under High/Medium/Low, and compare before/after draw calls, triangles, median/p95 frame time, visual wheel clearance.
+- [ ] Human touch/device QA and user's aesthetic approval. Do not merge to `develop`/`main`, open PR, force push, or deploy.
+
+---
+
+---
+
+## Roadster 2-inspired player vehicle fidelity — 2026-11-03
+
+**Feature branch:** `feature/roadster2-high-fidelity-body`, created from `develop` `b34b1bfc`.
+
+**Integration checkpoint:** `develop` `00ae95f8` was merged via `6cdd909f` (two parents, no force-push). Previous HEAD CI `41584935239` failed unit/browser/World Tour; unit failure identified a shared Roadster merged-material instance. Fix commit `5a11df0` is included. Verify the full CI on the exact new HEAD (not only feature-focused tests); visual WebGL and physical-device review remain separate gates. Visual reference: front/side/rear/wing/flight images in `docs/designs/roadster2-reference/`; spec and plan in `docs/superpowers/`.
+
+- [x] Preserve current race physics, VFX port coordinates, Garage body-paint API, wing lift and independent wheels.
+- [x] Replace roadster-only six-box-section shell with a multi-station faceted wedge and fastback glazing, add realistic side detail, aero rims, rear wing, nozzles and diffuser.
+- [x] Introduce physical pearl paint and glazed windows without changing rival/traffic styles; add targeted structural regression tests.
+- [ ] Verify the expected historical RED state on the pre-implementation commit: first GitHub test run was cancelled before unit jobs completed; do **not** claim TDD RED observed.
+- [ ] Obtain GREEN for `node --test tests/roadster-fidelity.test.js tests/car-model-draws.test.js`, complete `npm test`, `npm run build`, `npm run typecheck`, `make verify`.
+- [ ] Inspect real WebGL pictures for all major angles in Garage and race, at desktop and mobile viewport; compare frame time, triangles and draw calls before/after.
+- [ ] Verify exact-HEAD full CI quality-gate and manually test road/flight/transitions on real devices. No PR, merge, deployment or modification to `main`/`develop` without explicit user approval.
+
+---
+
+## Fix — What's New hero clip stays a still on iPhone Home Screen app until tapped (2026-11-03)
+
+**Branch:** `develop`. **Repro (user, iPhone 16, iOS 26.3, Home Screen app):** notes auto-open on launch, hero clip shows its
+poster, no music; only a tap on the clip (which enlarges it) starts the clip and the music.
+**Root cause:** where the browser refuses autoplay (iPhone Low Power Mode refuses even a muted clip; Web Audio never starts
+before a touch on iOS), `syncReleaseVideo` gave up on the first refusal and never retried. The music already retried on any
+touch; the hero did not.
+
+- [x] RED: `tests/release-video-browser.spec.js` "refused autoplay" desktop click + phone tap: play() refused without a real
+  input event, notes opened without one; first touch on the notes left the hero paused (both failed, 10 s poll).
+- [x] GREEN: `onUserActivation` (`src/user-activation.ts`, shared with the music unlock in `audio-ui.ts`) retries a paused hero
+  on the first tap/key while the notes are open; the enlarged view keeps it waiting (mutation: removing that guard fails
+  "waits behind its enlarged view"). Spec 13/13 green.
+- [x] iOS 27.0 simulator, Home Screen web app, production build: hero autoplays on launch with the fix (frames differ 2 s
+  apart); first tap creates a running AudioContext (music on).
+- [ ] Real iPhone 16 / iOS 26.3 retest by the user (Low Power Mode on and off). Not reproducible in the simulator, which has
+  no Low Power Mode; music before the first touch is impossible on iOS (platform rule).
+
+## Touch devices: hide keyboard remapping until a physical keyboard is used — 2026-11-03
+
+Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/tablets should not show the Controls panel's "鍵盤 · 先選擇動作，再按下按鍵" section, its rebind buttons, the fixed-shortcut note or Reset keyboard — but a phone/tablet with a Bluetooth keyboard must still be able to remap.
+
+- [x] Rule (`src/keyboard-presence.ts`): show at once on `(hover: hover) and (pointer: fine)`; otherwise hidden until a keydown with a non-empty `code`, not composing and not typed into a text field (on-screen keyboards send an empty code or compose), then remembered in `skyline-rush-keyboard-seen`. Wired in `setupKeyMapUI` → `panelsView.keyboardSettings` → `v-show` in `ControlsPanel.vue`.
+- [x] RED: `tests/keyboard-settings-browser.spec.js` touch case failed (`.keymap-field` visible) on the stub; GREEN after the change, desktop case green throughout. `tests/keyboard-presence.test.js` 6/6.
+- [x] `npm test` 1446 pass / 0 fail; `npm run build`; `npm run typecheck`; handoff/i18n/guide specs: the only 8 failures (handoff PERFECT LINE, i18n flow ×4, intro bottom edge ×3) fail identically on unmodified `origin/develop` `9ec7f3df`.
+- [x] Screenshot 390×844 touch: Controls panel without the keyboard block; after a Shift press, the block appears.
+- [x] Pre-existing develop reds (home row at 1440×900, `main-ui-parity`, i18n 3x artwork summary, handoff PERFECT LINE) were fixed
+  here, then superseded by develop's own fixes in 0.29.0; on merging `develop` `b34b1bfc` this branch took develop's versions and
+  dropped its duplicates (`hud-artwork.ts`, `layoutSeed` fixture, 12px/16px home row).
+- [ ] Physical iPad / iPhone with and without a Bluetooth keyboard.
+- [ ] `make verify` and full exact-HEAD CI `quality-gate` after merge into `develop`.
+
+---
+
+## Garage VFX remembered skin picks — 2026-11-03
+
+Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial pick survives reload as a preference only (`src/garage-skin-preference.ts`), re-applied through `session.equip`; never ownership.
+
+- [x] RED observed on old code: `tests/garage-skin-preference.test.js` (runtime reload / wiring), locked-bundle key audit in `tests/garage-release-build.test.js`, browser reload test (`data-state` was `trial`, expected `equipped`).
+- [x] GREEN: `npm test` 1462 pass / 0 fail, `npm run typecheck`, `npm run build` (locked bundle has no `skyline-rush-garage-skin-picks`; trial bundle has it), `tests/garage-skin-trial-browser.spec.js` 4/4 (desktop, 390×844, 844×390).
+- [ ] Pre-existing locally on unchanged `HEAD` source too: `garage-inspection-mode-browser.spec.js:4` (390×844) and `garage-studio-browser.spec.js:136` fail; confirm on CI.
+- [ ] `make verify` and the full exact-HEAD `quality-gate` (`[full-regression]`); then merge into `develop` (approved for this branch).
+
 ---
 
 ## Garage VFX badge clipping / 3× WebP regeneration — 2026-11-02

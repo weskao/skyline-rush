@@ -33,6 +33,23 @@ test('Garage promotion remains distinct but stops animating with reduced motion 
   await expect(garage.locator('.garage-new-tag')).toHaveCSS('animation-name', 'none');
 });
 
+// The NEW-tagged Garage pushed Practice onto a second desktop row and the 900px intro scrolled by 59px.
+for (const system of ['en-US', 'zh-TW']) for (const width of [1280, 1440]) {
+  test.describe(`promoted Garage fits ${system} ${width}x900`, () => {
+    test.use({ locale: system, viewport: { width, height: 900 } });
+    test('a one-line tagline pays for the Practice row, so the intro does not scroll', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const title = await page.locator('#intro-title').boundingBox();
+      const lineHeight = await page.locator('#intro-title').evaluate(el => parseFloat(getComputedStyle(el).lineHeight));
+      expect(title.height).toBeLessThanOrEqual(lineHeight + 1);
+      expect(await page.locator('#intro').evaluate(el => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(0);
+      for (const selector of ['#start-button', '#garage-button', '.history-button', '#practice-button'])
+        expect((await page.locator(selector).boundingBox()).height, selector).toBeGreaterThanOrEqual(44);
+    });
+  });
+}
+
 test('home Practice opens the guide on the practice call to action, which starts the lesson', async ({ page }) => {
   await page.goto('/');
   await page.locator('#practice-button').click();
@@ -102,6 +119,8 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [844, 390]])
       }
       expect(startBox.width).toBeGreaterThan(0);
       if (width >= 1001) {
+        // A wider Garage once wrapped Practice onto a second row and made the desktop intro scroll.
+        expect(await page.locator('#intro').evaluate(el => el.scrollHeight <= el.clientHeight + 1), 'desktop intro must fit without scrolling').toBe(true);
         // Desktop keeps History and the promoted Garage on the Start row.
         const [garage, history] = [await page.locator('#garage-button').boundingBox(), await page.locator('.history-button').boundingBox()];
         for (const box of [garage, history]) expect(Math.abs((startBox.y + startBox.height / 2) - (box.y + box.height / 2))).toBeLessThan(2);
@@ -147,5 +166,23 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [844, 390]])
       expect(spill).toEqual([]);
       if (touch) { await page.locator('#vfx-reset').scrollIntoViewIfNeeded(); await tall(page.locator('#vfx-reset')); }
     });
+  });
+}
+
+// The rules row (z-index 1, blurred) overlapped the corner NEW tag on desktop, and phones showed an inline tag instead.
+for (const [name, size] of Object.entries({ desktop: { width: 1280, height: 900 }, phone: { width: 390, height: 844 }, landscape: { width: 568, height: 320 }, narrow: { width: 320, height: 568 } })) {
+  test(`Garage NEW tag is a top-corner overlay and never covered (${name})`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.goto('/');
+    const garage = page.locator('#garage-button'), tag = garage.locator('.garage-new-tag');
+    await expect(tag).toBeVisible();
+    await expect(tag).toHaveCSS('position', 'absolute');
+    const hit = async () => tag.evaluate(el => { const r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return true; /* Garage itself is scrolled away (568x320 landscape, pre-existing) */ return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); });
+    expect(await hit()).toBe(true);
+    // Scrolling the intro (pinned row on phones) must not slide other widgets over the tag.
+    await page.locator('#intro').evaluate(el => { el.scrollTop = el.scrollHeight; });
+    expect(await hit()).toBe(true);
+    await page.locator('#intro').evaluate(el => { el.scrollTop = el.scrollHeight / 2; });
+    expect(await hit()).toBe(true);
   });
 }
