@@ -108,6 +108,22 @@ function addLandmarks(group: THREE.Group): THREE.Mesh[] {
     beam.name='Skyfall volumetric sky beam';
     beam.position.copy(framePoint(f,200+i%2*140,220));group.add(beam);
   }
+  // Visual only: the shared CourseGraph engine will own signed gate crossing.
+  const checkpointMaterial = new THREE.MeshBasicMaterial({color:0x98f0ff});
+  const finishMaterial = new THREE.MeshBasicMaterial({color:0xffdb91});
+  for (const nodeId of SKYFALL_COURSE.checkpoints) {
+    const arriving = SKYFALL_COURSE.edges.find(edge => edge.to === nodeId && edge.mode === 'ground')!;
+    const end = sampleSkyfallRoad(arriving.id, getSkyfallEdgeLength(arriving.id));
+    const marker = new THREE.Group();
+    marker.name = `Skyfall checkpoint marker ${nodeId}`;
+    marker.position.set(end.point.x, end.point.y + 25, end.point.z);
+    marker.rotation.y = Math.atan2(end.forward[0], -end.forward[2]);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(22, 1.8, 8, 32),
+      nodeId === 'finish' ? finishMaterial : checkpointMaterial);
+    ring.name = `Skyfall checkpoint ring ${nodeId}`;
+    marker.add(ring);
+    group.add(marker);
+  }
   return waterfalls;
 }
 
