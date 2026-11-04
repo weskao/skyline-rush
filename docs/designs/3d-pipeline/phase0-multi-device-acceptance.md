@@ -4,7 +4,7 @@
 **Applicable:** macOS Apple Silicon / Intel；其他支援 Blender、Claude Code 的 Linux / Windows 工作站可依各平台命令檢查。  
 **Repository:** https://github.com/weskao/skyline-rush  
 **Working branch:** `feature/3d-visual-fidelity-pipeline`  
-**Scope:** 只做環境檢查、必要且經同意的環境修復，以及證據文件提交。**不**升級 Three.js、不製作 3D 模型、不修改遊戲、不開 PR、不 merge、不 deploy、不 force push。
+**Scope:** 只做環境檢查、必要且經同意的環境修復，以及**留在本機且受 .gitignore 排除的驗收報告**；公開 Repository **不得包含任何裝置專屬報告或敏感資訊**。**不**升級 Three.js、不製作 3D 模型、不修改遊戲、不開 PR、不 merge、不 deploy、不 force push。
 
 > 這份文件包含目的、命令、判定準則、異常處理、紀錄表與 AI 執行 Prompt，可在每台裝置獨立使用；不需要先讀其他文件才能理解驗收條件。但在修改 Repo 時仍須遵守 `AGENTS.md`、`CLAUDE.md` 及 `docs/regression-first-workflow.md`。
 
@@ -15,7 +15,17 @@
 - **Workspace 可自行指定**。macOS 預設為 `~/Documents/Workspace/skyline-rush`，但可設定 `SKYLINE_RUSH_DIR`；不得假設每台裝置相同。
 - Global/User-scope 是相對於**該裝置的使用者帳號**，例如 `~/.claude/skills/` 和 Claude MCP user scope；**不是**把 Skills/MCP 存入 `skyline-rush/.claude/skills/`。
 - 一台裝置通過，不代表另一台通過。更換 Blender、Node、CLI、Skills、MCP 設定或 Three.js 版本後，受影響的檢查須重新執行。
-- 報告命名建議：`docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`；同一天重新驗證可在該裝置報告追加新的 run ID / 時間，而不是覆蓋其他裝置的報告。必要時先把臨時輸出存本機非追蹤目錄，僅提交去敏感化摘要。
+- 裝置報告寫到 **僅本機保留** 的 `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`，由 `.gitignore` 排除；相同裝置重新檢驗可追加 run ID / 日期。**不可 commit/push、不可使用 git add -f，亦不可上傳原始 logs 或憑證。** 不同裝置各自保存報告。
+- 實際驗收全部必要項通過後，在**該裝置的本機報告**寫入一般型號名稱，如 `Mac mini`、`MacBook Pro`（不是 macOS「電腦名稱」或 hostname），並更新本機忽略檔 `docs/designs/3d-pipeline/audits/device-status.md` 的通過紀錄。未驗證時只寫 `UNVERIFIED`，不捏造裝置名稱。
+- 僅公開可共用的規格、命令、匿名化測試方法；若後續需在 GitHub TODO 記錄進度，只可記錄通用的規劃狀態，**不得記錄實際裝置結果、名稱、版本清單、主機資料或本機路徑**。
+
+## 1A. Public GitHub 安全規則（必要）
+
+- **永遠不要公開**：序號、UUID、MAC/IP、主機名稱（hostname / Computer Name）、本機帳號、完整個人路徑、SSH key、Token、API key、MCP 設定原文、環境變數、網路端點、授權私有資產與原始 log。只在本機報告記錄驗證摘要；敏感輸出即使是 gitignored 檔案也應先遮蔽。
+- **允許只在本機報告內記錄**：一般機型顯示名稱 `Mac mini`、`MacBook Pro`，必要的軟體版本、驗證時間、PASS / FAIL、簡短錯誤原因。
+- macOS 取得「產品機型名稱」（不是 hostname）的安全範例：`system_profiler SPHardwareDataType | awk -F ': ' '/Model Name:/ {print $2; exit}'`。只儲存輸出的單行型號，不紀錄完整 `system_profiler` 輸出（其中可能含序號）。如果取得結果不可靠，寫 `MODEL_UNVERIFIED`，不能猜。
+- 使用 `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` 確認忽略規則生效；使用 `git ls-files docs/designs/3d-pipeline/audits/` 確認沒有被追蹤的裝置報告。注意：**.gitignore 不保護已被追蹤檔案**。若發現已追蹤或曾公開機密，停止推送並通知所有者先移除追蹤、撤銷可能暴露的憑證；不要以 .gitignore 聲稱機密已安全。
+- 只允許針對已審查的公開規格做 GitHub Commit／Push。執行 Phase 0 時**不需為個別裝置新增任何 Git Commit**；禁止強制加入忽略檔（`git add -f`）。可以把匿名化摘要直接回報給本機操作者，但不要推到公開 GitHub。
 
 ## 2. 判定與簽核規則
 
@@ -45,8 +55,8 @@
 | E08 | Required | 全域 blender-image-to-3d Skill | `~/.claude/skills/blender-image-to-3d/SKILL.md` 存在、列在 global Skill 清單，並在新 CLI session 可被調用/辨識 |
 | E09 | Required | 全域 Three.js Skills | `~/.claude/skills/threejs-*/SKILL.md` 具備合適的 loaders/materials/performance/asset-pipeline Skill，global 可見；明確指出 r186 Skill 範例不能直接覆蓋 r180 production API |
 | E10 | Required | Three.js baseline / Types | 在指定 branch 的 `package.json`、lockfile及實際 npm 安裝版本可核對（若未 npm ci，標示依賴未安裝），不提前升級到 r186；檢查 typecheck scripts 是否仍引用 r180 |
-| E11 | Required | GitHub 版本控制與文件 | 僅在指定分支新增去敏感化裝置報告、更新 Phase 0 TODO；記錄 commit SHA/URL，沒有改動 develop/main/其他分支 |
-| E12 | Required | CI 狀態 | 讀取本分支**最新 exact-HEAD** Actions run，記錄 Passed/Failed/Pending/Cancelled/Skipped-required 與 URL；不得引用舊 SHA 當作最新通過 |
+| E11 | Required | 公開 Repo 隱私與版控 | `.gitignore` 排除 `docs/designs/3d-pipeline/audits/`；`git check-ignore -v` 顯示正確規則，`git ls-files` 確認裝置報告未被追蹤；沒有把任何機器專屬資訊 Commit／Push |
+| E12 | Required | CI 狀態檢視（唯讀） | 若有 GitHub 權限，核對分支最新 exact-HEAD Actions run、SHA、結果；若尚未完成或沒有存取權，記錄 PENDING / NOT VERIFIED，不能說 Passed；不因裝置檢查而自行 Push 觸發 CI |
 | E13 | Conditional | glTF Transform CLI | 若 Phase 0 已要求資產操作：`npm ls @gltf-transform/cli` 與 CLI help/inspect 成功；否則記錄「Phase 2 才需 install」和 N/A approved，不可謊稱已安裝 |
 | E14 | Conditional | Codex user-scope MCP/Skill | 只有此裝置需 Codex 時才必查；能從 `codex mcp list` 看見配置且實際連線，或核准 N/A |
 | E15 | Conditional | Blender 資產取得與授權 | 若需要下載/使用現成測試素材：驗證來源、license 和磁碟空間；否則 N/A approved |
@@ -100,7 +110,7 @@ npx --no-install gltf-transform --help || true
 df -h .
 ```
 
-**輸出安全：** `git remote -v` 如果 remote 使用含憑證的 URL，請在報告中只寫 owner/repo，移除憑證。MCP 清單若含私有 host、環境變數、Token 或設定值，也只能提交「server 名稱、Scope、連線結果」，不要附原始密鑰。必要時由 AI 在本機完成判讀後，只提交摘要。
+**輸出安全：** `git remote -v` 及 MCP 清單可能含憑證／私有端點。由 Agent 在本機判讀，**不要提交或貼到公開 repo**；本機報告也只寫已遮蔽的 owner/repo、server 名稱、Scope、成功／失敗等摘要，不附原始設定或 Token。
 
 **Live test（必須另外執行）：** 在 Blender GUI 開啟任意工作場景並確認 MCP Server 已啟動，在 **新的 Claude Code session** 發出「請使用 Blender MCP 工具，以唯讀操作列出目前場景所有物件的名稱、型別、位置，並告訴我你使用的是哪個 MCP 工具；不得新建或修改物件。」核對實際 Tool 回傳內容及場景；只給一般文字答案不算 PASS。
 
@@ -152,14 +162,16 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 
 ## 7. 每台裝置的驗收報告範本
 
-複製此範本至 `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`，並記錄該裝置每次檢查；不要拿一台設備的結果直接勾選另一台設備。
+複製此範本至 **已加入 .gitignore 的本機目錄** `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`。這份報告 **只存在目前裝置，不可 Commit/Push**，並且不要拿另一台設備的結果直接勾選。使用 `git check-ignore -v` 驗證路徑後才寫入。
 
 ```markdown
 # Phase 0 Environment Audit — <device-alias> — YYYY-MM-DD
-- Device alias: <non-sensitive alias>
+- Device alias: <non-sensitive local alias; do not use hostname>
+- Device model name: UNVERIFIED (fill with e.g. Mac mini / MacBook Pro **only after** acceptance passes)
+- Privacy: LOCAL ONLY / gitignored / never commit or push
 - Operating system / CPU: <macOS / Linux / Windows, arch>
 - Local date/time/time zone: <timestamp with timezone>
-- Workspace: <sanitized path>
+- Workspace: <generic workspace label, never absolute private home path>
 - Repo branch / HEAD before / after: <branch and SHAs>
 - Agent clients tested: Claude Code / Codex / other
 - Auditor: <agent or human>
@@ -186,13 +198,25 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 - Live Blender MCP tool name + observed object count: <redacted evidence; no secrets>
 - Outstanding blockers and exact owner executable commands: <details>
 - Exact-HEAD GitHub CI link and status: <URL/status; never imply docs CI proves Mac tools>
+- Device name written AFTER PASS: <actual non-identifying model name, or UNVERIFIED>
+- Local-only inventory: docs/designs/3d-pipeline/audits/device-status.md (ignored)
 - Final verdict: READY FOR PHASE 1 / BLOCKED
 - Reviewer and approval for optional N/A: <name/alias and date>
 ```
 
 ## 8. 可直接給 Claude Code / Codex 的跨裝置 Phase 0 Prompt
 
-> 請在**你實際執行的本機裝置**，從目前 Skyline Rush checkout（預設 ~/Documents/Workspace/skyline-rush，若有 SKYLINE_RUSH_DIR 則優先）執行 GitHub 分支 `feature/3d-visual-fidelity-pipeline` 的 **Phase 0 only**。**先完整閱讀本文件** `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md`，再依 E01–E15 逐項執行實際命令和 live Blender MCP read-only scene query；每項附版本、Scope、命令、觀測輸出及 PASS/FAIL/NOT VERIFIED/N/A。必要修復需先保留原設定、確認權限，修復後重新驗證。不要改 Three.js、模型、遊戲程式或其他分支。為目前**這台裝置**建立獨立、去敏感化的 `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` 報告並更新 TODO.md 的**該裝置檢查狀態**，在指定分支 commit/push；對照最新 exact-HEAD CI。只有所有 Required PASS 和 Conditional 合理核准時才回報 READY FOR PHASE 1，否則明確回報 BLOCKED 及可複製的修復指令，不得以別台裝置結果替代。
+> 在此裝置上執行 Skyline Rush 的 **Phase 0 only**。先從本機 `SKYLINE_RUSH_DIR`（預設 `~/Documents/Workspace/skyline-rush`）進入 Repo 的既有 `feature/3d-visual-fidelity-pipeline`，先讀取本獨立文件 `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md`、`AGENTS.md` 與 `CLAUDE.md`。保留未提交的變更，不得 reset、force push、PR、merge、deploy 或改動遊戲／Three.js。
+>
+> **先做隱私保護：** 這是 PUBLIC GitHub repo。先用 `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` 確認整個 `audits/` 目錄已被 `.gitignore` 排除，並用 `git ls-files docs/designs/3d-pipeline/audits/` 確認未追蹤任何報告。若不成立，先修正忽略規則，且不要繼續寫含裝置資訊的報告。嚴禁 Commit/Push 裝置報告、原始 log、環境變數、憑證、序號、hostname、macOS「電腦名稱」、私有路徑或 MCP 設定。
+>
+> 依 E01–E15 在**這台本機**逐項執行檢查並保留已遮蔽證據：Blender CLI/Background Python/Add-on 是否啟用；透過 Claude Code **實際 MCP 唯讀工具呼叫**列出 Blender 場景物件；Claude Code 的 user-scoped Blender MCP；`~/.claude/skills/` 中的全球 `blender-image-to-3d` 和 `threejs-skills` 是否真正被 Agent 辨識；Node/npm/uvx；現行 Three.js/@types；glTF Transform；Codex 僅在該裝置需要時檢查。確認所有 PASS 都有實際命令、版本和輸出支持，不得用其他裝置結果替代。
+>
+> 缺少工具時先檢查版本、來源及現有設定，取得必要權限後只做最小修復並**重跑驗證**；無權限或無法連線時以 FAIL／NOT VERIFIED 記錄並給本機使用者可複製的指令，不虛構成功。
+>
+> 針對本機用非識別性 `device-alias` 建立**本機忽略的** `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`，使用本文件表格記錄 E01–E15。驗收通過後，才使用例如 `system_profiler SPHardwareDataType | awk -F ': ' '/Model Name:/ {print $2; exit}'` 取得**產品型號名稱**（如 `Mac mini`、`MacBook Pro`，**不是 hostname／Computer Name**），填入這台裝置的本機報告，並更新同為 `.gitignore` 排除的 `docs/designs/3d-pipeline/audits/device-status.md`。若任一必要驗收失敗，裝置名稱保持 `UNVERIFIED`，最後標示 BLOCKED；當全部 Required 為 PASS，Conditional 為 PASS 或核准 N/A 時才標示 READY FOR PHASE 1。
+>
+> 最後在此裝置顯示驗收表、通過項目與失敗修復建議；檢查 GitHub Actions 最新 exact-HEAD 狀態（唯讀），不要把未執行或尚在排隊的 CI 說成通過。**不要為這台裝置 Push 任何含裝置資訊的內容**。本次不得升級 Three.js、建立模型或修改遊戲。
 
 ## 9. 相關規格（進一步詳細設計；非本文件必要依賴）
 
