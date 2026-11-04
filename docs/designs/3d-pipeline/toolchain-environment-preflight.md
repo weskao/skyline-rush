@@ -4,6 +4,8 @@ Date: 2026-11-04 · Status: NOT RUN ON USER MAC · Owner workspace: ~/Documents/
 
 > **Reusable, cross-device acceptance:** [phase0-multi-device-acceptance.md](phase0-multi-device-acceptance.md) is the standalone authoritative E01–E15 checklist, with Mac/Linux/Windows commands, a copyable AI execution prompt, and a separate per-device audit report. This document is the Mac-focused companion only. Use SKYLINE_RUSH_DIR to override the default workspace on another device; never transfer PASS evidence between devices.
 
+**Public GitHub privacy:** device results and device model names live **only** in `docs/designs/3d-pipeline/audits/`, which is excluded by `.gitignore`. Keep this file and the reusable acceptance document public, never commit per-device output. After all required checks pass, the agent records a generic model label (`Mac mini`, etc.) in the ignored local audit and local `audits/device-status.md`. Confirm `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` and `git ls-files docs/designs/3d-pipeline/audits/` before writing results.
+
 **This check is mandatory before Blender, model generation, Three.js upgrades or asset processing.** The owner states tools were previously installed; the GitHub-only authoring session cannot verify the Mac's local binaries, user-scoped MCP or Skills. Do not mark installed or connected until exact commands are run there.
 
 ## Scope: "global" is not the workspace path
@@ -14,7 +16,7 @@ Date: 2026-11-04 · Status: NOT RUN ON USER MAC · Owner workspace: ~/Documents/
 - **Codex user-scope MCP:** ~/.codex/config.toml (Codex CLI manages this through its commands; do not overwrite or commit). Codex Skill support is separate; inspect ~/.codex/skills if installed.
 - **Blender addon:** in Blender user scripts/config for the detected Blender version (not workspace folder); addon enabled and addon server running are different conditions.
 - **glTF Transform:** a project dev dependency is appropriate for repeatable CI; check package.json/lockfile; a globally installed CLI alone is insufficient for reproducible builds.
-- Never print or commit API tokens, ~/.claude.json, ~/.codex/config.toml or other configs wholesale. Report only server names, Skill names, versions, and connection status.
+- Never print or commit API tokens, ~/.claude.json, ~/.codex/config.toml or other configs wholesale. **Any versions or machine-specific results belong only in ignored local audits, not public TODO.md**. Do not commit hostname, serial, private home paths, full MCP output or even a redacted device-specific report. `git add -f` is prohibited for audit files.
 
 ## 0A. Commands to run locally (read-only, from macOS Terminal)
 
