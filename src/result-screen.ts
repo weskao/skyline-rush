@@ -114,7 +114,7 @@ function standardView(race: FinishedRace, { best, record, medals, series, next }
     stats: `<div><span>${t('race.position')}</span><strong>${race.rivals.length ? result.position : t('mode.solo')}<small> / ${race.rivals.length + 1}</small></strong></div>`
       + row(t('result.yourTime'), timeString(displayedTime)) + row(t('result.best'), timeString(best))
       + (finishBadge ? row(getLocale() === 'zh-TW' ? '完賽名次徽章（僅展示）' : 'Placement badge (display only)',
-        `<img class="result-trophy-art" src="${placementBadgeArtwork(finishBadge.tier, import.meta.env?.BASE_URL ?? '/').src}" width="48" height="48" alt="" aria-hidden="true" style="vertical-align:middle;object-fit:contain;margin-right:8px">${finishBadge.name}`) : ''),
+        `<img class="result-trophy-art" src="${placementBadgeArtwork(finishBadge.tier, import.meta.env?.BASE_URL ?? '/').src}" width="96" height="96" alt="" aria-hidden="true" style="vertical-align:middle;object-fit:contain;margin-right:8px">${finishBadge.name}`) : ''),
     style: {
       aria: t('result.starsAria', { n: result.stars }),
       html: `<div class="style-stars" aria-hidden="true">${Array.from({ length: 3 }, (_, i) => `<span class="${i < result.stars ? 'earned' : ''}">${icon('star')}</span>`).join('')}</div><strong>${t('result.style', { score: result.score })}</strong><small>${t('result.styleHelp')}<br>${t('result.styleStars', { two: race.length * 0.25, three: race.length * 0.5 })}</small>`,
@@ -173,6 +173,10 @@ export function setupResultScreen() {
     if (view.nextStage !== undefined) nextStage.textContent = view.nextStage;
     if (view.nextTrack !== undefined) nextTrack.textContent = view.nextTrack;
     stats.innerHTML = view.stats;
+    // Decorative art failure never hides the real placement name.
+    for (const image of stats.querySelectorAll<HTMLImageElement>('.result-trophy-art')) {
+      image.onerror = () => { image.hidden = true; };
+    }
     if (view.style) { style.setAttribute('aria-label', view.style.aria); style.innerHTML = view.style.html; }
     if (!view.counts.length) return [];
     const targets = [stats.children[1]!.querySelector('strong')!, stats.children[2]!.querySelector('strong')!, $('#result-style > strong')];

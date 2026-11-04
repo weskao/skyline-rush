@@ -1892,3 +1892,8 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
   .tutorial-celebration-badge, .tutorial-celebration-badge svg, .tutorial-coach[data-step="complete"] { animation: none; }
   .tutorial-celebration i { display: none; }
 }
+
+/* Display-only 3x results artwork; no reward entitlement. */
+.result-trophy-art{display:inline-block;max-width:96px;vertical-align:middle;object-fit:contain;animation:reward-podium-reveal .52s ease-out both}
+@keyframes reward-podium-reveal{from{opacity:0;transform:scale(.88);filter:brightness(1.65) drop-shadow(0 0 12px #eecb70)}to{opacity:1;transform:scale(1);filter:none}}
+@media(prefers-reduced-motion:reduce){.result-trophy-art{animation:none}}

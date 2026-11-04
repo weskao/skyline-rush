@@ -59,7 +59,7 @@ test('all Rewards/Missions icon masters are independently encoded 3x transparent
 test('podium uses the formal PNG master at 48 CSS px, never treats it as an awarded entitlement', () => {
   const badge = placementBadgeArtwork('gold', '/skyline-rush/');
   assert.equal(badge.src, '/skyline-rush/feature-assets/garage-rewards-and-missions/raster/trophy-gold@3x.png');
-  assert.deepEqual([badge.cssSize, badge.sourcePixels], [48, 288]);
+  assert.deepEqual([badge.cssSize, badge.sourcePixels], [96, 288]);
 });
 
 test('actual Garage and Results surfaces reference PNG (not just the source Gallery) and have a load fallback', () => {

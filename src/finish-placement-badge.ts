@@ -14,9 +14,9 @@ export function presentationPlacementBadge(position: number, players: number, lo
   return { tier, name: LABELS[tier][locale === 'zh-TW' ? locale : 'en'], displayOnly: true };
 }
 
-/** Bundled source image remains 288px; the compact result row uses 48 CSS pixels. */
-export function placementBadgeArtwork(tier: PlacementTier, baseUrl: string): Readonly<{ src: string; cssSize: 48; sourcePixels: 288 }> {
+/** 288px source shown at 96 CSS pixels (native 3x). This is decoration, not an award. */
+export function placementBadgeArtwork(tier: PlacementTier, baseUrl: string): Readonly<{ src: string; cssSize: 96; sourcePixels: 288 }> {
   const base = /^\/(?!\/)(?:[A-Za-z0-9_-]+\/)*$/.test(baseUrl) ? baseUrl : '/';
-  return { src: `${base}feature-assets/garage-rewards-and-missions/raster/trophy-${tier}@3x.webp`,
-    cssSize: 48, sourcePixels: 288 };
+  return { src: `${base}feature-assets/garage-rewards-and-missions/raster/trophy-${tier}@3x.png`,
+    cssSize: 96, sourcePixels: 288 };
 }
