@@ -8,6 +8,13 @@ import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems, STORE_ITEM_PRESENTATION
 import type { Wave3PreviewCategory, Wave3PreviewGroup, Wave3Text } from './garage-wave3-preview-catalog.ts';
 
 const props = defineProps<{ category: Wave3PreviewCategory }>();
+const detailsRef = ref<HTMLDetailsElement | null>(null);
+function openStore(): void {
+  if (props.category !== 'garage-store-readiness' || !detailsRef.value) return;
+  detailsRef.value.open = true;
+  detailsRef.value.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+}
+defineExpose({ openStore });
 const locale = ref(getLocale());
 const config = computed(() => WAVE3_PREVIEW_CATALOG[props.category]);
 const storeState = storeReadiness();
@@ -36,7 +43,7 @@ onUnmounted(() => stopListening?.());
 </script>
 
 <template>
-  <details :id="'garage-art-source-' + category" class="garage-source-art" :data-wave3-category="category">
+  <details ref="detailsRef" :id="'garage-art-source-' + category" class="garage-source-art" :data-wave3-category="category">
     <summary>
       <span data-wave3-entry-icon class="garage-source-entry-icon">
         <GarageArtworkImage :src="image(category === 'garage-store-readiness' ? 'store-cart' : 'mission-race')"
