@@ -91,3 +91,14 @@ test('hazardous vent bypass is an actual ground road using canonical CourseGraph
   assert.ok(VOLCANIC_CROWN_EDGES.every(edge => edge.mode === 'ground' || edge.mode === 'flight'),
     'shared CourseGraph accepts only ground / flight route modes');
 });
+
+test('both flight alternatives rejoin the physical ground road without a heading snap',()=>{
+  for(const [flightId,nextGroundId] of [['rift-flight','ground-2'],['gorge-flight','ground-8']]){
+    const flight=sampleVolcanicRoute(flightId,volcanicEdgeLength(flightId));
+    const ground=sampleVolcanicRoute(nextGroundId,0);
+    const separation=Math.hypot(...flight.point.map((v,i)=>v-ground.point[i]));
+    assert.ok(separation<.01,`${flightId} must land on the real ground endpoint`);
+    assert.ok(dot(flight.forward,ground.forward)>Math.cos(Math.PI/12),
+      `${flightId} landing heading should agree with the continuing ground road within 15 degrees`);
+  }
+});
