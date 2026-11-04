@@ -248,9 +248,14 @@ export function monsoonObstacleHit(edgeId: MonsoonEdgeId, from: number, to: numb
     if (obstacle.edgeId !== edgeId || obstacle.at + obstacle.radius < Math.min(from, to)
       || obstacle.at - obstacle.radius > Math.max(from, to)
       || altitude >= obstacle.height + .7) return false;
-    const atObstacle = from === to ? 1 : clamp((obstacle.at - from) / (to - from), 0, 1);
-    const sweptLateral = lerp(previousLateral, lateral, atObstacle);
-    return Math.abs(obstacle.lateral - sweptLateral) <= obstacle.radius + 1.1;
+    // Closest approach of the swept car path to this solid obstacle in route/lane space.
+    const x0 = (from - obstacle.at) / obstacle.radius;
+    const y0 = (previousLateral - obstacle.lateral) / (obstacle.radius + 1.1);
+    const dx = (to - from) / obstacle.radius;
+    const dy = (lateral - previousLateral) / (obstacle.radius + 1.1);
+    const travel = dx * dx + dy * dy;
+    const t = travel < 1e-12 ? 0 : clamp(-(x0 * dx + y0 * dy) / travel, 0, 1);
+    return (x0 + dx * t) ** 2 + (y0 + dy * t) ** 2 <= 1;
   }) ?? null;
 }
 // AI chooses a legal lane before reaching a solid prop; collisions remain owned by the shared game.

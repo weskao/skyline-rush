@@ -3342,3 +3342,11 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 
 - [ ] **2026-11-03 source integration update:** Five independent art branches subsequently delivered actual native Three.js scene modules, corresponding focused unit tests and art notes. Their exports, geometry, absolute-time updates, quality/reduced-motion arguments and disposal methods were source-reviewed. The exact 15 committed Git blobs were selectively imported without merging old histories. Heads: `dune-tempest` `fa9573b4bddd`; `monsoon-ruins` `32411c88c702`; `skyfall-archipelago` `9707c5132dab`; `volcanic-crown` `d7ad8b01f57f`; `stormline-megacity` `84e9569a2d4c`. Source branch CI was still queued when checked; this is **not** verified visual acceptance.
 - [ ] Register all five in the shared renderer and run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and 2 real WebGL frames per map desktop/mobile. Pending; do not label scenes visually accepted before screenshots and checks.
+
+## Monsoon Ruins — map-only physical consistency (2026-11-04)
+
+- [x] Add deterministic regression tests for diagonal swept obstacle contact and ford water/contact surface consistency. Initial RED reproduced against exact prior function / fixed old 0.06 m water plane; GitHub test-only commit `ecadc8cb95ef2d4e76c2bdb915d5324fa3bb14bb`.
+- [x] Implement map-only closest-point swept obstacle contact and ford mesh water height driven by `monsoonWetContact`. Preserve the existing river-ford arc-length fix and all route-edge contracts.
+- [ ] Confirm both new tests and all existing suites on exact final HEAD; full browser/World Tour must execute, not skip.
+- [ ] Capture six real WebGL ground/ford/temple/falls/skybridge/landing views at desktop and phone sizes; inspect both original concept JPEGs.
+- [ ] Complete shared CourseGraph player/rival/AI integration, physical landing/recovery and checkpoint controller, measured 8-car 3–5-minute runs, and 30/60/120 FPS device evidence in read-only integration owner. Do not unlock Coming Soon from this branch.

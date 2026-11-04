@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {
-  MONSOON_RUINS_COURSE, sampleMonsoonRoute,
+  MONSOON_RUINS_COURSE, sampleMonsoonRoute, monsoonWetContact,
   type MonsoonEdgeId, type Vec3,
 } from './monsoon-ruins.ts';
 
@@ -37,14 +37,14 @@ const box = (group: THREE.Group, name: string, size: [number, number, number],
   return mesh;
 };
 function roadMesh(from: number, to: number, edgeId: MonsoonEdgeId,
-  width: number, material: THREE.Material, lift = .07, lateralOffset = 0): THREE.Mesh {
+  width: number, material: THREE.Material, lift: number | ((distance: number) => number) = .07, lateralOffset = 0): THREE.Mesh {
   const steps = Math.ceil((to - from) / 7), positions: number[] = [], indices: number[] = [];
   for (let i = 0; i <= steps; i++) {
     const s = from + (to - from) * i / steps;
     const { point, right } = sampleMonsoonRoute(edgeId, s);
     for (const side of [-1, 1]) {
       positions.push(point[0] + right[0] * (lateralOffset + side * width / 2),
-        point[1] + lift, point[2] + right[2] * (lateralOffset + side * width / 2));
+        point[1] + (typeof lift === 'number' ? lift : lift(s)), point[2] + right[2] * (lateralOffset + side * width / 2));
     }
     if (i < steps) {
       const j = i * 2;
@@ -291,7 +291,7 @@ export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
     }
   }
   if (edgeId === 'river-ford') {
-    const river = roadMesh(from, to, edgeId, (branch?.width ?? 24) * .92, water, .13);
+    const river = roadMesh(from, to, edgeId, (branch?.width ?? 24) * .92, water, s => .075 + monsoonWetContact(edgeId, s).depth);
     river.name = 'monsoon-shallow-river-ford';
     root.add(river);
   }
