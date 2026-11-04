@@ -59,10 +59,12 @@ function addFloatingIslands(group: THREE.Group, quality: Tier,
   const m=new THREE.Object3D();
   samples.forEach(({point,index},i)=>{
     const radius=quality==='low'?120:145+(index%5)*25;
-    m.position.copy(point); m.position.y-=25+(index%4)*8;
-    m.rotation.set(Math.PI,0,0); m.scale.set(radius,80+(index%3)*30,radius);
+    const surfaceY = point.y + 12; // road remains ~10 m above the suspended terrace
+    const hangingHeight = 80 + (index % 3) * 30;
+    m.position.copy(point); m.position.y = surfaceY - hangingHeight * .85;
+    m.rotation.set(Math.PI,0,0); m.scale.set(radius,hangingHeight,radius);
     m.updateMatrix();rock.setMatrixAt(i,m.matrix);
-    m.position.copy(point);m.position.y+=46+(index%3)*15;
+    m.position.copy(point);m.position.y=surfaceY;
     m.rotation.set(0,0,0);m.scale.set(radius*.94,1,radius*.94);
     m.updateMatrix();grass.setMatrixAt(i,m.matrix);
   });
