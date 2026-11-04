@@ -19,7 +19,7 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 - Keep r180 working until the r186 upgrade phase passes testing; exact target r186.1, matching type definitions and lockfile, keeping WebGLRenderer.
 - Uphold .claude/rules/performance-review.md, docs/rendering-performance.md, shader warmup, no mid-race NaNs, deterministic physics, all tracks, mobile, localization, and real screenshot/CI acceptance.
 - Never assume all included glTF-Sample-Assets have identical reuse terms; audit each licensed asset.
-- Commit after each verified task, with report and no PR/merge/deploy without consent.
+- For Phase 0, keep **every device-specific audit report LOCAL ONLY** under the gitignored `docs/designs/3d-pipeline/audits/`. Never commit or push reports, actual machine names, paths, versions or live MCP output. Later implementation tasks may commit reviewed code and public-safe documentation only; no PR/merge/deploy without consent.
 
 ## Review focus: five likely overlooked failures
 1. **MCP installed, but no live connection**: Blender addon enabled yet server missing; Phase 0 explicitly requires live read-only scene query.
@@ -32,7 +32,7 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 
 ## Task 0 — Mandatory user-Mac toolchain audit (execute FIRST; highest priority)
 
-**Files:** Reference docs/designs/3d-pipeline/toolchain-environment-preflight.md; write an untracked sanitized local audit output and summarize results in TODO.md only when verified.
+**Files:** Reference the standalone `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` plus `docs/designs/3d-pipeline/toolchain-environment-preflight.md`; save E01–E15 audit **only locally** to `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (gitignored) and update the ignored `audits/device-status.md` with non-identifying product model **only after PASS**. Public TODO.md can reference the verification procedure but must never contain device-specific outcomes or identifiers.
 **Consumes:** Mac workspace ~/Documents/Workspace/skyline-rush, existing Claude/Codex/Blender installations.
 **Produces:** toolchain matrix with PASS/FAIL/NOT VERIFIED, version evidence, connection smoke test and explicit blocked steps.
 
@@ -41,7 +41,7 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 - [ ] Confirm Blender addon enabled-state in Blender background preferences; then open Blender and execute **read-only live MCP scene query** from Claude Code. Mark addon/server/agent connection separately.
 - [ ] If any mandatory dependency is missing, stop the dependent subtask, review source and permissions, run only approved minimal repair commands, **rerun the same check** and record observed result. Global Skills use -g and user MCP scope; do not copy their files into repository. If remote agent cannot reach the Mac, return the exact owner-executable commands and wait for observed output; no fabricated PASS.
 - [ ] Review third-party Skill/MCP permissions and trusted model asset licenses. Verify global skill version/API claims vs current r180; after target migration recheck r186.
-- [ ] Document per-item evidence, not just installation success. Do not use Telegram/tgsend without a configured authorized sender.
+- [ ] Document per-item evidence in **local ignored** audit files, not in GitHub; check `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` and `git ls-files docs/designs/3d-pipeline/audits/` (must be empty). After successful acceptance, record only generic model such as `Mac mini` in that device's local report and local ignored device-status.md. Never commit/push private paths, hostnames, serials, raw command output or secrets. Do not use Telegram/tgsend without a configured authorized sender.
 
 **Exit:** All mandatory items PASS, or explicit documented owner-approved optional exclusion; actual Blender MCP scene retrieval must succeed for Blender tasks. Until then, all later implementation checkboxes remain unchecked.
 
