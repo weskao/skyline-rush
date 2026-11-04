@@ -5,6 +5,8 @@ import { createUpcomingEnvironment as monsoonRuins } from './monsoon-ruins.ts';
 import { createUpcomingEnvironment as skyfallArchipelago } from './skyfall-archipelago.ts';
 import { createUpcomingEnvironment as volcanicCrown } from './volcanic-crown.ts';
 import { createUpcomingEnvironment as stormlineMegacity } from './stormline-megacity.ts';
+import { createUpcomingEnvironment as frostbiteCanyon } from './frostbite-canyon.ts';
+import { stage2PreviewRequest } from '../stage2-tracks.ts';
 
 // The environments own scenery, never a renderer, cars, camera or race state.
 export const UPCOMING_ENVIRONMENTS: Partial<Record<UpcomingTrackId, UpcomingEnvironmentFactory>> = {
@@ -13,4 +15,9 @@ export const UPCOMING_ENVIRONMENTS: Partial<Record<UpcomingTrackId, UpcomingEnvi
   'skyfall-archipelago': skyfallArchipelago,
   'volcanic-crown': volcanicCrown,
   'stormline-megacity': stormlineMegacity,
+  'frostbite-canyon': (scene) => {
+    const environment = frostbiteCanyon(scene);
+    environment.setShot(stage2PreviewRequest(globalThis.location?.search ?? '')?.shot ?? 'p01');
+    return environment;
+  },
 };

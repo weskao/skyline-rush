@@ -68,3 +68,16 @@ test('10C: blocked storage retains compatibility and does not prevent a new-mode
   assert.deepEqual(recordModeRace(race,blocked),{best:79,record:true});
   assert.deepEqual(loadModeHistory(blocked),[]);
 });
+
+test('a 5th-to-8th place finish on the 8-car grid is recorded and survives reload instead of throwing at the finish', () => {
+  for (const position of [5, 8]) {
+    const store = storage();
+    const race = completed('custom', { rivals: 0, traffic: 'off', items: false });
+    race.result.position = position;
+    recordModeRace(race, store);
+    assert.equal(loadModeHistory(store)[0]?.position, position);
+  }
+  const race = completed('custom', { rivals: 0, traffic: 'off', items: false });
+  race.result.position = 9;
+  assert.throws(() => recordModeRace(race, storage()), TypeError);
+});

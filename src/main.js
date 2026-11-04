@@ -32,6 +32,7 @@ import { PAINTS } from './appearance.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
 import { drainSteps, SIM_STEP } from './frame-pacing.ts';
+import { captureRaceMotion } from './vehicle-render-motion.js';
 import { createStuntRun, stuntHeatContinues, stuntHeatLimit } from './stunt-attack.ts';
 import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
@@ -50,6 +51,7 @@ import { resultView, setupResultScreen } from './result-screen.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
+import { isCoverOnly } from './upcoming-tracks.ts';
 import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
@@ -149,7 +151,6 @@ function leaveIntro() {
   const animation = ui.intro.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-36px)' }], motionOptions('base'));
   animation.finished.catch(() => {}).then(() => { ui.intro.inert = false; ui.intro.hidden = race.phase !== 'ready'; });
 }
-
 const renderResult = setupResultScreen();
 
 const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
@@ -195,8 +196,7 @@ const raceSelect = setupRaceSelectUI({
   refreshPhase: () => phaseUI(),
   clearControls: () => controls.clear(),
   cueUi: () => sound.cue('ui'),
-  reducedMotion,
-  showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
+  reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
 });
 const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
@@ -232,11 +232,6 @@ const cloud = setupCloudUI({
   },
 });
 
-const previewObserver = new IntersectionObserver(entries => {
-  for (const entry of entries) entry.target.dataset.visible = String(entry.isIntersecting);
-}, { root: $('.track-select') });
-document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
-
 function startDaily() {
   daily = dailyChallenge();
   raceSelect.selectClassic();
@@ -259,7 +254,7 @@ const { showGarage, syncSkins } = setupGarageUI({
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
   setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
-  getStars: () => starTotal(progress.stars), subscribeAccount: cloud.subscribeAccount,
+  getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount,
 });
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
@@ -287,6 +282,7 @@ setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => contr
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
 function start() {
+  if (raceSelect.isUpcomingSelected() || isCoverOnly(race.trackId)) return; // preview selection cannot START, including Daily/unlocked
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
@@ -307,6 +303,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
+  if (raceSelect.isUpcomingSelected() || isCoverOnly(trackId)) return;
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
@@ -534,7 +531,6 @@ function updateUI(now, input) {
   }
   hud.update(now, input);
 }
-
 try {
   world = createWorld($('#world')); syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
@@ -544,11 +540,14 @@ try {
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad());
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
+  let motionRace = null; const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
   function frame(now) {
     // Requested first: a frame that throws still reports its error, but never freezes the game for good.
     animationId = requestAnimationFrame(frame);
     const rawDelta = (now - previousTime) / 1000; previousTime = now;
-    const dt = Math.max(0, Math.min(rawDelta, 0.05)), due = drainSteps(accumulator, dt); accumulator = due.accumulator;
+    const dt = Math.max(0, Math.min(rawDelta, 0.05));
+    if (motionRace !== race) { motionRace = race; accumulator = 0; captureRaceMotion(race, previousMotion); }
+    const due = drainSteps(accumulator, dt); accumulator = due.accumulator;
     // The 0.05s clamp already keeps a tab-switch gap from becoming unseen racing (hiding also pauses);
     // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
     const input = controls.read();
@@ -559,7 +558,7 @@ try {
     }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     for (let step = 0; step < due.steps; step++) {
-      stepRace(race, input, SIM_STEP);
+      captureRaceMotion(race, previousMotion); stepRace(race, input, SIM_STEP);
       if (tutorial) {
         // Completion keeps the race live as a free cruise: pausing it froze the world and read as a crash.
         const wasComplete = tutorial.complete; tutorial.update(input, SIM_STEP);
@@ -577,7 +576,8 @@ try {
     const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
     if (shouldRender) {
       const renderStarted = performance.now();
-      world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
+      renderMotion.alpha = Math.max(0, Math.min(1, accumulator / SIM_STEP));
+      world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed), renderMotion);
       fps.completeRender(performance.now() - renderStarted);
     }
     sound.update(race);
@@ -669,7 +669,7 @@ window.addEventListener('pagehide', event => {
   // A cached page resumes the same animation, renderer and controls on back navigation.
   if (event.persisted) return;
   cancelAnimationFrame(animationId);
-  previewObserver.disconnect();
+  raceSelect.disconnectPreviews();
   controls.destroy();
   sound.dispose();
   world?.dispose();
