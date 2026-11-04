@@ -6,7 +6,8 @@ import { createMonsoonRuinsChunk } from '../src/courses/monsoon-ruins-scene.ts';
 
 const find = (group, name) => {
   let found;
-  group.traverse(node => { if (node.name === name) found = node; });
+  // First match: the canopy's trunk InstancedMesh precedes its crowns, the -1 terrain side precedes +1.
+  group.traverse(node => { if (node.name === name) found ??= node; });
   return found;
 };
 const mount = (from, to, edgeId = 'ground', quality = 'medium') => {
