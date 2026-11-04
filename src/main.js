@@ -259,7 +259,7 @@ const { showGarage, syncSkins } = setupGarageUI({
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
   setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
-  getStars: () => starTotal(progress.stars), subscribeAccount: cloud.subscribeAccount,
+  getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount,
 });
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
