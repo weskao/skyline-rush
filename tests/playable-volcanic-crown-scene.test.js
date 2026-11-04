@@ -158,3 +158,25 @@ test('Low and Medium hairpin meshes stay within 0.3 m of the sampled physical ro
     }
   }
 });
+
+test('lava flow UVs follow the real ribbon and stay seamless across streamed chunks',()=>{
+  const first=createVolcanicCrownChunk('ground-5',0,'low');
+  const second=createVolcanicCrownChunk('ground-5',1,'low');
+  for(const chunk of [first,second]){
+    for(const name of ['physical-road','lava-river']){
+      const geometry=chunk.group.getObjectByName(name).geometry;
+      const uv=geometry.getAttribute('uv');
+      assert.ok(uv,`${name} needs UVs for real flowing basalt/lava shader`);
+      assert.equal(uv.count,geometry.getAttribute('position').count);
+      assert.equal(uv.getX(0),0);
+      assert.equal(uv.getX(1),1);
+      assert.ok(uv.getY(uv.count-1)>uv.getY(0),
+        `${name} must track forward progression, not a constant UV`);
+    }
+  }
+  const firstUV=first.group.getObjectByName('lava-river').geometry.getAttribute('uv');
+  const nextUV=second.group.getObjectByName('lava-river').geometry.getAttribute('uv');
+  assert.ok(Math.abs(firstUV.getY(firstUV.count-1)-nextUV.getY(0))<1e-6,
+    'flowing shader must not restart the texture at every streamed chunk');
+  first.dispose();second.dispose();
+});
