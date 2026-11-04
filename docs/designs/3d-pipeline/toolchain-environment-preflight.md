@@ -2,6 +2,8 @@
 
 Date: 2026-11-04 · Status: NOT RUN ON USER MAC · Owner workspace: ~/Documents/Workspace/skyline-rush
 
+> **Reusable, cross-device acceptance:** [phase0-multi-device-acceptance.md](phase0-multi-device-acceptance.md) is the standalone authoritative E01–E15 checklist, with Mac/Linux/Windows commands, a copyable AI execution prompt, and a separate per-device audit report. This document is the Mac-focused companion only. Use SKYLINE_RUSH_DIR to override the default workspace on another device; never transfer PASS evidence between devices.
+
 **This check is mandatory before Blender, model generation, Three.js upgrades or asset processing.** The owner states tools were previously installed; the GitHub-only authoring session cannot verify the Mac's local binaries, user-scoped MCP or Skills. Do not mark installed or connected until exact commands are run there.
 
 ## Scope: "global" is not the workspace path
