@@ -66,7 +66,8 @@ test('city has batched buildings, three major anchors and local atmospheric dept
   const lights = [];
   const drawables = [];
   env.group.traverse(object => {
-    if (object instanceof THREE.InstancedMesh) instanced.push(object);
+    // Duck-typed: the module loads three via require (CJS) and this test via import (ESM), so instanceof fails across the two copies.
+    if (object.isInstancedMesh) instanced.push(object);
     if (object.isLight) lights.push(object);
     if (object.isMesh || object.isPoints || object.isLineSegments) drawables.push(object);
   });
