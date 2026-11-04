@@ -148,3 +148,20 @@ test('Skyfall island terraces stay beneath playable road rather than burying it'
     `terrace should lie below road: road=${roadHeight}, terrace=${center.y}`);
   env.dispose();
 });
+
+test('Skyfall marks all four ordered checkpoints as non-contact elevated world landmarks', () => {
+  for (const quality of ['low', 'medium', 'high']) {
+    const scene = new THREE.Scene();
+    const env = createSkyfallWorld(scene, quality);
+    for (const nodeId of SKYFALL_COURSE.checkpoints) {
+      const node = SKYFALL_COURSE.nodes.find(item => item.id === nodeId);
+      const marker = env.group.getObjectByName(`Skyfall checkpoint marker ${nodeId}`);
+      assert.ok(marker?.isGroup, `${nodeId} has no visible checkpoint marker on ${quality}`);
+      assert.ok(Math.abs(marker.position.x - node.position.x) < 1e-4);
+      assert.ok(Math.abs(marker.position.z - node.position.z) < 1e-4);
+      assert.ok(marker.position.y >= node.position.y + 20, 'ring must clear moving cars');
+      assert.ok(marker.getObjectByName(`Skyfall checkpoint ring ${nodeId}`)?.isMesh);
+    }
+    env.dispose();
+  }
+});
