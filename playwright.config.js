@@ -15,7 +15,10 @@ export default defineConfig({
   workers: 1,
   timeout: 45000 * slow,
   expect: { timeout: 10000 * slow },
-  reporter: 'list',
+  // One CI retry absorbs runner stalls (e.g. browserType.launch timing out); the github reporter still annotates a
+  // test that passed only on retry, and .claude/rules/browser-test-stability.md treats that annotation as a bug.
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? [['list'], ['github']] : 'list',
   use: {
     channel: 'chrome',
     baseURL: `http://127.0.0.1:${port}`,
