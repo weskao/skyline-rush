@@ -45,7 +45,9 @@
   }
   // Renders `seconds` of ready-screen frames and samples the bearing every `every` seconds.
   // `racing` parks the player at the preview point mid-race, where the showcase view must not move the camera.
-  window.showcaseCameraProbe = (id, view, { airflow = false, seconds = 2, every = 0, start = 2, racing = false, quality = 'low' } = {}) => {
+  window.showcaseCameraProbe = (id, view, { airflow = false, seconds = 2, every = 0, start = 2, racing = false, quality = 'low', garage = false } = {}) => {
+    world.setGarageSkinPreview({}, garage);
+    world.setGaragePose(garage ? { mode: 'ground', wing: false } : null);
     world.configureVFX({ quality, enabled: true, bloom: 0, airflow, view });
     const race = createRace(id, id === 'harbor-circuit' ? { mode: 'circuit', laps: 3 } : null);
     if (racing) Object.assign(race, { phase: 'racing', elapsed: start }).player.distance = previewDistance(id);

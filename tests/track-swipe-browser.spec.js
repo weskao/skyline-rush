@@ -94,7 +94,7 @@ test.describe('phone', () => {
     await page.goto('/');
     const [, second] = await trackOrder(page);
     await page.locator('#airflow-toggle').tap();
-    expect(await page.locator('.swipe-gesture i').evaluate(dot => getComputedStyle(dot).animationName)).toBe('none');
+    await expect.poll(() => page.locator('.swipe-gesture i').evaluate(dot => getComputedStyle(dot).animationName)).toBe('none');
     await touchSwipe(page, 320, 90, 560);
     await expect.poll(() => selected(page)).toBe(second);
     expect(await page.locator('#world').evaluate(canvas => canvas.style.transform)).toBe('');

@@ -1,15 +1,20 @@
 import * as THREE from 'three';
 import { makeCar, CAR_STYLES } from './car-model.js';
 import { createAeroVFX } from './aero-vfx.js';
-import { showcaseCameraPose } from './track-preview.ts';
+import { showcaseCameraPose, type CameraPose } from './track-preview.ts';
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
 import type { PaintPreset } from './appearance.ts';
 import type { UpcomingTrackId } from './upcoming-tracks.ts';
 
 export type UpcomingEnvironment = {
   group: THREE.Group;
-  update(timeSeconds: number, quality: 'low' | 'medium' | 'high', reducedMotion: boolean): void;
+  /** `grounded`: AIRFLOW rests the car on the road, so an airborne shot must re-anchor on a real surface. */
+  update(timeSeconds: number, quality: 'low' | 'medium' | 'high', reducedMotion: boolean, grounded?: boolean): void;
   dispose(): void;
+  /** Optional authored drive-view pose (e.g. an airborne shot); FOV stays 50°, other views unchanged. */
+  readonly cameraPose?: CameraPose | null;
+  /** Optional drive-view pose for portrait phones (aspect < .78): above the home panel, or below the AIRFLOW telemetry card when grounded. */
+  readonly portraitCameraPose?: CameraPose | null;
 };
 export type UpcomingEnvironmentFactory = (scene: THREE.Scene) => UpcomingEnvironment;
 type Stage = {
@@ -103,8 +108,8 @@ export function createUpcomingShowcase(
     if (!stage) return;
     const settings = vfxSettings(options);
     const calm = reducedMotion || settings.comfortable;
-    stage.environment.update(time, settings.quality, calm);
     const grounded = settings.enabled && settings.airflow;
+    stage.environment.update(time, settings.quality, calm, grounded);
     const player = stage.cars[0]!;
     player.position.set(0, grounded ? .06 : 1.66 + (calm ? 0 : Math.sin(time * 1.1) * .12), 0);
     player.rotation.z = calm ? 0 : Math.sin(time * .85) * .022;
@@ -118,7 +123,8 @@ export function createUpcomingShowcase(
       rival.position.set((i - 2) * 4.5, i === 1 ? 4.5 : .06, -16 - i * 10);
       rival.userData.jets.visible = i === 1 && !calm;
     }
-    const pose = showcaseCameraPose(stage.id, settings.view, calm ? 0 : time, camera.aspect < .78);
+    const portrait = camera.aspect < .78, authored = portrait ? stage.environment.portraitCameraPose : stage.environment.cameraPose;
+    const pose = settings.view === 'drive' && authored || showcaseCameraPose(stage.id, settings.view, calm ? 0 : time, portrait);
     camera.fov = 50;
     camera.position.set(pose.cameraSide, player.position.y + pose.cameraHeight, pose.cameraBack);
     camera.lookAt(pose.lookSide, pose.lookHeight, -pose.lookAhead);

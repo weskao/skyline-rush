@@ -7,8 +7,6 @@ import { garageStudioView, updateGarageStudioView, updateGarageView } from './ga
 import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode, toggleGarageWing } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import { t } from './i18n.ts';
-// Keep progression checks locked to the same implementation used in production.
-import { availablePaints } from './access/production.ts';
 
 type Paint = (typeof PAINTS)[keyof typeof PAINTS];
 type PaintCatalog = Record<string, { stars: number }>;
@@ -37,6 +35,8 @@ interface GarageDependencies {
   getEquippedPaint(): string;
   setEquippedPaint(id: string): void;
   getStars(): number;
+  /** Entitlement from the build-selected `@progression-access` module (main.js), so unlocked dev servers see every paint. */
+  availablePaints(stars: number): string[];
   subscribeAccount(listener: (uid: string | null) => void): void;
 }
 
@@ -50,7 +50,7 @@ export function garagePresentation(
 
 // Preserve the existing WebGL canvas, paint entitlement source and race state.
 export function setupGarageUI({
-  getWorld, canOpen, clearControls, getEquippedPaint, setEquippedPaint, getStars, subscribeAccount,
+  getWorld, canOpen, clearControls, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount,
 }: GarageDependencies) {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
