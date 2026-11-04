@@ -1,4 +1,5 @@
 import test from 'node:test';
+import * as hazards from '../src/courses/volcanic-crown-obstacles.ts';
 import assert from 'node:assert/strict';
 import { sampleVolcanicRoute } from '../src/courses/volcanic-crown.ts';
 import {
@@ -68,4 +69,27 @@ test('surface vents use local road clearance on rising slopes, not world Y',()=>
   const crack=VOLCANIC_OBSTACLES.find(o=>o.id==='crack-01');
   assert.equal(volcanicObstacleContact(crack.edgeId,crack.s+3,crack.lateral,1.75,5),null,
     'car above the sloped crack must clear it despite world-Y proximity');
+});
+
+test('map-local AI descriptors share visible physics poses and safe passing corridors',()=>{
+  assert.equal(typeof hazards.volcanicAIAvoidanceHints,'function');
+  const rock=VOLCANIC_OBSTACLES.find(o=>o.id==='rockfall-01');
+  const hint=hazards.volcanicAIAvoidanceHints(rock.edgeId,rock.s-35,1)
+    .find(item=>item.id===rock.id);
+  assert.ok(hint,'warned falling rock must be visible to AI before impact');
+  assert.equal(hint.edgeId,rock.edgeId);
+  assert.equal(hint.distanceAhead,35);
+  assert.equal(hint.warning,true);
+  assert.equal(hint.active,false);
+  assert.deepEqual(hint.point,volcanicObstaclePose(rock,1).point);
+  assert.equal(hint.clearanceRadius,rock.radius+2.3);
+  assert.ok(hint.passLeft[0]<hint.passLeft[1],'left driving corridor must remain');
+  assert.ok(hint.passRight[0]<hint.passRight[1],'right driving corridor must remain');
+  assert.ok(hint.passLeft[1]<rock.lateral-hint.clearanceRadius+.001);
+  assert.ok(hint.passRight[0]>rock.lateral+hint.clearanceRadius-.001);
+  assert.deepEqual(hazards.volcanicAIAvoidanceHints('ground-5',rock.s-35,1),[],
+    'different road layer never inherits this hazard');
+  assert.equal(hazards.volcanicAIAvoidanceHints(rock.edgeId,rock.s-35,8)
+    .some(item=>item.id===rock.id),false,'cleared rock must not block AI');
+  assert.throws(()=>hazards.volcanicAIAvoidanceHints('bad-edge',0,0),/Unknown/);
 });
