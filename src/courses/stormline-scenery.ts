@@ -96,6 +96,39 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
       group.add(laneGuides);
     }
   }
+  // Flight is an actual road gap: guide markers live OUTSIDE the air corridor.
+  // Distances are absolute on the canonical graph so rebatching cannot move or double them.
+  if (edge.mode === 'flight') {
+    const markerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    ownedMaterials.push(markerMat);
+    const spacing = 90, first = 30;
+    const distances: number[] = [];
+    for (let s = first + Math.max(0, Math.ceil((from - first) / spacing)) * spacing;
+      s < to; s += spacing) distances.push(s);
+    const landing = limit - 35;
+    if (landing >= from && landing < to && !distances.includes(landing)) distances.push(landing);
+    if (distances.length) {
+      const geometry = new THREE.BoxGeometry(0.65, 3.2, 0.65);
+      const guides = new THREE.InstancedMesh(geometry, markerMat, distances.length * 2);
+      guides.name = `stormline:flight-guides:${edgeId}`;
+      const dummy = new THREE.Object3D();
+      for (const [i, s] of distances.entries()) {
+        const pose = sample(edgeId, s);
+        for (const [j, side] of ([-1, 1] as const).entries()) {
+          dummy.position.copy(v3(pose.point)
+            .addScaledVector(v3(pose.right), side * (edge.width / 2 + 6))
+            .addScaledVector(v3(pose.up), 2));
+          dummy.updateMatrix();
+          const index = i * 2 + j;
+          guides.setMatrixAt(index, dummy.matrix);
+          guides.setColorAt(index, new THREE.Color(side < 0 ? 0x38e8ff : 0xdb5ef4));
+        }
+      }
+      guides.instanceMatrix.needsUpdate = true;
+      if (guides.instanceColor) guides.instanceColor.needsUpdate = true;
+      group.add(guides);
+    }
+  }
   // Tunnel enclosure follows the identical canonical 3D frame as the asphalt.
   // Collision boundaries belong to shared course physics; these meshes are visuals only.
   if (edge.layer === 'tunnel' && edge.mode === 'drive') {
