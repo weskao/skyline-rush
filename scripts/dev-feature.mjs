@@ -62,6 +62,18 @@ function ensureCerts() {
   return { key, cert };
 }
 
+// A feature checkout must resolve its own policy, never the launching checkout's file.
+export function isWorktreeUnlockedAlias(alias, worktree) {
+  return typeof alias === 'string' && alias === path.join(path.resolve(worktree), 'src', 'access', 'dev-unlocked.ts');
+}
+
+// Reject older runtime-only unlock hooks; preview-only checkouts without entry hooks are safe.
+export function assertUpcomingEntryGuard(source) {
+  if (source.includes('isUpcomingEnterable') && !source.includes('upcomingReadiness')) {
+    throw new Error('Refusing to serve stale worktree: Coming Soon runtime entry lacks readiness approval.');
+  }
+}
+
 async function serve(worktree, tls) {
   // shortcut: this checkout's launcher loads the worktree's Vite. Revisit if a branch cannot import that file.
   const viteUrl = pathToFileURL(path.join(worktree, 'node_modules/vite/dist/node/index.js')).href;
@@ -73,15 +85,13 @@ async function serve(worktree, tls) {
   );
   const alias = loaded?.config?.resolve?.alias?.['@progression-access'] ?? '';
   const expected = path.join(worktree, 'src', 'access', 'dev-unlocked.ts');
-  if (alias !== expected) {
+  if (!isWorktreeUnlockedAlias(alias, worktree)) {
     throw new Error('Refusing to serve: the worktree did not select its own TypeScript all-unlocked access module.');
   }
   const upcomingCatalog = path.join(worktree, 'src', 'upcoming-tracks.ts');
   if (fs.existsSync(upcomingCatalog)) {
     const source = fs.readFileSync(expected, 'utf8');
-    if (source.includes('isUpcomingEnterable') && !source.includes('upcomingReadiness')) {
-      throw new Error('Refusing to serve stale worktree: Coming Soon runtime entry lacks readiness approval.');
-    }
+    assertUpcomingEntryGuard(source);
   }
   const server = await createServer(mergeConfig(loaded.config, {
     root: worktree,
