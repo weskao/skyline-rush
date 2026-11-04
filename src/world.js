@@ -362,7 +362,7 @@ export function createWorld(canvas) {
   const apexBox = new THREE.Box3();
   function landmarkBounds(look) {
     let best = null, bestDistance = Infinity;
-    for(const hero of worldTourScene.landmarks()) {
+    for(const hero of trackId === CIRCUIT_ID ? circuitScene.landmarks() : worldTourScene.landmarks()) {
       if(!hero.visible) continue;
       apexBox.setFromObject(hero);
       if(apexBox.isEmpty()) continue;
@@ -396,7 +396,7 @@ export function createWorld(canvas) {
       projectedCarBounds(originalEye,originalLook); // measure the car once; candidates only re-project it
       // The drive shot also owns the signature landmark: tilting down to catch the wheels
       // must not push its top out of frame, so that top is a fit constraint too.
-      const landmark=visual.view==='drive'&&TOUR_IDS.has(trackId)?landmarkBounds(originalLook):null;
+      const landmark=visual.view==='drive'&&framedRoad(trackId)?landmarkBounds(originalLook):null;
       // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
       const clearLeft=camera.aspect>1;
       // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
