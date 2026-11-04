@@ -49,8 +49,19 @@ for (const [name, viewport, hasTouch] of [
     await page.screenshot({ path: `artifacts/item-rules/${name}-emp.png` });
     expect(await page.evaluate(() => window.gameScene.renderer.info.programs.length)).toBe(before);
     await page.locator('#pause-button').click();
+    // Judge the label while the race is frozen just before an unhit pad: a driving car on a slow runner can pass every
+    // pad first, leaving the status hidden with its old English text (CI: "NEXT · AIR +25 · 6 M"), which no player sees.
+    await page.evaluate(() => {
+      const race = window.gameplay.race;
+      race.player.distance = race.rings.find(ring => !ring.hit && ring.type.endsWith('-pad')).distance - 60;
+    });
+    // A ring banked just before the pause shows "COLLECTED" instead (pause freezes its 1.2 s), so judge whichever label shows.
+    const bonusStatus = page.locator('#bonus-status');
+    await expect(bonusStatus).toBeVisible();
+    const english = await bonusStatus.textContent();
     await selectLocale(page, 'zh-TW');
-    await expect(page.locator('#bonus-status')).not.toContainText('NEXT');
+    await expect(bonusStatus).not.toHaveText(english);
+    await expect(bonusStatus).not.toContainText(/NEXT|COLLECTED/);
     expect(errors).toEqual([]);
   });
 });
@@ -60,8 +71,9 @@ test('Stunt and Checkpoint bonus gates are explicit opt-ins and keep ordinary se
     await page.locator(`button[data-race-mode="${mode}"]`).click();
     await expect(page.locator('#bonus-gates-rule')).toBeVisible();
     await page.locator('[data-race-rule="bonusGates"]').check();
-    expect(await page.evaluate(() => window.gameplay.race.rings.some(ring => ring.type === 'score-pad'))).toBe(true);
+    // The race rebuilds after the change event, not synchronously with it.
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.rings.some(ring => ring.type === 'score-pad'))).toBe(true);
     await page.locator('[data-race-rule="bonusGates"]').uncheck();
-    expect(await page.evaluate(() => window.gameplay.race.config.bonusGates)).toBeUndefined();
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.config.bonusGates)).toBeUndefined();
   }
 });
