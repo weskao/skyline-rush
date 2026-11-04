@@ -93,7 +93,7 @@ onUnmounted(() => stopListening?.());
       :aria-label="locale === 'zh-TW' ? '素材詳情' : 'Artwork details'">
       <div class="garage-source-detail-heading">
         <strong>{{ copy(current.name) }}</strong>
-        <span>{{ locale === 'zh-TW' ? '尚未開放' : 'Coming soon' }}</span>
+        <span>{{ category === 'garage-store-readiness' ? storeStatusLabel(current.id) : (locale === 'zh-TW' ? '尚未開放' : 'Coming soon') }}</span>
       </div>
       <p data-wave3-description aria-live="polite" aria-atomic="true">{{ copy(current.description) }}</p>
       <div v-if="category === 'garage-store-readiness'" class="garage-store-detail-footer">
