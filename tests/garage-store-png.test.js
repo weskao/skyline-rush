@@ -19,13 +19,31 @@ function inspect(name) {
     if(key==='IEND') break;
   }
   assert.deepEqual([w,h,type],[216,216,6], name + ': RGBA 3× raster');
-  const pixels=inflateSync(Buffer.concat(bytes));
+  const packed=inflateSync(Buffer.concat(bytes));
+  // Canvas PNG encoders may use any standard PNG row filter; decode before alpha QA.
+  const stride=w*4, pixels=Buffer.alloc(stride*h);
+  for(let y=0;y<h;y++){
+    const start=y*(stride+1), filter=packed[start];
+    assert.ok(filter>=0&&filter<=4,name + ': valid PNG row filter');
+    for(let x=0;x<stride;x++){
+      const value=packed[start+1+x], at=y*stride+x;
+      const left=x>=4?pixels[at-4]:0, up=y?pixels[at-stride]:0, topLeft=y&&x>=4?pixels[at-stride-4]:0;
+      let predictor=0;
+      if(filter===1)predictor=left;
+      if(filter===2)predictor=up;
+      if(filter===3)predictor=Math.floor((left+up)/2);
+      if(filter===4){
+        const p=left+up-topLeft, a=Math.abs(p-left),b=Math.abs(p-up),c=Math.abs(p-topLeft);
+        predictor=a<=b&&a<=c?left:b<=c?up:topLeft;
+      }
+      pixels[at]=(value+predictor)&255;
+    }
+  }
   let left=w, top=h, right=-1, bottom=-1, transparent=0, filled=0, vivid=0;
   const palette=new Set();
   for(let y=0;y<h;y++){
-    assert.equal(pixels[y*(w*4+1)],0,name + ': expected unfiltered RGBA rows');
     for(let x=0;x<w;x++){
-      const i=y*(w*4+1)+1+x*4, a=pixels[i+3];
+      const i=y*w*4+x*4, a=pixels[i+3];
       if(a===0)transparent++;
       if(a<=16)continue;
       filled++;
