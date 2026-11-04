@@ -42,7 +42,7 @@ test('start screen wordmark reloads the page', async ({ page }) => {
   await dismissMusicPrompt(page);
   await page.evaluate(() => { window.__stale = true; });
   await Promise.all([page.waitForEvent('load'), page.locator('#intro .intro-wordmark').click()]);
-  expect(await page.evaluate(() => window.__stale)).toBeUndefined();
+  expect(await page.evaluate(() => window.__stale)).toBeUndefined(); // settled: the load event above already fired
 });
 
 test('start screen leads with the game name and one dominant start action', async ({ page }) => {

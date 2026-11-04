@@ -34,9 +34,12 @@ for (const [device, options] of [['desktop', {}], ['phone', { viewport: { width:
     expect(Math.abs(await offCentre(page, id))).toBeLessThan(2);
   });
 
-  test('End race keeps the raced track; an edge track rests at the row end', async ({ page }) => {
-    await raceThenLeave(page, tracks.at(-1), 'end');
-    expect(await page.locator('.track-select').evaluate(row => Math.abs(row.scrollWidth - row.clientWidth - row.scrollLeft))).toBeLessThan(2);
+  test('End race keeps the last playable track centred before six preview-only cards', async ({ page }) => {
+    const id = tracks.at(-1);
+    await raceThenLeave(page, id, 'end');
+    await expect.poll(async () => Math.abs(await offCentre(page, id))).toBeLessThan(2);
+    await expect(page.locator('[data-upcoming-track]')).toHaveCount(6);
+    await expect(page.locator('button[data-upcoming-track][aria-pressed="false"]')).toHaveCount(6);
   });
 
   test('Clicking a track focuses it and scrolls it to the row centre', async ({ page }) => {

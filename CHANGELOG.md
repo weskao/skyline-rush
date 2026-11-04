@@ -1,3 +1,157 @@
+## [0.30.0] - 2026-11-04
+
+### 🚀 Features
+
+- Build faceted Roadster 2 shell, glazing, aero trim and detailed wheels
+- Integrate Roadster 2 visuals into shared player vehicle factory
+- Preserve folded panel normals, close front shell and add swept corner headlamps
+- **controls:** Hide keyboard remapping on touch devices until a physical key is pressed
+- Author four unique fictional racers and two non-racing traffic silhouettes
+- Register individual seven AI racing models and three distinct traffic forms
+- Render seven individually recognizable AI racers and mixed ordinary traffic
+- Sculpt Roadster wedge-front, curved rear fascia, recessed corner ducts and contoured light blade [full-regression]
+- Tuck Roadster corner light slits into dark recessed faceted pockets [full-regression]
+- Give compact Pulse and city hatch correct underbody lengths [full-regression]
+- Give compact Pulse and city hatch correct underbody lengths [full-regression]
+- **release-notes:** Sort highlights by media within each kind
+- **garage:** Add camera dock to the Garage page
+- Sculpt photographic Roadster wedge nose, black grille and layered rear bumper
+- Integrate photo-matched Roadster front and rear forms with original VFX anchors
+- Narrow Roadster rear LED into photographed black full-width recess
+- Tuck adjustable Roadster rear aerofoil against trailing deck edge
+- Taper the black rear quarter into Roadster carbon diffuser behind rear wheels
+- Build recessed machined four-port rear socket assemblies
+- Integrate reference-scale recessed nozzles without shifting NITRO emitters
+- Carve photo-like four-port bank and curved carbon upper/lower lips [full-regression]
+- Sculpt five swept carbon diffuser vanes beneath machined Roadster ports [full-regression]
+- **roadster:** Match photo front/rear fascia and fold-out wing [full-regression]
+- **roadster:** Sharper body, low canopy, star wheels, arched diffuser and 52-degree airbrake wing [full-regression]
+- **roadster:** Flush 45-degree airbrake wing, short struts, eased boost animation and fuller nose [full-regression]
+- **roadster:** Open airbrake wing to 35 degrees
+- **garage:** Add open wing toggle to studio pose row
+- **garage:** Pose buttons and bigger car on home
+- **upcoming:** Add 3D showroom scenes for previews
+- **upcoming:** Add track teaser images and route art
+- **upcoming:** Add Coming Soon cards and guards
+- **upcoming:** Add playable preview flag for dev
+
+### 🐛 Bug Fixes
+
+- Normalize procedural Roadster mesh UVs before static batching [full-regression]
+- Give each Roadster merged mesh its own material instance
+- **home:** Keep Start, Garage, History and Practice on one desktop row
+- **i18n:** Localize the 3x artwork gallery heading in Settings
+- **release-notes:** Start refused hero on first touch
+- **release-notes:** Announce on visit with no record
+- **release-notes:** Announce releases without highlights
+- **swipe:** Follow mouse 1:1 on home preview drag
+- **home:** Pin Garage NEW tag to corner on all devices
+- **swipe:** Switch track mid-drag past 20% width
+- **home:** Wrap start label to 2 lines
+- **showcase:** Keep showcase angle out of the race
+- **tutorial:** Keep the world live after practice completes
+- Keep low front intake visible above the white wedge from every frontal angle
+- Cut four actual diffuser openings around shared Roadster NITRO nozzle anchors
+- **roadster:** Spin star spokes and hub with the aero disc at car speed [full-regression]
+- **showcase:** Preserve Alpine panel gap and Coastal AIRFLOW portrait clearance [full-regression]
+- **roadster:** Raise the hood into one smooth sweep from nose to windscreen base [full-regression]
+- **roadster:** Extend lower intake to corner intakes
+- **roadster:** Restore low wedge nose with carbon band
+- **showcase:** Return +0 for portrait camera angles
+- **hud:** Write nitro aria-valuenow only on change
+- Interpolate vehicle poses across render frames and ease drift yaw [full-regression]
+- **history:** Accept 5th-8th place in mode records so the finish screen renders
+- **garage:** Restore scenic showcase framing
+- **garage:** Inject paint access from build module
+- **world:** Frame circuit beacon in drive shot
+- **swipe:** Select track after the slide finishes
+
+### 💼 Other
+
+- Integrate latest develop into Roadster 2 fidelity branch
+- Integrate latest develop into Roadster 2 fidelity [full-regression]
+- Incorporate develop Roadster reference assets and design notes, preserve fleet work [full-regression]
+- Incorporate latest develop home swipe changes into Roadster photo fidelity [full-regression]
+- Incorporate latest develop release-note fixes into Roadster quad-port fidelity [full-regression]
+- Preserve develop start-button wrap and Roadster wheel updates [full-regression]
+- Sync develop main UI parity fixture into Roadster 2 [full-regression]
+
+### 🚜 Refactor
+
+- Keep roadster wheel arches exposed through sculpted shell and split rockers
+- Preserve Roadster detail identities through static geometry batching
+- **audio:** Share user-activation listener helper
+- Keep legacy world module within enforced line ceiling
+- Respect legacy module-size ceilings and reuse pose buffers [full-regression]
+- **release:** Move older notes to archive module
+
+### 📚 Documentation
+
+- Record Roadster 2 reference-based visual design and validation gates
+- Add high fidelity Roadster feature implementation and verification plan
+- Track Roadster reference implementation and unverified regression gates [full-regression]
+- Track Roadster develop merge and full exact-HEAD verification [full-regression]
+- **claude:** Move guides into scoped rules
+- Track 8-car visual fidelity implementation and remaining full regression/visual gates [full-regression]
+- Add Roadster 2 reference photo set
+- **todo:** Plan drift trail marks and shop styles
+- Record Roadster front and rear photo-fidelity verification gates [full-regression]
+- Record real rear-nozzle cutouts and photo-matched quarter panels [full-regression]
+- Track reference quad-port geometry, real visual QA and exact-HEAD regression [full-regression]
+- **3d:** Design visual fidelity pipeline and mandatory toolchain preflight
+- **3d:** Design visual fidelity pipeline and mandatory toolchain preflight
+- **3d:** Plan r186 migration and staged GLB pipeline with Phase 0 audit
+- **3d:** Plan r186 migration and staged GLB pipeline with Phase 0 audit
+- **3d:** Plan r186 migration and staged GLB pipeline with Phase 0 audit
+- **3d:** Route Claude Code through preflight and visual fidelity plans
+- **3d:** Track Phase 0 environment check and visual pipeline milestones
+- **release:** Stamp 0.29.0, add 0.30.0 notes
+- **todo:** Track six Coming Soon preview evidence
+- **readme:** Document playable preview flag
+- **release:** Review 0.30.0 notes
+- **rules:** Browser specs survive a slow CI runner
+
+### ⚡ Performance
+
+- Reuse wheel and thruster detail geometries across vehicle instances
+
+### 🎨 Styling
+
+- **garage:** Add 5px gap before studio title
+
+### 🧪 Testing
+
+- Specify Roadster 2 silhouette, materials and moving-part fidelity [full-regression]
+- Preserve Roadster detail coverage and explicit mesh performance budget
+- Preserve Roadster detail coverage and explicit mesh performance budget
+- Require folded station shading, closed body and paired corner lamps [full-regression]
+- **handoff:** Pin the ring layout for the PERFECT LINE HUD test
+- **release-video:** Hero starts on first touch if refused
+- RED specification for eight unique racers, traffic silhouettes and Roadster fascia [full-regression]
+- Count each batched lamp instance through semantic mesh metadata
+- Budget each new race/traffic silhouette while retaining exact baseline snapshots [full-regression]
+- Require shadowed lamp pockets around both Roadster corner light slits
+- Compact city hatch must not inherit the prototype racing chassis overhang
+- **ui:** Refresh reviewed main CSS parity after all-device Garage NEW overlay [full-regression]
+- Specify photo-matched Roadster front slit lamps and layered rear fascia
+- Inspect unbatched Roadster mesh dimensions to avoid merged mesh false positives
+- Verify lower front grille remains visible across entire wedge
+- Roadster wing parks flush toward photographed rear deck
+- Rear valance must have four real nozzle cutouts not flat overlay circles
+- Preserve carbon rear-quarter taper seen in photographic rear side view
+- Require photo-scale inset metal nozzle barrels and four open cutouts [full-regression]
+- Require shared swept diffuser vanes instead of plain rear bumper boxes
+- Preserve showroom full-body panel clearance and portrait AIRFLOW headroom
+- **release-notes:** Stabilize browser specs
+- **browser:** Fix looping hand-over and safe-area timeout flakes
+- **bonus-gates:** Judge a visible label on slow runners
+- **browser:** Poll page state after a UI action
+
+### ⚙️ Miscellaneous Tasks
+
+- **release:** Add what's new car recorder
+- **release:** Add Coming Soon and Garage home What's New captures
+- **browser:** Retry a failed browser test once, keep flakes annotated
 ## [0.29.0] - 2026-11-03
 
 ### 🚀 Features

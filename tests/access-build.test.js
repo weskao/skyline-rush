@@ -39,3 +39,10 @@ test('distribution entry never directly imports the development unlock module', 
   const standardConfig = readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8');
   assert.ok(!standardConfig.includes('src/access/dev-unlocked.js'));
 });
+
+test('Garage paint entitlement comes from the build-selected access module, never a hard-wired production import', () => {
+  const garage = readFileSync(new URL('../src/garage-ui.ts', import.meta.url), 'utf8');
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.ok(!garage.includes('access/production'));
+  assert.match(main, /setupGarageUI\(\{[\s\S]*availablePaints/);
+});
