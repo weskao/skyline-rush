@@ -59,6 +59,20 @@ export const VOLCANIC_CROWN = {
   id: 'volcanic-crown', topologyVersion: 1, start: 'start', finish: 'finish',
   nodes: VOLCANIC_CROWN_NODES, edges: VOLCANIC_CROWN_EDGES,
   checkpoints: VOLCANIC_CROWN_CHECKPOINTS, groundEdgeIds: mainEdges.map(edge => edge.id),
+
+} as const;
+
+// Canonical data-only handoff for the shared CourseGraph validator/renderer.
+// No independent physics, state, frame loop or race registration lives here.
+export const VOLCANIC_CROWN_COURSE_GRAPH = {
+  id: VOLCANIC_CROWN.id,
+  version: VOLCANIC_CROWN.topologyVersion,
+  start: VOLCANIC_CROWN.start,
+  finish: VOLCANIC_CROWN.finish,
+  nodes: VOLCANIC_CROWN.nodes,
+  edges: VOLCANIC_CROWN.edges,
+  checkpoints: VOLCANIC_CROWN.checkpoints,
+  groundRoute: VOLCANIC_CROWN.groundEdgeIds,
 } as const;
 
 const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
