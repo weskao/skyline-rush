@@ -3458,3 +3458,11 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Run Typecheck, all Unit tests, Build, `make verify`, complete Browser/World Tour suites and exact-HEAD FULL CI; no PASS claim until observed.
 - [ ] Desktop/mobile manual QA: all six original home previews, 13.8 KM Frostbite card, both P01/P02 scenes, reduced motion/airflow, title/CTA translations, no race entry.
 - [ ] Only after successful pre-merge full CI and review, normal `--no-ff` merge of this preview-only branch to latest `develop`; verify develop exact-HEAD FULL CI. Do not merge playable-course runtimes or modify `main`/release tags without separate approval.
+
+
+## 2026-11-05 — measured physical CourseGraph step (opt-in)
+
+- [x] Regression-first opt-in trusted-pose graph stepping: 10/10 isolated Node tests and strict isolated TypeScript PASS (observed RED→GREEN including follow-up forged-FINISH-next-edge test). `src/course-measured-motion.ts`, `tests/course-measured-motion.test.js`.
+- [ ] Verify this new **exact-HEAD FULL** GitHub workflow: unit/typecheck/build, cloud-save, every Browser + World Tour shard and quality-gate. No success assertion while pending or if required jobs are skipped.
+- [ ] Wire trusted world poses/distance and signed graph transitions to actual shared RaceFactory/`game.js`/`world.js`; do not treat synthetic arc-length updates as authoritative. 8-car AI/drift/BOOST/NITRO/FLY, collision, Recovery, results/ghost and mobile controls remain pending.
+- [ ] Source branches are read-only; require their exact-HEAD FULL CI, real game WebGL 1440x900 / 390x844 and 20+ physical sessions per map before selective import or enabling any Coming Soon track.
