@@ -29,6 +29,9 @@ without explicit user approval.
 For any Blender, GLB/PBR, 3D asset, rendering-quality or Three.js r180 → r186 work:
 first read `docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md`
 and `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`.
+For repeatable checks across Mac mini, MacBook Pro or other devices, use the self-contained
+`docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` (E01–E15, device alias,
+actual live MCP evidence and per-device reports). Never reuse another device's PASS.
 **Mandatory Phase 0 before implementation:** run
 `docs/designs/3d-pipeline/toolchain-environment-preflight.md` on the user's Mac;
 check actual Blender addon + live MCP transport, user-global Skills, Claude/Codex scopes,
