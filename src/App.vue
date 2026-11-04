@@ -41,6 +41,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   <EventLabPanel />
   <TutorialCoach />
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
+  <div id="upcoming-scene" class="upcoming-scene" hidden><img id="upcoming-scene-image" alt="" /><span id="upcoming-scene-fallback" role="status">3D preview unavailable · concept image</span></div>
   <div class="scene-shade"></div>
   <div class="speed-streaks" aria-hidden="true"><i v-for="i in 18" :style="{ '--angle': `${(i - 1) * 20 + 6}deg`, '--delay': `${-(i - 1) * 0.13}s` }"></i></div>
   <div class="flight-director" aria-hidden="true"><span data-i18n="hud.flightVector">FLIGHT VECTOR</span><svg viewBox="0 0 300 100" fill="none"><path d="M5 48h75l12 12h16m84 0h16l12-12h75M150 15v13m0 48v10M135 50h30m-15-8v16"/><path class="director-level" d="M88 20h34m56 0h34M105 80h17m56 0h17"/></svg><span class="director-climb" id="climb-rate">+0.0 M/S</span></div>
@@ -123,11 +124,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </div>
       <p class="setup-step" id="track-step" data-i18n="mode.step.track">2 · Track</p>
       <div class="track-select" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
-        <div v-for="(track, id) in UPCOMING_TRACKS" :key="id" :data-upcoming-track="id" class="coming-soon-card" aria-disabled="true" :aria-label="`${track.names.en} — COMING SOON`">
-          <img class="coming-soon-cover" :src="`${BASE_URL}${track.image}`" :alt="track.names.en" loading="lazy" />
-          <span class="coming-soon-card-info"><b>{{ track.names.en }}</b><small>{{ track.length / 1000 }} KM</small></span>
-          <span class="coming-soon-stamp">COMING SOON</span>
-        </div>
+        <button v-for="(track, id) in UPCOMING_TRACKS" :key="id" type="button" class="upcoming-track-card" :data-upcoming-track="id" aria-pressed="false"><i class="track-preview upcoming-thumb" aria-hidden="true"><img :src="`${BASE_URL}${track.image}`" alt="" loading="lazy" /></i><span class="track-route-map" aria-hidden="true"><img class="upcoming-route-image" :src="`${BASE_URL}${track.route}`" alt="" loading="lazy" /></span><strong>{{ track.names.en }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
       </div>
       <p id="track-note" class="track-note"></p>
       <section class="race-mode-picker race-rules-row" id="race-rules-row" aria-labelledby="race-rules-step">
