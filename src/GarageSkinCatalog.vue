@@ -175,7 +175,7 @@ const statusText = (id: SkinId, locale: string) => {
   background: radial-gradient(ellipse at center 30%, #26719c28, transparent 70%), #102438;
 }
 .garage-loadout-art {
-  width: 112px; height: 112px; max-width: 100%; padding: 8px; box-sizing: border-box;
+  width: 104px; height: 104px; max-width: 100%; padding: 4px; box-sizing: border-box;
   display: grid; place-items: center; position: relative;
   border-radius: 10px; background: radial-gradient(circle, #36a6c02b, transparent 76%);
 }
