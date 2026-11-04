@@ -1,4 +1,5 @@
 import { CIRCUIT_ID } from './circuit-track.ts';
+import { stage2PreviewRequest } from './stage2-tracks.ts';
 import { UPCOMING_TRACKS, homeTrackStatus, isUpcomingTrack, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
@@ -296,6 +297,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
     setRace(selectedRace(last && unlockedTracks.has(last) ? last : getRace().trackId));
   } catch { /* Classic on Coast stays the default without storage. */ }
+  // Original Frostbite showroom URL: open P01/P02 preview, never enter a playable race.
+  upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
+  if (upcomingSelection) requestAnimationFrame(showTracks); // World WebGL bootstrap finishes first.
 
   return {
     recreate: eventLab.recreate,
