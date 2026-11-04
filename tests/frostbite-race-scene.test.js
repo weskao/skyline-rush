@@ -33,11 +33,11 @@ test('no terrain, deck or landmark covers the driving line anywhere, including t
 });
 
 test('shortcut ice decks and pylons sit at the section x/altitude the simulation tests', () => {
-  const [deck] = named('shortcut-ice-decks'), [pylons] = named('shortcut-pylons');
+  const decks = named('shortcut-ice-decks'), [pylons] = named('shortcut-pylons');
   const sections = FROSTBITE_TRACK.sections.filter(s => s.type === 'shortcut');
   for (const s of sections) {
     const f = frostbiteFrame((s.from + s.to) / 2), x = f.point.x + f.right[0] * s.x, z = f.point.z + f.right[2] * s.x;
-    const hit = new THREE.Raycaster(new THREE.Vector3(x, f.point.y + 30, z), down).intersectObject(deck)[0];
+    const hit = new THREE.Raycaster(new THREE.Vector3(x, f.point.y + 30, z), down).intersectObjects(decks)[0];
     assert.ok(hit && Math.abs(hit.point.y - (f.point.y + s.altitude - SHORTCUT_TOLERANCE)) < .05);
   }
   const spots = sections.flatMap(shortcutPylons), m = new THREE.Matrix4(), p = new THREE.Vector3();

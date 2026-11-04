@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { FROSTBITE_CANYON_GRAPH as graph, FROSTBITE_SEED } from './courses/frostbite-canyon.ts';
-import { FROSTBITE_TRACK, frostbiteFrame } from './courses/frostbite-race.ts';
+import { FROSTBITE_TRACK, frostbiteFrame, frostbiteLeg } from './courses/frostbite-race.ts';
 import { routeLength } from './course-route-frame.ts';
 import { SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
+import type { TrackSection } from './game-types.ts';
 import { seededRng } from './rng.ts';
 import { crystalField, crystalSentinels, edgeReflectors, iceArch } from './upcoming-scenes/frostbite-landmarks.ts';
 import { paintGlacier, ridgeNoise, smooth } from './upcoming-scenes/frostbite-terrain.ts';
@@ -75,6 +76,83 @@ function geometry(mesh: Mesh): THREE.BufferGeometry {
 }
 const empty = (): Mesh => ({ positions: [], indices: [] });
 
+// Shortcut structures: the deck top is the corridor floor (altitude - tolerance); everything over the
+// drivable road keeps >= 2.8 m clearance, supports stand past the road edge on the canyon floor.
+type Outline = readonly (readonly [number, number])[]; // [lateral, lift] corners, clockwise seen from behind
+/** Extrudes a closed cross-section along the route; each face gets its own vertices so edges stay crisp. */
+function extrude(out: Mesh, from: number, to: number, outline: Outline, rise: (s: number) => number = () => 0, step = ROAD_STEP): void {
+  const rows = Math.max(1, Math.ceil((to - from) / step));
+  outline.forEach((a, k) => {
+    const b = outline[(k + 1) % outline.length], first = out.positions.length / 3;
+    for (let i = 0; i <= rows; i++) {
+      const s = Math.min(to, from + i * step), f = frameAt(s), r = rise(s);
+      for (const [o, lift] of [a, b]) out.positions.push(f.point.x + f.right[0] * o, f.point.y + lift + r, f.point.z + f.right[2] * o);
+    }
+    for (let i = 0; i < rows; i++) { const p = first + i * 2; out.indices.push(p, p + 1, p + 2, p + 1, p + 3, p + 2); }
+  });
+}
+const box = (l: number, r: number, bottom: number, top: number): Outline => [[l, top], [r, top], [r, bottom], [l, bottom]];
+const DECK_DEPTH = .45, SUPPORT_LATERAL = ROAD_HALF + 3;
+type Style = 'glacier-ridge' | 'rift-ice-bridge' | 'aurora-span';
+const STYLES: Record<string, Style> = { 'glacier-valley': 'glacier-ridge', 'rift-lower-canyon': 'rift-ice-bridge', 'aurora-basin': 'aurora-span' };
+// Ridge: squat stone buttresses; bridge: tapering ice piers with icicles; span: tall glowing towers carrying a cable.
+const KIT: Record<Style, { spacing: number; geometry: () => THREE.BufferGeometry; top: number; support: string; rail: string; glow: number }> = {
+  'glacier-ridge': { spacing: 20, geometry: () => new THREE.CylinderGeometry(1.1, 1.7, 1, 4), top: 0, support: '#3b4f6b', rail: '#eef7ff', glow: 0 },
+  'rift-ice-bridge': { spacing: 30, geometry: () => new THREE.CylinderGeometry(.9, 1.6, 1, 7), top: 0, support: '#7fb9e0', rail: '#cfe9ff', glow: .3 },
+  'aurora-span': { spacing: 40, geometry: () => new THREE.CylinderGeometry(.45, .8, 1, 6), top: 15, support: '#6fe3ff', rail: '#9fe9ff', glow: .9 },
+};
+
+function placed(geometry: THREE.BufferGeometry, material: THREE.Material, spots: THREE.Matrix4[], name: string): THREE.InstancedMesh {
+  const mesh = new THREE.InstancedMesh(geometry, material, spots.length);
+  spots.forEach((m, i) => mesh.setMatrixAt(i, m));
+  mesh.name = name;
+  return mesh;
+}
+const dummy = new THREE.Object3D();
+function matrixAt(s: number, lateral: number, y: number, size: [number, number, number]): THREE.Matrix4 {
+  const f = frostbiteFrame(s);
+  dummy.position.set(f.point.x + f.right[0] * lateral, y, f.point.z + f.right[2] * lateral);
+  dummy.rotation.set(0, Math.atan2(f.forward[0], f.forward[2]), 0); dummy.scale.set(...size); dummy.updateMatrix();
+  return dummy.matrix.clone();
+}
+
+function shortcutStructure(section: TrackSection, height: (x: number, z: number) => number, deckMaterial: THREE.Material, hazard: THREE.Material): THREE.Group {
+  const style = STYLES[frostbiteLeg((section.from + section.to) / 2).edgeId], kit = KIT[style];
+  const { from, to } = section, x = section.x!, top = section.altitude! - SHORTCUT_TOLERANCE, under = top - DECK_DEPTH;
+  const side = Math.sign(x), outer = x + side * SHORTCUT_HALF_WIDTH, lateral = side * SUPPORT_LATERAL;
+  const root = new THREE.Group(); root.name = style;
+  const rail = new THREE.MeshStandardMaterial({ color: kit.rail, emissive: kit.rail, emissiveIntensity: kit.glow * .4, roughness: .35, metalness: .2 });
+  const deck = empty(), rails = empty();
+  extrude(deck, from, to, box(x - SHORTCUT_HALF_WIDTH, x + SHORTCUT_HALF_WIDTH, under, top));
+  for (const edge of [x - SHORTCUT_HALF_WIDTH, x + SHORTCUT_HALF_WIDTH]) extrude(rails, from, to, box(edge - .3, edge + .3, under - .05, top + .35));
+  const supportSpots: THREE.Matrix4[] = [], beamSpots: THREE.Matrix4[] = [], postSpots: THREE.Matrix4[] = [], icicleSpots: THREE.Matrix4[] = [];
+  const beamWidth = Math.abs(lateral - outer) + 1.2;
+  for (let s = from + kit.spacing / 2; s < to; s += kit.spacing) {
+    const f = frostbiteFrame(s), ground = height(f.point.x + f.right[0] * lateral, f.point.z + f.right[2] * lateral) - 1;
+    const head = f.point.y + (kit.top || under);
+    supportSpots.push(matrixAt(s, lateral, (ground + head) / 2, [1, head - ground, 1]));
+    beamSpots.push(matrixAt(s, (lateral + outer) / 2, f.point.y + under + DECK_DEPTH / 2, [beamWidth, DECK_DEPTH, 1.2]));
+    if (style === 'rift-ice-bridge') for (const o of [.6, 1.4, 2.2]) icicleSpots.push(matrixAt(s + o * 3 - 3, side * (ROAD_HALF + .5 + o), f.point.y + under - .9, [.35, 1.8, .35]));
+  }
+  for (let s = from + 6; s < to; s += 12) for (const edge of [x - SHORTCUT_HALF_WIDTH, x + SHORTCUT_HALF_WIDTH]) postSpots.push(matrixAt(s, edge, frostbiteFrame(s).point.y + top + .8, [.25, .9, .25]));
+  const supportMaterial = new THREE.MeshStandardMaterial({ color: kit.support, emissive: kit.support, emissiveIntensity: kit.glow * .5, roughness: .45, flatShading: true });
+  const deckMesh = new THREE.Mesh(geometry(deck), deckMaterial), railMesh = new THREE.Mesh(geometry(rails), rail);
+  deckMesh.name = 'shortcut-ice-decks'; railMesh.name = 'structure-rails';
+  root.add(deckMesh, railMesh,
+    placed(kit.geometry(), supportMaterial, supportSpots, 'structure-supports'),
+    placed(new THREE.BoxGeometry(1, 1, 1), rail, beamSpots, 'structure-beams'),
+    placed(new THREE.BoxGeometry(1, 1, 1), hazard, postSpots, 'hazard-posts'));
+  if (icicleSpots.length) root.add(placed(new THREE.ConeGeometry(1, 1, 5).rotateX(Math.PI), supportMaterial, icicleSpots, 'bridge-icicles'));
+  if (style === 'aurora-span') {
+    // One catenary per tower pair, outside the road: towers top out at kit.top, the cable sags to 6 m mid-span.
+    const cable = empty(), first = from + kit.spacing / 2;
+    extrude(cable, first, to - kit.spacing / 2, box(lateral - .12, lateral + .12, -.12, .12), s => 6 + (kit.top - 6) * (2 * (((s - first) / kit.spacing) % 1) - 1) ** 2, 2);
+    const cables = new THREE.Mesh(geometry(cable), rail); cables.name = 'span-cables';
+    root.add(cables);
+  }
+  return root;
+}
+
 /** Tiles within REACH of the route, each with the nearest road height as the far-wall fallback. */
 function terrainTiles(): Map<string, number> {
   const tiles = new Map<string, { y: number; d: number }>();
@@ -96,8 +174,10 @@ export function createFrostbiteRaceScene(scene: THREE.Scene) {
     terrain: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .8, metalness: .04, flatShading: true }),
     road: new THREE.MeshStandardMaterial({ color: '#4d6b91', roughness: .5, metalness: .12 }),
     paint: new THREE.MeshBasicMaterial({ color: '#cfefff' }),
-    deck: new THREE.MeshStandardMaterial({ color: '#8fd8ff', emissive: '#1d6f9c', emissiveIntensity: .35, roughness: .2, transparent: true, opacity: .55, depthWrite: false }),
     pylon: new THREE.MeshStandardMaterial({ color: '#d8f6ff', emissive: '#3fd8ff', emissiveIntensity: .8 }),
+    // Frosted ice: translucent so a car on the lower road under the corridor stays visible to the chase camera.
+    deck: new THREE.MeshStandardMaterial({ color: '#8fd8ff', emissive: '#1d6f9c', emissiveIntensity: .35, roughness: .2, transparent: true, opacity: .55, depthWrite: false }),
+    hazard: new THREE.MeshStandardMaterial({ color: '#ff9a3c', emissive: '#ff6a10', emissiveIntensity: 1.4 }),
   };
   const chunks: { group: THREE.Group; x: number; z: number; radius: number }[] = [];
   for (let from = 0; from < LENGTH + RUNOFF; from += CHUNK) {
@@ -125,21 +205,23 @@ export function createFrostbiteRaceScene(scene: THREE.Scene) {
     group.add(chunk);
   }
 
-  // Graph decisions as raced: translucent ice decks and solid pylons exactly where the simulation puts them.
+  // Graph decisions as raced: real structures around the simulation's corridor, solid pylons exactly where it tests.
   const shortcuts = FROSTBITE_TRACK.sections.filter(s => s.type === 'shortcut');
-  const decks = empty();
-  for (const s of shortcuts) strip(decks, s.from, s.to, ROAD_STEP, [s.x! - SHORTCUT_HALF_WIDTH, s.x! + SHORTCUT_HALF_WIDTH], (_x, _z, y) => y + s.altitude! - SHORTCUT_TOLERANCE);
-  const deck = new THREE.Mesh(geometry(decks), materials.deck); deck.name = 'shortcut-ice-decks';
+  const structures = new THREE.Group(); structures.name = 'shortcut-structures';
+  for (const s of shortcuts) {
+    const root = shortcutStructure(s, height, materials.deck, materials.hazard), c = frameAt((s.from + s.to) / 2).point;
+    structures.add(root);
+    chunks.push({ group: root, x: c.x, z: c.z, radius: (s.to - s.from) / 2 + 20 }); // culled like the road chunks
+  }
   const pylonSpots = shortcuts.flatMap(shortcutPylons);
   const pylons = new THREE.InstancedMesh(new THREE.BoxGeometry(.4, SHORTCUT_TOLERANCE * 2, .4), materials.pylon, pylonSpots.length);
-  const dummy = new THREE.Object3D();
   pylonSpots.forEach((p, i) => {
     const f = frostbiteFrame(p.distance);
     dummy.position.set(f.point.x + f.right[0] * p.x, f.point.y + p.altitude, f.point.z + f.right[2] * p.x);
     dummy.updateMatrix(); pylons.setMatrixAt(i, dummy.matrix);
   });
   pylons.name = 'shortcut-pylons';
-  group.add(deck, pylons);
+  group.add(structures, pylons);
 
   // Signature landmarks from the authored set, standing on this corridor's terrain (never on the road).
   const seed = seededRng(FROSTBITE_SEED, 'frostbite-race'), ground = (x: number, z: number): number => height(x, z);

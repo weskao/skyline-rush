@@ -12,8 +12,8 @@ const capture = async (page, name) => {
   mkdirSync(captureDir, { recursive: true });
   await page.screenshot({ path: join(captureDir, `${name}.png`) });
 };
-// Stops along the route: basin landmark, first hairpin, glacier shortcut, riverbed ice hairpin, Rift deck, climb, finish run-in.
-const STOPS = [['sentinels', 900], ['hairpin-1', 1750], ['glacier-deck', 3300], ['hairpin-2', 5100], ['rift-deck', 6400], ['climb', 7600], ['outlet', 13300]];
+// Stops along the route: basin landmark, first hairpin, glacier ridge, riverbed ice hairpin, Rift ice bridge, climb, aurora span, finish run-in.
+const STOPS = [['sentinels', 900], ['hairpin-1', 1750], ['glacier-deck', 3300], ['hairpin-2', 5100], ['rift-deck', 6400], ['climb', 7600], ['aurora-span', 9000], ['outlet', 13300]];
 
 test.use({ unlockedAccess: true });
 for (const [name, viewport, hasTouch] of [
