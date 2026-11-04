@@ -68,11 +68,14 @@ for (const id of TRACKS) {
 }
 
 for (const id of TRACKS) {
-  test(`${id}: AIRFLOW race camera keeps the chosen angle in the road frame`, async ({ page }) => {
+  test(`${id}: the showcase angle never reaches the race camera, AIRFLOW on or off`, async ({ page }) => {
     await openProbe(page, VIEWPORTS[0]);
-    for (const [view, expected] of Object.entries(FIXED)) {
-      const { bearing } = await page.evaluate(([id, view]) => window.showcaseCameraProbe(id, view, { airflow: true, racing: true, seconds: 0 }), [id, view]);
-      expect.soft(gap(bearing, expected), `${id}/${view} race bearing ${bearing.toFixed(1)}°`).toBeLessThan(10);
+    for (const airflow of [false, true]) {
+      const { bearing: chase } = await page.evaluate(([id, airflow]) => window.showcaseCameraProbe(id, 'drive', { airflow, racing: true, seconds: 0 }), [id, airflow]);
+      for (const view of [...Object.keys(FIXED), 'orbit']) {
+        const { bearing } = await page.evaluate(([id, view, airflow]) => window.showcaseCameraProbe(id, view, { airflow, racing: true, seconds: 0 }), [id, view, airflow]);
+        expect.soft(gap(bearing, chase), `${id}/${view} AIRFLOW ${airflow} race bearing ${bearing.toFixed(1)}° vs chase ${chase.toFixed(1)}°`).toBeLessThan(2);
+      }
     }
   });
 }

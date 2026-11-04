@@ -88,6 +88,12 @@ test('keyboard practice requires real actions, completes all ten steps and prese
   await keyStep(page, 'e', 'complete');
   await expect(page.locator('#tutorial-retry')).toBeVisible();
   await expect(page.locator('#tutorial-done')).toHaveText('Back to game');
+  // Completion must not freeze the world: the race stays live as a free cruise and a banner confirms the finish.
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+  await expect(page.locator('.tutorial-celebration')).toContainText('Free drive');
+  await page.keyboard.down('a');
+  await expect.poll(async () => page.evaluate(() => document.querySelector('#speed')?.textContent)).not.toBe('0');
+  await page.keyboard.up('a');
   expect(await career(page)).toEqual(before);
   await page.locator('#tutorial-retry').click();
   await step(page, 'throttle');
