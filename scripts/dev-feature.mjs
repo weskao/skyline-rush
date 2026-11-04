@@ -72,8 +72,16 @@ async function serve(worktree, tls) {
     worktree,
   );
   const alias = loaded?.config?.resolve?.alias?.['@progression-access'] ?? '';
-  if (!String(alias).endsWith(`${path.sep}dev-unlocked.js`) && !String(alias).endsWith('/dev-unlocked.js')) {
-    throw new Error('Refusing to serve: the worktree did not select the local all-unlocked access module.');
+  const expected = path.join(worktree, 'src', 'access', 'dev-unlocked.ts');
+  if (alias !== expected) {
+    throw new Error('Refusing to serve: the worktree did not select its own all-unlocked TypeScript access module.');
+  }
+  const upcoming = path.join(worktree, 'src', 'upcoming-tracks.ts');
+  if (fs.existsSync(upcoming)) {
+    const source = fs.readFileSync(expected, 'utf8');
+    if (!source.includes('isUpcomingTrack') && !source.includes('upcomingReadiness')) {
+      throw new Error('Refusing stale Coming Soon worktree: unlocked access has no preview-readiness guard.');
+    }
   }
   const server = await createServer(mergeConfig(loaded.config, {
     root: worktree,

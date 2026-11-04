@@ -1,5 +1,6 @@
 import { CIRCUIT_ID } from './circuit-track.ts';
-import { UPCOMING_TRACKS, homeTrackStatus, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
+import { stage2PreviewRequest } from './stage2-tracks.ts';
+import { UPCOMING_TRACKS, homeTrackStatus, isCoverOnly, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
@@ -156,14 +157,14 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       button.title = t('track.comingSoonInfo', { track: upcomingTrackName(id, getLocale()) });
     }
   }
-  const canRace = (trackId: string): boolean => !upcomingSelection && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId));
+  const canRace = (trackId: string): boolean => !upcomingSelection && !isCoverOnly(trackId) && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId));
   function renderRouteInfo(race: Race): void {
     const daily = options.getDaily();
     const startButton = ui['start-button'] as HTMLButtonElement;
     const upcoming = upcomingSelection ? UPCOMING_TRACKS[upcomingSelection] : null;
     const name = upcomingSelection ? upcomingTrackName(upcomingSelection, getLocale()) : trackName(race.trackId, getLocale());
     startButton.disabled = Boolean(upcoming) || (!daily && (!canRace(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount())));
-    const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.unavailable' : 'start.race';
+    const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.locked' : 'start.race';
     const actionLabel = startButton.querySelector<HTMLElement>('span')!;
     actionLabel.dataset.i18n = labelKey;
     actionLabel.textContent = t(labelKey);
@@ -296,9 +297,19 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
     setRace(selectedRace(last && unlockedTracks.has(last) ? last : getRace().trackId));
   } catch { /* Classic on Coast stays the default without storage. */ }
+  // Original Frostbite showroom URL: open P01/P02 preview, never enter a playable race.
+  upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
+  if (upcomingSelection) requestAnimationFrame(showTracks); // World WebGL bootstrap finishes first.
+
+  // Card previews animate only while scrolled into view.
+  const previewObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) (entry.target as HTMLElement).dataset.visible = String(entry.isIntersecting);
+  }, { root: $('.track-select') });
+  document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
 
   return {
     recreate: eventLab.recreate,
+    disconnectPreviews: (): void => previewObserver.disconnect(),
     selectedRace, canRace,
     selectedMode: (): string => selectedMode,
     isUpcomingSelected: (): boolean => Boolean(upcomingSelection),
