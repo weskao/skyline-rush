@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { UPCOMING_TRACKS, homeTrackStatus, isUpcomingTrack } from '../src/upcoming-tracks.ts';
 import { RACE_TRACKS } from '../src/game.js';
+import { STAGE2_TRACKS, stage2PreviewRequest } from '../src/stage2-tracks.ts';
 import { availableTracks as developmentTracks } from '../src/access/dev-unlocked.ts';
 import { availableTracks as productionTracks } from '../src/access/production.ts';
 
@@ -74,6 +75,14 @@ test('all unlocked Make targets resolve the development-only policy', () => {
 
 test('direct start and restart paths fail closed for Coming Soon, including Daily mode', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
-  assert.match(main, /function start\(\) \{\s*if \(isUpcomingTrack\(race\.trackId\)\) return;/);
-  assert.match(main, /function restart\(trackId = race\.trackId\) \{\s*if \(isUpcomingTrack\(trackId\)\) return;/);
+  assert.match(main, /function start\(\) \{\s*if \(raceSelect\.isUpcomingSelected\(\) \|\| isUpcomingTrack\(race\.trackId\)\) return;/);
+  assert.match(main, /function restart\(trackId = race\.trackId\) \{\s*if \(raceSelect\.isUpcomingSelected\(\) \|\| isUpcomingTrack\(trackId\)\) return;/);
+});
+
+test('Frostbite home shares Stage 2 metadata and only accepts the explicit showroom URL', () => {
+  assert.equal(UPCOMING_TRACKS['frostbite-canyon'], STAGE2_TRACKS['frostbite-canyon']);
+  assert.deepEqual(stage2PreviewRequest('?stage2-preview=frostbite-canyon&shot=p02'), { id: 'frostbite-canyon', shot: 'p02' });
+  assert.deepEqual(stage2PreviewRequest('?stage2-preview=frostbite-canyon'), { id: 'frostbite-canyon', shot: 'p01' });
+  assert.equal(stage2PreviewRequest('?stage2-preview=dune-tempest'), null);
+  assert.equal(stage2PreviewRequest('?stage2-preview=unknown&shot=p02'), null);
 });
