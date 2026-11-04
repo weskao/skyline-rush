@@ -63,6 +63,35 @@ export function volcanicObstacleContact(
   }
   return null;
 }
+// Data-only AI blockers: the shared eight-car runtime remains authoritative.
+export type VolcanicAIAvoidanceHint = {
+  readonly id:string; readonly edgeId:string; readonly distanceAhead:number;
+  readonly point:Vec3; readonly lateral:number; readonly clearanceRadius:number;
+  readonly warning:boolean; readonly active:boolean;
+  readonly passLeft:readonly [number,number]; readonly passRight:readonly [number,number];
+};
+export function volcanicAIAvoidanceHints(
+  edgeId:string, localS:number, timeSeconds:number, lookAhead=90,
+): VolcanicAIAvoidanceHint[] {
+  const edge=VOLCANIC_CROWN_EDGES.find(item=>item.id===edgeId);
+  if(!edge)throw new Error('Unknown Volcanic Crown edge: '+edgeId);
+  const maxLateral=edge.width/2-2.3;
+  return VOLCANIC_OBSTACLES.filter(item=>item.edgeId===edgeId &&
+    item.s>=localS-6 && item.s<=localS+lookAhead)
+    .map(item=>({item,pose:volcanicObstaclePose(item,timeSeconds)}))
+    .filter(({pose})=>pose.active||pose.warning)
+    .map(({item,pose})=>{
+      const clearanceRadius=item.radius+2.3;
+      return {
+        id:item.id,edgeId,distanceAhead:item.s-localS,point:pose.point,
+        lateral:item.lateral,clearanceRadius,warning:pose.warning,active:pose.active,
+        passLeft:[-maxLateral,Math.max(-maxLateral,
+          Math.min(maxLateral,item.lateral-clearanceRadius))] as const,
+        passRight:[Math.min(maxLateral,
+          Math.max(-maxLateral,item.lateral+clearanceRadius)),maxLateral] as const,
+      };
+    });
+}
 export function volcanicAIChooseLateral(
   edgeId:string, localS:number, preferredLateral:number, timeSeconds:number, lookAhead=90,
 ): number {
@@ -70,12 +99,10 @@ export function volcanicAIChooseLateral(
   if(!edge)throw new Error('Unknown Volcanic Crown edge: '+edgeId);
   const maxLateral=edge.width/2-2.3;
   const clamp=(n:number)=>Math.max(-maxLateral,Math.min(maxLateral,n));
-  const blocked=VOLCANIC_OBSTACLES.filter(obstacle=>obstacle.edgeId===edgeId &&
-    obstacle.s>=localS-6 && obstacle.s<=localS+lookAhead &&
-    (volcanicObstaclePose(obstacle,timeSeconds).active || volcanicObstaclePose(obstacle,timeSeconds).warning));
+  const blocked=volcanicAIAvoidanceHints(edgeId,localS,timeSeconds,lookAhead);
   const candidates=[clamp(preferredLateral),-8,8,-3,3,0].map(clamp);
-  const safe=candidates.filter(candidate=>blocked.every(obstacle=>
-    Math.abs(candidate-obstacle.lateral)>obstacle.radius+2.3));
+  const safe=candidates.filter(candidate=>blocked.every(item=>
+    Math.abs(candidate-item.lateral)>item.clearanceRadius));
   return (safe.length?safe:candidates).sort((a,b)=>
     Math.abs(a-preferredLateral)-Math.abs(b-preferredLateral))[0];
 }
