@@ -3423,3 +3423,26 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [x] Production build passed. No new GPU resources, per-frame work, sound or quality-tier branches: this restores camera placement only. Existing Low/Medium/High rendering and audio remain applicable.
 - [ ] Full local `make verify` and exact-final-commit GitHub CI `quality-gate`: pending. Initial gate caught a literal timeout in the new test; removed the unnecessary override and timeout-policy suite passed 7/7. Rerun typecheck passed, units 1630 passed / 3 skipped, build passed. Full browser run interrupted for safe remote integration; full local gate remains incomplete. Final integrated-tree checks and exact-HEAD full CI pending.
 - [ ] Physical iOS/Android and GPU/performance/thermal measurements remain open; browser viewport screenshots do not certify hardware. No PR, merge or deployment authorized.
+
+## 2026-11-04 — Five playable tracks / shared graph travel verification
+
+- [x] Added isolated TDD coverage for opt-in graph travel with 3D route-frame position, legal forks, ordered progress, flight permission, eight independent vehicle states, and altitude/lateral bypass rejection. Observed RED and GREEN 9/9, plus isolated strict TypeScript checks; this is NOT a whole-repository pass.
+- [ ] Confirm the newly pushed **exact-HEAD FULL** GitHub CI: unit/typecheck/build, cloud-save, every Browser and World Tour shard, and quality gate; skipped, queued, failed or cancelled does not count as PASS.
+- [ ] Connect the canonical graph traveller to authoritative `game.js` simulation, `world.js` road/wheel contact and shared RaceFactory, then implement trusted signed swept gates, branch-aware 8-car AI, layer-aware collisions, flight/landing, recovery and real results without changing legacy courses.
+- [ ] Run real desktop/mobile WebGL acceptance, compare two source JPEGs per map, measure 20+ completed races, 30/60/120 FPS, Reduced Motion and GPU disposal before enabling any Coming Soon course.
+
+
+## 2026-11-04 — graph fleet, swept gates and physical recovery
+
+- [x] TDD isolated: eight separate graph-car states, deterministic branch movement, finite metre/pose validation, layered collision candidates, verified-clear ground recovery and measured directional gate crossing; observed RED then GREEN 20/20 on isolated exact-SHA shared modules; strict isolated TS check passed.
+- [ ] Verify latest exact-HEAD FULL CI on this integration commit: Unit/Typecheck/Build, Cloud-save, every Browser (13) and World Tour (5) shard, quality-gate; no skipped/queued/cancelled/failed required suite counts as PASS.
+- [ ] Connect signed physical gates and all eight cars to the existing `game.js` authoritative simulation and RaceFactory; connect the same canonical frames to `world.js` road/pose/AI/minimap, actual knock/bump response, landing, hazard-safe recovery and finish/results.
+- [ ] Independently verify map-source exact-HEAD FULL CI and real WebGL 1440×900 / 390×844, 20+ timed races, 30/60/120 FPS, Reduced Motion, quality tiers and GPU dispose before selective file import and playable enablement. Keep Coming Soon.
+
+
+## 2026-11-04 — provisional graph-aware AI route choices and race order
+
+- [x] Added opt-in deterministic AI fork selection (no unauthorized flight), checkpoint-aware provisional race order and finish-time ordering; test-first RED and GREEN 9/9 in a minimal Node 22 mirror, combined shared 29/29 and isolated strict TS PASS.
+- [ ] Exact-HEAD FULL GitHub Actions must run all 13 Browser, all five World Tour, Unit/Typecheck/Build, cloud-save and quality-gate, not merely Focused PASS; capture job logs and fix any regressions.
+- [ ] Wire the new helpers into the authoritative existing `game.js` / RaceFactory / `world.js` runtime with trusted physics world poses, route-aware AI steering, signed gates, 3D colliders, actual recovery and results; preserve legacy gameplay.
+- [ ] 5 source branches remain read-only candidates pending their own exact-HEAD FULL CI, 3–5 minute / 8-car tests, 30/60/120 FPS, Reduced Motion, GPU disposal and real mobile/desktop WebGL versus both concept JPEGs. Coming Soon stays enabled.
