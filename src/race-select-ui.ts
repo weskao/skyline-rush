@@ -164,7 +164,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const upcoming = upcomingSelection ? UPCOMING_TRACKS[upcomingSelection] : null;
     const name = upcomingSelection ? upcomingTrackName(upcomingSelection, getLocale()) : trackName(race.trackId, getLocale());
     startButton.disabled = Boolean(upcoming) || (!daily && (!canRace(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount())));
-    const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.unavailable' : 'start.race';
+    const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.locked' : 'start.race';
     const actionLabel = startButton.querySelector<HTMLElement>('span')!;
     actionLabel.dataset.i18n = labelKey;
     actionLabel.textContent = t(labelKey);
