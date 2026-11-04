@@ -54,3 +54,30 @@ export function buildDuneGates(course: Course): readonly DirectionalGate[] {
     };
   });
 }
+
+/** Pure map-owned gate geometry; shared race runtime decides checkpoint order.
+ * Rejects non-physical (>90 m) single-sample jumps; runtime must substep longer updates.
+ */
+export function crossesDuneGate(gate: DirectionalGate, previous: Point3, current: Point3,
+  approachEdgeId: string): boolean {
+  if (approachEdgeId !== gate.approachEdgeId ||
+    !previous.every(Number.isFinite) || !current.every(Number.isFinite)) return false;
+
+  const dx = current[0] - previous[0], dz = current[2] - previous[2];
+  const distance = Math.hypot(dx, dz);
+  const [fx, fz] = gate.forwardXZ;
+  const forward = dx * fx + dz * fz;
+  if (distance === 0 || distance > 90 || forward / distance < 0.55) return false;
+
+  const signed = (p: Point3) => (p[0] - gate.center[0]) * fx + (p[2] - gate.center[2]) * fz;
+  const before = signed(previous), after = signed(current);
+  if (!(before < 0 && after >= 0)) return false;
+
+  const t = -before / (after - before);
+  const x = previous[0] + dx * t - gate.center[0];
+  const z = previous[2] + dz * t - gate.center[2];
+  const lateral = -fz * x + fx * z;
+  const altitude = previous[1] + (current[1] - previous[1]) * t - gate.center[1];
+  return Math.abs(lateral) <= gate.halfWidthMeters + 1e-7 &&
+    altitude >= gate.minRelativeAltitudeMeters && altitude <= gate.maxRelativeAltitudeMeters;
+}

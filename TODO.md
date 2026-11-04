@@ -3322,3 +3322,9 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 
 - [ ] **2026-11-03 source integration update:** Five independent art branches subsequently delivered actual native Three.js scene modules, corresponding focused unit tests and art notes. Their exports, geometry, absolute-time updates, quality/reduced-motion arguments and disposal methods were source-reviewed. The exact 15 committed Git blobs were selectively imported without merging old histories. Heads: `dune-tempest` `fa9573b4bddd`; `monsoon-ruins` `32411c88c702`; `skyfall-archipelago` `9707c5132dab`; `volcanic-crown` `d7ad8b01f57f`; `stormline-megacity` `84e9569a2d4c`. Source branch CI was still queued when checked; this is **not** verified visual acceptance.
 - [ ] Register all five in the shared renderer and run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and 2 real WebGL frames per map desktop/mobile. Pending; do not label scenes visually accepted before screenshots and checks.
+
+### Dune Tempest gate geometry — 2026-11-04
+- [x] Map-owned directional crossing check with semantic RED→GREEN (4/4 isolated focused assertions), wrong edge/reverse/oblique/high-altitude/teleport rejection and standalone strict typecheck.
+- [ ] Connect ordered crossing progression through shared CourseGraph runtime with per-car edge/localS and valid movement substeps; prove aerial/landing/recovery in real game.
+- [ ] Complete 8-car, 3–5 minute, 30/60/120 Hz, Low/Medium/High/Reduced Motion and streaming/disposal acceptance with actual desktop/mobile WebGL captures.
+- [ ] Complete local npm test/typecheck/build/make verify plus full exact-HEAD CI; historical focused results are not equivalent to all Browser/World Tour shards.
