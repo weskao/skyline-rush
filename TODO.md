@@ -3342,3 +3342,6 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [x] Expand map-owned `.setFocus()` split/merge prefetch threshold from 210 m to the full 420 m chunk; preserve current per-edge 420 m chunks, quality tiers and disconnected flight gaps. Do not count code change as tested.
 - [ ] Verify final-head `npm test`, typecheck, production build and mandatory FULL Browser / World Tour CI, including the new regression; run local `make verify` and obtain real desktop/mobile WebGL/30/60/120 FPS/8-car evidence before map acceptance.
 - [ ] Skyfall source concept JPEGs inspected: bottom sections include unrelated adjacent-course imagery; match only Skyfall content in upper sections and do not claim any real-WebGL screenshot comparison yet.
+
+- [x] Add 3D road-frame-aligned Skyfall landing guide strips on physically supported pavement after each air gap; never create road mesh in the gap. Guide geometry/material are chunk-owned and disposed on unload. Tests authored before code (`d9ef292c`, `6d4a61a2`); **RED outcome not observed** due to queued Actions.
+- [ ] Verify guide visibility, non-occlusion and contact parity in genuine 1440×900 and 390×844 WebGL screenshots for all three split/merge pairs; confirm quality tiers and reduced-motion on real hardware.

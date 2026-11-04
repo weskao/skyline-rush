@@ -109,6 +109,39 @@ function addLandmarks(group: THREE.Group): THREE.Mesh[] {
   return waterfalls;
 }
 
+/** Chunk-owned guide strips start on solid landing pavement, never above flight gaps. */
+function addLandingGuides(group: THREE.Group, edgeId: string,
+  start: number, end: number): void {
+  const edge = SKYFALL_COURSE.edges.find(item => item.id === edgeId);
+  if (edge?.mode !== 'air') return;
+  const vertices: number[] = [];
+  const length = getSkyfallEdgeLength(edgeId);
+  for (const gap of edge.gaps) for (const offset of [10, 26, 42]) {
+    const nearS = gap.to + offset;
+    if (nearS < start || nearS >= end) continue;
+    const farS = Math.min(nearS + 3, end, length);
+    if (farS - nearS < .05 || !hasSkyfallRoadContact(edgeId, nearS)
+      || !hasSkyfallRoadContact(edgeId, farS)) continue;
+    const a = sampleSkyfallRoad(edgeId, nearS), b = sampleSkyfallRoad(edgeId, farS);
+    const l0 = framePoint(a, -a.width * .36, .12);
+    const r0 = framePoint(a, a.width * .36, .12);
+    const l1 = framePoint(b, -b.width * .36, .12);
+    const r1 = framePoint(b, b.width * .36, .12);
+    vertices.push(...l0.toArray(), ...r0.toArray(), ...l1.toArray(),
+      ...r0.toArray(), ...r1.toArray(), ...l1.toArray());
+  }
+  if (!vertices.length) return;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x9befff, transparent: true, opacity: .84, depthWrite: false,
+    side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1,
+  });
+  const guides = new THREE.Mesh(geometry, material);
+  guides.name = `Skyfall ${edgeId} landing approach markings`;
+  group.add(guides);
+}
+
 function addRealObstacles(group: THREE.Group, edgeId: string,
   start: number, end: number): void {
   const obstacles = SKYFALL_OBSTACLES.filter(o =>
@@ -224,6 +257,7 @@ export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium')
       chunk.add(road);
       addFloatingIslands(chunk, quality, edgeId, start, end);
       addRealObstacles(chunk, edgeId, start, end);
+      addLandingGuides(chunk, edgeId, start, end);
       group.add(chunk);
       chunks.set(key, chunk);
     }
