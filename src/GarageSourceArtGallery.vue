@@ -23,7 +23,9 @@ const storeStatusLabel = (id: string): string => {
     : (unavailable ? 'Unavailable' : 'Coming soon');
 };
 const image = (id: string) =>
-  `${import.meta.env.BASE_URL}feature-assets/${props.category}/raster/${id}@3x.webp`;
+  `${import.meta.env.BASE_URL}feature-assets/${props.category}/raster/${id}@3x.${props.category === 'garage-store-readiness' ? 'png' : 'webp'}`;
+const legacyStoreImage = (id: string) =>
+  `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.webp`;
 function setFilter(group: Wave3PreviewGroup): void {
   filter.value = group;
   selected.value = filterWave3PreviewItems(props.category, group)[0]?.id ?? '';
@@ -38,7 +40,8 @@ onUnmounted(() => stopListening?.());
     <summary>
       <span data-wave3-entry-icon class="garage-source-entry-icon">
         <GarageArtworkImage :src="image(category === 'garage-store-readiness' ? 'store-cart' : 'mission-race')"
-          :size="40" :alt="''" :fallback-text="copy(config.heading)" loading="eager" />
+          :size="40" :alt="''" :fallback-text="copy(config.heading)" loading="eager"
+          :fallback-src="category === 'garage-store-readiness' ? legacyStoreImage('store-cart') : ''" />
       </span>
       {{ copy(config.heading) }}
       <span class="garage-source-soon">{{ locale === 'zh-TW' ? '概念預覽' : 'Preview' }}</span>
