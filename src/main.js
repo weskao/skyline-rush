@@ -51,6 +51,7 @@ import { resultView, setupResultScreen } from './result-screen.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
+import { isUpcomingTrack } from './upcoming-tracks.ts';
 import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
@@ -285,6 +286,7 @@ setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => contr
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
 function start() {
+  if (isUpcomingTrack(race.trackId)) return; // fail closed for Daily, saved progress and dev-unlocked
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
@@ -305,6 +307,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
+  if (isUpcomingTrack(trackId)) return;
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
