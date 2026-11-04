@@ -73,8 +73,8 @@ test('opening an older recent setup clears a previously restored active rule', a
   await page.locator('button[data-race-mode="custom"]').click();
   await page.locator('#recent-custom > summary').click();
   await page.locator('#recent-custom-runs button').nth(0).click();
-  expect(await page.evaluate(() => window.gameplay.race.config.activeItems)).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.gameplay.race.config.activeItems)).toBe(true);
   await page.locator('#recent-custom-runs button').nth(1).click();
-  expect(await page.evaluate(() => window.gameplay.race.config.activeItems)).toBeUndefined();
+  await expect.poll(() => page.evaluate(() => window.gameplay.race.config.activeItems)).toBeUndefined();
   expect(await page.evaluate(() => window.gameplay.race.config.itemRules)).toBeUndefined();
 });

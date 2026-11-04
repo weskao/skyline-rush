@@ -22,3 +22,11 @@ test('swipe preview rendering always reads the live race getter instead of a sta
   assert.doesNotMatch(code, /getWorld\(\)\.render\(race\s*,/, 'a stale undeclared race breaks track swipe render snapshots');
   assert.match(code, /world\.render\(getRace\(\)/, 'snapshots must use live selected race');
 });
+
+test('track preview swipe resolves playable and future card IDs without creating a Race', async () => {
+  const swipe = await import('../src/track-swipe-ui.ts');
+  assert.equal(typeof swipe.swipeTrackId, 'function', 'carousel must recognize upcoming cards');
+  assert.equal(swipe.swipeTrackId({ dataset: { track: 'cosmic' } }), 'cosmic');
+  assert.equal(swipe.swipeTrackId({ dataset: { upcomingTrack: 'dune-tempest' } }), 'dune-tempest');
+  assert.equal(swipe.swipeTrackId({ dataset: {} }), '');
+});

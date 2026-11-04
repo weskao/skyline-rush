@@ -112,7 +112,7 @@ test.describe('touch controls', () => {
     await page.locator('#layout-done').click();
     await page.locator('#controls-button').click();
     await page.locator('#layout-reset').click();
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape)).toEqual({});
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape)).toEqual({});
   });
   test('edited touch buttons remain inside notched-screen safe areas', async ({ page, context }) => {
     await open(page);
