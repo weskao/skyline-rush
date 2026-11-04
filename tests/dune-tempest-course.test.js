@@ -145,3 +145,14 @@ test('Dune directional gates bind every ordered checkpoint and finish to its rea
     assert.ok(gate.maxRelativeAltitudeMeters < 95, 'cannot count a high aerial bypass');
   }
 });
+
+test('merge2 ground branch meets the post-merge corridor without reversing direction', () => {
+  const incoming = byId('canyon-switchbacks').controlPoints;
+  const outgoing = byId('stone-ring-corridor').controlPoints;
+  const tangent = (a, b) => [b[0] - a[0], b[2] - a[2]];
+  const a = tangent(incoming.at(-2), incoming.at(-1));
+  const b = tangent(outgoing[0], outgoing[1]);
+  const dot = (a[0] * b[0] + a[1] * b[1]) / Math.hypot(...a) / Math.hypot(...b);
+  assert.ok(dot > Math.cos(35 * Math.PI / 180),
+    'canyon exit must connect to the shared road without a 144° steering snap');
+});

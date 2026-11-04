@@ -3400,3 +3400,7 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [x] RED (2/3 expected assertions fail on stub) → GREEN (3/3 pass) locally with Node 22 type stripping; standalone strict TypeScript passes for the pure chasm mesh builder.
 - [x] Connect a deterministic, seam-safe native canyon-floor mesh to flight-edge visual chunk without creating a solid flying road. GPU geometry/material disposal remains in existing chunk lifecycle.
 - [ ] Real WebGL screenshots, app runtime/flight/collision integration, full project verify and exact-final-HEAD FULL CI still required. This is visual geometry only, not approved terrain contact.
+
+### Dune merge2 road continuity — 2026-11-05
+- [x] Found a 144-degree main-branch tangent reversal at merge2. Map-owned TDD: isolated merge tangent test observed semantic RED then GREEN; widen the canyon hairpin and align exit with stone-ring-corridor. Checkpoint order and 3 branch topology unchanged.
+- [ ] Verify real shared-arc-length road mesh, vehicle and 8-car transitions with the map selected in playable runtime. Latest exact-HEAD FULL CI / screenshots still pending; isolated control-point math is not a real driving run.

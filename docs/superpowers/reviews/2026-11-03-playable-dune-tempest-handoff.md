@@ -81,3 +81,8 @@ The files exist at the shared baseline, but the connector could not decode the J
 - Implemented `src/courses/dune-tempest-chasm.ts` and linked the flight-only gap to `createDuneTempestVisualChunk`. It consumes the common sampled route frame and produces low-poly sandstone ravine walls and lower terrain, while **never bridging the aerial gap with a driveable road**.
 - Offline isolated TDD: 2/3 expected RED, then 3/3 GREEN using Node 22 type stripping; standalone strict TypeScript noEmit passed. A separate existing Three.js chunk test now asserts actual chasm geometry is instantiated; full project/real WebGL result remains pending.
 - Road collision, terrain recovery, flight authority, checkpoint integration, AI/race results and screenshot acceptance remain owned by the shared runtime. Coming Soon stays locked.
+
+## 2026-11-05 — canyon main-line merge2 physical tangent continuity
+- Corrected a verified 144-degree directional reversal between canyon-switchbacks and stone-ring-corridor at merge2. Last canyon approach control moved from (-1100,10,-5940) to (-875,10,-5980) storyboard units. Third hairpin widened from (-1500,10,-5210) to (-1720,10,-5210) to preserve the ≈13.5 km main route while retaining four strong hairpins.
+- A focused offline test reproducing the original edge-endpoint vectors observed RED then GREEN; added repository graph assertion enforcing a ≤35-degree merge steering handoff. Existing total-length, ordered-checkpoint and four-hairpin assertions remain required in GitHub CI.
+- Map-owned topology only: real vehicle-contact and shared CourseGraph integration must still be validated with browser evidence. Coming Soon remains enabled; source integration branch remains read-only.
