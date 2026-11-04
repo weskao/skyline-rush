@@ -100,3 +100,18 @@ test('browser specs poll page state after a UI action instead of reading it once
       ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
   assert.deepEqual(offenders, [], 'Use await expect.poll(() => page.evaluate(...)) (see .claude/rules/browser-test-stability.md)');
 });
+
+test('CI retries a failed browser test once and still reports it; local runs never retry', () => {
+  for (const ci of ['1', undefined]) {
+    const env = { ...process.env };
+    if (ci) env.CI = ci; else delete env.CI;
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e',
+      "import config from './playwright.config.js'; console.log(JSON.stringify({ retries: config.retries, reporter: config.reporter }));"],
+    { cwd: new URL('..', import.meta.url), env, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    const { retries, reporter } = JSON.parse(result.stdout);
+    assert.equal(retries, ci ? 1 : 0);
+    // The github reporter annotates a test that passed only on retry, so a flake stays visible on a green run.
+    if (ci) assert.deepEqual(reporter, [['list'], ['github']]); else assert.equal(reporter, 'list');
+  }
+});
