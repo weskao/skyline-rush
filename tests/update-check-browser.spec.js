@@ -11,8 +11,11 @@ test('a newer served build reloads the intro once, never in a loop', async ({ pa
     const body = (await response.text()).replace(/assets\/index-[^"]+\.js/, 'assets/index-NEWBUILD.js');
     return route.fulfill({ response, body });
   });
-  await page.goto('/');
-  await page.waitForEvent('load'); // the reload the stale check triggers
+  await page.goto('/', { waitUntil: 'commit' });
+  // The reload the stale check triggers. Under load it can land before the first page fires 'load', so read the
+  // document's own navigation type instead of waiting for a later event; mid-navigation reads return null.
+  const navigationType = () => page.evaluate(() => performance.getEntriesByType('navigation')[0]?.type).catch(() => null);
+  await expect.poll(navigationType).toBe('reload');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await expect.poll(() => fetches).toBeGreaterThanOrEqual(2); // the reloaded page checked again…
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
