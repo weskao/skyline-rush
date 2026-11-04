@@ -83,3 +83,16 @@ authorization. Bundling minification, local flags, and client storage are not li
 security controls.
 
 **Independent releases:** Merging Frostbite and the five Stage 1 tracks into `develop` must not promote either group. Every ID still in `UPCOMING_TRACKS` is shown as COMING SOON and cannot START in production, including the dev-playable Frostbite. Each course needs its own release approval, content promotion, exact-HEAD CI and visual/gameplay acceptance. Do not rewrite existing release tags.
+
+## Before a branch or release merge
+
+The Frostbite playable-preview flag is **not** a release flag. To release any map,
+separately remove it from `UPCOMING_TRACKS`, expose it through the approved
+release race catalog and pass the race-flow and visual gates. Merely merging
+a playable source branch into `develop` or `main` must never promote a card.
+
+Run `tests/upcoming-unlock-access.test.js`, `tests/access-build.test.js`
+and `tests/dev-feature.test.js`, plus desktop/mobile Coming Soon Browser tests,
+`make verify`, and exact-HEAD full CI. Both normal `make dev` and production
+builds must show all unreleased maps as COMING SOON and prevent START even with
+stale unlocked storage. No pre-existing release tag is rewritten.
