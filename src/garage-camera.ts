@@ -5,6 +5,8 @@ export interface GarageCamera {
   zoom: number;
   autoRotate: boolean;
   mode: 'ground' | 'flight';
+  /** Roadster airbrake wing: true = opened to its braking angle, false = stowed. */
+  wing: boolean;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -12,7 +14,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 export const GARAGE_MAX_ZOOM = 2.4;
 /** Longest Studio exhaust past the rear: NITRO trail streaks 6 + 8 × .85 ≈ 12.8 m, max jet ≈ 11.75 m. */
 export const GARAGE_EXHAUST_REACH = 13;
-export const defaultGarageCamera = (): GarageCamera => ({ yaw: .7, pitch: .27, zoom: 1, autoRotate: true, mode: 'ground' });
+export const defaultGarageCamera = (): GarageCamera => ({ yaw: .7, pitch: .27, zoom: 1, autoRotate: true, mode: 'ground', wing: false });
 
 export function garagePreset(view: string): GarageCamera {
   const angles: Record<string, [number, number]> = {
@@ -20,7 +22,7 @@ export function garagePreset(view: string): GarageCamera {
     top: [0, 1.18], cinematic: [.7, .27],
   };
   const pose = angles[view];
-  return pose ? { yaw: pose[0], pitch: pose[1], zoom: 1, autoRotate: false, mode: 'ground' } : defaultGarageCamera();
+  return pose ? { yaw: pose[0], pitch: pose[1], zoom: 1, autoRotate: false, mode: 'ground', wing: false } : defaultGarageCamera();
 }
 
 export function dragGarageCamera(state: GarageCamera, dx: number, dy: number): GarageCamera {
@@ -31,6 +33,7 @@ export function zoomGarageCamera(state: GarageCamera, multiplier: number): Garag
   return Number.isFinite(multiplier) && multiplier > 0
     ? { ...state, zoom: clamp(state.zoom * multiplier, .75, GARAGE_MAX_ZOOM) } : state;
 }
+export const toggleGarageWing = (state: GarageCamera): GarageCamera => ({ ...state, wing: !state.wing });
 export const toggleGarageOrbit = (state: GarageCamera): GarageCamera => ({ ...state, autoRotate: !state.autoRotate });
 
 export const releaseGarageOrbit = (camera: GarageCamera, paused: boolean): GarageCamera =>

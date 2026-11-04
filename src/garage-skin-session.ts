@@ -3,7 +3,8 @@ import type { SkinCategory, SkinId, SkinProfile, SkinSession } from './garage-sk
 
 /**
  * Garage Phase B's event-driven session boundary.
- * No localStorage, Firestore write or race-state mutation: free trials are ephemeral.
+ * No storage, Firestore write or race-state mutation here: temporary trial access lives only in memory.
+ * The trial runtime may re-apply a remembered pick through `equip`, which re-checks the same gate.
  */
 export function createGarageSkinSession(accountId: string, now: () => number, initial?: unknown) {
   let profile = normalizeSkinProfile(initial, accountId);

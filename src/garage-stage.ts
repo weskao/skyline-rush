@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CAR_STYLES, makeCar } from './car-model.js';
+import { CAR_STYLES, makeCar, poseWing } from './car-model.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings } from './vfx-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
@@ -32,11 +32,22 @@ export function createGarageStage(environment: THREE.Texture) {
   const paintSweep = createGaragePaintSweep(finish);
   car.position.y = 0.06;
   scene.add(car);
+  function poseCar(flying: boolean, tilt = 0) {
+    car.userData.jets.visible = flying;
+    poseWing(car.userData.wing, tilt, flying ? 1 : 0);
+    for (const wheel of car.userData.wheels)
+      wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
+  }
   // Measure the real vehicle before attaching any cosmetic shader/geometry.
   const carBounds = new THREE.Box3().setFromObject(car);
   const carRadius = carBounds.getBoundingSphere(new THREE.Sphere()).radius;
   const carCenter = carBounds.getCenter(new THREE.Vector3());
   const carHalf = carBounds.getSize(new THREE.Vector3()).multiplyScalar(.5);
+  // Flight folds the wheels out and lifts the wing, so it is framed by its own extent around the same centre.
+  poseCar(true);
+  const flightBounds = new THREE.Box3().setFromObject(car);
+  poseCar(false);
+  const flightHalf = flightBounds.max.clone().sub(carCenter).max(carCenter.clone().sub(flightBounds.min));
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
@@ -46,6 +57,8 @@ export function createGarageStage(environment: THREE.Texture) {
   const previewRace = { phase: 'racing', player: previewDriver };
   let previewSettings: VfxSettings = vfxSettings({ airflow: true });
   let lastTime = NaN;
+  // Airbrake travel 0..1 eased toward the Studio toggle; the same open/close times as racing.
+  let wingTilt = 0;
   const platform = new THREE.Mesh(
     new THREE.CylinderGeometry(5.65, 5.65, 0.18, 64),
     new THREE.MeshStandardMaterial({ color: '#172a36', metalness: 0.7, roughness: 0.36 }),
@@ -84,6 +97,9 @@ export function createGarageStage(environment: THREE.Texture) {
   const look = carCenter.clone();
 
   function update(camera: THREE.PerspectiveCamera, state: GarageCamera, time: number, reducedMotion: boolean) {
+    const dt = Number.isFinite(lastTime) ? Math.max(0, Math.min(0.05, time - lastTime)) : 1 / 60;
+    lastTime = time;
+    wingTilt = reducedMotion ? +state.wing : Math.max(0, Math.min(1, wingTilt + (state.wing ? dt : -dt) / .5));
     paintSweep.update(time, previewSettings.quality, previewSettings.enabled, reducedMotion || previewSettings.comfortable);
     const yaw = state.yaw + (state.autoRotate && !reducedMotion ? time * 0.13 : 0);
     // Frame the actual projected car bounds at every angle, including narrow portrait.
@@ -91,14 +107,11 @@ export function createGarageStage(environment: THREE.Texture) {
     const hover = flying ? 1.5 + (reducedMotion ? 0 : Math.sin(time * 1.8) * .12) : 0;
     car.position.y = 0.06 + hover;
     car.rotation.z = flying && !reducedMotion ? Math.sin(time * .9) * .035 : 0;
-    car.userData.jets.visible = flying;
-    car.userData.wing.position.y = car.userData.wing.userData.restY + (flying ? car.userData.wing.userData.lift : 0);
-    for (const wheel of car.userData.wheels)
-      wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
+    poseCar(flying, wingTilt);
     previewDriver.altitude = flying ? 2 : 0;
     look.copy(carCenter);
     look.y += hover;
-    const distance = garageFramedDistance(camera.aspect, state.zoom, carHalf, yaw, state.pitch);
+    const distance = garageFramedDistance(camera.aspect, state.zoom, flying ? flightHalf : carHalf, yaw, state.pitch);
     // Zoomed-out views (up to ~44 m, top view) keep the car and trail clear of the fog.
     fog.near = Math.max(24, distance + 8);
     fog.far = fog.near + 30;
@@ -110,8 +123,6 @@ export function createGarageStage(environment: THREE.Texture) {
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld(true);
     // The preview repeats real ignition/trail behaviour with a small, bounded motion.
-    const dt = Number.isFinite(lastTime) ? Math.max(0, Math.min(0.05, time - lastTime)) : 1 / 60;
-    lastTime = time;
     // Move only the emission sample briefly; keep the rendered car perfectly centred.
     car.position.z = reducedMotion ? 0 : Math.sin(time * 2) * 0.65;
     try { aero.update(previewRace, dt, origin, previewSettings, reducedMotion, null, true); }

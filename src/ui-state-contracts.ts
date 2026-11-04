@@ -19,6 +19,9 @@ export interface ReleaseTab {
   unread: boolean;
   unreadLabel: string;
 }
+// `source` is the bundled clip; `src` stays empty until the cached copy is ready, and `poster` is the still shown meanwhile.
+// `controls` (reduced motion) keeps the hero on its poster with native controls instead of autoplaying.
+export interface ReleaseClipView { src: string; source: string; poster: string; variant: 'desktop' | 'mobile'; controls: boolean }
 export interface ReleaseEntry {
   kind: string;
   kindLabel: string;
@@ -26,6 +29,9 @@ export interface ReleaseEntry {
   description: string;
   image: string;
   zoomLabel: string;
+  // Replaces the picture slot with a poster and play button when set.
+  video: ReleaseClipView | null;
+  playLabel: string;
 }
 export interface ReleaseView {
   openHidden: boolean;
@@ -36,11 +42,10 @@ export interface ReleaseView {
   version: string;
   date: string;
   heroSrc: string;
-  // Takes the hero's place while it loads and plays; null falls back to heroSrc.
-  // `source` is the bundled clip; `src` stays empty (poster only) until the cached copy is ready.
-  heroVideo: { src: string; source: string; poster: string; variant: 'desktop' | 'mobile'; controls: boolean } | null;
-  // Screen-reader names for the hero enlarge buttons and the enlarged view's close button.
-  zoom: { image: string; video: string; close: string };
+  // The hero clip, played inline while the notes are open; null falls back to heroSrc.
+  heroVideo: ReleaseClipView | null;
+  // Screen-reader names for the hero enlarge buttons and the enlarged view's close button and pause toggle.
+  zoom: { image: string; video: string; close: string; pause: string; resume: string };
 }
 export interface TutorialCoachView {
   visible: boolean;
@@ -53,8 +58,12 @@ export interface TutorialCoachView {
   assistHidden: boolean;
   hintKeys: string;
   hintText: string;
+  /** Non-empty only after the last lesson: the free-cruise celebration subtitle. */
+  celebration: string;
 }
 export interface ControlPanelsView {
   settingsOpen: boolean;
   controlsOpen: boolean;
+  /** Keyboard remapping: desktop, or a touch device once a physical keyboard was used. */
+  keyboardSettings: boolean;
 }

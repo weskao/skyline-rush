@@ -11,6 +11,18 @@ test('each release lists NEW first, then improvements, then fixes, keeping the w
   assert.deepEqual(highlights.map(h => h.id), ['fix-a', 'better', 'new-a', 'fix-b', 'new-b'], 'the shipped notes are never reordered in place');
 });
 
+test('inside a kind, clip entries come first, then picture entries, then text-only; ties keep the written order', () => {
+  const clip = { desktop: { src: 'a.mp4', poster: 'a.png' }, mobile: { src: 'b.mp4', poster: 'b.png' } };
+  const highlights = [
+    { id: 'fix-text', kind: 'fix' }, { id: 'fix-clip', kind: 'fix', image: 'f.png', video: clip },
+    { id: 'new-text-a', kind: 'new', image: null }, { id: 'new-image', kind: 'new', image: 'n.png' },
+    { id: 'new-text-b', kind: 'new', video: null }, { id: 'new-clip', kind: 'new', video: clip },
+    { id: 'new-image-b', kind: 'new', image: { en: 'n.png' } },
+  ];
+  assert.deepEqual(highlightsByKind(highlights).map(h => h.id),
+    ['new-clip', 'new-image', 'new-image-b', 'new-text-a', 'new-text-b', 'fix-clip', 'fix-text']);
+});
+
 test('a kind the order does not know yet goes last instead of jumping ahead of NEW', () => {
   assert.deepEqual(highlightsByKind([{ id: 'odd', kind: 'event' }, { id: 'fix', kind: 'fix' }, { id: 'new', kind: 'new' }]).map(h => h.id), ['new', 'fix', 'odd']);
 });

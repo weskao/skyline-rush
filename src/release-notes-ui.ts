@@ -1,9 +1,10 @@
 import { nextTick } from 'vue';
 import { releaseView, updateReleaseView } from './release-view-state.ts';
-import { HISTORY_KEY } from './history.ts';
 import { getLocale, t, formatDate, SUPPORTED_LOCALES } from './i18n.ts';
-import { CURRENT_RELEASE, NOTES_SEEN_KEY, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind } from './release-notes.ts';
+import { CURRENT_RELEASE, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind, type ReleaseVideo } from './release-notes.ts';
+import type { ReleaseClipView } from './ui-state-contracts.ts';
 import { createReleaseMediaCache } from './release-media-cache.ts';
+import { onUserActivation } from './user-activation.ts';
 
 // Pure keyboard navigation, independently testable without a DOM.
 export function releaseTabIndex(index: number, count: number, key: string): number | null {
@@ -36,33 +37,29 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   let releaseShownHere = false;
   let releaseUnread = new Set<string>();
   const releaseStorage = (): Storage | null => { try { return localStorage; } catch { return null; } };
-  // Someone who finished the guide or saved a race played before the notes were recorded.
-  const returningPlayer = () => {
-    try { return localStorage.getItem('skyline-rush-guide-seen') !== null || localStorage.getItem(HISTORY_KEY) !== null; }
-    catch { return false; }
-  };
   const releaseDay = (date: string, options: Intl.DateTimeFormatOptions): string => formatDate(new Date(date + 'T00:00:00'), options);
   const versionLabel = (version: string): string => version === UPCOMING ? t('release.upcoming') : 'v' + version;
   // Absolute, so the address matches what Cache Storage records for it.
   const bundled = (path: string): string => new URL(import.meta.env.BASE_URL + path, location.href).href;
-  const clipSources = new Set(RECENT_RELEASES.flatMap(release => SUPPORTED_LOCALES.flatMap(locale =>
-    [false, true].map(portrait => releaseHeroVideo(release.video, locale, portrait)?.src)))
+  const clipSources = new Set(RECENT_RELEASES.flatMap(release => [release.video, ...release.highlights.map(item => item.video)]
+    .flatMap(video => SUPPORTED_LOCALES.flatMap(locale => [false, true].map(portrait => releaseHeroVideo(video, locale, portrait)?.src))))
     .filter((src): src is string => !!src).map(bundled));
   const mediaCache = createReleaseMediaCache(clipSources, {
     caches: globalThis.caches, fetch: url => fetch(url), createObjectURL: blob => URL.createObjectURL(blob),
   });
-  // Downloads only while the notes are open; the poster shows until the clip is ready,
-  // and a reader who moved on meanwhile keeps their view.
-  function loadVisibleClip() {
-    const shown = releaseView.heroVideo;
-    if (!shown || shown.src || !releaseDialog.open) return;
-    const { source } = shown;
-    mediaCache.load(source).then(src => {
-      const view = releaseView.heroVideo;
-      if (view?.source !== source) return;
-      view.src = src;
-      nextTick(syncReleaseVideo);
-    });
+  // Clips download ahead only while the notes are open, so the hero and any enlarged clip start at once; highlight clips
+  // draw only their poster and play button. A reader who moved on meanwhile keeps their view (the stale view just updates unseen).
+  function loadVisibleClips() {
+    if (!releaseDialog.open) return;
+    for (const view of [releaseView.heroVideo, ...releaseView.entries.map(entry => entry.video)]) {
+      if (view && !view.src) mediaCache.load(view.source).then(src => { view.src = src; if (view === releaseView.heroVideo) nextTick(syncReleaseVideo); });
+    }
+  }
+  function clipView(video: ReleaseVideo | null | undefined, locale: string): ReleaseClipView | null {
+    const clip = releaseHeroVideo(video, locale, portrait.matches);
+    if (!clip) return null;
+    const source = bundled(clip.src);
+    return { src: mediaCache.peek(source) ?? '', source, poster: import.meta.env.BASE_URL + clip.poster, variant: clip.variant, controls: reducedMotion.matches };
   }
 
   function renderReleaseNotes() {
@@ -80,19 +77,14 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     }));
     const release = RECENT_RELEASES[releaseIndex];
     const hero = releaseImage(release.image, locale);
-    const clip = releaseHeroVideo(release.video, locale, portrait.matches);
-    const source = clip ? bundled(clip.src) : '';
     updateReleaseView({
       tabs,
       panelLabel: 'release-tab-' + releaseIndex,
       version: versionLabel(release.version),
       date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
       heroSrc: hero ? import.meta.env.BASE_URL + hero : '',
-      zoom: { image: t('release.zoomImage'), video: t('release.zoomVideo'), close: t('release.zoomClose') },
-      heroVideo: clip && {
-        src: mediaCache.peek(source) ?? '', source, poster: import.meta.env.BASE_URL + clip.poster,
-        variant: clip.variant, controls: reducedMotion.matches,
-      },
+      zoom: { image: t('release.zoomImage'), video: t('release.zoomVideo'), close: t('release.zoomClose'), pause: t('release.pauseClip'), resume: t('release.resumeClip') },
+      heroVideo: clipView(release.video, locale),
       entries: highlightsByKind(release.highlights).map(item => {
         const image = releaseImage(item.image, locale), title = releaseText(item.title, locale);
         return {
@@ -102,20 +94,28 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
           zoomLabel: t('release.zoomEntry', { title }),
           description: releaseText(item.description, locale),
           image: image ? import.meta.env.BASE_URL + image : '',
+          video: clipView(item.video, locale),
+          playLabel: t('release.playEntry', { title }),
         };
       }),
     });
-    updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage(), returningPlayer()) });
+    updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage()) });
     nextTick(syncReleaseVideo);
-    loadVisibleClip();
+    loadVisibleClips();
   }
-  // The clip only plays while the notes are open; reduced motion keeps its still and controls.
+  // The hero plays only while the notes are open and it is on screen (short landscape hides it); reduced motion keeps its poster and controls.
   function syncReleaseVideo() {
     const video = document.querySelector<HTMLVideoElement>('#release-video');
     if (!video) return;
-    if (releaseDialog.open && !reducedMotion.matches) video.play().catch(() => { /* autoplay refused: the poster stays */ });
+    if (releaseDialog.open && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
     else video.pause();
   }
+  // iPhone refuses even a muted clip in Low Power Mode until the player touches the page: the first tap or key anywhere starts
+  // the hero where it is (as it starts the music), not only a tap on the clip, which enlarges it. An enlarged view keeps it waiting.
+  onUserActivation(() => {
+    if (releaseDialog.open && !reducedMotion.matches && !releaseDialog.querySelector('dialog[open]')
+      && document.querySelector<HTMLVideoElement>('#release-video')?.paused) syncReleaseVideo();
+  });
   function selectRelease(index: number): void {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
     renderReleaseNotes();
@@ -133,25 +133,20 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     beforeOpen();
     // Showing the notes is what counts as read: record it now so a reload or crash never repeats them.
     // Everything newer than the previous record stays marked for this visit only.
-    const storage = releaseStorage(), returning = returningPlayer();
-    releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, storage, returning)).map(release => release.version));
+    const storage = releaseStorage();
+    releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, storage)).map(release => release.version));
     markAnnouncementSeen(CURRENT_RELEASE, storage);
     releaseShownHere = true;
     releaseIndex = 0;
     renderReleaseNotes();
     releaseDialog.showModal();
-    loadVisibleClip();
+    loadVisibleClips();
     $('#release-close').focus({ preventScroll: true });
     return true;
   }
   function maybeShowReleaseNotes() {
     if (releaseShownHere || !CURRENT_RELEASE) return;
-    const storage = releaseStorage(), returning = returningPlayer();
-    if (!shouldAnnounce(CURRENT_RELEASE, storage, returning)) {
-      // A first-time player starts from today's notes; the next release is the first one announced to them.
-      if (!returning) try { if (storage?.getItem(NOTES_SEEN_KEY) == null) markAnnouncementSeen(CURRENT_RELEASE, storage); } catch { /* nothing to record */ }
-      return;
-    }
+    if (!shouldAnnounce(CURRENT_RELEASE, releaseStorage())) return;
     if (!canAutoOpen() || !canOpen() || document.querySelector('dialog[open]')) return;
     openReleaseNotes();
   }

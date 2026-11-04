@@ -16,8 +16,7 @@ const storage = () => {
 test('a release newer than the version the player last saw shows once and records it', () => {
   const store = storage();
   const release = { version: '9.9.9', highlights: [{ id: 'new-track' }] };
-  assert.equal(shouldAnnounce(release, store), false, 'a first-time player has nothing new to catch up on');
-  assert.equal(shouldAnnounce(release, store, true), true, 'a returning player from before the record existed');
+  assert.equal(shouldAnnounce(release, store), true, 'no record (first visit, incognito, cleared storage) is always announced');
   markAnnouncementSeen(release, store);
   assert.equal(store.getItem(NOTES_SEEN_KEY), '9.9.9');
   assert.equal(shouldAnnounce(release, store), false, 'same version');
@@ -28,17 +27,23 @@ test('a release newer than the version the player last saw shows once and record
   assert.equal(shouldAnnounce(release, store), true, 'unreadable record counts as older');
 });
 
-test('no announcement without notes', () => {
+test('no announcement without a release; a release with no highlights follows the same seen-version rules', () => {
   const store = storage();
   assert.equal(shouldAnnounce(null, store), false);
-  assert.equal(shouldAnnounce({ version: '1.0.0', highlights: [] }, store), false);
+  const empty = { version: '1.0.0', highlights: [] };
+  assert.equal(shouldAnnounce(empty, store), true, 'no record');
+  store.setItem(NOTES_SEEN_KEY, '0.9.0');
+  assert.equal(shouldAnnounce(empty, store), true, 'older record');
+  store.setItem(NOTES_SEEN_KEY, '1.0.0');
+  assert.equal(shouldAnnounce(empty, store), false, 'same version');
 });
 
 test('blocked localStorage never crashes and never reopens the notes on every load', () => {
   const blocked = { getItem: () => { throw Error('blocked'); }, setItem: () => { throw Error('blocked'); } };
   const release = { version: '3.0.0', highlights: [{}] };
   assert.equal(shouldAnnounce(release, blocked), false);
-  assert.equal(shouldAnnounce(release, blocked, true), false);
+  assert.equal(shouldAnnounce(release, null), false, 'no storage at all cannot remember the visit either');
+  assert.equal(shouldAnnounce({ version: UPCOMING, highlights: [{}] }, storage()), false, 'unreleased notes never pop up, even with no record');
   assert.doesNotThrow(() => markAnnouncementSeen(release, blocked));
 });
 
@@ -213,6 +218,17 @@ test('the gate refuses a release video or poster that is not bundled', () => {
   assert.match(checkReleaseNotes('9.9.9', { notes: [release], reviews: { '9.9.9': reviewHash(release) } }).join('\n'), /desktop video .* is not a file in public\//);
   const shipped = RELEASE_NOTES.find(r => r.video && r.version !== UPCOMING); // the upcoming entry has no version to gate yet
   if (shipped) assert.deepEqual(checkReleaseNotes(shipped.version, { reviews: { [shipped.version]: reviewHash(shipped) } }), []);
+});
+
+test('a highlight carries its own video: the gate refuses one that is not bundled and editing it voids the review', () => {
+  const base = entry('Fly longer.', '飛得更久。');
+  const release = entry('Fly longer.', '飛得更久。', { video: clipVideo() });
+  assert.match(checkReleaseNotes('9.9.9', { notes: [release], reviews: { '9.9.9': reviewHash(release) } }).join('\n'), /x desktop video .* is not a file in public\//);
+  assert.notEqual(reviewHash(release), reviewHash(base));
+  const bundled = { desktop: { src: 'whats-new/rival-nitro/rival-nitro.desktop.en.mp4', poster: 'whats-new/rival-nitro/rival-nitro.desktop.en.jpg' },
+    mobile: { src: 'whats-new/rival-nitro/rival-nitro.mobile.en.mp4', poster: 'whats-new/rival-nitro/rival-nitro.mobile.en.jpg' } };
+  const ok = entry('Fly longer.', '飛得更久。', { video: bundled });
+  assert.deepEqual(checkReleaseNotes('9.9.9', { notes: [ok], reviews: { '9.9.9': reviewHash(ok) } }), []);
 });
 
 test('changing a release video voids its review, while entries without one keep their fingerprint', () => {

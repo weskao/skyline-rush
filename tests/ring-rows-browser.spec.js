@@ -14,6 +14,8 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+    // Layouts re-roll every race and ~7% of Coast rolls have no full-width row: pin the track's own layout seed.
+    await page.evaluate(async () => (await import('/src/game.js')).setLayoutSeed());
     await page.locator('[data-track="coast"]').click();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(10000) });
