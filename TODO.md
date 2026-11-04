@@ -3329,3 +3329,14 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 
 - [ ] **2026-11-03 source integration update:** Five independent art branches subsequently delivered actual native Three.js scene modules, corresponding focused unit tests and art notes. Their exports, geometry, absolute-time updates, quality/reduced-motion arguments and disposal methods were source-reviewed. The exact 15 committed Git blobs were selectively imported without merging old histories. Heads: `dune-tempest` `fa9573b4bddd`; `monsoon-ruins` `32411c88c702`; `skyfall-archipelago` `9707c5132dab`; `volcanic-crown` `d7ad8b01f57f`; `stormline-megacity` `84e9569a2d4c`. Source branch CI was still queued when checked; this is **not** verified visual acceptance.
 - [ ] Register all five in the shared renderer and run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and 2 real WebGL frames per map desktop/mobile. Pending; do not label scenes visually accepted before screenshots and checks.
+
+
+## 2026-11-04 — Volcanic Crown lateral swept collision follow-up
+
+- [x] RED test committed first at `1fdee9c902bebd9b134c8f652814d616613ddac3` (`tests/playable-volcanic-crown-sweep.test.js`), covering a one-frame lateral crossing of `crack-01` at 30/60/120 Hz and unrelated-edge exclusion.
+- [x] Isolated unmodified production sweep with an equivalent fissure contact shape; at 60 and 120 Hz, endpoint-only sampling returned no hit (RED). **This is not an npm/CI test run.**
+- [x] Change the map-local swept contact sampling density to use total route-frame displacement in metres plus the existing 60-Hz time bound. No changes to the shared damage/physics engine, Coming Soon, or other branches.
+- [ ] Observe RED on test-only GitHub run 41793046568 (queued when inspected); distinguish that evidence from the isolated reproduction.
+- [ ] Verify final code HEAD: `npm test`, typecheck, build, full Browser/World Tour, `make verify`, full CI and real desktop/mobile WebGL.
+- [ ] Compare actual WebGL with the original volcanic ground/air JPEGs; note the original JPEGs themselves show a narrow lower strip of unrelated adjoining artwork, which must NOT become terrain/track content.
+- [ ] Shared CourseGraph/Race runtime and 8-car playable integration, 20 measured races and phone GPU/FPS evidence remain owned by later integration gates.

@@ -107,9 +107,12 @@ export function volcanicObstacleSweptContact(
       to.timeSeconds < from.timeSeconds) {
     throw new RangeError('Invalid Volcanic Crown swept contact samples');
   }
-  // At most 2 m or 1/60 s between samples: a fast single-frame crossing
-  // cannot tunnel through a small obstacle or a short active eruption.
-  const steps = Math.max(1, Math.ceil(Math.abs(to.s - from.s) / 2),
+  // Sample by total route-frame motion, not only forward progress:
+  // a sideways dodge or takeoff can cross a hazard within one frame.
+  // Time samples also cover the falling rock's moving collision proxy.
+  const spatialMeters = Math.hypot(to.s - from.s, to.lateral - from.lateral,
+    to.altitude - from.altitude);
+  const steps = Math.max(1, Math.ceil(spatialMeters / 2),
     Math.ceil((to.timeSeconds - from.timeSeconds) * 60));
   for (let i = 0; i <= steps; i++) {
     const fraction = i / steps;

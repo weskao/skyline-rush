@@ -52,3 +52,8 @@ Only the integration owner should provide and test these **shared** capabilities
 - [ ] Verify Low/Medium/High, Reduced Motion, 30/60/120 FPS, GPU dispose, draw calls, triangles, frame p50/p95, and touch-device geometry clearance.
 
 Until these are evidenced, the branch is **not merge-ready or playable**, regardless of unit compilation or standalone mesh tests.
+
+
+## 2026-11-04 lateral sweep regression handoff
+
+The existing `volcanicObstacleSweptContact` interpolated only by longitudinal `localS` (and elapsed time). A same-edge, in-lane lateral move can therefore cross a fissure without either endpoint touching it at 60/120 Hz. Test-first commit `1fdee9c` adds a `crack-01` lateral traversal and per-edge isolation regression. An isolated execution of the unchanged sweep function with equivalent obstacle geometry reproduced missed 60/120 Hz hits; the GitHub RED workflow was still queued, not counted as proven. The follow-up correction now bounds sample spacing by total `(deltaS, deltaLateral, deltaAltitude)` route-frame movement as well as elapsed time. The collision provider remains shared-system owned. Full remote CI, real WebGL captures and actual playable-race acceptance are separate pending gates. The concept JPEG references have an unrelated adjoining artwork strip at the bottom; do not interpret that strip as part of the Volcanic Crown environment.
