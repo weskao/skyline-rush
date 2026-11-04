@@ -56,7 +56,7 @@ test('all Rewards/Missions icon masters are independently encoded 3x transparent
   }
 });
 
-test('podium uses the formal PNG master at 48 CSS px, never treats it as an awarded entitlement', () => {
+test('podium uses the formal PNG master at 96 CSS px, never treats it as an awarded entitlement', () => {
   const badge = placementBadgeArtwork('gold', '/skyline-rush/');
   assert.equal(badge.src, '/skyline-rush/feature-assets/garage-rewards-and-missions/raster/trophy-gold@3x.png');
   assert.deepEqual([badge.cssSize, badge.sourcePixels], [96, 288]);
@@ -67,10 +67,10 @@ test('actual Garage and Results surfaces reference PNG (not just the source Gall
   const results = readFileSync(new URL('../src/result-screen.ts', import.meta.url), 'utf8');
   const board = readFileSync(new URL('../src/GarageMissionBoard.vue', import.meta.url), 'utf8');
   const garage = readFileSync(new URL('../src/GaragePanel.vue', import.meta.url), 'utf8');
-  assert.match(gallery, /@3x\\.png/);
+  assert.match(gallery, /@3x\.png/);
   assert.match(results, /result-trophy-art/);
   assert.match(results, /onerror/);
-  assert.match(board, /@3x\\.png/);
+  assert.match(board, /@3x\.png/);
   assert.match(board, /Coming soon|尚未開放/);
   assert.match(garage, /GarageMissionBoard/);
 });
