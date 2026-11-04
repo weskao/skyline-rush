@@ -39,3 +39,21 @@ test('distribution entry never directly imports the development unlock module', 
   const standardConfig = readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8');
   assert.ok(!standardConfig.includes('src/access/dev-unlocked.js'));
 });
+
+test('all unlocked Make entrypoints use the same dev-only Vite access policy', () => {
+  const make = readFileSync(new URL('../Makefile', import.meta.url), 'utf8');
+  const recipe = name => {
+    const lines = make.split('\n'), index = lines.findIndex(line => line.startsWith(name + ':'));
+    assert.ok(index >= 0, 'missing Make target ' + name);
+    const body = [lines[index]];
+    for (let i = index + 1; i < lines.length && lines[i].startsWith('\t'); i++) body.push(lines[i]);
+    return body.join('\n');
+  };
+  assert.match(recipe('dev-unlocked'), /--config vite\.unlocked\.config\.js/);
+  assert.match(recipe('test-unlocked'), /^test-unlocked:\s*dev-unlocked\b/);
+  assert.match(recipe('phone-unlocked'), /--config vite\.unlocked\.config\.js/);
+  assert.match(recipe('dev-feature'), /scripts\/dev-feature\.mjs/);
+  const cfg = unlockedConfig({ command: 'serve', mode: 'development' });
+  assert.match(cfg.resolve.alias['@progression-access'], /access\/dev-unlocked\.ts$/);
+  assert.throws(() => unlockedConfig({ command: 'build', mode: 'production' }), /development-server only/);
+});
