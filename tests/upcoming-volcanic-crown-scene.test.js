@@ -39,13 +39,13 @@ test('scene contains a car-level road, recognizable hairpin, volcano and layered
   assert.ok(bbox.min.z <= -175 && bbox.max.z >= 40, 'road should cover the preview depth');
   assert.ok(bbox.min.x < -25 && bbox.max.x > 15, 'road should bend into a visible U turn');
   const vertices = road.geometry.getAttribute('position');
-  let nearCar = false;
   for (let i = 0; i < vertices.count; i++) {
-    const x = vertices.getX(i), y = vertices.getY(i), z = vertices.getZ(i);
-    assert.ok(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z));
-    if (Math.abs(z) < 3 && Math.abs(x) < 6 && Math.abs(y) < 0.6) nearCar = true;
+    assert.ok(Number.isFinite(vertices.getX(i)) && Number.isFinite(vertices.getY(i)) && Number.isFinite(vertices.getZ(i)));
   }
-  assert.ok(nearCar, 'road must support a shared car near the origin');
+  // Ribbon vertices sit on the road edges (x = ±half-width), so test the surface under the origin, not its vertices.
+  road.updateMatrixWorld(true);
+  const underCar = new THREE.Raycaster(new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0)).intersectObject(road);
+  assert.ok(underCar.length && Math.abs(underCar[0].point.y) < 0.6, 'road must support a shared car near the origin');
   const landmarks = new THREE.Box3().setFromObject(group);
   assert.ok(landmarks.max.y >= 35 && landmarks.min.y <= -2 && landmarks.max.x >= 75,
     'crater/cliffs and lava ravine must have real world depth');
