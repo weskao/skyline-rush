@@ -1,3 +1,22 @@
+## AI-assisted 3D visual fidelity pipeline / Three.js r186.1 — 2026-11-04
+
+**Branch:** `feature/3d-visual-fidelity-pipeline` (created from develop `b8ae6a19`).
+**Status:** design/planning only; local installation verification, dependency migration, new assets and game modifications **NOT DONE**.
+**Spec:** [3D design](docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md) ·
+[Implementation plan](docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) ·
+[Phase 0 preflight](docs/designs/3d-pipeline/toolchain-environment-preflight.md) ·
+[Three.js r180→r186 migration](docs/designs/3d-pipeline/threejs-r180-r186-migration.md).
+
+- [ ] **Phase 0 (highest priority):** On the actual Mac at `~/Documents/Workspace/skyline-rush`, run read-only environment checks: Blender binary/version, enabled addon, live Blender MCP scene query, global Claude Code Skills `blender-image-to-3d` and `threejs-*`, user-scoped Claude MCP and optional Codex MCP, Node >=22.20, uvx, project Three.js/types and glTF Transform. Record PASS/FAIL/NOT VERIFIED with sanitized output; repair missing pieces and recheck. **User-reported installed ≠ verified.** Globally installed tools belong in home agent paths, not the repository.
+- [ ] **Phase 1:** Baseline r180 screenshots/performance/RED tests; upgrade `three` to 0.186.1 and align `@types/three`, npm lockfile, import APIs and typecheck scripts (currently hardcoded r180); keep WebGLRenderer, existing composer and shader/NaN safeguards; full regression and exact-HEAD CI.
+- [ ] **Phase 2:** Build reproducible Blender Python/MCP → editable .blend → PBR/UV/LOD → GLB → glTF Transform/Meshopt/KTX2 pipeline; audit licenses; implement asynchronous GLTFLoader with renderer reuse, startup warmup, ownership, subpath URLs and procedural fallback.
+- [ ] **Phase 3:** Upgrade Roadster 2 model in existing Garage Studio using reference-led real 3D meshes for front, rear, four VFX thrusters, active wing, separate wheel pivots and paints; preserve current physics, collisions, NITRO/FLY/BOOST and existing Roadster branch work. Obtain real WebGL screenshots and visual approval.
+- [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
+- [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
+- [ ] **Share links:** reconcile full content if the three ChatGPT share pages become accessible; currently cannot independently verify their full text (linked in design spec).
+
+---
+
 ## Tutorial complete no longer freezes the screen — 2026-11-04
 
 **Branch:** `fix/tutorial-complete-alive` (from `develop` 4450a274). Repro: finish the last practice lesson (NITRO) → `main.js` set `race.phase = 'paused'`, so the car, road and HUD froze and the game looked broken.
