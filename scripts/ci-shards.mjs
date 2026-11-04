@@ -42,6 +42,7 @@ export function parseLog(text) {
   const unit = { ms: 0.001, s: 1, m: 60 };
   const durations = {};
   for (const m of text.matchAll(/[✓✘](?:\x1b\[\d+m)?\s+\d+\s+tests\/(\S+?):\d+:\d+ › (.*) \(([\d.]+)(ms|s|m)\)/g)) {
+    if (m[2].includes('(retry #')) continue; // A CI retry would add a second run to the test's duration.
     const key = `${m[1]} › ${m[2]}`;
     durations[key] = Math.round(((durations[key] ?? 0) + Number(m[3]) * unit[m[4]]) * 10) / 10;
   }

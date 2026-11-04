@@ -36,7 +36,7 @@ test.describe('tilt', () => {
     });
     await open(page);
     await page.locator('#controls-button').click();
-    expect(await page.evaluate(() => window.permissionRequests)).toBe(0);
+    expect(await page.evaluate(() => window.permissionRequests)).toBe(0); // settled: an absence check; opening the panel must not have asked
     await page.locator('[data-controls="mode"][value="tilt"]').click();
     await expect(page.locator('#tilt-status')).toContainText('denied');
     await expect(page.locator('[data-controls="mode"][value="slide"]')).toBeChecked();

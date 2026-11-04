@@ -79,7 +79,7 @@ for (const [name, viewport, hasTouch, locale] of [
     await page.locator('#leave-end').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
     await page.locator('button[data-race-mode="classic"]').click();
-    expect(await page.evaluate(() => window.gameplay.race.trackId)).toBe('coast');
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.trackId)).toBe('coast');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
     expect(errors).toEqual([]);
