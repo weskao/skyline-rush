@@ -79,10 +79,12 @@ export function iceArch(graph: CourseGraph, height: Height, edgeId: string, s: n
   }
   arc.computeVertexNormals();
   const rock = new THREE.Mesh(arc, new THREE.MeshStandardMaterial({ color: '#2a3550', roughness: .92, flatShading: true }));
-  const crust = new THREE.Mesh(new THREE.TorusGeometry(span / 2 + 1.5, 6.8, 7, 30, Math.PI * .92),
-    new THREE.MeshStandardMaterial({ color: '#a9e3ff', emissive: '#1d6f9c', emissiveIntensity: .25, roughness: .25, transparent: true, opacity: .85 }));
-  crust.rotation.z = Math.PI * .04;
-  crust.position.y = 2.5;
+  // Pale ice crust: a shell a little fatter than the rock tube, lifted so the dark rock shows only on the underside.
+  const crust = new THREE.Mesh(new THREE.TorusGeometry(span / 2 + 1.2, 9.6, 9, 30, Math.PI * .96),
+    new THREE.MeshStandardMaterial({ color: '#c4ecff', emissive: '#2a86b8', emissiveIntensity: .3, roughness: .25, transparent: true, opacity: .9 }));
+  crust.name = 'ice-crust';
+  crust.rotation.z = Math.PI * .02;
+  crust.position.y = 1.6;
   const snowCap = new THREE.Mesh(new THREE.TorusGeometry(span / 2 + 2, 4.2, 6, 28, Math.PI * .7),
     new THREE.MeshStandardMaterial({ color: '#f2f8ff', roughness: .85 }));
   snowCap.rotation.z = Math.PI * .15;
@@ -188,4 +190,33 @@ export function flightGuide(graph: CourseGraph, flightId: string, landingEdgeId:
   }
   landing.name = 'landing-merge';
   return { arc, landing };
+}
+
+/** Low mist sheets drifting in a chasm: soft-edged (vertex alpha), unlit by depth, sides of a road, never over it. */
+export function chasmMist(spots: readonly { point: readonly number[]; right: readonly number[]; lift: number }[], lateral = 34, size = 46): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'chasm-mist';
+  const sheet = new THREE.PlaneGeometry(size, size * .6, 8, 5).rotateX(-Math.PI / 2), p = sheet.getAttribute('position'), rgba: number[] = [];
+  for (let i = 0; i < p.count; i++) {
+    const edge = Math.max(Math.abs(p.getX(i)) / (size / 2), Math.abs(p.getZ(i)) / (size * .3));
+    rgba.push(.82, .9, 1, Math.max(0, 1 - edge) ** 1.5 * .55);
+  }
+  sheet.setAttribute('color', new THREE.Float32BufferAttribute(rgba, 4));
+  const material = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  spots.forEach(({ point, right, lift }, i) => {
+    const side = i % 2 ? 1 : -1, mesh = new THREE.Mesh(sheet, material);
+    mesh.position.set(point[0] + right[0] * lateral * side, point[1] + lift, point[2] + right[2] * lateral * side);
+    mesh.rotation.y = Math.atan2(right[0], right[2]);
+    mesh.userData.base = mesh.position.clone();
+    mesh.renderOrder = 1;
+    group.add(mesh);
+  });
+  return group;
+}
+/** Time-driven drift along the chasm (t = 0 holds still for Reduced Motion); no allocation. */
+export function driftMist(group: THREE.Group, t: number): void {
+  group.children.forEach((sheet, i) => {
+    const base = sheet.userData.base as THREE.Vector3;
+    sheet.position.set(base.x + Math.sin(t * .05 + i * 1.9) * 5, base.y + Math.sin(t * .11 + i) * .6, base.z + Math.cos(t * .04 + i * 1.3) * 5);
+  });
 }

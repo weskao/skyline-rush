@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { FROSTBITE_CANYON_GRAPH as graph, FROSTBITE_SEED } from './courses/frostbite-canyon.ts';
-import { FROSTBITE_TRACK, frostbiteFrame, frostbiteLeg } from './courses/frostbite-race.ts';
+import { FROSTBITE_SPAN, FROSTBITE_TRACK, frostbiteFrame, frostbiteLeg } from './courses/frostbite-race.ts';
 import { routeLength } from './course-route-frame.ts';
 import { SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import type { TrackSection } from './game-types.ts';
 import { seededRng } from './rng.ts';
-import { crystalField, crystalSentinels, edgeReflectors, iceArch } from './upcoming-scenes/frostbite-landmarks.ts';
+import { chasmMist, crystalField, crystalSentinels, edgeReflectors, iceArch } from './upcoming-scenes/frostbite-landmarks.ts';
 import { paintGlacier, ridgeNoise, smooth } from './upcoming-scenes/frostbite-terrain.ts';
 
 // Frostbite Canyon RACE scene: the whole 13.8 km ground route, built once from the same `frostbiteFrame`
@@ -242,6 +242,14 @@ export function createFrostbiteRaceScene(scene: THREE.Scene) {
     ({ edgeId, from: 30, to: routeLength(graph, edgeId) - 30, side: i % 2 ? 1 : -1 })));
   const reflectors = edgeReflectors(graph, graph.groundRoute.map(id => ({ id, from: 0, to: routeLength(graph, id) })), ROAD_HALF, 24);
   group.add(sentinels, arch, crystals, reflectors);
+  // Rift chasm mist under the span, beside the lower road (sheet inner edge 17 m out, ROAD_HALF is 12).
+  const { from, to } = FROSTBITE_SPAN, mist = chasmMist(Array.from({ length: 6 }, (_, i) => {
+    const f = frostbiteFrame(from + 70 + i * (to - from - 140) / 5);
+    return { point: [f.point.x, f.point.y, f.point.z], right: f.right, lift: 4 + (i % 2) * 2 };
+  }), 40);
+  const mid = frostbiteFrame((from + to) / 2).point;
+  chunks.push({ group: mist, x: mid.x, z: mid.z, radius: (to - from) / 2 + 60 });
+  group.add(mist);
   scene.add(group);
 
   return {

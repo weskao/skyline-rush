@@ -22,8 +22,8 @@ Weather seed: `FROSTBITE_SEED = 0x0f2057`, stream `frostbite-home`. References: 
 | --- | --- | --- | --- |
 | 1 | Main silhouette / landmark | PASS | Faceted cyan crystal cluster on the left, large rock arch on the right on the outside of the left-hand bend, glacier walls both sides. |
 | 2 | Terrain and road geometry | PASS | Curved ice road from the real CourseGraph; carved canyon walls; road never buried (unit test: 0/3035 samples). |
-| 3 | Car size / camera composition | PROPOSED DEVIATION | Shared 50° home pose and real Roadster/rivals. Reference car is black; ours uses the equipped paint (pearl by default). Desktop: car mid-left, not lower-left. **Phone portrait: the home panel covers the player car** (shared Stage 1 layout) — open item. |
-| 4 | Weather / materials / lighting | PROPOSED DEVIATION | Teal aurora curtains, snowfall, cold fog present. The purple/magenta upper aurora band is mostly hidden behind the walls; arch reads as dark rock without the pale ice crust seen in the reference; crystals are semi-transparent emissive, not refractive. |
+| 3 | Car size / camera composition | PROPOSED DEVIATION | Shared 50° home pose and real Roadster/rivals. Reference car is black; ours uses the equipped paint (pearl by default). Desktop: car mid-left, not lower-left. Phone portrait (2026-11-04): Frostbite's own portrait pose frames the whole car above the home panel (AIRFLOW off) or below the telemetry card (AIRFLOW on); unit-checked projected body bounds. The shared Stage 1 portrait pose still hides/crops the car on the other cards — shared follow-up. |
+| 4 | Weather / materials / lighting | PROPOSED DEVIATION | Teal aurora curtains, snowfall, cold fog present. 2026-11-04: magenta upper band now glows above the walls (upper-band glow + magenta high colours; measured magenta share of the upper half 0.0006 → 0.011); the arch wears a pale ice crust over its face with dark rock only underneath (front rays 28/28 pale). Remaining: crystals are semi-transparent emissive, not refractive. |
 | 5 | Branch / landing visibility | N/A for P01 | Fork is beyond this frame (see P02). |
 | 6 | No clipping / invisible walls | PASS | No invisible walls; arch legs clear of the driving line (unit test). |
 
@@ -33,8 +33,8 @@ Weather seed: `FROSTBITE_SEED = 0x0f2057`, stream `frostbite-home`. References: 
 | --- | --- | --- | --- |
 | 1 | Main silhouette / landmark | PASS | Long elevated deck crossing diagonally over a deep cobalt crevasse, as in the reference. |
 | 2 | Terrain and road geometry | PASS | Sheer blue ice/rock cliffs ≈145 m below the deck; bridge connects to the approach and the merge road. |
-| 3 | Car size / camera composition | PROPOSED DEVIATION | Car is airborne on the authored `rift-flight` edge; camera is a higher flight-layer chase (not the home pose) so the span reads. With AIRFLOW on, the shared showcase grounds the car at the origin, which is mid-air in this shot; P02 is meant for AIRFLOW off. No portrait-specific pose. |
-| 4 | Weather / materials / lighting | PROPOSED DEVIATION | Frosted deck, dark fascia, warm orange safety markers, icicles and snow present; chasm mist planes not implemented. |
+| 3 | Car size / camera composition | PROPOSED DEVIATION | Car is airborne on the authored `rift-flight` edge; camera is a higher flight-layer chase (not the home pose) so the span reads. 2026-11-04: with AIRFLOW on, P02 re-anchors onto the raced `rift-ice-bridge` deck (car rests on the real deck, unit raycast); portrait poses for AIRFLOW off/on. |
+| 4 | Weather / materials / lighting | PROPOSED DEVIATION | Frosted deck, dark fascia, warm orange safety markers, icicles and snow present; 2026-11-04: soft drifting chasm mist sheets under the deck (still under Reduced Motion), also in the race Rift beside the lower road. |
 | 5 | Branch / landing visibility | PASS (partial) | Landing chevrons and merge road visible ahead. The lower canyon road passes under the deck and is not visible from this pose. |
 | 6 | No clipping / invisible walls | PASS | Visible rails and posts; rails are visual only (no collision runtime yet). |
 

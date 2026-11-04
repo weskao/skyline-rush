@@ -5,7 +5,7 @@ import { courseRoadGeometry } from '../course-road-geometry.ts';
 import { routeLength, sampleRoute } from '../course-route-frame.ts';
 import { seededRng } from '../rng.ts';
 import { BOUNDS, createGlacierField, distantPeaks, type HeroEdge } from './frostbite-terrain.ts';
-import { bridgeStructure, crystalField, crystalSentinels, edgeReflectors, flightGuide, iceArch } from './frostbite-landmarks.ts';
+import { bridgeStructure, chasmMist, crystalField, crystalSentinels, driftMist, edgeReflectors, flightGuide, iceArch } from './frostbite-landmarks.ts';
 import { createFrostbiteSky } from './frostbite-sky.ts';
 import type { CameraPose } from '../track-preview.ts';
 
@@ -26,6 +26,15 @@ const SHOT_CAMERA: Readonly<Record<FrostbiteShot, CameraPose | null>> = Object.f
   p01: null,
   p02: { cameraSide: 14, cameraBack: 30, cameraHeight: 13, lookSide: 6, lookAhead: 40, lookHeight: -10 },
 });
+/** Portrait phones: the home panel fills the lower half, so the car sits upper-right, whole and unshrunk. */
+const PORTRAIT_CAMERA: Readonly<Record<FrostbiteShot, CameraPose>> = Object.freeze({
+  p01: { cameraSide: 7.8, cameraBack: 17, cameraHeight: 4.6, lookSide: -9.5, lookAhead: 14, lookHeight: -8.5 },
+  p02: { cameraSide: 9, cameraBack: 20, cameraHeight: 8, lookSide: -12, lookAhead: 20, lookHeight: -15 },
+});
+/** Portrait + AIRFLOW on: the panel hides and the car sits centred below the telemetry card (shared PORTRAIT_CAR_TOP rule). */
+const PORTRAIT_AIRFLOW_CAMERA: CameraPose = Object.freeze({ cameraSide: 7.8, cameraBack: 16, cameraHeight: 4.3, lookSide: -3.5, lookAhead: 6, lookHeight: 0 });
+/** AIRFLOW on rests the car on a road: P02 then sits on the raced ice-bridge deck at the same share of the span. */
+const P02_DECK = { edgeId: BRIDGE, localS: FROSTBITE_SHOTS.p02.localS * routeLength(graph, BRIDGE) / routeLength(graph, FROSTBITE_FLIGHT.edgeId) };
 const HERO: readonly HeroEdge[] = [
   { id: APPROACH, from: approachLength - 900, carve: true },
   { id: BRIDGE, carve: false },
@@ -103,17 +112,26 @@ export function createUpcomingEnvironment(scene: THREE.Scene) {
   const guide = flightGuide(graph, FROSTBITE_FLIGHT.edgeId, MERGE);
   world.add(guide.arc, guide.landing);
   const glow = buildLighting(world);
+  // Mist over the deep middle of the Rift, beside the lower road and well under the deck.
+  const mist = chasmMist(Array.from({ length: 6 }, (_, i) => {
+    const f = sampleRoute(graph, CANYON, 130 + i * 55);
+    return { point: f.point, right: f.right, lift: 4 + (i % 2) * 2 };
+  }));
+  world.add(mist);
 
   const sky = createFrostbiteSky(seed);
   group.add(sky.group);
   const fog = new THREE.Fog('#24476e', 260, 2600);
   scene.fog = fog;
-  let disposed = false, cameraPose: CameraPose | null = null;
+  let disposed = false, grounded = false, shot: FrostbiteShot = 'p01', anchored: { edgeId: string; localS: number } | null = null;
 
-  function setShot(shot: FrostbiteShot): void {
-    const target = FROSTBITE_SHOTS[shot];
-    if (!target) throw new Error('Unknown Frostbite shot: ' + shot);
-    cameraPose = SHOT_CAMERA[shot];
+  function setShot(next: FrostbiteShot, onDeck = false): void {
+    if (!FROSTBITE_SHOTS[next]) throw new Error('Unknown Frostbite shot: ' + next);
+    shot = next;
+    anchor(next === 'p02' && onDeck ? P02_DECK : FROSTBITE_SHOTS[next]);
+  }
+  function anchor(target: { edgeId: string; localS: number }): void {
+    anchored = target;
     const f = sampleRoute(graph, target.edgeId, target.localS);
     world.position.set(0, 0, 0);
     world.rotation.set(0, Math.atan2(f.forward[0], -f.forward[2]), 0);
@@ -124,10 +142,13 @@ export function createUpcomingEnvironment(scene: THREE.Scene) {
     glow.position.set(glowAt.x - 20, glowAt.y + 14, glowAt.z);
   }
 
-  function update(timeSeconds: number, quality: Quality, reducedMotion: boolean): void {
+  function update(timeSeconds: number, quality: Quality, reducedMotion: boolean, airflowGrounded = false): void {
     if (disposed) return;
+    grounded = airflowGrounded;
+    if (shot === 'p02' && (anchored === P02_DECK) !== grounded) setShot('p02', grounded); // only when AIRFLOW flips
     const t = reducedMotion || !Number.isFinite(timeSeconds) ? 0 : timeSeconds % 10000;
     sky.update(t, quality, reducedMotion);
+    driftMist(mist, t);
     glow.intensity = reducedMotion ? 320 : 320 + Math.sin(t * .7) * 50;
   }
 
@@ -150,5 +171,5 @@ export function createUpcomingEnvironment(scene: THREE.Scene) {
 
   setShot('p01');
   update(0, 'high', false);
-  return { group, update, dispose, setShot, get cameraPose() { return cameraPose; } };
+  return { group, update, dispose, setShot: (next: FrostbiteShot) => setShot(next), get cameraPose() { return SHOT_CAMERA[shot]; }, get portraitCameraPose() { return grounded ? PORTRAIT_AIRFLOW_CAMERA : PORTRAIT_CAMERA[shot]; } };
 }

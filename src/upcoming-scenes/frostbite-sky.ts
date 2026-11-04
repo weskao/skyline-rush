@@ -20,13 +20,16 @@ const AURORA_FRAGMENT = `
   uniform vec3 uLow;
   uniform vec3 uHigh;
   uniform float uStrength;
+  uniform float uHighGlow;
   varying vec2 vUv;
   void main() {
     float rays = 0.55 + 0.45 * sin(vUv.x * 140.0 + sin(vUv.x * 13.0 + uTime * 0.31 + uPhase) * 5.0);
     float base = smoothstep(0.0, 0.12, vUv.y) * pow(clamp(1.0 - vUv.y, 0.0, 1.0), 1.6);
     float edge = smoothstep(0.0, 0.08, vUv.x) * smoothstep(1.0, 0.92, vUv.x);
     vec3 color = mix(uLow, uHigh, smoothstep(0.25, 0.95, vUv.y));
-    float alpha = clamp(base * edge * rays * uStrength, 0.0, 1.0);
+    // Upper magenta/violet band: keeps its own glow where the base curtain fades out (reference View 01).
+    float high = smoothstep(0.4, 0.7, vUv.y) * smoothstep(1.0, 0.8, vUv.y);
+    float alpha = clamp((base + high * uHighGlow) * edge * rays * uStrength, 0.0, 1.0);
     gl_FragColor = vec4(clamp(color * alpha, 0.0, 4.0), alpha);
   }
 `;
@@ -73,11 +76,12 @@ const SNOW_FRAGMENT = `
 
 const CURTAINS = [
   // [x, y, z, yaw, width, low colour, high colour, strength]
-  [-260, 260, -1350, .25, 1500, '#16ffc0', '#7a3dff', 1.0],
-  [380, 330, -1550, -.35, 1300, '#22f0ff', '#c33dff', .85],
-  [-60, 420, -1900, .05, 1900, '#0fffb4', '#a347ff', .7],
-  [-820, 300, -1150, .7, 900, '#39ffd9', '#ff4fd8', .55],
+  [-260, 260, -1350, .25, 1500, '#16ffc0', '#d63dff', 1.0],
+  [380, 330, -1550, -.35, 1300, '#22f0ff', '#ff3dd2', .85],
+  [-60, 420, -1900, .05, 1900, '#0fffb4', '#c84dff', .7],
+  [-820, 300, -1150, .7, 900, '#39ffd9', '#ff4fd8', .8],
 ] as const;
+const HIGH_GLOW = .9;
 
 export function createFrostbiteSky(seed: () => number) {
   const group = new THREE.Group();
@@ -96,7 +100,7 @@ export function createFrostbiteSky(seed: () => number) {
       vertexShader: AURORA_VERTEX, fragmentShader: AURORA_FRAGMENT, transparent: true, depthWrite: false,
       blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
       uniforms: { uTime: { value: 0 }, uPhase: { value: i * 1.7 }, uLow: { value: new THREE.Color(low) },
-        uHigh: { value: new THREE.Color(high) }, uStrength: { value: strength } },
+        uHigh: { value: new THREE.Color(high) }, uStrength: { value: strength }, uHighGlow: { value: HIGH_GLOW } },
     });
     const curtain = new THREE.Mesh(curtainGeometry, material);
     curtain.scale.x = width;
