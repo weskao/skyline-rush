@@ -149,6 +149,8 @@ test.describe('desktop', () => {
       }, true);
     });
     await expect.poll(() => time(video)).toBeGreaterThan(1.2);
+    // A ~6 s looping clip: a slow runner can reach the hand-over late enough that heroTime + 1 wraps past the end.
+    await video.evaluate(el => { el.currentTime = 1.3; });
     await video.click(); // tapping the clip itself enlarges it too
     await expect(clip).toBeVisible();
     await expect.poll(() => playing(clip)).toBe(true);
@@ -163,7 +165,9 @@ test.describe('desktop', () => {
     await expect.poll(() => playing(video)).toBe(true);
     const { clipEnd, heroResume } = await page.evaluate(() => window.handOver);
     expect(clipEnd).toBeGreaterThan(heroTime + 1);
-    expect(Math.abs(heroResume - clipEnd), 'the hero resumes from the enlarged frame').toBeLessThan(0.5 + 0.1);
+    // Looping: a hand-over on the clip's last frame (currentTime === duration) resumes the hero from 0, the same frame.
+    const duration = await video.evaluate(el => el.duration), drift = Math.abs(heroResume - clipEnd) % duration;
+    expect(Math.min(drift, duration - drift), 'the hero resumes from the enlarged frame').toBeLessThan(0.5 + 0.1);
   });
 
   test('a tap on the enlarged clip pauses and resumes it, a tap outside or the close button closes it', async ({ page, gameplayURL }) => {
