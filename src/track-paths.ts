@@ -1,7 +1,7 @@
 import { raceTrack } from './race-tracks.ts';
 import { CIRCUIT_ID, circuitFrame } from './circuit-track.ts';
 import { skyFrame, skyPoint, type Vec3, type SkyPoint } from './sky-track.ts';
-import { FROSTBITE_ID, frostbiteFrame } from './courses/frostbite-race.ts';
+import { FROSTBITE_ID, frostbiteFrame, frostbiteObjectSpan } from './courses/frostbite-race.ts';
 
 interface OverviewPoint { distance: number; x: number; y: number }
 
@@ -35,11 +35,12 @@ export function trackPoint(trackId: string, distance: number, extended = false):
   return { x: classicRoadCenter(s), y: 0, z: -s };
 }
 
-export function trackFrame(trackId: string, distance: number, extended = false) {
+/** `span`: the car flies the Frostbite Rift span (`car.span`); other tracks ignore it. */
+export function trackFrame(trackId: string, distance: number, extended = false, span = false) {
   const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance);
-  if (trackId === FROSTBITE_ID) return frostbiteFrame(distance);
+  if (trackId === FROSTBITE_ID) return frostbiteFrame(distance, span);
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyFrame(s, extended);
   const a = trackPoint(trackId, s - 0.5, extended);
@@ -52,9 +53,10 @@ export function trackFrame(trackId: string, distance: number, extended = false) 
 
 /** Convert game-distance, lane and altitude to camera-relative 3D coordinates. */
 export function trackLocalPosition(trackId: string, distance: number, lateral = 0, altitude = 0, origin = 0, extended = false): Vec3 {
-  const point = trackPoint(trackId, distance, extended);
+  const span = trackId === FROSTBITE_ID && frostbiteObjectSpan(distance, lateral, altitude);
+  const frame = span ? frostbiteFrame(distance, true) : trackFrame(trackId, distance, extended);
+  const point = span ? frame.point : trackPoint(trackId, distance, extended);
   const home = trackPoint(trackId, origin, extended);
-  const frame = trackFrame(trackId, distance, extended);
   return [
     point.x - home.x + frame.right[0] * lateral + frame.up[0] * altitude,
     point.y - home.y + frame.right[1] * lateral + frame.up[1] * altitude,

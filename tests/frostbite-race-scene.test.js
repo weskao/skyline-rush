@@ -36,14 +36,14 @@ test('shortcut ice decks and pylons sit at the section x/altitude the simulation
   const decks = named('shortcut-ice-decks'), [pylons] = named('shortcut-pylons');
   const sections = FROSTBITE_TRACK.sections.filter(s => s.type === 'shortcut');
   for (const s of sections) {
-    const f = frostbiteFrame((s.from + s.to) / 2), x = f.point.x + f.right[0] * s.x, z = f.point.z + f.right[2] * s.x;
+    const f = frostbiteFrame((s.from + s.to) / 2, s.span), x = f.point.x + f.right[0] * s.x, z = f.point.z + f.right[2] * s.x;
     const hit = new THREE.Raycaster(new THREE.Vector3(x, f.point.y + 30, z), down).intersectObjects(decks)[0];
     assert.ok(hit && Math.abs(hit.point.y - (f.point.y + s.altitude - SHORTCUT_TOLERANCE)) < .05);
   }
-  const spots = sections.flatMap(shortcutPylons), m = new THREE.Matrix4(), p = new THREE.Vector3();
+  const spots = sections.flatMap(s => shortcutPylons(s).map(p => ({ ...p, span: s.span }))), m = new THREE.Matrix4(), p = new THREE.Vector3();
   assert.equal(pylons.count, spots.length);
   spots.forEach((spot, i) => {
-    const f = frostbiteFrame(spot.distance);
+    const f = frostbiteFrame(spot.distance, spot.span); // the Rift corridor is drawn on its span
     pylons.getMatrixAt(i, m); p.setFromMatrixPosition(m);
     assert.ok(p.distanceTo(new THREE.Vector3(f.point.x + f.right[0] * spot.x, f.point.y + spot.altitude, f.point.z + f.right[2] * spot.x)) < 1e-3); // float32 matrices
   });

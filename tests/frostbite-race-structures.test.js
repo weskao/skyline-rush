@@ -12,8 +12,9 @@ const height = createCorridorHeight();
 const sections = FROSTBITE_TRACK.sections.filter(s => s.type === 'shortcut');
 const STYLE = { 'glacier-valley': 'glacier-ridge', 'rift-lower-canyon': 'rift-ice-bridge', 'aurora-basin': 'aurora-span' };
 const find = (root, name) => { const out = []; root.traverse(o => { if (o.name === name) out.push(o); }); return out; };
-const lane = (s, lateral, lift = 0) => {
-  const f = frostbiteFrame(s);
+// The Rift deck is drawn where its corridor is raced: on the span over the lower canyon.
+const lane = (s, lateral, lift = 0, span = false) => {
+  const f = frostbiteFrame(s, span);
   return new THREE.Vector3(f.point.x + f.right[0] * lateral, f.point.y + lift, f.point.z + f.right[2] * lateral);
 };
 const up = new THREE.Vector3(0, 1, 0), down = new THREE.Vector3(0, -1, 0);
@@ -31,9 +32,9 @@ test('the deck is a slab with a real underside a car on the lower road can pass 
   assert.equal(decks.length, sections.length);
   for (const s of sections) for (let d = s.from + 20; d < s.to - 20; d += 37) {
     const top = s.altitude - SHORTCUT_TOLERANCE;
-    const below = new THREE.Raycaster(lane(d, s.x, .05), up, 0, top).intersectObjects(decks)[0];
+    const below = new THREE.Raycaster(lane(d, s.x, .05, s.span), up, 0, top).intersectObjects(decks)[0];
     assert.ok(below, `no underside at ${d}`);
-    const lift = below.point.y - frostbiteFrame(d).point.y;
+    const lift = below.point.y - frostbiteFrame(d, s.span).point.y;
     assert.ok(lift > 2.8 && lift < top - .2, `underside ${lift.toFixed(2)} m at ${d}`);
   }
 });
@@ -72,8 +73,8 @@ test('both deck edges carry a visible curb with warm hazard posts', () => {
     const s = sections.find(x => STYLE[frostbiteLeg((x.from + x.to) / 2).edgeId] === name), d = (s.from + s.to) / 2;
     for (const side of [-1, 1]) {
       const edge = s.x + side * (SHORTCUT_HALF_WIDTH + .1);
-      const hit = new THREE.Raycaster(lane(d, edge, 30), down).intersectObject(rails)[0];
-      assert.ok(hit && hit.point.y > lane(d, 0, s.altitude - SHORTCUT_TOLERANCE).y, `${name} curb side ${side}`);
+      const hit = new THREE.Raycaster(lane(d, edge, 30, s.span), down).intersectObject(rails)[0];
+      assert.ok(hit && hit.point.y > lane(d, 0, s.altitude - SHORTCUT_TOLERANCE, s.span).y, `${name} curb side ${side}`);
     }
   }
 });
@@ -87,4 +88,18 @@ test('the aurora span rises on towers with cables; the ridge and bridge keep dis
   const [towers] = find(span, 'structure-supports'), m = new THREE.Matrix4(), box = new THREE.Box3();
   towers.getMatrixAt(0, m); box.copy(towers.geometry.boundingBox).applyMatrix4(m);
   assert.ok(box.max.y - height(box.getCenter(new THREE.Vector3()).x, box.getCenter(new THREE.Vector3()).z) > 10, 'span towers rise above the deck');
+});
+
+test('the Rift deck and its pylons are drawn on the span, high over the lower canyon', () => {
+  const s = sections.find(x => x.span), mid = (s.from + s.to) / 2;
+  const [deck] = find(find(race.group, 'rift-ice-bridge')[0], 'shortcut-ice-decks');
+  const hit = new THREE.Raycaster(lane(mid, s.x, s.altitude, true), down, 0, 4).intersectObject(deck)[0];
+  assert.ok(hit, 'deck under the flying band on the span');
+  assert.ok(hit.point.y - frostbiteFrame(mid).point.y > 20, 'well above the lower road');
+  const [pylons] = find(race.group, 'shortcut-pylons'), m = new THREE.Matrix4(), p = new THREE.Vector3();
+  const onSpan = [...Array(pylons.count).keys()].filter(i => {
+    pylons.getMatrixAt(i, m); p.setFromMatrixPosition(m);
+    return p.y - frostbiteFrame(mid).point.y > 20 && Math.abs(p.x - hit.point.x) < 260;
+  });
+  assert.ok(onSpan.length >= 2, `${onSpan.length} pylons on the span`);
 });

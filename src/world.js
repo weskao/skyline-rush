@@ -19,7 +19,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage } from './garage-stage.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
-import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts'; import { createCircuitScene } from './circuit-scene.ts'; import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { FROSTBITE_ID } from './courses/frostbite-race.ts';
+import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts'; import { createCircuitScene } from './circuit-scene.ts'; import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
@@ -64,7 +64,7 @@ export function createWorld(canvas) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false;
   const skyPosition=(d,x=0,y=0,o=0)=>finiteSkyPosition(d,x,y,o,endlessActive),skyFrame=d=>finiteSkyFrame(d,endlessActive),
-    trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d)=>finiteFrame(id,d,endlessActive),
+    trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d,span=false)=>finiteFrame(id,d,endlessActive,span),
     trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
   // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
@@ -533,7 +533,7 @@ export function createWorld(canvas) {
   const lookTarget = new THREE.Vector3();
   const smoothLook = new THREE.Vector3(0, 2, -25);
   let cameraMode = 0;
-  let initialized = false, lastRace = null, trackId, carBank = 0;
+  let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
   let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
@@ -561,14 +561,14 @@ export function createWorld(canvas) {
     // past it would pile up at the arch like parked cars; they leave the scene instead.
     const pastFinish = !endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID) && car.distance > lastRace.length;
     mesh.visible = isPlayer || (relative > -55 && relative < 900 && !pastFinish);
-    if (!mesh.visible) return; mesh.userData.roadDistance = car.distance; mesh.userData.altitude = car.altitude || 0; // the pose the shadow sits under
+    if (!mesh.visible) return; mesh.userData.roadDistance = car.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = (car.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
     if (trackId === 'spiral' || framedRoad(trackId)) {
       if (trackId === 'spiral') mesh.position.fromArray(skyPosition(car.distance, car.x, car.altitude || 0, distance));
       else {
-        const p=trackPoint(trackId,car.distance),o=trackPoint(trackId,distance),f=trackFrame(trackId,car.distance);
+        const f=trackFrame(trackId,car.distance,car.span),p=f.point,o=trackPoint(trackId,distance);
         mesh.position.set(p.x-o.x+f.right[0]*car.x+f.up[0]*(car.altitude||0),p.y-o.y+f.right[1]*car.x+f.up[1]*(car.altitude||0),p.z-o.z+f.right[2]*car.x+f.up[2]*(car.altitude||0));
       }
-      const frame = trackId === 'spiral' ? skyFrame(car.distance) : trackFrame(trackId,car.distance);
+      const frame = trackId === 'spiral' ? skyFrame(car.distance) : trackFrame(trackId,car.distance,car.span);
       // Compose every visual offset in local car axes, retaining the actual road pitch/bank.
       // Reading/writing Euler rotation after setting the track quaternion used to
       // overwrite its banking and snap near 90-degree spiral headings.
@@ -900,8 +900,8 @@ export function createWorld(canvas) {
           ghostCar.rotation.y = -roadHeading(ghost.distance);
         }
       }
-      const { roadDistance, altitude: lift } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
-      if (trackId === 'spiral' || framedRoad(trackId)) placeGroundShadow(shadow, trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance), player.position, lift);
+      const { roadDistance, altitude: lift, span } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
+      if (trackId === 'spiral' || framedRoad(trackId)) placeGroundShadow(shadow, trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
       else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
       shadow.scale.setScalar(1 + lift * 0.04); shadow.material.opacity = 0.6 / (1 + lift * 0.2);
       if (trackId === 'spiral' || framedRoad(trackId)) {
@@ -971,18 +971,18 @@ export function createWorld(canvas) {
         if (trackId === 'spiral' || framedRoad(trackId)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
         else desiredCamera.set(car.x, car.altitude + 1.7, -0.95);
         if (trackId === 'spiral' || framedRoad(trackId)) {
-          const f=trackFrame(trackId,distance+lookAheadDistance(trackId,distance,65,endlessActive)),p=f.point,o=trackPoint(trackId,distance);
+          const f=trackFrame(trackId,distance+lookAheadDistance(trackId,distance,65,endlessActive),car.span),p=f.point,o=trackPoint(trackId,distance);
           lookTarget.set(p.x-o.x+f.right[0]*car.x,p.y-o.y+car.altitude+1.5,p.z-o.z+f.right[2]*car.x);
         }
         else lookTarget.set(car.x + roadCenter(distance + 65) - center, car.altitude + 1.5, -65);
       } else {
         if (trackId === 'spiral' || framedRoad(trackId)) {
-          const frame = trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance);
+          const frame = trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance,car.span);
           const back = new THREE.Vector3(...frame.forward).multiplyScalar(- (portrait ? 14.5 : 12.5));
           desiredCamera.copy(player.position).add(back).add(new THREE.Vector3(0,5,0));
         } else desiredCamera.set(car.x * 0.74, car.altitude * 0.85 + (car.altitude > 2 ? 4.4 : 4.8), portrait ? 13.5 : 11.6);
         if (trackId === 'spiral' || framedRoad(trackId)) {
-          const f=trackFrame(trackId,distance+lookAheadDistance(trackId,distance,34,endlessActive)),p=f.point,o=trackPoint(trackId,distance);
+          const f=trackFrame(trackId,distance+lookAheadDistance(trackId,distance,34,endlessActive),car.span),p=f.point,o=trackPoint(trackId,distance);
           lookTarget.set(p.x-o.x+f.right[0]*car.x,p.y-o.y+car.altitude+1.5,p.z-o.z+f.right[2]*car.x);
         }
         else lookTarget.set(car.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, car.altitude * 0.85 + 1.5, -25);
@@ -1003,7 +1003,8 @@ export function createWorld(canvas) {
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7); if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
+      const smoothing = 1 - Math.exp(-dt * 7); if (trackId === FROSTBITE_ID) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
+      if (!initialized || (car.fall !== seenFall && trackId === FROSTBITE_ID)) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; } seenFall = car.fall;
       camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
       if (photoView && race.phase === 'paused') {

@@ -48,6 +48,22 @@ for (const [name, viewport, hasTouch] of [
       expect(Math.hypot(pose[0], pose[2]), `${stop} player near origin`).toBeLessThan(3);
       await capture(page, `${name}-${stop}`);
     }
+    // Rift span: a car flying the corridor is drawn on the graph's ice bridge high over the lower canyon; sinking
+    // out of it mid-span is a failed jump back to the corridor start on the lower road (camera cuts, no swoop).
+    const span = await page.evaluate(() => window.gameplay.race.sections.find(s => s.span));
+    await page.keyboard.down('Space');
+    await page.evaluate(s => Object.assign(window.gameplay.race.player, { distance: (s.from + s.to) / 2 - 60, x: s.x, altitude: s.altitude, verticalSpeed: 0, speed: 60, span: true }), span);
+    await page.waitForTimeout(700);
+    const flying = await page.evaluate(() => ({ span: window.gameplay.race.player.span, falls: window.gameplay.race.player.falls, lift: window.gameScene.player.position.y }));
+    expect(flying.span && flying.falls === 0, 'on the span').toBe(true);
+    expect(flying.lift, 'drawn high over the lower road').toBeGreaterThan(15);
+    await capture(page, `${name}-rift-span`);
+    await page.keyboard.up('Space');
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.player.falls), { timeout: ciTimeout(8_000) }).toBe(1);
+    expect(await page.evaluate(() => window.gameplay.race.player.fall.distance), 'never ahead').toBe(span.from);
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => Math.abs(window.gameScene.player.position.y)), 'back on the lower road').toBeLessThan(3);
+    await capture(page, `${name}-rift-recovered`);
     expect(await page.evaluate(() => window.gameScene.renderer.info.programs.length), 'no shader compiles mid-race').toBe(programs);
 
     await page.evaluate(() => { const race = window.gameplay.race; Object.assign(race.player, { distance: race.length - 5, speed: 60 }); });

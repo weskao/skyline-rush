@@ -9,6 +9,8 @@ export interface TrackSection {
   x?: number;
   altitude?: number;
   dir?: number;
+  /** Shortcut drawn high over a chasm (Frostbite Rift): sinking or steering out of it mid-span is a fall. */
+  span?: boolean;
 }
 export interface TrackConfig {
   name: string;

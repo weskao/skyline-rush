@@ -18,7 +18,7 @@ import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts';
 import { createRaceSessionContract } from './race-session.ts';
-import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
+import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts'; import { dropCar, stepSpan, SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
 import { RACE_TRACKS, raceTrack, assertTrackMode } from './race-tracks.ts';
@@ -60,8 +60,7 @@ export const TRICK_NITRO = 0.25; // charges for a landed roll
 export const TRICK_HARD_LANDING = 11; // m/s landing.speed that loses the reward (an unpowered glide from 8.6 m)
 
 // SHORTCUT: a flight-only corridor { x, altitude } over an edge lane; inside it flight is free and faster, pylons are the risk.
-export const SHORTCUT_HALF_WIDTH = 3; // m either side of the corridor centre
-export const SHORTCUT_TOLERANCE = 2.5; // m above or below the corridor altitude (also the pylon height)
+export { SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts'; // corridor half width / altitude band (also the pylon height)
 export const SHORTCUT_CAP_BONUS = 12; // m/s added to the speed cap inside
 export const SHORTCUT_PYLON_SPACING = 100; // m
 export const SHORTCUT_PYLON_OFFSET = 2.2; // m from the centre, alternating sides
@@ -178,7 +177,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       poweredFlightTime: 0, flightBoosted: false,
-      section: null, inShortcut: false, falls: 0, fall: null,
+      section: null, inShortcut: false, falls: 0, fall: null, span: false,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
       drift: null, driftPayout: null, miniBoost: 0, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
@@ -420,19 +419,10 @@ export function stepRace(race, input, dt) {
   car.distance += car.speed * dt;
   const gapNow = race.trackId === 'spiral' ? skyGapAt(car.distance) : car.section === 'gap';
   if (gapNow && car.altitude < GAP_CLEARANCE && !(race.trackId === 'spiral' && car.altitude > 0 && car.verticalSpeed > 0)) {
-    car.speed *= GAP_SLOWDOWN;
     const gapEnd = race.trackId === 'spiral' ? SKY_JUMPS.find(j => car.distance >= j.gapFrom && car.distance < j.gapTo)?.gapTo : section.to;
-    car.distance = (gapEnd ?? section.to) + GAP_RESPAWN;
-    car.altitude = car.verticalSpeed = 0;
-    car.cooldown = 1.5; // respawn grace: no instant collision with traffic parked past the gap
-    car.combo = 0;
-    car.drift = null;
-    car.trick = null;
-    car.poweredFlightTime = 0;
-    car.flightBoosted = false;
-    car.falls++;
-    car.fall = { from: section.from, distance: car.distance, time: race.elapsed };
+    dropCar(car, (gapEnd ?? section.to) + GAP_RESPAWN, section.from, race.elapsed, GAP_SLOWDOWN);
   }
+  stepSpan(car, section, race.elapsed, GAP_SLOWDOWN);
 
   for (const traffic of race.traffic) {
     traffic.cooldown = Math.max(0, (traffic.cooldown || 0) - dt);
