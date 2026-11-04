@@ -1,131 +1,73 @@
 # Skyline Rush — Claude Code project instructions
 
-Browser 3D arcade racer: Vue 3 + TypeScript (strict) + Vite + Three.js. Node >= 22.12.
+Browser 3D arcade racer: Vue 3 + TypeScript (strict) + Vite + Three.js, Node >= 22.12.
 Simulation `src/game.js`; rendering `src/world.js`, `src/effects.js`, `src/aero-vfx.js`;
 UI `src/App.vue`, `src/main.js`, `src/style.css`.
 
-Preserve: existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage paints,
+Preserve existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage paints and
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
-Detailed, file-scoped rules live in `.claude/rules/` and load only when their files are touched:
-`unlock-separation` · `world-tour` · `performance-review` · `device-quality` · `track-showcase` ·
-`touch-input` · `vehicle-road-stability` · `ui-phase-interactions` · `ui-architecture` ·
-`release-notes` · `module-size` · `full-screen-dialogs` · `raster-artwork` · `home-layout-gate` ·
-`ci-gates` · `branch-release`. A rule that only matters for certain files goes there with `paths:`,
-not here.
+File-scoped rules live in `.claude/rules/` and load only with the files they cover (UI
+architecture, module size, artwork, tracks, touch, Garage, tutorial, release notes, CI,
+branches). A rule that only matters for certain files goes there with `paths:`, not here.
+A "→ Read `docs/<file>`" line names a situation: open that file only then, follow it exactly.
 
-A "→ Read `docs/<file>`" line below names a situation; open that file only when the situation
-occurs, then follow it exactly.
+## Workflow (every feature and bug fix)
 
-## Always-on defaults (details in the scoped rules)
+Follow `docs/regression-first-workflow.md`: trace the shared root cause; failing test (RED) →
+minimal fix (GREEN); regression-check affected tracks, vehicles, locales and inputs;
+`make verify`; inspect real WebGL / touch screenshots when behavior or rendering changed; then
+check the full GitHub `quality-gate` for the exact HEAD commit. Track evidence in `TODO.md`.
+CI, manual visual confirmation and RED evidence are separate gates; one never proves another.
 
-- **New UI is Vue 3 `<script setup lang="ts">`; new controllers, services, state and business
-  rules are typed `.ts`** (interfaces in `src/game-types.ts`). Plain JS stays only for
-  performance-sensitive renderer/physics/shader/frame-loop code, which never imports Vue.
-  `src/main.js` only shrinks. See `ui-architecture` and `TODO.md`.
-- **No source module past 400 lines, functions under ~60 lines**; split by responsibility, one
-  `setupXxxUI(deps)` controller per screen area. `tests/module-size.test.js` enforces it (`module-size`).
-- **AI-generated images are generated at exactly 3× their display size**, never upscaled; icon art
-  passes the completeness / anti-clipping gate in `raster-artwork`.
+Merge-ready only when the latest `develop` is integrated, required checks are green and the
+user-visible symptoms were retested. Never merge into `develop`/`main`, open a PR or deploy
+without explicit user approval.
 
-## New long-form tracks: concept art → real WebGL acceptance (Stage 1 and Stage 2)
+## AI-assisted 3D asset / Three.js upgrade (planned; not deployed)
 
-When implementing any of the ten **proposed** multi-route point-to-point tracks, first
-read [`docs/designs/new-tracks/visual-acceptance-gate.md`](docs/designs/new-tracks/visual-acceptance-gate.md), the two
-actual JPEG references for that map, its route SVG, and the relevant
-`.claude/rules/track-showcase.md` / `.claude/rules/vehicle-road-stability.md` guidance.
-Capture repeatable **real WebGL** ground and aerial route frames, compare landmark,
-terrain, vehicle scale, weather, branch/landing and visibility, and record deviations.
-Concept illustrations and upscaled Stage-2 JPEGs are **not** real 3D renders or true
-3× in-game textures. Do not mark visual acceptance complete without screenshot evidence,
-functional tests, performance review and explicit PASS/FAIL/APPROVED DEVIATION records.
-All ten new maps are point-to-point with distinct START and FINISH; no laps.
+For any Blender, GLB/PBR, 3D asset, rendering-quality or Three.js r180 → r186 work:
+first read `docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md`
+and `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`.
+**Mandatory Phase 0 before implementation:** run
+`docs/designs/3d-pipeline/toolchain-environment-preflight.md` on the user's Mac;
+check actual Blender addon + live MCP transport, user-global Skills, Claude/Codex scopes,
+Node and glTF Transform. Report PASS/FAIL/NOT VERIFIED; remote GitHub cannot validate
+local installation. Global Skills belong under `~/.claude/skills`, not in this repo.
+Three.js r186.1 is the *planned* target; until verified migration, obey currently
+installed r180 APIs. Read `docs/designs/3d-pipeline/threejs-r180-r186-migration.md`
+and scoped `.claude/rules/3d-asset-pipeline.md` when applicable. Never change
+production renderer, physics or sibling branches during a docs-only pass.
 
-## Stage 1 upcoming-map homepage: REAL animated Three.js showcase is mandatory
+## Verification
 
-**Read [the binding animated homepage spec](docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) and [six-chat implementation plan](docs/superpowers/plans/2026-11-03-six-chat-home-preview-integration.md) before changing the five Stage 1 Coming Soon cards or art.** The earlier JPEG-only full-hero `#upcoming-scene` overlay is a temporary implementation **not accepted** as final.
-- Selecting Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown or Stormline Megacity on the homepage must show that track's **real, animated, world-space Three.js landscape** in the existing `#world` renderer: visible ground road and air branch, signature landmarks, scene-specific motion/weather, actual shared player/rival car models, hover/jets and curated camera. JPEG is art-direction reference/card thumbnail/explicit WebGL failure fallback **only**; do not imitate 3D with a photo plane, CSS animation or static screenshot.
-- Reuse `src/world.js` renderer/camera/composer/idle update loop, `src/track-preview.ts` camera/vehicle appearance and `src/car-model.js` / `src/aero-vfx.js` effects; scene switching may mirror `src/garage-stage.ts`. **No second canvas, WebGL context or parallel render loop**. Each map's module must be independent, time-driven, quality/reduced-motion aware and disposable.
-- Keep exactly the Stage 1 five **unplayable**: their `#start-button` is disabled with `COMING SOON / 即將推出`, even for keyboard, saved unlocks or mode change. Do not add them to `RACE_TRACKS`. The Stage 2 five stay hidden. Preserve all existing playable tracks.
-- **TDD+QA:** prove two time-separated *real WebGL frames* with observed animation per new map and original JPEG visual anchors (ground and air), mobile/desktop and Reduced Motion, and full exact-HEAD CI. A JPEG file, scene module that does not render, or unrun test does not complete the homepage.
-
-## Mandatory regression-first workflow (every feature and bug fix)
-
-**Always follow `docs/regression-first-workflow.md`** before calling work complete:
-read the relevant rules and trace the shared root cause; reproduce with a failing
-test and observe RED; implement the minimal fix and observe GREEN; regression-check
-all affected tracks, vehicles, locales and inputs; run `make verify`; inspect
-real-game/WebGL and touch screenshots where behavior or rendering changed; then
-inspect the **full GitHub CI `quality-gate` for the exact HEAD commit**.
-Use `TODO.md` to track evidence. CI, manual visual confirmation and historical
-RED evidence are distinct gates — never claim one proves the others.
-
-Only mark the branch **merge-ready** when the latest `develop` has been integrated,
-all required checks are green and the user-visible symptoms have been retested.
-Do not merge into `develop` or `main`, create a PR or deploy without explicit user approval.
-
-## Situational guides
-
-- Renderer, scene, effect or shader code; adding a cache, instancing or any per-frame /
-  per-row work → Read `docs/rendering-performance.md`.
-- Road geometry, car pose, collision, steering, AI/traffic, or a prop drawn on the road
-  → Read `.claude/rules/vehicle-road-stability.md` and `.claude/rules/world-tour.md`
-  ("Solid props", "Shared collision physics").
-- Track centrelines, route previews/markers, Coast scenery, render pacing, or anything that
-  changes track length, checkpoints or saved best-time/Ghost data
-  → Read `docs/classic-road-minimap.md`.
-- Tutorial steps, lesson transitions or tutorial input → Read `docs/tutorial-driving.md`.
-- Home 3D preview, showcase camera views or a new track → Read `.claude/rules/track-showcase.md`;
-  camera dock / Start button layout → Read `docs/home-showcase.md`.
-- Adding, redesigning or modifying any UI element, screen, overlay, interaction or player
-  feedback (audio, quality tiers, iPhone touch, post-race clickability)
-  → Read `docs/ui-change-checklist.md`.
-- A bug seen only on a phone / iPhone Home Screen app → reproduce on that device class
-  (`make phone-diag`), since desktop Chromium and WebKit can stay clean.
-- Writing or editing What's New / release notes, or running `/release`
-  → Read `docs/release-process.md`.
-- Garage cosmetics, release mode, `GARAGE_VFX_RELEASE_MODE` or the Pages deploy pin
-  → Read `docs/garage-release-policy.md`.
-- Pushing, reading CI results or merging → Read `.claude/rules/ci-gates.md` and
-  `.claude/rules/branch-release.md`.
+- Gameplay / progression / build config → `npm test` + `npm run build`.
+- Rendering / navigation / controls / unlock visibility → also `npm run test:browser`, desktop and
+  mobile. `npx playwright test <spec>` serves `dist/`: run `npm run build` first or it tests old code.
+- Bug seen only on a phone → reproduce on that device class (`make phone-diag`).
+- Never delete or weaken tests to pass CI; report any test you could not run.
+- Only `main`/`develop` run the full remote CI; a green run on an earlier commit does not
+  validate the new HEAD. Pushing, reading CI or merging → Read `.claude/rules/ci-gates.md`
+  and `.claude/rules/branch-release.md`.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
 | `make` / `make dev` | Vite dev server, saved progression respected |
-| `make dev-unlocked` (= `make test-unlocked`) | Local-only all-unlocked server (not a test runner) |
-| `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS localhost |
-| `make phone [name] [y=1]` | Same menu as `/phone-dev`: start/check/stop a phone-reachable locked dev server for this checkout, a worktree or a branch; `y=1` takes every Recommended option, no prompts, prints each choice |
-| `make dev-diag` / `make phone-diag [name]` | Same servers with the on-screen diagnostic banner compiled in (`VITE_DIAG=1` → `src/crash-log.ts`); production builds never include it |
+| `make dev-unlocked` | Local-only all-unlocked server (not a test runner) |
+| `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS |
+| `make phone [name] [y=1]` | Phone-reachable locked dev server (`y=1` = no prompts) |
+| `make dev-diag` / `make phone-diag [name]` | Same servers with the diagnostic banner (`VITE_DIAG=1`) |
 | `npm test` | Node unit tests |
 | `npm run build` | Production build + release-bundle lock assertion |
 | `npm run test:browser` | Playwright suite (pretest builds production assets) |
-| `npm run test:layout` | Home-screen layout browser tests (pre-push hook runs it on UI pushes) |
-| `make run` | Unit + browser tests |
-| `make verify` | Full local regression gate: unit, build, browser, World Tour long-run |
+| `npm run test:layout` | Home-screen layout browser tests |
+| `make verify` | Full local gate: unit, build, browser, World Tour long-run |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
 
-## Verification
+## Branches
 
-- Gameplay / progression / build-config change → `npm test` + `npm run build`.
-- Rendering / navigation / controls / unlock visibility change → also `npm run test:browser`,
-  desktop and mobile. Running a spec directly with `npx playwright test <spec>` serves the built
-  `dist/`: run `npm run build` first, or the run checks the old code (a stale build once showed
-  last release's notes as "Latest").
-- Road, car pose, collision or steering change → follow `vehicle-road-stability.md`: TDD
-  RED→GREEN, all-track coverage, frame-rate and road-clearance checks, plus real WebGL
-  capture where clipping or jitter was reported. Record unrun checks as pending.
-- Home-screen change → `npm run test:layout` before pushing; never bypass the pre-push gate
-  (`home-layout-gate`).
-- Never delete or weaken tests to pass CI. Report any test you could not run.
-- `README.md` changed → sync `README.zh-TW.md` via `scripts/readme-zh.mjs` (hooks enforce it).
-- Only `main`/`develop` run the full remote CI; a green run on a previous commit does not validate
-  the new HEAD (`ci-gates`).
-
-## Branch workflow
-
-Commit and push to the current development branch. No PR, no merge into `develop` or `main`,
-no deploy unless the user explicitly asks. `feature/**`, `fix/**`, `refactor/**` branch from and
-merge back into `develop` (`--no-ff`); only `develop` and `hotfix/*` merge into `main`; `/release`
-back-merges `main` into `develop`. Full flow: `branch-release`.
+Commit and push to the current branch. `feature/**`, `fix/**`, `refactor/**` branch from and
+merge back into `develop` (`--no-ff`); only `develop` and `hotfix/*` merge into `main`;
+`/release` back-merges `main` into `develop`. Full flow: `.claude/rules/branch-release.md`.

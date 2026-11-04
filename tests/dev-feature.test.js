@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { featureSlug } from '../scripts/dev-feature.mjs';
 
 const USAGE = /Usage: make dev-feature <name>\nExample: make dev-feature world-tour-landmark-boost-polish/;
@@ -32,4 +33,14 @@ test('cli takes one positional name and does not read FEATURE', () => {
     assert.match(result.stderr, USAGE);
     assert.doesNotMatch(`${result.stdout}${result.stderr}`, /FETCH_HEAD|Reusing /);
   }
+});
+
+test('feature worktrees require local TypeScript unlock policy and do not bypass Coming Soon', () => {
+  const source = readFileSync(new URL('../scripts/dev-feature.mjs', import.meta.url), 'utf8');
+  assert.match(source, /src', 'access', 'dev-unlocked\.ts'/);
+  assert.match(source, /alias !== expected/);
+  assert.match(source, /upcoming-tracks\.ts/);
+  assert.match(source, /isUpcomingTrack/);
+  assert.match(source, /upcomingReadiness/);
+  assert.doesNotMatch(source, /endsWith\([^\n]*dev-unlocked\.js/);
 });
