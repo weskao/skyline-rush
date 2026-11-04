@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { UPCOMING_TRACKS, homeTrackStatus, upcomingReadiness } from '../src/upcoming-tracks.ts';
-import { isUpcomingEnterable as released } from '../src/access/production.ts';
+import { availableTracks as releasedTracks, isUpcomingEnterable as released } from '../src/access/production.ts';
 import { isUpcomingEnterable as unlocked } from '../src/access/dev-unlocked.ts';
 
 test('only explicitly playable Coming Soon tracks can START in make dev-unlocked', () => {
@@ -37,4 +38,25 @@ test('release builds always label Coming Soon cards and disable their START, des
   } finally {
     delete RACE_TRACKS['dune-tempest'];
   }
+});
+
+test('stale saved progress and a registered race cannot release a Coming Soon track', () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const storage = { getItem: key => key === 'skyline-rush-unlocked' ? JSON.stringify(['coast', 'dune-tempest']) : null,
+    setItem() {}, removeItem() {} };
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage });
+  RACE_TRACKS['dune-tempest'] = RACE_TRACKS.coast;
+  try {
+    assert.equal(releasedTracks().includes('dune-tempest'), false);
+    assert.equal(released('dune-tempest'), false);
+  } finally {
+    delete RACE_TRACKS['dune-tempest'];
+    if (original) Object.defineProperty(globalThis, 'localStorage', original);
+    else delete globalThis.localStorage;
+  }
+});
+
+test('the shared START handler guards previews before trusting saved unlocks', () => {
+  const src = readFileSync(new URL('../src/race-select-ui.ts', import.meta.url), 'utf8');
+  assert.match(src, /isUpcomingTrack\(id\) \? options\.isUpcomingEnterable\(id\) : unlockedTracks\.has\(id\)/);
 });
