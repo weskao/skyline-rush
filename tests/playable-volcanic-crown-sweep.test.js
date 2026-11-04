@@ -45,3 +45,21 @@ test('Volcanic crossing remains detectable with 30/60/120 Hz slices', () => {
     assert.equal(hit?.id, rock.id, `${hz} Hz swept pass must hit`);
   }
 });
+
+test('Volcanic swept collision catches cross-lane hazards at 30/60/120 Hz', () => {
+  // A one-frame sideways slide can cross a real fissure while both endpoint
+  // poses are safe; sweep density must follow world motion, not just distance.
+  const fissure = hazards.VOLCANIC_OBSTACLES.find(item => item.id === 'crack-01');
+  for (const hz of [30, 60, 120]) {
+    const from = sample(fissure.s, -11, 0, 5);
+    const to = sample(fissure.s, 16, 0, 5 + 1 / hz);
+    assert.equal(hazards.volcanicObstacleContact(fissure.edgeId,
+      from.s, from.lateral, from.altitude, from.timeSeconds), null);
+    assert.equal(hazards.volcanicObstacleContact(fissure.edgeId,
+      to.s, to.lateral, to.altitude, to.timeSeconds), null);
+    assert.equal(hazards.volcanicObstacleSweptContact(fissure.edgeId, from, to)?.id,
+      fissure.id, `${hz} Hz lateral tunnelling`);
+    assert.equal(hazards.volcanicObstacleSweptContact('ground-4', from, to), null,
+      'a different road layer must never inherit a local hazard');
+  }
+});
