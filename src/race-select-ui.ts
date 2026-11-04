@@ -2,6 +2,7 @@ import { CIRCUIT_ID } from './circuit-track.ts';
 import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
+import { isUpcomingTrack } from './upcoming-tracks.ts';
 import { RULE_PRESETS } from './race-config.ts';
 import { DEFAULT_RULES, modeEligibility, modeRulesSummary, ruleConflicts } from './mode-setup.ts';
 import { itemRuleValue } from './item-ui.ts';
@@ -144,7 +145,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       button.title = button.disabled ? t('mode.description.endless') : locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
     }
   }
-  const canRace = (trackId: string): boolean => getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId);
+  const canRace = (trackId: string): boolean => !isUpcomingTrack(trackId) && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId));
   function renderRouteInfo(race: Race): void {
     const daily = options.getDaily();
     const startButton = ui['start-button'] as HTMLButtonElement;
