@@ -132,7 +132,11 @@ export function createVolcanicCrownChunk(
     throw new RangeError('Invalid Volcanic Crown chunk index');
   const from=chunkIndex*VOLCANIC_CHUNK_METERS;
   const to=Math.min(volcanicEdgeLength(edgeId),from+VOLCANIC_CHUNK_METERS);
-  const rows=quality==='high'?28:quality==='medium'?20:12;
+  const baseRows=quality==='high'?28:quality==='medium'?20:12;
+  // Tight crater-rim turns need closer mesh/physics correspondence even at Low.
+  // Only these two authored hairpins pay the extra vertices.
+  const rows=(edgeId==='ground-2'||edgeId==='ground-6')
+    ?Math.max(24,baseRows):baseRows;
   const group=new THREE.Group();group.name=`volcanic-${edgeId}-${chunkIndex}`;
   let disposed=false;
   const roadMat=new THREE.MeshStandardMaterial({
