@@ -259,19 +259,20 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
 test.describe('device safe areas', () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  test('scene stays full-bleed and controls clear each device inset', async ({ page, context }) => {
-    const profiles = [
-      ['notch iphone', { top: 47, bottom: 34, left: 0, right: 0 }, 390, 844],
-      ['dynamic island', { top: 59, bottom: 34, left: 0, right: 0 }, 402, 874],
-      ['android 15 gesture', { top: 24, bottom: 24, left: 0, right: 0 }, 412, 915],
-      ['android 15 buttons', { top: 48, bottom: 48, left: 0, right: 0 }, 412, 892],
-      ['android 14', { top: 0, bottom: 0, left: 0, right: 0 }, 412, 915],
-      ['notch landscape', { top: 0, bottom: 21, left: 47, right: 47 }, 844, 390],
-      ['android 15 landscape buttons', { top: 24, bottom: 0, left: 0, right: 48 }, 915, 412],
-      ['ipad portrait', { top: 24, bottom: 20, left: 0, right: 0 }, 820, 1180],
-      ['ipad landscape', { top: 24, bottom: 20, left: 0, right: 0 }, 1180, 820],
-    ];
-    for (const [name, insets, width, height] of profiles) {
+  // One test per device: nine WebGL home loads in one test overran the timeout on slow runners.
+  const profiles = [
+    ['notch iphone', { top: 47, bottom: 34, left: 0, right: 0 }, 390, 844],
+    ['dynamic island', { top: 59, bottom: 34, left: 0, right: 0 }, 402, 874],
+    ['android 15 gesture', { top: 24, bottom: 24, left: 0, right: 0 }, 412, 915],
+    ['android 15 buttons', { top: 48, bottom: 48, left: 0, right: 0 }, 412, 892],
+    ['android 14', { top: 0, bottom: 0, left: 0, right: 0 }, 412, 915],
+    ['notch landscape', { top: 0, bottom: 21, left: 47, right: 47 }, 844, 390],
+    ['android 15 landscape buttons', { top: 24, bottom: 0, left: 0, right: 48 }, 915, 412],
+    ['ipad portrait', { top: 24, bottom: 20, left: 0, right: 0 }, 820, 1180],
+    ['ipad landscape', { top: 24, bottom: 20, left: 0, right: 0 }, 1180, 820],
+  ];
+  for (const [name, insets, width, height] of profiles) {
+    test(`scene stays full-bleed and controls clear the ${name} inset`, async ({ page, context }) => {
       await page.setViewportSize({ width, height });
       const cdp = await context.newCDPSession(page);
       await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets });
@@ -302,8 +303,8 @@ test.describe('device safe areas', () => {
       expect(start.y, `${name} start`).toBeGreaterThanOrEqual(insets.top - 1);
       expect(start.y + start.height, `${name} start`).toBeLessThanOrEqual(height - insets.bottom + 1);
       await cdp.detach();
-    }
-  });
+    });
+  }
 
   // Chromium never matches the iOS-only @supports block, so the test applies its real rules by hand.
   test('iOS footer and version sit in the home-indicator inset, clear of the bar', async ({ page, context }) => {

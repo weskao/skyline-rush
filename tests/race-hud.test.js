@@ -18,4 +18,6 @@ test('HUD updates never query the DOM or touch Vue reactivity per tick', () => {
   const update = hud.slice(hud.indexOf('function update('));
   assert.doesNotMatch(hud, /from 'vue'/);
   assert.doesNotMatch(update.slice(0, update.indexOf('\n  return {')), /querySelector|getElementById|\$\(/);
+  // The NITRO charge is observed for change: a per-frame rewrite of the same value reads as a new charge.
+  assert.match(hud, /if \(nitroMeter\.getAttribute\('aria-valuenow'\) !== charge\) nitroMeter\.setAttribute\('aria-valuenow', charge\)/);
 });

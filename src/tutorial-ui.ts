@@ -77,6 +77,7 @@ export function setupTutorialUI({
       assistHidden: done,
       hintKeys: done || touch ? '' : keys ?? '',
       hintText: !done && touch ? t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode)) : '',
+      celebration: done ? t('tutorial.freeDrive') : '',
     });
     for (const target of document.querySelectorAll<HTMLElement>('.tutorial-target')) target.classList.remove('tutorial-target');
     if (done) return;

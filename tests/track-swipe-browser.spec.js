@@ -115,6 +115,20 @@ test('desktop: dragging the preview with the mouse changes track from the regula
   await expect(page.locator(`[data-track="${second}"]`)).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('desktop: a mouse drag past 20% of a wide screen switches track before the button is released', async ({ page }) => {
+  await page.setViewportSize({ width: 2560, height: 1440 });
+  await page.goto('/');
+  const [, second] = await trackOrder(page);
+  await page.mouse.move(1900, 800);
+  await page.mouse.down();
+  for (let x = 1860; x >= 1360; x -= 50) { await page.mouse.move(x, 800); await page.waitForTimeout(16); } // 540px > 512px
+  await expect.poll(() => selected(page)).toBe(second);
+  await page.mouse.move(1300, 800); // the rest of the held drag must not start a second switch
+  await page.mouse.up();
+  await page.waitForTimeout(600);
+  expect(await selected(page)).toBe(second);
+});
+
 test('desktop: a two-finger trackpad swipe changes one track per gesture, momentum included', async ({ page }) => {
   await page.goto('/');
   const [first, second, third] = await trackOrder(page);
@@ -167,6 +181,7 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
     return { left: box.left, right: box.right, width: box.width, height: box.height, alpha: pixels[3] };
   }));
   expect(Math.abs(geometry[0].right - geometry[1].left)).toBeLessThan(1);
+  expect(Math.abs(geometry[0].right - (1440 - 130)), 'the scenes move the full 130px drag, not a damped half').toBeLessThan(1);
   expect(geometry[0].left).toBeLessThanOrEqual(0);
   expect(geometry[1].right).toBeGreaterThanOrEqual(1440);
   expect(geometry.every(part => part.width === 1440 && part.height > 0 && part.alpha === 255), 'both actual scenes remain fully opaque').toBe(true);
