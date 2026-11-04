@@ -7,9 +7,13 @@ import { garageView } from './garage-view-state.ts';
 import CloseButton from './CloseButton.vue';
 import GaragePaintPreview from './GaragePaintPreview.vue';
 import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
+import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 const locale = ref(getLocale());
+const storeCatalog = ref<{ openStore: () => void } | null>(null);
+const storeIcon = `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/store-cart@3x.png`;
+const storeIconFallback = `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/store-cart@3x.webp`;
 let unsubscribe: (() => void) | undefined;
 onMounted(() => { unsubscribe = onLocaleChange(value => { locale.value = value; }); });
 onUnmounted(() => unsubscribe?.());
@@ -74,13 +78,41 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         <p class="garage-coming">{{ copy.coming }}</p>
         <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
-        <GarageSourceArtGallery category="garage-store-readiness" />
+        <section class="garage-store-entry" data-garage-store-entry
+          :aria-label="locale === 'zh-TW' ? '車庫商店' : 'Garage Store'">
+          <GarageArtworkImage :src="storeIcon" :fallback-src="storeIconFallback"
+            :size="52" :alt="''" :fallback-text="locale === 'zh-TW' ? '商店' : 'Store'" loading="eager" />
+          <div class="garage-store-entry-copy">
+            <strong>{{ locale === 'zh-TW' ? '商店 · 即將推出' : 'Garage Store · Coming Soon' }}</strong>
+            <span>{{ locale === 'zh-TW' ? '瀏覽未來的外觀、組合與收藏；目前不提供交易。' : 'Preview future cosmetics, bundles and collections. No transactions.' }}</span>
+          </div>
+          <button type="button" data-garage-store-open @click="storeCatalog?.openStore()">
+            {{ locale === 'zh-TW' ? '瀏覽商店概念' : 'Browse Store' }}
+          </button>
+        </section>
+        <GarageSourceArtGallery ref="storeCatalog" category="garage-store-readiness" />
       </aside>
     </div>
   </dialog>
 </template>
 
 <style>
+#garage-screen .garage-store-entry { display: flex; align-items: center; flex-wrap: wrap; gap: 9px;
+  min-width: 0; margin: 10px 0 3px; padding: 10px; border: 1px solid #7a509b; border-radius: 13px;
+  background: linear-gradient(125deg, #27163b, #12283c 85%); }
+#garage-screen .garage-store-entry .artwork-img { flex: 0 0 52px; object-fit: contain; }
+#garage-screen .garage-store-entry-copy { display: flex; flex: 1 1 155px; flex-direction: column;
+  min-width: 0; gap: 4px; overflow-wrap: anywhere; }
+#garage-screen .garage-store-entry-copy strong { color: #f5d5ff; font-size: 14px; line-height: 1.4; }
+#garage-screen .garage-store-entry-copy span { color: #bfd4ee; font-size: 11px; line-height: 1.5; }
+#garage-screen .garage-store-entry button { display: inline-flex; align-items: center; justify-content: center;
+  box-sizing: border-box; min-height: 44px; width: 100%; border-radius: 8px; border: 1px solid #b37ac9;
+  padding: 9px 13px; color: #fff2ff; font-weight: 750; font-size: 12px;
+  background: linear-gradient(110deg, #693280, #334a83); cursor: pointer; touch-action: manipulation; }
+#garage-screen .garage-store-entry button:focus-visible { outline: 3px solid #6ce8ff; outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  #garage-screen .garage-store-entry button:hover { border-color: #e4b2ff; background: #76519d; }
+}
 /* The full-screen Garage/Studio covers the home: stop rendering it, or iOS WebKit flashes its animated layers
    (START sheen, Garage pulse) over the dialog. Descendants too: airflow mode forces #start-button visible. */
 #app:has(> #garage-screen[open]) > :not(dialog), #app:has(> #garage-screen[open]) > :not(dialog) * { visibility: hidden !important; }
