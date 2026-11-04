@@ -40,7 +40,17 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
-        id: 'garage-poses', kind: 'improvement', image: null,
+        id: 'coming-soon-tracks', kind: 'new',
+        image: { en: 'whats-new/coming-soon/coming-soon.en.jpg', 'zh-TW': 'whats-new/coming-soon/coming-soon.zh-TW.jpg' },
+        title: { en: 'Six new tracks are coming soon', 'zh-TW': '六條新賽道即將推出' },
+        description: {
+          en: 'Preview Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity and Frostbite Canyon on Home. You cannot race them yet.',
+          'zh-TW': '在首頁預覽沙暴裂谷、雨林失落神殿、浮空群島、熔火天脊、霓虹暴雨都市和極地冰原峽谷，目前還不能比賽。'
+        }
+      },
+      {
+        id: 'garage-poses', kind: 'improvement',
+        image: { en: 'whats-new/roadster-2/garage-home.en.jpg', 'zh-TW': 'whats-new/roadster-2/garage-home.zh-TW.jpg' },
         title: { en: 'A bigger car and quick poses in the Garage', 'zh-TW': '車庫的車更大，姿勢更好切換' },
         description: {
           en: 'The Garage page now shows your car larger, with Ground, Flight and wing buttons and camera views right underneath.',
@@ -67,16 +77,16 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         id: 'tidy-home', kind: 'improvement', image: null,
         title: { en: 'A tidier Home screen', 'zh-TW': '更整齊的首頁' },
         description: {
-          en: 'Start, Garage, History and Practice stay on one row on desktop, a long Start label wraps neatly, and phones hide keyboard key settings until a keyboard is used.',
-          'zh-TW': '桌機的開始、車庫、歷史紀錄和練習排在同一列，過長的開始文字會自動換行；手機在用到鍵盤前不顯示鍵盤設定。'
+          en: 'Start, Garage, History and Practice sit on one row on desktop, and phones hide keyboard settings until you use a keyboard.',
+          'zh-TW': '桌機的開始、車庫、歷史紀錄和練習排在同一列；手機在用到鍵盤前不再顯示鍵盤設定。'
         }
       },
       {
         id: 'practice-finish', kind: 'fix', image: null,
         title: { en: 'Practice no longer freezes at the end', 'zh-TW': '練習結束後畫面不再凍結' },
         description: {
-          en: 'After the last lesson the road and your car keep moving, with a celebration and a clear Back to game button.',
-          'zh-TW': '完成最後一堂課後，道路和車子會繼續動，並出現慶祝畫面和醒目的「回到遊戲」按鈕。'
+          en: 'After the last lesson the road and your car keep moving, with a completion message and a clear Back to game button.',
+          'zh-TW': '完成最後一堂課後，道路和車子會繼續動，並出現完成訊息和醒目的「回到遊戲」按鈕。'
         }
       },
       {
