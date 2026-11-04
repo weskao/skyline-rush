@@ -3351,3 +3351,24 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [x] Added test first at `6d951b7feac130ac99a14c8d97b316e745b86dcf` for ground-truth pad position and permanent emissive edge markings on two flight alternatives × Low/Medium/High with Reduced Motion.
 - [x] Added a restrained emissive basalt landing material and two geometry-based cyan edge strips per pad; all are oriented by `sampleVolcanicRoute` world frame and disposable with their chunk. No second renderer, loop or visual-only physics pose.
 - [ ] Observed `npm test` RED/GREEN, exact final-HEAD FULL CI, desktop/mobile rendered WebGL review, GPU/draw-call budgets and game landing acceptance remain required. The structural no-marking check was RED, but is not equivalent to a full test execution.
+
+
+## 2026-11-04 — Volcanic Crown map-owned completion ledger (only feature/playable-volcanic-crown)
+
+- [x] TDD-first sloped obstacle regression tests, then fix shared world-frame disc contact and warning orientation: implementation `23b4596b`. Isolated original/corrected contact functions reproduced RED/GREEN on matching sloped-plane stubs; **not an npm suite run**.
+- [x] TDD-first Low/Medium physical road mesh deviation test, then selective >=24-row tessellation on ground-2/ground-6 hairpins: `756cf21b`. Independent sampling measured original Low worst ~0.979 m and proposed 24-row ~0.256 m; real WebGL tire contact remains unverified.
+- [x] TDD-first flight-rejoin tangent test; adjust only penultimate flight control points `6bf01fb1` without damaging mainline hairpins or checkpoints.
+- [x] TDD-first canonical CourseGraph data contract export `f90ec9c8`; shared runtime continues to own motion/physics/checkpoint authority.
+- [x] TDD-first AI collision warning/passing corridor descriptors `1029e5e9`; same obstacle pose source, no parallel eight-car engine.
+- [x] TDD-first lava UV continuity test `adc8aab8`; UVs now follow absolute route arc-length across neighboring 240 m chunks.
+- [x] TDD-first directional checkpoint/finish frame metadata `c8365ac0`; no separate finish controller.
+- [x] TDD-first active-vent visual/collision parity `096628cb`; inactive mesh hidden, warning ring still visible.
+- [x] TDD-first Low/Medium/High light-intensity persistence `9b276419`; Reduced Motion stops pulsing without removing visibility.
+- [x] Fresh isolated source-geometry review at `9b27641951c880e083bba3d669156336720467c0`: ~15,964.2 m authored main ground route, 10 ground edges + three alternative edges, 12 authored obstacles with no range/road-width validation violations, flight landing approaches ~0.50° and ~0.096° to ground continuation. This is **NOT actual driving, Typecheck, WebGL or full CI**.
+- [ ] Observe test-only GitHub RED job outputs; commits were superseded/cancelled as the active branch progressed, so these must not be described as witnessed npm RED.
+- [ ] Run focused `node --test tests/playable-volcanic-crown*.test.js`, `npm test`, `npm run typecheck`, `npm run build`, `make verify` against exact final HEAD, record all logs and repair any real failures.
+- [ ] Require exact-HEAD FULL CI with every relevant Unit, Cloud Save, Browser (all shards), World Tour (all shards), and Quality Gate result confirmed PASS. Workflow-level Success with Browser/World Tour skipped does not qualify.
+- [ ] Produce real 1440×900 desktop and 390×844 mobile WebGL captures in a real race across ground, both hairpins, crater, arch, lava gorge, timed rockfall, flight and landing; compare against both original JPEG references, not source-art fragments.
+- [ ] Verify actual 8-car shared CourseGraph/RaceFactory integration, sweeps/landings, signed forward checkpoint gates, recovery, results and 20+ complete races with measured median 3–5 minutes; this requires the **read-only** `feature/epic-multiroute-longform-tracks` integration owner's work. Do not register the course for play or remove Coming Soon on this map branch.
+- [ ] Measure 30/60/120 Hz full simulation contact outcomes, Low/Medium/High and Reduced Motion real-GPU p50/p95, bounded particle/draw-call budgets, resource disposal, and physical road/body clearance on mobile.
+- [ ] No PR, deployment, changes to develop/main/integration/siblings, reset or force push.
