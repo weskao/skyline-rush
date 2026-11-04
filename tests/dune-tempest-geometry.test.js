@@ -45,3 +45,23 @@ test('weather is capped by quality and respects Reduced Motion', () => {
   assert.deepEqual(['low','medium','high'].map(q => duneWeatherBudget(zone, q, false)), [24,80,160]);
   for (const quality of ['low','medium','high']) assert.equal(duneWeatherBudget(zone, quality, true), 0);
 });
+
+import { duneSurfaceIntervals, buildDuneTerrainChunk } from '../src/courses/dune-tempest-geometry.ts';
+
+test('aerial gap has only real takeoff and landing pads, never a continuous floating road', () => {
+  assert.deepEqual(duneSurfaceIntervals(0, 180, 1000, 60, 105), [[0,60]]);
+  assert.deepEqual(duneSurfaceIntervals(180, 800, 1000, 60, 105), []);
+  assert.deepEqual(duneSurfaceIntervals(800, 1000, 1000, 60, 105), [[895,1000]]);
+  assert.deepEqual(duneSurfaceIntervals(850, 950, 1000, 60, 105), [[895,950]]);
+});
+test('3D dunes remain continuous between streamed chunks and clear both road edges', () => {
+  const a = buildDuneTerrainChunk(sample,'bend',0,60,28,120,10);
+  const b = buildDuneTerrainChunk(sample,'bend',60,120,28,120,10);
+  assert.equal(a.positions.length, 7*2*5*3);
+  assert.equal(a.indices.length, 6*2*4*6);
+  const p = (g,row,side,col) => g.positions.slice(((row*2+side)*5+col)*3,((row*2+side)*5+col)*3+3);
+  for(let side=0;side<2;side++) for(let col=0;col<5;col++)
+    assert.deepEqual(p(a,6,side,col),p(b,0,side,col));
+  assert.ok(p(a,0,0,0)[1]<10 && p(a,0,1,0)[1]<10);
+  assert.ok(p(a,0,0,4)[0]<-100 && p(a,0,1,4)[0]>100);
+});
