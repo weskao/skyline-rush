@@ -197,6 +197,7 @@ const raceSelect = setupRaceSelectUI({
   clearControls: () => controls.clear(),
   cueUi: () => sound.cue('ui'),
   reducedMotion,
+  showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
 });
 const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
@@ -275,6 +276,7 @@ const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   getRace: () => race,
   getWorld: () => world,
   selectedRace,
+  getSelectedTrackId: () => raceSelect.currentTrackId(),
   calmMotion,
   motionOptions,
   isTutorialActive: () => !!tutorial,
