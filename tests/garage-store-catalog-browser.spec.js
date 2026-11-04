@@ -77,7 +77,7 @@ test('all six standalone Store PNGs preserve the restored WebP source pixels exa
     const metrics = await picture.evaluate(async img => {
       await img.decode();
       const original = new Image();
-      original.src = img.src.replace(/\\.png$/, '.webp');
+      original.src = img.src.replace(/\.png$/, '.webp');
       await original.decode();
       const source = document.createElement('canvas');
       const target = document.createElement('canvas');
