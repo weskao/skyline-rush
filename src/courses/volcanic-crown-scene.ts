@@ -32,18 +32,21 @@ const material=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.
 const to3=(p:readonly number[])=>new THREE.Vector3(p[0],p[1],p[2]);
 function ribbon(edgeId:string, from:number, to:number, halfWidth:number,
   rows:number, center=0, drop=0):THREE.BufferGeometry {
-  const vertices:number[]=[],indices:number[]=[];
+  const vertices:number[]=[],uvs:number[]=[],indices:number[]=[];
   for(let i=0;i<=rows;i++){
     const s=from+(to-from)*i/rows;
     const f=sampleVolcanicRoute(edgeId,s);
     for(const sign of [-1,1]){
       const lat=center+sign*halfWidth;
       vertices.push(...f.point.map((v,k)=>v+f.right[k]*lat-f.up[k]*drop));
+      // Absolute distance makes flowing magma continuous across streamed chunks.
+      uvs.push(sign<0?0:1,s/VOLCANIC_CHUNK_METERS);
     }
     if(i<rows){const v=i*2;indices.push(v,v+1,v+2,v+1,v+3,v+2);}
   }
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
   geo.setIndex(indices);geo.computeVertexNormals();
   return geo;
 }
