@@ -60,3 +60,4 @@ landmarks · `src/world.js` lighting · `src/route-map.js` + `src/style.css` rou
   adding cars.
 
 Docs: `docs/world-tour-scenic-redesign.md`, `docs/world-tour-landmark-polish.md`.
+Route previews, track length or checkpoint changes → Read `docs/classic-road-minimap.md`.

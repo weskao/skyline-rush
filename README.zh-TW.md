@@ -1,4 +1,4 @@
-<!-- source-sha256: 0955c2d6c7f731490fb1896a17eebbdee040d554190e9a4a79b68ff05c5254c3 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 0927f83547dbb00d75739d679ab79c764f29639b52302fb2e2eb95605a943427 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -135,7 +135,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 行動版版面提供轉向、油門、煞車、加速、飛行與 NITRO 按鈕。觸控操作支援同時按住多個按鈕。AUTO 會持續按住油門，讓你專心轉向與飛行；煞車一律優先於它。每種裝置預設皆為開啟；一旦你切換過，你的選擇會記在此瀏覽器中（`skyline-rush-auto`）。離開分頁會暫停比賽並清除按住的輸入。在比賽中點按 SKYLINE RUSH 標誌會暫停並先詢問：**繼續比賽**、**結束比賽**（回到賽道選擇，不儲存本次成績）或 **回到首頁**（重新載入）；無論哪一種，開始畫面都會重新開啟在剛比賽過的賽道上，並捲動到賽道列的中央（第一條與最後一條賽道位於其兩端）。Esc 會讓比賽維持暫停。鏡頭與音效快捷鍵會保留按住中的駕駛操作。在觸控上，拇指在轉向板上向下滑動會煞車，向下並向側邊滑動則會漂移；在 Buttons 模式中，較細的煞車鍵位於轉向按鈕上方、離開拇指擱置的那一排，因此只會在刻意時才被按到；把拇指從 ← 或 → 往上滑入煞車鍵，會同時轉向並煞車，所以單一拇指就能漂移，往下滑回則會放開煞車。觸控按鈕與螢幕角落保持距離，方便拇指觸及，平板則會將它們抬高並放大。
 
-比賽前或暫停時開啟 **Controls**，可調整鍵盤轉向靈敏度或重新對應駕駛動作。選擇一個動作，然後按下按鍵；衝突的按鍵綁定會互換，固定的快捷鍵保持保留，按 Escape 取消擷取。Reset keyboard 會還原預設值。綁定會立即生效，並儲存在 `localStorage['skyline-rush-keymap']`。
+比賽前或暫停時開啟 **Controls**，可調整鍵盤轉向靈敏度或重新對應駕駛動作。選擇一個動作，然後按下按鍵；衝突的按鍵綁定會互換，固定的快捷鍵保持保留，按 Escape 取消擷取。Reset keyboard 會還原預設值。綁定會立即生效，並儲存在 `localStorage['skyline-rush-keymap']`。手機與平板會隱藏鍵盤區塊，直到按下實體（例如藍牙）鍵盤的按鍵；之後會在 `localStorage['skyline-rush-keyboard-seen']` 記住該鍵盤。
 
 同一個面板也控制觸控轉向模式、慣用手、滑動靈敏度、大小、不透明度以及按住/切換式 FLY。**Edit touch layout** 讓你在比賽預覽上拖曳動作按鈕與經典轉向按鈕；**Done editing** 會保留配置，**Reset touch layout** 則還原。位置會在重新載入後保留、隨慣用手鏡像，並在旋轉後維持在視窗範圍內。在矮的橫向螢幕上（高度低於 380 px，例如顯示工具列的 iPhone Safari），開始畫面會省略標語，讓 START RACE 不需捲動，比賽 HUD 也會隱藏速度表與次要電量列，避免面板互相重疊。
 

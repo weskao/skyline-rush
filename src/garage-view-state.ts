@@ -13,8 +13,8 @@ export function updateGarageView(fields: Partial<GarageView>) {
   Object.assign(garageView, fields);
 }
 
-export const garageStudioView = reactive<{ page: 'home' | 'studio'; angle: string; autoRotate: boolean; mode: 'ground' | 'flight'; ownedPaints: string[]; equippedPaint: string }>({
-  page: 'home', angle: '', autoRotate: true, mode: 'ground', ownedPaints: ['pearl'], equippedPaint: 'pearl',
+export const garageStudioView = reactive<{ page: 'home' | 'studio'; angle: string; autoRotate: boolean; mode: 'ground' | 'flight'; wing: boolean; ownedPaints: string[]; equippedPaint: string }>({
+  page: 'home', angle: '', autoRotate: true, mode: 'ground', wing: false, ownedPaints: ['pearl'], equippedPaint: 'pearl',
 });
 export function updateGarageStudioView(fields: Partial<typeof garageStudioView>) {
   Object.assign(garageStudioView, fields);

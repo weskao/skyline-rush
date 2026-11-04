@@ -1,3 +1,678 @@
+## [0.29.0] - 2026-11-03
+
+### 🚀 Features
+
+- **release:** Merge main back into develop after /release
+- **tutorial:** Observe real NITRO sprint before completing practice
+- **tutorial:** Add engine-confirmed air-chain and barrel-roll lessons
+- **tutorial:** Explain failed air-chain and barrel-roll landings with retry coaching
+- **hud:** Add typed Hybrid/Competitive preference storage with regression tests
+- **hud:** Expose localized Hybrid and Competitive Settings selector
+- **nitro:** Track engine-ready states and one-shot audio without reactive HUD updates
+- **touch:** Persist portrait/landscape layouts and move thumb clusters together
+- **hud:** Add persistent Competitive widget visibility controls
+- **hud:** Make READY feedback optional and reset every HUD preference
+- **garage:** Add responsive Home and full-screen Studio shell with localized controls
+- **garage:** Reuse existing WebGL renderer for bounded studio camera orbit
+- **garage:** Wire Studio gestures, paint safety and same-document history
+- **garage:** Render independent studio scene with shared WebGL pipeline and framing QA
+- **garage:** Align responsive studio UI with visual concept and truthful cosmetic states
+- **foldable:** React to viewport segments and keep touch controls outside hinge
+- **tutorial:** Add real drift-and-release reward lesson after braking
+- **tutorial:** Explain drift thresholds and release rewards in both locales
+- **tutorial:** Focus brake and steering controls during drift practice
+- **wave2:** GREEN bounded typed four-stage NITRO and BOOST presentation controller
+- **wave2:** Render distinct sprint palettes via pooled Three.js shader uniforms
+- **wave2:** Drive bounded sprint visuals from race snapshots without physics changes
+- **garage-skins:** Add typed Phase A catalog and safe entitlement contracts
+- **garage-skins:** Render honest read-only Vue catalog with SVG and text fallback
+- **garage-skins:** Expose read-only catalog in existing Garage Studio
+- **garage:** GREEN session-only skin trials, safe equip and account isolation
+- **garage:** GREEN bounded shader palettes for four independent cosmetic slots
+- **garage:** GREEN cosmetic tint on shared Aero VFX shader materials without extra GPU geometry
+- **garage:** GREEN real shared Aero VFX in full-screen Studio with bounded mesh reuse
+- **garage:** GREEN reactive account-scoped VFX skin preview and trial equip boundary
+- **garage:** GREEN accessible bilingual skin preview and trial equip controls
+- **garage:** Bind trial/preview selection to real WebGL Aero race and studio scenes
+- **garage:** Isolate trial skins on Firebase auth changes and update UI regressions
+- **garage:** GREEN blue-only launch flare on race start without gameplay mutation
+- **garage:** GREEN generate real shared NITRO trail from bounded showroom vehicle motion
+- **garage:** GREEN timed trial expiry revokes active shaders without user interaction
+- **garage:** GREEN warm up VFX shader programs before first Studio frame and after context loss
+- **garage:** GREEN expose actual shader program count for WebGL skin preview regression
+- **garage:** Add release strategy scripts/garage-release-build.mjs
+- **garage:** Add release strategy src/garage-release-coming-soon.ts
+- **garage:** Add release strategy src/garage-release-trial.ts
+- **garage:** Add release strategy src/garage-release-released.ts
+- **garage:** Add release strategy src/GarageSkinComingSoon.vue
+- **garage:** Add release strategy src/garage-skin-runtime-locked.ts
+- **garage:** Add release strategy src/garage-skin-palette-locked.ts
+- **garage:** Wire production-safe Vite Strategy aliases and browser build entry
+- **garage:** Route Vue and race cosmetics through build-selected strategies; fail-closed trial entitlements
+- **garage:** Preserve separate Coming Soon, Trial and Released localized presentations
+- **wave2:** Typed eight-car grid contracts, Cup scoring and Sprint orders
+- **wave2:** Integrate physical 8-car grid and WebGL rivals
+- **wave2:** Dynamic eight-racer HUD, map markers and Custom choices
+- **wave2:** Wire reverse-grid into Cup resume and sprint next heat
+- **wave2:** Default all competitive and staged Custom fields to eight racers
+- Bound reward chip queue and race-time cadence
+- Add event-driven, hinge-safe peripheral feedback placement
+- Place reward chips and actionable warnings near available HUD edges
+- **classic:** Denser, more rewarding rings on Coast, Neon and Canyon
+- **tracks:** Bring the first NITRO forward on Sky Spiral and Circuit
+- **records:** Keep re-laid track records under a layout version key
+- **cloud:** Accept layout 2 Classic best ids in Firestore rules
+- **hud:** GREEN archive and display all 18 original 3x UI assets in 1x settings artwork preview
+- **hud:** Decorate original functional controls with 3x source images without changing inputs
+- **wave3:** GREEN archive and display 6 original 3x garage-store-readiness UI icons at 1x CSS
+- **wave3:** GREEN bilingual mission/store read-only catalog previews and 3x artwork
+- **layout:** Twice the rings and pickups, full-width rows and dense trains on all ten tracks
+- **items:** A taken ring or pickup is gone for 2.5 s, then back for everyone
+- **rivals:** Rivals collect NITRO rings and pickups by difficulty
+- **records:** New layout version keys for every track; old ids stay readable
+- **rivals:** See and hear a nearby rival take an item or fire NITRO
+- **whats-new:** Show rivals grabbing nitro in a clip
+- **garage:** Expand catalog to 16 stable IDs and independent shape patterns [full-regression]
+- **garage:** Bind four distinct skin pattern modes to shared Aero VFX shaders [full-regression]
+- **garage:** Wire ten true 3x WebP skins to 1x CSS cards with two-stage fallback [full-regression]
+- **garage:** GREEN physical void pulse beams and repeated premium flare visual demos
+- **garage:** Enable real Skin Preview on Home/Studio with 3D GPU feedback and highlighted cards
+- **garage:** GREEN import all 27 original 3x VFX materials and add six selectable effects
+- **garage:** Expose 11 original status/rarity artworks and unique 3x flare/trail previews
+- **garage:** GREEN animate 3x purple nebula trail via existing ribbon time uniform
+- **garage:** Shared 3x artwork image/fallback widget and themed badge card
+- **garage:** Launch flares redrawn from their badges with body glow
+- **garage:** Full-card Preview click and keyboard support, one Equip/Try button and neon hover UI
+- **garage:** 3d launch flares and volumetric void beams [full-regression]
+- **garage:** Connect four unique 3x vector Airflow thumbnails with SVG fallback
+- **garage:** Cohesive game-style paint collection panels, swatch cards, controls, hover and readable labels
+- **garage:** Enlarge paint car previews and quality-aware gloss [paint-collection]
+- **garage:** Launch flares rise from under the car and NITRO trails get distinct streak styles [full-regression]
+- **garage:** Fit NITRO plumes to round nozzles
+- **garage:** Loop launch flare through countdown
+- **garage:** Enable approved public free trial in gated deploy, keep locked default, audit bundle [full-regression]
+- **make:** Add YES=1 to take phone menu defaults
+- **make:** Shorten phone defaults flag to y=1
+- **items:** [**breaking**] Scale rings to 4 per car, re-roll per race
+- **hud:** Move race hud options into the vfx panel
+- **garage:** Ship six 3x paint cards and real 3D clearcoat sweep [full-regression]
+- **garage:** Frame each orbit by projected car dimensions
+- **garage:** Align stage orbit and animate real flight hardware
+- **garage:** Make ground/flight mode part of studio view state
+- **garage:** Wire flight/ground mode with orbit and zoom
+- **garage:** Accessible bilingual Ground/Flight controls in preview studio
+- **garage:** Reclaim full viewport and compact both Garage and Studio layout [full-regression]
+- **make:** Reuse dev port held by this repo's server
+- **rings:** Add ring trains, rows and pickup runs
+- **garage:** Zoom studio out to the full exhaust
+- **home:** Promote Garage with NEW highlight and swap Practice position
+- **rings:** More rings and pickups, middle-lane ground trains
+- **whats-new:** Lead the upcoming notes with the Garage clip
+- **release-notes:** Highlights may carry a video, checked by the release gate
+- **release-notes:** Clips wait behind a poster and play button and play enlarged on a tap
+- **whats-new:** Play the rivals clip from its card
+- **whats-new:** Autoplay the hero clip inline
+- **garage:** Remember last VFX skin pick [full-regression]
+
+### 🐛 Bug Fixes
+
+- **input:** Stop ios magnifier on held touch controls
+- **tutorial:** Reject stale landing on barrel-roll reward events
+- **tutorial:** Derive progress maximum from actual lesson count
+- **tutorial:** Synchronize real flight/flick cues and repair touch regression [full-regression]
+- **tutorial:** Isolate flight credit and coach completed barrel-roll landings
+- **tutorial:** Make interrupted NITRO practice retryable without fake charges
+- **tutorial:** Align barrel-roll browser assertions and safe-glide coaching
+- **tutorial:** Keep held steering continuous at combo lesson boundaries
+- **hud:** Handle blocked localStorage getters during initial render
+- **touch:** Keep active steering during mobile browser chrome resize
+- **garage:** Restore orbit on pointer release and assert bounded zoom events
+- **garage:** Dispose studio-only geometry without invalidating shared car meshes (TDD)
+- **garage:** Handle Three.js multi-material types during stage resource cleanup
+- **garage:** Localize showroom accessibility and stabilize WebGL browser regression waits
+- **garage:** Enforce camera silhouette bounds, persistent default equip and accessible paint states
+- **garage:** Keep unlock copy truthful and invalidate stale camera QA evidence
+- **foldable:** CI-scaled timeout and state-independent mobile HUD assertions
+- **foldable:** Restore audio accessibility, align nitro readiness and localize HUD; stabilize real-touch practice [full-regression]
+- **foldable:** Verify orientation-scoped touch layouts and stabilize real multi-touch tutorial [full-regression]
+- **foldable:** Cap audio panel height on short screens
+- **tutorial:** Narrow legacy JS drift state with typed adapter for TS strict
+- **ios:** Prevent game long-press loupe without swallowing UI taps
+- **tutorial:** Measure NITRO sprint from activation speed
+- **develop:** Restore wave 1 work lost in drift merge [full-regression]
+- **hud:** Localize HUD settings copy and cap the panel on short screens
+- **hud:** Keep the reviewed CSS baseline byte-identical
+- **wave2:** Immediately hide disabled sprint VFX and limit reduced-motion flow
+- **wave2:** Repair video CI, photo export module ratchet and Wave1 test contracts [full-regression]
+- **wave2-vfx:** Repair typed pixel export, actual NITRO recovery and touch CI assertions [full-regression]
+- **garage:** GREEN clear expired/revoked trial equips and preview state
+- **garage:** GREEN dispose stage-owned Aero geometries exactly once without freeing shared car model
+- **garage:** GREEN shared NITRO wake demo without camera silhouette or car offset regression
+- **garage:** Exclude cosmetics from camera fit and actual vehicle silhouette bounds
+- **garage:** GREEN no unpublished skin IDs in shared renderer or locked production assets
+- **garage:** Keep skin runtime type assertions in return expressions [full-regression]
+- **garage:** Keep trial equipment map non-nullable for strict TS
+- **garage:** Restore Vite config factory contracts and single cloud auth observer [full-regression]
+- **vfx:** Restore the full NITRO/BOOST camera FOV on every quality tier
+- **garage:** Show the cyan NITRO trail from the first frames of NITRO
+- **wave2:** Dynamically initialize Circuit laps and eight-racer VFX pools
+- **wave2:** Preserve legacy Custom signatures and display dynamic field totals
+- **wave2:** Compact 8-car HUD, keep 4-car home showcase and exercise visible Custom selector
+- **wave2:** Keep solo rank empty and test dynamic NITRO accessibility without AI physics noise
+- **wave2:** Localize eight racer labels and keep Chinese NITRO status readable
+- **ci:** [full-regression] align eight-car UI regression contracts and HUD spacing
+- **ci:** [full-regression] align persisted layout and reviewed eight-car CSS contract
+- **ci:** Bound short-landscape settings panel and retry real tutorial maneuvers [full-regression]
+- **hud:** Keep the tablet live map clear of flight telemetry [full-regression]
+- **hud:** Move overlapping race HUD blocks apart on folds, phones and tablet [full-regression]
+- Prioritize queued NITRO before rendering next badge [full-regression]
+- Preserve immediate reward order while prioritizing backlog [full-regression]
+- Keep peripheral race chip translucent and road-safe before first placement [full-regression]
+- **hud:** Restore phone flight-director hide while a callout shows [full-regression]
+- **hud:** Size reward chips to their text and use free side gaps [full-regression]
+- **classic:** Canyon keeps its ring volume; only the first NITRO comes earlier
+- **hud:** Re-place the reward chip when the GO countdown clears [full-regression]
+- **hud:** Keep the short-window race callout clear of the centre view without touch [full-regression]
+- Remeasure moved flight telemetry and include late NITRO HUD [full-regression]
+- **release:** Refuse to tag changed Firestore rules until their deploy is attested
+- **hud:** Make 3x artwork overlay visible behind semantic SVG and button labels
+- **hud:** Keep decorative 3x art within real control boxes, preserving pointer events
+- **hud:** Keep the short-landscape callout out of the centre view [full-regression]
+- **hud:** Re-place a callout raised during GO! once the telemetry appears [full-regression]
+- **ci:** Validate upstream suites before WebGL artifacts
+- **history:** Keep the OLD LAYOUT tag clear of the expand chevron [full-regression]
+- **history:** Append the OLD LAYOUT tag rule after the pinned main CSS block [full-regression]
+- **garage:** GREEN rearm trial expiry across JS timer limits [full-regression]
+- **garage:** Keep locked production shader ABI neutral and forbid expanded skin leaks [full-regression]
+- **garage:** Clear expired trial selection before renewal (TDD GREEN) [full-regression]
+- **garage:** Force visible Home showroom VFX demo without allocating per-frame settings
+- **garage:** Keep immutable preview world origin while billboard flares face camera
+- **garage:** Prevent unreleased Void pulse GPU code from leaking into locked build
+- **garage:** GREEN stationary Home showroom previews real NITRO ribbon without mutating race
+- **garage:** GREEN badge image fallback keeps source gallery accessible
+- **garage:** Guard shader power, localize badge art and show void beams [full-regression]
+- **garage:** Enforce exact 1x CSS image size and correct neon theme test regex
+- **garage:** Equipped vfx skins replace standard fx [full-regression]
+- **garage:** Resolve neon card hue per item instead of freezing parent CSS variable
+- **test:** Restore clean preview test file and check 3x SVG airflow paths
+- **garage:** Respect legacy world module size limit while applying paint finish
+- **garage:** Keep world.js within legacy line budget
+- **garage:** Dim whole skin card on press, glow selected
+- **vfx:** Hide airflow streamlines while sprinting off
+- **ci:** Restore quality-gate order lost in an earlier garage merge
+- **i18n:** Drop design codes from HUD mode labels
+- **garage:** Scope Ground/Flight Playwright selectors and reduce Firestore rules expression cost; sync develop [full-regression]
+- **ui:** Remove 3x artwork under buttons
+- **garage:** Regenerate eight clipped 3x WebP badges and protect gallery geometry
+- **garage:** Redraw six full 3x store icons, prevent clipping and document visual gate [full-regression]
+- **garage:** Restore vivid 3D Store artwork with unclipped 3x WebP icons [full-regression]
+- **garage:** Stop rendering covered home under dialogs
+- **i18n:** Move HUD artwork gallery copy into the locale tables
+- **garage:** Frame flight mode by its folded-wheel width
+- **home:** One-line tagline pays for the wrapped Practice row
+- **home:** Keep the desktop Start row on one line with the Garage NEW tag [full-regression]
+- **hud:** Draw the 3x artwork disclosure in the page
+
+### 💼 Other
+
+- **wave1:** Integrate tutorial UX combos into develop
+- **wave1:** Integrate mobile controls and HUD into develop
+- **wave1:** Integrate Garage Preview Studio into develop
+- **develop:** Sync Wave 1 mobile HUD, tutorial and garage into foldable feature
+- **wave2:** Sync develop into high-speed-vfx without losing Wave 2 design
+- **skins:** Add four transparent vector category icons [skip ci]
+- Non-destructively integrate develop Wave 1 into garage VFX skins
+- **develop:** Preserve Wave 1 Garage/HUD with drift tutorial and iOS touch guard
+- **garage:** Deny unpublished trial JS/assets in production and use separate test-only bundle
+- Origin/develop into feature/garage-vfx-skins [full-regression]
+- Origin/develop 54de8259 into feature/garage-vfx-skins [full-regression]
+- Origin/develop bcf9b3f5 (high-speed VFX) into feature/garage-vfx-skins [full-regression]
+- **develop:** Preserve Wave 1 and Wave 2 planning baseline
+- **develop:** Integrate Foldable and Garage (dece5745) into eight-car grid [full-regression]
+- Integrate develop into feature/in-race-feedback-visibility [full-regression]
+- Feature/in-race-feedback-visibility into develop
+- Integrate develop into feature/in-race-feedback-visibility [full-regression]
+- Combine remote telemetry/NITRO placement fix with GO countdown refresh [full-regression]
+- Feature/in-race-feedback-visibility into develop
+- **store:** Add transparent non-transactional collection icons [skip ci]
+- **develop:** Preserve Garage RED regression while syncing HUD fixes [full-regression]
+- **garage:** Restore three cropped 216px 3x badge masters and their runtime WebPs
+- **garage:** Four original 288-unit transparent airflow vectors for 3x thumbnail display
+- **develop:** Preserve Wave3 source gallery and CI guard with Garage compact UI [full-regression]
+- **develop:** Sync garage VFX Studio with latest pickups and CI optimizations [full-regression]
+- **wave3:** Archive six original 3x garage store WebP images
+- **wave3:** Archive eight original 3x rewards and missions WebP images
+- **wave2:** Archive first 13 original 3x garage skins WebP materials
+- **wave2:** Archive remaining 14 original 3x garage skins WebP materials
+- **wave1:** Archive first nine 3x mobile HUD WebP images
+- **wave1:** Archive remaining nine 3x mobile HUD WebP images
+- **develop:** Sync 3x HUD artwork integration with latest develop
+
+### 🚜 Refactor
+
+- **tutorial:** Extract bilingual lesson copy to satisfy module size gate
+- **hud:** Gate READY feedback at the HUD boundary without main.js growth
+- **hud:** Move nitro status copy to its catalog
+- **garage:** Keep world scene adapter at legacy line ceiling
+- **garage:** Honor main/world legacy module-size ratchets and use typed auth dependency
+- **garage:** Node-compatible #imports for TDD and Vite build aliases
+- Restrict placement measurements to structural changes and preserve warnings
+- **hud:** Reuse 3x responsive artwork widgets for all 18 source images
+- **wave3:** Reuse the same safe 3x artwork and neon card widgets for gallery
+- **rivals:** Move rival NITRO timing into rival-items.ts
+- **items:** NITRO_MAX, pickup and ring NITRO amounts live in ring-layout.ts
+- **garage:** Keep 1126-line world.js legacy ceiling with no per-frame allocations
+- **garage:** Reuse 3x image widget and CSS-toned card for all 11 badges and 22 skins
+- **art:** Shared artwork widget supports rectangular 3x HUD buttons without duplicate rendering code
+- **art:** One responsive neon card for 3x badges, mission, store and HUD images
+- **garage:** Use semantic full-card Preview button with separate Equip action
+- **race:** Move the app createRace wrapper out of main.js
+- **garage:** Remove redundant disabled tabs and reserved scrollbar gutter [full-regression]
+
+### 📚 Documentation
+
+- **spec:** Define SDD and BDD for foldable-layout-adaptation
+- **plan:** Create Superpowers SDD-BDD-TDD plan for foldable-layout-adaptation
+- **visual:** Add screen and asset design prompt for foldable-layout-adaptation
+- **plan:** Add visual art direction and responsive asset gate for foldable-layout-adaptation
+- **prompt:** Add standalone GPT Wave 2 assignment for foldable-layout-adaptation
+- **wave:** Specify GPT-made assets and transparent-background policy for foldable-layout-adaptation
+- **visual:** Add optional GPT image creation and alpha asset QA for foldable-layout-adaptation
+- **plan:** Add conditional GPT asset generation and alpha QA task for foldable-layout-adaptation
+- **spec:** Clarify Wave 2-3 optional images, alpha channel and BDD asset fallback for foldable-layout-adaptation
+- **plan:** Record independent artwork status and deferred Wave prerequisites [skip ci]
+- **dispatch:** Hand off prebuilt artwork and defer runtime until dependency gates [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Require actual approved-art visual gate [skip ci]
+- **dispatch:** Require user-approved reference fidelity [skip ci]
+- **visual:** Require true reference assets before image generation [skip ci]
+- **wave2:** Target develop and enforce full regression dependency gate [skip ci]
+- **wave2:** Align foldable-layout-adaptation spec and plan to develop [skip ci]
+- **spec:** Define SDD and BDD for tutorial-ux-combos
+- **plan:** Create Superpowers SDD-BDD-TDD plan for tutorial-ux-combos
+- **visual:** Add screen and asset design prompt for tutorial-ux-combos
+- **plan:** Add visual art direction and responsive asset gate for tutorial-ux-combos
+- **prompt:** Add standalone GPT Wave 1 assignment for tutorial-ux-combos
+- **tutorial:** Record implementation and cancelled CI verification gate
+- **tutorial:** Reconcile implementation checklist before final CI gate
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **tutorial:** Add explicit approved-art visual fidelity gate [skip ci]
+- **tutorial:** Update GPT handoff with original screenshot comparison [skip ci]
+- **visual:** Bind image generation to original high-fidelity art [skip ci]
+- **spec:** Define SDD and BDD for mobile-controls-hud
+- **plan:** Create Superpowers SDD-BDD-TDD plan for mobile-controls-hud
+- **visual:** Add screen and asset design prompt for mobile-controls-hud
+- **plan:** Add visual art direction and responsive asset gate for mobile-controls-hud
+- **prompt:** Add standalone GPT Wave 1 assignment for mobile-controls-hud
+- **visual:** Add editable layout proposal blueprints [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Add reviewer-locked visual fidelity gate [skip ci]
+- **dispatch:** Lock source-image visual acceptance prompt [skip ci]
+- **visual:** Bind image generation to original high-fidelity art [skip ci]
+- **assets:** Specify verified 3x art pack, 1x CSS sizing and pending import [skip ci]
+- **dispatch:** Require 3x raster to display at 1x CSS dimensions [skip ci]
+- **assets:** Commit exact 3x filenames, checksums and 1x import contract for mobile-controls-hud [skip ci]
+- **plan:** Link exact raster handoff and CSS sizes [skip ci]
+- **dispatch:** Point to exact 3x image manifest [skip ci]
+- **assets:** Use valid candidate key in integration example [skip ci]
+- **spec:** Define SDD and BDD for garage-preview-studio
+- **plan:** Create Superpowers SDD-BDD-TDD plan for garage-preview-studio
+- **visual:** Add screen and asset design prompt for garage-preview-studio
+- **plan:** Add visual art direction and responsive asset gate for garage-preview-studio
+- **prompt:** Add standalone GPT Wave 1 assignment for garage-preview-studio
+- **garage:** Reconcile typed studio adapter and record unverified acceptance gates
+- **visual:** Add editable layout proposal blueprints [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Add reviewer-locked visual fidelity gate [skip ci]
+- **dispatch:** Lock source-image visual acceptance prompt [skip ci]
+- **visual:** Bind image generation to original high-fidelity art [skip ci]
+- **spec:** Define SDD and BDD for high-speed-vfx
+- **plan:** Create Superpowers SDD-BDD-TDD plan for high-speed-vfx
+- **visual:** Add screen and asset design prompt for high-speed-vfx
+- **plan:** Add visual art direction and responsive asset gate for high-speed-vfx
+- **prompt:** Add standalone GPT Wave 2 assignment for high-speed-vfx
+- **wave:** Specify GPT-made assets and transparent-background policy for high-speed-vfx
+- **visual:** Add optional GPT image creation and alpha asset QA for high-speed-vfx
+- **plan:** Add conditional GPT asset generation and alpha QA task for high-speed-vfx
+- **spec:** Clarify Wave 2-3 optional images, alpha channel and BDD asset fallback for high-speed-vfx
+- **vfx:** Add independent NITRO/BOOST storyboard reference [skip ci]
+- **plan:** Record independent artwork status and deferred Wave prerequisites [skip ci]
+- **dispatch:** Hand off prebuilt artwork and defer runtime until dependency gates [skip ci]
+- **visual:** Reference prebuilt SVG assets and avoid regeneration [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Add reviewer-locked visual fidelity gate [skip ci]
+- **dispatch:** Lock source-image visual acceptance prompt [skip ci]
+- **visual:** Bind image generation to original high-fidelity art [skip ci]
+- **wave2:** Target develop and enforce full regression dependency gate [skip ci]
+- **wave2:** Align high-speed-vfx spec and plan to develop integration [skip ci]
+- **wave2:** Record actual RED evidence, implementation and remaining visual/CI gates
+- **wave2:** Track completed implementation subitems and pending acceptance in TODO #10 [full-regression]
+- **spec:** Define SDD and BDD for garage-vfx-skins
+- **plan:** Create Superpowers SDD-BDD-TDD plan for garage-vfx-skins
+- **visual:** Add screen and asset design prompt for garage-vfx-skins
+- **plan:** Add visual art direction and responsive asset gate for garage-vfx-skins
+- **prompt:** Add standalone GPT Wave 2 assignment for garage-vfx-skins
+- **wave:** Specify GPT-made assets and transparent-background policy for garage-vfx-skins
+- **visual:** Add optional GPT image creation and alpha asset QA for garage-vfx-skins
+- **plan:** Add conditional GPT asset generation and alpha QA task for garage-vfx-skins
+- **spec:** Clarify Wave 2-3 optional images, alpha channel and BDD asset fallback for garage-vfx-skins
+- **plan:** Record independent artwork status and deferred Wave prerequisites [skip ci]
+- **dispatch:** Hand off prebuilt artwork and defer runtime until dependency gates [skip ci]
+- **visual:** Reference prebuilt SVG assets and avoid regeneration [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Require actual approved-art visual gate [skip ci]
+- **dispatch:** Require user-approved reference fidelity [skip ci]
+- **visual:** Require true reference assets before image generation [skip ci]
+- **assets:** Specify verified 3x art pack, 1x CSS sizing and pending import [skip ci]
+- **dispatch:** Require 3x raster to display at 1x CSS dimensions [skip ci]
+- **assets:** Commit exact 3x filenames, checksums and 1x import contract for garage-vfx-skins [skip ci]
+- **plan:** Link exact raster handoff and CSS sizes [skip ci]
+- **dispatch:** Point to exact 3x image manifest [skip ci]
+- **assets:** Use valid candidate key in integration example [skip ci]
+- **wave2:** Target develop and enforce full regression dependency gate [skip ci]
+- **wave2:** Align garage-vfx-skins spec and plan to develop [skip ci]
+- **garage-skins:** Record Phase A implementation, pending QA and Phase B gate
+- **garage:** Phase B runtime contract, testing evidence gaps and upstream gates [full-regression]
+- **garage:** Document SOLID Strategy rollout, Vite bundle isolation and backend entitlement security
+- **spec:** Define SDD and BDD for race-difficulty-eight-car-grid
+- **plan:** Create Superpowers SDD-BDD-TDD plan for race-difficulty-eight-car-grid
+- **visual:** Add screen and asset design prompt for race-difficulty-eight-car-grid
+- **plan:** Add visual art direction and responsive asset gate for race-difficulty-eight-car-grid
+- **prompt:** Add standalone GPT Wave 2 assignment for race-difficulty-eight-car-grid
+- **wave:** Specify GPT-made assets and transparent-background policy for race-difficulty-eight-car-grid
+- **visual:** Add optional GPT image creation and alpha asset QA for race-difficulty-eight-car-grid
+- **plan:** Add conditional GPT asset generation and alpha QA task for race-difficulty-eight-car-grid
+- **spec:** Clarify Wave 2-3 optional images, alpha channel and BDD asset fallback for race-difficulty-eight-car-grid
+- **plan:** Record independent artwork status and deferred Wave prerequisites [skip ci]
+- **dispatch:** Hand off prebuilt artwork and defer runtime until dependency gates [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Add reviewer-locked visual fidelity gate [skip ci]
+- **dispatch:** Lock source-image visual acceptance prompt [skip ci]
+- **visual:** Bind image generation to original high-fidelity art [skip ci]
+- **wave2:** Target develop and enforce full regression dependency gate [skip ci]
+- **wave2:** Align race-difficulty-eight-car-grid spec and plan to develop integration [skip ci]
+- **wave2:** Record implementation, actual RED/GREEN gates and remaining verification [full-regression]
+- **wave2:** Request exact-head cross-platform full CI after 8-car repairs [full-regression]
+- **ux:** Specify in-race road-safe feedback and toast behavior [skip ci]
+- **ux:** Plan TDD peripheral race toast and forward-road visibility [skip ci]
+- Record road-safe HUD implementation constraints [full-regression]
+- **plan:** Classic first-three-map pickup density plan
+- **plan:** Version-key design and TODO tracking for classic pickup density
+- **todo:** Pause classic pickup density until Wave 2 lands in develop
+- **todo:** Queue stage 2 rival item pickups behind classic pickup density
+- **plan:** Other tracks and modes addendum for classic pickup density
+- **plan:** User decisions on Aurora, Sky Spiral, Circuit and bot extension
+- **plan:** Align AC2/AC3 with the expanded scope
+- **plan:** Difficulty-curve decision and complete stage plan (S0-S9, stage 2)
+- **plan:** Record S3 develop merge and unchanged economy numbers
+- **release:** Stamp shipped 0.28.0 notes and add reviewed 0.29.0 ring highlights
+- **plan:** Record S6-S8 results, Firestore deploy order and render table [full-regression]
+- **todo:** Tick S7 and S9 for classic pickup density (CI 41319983990 green)
+- **release:** Deploy changed Firestore rules before tagging
+- **hud:** Map 18 original 3x assets to live buttons, preview gallery, and QA gates
+- **spec:** Define SDD and BDD for garage-store-readiness
+- **plan:** Create Superpowers SDD-BDD-TDD plan for garage-store-readiness
+- **visual:** Add screen and asset design prompt for garage-store-readiness
+- **plan:** Add visual art direction and responsive asset gate for garage-store-readiness
+- **prompt:** Add standalone GPT Wave 3 assignment for garage-store-readiness
+- **wave:** Specify GPT-made assets and transparent-background policy for garage-store-readiness
+- **visual:** Add optional GPT image creation and alpha asset QA for garage-store-readiness
+- **plan:** Add conditional GPT asset generation and alpha QA task for garage-store-readiness
+- **spec:** Clarify Wave 2-3 optional images, alpha channel and BDD asset fallback for garage-store-readiness
+- **plan:** Record independent artwork status and deferred Wave prerequisites [skip ci]
+- **dispatch:** Hand off prebuilt artwork and defer runtime until dependency gates [skip ci]
+- **visual:** Reference prebuilt SVG assets and avoid regeneration [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Require actual approved-art visual gate [skip ci]
+- **dispatch:** Require user-approved reference fidelity [skip ci]
+- **visual:** Require true reference assets before image generation [skip ci]
+- **assets:** Specify verified 3x art pack, 1x CSS sizing and pending import [skip ci]
+- **dispatch:** Require 3x raster to display at 1x CSS dimensions [skip ci]
+- **assets:** Commit exact 3x filenames, checksums and 1x import contract for garage-store-readiness [skip ci]
+- **plan:** Link exact raster handoff and CSS sizes [skip ci]
+- **dispatch:** Point to exact 3x image manifest [skip ci]
+- **assets:** Use valid candidate key in integration example [skip ci]
+- **wave3:** Guide Coming Soon store to six verified 3x WebPs and 1x CSS
+- **wave3:** Update garage-store-readiness raster handoff with verified 3x Git source
+- **wave3:** Make store 3x source assets mandatory in agent and dispatch entrypoints
+- **wave3:** Record all 6 verified 3x source images and non-entitlement UI integration
+- **plan:** Stage 2 rival item pickups (planned, not scheduled)
+- **plan:** Stage 2 decisions, inventory and slice plan
+- **release-notes:** 0.29.0 What's New for rivals grabbing NITRO and twice the rings
+- **plan:** Stage 2 measurements, AC5 WebGL table and Tokyo draw attribution
+- **plan:** Attribute Tokyo's draw-call rise to car position, not item rendering [full-regression]
+- **todo:** Tick stage 2 rival item pickups and R11 after green quality-gate
+- **plans:** Mark stage 2 rival item pickups done after green develop CI
+- **release:** Require real-game media for visible highlights
+- **release:** Review 0.29.0 notes
+- **release:** Record What's New media once, at release
+- **claude:** Move situational guidance into docs/
+- **claude:** Dedupe docs/ into path-scoped rules
+- **todo:** Plan air-road combo, tutorial and mobile controls UX
+- **todo:** Plan separate Garage Skins and visual effects feature
+- **todo:** Define Garage Studio, trial cosmetics, economy roadmap and mobile HUD UX
+- **todo:** Clarify cosmetic earning paths and scope-specific verification gates
+- **todo:** Plan barrel-roll lesson in tutorial
+- **todo:** Plan sustained tutorial NITRO sprint and speed-aware racing VFX
+- **todo:** Link verified official Asphalt nitro reference
+- **todo:** Plan harder AI, eight-car racing and reverse-grid multi-heat rules
+- **todo:** Correct race-standings path formatting
+- **todo:** Confirm Hybrid A+B default with optional Competitive C HUD mode
+- **todo:** Require cross-platform responsive and quality-tier acceptance for all UX features
+- **plan:** Add multi-wave GPT dispatch index and dependency verification gatebook
+- **waves:** Document optional GPT asset production, transparent backgrounds and acceptance across Wave 2-3
+- **waves:** Index early SVG assets and deferrals for Wave 2-3 [skip ci]
+- **visual:** Define signoff and real-render fidelity gate [skip ci]
+- **waves:** Index image-to-implementation visual fidelity process [skip ci]
+- **todo:** Require reference-approved visual parity before UI completion [skip ci]
+- **waves:** Index 3x candidate art, CSS 1x sizes and import gates [skip ci]
+- **waves:** Link reusable 3x asset manifests and honest binary import status [skip ci]
+- **waves:** Record W1-to-develop merges and W2 dispatch gates [skip ci]
+- **todo:** Expand Wave 2 Garage VFX Phase B visual assets and unique skin acceptance
+- **garage:** Map 16 runtime effects to original art and unapproved candidates
+- **todo:** Record partial Phase B effect implementation and remaining visual/CI gates
+- **garage:** Record recovered ZIP, 27 archived WebPs and ten trial 3x-to-1x integrations
+- **garage:** Update 27-art/22-skin matrix and 59-art cross-wave checkpoint [full-regression]
+- **garage:** 59-image clipping audit and reusable 3x art components [full-regression]
+- **todo:** Record garage skin replacement and 3d fx [full-regression]
+- **garage:** Full-card preview UX and four 3x airflow designs [full-regression]
+- **claude:** Require AI-generated images at 3x display size
+- **readme:** Compact feature-first media layout with track montage
+- **hud:** Describe Race HUD in the VFX panel; use ciTimeout in its spec
+- **garage:** Ground/flight acceptance and screenshot evidence [full-regression]
+- **assets:** Document 59 verified 3x WebP materials and 1x CSS Wave 3 handoff
+- Note artwork restore path
+- **rings:** Document ring trains, rows, pickup runs
+- **todo:** Track studio exhaust zoom evidence
+- **rings:** Document middle-lane trains and 5 slots per car
+- **claude:** Move file-scoped sections into rules
+- **release-notes:** Document poster + play clips; encode clips at the best CRF under 1 MB
+- **release:** Review 0.29.0 notes
+
+### ⚡ Performance
+
+- **cars:** Draw each car's static parts once per material [full-regression]
+- **effects:** Draw rings and pickups through one instanced mesh per material
+- **markers:** Cull instanced ring/pickup pools by this frame's bound
+
+### 🎨 Styling
+
+- **wave2:** Color-code seven opponents and offset minimap by actual lane
+- Compact race feedback into peripheral single-line chips
+- Reserve gap between peripheral feedback and protected roadway
+
+### 🧪 Testing
+
+- **ci:** Require develop in the CI push triggers
+- **tutorial:** Cover real ten-step keyboard and multi-touch practice
+- **tutorial:** Keep airborne stunt landings gentle under real physics
+- **tutorial:** Require all 49 bilingual coaching keys including reverse steer
+- **tutorial:** Synchronize real flick gestures and WebGL effect decay
+- **tutorial:** Synchronize touch maneuvers with real WebGL frames
+- **tutorial:** Verify genuine glide barrel roll before clean landing
+- **tutorial:** Cover retryable NITRO sprint in real keyboard WebGL flow
+- **tutorial:** Scale the sprint interrupt wait for ci
+- **tutorial:** Keep touch steering edges within barrel-roll timing window
+- **garage:** Add bounded studio orbit camera contract (red-green)
+- **garage:** Add BDD cross-viewport studio and navigation regression scenarios
+- **garage:** Capture real WebGL screenshots and assert car bounds and draw metrics
+- **vfx:** Await actual barrel-roll ribbon fade under software WebGL
+- **garage:** Real-WebGL quality-tier evidence and all-angle silhouette regressions
+- **garage:** Archive before/after real-WebGL and complete UI screenshots at target viewports
+- **foldable:** Add viewport-segment geometry and real DOM hinge regressions
+- **foldable:** Preserve toolbar-resize input contract with hinge-aware regression
+- **foldable:** Cover short-landscape desktop locales and horizontal hinge screenshots
+- **foldable:** Upload real layout screenshots and run all acceptance shards [full-regression]
+- **foldable:** Preserve real tutorial flight through button flick and retry soft chain landing [full-regression]
+- **tutorial:** Declare fly touch point for barrel roll [full-regression]
+- **tutorial:** Specify real drift payout and negative behavior before implementation
+- **tutorial:** Verify bilingual drift coaching and eleven lessons
+- **tutorial:** Steer within road while proving real drift payout
+- **ios:** Target non-scrollable HUD for long-press regression
+- **tutorial:** Restore drift loop lost to escaped newlines
+- **tutorial:** Drive the DRIFT lesson in keyboard and touch practice
+- **tutorial:** Release fly in one touch dispatch
+- **tutorial:** Send the barrel roll flick in one turn
+- **hud:** Follow the Wave 1 HUD spec labels [full-regression]
+- **touch:** Find the NITRO button by its control [full-regression]
+- **touch:** Find the handoff NITRO button by its control
+- **tutorial:** Retry missed air lessons with real input [full-regression]
+- **touch:** Read custom layouts from the per-orientation store [full-regression]
+- **wave2:** RED contracts for bounded four-phase sprint visual state
+- **wave2:** RED regression for renderer NITRO/BOOST color and pooled resources
+- **wave2:** Browser WebGL color, shader lifecycle and twelve-second visual evidence
+- **wave2:** Measure actual 10-second browser frame-time p50 and p95
+- **vfx:** Scale nitro recovery poll by ci factor
+- **touch:** Read edited layout from orientation key
+- **ui:** Pin the reviewed CSS before the Wave 1 NITRO block [full-regression]
+- **touch:** Release toggled FLY without post-cue layout wait [full-regression]
+- **garage-skins:** Cover Phase A BDD trial, ownership, account isolation and asset fallbacks
+- **garage-skins:** Add Phase A catalog browser BDD and missing-art fallback
+- **garage-skins:** Pin actual legacy PAINTS unlock thresholds
+- **tutorial:** Restore drift loop lost to escaped newlines
+- **garage:** RED trial equip, expiry, account isolation and permanent entitlement contract
+- **garage:** RED shader-safe visual palette per cosmetic category
+- **garage:** RED shared Aero shader palette preserves GPU resource identity
+- **garage:** RED full-screen Stage uses shared Aero shader and bounded preview GPU resources
+- **garage:** RED reactive trial preview/equip and account-bound renderer notifications
+- **garage:** RED live Vue trial controls and shared WebGL palette in 3 viewports
+- **garage:** RED new blue launch flare triggers on race start without boost
+- **garage:** RED require real NITRO trail geometry visible in Studio preview
+- **garage:** RED trial flag revocation clears both preview and transient equipped skins
+- **garage:** RED require disposal of new unique studio VFX geometries
+- **garage:** RED automatically revoke timed free trial and refresh live renderer
+- **garage:** RED moving shared VFX preview must not shift the car silhouette
+- **garage:** RED studio cosmetic shader prewarming and event-driven GPU resource reuse
+- **garage:** RED changing skins never compiles new GPU shader programs after warmup
+- **garage:** Fix Playwright program-count numeric attribute regex
+- **garage:** RED VFX geometry must not affect actual vehicle silhouette camera bounds
+- **garage:** RED build-time release strategies, fail-closed prod aliases and bundle leak audit
+- **garage:** RED mandatory default production bundle audit in CI and inert coming-soon UI
+- **garage:** RED Pages deployment must pin reviewed release strategy
+- **garage:** RED exclude all unreleased cosmetic IDs from shared shader and deployment artifact
+- **wave2:** RED scenarios for eight-car fields, difficulty and legacy cup
+- **wave2:** Update obsolete four-car assumptions while preserving legacy paths
+- **wave2:** Cover real reverse-grid Cup/Sprint, storage and WebGL HUD
+- **wave2:** Isolate steering physics and preserve three-car home showcase
+- **wave2:** Validate seven knockout rounds, isolate air-dash physics
+- **wave2:** Differentiate eight-car new Custom defaults from legacy v1 signatures
+- **wave2:** Exercise real two-car Custom race and responsive HUD WebGL
+- **wave2:** Align classic World Tour marker counts and bilingual eight-car setup copy
+- Locate combined Audio/HUD settings by stable button id [full-regression]
+- Assert current Nitro READY state in charged FLY tests [full-regression]
+- **ci:** Align touch layout assertions with orientation v2 schema
+- **ci:** Allow bounded engine-verified touch retries to complete [full-regression]
+- Sample real touch steering across a frame [full-regression]
+- **ui:** Pin the reviewed CSS before the Wave 1 NITRO block [full-regression]
+- **tutorial:** Avoid layout round trip during powered landing [full-regression]
+- **hud:** Assert in-race HUD blocks never overlap on phones, tablet and folds
+- **red:** Specify bounded road-safe reward feedback cadence
+- **red:** Assert WebGL racing road stays clear of event chips
+- Ensure peripheral placement avoids road, HUD and hinge
+- **i18n:** Wait out the 2 s near-miss cooldown before the charge callout [full-regression]
+- **economy:** Measure Classic BOOST/NITRO economy on all ten tracks
+- **economy:** Measure modes, Circuit, Endless and daily layouts with a capped bot
+- **records:** Export, import and cloud merge keep old and layout 2 records
+- **browser:** Seed current-layout records under their layout 2 ids
+- **cloud:** Firestore accepts layout 2 Circuit and mode record keys and run layout fields [full-regression]
+- **browser:** Read Coast layout 2 records and fly each first-group ring at its own height [full-regression]
+- **hud:** RED all eighteen 3x UI originals must render at 1x in settings preview
+- **hud:** RED 3x action glyphs must decorate real controls without intercepting clicks
+- **hud:** RED all 18 native 3x artworks must fit safe shared cards on mobile and desktop
+- **hud:** RED translucent 3x button images must fit existing hit regions
+- **wave3:** RED 6 original 3x garage-store-readiness images need safe Garage UI
+- **art:** RED shared 3x cards need safe frames and caption separation at all viewports
+- **wave3:** RED read-only interactive mission/store catalog with bilingual 3x artwork
+- **wave3:** Exercise locale switch outside modal before reopening preview
+- **economy:** Measure every mode, track and difficulty with seven rivals
+- **economy:** The bot steers around rivals like a player
+- **economy:** Lock AC1 player take and AC2 rival NITRO across every mode, track and difficulty
+- **history:** Seed saved runs on each track's current layout version [full-regression]
+- **hud:** Measure transient HUD overlays in one atomic snapshot [full-regression]
+- **hud:** Keep the portrait callout-during-GO! guard [full-regression]
+- **hud:** Keep ring-reward and low-charge specs independent of rival pickups and denser refills [full-regression]
+- **garage:** RED guard Wave3 previews and approved public-trial VFX integration
+- **garage:** Reproduce long-duration trial expiry timer gap (RED)
+- **garage:** RED 16 distinct VFX skins and shared shader patterns [full-regression]
+- **garage:** Expect preview and try controls for all 16 skins [full-regression]
+- **garage:** RED expired session trial must not revive temporary equip
+- **garage:** Expect original 3x WebP at 1x CSS and staged SVG fallback (RED)
+- **garage:** Correct 3x WebP URL and regex assertions (RED)
+- **garage:** RED real beam and repeatable flare previews on Garage Home and Studio
+- **garage:** Cover all sixteen GPU previews and archive actual 3D screenshots
+- **release:** RED reject bundling premium Void beams in locked production
+- **garage:** RED Home ready-phase must display actual NITRO ribbon and Void beams
+- **garage:** RED cover 16 original VFX equipment images, 22 skins, and 11 badge illustrations
+- **garage:** RED animated purple NITRO shader must have a moving time uniform
+- **garage:** RED 3x rarity/badge image failures must show accessible text fallback
+- **garage:** Verify localized badge image fallback [full-regression]
+- **garage:** RED 3 cropped badges need balanced 3x alpha and safe icon/label layout
+- **garage:** RED all 11 badges require one themed neon CSS card and safe 3x layout
+- **garage:** RED full-card preview UX, action isolation and four native-3x airflow icons [full-regression]
+- **garage:** RED paint collection should match game-like card UX without breaking paint preview
+- **garage:** Validate all four distinct 288-unit Airflow sources [full-regression]
+- **garage:** Capture actual mobile paint cards in existing foldable artifact upload [full-regression]
+- **garage:** RED public free-trial rollout, trial bundle audit and reload-safe entitlement
+- **vfx:** Keep wave 2 browser samples numeric
+- **browser:** Wait on frames, not wall-clock, in black-frame phases [full-regression]
+- **hud:** Judge one-charge NITRO press from recorded meter values [full-regression]
+- **garage:** RED photo-quality 3x paint cards and real showroom paint shader
+- **garage:** Update default camera snapshot for flight pose
+- **garage:** Regression tests for frame fit and real WebGL Ground/Flight
+- **garage:** Regression tests for frame fit and real WebGL Ground/Flight
+- **garage:** RED viewport-density and real WebGL layout acceptance
+- **garage:** RED viewport-density and real WebGL layout acceptance
+- **ui:** Record the Race HUD CSS change in the main UI contract
+- **garage:** Request full visual regression for regenerated 3x WebP badges [full-regression]
+- **garage:** Capture clipped store icons at native 3x size [full-regression]
+- **endless:** Bound streamed items by the per-chunk layout
+- **ui:** Record the Garage home promotion in the main UI contract
+- **garage:** Zoom out enough to reach the 2.4 limit
+- **items:** Remove two timing and random-layout flakes
+- **endless:** Bound streamed rings and pickups by the exact window maximum
+- **hud:** Fly the live first ring group of a pinned Coast layout [full-regression]
+- **items:** Judge the emp icon on the next frame
+- **whats-new:** Read clip frames in-page
+- **hud:** Measure artwork cards in one pass
+- **hud:** Pin the layout seed before the mode tab
+
+### ⚙️ Miscellaneous Tasks
+
+- Adopt develop branch flow
+- Run browser suites only on main and develop
+- Pack browser and World Tour shards by measured duration [full-regression]
+- **wave2:** Upload real rendered high-speed sprint screenshots and timed animation
+- **garage:** GREEN require secure default production bundle audit in unit quality gate
+- **garage:** Pin reviewed Pages release to coming-soon, prevent environment bypass
+- **scripts:** Add what's new clip recorder
+- **garage:** Request exact HEAD browser, screenshot and performance verification [full-regression]
+- **hooks:** Allow only develop/hotfix into main
+- Fail main pushes that merge non-develop branches
+- Skip suites for docs/media-only changes
+- Skip suites for makefile-only changes
+- **garage:** Upload actual ground/flight WebGL inspection screenshots
+- **garage:** Archive actual compact Garage Home and Studio screenshots [full-regression]
+- **release:** Record What's New clips at balanced quality
 ## [0.28.0] - 2026-10-31
 
 ### 🚀 Features
