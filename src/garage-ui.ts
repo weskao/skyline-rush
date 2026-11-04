@@ -2,6 +2,7 @@ import { PAINTS } from './appearance.ts';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
+import type { GaragePose } from './track-preview.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
 import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode, toggleGarageWing } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
@@ -17,6 +18,8 @@ interface GarageWorld {
   previewAppearance(paint: Paint): void;
   resize(): void;
   setGarageCamera(camera: GarageCamera | null): void;
+  /** Home page only: poses the track-showcase car like the Studio's ground / flight / wing buttons. */
+  setGaragePose?(pose: GaragePose | null): void;
   setCosmeticSkins?(ids: Record<SkinCategory, SkinId>): void;
   setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>, home?: boolean): void;
   inspectCosmeticPreview?(): {
@@ -125,6 +128,11 @@ export function setupGarageUI({
     updateGarageView({ selected: id });
     showGarage();
   }
+  function syncWorldCamera(): void {
+    const studio = garageStudioView.page === 'studio';
+    getWorld()?.setGarageCamera(studio ? camera : null);
+    getWorld()?.setGaragePose?.(studio ? null : { mode: camera.mode, wing: camera.wing });
+  }
   function setCamera(next: GarageCamera, angle = ''): void {
     camera = next;
     preview.dataset.garageMode = camera.mode;
@@ -134,14 +142,14 @@ export function setupGarageUI({
     // Never let QA or assistive evidence claim the previous camera's bounds.
     delete preview.dataset.carInFrame;
     updateGarageStudioView({ angle, autoRotate: camera.autoRotate, mode: camera.mode, wing: camera.wing });
-    getWorld()?.setGarageCamera(garageStudioView.page === 'studio' ? camera : null);
+    syncWorldCamera();
     inspectStudioAfterFrame();
   }
   function showPage(page: 'home' | 'studio'): void {
     if (page === 'home') contacts.clear();
     updateGarageStudioView({ page });
     delete preview.dataset.carInFrame;
-    getWorld()?.setGarageCamera(page === 'studio' ? camera : null);
+    syncWorldCamera();
     getWorld()?.resize();
     syncSkins();
     inspectStudioAfterFrame();
@@ -210,6 +218,7 @@ export function setupGarageUI({
     $('#app').prepend($('#world'));
     dockParent.insertBefore(dock, dockNext);
     getWorld()?.setGarageCamera(null);
+    getWorld()?.setGaragePose?.(null);
     getWorld()?.resize();
     cancelGarageSkinPreview();
     previewPaint(getEquippedPaint());
