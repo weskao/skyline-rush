@@ -55,18 +55,15 @@ import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
 import { focusRace, setupRaceNavigation } from './race-navigation-ui.ts';
-
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
 /** @typedef {import('./game-types.js').RivalSnapshot} RivalSnapshot */
-
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
 createApp(App).mount('#app');
 // Saved choice > system language > English; only a click on the switch persists (saveLocale below).
 setLocale(resolveInitialLocale());
 applyI18n(); applyDocumentLocale(); // before customSelect, so the drawn selects copy translated text
 for (const select of document.querySelectorAll('select')) customSelect(select);
-
 const $ =selector => document.querySelector(selector);
 // Event messages (tilt, key map, errors) remember how to re-render, so a language switch translates the live text.
 const said = new Map();
@@ -153,7 +150,6 @@ function leaveIntro() {
   const animation = ui.intro.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-36px)' }], motionOptions('base'));
   animation.finished.catch(() => {}).then(() => { ui.intro.inert = false; ui.intro.hidden = race.phase !== 'ready'; });
 }
-
 const renderResult = setupResultScreen();
 
 const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
@@ -536,7 +532,6 @@ function updateUI(now, input) {
   }
   hud.update(now, input);
 }
-
 try {
   world = createWorld($('#world')); syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
@@ -546,8 +541,7 @@ try {
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad());
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
-  let motionRace = null;
-  const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
+  let motionRace = null; const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
   function frame(now) {
     // Requested first: a frame that throws still reports its error, but never freezes the game for good.
     animationId = requestAnimationFrame(frame);
@@ -565,8 +559,7 @@ try {
     }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     for (let step = 0; step < due.steps; step++) {
-      captureRaceMotion(race, previousMotion);
-      stepRace(race, input, SIM_STEP);
+      captureRaceMotion(race, previousMotion); stepRace(race, input, SIM_STEP);
       if (tutorial) {
         // Completion keeps the race live as a free cruise: pausing it froze the world and read as a crash.
         const wasComplete = tutorial.complete; tutorial.update(input, SIM_STEP);

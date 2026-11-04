@@ -75,3 +75,16 @@ test('drift yaw eases into and out of a slide instead of snapping 25 degrees on 
   assert.ok(release > angle && release < 0);
   assert.equal(smoothDriftYaw(release, null, 0), release, 'paused rendering cannot animate drift');
 });
+
+test('car presentation reuses one mesh-owned render buffer and preserves exact simulation flags', async () => {
+  const { poseFor } = await import('../src/vehicle-render-motion.js');
+  const mesh = { userData: {} };
+  const physics = { ...car(10, 4), nitroTime: 1, drift: { dir: 1 } };
+  const previous = { ...car(9, 3) };
+  const rendered = poseFor(mesh, physics, previous, 0.5);
+  assert.equal(rendered.x, 3.5);
+  assert.equal(poseFor(mesh, physics, previous, 0.75), rendered);
+  assert.equal(physics.x, 4);
+  assert.equal(physics.nitroTime, 1);
+  assert.equal(poseFor(mesh, physics, previous, 1), physics);
+});

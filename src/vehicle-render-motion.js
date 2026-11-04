@@ -32,3 +32,8 @@ export function smoothDriftYaw(yaw, drift, dt) {
   const target = drift ? -drift.dir * Math.PI * 25 / 180 : 0;
   return yaw + (target - yaw) * (1 - Math.exp(-12 * Math.max(0, dt)));
 }
+
+// Reuse a buffer per visible car rather than allocating 50+ interpolated objects every frame.
+export function poseFor(mesh, car, previous, alpha) {
+  return previous && alpha < 1 ? interpolateMotion(car, previous, alpha, mesh.userData.renderMotion ??= {}) : car;
+}

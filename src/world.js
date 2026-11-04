@@ -26,7 +26,7 @@ import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
-import { interpolateMotion, smoothDriftYaw } from './vehicle-render-motion.js';
+import { poseFor, smoothDriftYaw } from './vehicle-render-motion.js';
 import { classicRoadCenter, trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition } from './track-paths.ts';
 import { HERO_PREVIEWS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
@@ -562,7 +562,6 @@ export function createWorld(canvas) {
   resize();
   // iOS fires resize on rotation before the new layout lands; observing the canvas catches the settled size.
   new ResizeObserver(resize).observe(canvas);
-
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}, pose = car) {
     const relative = physicalGap(trackId, distance, pose.distance);
     // Tour and sky routes end at the finish and trackPoint clamps there, so cars
@@ -610,11 +609,6 @@ export function createWorld(canvas) {
       if (wheel.children[2]) wheel.children[2].rotation.x -= pose.speed * dt / 0.44;
     });
   }
-
-  function poseFor(mesh, car, previous, alpha) {
-    return previous && alpha < 1 ? interpolateMotion(car, previous, alpha, mesh.userData.renderMotion ??= {}) : car;
-  }
-
   return {
     resize, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); },
     setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) aero.setSkins(ids); }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
@@ -659,12 +653,10 @@ export function createWorld(canvas) {
       endlessActive=!!race.endless;
       const preview = race.phase === 'ready';
       const car = race.player;
-      const alpha = race.phase === 'racing' ? motion?.alpha ?? 1 : 1;
-      const visualCar = poseFor(player, car, motion?.previous?.player, alpha);
+      const alpha = race.phase === 'racing' ? motion?.alpha ?? 1 : 1, visualCar = poseFor(player, car, motion?.previous?.player, alpha);
       const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
-      if (lastRace !== race) { effects.reset(); aero.reset(); sprintVisual.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0;
-         for (const mesh of [player, ...rivals, ...traffic]) mesh.userData.driftYaw = 0; }
+      if (lastRace !== race) { effects.reset(); aero.reset(); sprintVisual.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; for (const mesh of [player, ...rivals, ...traffic]) mesh.userData.driftYaw = 0; }
       if (trackId !== race.trackId) {
         sprintVisual.reset();
         raceVisuals.reset();
@@ -892,11 +884,9 @@ export function createWorld(canvas) {
         if (race.phase === 'finished') player.position.z -= presentation.finishDistance || 0;
         rivals.forEach((mesh, i) => {
           mesh.visible = i < race.rivals.length;
-          if (mesh.visible) updateCar(mesh, race.rivals[i], distance, center, time, motionDt, false, {},
-              poseFor(mesh, race.rivals[i], motion?.previous?.rivals?.[i], alpha));
+          if (mesh.visible) updateCar(mesh, race.rivals[i], distance, center, time, motionDt, false, {}, poseFor(mesh, race.rivals[i], motion?.previous?.rivals?.[i], alpha));
         });
-        traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt, false, {},
-            poseFor(mesh, race.traffic[i], motion?.previous?.traffic?.[i], alpha)); });
+        traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt, false, {}, poseFor(mesh, race.traffic[i], motion?.previous?.traffic?.[i], alpha)); });
       }
       ghostCar.visible = !preview && !!ghost;
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
