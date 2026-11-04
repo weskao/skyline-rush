@@ -58,6 +58,8 @@ export interface TutorialCoachView {
   assistHidden: boolean;
   hintKeys: string;
   hintText: string;
+  /** Non-empty only after the last lesson: the free-cruise celebration subtitle. */
+  celebration: string;
 }
 export interface ControlPanelsView {
   settingsOpen: boolean;

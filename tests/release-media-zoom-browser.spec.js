@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
-import { recentReleases } from '../src/release-notes.ts';
+import { recentReleases, NOTES_SEEN_KEY } from '../src/release-notes.ts';
 
 // Tapping a What's New picture or clip shows all of it, uncropped and on screen, on desktops, tablets and phones.
 // Escape, the close button or a tap anywhere on a picture (outside the clip, for a clip) closes only the enlarged view and hands focus back.
@@ -50,7 +50,7 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
 
   test('a highlight picture opens whole and on screen, and every way out closes only the enlarged view', async ({ page, gameplayURL }) => {
     const errors = await openNotes(page, gameplayURL);
-    const thumb = page.locator('#release-items .release-zoom').first();
+    const thumb = page.locator('#release-items .release-zoom:not(.release-play)').first(); // clip cards sort first and play instead
     await thumb.scrollIntoViewIfNeeded();
     const thumbBox = await thumb.boundingBox(), thumbSrc = await thumb.locator('img').getAttribute('src');
     const viewer = page.locator('#release-media-viewer'), shown = viewer.locator('img');
@@ -167,6 +167,8 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
 test.describe('hero picture and animated pictures', () => {
   for (const [device, width, height, touch] of [DEVICES[0], DEVICES[3]]) test(`${device}: the hero picture and an animated highlight open whole`, async ({ browser, gameplayURL }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
+    // A bare page has no What's New record, so the notes would already be open on load and cover their opener.
+    await page.addInitScript(key => localStorage.setItem(key, '999.0.0'), NOTES_SEEN_KEY);
     const errors = await openNotes(page, gameplayURL, "CURRENT_RELEASE.video = null; CURRENT_RELEASE.image = 'whats-new/0.26.0/world-tour-scenery.webp'; CURRENT_RELEASE.highlights[0].image = 'whats-new/test/animated.gif';");
     const viewer = page.locator('#release-media-viewer'), shown = viewer.locator('img');
     const hero = page.locator('#release-hero-zoom');
@@ -210,8 +212,8 @@ test.describe('reduced motion and languages', () => {
 
   test('enlarge, play and close are named in the reader\'s language', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);
-    const thumb = page.locator('#release-items .release-zoom').first();
-    const card = page.locator('#release-items .release-entry').filter({ has: page.locator('.release-zoom') }).first();
+    const thumb = page.locator('#release-items .release-zoom:not(.release-play)').first(); // clip cards sort first and play instead
+    const card = page.locator('#release-items .release-entry').filter({ has: page.locator('.release-zoom:not(.release-play)') }).first();
     const title = await card.locator('strong').textContent();
     await expect(thumb).toHaveAccessibleName(`Enlarge image: ${title}`);
     await expect(page.locator('#release-video-zoom')).toHaveAccessibleName('Enlarge video');

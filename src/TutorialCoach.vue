@@ -9,4 +9,11 @@ import { TUTORIAL_STEPS } from './interactive-tutorial.ts';
     <div class="tutorial-copy"><p id="tutorial-instruction" role="status" aria-live="polite">{{ coachView.instruction }}</p><div id="tutorial-input" :data-keys="coachView.hintKeys || undefined">{{ coachView.hintText }}</div><small id="tutorial-assist" :hidden="coachView.assistHidden" data-i18n="tutorial.assist">Practice only · assisted cruising · no career rewards</small></div>
     <div id="tutorial-complete-actions" class="tutorial-actions" :hidden="coachView.completeActionsHidden"><button id="tutorial-retry" class="controls-reset" data-i18n="tutorial.retry">Practice again</button><button id="tutorial-done" class="controls-reset" data-i18n="tutorial.done">Back to game</button></div>
   </aside>
+  <!-- Decorative: the coach title and role=status copy already announce completion. -->
+  <div v-if="coachView.visible && coachView.celebration" class="tutorial-celebration" aria-hidden="true">
+    <span class="tutorial-celebration-badge"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>
+    <strong>{{ coachView.title }}</strong>
+    <small>{{ coachView.celebration }}</small>
+    <i v-for="n in 16" :key="n" :style="{ '--n': n }"></i>
+  </div>
 </template>

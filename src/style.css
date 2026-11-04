@@ -1097,9 +1097,9 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
 .intro :is(.history-button, .garage-button, .practice-button):hover { border-color: var(--accent); color: var(--accent); background: rgb(30 34 46 / .7); }
 
 /* Garage update: promote the showroom beside Start without shifting the button's hit area. */
-.intro .garage-button { gap: 8px; border-color: #7de1f7; color: #e9fbff; background: linear-gradient(110deg, #15536b, #0b2b44); animation: garage-highlight 3s ease-in-out infinite; }
+.intro .garage-button { position: relative; gap: 8px; border-color: #7de1f7; color: #e9fbff; background: linear-gradient(110deg, #15536b, #0b2b44); animation: garage-highlight 3s ease-in-out infinite; }
 .intro .garage-button:hover { border-color: #b6f4ff; color: #fff; background: linear-gradient(110deg, #1b728d, #14435d); }
-.intro .garage-new-tag { display: inline-block; padding: 4px 5px; border-radius: 3px; background: #ffc06b; color: #142333; font: 800 9px/1 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: .06em; animation: garage-new-pop 3s ease-in-out infinite; }
+.intro .garage-new-tag { position: absolute; top: -9px; right: -9px; z-index: 2; display: inline-block; padding: 4px 5px; border-radius: 3px; background: #ffc06b; color: #142333; font: 800 9px/1 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: .06em; animation: garage-new-pop 3s ease-in-out infinite; }
 @keyframes garage-highlight {
   0%, 100% { box-shadow: inset 0 0 0 1px rgb(125 225 247 / .2), 0 0 9px rgb(64 201 238 / .2); }
   50% { box-shadow: inset 0 0 0 1px rgb(125 225 247 / .6), 0 0 21px rgb(64 201 238 / .52); }
@@ -1107,11 +1107,9 @@ body[data-phase="ready"] :is(.brand, .route-heading) { visibility: hidden; }
 @keyframes garage-new-pop { 0%, 80%, 100% { transform: scale(1); } 88% { transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .intro .garage-button, .intro .garage-new-tag { animation: none; } }
 .vfx-comfort .intro .garage-button, .vfx-comfort .intro .garage-new-tag { animation: none; }
-/* Desktop: an inline tag widened Garage enough to wrap Practice and make the intro scroll; pin it to the corner instead. */
-@media (min-width: 1001px) {
-  .intro .garage-button { position: relative; }
-  .intro .garage-new-tag { position: absolute; top: -9px; right: -9px; }
-}
+/* Every device pins the tag to the corner (an inline tag widened Garage and wrapped Practice). z-index 2 lifts it over the
+   blurred rules row (1) that overlaps its 9px overhang; an open dropdown (3) still covers it. */
+.intro .race-rules-row:has([aria-expanded="true"]) { z-index: 3; } /* an open dropdown covers the Start row and its tag */
 
 .intro .start-hint { vertical-align: middle; letter-spacing: .04em; }
 .intro .start-hint kbd { height: 20px; padding: 0 6px; margin-left: 5px; border: 1px solid rgb(230 236 240 / .3); border-bottom-width: 2px; font-size: 9px; letter-spacing: .1em; }
@@ -1507,7 +1505,6 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
    background: linear-gradient(rgb(5 18 31 / 0), rgb(5 18 31 / .92) 10px); }
  .intro .intro-actions > .text-button { display: inline-flex; margin: 8px 16px 0 0; }
  .intro:has(.race-mode-picker) { scroll-padding-bottom: 72px; } /* controls scrolled or tabbed to land above the pinned row */
- .intro .race-rules-row:has([aria-expanded="true"]) { z-index: 2; } /* an open dropdown covers the pinned row */
 }
 /* Narrow panels lift the pinned row 28px clear of the bottom fade (60px above the scrollport edge with its padding), so the
    scroll margin is the row plus 60px: one line in landscape (568x320 keeps a 52px view), two lines at 320px wide. */
@@ -1885,4 +1882,35 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 @media (max-height: 500px) {
   .upcoming-scene img { top: 8%; right: 2%; width: min(51vw, 520px); opacity: .5; }
   .intro #start-button { width: 190px; min-width: 190px; max-width: 190px; }
+}
+/* Start keeps its size: a label wider than the panel wraps to at most two lines inside the button instead of widening it into the panel's clip. */
+.intro #start-button { max-width: 100%; }
+.intro #start-button > span { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; line-height: 1.1; }
+.intro #start-button > svg { flex: none; }
+.airflow-active[data-phase="ready"] #start-button { max-width: calc(100vw - 80px); }
+
+/* Tutorial complete: the race stays live as a free cruise; a banner and glowing coach make the finish unmistakable. */
+.tutorial-celebration { position: fixed; z-index: 13; top: 34%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: grid; justify-items: center; gap: 6px; padding: 18px 28px 16px; border: 1px solid #ffd27a; border-radius: 16px; background: rgb(20 35 52 / .9); color: #fff4dc; text-align: center; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 6px rgb(255 210 122 / .12), 0 12px 40px rgb(0 9 22 / .45); animation: celebrate-in .5s var(--ease-spring) both, celebrate-out .6s ease-in 3.4s forwards; }
+.tutorial-celebration strong { font-size: 24px; letter-spacing: .4px; }
+.tutorial-celebration small { color: #96e3ff; font-size: 13px; font-weight: 700; }
+.tutorial-celebration-badge { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #ffd27a; animation: celebrate-pop .6s var(--ease-spring) .15s both; }
+.tutorial-celebration-badge svg { width: 32px; height: 32px; fill: none; stroke: #142333; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; animation: celebrate-check .45s ease-out .45s both; }
+.tutorial-celebration i { position: absolute; top: 46px; left: 50%; width: 7px; height: 12px; margin-left: -3px; border-radius: 2px; background: hsl(calc(var(--n) * 47deg) 90% 66%); opacity: 0; transform: rotate(calc(var(--n) * 22.5deg)); animation: celebrate-burst 1.3s var(--ease-out) .3s; }
+.tutorial-coach[data-step="complete"] { border-color: #ffd27a; animation: coach-glow 2.4s ease-in-out infinite; }
+.tutorial-coach[data-step="complete"] #tutorial-title::before { content: '✓'; display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; border-radius: 50%; background: #ffd27a; color: #142333; font-size: 13px; }
+.tutorial-coach[data-step="complete"] progress { accent-color: #ffd27a; }
+.tutorial-coach[data-step="complete"] #tutorial-input { display: none; } /* the last lesson's key chips are stale once practice ends */
+.tutorial-coach[data-step="complete"] #tutorial-done { border-color: var(--accent); background: var(--accent); color: #142333; font-weight: 700; }
+@keyframes celebrate-in { from { opacity: 0; transform: translate(-50%, -50%) scale(.7); } }
+@keyframes celebrate-out { to { opacity: 0; transform: translate(-50%, -62%) scale(.96); visibility: hidden; } }
+@keyframes celebrate-pop { from { transform: scale(0); } }
+@keyframes celebrate-check { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+@keyframes celebrate-burst { 0% { opacity: 1; transform: rotate(calc(var(--n) * 22.5deg)) translateY(0); } 100% { opacity: 0; transform: rotate(calc(var(--n) * 22.5deg + 90deg)) translateY(-120px); } }
+@keyframes coach-glow { 50% { box-shadow: 0 0 0 4px rgb(255 210 122 / .18), 0 8px 28px rgb(255 210 122 / .25); } }
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-celebration { top: 58%; } } /* below the phone coach card */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-celebration { top: 46%; left: 72%; padding: 12px 18px; } .tutorial-celebration strong { font-size: 18px; } }
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-celebration { animation: celebrate-out .01s 3.4s forwards; }
+  .tutorial-celebration-badge, .tutorial-celebration-badge svg, .tutorial-coach[data-step="complete"] { animation: none; }
+  .tutorial-celebration i { display: none; }
 }
