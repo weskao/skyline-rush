@@ -180,3 +180,17 @@ test('lava flow UVs follow the real ribbon and stay seamless across streamed chu
     'flowing shader must not restart the texture at every streamed chunk');
   first.dispose();second.dispose();
 });
+
+test('steam vent mesh only renders during the same physically active hazard phase',()=>{
+  const vent=VOLCANIC_OBSTACLES.find(o=>o.kind==='vent');
+  const chunk=createVolcanicCrownChunk(vent.edgeId,Math.floor(vent.s/VOLCANIC_CHUNK_METERS),'low');
+  const mesh=chunk.group.getObjectByName(vent.id);
+  const warning=chunk.group.getObjectByName(vent.id+'-warning');
+  for(const [time,active,alert] of [[1,false,true],[3,true,false],[5.5,true,false],[8,false,false],[13,false,true]]){
+    chunk.update(time,true);
+    assert.equal(volcanicObstaclePose(vent,time).active,active);
+    assert.equal(mesh.visible,active,`vent mesh / collision mismatch at ${time}s`);
+    assert.equal(warning.visible,alert,`warning ring mismatch at ${time}s`);
+  }
+  chunk.dispose();
+});
