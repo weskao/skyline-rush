@@ -55,3 +55,9 @@ test('all unlocked Make targets resolve the development-only policy', () => {
   assert.match(make, /phone-unlocked:[\s\S]*?vite\.unlocked\.config\.js/);
   assert.match(make, /dev-feature:[\s\S]*?scripts\/dev-feature\.mjs/);
 });
+
+test('direct start and restart paths fail closed for Coming Soon, including Daily mode', () => {
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.match(main, /function start\(\) \{\s*if \(isUpcomingTrack\(race\.trackId\)\) return;/);
+  assert.match(main, /function restart\(trackId = race\.trackId\) \{\s*if \(isUpcomingTrack\(trackId\)\) return;/);
+});
