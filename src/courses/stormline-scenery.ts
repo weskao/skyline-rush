@@ -98,23 +98,27 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
     strip('roof', [-halfWidth, 7], [halfWidth, 7]);
   }
   // Repeated real 3D building volumes remain clear of the road, not JPEG planes.
-  const count = Math.min(quality === 'high' ? 44 : quality === 'medium' ? 26 : 12,
-    Math.ceil((to - from) / (quality === 'low' ? 75 : 42)));
-  if (edge.layer !== 'tunnel' && count > 0) {
-    const buildings = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), glassMat, count);
+  // Buildings are anchored to absolute edge-distance cells, never relative chunk indices.
+  // Re-slicing a stream window must not move towers or change their deterministic palette.
+  const spacing = quality === 'low' ? 75 : 42;
+  const firstTower = spacing / 2 + Math.max(0, Math.ceil((from - spacing / 2) / spacing)) * spacing;
+  const towerCount = Math.max(0, Math.ceil((to - firstTower) / spacing));
+  if (edge.layer !== 'tunnel' && towerCount > 0) {
+    const buildings = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), glassMat, towerCount);
     buildings.name = `stormline:buildings:${edgeId}`;
     const dummy = new THREE.Object3D();
-    for (let i = 0; i < count; i++) {
-      const index = i + Math.floor(from / 40) * 5 + edgeId.length * 19;
-      const p = frame((i + 0.5) / count * steps);
-      const side = i % 2 ? -1 : 1;
+    for (let i = 0; i < towerCount; i++) {
+      const s = firstTower + i * spacing;
+      const index = Math.round((s - spacing / 2) / spacing) + edgeId.length * 19;
+      const p = sample(edgeId, s);
+      const side = index % 2 ? -1 : 1;
       const setback = edge.width / 2 + 38 + hash(index) * 28;
       const height = 36 + hash(index + 31) * 124;
       const pos = v3(p.point).addScaledVector(v3(p.right), setback * side);
       dummy.position.set(pos.x, height / 2, pos.z);
       dummy.scale.set(16 + hash(index + 2) * 20, height, 18 + hash(index + 5) * 18);
       dummy.updateMatrix(); buildings.setMatrixAt(i, dummy.matrix);
-      buildings.setColorAt(i, new THREE.Color(i % 5 === 0 ? 0x304477 : 0x172443));
+      buildings.setColorAt(i, new THREE.Color(index % 5 === 0 ? 0x304477 : 0x172443));
     }
     buildings.instanceMatrix.needsUpdate = true; group.add(buildings);
   }
@@ -136,7 +140,7 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
   }
   if (edge.layer === 'viaduct' && edge.mode === 'drive') {
     const pillarGeo = new THREE.CylinderGeometry(1.4, 2, 1, 8);
-    for (let s = from + 65; s < to; s += 140) {
+    for (let s = 65 + Math.max(0, Math.ceil((from - 65) / 140)) * 140; s < to; s += 140) {
       const p = sample(edgeId, s).point;
       if (p[1] < 5) continue;
       const pillar = new THREE.Mesh(pillarGeo, structureMat);
