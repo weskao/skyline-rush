@@ -165,7 +165,7 @@ const statusText = (id: SkinId, locale: string) => {
 }
 .garage-vfx-live-loadout h4 { margin: 0 0 8px; font-size: 13px; color: #e2f8ff; }
 .garage-vfx-loadout-grid {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 138px), 1fr));
   gap: 8px; padding: 0; margin: 0; list-style: none;
 }
 .garage-vfx-loadout-tile {
@@ -315,7 +315,6 @@ const statusText = (id: SkinId, locale: string) => {
 }
 .garage-art-showcase { min-width: 0; }
 .garage-art-showcase h4 { margin-bottom: 10px; }
-@media (max-height: 420px) and (orientation: landscape) { .garage-vfx-category ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce), (prefers-reduced-data: reduce) {
   .garage-vfx-catalog *, .garage-vfx-catalog *::after { animation: none !important; transition: none !important; }
 }
