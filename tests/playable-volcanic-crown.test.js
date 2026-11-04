@@ -83,3 +83,10 @@ test('recovery never drops the player into midair or bypasses the next checkpoin
     assert.ok(frame.point.every(Number.isFinite));
   }
 });
+
+test('hazardous vent bypass is an actual ground road using canonical CourseGraph modes', () => {
+  const vent = VOLCANIC_CROWN_EDGES.find(edge => edge.id === 'vent-risk');
+  assert.equal(vent.mode, 'ground', 'visible basalt road must be treated as drivable ground');
+  assert.ok(VOLCANIC_CROWN_EDGES.every(edge => edge.mode === 'ground' || edge.mode === 'flight'),
+    'shared CourseGraph accepts only ground / flight route modes');
+});
