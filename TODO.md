@@ -3466,3 +3466,12 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Verify this new **exact-HEAD FULL** GitHub workflow: unit/typecheck/build, cloud-save, every Browser + World Tour shard and quality-gate. No success assertion while pending or if required jobs are skipped.
 - [ ] Wire trusted world poses/distance and signed graph transitions to actual shared RaceFactory/`game.js`/`world.js`; do not treat synthetic arc-length updates as authoritative. 8-car AI/drift/BOOST/NITRO/FLY, collision, Recovery, results/ghost and mobile controls remain pending.
 - [ ] Source branches are read-only; require their exact-HEAD FULL CI, real game WebGL 1440x900 / 390x844 and 20+ physical sessions per map before selective import or enabling any Coming Soon track.
+
+
+## 2026-11-05 — signed eight-car sweeps and continuous steep-road frames
+
+- [x] Added the physical-sweep eight-car adapter and validated ID/sweep rejection, atomic rollback, checkpoint independence and flight authorization: local RED then GREEN 8/8.
+- [x] Added near-vertical route-frame regression (observed 90-degree orientation flip before fix) and 3D road-surface-normal `lift` regression: both local RED then GREEN; combined opt-in suite 20/20, isolated TypeScript PASS.
+- [ ] Verify exact-HEAD FULL CI including Unit/Typecheck/Build, Cloud-save, all 13 Browser and all five World Tour shards and quality-gate. Pending or skipped is not a PASS.
+- [ ] Integrate measured fleet state into the existing `game.js`/RaceFactory/`world.js` authoritative loop, including player/drift/BOOST/NITRO/FLY, 8-car AI and standings, layered collisions, valid recovery, minimap, race results, records and ghost persistence.
+- [ ] No source course import until each candidate branch passes its own exact-HEAD FULL CI, safety checks, real ground/aerial WebGL and 20+ timed 3–5 minute sessions per course; preserve Coming Soon until human signoff.
