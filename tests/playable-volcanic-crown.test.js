@@ -1,4 +1,5 @@
 import test from 'node:test';
+import * as volcanic from '../src/courses/volcanic-crown.ts';
 import assert from 'node:assert/strict';
 import {
   VOLCANIC_CROWN, VOLCANIC_CROWN_EDGES, VOLCANIC_CROWN_CHECKPOINTS,
@@ -101,4 +102,18 @@ test('both flight alternatives rejoin the physical ground road without a heading
     assert.ok(dot(flight.forward,ground.forward)>Math.cos(Math.PI/12),
       `${flightId} landing heading should agree with the continuing ground road within 15 degrees`);
   }
+});
+
+test('Volcanic exports a canonical graph for the shared runtime without duplicating physics',()=>{
+  const graph=volcanic.VOLCANIC_CROWN_COURSE_GRAPH;
+  assert.ok(graph,'the integration branch needs a canonical CourseGraph-shaped export');
+  assert.equal(graph.id,'volcanic-crown');
+  assert.equal(graph.version,VOLCANIC_CROWN.topologyVersion);
+  assert.equal(graph.start,VOLCANIC_CROWN.start);
+  assert.equal(graph.finish,VOLCANIC_CROWN.finish);
+  assert.deepEqual(graph.groundRoute,VOLCANIC_CROWN.groundEdgeIds);
+  assert.deepEqual(graph.checkpoints,VOLCANIC_CROWN_CHECKPOINTS);
+  assert.strictEqual(graph.nodes,VOLCANIC_CROWN.nodes);
+  assert.strictEqual(graph.edges,VOLCANIC_CROWN.edges);
+  assert.ok(graph.edges.every(edge=>edge.mode==='ground'||edge.mode==='flight'));
 });
