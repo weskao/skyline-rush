@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   MONSOON_RUINS_COURSE, sampleMonsoonRoute, monsoonWetContact,
+  monsoonTerrainOffset, monsoonTerrainHeight,
   type MonsoonEdgeId, type Vec3,
 } from './monsoon-ruins.ts';
 
@@ -71,11 +72,7 @@ function terrainMesh(from: number, to: number, side: -1 | 1,
     const { point, right } = sampleMonsoonRoute('ground', s);
     for (let col = 0; col <= columns; col++) {
       const d = 13.5 + col * 19;
-      const waves = Math.sin(s / 145 + col * .9 + side) * 2
-        + Math.cos(s / 85 - col * 1.7) * 1.5;
-      const valley = s > 2900 && s < 4900 && side === 1 ? -16 : 0;
-      const y = point[1] - .65 + (d / 180) ** 1.5 * (20 + 12 * Math.sin(s / 240))
-        + waves * Math.min(1, col / 3) + valley * Math.min(1, col / 3);
+      const y = point[1] + monsoonTerrainOffset(s, d * side);
       positions.push(point[0] + right[0] * d * side, y, point[2] + right[2] * d * side);
       const mix = clamp(.22 + col / columns * .64 + .13 * Math.sin(s / 66 + col), 0, 1);
       const color = earthy.clone().lerp(foliage, mix);
@@ -108,6 +105,7 @@ function makeForest(group: THREE.Group, from: number, to: number,
     const s = from + (to - from) * seed(key * 7);
     const lateral = (i % 2 ? 1 : -1) * (27 + seed(key + 18) * 145);
     const base = location(s, lateral);
+    base.y = monsoonTerrainHeight(s, lateral);
     const height = 12 + seed(key * 11) * 22;
     dummy.position.copy(base);
     dummy.position.y += height / 2;
@@ -136,6 +134,7 @@ function makeLandmarks(group: THREE.Group, from: number, to: number,
     const root = new THREE.Group();
     root.name = 'monsoon-colossal-guardian-temple';
     root.position.copy(location(5300, -135));
+    root.position.y = monsoonTerrainHeight(5300, -135);
     group.add(root);
     for (let i = 0; i < 6; i++) {
       box(root, 'moss-covered stepped sanctuary',
@@ -169,6 +168,7 @@ function makeLandmarks(group: THREE.Group, from: number, to: number,
     const root = new THREE.Group();
     root.name = 'monsoon-river-gorge-triple-waterfall';
     root.position.copy(location(6740, 115));
+    root.position.y = monsoonTerrainHeight(6740, 115);
     group.add(root);
     for (let i = 0; i < 3; i++) {
       const x = (i - 1) * 21, height = 24 + i * 10;

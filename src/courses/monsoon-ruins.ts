@@ -135,6 +135,32 @@ function mainPoint(distance: number): Vec3 {
   const fraction = (target - lengths[lo - 1]) / Math.max(1e-8, lengths[lo] - lengths[lo - 1]);
   return mix(samples[lo - 1], samples[lo], fraction);
 }
+// Deterministic contact height for the authored ground roadside terrain (13.5..184.5m).
+// Shares the vertex-height law with the rendered mesh; outside its authored width, recover instead.
+export function monsoonTerrainOffset(distance: number, lateral: number): number {
+  if (!Number.isFinite(distance) || distance < 0 || distance > LENGTH ||
+    !Number.isFinite(lateral) || Math.abs(lateral) > 184.5) {
+    throw new RangeError('Monsoon ground terrain coordinate outside modelled bounds');
+  }
+  const side = lateral < 0 ? -1 : 1, d = Math.abs(lateral);
+  if (d < 13.5) return .07; // Main road surface shares the renderer's 7cm road lift.
+  const col = clamp((d - 13.5) / 19, 0, 9);
+  const heightAt = (column: number): number => {
+    const radius = 13.5 + column * 19;
+    const waves = Math.sin(distance / 145 + column * .9 + side) * 2
+      + Math.cos(distance / 85 - column * 1.7) * 1.5;
+    const valley = distance > 2900 && distance < 4900 && side === 1 ? -16 : 0;
+    const factor = Math.min(1, column / 3);
+    return -.65 + (radius / 180) ** 1.5 * (20 + 12 * Math.sin(distance / 240))
+      + (waves + valley) * factor;
+  };
+  const lo = Math.floor(col), hi = Math.min(9, lo + 1);
+  return lerp(heightAt(lo), heightAt(hi), col - lo);
+}
+export function monsoonTerrainHeight(distance: number, lateral: number): number {
+  return mainPoint(distance)[1] + monsoonTerrainOffset(distance, lateral);
+}
+
 function frameFor(pointAt: (s: number) => Vec3, s: number, from: number, to: number,
   edgeId: MonsoonEdgeId, span = 1): MonsoonRouteFrame {
   const a = pointAt(Math.max(from, s - span)), b = pointAt(Math.min(to, s + span));

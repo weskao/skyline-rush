@@ -3356,3 +3356,8 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [x] Reproduce RED for fixed-per-chunk foliage/rain density (100m+150m costs 2× a 250m chunk), and ~20m landmark viaduct offset; add deterministic scene regression tests and map-local fixes. Remote tests on final HEAD are still required.
 - [x] Address existing 844×390 Start long-label regression in this branch without changing button dimensions; reuse existing Browser regression spec and preserve Coming Soon locking. RED: FULL CI run 41793715525 browser shard 1.
 - [ ] Confirm latest exact-HEAD full Browser/World Tour/Unit/Cloud/Quality Gate; verify responsive layout gate and real WebGL screenshots (desktop + mobile) before marking either change visually accepted.
+
+## Monsoon Ruins — terrain height/contact parity (2026-11-04)
+
+- [x] RED source inspection: guardian temple base 11.14 m below raised terrain, waterfall basin 12.80 m below, representative forest tree roots 8.72 m below authored ground. Introduce a map-owned deterministic height sampler, reuse it for mesh vertices and prop placement, add scene tests.
+- [ ] Run exact-HEAD unit/Typecheck/build, WebGL visuals for elevated valley and real landing, complete shared-course integration and 8-car race evidence before marking terrain contacts physically accepted.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { MONSOON_RUINS_COURSE, sampleMonsoonRoute, monsoonWetContact } from '../src/courses/monsoon-ruins.ts';
+import { MONSOON_RUINS_COURSE, sampleMonsoonRoute, monsoonWetContact, monsoonTerrainHeight } from '../src/courses/monsoon-ruins.ts';
 import { createMonsoonRuinsChunk } from '../src/courses/monsoon-ruins-scene.ts';
 
 const find = (group, name) => {
@@ -39,6 +39,57 @@ test('guardian face and temple have authored three-dimensional meshes', () => {
   for (const key of ['guardian-brow', 'guardian-nose', 'guardian-mouth', 'guardian-stone-headdress']) {
     assert.ok(find(chunk.group, key), key + ' should articulate the face silhouette');
   }
+  chunk.dispose();
+});
+
+test('guardian, falls and instanced tree roots sit on physical authored terrain', () => {
+  const temple = mount(5210, 5450, 'ground', 'medium');
+  const sanctuary = find(temple.chunk.group, 'monsoon-colossal-guardian-temple');
+  const roadAtTemple = sampleMonsoonRoute('ground', 5300).point[1];
+  assert.ok(sanctuary.position.y - roadAtTemple > 8,
+    'guardian base cannot be buried below raised valley terrain');
+  assert.ok(Math.abs(sanctuary.position.y - monsoonTerrainHeight(5300, -135)) < .01);
+  temple.chunk.dispose();
+
+  const waterfall = mount(6660, 6850, 'ground', 'medium');
+  const falls = find(waterfall.chunk.group, 'monsoon-river-gorge-triple-waterfall');
+  const roadAtFalls = sampleMonsoonRoute('ground', 6740).point[1];
+  assert.ok(falls.position.y - roadAtFalls > 8, 'falls basin must rest on raised terrain');
+  assert.ok(Math.abs(falls.position.y - monsoonTerrainHeight(6740, 115)) < .01);
+  waterfall.chunk.dispose();
+
+  const from = 1050, to = 1300, forest = mount(from, to, 'ground', 'medium');
+  const trunk = find(forest.chunk.group, 'monsoon-mixed-rainforest-canopy');
+  const matrix = new THREE.Matrix4();
+  trunk.getMatrixAt(0, matrix);
+  const position = new THREE.Vector3(), rotation = new THREE.Quaternion(), scale = new THREE.Vector3();
+  matrix.decompose(position, rotation, scale);
+  const seed = n => { const x = Math.sin(n * 127.1 + 78.233) * 43758.5453; return x - Math.floor(x); };
+  const key = Math.floor(from / 17) * 241;
+  const s = from + (to - from) * seed(key * 7);
+  const lateral = -(27 + seed(key + 18) * 145);
+  const baseY = position.y - scale.y / 2;
+  assert.ok(baseY - sampleMonsoonRoute('ground', s).point[1] > 3,
+    'trunk roots must not remain at road elevation when the terrain rises');
+  assert.ok(Math.abs(baseY - monsoonTerrainHeight(s, lateral)) < .01,
+    'instanced trunk base must touch authored terrain');
+  forest.chunk.dispose();
+});
+
+test('terrain mesh vertices match the exported ground contact-height sampler', () => {
+  const from = 1050, to = 1300;
+  const { chunk } = mount(from, to, 'ground', 'low');
+  const positions = find(chunk.group, 'monsoon-jungle-river-valley-terrain').geometry.getAttribute('position');
+  const rows = Math.ceil((to - from) / 15);
+  for (const row of [0, Math.floor(rows / 2), rows]) {
+    const s = from + (to - from) * row / rows;
+    for (const col of [0, 3, 6, 9]) {
+      const expected = monsoonTerrainHeight(s, -(13.5 + col * 19));
+      assert.ok(Math.abs(positions.getY(row * 10 + col) - expected) < .01,
+        `off-road mesh/contact separation at ${s}m / column ${col}`);
+    }
+  }
+  assert.throws(() => monsoonTerrainHeight(100, 190), /bounds/i);
   chunk.dispose();
 });
 
