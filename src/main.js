@@ -288,7 +288,7 @@ setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => contr
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
 function start() {
-  if (isUpcomingTrack(race.trackId)) return; // fail closed for Daily, saved progress and dev-unlocked
+  if (raceSelect.isUpcomingSelected() || isUpcomingTrack(race.trackId)) return; // preview selection cannot START, including Daily/unlocked
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
@@ -309,7 +309,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
-  if (isUpcomingTrack(trackId)) return;
+  if (raceSelect.isUpcomingSelected() || isUpcomingTrack(trackId)) return;
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
