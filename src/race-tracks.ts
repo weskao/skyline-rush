@@ -58,6 +58,8 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
 
 // The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.
 // Frostbite Canyon is a gated CourseGraph sprint: raceable by id, never in the catalog, Daily, Cup or saves.
+/** CourseGraph sprints outside the catalog whose results persist under a topology-keyed id (`record-layout.ts`). */
+export const COURSE_TRACKS: Readonly<Record<string, TrackConfig & { topologyVersion: number }>> = { [FROSTBITE_ID]: FROSTBITE_TRACK };
 export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : id === FROSTBITE_ID ? FROSTBITE_TRACK : RACE_TRACKS[id];
 
 export const isModeTrack = (id: unknown, mode: unknown): id is string => typeof id === 'string' &&

@@ -21,7 +21,7 @@ for (const [name, viewport, hasTouch] of [
   ['phone', { width: 390, height: 844 }, true],
 ]) test.describe(`Frostbite race ${name}`, () => {
   test.use({ viewport, hasTouch });
-  test('the Coming Soon card enters a real 13.8 km race that renders the course, finishes once and saves nothing', async ({ gameplayPage: page }) => {
+  test('the Coming Soon card enters a real 13.8 km race that renders the course, finishes once and saves topology-keyed results', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
@@ -71,12 +71,44 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#race-overlay')).toBeVisible({ timeout: ciTimeout(15_000) });
     await expect(page.locator('#next-button')).toBeHidden(); // a gated runtime unlocks nothing
     await capture(page, `${name}-finished`);
-    const saved = await page.evaluate(() => ['skyline-rush-history', 'skyline-rush-best-tracks', 'skyline-rush-stars']
-      .map(key => localStorage.getItem(key)));
-    expect(saved).toEqual([null, null, null]);
+    // Results persist under the topology-keyed id; campaign progress (stars, unlocks) is untouched.
+    const saved = await page.evaluate(() => ({ history: JSON.parse(localStorage.getItem('skyline-rush-history') ?? '[]').map(r => r.track),
+      bests: Object.keys(JSON.parse(localStorage.getItem('skyline-rush-best-tracks') ?? '{}')), stars: localStorage.getItem('skyline-rush-stars') }));
+    expect(saved).toEqual({ history: ['frostbite-canyon'], bests: ['frostbite-canyon@t1l1'], stars: null });
     await page.locator('#again-button').click(); // a real click on the results screen restarts the same course
     await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
     expect(await page.evaluate(() => [window.gameplay.race.trackId, window.gameplay.race.player.distance < 50])).toEqual(['frostbite-canyon', true]);
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe('Frostbite Ghost', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+  test('a saved topology-keyed Ghost replays, drawn on the Rift span while inside its corridor', async ({ gameplayPage: page }) => {
+    // Synthetic Ghost: 60 s parked mid-span in the corridor (x 7.5, altitude 6), then straight on to FINISH.
+    await page.evaluate(() => {
+      const mid = 6480, length = 13799, samples = Array.from({ length: 3001 }, (_, i) => i < 600 ? [mid, 7.5, 6] : [mid + (length - mid) * (i - 600) / 2400, 0, 0]);
+      localStorage.setItem('skyline-rush-ghosts', JSON.stringify({ 'frostbite-canyon@t1l1': { time: 300, samples } }));
+    });
+    await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
+    await expect(page.locator('#ghost-status')).toContainText('5:00');
+    await page.locator('#controls-button').click(); // Ghost display is opt-in, in the Controls panel (real clicks)
+    await page.locator('#ghost-enabled').check();
+    await page.locator('#controls-button').click();
+    await page.locator('#start-button').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15_000) });
+    const span = await page.evaluate(() => window.gameplay.race.sections.find(s => s.span));
+    expect(span.from < 6480 && span.to > 6480).toBe(true);
+    await page.keyboard.down('Space');
+    await page.evaluate(s => Object.assign(window.gameplay.race.player, { distance: 6420, x: s.x, altitude: s.altitude, speed: 60, span: true }), span);
+    await page.waitForTimeout(700);
+    const ghost = await page.evaluate(() => { const g = window.gameScene.scene.getObjectByName('ghost-car'), p = window.gameScene.player.position;
+      return { visible: g.visible, lift: g.position.y, ahead: g.position.distanceTo(p) }; }); // origin = the lower road under the player
+    await page.keyboard.up('Space');
+    expect(ghost.visible).toBe(true);
+    expect(await page.evaluate(() => window.gameplay.race.player.falls), 'player stayed on the span').toBe(0);
+    expect(ghost.lift, 'ghost drawn on the span, high over the lower road').toBeGreaterThan(15);
+    expect(ghost.ahead, 'ghost ~60 m ahead on the same deck').toBeLessThan(90);
+    await capture(page, 'desktop-ghost-span');
   });
 });

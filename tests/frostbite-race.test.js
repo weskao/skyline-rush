@@ -89,7 +89,9 @@ test('rivals finish the point-to-point course and the race ends exactly once', (
   assert.ok(Number.isInteger(race.result.position) && race.result.position >= 1 && race.result.position <= 8);
 });
 
-test('a finished gated Frostbite race writes no history, bests, unlocks, stars, medals or ghosts', async () => {
+// Since 2026-11-04 a finished Frostbite race persists its results under a topology-keyed id (tests/frostbite-persistence.test.js);
+// it still never touches the campaign: no unlocks, stars, medals, NEXT, or bare/classic best ids.
+test('a finished gated Frostbite race writes only its topology-keyed results, never campaign progress', async () => {
   const { settleRace } = await import('../src/race-results.ts');
   const { loadSessionProgress } = await import('../src/session-progress.ts');
   const { createGhostStore } = await import('../src/ghost-store.ts');
@@ -100,9 +102,11 @@ test('a finished gated Frostbite race writes no history, bests, unlocks, stars, 
       result: { position: 1, time: 150, score: 900, stars: 3, collisions: 0, nearMisses: 0, success: true } });
     const settled = settleRace(race, { series: { sprintSeries: null, cup: null, stunt: null }, progress: loadSessionProgress(['coast']),
       ghosts: createGhostStore(), daily: null, trace: [{ t: 0, distance: 0, x: 0, altitude: 0 }] });
-    assert.equal(settled.record, false);
     assert.equal(settled.next, null);
-    assert.deepEqual([...store.keys()].filter(k => k.startsWith('skyline-rush-')), []);
+    assert.deepEqual([...store.keys()].filter(k => k.startsWith('skyline-rush-')).sort(),
+      ['skyline-rush-best-tracks', 'skyline-rush-history', 'skyline-rush-unlocked']); // a 1-sample trace is no valid Ghost
+    assert.deepEqual(Object.keys(JSON.parse(store.get('skyline-rush-best-tracks'))), ['frostbite-canyon@t1l1']);
+    assert.deepEqual(JSON.parse(store.get('skyline-rush-unlocked')), ['coast']);
   } finally { delete globalThis.localStorage; }
 });
 

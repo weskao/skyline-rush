@@ -47,13 +47,28 @@ export function settleRace(race: FinishedRace, context: SettleContext): Settleme
   return settlement;
 }
 
+/** Classic personal best and its Ghost. A re-laid track keeps its best under `<track>@<layout>`, a course sprint under its
+ * topology-keyed id: older-layout times never block a record. */
+function classicBest(race: FinishedRace, progress: SessionProgress, ghosts: SettleContext['ghosts'], trace: GhostSample[] | null): { best: number; record: boolean } {
+  const trackId: string = race.trackId ?? 'coast', recordId = recordTrackId(trackId);
+  const saved = recordBest(recordId, race.elapsed);
+  // Session bests keep "personal best" honest when storage is blocked.
+  const best = Math.min(saved.best, progress.bests[recordId] ?? Infinity);
+  const record = saved.record && !(progress.bests[recordId]! <= race.elapsed);
+  progress.bests[recordId] = best;
+  const ghost = { time: race.elapsed, samples: trace ?? [] };
+  if (record && trace && validGhost(ghost, trackId)) ghosts.saveClassic(trackId, ghost);
+  return { best, record };
+}
+
 function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace }: SettleContext): Settlement {
   let { sprintSeries, cup } = series;
   const { stunt } = series;
   if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
   if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
   if (stunt && race.mode === 'stunt') addStuntHeat(stunt, race);
-  // A gated Coming Soon runtime (Frostbite, dev-unlocked only) saves nothing until its release adds save keys.
+  // A Coming Soon CourseGraph runtime (Frostbite, dev-unlocked only): results, best and Ghost under its topology-keyed id,
+  // never campaign effects (medals, stars, unlocks, NEXT).
   const gated = isUpcomingTrack(race.trackId ?? 'coast');
   const medals = (race.mode === 'classic' && !gated ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
   progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
@@ -64,7 +79,8 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
   if (intermediateStage) {
     best = 0; record = false; // A partial series never writes a misleading individual best.
   } else if (gated) {
-    best = race.elapsed; record = false;
+    progress.history = [...progress.history, recordRace(race)].slice(-50);
+    ({ best, record } = classicBest(race, progress, ghosts, trace));
   } else if (race.result.success === false && race.mode !== 'classic') {
     best = race.elapsed; record = false; // A missed gate or expired clock is a retry, not a saved best.
   } else if (race.mode === 'free') {
@@ -97,19 +113,11 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     const campaignDone = tracks.every(id => progress.unlocked.has(id));
     if (following && race.result.position <= 3 && !progress.unlocked.has(following)) progress.unlocked.add(following);
     if (following && !campaignDone && progress.unlocked.has(following)) next = following;
-    // A re-laid track keeps its best under `<track>@<layout>`: older-layout times never block a record.
-    const recordId = recordTrackId(trackId);
-    const saved = recordBest(recordId, race.elapsed);
-    // Session bests keep "personal best" honest when storage is blocked.
-    best = Math.min(saved.best, progress.bests[recordId] ?? Infinity);
-    record = saved.record && !(progress.bests[recordId]! <= race.elapsed);
-    progress.bests[recordId] = best;
+    ({ best, record } = classicBest(race, progress, ghosts, trace));
     // The pre-tracks key stays readable for layout-1 coast only (older builds, browser test).
-    if (record && recordId === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
+    if (record && recordTrackId(trackId) === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
     recordStars(trackId, race.result.stars);
     progress.stars[trackId] = Math.max(progress.stars[trackId] ?? 0, race.result.stars);
-    const ghost = { time: race.elapsed, samples: trace ?? [] };
-    if (record && trace && validGhost(ghost, trackId)) ghosts.saveClassic(trackId, ghost);
   }
   if (race.mode === 'custom' && trace) ghosts.saveCustom(race, { time: race.elapsed, samples: trace });
   let challengeMedals: ChallengeMedalId[] = [];

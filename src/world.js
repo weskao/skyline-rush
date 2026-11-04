@@ -19,7 +19,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage } from './garage-stage.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
-import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts'; import { createCircuitScene } from './circuit-scene.ts'; import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteSpanLift } from './courses/frostbite-race.ts';
+import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts'; import { createCircuitScene } from './circuit-scene.ts'; import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
@@ -311,7 +311,7 @@ export function createWorld(canvas) {
   const ghostCar = makeCar(CAR_STYLES.roadster);
   const ghostMaterial = new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: 0.3, depthWrite: false });
   ghostCar.traverse(object => { if (object.material) { [].concat(object.material).forEach(mat => mat.dispose()); object.material = ghostMaterial; } });
-  ghostCar.userData.jets.visible = ghostCar.visible = false;
+  ghostCar.userData.jets.visible = ghostCar.visible = false; ghostCar.name = 'ghost-car';
   scene.add(ghostCar);
   const shadowCanvas = document.createElement('canvas');
   shadowCanvas.width = shadowCanvas.height = 64;
@@ -888,12 +888,13 @@ export function createWorld(canvas) {
       }
       ghostCar.visible = !preview && !!ghost;
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
-      if (ghostCar.visible) {
+      if (ghostCar.visible) { // samples carry no span flag: a Frostbite ghost inside the Rift corridor box is drawn on the span
+        const ghostSpan = trackId === FROSTBITE_ID && frostbiteObjectSpan(ghost.distance, ghost.x, ghost.altitude);
         if (trackId === 'spiral' || framedRoad(trackId)) {
           if(trackId==='spiral')ghostCar.position.fromArray(skyPosition(ghost.distance,ghost.x,ghost.altitude,distance));
-          else {const p=trackPoint(trackId,ghost.distance),o=trackPoint(trackId,distance),f=trackFrame(trackId,ghost.distance);
+          else {const f=trackFrame(trackId,ghost.distance,ghostSpan),p=f.point,o=trackPoint(trackId,distance);
             ghostCar.position.set(p.x-o.x+f.right[0]*ghost.x,p.y-o.y+f.up[1]*ghost.altitude,p.z-o.z+f.right[2]*ghost.x);}
-          const frame = trackId==='spiral'?skyFrame(ghost.distance):trackFrame(trackId,ghost.distance);
+          const frame = trackId==='spiral'?skyFrame(ghost.distance):trackFrame(trackId,ghost.distance,ghostSpan);
           ghostCar.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right),new THREE.Vector3(...frame.up),new THREE.Vector3(...frame.forward).negate()));
         } else {
           ghostCar.position.set(roadCenter(ghost.distance) - center + ghost.x, ghost.altitude, distance - ghost.distance);
