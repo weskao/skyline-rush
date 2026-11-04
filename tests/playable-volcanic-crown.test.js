@@ -117,3 +117,23 @@ test('Volcanic exports a canonical graph for the shared runtime without duplicat
   assert.strictEqual(graph.edges,VOLCANIC_CROWN.edges);
   assert.ok(graph.edges.every(edge=>edge.mode==='ground'||edge.mode==='flight'));
 });
+
+test('ordered directional gate frames match real physical road and finish nodes',()=>{
+  const gates=volcanic.VOLCANIC_CROWN_DIRECTIONAL_GATES;
+  assert.ok(Array.isArray(gates),'shared gate renderer needs road-frame metadata');
+  assert.deepEqual(gates.map(item=>item.nodeId),[...VOLCANIC_CROWN_CHECKPOINTS,VOLCANIC_CROWN.finish]);
+  for(const [index,gate] of gates.entries()){
+    const node=VOLCANIC_CROWN.nodes.find(item=>item.id===gate.nodeId);
+    const edge=VOLCANIC_CROWN.edges.find(item=>item.id===gate.incomingEdgeId);
+    assert.equal(edge.to,node.id);
+    assert.equal(gate.kind,index===gates.length-1?'finish':'checkpoint');
+    assert.equal(gate.width,edge.width);
+    near(gate.localS,volcanicEdgeLength(edge.id));
+    const sampled=sampleVolcanicRoute(edge.id,gate.localS);
+    for(let axis=0;axis<3;axis++){
+      near(gate.point[axis],node.at[axis],.01);
+      near(gate.forward[axis],sampled.forward[axis]);
+      near(gate.up[axis],sampled.up[axis]);
+    }
+  }
+});
