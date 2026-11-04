@@ -195,13 +195,17 @@ export function createVolcanicCrownChunk(
       :new THREE.CylinderGeometry(item.radius,item.radius,.24,24);
     const solid=item.kind==='fissure'||item.kind==='vent'?lavaMat:rock;
     const mesh=new THREE.Mesh(geometry,solid);
+    const frame=sampleVolcanicRoute(edgeId,item.s);
+    if(item.kind==='fissure'||item.kind==='vent')
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),to3(frame.up));
     mesh.name=item.id;group.add(mesh);obstacleMeshes.push({item,mesh});
     if(item.kind==='rockfall'||item.kind==='vent'){
       const warning=new THREE.Mesh(new THREE.RingGeometry(item.radius+1,item.radius+2,28),
         new THREE.MeshBasicMaterial({color:'#ffaa39',side:THREE.DoubleSide}));
-      warning.name=`${item.id}-warning`;warning.rotation.x=-Math.PI/2;
-      const baseline=volcanicObstaclePose(item,0).point;
-      warning.position.set(baseline[0],baseline[1]-(item.kind==='rockfall'?45:0)+.12,baseline[2]);
+      warning.name=`${item.id}-warning`;
+      warning.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),to3(frame.up));
+      warning.position.copy(to3(volcanicWorldPosition(edgeId,item.s,item.lateral)))
+        .addScaledVector(to3(frame.up),.12);
       group.add(warning);
     }
   }

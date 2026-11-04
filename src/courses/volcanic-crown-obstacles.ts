@@ -53,9 +53,12 @@ export function volcanicObstacleContact(
     const pose=volcanicObstaclePose(obstacle,timeSeconds);
     if(!pose.active)continue;
     const dx=car[0]-pose.point[0],dy=car[1]-pose.point[1],dz=car[2]-pose.point[2];
-    const horizontal=Math.hypot(dx,dz);
     if(obstacle.kind==='fissure'||obstacle.kind==='vent'){
-      if(horizontal<=obstacle.radius+vehicleRadius && Math.abs(dy)<1.7)return obstacle;
+      // The visible cylinder lies in the sampled road plane, not world XZ.
+      const up=sampleVolcanicRoute(edgeId,obstacle.s).up;
+      const vertical=dx*up[0]+dy*up[1]+dz*up[2];
+      const radial=Math.sqrt(Math.max(0,dx*dx+dy*dy+dz*dz-vertical*vertical));
+      if(radial<=obstacle.radius+vehicleRadius && Math.abs(vertical)<1.7)return obstacle;
     }else if(Math.hypot(dx,dy,dz)<=pose.radius+vehicleRadius)return obstacle;
   }
   return null;
