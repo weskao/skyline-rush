@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createSkyfallWorld } from '../src/courses/skyfall-world.ts';
-import { SKYFALL_COURSE, getSkyfallEdgeLength, sampleSkyfallRoad } from '../src/courses/skyfall-archipelago.ts';
+import { SKYFALL_COURSE, getSkyfallEdgeLength, sampleSkyfallRoad, hasSkyfallRoadContact } from '../src/courses/skyfall-archipelago.ts';
 
 test('Skyfall streams geometry-backed roads, islands, cloud ocean and sky rings',()=>{
   const scene=new THREE.Scene();
