@@ -29,7 +29,7 @@ import { createSkyScene } from './sky-scene.js';
 import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
 import { classicRoadCenter, trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance } from './track-paths.ts';
-import { GARAGE_FILL_BACKS,HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
+import { HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
@@ -406,11 +406,11 @@ export function createWorld(canvas) {
       projectedCarBounds(originalEye,originalLook); // measure the car once; candidates only re-project it
       // The drive shot also owns the signature landmark: tilting down to catch the wheels
       // must not push its top out of frame, so that top is a fit constraint too.
-      const landmark=!garageHomePreview&&visual.view==='drive'&&TOUR_IDS.has(trackId)?landmarkBounds(originalLook):null;
+      const landmark=visual.view==='drive'&&TOUR_IDS.has(trackId)?landmarkBounds(originalLook):null;
       // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
       const clearLeft=camera.aspect>1;
       // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
-      search: for(const back of garageHomePreview?GARAGE_FILL_BACKS:SHOWCASE_BACKS) {
+      search: for(const back of SHOWCASE_BACKS) {
         const eye=originalEye.clone().addScaledVector(framingAxis,back);
         for(const down of [0,.25,.5,.75,1,1.5,2,3,4,5,6,8,10,12]) {
           const look=originalLook.clone();look.y-=down;

@@ -129,3 +129,19 @@ for (const id of TRACKS) {
     }
   }
 }
+
+// Garage uses the same course and camera dock: preserve the home shot's scene context.
+for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
+  test(`Garage retains home camera distance and a visible car at ${viewport.width}px`, async ({ page }) => {
+    await openProbe(page, viewport);
+    for (const id of TRACKS) for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
+      const [home, garage] = await page.evaluate(([id, view]) => [
+        window.showcaseCameraProbe(id, view, { airflow: true }),
+        window.showcaseCameraProbe(id, view, { airflow: true, garage: true }),
+      ], [id, view]);
+      expect.soft(garage.range, `${id}/${view}: retain scenery around the vehicle`).toBeGreaterThanOrEqual(home.range * .95);
+      expectWholeCar(garage, `${id}/${view}/garage`);
+    }
+    await page.screenshot({ path: test.info().outputPath('garage-scene.png') });
+  });
+}
