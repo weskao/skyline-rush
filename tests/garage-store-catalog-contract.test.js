@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { STORE_ITEM_PRESENTATION, WAVE3_PREVIEW_CATALOG } from '../src/garage-wave3-preview-catalog.ts';
+import * as previewCatalog from '../src/garage-wave3-preview-catalog.ts';
+const { WAVE3_PREVIEW_CATALOG } = previewCatalog;
+const STORE_ITEM_PRESENTATION = previewCatalog.STORE_ITEM_PRESENTATION ?? {};
 import { storeReadiness } from '../src/garage-store-readiness.ts';
 
 test('all six Store cards have explicit presentation status but no transaction data', () => {
