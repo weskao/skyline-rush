@@ -56,7 +56,7 @@ test('Coming Soon cards keep original selectable route-map and KM styling, not a
 });
 
 test('existing locale and navigation hooks describe all six Coming Soon previews', () => {
-  const locale = readFileSync(new URL('../src/locales/ui.ts', import.meta.url), 'utf8');
+  const locale = readFileSync(new URL('../src/locales/upcoming-copy.ts', import.meta.url), 'utf8');
   const swipe = readFileSync(new URL('../src/track-swipe-ui.ts', import.meta.url), 'utf8');
   assert.match(locale, /'track.comingSoon': 'COMING SOON'/);
   assert.match(locale, /'track.comingSoon': '即將推出'/);

@@ -301,8 +301,15 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
   if (upcomingSelection) requestAnimationFrame(showTracks); // World WebGL bootstrap finishes first.
 
+  // Card previews animate only while scrolled into view.
+  const previewObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) (entry.target as HTMLElement).dataset.visible = String(entry.isIntersecting);
+  }, { root: $('.track-select') });
+  document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
+
   return {
     recreate: eventLab.recreate,
+    disconnectPreviews: (): void => previewObserver.disconnect(),
     selectedRace, canRace,
     selectedMode: (): string => selectedMode,
     isUpcomingSelected: (): boolean => Boolean(upcomingSelection),

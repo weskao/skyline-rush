@@ -18,6 +18,7 @@ import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage } from './garage-stage.ts';
+import { createCarBounds } from './car-bounds.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
@@ -354,28 +355,8 @@ export function createWorld(canvas) {
   // Orbit reuses eight fitted poses.
   const orbitTurns = [0,1,2,3,4,5,6,7].map(i=>i*Math.PI/4), spin = (v,a) => v.clone().sub(player.position).applyAxisAngle(camera.up,a).add(player.position);
   // Frame the full vehicle silhouette, including wheels.
-  const carBox = new THREE.Box3();
-  const carCorner = new THREE.Vector3();
+  const { projectedCarBounds, carCorner } = createCarBounds(showcaseProbe, camera, player, () => aero.group);
   let framingKey = '', framingBack = 0, framingLookY = 0; const framingAxis = new THREE.Vector3();
-  function projectedCarBounds(eye, look, measure = true) {
-    showcaseProbe.fov=50;
-    showcaseProbe.aspect=camera.aspect;
-    showcaseProbe.position.copy(eye);
-    showcaseProbe.lookAt(look);
-    showcaseProbe.updateProjectionMatrix();
-    showcaseProbe.updateMatrixWorld(true);
-    player.updateMatrixWorld(true);
-    if(measure) { carBox.makeEmpty(); for(const part of player.children) if(part!==aero.group) carBox.expandByObject(part,true); } // model only: airflow VFX spans metres
-    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-    for(const x of [carBox.min.x,carBox.max.x])
-      for(const y of [carBox.min.y,carBox.max.y])
-        for(const z of [carBox.min.z,carBox.max.z]) {
-          carCorner.set(x,y,z).project(showcaseProbe);
-          minX=Math.min(minX,carCorner.x);maxX=Math.max(maxX,carCorner.x);
-          minY=Math.min(minY,carCorner.y);maxY=Math.max(maxY,carCorner.y);
-        }
-    return {minX,maxX,minY,maxY};
-  }
 
   // Bounds of the visible landmark nearest the look target; null when none is shown.
   const apexBox = new THREE.Box3();

@@ -196,8 +196,7 @@ const raceSelect = setupRaceSelectUI({
   refreshPhase: () => phaseUI(),
   clearControls: () => controls.clear(),
   cueUi: () => sound.cue('ui'),
-  reducedMotion,
-  showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
+  reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
 });
 const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
@@ -232,11 +231,6 @@ const cloud = setupCloudUI({
     showGarage();
   },
 });
-
-const previewObserver = new IntersectionObserver(entries => {
-  for (const entry of entries) entry.target.dataset.visible = String(entry.isIntersecting);
-}, { root: $('.track-select') });
-document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
 
 function startDaily() {
   daily = dailyChallenge();
@@ -675,7 +669,7 @@ window.addEventListener('pagehide', event => {
   // A cached page resumes the same animation, renderer and controls on back navigation.
   if (event.persisted) return;
   cancelAnimationFrame(animationId);
-  previewObserver.disconnect();
+  raceSelect.disconnectPreviews();
   controls.destroy();
   sound.dispose();
   world?.dispose();
