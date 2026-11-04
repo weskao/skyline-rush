@@ -1,3 +1,9 @@
+## 2026-11-04 — Skyfall browser CI regression (#41803628752)
+
+- [x] RED (remote exact-HEAD `ec89c654`): Browser shard 4 failed the mobile upcoming-track swipe because the pointer-down position hits the visible intro instead of the WebGL canvas; shard 9 tried to select an option on the deliberately hidden native locale select. Quality Gate failed as a consequence.
+- [ ] GREEN: confirm the canvas-hit assertion and upcoming swipe test, plus the shared visible-language-picker helper and CTA localization test, on the changed HEAD in real Playwright.
+- [ ] Complete `make verify`, inspect mobile interaction, and require exact-HEAD full `quality-gate` PASS before merge. No manual-device acceptance claimed.
+
 ## Tutorial complete no longer freezes the screen — 2026-11-04
 
 **Branch:** `fix/tutorial-complete-alive` (from `develop` 4450a274). Repro: finish the last practice lesson (NITRO) → `main.js` set `race.phase = 'paused'`, so the car, road and HUD froze and the game looked broken.

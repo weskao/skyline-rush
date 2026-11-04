@@ -321,6 +321,10 @@ test.describe('phone upcoming preview swipe', () => {
   test('uses existing canvas drag to switch between future and playable scenes', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-upcoming-track="dune-tempest"]').click();
+    // The normal phone intro covers (320, 560); reveal the canvas before testing its drag handler.
+    await page.locator('#airflow-toggle').click();
+    await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
+    expect(await page.evaluate(() => document.elementFromPoint(320, 560)?.id)).toBe('world');
     await touchSwipe(page, 320, 90, 560);
     await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#start-button')).toBeDisabled();

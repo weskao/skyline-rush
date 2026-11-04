@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { selectLocale } from './helpers/locale-browser.js';
 
 const stage1 = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcanic-crown', 'stormline-megacity'];
 test.beforeEach(async ({ page }) => {
@@ -38,7 +39,7 @@ test('CTA copy is translated without resizing its hit target', async ({ page }) 
   await page.locator('[data-upcoming-track="dune-tempest"]').click();
   const button = page.locator('#start-button');
   const widthEn = await button.evaluate(e => e.getBoundingClientRect().width);
-  await page.locator('#locale-select').selectOption('zh-TW');
+  await selectLocale(page, 'zh-TW');
   await expect(button.locator('span')).toHaveText('即將推出');
   await expect(page.locator('[data-upcoming-track="dune-tempest"] small')).toHaveText('即將推出');
   await expect(page.locator('[data-upcoming-track="dune-tempest"] strong')).toHaveText('沙暴裂谷');
