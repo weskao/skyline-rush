@@ -37,7 +37,7 @@ test('owned paints equip and persist; locked paints stay preview only', async ({
   await expect(status).toContainText('Preview only · unlocks at 6 stars');
   await expect(equip).toBeDisabled();
   await page.getByRole('button', { name: 'Close garage' }).click();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('aurora');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('aurora');
   await page.reload();
   await dismissMusicPrompt(page);
   await page.getByRole('button', { name: 'Garage', exact: true }).click();
@@ -83,9 +83,9 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   await expect(toggle).not.toBeChecked();
   await expect(page.locator('#ghost-status')).toContainText('00:50.00');
   await toggle.check();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).ghost)).toBe(true);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).ghost)).toBe(true);
   await toggle.uncheck();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).ghost)).toBe(false);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).ghost)).toBe(false);
   await toggle.check();
   await page.locator('#controls-button').click();
   await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
