@@ -1,6 +1,6 @@
 import { CIRCUIT_ID } from './circuit-track.ts';
 import { stage2PreviewRequest } from './stage2-tracks.ts';
-import { UPCOMING_TRACKS, homeTrackStatus, isUpcomingTrack, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
+import { UPCOMING_TRACKS, homeTrackStatus, isCoverOnly, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
@@ -157,7 +157,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       button.title = t('track.comingSoonInfo', { track: upcomingTrackName(id, getLocale()) });
     }
   }
-  const canRace = (trackId: string): boolean => !upcomingSelection && !isUpcomingTrack(trackId) && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId));
+  const canRace = (trackId: string): boolean => !upcomingSelection && !isCoverOnly(trackId) && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId));
   function renderRouteInfo(race: Race): void {
     const daily = options.getDaily();
     const startButton = ui['start-button'] as HTMLButtonElement;

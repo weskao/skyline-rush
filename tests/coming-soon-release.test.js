@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { UPCOMING_TRACKS, homeTrackStatus, isUpcomingTrack } from '../src/upcoming-tracks.ts';
+import { UPCOMING_TRACKS, PLAYABLE_PREVIEW_IDS, homeTrackStatus, isCoverOnly, isUpcomingTrack } from '../src/upcoming-tracks.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { STAGE2_TRACKS, stage2PreviewRequest } from '../src/stage2-tracks.ts';
 import { availableTracks as developmentTracks } from '../src/access/dev-unlocked.ts';
@@ -39,6 +39,29 @@ test('all-unlocked Make variants still cannot unlock a registered cover-only cou
   }
 });
 
+test('an approved playable preview with a real runtime is playable in dev-unlocked only', () => {
+  assert.equal(PLAYABLE_PREVIEW_IDS.size, 0, 'no card is approved until its race runtime lands');
+  RACE_TRACKS['dune-tempest'] = RACE_TRACKS.coast; // stands in for a real, merged runtime
+  PLAYABLE_PREVIEW_IDS.add('dune-tempest');
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: { getItem: () => JSON.stringify(['coast', 'dune-tempest']), setItem() {} },
+  });
+  try {
+    assert.equal(developmentTracks().includes('dune-tempest'), true);
+    assert.equal(developmentTracks().includes('frostbite-canyon'), false, 'unapproved cards stay blocked');
+    assert.equal(productionTracks().includes('dune-tempest'), false, 'production never unlocks a Coming Soon id');
+    assert.equal(isCoverOnly('dune-tempest'), false);
+    assert.equal(isCoverOnly('monsoon-ruins'), true);
+  } finally {
+    PLAYABLE_PREVIEW_IDS.clear();
+    delete RACE_TRACKS['dune-tempest'];
+    if (original) Object.defineProperty(globalThis, 'localStorage', original);
+    else delete globalThis.localStorage;
+  }
+});
+
 test('Coming Soon cards keep original selectable route-map and KM styling, not a parallel gallery', () => {
   const shell = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
   const select = readFileSync(new URL('../src/race-select-ui.ts', import.meta.url), 'utf8');
@@ -51,7 +74,7 @@ test('Coming Soon cards keep original selectable route-map and KM styling, not a
   assert.match(select, /for \(const button of upcomingButtons\(\)\) button.addEventListener\('click'/);
   assert.match(select, /upcomingSelection = button.dataset.upcomingTrack/);
   assert.match(select, /labelKey = upcoming \? 'track.comingSoon'/);
-  assert.match(select, /!isUpcomingTrack\(trackId\)/, 'preview race is forbidden regardless of saved unlock');
+  assert.match(select, /!isCoverOnly\(trackId\)/, 'preview race is forbidden regardless of saved unlock');
   assert.match(select, /startButton.disabled = Boolean\(upcoming\)/);
 });
 
@@ -75,8 +98,8 @@ test('all unlocked Make targets resolve the development-only policy', () => {
 
 test('direct start and restart paths fail closed for Coming Soon, including Daily mode', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
-  assert.match(main, /function start\(\) \{\s*if \(raceSelect\.isUpcomingSelected\(\) \|\| isUpcomingTrack\(race\.trackId\)\) return;/);
-  assert.match(main, /function restart\(trackId = race\.trackId\) \{\s*if \(raceSelect\.isUpcomingSelected\(\) \|\| isUpcomingTrack\(trackId\)\) return;/);
+  assert.match(main, /function start\(\) \{\s*if \(raceSelect\.isUpcomingSelected\(\) \|\| isCoverOnly\(race\.trackId\)\) return;/);
+  assert.match(main, /function restart\(trackId = race\.trackId\) \{\s*if \(raceSelect\.isUpcomingSelected\(\) \|\| isCoverOnly\(trackId\)\) return;/);
 });
 
 test('Frostbite home shares Stage 2 metadata and only accepts the explicit showroom URL', () => {
