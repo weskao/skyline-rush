@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 });
 
-test('all six Coming Soon cards select original preview UI without enabling any race', async ({ page }) => {
+test('all six Coming Soon previews stay selectable, show original maps and never enter a race', async ({ page }) => {
   await expect(page.locator('[data-upcoming-track]')).toHaveCount(6);
   for (const id of previews) {
     await page.locator(`[data-upcoming-track="${id}"]`).click();
@@ -19,7 +19,6 @@ test('all six Coming Soon cards select original preview UI without enabling any 
     await expect(page.locator('#start-button')).toBeDisabled();
     await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
     await expect(page.locator('#upcoming-scene-image')).toHaveAttribute('src', new RegExp(id + '\\.jpg$'));
-    // Original card layout: route SVG miniature, not a cover-only static gallery.
     const card = page.locator(`[data-upcoming-track="${id}"]`);
     await expect(card).toHaveClass(/upcoming-track-card/);
     await expect(card.locator('.upcoming-route-image')).toHaveAttribute('src', new RegExp(id + '-route\\.svg
@@ -101,8 +100,8 @@ test('Start and Coming Soon labels fit after locale switching on phones', async 
 ));
     await expect(card.locator('strong')).not.toBeEmpty();
     await expect(card.locator('span').last()).toContainText('KM');
+    await expect(page.locator('#upcoming-scene')).toBeHidden(); // Original live Three.js preview, including Frostbite.
     await expect(page.locator('#track-length')).toContainText('PLANNED');
-    if (id === 'frostbite-canyon') await expect(page.locator('#upcoming-scene')).toBeVisible();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   }
   await page.keyboard.press('Enter');
@@ -177,4 +176,14 @@ test('Start and Coming Soon labels fit after locale switching on phones', async 
       }
     }
   }
+});
+
+test('Frostbite Canyon supports its authored P02 homepage view without enabling racing', async ({ page }) => {
+  await page.goto('/?stage2-preview=frostbite-canyon&shot=p02');
+  await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
+  await expect(page.locator('[data-upcoming-track="frostbite-canyon"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#upcoming-scene')).toBeHidden(); // 3D environment, not static JPEG fallback
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
 });
