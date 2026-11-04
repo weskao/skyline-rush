@@ -8,6 +8,7 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 **Tech Stack:** Blender + Python + mcp-for-blender + blender-image-to-3d + Three.js 0.186.1 + GLTFLoader + glTF Transform + Meshopt/KTX2 + Vue 3 + Vite + Node tests + Playwright.
 **Spec:** ../specs/2026-11-04-3d-visual-fidelity-pipeline-design.md
 **Preflight:** ../../designs/3d-pipeline/toolchain-environment-preflight.md
+**Standalone Phase 0 acceptance, device-specific reporting, and ready-to-copy AI prompt:** ../../designs/3d-pipeline/phase0-multi-device-acceptance.md
 **Version migration:** ../../designs/3d-pipeline/threejs-r180-r186-migration.md
 
 ## Global constraints
