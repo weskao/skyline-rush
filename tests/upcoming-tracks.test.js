@@ -7,8 +7,8 @@ import { UPCOMING_TRACKS, isUpcomingTrack, homeTrackStatus } from '../src/upcomi
 
 const ids = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcanic-crown', 'stormline-megacity'];
 
-test('only the five Stage 1 planning tracks appear as selectable coming-soon home cards', () => {
-  assert.deepEqual(Object.keys(UPCOMING_TRACKS), ids);
+test('the five Stage 1 planning tracks plus Stage 2 Frostbite Canyon appear as selectable coming-soon home cards', () => {
+  assert.deepEqual(Object.keys(UPCOMING_TRACKS), [...ids, 'frostbite-canyon']);
   for (const id of ids) {
     assert.equal(isUpcomingTrack(id), true);
     assert.equal(RACE_TRACKS[id], undefined, 'concept maps cannot enter playable RaceFactory');
@@ -17,7 +17,8 @@ test('only the five Stage 1 planning tracks appear as selectable coming-soon hom
     assert.ok(item.names.en.length > 0 && item.names['zh-TW'].length > 0);
     assert.ok(item.image.endsWith('.jpg'));
   }
-  assert.equal(isUpcomingTrack('frostbite-canyon'), false, 'Stage 2 stays out of home');
+  assert.equal(isUpcomingTrack('frostbite-canyon'), true, 'Stage 2 card is on home since 0.30.0');
+  assert.equal(RACE_TRACKS['frostbite-canyon'], undefined, 'Stage 2 concept map cannot enter playable RaceFactory');
 });
 
 test('coming-soon never becomes playable through an unlock save or another game mode', () => {
