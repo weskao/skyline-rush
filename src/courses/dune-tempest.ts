@@ -1,4 +1,5 @@
 import { buildDuneGates } from './dune-tempest-gates.ts';
+import { createDuneCourseGraph } from './dune-tempest-graph.ts';
 
 /** Authored, data-only Dune Tempest CourseGraph draft (metres).
  * The current race engine only supports a single distance-axis centreline.
@@ -140,3 +141,7 @@ export const DUNE_TEMPEST_COURSE = {
 
 // Static gate planes only. The shared CourseGraph runtime must enforce crossing order.
 export const DUNE_TEMPEST_GATES = buildDuneGates(DUNE_TEMPEST_COURSE);
+
+// Integration consumes this through the shared CourseGraph validator/arc-length sampler.
+// No new race engine or independent vehicle pose calculations are introduced.
+export const DUNE_TEMPEST_GRAPH = createDuneCourseGraph(DUNE_TEMPEST_COURSE);
