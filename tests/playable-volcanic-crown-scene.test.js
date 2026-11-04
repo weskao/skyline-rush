@@ -133,3 +133,28 @@ test('fissure discs and warning rings follow the actual sloped road normal',()=>
     chunk.dispose();
   }
 });
+
+test('Low and Medium hairpin meshes stay within 0.3 m of the sampled physical road',()=>{
+  for(const edgeId of ['ground-2','ground-6']){
+    const length=volcanicEdgeLength(edgeId);
+    for(const quality of ['low','medium']){
+      for(let chunkIndex=0;chunkIndex*VOLCANIC_CHUNK_METERS<length;chunkIndex++){
+        const chunk=createVolcanicCrownChunk(edgeId,chunkIndex,quality);
+        const position=chunk.group.getObjectByName('physical-road').geometry.getAttribute('position');
+        const rows=position.count/2-1;
+        const from=chunkIndex*VOLCANIC_CHUNK_METERS;
+        const to=Math.min(length,from+VOLCANIC_CHUNK_METERS);
+        for(let i=0;i<rows;i++){
+          const center=new THREE.Vector3();
+          for(const vertex of [2*i,2*i+1,2*i+2,2*i+3])
+            center.add(new THREE.Vector3(position.getX(vertex),position.getY(vertex),position.getZ(vertex)));
+          center.multiplyScalar(.25);
+          const physical=new THREE.Vector3(...sampleVolcanicRoute(edgeId,from+(to-from)*(i+.5)/rows).point);
+          assert.ok(center.distanceTo(physical)<=.3,
+            `${edgeId} ${quality} chunk ${chunkIndex} row ${i}: visible road deviates from physics`);
+        }
+        chunk.dispose();
+      }
+    }
+  }
+});
