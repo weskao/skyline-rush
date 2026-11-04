@@ -76,6 +76,14 @@ test('Store 3x artwork appears directly in Garage and opens its 6-image interact
     await expect(gallery.locator('[data-wave3-asset]')).toHaveCount(2);
     await gallery.locator('[data-wave3-asset="store-star"]').click();
     await expect(gallery.locator('[data-wave3-selected]')).toHaveAttribute('data-wave3-selected','store-star');
+    const selectedArt = gallery.locator('[data-wave3-preview-image="store-star"] img[data-image="store-star-detail"]');
+    await expect(selectedArt).toHaveAttribute('width', '72');
+    await expect(selectedArt).toHaveAttribute('height', '72');
+    await expect(selectedArt).toHaveJSProperty('naturalWidth', 216);
+    await gallery.locator('[data-wave3-filter="store"]').click();
+    await gallery.locator('[data-wave3-asset="store-cart"]').click();
+    const cartArt = gallery.locator('[data-wave3-preview-image="store-cart"] img[data-image="store-cart-detail"]');
+    await expect(cartArt).toHaveJSProperty('naturalWidth', 216);
     await expect(gallery.getByRole('button',{name:/buy now|purchase|claim|checkout/i})).toHaveCount(0);
     await test.info().attach(`garage-store-applied-${viewport.width}x${viewport.height}.png`, {
       body: await gallery.screenshot(), contentType: 'image/png',
@@ -95,4 +103,17 @@ test('Store preview summary has bilingual art fallback without granting an Econo
   await page.locator('#garage-close').click();
   // No balance, ownership or checkout is unlocked by displaying source artwork.
   await expect(page.locator('#garage-screen')).not.toBeVisible();
+});
+
+test('failed selected Store concept image keeps readable text and no purchase CTA', async ({ page }) => {
+  await page.route('**/feature-assets/garage-store-readiness/raster/store-star@3x.webp', route => route.abort());
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const gallery = page.locator('#garage-art-source-garage-store-readiness');
+  await gallery.locator('summary').click();
+  await gallery.locator('[data-wave3-asset="store-star"]').click();
+  const detail = gallery.locator('[data-wave3-preview-image="store-star"]');
+  await expect(detail.getByRole('img', {name: 'Featured icon'})).toBeVisible();
+  await expect(gallery.locator('[data-wave3-description]')).not.toBeEmpty();
+  await expect(gallery.getByRole('button', {name: /buy|checkout|claim|pay/i})).toHaveCount(0);
 });

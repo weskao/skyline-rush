@@ -59,7 +59,16 @@ onUnmounted(() => stopListening?.());
         <strong>{{ copy(current.name) }}</strong>
         <span>{{ locale === 'zh-TW' ? '尚未開放' : 'Coming soon' }}</span>
       </div>
-      <p data-wave3-description aria-live="polite" aria-atomic="true">{{ copy(current.description) }}</p>
+      <div class="garage-source-detail-body">
+        <div v-if="category === 'garage-store-readiness'" class="garage-source-detail-art"
+          :data-wave3-preview-image="current.id"
+          :style="{ width: config.cssSize + 'px', height: config.cssSize + 'px' }">
+          <GarageArtworkImage :src="image(current.id)" :size="config.cssSize"
+            :image-id="current.id + '-detail'"
+            :alt="copy(current.name)" :fallback-text="copy(current.name)" loading="eager" />
+        </div>
+        <p data-wave3-description aria-live="polite" aria-atomic="true">{{ copy(current.description) }}</p>
+      </div>
     </section>
   </details>
 </template>
@@ -115,6 +124,11 @@ onUnmounted(() => stopListening?.());
 .garage-source-detail-heading span { font-size: 11px; color: #e6c3f5; }
 .garage-source-detail p { margin: 7px 0 0; color: #d0e1f4; font-size: 12px; line-height: 1.55;
   overflow-wrap: anywhere; }
+.garage-source-detail-body { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.garage-source-detail-body > p { flex: 1 1 150px; margin: 0; }
+.garage-source-detail-art { flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px;
+  background: radial-gradient(circle, #43b7e22b, transparent 75%); }
+.garage-source-detail-art :deep(.artwork-img) { object-fit: contain; max-width: 100%; max-height: 100%; }
 @media (hover: hover) and (pointer: fine) {
   .garage-source-choice:hover { transform: translateY(-3px); box-shadow: 0 0 17px #3ec0f355; }
   .garage-source-filters button:hover { border-color: #7adcf7; }
