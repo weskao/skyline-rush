@@ -31,7 +31,8 @@ export function advanceCourseTravel(
   graph: CourseGraph, state: CourseTravel, metres: number,
   choices: Readonly<Record<string, string>> = {}, allowFlight = false,
 ): CourseTravel {
-  if (state.finished || !Number.isFinite(metres) || metres <= 0 || !Number.isFinite(state.localS)) return state;
+  if (state.finished || !Number.isFinite(metres) || metres <= 0 ||
+      !Number.isFinite(state.localS) || !Number.isFinite(state.lateral) || !Number.isFinite(state.altitude)) return state;
   const startEdge = graph.edges.find(edge => edge.id === state.currentEdgeId);
   if (!startEdge || state.localS < 0 || state.localS >= routeLength(graph, startEdge.id)) return state;
   if (startEdge.mode === 'flight' && !allowFlight) return state;

@@ -3385,3 +3385,11 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Confirm the newly pushed **exact-HEAD FULL** GitHub CI: unit/typecheck/build, cloud-save, every Browser and World Tour shard, and quality gate; skipped, queued, failed or cancelled does not count as PASS.
 - [ ] Connect the canonical graph traveller to authoritative `game.js` simulation, `world.js` road/wheel contact and shared RaceFactory, then implement trusted signed swept gates, branch-aware 8-car AI, layer-aware collisions, flight/landing, recovery and real results without changing legacy courses.
 - [ ] Run real desktop/mobile WebGL acceptance, compare two source JPEGs per map, measure 20+ completed races, 30/60/120 FPS, Reduced Motion and GPU disposal before enabling any Coming Soon course.
+
+
+## 2026-11-04 — graph fleet, swept gates and physical recovery
+
+- [x] TDD isolated: eight separate graph-car states, deterministic branch movement, finite metre/pose validation, layered collision candidates, verified-clear ground recovery and measured directional gate crossing; observed RED then GREEN 20/20 on isolated exact-SHA shared modules; strict isolated TS check passed.
+- [ ] Verify latest exact-HEAD FULL CI on this integration commit: Unit/Typecheck/Build, Cloud-save, every Browser (13) and World Tour (5) shard, quality-gate; no skipped/queued/cancelled/failed required suite counts as PASS.
+- [ ] Connect signed physical gates and all eight cars to the existing `game.js` authoritative simulation and RaceFactory; connect the same canonical frames to `world.js` road/pose/AI/minimap, actual knock/bump response, landing, hazard-safe recovery and finish/results.
+- [ ] Independently verify map-source exact-HEAD FULL CI and real WebGL 1440×900 / 390×844, 20+ timed races, 30/60/120 FPS, Reduced Motion, quality tiers and GPU dispose before selective file import and playable enablement. Keep Coming Soon.
