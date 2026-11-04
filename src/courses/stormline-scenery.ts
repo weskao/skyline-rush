@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { STORMLINE_MEGACITY, edgeLength, type Point3 } from './stormline-megacity.ts';
+import { STORMLINE_MEGACITY, type Point3 } from './stormline-megacity.ts';
+import { stormlineRoadLength } from './stormline-course-graph.ts';
 
 /** The graph integrator supplies the SAME canonical road frame used for physics, AI and cameras. */
 export interface CourseRoadFrame {
@@ -17,7 +18,8 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
   sample: RoadSampler, quality: Quality) {
   const edge = STORMLINE_MEGACITY.edges.find(item => item.id === edgeId);
   if (!edge) throw new Error(`Unknown Stormline edge ${edgeId}`);
-  const limit = edgeLength(edge);
+  // Chunk boundaries use the SAME smooth arc-length metres as the canonical road sampler.
+  const limit = stormlineRoadLength(edgeId);
   const from = Math.max(0, Math.min(startS, limit));
   const to = Math.max(from, Math.min(endS, limit));
   const group = new THREE.Group();
