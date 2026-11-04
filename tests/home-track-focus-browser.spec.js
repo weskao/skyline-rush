@@ -39,7 +39,7 @@ for (const [device, options] of [['desktop', {}], ['phone', { viewport: { width:
     await raceThenLeave(page, id, 'end');
     await expect.poll(async () => Math.abs(await offCentre(page, id))).toBeLessThan(2);
     await expect(page.locator('[data-upcoming-track]')).toHaveCount(6);
-    await expect(page.locator('[data-upcoming-track][aria-disabled="true"]')).toHaveCount(6);
+    await expect(page.locator('button[data-upcoming-track][aria-pressed="false"]')).toHaveCount(6);
   });
 
   test('Clicking a track focuses it and scrolls it to the row centre', async ({ page }) => {
