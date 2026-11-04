@@ -89,3 +89,22 @@ test('Skyfall waterfalls animate deterministically and freeze under Reduced Moti
   assert.equal(waterfall.position.y, baseY);
   env.dispose();
 });
+
+test('Skyfall streams both sides of split and merge before the next 420 m chunk boundary', () => {
+  const scene = new THREE.Scene();
+  const env = createSkyfallWorld(scene, 'low');
+  const road = edgeId => env.group.getObjectByName(`Skyfall ${edgeId} banked playable road`);
+
+  // Within one streamed chunk of a split, both possible routes must be visible.
+  env.setFocus([{ edgeId: 'approach', localS: getSkyfallEdgeLength('approach') - 300 }]);
+  for (const edgeId of ['a-ground', 'a-air']) {
+    assert.ok(road(edgeId), `missing next route ${edgeId} within 420 m of split`);
+  }
+
+  // Within one chunk of a merge, retain both prior approaches for the camera/rivals.
+  env.setFocus([{ edgeId: 'midway-one', localS: 300 }]);
+  for (const edgeId of ['a-ground', 'a-air']) {
+    assert.ok(road(edgeId), `missing previous route ${edgeId} within 420 m of merge`);
+  }
+  env.dispose();
+});
