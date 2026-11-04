@@ -113,7 +113,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
 }
 
 test('Store preview keeps readable Coming Soon when the real 3x entrance icon fails', async ({ page }) => {
-  await page.route('**/feature-assets/garage-store-readiness/raster/store-cart@3x.webp', route => route.abort());
+  await page.route('**/feature-assets/garage-store-readiness/raster/store-cart@3x.*', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   const gallery = page.locator('#garage-art-source-garage-store-readiness');
