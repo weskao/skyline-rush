@@ -3202,3 +3202,32 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] After asset integration, run applicable targeted tests, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, Cloud Save / World Tour and `make verify`; inspect **exact-final-HEAD** full GitHub Actions `quality-gate`. Record browser/WebGL evidence and remaining physical iOS/Android verification separately. **Do not mark Phase B or relevant TODO #5.* complete until requirements and visual signoff pass**; do not merge to `develop`, open a PR or deploy without separate authorization.
 
 ---
+
+
+## 2026-11-03 — Stage 1 real-3D homepage integration checkpoint
+
+- [x] Verified latest six branch heads before implementation. At inspection: integration `00ea05de`; Dune `b509ed2f`; Monsoon `bffc2479`; Skyfall `9eddd936`; Volcanic `efcf7a8e`; Stormline `6b28e1f4`. All five independent `src/upcoming-scenes/<id>.ts` and scene tests were absent at that snapshot; no complete art environment was selectively imported.
+- [ ] Shared-stage lifecycle test was committed first (`tests/upcoming-showcase.test.js`, initial RED candidate commit `43727ce`). **RED execution not observed**: this GitHub connector cannot run local npm in the repository; do not label TDD fully verified.
+- [ ] `src/upcoming-showcase.ts` and `src/world.js` wiring added with the single WebGL renderer/composer, shared car model/VFX, camera and quality/reduced-motion inputs. **Not accepted until real browser and CI execute**.
+- [ ] Each of five scene factory modules must arrive from its respective art branch and pass scene-specific tests. Until a factory is registered, show a localized, explicit **concept-image fallback**, never claim that JPEG is rendered 3D.
+- [ ] Run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify` locally, confirm exact-HEAD full CI, desktop 1440×900 / phone 390×844 WebGL screenshots, two timestamps per scene, Reduced Motion, and comparison with both JPEG views. **None of these local or visual checks has been observed in this session**.
+- [ ] Preserve ten existing playable tracks, Coming Soon disabled state, no new race IDs, no main/develop mutations, PR or deployment.
+
+- [ ] **2026-11-03 source integration update:** Five independent art branches subsequently delivered actual native Three.js scene modules, corresponding focused unit tests and art notes. Their exports, geometry, absolute-time updates, quality/reduced-motion arguments and disposal methods were source-reviewed. The exact 15 committed Git blobs were selectively imported without merging old histories. Heads: `dune-tempest` `fa9573b4bddd`; `monsoon-ruins` `32411c88c702`; `skyfall-archipelago` `9707c5132dab`; `volcanic-crown` `d7ad8b01f57f`; `stormline-megacity` `84e9569a2d4c`. Source branch CI was still queued when checked; this is **not** verified visual acceptance.
+- [ ] Register all five in the shared renderer and run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and 2 real WebGL frames per map desktop/mobile. Pending; do not label scenes visually accepted before screenshots and checks.
+
+## 2026-11-04 — Preview-only Coming Soon fail-closed access (Frostbite working branch)
+
+- [x] Add explicit default-preview readiness to the shared Coming Soon catalog. Only approved `playable` cards with real race runtime can START under `make dev-unlocked`; concept-only or development cards never can, even with an accidental runtime registration. Frostbite remains dev-only; all production Coming Soon cards remain disabled.
+- [x] Focused isolated RED→GREEN reproduced runtime-only unlock on a preview with Node 22 stubs (2 expected failures before fix, 3/3 pass after). This is not a full repository regression run.
+- [ ] Run `make verify`, production bundle audit and real desktop/mobile UI checks from a complete checkout; inspect exact-HEAD FULL GitHub Actions CI and screenshots. Do not label merge-ready until these gates pass.
+- [ ] After source integration CI and branch conflict review, forward-port the shared readiness guard to `feature/epic-multiroute-longform-tracks`; then follow feature → develop → main release checks. Do not alter existing release tags.
+
+## 2026-11-04 — Garage showcase camera regression
+
+- [x] Source/rules review: `b8ae6a19` introduced `GARAGE_FILL_BACKS` with −9..−1 m dolly-in and disabled Garage drive landmark framing. Restore the shared home-distance candidates and landmark constraint; keep pose controls and Studio inspection unchanged.
+- [x] RED → GREEN: `playwright.world-tour.config.js`, `showcase-camera-views-browser.spec.js -g 'Garage retains'`: 2 failed before / 2 passed after. Covers every `RACE_TRACKS` entry plus Harbor Circuit, six views, 1440×900 and 390×844; checks home-relative distance, complete car bounds and scenery occlusion. Coast drive was ~13.1 m home vs ~6.4 m Garage; fixed Garage retains home distance.
+- [x] Actual Garage UI + Studio regression: 15 passed at 1440×900, 390×844, 844×390 (Studio also 320×740); pose/wing, preset controls, zoom, drag, paint entitlement, locale and back navigation. Real WebGL screenshots for all six Garage home views: `artifacts/garage-camera-check/`. Visually inspected desktop drive and phone front: complete vehicle plus road and scenery visible. Remaining screenshots captured for review, not physical-device signoff.
+- [x] Production build passed. No new GPU resources, per-frame work, sound or quality-tier branches: this restores camera placement only. Existing Low/Medium/High rendering and audio remain applicable.
+- [ ] Full local `make verify` and exact-final-commit GitHub CI `quality-gate`: pending. Initial gate caught a literal timeout in the new test; removed the unnecessary override and timeout-policy suite passed 7/7. Rerun typecheck passed, units 1630 passed / 3 skipped, build passed. Full browser run interrupted for safe remote integration; full local gate remains incomplete. Final integrated-tree checks and exact-HEAD full CI pending.
+- [ ] Physical iOS/Android and GPU/performance/thermal measurements remain open; browser viewport screenshots do not certify hardware. No PR, merge or deployment authorized.
