@@ -62,3 +62,35 @@ test('beside a deck, or on a classic track shortcut, the car still rises freely 
   for (let i = 0; i < 150; i++) stepRace(classic, { fly: true }, 1 / 60);
   assert.ok(classic.player.altitude > slab(coast).top, `coast: ${classic.player.altitude}`);
 });
+
+// AI rivals' scripted hops (a time cycle, not physics) obey the same decks: every phase of every rival's hop.
+const inSlab = (s, altitude) => altitude + CAR_HEIGHT > slab(s).under + 1e-9 && altitude < slab(s).top - 1e-9;
+for (const hz of [30, 60, 120]) {
+  test(`a rival hopping under a deck never sits inside its slab (${hz} Hz)`, () => {
+    let peak = 0;
+    for (const section of decks) for (let start = 0; start < 13; start++) {
+      const race = at(FROSTBITE_ID, section, { distance: section.from - 200 });
+      race.elapsed = start;
+      for (const rival of race.rivals) Object.assign(rival, { distance: section.from + 10, x: section.x, homeX: section.x, speed: 20 });
+      for (let i = 0; i < 4 * hz; i++) {
+        stepRace(race, {}, 1 / hz);
+        for (const r of race.rivals) if (r.distance < section.to && Math.abs(r.x - section.x) < SHORTCUT_HALF_WIDTH) {
+          assert.ok(!inSlab(section, r.altitude), `${r.name} at ${r.altitude.toFixed(2)} inside ${slab(section).under}–${slab(section).top}`);
+          peak = Math.max(peak, r.altitude);
+        }
+      }
+    }
+    assert.ok(peak + CAR_HEIGHT > decks[0].altitude - SHORTCUT_TOLERANCE - DECK_DEPTH - .05, 'a rival really hopped up to the ceiling');
+  });
+}
+
+test('a rival on a classic shortcut still hops through the deck height', () => {
+  const coast = RACE_TRACKS.coast.sections.find(s => s.type === 'shortcut');
+  const race = at('coast', coast, { distance: coast.from - 200 });
+  race.elapsed = 6;
+  const [rival] = race.rivals;
+  Object.assign(rival, { distance: coast.from + 10, x: coast.x, homeX: coast.x, speed: 20 });
+  let peak = 0;
+  for (let i = 0; i < 240; i++) { stepRace(race, {}, 1 / 60); peak = Math.max(peak, rival.altitude); }
+  assert.ok(peak > slab(coast).top, `coast rival peak ${peak.toFixed(2)}`);
+});

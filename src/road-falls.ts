@@ -52,10 +52,18 @@ const CAR_HALF_WIDTH = .85; // m: half the car-vs-car box (|Δx| < 1.7)
  * Solid deck (`section.deck`): a car body never sits inside the slab. Whichever side the car came from wins:
  * from below its roof stops at the underside, from above it rests on the top and drops off past the end or a side.
  */
-export function stepDeck(car: FallingCar, section: TrackSection | undefined, previousAltitude: number, carHeight: number): void {
+export function stepDeck(car: Pick<FallingCar, 'distance' | 'x' | 'altitude' | 'verticalSpeed'>, section: TrackSection | undefined, previousAltitude: number, carHeight: number): void {
   if (!section?.deck || car.distance >= section.to || Math.abs(car.x - (section.x ?? 0)) >= SHORTCUT_HALF_WIDTH + CAR_HALF_WIDTH) return;
   const top = (section.altitude ?? 0) - SHORTCUT_TOLERANCE, under = top - DECK_DEPTH;
   if (car.altitude + carHeight <= under || car.altitude >= top) return;
   if (previousAltitude + carHeight / 2 < (top + under) / 2) { car.altitude = under - carHeight; car.verticalSpeed = Math.min(0, car.verticalSpeed); }
   else { car.altitude = top; car.verticalSpeed = Math.max(0, car.verticalSpeed); }
+}
+
+/** A rival's scripted hop (a time cycle, no vertical speed) obeys the same solid decks, from its last clamped altitude. */
+export function stepRivalDeck(rival: { distance: number; x: number; altitude: number }, sections: readonly TrackSection[], previousAltitude: number, carHeight: number): void {
+  if (!rival.altitude && !previousAltitude) return; // grounded, the common case: no section lookup
+  const car = { distance: rival.distance, x: rival.x, altitude: rival.altitude, verticalSpeed: 0 };
+  stepDeck(car, sections.find(s => car.distance >= s.from && car.distance < s.to), previousAltitude, carHeight);
+  rival.altitude = car.altitude;
 }
