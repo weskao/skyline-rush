@@ -17,8 +17,9 @@ for (const [name, viewport, hasTouch] of [
   test.use({ viewport, hasTouch });
   test('track previews, countdown, pause and restart have interruptible motion', async ({ page }) => {
     await open(page);
-    await expect(page.locator('.track-preview')).toHaveCount(Object.keys(RACE_TRACKS).length);
-    await expect(page.locator('.track-preview').first()).toHaveCSS('animation-play-state', 'running');
+    // Coming Soon cards reuse .track-preview for their thumbnail; only race tracks animate here.
+    await expect(page.locator('[data-track] .track-preview')).toHaveCount(Object.keys(RACE_TRACKS).length);
+    await expect(page.locator('[data-track] .track-preview').first()).toHaveCSS('animation-play-state', 'running');
     await page.evaluate(() => {
       window.uiMotion = [];
       const animate = Element.prototype.animate;
@@ -77,7 +78,7 @@ test('reduced-motion and comfort suppress presentation movement and looping prev
   await open(page);
   await expect(page.locator('.track-preview').first()).toHaveCSS('animation-name', 'none');
   await page.locator('.history-button').click();
-  expect(await page.locator('#history-screen').evaluate(el => el.getAnimations().length)).toBe(0);
+  await expect.poll(() => page.locator('#history-screen').evaluate(el => el.getAnimations().length)).toBe(0);
   await page.keyboard.press('Escape');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.locator('#vfx-panel > summary').click();
@@ -89,7 +90,7 @@ test('enabling reduced motion interrupts an intro exit already in progress', asy
   await open(page);
   await page.evaluate(() => document.documentElement.style.setProperty('--dur-base', '4000ms'));
   await page.locator('#start-button').click();
-  expect(await page.locator('#intro').evaluate(el => el.getAnimations().length)).toBeGreaterThan(0);
+  await expect.poll(() => page.locator('#intro').evaluate(el => el.getAnimations().length)).toBeGreaterThan(0);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   // Leave room for a software-rendered frame, but fail before the 4 s animation expires naturally (fixed budget: never scaled).
   await expect.poll(() => page.locator('#intro').evaluate(el => el.getAnimations().length), { timeout: 2000 }).toBe(0);
