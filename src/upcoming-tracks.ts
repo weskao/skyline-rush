@@ -29,6 +29,13 @@ export const UPCOMING_TRACKS = Object.freeze({
 export type UpcomingTrackId = keyof typeof UPCOMING_TRACKS;
 export type HomeTrackStatus = 'coming-soon' | 'locked' | 'unlocked';
 export const isUpcomingTrack = (id: string): id is UpcomingTrackId => Object.hasOwn(UPCOMING_TRACKS, id);
+
+/** Cards whose real race runtime is registered in RACE_TRACKS and approved for dev-unlocked play (empty until then).
+ *  Only src/access/dev-unlocked.ts honours it; production.ts always filters every upcoming id. */
+export const PLAYABLE_PREVIEW_IDS: Set<string> = new Set();
+export const isPlayablePreview = (id: string): boolean => isUpcomingTrack(id) && PLAYABLE_PREVIEW_IDS.has(id);
+/** A Coming Soon id that must never START: every upcoming card except an approved playable preview. */
+export const isCoverOnly = (id: string): boolean => isUpcomingTrack(id) && !PLAYABLE_PREVIEW_IDS.has(id);
 export const upcomingTrackName = (id: UpcomingTrackId, locale: string): string =>
   UPCOMING_TRACKS[id].names[locale === 'zh-TW' ? 'zh-TW' : 'en'];
 export function homeTrackStatus(id: string, unlocked: ReadonlySet<string>): HomeTrackStatus {

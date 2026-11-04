@@ -25,6 +25,7 @@ test('parseLog reads list-reporter durations from a CI log', () => {
     'browser-tests (1)\tRun\t2026-10-30T21:50:53.8Z   ✓   1 tests/a-browser.spec.js:20:3 › grp › one (23.5s)',
     'browser-tests (1)\tRun\t2026-10-30T21:50:54.8Z   ✘   2 tests/a-browser.spec.js:30:3 › two (1.5m)',
     'browser-tests (1)\tRun\t2026-10-30T21:50:55.8Z   ✓   3 tests/a-browser.spec.js:40:3 › three (250ms)',
+    'browser-tests (1)\tRun\t2026-10-30T21:52:55.8Z   ✓   4 tests/a-browser.spec.js:30:3 › two (retry #1) (40.0s)',
   ].join('\n');
   assert.deepEqual(parseLog(log), { 'a-browser.spec.js › grp › one': 23.5, 'a-browser.spec.js › two': 90, 'a-browser.spec.js › three': 0.3 });
 });
