@@ -136,8 +136,8 @@ function mainPoint(distance: number): Vec3 {
   return mix(samples[lo - 1], samples[lo], fraction);
 }
 function frameFor(pointAt: (s: number) => Vec3, s: number, from: number, to: number,
-  edgeId: MonsoonEdgeId): MonsoonRouteFrame {
-  const a = pointAt(Math.max(from, s - 1)), b = pointAt(Math.min(to, s + 1));
+  edgeId: MonsoonEdgeId, span = 1): MonsoonRouteFrame {
+  const a = pointAt(Math.max(from, s - span)), b = pointAt(Math.min(to, s + span));
   const forward = normalize(subtract(b, a));
   const right = normalize([-forward[2], 0, forward[0]]);
   const up = normalize(cross(right, forward));
@@ -154,7 +154,8 @@ export function sampleMonsoonRoute(edgeId: MonsoonEdgeId | string, distance: num
     const t = (s - branch.from) / (branch.to - branch.from);
     if (t <= 0) return mainPoint(branch.from);
     if (t >= 1) return mainPoint(branch.to);
-    const { point, right } = frameFor(mainPoint, s, 0, LENGTH, 'ground');
+    // Wide normal window: a ±1 window flips at every centreline facet and swings the fork offset.
+    const { point, right } = frameFor(mainPoint, s, 0, LENGTH, 'ground', 40);
     const fade = Math.sin(Math.PI * t) ** 2;
     return [
       point[0] + right[0] * branch.offset * fade,
