@@ -188,7 +188,8 @@ export function createVolcanicCrownChunk(
       .addScaledVector(to3(f.up),5);
     shimmer.name='heat-shimmer';group.add(shimmer);
   }
-  const lavaLight=edge.mode==='flight'?null:new THREE.PointLight('#ff743b',quality==='low'?.8:1.5,95,2);
+  const lavaGlow=quality==='low'?.7:quality==='medium'?1.1:1.55;
+  const lavaLight=edge.mode==='flight'?null:new THREE.PointLight('#ff743b',lavaGlow,95,2);
   if(lavaLight){
     const f=sampleVolcanicRoute(edgeId,(from+to)/2);
     lavaLight.position.copy(to3(f.point)).addScaledVector(to3(f.right),edge.width/2+23)
@@ -232,7 +233,7 @@ export function createVolcanicCrownChunk(
     if(sparks)sparks.visible=!reduce;
     if(ash){ash.visible=!reduce;ash.position.y=reduce?0:Math.sin(time*.2)*1.3;}
     if(shimmer){shimmer.visible=!reduce;shimmer.scale.y=reduce?1:1+Math.sin(time*.7)*.09;}
-    if(lavaLight)lavaLight.intensity=reduce?1.1:1.1+Math.sin(time*.9)*.22;
+    if(lavaLight)lavaLight.intensity=lavaGlow+(reduce?0:Math.sin(time*.9)*.14);
     const plume=group.getObjectByName('eruption-plume');
     if(plume)plume.scale.y=reduce?1:1+Math.sin(time*.47)*.12;
     for(const {item,mesh} of obstacleMeshes){
