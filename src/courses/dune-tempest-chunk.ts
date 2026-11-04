@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildDuneChasmTerrain } from './dune-tempest-chasm.ts';
 import { DUNE_TEMPEST_COURSE, DUNE_TEMPEST_GRAPH } from './dune-tempest.ts';
 import { buildDuneRoadChunk, buildDuneTerrainChunk, positionDuneHazards,
   duneSurfaceIntervals, duneWeatherBudget } from './dune-tempest-geometry.ts';
@@ -50,6 +51,18 @@ export function createDuneTempestVisualChunk(parent: THREE.Object3D, edgeId: str
     const terrain = buildDuneTerrainChunk(sample, edgeId, from, to, edge.width,
       initialQuality === 'low' ? 110 : 145, spacing * 1.5);
     addMesh('Dune open terrain', terrain.positions, terrain.indices, 0xd99445);
+  }
+
+  if (edge.mode === 'flight') {
+    const gapFrom = Math.max(startS, 60);
+    const gapTo = Math.min(endS, length - (authoredEdge.landing?.clearLengthMeters ?? 105));
+    if (gapTo > gapFrom) {
+      const fromNode = DUNE_TEMPEST_GRAPH.nodes.find(node => node.id === edge.from)!;
+      const toNode = DUNE_TEMPEST_GRAPH.nodes.find(node => node.id === edge.to)!;
+      const terrain = buildDuneChasmTerrain(sample, edgeId, gapFrom, gapTo, length, edge.width,
+        Math.min(fromNode.at[1], toNode.at[1]), spacing * 2);
+      addMesh('Dune chasm floor', terrain.positions, terrain.indices, 0x945b3c);
+    }
   }
 
   const placed = positionDuneHazards(DUNE_TEMPEST_COURSE.hazards, edgeId, length, sample);
