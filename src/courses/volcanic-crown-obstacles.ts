@@ -68,7 +68,7 @@ export type VolcanicAIAvoidanceHint = {
   readonly id:string; readonly edgeId:string; readonly distanceAhead:number;
   readonly point:Vec3; readonly lateral:number; readonly clearanceRadius:number;
   readonly warning:boolean; readonly active:boolean;
-  readonly passLeft:readonly [number,number]; readonly passRight:readonly [number,number];
+  readonly passLeft:readonly [number,number]|null; readonly passRight:readonly [number,number]|null;
 };
 export function volcanicAIAvoidanceHints(
   edgeId:string, localS:number, timeSeconds:number, lookAhead=90,
@@ -82,13 +82,13 @@ export function volcanicAIAvoidanceHints(
     .filter(({pose})=>pose.active||pose.warning)
     .map(({item,pose})=>{
       const clearanceRadius=item.radius+2.3;
+      const leftEnd=Math.max(-maxLateral,Math.min(maxLateral,item.lateral-clearanceRadius));
+      const rightStart=Math.min(maxLateral,Math.max(-maxLateral,item.lateral+clearanceRadius));
       return {
         id:item.id,edgeId,distanceAhead:item.s-localS,point:pose.point,
         lateral:item.lateral,clearanceRadius,warning:pose.warning,active:pose.active,
-        passLeft:[-maxLateral,Math.max(-maxLateral,
-          Math.min(maxLateral,item.lateral-clearanceRadius))] as const,
-        passRight:[Math.min(maxLateral,
-          Math.max(-maxLateral,item.lateral+clearanceRadius)),maxLateral] as const,
+        passLeft:leftEnd>-maxLateral ? [-maxLateral,leftEnd] as const : null,
+        passRight:rightStart<maxLateral ? [rightStart,maxLateral] as const : null,
       };
     });
 }
