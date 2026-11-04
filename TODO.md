@@ -3174,3 +3174,19 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] After asset integration, run applicable targeted tests, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, `npm run test:browser`, Cloud Save / World Tour and `make verify`; inspect **exact-final-HEAD** full GitHub Actions `quality-gate`. Record browser/WebGL evidence and remaining physical iOS/Android verification separately. **Do not mark Phase B or relevant TODO #5.* complete until requirements and visual signoff pass**; do not merge to `develop`, open a PR or deploy without separate authorization.
 
 ---
+
+---
+
+## 2026-11-04 — Wave 3 Garage Store Readiness implementation and pending evidence
+
+**Owner:** `feature/garage-store-readiness` only. **Integration:** no merge / PR / deployment authorized. The Store is a read-only, unavailable catalog; no price, live purchase, balance, claim, or ownership grant.
+
+- [ ] **Independent 3× assets:** 6 repaired, complete source WebPs and SVG masters are present. CI-triggered lossless exports to `public/feature-assets/garage-store-readiness/raster/store-*@3x.png` must be **committed and verified** at 216 × 216 with true alpha, safe bounds, source pixel identity, unique content and actual browser display at 72 × 72 CSS pixels. Until all six PNGs exist in the branch, this remains open.
+- [ ] **Real Garage Store UI:** direct non-checkout Store entrance in `GaragePanel.vue` opens bilingual category filters, Featured concepts, Coming Soon/Unavailable cards and a deliberately disabled action. Source added, but browser/manual acceptance is outstanding.
+- [ ] **Fallback & responsive:** `BASE_URL` PNG → repaired WebP → text, mouse/keyboard/touch, en/zh-TW, 390×844 / 844×390 / 1440×900, reduced-motion and 44px hit targets. Automated specs added; exact-HEAD results and screenshots remain unverified.
+- [ ] **TDD / Focused Checks:** source-level tests `garage-store-catalog-contract.test.js`, `garage-store-png.test.js`, existing Wave 3 tests and new `garage-store-catalog-browser.spec.js` added. RED assertions were committed before implementation; original RED was **not executed successfully** before follow-up pushes cancelled CI, so do not claim observed RED/GREEN evidence.
+- [ ] **Full Regression:** require final asset commit, `npm test`, Typecheck, Build, Browser, Cloud Save and World Tour checks on **exact final branch HEAD**. A focused green result with skipped Browser/World Tour is not full acceptance. Local `make verify` and actual iOS/Android screen/perf review remain independent gates.
+- [ ] **Separate approval:** prices, refunds, purchase SDK/checkout, paid/earned entitlement, currency balances and provider policies are neither approved nor implemented; no Store publishing until approved.
+
+Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIFEST.md`. PNG generator: `scripts/render-store-png.mjs`; branch-only audit workflow: `.github/workflows/store-png-generator.yml`. Prior exact-HEAD `c8235fc8045982e01638794027f818b8103cbdf0` passed **focused** CI run `41784030747` while Browser and World Tour were skipped. Those checks do not validate later changes.
+
