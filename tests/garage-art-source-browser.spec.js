@@ -72,7 +72,7 @@ test('Store 3x artwork appears directly in Garage and opens its 6-image interact
     await page.keyboard.press('Enter');
     await expect(gallery).toHaveAttribute('open','');
     await expect(gallery.locator('[data-wave3-asset]')).toHaveCount(6);
-    await gallery.getByRole('button',{name:'Collection'}).click();
+    await gallery.getByRole('button',{name:'Collection',exact:true}).click();
     await expect(gallery.locator('[data-wave3-asset]')).toHaveCount(2);
     await gallery.locator('[data-wave3-asset="store-star"]').click();
     await expect(gallery.locator('[data-wave3-selected]')).toHaveAttribute('data-wave3-selected','store-star');
