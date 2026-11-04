@@ -170,7 +170,11 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
     race.traffic = [];
     for (const ring of race.rings) if (ring.group !== 0) ring.hit = true;
     first.forEach((ring, i) => Object.assign(ring, {
-      x: race.player.x, altitude: 2.5, type: i < 2 ? 'nitro' : 'charge',
+      // Keep real game collection/scoring, but make every gate independently reachable
+      // before slow software WebGL runs out of simulated distance on CI.
+      distance: 110 + i * 30, x: race.player.x, altitude: 2.5, radius: 4.8,
+      row: false, groupSize: first.length, hit: false, downUntil: 0,
+      type: i < 2 ? 'nitro' : 'charge',
     }));
     return first.map(({ distance, type }) => ({ distance, type }));
   });

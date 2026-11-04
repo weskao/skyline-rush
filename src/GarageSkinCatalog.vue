@@ -218,7 +218,7 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-skin-preview-hitarea {
   position: relative; z-index: 1; flex: 1; width: 100%; min-height: 0;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  border: 0; border-radius: inherit; padding: 12px 8px 8px; color: inherit;
+  border: 0; border-radius: inherit; padding: 12px 4px 8px; color: inherit;
   text-align: center; background: transparent; cursor: pointer; touch-action: manipulation;
 }
 /* Press feedback belongs to the whole card, never a dimmed box around its upper part. */

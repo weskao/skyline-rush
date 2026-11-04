@@ -171,6 +171,8 @@ test.describe('desktop', () => {
     });
     await page.keyboard.press('Escape');
     await expect(page.locator('#release-media-viewer')).toBeHidden();
+    // HTMLDialogElement queues the close event after removing the open attribute.
+    await expect.poll(() => page.evaluate(() => window.releaseHandoff)).toBeDefined();
     const handoff = await page.evaluate(() => window.releaseHandoff);
     expect(handoff?.enlarged).toBeGreaterThan(heroTime + 1);
     expect(Math.abs(handoff.hero - handoff.enlarged), 'the hero resumes from the enlarged frame on close').toBeLessThan(0.1);
