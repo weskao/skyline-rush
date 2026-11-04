@@ -131,3 +131,20 @@ test('Skyfall landing guidance appears only beyond each unsupported flight gap a
   }
   env.dispose();
 });
+
+test('Skyfall island terraces stay beneath playable road rather than burying it', () => {
+  const scene = new THREE.Scene();
+  const env = createSkyfallWorld(scene, 'low');
+  const sampleS = 1030; // second low-tier island on the a-ground edge
+  env.setFocus([{edgeId:'a-ground', localS:sampleS}]);
+  const chunk = env.group.getObjectByName('Skyfall streamed chunk a-ground:2');
+  const terrace = chunk?.getObjectByName('Skyfall playable island terraces');
+  assert.ok(terrace?.isInstancedMesh, 'expected streamed island terrace');
+  const matrix = new THREE.Matrix4();
+  terrace.getMatrixAt(0, matrix);
+  const center = new THREE.Vector3().setFromMatrixPosition(matrix);
+  const roadHeight = sampleSkyfallRoad('a-ground',sampleS).point.y;
+  assert.ok(center.y < roadHeight - 7,
+    `terrace should lie below road: road=${roadHeight}, terrace=${center.y}`);
+  env.dispose();
+});
