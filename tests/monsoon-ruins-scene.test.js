@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { MONSOON_RUINS_COURSE, sampleMonsoonRoute } from '../src/courses/monsoon-ruins.ts';
+import { MONSOON_RUINS_COURSE, sampleMonsoonRoute, monsoonWetContact } from '../src/courses/monsoon-ruins.ts';
 import { createMonsoonRuinsChunk } from '../src/courses/monsoon-ruins-scene.ts';
 
 const find = (group, name) => {
@@ -73,6 +73,21 @@ test('ford has a physical visible water layer separate from the mud driving surf
   const { chunk } = mount(3150, 3300, 'river-ford');
   assert.ok(find(chunk.group, 'monsoon-course-river-ford'));
   assert.ok(find(chunk.group, 'monsoon-shallow-river-ford'));
+  chunk.dispose();
+});
+
+test('river ford water mesh follows the shared physical contact depth along the road', () => {
+  const from = 3150, to = 3300;
+  const { chunk } = mount(from, to, 'river-ford');
+  const road = find(chunk.group, 'monsoon-course-river-ford').geometry.getAttribute('position');
+  const water = find(chunk.group, 'monsoon-shallow-river-ford').geometry.getAttribute('position');
+  assert.equal(water.count, road.count);
+  for (let i = 0; i < road.count; i += 2) {
+    const s = from + (to - from) * (i / 2) / (road.count / 2 - 1);
+    const visibleDepth = water.getY(i) - road.getY(i) - .005;
+    assert.ok(Math.abs(visibleDepth - monsoonWetContact('river-ford', s).depth) < .003,
+      `water/physics mismatch at ${s}: ${visibleDepth}`);
+  }
   chunk.dispose();
 });
 

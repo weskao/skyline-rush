@@ -189,6 +189,15 @@ test('swept lateral obstacle query catches diagonal crosses but not adjacent rou
     column.at + 10, 8, 0, -20), null, 'separate edge never collides');
 });
 
+test('diagonal obstacle sweep detects a side-swipe before its centre', () => {
+  const column = course.obstacles.find(o => o.id === 'collapsed-column-1');
+  assert.ok(column);
+  assert.equal(monsoonObstacleHit('ground', column.at - 3, column.at + 25,
+    column.lateral + 50, 0, column.lateral - .5)?.id, column.id);
+  assert.equal(monsoonObstacleHit('ground', column.at - 3, column.at + 25,
+    column.lateral + 50, 0, column.lateral + 12), null);
+});
+
 test('recovery selects passed safe checkpoint on the real ground and never teleports to finish', () => {
   const passed = course.checkpoints.slice(0, 3);
   const safe = monsoonRecovery(8500, passed);
