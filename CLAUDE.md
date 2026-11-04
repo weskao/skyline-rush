@@ -32,6 +32,11 @@ and `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`.
 For repeatable checks across Mac mini, MacBook Pro or other devices, use the self-contained
 `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` (E01–E15, device alias,
 actual live MCP evidence and per-device reports). Never reuse another device's PASS.
+**Public repo security:** all per-device reports and device names belong ONLY in the
+`.gitignore`-excluded `docs/designs/3d-pipeline/audits/` directory; after a device
+actually passes, write only its general model (e.g. Mac mini) to the LOCAL report
+and ignored `audits/device-status.md`. Do not commit/push machine identifiers,
+paths, serials, MCP configs, raw logs or any per-device pass results.
 **Mandatory Phase 0 before implementation:** run
 `docs/designs/3d-pipeline/toolchain-environment-preflight.md` on the user's Mac;
 check actual Blender addon + live MCP transport, user-global Skills, Claude/Codex scopes,
