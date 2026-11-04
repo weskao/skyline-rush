@@ -66,8 +66,9 @@ test('city has batched buildings, three major anchors and local atmospheric dept
   const lights = [];
   const drawables = [];
   env.group.traverse(object => {
-    // Duck-typed: the module loads three via require (CJS) and this test via import (ESM), so instanceof fails across the two copies.
-    if (object.isInstancedMesh) instanced.push(object);
+    // The scene's CommonJS-transpiled Three module may not share constructor identity
+    // with our ESM import. Three's intrinsic instance tag tests the real GPU batch.
+    if (object.isInstancedMesh && object.instanceMatrix) instanced.push(object);
     if (object.isLight) lights.push(object);
     if (object.isMesh || object.isPoints || object.isLineSegments) drawables.push(object);
   });
