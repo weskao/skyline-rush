@@ -161,3 +161,21 @@ export function volcanicRecovery(state: VolcanicGateState): RouteFrame {
   const edge=mainEdges.find(item=>item.from===checkpoint) ?? mainEdges[0];
   return sampleVolcanicRoute(edge.id, Math.min(32, volcanicEdgeLength(edge.id)*.05));
 }
+
+// Static presentation metadata only: the shared race runtime authorizes swept,
+// forward, route-layer-aware checkpoint crossings and finish transitions.
+export type VolcanicDirectionalGate = {
+  readonly nodeId:string; readonly kind:'checkpoint'|'finish';
+  readonly incomingEdgeId:string; readonly localS:number;
+  readonly point:Vec3; readonly forward:Vec3; readonly up:Vec3;
+  readonly width:number;
+};
+export const VOLCANIC_CROWN_DIRECTIONAL_GATES: readonly VolcanicDirectionalGate[] =
+  [...VOLCANIC_CROWN_CHECKPOINTS,VOLCANIC_CROWN.finish].map(nodeId=>{
+    const edge=mainEdges.find(item=>item.to===nodeId)!;
+    const localS=volcanicEdgeLength(edge.id);
+    const frame=sampleVolcanicRoute(edge.id,localS);
+    const kind:'checkpoint'|'finish'=nodeId===VOLCANIC_CROWN.finish?'finish':'checkpoint';
+    return {nodeId,kind,incomingEdgeId:edge.id,localS,
+      point:frame.point,forward:frame.forward,up:frame.up,width:edge.width};
+  });
