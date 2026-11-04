@@ -64,6 +64,35 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(points[0], 3));
       group.add(new THREE.Line(geo, points[1]));
     }
+    // Fixed-distance dashed lane guide remains readable in rain across arbitrary stream splits.
+    // Use the same canonical road frame; these non-solid meshes never enter collision physics.
+    const guides: number[] = [], faces: number[] = [];
+    const dashStep = 24;
+    for (let index = Math.floor(from / dashStep); index * dashStep < to; index++) {
+      const start = Math.max(from, index * dashStep + 4);
+      const end = Math.min(to, index * dashStep + 15);
+      if (start >= end) continue;
+      for (const distance of [start, end]) {
+        const pose = sample(edgeId, distance);
+        for (const offset of [-0.22, 0.22]) {
+          const point = v3(pose.point).addScaledVector(v3(pose.right), offset)
+            .addScaledVector(v3(pose.up), 0.11);
+          guides.push(point.x, point.y, point.z);
+        }
+      }
+      const n = guides.length / 3 - 4;
+      faces.push(n, n + 1, n + 2, n + 1, n + 3, n + 2);
+    }
+    if (guides.length) {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(guides, 3));
+      geometry.setIndex(faces); geometry.computeVertexNormals();
+      const material = new THREE.MeshBasicMaterial({ color: 0x9bcddb, side: THREE.DoubleSide });
+      ownedMaterials.push(material);
+      const laneGuides = new THREE.Mesh(geometry, material);
+      laneGuides.name = `stormline:lane-guides:${edgeId}`;
+      group.add(laneGuides);
+    }
   }
   // Tunnel enclosure follows the identical canonical 3D frame as the asphalt.
   // Collision boundaries belong to shared course physics; these meshes are visuals only.

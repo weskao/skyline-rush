@@ -84,8 +84,10 @@ export const STORMLINE_MEGACITY: StormlineCourse = {
     edge('ground-detour', 'i', 'j', [[-1230, 0, -1160], [-1520, 0, -1130]]),
     edge('roof-flight', 'i', 'j', [[-1130, 12, -1110], [-1310, 38, -1100], [-1480, 36, -1110],
       [-1620, 9, -1150]], 'air', 'gap', 'flight', 42, 5, 13),
-    edge('final-interchange', 'j', 'k', [[-1770, 7, -1620], [-1740, 22, -2080]],
-      'viaduct', 'elevated-asphalt', 'drive', 25, 2),
+    // Align the first 120 m of the interchange with BOTH ground and rooftop approaches.
+    // The turn into the north/south viaduct happens after the flight landing, not at its wheel contact.
+    edge('final-interchange', 'j', 'k', [[-1870, 6, -1205], [-1940, 13, -1560],
+      [-1740, 22, -2080]], 'viaduct', 'elevated-asphalt', 'drive', 25, 2),
     edge('skyline-finish', 'k', 'finish', [[-1830, 24, -2940], [-1940, 22, -3230]],
       'viaduct', 'elevated-asphalt', 'drive', 26, 2),
   ],
@@ -162,6 +164,41 @@ export function validateStormlineCourse(course: StormlineCourse): string[] {
     const safe = course.edges.find(item => item.id === fork.safe), risky = course.edges.find(item => item.id === fork.risky);
     if (!safe || !risky || safe.from !== risky.from || safe.to !== risky.to || safe.mode !== 'drive') problems.push(`Invalid fork ${fork.from}`);
   }
-  for (const checkpoint of course.checkpoints) if (!visited.has(checkpoint.node)) problems.push(`Unreachable checkpoint ${checkpoint.node}`);
+  for (const checkpoint of course.checkpoints) {
+    if (!visited.has(checkpoint.node)) problems.push(`Unreachable checkpoint ${checkpoint.node}`);
+    const y = course.nodes[checkpoint.node]?.[1];
+    if (!Number.isFinite(checkpoint.radius) || checkpoint.radius <= 0 ||
+        !Number.isFinite(checkpoint.minY) || !Number.isFinite(checkpoint.maxY) ||
+        checkpoint.minY >= checkpoint.maxY || y === undefined ||
+        y < checkpoint.minY || y > checkpoint.maxY) {
+      problems.push(`Invalid checkpoint height ${checkpoint.node}`);
+    }
+  }
+  // Physics and traffic share these authored edge-local anchors. Reject invalid
+  // shapes before the shared engine can turn them into phantom or invisible collisions.
+  const obstacleIds = new Set<string>();
+  for (const obstacle of course.obstacles) {
+    if (obstacleIds.has(obstacle.id)) problems.push(`Duplicate obstacle ${obstacle.id}`);
+    obstacleIds.add(obstacle.id);
+    const onEdge = course.edges.find(edge => edge.id === obstacle.edge);
+    if (!onEdge || onEdge.mode !== 'drive') {
+      problems.push(`Unknown obstacle edge ${obstacle.id}`);
+      continue;
+    }
+    if (!Number.isFinite(obstacle.s) || obstacle.s < 0 || obstacle.s >= edgeLength(onEdge)) {
+      problems.push(`Invalid obstacle distance ${obstacle.id}`);
+    }
+    if (!Number.isFinite(obstacle.lateral) || !Number.isFinite(obstacle.radius) ||
+        !Number.isFinite(obstacle.height) || obstacle.radius <= 0 || obstacle.height <= 0 ||
+        Math.abs(obstacle.lateral) + obstacle.radius > onEdge.width / 2) {
+      problems.push(`Invalid obstacle bounds ${obstacle.id}`);
+    }
+    if (obstacle.kind === 'construction' && Math.abs(obstacle.lateral) - obstacle.radius < 4.5) {
+      problems.push(`Center lane blocked ${obstacle.id}`);
+    }
+    if (obstacle.solid !== (obstacle.kind !== 'puddle')) {
+      problems.push(`Invalid obstacle solidity ${obstacle.id}`);
+    }
+  }
   return problems;
 }
