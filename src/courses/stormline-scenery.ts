@@ -36,7 +36,8 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
   const structureMat = new THREE.MeshStandardMaterial({ color: 0x1b2541, metalness: 0.42, roughness: 0.57 });
   const glassMat = new THREE.MeshStandardMaterial({ color: 0x1b244a, metalness: 0.58, roughness: 0.28 });
   const ownedMaterials = [roadMat, railMat, ledMat, structureMat, glassMat];
-  const step = quality === 'low' ? 14 : 8;
+  // Even Low needs a tight chord limit at hairpins to keep rendered asphalt beneath wheels.
+  const step = 8;
   const steps = Math.max(2, Math.ceil((to - from) / step));
   const frame = (i: number) => sample(edgeId, from + (to - from) * i / steps);
   if (edge.mode === 'drive') {
