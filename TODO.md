@@ -3423,3 +3423,9 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Run Typecheck, all Unit tests, Build, `make verify`, complete Browser/World Tour suites and exact-HEAD FULL CI; no PASS claim until observed.
 - [ ] Desktop/mobile manual QA: all six original home previews, 13.8 KM Frostbite card, both P01/P02 scenes, reduced motion/airflow, title/CTA translations, no race entry.
 - [ ] Only after successful pre-merge full CI and review, normal `--no-ff` merge of this preview-only branch to latest `develop`; verify develop exact-HEAD FULL CI. Do not merge playable-course runtimes or modify `main`/release tags without separate approval.
+
+## Monsoon Ruins — road shoulder / water contact continuity (2026-11-05)
+
+- [x] RED reproduced from `monsoonTerrainOffset` at 8 distances and both roadside boundaries (7–55 cm height mismatch) and the original scene's dry-section puddle placement.
+- [x] New deterministic road-shoulder and puddle/physics tests. Terrain's first column now equals the +0.07 m road lift; puddle locations and elevations derive from `monsoonWetContact`.
+- [ ] Run `npm test`, `npm run typecheck`, `npm run build`, `make verify`, real WebGL desktop/mobile captures and exact-HEAD FULL CI. User-visible scene clearance and performance not accepted until direct evidence exists.

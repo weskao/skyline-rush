@@ -182,6 +182,17 @@ test('valley edges and puddles enter without terrain steps or instantaneous tyre
   }
 });
 
+test('road shoulder and ground terrain share a seamless contact height', () => {
+  for (const s of [0, 1200, 2100, 3500, 5300, 6950, 9000, 12499]) {
+    for (const side of [-1, 1]) {
+      const inside = monsoonTerrainHeight(s, side * 13.499);
+      const shoulder = monsoonTerrainHeight(s, side * 13.5);
+      assert.ok(Math.abs(shoulder - inside) < .02,
+        `road/terrain seam must not be a vertical ledge at ${s}m, side ${side}`);
+    }
+  }
+});
+
 test('solid ruin debris has swept collision and visible AI bypass space', () => {
   assert.ok(course.obstacles.some(obstacle => obstacle.kind === 'collapsed-column'));
   assert.ok(course.obstacles.some(obstacle => obstacle.kind === 'fallen-tree'));

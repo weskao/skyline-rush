@@ -327,10 +327,12 @@ export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
       leaves.add(leaf);
     }
     for (let s = Math.ceil(from / 125) * 125; s < to; s += 125) {
+      const depth = monsoonWetContact('ground', s).depth;
+      if (depth <= .01) continue; // No visible standing water on a dry road section.
       const puddle = new THREE.Mesh(new THREE.CircleGeometry(3.4, 14), water);
       puddle.name = 'monsoon-rain-reflective-puddle';
       puddle.position.copy(location(s, s % 250 ? 5 : -5));
-      puddle.position.y += .1;
+      puddle.position.y += .075 + depth; // Road is +.07m; keep water 5mm above physical depth.
       puddle.rotation.x = -Math.PI / 2;
       root.add(puddle);
     }

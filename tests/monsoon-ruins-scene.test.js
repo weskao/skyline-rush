@@ -143,6 +143,31 @@ test('river ford water mesh follows the shared physical contact depth along the 
   chunk.dispose();
 });
 
+test('reflective puddles appear only where road contact is wet and share that water depth', () => {
+  const dry = mount(1000, 1200);
+  const dryPuddles = [];
+  dry.chunk.group.traverse(node => {
+    if (node.name === 'monsoon-rain-reflective-puddle') dryPuddles.push(node);
+  });
+  assert.equal(dryPuddles.length, 0, 'do not show standing water on a dry contact zone');
+  dry.chunk.dispose();
+
+  const wet = mount(2100, 2350);
+  const puddles = [];
+  wet.chunk.group.traverse(node => {
+    if (node.name === 'monsoon-rain-reflective-puddle') puddles.push(node);
+  });
+  assert.equal(puddles.length, 2, 'two wet-zone puddle positions at 2125m and 2250m');
+  for (const [i, s] of [2125, 2250].entries()) {
+    const road = sampleMonsoonRoute('ground', s).point[1];
+    const depth = monsoonWetContact('ground', s).depth;
+    assert.ok(depth > .01);
+    assert.ok(Math.abs(puddles[i].position.y - (road + .075 + depth)) < .005,
+      `puddle height must match road + wet contact depth at ${s}m`);
+  }
+  wet.chunk.dispose();
+});
+
 test('flight stone bridge has physical vertical deck and visible obstacles', () => {
   const edge = MONSOON_RUINS_COURSE.branches.find(e => e.id === 'waterfall-skybridge');
   const { chunk } = mount(6810, 7070, edge.id);

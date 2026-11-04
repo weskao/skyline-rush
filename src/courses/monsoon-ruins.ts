@@ -147,6 +147,8 @@ export function monsoonTerrainOffset(distance: number, lateral: number): number 
   if (d < 13.5) return .07; // Main road surface shares the renderer's 7cm road lift.
   const col = clamp((d - 13.5) / 19, 0, 9);
   const heightAt = (column: number): number => {
+    // The first terrain column shares the road ribbon's contact height: no shoulder ledge.
+    if (column === 0) return .07;
     const radius = 13.5 + column * 19;
     const waves = Math.sin(distance / 145 + column * .9 + side) * 2
       + Math.cos(distance / 85 - column * 1.7) * 1.5;
