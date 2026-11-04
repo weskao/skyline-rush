@@ -87,3 +87,16 @@ test('browser specs never set a wall-clock budget that skips the CI factor', () 
       ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
   assert.deepEqual(offenders, [], 'Wrap per-test and per-assertion timeouts in ciTimeout() from tests/helpers/ci.js');
 });
+
+// A UI action resolves once its events are dispatched, not once the race rebuilds or the frame repaints, so a one-shot
+// read on the next line races a slow CI runner (bonus-gates read race.rings after .check() and failed 1 run in 8).
+const UI_ACTION = /^\s*await [^;]*\.(?:click|check|uncheck|selectOption|press|tap|fill|setChecked|dispatchEvent)\(/;
+const ONE_SHOT_READ = /^\s*expect\(await [^;]*\.evaluate\(/;
+
+test('browser specs poll page state after a UI action instead of reading it once', () => {
+  // A read that is settled by the action itself says why on its own line: "// settled: <reason>".
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i, lines) => ONE_SHOT_READ.test(line) && UI_ACTION.test(lines[i - 1] ?? '') && !line.includes('// settled:')
+      ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Use await expect.poll(() => page.evaluate(...)) (see .claude/rules/browser-test-stability.md)');
+});
