@@ -12,7 +12,7 @@ const detailsRef = ref<HTMLDetailsElement | null>(null);
 function openStore(): void {
   if (props.category !== 'garage-store-readiness' || !detailsRef.value) return;
   detailsRef.value.open = true;
-  detailsRef.value.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  detailsRef.value.scrollIntoView({ block: 'nearest', behavior: 'auto' });
 }
 defineExpose({ openStore });
 const locale = ref(getLocale());
@@ -74,7 +74,7 @@ onUnmounted(() => stopListening?.());
     <div class="garage-source-grid">
       <button v-for="item in visible" :key="item.id" type="button" class="garage-source-choice"
         :data-wave3-asset="item.id" :aria-pressed="selected === item.id"
-        :aria-label="`${locale === 'zh-TW' ? '預覽' : 'Preview'} ${copy(item.name)}`"
+        :aria-label="`${locale === 'zh-TW' ? '預覽' : 'Preview'} ${copy(item.name)}${category === 'garage-store-readiness' ? ' · ' + storeStatusLabel(item.id) : ''}`"
         @click="selected = item.id">
         <GarageArtworkTile :id="item.id" :label="copy(item.name)" :src="image(item.id)"
           :size="config.cssSize" :tone="item.tone"
