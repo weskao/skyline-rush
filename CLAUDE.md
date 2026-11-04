@@ -24,6 +24,21 @@ Merge-ready only when the latest `develop` is integrated, required checks are gr
 user-visible symptoms were retested. Never merge into `develop`/`main`, open a PR or deploy
 without explicit user approval.
 
+## AI-assisted 3D asset / Three.js upgrade (planned; not deployed)
+
+For any Blender, GLB/PBR, 3D asset, rendering-quality or Three.js r180 → r186 work:
+first read `docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md`
+and `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`.
+**Mandatory Phase 0 before implementation:** run
+`docs/designs/3d-pipeline/toolchain-environment-preflight.md` on the user's Mac;
+check actual Blender addon + live MCP transport, user-global Skills, Claude/Codex scopes,
+Node and glTF Transform. Report PASS/FAIL/NOT VERIFIED; remote GitHub cannot validate
+local installation. Global Skills belong under `~/.claude/skills`, not in this repo.
+Three.js r186.1 is the *planned* target; until verified migration, obey currently
+installed r180 APIs. Read `docs/designs/3d-pipeline/threejs-r180-r186-migration.md`
+and scoped `.claude/rules/3d-asset-pipeline.md` when applicable. Never change
+production renderer, physics or sibling branches during a docs-only pass.
+
 ## Verification
 
 - Gameplay / progression / build config → `npm test` + `npm run build`.

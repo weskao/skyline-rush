@@ -49,6 +49,7 @@ export function createCircuitScene(scene: THREE.Scene) {
   return {
     update(distance: number): void { const p = circuitFrame(distance).point; group.visible = true; group.position.set(-p.x, -p.y, -p.z); },
     hide(): void { group.visible = false; },
+    landmarks: (): THREE.Object3D[] => [beacon],
     dispose(): void {
       group.removeFromParent();
       const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();

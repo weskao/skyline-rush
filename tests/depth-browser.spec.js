@@ -180,7 +180,7 @@ gameplayTest('fuel warns below 20%, refill feedback appears and comfort disables
   await expect(page.locator('#fuel-meter')).toHaveAttribute('data-refilling', 'true');
   await page.locator('#vfx-panel > summary').click();
   await page.locator('[data-vfx="comfortable"]').check();
-  expect(await page.locator('#fuel-fill').evaluate(el => getComputedStyle(el).transitionDuration)).toBe('0s');
+  await expect.poll(() => page.locator('#fuel-fill').evaluate(el => getComputedStyle(el).transitionDuration)).toBe('0s');
   expect(await page.locator('#fuel-meter').evaluate(el => getComputedStyle(el, '::after').animationName)).toBe('none');
 });
 
