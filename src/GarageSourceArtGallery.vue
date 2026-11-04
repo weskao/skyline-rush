@@ -71,7 +71,8 @@ onUnmounted(() => stopListening?.());
         @click="selected = item.id">
         <GarageArtworkTile :id="item.id" :label="copy(item.name)" :src="image(item.id)"
           :size="config.cssSize" :tone="item.tone"
-          :restored="category === 'garage-store-readiness'" />
+          :restored="category === 'garage-store-readiness'"
+          :fallback-src="category === 'garage-store-readiness' ? legacyStoreImage(item.id) : ''" />
         <span v-if="category === 'garage-store-readiness'" class="garage-store-card-meta">
           <span v-if="STORE_ITEM_PRESENTATION[item.id]?.featured" data-store-featured class="garage-store-featured">
             {{ locale === 'zh-TW' ? '精選概念' : 'Featured concept' }}
