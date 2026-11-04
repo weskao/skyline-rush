@@ -108,3 +108,26 @@ test('Skyfall streams both sides of split and merge before the next 420 m chunk 
   }
   env.dispose();
 });
+
+test('Skyfall landing guidance appears only beyond each unsupported flight gap and releases GPU resources', () => {
+  const scene = new THREE.Scene();
+  const env = createSkyfallWorld(scene, 'low');
+  for (const edgeId of ['a-air', 'b-air', 'c-air']) {
+    const edge = SKYFALL_COURSE.edges.find(e => e.id === edgeId);
+    const gap = edge.gaps[0];
+    assert.equal(hasSkyfallRoadContact(edgeId, (gap.from + gap.to) / 2), false);
+    assert.equal(hasSkyfallRoadContact(edgeId, gap.to + 10), true);
+    env.setFocus([{ edgeId, localS: gap.to + 20 }]);
+
+    const guides = env.group.getObjectByName(`Skyfall ${edgeId} landing approach markings`);
+    assert.ok(guides?.isMesh, `${edgeId} has no visibly supported landing guidance`);
+    assert.ok(guides.geometry.getAttribute('position').count >= 6);
+    let geometryDisposed = false, materialDisposed = false;
+    guides.geometry.dispose = () => { geometryDisposed = true; };
+    guides.material.dispose = () => { materialDisposed = true; };
+    env.setFocus([{ edgeId: 'approach', localS: 0 }]);
+    assert.equal(geometryDisposed, true, `${edgeId} guide geometry leaked`);
+    assert.equal(materialDisposed, true, `${edgeId} guide material leaked`);
+  }
+  env.dispose();
+});
