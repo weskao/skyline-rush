@@ -7,7 +7,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.goto('/');
     await page.locator('#garage-button').click();
     const catalog = page.locator('#garage-art-source-garage-store-readiness');
-    await catalog.locator('summary').click();
+    await page.locator('[data-garage-store-open]').click();
+    await expect(catalog).toHaveAttribute('open', '');
+    await expect(page.locator('[data-garage-store-entry]')).toBeVisible();
     await expect(catalog.locator('[data-store-catalog]')).toBeVisible();
     await expect(catalog.locator('[data-store-phase="coming-soon"]')).toBeVisible();
     await expect(catalog.locator('[data-store-featured]')).toHaveCount(2);
