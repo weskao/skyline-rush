@@ -194,3 +194,22 @@ test('steam vent mesh only renders during the same physically active hazard phas
   }
   chunk.dispose();
 });
+
+test('lava point-light intensity respects Low/Medium/High after animation updates',()=>{
+  const lightAt=(quality,time,reduce)=>{
+    const chunk=createVolcanicCrownChunk('ground-5',0,quality,reduce);
+    chunk.update(time,reduce);
+    const intensity=chunk.group.getObjectByName('lava-reflection-light').intensity;
+    chunk.dispose();
+    return intensity;
+  };
+  for(const [time,reduce] of [[0,true],[5,true],[5,false]]){
+    const low=lightAt('low',time,reduce);
+    const medium=lightAt('medium',time,reduce);
+    const high=lightAt('high',time,reduce);
+    assert.ok(low<medium&&medium<high,
+      `quality-tier lighting collapsed after update ${time}s reduced=${reduce}`);
+  }
+  assert.equal(lightAt('low',1,true),lightAt('low',9,true),
+    'Reduced Motion should disable light pulsing without disabling visibility');
+});
