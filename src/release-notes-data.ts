@@ -9,7 +9,88 @@ import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-11-02', image: null,
+    version: UPCOMING, date: '2026-11-04', image: null,
+    video: {
+      desktop: {
+        src: { en: 'whats-new/roadster-2/roadster-2.desktop.en.mp4', 'zh-TW': 'whats-new/roadster-2/roadster-2.desktop.zh-TW.mp4' },
+        poster: { en: 'whats-new/roadster-2/roadster-2.desktop.en.jpg', 'zh-TW': 'whats-new/roadster-2/roadster-2.desktop.zh-TW.jpg' }
+      },
+      mobile: {
+        src: { en: 'whats-new/roadster-2/roadster-2.mobile.en.mp4', 'zh-TW': 'whats-new/roadster-2/roadster-2.mobile.zh-TW.mp4' },
+        poster: { en: 'whats-new/roadster-2/roadster-2.mobile.en.jpg', 'zh-TW': 'whats-new/roadster-2/roadster-2.mobile.zh-TW.jpg' }
+      }
+    },
+    highlights: [
+      {
+        id: 'roadster-redesign', kind: 'new',
+        image: { en: 'whats-new/roadster-2/roadster-2-angles.jpg', 'zh-TW': 'whats-new/roadster-2/roadster-2-angles.jpg' },
+        title: { en: 'A sharper, more detailed Roadster', 'zh-TW': '全新造型的 Roadster' },
+        description: {
+          en: 'Your Roadster has a low wedge nose, star wheels, a four-port rear diffuser and a fold-out airbrake wing. Spin it in the Garage to see every angle.',
+          'zh-TW': '低趴楔形車頭、星形輪框、四孔尾部擴散器和可展開的尾翼。到車庫轉一圈，各個角度都看得到。'
+        }
+      },
+      {
+        id: 'unique-rivals', kind: 'new',
+        image: { en: 'whats-new/roadster-2/roadster-2-racers.en.jpg', 'zh-TW': 'whats-new/roadster-2/roadster-2-racers.zh-TW.jpg' },
+        title: { en: 'Every rival drives a different car', 'zh-TW': '每位對手都開不同的車' },
+        description: {
+          en: 'The seven rivals now each have their own look, and everyday traffic comes in more shapes, so you can tell who is beside you at a glance.',
+          'zh-TW': '七位對手各有自己的造型，路上的一般車輛也更多樣，一眼就能分辨身旁是誰。'
+        }
+      },
+      {
+        id: 'garage-poses', kind: 'improvement', image: null,
+        title: { en: 'A bigger car and quick poses in the Garage', 'zh-TW': '車庫的車更大，姿勢更好切換' },
+        description: {
+          en: 'The Garage page now shows your car larger, with Ground, Flight and wing buttons and camera views right underneath.',
+          'zh-TW': '車庫首頁的車變大了，下方直接有平地、起飛、尾翼按鈕和鏡頭視角，隨手就能切換。'
+        }
+      },
+      {
+        id: 'smoother-motion', kind: 'improvement', image: null,
+        title: { en: 'Smoother car movement', 'zh-TW': '車輛移動更流暢' },
+        description: {
+          en: 'Cars glide more smoothly on screen, and drifting turns ease in instead of snapping.',
+          'zh-TW': '車子在畫面上滑行更順暢，甩尾轉向也不再突然一彈。'
+        }
+      },
+      {
+        id: 'home-swipe', kind: 'improvement', image: null,
+        title: { en: 'Swiping tracks on Home feels natural', 'zh-TW': '首頁滑動換賽道更自然' },
+        description: {
+          en: 'Dragging the Home preview with a mouse now follows your pointer, and a long enough drag switches track right away.',
+          'zh-TW': '用滑鼠拖曳首頁預覽時，畫面會跟著游標走；拖得夠遠就會立刻換賽道。'
+        }
+      },
+      {
+        id: 'tidy-home', kind: 'improvement', image: null,
+        title: { en: 'A tidier Home screen', 'zh-TW': '更整齊的首頁' },
+        description: {
+          en: 'Start, Garage, History and Practice stay on one row on desktop, a long Start label wraps neatly, and phones hide keyboard key settings until a keyboard is used.',
+          'zh-TW': '桌機的開始、車庫、歷史紀錄和練習排在同一列，過長的開始文字會自動換行；手機在用到鍵盤前不顯示鍵盤設定。'
+        }
+      },
+      {
+        id: 'practice-finish', kind: 'fix', image: null,
+        title: { en: 'Practice no longer freezes at the end', 'zh-TW': '練習結束後畫面不再凍結' },
+        description: {
+          en: 'After the last lesson the road and your car keep moving, with a celebration and a clear Back to game button.',
+          'zh-TW': '完成最後一堂課後，道路和車子會繼續動，並出現慶祝畫面和醒目的「回到遊戲」按鈕。'
+        }
+      },
+      {
+        id: 'low-places-results', kind: 'fix', image: null,
+        title: { en: 'Results show for 5th to 8th place', 'zh-TW': '第 5 到第 8 名也看得到成績' },
+        description: {
+          en: 'Finishing 5th to 8th in a mode race now shows your results screen and saves the run to History.',
+          'zh-TW': '在各模式競速拿到第 5 到第 8 名時，現在會正常顯示成績畫面，並把這次成績存進歷史紀錄。'
+        }
+      }
+    ]
+  },
+  {
+    version: '0.29.0', date: '2026-11-03', image: null,
     video: {
       desktop: {
         src: { en: 'whats-new/garage/garage.desktop.en.mp4', 'zh-TW': 'whats-new/garage/garage.desktop.zh-TW.mp4' },
