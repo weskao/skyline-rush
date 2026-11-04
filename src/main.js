@@ -32,6 +32,7 @@ import { PAINTS } from './appearance.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
 import { drainSteps, SIM_STEP } from './frame-pacing.ts';
+import { captureRaceMotion } from './vehicle-render-motion.js';
 import { createStuntRun, stuntHeatContinues, stuntHeatLimit } from './stunt-attack.ts';
 import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
@@ -545,11 +546,15 @@ try {
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad());
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
+  let motionRace = null;
+  const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
   function frame(now) {
     // Requested first: a frame that throws still reports its error, but never freezes the game for good.
     animationId = requestAnimationFrame(frame);
     const rawDelta = (now - previousTime) / 1000; previousTime = now;
-    const dt = Math.max(0, Math.min(rawDelta, 0.05)), due = drainSteps(accumulator, dt); accumulator = due.accumulator;
+    const dt = Math.max(0, Math.min(rawDelta, 0.05));
+    if (motionRace !== race) { motionRace = race; accumulator = 0; captureRaceMotion(race, previousMotion); }
+    const due = drainSteps(accumulator, dt); accumulator = due.accumulator;
     // The 0.05s clamp already keeps a tab-switch gap from becoming unseen racing (hiding also pauses);
     // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
     const input = controls.read();
@@ -560,6 +565,7 @@ try {
     }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     for (let step = 0; step < due.steps; step++) {
+      captureRaceMotion(race, previousMotion);
       stepRace(race, input, SIM_STEP);
       if (tutorial) {
         // Completion keeps the race live as a free cruise: pausing it froze the world and read as a crash.
@@ -578,7 +584,8 @@ try {
     const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
     if (shouldRender) {
       const renderStarted = performance.now();
-      world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed));
+      renderMotion.alpha = Math.max(0, Math.min(1, accumulator / SIM_STEP));
+      world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed), renderMotion);
       fps.completeRender(performance.now() - renderStarted);
     }
     sound.update(race);

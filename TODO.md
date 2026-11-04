@@ -1,3 +1,12 @@
+## Vehicle movement jitter and drift yaw — 2026-11-04
+
+**Branch:** `fix/vehicle-motion-jitter` (from `develop` b05ff1fa). Player-visible issue: left/right movement stutters at variable render rates, especially NITRO/FLY/takeoff/landing; initiating/releasing drift snaps the visual yaw 25°.
+- [x] RED: 4 deterministic local Node assertions failed against non-interpolated fixed-step poses (car/rival/traffic snapshot, half-step lateral position, landing pose, 120 Hz repeated frames).
+- [x] GREEN: 5/5 focused isolated Node tests passed after reusable snapshot/interpolation and eased visual drift yaw. Physics, scoring, collisions and input are unchanged; camera and all car classes use interpolated road poses in render only.
+- [ ] Full repository `npm test`, build, typecheck, `make verify`, World Tour, exact-HEAD GitHub full CI, manual desktop/mobile WebGL video and frame-time p50/p95 measurements. Do not mark merge-ready until verified.
+
+---
+
 ## Tutorial complete no longer freezes the screen — 2026-11-04
 
 **Branch:** `fix/tutorial-complete-alive` (from `develop` 4450a274). Repro: finish the last practice lesson (NITRO) → `main.js` set `race.phase = 'paused'`, so the car, road and HUD froze and the game looked broken.
