@@ -3194,3 +3194,9 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Obtain explicit backend entitlement authority, Firestore rules/emulator coverage, grant migration contract and product approval before enabling any owned skin, award, price, wallet, claim or checkout. The new `src/garage-economy-state.ts` is read-only: `owned: []`, `balance/price/award: null`, `canBuy/canClaim: false` in all phases.
 - [ ] Integrate the exported Garage Economy snapshot with Rewards and Store consumers **only on their respective authorized branches**. Shared version 1 phases: unavailable/loading/ready/error/unsupported; ready confirms only that schema/account metadata was read, never server-authoritative entitlement.
 - [ ] Inspect existing Economy source imagery before any redesign: this work adds no raster art and does not pretend the separate archive or previews are purchases. Legacy PAINTS and Garage trial preferences remain independent.
+
+
+## Economy Foundation — 2026-11-04 existing Store art in live Garage
+- [ ] Visual acceptance: real desktop/iOS/Android screenshots and exact-HEAD full CI still required for Garage store-entry art.
+- [x] Source integration: existing 216×216 store-collection WebP appears at 72×72 CSS in the real Garage summary, and the existing six 3× Store artworks remain selectable via the native details/gallery controls. No PNG regeneration was needed; no checkout, currency, price or permanent entitlement is implied.
+- [ ] Run full browser/WebGL interaction checks after CI runner availability, including keyboard, touch, 390×844, 844×390 and 1440×900; compare alpha safety and caption clipping. New browser assertions are in tests/garage-art-source-browser.spec.js.

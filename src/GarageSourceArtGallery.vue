@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
+import GarageArtworkImage from './GarageArtworkImage.vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
 import type { Wave3PreviewCategory, Wave3PreviewGroup, Wave3Text } from './garage-wave3-preview-catalog.ts';
@@ -25,8 +26,18 @@ onUnmounted(() => stopListening?.());
 </script>
 
 <template>
-  <details :id="'garage-art-source-' + category" class="garage-source-art" :data-wave3-category="category">
-    <summary>{{ copy(config.heading) }} <span class="garage-source-soon">{{ locale === 'zh-TW' ? '概念預覽' : 'Preview' }}</span></summary>
+  <details :id="'garage-art-source-' + category" class="garage-source-art"
+    :data-wave3-category="category" data-economy-preview="art-only">
+    <summary>
+      <GarageArtworkImage v-if="category === 'garage-store-readiness'"
+        :src="image('store-collection')" :size="72" image-id="store-collection-summary"
+        :alt="locale === 'zh-TW' ? '商店收藏概念圖示' : 'Store collection concept artwork'"
+        :fallback-text="locale === 'zh-TW' ? '收藏圖示' : 'Collection art'" loading="eager" />
+      <span class="garage-source-summary-label">{{ copy(config.heading) }}
+        <small v-if="category === 'garage-store-readiness'">{{ locale === 'zh-TW' ? '檢視 6 款現有 3× 圖示' : 'View 6 existing 3× icons' }}</small>
+      </span>
+      <span class="garage-source-soon">{{ locale === 'zh-TW' ? '概念預覽' : 'Preview' }}</span>
+    </summary>
     <p class="garage-source-hint">{{ copy(config.notice) }}</p>
     <div class="garage-source-filters" role="group" :aria-label="locale === 'zh-TW' ? '篩選收藏類型' : 'Filter catalog category'">
       <button v-for="item in config.filters" :key="item.id" type="button" :data-wave3-filter="item.id"
@@ -63,6 +74,17 @@ onUnmounted(() => stopListening?.());
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   min-height: 44px; cursor: pointer; font-weight: 750;
 }
+.garage-source-art summary :deep(.artwork-img) {
+  flex: 0 0 72px; width: 72px; height: 72px; object-fit: contain;
+  border-radius: 9px;
+}
+.garage-source-art summary :deep(.artwork-fallback) {
+  flex: 0 0 72px; width: 72px; min-height: 72px;
+}
+.garage-source-summary-label { flex: 1 1 125px; min-width: 0; overflow-wrap: anywhere; }
+.garage-source-summary-label small { display: block; margin-top: 3px; font-size: 11px;
+  font-weight: 450; color: #b2d4e6; }
+
 .garage-source-soon { margin-inline-start: auto; border-radius: 100px; padding: 3px 8px;
   background: #5d456b88; color: #e5caff; font-size: 11px; letter-spacing: .02em; }
 .garage-source-hint { font-size: 12px; line-height: 1.5; color: #abc8dd; margin: 8px 0; }

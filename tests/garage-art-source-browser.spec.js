@@ -5,8 +5,13 @@ test('Garage source artwork is available at native 3x resolution with 1x CSS dis
   await page.locator('#garage-button').click();
   const source = page.locator('#garage-art-source-garage-store-readiness');
   await expect(source).toBeVisible();
+  const entry = source.locator('summary img[data-image="store-collection-summary"]');
+  await expect(entry).toBeVisible();
+  await expect(entry).toHaveAttribute('width', '72');
+  await expect(entry).toHaveAttribute('height', '72');
+  await expect(entry).toHaveJSProperty('naturalWidth', 216);
   await source.locator('summary').click();
-  const thumbnails = source.locator('img');
+  const thumbnails = source.locator('.garage-source-grid img');
   await expect(thumbnails).toHaveCount(6);
   const first = thumbnails.first();
   await first.scrollIntoViewIfNeeded();
@@ -41,4 +46,53 @@ test('safe 3x reference cards never crop image or caption on desktop and phone',
       expect(v.width).toBeLessThanOrEqual(v.viewport);
     }
   }
+});
+
+test('Store 3x artwork appears directly in Garage and opens its 6-image interactive gallery', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  for (const viewport of [{width:1440,height:900}, {width:390,height:844}, {width:844,height:390}]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#garage-button').click();
+    const gallery = page.locator('#garage-art-source-garage-store-readiness');
+    await expect(gallery).toBeVisible();
+    await expect(gallery).toHaveAttribute('data-economy-preview','art-only');
+    const entry = gallery.locator('summary img[data-image="store-collection-summary"]');
+    await entry.scrollIntoViewIfNeeded();
+    await expect(entry).toHaveJSProperty('naturalWidth', 216);
+    await expect(entry).toHaveJSProperty('naturalHeight', 216);
+    const geometry = await entry.evaluate(image => {
+      const box = image.getBoundingClientRect();
+      return { width: box.width, height: box.height, objectFit: getComputedStyle(image).objectFit,
+        contained: box.left >= 0 && box.right <= innerWidth };
+    });
+    expect(geometry).toEqual({width:72,height:72,objectFit:'contain',contained:true});
+    await gallery.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(gallery).toHaveAttribute('open','');
+    await expect(gallery.locator('[data-wave3-asset]')).toHaveCount(6);
+    await gallery.getByRole('button',{name:'Collection'}).click();
+    await expect(gallery.locator('[data-wave3-asset]')).toHaveCount(2);
+    await gallery.locator('[data-wave3-asset="store-star"]').click();
+    await expect(gallery.locator('[data-wave3-selected]')).toHaveAttribute('data-wave3-selected','store-star');
+    await expect(gallery.getByRole('button',{name:/buy now|purchase|claim|checkout/i})).toHaveCount(0);
+    await test.info().attach(`garage-store-applied-${viewport.width}x${viewport.height}.png`, {
+      body: await gallery.screenshot(), contentType: 'image/png',
+    });
+  }
+  expect(errors).toEqual([]);
+});
+
+test('Store preview summary has bilingual art fallback without granting an Economy entitlement', async ({ page }) => {
+  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.webp', route => route.abort());
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const entry = page.locator('#garage-art-source-garage-store-readiness summary');
+  await expect(entry.getByRole('img',{name:'Collection art'})).toBeVisible();
+  await entry.click();
+  await expect(page.locator('[data-wave3-asset]')).toHaveCount(6);
+  await page.locator('#garage-close').click();
+  // No balance, ownership or checkout is unlocked by displaying source artwork.
+  await expect(page.locator('#garage-screen')).not.toBeVisible();
 });
