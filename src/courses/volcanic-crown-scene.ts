@@ -238,7 +238,8 @@ export function createVolcanicCrownChunk(
     for(const {item,mesh} of obstacleMeshes){
       const pose=volcanicObstaclePose(item,time);
       mesh.position.copy(to3(pose.point));
-      mesh.visible=item.kind!=='rockfall'||pose.active;
+      // Physics and rendered hazard share the same active/warning timeline.
+      mesh.visible=pose.active;
       const warning=warnings.find(c=>c.name===item.id+'-warning');
       if(warning)warning.visible=pose.warning;
     }
