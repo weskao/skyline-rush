@@ -56,6 +56,8 @@ const isPreviewActive = (id: SkinId, category: SkinCategory) => {
   void garageSkinState.revision;
   return selectedGarageSkins()[category] === id;
 };
+const isPreviewOnly = (id: SkinId, category: SkinCategory) =>
+  isPreviewActive(id, category) && view(id)?.state !== 'equipped';
 const statusText = (id: SkinId, locale: string) => {
   const state = view(id)?.state ?? 'locked';
   return ({ en: { trial: 'Free trial', equipped: 'Equipped', owned: 'Owned', locked: 'Locked' },
@@ -76,6 +78,7 @@ const statusText = (id: SkinId, locale: string) => {
         <li v-for="skin in entries.filter(entry => entry.category === category)" :key="skin.id"
           :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)"
           :data-preview-active="String(isPreviewActive(skin.id, skin.category))"
+          :data-preview-only="String(isPreviewOnly(skin.id, skin.category))"
           class="garage-skin-card" :style="{ '--card-hue': skinHue(skin.id, skin.category) }">
           <!-- Native full-surface Preview control; Equip/Try is its sibling, not nested. -->
           <button class="garage-skin-preview-hitarea" type="button"
@@ -89,6 +92,7 @@ const statusText = (id: SkinId, locale: string) => {
             </span>
             <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
             <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
+            <small class="garage-skin-preview-label" :aria-hidden="!isPreviewOnly(skin.id, skin.category)">{{ locale === 'zh-TW' ? '預覽中' : 'Previewing' }}</small>
           </button>
           <div class="garage-vfx-actions">
             <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
@@ -151,6 +155,7 @@ const statusText = (id: SkinId, locale: string) => {
   outline: 3px solid #74ebff; outline-offset: 3px;
 }
 .garage-vfx-art {
+  position: relative;
   width: 112px; height: 112px; max-width: 100%; box-sizing: border-box;
   padding: 8px; display: grid; place-items: center; border-radius: 13px;
   background: radial-gradient(circle, hsl(var(--card-hue) 74% 44% / .19), transparent 73%);
@@ -160,11 +165,29 @@ const statusText = (id: SkinId, locale: string) => {
   max-width: 100%; max-height: 100%; object-fit: contain;
   filter: drop-shadow(0 0 5px hsl(var(--card-hue) 85% 64% / .34));
 }
+.garage-vfx-art::after {
+  content: ''; position: absolute; inset: 9px; border-radius: 50%;
+  border: 1px solid hsl(var(--card-hue) 95% 74% / .8);
+  box-shadow: 0 0 13px hsl(var(--card-hue) 100% 67% / .35);
+  opacity: 0; pointer-events: none;
+}
+.garage-skin-card[data-preview-only="true"] .garage-vfx-art::after {
+  animation: garage-vfx-preview-pulse 2.6s ease-in-out infinite;
+}
+@keyframes garage-vfx-preview-pulse {
+  0%, 100% { opacity: .15; transform: scale(.94); }
+  50% { opacity: .55; transform: scale(1.05); }
+}
 .garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
 .garage-skin-card strong {
   min-height: 35px; font-size: 12px; line-height: 1.5; color: #ecf6ff;
   font-weight: 750; overflow-wrap: anywhere; pointer-events: none;
 }
+.garage-skin-preview-label {
+  display: block; min-height: 15px; font-size: 11px; font-weight: 750;
+  color: #bdefff; opacity: 0; pointer-events: none;
+}
+.garage-skin-card[data-preview-only="true"] .garage-skin-preview-label { opacity: 1; }
 .garage-skin-status {
   font-size: 11px; min-height: 19px; padding: 1px 7px; border-radius: 999px;
   background: hsl(var(--card-hue) 82% 54% / .13);
@@ -220,5 +243,7 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-art-showcase { min-width: 0; }
 .garage-art-showcase h4 { margin-bottom: 10px; }
 @media (max-height: 420px) and (orientation: landscape) { .garage-vfx-category ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (prefers-reduced-motion: reduce) { .garage-vfx-catalog * { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce), (prefers-reduced-data: reduce) {
+  .garage-vfx-catalog *, .garage-vfx-catalog *::after { animation: none !important; transition: none !important; }
+}
 </style>

@@ -63,7 +63,7 @@ test('preview glow respects reduced motion without changing ownership', async ({
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('[data-skin="thruster-ion"]');
   await ion.locator('.garage-skin-preview-hitarea').click();
-  const name = await ion.locator('.garage-vfx-art').evaluate(el => getComputedStyle(el).animationName);
+  const name = await ion.locator('.garage-vfx-art').evaluate(el => getComputedStyle(el, '::after').animationName);
   expect(name).toBe('none');
   await expect(ion).toHaveAttribute('data-state', 'trial');
 });
