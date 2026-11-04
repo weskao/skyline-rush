@@ -51,6 +51,7 @@ import { resultView, setupResultScreen } from './result-screen.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
+import { isUpcomingTrack } from './upcoming-tracks.ts';
 import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
@@ -195,7 +196,7 @@ const raceSelect = setupRaceSelectUI({
   refreshPhase: () => phaseUI(),
   clearControls: () => controls.clear(),
   cueUi: () => sound.cue('ui'),
-  reducedMotion,
+  reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
 });
 const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
@@ -230,11 +231,6 @@ const cloud = setupCloudUI({
     showGarage();
   },
 });
-
-const previewObserver = new IntersectionObserver(entries => {
-  for (const entry of entries) entry.target.dataset.visible = String(entry.isIntersecting);
-}, { root: $('.track-select') });
-document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
 
 function startDaily() {
   daily = dailyChallenge();
@@ -274,6 +270,7 @@ const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   getRace: () => race,
   getWorld: () => world,
   selectedRace,
+  getSelectedTrackId: () => raceSelect.currentTrackId(),
   calmMotion,
   motionOptions,
   isTutorialActive: () => !!tutorial,
@@ -285,6 +282,7 @@ setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => contr
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
 function start() {
+  if (raceSelect.isUpcomingSelected() || isUpcomingTrack(race.trackId)) return; // preview selection cannot START, including Daily/unlocked
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
@@ -305,6 +303,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
+  if (raceSelect.isUpcomingSelected() || isUpcomingTrack(trackId)) return;
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
@@ -670,7 +669,7 @@ window.addEventListener('pagehide', event => {
   // A cached page resumes the same animation, renderer and controls on back navigation.
   if (event.persisted) return;
   cancelAnimationFrame(animationId);
-  previewObserver.disconnect();
+  raceSelect.disconnectPreviews();
   controls.destroy();
   sound.dispose();
   world?.dispose();

@@ -29,6 +29,9 @@ export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freez
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
   cosmic: { distance: 3700, landmark: 'cosmic-gate', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
+  // Stage 2 Frostbite home art direction (the playable registry remains unchanged).
+  'frostbite-canyon': { distance: 800, landmark: 'crystal-sentinels', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
 });
 /** Showcase dolly-out candidates (metres behind the base chase pose), nearest first: the first that fits wins. */
 export const SHOWCASE_BACKS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 20, 26, 32, 40];
