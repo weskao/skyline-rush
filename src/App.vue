@@ -4,6 +4,7 @@
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.
 import { version } from '../package.json';
 import { RACE_TRACKS } from './game.js';
+import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
 import GaragePanel from './GaragePanel.vue';
@@ -27,6 +28,7 @@ import ItemSlot from './ItemSlot.vue';
 
 setupInputModality();
 
+const BASE_URL = import.meta.env.BASE_URL;
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
 
 // Controls-panel radio groups: settings key → [legend, [value, label]...]; values must match controlSettings().
@@ -121,6 +123,17 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </div>
       <p class="setup-step" id="track-step" data-i18n="mode.step.track">2 · Track</p>
       <div class="track-select" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button></div>
+      <!-- Preview-only: no data-track, no START handler, no race registry dependency. -->
+      <section class="coming-soon-release" aria-label="Coming Soon tracks">
+        <strong class="coming-soon-heading">COMING SOON <span>· 即將推出</span></strong>
+        <div class="coming-soon-list">
+          <div v-for="(track, id) in UPCOMING_TRACKS" :key="id" :data-upcoming-track="id" class="coming-soon-card" aria-disabled="true" :aria-label="`${track.names.en} — COMING SOON`">
+            <img class="coming-soon-cover" :src="`${BASE_URL}${track.image}`" :alt="track.names.en" loading="lazy" />
+            <span class="coming-soon-card-info"><b>{{ track.names.en }}</b><small>{{ track.length / 1000 }} KM</small></span>
+            <span class="coming-soon-stamp">COMING SOON</span>
+          </div>
+        </div>
+      </section>
       <p id="track-note" class="track-note"></p>
       <section class="race-mode-picker race-rules-row" id="race-rules-row" aria-labelledby="race-rules-step">
         <div class="race-rules-head"><span id="race-rules-step" data-i18n="mode.step.rules">3 · Rules</span><p class="race-rules-text"><small id="mode-rules-summary" role="status"></small><small id="mode-eligibility"></small></p><button type="button" class="text-button" id="rules-restore" data-i18n="mode.restoreDefaults">Restore defaults</button></div>
