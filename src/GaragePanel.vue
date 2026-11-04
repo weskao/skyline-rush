@@ -47,7 +47,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         <div id="garage-preview" class="garage-preview" tabindex="0" role="group" :aria-label="copy.hint" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + -">
           <p v-show="garageStudioView.page === 'studio'" class="garage-hint">{{ copy.hint }}</p>
         </div>
-        <div v-show="garageStudioView.page === 'studio'" class="garage-mode-controls" role="group" :aria-label="copy.viewMode">
+        <div class="garage-mode-controls" role="group" :aria-label="copy.viewMode">
           <span class="garage-mode-label">{{ copy.viewMode }}</span>
           <button type="button" data-garage-mode="ground" :aria-pressed="garageStudioView.mode === 'ground'">{{ copy.ground }}</button>
           <button type="button" data-garage-mode="flight" :aria-pressed="garageStudioView.mode === 'flight'">{{ copy.flight }}</button>
@@ -177,6 +177,18 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
   #garage-screen .garage-camera-controls { max-height: none; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; justify-content: flex-start; }
   #garage-screen .garage-camera-controls button { flex: none; min-height: 44px; }
   #garage-screen .garage-paint-badge { font-size: 10px; }
+}
+
+/* Garage home: the pose buttons share one row with the camera dock under the showroom, so the car keeps the rest. */
+#garage-screen[data-page="home"] .garage-visual { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; }
+#garage-screen[data-page="home"] .garage-preview { grid-column: 1 / -1; align-self: stretch; }
+#garage-screen[data-page="home"] .garage-mode-controls { grid-area: 2 / 1; }
+#garage-screen[data-page="home"] #showcase-camera-dock { grid-area: 2 / 2; justify-self: end; padding: 0; }
+#garage-screen[data-page="home"] :is(.garage-mode-label, .showcase-camera-heading, .showcase-camera-dots) { display: none; }
+@media (max-width: 650px) and (orientation: portrait) {
+  #garage-screen[data-page="home"] .garage-visual { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; }
+  #garage-screen[data-page="home"] #showcase-camera-dock { grid-area: 3 / 1; justify-self: stretch; }
+  #garage-screen[data-page="home"] .garage-collection { flex-basis: 34%; } /* the paint list scrolls; the car gets the height */
 }
 
 /* Unified Garage Collection polish: one shared themed surface for paint and VFX cards. */
