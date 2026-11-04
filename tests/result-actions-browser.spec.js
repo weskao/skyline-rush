@@ -77,9 +77,12 @@ for (const [name, viewport, hasTouch] of [
     await finishRace(page);
     const trophy = page.locator('#result-stats .result-trophy-art');
     await expect(trophy).toBeVisible();
-    await expect(trophy).toHaveAttribute('src', /trophy-gold@3x\.webp$/);
+    await expect(trophy).toHaveAttribute('src', /trophy-gold@3x\.png$/);
     await expect(trophy).toHaveJSProperty('naturalWidth', 288);
-    expect((await trophy.boundingBox()).width).toBe(48);
+    await expect(trophy).toHaveJSProperty('naturalHeight', 288);
+    await expect(trophy).toHaveAttribute('width', '96');
+    await expect(trophy).toHaveAttribute('height', '96');
+    expect((await trophy.boundingBox()).width).toBe(96);
     await expect(page.locator('#result-stats')).toContainText('Placement badge (display only)');
     const next = page.locator('#next-button');
     await expect(next).toBeVisible();
