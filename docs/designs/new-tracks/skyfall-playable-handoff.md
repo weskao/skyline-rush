@@ -28,3 +28,12 @@
 - 2026-11-04: prefetch regression authored in test-first commit `6d0b9535`; initial exact-HEAD Actions run `41793013459` was queued when the minimal 210 → 420 m graph-join prefetch fix was prepared. **The RED outcome was not observed**, and unit/typecheck/build/FULL Browser/World Tour remain subject to final-HEAD execution. The change affects Skyfall map-owned streaming only; it does not integrate shared race physics, AI or checkpoints.
 
 - 2026-11-04: map-owned aerial landing strips are anchored to supported sampled road frames at offsets after each flight-only gap and released with their 420 m chunk. Regression tests were committed test-first (`d9ef292c`, import correction `6d4a61a2`); **RED outcome not observed while GitHub Actions was queued.** Landing guides are only visual indicators, not collision/checkpoint/AI integration. Exact-HEAD FULL CI and real WebGL visual acceptance remain required.
+
+## 2026-11-04 continued branch-only map work
+
+- Stream: one full 420 m prefetch window at split/merge joins (`6b8febf9`); luminous guide strips are placed only on solid landing pavement and released with streamed chunks (`74aa6c91`).
+- Physical geometry: `a-air` controls adjusted in `c550ee77` to meet the `midway-one` landing heading (~69.4° before / ~5.3° analytical after); ground route length and 10-edge topology remain authored as before. `f904ab05` hangs the instance island terrace below the road rather than visually burying it.
+- Visible but non-colliding checkpoints: `4164b960` draws four overhead 3D rings at the four existing checkpoint node positions on all quality tiers; signed checkpoint logic still belongs to the shared engine.
+- UI blocker outside Skyfall map geometry: prior FULL CI `41793905332` had Unit SUCCESS and Browser shard-5 FAIL at en-US 320×640 clipped Start label; `3d0b0c22` resets `white-space:normal`. The run was later cancelled by subsequent pushes. Exact-HEAD Browser GREEN has not been observed.
+- All additions have test-first authored commits, but test-only Action runs were cancelled before observed RED, so **do not claim complete TDD RED→GREEN verification**. CI final-HEAD FULL gate, in-game WebGL screenshots and cross-device performance/8-car driving remain open.
+- Shared integration source HEAD `13e3686c` only had focused CI PASS (`41795278514`) with Browser and World Tour skipped. No merge, PR, deployment or Coming Soon activation was performed.
