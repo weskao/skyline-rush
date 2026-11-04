@@ -35,15 +35,24 @@ for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { 
     await expect(wing).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-wing', 'true');
     await page.waitForTimeout(900); // wing travel + hover wheels fold
-    // The showroom dollies in: the car fills most of the canvas (NDC span 2 = full width/height) and stays inside it.
+    // Keep the whole car legible while leaving room for the actual track scenery.
     const preview$ = page.locator('#garage-preview');
     await expect(preview$).toHaveAttribute('data-car-in-frame', 'true');
     const fill = JSON.parse(await preview$.getAttribute('data-car-bounds'));
-    // Regression guard: before the dolly-in the home car spanned ~26% of the showroom.
-    expect(Math.max((fill.maxX - fill.minX) / 2, (fill.maxY - fill.minY) / 2)).toBeGreaterThan(.45);
+    // The home-scale shot shows both the vehicle and the course.
+    expect(Math.max((fill.maxX - fill.minX) / 2, (fill.maxY - fill.minY) / 2)).toBeGreaterThan(.15);
     const shot = test.info().outputPath(`garage-home-pose-${size.width}x${size.height}.png`);
     await page.screenshot({ path: shot });
     await test.info().attach('actual-Garage-Home-Pose-WebGL', { path: shot });
+
+    for (const view of ['front', 'rear', 'left', 'right', 'orbit', 'drive']) {
+      await page.locator('#showcase-camera-next').click();
+      await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', view);
+      await page.waitForTimeout(900); // let the actual camera glide settle before visual capture
+      const angleShot = test.info().outputPath(`garage-${view}-${size.width}x${size.height}.png`);
+      await page.screenshot({ path: angleShot });
+      await test.info().attach(`garage-${view}-WebGL`, { path: angleShot });
+    }
 
     // The same pose carries into the Studio and back.
     await page.locator('#garage-studio-open').click();
