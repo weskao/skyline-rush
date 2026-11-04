@@ -13,3 +13,9 @@ test('scenario 4 — Navigation offers keyboard controls and clear path back', (
   const vue = readFileSync(new URL('../src/GaragePanel.vue', import.meta.url), 'utf8');
   for (const id of ['garage-studio-back','garage-rotate-left','garage-zoom-in','garage-reset']) assert.ok(vue.includes('id="'+id+'"'));
 });
+test('Studio offers a wing toggle wired to the camera state and the stage', () => {
+  const read = name => readFileSync(new URL(`../src/${name}`, import.meta.url), 'utf8');
+  assert.match(read('GaragePanel.vue'), /id="garage-wing"[^>]*:aria-pressed="garageStudioView\.wing"/);
+  assert.match(read('garage-ui.ts'), /#garage-wing[\s\S]*toggleGarageWing/);
+  assert.match(read('garage-stage.ts'), /state\.wing/);
+});

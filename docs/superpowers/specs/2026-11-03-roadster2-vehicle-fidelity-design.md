@@ -1,7 +1,7 @@
 # Roadster 2-inspired vehicle fidelity — Design (2026-11-03)
 
 ## Intent
-Rebuild Skyline Rush's shared player car mesh to closely resemble the **2026 Tesla Roadster 2 reference images supplied in the conversation**: low wedge nose, folded broad shoulders, seamless black/copper-glazed fastback, pearl white satin-gloss body, five-blade aero wheels, hidden front light, continuous rear light, deep quad thrusters, black split diffuser and deployable rear aerofoil. This is a game-ready visual interpretation, **not OEM CAD**. Performance/weight/thruster claims in articles are not dimensional inputs.
+Rebuild Skyline Rush's shared player car mesh to closely resemble the **2026 Tesla Roadster 2 reference images** (stored in `docs/designs/roadster2-reference/`, indexed in its `README.md`): low wedge nose, folded broad shoulders, seamless black/copper-glazed fastback, pearl white satin-gloss body, five-blade aero wheels, hidden front light, continuous rear light, deep quad thrusters, black split diffuser and deployable rear aerofoil. This is a game-ready visual interpretation, **not OEM CAD**. Performance/weight/thruster claims in articles are not dimensional inputs.
 
 ## Existing architecture
 `src/car-model.js` is the shared factory for racing, Home preview and Garage Studio. `src/geometry.ts` uses a six-station, four-corner rectangular shell and eight-vertex trapezoid canopy; roadster trim relies on blocks and flat nozzle discs. `src/rear-light.ts` already implements the animated full-width brake light, and `src/aero-vfx.js` owns the four rear jet coordinates. `src/garage-stage.ts` replaces the body paint material for the Garage clearcoat shader and animates `userData.wing` / wheels.

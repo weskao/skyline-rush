@@ -168,3 +168,21 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [844, 390]])
     });
   });
 }
+
+// The rules row (z-index 1, blurred) overlapped the corner NEW tag on desktop, and phones showed an inline tag instead.
+for (const [name, size] of Object.entries({ desktop: { width: 1280, height: 900 }, phone: { width: 390, height: 844 }, landscape: { width: 568, height: 320 }, narrow: { width: 320, height: 568 } })) {
+  test(`Garage NEW tag is a top-corner overlay and never covered (${name})`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.goto('/');
+    const garage = page.locator('#garage-button'), tag = garage.locator('.garage-new-tag');
+    await expect(tag).toBeVisible();
+    await expect(tag).toHaveCSS('position', 'absolute');
+    const hit = async () => tag.evaluate(el => { const r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return true; /* Garage itself is scrolled away (568x320 landscape, pre-existing) */ return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); });
+    expect(await hit()).toBe(true);
+    // Scrolling the intro (pinned row on phones) must not slide other widgets over the tag.
+    await page.locator('#intro').evaluate(el => { el.scrollTop = el.scrollHeight; });
+    expect(await hit()).toBe(true);
+    await page.locator('#intro').evaluate(el => { el.scrollTop = el.scrollHeight / 2; });
+    expect(await hit()).toBe(true);
+  });
+}
