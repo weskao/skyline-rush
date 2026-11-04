@@ -17,8 +17,9 @@ for (const [name, viewport, hasTouch] of [
   test.use({ viewport, hasTouch });
   test('track previews, countdown, pause and restart have interruptible motion', async ({ page }) => {
     await open(page);
-    await expect(page.locator('.track-preview')).toHaveCount(Object.keys(RACE_TRACKS).length);
-    await expect(page.locator('.track-preview').first()).toHaveCSS('animation-play-state', 'running');
+    // Coming Soon cards reuse .track-preview for their thumbnail; only race tracks animate here.
+    await expect(page.locator('[data-track] .track-preview')).toHaveCount(Object.keys(RACE_TRACKS).length);
+    await expect(page.locator('[data-track] .track-preview').first()).toHaveCSS('animation-play-state', 'running');
     await page.evaluate(() => {
       window.uiMotion = [];
       const animate = Element.prototype.animate;
