@@ -87,3 +87,25 @@ test('invalid chunk references cannot allocate resources',()=>{
   assert.throws(()=>createVolcanicCrownChunk('ground-0',999),RangeError);
   assert.ok(sampleVolcanicRoute('ground-0',0).point.every(Number.isFinite));
 });
+
+test('every flight pad has safe world-frame placement and visible edge markings at every quality', () => {
+  for (const edgeId of ['rift-flight', 'gorge-flight']) {
+    const length = volcanicEdgeLength(edgeId);
+    const lastChunk = Math.floor((length - 1e-6) / VOLCANIC_CHUNK_METERS);
+    for (const [chunkIndex, name, s] of [[0, 'launch-pad', 0], [lastChunk, 'landing-pad', length]]) {
+      for (const quality of ['low', 'medium', 'high']) {
+        const chunk = createVolcanicCrownChunk(edgeId, chunkIndex, quality, true);
+        const pad = chunk.group.getObjectByName(name);
+        assert.ok(pad?.isMesh, `${edgeId} ${name} must exist at ${quality}`);
+        assert.ok(pad.material.emissive.getHex() !== 0,
+          `${edgeId} ${name} must remain visible without animated effects`);
+        assert.equal(pad.children.filter(child => child.name === 'pad-edge-light').length, 2);
+        const frame = sampleVolcanicRoute(edgeId, s);
+        const expected = new THREE.Vector3(...frame.point)
+          .addScaledVector(new THREE.Vector3(...frame.up), -.5);
+        assert.ok(pad.position.distanceTo(expected) < 1e-4, `${edgeId} ${name} world frame`);
+        chunk.dispose();
+      }
+    }
+  }
+});
