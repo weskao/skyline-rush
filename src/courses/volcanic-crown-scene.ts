@@ -138,8 +138,8 @@ export function createVolcanicCrownChunk(
   const baseRows=quality==='high'?28:quality==='medium'?20:12;
   // Tight crater-rim turns need closer mesh/physics correspondence even at Low.
   // Only these two authored hairpins pay the extra vertices.
-  const rows=(edgeId==='ground-2'||edgeId==='ground-6')
-    ?Math.max(24,baseRows):baseRows;
+  const rows=edgeId==='ground-6'?Math.max(28,baseRows)
+    :edgeId==='ground-2'?Math.max(24,baseRows):baseRows;
   const group=new THREE.Group();group.name=`volcanic-${edgeId}-${chunkIndex}`;
   let disposed=false;
   const roadMat=new THREE.MeshStandardMaterial({
