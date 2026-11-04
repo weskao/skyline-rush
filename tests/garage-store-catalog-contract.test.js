@@ -31,3 +31,8 @@ test('Store readiness is mounted as an actual catalog, with accessible real stat
   assert.ok(component.includes('prefers-reduced-motion'), 'reduced motion required');
   assert.ok(component.includes('import.meta.env.BASE_URL'), 'public asset paths must work on GitHub Pages');
 });
+
+test('Store detail status uses the selected item state, instead of hardcoding Coming soon', () => {
+  const component = readFileSync(new URL('../src/GarageSourceArtGallery.vue', import.meta.url), 'utf8');
+  assert.match(component, /category === 'garage-store-readiness' \? storeStatusLabel\(current\.id\) :/);
+});

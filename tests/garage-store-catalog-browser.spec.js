@@ -97,3 +97,22 @@ test('all six standalone Store PNGs preserve the restored WebP source pixels exa
     expect(metrics.mismatches, id + ': avoid altered/composited PNG or truncated icon').toBe(0);
   }
 });
+
+for (const [locale, unavailable, coming] of [
+  ['en', 'Unavailable', 'Coming soon'],
+  ['zh-TW', '尚未開放', '即將推出'],
+]) {
+  test(`Store detail status agrees with the selected card in ${locale}`, async ({ page }) => {
+    await page.goto('/');
+    if (locale !== 'en') await selectLocale(page, locale);
+    await page.locator('#garage-button').click();
+    await page.locator('[data-garage-store-open]').click();
+    const catalog = page.locator('#garage-art-source-garage-store-readiness');
+    const heading = catalog.locator('.garage-source-detail-heading span');
+    await catalog.locator('[data-wave3-asset="store-box"]').click();
+    await expect(heading).toHaveText(unavailable);
+    await catalog.locator('[data-wave3-asset="store-star"]').click();
+    await expect(heading).toHaveText(coming);
+    await expect(catalog.locator('[data-store-purchase-disabled]')).toBeDisabled();
+  });
+}
