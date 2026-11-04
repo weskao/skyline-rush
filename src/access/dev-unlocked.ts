@@ -4,10 +4,12 @@
 import { RACE_TRACKS } from '../game.js';
 import { raceTrack } from '../race-tracks.ts';
 import { PAINTS } from '../appearance.ts';
+import { upcomingReadiness } from '../upcoming-tracks.ts';
 
 console.info('SKYLINE_RUSH_DEV_UNLOCK_ALL_ONLY: local development preview; never distribute.');
 
 export const availableTracks = () => Object.keys(RACE_TRACKS);
-// A Coming Soon card is enterable here only once its race runtime exists (`raceTrack` resolves it).
-export const isUpcomingEnterable = (id: string): boolean => raceTrack(id) !== undefined;
+// A registered runtime does not make concept art or an unfinished course playable.
+export const isUpcomingEnterable = (id: string): boolean =>
+  upcomingReadiness(id) === 'playable' && raceTrack(id) !== undefined;
 export const availablePaints = () => Object.keys(PAINTS);

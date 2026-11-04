@@ -26,10 +26,22 @@ export const UPCOMING_TRACKS = Object.freeze({
 } as const);
 
 export type UpcomingTrackId = keyof typeof UPCOMING_TRACKS;
-/** Any preview-only Coming Soon id. */
+/** Any Coming Soon card; entry is independently gated by readiness and build mode. */
 export type PreviewTrackId = UpcomingTrackId;
 export type HomeTrackStatus = 'coming-soon' | 'locked' | 'unlocked';
 export const isUpcomingTrack = (id: string): id is UpcomingTrackId => Object.hasOwn(UPCOMING_TRACKS, id);
+/**
+ * A concept/preview is NEVER evidence of a playable race. Missing entries fail closed.
+ * Only promote a course to 'playable' after its real driving, finish and regression gates.
+ * Production still keeps all UPCOMING_TRACKS as COMING SOON until explicit release promotion.
+ */
+export type UpcomingReadiness = 'preview' | 'development' | 'playable';
+const UPCOMING_READINESS: Readonly<Partial<Record<UpcomingTrackId, Exclude<UpcomingReadiness, 'preview'>>>> = Object.freeze({
+  'frostbite-canyon': 'playable',
+});
+export const upcomingReadiness = (id: string): UpcomingReadiness =>
+  isUpcomingTrack(id) ? UPCOMING_READINESS[id] ?? 'preview' : 'preview';
+
 export const upcomingTrackInfo = (id: PreviewTrackId) => UPCOMING_TRACKS[id];
 export const upcomingTrackName = (id: PreviewTrackId, locale: string): string =>
   upcomingTrackInfo(id).names[locale === 'zh-TW' ? 'zh-TW' : 'en'];

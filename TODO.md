@@ -3406,3 +3406,10 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 
 - [ ] **2026-11-03 source integration update:** Five independent art branches subsequently delivered actual native Three.js scene modules, corresponding focused unit tests and art notes. Their exports, geometry, absolute-time updates, quality/reduced-motion arguments and disposal methods were source-reviewed. The exact 15 committed Git blobs were selectively imported without merging old histories. Heads: `dune-tempest` `fa9573b4bddd`; `monsoon-ruins` `32411c88c702`; `skyfall-archipelago` `9707c5132dab`; `volcanic-crown` `d7ad8b01f57f`; `stormline-megacity` `84e9569a2d4c`. Source branch CI was still queued when checked; this is **not** verified visual acceptance.
 - [ ] Register all five in the shared renderer and run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and 2 real WebGL frames per map desktop/mobile. Pending; do not label scenes visually accepted before screenshots and checks.
+
+## 2026-11-04 — Preview-only Coming Soon fail-closed access (Frostbite working branch)
+
+- [x] Add explicit default-preview readiness to the shared Coming Soon catalog. Only approved `playable` cards with real race runtime can START under `make dev-unlocked`; concept-only or development cards never can, even with an accidental runtime registration. Frostbite remains dev-only; all production Coming Soon cards remain disabled.
+- [x] Focused isolated RED→GREEN reproduced runtime-only unlock on a preview with Node 22 stubs (2 expected failures before fix, 3/3 pass after). This is not a full repository regression run.
+- [ ] Run `make verify`, production bundle audit and real desktop/mobile UI checks from a complete checkout; inspect exact-HEAD FULL GitHub Actions CI and screenshots. Do not label merge-ready until these gates pass.
+- [ ] After source integration CI and branch conflict review, forward-port the shared readiness guard to `feature/epic-multiroute-longform-tracks`; then follow feature → develop → main release checks. Do not alter existing release tags.
