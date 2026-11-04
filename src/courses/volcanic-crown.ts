@@ -1,3 +1,4 @@
+import { routeLength, sampleRoute } from '../course-route-frame.ts';
 // Volcanic Crown: independent authored graph data and world-space route sampling.
 // The integration host owns race state, camera, physics and rendering.
 export type Vec3 = readonly [number, number, number];
@@ -76,68 +77,20 @@ export const VOLCANIC_CROWN_COURSE_GRAPH = {
 } as const;
 
 const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const scale = (a: Vec3, n: number): Vec3 => [a[0] * n, a[1] * n, a[2] * n];
-const dot = (a: Vec3, b: Vec3): number => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-const cross = (a: Vec3, b: Vec3): Vec3 => [
-  a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0],
-];
-const normal = (v: Vec3): Vec3 => scale(v, 1 / Math.max(1e-10, Math.sqrt(dot(v, v))));
-const distance = (a: Vec3, b: Vec3): number => Math.hypot(...sub(a, b));
-const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 
-// Centripetal-style authored Catmull-Rom coordinates, no duplicated shared physics.
-function pointAt(edge: RouteEdge, u: number): Vec3 {
-  const points = edge.points;
-  const at = clamp(u, 0, 1) * (points.length - 1);
-  const i = Math.min(points.length - 2, Math.floor(at));
-  const t = at - i, t2 = t*t, t3 = t2*t;
-  const a = points[Math.max(0, i-1)], b = points[i], c = points[i+1];
-  const d = points[Math.min(points.length-1, i+2)];
-  return [0,1,2].map(k => .5*((2*b[k]) + (-a[k]+c[k])*t
-    + (2*a[k]-5*b[k]+4*c[k]-d[k])*t2
-    + (-a[k]+3*b[k]-3*c[k]+d[k])*t3)) as unknown as Vec3;
-}
-type LengthTable = { edge: RouteEdge; positions: Float64Array; total: number; steps: number };
-const routeTables = new Map<string, LengthTable>();
-for (const edge of VOLCANIC_CROWN_EDGES) {
-  const steps = Math.max(128, edge.points.length * 48);
-  const positions = new Float64Array(steps+1);
-  let previous = pointAt(edge, 0);
-  for (let i=1; i<=steps; i++) {
-    const next = pointAt(edge, i/steps);
-    positions[i] = positions[i-1] + distance(previous, next);
-    previous = next;
-  }
-  routeTables.set(edge.id, { edge, positions, total: positions[steps], steps });
-}
+// Keep the map's legacy exports, but share the exact arc-length and road frame
+// used by CourseGraph, AI, collisions and the future race runtime.
 export function volcanicEdgeLength(edgeId: string): number {
-  const table = routeTables.get(edgeId);
-  if (!table) throw new Error('Unknown Volcanic Crown edge: ' + edgeId);
-  return table.total;
+  return routeLength(VOLCANIC_CROWN_COURSE_GRAPH, edgeId);
 }
 export function volcanicGroundLength(): number {
   return mainEdges.reduce((sum, edge) => sum + volcanicEdgeLength(edge.id), 0);
 }
 export function sampleVolcanicRoute(edgeId: string, localS: number): RouteFrame {
-  const table = routeTables.get(edgeId);
-  if (!table) throw new Error('Unknown Volcanic Crown edge: ' + edgeId);
-  const s = clamp(Number.isFinite(localS) ? localS : 0, 0, table.total);
-  let lo=0, hi=table.steps;
-  while (lo+1 < hi) {
-    const mid=(lo+hi)>>>1;
-    if (table.positions[mid] < s) lo=mid; else hi=mid;
-  }
-  const span = table.positions[hi] - table.positions[lo];
-  const u=(lo + (span > 1e-8 ? (s-table.positions[lo])/span : 0)) / table.steps;
-  const point=pointAt(table.edge, u);
-  const left=pointAt(table.edge, Math.max(0, u-0.0001));
-  const rightPoint=pointAt(table.edge, Math.min(1, u+0.0001));
-  const forward=normal(sub(rightPoint, left));
-  const right=normal([-forward[2], 0, forward[0]]);
-  const up=normal(cross(right, forward));
-  return { edgeId, localS:s, point, forward, right, up };
+  return sampleRoute(VOLCANIC_CROWN_COURSE_GRAPH, edgeId, localS);
 }
+
 export function volcanicWorldPosition(edgeId: string, localS: number, lateral=0, altitude=0): Vec3 {
   const frame=sampleVolcanicRoute(edgeId, localS);
   return add(add(frame.point, scale(frame.right,lateral)),scale(frame.up,altitude));
