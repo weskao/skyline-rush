@@ -49,3 +49,32 @@ test('Garage Missions stay truthful in Traditional Chinese and fall back on miss
   await expect(board.locator('[data-mission-id="mission-race"]')).toContainText('競速挑戰');
   await expect(board).not.toContainText(/領取|已完成|已獲得/);
 });
+
+test('Garage shows all eight PNGs in the actual interface without opening the concept gallery', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const board = page.locator('.garage-mission-board');
+  await expect(board.locator('[data-mission-id] img')).toHaveCount(4);
+  await expect(board.locator('[data-trophy-id] img')).toHaveCount(4);
+  for (const trophy of await board.locator('[data-trophy-id]').all()) {
+    const img = trophy.locator('img');
+    await img.scrollIntoViewIfNeeded();
+    await expect(img).toHaveAttribute('width', '96');
+    await expect(img).toHaveJSProperty('naturalWidth', 288);
+    await expect(trophy).toContainText('Display only');
+  }
+  await expect(page.locator('#garage-art-source-garage-rewards-and-missions')).not.toHaveAttribute('open', '');
+  await expect(board).not.toContainText(/Claim|Redeem|Earned|立即領取|已獲得/);
+});
+
+test('Garage trophy display preserves Traditional Chinese and missing-image fallback', async ({ page }) => {
+  await page.route('**/trophy-gold@3x.png', route => route.abort());
+  await page.goto('/');
+  await selectLocale(page, 'zh-TW');
+  await page.locator('#garage-button').click();
+  const trophy = page.locator('.garage-mission-board [data-trophy-id="trophy-gold"]');
+  await expect(trophy).toContainText('金級獎盃');
+  await expect(trophy).toContainText('僅展示');
+  await expect(trophy.locator('.artwork-fallback')).toBeVisible();
+});
