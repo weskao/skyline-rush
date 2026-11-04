@@ -76,7 +76,7 @@ const edges: Edge[] = [
     landing: { clearLengthMeters: 105, recoveryEdgeId: 'canyon-switchbacks' },
   },
   edge('stone-ring-corridor', 'merge2', 'cp3', 'main', 'canyon-track', 34, 1,
-    [[-1350, 10, -6100], [-1740, 16, -6420], [-1710, 14, -6760], [-1350, 10, -6830]]),
+    [[-1130, 10, -6200], [-1740, 16, -6420], [-1710, 14, -6760], [-1350, 10, -6830]]),
   edge('sandstorm-climb', 'cp3', 'split3', 'main', 'dune-crest', 42, 2,
     [[-1900, 9, -7130], [-1960, 9, -7410], [-1620, 10, -7590]]),
   edge('natural-arch-pass', 'split3', 'merge3', 'main', 'canyon-track', 28, 1,

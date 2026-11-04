@@ -156,3 +156,22 @@ test('merge2 ground branch meets the post-merge corridor without reversing direc
   assert.ok(dot > Math.cos(35 * Math.PI / 180),
     'canyon exit must connect to the shared road without a 144° steering snap');
 });
+
+test('both ground and aerial canyon choices join merge2 within safe turning angles', () => {
+  const following = byId('stone-ring-corridor').controlPoints;
+  const exit = byId('canyon-switchbacks').controlPoints;
+  const air = byId('canyon-air-crossing').controlPoints;
+  const tangent = (p, q) => [q[0] - p[0], q[2] - p[2]];
+  const outgoing = tangent(following[0], following[1]);
+  const joinAngle = points => {
+    const incoming = tangent(points.at(-2), points.at(-1));
+    const dot = (incoming[0] * outgoing[0] + incoming[1] * outgoing[1])
+      / Math.hypot(...incoming) / Math.hypot(...outgoing);
+    return Math.acos(Math.max(-1, Math.min(1, dot))) * 180 / Math.PI;
+  };
+  assert.ok(joinAngle(exit) < 40, 'main switchbacks must not snap at merge2');
+  assert.ok(joinAngle(air) < 40, 'flight landing must join without a sideways steering snap');
+  const last = air.at(-1), before = air.at(-2);
+  const grade = Math.abs(last[1] - before[1]) / Math.hypot(last[0] - before[0], last[2] - before[2]);
+  assert.ok(grade < 0.12, 'landing approach must not demand an unsafe vertical drop');
+});
