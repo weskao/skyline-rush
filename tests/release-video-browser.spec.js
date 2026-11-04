@@ -149,6 +149,8 @@ test.describe('desktop', () => {
       }, true);
     });
     await expect.poll(() => time(video)).toBeGreaterThan(1.2);
+    // A ~6 s looping clip: a slow runner can reach the hand-over late enough that heroTime + 1 wraps past the end.
+    await video.evaluate(el => { el.currentTime = 1.3; });
     await video.click(); // tapping the clip itself enlarges it too
     await expect(clip).toBeVisible();
     await expect.poll(() => playing(clip)).toBe(true);
