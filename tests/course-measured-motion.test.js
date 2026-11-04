@@ -95,3 +95,13 @@ test('finish gate refuses a supplied next edge even if the signed sweep is valid
   const s={...createCourseTravel(graph),currentEdgeId:'final',localS:98,nextCheckpoint:1};
   assert.deepEqual(advanceMeasuredCourseTravel(graph,s,motion(s,101,{toPosition:[0,0,-201],nextEdgeId:'entry',maxStepMetres:4})),s);
 });
+
+test('authorized flight over an ordinary ground edge can advance, but cannot bypass a high checkpoint',()=>{
+  const high={...createCourseTravel(graph),currentEdgeId:'road',localS:10,altitude:10};
+  const flight=motion(high,16,{flightAuthorized:true,maxStepMetres:7});
+  assert.equal(advanceMeasuredCourseTravel(graph,high,flight).localS,16);
+  assert.deepEqual(advanceMeasuredCourseTravel(graph,high,{...flight,flightAuthorized:false}),high);
+  const atGate={...high,localS:48};
+  const bypass=motion(atGate,51,{flightAuthorized:true,toPosition:[0,10,-101],nextEdgeId:'final',maxStepMetres:4});
+  assert.deepEqual(advanceMeasuredCourseTravel(graph,atGate,bypass),atGate);
+});

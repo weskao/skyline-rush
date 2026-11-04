@@ -39,7 +39,7 @@ export function advanceMeasuredCourseTravel(graph: CourseGraph, state: CourseTra
     const frame = sampleRoute(graph, edge.id, motion.toS), off = delta(motion.toPosition, frame.point);
     const lateral = dot(off, frame.right), altitude = dot(off, frame.up);
     if (Math.abs(dot(off, frame.forward)) > 0.25 || Math.abs(lateral) > frame.width / 2 ||
-        (edge.mode === 'ground' && (altitude < -2 || altitude > 5))) return state;
+        (edge.mode === 'ground' && (altitude < -2 || (altitude > 5 && !motion.flightAuthorized)))) return state;
     return { ...state, localS: motion.toS, lateral, altitude };
   }
 

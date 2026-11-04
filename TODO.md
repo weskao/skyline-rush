@@ -3475,3 +3475,10 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Verify exact-HEAD FULL CI including Unit/Typecheck/Build, Cloud-save, all 13 Browser and all five World Tour shards and quality-gate. Pending or skipped is not a PASS.
 - [ ] Integrate measured fleet state into the existing `game.js`/RaceFactory/`world.js` authoritative loop, including player/drift/BOOST/NITRO/FLY, 8-car AI and standings, layered collisions, valid recovery, minimap, race results, records and ghost persistence.
 - [ ] No source course import until each candidate branch passes its own exact-HEAD FULL CI, safety checks, real ground/aerial WebGL and 20+ timed 3–5 minute sessions per course; preserve Coming Soon until human signoff.
+
+
+## 2026-11-05 — authorized air-over-ground travel, signed gate unchanged
+
+- [x] Observed failing RED for authoritative authorized air-over-ground route advance (previously frozen by a ground-height guard), then GREEN while high checkpoint sweep remained rejected; local combined 21/21 Node tests and isolated strict TypeScript PASS.
+- [ ] Confirm newest exact-HEAD FULL CI (Unit/Typecheck/Build, Cloud-save, 13 Browser and five World Tour shards, Quality Gate); pending/skipped jobs do not pass.
+- [ ] Connect `advanceMeasuredCourseTravel` and measured fleet states to real physics-derived world positions and existing AI/game/world architecture; complete the full five-course physical/visual acceptance before enabling any race.
