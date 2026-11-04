@@ -3350,3 +3350,9 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Confirm both new tests and all existing suites on exact final HEAD; full browser/World Tour must execute, not skip.
 - [ ] Capture six real WebGL ground/ford/temple/falls/skybridge/landing views at desktop and phone sizes; inspect both original concept JPEGs.
 - [ ] Complete shared CourseGraph player/rival/AI integration, physical landing/recovery and checkpoint controller, measured 8-car 3–5-minute runs, and 30/60/120 FPS device evidence in read-only integration owner. Do not unlock Coming Soon from this branch.
+
+## Monsoon Ruins — continued TDD (2026-11-04)
+
+- [x] Reproduce RED for fixed-per-chunk foliage/rain density (100m+150m costs 2× a 250m chunk), and ~20m landmark viaduct offset; add deterministic scene regression tests and map-local fixes. Remote tests on final HEAD are still required.
+- [x] Address existing 844×390 Start long-label regression in this branch without changing button dimensions; reuse existing Browser regression spec and preserve Coming Soon locking. RED: FULL CI run 41793715525 browser shard 1.
+- [ ] Confirm latest exact-HEAD full Browser/World Tour/Unit/Cloud/Quality Gate; verify responsive layout gate and real WebGL screenshots (desktop + mobile) before marking either change visually accepted.

@@ -100,6 +100,36 @@ test('flight stone bridge has physical vertical deck and visible obstacles', () 
   chunk.dispose();
 });
 
+test('viaduct structural deck follows the real high-route crossing, not an offset decorative platform', () => {
+  const { chunk } = mount(6840, 7050, 'ground');
+  const deck = find(chunk.group, 'elevated-bridge-deck');
+  assert.ok(deck);
+  const route = sampleMonsoonRoute('waterfall-skybridge', 6950);
+  const centre = deck.getWorldPosition(new THREE.Vector3());
+  assert.ok(centre.distanceTo(new THREE.Vector3(...route.point)) < 2,
+    'decorative bridge deck must sit immediately beneath the sampled route');
+  const axis = new THREE.Vector3(1, 0, 0).applyQuaternion(
+    deck.getWorldQuaternion(new THREE.Quaternion()),
+  );
+  const heading = new THREE.Vector3(...route.forward).setY(0).normalize();
+  assert.ok(axis.dot(heading) > 0.95, 'deck must face the actual route tangent');
+  chunk.dispose();
+});
+
+test('forest and rain budgets scale with streamed metres, rather than number of chunks', () => {
+  const big = mount(1050, 1300, 'ground', 'high');
+  const left = mount(1050, 1150, 'ground', 'high');
+  const right = mount(1150, 1300, 'ground', 'high');
+  const trees = ({ chunk }) => find(chunk.group, 'monsoon-mixed-rainforest-canopy').count;
+  const drops = ({ chunk }) =>
+    find(chunk.group, 'monsoon-animated-rain').geometry.getAttribute('position').count;
+  assert.equal(trees(left) + trees(right), trees(big),
+    'subdividing a chunk must not double foliage instances');
+  assert.equal(drops(left) + drops(right), drops(big),
+    'subdividing a chunk must not double rain draw workload');
+  [big, left, right].forEach(({ chunk }) => chunk.dispose());
+});
+
 test('rain/fern animation respects reduced motion and all scene-owned resources release', () => {
   const { scene, chunk } = mount(11100, 11300, 'ground', 'medium');
   const rain = find(chunk.group, 'monsoon-animated-rain');

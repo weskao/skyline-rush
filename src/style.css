@@ -1884,8 +1884,8 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
   .intro #start-button { width: 190px; min-width: 190px; max-width: 190px; }
 }
 /* Start keeps its size: a label wider than the panel wraps to at most two lines inside the button instead of widening it into the panel's clip. */
-.intro #start-button { max-width: 100%; }
-.intro #start-button > span { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; line-height: 1.1; }
+.intro #start-button { max-width: 100%; gap: 12px; }
+.intro #start-button > span { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; letter-spacing: normal; overflow: hidden; overflow-wrap: anywhere; line-height: 1.1; }
 .intro #start-button > svg { flex: none; }
 .airflow-active[data-phase="ready"] #start-button { max-width: calc(100vw - 80px); }
 

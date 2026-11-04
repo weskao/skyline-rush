@@ -98,7 +98,7 @@ function terrainMesh(from: number, to: number, side: -1 | 1,
 }
 function makeForest(group: THREE.Group, from: number, to: number,
   tier: Quality, wood: THREE.Material, dark: THREE.Material, light: THREE.Material) {
-  const count = tier === 'low' ? 35 : tier === 'medium' ? 90 : 150;
+  const count = Math.max(1, Math.round((tier === 'low' ? 35 : tier === 'medium' ? 90 : 150) * (to - from) / 250));
   const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(.75, 1.25, 1, 6), wood, count);
   const canopy = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), dark, count);
   const crown = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), light, count);
@@ -190,17 +190,22 @@ function makeLandmarks(group: THREE.Group, from: number, to: number,
   if (inRange(6950)) {
     const bridge = new THREE.Group();
     bridge.name = 'monsoon-high-arched-stone-viaduct';
-    bridge.position.copy(location(6950, -84));
+    const crossing = sampleMonsoonRoute('waterfall-skybridge', 6950);
+    bridge.position.copy(vec(crossing.point));
+    bridge.rotation.y = Math.atan2(-crossing.forward[2], crossing.forward[0]);
     group.add(bridge);
+    const groundY = sampleMonsoonRoute('ground', 6950).point[1] - 13;
+    const pierHeight = Math.max(6, crossing.point[1] - groundY);
     for (let i = 0; i < 6; i++) {
       const x = (i - 2.5) * 16;
-      box(bridge, 'mossy-stone-bridge-pier', [5, 34, 6],
-        new THREE.Vector3(x, 13, 0), stone);
+      box(bridge, 'mossy-stone-bridge-pier', [5, pierHeight, 6],
+        new THREE.Vector3(x, -1.5 - pierHeight / 2, 0), stone);
       box(bridge, 'bridge-arch-cap', [16, 4, 6],
-        new THREE.Vector3(x + 8, 31, 0), dark);
+        new THREE.Vector3(x + 8, -3.5, 0), dark);
     }
+    // Structural deck sits directly under the route-owned road mesh; it is not a second drivable surface.
     box(bridge, 'elevated-bridge-deck', [95, 3, 15],
-      new THREE.Vector3(0, 34, 0), stone);
+      new THREE.Vector3(0, -1.5, 0), stone);
   }
 }
 function makeVisibleObstacles(group: THREE.Group, from: number, to: number,
@@ -226,7 +231,7 @@ function makeVisibleObstacles(group: THREE.Group, from: number, to: number,
   }
 }
 function makeRain(group: THREE.Group, from: number, to: number, tier: Quality) {
-  const max = tier === 'low' ? 120 : tier === 'medium' ? 210 : 320;
+  const max = Math.max(1, Math.round((tier === 'low' ? 120 : tier === 'medium' ? 210 : 320) * (to - from) / 250));
   const data = new Float32Array(max * 6);
   // Preserve the rain's world-space spawn points across frames; only falling Y animates.
   const origins = Array.from({ length: max }, (_, i) => {
