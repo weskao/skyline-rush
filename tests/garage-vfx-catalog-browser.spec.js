@@ -314,8 +314,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       await expect(tile).toHaveAttribute('data-artwork-restored', 'true');
       const image = tile.locator('img');
       await expect(image).toHaveAttribute('data-static-src', new RegExp(`${id}@3x\\.webp$`));
-      await expect(image).toHaveAttribute('src', new RegExp(`garage-animated/${id}@3x\\\\.gif      await expect(image).toHaveAttribute('data-static-src', new RegExp(`${id}@3x\\.webp$`));
-));
+      await expect(image).toHaveAttribute('src', new RegExp(`garage-animated/${id}@3x\\.gif$`));
       const result = await tile.evaluate(async figure => {
         const img = figure.querySelector('img');
         await img.decode();
