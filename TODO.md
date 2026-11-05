@@ -3235,6 +3235,37 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 
 Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIFEST.md`. PNG generator: `scripts/render-store-png.mjs`; branch-only audit workflow: `.github/workflows/store-png-generator.yml`. Prior exact-HEAD `c8235fc8045982e01638794027f818b8103cbdf0` passed **focused** CI run `41784030747` while Browser and World Tour were skipped. Those checks do not validate later changes.
 
+### 2026-11-02 Garage VFX CI follow-up (pending exact-HEAD full gate)
+- [x] Old feature `64773e6`: Firestore full-save and Garage button-selector regressions now green (cloud-save, browser shard 12).
+- [ ] Correct 390×844 Flight framing after spoiler/wheel pose; real WebGL browser evidence and unit gate pending on the new commit.
+- [ ] Repair solo Stunt/Checkpoint score-pad availability and re-rolled Time Trial ring test; full browser shards 2/7 and `quality-gate` pending.
+- [ ] Recheck Circuit landscape-zh pause-to-result transition on the exact merged commit; preserve the test until root cause is verified.
+- [ ] Merge only after feature full-regression and verify exact develop merge commit; no `main` change or release.
+
+### 2026-11-05 Garage VFX exact-HEAD Full CI repair
+- [x] RED observed on `2b3a10c9` Full Regression [#41908608993](https://github.com/weskao/skyline-rush/actions/runs/41908608993): Browser (7) `handoff-browser.spec.js` PERFECT LINE false; Browser (6) `release-video-browser.spec.js` undefined enlarged media after dialog teardown. Unit, Cloud Save and all five World Tour shards passed; Quality Gate failed as required.
+- [ ] Revalidate real Ring → NITRO → PERFECT LINE and viewer frame handoff with latest-head Full Browser/World Tour/Quality Gate; use the pinned Coast Solo Time Trial + actual input pilot and capture video times before DOM teardown, matching already-green Economy Full CI #41908841653. No production award/entitlement changes. Local `make verify` and physical device checks not executed in connector-only environment.
+
+### 2026-11-02 Garage VFX CI follow-up — f2a1816 RED, latest repair pending
+- [x] Observed exact-HEAD feature CI RED run 41466802082: unit-tests, cloud-save and five World Tour shards green; browser shards 4/5/7/8/11/12 red. Full gate not passed.
+- [ ] Localize 3× HUD artwork summary/notice and custom-draw its disclosure marker; verify EN/zh-TW and CSS sizing in latest CI.
+- [ ] Repair handoff test missing gameplay fixture, deterministic real callout timing and probabilistic Risk Line assertion; verify latest full CI.
+- [ ] Preserve develop Garage badge art, zoom-out fog and ring row semantics alongside feature Flight framing, bonus score gates, eight-car finish tests and real 3D framing tests.
+- [ ] Latest feature quality-gate, develop no-ff merge CI and manual WebGL/device review remain pending.
+
+### 2026-11-03 Garage CI RED checkpoint
+- [x] Exact feature 16f2485 CI 41476482401: unit-tests, cloud-save, 5 World Tour passed; browser shards 1,3,4,6,7,8,9,10,11,12,13 failed; quality-gate failed. Logs confirm stale Endless 20/15 budget, Garage zoom click count, desktop intro overflow, HUD art timeout and NITRO reward assumptions. No green claim for the next SHA.
+- [ ] Recheck complete exact-HEAD full CI after upstream sync and fixes. Manual real-WebGL/phone checks remain independent.
+
+### 2026-11-03 Garage exact-HEAD CI #41520208780 observed RED (follow-up pending)
+- [x] Browser shards 2/7/9 failed on exact feature `ef1a94a`: 1440×900 intro overlapped topbar; intro scroll test counted the fixed camera dock as flow content; handoff PERFECT LINE pilot exited in READY phase; release clip handoff assertion compared different instants. Logs inspected, not a full CI pass.
+- [ ] Verify fixes on next exact-SHA full-regression CI: actual Start race before ring collision; exclude fixed dock only from scroll-flow test; preserve 900px intro height with correct header gap; compare release video clocks at dialog close. Do not mark GREEN without CI evidence.
+- [ ] Verify remaining 13 browser, 5 World Tour, cloud-save, unit-tests, quality-gate; after all green and latest develop integrated, no-ff merge to develop only and verify merged SHA. Manual WebGL/device review separate.
+
+### 2026-11-03 Garage full-regression browser shard 2 RED — footer hitbox
+- [x] On exact feature `e4b7564031e9e9b431a06248aa4947b83f3f9121`, Actions run 41536582099 browser-tests (2) failed `tests/responsive-browser.spec.js:37` at 1440×900: intro rectangle overlapped `.bottomline`. Inspected actual Playwright failure screenshot (`browser-failures-2` artifact 13187604260). Footer includes a 44px action; the 900px override's `bottom: 24px` leaves the intro rectangle over that hitbox despite visible text ending higher. Existing browser assertion is the RED regression test; no test weakened.
+- [ ] Exact-HEAD GREEN pending: 900px desktop intro bottom inset 60px reserves the 44px footer plus a small gap, top remains 118px to clear the 112px header after the -6px margin. Re-run all 13 browser shards, unit, cloud-save, five World Tour, quality-gate and `npm run test:layout` where a runnable checkout is available; inspect 900px scroll/locale/physical screenshots separately. No local browser execution was possible in this connector-only run.
+
 ## Wave 3 Economy Foundation — 2026-11-04 read-only state gate
 
 - [ ] Exact-HEAD full regression and real device/visual acceptance for the Economy state gate. The focused local Node 22 test observed RED (3 failures: missing shared state contract), then GREEN (3 passes) and strict standalone TypeScript check; this is **not** full-repo verification.
