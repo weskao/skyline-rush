@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -21,6 +22,7 @@ import socket
 import subprocess
 import sys
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,18 +39,21 @@ LAUNCH_JS = ("import { chromium } from 'playwright-core';"
              "console.log('chrome launched'); await browser.close();")
 D4_SPECS = ["tests/shader-warmup-browser.spec.js", "tests/black-frame-browser.spec.js"]
 PERF_LINE = re.compile(r"(\S+@\w+)\s+p50 ([\d.]+) ms · p95 ([\d.]+) ms · ([\d.]+) fps")
+FAILED_TEST = re.compile(r"✘\s+\d+\s+(tests/\S+?\.spec\.js:\d+)")  # Playwright line reporter: "✘  8 tests/x.spec.js:572:1 › ..."
+GUARDED_PATHS = ("src", "tests", "package.json", "package-lock.json")  # a change here mid-run invalidates the run
 
 
 @dataclass
 class Result:
     id: str
     name: str
-    status: str  # PASS | FAIL | SKIP
+    status: str  # PASS | FAIL | FLAKY (red in the full run, green alone) | SKIP
     detail: str = ""
 
 
-def run(cmd: list[str], cwd: Path = ROOT, env: dict | None = None, timeout: int = 1800) -> tuple[int, str]:
-    """Stream the command's output live; return (exit code, last 40 lines)."""
+def run(cmd: list[str], cwd: Path = ROOT, env: dict | None = None, timeout: int = 1800,
+        on_line: Callable[[str], None] | None = None) -> tuple[int, str]:
+    """Stream the command's output live; return (exit code, last 40 lines). `on_line` sees every line."""
     tail: list[str] = []
     # `make perf` prints "·" and PERF_LINE matches it: decode as UTF-8 whatever the host locale is.
     proc = subprocess.Popen(cmd, cwd=cwd, env={**os.environ, "LC_ALL": "en_US.UTF-8", **(env or {})}, stdout=subprocess.PIPE,
@@ -59,6 +64,8 @@ def run(cmd: list[str], cwd: Path = ROOT, env: dict | None = None, timeout: int 
         for line in proc.stdout:
             print(line, end="")
             tail = (tail + [line.rstrip()])[-40:]
+            if on_line:
+                on_line(line)
         code = proc.wait()
     finally:
         timer.cancel()
@@ -112,6 +119,33 @@ def compare(old_rows: list[dict], new_rows: list[dict]) -> tuple[list[str], list
 def parse_perf(text: str) -> list[tuple[str, float, float]]:
     """`make perf` summary lines -> [(build, p50, p95)], in print order (current first, then BASE)."""
     return [(m[1], float(m[2]), float(m[3])) for m in PERF_LINE.finditer(text.split("Median of")[-1])]
+
+
+def classify_verify(code: int, changed: bool, failed: list[str], still_failing: list[str]) -> tuple[str, str]:
+    """`make verify` outcome -> (status, detail). `failed` = specs red in the full run, `still_failing` = red again alone."""
+    if changed:  # a rebase/stash/edit mid-run reloads the dev server and fails whatever test was running (seen 2026-11-06)
+        return "FAIL", ("tree changed during the run (src/tests/package files), result not trustworthy: rerun when nothing else "
+                        "touches the repo" + (f"; red meanwhile: {', '.join(failed)}" if failed else ""))
+    if code == 0:
+        return "PASS", ""
+    if not failed:
+        return "FAIL", "make verify failed outside a browser spec (see its output)"
+    if still_failing:
+        return "FAIL", f"red alone too: {', '.join(still_failing)}"
+    return "FLAKY", f"red in the full run, green alone (timing or contention; find the race): {', '.join(failed)}"
+
+
+def tree_fingerprint() -> str:
+    """Hash of the guarded files as git sees them (index + unstaged diff); moves when anything edits or stashes them."""
+    blob = git("ls-files", "-s", "--", *GUARDED_PATHS) + git("diff", "--", *GUARDED_PATHS)
+    return hashlib.sha256(blob.encode()).hexdigest()
+
+
+def busy_runs() -> list[str]:
+    """Test runs already active (any session): a rebase or install now would corrupt them."""
+    out = subprocess.run(["pgrep", "-fl", "playwright test|make verify|npm test"], capture_output=True,
+                         encoding="utf-8", errors="replace").stdout
+    return [line.strip() for line in out.splitlines() if "pgrep" not in line]
 
 
 # ---- steps -------------------------------------------------------------------------------------------------------
@@ -172,9 +206,11 @@ def d3_r180_baseline(args) -> Result:
     return Result("D3", "own r180 baseline", "PASS", f"captured from {R180_REF}")
 
 
-def d4_specs(_args) -> Result:
-    code, _ = playwright(D4_SPECS)
-    return Result("D4", "shader warmup + black frame", "PASS" if code == 0 else "FAIL", "2 specs" if code == 0 else "spec failed")
+def d4_specs(args) -> Result:
+    specs = [s for s in args.specs.split(",") if s] or D4_SPECS  # --specs reruns any spec or file:line alone
+    code, _ = playwright(specs)
+    return Result("D4", "shader warmup + black frame" if specs == D4_SPECS else "specs", "PASS" if code == 0 else "FAIL",
+                  f"{len(specs)} spec(s)" if code == 0 else "spec failed")
 
 
 def d5_capture_compare(args) -> Result:
@@ -207,8 +243,25 @@ def d6_perf(_args) -> Result:
 
 
 def d7_verify(_args) -> Result:
-    code, _ = run(["make", "verify"], timeout=5400)
-    return Result("D7", "make verify", "PASS" if code == 0 else "FAIL", "" if code == 0 else "make verify failed")
+    if busy := busy_runs():
+        return Result("D7", "make verify", "FAIL", f"another test run is active, not starting a second: {busy[0]}")
+    start, changed, stop = tree_fingerprint(), threading.Event(), threading.Event()
+
+    def watch() -> None:
+        while not stop.wait(5):
+            if tree_fingerprint() != start:
+                changed.set()
+                return
+
+    threading.Thread(target=watch, daemon=True).start()
+    failed: list[str] = []
+    code, _ = run(["make", "verify"], timeout=5400, on_line=lambda line: failed.extend(FAILED_TEST.findall(line)))
+    stop.set()
+    failed = list(dict.fromkeys(failed))
+    # shortcut: reruns use the default Playwright config only; a World Tour spec failure needs its own config rerun by hand
+    still_failing = [spec for spec in failed if playwright([spec])[0]] if not changed.is_set() else []
+    status, detail = classify_verify(code, changed.is_set(), failed, still_failing)
+    return Result("D7", "make verify", status, detail)
 
 
 STEPS = {"D1": d1_install, "D2": d2_browser_launch, "D3": d3_r180_baseline, "D4": d4_specs,
@@ -228,6 +281,16 @@ def self_test() -> None:
               "  current@67fc5218  p50 16.7 ms · p95 16.8 ms · 59.3 fps\n  main@abcd1234  p50 16.7 ms · p95 16.7 ms · 59.2 fps")
     assert parse_perf(sample) == [("current@67fc5218", 16.7, 16.8), ("main@abcd1234", 16.7, 16.7)]
     assert 1024 <= free_port() <= 65535
+    line = "  ✘    8 tests/browser.spec.js:572:1 › a complete 5 km sprint reaches results (1.7m)"
+    assert FAILED_TEST.findall(line) == ["tests/browser.spec.js:572"]
+    assert FAILED_TEST.findall("  ✓    9 tests/browser.spec.js:620:1 › ok") == []
+    assert classify_verify(0, False, [], []) == ("PASS", "")
+    assert classify_verify(0, True, [], [])[0] == "FAIL", "a changed tree voids even a green run"
+    assert classify_verify(2, True, ["a:1"], [])[0] == "FAIL"
+    assert classify_verify(2, False, [], [])[0] == "FAIL"
+    assert classify_verify(2, False, ["a:1"], ["a:1"]) == ("FAIL", "red alone too: a:1")
+    assert classify_verify(2, False, ["a:1"], [])[0] == "FLAKY"
+    assert isinstance(busy_runs(), list) and len(tree_fingerprint()) == 64
     print("self-test OK")
 
 
@@ -251,6 +314,7 @@ def main() -> int:
     parser.add_argument("--npm-ci", action="store_true", help="D1: really reinstall node_modules first")
     parser.add_argument("--recapture-r180", action="store_true", help="D3: capture again even if a baseline exists")
     parser.add_argument("--no-capture", action="store_true", help="D5: only compare the metrics already on disk")
+    parser.add_argument("--specs", default="", help="D4: comma list of specs or tests/x.spec.js:LINE to run alone instead of the default pair")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")  # step details and child output contain "·" and "±"

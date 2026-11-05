@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from phase1_device_check import ROOT, run  # sibling module; stdlib only
+from phase1_device_check import ROOT, busy_runs, run  # sibling module; stdlib only
 
 STEPS = {
     "P0": ("sync with remote (rebase pull, local edits autostashed)", ["git", "pull", "--rebase", "--autostash"]),
@@ -57,6 +57,10 @@ def main() -> int:
         self_test()
         return 0
     steps = parse_steps(args.steps)
+    # P0 rebases/autostashes and P1 reinstalls: either one rewrites package.json mid-run and fails whatever test is running.
+    if busy := busy_runs():
+        print(f"A test run is active, not touching the checkout: {busy[0]}", file=sys.stderr)
+        return 1
     for step in steps:
         name, cmd = STEPS[step]
         print(f"\n=== {step} {name}: {' '.join(cmd)}", flush=True)
