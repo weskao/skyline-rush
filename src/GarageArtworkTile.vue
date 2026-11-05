@@ -7,7 +7,8 @@ const props = withDefaults(defineProps<{ id: string; label: string; src: string;
 const hues: Record<Tone, number> = {
   cyan: 189, magenta: 312, gold: 42, slate: 214, azure: 207, amber: 32, red: 354,
 };
-const animatedSrc = computed(() => /^(badge-|rarity-|store-)/.test(props.id)\n  ? `${import.meta.env.BASE_URL}feature-assets/garage-animated/${props.id}@3x.gif` : '');
+const animatedSrc = computed(() => /^(badge-|rarity-|store-)/.test(props.id)
+  ? `${import.meta.env.BASE_URL}feature-assets/garage-animated/${props.id}@3x.gif` : '');
 const colors = computed(() => ({
   '--badge-hue': String(hues[props.tone]),
   '--art-width': props.size + 'px',
