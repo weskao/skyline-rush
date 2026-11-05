@@ -8,9 +8,13 @@ import CloseButton from './CloseButton.vue';
 import GaragePaintPreview from './GaragePaintPreview.vue';
 import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
 import GarageMissionBoard from './GarageMissionBoard.vue';
+import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 const locale = ref(getLocale());
+const storeCatalog = ref<{ openStore: () => void } | null>(null);
+const storeIcon = `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/store-cart@3x.png`;
+const storeIconFallback = `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/store-cart@3x.webp`;
 let unsubscribe: (() => void) | undefined;
 onMounted(() => { unsubscribe = onLocaleChange(value => { locale.value = value; }); });
 onUnmounted(() => unsubscribe?.());
@@ -66,7 +70,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
       </section>
       <aside class="garage-collection">
         <h3>{{ copy.collection }}</h3>
-        <GarageSourceArtGallery category="garage-store-readiness" />
+        <GarageSourceArtGallery ref="storeCatalog" category="garage-store-readiness" />
         <p class="collection-note garage-intro" v-show="garageStudioView.page === 'home'" data-i18n="garage.intro">Explore paint and tail light combinations. Appearance never changes performance.</p>
     <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><GaragePaintPreview :id="id" :color="paint.paint" /><span class="garage-paint-meta"><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id) }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></span></button></div>
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
@@ -77,12 +81,25 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         <GarageMissionBoard />
         <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
+        <section class="garage-store-entry" data-garage-store-entry
+          :aria-label="locale === 'zh-TW' ? '車庫商店' : 'Garage Store'">
+          <GarageArtworkImage :src="storeIcon" :fallback-src="storeIconFallback"
+            :size="52" :alt="''" :fallback-text="locale === 'zh-TW' ? '商店' : 'Store'" loading="eager" />
+          <div class="garage-store-entry-copy">
+            <strong>{{ locale === 'zh-TW' ? '商店 · 即將推出' : 'Garage Store · Coming Soon' }}</strong>
+            <span>{{ locale === 'zh-TW' ? '瀏覽未來的外觀、組合與收藏；目前不提供交易。' : 'Preview future cosmetics, bundles and collections. No transactions.' }}</span>
+          </div>
+          <button type="button" data-garage-store-open @click="storeCatalog?.openStore()">
+            {{ locale === 'zh-TW' ? '瀏覽商店概念' : 'Browse Store' }}
+          </button>
+        </section>
         <GarageSourceArtGallery category="garage-rewards-and-missions" />
       </aside>
     </div>
   </dialog>
 </template>
 
+<style src="./garage-store-entry.css"></style>
 <style>
 /* The full-screen Garage/Studio covers the home: stop rendering it, or iOS WebKit flashes its animated layers
    (START sheen, Garage pulse) over the dialog. Descendants too: airflow mode forces #start-button visible. */

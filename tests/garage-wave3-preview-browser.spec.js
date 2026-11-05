@@ -9,6 +9,12 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');
     await gallery.locator('summary').click();
+    const entryIcon = gallery.locator('summary [data-wave3-entry-icon] img');
+    await expect(entryIcon).toBeVisible();
+    await expect(entryIcon).toHaveJSProperty('naturalWidth', 216);
+    await expect(entryIcon).toHaveJSProperty('naturalHeight', 216);
+    await expect(entryIcon).toHaveAttribute('src', /store-cart@3x\.png$/);
+    await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
     const cards=gallery.locator('button[data-wave3-asset]');
     await expect(cards).toHaveCount(6);
     const picked=cards.nth(1), id=await picked.getAttribute('data-wave3-asset');
@@ -36,6 +42,7 @@ test('Wave3 garage-store-readiness filters and locale switch keep all buttons no
   await page.locator('#garage-button').click();
   const localized=page.locator('#garage-art-source-garage-store-readiness');
   await localized.locator('summary').click();
+  await expect(localized.locator('[data-store-phase="coming-soon"]')).toHaveText('商店 · 即將推出 — 僅供預覽');
   await expect(localized.locator('[data-wave3-description]')).toContainText(/[一-龥]/);
   await expect(localized.getByRole('button',{name:/購買|領取|buy|claim/i})).toHaveCount(0);
 });
@@ -86,7 +93,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
           captionBelow:c.top>=b.bottom+4, frameInside:b.left>=button.getBoundingClientRect().left&&b.right<=button.getBoundingClientRect().right,
           vividFraction: vivid / Math.max(visible, 1), paletteBins: palette.size};
       });
-      expect(metrics.type).toMatch(/@3x\.webp$/);
+      expect(metrics.type).toMatch(/@3x\.png$/);
       expect(metrics.size).toEqual([216,216]);
       expect(metrics.display).toEqual([72,72]);
       expect(metrics.bounds[0]).toBeGreaterThanOrEqual(20);
@@ -105,6 +112,17 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
   });
 }
 
+test('Store preview keeps readable Coming Soon when the real 3x entrance icon fails', async ({ page }) => {
+  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.webp', route => route.abort());
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const gallery = page.locator('#garage-art-source-garage-store-readiness');
+  await expect(gallery.locator('summary')).toBeVisible();
+  await expect(gallery.locator('summary [data-wave3-entry-icon] .artwork-fallback')).toBeVisible();
+  await gallery.locator('summary').click();
+  await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
+  await expect(gallery.getByRole('button', {name: /buy|claim|purchase|pay/i})).toHaveCount(0);
+});
 
 for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844,height:390}]){
   test(`Wave3 garage-rewards-and-missions read-only cards browse safely at ${viewport.width}x${viewport.height}`,async({page})=>{
