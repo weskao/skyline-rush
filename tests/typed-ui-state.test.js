@@ -12,3 +12,12 @@ test('Vue template semantic checking uses vue-tsc, not only transpilation', () =
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['typecheck:vue'], /vue-tsc@3\.3\.13/, 'pin Vue SFC semantic type-checker');
 });
+test('typecheck installs keep the lockfile, so an upstream partial publish cannot break CI', () => {
+  // 2026-11-06: playwright@1.65.0 shipped before playwright-core@1.65.0; --package-lock=false re-resolved
+  // "@playwright/test": "^1.56.0" to it and every CI typecheck failed with ETARGET.
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  for (const name of ['typecheck:ts', 'typecheck:vue']) {
+    assert.doesNotMatch(pkg.scripts[name], /--package-lock=false/, `${name} must install against package-lock.json`);
+    assert.match(pkg.scripts[name], /--no-save/, `${name} must not rewrite package.json or the lockfile`);
+  }
+});

@@ -20,9 +20,11 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   unit 1617/0, browser 995 pass + the 4 race fixes above, World Tour 328/0, `npm run test:cloud` 15+3 PASS, build PASS.
 - [x] Images: every Wave 3 Garage image loads under the Pages base `/skyline-rush/` (desktop + 390×844, 0 × 4xx,
   0 text fallbacks); en/zh-TW screenshots reviewed at 1440×900, 390×844, 844×390.
-- [ ] Exact-HEAD full CI for the final commit — see the completion report; CI typecheck once failed on an npm partial
-  publish (`playwright@1.65.0` without `playwright-core@1.65.0`) because `typecheck:ts` installs with
-  `--package-lock=false`.
+- [x] CI typecheck failed on an npm partial publish (`playwright@1.65.0` without `playwright-core@1.65.0`) because
+  `typecheck:ts`/`typecheck:vue` installed with `--package-lock=false`. Both now install against the lockfile
+  (`--no-save` keeps package files unchanged); guard in `tests/typed-ui-state.test.js` RED→GREEN; full typecheck
+  PASS locally while the upstream release is still broken, `playwright-core` stays 1.64.1.
+- [ ] Exact-HEAD full CI for the final commit — see the completion report.
 - [ ] Lint: no linter is configured in this repo (no script, config or CI step); not run.
 - [ ] Real-device phone hardware check; mission/trophy duplicate surfaces (Mission center + concept gallery) awaiting
   product decision; real purchases/payouts/grants remain BLOCKED by policy.
