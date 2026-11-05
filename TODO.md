@@ -3212,6 +3212,10 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Recheck Circuit landscape-zh pause-to-result transition on the exact merged commit; preserve the test until root cause is verified.
 - [ ] Merge only after feature full-regression and verify exact develop merge commit; no `main` change or release.
 
+### 2026-11-05 Garage VFX exact-HEAD Full CI repair
+- [x] RED observed on `2b3a10c9` Full Regression [#41908608993](https://github.com/weskao/skyline-rush/actions/runs/41908608993): Browser (7) `handoff-browser.spec.js` PERFECT LINE false; Browser (6) `release-video-browser.spec.js` undefined enlarged media after dialog teardown. Unit, Cloud Save and all five World Tour shards passed; Quality Gate failed as required.
+- [ ] Revalidate real Ring → NITRO → PERFECT LINE and viewer frame handoff with latest-head Full Browser/World Tour/Quality Gate; use the pinned Coast Solo Time Trial + actual input pilot and capture video times before DOM teardown, matching already-green Economy Full CI #41908841653. No production award/entitlement changes. Local `make verify` and physical device checks not executed in connector-only environment.
+
 ### 2026-11-02 Garage VFX CI follow-up — f2a1816 RED, latest repair pending
 - [x] Observed exact-HEAD feature CI RED run 41466802082: unit-tests, cloud-save and five World Tour shards green; browser shards 4/5/7/8/11/12 red. Full gate not passed.
 - [ ] Localize 3× HUD artwork summary/notice and custom-draw its disclosure marker; verify EN/zh-TW and CSS sizing in latest CI.

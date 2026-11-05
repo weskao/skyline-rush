@@ -141,7 +141,7 @@ test.describe('touch controls', () => {
 });
 
 gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ gameplayPage: page }) => {
-  test.setTimeout(ciTimeout(90000));
+  gameplayTest.setTimeout(ciTimeout(90000));
   await page.locator('#controls-button').click();
   await page.locator('#controls-sensitivity').focus();
   await page.keyboard.press('Home');
@@ -158,55 +158,55 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
     });
     observer.observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
   });
-  // RED on CI #41498728729: tracking variable flight altitudes misses a re-rolled first group.
-  // This test owns the ring -> NITRO -> HUD contract, not flight navigation (covered separately).
-  // Normalize only the live group's reachable geometry/rewards; actual race frames still collect
-  // the rings, award PERFECT LINE and update the HUD. Never write the player's charge here.
-  const gates = await page.evaluate(() => {
-    const race = window.gameplay.race;
-    const first = race.rings.filter(ring => ring.group === 0);
-    if (first.length < 3) throw new Error('Expected a real first ring group');
-    race.pickups = [];
-    race.traffic = [];
-    for (const ring of race.rings) if (ring.group !== 0) ring.hit = true;
-    first.forEach((ring, i) => Object.assign(ring, {
-      // Keep real game collection/scoring, but make every gate independently reachable
-      // before slow software WebGL runs out of simulated distance on CI.
-      distance: 110 + i * 30, x: race.player.x, altitude: 2.5, radius: 4.8,
-      row: false, groupSize: first.length, hit: false, downUntil: 0,
-      type: i < 2 ? 'nitro' : 'charge',
-    }));
-    return first.map(({ distance, type }) => ({ distance, type }));
+  // Ring types re-roll every race, so pin Coast's own layout seed (as tests/ring-rows-browser.spec.js does): its first
+  // group is four gates, the last a full-width row. Pinned before the mode tab, which builds the race.
+  const { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO } = await page.evaluate(async () => {
+    (await import('/src/game.js')).setLayoutSeed();
+    const { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO } = await import('/src/ring-layout.ts');
+    return { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO };
   });
-  expect(gates.filter(ring => ring.type === 'nitro')).toHaveLength(2);
-  // CI RED #41520208780: gameplayPage loads the real race but leaves it READY.
-  // The pilot below exits immediately unless the user actually starts driving.
-  await start(page);
-  await page.keyboard.down('w');
-  const perfectLine = await page.evaluate(budget => new Promise(resolve => {
+  // Solo Time Trial: rivals ahead on the grid take Coast's first rings (2.5 s respawn), so the player's first charge
+  // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
+  await page.locator('button[data-race-mode="time"]').click();
+  await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
+  await page.getByRole('button', { name: 'Start race', exact: true }).click();
+  // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
+  // Coast's first group from this race's layout: ring heights vary, so each gate is flown at its own altitude (a row is
+  // four rings at one distance and altitude, one gate). The group is made nitro rings so the rewards are known: 0.5 per
+  // gate (a row pays once) plus PERFECT LINE's 1 fills the 3-charge meter from four gates. Set during the countdown, so
+  // the pilot is flying before the first gate even on a slow runner.
+  await expect.poll(() => page.evaluate(() => window.gameplay.race.mode)).toBe('time');
+  const gates = await page.evaluate(([RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO]) => {
+    const group = window.gameplay.race.rings.filter(ring => ring.group === 0);
+    for (const ring of group) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
+    const at = [...new Set(group.map(ring => ring.distance))];
+    if (at.length * RING_NITRO.nitro + PERFECT_LINE_NITRO < 3) throw new Error(`first group has only ${at.length} gates`);
+    return at.map(distance => ({ distance, altitude: group.find(ring => ring.distance === distance).altitude }));
+  }, [RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO]);
+  await expect(page.locator('#race-status')).toHaveText('RACING');
+  const perfectLine = await page.evaluate(([budget, gates]) => new Promise(resolve => {
+    let held = false;
     const deadline = performance.now() + budget;
+    const key = type => window.dispatchEvent(new KeyboardEvent(type, { code: 'Space', key: ' ', bubbles: true, cancelable: true }));
     const pilot = () => {
-      const race = window.gameplay.race;
-      if (race.player.perfectLines > 0 || performance.now() >= deadline || race.phase !== 'racing') {
-        resolve(race.player.perfectLines > 0);
-        return;
+      const collected = !document.querySelector('#maneuver-report').hidden;
+      if (collected || performance.now() >= deadline || document.body.dataset.phase !== 'racing') {
+        key('keyup'); resolve(collected); return;
       }
+      const distance = Number(document.querySelector('#distance').textContent) * 1000;
+      const altitude = Number(document.querySelector('#altitude').textContent);
+      const gate = gates.find(ring => ring.distance >= distance);
+      const fly = !!gate && gate.distance - distance < 125 && altitude < gate.altitude + 0.8;
+      if (fly !== held) { key(fly ? 'keydown' : 'keyup'); held = fly; }
       requestAnimationFrame(pilot);
     };
     pilot();
-  }), ciTimeout(65000));
+  }), [ciTimeout(65000), gates]);
   expect(perfectLine, 'The visible first ring group must produce a real PERFECT LINE').toBe(true);
   expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();
   await expect(page.locator('#nitro-status')).toHaveText('NITRO READY');
   await expect(page.locator('#nitro-meter')).toHaveAttribute('data-nitro-state', 'ready');
-  // Two 0.5-charge opening rings plus PERFECT LINE earn at least 2; other generated
-  // rings may add a partial third charge. Verify the real reward before the full-state HUD test.
-  const earned = await page.evaluate(() => window.gameplay.race.player.nitro);
-  expect(earned).toBeGreaterThanOrEqual(2);
-  expect(earned).toBeLessThan(3);
-  await expect(page.locator('.nitro-segment.is-full')).toHaveCount(2);
-  await page.evaluate(() => { window.gameplay.race.player.nitro = 3; });
   await expect(page.locator('.nitro-segment.is-full')).toHaveCount(3);
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'nitro-max');
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -232,7 +232,6 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   await page.waitForTimeout(450);
   expect(await page.evaluate(() => Math.min(...window.nitroValues)), 'holding NITRO fires one charge, not one per frame').toBe(2);
   await page.keyboard.up('e');
-  await page.keyboard.up('w');
   await expect(page.locator('body')).not.toHaveClass(/nitro-active/);
 });
 
