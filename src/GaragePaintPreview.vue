@@ -49,7 +49,6 @@ body[data-vfx-quality="high"] .paint-options button[aria-pressed="true"] .garage
 body[data-vfx-quality="low"] .garage-paint-sheen,
 body[data-vfx-enabled="false"] .garage-paint-sheen,
 body.vfx-comfort .garage-paint-sheen { animation: none; opacity: 0; will-change: auto; }
-body[data-vfx-quality="low"] .garage-paint-preview::after,
 body[data-vfx-enabled="false"] .garage-paint-preview::after,
 body.vfx-comfort .garage-paint-preview::after { background-image: none; }
 @media (prefers-reduced-motion: reduce) {
