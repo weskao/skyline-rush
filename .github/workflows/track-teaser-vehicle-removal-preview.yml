@@ -64,7 +64,7 @@ jobs:
               for poly in polygons:
                   cv2.fillPoly(mask,[np.array(poly,dtype=np.int32)],255)
               mask=cv2.dilate(mask,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(7,7)))
-              edited=np.asarray(model(Image.fromarray(rgb),Image.fromarray(mask).convert("L")).convert("RGB"))
+              edited=np.asarray(model(Image.fromarray(rgb),Image.fromarray(mask).convert("L")).convert("RGB"))[:h,:w]
               restored=cv2.cvtColor(np.where(mask[:,:,None]>0,edited,rgb).astype(np.uint8),cv2.COLOR_RGB2BGR)
               if name=="volcanic-crown":
                   # Top-right accidental dark bar, not a landscape feature.
