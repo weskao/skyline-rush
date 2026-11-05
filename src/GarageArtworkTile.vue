@@ -7,7 +7,7 @@ const props = withDefaults(defineProps<{ id: string; label: string; src: string;
 const hues: Record<Tone, number> = {
   cyan: 189, magenta: 312, gold: 42, slate: 214, azure: 207, amber: 32, red: 354,
 };
-const animatedGif = `url("${import.meta.env.BASE_URL}feature-assets/garage-animated/sparkle@3x.gif")`;
+const animatedGif = `url("${import.meta.env.BASE_URL}feature-assets/garage-animated/sparkle-badges@3x.gif")`;
 const colors = computed(() => ({
   '--badge-hue': String(hues[props.tone]),
   '--garage-animated-gif': animatedGif,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 const props = defineProps<{ id: string; color: string }>();
-const animatedGif = `url("${import.meta.env.BASE_URL}feature-assets/garage-animated/sparkle@3x.gif")`;
+const animatedGif = `url("${import.meta.env.BASE_URL}feature-assets/garage-animated/sparkle-paint@3x.gif")`;
 // Vite BASE_URL supports both the local dev server and /skyline-rush/ Pages.
 const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage-vfx-skins/paint-cards/' + props.id + '@3x.webp');
 </script>

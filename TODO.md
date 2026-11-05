@@ -3251,7 +3251,7 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 **Branch:** `feature/garage-preview-animated-gifs`, from `develop` at `4b94bdabf9fa5030045646e04a45a4aef549edc3`.
 
 - [x] Preserve the interactive WebGL car showroom, 3x WebP paint/VFX/badge/store masters, artwork IDs, selections, entitlement checks and fallback images.
-- [x] Add a genuine 288 × 288, eight-frame transparent, infinitely looping GIF (`public/feature-assets/garage-animated/sparkle@3x.gif`) and reuse it as the animation layer on all paint, VFX, badge and concept cards in both Garage and Preview Studio. This is an animated **GIF overlay**, not full per-image re-encoding: originals remain sharp and uncropped.
+- [x] Add three genuine eight-frame transparent looping GIF overlays at native 3× layout sizes: 216×216 badges/store, 288×288 VFX, 960×510 paint. Apply them to all paint, VFX, badge and concept cards in Garage and Preview Studio. These are animated **GIF overlays**, not full per-image re-encodings: original artwork remains sharp and uncropped.
 - [x] Respect `prefers-reduced-motion`; paint GIF also stops when visual effects are disabled or comfort mode is enabled. No new audio: these are decorative flourishes without state changes. HTML/CSS art unchanged across Low/Medium/High quality tiers.
 - [x] Add unit GIF-format/loop/frame-count and browser two-page/reduced-motion checks, adjusting original no-GIF contract while preserving 3x source checks.
 - [ ] RED run observed before production changes: first feature-branch Actions attempts were cancelled by subsequent pushes; cannot claim a verified RED run.
