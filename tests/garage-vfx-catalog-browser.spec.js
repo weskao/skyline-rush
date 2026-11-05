@@ -19,12 +19,14 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   });
 }
 
-test('selected artwork loads its original 3x WebP at 1x CSS size', async ({ page }) => {
+test('selected artwork animates at original 3x dimensions while retaining WebP fallback', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('[data-skin="thruster-ion"] img');
-  await expect(ion).toHaveAttribute('src', /raster\/thruster-ion@3x\.webp$/);
+  await ion.scrollIntoViewIfNeeded();
+  await expect(ion).toHaveAttribute('data-static-src', /raster\/thruster-ion@3x\.webp$/);
+  await expect(ion).toHaveAttribute('src', /garage-animated\/thruster-ion@3x\.gif$/);
   await expect(ion).toHaveAttribute('width', '96');
   await expect(ion).toHaveAttribute('height', '96');
   await expect(ion).toBeVisible();
@@ -32,7 +34,8 @@ test('selected artwork loads its original 3x WebP at 1x CSS size', async ({ page
   expect(dims).toEqual({ width: 288, height: 288 });
 });
 
-test('unavailable original WebP falls back to category SVG, without granting ownership', async ({ page }) => {
+test('unavailable GIF and original WebP fall back to category SVG, without granting ownership', async ({ page }) => {
+  await page.route('**/feature-assets/garage-animated/thruster-ion@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
@@ -43,7 +46,8 @@ test('unavailable original WebP falls back to category SVG, without granting own
   await expect(page.locator('#garage-equip')).toBeDisabled();
 });
 
-test('missing both WebP and SVG shows accessible text fallback without unlocking a skin', async ({ page }) => {
+test('missing GIF, WebP and SVG shows accessible text fallback without unlocking a skin', async ({ page }) => {
+  await page.route('**/feature-assets/garage-animated/thruster-ion@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/thruster.svg', route => route.abort());
   await page.goto('/');
