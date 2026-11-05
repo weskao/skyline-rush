@@ -343,11 +343,10 @@ def palette_for(frames):
 
 def palettize(frame, palette):
     rgba = np.asarray(frame)
-    # Ordered alpha coverage preserves soft source glows without black matte.
-    threshold = np.array([[0, 48, 12, 60], [32, 16, 44, 28],
-                          [8, 56, 4, 52], [40, 24, 36, 20]], dtype=np.uint8)
-    h, w = rgba.shape[:2]
-    visible = rgba[:, :, 3] > (threshold[np.arange(h)[:, None] % 4, np.arange(w)[None, :] % 4] * 4)
+    # GIF has only binary transparency. A Bayer alpha pattern produces an
+    # obvious checkerboard halo over dark Garage cards; avoid that artifact.
+    # Keep the substantial original flame/glow, omit only faint matte fringes.
+    visible = rgba[:, :, 3] >= 96
     quantized = Image.fromarray(rgba[:, :, :3], 'RGB').quantize(
         palette=palette, dither=Image.Dither.NONE)
     indices = np.asarray(quantized, dtype=np.uint8) + 1
