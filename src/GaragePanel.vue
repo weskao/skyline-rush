@@ -7,6 +7,7 @@ import { garageView } from './garage-view-state.ts';
 import CloseButton from './CloseButton.vue';
 import GaragePaintPreview from './GaragePaintPreview.vue';
 import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
+import GarageMissionBoard from './GarageMissionBoard.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 const locale = ref(getLocale());
@@ -73,8 +74,10 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
     <button v-show="garageStudioView.page === 'studio'" id="garage-restore-default" type="button" class="garage-restore">{{ copy.restore }}</button>
         <p class="collection-note">{{ copy.unlockNote }}</p>
         <p class="garage-coming">{{ copy.coming }}</p>
+        <GarageMissionBoard />
         <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
+        <GarageSourceArtGallery category="garage-rewards-and-missions" />
       </aside>
     </div>
   </dialog>

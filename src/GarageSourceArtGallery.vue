@@ -14,8 +14,9 @@ const visible = computed(() => filterWave3PreviewItems(props.category, filter.va
 const selected = ref(config.value.items[0].id);
 const current = computed(() => visible.value.find(item => item.id === selected.value) ?? visible.value[0]);
 const copy = (item: Wave3Text) => item[locale.value];
-const image = (id: string) =>
-  `${import.meta.env.BASE_URL}feature-assets/${props.category}/raster/${id}@3x.webp`;
+const image = (id: string) => props.category === 'garage-rewards-and-missions'
+  ? `${import.meta.env.BASE_URL}feature-assets/garage-rewards-and-missions/raster/${id}@3x.png`
+  : `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.webp`;
 function setFilter(group: Wave3PreviewGroup): void {
   filter.value = group;
   selected.value = filterWave3PreviewItems(props.category, group)[0]?.id ?? '';
