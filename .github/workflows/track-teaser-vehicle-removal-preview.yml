@@ -5,7 +5,7 @@ on:
       - .github/workflows/track-teaser-vehicle-removal-preview.yml
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   preview:
     runs-on: ubuntu-latest
@@ -71,7 +71,7 @@ jobs:
               if name=="volcanic-crown":
                   # Top-right accidental dark bar, not a landscape feature.
                   top=np.zeros_like(mask)
-                  top[0:8,446:568]=255
+                  top[0:8,390:568]=255
                   restored=cv2.inpaint(restored,top,3,cv2.INPAINT_TELEA)
                   mask=np.maximum(mask,top)
               Image.fromarray(cv2.cvtColor(restored,cv2.COLOR_BGR2RGB)).save(output/f"{name}.jpg",quality=94,optimize=True)
@@ -83,3 +83,24 @@ jobs:
           name: teaser-vehicle-removal-preview
           path: teaser-inpaint-preview/
           retention-days: 1
+
+      - name: Commit approved vehicle-free teaser images
+        run: |
+          set -euo pipefail
+          cp teaser-inpaint-preview/{skyfall-archipelago,stormline-megacity,volcanic-crown,frostbite-canyon}.jpg public/track-teasers/ 2>/dev/null || true
+          for name in skyfall-archipelago stormline-megacity volcanic-crown frostbite-canyon; do
+            cp "teaser-inpaint-preview/$name.jpg" "public/track-teasers/$name.jpg"
+          done
+          python - <<'PY'
+          from PIL import Image
+          for name in ("skyfall-archipelago", "stormline-megacity", "volcanic-crown", "frostbite-canyon"):
+              with Image.open(f"public/track-teasers/{name}.jpg") as im:
+                  assert im.format == "JPEG" and im.size == (568,205), (name,im.format,im.size)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/track-teasers/skyfall-archipelago.jpg public/track-teasers/stormline-megacity.jpg public/track-teasers/volcanic-crown.jpg public/track-teasers/frostbite-canyon.jpg
+          git rm .github/workflows/track-teaser-vehicle-removal-preview.yml
+          git diff --cached --name-only
+          git commit -m "fix(assets): remove cars from four existing track teaser scenes"
+          git push origin HEAD:develop
