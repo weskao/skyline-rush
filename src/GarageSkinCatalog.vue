@@ -7,6 +7,8 @@ import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
 defineProps<{ locale: string }>();
+const animatedArtworkSrc = (id: string): string =>
+  `${import.meta.env.BASE_URL}feature-assets/garage-animated/${id}@3x.gif`;
 
 // Source-only cosmetic status and rarity icon gallery. These artworks do not
 // create a badge, inventory entitlement, artificial rarity or monetary offer.
@@ -83,7 +85,7 @@ const statusText = (id: SkinId, locale: string) => {
             @click="selectGarageSkin(skin.id)">
             <span class="garage-vfx-art">
               <GarageArtworkImage :src="skin.artwork.src" :fallback-src="skin.artwork.hasRaster ? skin.artwork.fallback : ''"
-                :animated-src="`${import.meta.env.BASE_URL}feature-assets/garage-animated/${skin.id}@3x.gif`"
+                :animated-src="animatedArtworkSrc(skin.id)"
                 :size="skin.artwork.cssSize" alt="" loading="lazy" fallback-class="garage-vfx-fallback"
                 :fallback-text="categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en']" />
             </span>
