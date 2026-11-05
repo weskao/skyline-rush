@@ -37,7 +37,7 @@
 | **N/A (approved)** | 明確非本裝置所需，例如未安裝／不使用 Codex；由負責人確認 | 記錄理由、確認者及日期，不計入必要項失敗 |
 
 **最終狀態：**
-- `READY FOR PHASE 1`：表中全部 **Required** 項為 PASS；**Conditional** 項在需要該功能時 PASS，否則有明確核准的 N/A；檢查報告已提交至正確分支，CI 狀態如實記錄。若計畫要用 Blender MCP 建模，必須另有 Live Blender MCP PASS，不能只見到已安裝。
+- `READY FOR PHASE 1`：表中全部 **Required** 項為 PASS；**Conditional** 項在需要該功能時 PASS，否則有明確核准的 N/A；檢查報告保存在本機忽略目錄，CI 狀態如實記錄。若計畫要用 Blender MCP 建模，必須另有 Live Blender MCP PASS，不能只見到已安裝。
 - `BLOCKED`：有任何 Required FAIL / NOT VERIFIED，或需要 Blender MCP 而 live tool call 失敗；未完成的 Phase 0 TODO 不得勾選。
 - **CI 不會驗證你的 Mac**：只有該台裝置上的真實命令與 MCP 呼叫可證明本機環境。docs-only CI green/skipped 不等於 Mac PASS。
 
@@ -59,9 +59,8 @@
 | E12 | Required | CI 狀態檢視（唯讀） | 若有 GitHub 權限，核對分支最新 exact-HEAD Actions run、SHA、結果；若尚未完成或沒有存取權，記錄 PENDING / NOT VERIFIED，不能說 Passed；不因裝置檢查而自行 Push 觸發 CI |
 | E13 | Required | glTF Transform CLI | `npm ls @gltf-transform/cli` 顯示專案 devDependency 精確固定 `4.5.1` 且 lockfile 已記錄；`npx --no-install gltf-transform --version` 輸出 4.5.1；對 Blender 匯出的測試 GLB 成功執行 `inspect` 與 `optimize --compress meshopt`。僅全域安裝不算 PASS |
 | E14 | Required | Codex project MCP/Skill | 本專案須確認 `.codex/config.toml` 註冊、`codex mcp list` 可見且實際連線；不能用 global 註冊代替 |
-| E15 | Conditional | Blender 資產取得與授權 | 若需要下載/使用現成測試素材：驗證來源、license 和磁碟空間；否則 N/A approved |
 
-Phase 0 要求安裝並驗證 glTF Transform（E13，安裝命令見第 6 節第 5 點與 `toolchain-environment-preflight.md`）；不要求下載素材，若本次不需資產操作，E15 可經負責人核准標為 N/A，留到後續實作有需要時再下載及驗證授權。KTX2 貼圖輸出所需的外部 `toktx` 不屬 Phase 0，Phase 2 選用 KTX2 時才安裝。
+Phase 0 要求安裝並驗證 glTF Transform（E13，安裝命令見第 6 節第 5 點與 `toolchain-environment-preflight.md`）；不下載外部素材；原 E15 的來源、授權和磁碟空間檢查移至 Phase 2／Task 3，僅在實際需要外部素材時、下載或使用之前執行。KTX2 貼圖輸出所需的外部 `toktx` 不屬 Phase 0，Phase 2 選用 KTX2 時才安裝。
 
 **重要：** E07 明確要求 **MCP 工具呼叫本身成功**。不接受只看到 `claude mcp list`、`BLENDER_MCP_ENABLED=True` 或 Blender 視窗就宣告 PASS。E08/E09 亦不能只看目錄，需確認新 session 能辨識。
 
@@ -180,7 +179,7 @@ df -h .
 
 ## 5. Windows / PowerShell 7 可重複檢查
 
-在 Windows 上可重複相同的 E01–E15 條件；以下先檢查基本命令和使用者 Scope，然後用已確認的 Blender.exe 路徑執行與第 4 節相同的 `--background --python-expr`。**不要將 macOS 的 /Applications 路徑照抄至 Windows。**
+在 Windows 上可重複相同的 E01–E14 條件；以下先檢查基本命令和使用者 Scope，然後用已確認的 Blender.exe 路徑執行與第 4 節相同的 `--background --python-expr`。**不要將 macOS 的 /Applications 路徑照抄至 Windows。**
 
 ```powershell
 $Repo = if ($env:SKYLINE_RUSH_DIR) { $env:SKYLINE_RUSH_DIR } else { Join-Path $HOME "Documents/Workspace/skyline-rush" }
@@ -257,7 +256,6 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 | E12 | Required | NOT VERIFIED | | | |
 | E13 | Required | NOT VERIFIED | | | |
 | E14 | Required | NOT VERIFIED | | | |
-| E15 | Conditional | NOT VERIFIED | | | |
 
 - Live Blender MCP tool name + observed object count: <redacted evidence; no secrets>
 - Outstanding blockers and exact owner executable commands: <details>
@@ -274,11 +272,11 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 >
 > **先做隱私保護：** 這是 PUBLIC GitHub repo。先用 `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` 確認整個 `audits/` 目錄已被 `.gitignore` 排除，並用 `git ls-files docs/designs/3d-pipeline/audits/` 確認未追蹤任何報告。若不成立，先修正忽略規則，且不要繼續寫含裝置資訊的報告。嚴禁 Commit/Push 裝置報告、原始 log、環境變數、憑證、序號、hostname、macOS「電腦名稱」、私有路徑或 MCP 設定。
 >
-> 依 E01–E15 在**這台本機**逐項執行檢查並保留已遮蔽證據：Blender CLI/Background Python/Add-on 是否啟用；透過 Claude Code **實際 MCP 唯讀工具呼叫**列出 Blender 場景物件；Claude Code 與 Codex 的 project-scoped Blender MCP，以及各 AI agent 無 global Blender MCP；專案的 `blender-image-to-3d` 與 `~/.claude/skills/` 中的全球 `threejs-skills` 是否真正被 Agent 辨識；Node/npm/uvx；現行 Three.js/@types；glTF Transform；Codex 在此專案為必查。確認所有 PASS 都有實際命令、版本和輸出支持，不得用其他裝置結果替代。
+> 依 E01–E14 在**這台本機**逐項執行檢查並保留已遮蔽證據：Blender CLI/Background Python/Add-on 是否啟用；透過 Claude Code **實際 MCP 唯讀工具呼叫**列出 Blender 場景物件；Claude Code 與 Codex 的 project-scoped Blender MCP，以及各 AI agent 無 global Blender MCP；專案的 `blender-image-to-3d` 與 `~/.claude/skills/` 中的全球 `threejs-skills` 是否真正被 Agent 辨識；Node/npm/uvx；現行 Three.js/@types；glTF Transform；Codex 在此專案為必查。確認所有 PASS 都有實際命令、版本和輸出支持，不得用其他裝置結果替代。
 >
 > 缺少工具時先檢查版本、來源及現有設定，取得必要權限後只做最小修復並**重跑驗證**；無權限或無法連線時以 FAIL／NOT VERIFIED 記錄並給本機使用者可複製的指令，不虛構成功。
 >
-> 針對本機用非識別性 `device-alias` 建立**本機忽略的** `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`，使用本文件表格記錄 E01–E15。驗收通過後，才使用例如 `system_profiler SPHardwareDataType | awk -F ': ' '/Model Name:/ {print $2; exit}'` 取得**產品型號名稱**（如 `Mac mini`、`MacBook Pro`，**不是 hostname／Computer Name**），填入這台裝置的本機報告，並更新同為 `.gitignore` 排除的 `docs/designs/3d-pipeline/audits/device-status.md`。若任一必要驗收失敗，裝置名稱保持 `UNVERIFIED`，最後標示 BLOCKED；當全部 Required 為 PASS，Conditional 為 PASS 或核准 N/A 時才標示 READY FOR PHASE 1。
+> 針對本機用非識別性 `device-alias` 建立**本機忽略的** `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`，使用本文件表格記錄 E01–E14。驗收通過後，才使用例如 `system_profiler SPHardwareDataType | awk -F ': ' '/Model Name:/ {print $2; exit}'` 取得**產品型號名稱**（如 `Mac mini`、`MacBook Pro`，**不是 hostname／Computer Name**），填入這台裝置的本機報告，並更新同為 `.gitignore` 排除的 `docs/designs/3d-pipeline/audits/device-status.md`。若任一必要驗收失敗，裝置名稱保持 `UNVERIFIED`，最後標示 BLOCKED；當全部 Required 為 PASS，Conditional 為 PASS 或核准 N/A 時才標示 READY FOR PHASE 1。
 >
 > 最後在此裝置顯示驗收表、通過項目與失敗修復建議；檢查 GitHub Actions 最新 exact-HEAD 狀態（唯讀），不要把未執行或尚在排隊的 CI 說成通過。**不要為這台裝置 Push 任何含裝置資訊的內容**。本次不得升級 Three.js、建立模型或修改遊戲。
 

@@ -32,7 +32,7 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 
 ## Task 0 — Mandatory user-Mac toolchain audit (execute FIRST; highest priority)
 
-**Files:** Reference the standalone `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` plus `docs/designs/3d-pipeline/toolchain-environment-preflight.md`; save E01–E15 audit **only locally** to `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (gitignored) and update the ignored `audits/device-status.md` with non-identifying product model **only after PASS**. Public TODO.md can reference the verification procedure but must never contain device-specific outcomes or identifiers.
+**Files:** Reference the standalone `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` plus `docs/designs/3d-pipeline/toolchain-environment-preflight.md`; save E01–E14 audit **only locally** to `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (gitignored) and update the ignored `audits/device-status.md` with non-identifying product model **only after PASS**. Public TODO.md can reference the verification procedure but must never contain device-specific outcomes or identifiers.
 **Consumes:** Mac workspace ~/Documents/Workspace/skyline-rush, existing Claude/Codex/Blender installations.
 **Produces:** toolchain matrix with PASS/FAIL/NOT VERIFIED, version evidence, connection smoke test and explicit blocked steps.
 
@@ -41,7 +41,7 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 - [ ] Confirm Blender addon enabled-state in Blender background preferences; then open Blender and execute **read-only live MCP scene query** from Claude Code. Mark addon/server/agent connection separately.
 - [ ] If any mandatory dependency is missing, stop the dependent subtask, review source and permissions, run only approved minimal repair commands, **rerun the same check** and record observed result. Three.js Skills use -g; install blender-image-to-3d only in the project; configure Blender MCP in project scope for Claude and Codex, and remove global Blender MCP registrations across AI agents; preserve the project skill source and license. If remote agent cannot reach the Mac, return the exact owner-executable commands and wait for observed output; no fabricated PASS.
 - [ ] Verify Claude and Codex project Blender MCP registrations and live read-only scene queries, and confirm no Blender MCP registration remains in global AI agent configurations.
-- [ ] Review third-party Skill/MCP permissions and trusted model asset licenses. Verify global skill version/API claims vs current r180; after target migration recheck r186.
+- [ ] Review third-party Skill/MCP permissions. Verify global skill version/API claims vs current r180; after target migration recheck r186.
 - [ ] Document per-item evidence in **local ignored** audit files, not in GitHub; check `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` and `git ls-files docs/designs/3d-pipeline/audits/` (must be empty). After successful acceptance, record only generic model such as `Mac mini` in that device's local report and local ignored device-status.md. Never commit/push private paths, hostnames, serials, raw command output or secrets. Do not use Telegram/tgsend without a configured authorized sender.
 
 **Exit:** All mandatory items PASS, or explicit documented owner-approved optional exclusion; actual Blender MCP scene retrieval must succeed for Blender tasks. Until then, all later implementation checkboxes remain unchecked.
@@ -75,6 +75,7 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 **Files:** scripts/assets/ (planned Blender export / glTF Transform CLI scripts); src/asset-model-loader.ts (planned), src/model-manifest.ts (planned), tests/model-asset-loader.test.js (planned), tests/model-manifest.test.js (planned), public/models/ (validated outputs only), assets-src/ (masters); src/world.js minimally for staged adapter.
 **Produces:** manifest-defined, preloaded game model with fallback, predictable decoder/asset lifetime and GitHub Pages subpath support.
 
+- [ ] If external assets are needed, verify each source, license and available disk space before downloading or using it (deferred from Phase 0 E15).
 - [ ] First write RED tests for missing/slow/invalid GLB, decoder unavailability, exact node names, duplicate request deduplication, cancellation, ownership and disposal.
 - [ ] Specify minimal manifest and async loader contracts (avoid speculative factory abstractions). Define: asset ID → URL, source SHA/license, node names, LOD references, fallback type, material set and asset provenance.
 - [ ] Implement a single GLTFLoader backend, opt-in KTX2Loader/MeshoptDecoder/DRACOLoader only if encoded assets require them, using import.meta.env.BASE_URL paths.

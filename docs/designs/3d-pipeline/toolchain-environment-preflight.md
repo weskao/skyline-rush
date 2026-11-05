@@ -2,7 +2,7 @@
 
 Date: 2026-11-04 · Status: NOT RUN ON USER MAC · Owner workspace: ~/Documents/Workspace/skyline-rush
 
-> **Reusable, cross-device acceptance:** [phase0-multi-device-acceptance.md](phase0-multi-device-acceptance.md) is the standalone authoritative E01–E15 checklist, with Mac/Linux/Windows commands, a copyable AI execution prompt, and a separate per-device audit report. This document is the Mac-focused companion only. Use SKYLINE_RUSH_DIR to override the default workspace on another device; never transfer PASS evidence between devices.
+> **Reusable, cross-device acceptance:** [phase0-multi-device-acceptance.md](phase0-multi-device-acceptance.md) is the standalone authoritative E01–E14 checklist, with Mac/Linux/Windows commands, a copyable AI execution prompt, and a separate per-device audit report. This document is the Mac-focused companion only. Use SKYLINE_RUSH_DIR to override the default workspace on another device; never transfer PASS evidence between devices.
 
 **Public GitHub privacy:** device results and device model names live **only** in `docs/designs/3d-pipeline/audits/`, which is excluded by `.gitignore`. Keep this file and the reusable acceptance document public, never commit per-device output. After all required checks pass, the agent records a generic model label (`Mac mini`, etc.) in the ignored local audit and local `audits/device-status.md`. Confirm `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` and `git ls-files docs/designs/3d-pipeline/audits/` before writing results.
 
@@ -123,7 +123,7 @@ Expect: version `4.5.1`, `inspect` prints an OVERVIEW table, `optimize` writes `
 | Global threejs Skills | ~/.claude/skills, skills list -g, r186 compatibility noted | NOT VERIFIED | |
 | glTF Transform repeatable CLI (Required) | npm ls shows exact-pinned 4.5.1, `--version`, smoke inspect + optimize, lockfile recorded | NOT VERIFIED | |
 | Three.js baseline | npm ls + lockfile matches r180 source | NOT VERIFIED | |
-| License/asset sources/disk | local files, legal data, free space | NOT VERIFIED | |
+| External assets (Phase 2 / Task 3) | If needed, verify source, license and free space before download/use | DEFERRED | |
 
 ### Exit criteria / escalation
 
