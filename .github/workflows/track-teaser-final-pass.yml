@@ -1,0 +1,66 @@
+name: Final teaser seam and caption cleanup
+on:
+  push:
+    branches: [develop]
+    paths:
+      - .github/workflows/track-teaser-final-pass.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Correct remaining two image artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q pillow opencv-python-headless
+          python - <<'PY'
+          import io
+          import subprocess
+          import cv2
+          import numpy as np
+          from PIL import Image
+
+          base = "4b94bdabf9fa5030045646e04a45a4aef549edc3"
+          source = lambda name: Image.open(io.BytesIO(subprocess.check_output([
+              "git", "show", f"{base}:public/track-teasers/{name}.jpg"
+          ]))).convert("RGB")
+
+          # Preserve original monsoon illustration, inpainting only the exact
+          # top-right caption footprint. The broader previous mask smudged the sky.
+          monsoon = source("monsoon-ruins")
+          bgr = cv2.cvtColor(np.asarray(monsoon), cv2.COLOR_RGB2BGR)
+          mask = np.zeros(bgr.shape[:2], np.uint8)
+          mask[10:38, 379:568] = 255
+          bgr = cv2.inpaint(bgr, mask, 3, cv2.INPAINT_TELEA)
+          monsoon = Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
+          monsoon = monsoon.crop((0, 3, 568, 187)).resize((568, 205), Image.Resampling.LANCZOS)
+
+          # This original collage switches to Stormline at ~source row 160,
+          # not row 180; exclude the whole next-map strip.
+          volcanic = source("volcanic-crown").crop((0, 0, 568, 157))
+          volcanic = volcanic.resize((568, 205), Image.Resampling.LANCZOS)
+
+          for name, picture in [("monsoon-ruins", monsoon), ("volcanic-crown", volcanic)]:
+              assert picture.size == (568, 205)
+              pixels = np.asarray(picture)
+              assert all(not np.all(edge >= 248) for edge in
+                         (pixels[0], pixels[-1], pixels[:, 0], pixels[:, -1]))
+              path = f"public/track-teasers/{name}.jpg"
+              picture.save(path, "JPEG", quality=89, subsampling=0, optimize=True)
+              with Image.open(path) as check:
+                  assert check.size == (568, 205) and check.format == "JPEG"
+              print("PASS", path)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/track-teasers/monsoon-ruins.jpg public/track-teasers/volcanic-crown.jpg
+          git rm .github/workflows/track-teaser-final-pass.yml
+          git commit -m "fix(assets): remove remaining volcanic seam and refine monsoon text removal"
+          git push origin HEAD:develop
