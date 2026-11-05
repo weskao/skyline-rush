@@ -1,34 +1,67 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
-const source = file => readFileSync(new URL('../src/' + file, import.meta.url), 'utf8');
+const read = path => readFileSync(new URL('../' + path, import.meta.url));
+const src = file => read('src/' + file).toString('utf8');
+const root = 'public/feature-assets/garage-animated/';
+const manifest = JSON.parse(read(root + 'manifest.json').toString('utf8'));
+const expected = { thruster: 4, airflow: 4, 'nitro-trail': 5,
+  'launch-flare': 9, 'badges-rarity': 11, 'store-concept': 6 };
 
-test('Garage and Preview Studio use looping 3x GIF layers without replacing native artwork', () => {
-  for (const [name, width, height] of [
-    ['sparkle-badges@3x.gif', 216, 216],
-    ['sparkle@3x.gif', 288, 288],
-    ['sparkle-paint@3x.gif', 960, 510],
-  ]) {
-    const gif = readFileSync(new URL('../public/feature-assets/garage-animated/' + name, import.meta.url));
-    assert.equal(gif.toString('ascii', 0, 6), 'GIF89a', name);
-    assert.equal(gif.readUInt16LE(6), width, name + ' native width');
-    assert.equal(gif.readUInt16LE(8), height, name + ' native height');
-    assert.ok(gif.includes(Buffer.from('NETSCAPE2.0')), name + ' must loop');
+test('all six categories use distinct original-source 3x animated GIF assets', () => {
+  assert.equal(manifest.length, 39);
+  assert.equal(new Set(manifest.map(item => item.name)).size, 39);
+  const counts = Object.fromEntries(Object.keys(expected).map(cat =>
+    [cat, manifest.filter(item => item.category === cat).length]));
+  assert.deepEqual(counts, expected);
+  const hashes = new Set();
+  for (const item of manifest) {
+    assert.ok(existsSync(new URL('../' + item.source, import.meta.url)), item.source);
+    const gif = read(item.file);
+    assert.equal(item.size, gif.length, item.name + ' manifest size');
+    assert.ok(gif.length < 1_000_000, item.name + ' decoding budget');
+    assert.equal(gif.toString('ascii', 0, 6), 'GIF89a', item.name);
+    assert.equal(gif.readUInt16LE(6), item.width, item.name + ' native 3x width');
+    assert.equal(gif.readUInt16LE(8), item.height, item.name + ' native 3x height');
+    assert.equal(item.width, item.category === 'badges-rarity' || item.category === 'store-concept' ? 216 : 288);
+    assert.ok(gif.includes(Buffer.from('NETSCAPE2.0')), item.name + ' infinite loop');
     const gce = Buffer.from([0x21, 0xf9, 0x04]);
-    let frames = 0, index = 0;
-    while ((index = gif.indexOf(gce, index)) >= 0) { frames++; index += gce.length; }
-    assert.ok(frames >= 4, name + ' needs multiple frames');
+    let index = 0, frames = 0, transparent = 0;
+    while ((index = gif.indexOf(gce, index)) !== -1) {
+      if (gif[index + 3] & 1) transparent++;
+      frames++;
+      index += gce.length;
+    }
+    assert.ok(frames >= 4 && transparent > 0, item.name + ' multiple transparent frames');
+    hashes.add(createHash('sha256').update(gif).digest('hex'));
   }
-  for (const [file, gif] of [
-    ['GarageArtworkTile.vue', 'sparkle-badges@3x.gif'],
-    ['GarageSkinCatalog.vue', 'sparkle@3x.gif'],
-    ['GaragePaintPreview.vue', 'sparkle-paint@3x.gif'],
-  ]) {
-    assert.match(source(file), /garage-animated-gif/, file);
-    assert.ok(source(file).includes(gif), file + ' must render the correct 3x GIF');
-    assert.match(source(file), /prefers-reduced-motion: reduce/, file);
+  assert.equal(hashes.size, 39, 'each original icon retains distinct animated bytes');
+});
+
+test('production cards use native animation instead of sparkle overlays and respect fallbacks', () => {
+  const image = src('GarageArtworkImage.vue');
+  assert.match(image, /animatedSrc/);
+  assert.match(image, /IntersectionObserver/);
+  assert.match(image, /prefers-reduced-motion: reduce/);
+  assert.match(image, /animationFailed\.value = true/);
+  assert.match(image, /return props\.src/);
+  const skin = src('GarageSkinCatalog.vue');
+  assert.match(skin, /:animated-src=/);
+  assert.doesNotMatch(skin, /sparkle@3x\.gif/);
+  const tile = src('GarageArtworkTile.vue');
+  assert.match(tile, /garage-animated\/\$\{props\.id\}@3x\.gif/);
+  assert.doesNotMatch(tile, /sparkle-badges@3x\.gif/);
+  assert.doesNotMatch(src('GaragePaintPreview.vue'), /sparkle-paint@3x\.gif/);
+  assert.match(src('GaragePanel.vue'), /id="garage-preview"/);
+});
+
+test('renderer has separate motion behavior and a moving box lid, without shared overlay', () => {
+  const generator = read('scripts/generate-garage-gifs.py').toString('utf8');
+  for (const category of Object.keys(expected)) {
+    assert.ok(generator.includes('category == "' + category + '"'), category);
   }
-  assert.match(source('GaragePanel.vue'), /id="garage-preview"/, 'interactive 3D remains');
-  assert.ok(source('GaragePaintPreview.vue').includes('@3x.webp'), 'native 3x original remains underneath');
+  assert.ok(generator.includes('out[lid] = 0') && generator.includes('ys - lift'),
+    'store box moves its lid separately from the base');
 });
