@@ -90,6 +90,7 @@ test('eleven original 3x badge/rarity artworks appear in a non-entitlement showc
 });
 
 test('badge reference art falls back to visible accessible label if the 3x image fails', async ({ page }) => {
+  await page.route('**/feature-assets/garage-animated/badge-equipped@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
@@ -103,6 +104,7 @@ test('badge reference art falls back to visible accessible label if the 3x image
 });
 
 test('failed badge artwork remains accessible and localized in Traditional Chinese', async ({ page }) => {
+  await page.route('**/feature-assets/garage-animated/badge-equipped@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.webp', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
