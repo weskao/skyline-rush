@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 const props = defineProps<{ id: string; color: string }>();
+const animatedGif = `url("${import.meta.env.BASE_URL}feature-assets/garage-animated/sparkle@3x.gif")`;
 // Vite BASE_URL supports both the local dev server and /skyline-rush/ Pages.
 const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage-vfx-skins/paint-cards/' + props.id + '@3x.webp');
 </script>
 
 <template>
-  <span class="garage-paint-preview" :data-finish="id" :style="{ '--paint-color': color }" aria-hidden="true">
+  <span class="garage-paint-preview" :data-finish="id" :style="{ '--paint-color': color, '--garage-animated-gif': animatedGif }" aria-hidden="true">
     <img class="garage-paint-image" :src="artwork" width="960" height="510" alt=""
       loading="eager" decoding="async" />
     <span class="garage-paint-sheen"></span>
@@ -20,6 +21,10 @@ const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage
   position: relative; isolation: isolate; display: block; width: 100%;
   min-height: 92px; aspect-ratio: 960 / 510; overflow: hidden; border-radius: 11px 8px 6px 6px;
   background: radial-gradient(ellipse at 45% 32%, color-mix(in srgb, var(--paint-color) 34%, #0b2642), transparent 75%), #081828;
+}
+.garage-paint-preview::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: var(--garage-animated-gif) center / 100% 100% no-repeat;
 }
 .garage-paint-image { display: block; width: 100%; height: 100%; object-fit: cover;
   object-position: center; border-radius: inherit; }
@@ -44,7 +49,11 @@ body[data-vfx-quality="high"] .paint-options button[aria-pressed="true"] .garage
 body[data-vfx-quality="low"] .garage-paint-sheen,
 body[data-vfx-enabled="false"] .garage-paint-sheen,
 body.vfx-comfort .garage-paint-sheen { animation: none; opacity: 0; will-change: auto; }
+body[data-vfx-quality="low"] .garage-paint-preview::after,
+body[data-vfx-enabled="false"] .garage-paint-preview::after,
+body.vfx-comfort .garage-paint-preview::after { background-image: none; }
 @media (prefers-reduced-motion: reduce) {
+  .garage-paint-preview::after { background-image: none !important; }
   .garage-paint-sheen { animation: none !important; opacity: 0 !important; will-change: auto; }
 }
 </style>
