@@ -40,6 +40,11 @@ minimal fix (GREEN); regression-check affected tracks, vehicles, locales and inp
 `make verify`; inspect real WebGL / touch screenshots when behavior or rendering changed; then
 check the full GitHub `quality-gate` for the exact HEAD commit. Track evidence in `TODO.md`.
 CI, manual visual confirmation and RED evidence are separate gates; one never proves another.
+For CourseGraph geometry tests, compare equivalent **physical arc-length** fractions,
+not equal fractions of an authored scalar-distance parameter. Compare float-derived
+bank/frame values with tight explicit tolerances, never strict equality of results
+from different floating-point expression orders. Do not round/quantize production
+metres, coordinates, road contact, signed checkpoints, collisions or flight gaps.
 
 Merge-ready only when the latest `develop` is integrated, required checks are green and the
 user-visible symptoms were retested. Never merge into `develop`/`main`, open a PR or deploy

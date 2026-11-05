@@ -14,6 +14,9 @@ import {
 
 const state = (flightAuthorized = false, airborne = false, landing = false) =>
   ({ flightAuthorized, airborne, landing });
+// Equivalent physical distances can differ by a few ULPs after conversion.
+// Never quantize simulation positions or safety-critical contact/flight gates.
+const BANK_TOLERANCE = 1e-12;
 
 test('reuse validated graph, preserve all mandatory merges and complete ground fallback', () => {
   const graph = PLAYABLE_COURSE_GRAPH;
@@ -45,7 +48,8 @@ test('runtime positions, altitude, bank and frames exactly reuse physical world 
       ]) for (let i = 0; i < 3; i++) {
         assert.ok(Math.abs(got[i] - expected[i]) < 1e-6, `${edge.id} coordinate ${i}`);
       }
-      assert.equal(runtime.bank, actual.bank);
+      assert.ok(Math.abs(runtime.bank - actual.bank) < BANK_TOLERANCE,
+        `${edge.id} bank drift: ${Math.abs(runtime.bank - actual.bank)} radians`);
       assert.equal(runtime.width, edge.width);
       assert.equal(runtime.roadContact, hasSkyfallRoadContact(edge.id, runtime.physicalS));
     }

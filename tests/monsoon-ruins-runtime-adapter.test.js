@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PLAYABLE_COURSE_GRAPH as graph } from '../src/courses/monsoon-ruins-runtime-adapter.ts';
-import { MONSOON_RUINS_COURSE, sampleMonsoonRoute } from '../src/courses/monsoon-ruins.ts';
+import {
+  MONSOON_RUINS_COURSE, sampleMonsoonRoute, monsoonEdgeLength, sampleMonsoonEdge,
+} from '../src/courses/monsoon-ruins.ts';
 import { validateCourseGraph } from '../src/course-graph.ts';
 import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
 import { advanceSignedGate } from '../src/course-signed-gates.ts';
@@ -46,8 +48,16 @@ test('RED: physical branches preserve authored river, waterfall and canopy endpo
     const center = sampleMonsoonRoute(branch.id, (branch.from + branch.to) / 2).point;
     const ground = sampleMonsoonRoute('ground', (branch.from + branch.to) / 2).point;
     assert.ok(distance(center, ground) > 20, `${branch.id} must be physically distinct`);
-    assert.ok(distance(sampleRoute(graph, edge.id, routeLength(graph, edge.id) / 2).point, center) < 2,
-      `${branch.id} midpoint follows actual surface`);
+    // Half of an authored distance parameter is NOT half of a winding 3D
+    // arc length. Compare the independent source and canonical metre samplers.
+    const referenceLength = monsoonEdgeLength(branch.id);
+    const canonicalLength = routeLength(graph, edge.id);
+    for (const fraction of [0.25, 0.5, 0.75]) {
+      const reference = sampleMonsoonEdge(branch.id, referenceLength * fraction).point;
+      const actual = sampleRoute(graph, edge.id, canonicalLength * fraction).point;
+      const drift = distance(actual, reference);
+      assert.ok(drift < 2, `${branch.id} at physical fraction ${fraction}: ${drift}m drift`);
+    }
   }
 });
 
