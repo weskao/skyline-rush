@@ -313,15 +313,21 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       await tile.scrollIntoViewIfNeeded();
       await expect(tile).toHaveAttribute('data-artwork-restored', 'true');
       const image = tile.locator('img');
-      await expect(image).toHaveAttribute('src', new RegExp(`${id}@3x\\.webp$`));
+      await expect(image).toHaveAttribute('data-static-src', new RegExp(`${id}@3x\\.webp$`));
+      await expect(image).toHaveAttribute('src', new RegExp(`garage-animated/${id}@3x\\\\.gif      await expect(image).toHaveAttribute('data-static-src', new RegExp(`${id}@3x\\.webp$`));
+));
       const result = await tile.evaluate(async figure => {
         const img = figure.querySelector('img');
         await img.decode();
+        // Original native 3x source has full quality; GIF is palette-compressed.
+        const original = new Image();
+        original.src = img.dataset.staticSrc;
+        await original.decode();
         const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        canvas.width = original.naturalWidth;
+        canvas.height = original.naturalHeight;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(original, 0, 0);
         const rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         const bounds = { minX: canvas.width, minY: canvas.height, maxX: -1, maxY: -1 };
         for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
