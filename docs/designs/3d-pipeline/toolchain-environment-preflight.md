@@ -104,6 +104,8 @@ npx --no-install gltf-transform inspect "$T/smoke.glb" | head -n 8
 npx --no-install gltf-transform optimize "$T/smoke.glb" "$T/smoke-opt.glb" --compress meshopt --texture-compress false
 ~~~
 
+The same steps are scripted, idempotent: `node scripts/install-gltf-transform.mjs` (set `BLENDER_BIN` if Blender is not in `/Applications`); it prints `E13 PASS` on success.
+
 Expect: version `4.5.1`, `inspect` prints an OVERVIEW table, `optimize` writes `smoke-opt.glb`. The install changes `package.json` and `package-lock.json` (commit them as public-safe config; the smoke files stay in the temp dir). KTX2 texture output additionally needs the external `toktx` binary (KTX-Software); install it only when Phase 2 selects KTX2 textures.
 
 ## 0D. Preflight record template
