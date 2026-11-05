@@ -7,6 +7,7 @@ import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
 defineProps<{ locale: string }>();
+const animatedGif = `url("${import.meta.env.BASE_URL}feature-assets/garage-animated/sparkle@3x.gif")`;
 
 // Source-only cosmetic status and rarity icon gallery. These artworks do not
 // create a badge, inventory entitlement, artificial rarity or monetary offer.
@@ -66,7 +67,7 @@ const statusText = (id: SkinId, locale: string) => {
 <template>
   <!-- The trial/equip action passes through the session-only entitlement controller. -->
   <section id="garage-vfx-catalog" class="garage-vfx-catalog" data-preview-contract="live-shared-aero" :data-release-mode="GARAGE_RELEASE_MODE"
-    aria-labelledby="garage-vfx-catalog-heading">
+    :style="{ '--garage-animated-gif': animatedGif }" aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
     <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入後仍會記住你在此帳號最後的選擇，但這不是擁有權；試用結束後會還原為預設。' : 'Select a card to preview, then Try to equip temporarily. Your last pick is remembered on reload for this account, but it is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
     <div v-for="category in SKIN_CATEGORIES" :key="category" class="garage-vfx-category">
@@ -150,10 +151,14 @@ const statusText = (id: SkinId, locale: string) => {
   outline: 3px solid #74ebff; outline-offset: 3px;
 }
 .garage-vfx-art {
-  width: 112px; height: 112px; max-width: 100%; box-sizing: border-box;
+  position: relative; width: 112px; height: 112px; max-width: 100%; box-sizing: border-box;
   padding: 8px; display: grid; place-items: center; border-radius: 13px;
   background: radial-gradient(circle, hsl(var(--card-hue) 74% 44% / .19), transparent 73%);
   pointer-events: none;
+}
+.garage-vfx-art::after {
+  content: ''; position: absolute; inset: 8px; pointer-events: none;
+  background: var(--garage-animated-gif) center / contain no-repeat;
 }
 .garage-vfx-art :deep(.artwork-img) {
   max-width: 100%; max-height: 100%; object-fit: contain;
@@ -220,4 +225,7 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-art-showcase h4 { margin-bottom: 10px; }
 @media (max-height: 420px) and (orientation: landscape) { .garage-vfx-category ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .garage-vfx-catalog * { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  .garage-vfx-art::after { background-image: none !important; }
+}
 </style>
