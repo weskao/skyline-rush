@@ -3293,3 +3293,19 @@ No new branches, PR, deployment or merges to `develop`/`main`.
 Original WebP/SVG masters, live 3D car rendering, ownership rules and the static/reduced-motion fallback stay in place. No PR, merge or deploy.
 
 - [x] 2026-11-05 full-CI regression failure repro: Actions `41969270176` browser shards failed Vite template parse at `src/GarageSkinCatalog.vue:86` because `import.meta.env.BASE_URL` was incorrectly embedded in template expression; corrected by `animatedArtworkSrc(skin.id)` in the script module at `58ae193c9ab6daefb05c77af63121e8567893d74`. Added a source-structure regression test. This fixes the identified syntax root cause; do not mark Build/Browser green until fresh exact-HEAD CI completes.
+
+## 2026-11-05 — Original-art animated Garage GIF physical-motion correction
+
+**Only writable branch:** `feature/garage-preview-animated-gifs`.
+
+- [x] Reviewed source-linked 39-image manifest and preserved each icon's 3x WebP/SVG and native 1x CSS footprint.
+- [x] Added regression tests for genuine alpha/silhouette changes in 4 thrusters and 9 launch flares; preserve untouched metal/nozzle pixels and transparent original outside silhouette.
+- [x] Added a synthetic red-lid/blue-base test that rejects entire-box movement or simple vertical lid bobbing; require two-axis physical hinge motion.
+- [x] Observed RED from GitHub Actions run 41975454359 (11 failures, including launch flare material-only animation, thruster-basic and vertically bobbing store-box).
+- [x] Updated `scripts/generate-garage-gifs.py`: directional combustion-edge alpha changes, radial shockwave edge alpha modulation, rotated chest lid around back hinge and independently hinged/bobbing ribbon loop. No full-image zoom, rotation, generic sparkle overlay or changes to game physics.
+- [x] GitHub Actions source-animation generation run 41975622710 succeeded and committed **39 GIF files** plus manifest (16 frames each, native 3x, 12.5fps; 10,327,386 bytes across six categories). This demonstrates Python motion regression GREEN and actual GitHub asset generation, not manual visual approval.
+- [x] Corrected existing Garage Browser checks to separately verify GIF runtime `src` and the original lossless-fidelity source WebP/SVG `data-static-src`. Badge-error tests now block both GIF and source to check accessible fallback; fixed previous stale WebP-only expectations.
+- [ ] Exact-HEAD FULL GitHub CI: rerun after this evidence update with `[full-regression]`; do not claim success until all required Unit/Typecheck/Build/Browser/World Tour/cloud-save/Quality Gate jobs pass.
+- [ ] Local `make verify`: this remote GitHub-only context cannot execute the full repository locally.
+- [ ] Real manual device/3D review, artwork crop/halo/material fidelity, iPhone/Android/foldable orientation and motion comfort still require hands-on QA.
+
