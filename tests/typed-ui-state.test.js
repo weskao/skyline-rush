@@ -10,5 +10,8 @@ test('all five reactive UI state modules use native TypeScript implementations',
 });
 test('Vue template semantic checking uses vue-tsc, not only transpilation', () => {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.match(pkg.scripts['typecheck:vue'], /vue-tsc@3\.3\.13/, 'pin Vue SFC semantic type-checker');
+  const lock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.devDependencies['vue-tsc'], '3.3.13', 'pin Vue SFC semantic type-checker');
+  assert.equal(lock.packages['node_modules/vue-tsc'].version, pkg.devDependencies['vue-tsc']);
+  assert.match(pkg.scripts['typecheck:vue'], /\bvue-tsc\b.*--noEmit.*--project tsconfig\.json/);
 });
