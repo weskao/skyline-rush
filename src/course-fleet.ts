@@ -1,6 +1,7 @@
 import type { CourseGraph, CoursePoint3 } from './course-graph.ts';
 import { routeLength } from './course-route-frame.ts';
 import { advanceCourseTravel, courseTravelPosition, createCourseTravel, type CourseTravel } from './course-travel.ts';
+import { advanceMeasuredCourseTravel, type MeasuredCourseMotion } from './course-measured-motion.ts';
 
 /** Pure opt-in graph state for up to eight cars. Existing Race physics owns movement inputs. */
 export interface CourseCar { readonly id: string; readonly travel: CourseTravel }
@@ -36,6 +37,43 @@ export function advanceCourseFleet(graph: CourseGraph, fleet: CourseFleet, moves
     if (!move) return car;
     return { ...car, travel: advanceCourseTravel(graph, car.travel, move.metres, move.choices, move.flightAuthorized) };
   });
+}
+
+/**
+ * Host-physics-only input. The caller must supply trusted before/after world
+ * poses; neither browser controls nor authored scalar metres are authority.
+ */
+export interface CourseCarMeasuredMove {
+  readonly id: string;
+  readonly motion: MeasuredCourseMotion;
+}
+
+/**
+ * Validate all eight cars against the same physical snapshot before publishing
+ * any progress. An invalid sweep aborts the entire batch, including checkpoints.
+ * This is an opt-in bridge, not a replacement for RaceFactory's physics loop.
+ */
+export function advanceMeasuredCourseFleet(
+  graph: CourseGraph, fleet: CourseFleet, moves: readonly CourseCarMeasuredMove[],
+): CourseFleet {
+  const cars = new Map(fleet.map(car => [car.id, car]));
+  const seen = new Set<string>();
+  for (const move of moves) {
+    if (!cars.has(move.id)) throw new Error(`Unknown course car: ${move.id}`);
+    if (seen.has(move.id)) throw new Error(`Duplicate course car move: ${move.id}`);
+    if (!move.motion) throw new Error(`Missing physical motion for ${move.id}`);
+    seen.add(move.id);
+  }
+  if (moves.length === 0) return fleet;
+
+  const next = new Map<string, CourseTravel>();
+  for (const move of moves) {
+    const car = cars.get(move.id)!;
+    const advanced = advanceMeasuredCourseTravel(graph, car.travel, move.motion);
+    if (advanced === car.travel) return fleet;
+    next.set(move.id, advanced);
+  }
+  return fleet.map(car => next.has(car.id) ? { ...car, travel: next.get(car.id)! } : car);
 }
 
 /** Broad-phase 3D candidates only: existing shared car knock/bump logic owns responses. */

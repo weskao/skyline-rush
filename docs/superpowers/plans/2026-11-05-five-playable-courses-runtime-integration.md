@@ -45,6 +45,8 @@
 - [ ] Wire the canonical physical route frame into collision/terrain, NITRO, FLY/takeoff/landing, recovery, finish and results; preserve every legacy race's behavior.
 - [ ] Verify 30/60/120 Hz equivalence, no per-frame geometry allocation and no race unlock.
 
+- [ ] Verify the new opt-in `advanceMeasuredCourseFleet` eight-car atomic 3D sweep bridge on exact-HEAD FULL CI; it rejects incomplete/unauthorized world-pose batches and preserves checkpoint order. It is **not** attached to `game.js`'s authoritative physics step yet; never treat it as playable or anti-cheat authority without trusted host integration.
+
 ### Task 4 — Shared rendering, fleet, AI, HUD, and persistence (shared owner)
 - [ ] Use one existing `#world` renderer, shared car and camera, map-owned streaming chunks; update scenery via quality/reduced-motion, dispose on switch.
 - [ ] Adapt shared eight-car AI branch navigation, route-layer-aware collision, standings, HUD/minimap and point-to-point progress.

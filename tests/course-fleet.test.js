@@ -4,7 +4,7 @@ import { validateCourseGraph } from '../src/course-graph.ts';
 import { routeLength } from '../src/course-route-frame.ts';
 import { courseTravelPosition, advanceCourseTravel, createCourseTravel } from '../src/course-travel.ts';
 const fleetModule = await import('../src/course-fleet.ts').catch(() => ({}));
-const { createCourseFleet, advanceCourseFleet, recoverCourseFleetCar, courseFleetContactPairs } = fleetModule;
+const { createCourseFleet, advanceCourseFleet, advanceMeasuredCourseFleet, recoverCourseFleetCar, courseFleetContactPairs } = fleetModule;
 
 const n = (id, kind, at) => ({ id, kind, at });
 const e = (id, from, to, points, mode = 'ground') => ({ id, from, to, points, width: 20, mode });
@@ -123,4 +123,88 @@ test('recovery clearance receives the candidate road state for collision and haz
 test('finished cars never produce contact candidates', () => {
   const fleet=createCourseFleet(graph,ids).slice(0,2).map((car,i)=>({...car,travel:{...car.travel,finished:i===0,localS:40}}));
   assert.deepEqual(courseFleetContactPairs(graph,fleet),[]);
+});
+
+const measured = (travel, toS, override = {}) => ({
+  edgeId: travel.currentEdgeId,
+  fromS: travel.localS,
+  toS,
+  fromPosition: courseTravelPosition(graph, travel),
+  toPosition: courseTravelPosition(graph, {
+    ...travel, localS: Math.min(toS, routeLength(graph, travel.currentEdgeId)),
+  }),
+  maxStepMetres: toS - travel.localS + 2,
+  ...override,
+});
+
+test('measured eight-car batch advances only cars with trusted 3D poses', () => {
+  const before = createCourseFleet(graph, ids);
+  const next = advanceMeasuredCourseFleet(graph, before, [
+    { id: ids[0], motion: measured(before[0].travel, 7) },
+    { id: ids[1], motion: measured(before[1].travel, 11) },
+  ]);
+  assert.equal(next[0].travel.localS, 7);
+  assert.equal(next[1].travel.localS, 11);
+  assert.equal(before[0].travel.localS, 0);
+  assert.equal(next.length, 8);
+  for (let i = 2; i < 8; i++) assert.equal(next[i], before[i]);
+  assert.equal(advanceMeasuredCourseFleet(graph, before, []), before);
+});
+
+test('one forged world pose aborts the entire measured batch before publishing state', () => {
+  const before = createCourseFleet(graph, ids);
+  const next = advanceMeasuredCourseFleet(graph, before, [
+    { id: ids[0], motion: measured(before[0].travel, 8) },
+    { id: ids[1], motion: measured(before[1].travel, 8, {
+      toPosition: [40, 0, -8], maxStepMetres: 45,
+    }) },
+  ]);
+  assert.equal(next, before);
+  assert.equal(next[0].travel.localS, 0);
+  assert.equal(next[1].travel.localS, 0);
+});
+
+test('measured batch collects a checkpoint only from a signed 3D crossing', () => {
+  const fleet = createCourseFleet(graph, ids);
+  const atGate = fleet.map((car, i) => i === 0 ? {
+    ...car, travel: { ...car.travel, currentEdgeId: 'gate', localS: 98 },
+  } : car);
+  const actual = advanceMeasuredCourseFleet(graph, atGate, [{
+    id: ids[0],
+    motion: measured(atGate[0].travel, 101, {
+      toPosition: [0, 0, -401], maxStepMetres: 4, nextEdgeId: 'finish-road',
+    }),
+  }]);
+  assert.equal(actual[0].travel.currentEdgeId, 'finish-road');
+  assert.equal(actual[0].travel.nextCheckpoint, 1);
+  assert.ok(Math.abs(actual[0].travel.localS - 1) < 1e-4);
+
+  const bypass = advanceMeasuredCourseFleet(graph, atGate, [{
+    id: ids[0],
+    motion: measured(atGate[0].travel, 101, {
+      toPosition: [0, 25, -401], maxStepMetres: 30, nextEdgeId: 'finish-road',
+    }),
+  }]);
+  assert.equal(bypass, atGate);
+});
+
+test('measured batch refuses unauthorized flight, unknown and duplicate cars', () => {
+  const fleet = createCourseFleet(graph, ids);
+  const atSplit = fleet.map((car, i) => i === 0 ? {
+    ...car, travel: { ...car.travel, localS: 98 },
+  } : car);
+  const flight = measured(atSplit[0].travel, 101, {
+    toPosition: [0, 0, -101], nextEdgeId: 'air', maxStepMetres: 4,
+  });
+  assert.equal(advanceMeasuredCourseFleet(graph, atSplit, [
+    { id: ids[0], motion: flight },
+  ]), atSplit);
+  assert.throws(() => advanceMeasuredCourseFleet(graph, fleet, [
+    { id: 'unknown', motion: measured(fleet[0].travel, 4) },
+  ]), /unknown/i);
+  const same = { id: ids[0], motion: measured(fleet[0].travel, 4) };
+  assert.throws(() => advanceMeasuredCourseFleet(graph, fleet, [same, same]), /duplicate/i);
+  assert.throws(() => advanceMeasuredCourseFleet(graph, fleet, [
+    { id: ids[0] },
+  ]), /missing physical motion/i);
 });
