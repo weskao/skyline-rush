@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install raster libraries
-        run: python -m pip install --quiet "numpy<2" pillow opencv-python-headless==4.10.0.84
+        run: python -m pip install --quiet "numpy<2" pillow opencv-python-headless==4.10.0.84 simple-lama-inpainting
       - name: Inpaint ONLY vehicle and exhaust regions
         run: |
           python - <<'PY'
@@ -23,6 +23,8 @@ jobs:
           import cv2
           import numpy as np
           from PIL import Image, ImageChops
+          from simple_lama_inpainting import SimpleLama
+          model=SimpleLama()
 
           root=Path("public/track-teasers")
           output=Path("teaser-inpaint-preview")
@@ -62,7 +64,8 @@ jobs:
               for poly in polygons:
                   cv2.fillPoly(mask,[np.array(poly,dtype=np.int32)],255)
               mask=cv2.dilate(mask,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(7,7)))
-              restored=cv2.inpaint(cv2.cvtColor(rgb,cv2.COLOR_RGB2BGR),mask,4,cv2.INPAINT_TELEA)
+              edited=np.asarray(model(Image.fromarray(rgb),Image.fromarray(mask).convert("L")).convert("RGB"))
+              restored=cv2.cvtColor(np.where(mask[:,:,None]>0,edited,rgb).astype(np.uint8),cv2.COLOR_RGB2BGR)
               if name=="volcanic-crown":
                   # Top-right accidental dark bar, not a landscape feature.
                   top=np.zeros_like(mask)
