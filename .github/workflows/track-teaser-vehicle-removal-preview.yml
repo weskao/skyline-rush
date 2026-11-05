@@ -53,6 +53,8 @@ jobs:
           }
           for name,polygons in masks.items():
               path=root/f"{name}.jpg"
+              import shutil
+              shutil.copy2(path, output / f"{name}-original.jpg")
               rgb=np.asarray(Image.open(path).convert("RGB"))
               h,w=rgb.shape[:2]
               assert (w,h)==(568,205),(name,(w,h))
