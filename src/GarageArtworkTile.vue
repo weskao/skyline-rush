@@ -7,10 +7,9 @@ const props = withDefaults(defineProps<{ id: string; label: string; src: string;
 const hues: Record<Tone, number> = {
   cyan: 189, magenta: 312, gold: 42, slate: 214, azure: 207, amber: 32, red: 354,
 };
-const animatedGif = `url("${import.meta.env.BASE_URL}feature-assets/garage-animated/sparkle-badges@3x.gif")`;
+const animatedSrc = computed(() => /^(badge-|rarity-|store-)/.test(props.id)\n  ? `${import.meta.env.BASE_URL}feature-assets/garage-animated/${props.id}@3x.gif` : '');
 const colors = computed(() => ({
   '--badge-hue': String(hues[props.tone]),
-  '--garage-animated-gif': animatedGif,
   '--art-width': props.size + 'px',
   '--art-height': (props.imageHeight ?? props.size) + 'px',
   '--frame-width': (props.size + 16) + 'px',
@@ -22,7 +21,7 @@ const colors = computed(() => ({
     :data-artwork-restored="String(restored)" :data-art="id" :style="colors">
     <div class="garage-badge-art-frame">
       <GarageArtworkImage :src="src" :size="size" :height="imageHeight" :image-id="id"
-        :alt="label" :fallback-text="label" />
+        :alt="label" :animated-src="animatedSrc" :fallback-text="label" />
     </div>
     <figcaption>{{ label }}</figcaption>
   </figure>
@@ -48,10 +47,6 @@ const colors = computed(() => ({
   width: var(--frame-width); height: var(--frame-height); padding: 8px; border-radius: 13px; overflow: visible;
   background: radial-gradient(circle, hsl(var(--badge-hue) 70% 49% / .15), transparent 67%);
 }
-.garage-badge-art-frame::after {
-  content: ''; position: absolute; inset: 8px; pointer-events: none;
-  background: var(--garage-animated-gif) center / contain no-repeat;
-}
 .garage-badge-art-frame :deep(.artwork-img) {
   display: block; width: var(--art-width); height: var(--art-height); max-width: 100%; max-height: 100%;
   object-fit: contain; object-position: center; image-rendering: auto;
@@ -64,6 +59,5 @@ const colors = computed(() => ({
 }
 @media (prefers-reduced-motion: reduce) {
   .garage-badge-card * { animation: none !important; transition: none !important; }
-  .garage-badge-art-frame::after { background-image: none !important; }
 }
 </style>
