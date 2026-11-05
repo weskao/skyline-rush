@@ -3245,3 +3245,15 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Run Typecheck, all Unit tests, Build, `make verify`, complete Browser/World Tour suites and exact-HEAD FULL CI; no PASS claim until observed.
 - [ ] Desktop/mobile manual QA: all six original home previews, 13.8 KM Frostbite card, both P01/P02 scenes, reduced motion/airflow, title/CTA translations, no race entry.
 - [ ] Only after successful pre-merge full CI and review, normal `--no-ff` merge of this preview-only branch to latest `develop`; verify develop exact-HEAD FULL CI. Do not merge playable-course runtimes or modify `main`/release tags without separate approval.
+
+## 2026-11-05 — Garage / Preview Studio animated GIF artwork (feature branch)
+
+**Branch:** `feature/garage-preview-animated-gifs`, from `develop` at `4b94bdabf9fa5030045646e04a45a4aef549edc3`.
+
+- [x] Preserve the interactive WebGL car showroom, 3x WebP paint/VFX/badge/store masters, artwork IDs, selections, entitlement checks and fallback images.
+- [x] Add a genuine 288 × 288, eight-frame transparent, infinitely looping GIF (`public/feature-assets/garage-animated/sparkle@3x.gif`) and reuse it as the animation layer on all paint, VFX, badge and concept cards in both Garage and Preview Studio. This is an animated **GIF overlay**, not full per-image re-encoding: originals remain sharp and uncropped.
+- [x] Respect `prefers-reduced-motion`; paint GIF also stops when visual effects are disabled or comfort mode is enabled. No new audio: these are decorative flourishes without state changes. HTML/CSS art unchanged across Low/Medium/High quality tiers.
+- [x] Add unit GIF-format/loop/frame-count and browser two-page/reduced-motion checks, adjusting original no-GIF contract while preserving 3x source checks.
+- [ ] RED run observed before production changes: first feature-branch Actions attempts were cancelled by subsequent pushes; cannot claim a verified RED run.
+- [ ] Run `make verify`, typecheck, full browser / World Tour regression and exact-HEAD FULL GitHub Actions CI. Required for acceptance; remote work does not prove local execution.
+- [ ] Manual desktop/mobile visual review, browser GIF animation decode/performance, iOS and Android reduced-motion, GIF artwork appearance and showroom interactions. No PR, merge or deployment authorized.
