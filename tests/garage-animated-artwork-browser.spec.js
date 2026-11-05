@@ -57,3 +57,28 @@ test('failed GIF falls back to source WebP without changing equipped state', asy
   await expect(icon).toHaveAttribute('src', /raster\/thruster-ion@3x\.webp$/);
   await expect(skin).toHaveAttribute('data-owned', 'false');
 });
+
+test('all 39 Garage, badge and Store cards map to their own source-art GIFs on Home and Studio', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-art-source-garage-store-readiness summary').click();
+  const readCards = async () => {
+    const skin = await page.locator('#garage-vfx-catalog [data-skin]').evaluateAll(cards =>
+      cards.map(card => ({ id: card.dataset.skin, src: card.querySelector('img')?.dataset.animatedSrc })));
+    const badges = await page.locator('#garage-vfx-art-badges [data-badge-art]').evaluateAll(cards =>
+      cards.map(card => ({ id: card.dataset.badgeArt, src: card.querySelector('img')?.dataset.animatedSrc })));
+    const store = await page.locator('#garage-art-source-garage-store-readiness [data-wave3-asset]').evaluateAll(cards =>
+      cards.map(card => ({ id: card.dataset.wave3Asset, src: card.querySelector('img')?.dataset.animatedSrc })));
+    expect([skin.length, badges.length, store.length]).toEqual([22, 11, 6]);
+    const combined = [...skin, ...badges, ...store];
+    expect(new Set(combined.map(item => item.id)).size).toBe(39);
+    for (const item of combined) {
+      expect(item.src, `Missing independent original-art motion for ${item.id}`)
+        .toMatch(new RegExp(`garage-animated/${item.id}@3x\\.gif$`));
+    }
+  };
+  await readCards();
+  await page.locator('#garage-studio-open').click();
+  await expect(page.locator('#garage-preview #world')).toBeVisible();
+  await readCards();
+});
