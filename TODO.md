@@ -1,3 +1,12 @@
+## Garage Wave 3 branch-specific source notes (preserved from economy branch)
+
+## 2026-11-02 — Wave 3 art-source discovery and 3×→1× runtime sizing
+
+**Asset source is now in GitHub.** Before inventing new icons or assuming no source images exist, read [the shared 59-file WebP/1× CSS manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) at `feature/3x-ui-materials` (verified archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`). The staged binaries are **27 garage VFX/skin icons, 8 rewards/mission icons, 6 store icons and 18 mobile HUD/common UI images**. Physical 3× source assets are **288×288 → 96×96 CSS**, **216×216 → 72×72 CSS**, or **432×156 → 144×52 CSS**; preserve source pixel dimensions and use a 1× display box and `object-fit: contain`. Source PNGs and the original ZIPs remain in the ChatGPT File Library; Git holds optimized WebPs in `docs/designs/3x-asset-library/webp/`.
+
+**Economy boundary:** There is **no approved real currency, paid entitlement, wallet or live store source image/behavior** in this archive. Badge/rarity or trophy art must not grant/represent unauthorized ownership, convert into a fake coin balance, or imply a payment flow. Economy Foundation must keep its account/Cloud Save entitlement truth independently of artwork, and must not mistakenly count reusable decorative images as completed feature functionality. Only copy approved images into a feature public runtime directory during authorized implementation, with `import.meta.env.BASE_URL` URL, 1× CSS display, RED→GREEN tests, en/zh-TW, fallback, accessibility and CI.
+
+**Current integration target is `develop`, not historical `main`.** Shared asset archive is isolated; this Wave 3 branch does not yet contain runtime images from it. Do not mark feature TODO tasks complete solely because materials exist.
 ## Vehicle movement jitter and drift yaw — 2026-11-04
 
 **Branch:** `fix/vehicle-motion-jitter` (from `develop` b05ff1fa). Player-visible issue: left/right movement stutters at variable render rates, especially NITRO/FLY/takeoff/landing; initiating/releasing drift snaps the visual yaw 25°.
@@ -3204,6 +3213,18 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 ---
 
 
+## Wave 3 Economy Foundation — 2026-11-04 read-only state gate
+
+- [ ] Exact-HEAD full regression and real device/visual acceptance for the Economy state gate. The focused local Node 22 test observed RED (3 failures: missing shared state contract), then GREEN (3 passes) and strict standalone TypeScript check; this is **not** full-repo verification.
+- [ ] Obtain explicit backend entitlement authority, Firestore rules/emulator coverage, grant migration contract and product approval before enabling any owned skin, award, price, wallet, claim or checkout. The new `src/garage-economy-state.ts` is read-only: `owned: []`, `balance/price/award: null`, `canBuy/canClaim: false` in all phases.
+- [ ] Integrate the exported Garage Economy snapshot with Rewards and Store consumers **only on their respective authorized branches**. Shared version 1 phases: unavailable/loading/ready/error/unsupported; ready confirms only that schema/account metadata was read, never server-authoritative entitlement.
+- [ ] Inspect existing Economy source imagery before any redesign: this work adds no raster art and does not pretend the separate archive or previews are purchases. Legacy PAINTS and Garage trial preferences remain independent.
+
+
+## Economy Foundation — 2026-11-04 existing Store art in live Garage
+- [ ] Visual acceptance: real desktop/iOS/Android screenshots and exact-HEAD full CI still required for Garage store-entry art.
+- [ ] Source integration acceptance: existing 216×216 store-collection WebP is wired for 72×72 CSS in the Garage summary and the six 3× Store artworks remain selectable via native details/gallery controls. Await exact-HEAD CI, browser screenshots and manual visual sign-off before marking complete. No checkout, currency, price or permanent entitlement is implied.
+- [ ] Run full browser/WebGL interaction checks after CI runner availability, including keyboard, touch, 390×844, 844×390 and 1440×900; compare alpha safety and caption clipping. New browser assertions are in tests/garage-art-source-browser.spec.js.
 ## 2026-11-03 — Stage 1 real-3D homepage integration checkpoint
 
 - [x] Verified latest six branch heads before implementation. At inspection: integration `00ea05de`; Dune `b509ed2f`; Monsoon `bffc2479`; Skyfall `9eddd936`; Volcanic `efcf7a8e`; Stormline `6b28e1f4`. All five independent `src/upcoming-scenes/<id>.ts` and scene tests were absent at that snapshot; no complete art environment was selectively imported.

@@ -65,6 +65,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
       </section>
       <aside class="garage-collection">
         <h3>{{ copy.collection }}</h3>
+        <GarageSourceArtGallery category="garage-store-readiness" />
         <p class="collection-note garage-intro" v-show="garageStudioView.page === 'home'" data-i18n="garage.intro">Explore paint and tail light combinations. Appearance never changes performance.</p>
     <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><GaragePaintPreview :id="id" :color="paint.paint" /><span class="garage-paint-meta"><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id) }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></span></button></div>
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
@@ -74,7 +75,6 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         <p class="garage-coming">{{ copy.coming }}</p>
         <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
-        <GarageSourceArtGallery category="garage-store-readiness" />
       </aside>
     </div>
   </dialog>
