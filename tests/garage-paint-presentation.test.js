@@ -33,7 +33,8 @@ test('native image sweep follows Low/Medium/High, disabled VFX and reduced-motio
   for (const q of ['low', 'medium', 'high']) assert.ok(preview.includes('data-vfx-quality="' + q + '"'));
   assert.match(preview, /prefers-reduced-motion: reduce/);
   assert.match(preview, /garage-paint-sheen/);
-  assert.doesNotMatch(preview, /<canvas|\.gif/i);
+  assert.doesNotMatch(preview, /<canvas/i);
+  assert.match(preview, /garage-animated-gif/);
 });
 
 test('real 3D paint uses clearcoat material without extra car geometry, shader sweep disabled on Low and reduced motion', () => {
