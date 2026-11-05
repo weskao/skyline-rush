@@ -57,11 +57,16 @@ test('production cards use native animation instead of sparkle overlays and resp
   assert.match(src('GaragePanel.vue'), /id="garage-preview"/);
 });
 
-test('renderer has separate motion behavior and a moving box lid, without shared overlay', () => {
+test('every item has its own source-driven motion recipe, with moving physical parts rather than whole image distortion', () => {
   const generator = read('scripts/generate-garage-gifs.py').toString('utf8');
-  for (const category of Object.keys(expected)) {
-    assert.ok(generator.includes('category == "' + category + '"'), category);
+  assert.match(generator, /PROFILES = \{/);
+  for (const asset of manifest) {
+    assert.ok(generator.includes("'" + asset.name + "':"), asset.name + ' requires art direction');
   }
-  assert.ok(generator.includes('out[lid] = 0') && generator.includes('ys - lift'),
-    'store box moves its lid separately from the base');
+  assert.match(generator, /subtle_part_motion/);
+  assert.match(generator, /hinged-crate/);
+  assert.match(generator, /ribbon-bow/);
+  assert.match(generator, /animate_airflow/);
+  assert.match(generator, /metal_reflection/);
+  assert.doesNotMatch(generator, /np\.rint\(xx - dx\)/, 'no whole-image pixel field warp');
 });
