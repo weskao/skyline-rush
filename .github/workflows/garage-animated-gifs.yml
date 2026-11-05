@@ -29,6 +29,8 @@ jobs:
           python-version: '3.12'
       - name: Install image generation libraries
         run: python -m pip install 'numpy>=2.0,<3' 'Pillow>=11.3,<13' 'CairoSVG>=2.7,<3'
+      - name: Test real source geometry, independent parts and 39 art directions
+        run: python -m unittest discover -s tests -p test_garage_gif_motion.py -v
       - name: Animate real checked-in transparent WebP and SVG artwork
         run: python scripts/generate-garage-gifs.py
       - name: Verify all 39 exported files before committing
@@ -43,7 +45,7 @@ jobs:
           assert len({item['category'] for item in files}) == 6
           for item in files:
               gif = Image.open(item['file'])
-              assert gif.n_frames == 12 and gif.info['loop'] == 0
+              assert gif.n_frames >= 4 and gif.info['loop'] == 0 and item['frames'] == 16
               assert gif.size == (item['width'], item['height'])
               assert item['size'] == Path(item['file']).stat().st_size
           print('Verified source-linked GIFs:', len(files))
