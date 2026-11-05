@@ -70,3 +70,11 @@ test('every item has its own source-driven motion recipe, with moving physical p
   assert.match(generator, /metal_reflection/);
   assert.doesNotMatch(generator, /np\.rint\(xx - dx\)/, 'no whole-image pixel field warp');
 });
+
+test('Vite BASE_URL is resolved in Vue script, never inside template expression', () => {
+  const skin = src('GarageSkinCatalog.vue');
+  assert.match(skin, /const animatedArtworkSrc =/);
+  assert.match(skin, /:animated-src="animatedArtworkSrc\(skin\.id\)"/);
+  assert.doesNotMatch(skin, /:animated-src="[^"]*import\.meta/,
+    'Vue template expression is not parsed as a JavaScript module');
+});
