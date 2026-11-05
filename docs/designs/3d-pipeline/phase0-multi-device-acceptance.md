@@ -55,11 +55,13 @@
 | E08 | Required | 專案 blender-image-to-3d Skill | `.claude/skills/blender-image-to-3d/SKILL.md` 存在，並在此專案的新 Claude CLI session 可被調用／辨識；不安裝至 global |
 | E09 | Required | 全域 Three.js Skills | `~/.claude/skills/threejs-*/SKILL.md` 具備合適的 loaders/materials/performance/asset-pipeline Skill，global 可見；明確指出 r186 Skill 範例不能直接覆蓋 r180 production API |
 | E10 | Required | Three.js baseline / Types | 在指定 branch 的 `package.json`、lockfile及實際 npm 安裝版本可核對（若未 npm ci，標示依賴未安裝），不提前升級到 r186；檢查 typecheck scripts 是否仍引用 r180 |
-| E11 | Required | 公開 Repo 隱私與版控 | `.gitignore` 排除 `docs/designs/3d-pipeline/audits/`；`git check-ignore -v` 顯示正確規則，`git ls-files` 確認裝置報告未被追蹤；沒有把任何機器專屬資訊 Commit／Push |
+| E11 | Required | 公開 Repo 隱私與版控 | `.gitignore` 排除 `docs/designs/3d-pipeline/audits/`；`git check-ignore -v` 顯示正確規則，`git ls-files` 確認裝置報告未被追蹤；檢查目前受追蹤內容與新提交不含機器專屬資訊。歷史中的個人家目錄路徑不列為驗收阻擋，不因而改寫歷史；若發現憑證等機密外洩，仍依第 1A 節處理 |
 | E12 | Required | CI 狀態檢視（唯讀） | 若有 GitHub 權限，核對分支最新 exact-HEAD Actions run、SHA、結果；若尚未完成或沒有存取權，記錄 PENDING / NOT VERIFIED，不能說 Passed；不因裝置檢查而自行 Push 觸發 CI |
 | E13 | Conditional | glTF Transform CLI | 若 Phase 0 已要求資產操作：`npm ls @gltf-transform/cli` 與 CLI help/inspect 成功；否則記錄「Phase 2 才需 install」和 N/A approved，不可謊稱已安裝 |
 | E14 | Required | Codex project MCP/Skill | 本專案須確認 `.codex/config.toml` 註冊、`codex mcp list` 可見且實際連線；不能用 global 註冊代替 |
 | E15 | Conditional | Blender 資產取得與授權 | 若需要下載/使用現成測試素材：驗證來源、license 和磁碟空間；否則 N/A approved |
+
+Phase 0 不要求下載素材或安裝資產處理工具；若本次不需資產操作，E13 和 E15 可經負責人核准標為 N/A，留到後續實作有需要時再安裝、下載及驗證授權。
 
 **重要：** E07 明確要求 **MCP 工具呼叫本身成功**。不接受只看到 `claude mcp list`、`BLENDER_MCP_ENABLED=True` 或 Blender 視窗就宣告 PASS。E08/E09 亦不能只看目錄，需確認新 session 能辨識。
 
