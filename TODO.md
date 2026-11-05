@@ -3482,3 +3482,13 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [x] Observed failing RED for authoritative authorized air-over-ground route advance (previously frozen by a ground-height guard), then GREEN while high checkpoint sweep remained rejected; local combined 21/21 Node tests and isolated strict TypeScript PASS.
 - [ ] Confirm newest exact-HEAD FULL CI (Unit/Typecheck/Build, Cloud-save, 13 Browser and five World Tour shards, Quality Gate); pending/skipped jobs do not pass.
 - [ ] Connect `advanceMeasuredCourseTravel` and measured fleet states to real physics-derived world positions and existing AI/game/world architecture; complete the full five-course physical/visual acceptance before enabling any race.
+
+
+## 2026-11-05 — six-course shared preview, AIRFLOW, Garage/Studio parity
+
+- [x] Read and documented the existing shared six-map home selection/swipe, AIRFLOW (ON=ground / OFF=hover), same Roadster/3 rivals, camera views, Garage Home and Preview Studio. New scoped rule: `.claude/rules/playable-course-shared-template.md`; link in `CLAUDE.md`.
+- [x] Updated the common `src/upcoming-showcase.ts` to derive Roadster vertical hover/ground/jet pose from the existing `previewPlayer` used on classic tracks; no extra map-specific controller or renderer, no change to Coming Soon.
+- [ ] Validate `tests/shared-course-template-browser.spec.js`: six consecutive horizontal carousel selections and six-course AIRFLOW/Garage/Studio interaction regressions. New `tests/upcoming-showcase.test.js` verifies shared 3D vehicle pose for every upcoming environment. Tests are authored but **not locally run**; no test-first RED or GREEN is claimed for this current revision.
+- [ ] Run `npm test`, `npm run build`, `make verify`; inspect the latest **exact-HEAD FULL** GitHub CI (all required Browser/World Tour shards, Unit/Typecheck/Build, Cloud-save, Quality Gate). Fix real failures and preserve existing behavior.
+- [ ] Capture real desktop/mobile WebGL frames for all six preview courses, AIRFLOW ON/OFF, camera views, touch swipe and Garage/Studio. Measure actual road/wheel contact, visual parity, Reduced Motion, frame timing and GPU disposal; these are not proved by UI tests.
+- [ ] Separately connect actual six-course CourseGraph physics, branching, flight/landing, 8-car AI, collision, checkpoints, recovery, results/ghost and start/finish. UI/template parity does **not** authorize race registration or remove Coming Soon.
