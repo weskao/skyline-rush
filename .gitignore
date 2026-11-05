@@ -22,5 +22,9 @@ artifacts/*
 !artifacts/interactive-tutorial/
 !artifacts/refactor-20261027/
 
+# Keep local logs and event streams out of the public repository.
+*.log
+*.jsonl
+
 # Local per-device 3D Phase 0 audits. Public repo: NEVER commit machine-specific evidence.
 docs/designs/3d-pipeline/audits/
