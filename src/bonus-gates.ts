@@ -20,7 +20,9 @@ export function decorateBonusGates(rings: RaceRing[], config: BonusConfig): Race
   if (style) types.push('score-pad');
   else if (config.mode === 'custom' && config.rivals > 0) types.push('emp');
   let index = 0;
-  return rings.map(ring => ring.type === 'mystery' ? ring : { ...ring, type: types[index++ % types.length] });
+  // Stunt/Checkpoint have no active item slot: their four solo rings must include a score gate,
+  // even when the original fourth ring rolled Mystery. Custom All still preserves item rings.
+  return rings.map(ring => !style && ring.type === 'mystery' ? ring : { ...ring, type: types[index++ % types.length] });
 }
 
 export function collectBonusGate(race: BonusRace, ring: RaceRing): void {

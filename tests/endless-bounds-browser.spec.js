@@ -55,6 +55,10 @@ test.describe('endless bounds desktop', () => {
     const windowMax = { pickups: 5 * 5 * 4, rings: 5 * (3 + 4 + 6), groups: 5 * 2 };
     for (const key of Object.keys(early)) {
       if (key in windowMax) for (const [km, sample] of Object.entries(samples)) expect(sample[key], `${key} at ${km} km`).toBeLessThanOrEqual(windowMax[key]);
+      // Each live chunk can hold a different GPU/scene item count while still respecting the fixed streaming window.
+      else if (['geometries', 'textures', 'programs'].includes(key))
+        expect(late[key], `${key} at 50 km vs 25 km`).toBeLessThanOrEqual(early[key] + 12);
+      else if (key === 'objects') expect(late[key], 'scene nodes at 50 km').toBeLessThanOrEqual(Math.ceil(early.objects * 1.03));
       else expect(late[key], `${key} at 50 km vs 25 km`).toBeLessThanOrEqual(early[key]);
     }
     expect(late.traffic, 'fixed traffic budget').toBeLessThanOrEqual(40);

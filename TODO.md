@@ -1,3 +1,69 @@
+## Garage Wave 3 branch-specific source notes (preserved from economy branch)
+
+## 2026-11-06 — Wave 3 integration completion (`feature/wave3-garage-integration-20261105`)
+
+Preflight SHAs (2026-11-06): develop `ca592105` → integrated `17c94d74`; Economy `6f0b662e`, Store `51a90571`,
+VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero tree change).
+
+- [x] Exact-HEAD CI `bf548a35` (run 42047600915) failures root-caused: Store merge `c76b1e71` kept Economy's WebP
+  summary icon vs Store's PNG spec; Economy spec counted `[data-wave3-asset]` page-wide (14 ≠ 6); Rewards spec counted
+  the summary icon as a thumbnail (9 ≠ 8). RED reproduced locally (5 failures) → GREEN `22717299`; stress
+  `CI=1 --repeat-each=8 --retries=0` 160/160.
+- [x] `badge-limited@3x.png`: detached 5×5 neighbouring-sprite fragment removed and art re-centred losslessly (bounds
+  19/18); guard `tests/garage-vfx-badge-png.test.js` RED→GREEN `c0de1be9`. Archive WebP fallback kept byte-identical.
+  Equipped/Favorite badges pass the audit unchanged (not redrawn; no image generation used).
+- [x] Mission center reads `WAVE3_PREVIEW_CATALOG` instead of a second copy of the 8 ids/names (`f4b379c9`).
+- [x] Test races fixed (product unchanged): eleven-badges `naturalWidth` before decode; podium trophy measured during
+  `reward-podium-reveal` (`5fff5b91`); pose row measured during `history-in` slide (RED via CDP playbackRate 0.05,
+  `811f06e0`). Each stress 24/24 or better under CI timing.
+- [x] Local gate on final code: typecheck PASS (non-nested copy; nested worktree resolves the parent `node_modules`),
+  unit 1617/0, browser 995 pass + the 4 race fixes above, World Tour 328/0, `npm run test:cloud` 15+3 PASS, build PASS.
+- [x] Images: every Wave 3 Garage image loads under the Pages base `/skyline-rush/` (desktop + 390×844, 0 × 4xx,
+  0 text fallbacks); en/zh-TW screenshots reviewed at 1440×900, 390×844, 844×390.
+- [x] CI typecheck failed on an npm partial publish (`playwright@1.65.0` without `playwright-core@1.65.0`) because
+  `typecheck:ts`/`typecheck:vue` installed with `--package-lock=false`. Both now install against the lockfile
+  (`--no-save` keeps package files unchanged); guard in `tests/typed-ui-state.test.js` RED→GREEN; full typecheck
+  PASS locally while the upstream release is still broken, `playwright-core` stays 1.64.1.
+- [ ] Exact-HEAD full CI for the final commit — see the completion report.
+- [ ] Lint: no linter is configured in this repo (no script, config or CI step); not run.
+- [ ] Real-device phone hardware check; mission/trophy duplicate surfaces (Mission center + concept gallery) awaiting
+  product decision; real purchases/payouts/grants remain BLOCKED by policy.
+
+
+## 2026-11-06 — Wave 3 Go backend (DEFERRED; preserve existing game and anti-cheat boundary)
+
+**Single future implementation branch:** `feature/wave3-garage-integration-20261105`. **Go backend plan/prompt:** [2026-11-06-wave3-go-backend-implementation.md](docs/superpowers/plans/2026-11-06-wave3-go-backend-implementation.md). **Status:** Documentation only; Go backend has NOT been implemented, verified, deployed or approved for real grants.
+
+- [x] Create an actionable **Go-language** backend implementation plan covering Firebase Auth, Firestore transactions/rules, Go service contracts, server-side race verification, mission progress, idempotent settlement, inventory/store boundaries, anti-cheat and TDD.
+- [ ] **Prerequisites:** Explicit future implementation authorization; verified Wave 3 frontend/CI baseline; current API/source audit; supported Go version/toolchain; Node 22+; Java 21 and Firebase emulators; dedicated non-production Firebase/GCP project and least-privilege IAM; approved architecture, budgets, privacy/data-retention policy and rollback owner. No credentials committed to this public repo.
+- [ ] **Anti-cheat prerequisite:** Threat-model the client-side race engine and decide how the Go server can *actually verify* eligible completions (server-owned sessions/challenges plus trusted deterministic replay/authoritative simulation when feasible). Auth/App Check/nonce/client telemetry or a browser signature alone are NOT anti-cheat proof; no trustworthy proof means **no redeemable or paid reward grants**.
+- [ ] **Zero regression while backend is absent/down:** Keep existing offline/local racing, tracks, controls, physics, NITRO/FLY/BOOST, tutorials, results/history, PAINTS, Garage/VFX free trials, Coming Soon Store/Rewards previews, localization, and existing local/Cloud Save behavior operational. Never make a Go request mandatory before starting or continuing a race or opening Garage.
+- [ ] **Fail-closed privileged actions:** Without verified Go authority, never create persistent achievement/reward, new paid entitlement, currency balance, purchase, or claim success. Show honest `pending/unavailable/unverified` while retaining existing playable and preview behavior.
+- [ ] Build Go authentication/authorization, versioned APIs, strict UID scoping, Firestore service IAM and server-side validation, with RED→GREEN→REFACTOR evidence.
+- [ ] Verify eligible race completions against trusted server evidence; reject forged, duplicated, replayed, cross-account, tutorial/practice/cancelled and impossible results. Document residual cheating risks; do not declare fully cheat-proof.
+- [ ] Implement durable exactly-once `(uid,completionId)` settlement and server-owned mission progress with daily/weekly UTC boundaries, replay/concurrent requests and offline/retry protection.
+- [ ] Safely integrate account-scoped inventory/entitlement reads and legacy PAINTS/Skin Session/Cloud Save migrations without granting client-forged ownership or damaging existing progress.
+- [ ] Keep real credits, wallet/payout rules, paid store/checkout, receipt fulfillment, refunds, and paid entitlement grants **BLOCKED** until explicit policy/economy/platform/backend-authority approval.
+- [ ] Test Go service down/timeout/error, authentication expiry, account A→B switching, retry/reconnect, stored-profile manipulation, Firestore emulator rules, `go test ./...`, `go test -race ./...`, `go vet ./...` and compatibility with the existing frontend.
+- [ ] Verify existing game flows **before and after** backend integration on desktop and phone (portrait/landscape, offline/online, en/zh-TW, low quality/reduced motion), `npm test`, typecheck/build, `npm run test:cloud`, `make verify`, and **exact-HEAD Full Regression CI** (not focused-only or a previous SHA). Keep rollback tested, do not weaken any quality gate.
+- [ ] Record approved release gates, Go backend commit/CI evidence, anti-cheat limits, test outcomes, and remaining policy blockers; no PR, deployment, force-push, or develop/main modification without separate authorization.
+
+---
+
+## 2026-11-02 — Wave 3 art-source discovery and 3×→1× runtime sizing
+
+**Asset source is now in GitHub.** Before inventing new icons or assuming no source images exist, read [the shared 59-file WebP/1× CSS manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) at `feature/3x-ui-materials` (verified archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`). The staged binaries are **27 garage VFX/skin icons, 8 rewards/mission icons, 6 store icons and 18 mobile HUD/common UI images**. Physical 3× source assets are **288×288 → 96×96 CSS**, **216×216 → 72×72 CSS**, or **432×156 → 144×52 CSS**; preserve source pixel dimensions and use a 1× display box and `object-fit: contain`. Source PNGs and the original ZIPs remain in the ChatGPT File Library; Git holds optimized WebPs in `docs/designs/3x-asset-library/webp/`.
+
+**Economy boundary:** There is **no approved real currency, paid entitlement, wallet or live store source image/behavior** in this archive. Badge/rarity or trophy art must not grant/represent unauthorized ownership, convert into a fake coin balance, or imply a payment flow. Economy Foundation must keep its account/Cloud Save entitlement truth independently of artwork, and must not mistakenly count reusable decorative images as completed feature functionality. Only copy approved images into a feature public runtime directory during authorized implementation, with `import.meta.env.BASE_URL` URL, 1× CSS display, RED→GREEN tests, en/zh-TW, fallback, accessibility and CI.
+
+**Current integration target is `develop`, not historical `main`.** Shared asset archive is isolated; this Wave 3 branch does not yet contain runtime images from it. Do not mark feature TODO tasks complete solely because materials exist.
+## Rewards and Missions source instructions (retained from feature branch)
+
+**Read this before image generation or UI implementation.** The user's original `skyline-rush-3x-garage-rewards-and-missions.zip` was recovered from the ChatGPT File Library (SHA-256 `d526e1570865887924c09909f85d057186477cf189862ae351457847f4754b60`). All **eight original 3× transparent WebP icons** are now verified Git blobs in the **shared asset-only branch** `feature/3x-ui-materials`, pinned reference commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. Source: [asset library and exact Git blobs](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) and [Rewards/Missions WebPs](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-rewards-and-missions).
+
+**8 actual files:** `mission-race@3x.webp`, `mission-time@3x.webp`, `mission-drift@3x.webp`, `mission-combo@3x.webp`, `trophy-bronze@3x.webp`, `trophy-silver@3x.webp`, `trophy-gold@3x.webp`, `trophy-platinum@3x.webp` (all **288×288 physical pixels**; set **96×96 CSS px** on use, e.g. `<img width="96" height="96">` plus `width:96px;height:96px;object-fit:contain`). Use `import.meta.env.BASE_URL` when copying approved assets into `public/feature-assets/garage-rewards-and-missions/raster/` to ensure GitHub Pages subpath support. Do **not** resize the original images to 1×: only the rendered CSS box is 1×. The PNG originals/source archive remain in ChatGPT File Library, not the Git branch.
+
+**Next implementer's mandatory sequence:** (1) Sync latest `develop` only when branch dependencies/gates permit (never treat historical `main` instructions as the current integration target); (2) inspect the actual 8 WebPs and existing icons, reject glow halos / baked fake balances / illegible cutouts and select only suitable files; (3) fetch `origin/feature/3x-ui-materials` and copy approved Git blobs from `docs/designs/3x-asset-library/webp/garage-rewards-and-missions/` to runtime public path; (4) write RED BDD/tests for 1× layout, missing-image text fallback, en/zh-TW, verified-only rewards (no fake/pending payout), account isolation and retry idempotency; (5) implement Vue 3/TS at 96 CSS px and verify build/CI/WebGL and accessibility. Image existence does **not** approve settlement, create credits, make missions functional, or satisfy the rest of Wave 3.
 ## Vehicle movement jitter and drift yaw — 2026-11-04
 
 **Branch:** `fix/vehicle-motion-jitter` (from `develop` b05ff1fa). Player-visible issue: left/right movement stutters at variable render rates, especially NITRO/FLY/takeoff/landing; initiating/releasing drift snaps the visual yaw 25°.
@@ -3204,6 +3270,64 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 ---
 
 
+---
+
+## 2026-11-04 — Wave 3 Garage Store Readiness implementation and pending evidence
+
+**Owner:** `feature/garage-store-readiness` only. **Integration:** no merge / PR / deployment authorized. The Store is a read-only, unavailable catalog; no price, live purchase, balance, claim, or ownership grant.
+
+- [ ] **Independent 3× assets:** 6 repaired, complete source WebPs and SVG masters are present. CI-triggered lossless exports to `public/feature-assets/garage-store-readiness/raster/store-*@3x.png` must be **committed and verified** at 216 × 216 with true alpha, safe bounds, source pixel identity, unique content and actual browser display at 72 × 72 CSS pixels. Until all six PNGs exist in the branch, this remains open.
+- [ ] **Real Garage Store UI:** direct non-checkout Store entrance in `GaragePanel.vue` opens bilingual category filters, Featured concepts, Coming Soon/Unavailable cards and a deliberately disabled action. Source added, but browser/manual acceptance is outstanding.
+- [ ] **Fallback & responsive:** `BASE_URL` PNG → repaired WebP → text, mouse/keyboard/touch, en/zh-TW, 390×844 / 844×390 / 1440×900, reduced-motion and 44px hit targets. Automated specs added; exact-HEAD results and screenshots remain unverified.
+- [ ] **TDD / Focused Checks:** source-level tests `garage-store-catalog-contract.test.js`, `garage-store-png.test.js`, existing Wave 3 tests and new `garage-store-catalog-browser.spec.js` added. RED assertions were committed before implementation; original RED was **not executed successfully** before follow-up pushes cancelled CI, so do not claim observed RED/GREEN evidence.
+- [ ] **Full Regression:** require final asset commit, `npm test`, Typecheck, Build, Browser, Cloud Save and World Tour checks on **exact final branch HEAD**. A focused green result with skipped Browser/World Tour is not full acceptance. Local `make verify` and actual iOS/Android screen/perf review remain independent gates.
+- [ ] **Separate approval:** prices, refunds, purchase SDK/checkout, paid/earned entitlement, currency balances and provider policies are neither approved nor implemented; no Store publishing until approved.
+
+Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIFEST.md`. PNG generator: `scripts/render-store-png.mjs`; branch-only audit workflow: `.github/workflows/store-png-generator.yml`. Prior exact-HEAD `c8235fc8045982e01638794027f818b8103cbdf0` passed **focused** CI run `41784030747` while Browser and World Tour were skipped. Those checks do not validate later changes.
+
+### 2026-11-02 Garage VFX CI follow-up (pending exact-HEAD full gate)
+- [x] Old feature `64773e6`: Firestore full-save and Garage button-selector regressions now green (cloud-save, browser shard 12).
+- [ ] Correct 390×844 Flight framing after spoiler/wheel pose; real WebGL browser evidence and unit gate pending on the new commit.
+- [ ] Repair solo Stunt/Checkpoint score-pad availability and re-rolled Time Trial ring test; full browser shards 2/7 and `quality-gate` pending.
+- [ ] Recheck Circuit landscape-zh pause-to-result transition on the exact merged commit; preserve the test until root cause is verified.
+- [ ] Merge only after feature full-regression and verify exact develop merge commit; no `main` change or release.
+
+### 2026-11-05 Garage VFX exact-HEAD Full CI repair
+- [x] RED observed on `2b3a10c9` Full Regression [#41908608993](https://github.com/weskao/skyline-rush/actions/runs/41908608993): Browser (7) `handoff-browser.spec.js` PERFECT LINE false; Browser (6) `release-video-browser.spec.js` undefined enlarged media after dialog teardown. Unit, Cloud Save and all five World Tour shards passed; Quality Gate failed as required.
+- [ ] Revalidate real Ring → NITRO → PERFECT LINE and viewer frame handoff with latest-head Full Browser/World Tour/Quality Gate; use the pinned Coast Solo Time Trial + actual input pilot and capture video times before DOM teardown, matching already-green Economy Full CI #41908841653. No production award/entitlement changes. Local `make verify` and physical device checks not executed in connector-only environment.
+
+### 2026-11-02 Garage VFX CI follow-up — f2a1816 RED, latest repair pending
+- [x] Observed exact-HEAD feature CI RED run 41466802082: unit-tests, cloud-save and five World Tour shards green; browser shards 4/5/7/8/11/12 red. Full gate not passed.
+- [ ] Localize 3× HUD artwork summary/notice and custom-draw its disclosure marker; verify EN/zh-TW and CSS sizing in latest CI.
+- [ ] Repair handoff test missing gameplay fixture, deterministic real callout timing and probabilistic Risk Line assertion; verify latest full CI.
+- [ ] Preserve develop Garage badge art, zoom-out fog and ring row semantics alongside feature Flight framing, bonus score gates, eight-car finish tests and real 3D framing tests.
+- [ ] Latest feature quality-gate, develop no-ff merge CI and manual WebGL/device review remain pending.
+
+### 2026-11-03 Garage CI RED checkpoint
+- [x] Exact feature 16f2485 CI 41476482401: unit-tests, cloud-save, 5 World Tour passed; browser shards 1,3,4,6,7,8,9,10,11,12,13 failed; quality-gate failed. Logs confirm stale Endless 20/15 budget, Garage zoom click count, desktop intro overflow, HUD art timeout and NITRO reward assumptions. No green claim for the next SHA.
+- [ ] Recheck complete exact-HEAD full CI after upstream sync and fixes. Manual real-WebGL/phone checks remain independent.
+
+### 2026-11-03 Garage exact-HEAD CI #41520208780 observed RED (follow-up pending)
+- [x] Browser shards 2/7/9 failed on exact feature `ef1a94a`: 1440×900 intro overlapped topbar; intro scroll test counted the fixed camera dock as flow content; handoff PERFECT LINE pilot exited in READY phase; release clip handoff assertion compared different instants. Logs inspected, not a full CI pass.
+- [ ] Verify fixes on next exact-SHA full-regression CI: actual Start race before ring collision; exclude fixed dock only from scroll-flow test; preserve 900px intro height with correct header gap; compare release video clocks at dialog close. Do not mark GREEN without CI evidence.
+- [ ] Verify remaining 13 browser, 5 World Tour, cloud-save, unit-tests, quality-gate; after all green and latest develop integrated, no-ff merge to develop only and verify merged SHA. Manual WebGL/device review separate.
+
+### 2026-11-03 Garage full-regression browser shard 2 RED — footer hitbox
+- [x] On exact feature `e4b7564031e9e9b431a06248aa4947b83f3f9121`, Actions run 41536582099 browser-tests (2) failed `tests/responsive-browser.spec.js:37` at 1440×900: intro rectangle overlapped `.bottomline`. Inspected actual Playwright failure screenshot (`browser-failures-2` artifact 13187604260). Footer includes a 44px action; the 900px override's `bottom: 24px` leaves the intro rectangle over that hitbox despite visible text ending higher. Existing browser assertion is the RED regression test; no test weakened.
+- [ ] Exact-HEAD GREEN pending: 900px desktop intro bottom inset 60px reserves the 44px footer plus a small gap, top remains 118px to clear the 112px header after the -6px margin. Re-run all 13 browser shards, unit, cloud-save, five World Tour, quality-gate and `npm run test:layout` where a runnable checkout is available; inspect 900px scroll/locale/physical screenshots separately. No local browser execution was possible in this connector-only run.
+
+## Wave 3 Economy Foundation — 2026-11-04 read-only state gate
+
+- [ ] Exact-HEAD full regression and real device/visual acceptance for the Economy state gate. The focused local Node 22 test observed RED (3 failures: missing shared state contract), then GREEN (3 passes) and strict standalone TypeScript check; this is **not** full-repo verification.
+- [ ] Obtain explicit backend entitlement authority, Firestore rules/emulator coverage, grant migration contract and product approval before enabling any owned skin, award, price, wallet, claim or checkout. The new `src/garage-economy-state.ts` is read-only: `owned: []`, `balance/price/award: null`, `canBuy/canClaim: false` in all phases.
+- [ ] Integrate the exported Garage Economy snapshot with Rewards and Store consumers **only on their respective authorized branches**. Shared version 1 phases: unavailable/loading/ready/error/unsupported; ready confirms only that schema/account metadata was read, never server-authoritative entitlement.
+- [ ] Inspect existing Economy source imagery before any redesign: this work adds no raster art and does not pretend the separate archive or previews are purchases. Legacy PAINTS and Garage trial preferences remain independent.
+
+
+## Economy Foundation — 2026-11-04 existing Store art in live Garage
+- [ ] Visual acceptance: real desktop/iOS/Android screenshots and exact-HEAD full CI still required for Garage store-entry art.
+- [ ] Source integration acceptance: existing 216×216 store-collection WebP is wired for 72×72 CSS in the Garage summary and the six 3× Store artworks remain selectable via native details/gallery controls. Await exact-HEAD CI, browser screenshots and manual visual sign-off before marking complete. No checkout, currency, price or permanent entitlement is implied.
+- [ ] Run full browser/WebGL interaction checks after CI runner availability, including keyboard, touch, 390×844, 844×390 and 1440×900; compare alpha safety and caption clipping. New browser assertions are in tests/garage-art-source-browser.spec.js.
 ## 2026-11-03 — Stage 1 real-3D homepage integration checkpoint
 
 - [x] Verified latest six branch heads before implementation. At inspection: integration `00ea05de`; Dune `b509ed2f`; Monsoon `bffc2479`; Skyfall `9eddd936`; Volcanic `efcf7a8e`; Stormline `6b28e1f4`. All five independent `src/upcoming-scenes/<id>.ts` and scene tests were absent at that snapshot; no complete art environment was selectively imported.

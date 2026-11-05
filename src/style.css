@@ -1626,6 +1626,19 @@ body.photo-studio #perf-overlay { display: none; }
   .intro h1 br { display: none; }
   .intro .intro-actions { row-gap: 8px; }
 }
+/* Desktop 900px: reserve the 112px top bar and the full 44px footer action.
+   The global -6px intro margin extends its box on both edges. */
+@media (min-width: 1001px) and (min-height: 900px) and (max-height: 966px) {
+  .intro { top: 118px; bottom: 60px; }
+  .intro .route-label { margin-bottom: 8px; }
+  .intro .intro-wordmark { font-size: clamp(46px, 4.7vw, 64px); margin-bottom: 4px; }
+  .intro .track-preview { height: 12px; margin-bottom: 4px; }
+  .intro .track-select button > span.track-route-map { height: 34px; }
+  .intro .track-note { margin: 3px 0 5px; }
+  .intro .daily-card { margin-top: 6px; padding-block: 2px; }
+  .intro .intro-actions { gap: 6px 12px; }
+  .intro .intro-controls { margin-top: 2px; }
+}
 @media (max-width: 370px), (max-height: 500px) {
   .daily-card { grid-template-columns: minmax(0, 1fr) auto; margin-top: 10px; padding: 8px 8px 8px 12px; }
   .daily-card-icon { display: none; }
@@ -1893,6 +1906,10 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
   .tutorial-celebration i { display: none; }
 }
 
+/* Display-only 3x results artwork; no reward entitlement. */
+.result-trophy-art{display:inline-block;max-width:96px;vertical-align:middle;object-fit:contain;animation:reward-podium-reveal .52s ease-out both}
+@keyframes reward-podium-reveal{from{opacity:0;transform:scale(.88);filter:brightness(1.65) drop-shadow(0 0 12px #eecb70)}to{opacity:1;transform:scale(1);filter:none}}
+@media(prefers-reduced-motion:reduce){.result-trophy-art{animation:none}}
 /* Concept thumbnail is a clearly labeled fallback, never a live 3D replacement. */
 .upcoming-scene { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .upcoming-scene img { position: absolute; top: 19%; right: 3.5%; width: min(56vw, 760px); aspect-ratio: 568 / 205; object-fit: cover; border: 1px solid rgb(210 235 255 / .38); border-radius: 12px; box-shadow: 0 24px 90px rgb(0 9 24 / .65); filter: saturate(1.07); }
