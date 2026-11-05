@@ -3274,3 +3274,20 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Document separate observed RED failure and full GREEN command evidence; local synthetic-source generator smoke test is **not** a complete TDD/CI gate.
 
 No new branches, PR, deployment or merges to `develop`/`main`.
+
+
+## 2026-11-05 — Garage animated GIF artistic rework after user visual review
+
+**Scope:** `feature/garage-preview-animated-gifs` only. Prior 39-icon generic pixel field animation produced undesirable distortion. This revision replaces it with explicitly keyed profiles on the same 39 original 3× WebP/SVG masters.
+
+- [x] 39 icon IDs each have distinct `PROFILES` recipes, across thruster (4), airflow (4), NITRO (5), launch (9), badge/rarity (11), Store concept (6).
+- [x] Stop whole-image grid displacement: move energy highlights within original flames, trails and shockwaves; animate author-drawn SVG airflow paths while blocking highlights over the partially translucent car; keep badge silhouettes fixed while changing material response; separate crate lid/gift ribbon/card component movement.
+- [x] Replace separately quantized moving pixels with an all-frame shared palette per GIF, 16 source-linked phases at 12.5 FPS. Avoid patterned Bayer transparency dithering after inspecting actual exported GIFs: it created a visible checkerboard glow. The refreshed binaries use explicit binary alpha threshold for clean cutouts.
+- [x] Test-first RED observed on original animation script: GitHub Action `41968588434`, 7 new source fidelity checks failed (old program lacked independent source-linked part animation).
+- [x] GREEN on the actual GitHub WebP/SVG masters: `41969123657` generated/validated all 39 original-art GIFs; generated commit `b2a3d27fcc984bb7ab2e95360ca705b0127702d9`, 10,240,587 bytes total. The generated manifest records all 39 source-to-GIF paths, dimensions, original IDs, file sizes and unique motion profiles.
+- [x] Examine representative real exported GIF frames for `thruster-ion` and `store-box` after the alpha change; original shapes remain recognizable, with no artificial patterned transparency around their glow.
+- [ ] Full exact-HEAD GitHub CI (Unit, Typecheck, Build, Browser, World Tour, cloud-save, Quality Gate) for the *final* commit; do not reuse a prior successful SHA.
+- [ ] On-device human acceptance of motion style, box lid hinge, GPU/decode cost, true frame sequence and loop smoothness, reduced motion, all screen sizes including folding, interactive 3D showcase and cosmetic entitlement regression.
+- [ ] Run complete `make verify` in a full local checkout (GitHub contents connector has no local test runner). Synthetic-image local smoke tests are not production-art visual sign-off.
+
+Original WebP/SVG masters, live 3D car rendering, ownership rules and the static/reduced-motion fallback stay in place. No PR, merge or deploy.
