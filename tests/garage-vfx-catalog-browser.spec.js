@@ -182,8 +182,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     const colors = [];
     for (const tile of await tiles.all()) {
       await tile.scrollIntoViewIfNeeded();
-      const info = await tile.evaluate(figure => {
+      const info = await tile.evaluate(async figure => {
         const img = figure.querySelector('img');
+        // Lazy art starts loading only once scrolled in; read natural size after it decodes, not before.
+        if (!img.complete || !img.naturalWidth) await img.decode();
         const frame = figure.querySelector('.garage-badge-art-frame');
         const caption = figure.querySelector('figcaption');
         const a = img.getBoundingClientRect(), b = frame.getBoundingClientRect(), c = caption.getBoundingClientRect();
