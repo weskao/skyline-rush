@@ -12,6 +12,11 @@ architecture, module size, artwork, tracks, touch, Garage, tutorial, release not
 branches). A rule that only matters for certain files goes there with `paths:`, not here.
 A "→ Read `docs/<file>`" line names a situation: open that file only then, follow it exactly.
 
+**No personal paths in files.** This repo is public: never write a user-specific absolute path
+(`/Users/<name>/…`, `/home/<name>/…`, `C:\Users\<name>\…`) into any committed file (code, docs,
+specs, configs, tests, logs). Use repo-relative paths, `$HOME`/`~`, or a placeholder such as
+`<repo>`.
+
 ## Workflow (every feature and bug fix)
 
 Follow `docs/regression-first-workflow.md`: trace the shared root cause; failing test (RED) →
