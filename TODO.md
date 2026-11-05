@@ -3291,3 +3291,5 @@ No new branches, PR, deployment or merges to `develop`/`main`.
 - [ ] Run complete `make verify` in a full local checkout (GitHub contents connector has no local test runner). Synthetic-image local smoke tests are not production-art visual sign-off.
 
 Original WebP/SVG masters, live 3D car rendering, ownership rules and the static/reduced-motion fallback stay in place. No PR, merge or deploy.
+
+- [x] 2026-11-05 full-CI regression failure repro: Actions `41969270176` browser shards failed Vite template parse at `src/GarageSkinCatalog.vue:86` because `import.meta.env.BASE_URL` was incorrectly embedded in template expression; corrected by `animatedArtworkSrc(skin.id)` in the script module at `58ae193c9ab6daefb05c77af63121e8567893d74`. Added a source-structure regression test. This fixes the identified syntax root cause; do not mark Build/Browser green until fresh exact-HEAD CI completes.
