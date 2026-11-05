@@ -19,16 +19,16 @@ Non-goals: replacing the game with Unity/Unreal, migrating Vue to React or TresJ
 
 ## 3. Mandatory Phase 0: local environment check FIRST
 
-**Owner reports these installed; this is not verified evidence.** Before any dependency change, Blender scene editing or asset generation, run the full local audit described in docs/designs/3d-pipeline/toolchain-environment-preflight.md from ~/Documents/Workspace/skyline-rush. Record binaries and versions, Blender addon enabled-state and MCP connection, global user-scope Skills/MCP for Claude and optional Codex, Node floor, existing dependency versions, KTX2/Meshopt tools, network/access and disk capacity. For each item explicitly mark PASS / FAIL / NOT VERIFIED with sanitized evidence. If missing, show the exact install/repair command and **stop the affected work until rerun succeeds**. Never claim GitHub access alone proves an app exists on the user's Mac.
+**Owner reports these installed; this is not verified evidence.** Before any dependency change, Blender scene editing or asset generation, run the full local audit described in docs/designs/3d-pipeline/toolchain-environment-preflight.md from ~/Documents/Workspace/skyline-rush. Record binaries and versions, Blender addon enabled-state and MCP connection, global Three.js Skills, project-scoped Blender Skill and Blender MCP for Claude and Codex, Node floor, existing dependency versions, KTX2/Meshopt tools, network/access and disk capacity. For each item explicitly mark PASS / FAIL / NOT VERIFIED with sanitized evidence. If missing, show the exact install/repair command and **stop the affected work until rerun succeeds**. Never claim GitHub access alone proves an app exists on the user's Mac.
 
-"Install globally while working in ~/Documents/Workspace/skyline-rush" means run commands from that project directory but install **user-scoped** Skills to ~/.claude/skills and Claude MCP to user scope; don't copy third-party installed Skills or user secrets into Git. Repository-specific design rules remain in .claude/rules/.
+"Install globally while working in ~/Documents/Workspace/skyline-rush" means run commands from that project directory but install Three.js Skills to ~/.claude/skills and blender-image-to-3d and Blender MCP in project scope for Claude and Codex; remove global Blender MCP registrations across AI agents; preserve third-party license terms and never commit user secrets. Repository-specific design rules remain in .claude/rules/.
 
 ## 4. Tool selection
 
 | Tool | Decision | Evidence and safeguards |
 |---|---|---|
-| mcp-for-blender | User-scoped MCP, preflight first | https://github.com/ahujasid/mcp-for-blender ; Python execution is powerful, use trusted repo only and review permissions |
-| blender-game-skills/blender-image-to-3d | Global Claude Skill | https://github.com/majidmanzarpour/blender-game-skills ; image-to-model quality gate, no guarantee of fully accurate result |
+| mcp-for-blender | Project-scoped Claude and Codex MCP, preflight first | https://github.com/ahujasid/mcp-for-blender ; Python execution is powerful, use trusted repo only and review permissions |
+| blender-game-skills/blender-image-to-3d | Project Claude Skill | https://github.com/majidmanzarpour/blender-game-skills ; image-to-model quality gate, no guarantee of fully accurate result |
 | glTF Transform | Project dev dependency / CLI | https://github.com/donmccurdy/glTF-Transform ; inspect, optimize and verify runtime decode paths |
 | CloudAI-X/threejs-skills | Global Claude Skill | https://github.com/CloudAI-X/threejs-skills ; r186-targeted; until migration is approved/current, treat code examples as guidance, verify actual installed API |
 | Three.js official addons | Reuse current installed Three.js | GLTFLoader, KTX2Loader, DRACOLoader and MeshoptDecoder selectively |
@@ -73,7 +73,7 @@ flowchart TD
 
 ## 7. Delivery phases and acceptance
 
-**Phase 0 — toolchain check:** inspect current environment and user-scope agent configuration; only fix missing items with user/local permissions, keep a redacted report; not a repo-code deployment.
+**Phase 0 — toolchain check:** inspect current environment and project-scoped Blender MCP configuration; only fix missing items with user/local permissions, keep a redacted report; not a repo-code deployment.
 
 **Phase 1 — Three.js r186.1 migration:** independent change to exact-pinned three and aligned types, lockfile and API migration. Preserve WebGLRenderer, existing composer/NaN guard and shader warm-up. Characterization screenshots, CI, performance parity and renderer recovery gate first; do not mix with GLB replacement. See docs/designs/3d-pipeline/threejs-r180-r186-migration.md.
 

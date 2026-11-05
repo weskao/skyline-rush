@@ -13,7 +13,7 @@
 - 在**執行檢查的本機**收集證據，不能用別台 Mac 的結果替代，不能把「使用者說已安裝」等同 PASS。
 - 使用 **Device Alias**（如 `mac-mini`、`macbook-pro`、`windows-workstation`），不得將序號、帳號、Token、家目錄私密檔完整內容上傳。
 - **Workspace 可自行指定**。macOS 預設為 `~/Documents/Workspace/skyline-rush`，但可設定 `SKYLINE_RUSH_DIR`；不得假設每台裝置相同。
-- Global/User-scope 是相對於**該裝置的使用者帳號**，例如 `~/.claude/skills/` 和 Claude MCP user scope；**不是**把 Skills/MCP 存入 `skyline-rush/.claude/skills/`。
+- Global/User-scope 是相對於**該裝置的使用者帳號**，例如 `~/.claude/skills/`。Blender MCP 則只設於本專案 Claude `.mcp.json` 和 Codex `.codex/config.toml`，不設為任何 AI agent 的 global MCP。
 - 一台裝置通過，不代表另一台通過。更換 Blender、Node、CLI、Skills、MCP 設定或 Three.js 版本後，受影響的檢查須重新執行。
 - 裝置報告寫到 **僅本機保留** 的 `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`，由 `.gitignore` 排除；相同裝置重新檢驗可追加 run ID / 日期。**不可 commit/push、不可使用 git add -f，亦不可上傳原始 logs 或憑證。** 不同裝置各自保存報告。
 - 實際驗收全部必要項通過後，在**該裝置的本機報告**寫入一般型號名稱，如 `Mac mini`、`MacBook Pro`（不是 macOS「電腦名稱」或 hostname），並更新本機忽略檔 `docs/designs/3d-pipeline/audits/device-status.md` 的通過紀錄。未驗證時只寫 `UNVERIFIED`，不捏造裝置名稱。
@@ -50,15 +50,15 @@
 | E03 | Required | Blender GUI / CLI | 能找到 Blender 可執行檔、取得版本；`--background --python-expr` 成功呼叫 bpy |
 | E04 | Required | uv / uvx / Claude CLI | `uvx --version`、`claude --version` 均成功；命令路徑可解析 |
 | E05 | Required | Blender Add-on installed + enabled | 以 Blender `bpy.context.preferences.addons` 確認 `blender_mcp` 啟用；安裝檔存在但未啟用是 FAIL |
-| E06 | Required | Blender MCP user scope | `claude mcp get blender` 顯示有效的 user-scoped 註冊，而非僅 repo-local 設定；確認 server executable 可執行 |
+| E06 | Required | Blender MCP project scope | `claude mcp get blender` 顯示 project-scope 註冊；確認 executable 可執行，並核對各已安裝 AI agent 的 global Blender MCP 已移除 |
 | E07 | Required | Blender MCP **live read-only call** | 開啟 GUI Blender，透過 Claude **實際呼叫 Blender MCP tool** 列出當前 Scene 的物件名稱/類型；工具回傳而非虛構的示例文字 |
-| E08 | Required | 全域 blender-image-to-3d Skill | `~/.claude/skills/blender-image-to-3d/SKILL.md` 存在、列在 global Skill 清單，並在新 CLI session 可被調用/辨識 |
+| E08 | Required | 專案 blender-image-to-3d Skill | `.claude/skills/blender-image-to-3d/SKILL.md` 存在，並在此專案的新 Claude CLI session 可被調用／辨識；不安裝至 global |
 | E09 | Required | 全域 Three.js Skills | `~/.claude/skills/threejs-*/SKILL.md` 具備合適的 loaders/materials/performance/asset-pipeline Skill，global 可見；明確指出 r186 Skill 範例不能直接覆蓋 r180 production API |
 | E10 | Required | Three.js baseline / Types | 在指定 branch 的 `package.json`、lockfile及實際 npm 安裝版本可核對（若未 npm ci，標示依賴未安裝），不提前升級到 r186；檢查 typecheck scripts 是否仍引用 r180 |
 | E11 | Required | 公開 Repo 隱私與版控 | `.gitignore` 排除 `docs/designs/3d-pipeline/audits/`；`git check-ignore -v` 顯示正確規則，`git ls-files` 確認裝置報告未被追蹤；沒有把任何機器專屬資訊 Commit／Push |
 | E12 | Required | CI 狀態檢視（唯讀） | 若有 GitHub 權限，核對分支最新 exact-HEAD Actions run、SHA、結果；若尚未完成或沒有存取權，記錄 PENDING / NOT VERIFIED，不能說 Passed；不因裝置檢查而自行 Push 觸發 CI |
 | E13 | Conditional | glTF Transform CLI | 若 Phase 0 已要求資產操作：`npm ls @gltf-transform/cli` 與 CLI help/inspect 成功；否則記錄「Phase 2 才需 install」和 N/A approved，不可謊稱已安裝 |
-| E14 | Conditional | Codex user-scope MCP/Skill | 只有此裝置需 Codex 時才必查；能從 `codex mcp list` 看見配置且實際連線，或核准 N/A |
+| E14 | Required | Codex project MCP/Skill | 本專案須確認 `.codex/config.toml` 註冊、`codex mcp list` 可見且實際連線；不能用 global 註冊代替 |
 | E15 | Conditional | Blender 資產取得與授權 | 若需要下載/使用現成測試素材：驗證來源、license 和磁碟空間；否則 N/A approved |
 
 **重要：** E07 明確要求 **MCP 工具呼叫本身成功**。不接受只看到 `claude mcp list`、`BLENDER_MCP_ENABLED=True` 或 Blender 視窗就宣告 PASS。E08/E09 亦不能只看目錄，需確認新 session 能辨識。
@@ -97,7 +97,7 @@ else
 fi
 
 # 只檢查路徑，不能替代 Skill loaded 測試。
-test -f "$HOME/.claude/skills/blender-image-to-3d/SKILL.md" && echo "BLENDER_SKILL_FILE=present" || echo "BLENDER_SKILL_FILE=missing"
+test -f "$SKYLINE_RUSH_DIR/.claude/skills/blender-image-to-3d/SKILL.md" && echo "BLENDER_SKILL_FILE=present" || echo "BLENDER_SKILL_FILE=missing"
 if [ -d "$HOME/.claude/skills" ]; then
   find "$HOME/.claude/skills" -maxdepth 2 -name SKILL.md -print | grep -E 'blender-image-to-3d|threejs-' || true
 fi
@@ -113,6 +113,66 @@ df -h .
 **輸出安全：** `git remote -v` 及 MCP 清單可能含憑證／私有端點。由 Agent 在本機判讀，**不要提交或貼到公開 repo**；本機報告也只寫已遮蔽的 owner/repo、server 名稱、Scope、成功／失敗等摘要，不附原始設定或 Token。
 
 **Live test（必須另外執行）：** 在 Blender GUI 開啟任意工作場景並確認 MCP Server 已啟動，在 **新的 Claude Code session** 發出「請使用 Blender MCP 工具，以唯讀操作列出目前場景所有物件的名稱、型別、位置，並告訴我你使用的是哪個 MCP 工具；不得新建或修改物件。」核對實際 Tool 回傳內容及場景；只給一般文字答案不算 PASS。
+
+### Blender MCP 安裝、啟動與驗證（macOS）
+
+以下在本專案執行；Blender add-on 由 Claude Code 與 Codex 共用，不須安裝兩次。這些步驟會修改 Blender 使用者外掛或偏好設定；先確認版本及現有安裝，已安裝且正常時不必重新安裝。技能仍依 E08／E09 的各自範圍安裝。
+
+1. 在 Terminal 檢查工具及外掛位置：
+
+   ```sh
+   cd "${SKYLINE_RUSH_DIR:-$HOME/Documents/Workspace/skyline-rush}" || exit 1
+   command -v uvx
+   uvx --version
+   uvx mcp-for-blender addon-paths
+   ```
+
+   `addon-paths` 只列出候選位置，不能證明已啟用。需要安裝或重新安裝時才執行：
+
+   ```sh
+   uvx mcp-for-blender install-addon
+   ```
+
+   外掛更新後，先儲存 Blender 尚未儲存的工作，再重新啟動 Blender，以確保載入新版本。
+
+2. 在 **Blender GUI** 開啟場景。若需要啟用或重新載入 add-on，按 `Shift+F4` 將目前區域切換成 Python Console，**逐行**執行：
+
+   ```python
+   import bpy
+   bpy.ops.preferences.addon_disable(module="blender_mcp")
+   bpy.ops.preferences.addon_enable(module="blender_mcp")
+   bpy.ops.wm.save_userpref()
+   ```
+
+   若 add-on 尚未啟用，可略過 `addon_disable`；若操作報錯，先在 Blender Preferences 的 Add-ons 啟用 Blender MCP，再繼續。儲存偏好設定會影響此使用者的 Blender。Server 尚未啟動時，在同一個 Blender Python Console 執行：
+
+   ```python
+   bpy.ops.blendermcp.start_server()
+   ```
+
+   若 Server 已在運作，不要重複啟動。Terminal 的 `blender --background` 是另一個程序，不能用來啟動現有 GUI 視窗中的 Server。
+
+3. 回到 Terminal 檢查預設連接埠與專案註冊，避免公開原始輸出：
+
+   ```sh
+   lsof -nP -iTCP:9876 -sTCP:LISTEN
+   claude mcp get blender
+   codex mcp list
+   ```
+
+   `lsof` 出現監聽程序只表示連接埠有人監聽；需確認是 Blender 使用的預設埠，且不能取代 MCP 工具呼叫。非預設埠需依實際設定檢查。Claude 應顯示 project scope；Codex 應從可信任專案的 `.codex/config.toml` 讀取 blender 設定。
+
+4. Claude 專案註冊缺少時，從專案根目錄執行：
+
+   ```sh
+   claude mcp add --scope project blender -- uvx mcp-for-blender
+   ```
+
+   Codex 的專案設定是 `.codex/config.toml` 中的 `[mcp_servers.blender]`，其 `command = "uvx"`、`args = ["mcp-for-blender"]`；保留其他設定。不要執行會建立全域註冊的 `codex mcp add blender`。重新開啟 Claude Code 與 Codex session；在 Claude 輸入 `/mcp`，若出現專案信任或授權提示，由使用者確認。
+
+5. 分別在新的 Claude Code 與 Codex session 要求 Blender MCP **唯讀列出場景物件名稱與類型**，核對實際工具呼叫與回傳。Claude 成功才算 E07 PASS；Codex 的專案註冊及成功連線才算 E14 PASS。`claude mcp list`、埠監聽或 add-on 啟用均不能代替 live call。
+
+`uvx mcp-for-blender setup` 會更動 MCP client 設定；`uvx mcp-for-blender@latest update` 會更新 Server 與 add-on。兩者均不是一般驗證必要步驟，執行前須檢查影響並維持本專案限定的 MCP 範圍；更新後重啟並重跑受影響的驗收。
 
 ## 5. Windows / PowerShell 7 可重複檢查
 
@@ -131,7 +191,7 @@ npm --version
 uvx --version
 claude --version
 codex --version
-Test-Path (Join-Path $HOME ".claude/skills/blender-image-to-3d/SKILL.md")
+Test-Path (Join-Path $Repo ".claude/skills/blender-image-to-3d/SKILL.md")
 Get-ChildItem (Join-Path $HOME ".claude/skills") -Filter SKILL.md -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match 'blender-image-to-3d|threejs-' } | Select-Object -ExpandProperty FullName
 npx skills list -g -a claude-code
 claude mcp list
@@ -151,9 +211,9 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 ## 6. FAIL 的修復原則
 
 1. 先記錄錯誤指令、退出碼和清理敏感資料後的 stderr，再修復；所有原本存在的設定先備份。不能把任何 FAIL 改寫成未經驗證的 PASS。
-2. **Skills（全域）**：確認 Node >=22.20；缺少時由使用者同意後執行 `npx skills add majidmanzarpour/blender-game-skills --skill blender-image-to-3d -g -a claude-code` 或 `npx skills add CloudAI-X/threejs-skills -g -a claude-code`。選擇所需 skills，不必安裝 React-specific 部分。
-3. **Claude MCP（全域）**：先查已有註冊，必要時檢查本機 CLI `claude mcp add --help`，以 user scope 設定 `claude mcp add --scope user blender -- uvx mcp-for-blender`。避免覆蓋其他 MCP。缺少 uvx 時才考慮安裝 uv。
-4. **Blender Add-on**：缺少時 `uvx mcp-for-blender install-addon`；若未啟用，先完整關閉 Blender 再用官方 `uvx mcp-for-blender setup` 或下列受控方式啟用（**會寫入使用者 Blender preferences**）：
+2. **Skills（Blender 專案、Three.js 全域）**：確認 Node >=22.20；缺少時由使用者同意後執行 `npx skills add majidmanzarpour/blender-game-skills --skill blender-image-to-3d -a claude-code` 或 `npx skills add CloudAI-X/threejs-skills -g -a claude-code`。選擇所需 skills，不必安裝 React-specific 部分。
+3. **Blender MCP（僅專案）**：以 `claude mcp add --scope project blender -- uvx mcp-for-blender` 設定 Claude；在專案 `.codex/config.toml` 的 `[mcp_servers.blender]` 設定相同命令。盤點並移除各 AI agent 的 global Blender MCP 註冊，保留其他 MCP；重新啟動 session 後驗證兩者的唯讀 live scene call。缺少 uvx 時才考慮安裝 uv。
+4. **Blender Add-on**：依第 4 節的安裝、GUI 啟動與驗證流程操作。或在 Blender 完全關閉後，以下受控方式啟用 add-on（**會寫入使用者 Blender preferences**，不會啟動 GUI Server）：
    ```bash
    "$BLENDER_BIN" --background --python-expr "import addon_utils,bpy; addon_utils.enable('blender_mcp',default_set=True); bpy.ops.wm.save_userpref()"
    ```
@@ -175,7 +235,7 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 - Repo branch / HEAD before / after: <branch and SHAs>
 - Agent clients tested: Claude Code / Codex / other
 - Auditor: <agent or human>
-- Scope: user-global Skills and MCP; project code not changed
+- Scope: project-scoped Blender Skill and MCP, user-global Three.js Skills; project game code not changed
 
 | ID | Required / Conditional | Result PASS/FAIL/NOT VERIFIED/N/A | Version/scope | Actual command/evidence (redacted) | Repair + retest |
 |----|------------------------|-----------------------------------|---------------|-----------------------------------|----------------|
@@ -192,7 +252,7 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 | E11 | Required | NOT VERIFIED | | | |
 | E12 | Required | NOT VERIFIED | | | |
 | E13 | Conditional | NOT VERIFIED | | | |
-| E14 | Conditional | NOT VERIFIED | | | |
+| E14 | Required | NOT VERIFIED | | | |
 | E15 | Conditional | NOT VERIFIED | | | |
 
 - Live Blender MCP tool name + observed object count: <redacted evidence; no secrets>
@@ -210,7 +270,7 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 >
 > **先做隱私保護：** 這是 PUBLIC GitHub repo。先用 `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` 確認整個 `audits/` 目錄已被 `.gitignore` 排除，並用 `git ls-files docs/designs/3d-pipeline/audits/` 確認未追蹤任何報告。若不成立，先修正忽略規則，且不要繼續寫含裝置資訊的報告。嚴禁 Commit/Push 裝置報告、原始 log、環境變數、憑證、序號、hostname、macOS「電腦名稱」、私有路徑或 MCP 設定。
 >
-> 依 E01–E15 在**這台本機**逐項執行檢查並保留已遮蔽證據：Blender CLI/Background Python/Add-on 是否啟用；透過 Claude Code **實際 MCP 唯讀工具呼叫**列出 Blender 場景物件；Claude Code 的 user-scoped Blender MCP；`~/.claude/skills/` 中的全球 `blender-image-to-3d` 和 `threejs-skills` 是否真正被 Agent 辨識；Node/npm/uvx；現行 Three.js/@types；glTF Transform；Codex 僅在該裝置需要時檢查。確認所有 PASS 都有實際命令、版本和輸出支持，不得用其他裝置結果替代。
+> 依 E01–E15 在**這台本機**逐項執行檢查並保留已遮蔽證據：Blender CLI/Background Python/Add-on 是否啟用；透過 Claude Code **實際 MCP 唯讀工具呼叫**列出 Blender 場景物件；Claude Code 與 Codex 的 project-scoped Blender MCP，以及各 AI agent 無 global Blender MCP；專案的 `blender-image-to-3d` 與 `~/.claude/skills/` 中的全球 `threejs-skills` 是否真正被 Agent 辨識；Node/npm/uvx；現行 Three.js/@types；glTF Transform；Codex 在此專案為必查。確認所有 PASS 都有實際命令、版本和輸出支持，不得用其他裝置結果替代。
 >
 > 缺少工具時先檢查版本、來源及現有設定，取得必要權限後只做最小修復並**重跑驗證**；無權限或無法連線時以 FAIL／NOT VERIFIED 記錄並給本機使用者可複製的指令，不虛構成功。
 >

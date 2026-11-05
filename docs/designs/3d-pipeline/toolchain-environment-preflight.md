@@ -6,14 +6,14 @@ Date: 2026-11-04 · Status: NOT RUN ON USER MAC · Owner workspace: ~/Documents/
 
 **Public GitHub privacy:** device results and device model names live **only** in `docs/designs/3d-pipeline/audits/`, which is excluded by `.gitignore`. Keep this file and the reusable acceptance document public, never commit per-device output. After all required checks pass, the agent records a generic model label (`Mac mini`, etc.) in the ignored local audit and local `audits/device-status.md`. Confirm `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` and `git ls-files docs/designs/3d-pipeline/audits/` before writing results.
 
-**This check is mandatory before Blender, model generation, Three.js upgrades or asset processing.** The owner states tools were previously installed; the GitHub-only authoring session cannot verify the Mac's local binaries, user-scoped MCP or Skills. Do not mark installed or connected until exact commands are run there.
+**This check is mandatory before Blender, model generation, Three.js upgrades or asset processing.** The owner states tools were previously installed; the GitHub-only authoring session cannot verify the Mac's local binaries, project-scoped Blender MCP or user-global Skills. Do not mark installed or connected until exact commands are run there.
 
 ## Scope: "global" is not the workspace path
 
 - **Work directory:** ~/Documents/Workspace/skyline-rush (run commands from here).
-- **Claude Code global/user Skills:** ~/.claude/skills/ ; **project Skills:** ./.claude/skills/. Use -g for global. Do not copy third-party skills into the repository for this task.
-- **Claude Code user-scope MCP:** user configuration, not project .mcp.json. Verify with claude mcp get/list. Use --scope user explicitly on add if necessary, not a project-only registration.
-- **Codex user-scope MCP:** ~/.codex/config.toml (Codex CLI manages this through its commands; do not overwrite or commit). Codex Skill support is separate; inspect ~/.codex/skills if installed.
+- **Claude Code Skills:** `blender-image-to-3d` lives in project `.claude/skills/`; Three.js skills remain in `~/.claude/skills/`.
+- **Claude Code Blender MCP:** project `.mcp.json`, verified with `claude mcp get blender`; remove global Blender registrations.
+- **Codex Blender MCP:** project `.codex/config.toml` under `[mcp_servers.blender]`; trusted-project settings apply. Do not overwrite unrelated settings. Remove global Blender registrations from all installed AI agents. Codex Skills remain separate.
 - **Blender addon:** in Blender user scripts/config for the detected Blender version (not workspace folder); addon enabled and addon server running are different conditions.
 - **glTF Transform:** a project dev dependency is appropriate for repeatable CI; check package.json/lockfile; a globally installed CLI alone is insufficient for reproducible builds.
 - Never print or commit API tokens, ~/.claude.json, ~/.codex/config.toml or other configs wholesale. **Any versions or machine-specific results belong only in ignored local audits, not public TODO.md**. Do not commit hostname, serial, private home paths, full MCP output or even a redacted device-specific report. `git add -f` is prohibited for audit files.
@@ -34,7 +34,7 @@ command -v codex && codex --version
 node --version
 npm --version
 npx skills list -g -a claude-code
-ls -ld ~/.claude/skills/blender-image-to-3d ~/.claude/skills/threejs-* 2>/dev/null || true
+ls -ld .claude/skills/blender-image-to-3d ~/.claude/skills/threejs-* 2>/dev/null || true
 claude mcp list
 claude mcp get blender
 codex mcp list
@@ -47,6 +47,12 @@ Interpretation: a binary path means CLI presence, **not** a healthy MCP. A Skill
 
 ## 0B. Verify Blender addon enabled and server available
 
+For the complete copyable installation, Blender Python Console server-start,
+project-scoped Claude/Codex setup, authorization and live verification sequence,
+see the macOS Blender MCP subsection in `phase0-multi-device-acceptance.md` §4.
+The add-on is shared by both clients; `setup` and `update` can change existing
+user-level state and are not required for a normal verification.
+
 First **close Blender** before changing configuration. For a non-destructive enabled-state check, find the installed executable (app path shown above or command -v blender) and run:
 
 ~~~bash
@@ -57,10 +63,10 @@ If Blender.app lives elsewhere, use the detected executable instead. "True" mean
 
 ## 0C. Repair missing components (execute only after failed check)
 
-**If global Blender game skill is missing:** (review source before executing; Node >=22.20)
+**If project Blender game skill is missing:** (review source before executing; Node >=22.20)
 
 ~~~bash
-npx skills add majidmanzarpour/blender-game-skills --skill blender-image-to-3d -g -a claude-code
+npx skills add majidmanzarpour/blender-game-skills --skill blender-image-to-3d -a claude-code
 ~~~
 
 **If global Three.js Skills missing:** review repository r186 source and install only relevant skills, excluding React-specific one; interactive selection:
@@ -69,10 +75,10 @@ npx skills add majidmanzarpour/blender-game-skills --skill blender-image-to-3d -
 npx skills add CloudAI-X/threejs-skills -g -a claude-code
 ~~~
 
-**If user-scoped Claude MCP missing:** inspect existing entries and back up configuration first, avoid duplicate project-scope server; on current Claude CLI validate command help syntax. Preferred user-scope registration:
+**If project-scoped Claude MCP is missing:** inspect existing entries and preserve unrelated configuration. Register from the project root:
 
 ~~~bash
-claude mcp add --scope user blender -- uvx mcp-for-blender
+claude mcp add --scope project blender -- uvx mcp-for-blender
 ~~~
 
 If uv is missing, install with Homebrew after approval: brew install uv. If Blender addon missing: uvx mcp-for-blender install-addon. For automatic enable/connection setup from trusted upstream: uvx mcp-for-blender setup; read prompts carefully because setup can modify user-level agent settings. If only addon disabled and Blender is closed, this headless approach writes Blender user preferences (not a safe read-only check):
@@ -81,7 +87,7 @@ If uv is missing, install with Homebrew after approval: brew install uv. If Blen
 /Applications/Blender.app/Contents/MacOS/Blender --background --python-expr "import addon_utils,bpy; addon_utils.enable('blender_mcp',default_set=True); bpy.ops.wm.save_userpref()"
 ~~~
 
-**If Codex needs Blender MCP** (optional, only if user requests): codex mcp add blender -- uvx mcp-for-blender. Confirm the config and behavior with codex mcp list; do not register a second running Blender server process.
+**Codex project MCP:** add `[mcp_servers.blender]` to project `.codex/config.toml` with `command = "uvx"` and `args = ["mcp-for-blender"]`. Check the trusted project and perform a live read-only scene query. Remove existing global Blender MCP registrations for all AI agents, without changing other servers.
 
 **If glTF Transform not in package-lock.json**: add in a later implementation phase as a pinned dev dependency (npm install -D @gltf-transform/cli); test binary and supported CLI flags against installed version. Do NOT mutate package.json during this docs-only planning phase.
 
@@ -94,9 +100,9 @@ If uv is missing, install with Homebrew after approval: brew install uv. If Blen
 | Blender app and CLI | executable, version | NOT VERIFIED | |
 | Blender addon enabled | BLENDER_MCP_ENABLED=True | NOT VERIFIED | |
 | MCP server live in Blender | read-only MCP scene query successful | NOT VERIFIED | |
-| Claude Code user-scope MCP | claude mcp get blender + scope/user | NOT VERIFIED | |
-| Optional Codex MCP | codex mcp list (if required) | NOT VERIFIED | |
-| Global blender-image-to-3d Skill | ~/.claude/skills, skills list -g, skill loaded | NOT VERIFIED | |
+| Claude Code project-scope MCP | claude mcp get blender + project scope | NOT VERIFIED | |
+| Codex project MCP | project config, codex mcp list, live scene call | NOT VERIFIED | |
+| Project blender-image-to-3d Skill | .claude/skills, new project session skill loaded | NOT VERIFIED | |
 | Global threejs Skills | ~/.claude/skills, skills list -g, r186 compatibility noted | NOT VERIFIED | |
 | glTF Transform repeatable CLI | npm ls + CLI help, lockfile recorded | NOT VERIFIED | |
 | Three.js baseline | npm ls + lockfile matches r180 source | NOT VERIFIED | |

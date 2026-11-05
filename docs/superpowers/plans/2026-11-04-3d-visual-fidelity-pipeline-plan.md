@@ -13,7 +13,7 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 
 ## Global constraints
 - This document describes future work; no item is done because the owner says a tool was installed.
-- Start in ~/Documents/Workspace/skyline-rush. Global means ~/.claude/skills and user-level MCP, **not** files in the checkout. Do not accidentally run project-scope installs. No secrets in Git or logs.
+- Start in ~/Documents/Workspace/skyline-rush. Three.js skills remain global; blender-image-to-3d is project-scoped; Blender MCP belongs only to this project for Claude and Codex. Remove global Blender MCP registrations across AI agents, preserving unrelated servers. No secrets in Git or logs.
 - First branch already exists: feature/3d-visual-fidelity-pipeline. Changes may target this existing branch only until owner explicitly directs otherwise. Do not change develop/main/sibling art/map or Roadster branch.
 - User requested planning first: write docs and TODO, but **do not upgrade dependencies or remodel game during this docs-only milestone**.
 - Keep r180 working until the r186 upgrade phase passes testing; exact target r186.1, matching type definitions and lockfile, keeping WebGLRenderer.
@@ -37,9 +37,10 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 **Produces:** toolchain matrix with PASS/FAIL/NOT VERIFIED, version evidence, connection smoke test and explicit blocked steps.
 
 - [ ] Confirm working directory, git branch/HEAD and clean or acknowledged working state; do not clobber concurrent developer work.
-- [ ] Run read-only commands for Blender executable/version, node >=22.20, npm, uvx, Claude/Codex CLI (optional Codex), npx skills list -g, ~/.claude/skills/, claude mcp get/list, codex mcp list and npm ls for three/types/glTF Transform.
+- [ ] Run read-only commands for Blender executable/version, node >=22.20, npm, uvx, Claude/Codex CLI, npx skills list -g, ~/.claude/skills/, claude mcp get/list, codex mcp list and npm ls for three/types/glTF Transform.
 - [ ] Confirm Blender addon enabled-state in Blender background preferences; then open Blender and execute **read-only live MCP scene query** from Claude Code. Mark addon/server/agent connection separately.
-- [ ] If any mandatory dependency is missing, stop the dependent subtask, review source and permissions, run only approved minimal repair commands, **rerun the same check** and record observed result. Global Skills use -g and user MCP scope; do not copy their files into repository. If remote agent cannot reach the Mac, return the exact owner-executable commands and wait for observed output; no fabricated PASS.
+- [ ] If any mandatory dependency is missing, stop the dependent subtask, review source and permissions, run only approved minimal repair commands, **rerun the same check** and record observed result. Three.js Skills use -g; install blender-image-to-3d only in the project; configure Blender MCP in project scope for Claude and Codex, and remove global Blender MCP registrations across AI agents; preserve the project skill source and license. If remote agent cannot reach the Mac, return the exact owner-executable commands and wait for observed output; no fabricated PASS.
+- [ ] Verify Claude and Codex project Blender MCP registrations and live read-only scene queries, and confirm no Blender MCP registration remains in global AI agent configurations.
 - [ ] Review third-party Skill/MCP permissions and trusted model asset licenses. Verify global skill version/API claims vs current r180; after target migration recheck r186.
 - [ ] Document per-item evidence in **local ignored** audit files, not in GitHub; check `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` and `git ls-files docs/designs/3d-pipeline/audits/` (must be empty). After successful acceptance, record only generic model such as `Mac mini` in that device's local report and local ignored device-status.md. Never commit/push private paths, hostnames, serials, raw command output or secrets. Do not use Telegram/tgsend without a configured authorized sender.
 
