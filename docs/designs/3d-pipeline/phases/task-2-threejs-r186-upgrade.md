@@ -10,12 +10,11 @@ Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.
 - [ ] RED-first: keep tests that expose r180 vs r186 incompatibility (such as expected version and API use). Observe expected failure, not a test typo.
 - [ ] Set three exactly 0.186.1, align @types/three release in devDependencies and remove hardcoded @types/three@0.180.0 dynamic installs from typecheck scripts. Update package-lock and validate clean npm ci.
 - [ ] Fix only breaking runtime APIs and image changes; preserve WebGLRenderer, HalfFloat MSAA, bloom finite-pixel guard, shader warmup and one shared Garage context. Do not casually migrate to WebGPU or TSL.
-- [ ] Run focused tests, npm run typecheck, npm test, npm run build, browser shader/black-frame/road/garage tests until green; resolve discovered failures.
-- [ ] Run make verify and full exact-HEAD quality-gate (trigger [full-regression] on feature branch as appropriate); do not declare pass if queued, skipped-required or red. Commit only validated diff.
-
-## Shared via `~/.claude` repo
-- [ ] After the bump, re-read `~/.claude/skills/threejs-*` against r186.1 and record which examples now apply; commit any note to the `~/.claude` repo, then `git pull` it on other devices.
+- [ ] Run focused tests, npm run typecheck, npm test, npm run build until green; resolve discovered failures with one shared fix, never a per-device workaround.
+- [ ] After the bump, re-read `~/.claude/skills/threejs-*` against r186.1 and record which examples now apply.
+- [ ] Commit only validated diff, then the full exact-HEAD quality-gate (trigger [full-regression] on feature branch as appropriate); do not declare pass if queued, skipped-required or red.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 - [ ] `git pull` + `npm ci`; confirm Node satisfies `>=22.12.0` on that machine.
+- [ ] Browser shader-warmup/black-frame/road/garage specs and `make verify` green on that machine.
 - [ ] Compare true WebGL screenshots, shader-program counts, draw calls, triangle counts and frame p50/p95 with that same device's Task 1 baseline. Record deviations and owner-facing material decisions (public-safe summary in repo, raw per-device numbers in `../audits/`).

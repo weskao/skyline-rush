@@ -13,7 +13,7 @@
 - 在**執行檢查的本機**收集證據，不能用別台 Mac 的結果替代，不能把「使用者說已安裝」等同 PASS。
 - 使用 **Device Alias**（如 `mac-mini`、`macbook-pro`、`windows-workstation`），不得將序號、帳號、Token、家目錄私密檔完整內容上傳。
 - **Workspace 可自行指定**。macOS 預設為 `~/Documents/Workspace/skyline-rush`，但可設定 `SKYLINE_RUSH_DIR`；不得假設每台裝置相同。
-- Global/User-scope 是相對於**該裝置的使用者帳號**，例如 `~/.claude/skills/`。Blender MCP 則只設於本專案 Claude `.mcp.json` 和 Codex `.codex/config.toml`，不設為任何 AI agent 的 global MCP。
+- 裝置層狀態是相對於**該裝置的使用者帳號**，例如 `~/.claude.json`、`~/.codex/config.toml`。Blender MCP 則只設於本專案 Claude `.mcp.json` 和 Codex `.codex/config.toml`，不設為任何 AI agent 的 global MCP。
 - 一台裝置通過，不代表另一台通過。更換 Blender、Node、CLI、Skills、MCP 設定或 Three.js 版本後，受影響的檢查須重新執行。
 - 裝置報告寫到 **僅本機保留** 的 `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md`，由 `.gitignore` 排除；相同裝置重新檢驗可追加 run ID / 日期。**不可 commit/push、不可使用 git add -f，亦不可上傳原始 logs 或憑證。** 不同裝置各自保存報告。
 - 實際驗收全部必要項通過後，在**該裝置的本機報告**寫入一般型號名稱，如 `Mac mini`、`MacBook Pro`（不是 macOS「電腦名稱」或 hostname），並更新本機忽略檔 `docs/designs/3d-pipeline/audits/device-status.md` 的通過紀錄。未驗證時只寫 `UNVERIFIED`，不捏造裝置名稱。
@@ -41,24 +41,26 @@
 - `BLOCKED`：有任何 Required FAIL / NOT VERIFIED，或需要 Blender MCP 而 live tool call 失敗；未完成的 Phase 0 TODO 不得勾選。
 - **CI 不會驗證你的 Mac**：只有該台裝置上的真實命令與 MCP 呼叫可證明本機環境。docs-only CI green/skipped 不等於 Mac PASS。
 
-## 3. 驗收矩陣（每台裝置都重新填寫）
+## 3. 驗收矩陣
 
-| ID | 必要性 | 檢查項目 | PASS 的客觀條件 |
-|---|---|---|---|
-| E01 | Required | Workspace / Git / 分支 | `pwd` 指向實際 checkout，repo remote 正確，位於指定 branch；未提交變更獲保留，已記錄 HEAD SHA |
-| E02 | Required | Node / npm | `node --version` >= 22.20.0，`npm --version` 正常；不得只依據 package.json 的 >=22.12.0 |
-| E03 | Required | Blender GUI / CLI | 能找到 Blender 可執行檔、取得版本；`--background --python-expr` 成功呼叫 bpy |
-| E04 | Required | uv / uvx / Claude CLI | `uvx --version`、`claude --version` 均成功；命令路徑可解析 |
-| E05 | Required | Blender Add-on installed + enabled | 以 Blender `bpy.context.preferences.addons` 確認 `blender_mcp` 啟用；安裝檔存在但未啟用是 FAIL |
-| E06 | Required | Blender MCP project scope | `claude mcp get blender` 顯示 project-scope 註冊；確認 executable 可執行，並核對各已安裝 AI agent 的 global Blender MCP 已移除 |
-| E07 | Required | Blender MCP **live read-only call** | 開啟 GUI Blender，透過 Claude **實際呼叫 Blender MCP tool** 列出當前 Scene 的物件名稱/類型；工具回傳而非虛構的示例文字 |
-| E08 | Required | 專案 blender-image-to-3d Skill | `.claude/skills/blender-image-to-3d/SKILL.md` 存在，並在此專案的新 Claude CLI session 可被調用／辨識；不安裝至 global |
-| E09 | Required | 全域 Three.js Skills | `~/.claude/skills/threejs-*/SKILL.md` 具備合適的 loaders/materials/performance/asset-pipeline Skill，global 可見；明確指出 r186 Skill 範例不能直接覆蓋 r180 production API |
-| E10 | Required | Three.js baseline / Types | 在指定 branch 的 `package.json`、lockfile及實際 npm 安裝版本可核對（若未 npm ci，標示依賴未安裝），不提前升級到 r186；檢查 typecheck scripts 是否仍引用 r180 |
-| E11 | Required | 公開 Repo 隱私與版控 | `.gitignore` 排除 `docs/designs/3d-pipeline/audits/`；`git check-ignore -v` 顯示正確規則，`git ls-files` 確認裝置報告未被追蹤；檢查目前受追蹤內容與新提交不含機器專屬資訊。歷史中的個人家目錄路徑不列為驗收阻擋，不因而改寫歷史；若發現憑證等機密外洩，仍依第 1A 節處理 |
-| E12 | Required | CI 狀態檢視（唯讀） | 若有 GitHub 權限，核對分支最新 exact-HEAD Actions run、SHA、結果；若尚未完成或沒有存取權，記錄 PENDING / NOT VERIFIED，不能說 Passed；不因裝置檢查而自行 Push 觸發 CI |
-| E13 | Required | glTF Transform CLI | `npm ls @gltf-transform/cli` 顯示專案 devDependency 精確固定 `4.5.1` 且 lockfile 已記錄；`npx --no-install gltf-transform --version` 輸出 4.5.1；對 Blender 匯出的測試 GLB 成功執行 `inspect` 與 `optimize --compress meshopt`。僅全域安裝不算 PASS |
-| E14 | Required | Codex project MCP/Skill | 本專案須確認 `.codex/config.toml` 註冊、`codex mcp list` 可見且實際連線；不能用 global 註冊代替 |
+**範圍：** `By device` 項目每台裝置重新檢查；`By project` 項目只做一次（repo 或 `~/.claude` 內容），其他裝置 `git pull` + `npm ci` 後沿用。兩者兼具者（`Both`）的專案檔部分做一次，裝置部分每台重做。分類見 [phases/README.md](phases/README.md)。已通過的裝置維持其狀態。
+
+| ID | 必要性 | 範圍 | 檢查項目 | PASS 的客觀條件 |
+|---|---|---|---|---|
+| E01 | Required | By device | Workspace / Git / 分支 | `pwd` 指向實際 checkout，repo remote 正確，位於指定 branch；未提交變更獲保留，已記錄 HEAD SHA |
+| E02 | Required | By device | Node / npm | `node --version` >= 22.20.0，`npm --version` 正常；不得只依據 package.json 的 >=22.12.0 |
+| E03 | Required | By device | Blender GUI / CLI | 能找到 Blender 可執行檔、取得版本；`--background --python-expr` 成功呼叫 bpy |
+| E04 | Required | By device | uv / uvx / Claude CLI | `uvx --version`、`claude --version` 均成功；命令路徑可解析 |
+| E05 | Required | By device | Blender Add-on installed + enabled | 以 Blender `bpy.context.preferences.addons` 確認 `blender_mcp` 啟用；安裝檔存在但未啟用是 FAIL |
+| E06 | Required | Both | Blender MCP project scope | `claude mcp get blender` 顯示 project-scope 註冊；確認 executable 可執行，並核對各已安裝 AI agent 的 global Blender MCP 已移除 |
+| E07 | Required | By device | Blender MCP **live read-only call** | 開啟 GUI Blender，透過 Claude **實際呼叫 Blender MCP tool** 列出當前 Scene 的物件名稱/類型；工具回傳而非虛構的示例文字 |
+| E08 | Required | By project | 專案 blender-image-to-3d Skill | `.claude/skills/blender-image-to-3d/SKILL.md` 存在，並在此專案的新 Claude CLI session 可被調用／辨識；不安裝至 global |
+| E09 | Required | By project | 全域 Three.js Skills | `~/.claude/skills/threejs-*/SKILL.md` 具備合適的 loaders/materials/performance/asset-pipeline Skill，global 可見；明確指出 r186 Skill 範例不能直接覆蓋 r180 production API |
+| E10 | Required | Both | Three.js baseline / Types | 在指定 branch 的 `package.json`、lockfile及實際 npm 安裝版本可核對（若未 npm ci，標示依賴未安裝），不提前升級到 r186；檢查 typecheck scripts 是否仍引用 r180 |
+| E11 | Required | By project | 公開 Repo 隱私與版控 | `.gitignore` 排除 `docs/designs/3d-pipeline/audits/`；`git check-ignore -v` 顯示正確規則，`git ls-files` 確認裝置報告未被追蹤；檢查目前受追蹤內容與新提交不含機器專屬資訊。歷史中的個人家目錄路徑不列為驗收阻擋，不因而改寫歷史；若發現憑證等機密外洩，仍依第 1A 節處理 |
+| E12 | Required | By project | CI 狀態檢視（唯讀） | 若有 GitHub 權限，核對分支最新 exact-HEAD Actions run、SHA、結果；若尚未完成或沒有存取權，記錄 PENDING / NOT VERIFIED，不能說 Passed；不因裝置檢查而自行 Push 觸發 CI |
+| E13 | Required | Both | glTF Transform CLI | `npm ls @gltf-transform/cli` 顯示專案 devDependency 精確固定 `4.5.1` 且 lockfile 已記錄；`npx --no-install gltf-transform --version` 輸出 4.5.1；對 Blender 匯出的測試 GLB 成功執行 `inspect` 與 `optimize --compress meshopt`。僅全域安裝不算 PASS |
+| E14 | Required | Both | Codex project MCP/Skill | 本專案須確認 `.codex/config.toml` 註冊、`codex mcp list` 可見且實際連線；不能用 global 註冊代替 |
 
 Phase 0 要求安裝並驗證 glTF Transform（E13，安裝命令見第 6 節第 5 點與 `toolchain-environment-preflight.md`）；不下載外部素材；原 E15 的來源、授權和磁碟空間檢查移至 Phase 2／Task 3，僅在實際需要外部素材時、下載或使用之前執行。KTX2 貼圖輸出所需的外部 `toktx` 不屬 Phase 0，Phase 2 選用 KTX2 時才安裝。
 
@@ -272,7 +274,7 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 >
 > **先做隱私保護：** 這是 PUBLIC GitHub repo。先用 `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` 確認整個 `audits/` 目錄已被 `.gitignore` 排除，並用 `git ls-files docs/designs/3d-pipeline/audits/` 確認未追蹤任何報告。若不成立，先修正忽略規則，且不要繼續寫含裝置資訊的報告。嚴禁 Commit/Push 裝置報告、原始 log、環境變數、憑證、序號、hostname、macOS「電腦名稱」、私有路徑或 MCP 設定。
 >
-> 依 E01–E14 在**這台本機**逐項執行檢查並保留已遮蔽證據：Blender CLI/Background Python/Add-on 是否啟用；透過 Claude Code **實際 MCP 唯讀工具呼叫**列出 Blender 場景物件；Claude Code 與 Codex 的 project-scoped Blender MCP，以及各 AI agent 無 global Blender MCP；專案的 `blender-image-to-3d` 與 `~/.claude/skills/` 中的全球 `threejs-skills` 是否真正被 Agent 辨識；Node/npm/uvx；現行 Three.js/@types；glTF Transform；Codex 在此專案為必查。確認所有 PASS 都有實際命令、版本和輸出支持，不得用其他裝置結果替代。
+> 依 E01–E14 中第 3 節標為 `By device`／`Both` 的項目，在**這台本機**逐項執行檢查並保留已遮蔽證據（`By project` 項目已完成者沿用，不重做）：Blender CLI/Background Python/Add-on 是否啟用；透過 Claude Code **實際 MCP 唯讀工具呼叫**列出 Blender 場景物件；Claude Code 與 Codex 的 project-scoped Blender MCP，以及各 AI agent 無 global Blender MCP；專案的 `blender-image-to-3d` 與 `~/.claude/skills/` 中的全球 `threejs-skills` 是否真正被 Agent 辨識；Node/npm/uvx；現行 Three.js/@types；glTF Transform；Codex 在此專案為必查。確認所有 PASS 都有實際命令、版本和輸出支持，不得用其他裝置結果替代。
 >
 > 缺少工具時先檢查版本、來源及現有設定，取得必要權限後只做最小修復並**重跑驗證**；無權限或無法連線時以 FAIL／NOT VERIFIED 記錄並給本機使用者可複製的指令，不虛構成功。
 >
