@@ -5,6 +5,7 @@ on:
     branches: [feature/garage-preview-animated-gifs]
     paths:
       - scripts/generate-garage-gifs.py
+      - tests/test_garage_gif_motion.py
       - .github/workflows/garage-animated-gifs.yml
   workflow_dispatch:
 
