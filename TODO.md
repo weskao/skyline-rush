@@ -3257,3 +3257,20 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] RED run observed before production changes: first feature-branch Actions attempts were cancelled by subsequent pushes; cannot claim a verified RED run.
 - [ ] Run `make verify`, typecheck, full browser / World Tour regression and exact-HEAD FULL GitHub Actions CI. Required for acceptance; remote work does not prove local execution.
 - [ ] Manual desktop/mobile visual review, browser GIF animation decode/performance, iOS and Android reduced-motion, GIF artwork appearance and showroom interactions. No PR, merge or deployment authorized.
+
+
+## 2026-11-05 — Garage / Preview Studio actual original-art GIF upgrade
+
+**Scope:** Only `feature/garage-preview-animated-gifs`. Supersedes the earlier three `sparkle*.gif` **overlay-only** UI implementation, not its historical record.
+
+- [x] From existing tracked 3× WebP/SVG art, generate **39 distinct GIFs** in `public/feature-assets/garage-animated/` using `scripts/generate-garage-gifs.py`: Thruster 4/4, Airflow 4/4, NITRO Trail 5/5, Launch Flare 9/9, badges/rarity 11/11, Store Concept 6/6.
+- [x] Each 12-frame GIF loops at 12.5 FPS with transparent palette index, preserves source output dimensions (288×288 VFX and 216×216 badge/store), and retains its untouched WebP/SVG in the repository. The original-asset generator job 41966520062 succeeded; `manifest.json` records source paths and actual sizes (39 GIFs, 6,719,740 bytes total).
+- [x] Replace generic `::after` sparkle animation in actual VFX cards and badge/store artwork tiles with their per-artwork GIF; remove paint-specific generic sparkle overlay without altering existing paint texture or 3D renderer.
+- [x] Add `GarageArtworkImage.vue` `animatedSrc` support: IntersectionObserver visibility gating, media-query reduced motion switching, GIF error fallback to original WebP/SVG, then existing text fallback.
+- [x] Add 39-file integrity assertions, rendering contract checks, browser tests for Garage Home and Studio, store artwork, reduced motion and GIF failures, and update previous VFX static-source browser expectations.
+- [ ] Exact latest HEAD Unit, Typecheck, Build, Browser, World Tour, cloud-save and Quality Gate: **do not mark passing** until a completed full Actions run matches the final HEAD.
+- [ ] Local `make verify` on a full checkout; GitHub connector does not provide a local runner. Record the command's exit status rather than assuming success.
+- [ ] Actual on-device visual acceptance for flame shapes/flow, genuine box-lid articulation, source-image fidelity, clipping, iOS/Android reduced motion, folded landscape/portrait, touch, 3D rotation and GPU/memory budget. Automated frame change cannot substitute for human visual approval.
+- [ ] Document separate observed RED failure and full GREEN command evidence; local synthetic-source generator smoke test is **not** a complete TDD/CI gate.
+
+No new branches, PR, deployment or merges to `develop`/`main`.
