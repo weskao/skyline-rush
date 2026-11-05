@@ -321,12 +321,22 @@ test.describe('phone upcoming preview swipe', () => {
   test('uses existing canvas drag to switch between future and playable scenes', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-upcoming-track="dune-tempest"]').click();
-    await touchSwipe(page, 320, 90, 560);
+    // Scrolling the selected upcoming card can cover y=560 on small phones.
+    // Target only the exposed WebGL canvas; clicking a card is not a preview drag.
+    const swipeY = await page.evaluate(() => {
+      const canvas = document.querySelector('#world');
+      for (let y = innerHeight - 50; y > 100; y -= 12) {
+        if ([70, 320].every(x => document.elementFromPoint(x, y) === canvas)) return y;
+      }
+      return null;
+    });
+    expect(swipeY, 'both swipe starts must hit the WebGL canvas').not.toBeNull();
+    await touchSwipe(page, 320, 90, swipeY);
     await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#start-button')).toBeDisabled();
-    await touchSwipe(page, 70, 300, 560);
+    await touchSwipe(page, 70, 300, swipeY);
     await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
-    await touchSwipe(page, 70, 300, 560);
+    await touchSwipe(page, 70, 300, swipeY);
     await expect(page.locator('[data-track="cosmic"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#upcoming-scene')).toBeHidden();
   });
