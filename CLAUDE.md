@@ -12,6 +12,11 @@ architecture, module size, artwork, tracks, touch, Garage, tutorial, release not
 branches). A rule that only matters for certain files goes there with `paths:`, not here.
 A "→ Read `docs/<file>`" line names a situation: open that file only then, follow it exactly.
 
+**No personal paths in files.** This repo is public: never write a user-specific absolute path
+(`/Users/<name>/…`, `/home/<name>/…`, `C:\Users\<name>\…`) into any committed file (code, docs,
+specs, configs, tests, logs). Use repo-relative paths, `$HOME`/`~`, or a placeholder such as
+`<repo>`.
+
 ## Workflow (every feature and bug fix)
 
 Follow `docs/regression-first-workflow.md`: trace the shared root cause; failing test (RED) →
@@ -71,3 +76,14 @@ production renderer, physics or sibling branches during a docs-only pass.
 Commit and push to the current branch. `feature/**`, `fix/**`, `refactor/**` branch from and
 merge back into `develop` (`--no-ff`); only `develop` and `hotfix/*` merge into `main`;
 `/release` back-merges `main` into `develop`. Full flow: `.claude/rules/branch-release.md`.
+
+## Track teaser artwork contract (all maps)
+
+Applies to `public/track-teasers/<track-slug>.jpg` in the home/Coming Soon/track-selection UI.
+
+- Final committed asset **must decode as an actual 568 × 205 pixel JPEG** (not merely display at that CSS size); use a consistent high-quality cinematic futuristic racing illustration style. The 3× rule for transparent UI icons does not replace this exact JPEG contract.
+- **Scene only:** never burn in track names, headings, descriptions, buttons, labels, logos, watermarks, captions, or any other text. UI copy belongs in HTML/Vue, not inside the image.
+- **Edge-to-edge scene:** no white/blank borders, padding, letterbox bars, empty canvas corners, or fragments of adjacent maps. Inspect the top/bottom rows and all four edges for seams, other map strips and unwanted overlays. Keep the intended vehicle, road and landmark visibly framed; do not crop off significant content to hide a defect.
+- For the five-track 2026-11-05 correction, **preserve the original artwork, viewpoint, colors and subject** for Monsoon Ruins, Skyfall Archipelago, Stormline Megacity and Volcanic Crown; repair only text, seams and unwanted lower strips with source-faithful reconstruction. **Only Frostbite Canyon is authorized for a full redraw** to match those maps' original cinematic illustration style.
+- Before committing, inspect each decoded JPEG at native 568 × 205 and compare against the source side by side; verify image format and dimensions with an executable check, ensure the image is readable in the real desktop/mobile track-selection UI and check that no unrelated source files changed. CI/test results and manual visual acceptance must be reported separately, never assumed.
+
