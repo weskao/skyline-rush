@@ -107,4 +107,5 @@ The external share endpoints could not be opened in this environment (cache miss
 - ../plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md
 - ../../designs/3d-pipeline/toolchain-environment-preflight.md
 - ../../designs/3d-pipeline/threejs-r180-r186-migration.md
+- ../../designs/3d-pipeline/phases/README.md (per-task files, by-project vs by-device scope)
 - https://github.com/mrdoob/three.js/wiki/Migration-Guide

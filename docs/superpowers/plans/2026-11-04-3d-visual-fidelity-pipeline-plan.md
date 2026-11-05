@@ -30,92 +30,23 @@ Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
 
 ---
 
-## Task 0 — Mandatory user-Mac toolchain audit (execute FIRST; highest priority)
+## Scope convention: by project vs by device
 
-**Files:** Reference the standalone `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` plus `docs/designs/3d-pipeline/toolchain-environment-preflight.md`; save E01–E14 audit **only locally** to `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (gitignored) and update the ignored `audits/device-status.md` with non-identifying product model **only after PASS**. Public TODO.md can reference the verification procedure but must never contain device-specific outcomes or identifiers.
-**Consumes:** Mac workspace ~/Documents/Workspace/skyline-rush, existing Claude/Codex/Blender installations.
-**Produces:** toolchain matrix with PASS/FAIL/NOT VERIFIED, version evidence, connection smoke test and explicit blocked steps.
+This repo and `~/.claude` are both git repos shared across the owner's machines. From Task 1 on, every checklist item is tagged **By project** (committed here, done once, other devices `git pull` + `npm ci`), **Shared via `~/.claude` repo** (user skills, pull elsewhere, verify loaded per device) or **By device** (`~/.claude.json`, `~/.codex/config.toml`, Blender.app/addon/prefs, `uv`, `toktx`, Node runtime, disk space, real-hardware evidence — redo on each machine, evidence only in ignored `audits/`). Full definition: ../../designs/3d-pipeline/phases/README.md
 
-- [ ] Confirm working directory, git branch/HEAD and clean or acknowledged working state; do not clobber concurrent developer work.
-- [ ] Run read-only commands for Blender executable/version, node >=22.20, npm, uvx, Claude/Codex CLI, npx skills list -g, ~/.claude/skills/, claude mcp get/list, codex mcp list and npm ls for three/types/glTF Transform. Install `@gltf-transform/cli` as an exact-pinned devDependency if missing and smoke-test inspect/optimize (E13, Required).
-- [ ] Confirm Blender addon enabled-state in Blender background preferences; then open Blender and execute **read-only live MCP scene query** from Claude Code. Mark addon/server/agent connection separately.
-- [ ] If any mandatory dependency is missing, stop the dependent subtask, review source and permissions, run only approved minimal repair commands, **rerun the same check** and record observed result. Three.js Skills use -g; install blender-image-to-3d only in the project; configure Blender MCP in project scope for Claude and Codex, and remove global Blender MCP registrations across AI agents; preserve the project skill source and license. If remote agent cannot reach the Mac, return the exact owner-executable commands and wait for observed output; no fabricated PASS.
-- [ ] Verify Claude and Codex project Blender MCP registrations and live read-only scene queries, and confirm no Blender MCP registration remains in global AI agent configurations.
-- [ ] Review third-party Skill/MCP permissions. Verify global skill version/API claims vs current r180; after target migration recheck r186.
-- [ ] Document per-item evidence in **local ignored** audit files, not in GitHub; check `git check-ignore -v docs/designs/3d-pipeline/audits/example.md` and `git ls-files docs/designs/3d-pipeline/audits/` (must be empty). After successful acceptance, record only generic model such as `Mac mini` in that device's local report and local ignored device-status.md. Never commit/push private paths, hostnames, serials, raw command output or secrets. Do not use Telegram/tgsend without a configured authorized sender.
+## Tasks (one file each; read only the task you execute)
 
-**Exit:** All mandatory items PASS, or explicit documented owner-approved optional exclusion; actual Blender MCP scene retrieval must succeed for Blender tasks. Until then, all later implementation checkboxes remain unchecked.
+| Task | Spec phase | Scope | File |
+|---|---|---|---|
+| 0 — Mandatory user-Mac toolchain audit (FIRST) | 0 | by device | ../../designs/3d-pipeline/phases/task-0-toolchain-audit.md |
+| 1 — Characterize r180 visuals; RED compatibility tests | 1 | project + device evidence | ../../designs/3d-pipeline/phases/task-1-r180-baseline.md |
+| 2 — Upgrade to Three.js r186.1 | 1 | project + `~/.claude` + device | ../../designs/3d-pipeline/phases/task-2-threejs-r186-upgrade.md |
+| 3 — GLB pipeline MVP, licensing, loader | 2 | project + device | ../../designs/3d-pipeline/phases/task-3-glb-pipeline-mvp.md |
+| 4 — Reference-led Roadster in Garage | 2 | project + device | ../../designs/3d-pipeline/phases/task-4-roadster-garage.md |
+| 5 — Coast road UV, PBR, streaming pilot | 3 | project + device evidence | ../../designs/3d-pipeline/phases/task-5-coast-pbr-road.md |
+| 6 — Five new tracks + showcase/cover | 4–5 | project + device | ../../designs/3d-pipeline/phases/task-6-new-tracks-showcase.md |
 
-## Task 1 — Characterize r180 visuals and performance; add RED compatibility tests
-
-**Files:** tests/three-version-contract.test.js (planned new); tests/shader-warmup-browser.spec.js; tests/black-frame-browser.spec.js; src/world.js read-only baseline; new evidence doc under docs/designs/3d-pipeline/.
-**Produces:** reproducible r180 acceptance baseline and real RED evidence tied to a specific compatibility assertion.
-
-- [ ] Read scoped rules and current HEAD; gather exact import API inventory and known material/lighting behavior, Game/Garage/track metrics.
-- [ ] Write a targeted failing test for requested r186 compatibility or type/version alignment; record actual observed failure before changing code.
-- [ ] Capture true WebGL screenshots and renderer metrics at same settings on Garage, Coast, Sky Spiral and World Tour; include desktop/phone and NITRO/FLY/landing.
-- [ ] Confirm existing physics/animation contract assertions and shader warmup/black-frame tests stay meaningful.
-- [ ] Commit tests and baseline documentation; no production engine change yet.
-
-## Task 2 — Upgrade to Three.js r186.1 with aligned types and stable WebGL
-
-**Files:** package.json, package-lock.json, src/world.js (only if required), targeted imports/shader files identified by audit, tests/three-version-contract.test.js, tests/shader-safety.test.js.
-**Produces:** r186.1 WebGL app matching baseline and production bundle, no stale r180 types.
-
-- [ ] Review the 180→186 official migration guide and docs/designs/3d-pipeline/threejs-r180-r186-migration.md with concrete repo import search.
-- [ ] RED-first: keep tests that expose r180 vs r186 incompatibility (such as expected version and API use). Observe expected failure, not a test typo.
-- [ ] Set three exactly 0.186.1, align @types/three release in devDependencies and remove hardcoded @types/three@0.180.0 dynamic installs from typecheck scripts. Update package-lock and validate clean npm ci.
-- [ ] Fix only breaking runtime APIs and image changes; preserve WebGLRenderer, HalfFloat MSAA, bloom finite-pixel guard, shader warmup and one shared Garage context. Do not casually migrate to WebGPU or TSL.
-- [ ] Run focused tests, npm run typecheck, npm test, npm run build, browser shader/black-frame/road/garage tests until green; resolve discovered failures.
-- [ ] Compare true WebGL screenshots, shader-program counts, draw calls, triangle counts and frame p50/p95 with r180 baseline. Record deviations and owner-facing material decisions.
-- [ ] Run make verify and full exact-HEAD quality-gate (trigger [full-regression] on feature branch as appropriate); do not declare pass if queued, skipped-required or red. Commit only validated diff.
-
-## Task 3 — GLB pipeline MVP, licensing and asset loader
-
-**Files:** scripts/assets/ (planned Blender export / glTF Transform CLI scripts); src/asset-model-loader.ts (planned), src/model-manifest.ts (planned), tests/model-asset-loader.test.js (planned), tests/model-manifest.test.js (planned), public/models/ (validated outputs only), assets-src/ (masters); src/world.js minimally for staged adapter.
-**Produces:** manifest-defined, preloaded game model with fallback, predictable decoder/asset lifetime and GitHub Pages subpath support.
-
-- [ ] If external assets are needed, verify each source, license and available disk space before downloading or using it (deferred from Phase 0 E15).
-- [ ] First write RED tests for missing/slow/invalid GLB, decoder unavailability, exact node names, duplicate request deduplication, cancellation, ownership and disposal.
-- [ ] Specify minimal manifest and async loader contracts (avoid speculative factory abstractions). Define: asset ID → URL, source SHA/license, node names, LOD references, fallback type, material set and asset provenance.
-- [ ] Implement a single GLTFLoader backend, opt-in KTX2Loader/MeshoptDecoder/DRACOLoader only if encoded assets require them, using import.meta.env.BASE_URL paths.
-- [ ] Author reproducible Blender .blend + Python source, glTF Transform inspect/optimize step with triangle, texture and animation/names integrity checks. Keep source material legally auditable.
-- [ ] Add camera-switch, quality-change, track-switch and context-loss lifecycle tests; prewarm all material/shader variants before mid-race use.
-- [ ] Observe GREEN, test real WebGL Garage load/fallback and browser console, run focused and full checks; report actual packaged asset sizes and metrics.
-
-## Task 4 — Reference-led high-fidelity Roadster in Garage
-
-**Files:** assets-src/roadster2/ (planned), public/models/cars/ (planned), src/car-model.js, src/garage-stage.ts, src/roadster-fidelity.js for procedural fallback only, tests/roadster-fidelity.test.js, tests/garage-*-browser.spec.js.
-**Produces:** real GLB-based hero car demonstrably matching approved front/side/rear reference while maintaining game controls and vehicle attachments.
-
-- [ ] Read all docs/designs/roadster2-reference/ photographs, Garage visual contract and active roadster feature branch; reconcile its completed diff before editing any shared car file. Do not overwrite branch work.
-- [ ] RED tests for named four independent wheels, active wing, exact original VFX ports/collision frame/paint targets, fallback and camera visibility.
-- [ ] Use installed Blender MCP and image-to-3D Skill (proven available in Task 0) to sculpt car in visually gated iterations. Export front, side, rear and rear-quarter same-camera comparisons; inspect body panel smoothness, lamp shapes, five-blade wheels and quad dark recessed thrusters.
-- [ ] Rig/animate only visual pivots, use PBR and HDRI with explicit environment license, run GLB validation/LOD optimization. Test paint selection without affecting ownership.
-- [ ] Deploy only after all RED→GREEN and Garage/race/flight/BOOST/NITRO screenshots, performance and exact-HEAD CI evidence; obtain owner visual sign-off for fidelity.
-
-## Task 5 — Coast road UV, PBR and streaming pilot
-
-**Files:** src/geometry.ts (roadRibbon UV), src/world-tour-scene.js, src/track-palettes.ts, src/coast-visuals.ts, src/world-tour-scenery.js, tests/phase4-road-materials.test.js and new UV seam test.
-**Produces:** PBR asphalt/shoulder/track objects at Coast with unaffected track frame, lanes and collisions.
-
-- [ ] RED tests for UV continuity across moving road ribbon/chunks, correct tangent-space orientation, road widths, world-frame transforms, track switch and collision/vehicle-road clearance parity.
-- [ ] Add UV0 and safe road PBR texture assignment with per-quality resources; static terrain props may use an authored GLB with existing deterministic 120 m chunk placement/InstancedMesh.
-- [ ] Validate asset stream eviction and no duplicate draw calls; preserve Low visuals and proper renderer ownership.
-- [ ] Real WebGL screenshots/draw and p50/p95 tables across Coast rain/day and other ten tracks; verify drift, flight/landing and ramps.
-- [ ] Full verification and exact-HEAD CI, no silent map topology changes.
-
-## Task 6 — Five new tracks adopt shared pipeline and optional showcase/cover
-
-**Files:** shared loader/manifests established in Task 3; branch-specific scene modules only with owner approval, per-track visual assets, existing showcase modules and tests.
-**Produces:** reusable, measured visual assets for Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown and Stormline Megacity.
-
-- [ ] Wait until shared pipeline is validated and integrated according to repository branch policy. Don't change sibling map branches from this working branch.
-- [ ] Define each map's unique foreground landmarks, reference images, licensed texture sets, world-space scale and deterministic chunk/LOD budgets with its owner.
-- [ ] Use reference-led Blender models only for major nearby features and hero landmarks; farther scenery retains low-cost procedural geometry and correct occlusion.
-- [ ] Add per-map parity tests for course frames, checkpoints, collisions, flying shortcuts and no missing GLB or pipeline stall. Test weather/fog and game speed separately.
-- [ ] Build actual running-game captures for launch/cover assets. Generated concept images can remain mood-board only; label separate from WebGL proof.
-- [ ] Measure tier-by-tier across Mac/phone and exact-HEAD CI, review source asset licensing and owner art approval.
+**Exit (Task 0):** All mandatory items PASS per device, or explicit documented owner-approved optional exclusion; actual Blender MCP scene retrieval must succeed for Blender tasks. Until then, all later implementation checkboxes remain unchecked.
 
 ## Final review and handoff
 - [ ] Compare every section of design spec, migration doc and toolchain preflight against this plan; verify task coverage.
