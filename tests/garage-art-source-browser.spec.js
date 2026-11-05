@@ -98,13 +98,15 @@ test('Store 3x artwork appears directly in Garage and opens its 6-image interact
 });
 
 test('Store preview summary has bilingual art fallback without granting an Economy entitlement', async ({ page }) => {
-  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.webp', route => route.abort());
+  // Both the primary 3x PNG and its WebP fallback fail, so only the text fallback remains.
+  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.{png,webp}', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   const entry = page.locator('#garage-art-source-garage-store-readiness summary');
   await expect(entry.getByRole('img',{name:'Collection art'})).toBeVisible();
   await entry.click();
-  await expect(page.locator('[data-wave3-asset]')).toHaveCount(6);
+  // Rewards' gallery is mounted beside Store's; count only the Store cards.
+  await expect(page.locator('#garage-art-source-garage-store-readiness [data-wave3-asset]')).toHaveCount(6);
   await page.locator('#garage-close').click();
   // No balance, ownership or checkout is unlocked by displaying source artwork.
   await expect(page.locator('#garage-screen')).not.toBeVisible();
@@ -129,7 +131,8 @@ test('Rewards/Missions source artwork is available at native 3x resolution with 
   const source = page.locator('#garage-art-source-garage-rewards-and-missions');
   await expect(source).toBeVisible();
   await source.locator('summary').click();
-  const thumbnails = source.locator('img');
+  // The summary entry icon is not a catalog thumbnail; count the grid only.
+  const thumbnails = source.locator('.garage-source-grid img');
   await expect(thumbnails).toHaveCount(8);
   const first = thumbnails.first();
   await first.scrollIntoViewIfNeeded();

@@ -48,7 +48,8 @@ onUnmounted(() => stopListening?.());
       <span data-wave3-entry-icon class="garage-source-entry-icon"
         :class="{ 'garage-source-entry-icon--store': category === 'garage-store-readiness' }">
         <GarageArtworkImage v-if="category === 'garage-store-readiness'"
-          :src="legacyStoreImage('store-collection')" :size="72" image-id="store-collection-summary"
+          :src="image('store-collection')" :fallback-src="legacyStoreImage('store-collection')"
+          :size="72" image-id="store-collection-summary"
           :alt="locale === 'zh-TW' ? '商店收藏概念圖示' : 'Store collection concept artwork'"
           :fallback-text="locale === 'zh-TW' ? '收藏圖示' : 'Collection art'" loading="eager" />
         <GarageArtworkImage v-else :src="image('mission-race')"
