@@ -78,16 +78,16 @@ npx skills add CloudAI-X/threejs-skills -g -a claude-code
 **If project-scoped Claude MCP is missing:** inspect existing entries and preserve unrelated configuration. Register from the project root:
 
 ~~~bash
-claude mcp add --scope project blender -- uvx mcp-for-blender
+claude mcp add --scope project blender -- uvx mcp-for-blender@2.2.7
 ~~~
 
-If uv is missing, install with Homebrew after approval: brew install uv. If Blender addon missing: uvx mcp-for-blender install-addon. For automatic enable/connection setup from trusted upstream: uvx mcp-for-blender setup; read prompts carefully because setup can modify user-level agent settings. If only addon disabled and Blender is closed, this headless approach writes Blender user preferences (not a safe read-only check):
+If uv is missing, install with Homebrew after approval: brew install uv. If Blender addon missing: uvx mcp-for-blender@2.2.7 install-addon. For automatic enable/connection setup from trusted upstream: uvx mcp-for-blender@2.2.7 setup; read prompts carefully because setup can modify user-level agent settings. If only addon disabled and Blender is closed, this headless approach writes Blender user preferences (not a safe read-only check):
 
 ~~~bash
 /Applications/Blender.app/Contents/MacOS/Blender --background --python-expr "import addon_utils,bpy; addon_utils.enable('blender_mcp',default_set=True); bpy.ops.wm.save_userpref()"
 ~~~
 
-**Codex project MCP:** add `[mcp_servers.blender]` to project `.codex/config.toml` with `command = "uvx"` and `args = ["mcp-for-blender"]`. Check the trusted project and perform a live read-only scene query. Remove existing global Blender MCP registrations for all AI agents, without changing other servers.
+**Codex project MCP:** add `[mcp_servers.blender]` to project `.codex/config.toml` with `command = "uvx"` and `args = ["mcp-for-blender@2.2.7"]`. Check the trusted project and perform a live read-only scene query. Remove existing global Blender MCP registrations for all AI agents, without changing other servers.
 
 **If glTF Transform not in package-lock.json**: add in a later implementation phase as a pinned dev dependency (npm install -D @gltf-transform/cli); test binary and supported CLI flags against installed version. Do NOT mutate package.json during this docs-only planning phase.
 

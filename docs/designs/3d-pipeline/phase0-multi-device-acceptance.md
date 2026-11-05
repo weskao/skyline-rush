@@ -118,19 +118,21 @@ df -h .
 
 以下在本專案執行；Blender add-on 由 Claude Code 與 Codex 共用，不須安裝兩次。這些步驟會修改 Blender 使用者外掛或偏好設定；先確認版本及現有安裝，已安裝且正常時不必重新安裝。技能仍依 E08／E09 的各自範圍安裝。
 
+**固定版本：** Blender MCP Server 與 add-on 一律使用 `mcp-for-blender@2.2.7`（`.mcp.json` 與 `.codex/config.toml` 已固定），不使用未固定版本或 `@latest`。
+
 1. 在 Terminal 檢查工具及外掛位置：
 
    ```sh
    cd "${SKYLINE_RUSH_DIR:-$HOME/Documents/Workspace/skyline-rush}" || exit 1
    command -v uvx
    uvx --version
-   uvx mcp-for-blender addon-paths
+   uvx mcp-for-blender@2.2.7 addon-paths
    ```
 
    `addon-paths` 只列出候選位置，不能證明已啟用。需要安裝或重新安裝時才執行：
 
    ```sh
-   uvx mcp-for-blender install-addon
+   uvx mcp-for-blender@2.2.7 install-addon
    ```
 
    外掛更新後，先儲存 Blender 尚未儲存的工作，再重新啟動 Blender，以確保載入新版本。
@@ -165,14 +167,14 @@ df -h .
 4. Claude 專案註冊缺少時，從專案根目錄執行：
 
    ```sh
-   claude mcp add --scope project blender -- uvx mcp-for-blender
+   claude mcp add --scope project blender -- uvx mcp-for-blender@2.2.7
    ```
 
-   Codex 的專案設定是 `.codex/config.toml` 中的 `[mcp_servers.blender]`，其 `command = "uvx"`、`args = ["mcp-for-blender"]`；保留其他設定。不要執行會建立全域註冊的 `codex mcp add blender`。重新開啟 Claude Code 與 Codex session；在 Claude 輸入 `/mcp`，若出現專案信任或授權提示，由使用者確認。
+   Codex 的專案設定是 `.codex/config.toml` 中的 `[mcp_servers.blender]`，其 `command = "uvx"`、`args = ["mcp-for-blender@2.2.7"]`；保留其他設定。不要執行會建立全域註冊的 `codex mcp add blender`。重新開啟 Claude Code 與 Codex session；在 Claude 輸入 `/mcp`，若出現專案信任或授權提示，由使用者確認。
 
 5. 分別在新的 Claude Code 與 Codex session 要求 Blender MCP **唯讀列出場景物件名稱與類型**，核對實際工具呼叫與回傳。Claude 成功才算 E07 PASS；Codex 的專案註冊及成功連線才算 E14 PASS。`claude mcp list`、埠監聽或 add-on 啟用均不能代替 live call。
 
-`uvx mcp-for-blender setup` 會更動 MCP client 設定；`uvx mcp-for-blender@latest update` 會更新 Server 與 add-on。兩者均不是一般驗證必要步驟，執行前須檢查影響並維持本專案限定的 MCP 範圍；更新後重啟並重跑受影響的驗收。
+`uvx mcp-for-blender@2.2.7 setup` 會更動 MCP client 設定；`uvx mcp-for-blender@latest update` 會更新 Server 與 add-on。兩者均不是一般驗證必要步驟，執行前須檢查影響並維持本專案限定的 MCP 範圍；更新後重啟並重跑受影響的驗收。升級版本時，須同步修改 `.mcp.json`、`.codex/config.toml` 與本文件中的 `2.2.7`。
 
 ## 5. Windows / PowerShell 7 可重複檢查
 
@@ -212,7 +214,7 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 
 1. 先記錄錯誤指令、退出碼和清理敏感資料後的 stderr，再修復；所有原本存在的設定先備份。不能把任何 FAIL 改寫成未經驗證的 PASS。
 2. **Skills（Blender 專案、Three.js 全域）**：確認 Node >=22.20；缺少時由使用者同意後執行 `npx skills add majidmanzarpour/blender-game-skills --skill blender-image-to-3d -a claude-code` 或 `npx skills add CloudAI-X/threejs-skills -g -a claude-code`。選擇所需 skills，不必安裝 React-specific 部分。
-3. **Blender MCP（僅專案）**：以 `claude mcp add --scope project blender -- uvx mcp-for-blender` 設定 Claude；在專案 `.codex/config.toml` 的 `[mcp_servers.blender]` 設定相同命令。盤點並移除各 AI agent 的 global Blender MCP 註冊，保留其他 MCP；重新啟動 session 後驗證兩者的唯讀 live scene call。缺少 uvx 時才考慮安裝 uv。
+3. **Blender MCP（僅專案）**：以 `claude mcp add --scope project blender -- uvx mcp-for-blender@2.2.7` 設定 Claude；在專案 `.codex/config.toml` 的 `[mcp_servers.blender]` 設定相同命令。盤點並移除各 AI agent 的 global Blender MCP 註冊，保留其他 MCP；重新啟動 session 後驗證兩者的唯讀 live scene call。缺少 uvx 時才考慮安裝 uv。
 4. **Blender Add-on**：依第 4 節的安裝、GUI 啟動與驗證流程操作。或在 Blender 完全關閉後，以下受控方式啟用 add-on（**會寫入使用者 Blender preferences**，不會啟動 GUI Server）：
    ```bash
    "$BLENDER_BIN" --background --python-expr "import addon_utils,bpy; addon_utils.enable('blender_mcp',default_set=True); bpy.ops.wm.save_userpref()"
