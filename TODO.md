@@ -1,5 +1,32 @@
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
 
+## 2026-11-06 — Wave 3 integration completion (`feature/wave3-garage-integration-20261105`)
+
+Preflight SHAs (2026-11-06): develop `ca592105` → integrated `17c94d74`; Economy `6f0b662e`, Store `51a90571`,
+VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero tree change).
+
+- [x] Exact-HEAD CI `bf548a35` (run 42047600915) failures root-caused: Store merge `c76b1e71` kept Economy's WebP
+  summary icon vs Store's PNG spec; Economy spec counted `[data-wave3-asset]` page-wide (14 ≠ 6); Rewards spec counted
+  the summary icon as a thumbnail (9 ≠ 8). RED reproduced locally (5 failures) → GREEN `22717299`; stress
+  `CI=1 --repeat-each=8 --retries=0` 160/160.
+- [x] `badge-limited@3x.png`: detached 5×5 neighbouring-sprite fragment removed and art re-centred losslessly (bounds
+  19/18); guard `tests/garage-vfx-badge-png.test.js` RED→GREEN `c0de1be9`. Archive WebP fallback kept byte-identical.
+  Equipped/Favorite badges pass the audit unchanged (not redrawn; no image generation used).
+- [x] Mission center reads `WAVE3_PREVIEW_CATALOG` instead of a second copy of the 8 ids/names (`f4b379c9`).
+- [x] Test races fixed (product unchanged): eleven-badges `naturalWidth` before decode; podium trophy measured during
+  `reward-podium-reveal` (`5fff5b91`); pose row measured during `history-in` slide (RED via CDP playbackRate 0.05,
+  `811f06e0`). Each stress 24/24 or better under CI timing.
+- [x] Local gate on final code: typecheck PASS (non-nested copy; nested worktree resolves the parent `node_modules`),
+  unit 1617/0, browser 995 pass + the 4 race fixes above, World Tour 328/0, `npm run test:cloud` 15+3 PASS, build PASS.
+- [x] Images: every Wave 3 Garage image loads under the Pages base `/skyline-rush/` (desktop + 390×844, 0 × 4xx,
+  0 text fallbacks); en/zh-TW screenshots reviewed at 1440×900, 390×844, 844×390.
+- [ ] Exact-HEAD full CI for the final commit — see the completion report; CI typecheck once failed on an npm partial
+  publish (`playwright@1.65.0` without `playwright-core@1.65.0`) because `typecheck:ts` installs with
+  `--package-lock=false`.
+- [ ] Lint: no linter is configured in this repo (no script, config or CI step); not run.
+- [ ] Real-device phone hardware check; mission/trophy duplicate surfaces (Mission center + concept gallery) awaiting
+  product decision; real purchases/payouts/grants remain BLOCKED by policy.
+
 
 ## 2026-11-06 — Wave 3 Go backend (DEFERRED; preserve existing game and anti-cheat boundary)
 
