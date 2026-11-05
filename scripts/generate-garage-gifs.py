@@ -140,7 +140,15 @@ def animate_airflow(path, name, step):
                               f'stroke-dashoffset="{-progress:.2f}" '
                               f'opacity="{(0.18 + 0.21 * intensity) * (1 - math.cos(2*math.pi*step/FRAMES))/2:.3f}"/>')
         flow.append(overlay)
-    modified = source[:match.end(2)] + ''.join(flow) + source[match.end(2):]
+    # The source car is translucent. Clip animated streaks OUT of its entire
+    # silhouette, otherwise stream highlights show through and tint the body.
+    mask = ('<defs><clipPath id="garage-stream-vehicle-occlusion">'
+            '<path d="M0 0 H288 V150 H0 Z M0 226 H288 V288 H0 Z '
+            'M0 150 H48 V226 H0 Z M253 150 H288 V226 H253 Z"/>'
+            '</clipPath></defs>')
+    animated_streams = (mask + '<g clip-path="url(#garage-stream-vehicle-occlusion)">'
+                        + ''.join(flow) + '</g>')
+    modified = source[:match.end(2)] + animated_streams + source[match.end(2):]
     return svg_to_image(modified)
 
 
