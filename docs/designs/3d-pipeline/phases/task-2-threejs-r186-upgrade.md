@@ -10,7 +10,7 @@ Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.
 - [ ] RED-first: keep tests that expose r180 vs r186 incompatibility (such as expected version and API use). Observe expected failure, not a test typo.
 - [ ] Set three exactly 0.186.1, align @types/three release in devDependencies and remove hardcoded @types/three@0.180.0 dynamic installs from typecheck scripts. Update package-lock and validate clean npm ci.
 - [ ] Fix only breaking runtime APIs and image changes; preserve WebGLRenderer, HalfFloat MSAA, bloom finite-pixel guard, shader warmup and one shared Garage context. Do not casually migrate to WebGPU or TSL.
-- [ ] Run focused tests, npm run typecheck, npm test, npm run build until green; resolve discovered failures with one shared fix, never a per-device workaround.
+- [ ] Run focused tests, npm run typecheck, npm test, npm run build until green; resolve discovered failures with one shared fix, never a per-device workaround. Run `python3 scripts/three-pipeline/phase1_project_check.py` (P0 rebase pull, P1 `npm ci`, P2 contract test, P3 typecheck, P4 `npm test`, P5 build; `--steps P2,P3` for a subset). AI agents may execute it directly without asking: it never commits or pushes, and stops at the first FAIL.
 - [ ] After the bump, re-read `~/.claude/skills/threejs-*` against r186.1 and record which examples now apply.
 - [ ] Commit only validated diff, then the full exact-HEAD quality-gate (trigger [full-regression] on feature branch as appropriate); do not declare pass if queued, skipped-required or red.
 

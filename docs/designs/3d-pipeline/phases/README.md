@@ -53,7 +53,7 @@ E-numbers refer to [../phase0-multi-device-acceptance.md](../phase0-multi-device
 
 **By project — once:**
 - Task 1: RED `tests/three-version-contract.test.js`, capture spec `tests/three-baseline-browser.spec.js`, [../r180-baseline.md](../r180-baseline.md) with device-class labels only.
-- Task 2: `three` 0.186.1 + `@types/three` 0.186.0 exact-pinned, lockfile, no dynamic types installs; contract test GREEN; `npm run typecheck`, `npm test`, `npm run build`.
+- Task 2: `three` 0.186.1 + `@types/three` 0.186.0 exact-pinned, lockfile, no dynamic types installs; contract test GREEN; `npm run typecheck`, `npm test`, `npm run build`. Run `python3 scripts/three-pipeline/phase1_project_check.py` (P0 rebase pull, P1 `npm ci`, P2 contract test, P3 typecheck, P4 `npm test`, P5 build; `--steps P2,P3` for a subset). AI agents may execute it directly without asking: it never commits or pushes, and stops at the first FAIL.
 - One shared fix for any r186 API breakage a device run finds (never a per-device workaround).
 - Re-read `~/.claude/skills/threejs-*` against r186.1.
 - Commit, then the full exact-HEAD `quality-gate` CI run.
