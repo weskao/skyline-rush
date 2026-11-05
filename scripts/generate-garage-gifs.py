@@ -199,10 +199,12 @@ def color_flow(source, style, strength, step, category):
             flow0 = 0.5 + 0.5 * np.sin(17 * distance + 2.6 * (y - x))
         gain = 1 + strength * 0.26 * (flow - flow0)
         rgba[:, :, :3] = np.where(flame[:, :, None], np.clip(rgba[:, :, :3] * gain[:, :, None], 0, 255), rgba[:, :, :3])
-        # Subtle periodic tip dissipation stays within the source alpha silhouette.
-        if style != 'exhaust-cold':
-            tip = flame & (x < .15) & (y > .72)
-            rgba[:, :, 3] = np.where(tip, alpha * (1 + .06 * (np.sin(t + 9 * y) - np.sin(9 * y))), alpha)
+        # Combustion fluctuates at the exhaust edges. Keep the nozzle and
+        # its metal ring fixed; move the source flame's existing translucent edge.
+        tip = flame & (x < .35) & (y > .56)
+        flicker = (np.sin(14 * distance - t + 4 * (y - x)) -
+                   np.sin(14 * distance + 4 * (y - x)))
+        rgba[:, :, 3] = np.where(tip, alpha * (1 + .19 * strength * flicker), alpha)
     elif category == 'nitro-trail':
         # Existing tail follows a lower-left to upper-right diagonal.
         longitudinal = (x + (1 - y)) * .5
@@ -241,6 +243,11 @@ def color_flow(source, style, strength, step, category):
         core = radius > .13
         active = (alpha > 15) & core & (light > 80)
         rgba[:, :, :3] = np.where(active[:, :, None], np.clip(rgba[:, :, :3] * gain[:, :, None], 0, 255), rgba[:, :, :3])
+        # Shockwave rays flicker through the original flare silhouette;
+        # core/center remains stable and no new pixels appear outside it.
+        rim = active & (radius > .25)
+        ripple = wave - baseline
+        rgba[:, :, 3] = np.where(rim, alpha * (1 + .20 * strength * ripple), alpha)
     if not np.array_equal(rgba[:, :, 3].astype(np.uint8)[original_alpha < 1], original_alpha.astype(np.uint8)[original_alpha < 1]):
         raise AssertionError('energy motion added pixels outside original alpha')
     return Image.fromarray(np.clip(rgba, 0, 255).astype('uint8'), 'RGBA')
@@ -280,8 +287,8 @@ def polygon_mask(size, points, blur=0):
     return mask.filter(ImageFilter.GaussianBlur(blur)) if blur else mask
 
 
-def subtle_part_motion(source, mask, step, dx=0, dy=0):
-    """Reposition only a separated component, keeping the rest source-native."""
+def subtle_part_motion(source, mask, step, dx=0, dy=0, angle=0, pivot=(.5, .5)):
+    """Pivot only a separated component, keeping the whole icon anchored."""
     if step == 0:
         return source.copy()
     part = source.copy()
@@ -289,6 +296,9 @@ def subtle_part_motion(source, mask, step, dx=0, dy=0):
     body = source.copy()
     body.putalpha(Image.fromarray((np.asarray(source.getchannel('A'), dtype=np.uint16) *
                                    (255 - np.asarray(mask, dtype=np.uint16)) // 255).astype('uint8')))
+    if angle:
+        part = part.rotate(angle, resample=Image.Resampling.BICUBIC,
+                           center=(source.width * pivot[0], source.height * pivot[1]))
     moved = Image.new('RGBA', source.size)
     moved.paste(part, (int(dx), int(dy)))
     return Image.alpha_composite(body, moved)
@@ -303,12 +313,16 @@ def animate_store(source, style, strength, step):
     if style == 'hinged-crate':
         # Original gold/silver chest has a distinct beveled top. Lift ONLY that lid.
         lid = polygon_mask(source.size, [(0.29,.35),(.52,.25),(.83,.33),(.91,.48),(.61,.58),(.30,.50)], 0.75)
-        gap = round(6 * openness * strength)
-        return subtle_part_motion(source, lid, step, dy=-gap)
+        gap = round(8 * openness * strength)
+        # The rear-right pivot is the box's actual hinge, not the card center.
+        return subtle_part_motion(source, lid, step, dy=-gap,
+                                  angle=-13 * openness * strength, pivot=(.76, .53))
     if style == 'ribbon-bow':
         # Actual satin loops above the purple gift move independently of its box.
         bow = polygon_mask(source.size, [(.33,.18),(.65,.16),(.80,.35),(.68,.49),(.45,.45),(.28,.34)], .6)
-        return subtle_part_motion(source, bow, step, dx=round(2 * math.sin(t)), dy=round(-2.4 * openness))
+        return subtle_part_motion(source, bow, step, dx=round(2 * math.sin(t)),
+                                  dy=round(-2.4 * openness), angle=2.8 * math.sin(t),
+                                  pivot=(.50, .43))
     if style == 'collection-fan':
         # Lift just the upper collectible card, not the UI tile.
         card = polygon_mask(source.size, [(.35,.17),(.74,.19),(.80,.48),(.49,.60),(.31,.44)], .5)
