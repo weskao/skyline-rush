@@ -85,8 +85,10 @@ class GarageAnimationTests(unittest.TestCase):
             with self.subTest(name=name):
                 original = np.asarray(garage.load(path))
                 moving = np.asarray(garage.animate(garage.load(path), category, name, 8, path))
-                # Source SVG's vehicle covers this lower image region.
-                np.testing.assert_array_equal(original[215:270], moving[215:270])
+                # Sample inside the opaque car body. The Vortex trail passes BELOW
+                # the vehicle too, so comparing the entire lower half is invalid.
+                np.testing.assert_array_equal(original[192:203, 110:170],
+                                              moving[192:203, 110:170])
                 self.assertGreater(np.count_nonzero(original != moving), 5)
 
 
