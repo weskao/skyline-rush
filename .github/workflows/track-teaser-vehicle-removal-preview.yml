@@ -34,7 +34,7 @@ jobs:
           # No crop / camera rotation / global AI redraw is applied.
           masks={
             "skyfall-archipelago": [
-              [(156,135),(181,125),(216,128),(257,142),(276,166),(262,181),(221,187),(188,173),(146,177)],
+              [(149,133),(177,115),(194,107),(226,105),(252,118),(270,137),(279,168),(260,190),(213,188),(179,183),(142,176)],
               [(170,168),(194,159),(223,174),(205,205),(129,205)],
               [(220,169),(243,154),(263,169),(258,205),(197,205)]
             ],
@@ -50,7 +50,9 @@ jobs:
             ],
             "frostbite-canyon": [
               [(382,126),(409,111),(447,113),(481,123),(506,139),(519,168),(507,185),(474,184),(435,169),(386,169),(367,151)],
-              [(448,160),(483,155),(524,177),(552,205),(446,205)]
+              [(448,160),(483,155),(524,177),(552,205),(446,205)],
+              [(475,115),(503,111),(514,119),(515,136),(472,142)],
+              [(369,154),(389,154),(392,205),(370,205)]
             ]
           }
           for name,polygons in masks.items():
@@ -69,7 +71,7 @@ jobs:
               if name=="volcanic-crown":
                   # Top-right accidental dark bar, not a landscape feature.
                   top=np.zeros_like(mask)
-                  top[0:8,518:568]=255
+                  top[0:8,446:568]=255
                   restored=cv2.inpaint(restored,top,3,cv2.INPAINT_TELEA)
                   mask=np.maximum(mask,top)
               Image.fromarray(cv2.cvtColor(restored,cv2.COLOR_BGR2RGB)).save(output/f"{name}.jpg",quality=94,optimize=True)
