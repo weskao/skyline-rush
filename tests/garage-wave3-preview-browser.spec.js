@@ -56,13 +56,18 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
       const metrics = await tile.evaluate(async button => {
         const image = button.querySelector('img');
         await image.decode();
+        // The displayed GIF is deliberately palette-limited. Audit original
+        // transparent WebP for source fidelity and the GIF for playback/layout.
+        const original = new Image();
+        original.src = image.dataset.staticSrc;
+        await original.decode();
         const frame = button.querySelector('.garage-badge-art-frame');
         const caption = button.querySelector('figcaption');
         const canvas = document.createElement('canvas');
-        canvas.width = image.naturalWidth;
-        canvas.height = image.naturalHeight;
+        canvas.width = original.naturalWidth;
+        canvas.height = original.naturalHeight;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(image, 0, 0);
+        ctx.drawImage(original, 0, 0);
         const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         let left=canvas.width, top=canvas.height, right=-1, bottom=-1;
         for (let y=0; y<canvas.height; y++) for (let x=0; x<canvas.width; x++) {
@@ -81,12 +86,17 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
           palette.add(`${r >> 4}-${g >> 4}-${blue >> 4}`);
         }
         const a=image.getBoundingClientRect(), b=frame.getBoundingClientRect(), c=caption.getBoundingClientRect();
-        return {type:image.currentSrc, size:[canvas.width,canvas.height], bounds:[left,top,right,bottom],
+        return {type:image.currentSrc, original:original.currentSrc,
+          animated:image.dataset.animationActive, nativeGif:[image.naturalWidth,image.naturalHeight],
+          size:[canvas.width,canvas.height], bounds:[left,top,right,bottom],
           display:[a.width,a.height], imageInside:a.left>=b.left&&a.right<=b.right&&a.top>=b.top&&a.bottom<=b.bottom,
           captionBelow:c.top>=b.bottom+4, frameInside:b.left>=button.getBoundingClientRect().left&&b.right<=button.getBoundingClientRect().right,
           vividFraction: vivid / Math.max(visible, 1), paletteBins: palette.size};
       });
-      expect(metrics.type).toMatch(/@3x\.webp$/);
+      expect(metrics.type).toMatch(/garage-animated\/store-[a-z]+@3x\.gif$/);
+      expect(metrics.animated).toBe('true');
+      expect(metrics.original).toMatch(/@3x\.webp$/);
+      expect(metrics.nativeGif).toEqual([216,216]);
       expect(metrics.size).toEqual([216,216]);
       expect(metrics.display).toEqual([72,72]);
       expect(metrics.bounds[0]).toBeGreaterThanOrEqual(20);
