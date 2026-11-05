@@ -30,5 +30,5 @@ test('Garage and Preview Studio use looping 3x GIF layers without replacing nati
     assert.match(source(file), /prefers-reduced-motion: reduce/, file);
   }
   assert.match(source('GaragePanel.vue'), /id="garage-preview"/, 'interactive 3D remains');
-  assert.match(source('GaragePaintPreview.vue'), /@3x\\.webp/, 'native 3x original remains underneath');
+  assert.ok(source('GaragePaintPreview.vue').includes('@3x.webp'), 'native 3x original remains underneath');
 });
