@@ -181,6 +181,8 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     const colors = [];
     for (const tile of await tiles.all()) {
       await tile.scrollIntoViewIfNeeded();
+      // The badge is loading="lazy" with async decode: right after the scroll naturalWidth is still 0 (browser-test-stability.md).
+      await expect.poll(() => tile.locator('img').evaluate(img => [img.naturalWidth, img.naturalHeight]), { message: 'badge art decoded at 3x' }).toEqual([216, 216]);
       const info = await tile.evaluate(figure => {
         const img = figure.querySelector('img');
         const frame = figure.querySelector('.garage-badge-art-frame');
