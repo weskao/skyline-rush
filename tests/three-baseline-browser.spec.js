@@ -42,7 +42,11 @@ test(`${LABEL} ${VIEW}: renderer baseline across Garage and all ten tracks`, asy
   await page.waitForTimeout(1500); // idle-camera settle
   await shot('garage', page.locator('#garage-preview #world'));
   const preview = page.locator('#garage-preview');
-  rows.push({ scenario: 'garage', drawCalls: +await preview.getAttribute('data-draw-calls'), triangles: +await preview.getAttribute('data-triangles'), ...await stats() });
+  const previewStats = await preview.evaluate(node => ({ drawCalls: +node.dataset.drawCalls, triangles: +node.dataset.triangles }));
+  expect(previewStats.drawCalls).toBeGreaterThan(0);
+  expect(previewStats.triangles).toBeGreaterThan(0);
+  rows.push({ scenario: 'garage', ...await stats(), ...previewStats });
+  expect(rows[0]).toMatchObject(previewStats);
 
   for (const track of TRACKS) {
     await open();
@@ -75,5 +79,25 @@ test(`${LABEL} ${VIEW}: renderer baseline across Garage and all ten tracks`, asy
   console.table(rows);
   const three = JSON.parse(fs.readFileSync('node_modules/three/package.json', 'utf8')).version;
   fs.writeFileSync(`${OUT}/metrics.json`, JSON.stringify({ label: LABEL, viewport: VIEW, seconds: SECONDS, three, rows }, null, 2));
+  expect(errors).toEqual([]);
+});
+
+test(`${LABEL} ${VIEW}: Garage Studio paint and glass baseline`, async ({ gameplayPage: page, gameplayURL }) => {
+  fs.mkdirSync(OUT, { recursive: true });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  await page.goto(gameplayURL);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  const preview = page.locator('#garage-preview');
+  await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'studio');
+  for (const angle of ['front', 'side', 'rear']) {
+    await page.locator(`[data-garage-angle="${angle}"]`).click();
+    await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
+    await page.waitForTimeout(ciTimeout(700)); // settle the camera before the comparison shot
+    await page.locator('#garage-preview #world').screenshot({ path: `${OUT}/studio-${angle}.png` });
+  }
   expect(errors).toEqual([]);
 });

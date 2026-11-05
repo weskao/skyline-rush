@@ -10,7 +10,7 @@
 ## AI-assisted 3D visual fidelity pipeline / Three.js r186.1 — 2026-11-04
 
 **Branch:** `feature/3d-visual-fidelity-pipeline` (created from develop `b8ae6a19`).
-**Status:** design/planning only; local installation verification, dependency migration, new assets and game modifications **NOT DONE**.
+**Status:** r180 baseline and migration preparation underway; dependency migration, new assets and game modifications **NOT DONE**.
 **Spec:** [3D design](docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md) ·
 [Implementation plan](docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) ·
 [Phase 0 preflight](docs/designs/3d-pipeline/toolchain-environment-preflight.md) ·
@@ -21,7 +21,7 @@
 - [ ] **Phase 0 cross-device acceptance (separate .md):** On each target device, independently execute the by-device items of [E01–E14 standalone validation and AI prompt](docs/designs/3d-pipeline/phase0-multi-device-acceptance.md); by-project items are done once ([split](docs/designs/3d-pipeline/phases/README.md)). Device-specific results and evidence must stay **LOCAL ONLY** in gitignored `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (never commit/push). Once all required checks pass, store only the generic product model such as `Mac mini` in the local report and ignored `audits/device-status.md`. Keep actual commands, versions, live MCP output and READY/BLOCKED status out of public TODO.md. No device's PASS substitutes for another's; this public checkbox covers documentation, not actual verification.
 - [ ] **Phase 1:** Baseline r180 screenshots/performance/RED tests; upgrade `three` to 0.186.1 and align `@types/three`, npm lockfile, import APIs and typecheck scripts (currently hardcoded r180); keep WebGLRenderer, existing composer and shader/NaN safeguards; full regression and exact-HEAD CI.
   - **By project — done once, the result lives in git/CI and does not depend on the device:**
-    - [x] Task 1 RED contract + capture tooling (`67fc5218`): `node --test tests/three-version-contract.test.js` fails 4/4 at r180; `tests/three-baseline-browser.spec.js`; first table in [r180-baseline.md](docs/designs/3d-pipeline/r180-baseline.md).
+    - [x] Task 1 RED contract + capture tooling (`67fc5218`): `node --test tests/three-version-contract.test.js` fails 4/4 at r180; see `tests/three-baseline-browser.spec.js` and the [baseline procedure](docs/designs/3d-pipeline/r180-baseline.md). Garage preview metrics capture corrected and Studio views added; device evidence remains local.
     - [ ] Task 2 upgrade: `three` 0.186.1 + `@types/three` 0.186.0 exact-pinned, lockfile, dynamic types installs removed from `typecheck:ts`/`typecheck:vue`; contract test GREEN; `npm run typecheck`, `npm test`, `npm run build` (all deterministic from the lockfile). Run `python3 scripts/three-pipeline/phase1_project_check.py` (P0 rebase pull, P1 `npm ci`, P2 contract test, P3 typecheck, P4 `npm test`, P5 build; `--steps P2,P3` for a subset). AI agents may execute it directly without asking: it never commits or pushes, and stops at the first FAIL.
     - [ ] Fix any r186 API breakage found by a device run below (`RoomEnvironment` in `src/world.js`, `updateWorldMatrix` in `effects.js`/`aero-vfx.js`/`world-tour-batching.ts`); one shared fix, never a per-device workaround.
     - [ ] Commit, then the full exact-HEAD `quality-gate` CI run; record SHA and run ID here (no device identifiers).
