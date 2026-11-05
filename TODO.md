@@ -1,5 +1,26 @@
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
 
+
+## 2026-11-06 — Wave 3 Go backend (DEFERRED; preserve existing game and anti-cheat boundary)
+
+**Single future implementation branch:** `feature/wave3-garage-integration-20261105`. **Go backend plan/prompt:** [2026-11-06-wave3-go-backend-implementation.md](docs/superpowers/plans/2026-11-06-wave3-go-backend-implementation.md). **Status:** Documentation only; Go backend has NOT been implemented, verified, deployed or approved for real grants.
+
+- [x] Create an actionable **Go-language** backend implementation plan covering Firebase Auth, Firestore transactions/rules, Go service contracts, server-side race verification, mission progress, idempotent settlement, inventory/store boundaries, anti-cheat and TDD.
+- [ ] **Prerequisites:** Explicit future implementation authorization; verified Wave 3 frontend/CI baseline; current API/source audit; supported Go version/toolchain; Node 22+; Java 21 and Firebase emulators; dedicated non-production Firebase/GCP project and least-privilege IAM; approved architecture, budgets, privacy/data-retention policy and rollback owner. No credentials committed to this public repo.
+- [ ] **Anti-cheat prerequisite:** Threat-model the client-side race engine and decide how the Go server can *actually verify* eligible completions (server-owned sessions/challenges plus trusted deterministic replay/authoritative simulation when feasible). Auth/App Check/nonce/client telemetry or a browser signature alone are NOT anti-cheat proof; no trustworthy proof means **no redeemable or paid reward grants**.
+- [ ] **Zero regression while backend is absent/down:** Keep existing offline/local racing, tracks, controls, physics, NITRO/FLY/BOOST, tutorials, results/history, PAINTS, Garage/VFX free trials, Coming Soon Store/Rewards previews, localization, and existing local/Cloud Save behavior operational. Never make a Go request mandatory before starting or continuing a race or opening Garage.
+- [ ] **Fail-closed privileged actions:** Without verified Go authority, never create persistent achievement/reward, new paid entitlement, currency balance, purchase, or claim success. Show honest `pending/unavailable/unverified` while retaining existing playable and preview behavior.
+- [ ] Build Go authentication/authorization, versioned APIs, strict UID scoping, Firestore service IAM and server-side validation, with RED→GREEN→REFACTOR evidence.
+- [ ] Verify eligible race completions against trusted server evidence; reject forged, duplicated, replayed, cross-account, tutorial/practice/cancelled and impossible results. Document residual cheating risks; do not declare fully cheat-proof.
+- [ ] Implement durable exactly-once `(uid,completionId)` settlement and server-owned mission progress with daily/weekly UTC boundaries, replay/concurrent requests and offline/retry protection.
+- [ ] Safely integrate account-scoped inventory/entitlement reads and legacy PAINTS/Skin Session/Cloud Save migrations without granting client-forged ownership or damaging existing progress.
+- [ ] Keep real credits, wallet/payout rules, paid store/checkout, receipt fulfillment, refunds, and paid entitlement grants **BLOCKED** until explicit policy/economy/platform/backend-authority approval.
+- [ ] Test Go service down/timeout/error, authentication expiry, account A→B switching, retry/reconnect, stored-profile manipulation, Firestore emulator rules, `go test ./...`, `go test -race ./...`, `go vet ./...` and compatibility with the existing frontend.
+- [ ] Verify existing game flows **before and after** backend integration on desktop and phone (portrait/landscape, offline/online, en/zh-TW, low quality/reduced motion), `npm test`, typecheck/build, `npm run test:cloud`, `make verify`, and **exact-HEAD Full Regression CI** (not focused-only or a previous SHA). Keep rollback tested, do not weaken any quality gate.
+- [ ] Record approved release gates, Go backend commit/CI evidence, anti-cheat limits, test outcomes, and remaining policy blockers; no PR, deployment, force-push, or develop/main modification without separate authorization.
+
+---
+
 ## 2026-11-02 — Wave 3 art-source discovery and 3×→1× runtime sizing
 
 **Asset source is now in GitHub.** Before inventing new icons or assuming no source images exist, read [the shared 59-file WebP/1× CSS manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) at `feature/3x-ui-materials` (verified archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`). The staged binaries are **27 garage VFX/skin icons, 8 rewards/mission icons, 6 store icons and 18 mobile HUD/common UI images**. Physical 3× source assets are **288×288 → 96×96 CSS**, **216×216 → 72×72 CSS**, or **432×156 → 144×52 CSS**; preserve source pixel dimensions and use a 1× display box and `object-fit: contain`. Source PNGs and the original ZIPs remain in the ChatGPT File Library; Git holds optimized WebPs in `docs/designs/3x-asset-library/webp/`.
