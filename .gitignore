@@ -22,3 +22,5 @@ artifacts/*
 
 # Local per-device 3D Phase 0 audits. Public repo: NEVER commit machine-specific evidence.
 docs/designs/3d-pipeline/audits/
+
+__pycache__/
