@@ -57,11 +57,11 @@
 | E10 | Required | Three.js baseline / Types | 在指定 branch 的 `package.json`、lockfile及實際 npm 安裝版本可核對（若未 npm ci，標示依賴未安裝），不提前升級到 r186；檢查 typecheck scripts 是否仍引用 r180 |
 | E11 | Required | 公開 Repo 隱私與版控 | `.gitignore` 排除 `docs/designs/3d-pipeline/audits/`；`git check-ignore -v` 顯示正確規則，`git ls-files` 確認裝置報告未被追蹤；檢查目前受追蹤內容與新提交不含機器專屬資訊。歷史中的個人家目錄路徑不列為驗收阻擋，不因而改寫歷史；若發現憑證等機密外洩，仍依第 1A 節處理 |
 | E12 | Required | CI 狀態檢視（唯讀） | 若有 GitHub 權限，核對分支最新 exact-HEAD Actions run、SHA、結果；若尚未完成或沒有存取權，記錄 PENDING / NOT VERIFIED，不能說 Passed；不因裝置檢查而自行 Push 觸發 CI |
-| E13 | Conditional | glTF Transform CLI | 若 Phase 0 已要求資產操作：`npm ls @gltf-transform/cli` 與 CLI help/inspect 成功；否則記錄「Phase 2 才需 install」和 N/A approved，不可謊稱已安裝 |
+| E13 | Required | glTF Transform CLI | `npm ls @gltf-transform/cli` 顯示專案 devDependency 精確固定 `4.5.1` 且 lockfile 已記錄；`npx --no-install gltf-transform --version` 輸出 4.5.1；對 Blender 匯出的測試 GLB 成功執行 `inspect` 與 `optimize --compress meshopt`。僅全域安裝不算 PASS |
 | E14 | Required | Codex project MCP/Skill | 本專案須確認 `.codex/config.toml` 註冊、`codex mcp list` 可見且實際連線；不能用 global 註冊代替 |
 | E15 | Conditional | Blender 資產取得與授權 | 若需要下載/使用現成測試素材：驗證來源、license 和磁碟空間；否則 N/A approved |
 
-Phase 0 不要求下載素材或安裝資產處理工具；若本次不需資產操作，E13 和 E15 可經負責人核准標為 N/A，留到後續實作有需要時再安裝、下載及驗證授權。
+Phase 0 要求安裝並驗證 glTF Transform（E13，安裝命令見第 6 節第 5 點與 `toolchain-environment-preflight.md`）；不要求下載素材，若本次不需資產操作，E15 可經負責人核准標為 N/A，留到後續實作有需要時再下載及驗證授權。KTX2 貼圖輸出所需的外部 `toktx` 不屬 Phase 0，Phase 2 選用 KTX2 時才安裝。
 
 **重要：** E07 明確要求 **MCP 工具呼叫本身成功**。不接受只看到 `claude mcp list`、`BLENDER_MCP_ENABLED=True` 或 Blender 視窗就宣告 PASS。E08/E09 亦不能只看目錄，需確認新 session 能辨識。
 
@@ -108,7 +108,7 @@ claude mcp list
 claude mcp get blender
 codex mcp list || true
 npm ls three @types/three @gltf-transform/cli --depth=0 || true
-npx --no-install gltf-transform --help || true
+npx --no-install gltf-transform --version || true
 df -h .
 ```
 
@@ -221,7 +221,7 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
    ```bash
    "$BLENDER_BIN" --background --python-expr "import addon_utils,bpy; addon_utils.enable('blender_mcp',default_set=True); bpy.ops.wm.save_userpref()"
    ```
-5. **glTF Transform**：若未安裝、且 Phase 0 不需要實際資產工作，標記 Conditional/N/A 並於 Phase 2 處理；若本次需 smoke test，先確認是否授權更動 package/lockfile。**不得因 Phase 0 自動升級 Three.js。**
+5. **glTF Transform（E13，Required）**：`npm ls @gltf-transform/cli` 未顯示專案依賴時，於專案根目錄執行 `npm install -D --save-exact @gltf-transform/cli@4.5.1`（會更動 `package.json` 與 `package-lock.json`，須取得同意；不用全域安裝或 `latest`），再以 `npx --no-install gltf-transform --version` 與 Blender 匯出測試 GLB 的 `inspect`／`optimize --compress meshopt` 驗證。完整指令見 `toolchain-environment-preflight.md`。已在同一專案安裝過的裝置只需 `npm ci` 後重跑驗證。**不得因此升級 Three.js。**
 6. **無 Mac 控制權限**：只提供對應本機可複製指令並標示 NOT VERIFIED；不得聲稱已完成，亦不得擅用未授權 Telegram/tgsend 發送。
 
 ## 7. 每台裝置的驗收報告範本
@@ -255,7 +255,7 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 | E10 | Required | NOT VERIFIED | | | |
 | E11 | Required | NOT VERIFIED | | | |
 | E12 | Required | NOT VERIFIED | | | |
-| E13 | Conditional | NOT VERIFIED | | | |
+| E13 | Required | NOT VERIFIED | | | |
 | E14 | Required | NOT VERIFIED | | | |
 | E15 | Conditional | NOT VERIFIED | | | |
 

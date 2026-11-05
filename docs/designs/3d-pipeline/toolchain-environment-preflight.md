@@ -89,7 +89,22 @@ If uv is missing, install with Homebrew after approval: brew install uv. If Blen
 
 **Codex project MCP:** add `[mcp_servers.blender]` to project `.codex/config.toml` with `command = "uvx"` and `args = ["mcp-for-blender@2.2.7"]`. Check the trusted project and perform a live read-only scene query. Remove existing global Blender MCP registrations for all AI agents, without changing other servers.
 
-**If glTF Transform not in package-lock.json**: add in a later implementation phase as a pinned dev dependency (npm install -D @gltf-transform/cli); test binary and supported CLI flags against installed version. Do NOT mutate package.json during this docs-only planning phase.
+**If glTF Transform is not in package-lock.json** (Phase 0, Required): install it as an exact-pinned project dev dependency, then verify the binary and a smoke test. Never use a global-only install or `latest`.
+
+~~~bash
+cd "${SKYLINE_RUSH_DIR:-$HOME/Documents/Workspace/skyline-rush}" || exit 1
+npm ls @gltf-transform/cli --depth=0 2>/dev/null | grep -q '@gltf-transform/cli@' \
+  || npm install -D --save-exact @gltf-transform/cli@4.5.1
+npx --no-install gltf-transform --version   # expect 4.5.1
+# smoke test: Blender-exported cube -> inspect -> optimize (meshopt)
+T="$(mktemp -d)"
+"${BLENDER_BIN:-/Applications/Blender.app/Contents/MacOS/Blender}" --background --factory-startup \
+  --python-expr "import bpy; bpy.ops.mesh.primitive_cube_add(); bpy.ops.export_scene.gltf(filepath='$T/smoke.glb')"
+npx --no-install gltf-transform inspect "$T/smoke.glb" | head -n 8
+npx --no-install gltf-transform optimize "$T/smoke.glb" "$T/smoke-opt.glb" --compress meshopt --texture-compress false
+~~~
+
+Expect: version `4.5.1`, `inspect` prints an OVERVIEW table, `optimize` writes `smoke-opt.glb`. The install changes `package.json` and `package-lock.json` (commit them as public-safe config; the smoke files stay in the temp dir). KTX2 texture output additionally needs the external `toktx` binary (KTX-Software); install it only when Phase 2 selects KTX2 textures.
 
 ## 0D. Preflight record template
 
@@ -104,7 +119,7 @@ If uv is missing, install with Homebrew after approval: brew install uv. If Blen
 | Codex project MCP | project config, codex mcp list, live scene call | NOT VERIFIED | |
 | Project blender-image-to-3d Skill | .claude/skills, new project session skill loaded | NOT VERIFIED | |
 | Global threejs Skills | ~/.claude/skills, skills list -g, r186 compatibility noted | NOT VERIFIED | |
-| glTF Transform repeatable CLI | npm ls + CLI help, lockfile recorded | NOT VERIFIED | |
+| glTF Transform repeatable CLI (Required) | npm ls shows exact-pinned 4.5.1, `--version`, smoke inspect + optimize, lockfile recorded | NOT VERIFIED | |
 | Three.js baseline | npm ls + lockfile matches r180 source | NOT VERIFIED | |
 | License/asset sources/disk | local files, legal data, free space | NOT VERIFIED | |
 
