@@ -4,7 +4,8 @@ import { ringRow, ringTrain, pickupRun, TRAIN_LANES } from './ring-layout.ts';
 // Endless extends each themed route; finite sprint geometry and rules are unchanged.
 export const ENDLESS_CHUNK = 500;
 export const ENDLESS_COLLISIONS = 5;
-export interface EndlessState { chunk: number; milestones: number }
+// practice: the tutorial borrows the endless road only; no encounters stream in and no collision limit ends it.
+export interface EndlessState { chunk: number; milestones: number; practice?: boolean }
 interface Encounter { chunk?: number; distance: number }
 interface Traffic extends Encounter { x: number; homeX: number; speed: number; cruise: number; altitude: number; cooldown: number; color: number }
 interface Pickup extends Encounter { x: number; altitude: number; tier: string; taken?: boolean }
@@ -56,7 +57,7 @@ function retainWindow<T extends Encounter>(items: T[], first: number, last: numb
 }
 /** Streaming runs only when crossing a chunk; ordinary simulation ticks allocate nothing here. */
 export function streamEndless(race: EndlessRace): void {
-  if (!race.endless) return;
+  if (!race.endless || race.endless.practice) return;
   const chunk = Math.floor(race.player.distance / ENDLESS_CHUNK), old = race.endless.chunk;
   if (chunk === old) return;
   const first = Math.max(0, chunk - 1), last = chunk + 3;
@@ -84,7 +85,7 @@ export function prepareEndless(race: EndlessRace): void {
 }
 /** A collision limit ends a completed survival attempt; it is an eligible distance result. */
 export function finishEndless(race: EndlessRace): boolean {
-  if (!race.endless) return false;
+  if (!race.endless || race.endless.practice) return false;
   race.endless.milestones = Math.floor(race.player.distance / 1000);
   const car = race.player;
   if (car.collisions < ENDLESS_COLLISIONS) return false;
