@@ -369,6 +369,23 @@ Data access is enforced by `firestore.rules` (owner-only `get`/`delete`, no `lis
 - [ ] API key still restricted (no restriction removed during debugging); no new keys or secrets in the diff.
 - [ ] Any new Firestore collection ships with owner-only rules, write validation and a rules test.
 - [ ] No high/critical `npm audit` advisories in production dependencies.
+## Monsoon Ruins full-course module — 2026-11-03
+
+Branch: `feature/playable-monsoon-ruins`; integration owner: `feature/epic-multiroute-longform-tracks`. Source references: two real Monsoon JPEGs, route SVG and visual acceptance gate. Separate start/finish; homepage remains Coming Soon.
+
+- [x] Read AGENTS/CLAUDE, regression-first rules, World Tour, vehicle contact, showcase and CI guidance. Inspect both concept JPEGs and route schematic.
+- [x] Add map-specific 12.5 km geometry and three genuine ground/air route edges, terrain/props, mutable weather visuals, surface hints, physical arc-length edge samples, checkpoints and recovery helpers.
+- [x] Add focused route/obstacle/scene tests before and during implementation. The first RED Actions runs were cancelled by branch concurrency; **RED execution evidence remains pending**.
+- [x] Keep shared Registry/World/Game/AI/HUD untouched; keep Coming Soon and no PR/merge/deploy.
+- [ ] Focused `node --test tests/monsoon-ruins-*.test.js` observed GREEN for exact HEAD.
+- [ ] `npm test`, `npm run typecheck`, `npm run build`, browser + World Tour + `make verify` observed GREEN; record actual output.
+- [ ] Exact-HEAD **full** GitHub Actions `quality-gate` passed (focused feature CI is insufficient).
+- [ ] Integration branch: signed world-space gate crossings, physically consistent road/car/AI/props, start/finish and 8-car full-play races.
+- [ ] Repeatable actual WebGL screenshots: guardian temple, two hairpins, river valley, waterfall, airborne stone bridge, visible solid obstacles at desktop 1440×900 and phone 390×844.
+- [ ] Visual comparison against both JPEGs: six acceptance categories, Low/Medium/High, Reduced Motion, mobile/desktop visibility and GPU cleanup; measured 3–5-minute target.
+- [ ] Explicit human visual and device acceptance.
+
+Integration contract and precise pending gates: `docs/designs/new-tracks/monsoon-ruins-playable-handoff.md`.
 
 ---
 
@@ -3629,6 +3646,31 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Shared integration of `sampleRoute`, `advanceSignedGate`, eight-car fleet/AI, flight physics, terrain/obstacle collision, safe recovery, standing, results, records and UI into the existing `game.js`, `world.js`, RaceFactory.
 - [ ] Actual drivable road/landing and 3–5-minute full-race trials with 30/60/120 FPS, mobile/desktop WebGL screenshots vs two concept JPEGs, real draw-call/triangle/p50-p95 frame measurements, and disposal/context restoration.
 - [ ] Exact-final-HEAD FULL CI success including Browser/World Tour shards and Cloud-save; local full `npm test`, typecheck, build, `make verify` still unavailable without a repository clone and Node modules.
+
+## Monsoon Ruins — map-only physical consistency (2026-11-04)
+
+- [x] Add deterministic regression tests for diagonal swept obstacle contact and ford water/contact surface consistency. Initial RED reproduced against exact prior function / fixed old 0.06 m water plane; GitHub test-only commit `ecadc8cb95ef2d4e76c2bdb915d5324fa3bb14bb`.
+- [x] Implement map-only closest-point swept obstacle contact and ford mesh water height driven by `monsoonWetContact`. Preserve the existing river-ford arc-length fix and all route-edge contracts.
+- [ ] Confirm both new tests and all existing suites on exact final HEAD; full browser/World Tour must execute, not skip.
+- [ ] Capture six real WebGL ground/ford/temple/falls/skybridge/landing views at desktop and phone sizes; inspect both original concept JPEGs.
+- [ ] Complete shared CourseGraph player/rival/AI integration, physical landing/recovery and checkpoint controller, measured 8-car 3–5-minute runs, and 30/60/120 FPS device evidence in read-only integration owner. Do not unlock Coming Soon from this branch.
+
+## Monsoon Ruins — continued TDD (2026-11-04)
+
+- [x] Reproduce RED for fixed-per-chunk foliage/rain density (100m+150m costs 2× a 250m chunk), and ~20m landmark viaduct offset; add deterministic scene regression tests and map-local fixes. Remote tests on final HEAD are still required.
+- [x] Address existing 844×390 Start long-label regression in this branch without changing button dimensions; reuse existing Browser regression spec and preserve Coming Soon locking. RED: FULL CI run 41793715525 browser shard 1.
+- [ ] Confirm latest exact-HEAD full Browser/World Tour/Unit/Cloud/Quality Gate; verify responsive layout gate and real WebGL screenshots (desktop + mobile) before marking either change visually accepted.
+
+## Monsoon Ruins — terrain height/contact parity (2026-11-04)
+
+- [x] RED source inspection: guardian temple base 11.14 m below raised terrain, waterfall basin 12.80 m below, representative forest tree roots 8.72 m below authored ground. Introduce a map-owned deterministic height sampler, reuse it for mesh vertices and prop placement, add scene tests.
+- [ ] Run exact-HEAD unit/Typecheck/build, WebGL visuals for elevated valley and real landing, complete shared-course integration and 8-car race evidence before marking terrain contacts physically accepted.
+
+## Monsoon Ruins — wet-ground and valley seam regression (2026-11-04)
+
+- [x] TDD RED: at 2 m sampling across 2900/4900 m the valley terrain jumps ~16m; six ground wet-zone endpoints jump 0.055m water depth. Keep the same authored plateau/depth values but apply smooth entry/exit ramps using the common terrain/contact APIs.
+- [ ] Verify new seam and contact tests, full Unit/Browser/World Tour/Quality Gate at exact final HEAD. Capture real rendered Ford and valley screenshots; no visual acceptance until actual WebGL evidence exists.
+
 ## 2026-11-04 — Preview-only Coming Soon fail-closed access (Frostbite working branch)
 
 - [x] Add explicit default-preview readiness to the shared Coming Soon catalog. Only approved `playable` cards with real race runtime can START under `make dev-unlocked`; concept-only or development cards never can, even with an accidental runtime registration. Frostbite remains dev-only; all production Coming Soon cards remain disabled.
@@ -3702,3 +3744,9 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Verify real shared-arc-length road mesh, vehicle and 8-car transitions with the map selected in playable runtime. Latest exact-HEAD FULL CI / screenshots still pending; isolated control-point math is not a real driving run.
 - [x] Adjust stone-ring-corridor first approach control so both canyon ground and aerial landing branches meet merge2 within 40°; isolated numeric RED→GREEN observed for previous 64° aerial join.
 - [ ] Measure actual landing grip/clearance, physical flight, FPS and render parity in shared runtime; no real race proof from geometric contract tests.
+
+## Monsoon Ruins — road shoulder / water contact continuity (2026-11-05)
+
+- [x] RED reproduced from `monsoonTerrainOffset` at 8 distances and both roadside boundaries (7–55 cm height mismatch) and the original scene's dry-section puddle placement.
+- [x] New deterministic road-shoulder and puddle/physics tests. Terrain's first column now equals the +0.07 m road lift; puddle locations and elevations derive from `monsoonWetContact`.
+- [ ] Run `npm test`, `npm run typecheck`, `npm run build`, `make verify`, real WebGL desktop/mobile captures and exact-HEAD FULL CI. User-visible scene clearance and performance not accepted until direct evidence exists.
