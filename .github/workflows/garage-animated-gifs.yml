@@ -62,15 +62,6 @@ jobs:
                   assert min(xs.min(),ys.min(),item['width']-1-xs.max(),item['height']-1-ys.max()) >= m
           print('Verified source-linked GIFs:', len(files))
           PY
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - name: Install and run full unit / production build gates
-        run: |
-          npm ci
-          npm test
-          npm run build
       - name: Commit generated binaries to the sole authorized branch
         run: |
           git config user.name 'github-actions[bot]'

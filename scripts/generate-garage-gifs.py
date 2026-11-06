@@ -183,7 +183,7 @@ def color_flow(source, style, strength, step, category):
             flow0 = 0.5 + 0.5 * np.sin(24 * distance)
         else:
             flow0 = 0.5 + 0.5 * np.sin(17 * distance + 2.6 * (y - x))
-        gain = 1 + strength * 0.26 * (flow - flow0)
+        gain = 1 + strength * 0.28 * np.maximum(0, flow - flow0)
         rgba[:, :, :3] = np.where(flame[:, :, None], np.clip(rgba[:, :, :3] * gain[:, :, None], 0, 255), rgba[:, :, :3])
         # Combustion fluctuates at the exhaust edges. Keep the nozzle and
         # its metal ring fixed; move the source flame's existing translucent edge.
@@ -211,7 +211,7 @@ def color_flow(source, style, strength, step, category):
             baseline = np.tanh(3 * baseline)
         elif style == 'nitro-nebula':
             baseline = (np.sin(omega * longitudinal) + np.sin(13 * transverse)) / 2
-        gain = 1 + .24 * strength * (pulse - baseline)
+        gain = 1 + .27 * strength * np.maximum(0, pulse - baseline)
         active = (alpha > 15) & (light > 80)
         rgba[:, :, :3] = np.where(active[:, :, None], np.clip(rgba[:, :, :3] * gain[:, :, None], 0, 255), rgba[:, :, :3])
     else:
@@ -225,14 +225,14 @@ def color_flow(source, style, strength, step, category):
         baseline = np.sin(11 * radius + speed * angle)
         if style in ('flare-beat', 'flare-nova'):
             baseline = np.cos(16 * radius)
-        gain = 1 + .24 * strength * (wave - baseline)
+        gain = 1 + .26 * strength * np.maximum(0, wave - baseline)
         core = radius > .13
         active = (alpha > 15) & core & (light > 80)
         rgba[:, :, :3] = np.where(active[:, :, None], np.clip(rgba[:, :, :3] * gain[:, :, None], 0, 255), rgba[:, :, :3])
         # Shockwave rays flicker through the original flare silhouette;
         # core/center remains stable and no new pixels appear outside it.
         rim = active & (radius > .25)
-        ripple = wave - baseline
+        ripple = np.maximum(0, wave - baseline)
         rgba[:, :, 3] = np.where(rim, alpha * (1 + .20 * strength * ripple), alpha)
     if not np.array_equal(rgba[:, :, 3].astype(np.uint8)[original_alpha < 1], original_alpha.astype(np.uint8)[original_alpha < 1]):
         raise AssertionError('energy motion added pixels outside original alpha')
@@ -252,9 +252,7 @@ def subtle_part_motion(source, mask, step, dx=0, dy=0, angle=0, pivot=(.5, .5)):
         return source.copy()
     part = source.copy()
     part.putalpha(Image.fromarray(np.minimum(np.asarray(source.getchannel('A')), np.asarray(mask)).astype('uint8')))
-    body = source.copy()
-    body.putalpha(Image.fromarray((np.asarray(source.getchannel('A'), dtype=np.uint16) *
-                                   (255 - np.asarray(mask, dtype=np.uint16)) // 255).astype('uint8')))
+    body = source.copy()  # original underpainting prevents exposed black cut seams
     if angle:
         part = part.rotate(angle, resample=Image.Resampling.BICUBIC,
                            center=(source.width * pivot[0], source.height * pivot[1]))
