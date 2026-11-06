@@ -1,4 +1,4 @@
-<!-- source-sha256: 2585710eb288e9c5c3716f17b40f9b7defbed15dfd67a1b1c87fe58780e72597 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 2503ef3176b6343a4f3a1269da09bc83d1760b8d46be9824644c69ec13150987 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -279,6 +279,7 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull requ
 - `scripts/capture-og-images.mjs`：從真實 App 擷取英文與 zh-TW 的封面圖片以及 zh-TW README 截圖。
 - `scripts/pickup-economy.mjs`：由腳本控制的機器人駕駛每條賽道，並印出每分鐘 NITRO、BOOST 占比、燃料耗盡次數與第一次 NITRO 時間；`tests/pickup-economy.test.js` 鎖定光環／拾取物的佈局。
 - `scripts/ring-variety.mjs`：在重新隨機的比賽種子上，印出每條賽道的光環車道分布、地面占比、每場比賽的光環列與排數，以及機器人的光環取得量與 NITRO 速率；`tests/ring-variety.test.js` 確保每條車道都被使用，且不讓光環更難收集。
+- `scripts/rival-balance.mjs`：專家機器人（使用 BOOST、飛行取光環）與新手機器人（兩者皆不用）在每條賽道與每個難度上與七名對手競速；印出最快對手的領先差距與機器人的名次。
 - `scripts/ci-shards.mjs`：`plan` 為每個 CI 分片提供其 Playwright `--test-list`，依耗時打包測試，讓每個分片大約同時完成；`refresh <run-id>` 會在測試套件大幅變動後，根據某次 CI 執行的記錄重寫 `tests/ci-durations.json`。
 - `src/App.vue`、`src/icons.js`：Vue 3 的 UI 外殼（開始畫面、HUD、面板、觸控操作）及其共用的 SVG 圖示；只渲染一次，沒有響應式狀態。
 - `src/main.js`、`src/style.css`：掛載 `App.vue`、連接各畫面控制器，並執行比賽生命週期（開始、暫停、重新開始、結果）與影格迴圈。
